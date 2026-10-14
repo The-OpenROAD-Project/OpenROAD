@@ -97,6 +97,7 @@ filegroup(
 filegroup(
     name = "asap7_data",
     srcs = [
+        "asap7/asap7.tracks.tcl",
         "asap7/asap7_tech_1x_201209.lef",
         "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
     ],

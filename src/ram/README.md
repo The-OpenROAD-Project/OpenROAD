@@ -110,6 +110,7 @@ generate_ram [-mask_size bits]
 | `-max_tap_dist` | The distance (in microns) that tapcells should be placed apart. Requires `-tapcell`. |
 | `-use_latch` | If set to `1`, uses a two-phase latch-based design instead of flip-flops for the storage elements. Functionally equivalent to flip-flop design with smaller storage cell area. Default: `0`. |
 | `-write_behavioral_verilog` | Write a behavioral Verilog model of the RAM array to the specified file. |
+| `-tracks` | `generate_ram` only. A Tcl file of `make_tracks` commands, sourced in place of `make_tracks` with the technology LEF's offsets, for a technology whose offsets do not fit the block (asap7's M2 offset is negative). Default: the LEF's tracks. |
 
 ## Example scripts
 

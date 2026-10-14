@@ -337,6 +337,7 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-max_tap_dist value]
                                      [-use_latch value]
                                      [-write_behavioral_verilog filename]
+                                     [-tracks file]
                                      }
 
 # user arguments for generate ram arguments
@@ -351,9 +352,13 @@ proc generate_ram { args } {
            -banks -bank_columns -bank_order -rb_ports -register_read_address
            -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
-           -bank_column_layout } flags {}
+           -bank_column_layout -tracks } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
+
+  if { [info exists keys(-tracks)] && ![file readable $keys(-tracks)] } {
+    utl::error RAM 97 "-tracks file $keys(-tracks) is not readable."
+  }
 
   # Check for valid design
   if { [ord::get_db_block] != "NULL" } {
@@ -509,7 +514,11 @@ proc generate_ram { args } {
     $route_name $route_width \
     $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 
-  make_tracks -x_offset 0 -y_offset 0
+  if { [info exists keys(-tracks)] } {
+    source $keys(-tracks)
+  } else {
+    make_tracks -x_offset 0 -y_offset 0
+  }
 
   ram::ram_pinplacer $ver_name $hor_name
 

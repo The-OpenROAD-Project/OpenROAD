@@ -1885,8 +1885,40 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
   }
 
   auto pin_tech = block_->getDb()->getTech();
-  io_placer_->addHorLayer(pin_tech->findLayer(hor_name));
-  io_placer_->addVerLayer(pin_tech->findLayer(ver_name));
+  odb::dbTechLayer* hor_layer = pin_tech->findLayer(hor_name);
+  odb::dbTechLayer* ver_layer = pin_tech->findLayer(ver_name);
+  io_placer_->addHorLayer(hor_layer);
+  io_placer_->addVerLayer(ver_layer);
+
+  // no pin on a power strap of its own layer: where a strap reaches an
+  // edge, a pin on the tracks under it cannot be reached (asap7's M4
+  // straps start on the bottom edge, its first track 12 nm above it)
+  for (dbNet* net : block_->getNets()) {
+    if (!net->getSigType().isSupply()) {
+      continue;
+    }
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* box : swire->getWires()) {
+        if (box->isVia()) {
+          continue;
+        }
+        const odb::Rect r = box->getBox();
+        if (box->getTechLayer() == hor_layer) {
+          const int s = hor_layer->getSpacing();
+          io_placer_->excludeInterval(
+              ppl::Edge::right, r.yMin() - s, r.yMax() + s);
+          io_placer_->excludeInterval(
+              ppl::Edge::left, r.yMin() - s, r.yMax() + s);
+        } else if (box->getTechLayer() == ver_layer) {
+          const int s = ver_layer->getSpacing();
+          io_placer_->excludeInterval(
+              ppl::Edge::top, r.xMin() - s, r.xMax() + s);
+          io_placer_->excludeInterval(
+              ppl::Edge::bottom, r.xMin() - s, r.xMax() + s);
+        }
+      }
+    }
+  }
   io_placer_->getParameters()->setCornerAvoidance(0);
   io_placer_->runHungarianMatching();
 }
