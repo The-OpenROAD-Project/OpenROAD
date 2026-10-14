@@ -131,15 +131,17 @@ class AntennaSyntheticTest : public tst::DbFixture
 
 TEST_F(AntennaSyntheticTest, PartialAreaRatio)
 {
-  tst::applyAntennaRule(m1(), {.par = 1.5});
+  tst::applyAntennaRule(m1(), {.par = 1.5, .car = 1.8});
   const LayerCheck check = layerCheck(gateNet("n1"), m1());
 
   EXPECT_NEAR(check.par.actual, kPar, 1e-9);
   EXPECT_DOUBLE_EQ(check.par.required, 1.5);
   EXPECT_TRUE(check.par.violated);
   EXPECT_TRUE(check.violated);
-  // CAR is not evaluated once PAR violates.
-  EXPECT_FALSE(check.car.has_value());
+  // CAR is checked and reported even though PAR already violates.
+  EXPECT_NEAR(check.car.actual, kPar, 1e-9);
+  EXPECT_DOUBLE_EQ(check.car.required, 1.8);
+  EXPECT_TRUE(check.car.violated);
 }
 
 TEST_F(AntennaSyntheticTest, PartialAreaRatioWithinLimit)
@@ -149,8 +151,7 @@ TEST_F(AntennaSyntheticTest, PartialAreaRatioWithinLimit)
 
   EXPECT_FALSE(check.par.violated);
   EXPECT_FALSE(check.violated);
-  ASSERT_TRUE(check.car.has_value());
-  EXPECT_NEAR(check.car->actual, kPar, 1e-9);
+  EXPECT_NEAR(check.car.actual, kPar, 1e-9);
 }
 
 TEST_F(AntennaSyntheticTest, SideAreaRatio)
@@ -284,11 +285,10 @@ TEST_F(AntennaSyntheticTest, CumulativeRatiosAcrossLayers)
 
   const LayerCheck m1_check = layerCheck(net, m1());
   const LayerCheck m2_check = layerCheck(net, m2());
-  ASSERT_TRUE(m1_check.car && m2_check.car && m1_check.psr && m2_check.psr
-              && m1_check.csr && m2_check.csr);
-  EXPECT_NEAR(m1_check.car->actual, m1_check.par.actual, 1e-9);
+  ASSERT_TRUE(m1_check.psr && m2_check.psr && m1_check.csr && m2_check.csr);
+  EXPECT_NEAR(m1_check.car.actual, m1_check.par.actual, 1e-9);
   EXPECT_NEAR(
-      m2_check.car->actual, m1_check.par.actual + m2_check.par.actual, 1e-9);
+      m2_check.car.actual, m1_check.par.actual + m2_check.par.actual, 1e-9);
   EXPECT_NEAR(
       m2_check.csr->actual, m1_check.psr->actual + m2_check.psr->actual, 1e-9);
 
@@ -304,9 +304,8 @@ TEST_F(AntennaSyntheticTest, CumulativeAreaRatioViolation)
 {
   tst::applyAntennaRule(m1(), {.car = 1.5});
   const LayerCheck check = layerCheck(gateNet("n1"), m1());
-  ASSERT_TRUE(check.car.has_value());
-  EXPECT_NEAR(check.car->actual, kPar, 1e-9);
-  EXPECT_TRUE(check.car->violated);
+  EXPECT_NEAR(check.car.actual, kPar, 1e-9);
+  EXPECT_TRUE(check.car.violated);
   EXPECT_TRUE(check.violated);
 }
 
@@ -352,7 +351,6 @@ TEST_F(AntennaSyntheticTest, SpecialNet)
   gateNet("n2", 1000);  // so the design counts as routed
 
   EXPECT_TRUE(checker_.checkNet(net).pins.empty());
-  checker_.initAntennaRules();
   EXPECT_TRUE(checker_.getAntennaViolations(net, nullptr, 0).empty());
   EXPECT_LOGGER_ERROR(checker_.check(net), "ANT-0014");
   // A check of every net skips it.
@@ -485,12 +483,13 @@ TEST_F(AntennaSyntheticTest, ThreadCountDoesNotChangeResults)
   }
 }
 
+// getAntennaViolations loads the layer rules itself, as repair may call it
+// on a new checker.
 TEST_F(AntennaSyntheticTest, ViolationsWithoutDiode)
 {
   tst::applyAntennaRule(m1(), {.par = 1.5});
   odb::dbNet* net = gateNet("n1");
 
-  checker_.initAntennaRules();  // as repair does
   const Violations violations = checker_.getAntennaViolations(net, nullptr, 0);
   ASSERT_EQ(violations.size(), 1);
   EXPECT_EQ(violations[0].routing_level, 1);
@@ -511,7 +510,6 @@ TEST_F(AntennaSyntheticTest, DiodeCount)
   odb::dbNet* net = gateNet("n1");
   odb::dbMaster* diode = driver(/*diff_area=*/0.25);
 
-  checker_.initAntennaRules();  // as repair does
   const Violations violations
       = checker_.getAntennaViolations(net, diode->findMTerm("X"), 0);
   ASSERT_EQ(violations.size(), 1);
@@ -527,7 +525,6 @@ TEST_F(AntennaSyntheticTest, DiodeCountCapped)
   odb::dbNet* net = gateNet("n1");
   odb::dbMaster* diode = driver(/*diff_area=*/0.0001);
 
-  checker_.initAntennaRules();  // as repair does
   const Violations violations
       = checker_.getAntennaViolations(net, diode->findMTerm("X"), 0);
   ASSERT_EQ(violations.size(), 1);
