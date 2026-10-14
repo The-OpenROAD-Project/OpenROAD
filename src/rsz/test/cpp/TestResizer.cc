@@ -308,7 +308,8 @@ TEST_F(TestResizer, ResizeSlacksExcludeNonTimingDrivers)
   ASSERT_TRUE(unconstrained->hasFanout());
   const sta::Slack wns = sta_->worstSlack(max);
   EXPECT_NEAR(wns, staTime(-0.028), tolerance);
-  EXPECT_NEAR(sta_->slack(isolated, max), staTime(-0.270), tolerance);
+  // An input with no fanout is on no timing path (OpenSTA #523).
+  EXPECT_TRUE(sta::fuzzyInf(sta_->slack(isolated, max)));
   EXPECT_TRUE(sta::fuzzyInf(sta_->slack(unconstrained, max)));
 
   const odb::dbNet* timed_net = db_network_->flatNet(constrained->pin());

@@ -74,24 +74,24 @@ Stage 1: Pattern routing.
 Stage 2: Resistance-aware re-route of critical nets.
 Routing statistics
 Wire length:           34595
-Total via count:       2509
+Total via count:       2583
 Total congestion:      0.00
-Min resource:          0.32
-Bottleneck:            (4, 90, 152)
+Min resource:          0.31
+Bottleneck:            (4, 93, 151)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    177468.85       377.00       175.22       552.22       0.31
-M3        V    191126.39       956.00       126.08      1082.08       0.57
-M4        H    143310.39       248.00        93.21       341.21       0.24
-M5        V    143310.39       626.00        49.69       675.69       0.47
-M6        H    107534.39       110.00        10.35       120.35       0.11
+M2        H    177468.85       379.00       107.25       486.25       0.27
+M3        V    191126.39       937.00        94.96      1031.96       0.54
+M4        H    143310.39       240.00        67.97       307.97       0.21
+M5        V    143310.39       645.00        44.89       689.89       0.48
+M6        H    107534.39       116.00        13.70       129.70       0.12
 --------------------------------------------------------------------------
-Total          762750.41      2317.00       454.56      2771.56       0.36
+Total          762750.41      2317.00       328.77      2645.77       0.35
 [INFO GRT-0018] Total wirelength: 7364 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -115.3 ps  TNS: -2615.1 ps
+resistance-aware               WNS: -115.5 ps  TNS: -2619.4 ps
 resistance-aware WNS and TNS not worse than baseline: PASS
 No differences found.
