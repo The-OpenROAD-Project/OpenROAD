@@ -19,6 +19,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "rsz/Resizer.hh"
 #include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -293,6 +294,13 @@ void ScanReplace::collectScanCellAvailable()
       }
 
       if (utils::IsScanCell(db_network, liberty_cell)) {
+        // Only skip user-configured or library dont_use cells as replacement
+        // targets. Non-scan cells that are already instantiated in the netlist
+        // should still be mapped to an allowed scan equivalent even if their
+        // non-scan library cell is marked dont_use.
+        if (resizer_ && resizer_->dontUse(liberty_cell)) {
+          continue;
+        }
         available_scan_lib_cells_.insert(liberty_cell);
       } else {
         non_scan_cells.push_back(liberty_cell);
@@ -330,8 +338,9 @@ void ScanReplace::collectScanCellAvailable()
 
 ScanReplace::ScanReplace(odb::dbDatabase* db,
                          sta::dbSta* sta,
+                         rsz::Resizer* resizer,
                          utl::Logger* logger)
-    : db_(db), sta_(sta), logger_(logger)
+    : db_(db), sta_(sta), resizer_(resizer), logger_(logger)
 {
   db_network_ = sta->getDbNetwork();
 }
