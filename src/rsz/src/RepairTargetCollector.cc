@@ -999,17 +999,7 @@ void RepairTargetCollector::collectViolatingStartpoints()
 sta::Path* RepairTargetCollector::findWorstSlackPath(
     sta::Vertex* endpoint) const
 {
-  if (restrictedToPathGroup()) {
-    // An endpoint qualifies by hosting a path in the group, not by its worst
-    // path being in it, so repair the path the group query returns. Falls
-    // through when the group has no path here, as happens mid run once the
-    // endpoint stops violating.
-    const PathGroupFilter path_group_filter(resizer_);
-    if (sta::Path* path = path_group_filter.groupPath(endpoint, max_)) {
-      return path;
-    }
-  }
-  return sta_->vertexWorstSlackPath(endpoint, max_);
+  return PathGroupFilter(resizer_).findWorstSlackPath(endpoint, max_);
 }
 
 void RepairTargetCollector::collectExpandedPathDriverTargets(

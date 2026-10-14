@@ -558,11 +558,8 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
   // The endpoint is here because the group's hold slack violates, which its
   // worst hold path need not belong to. Repair the group's own path so the
   // buffers land on what was asked for.
-  const PathGroupFilter path_group_filter(resizer_);
-  sta::Path* end_path = path_group_filter.groupPath(end_vertex, min_);
-  if (end_path == nullptr) {
-    end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  }
+  sta::Path* end_path
+      = PathGroupFilter(resizer_).findWorstSlackPath(end_vertex, min_);
   if (end_path) {
     sta::Mode* mode = end_path->mode(sta_);
     debugPrint(logger_,

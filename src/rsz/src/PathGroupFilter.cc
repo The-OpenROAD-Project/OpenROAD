@@ -390,14 +390,18 @@ std::optional<sta::Slack> PathGroupFilter::groupSlack(
   return end->slack(sta_);
 }
 
-sta::Path* PathGroupFilter::groupPath(sta::Vertex* endpoint,
-                                      const sta::MinMax* min_max) const
+sta::Path* PathGroupFilter::findWorstSlackPath(sta::Vertex* endpoint,
+                                               const sta::MinMax* min_max) const
 {
-  if (!enabled() || endpoint == nullptr) {
+  if (endpoint == nullptr) {
     return nullptr;
   }
-  sta::PathEnd* end = worstGroupEnd(endpoint, min_max);
-  return end != nullptr ? end->path() : nullptr;
+  if (enabled()) {
+    if (sta::PathEnd* end = worstGroupEnd(endpoint, min_max)) {
+      return end->path();
+    }
+  }
+  return sta_->vertexWorstSlackPath(endpoint, min_max);
 }
 
 PathGroupFilter::GroupSlacks PathGroupFilter::groupEndpointSlacks(

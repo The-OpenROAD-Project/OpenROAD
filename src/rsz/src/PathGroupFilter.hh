@@ -101,15 +101,17 @@ class PathGroupFilter
   std::optional<sta::Slack> groupSlack(sta::Vertex* endpoint,
                                        const sta::MinMax* min_max) const;
 
-  // The group's worst path to `endpoint`, or nullptr when it hosts none or no
-  // group is selected, leaving callers on their own path lookup.
+  // The group's worst path to `endpoint`, falling back to the endpoint's
+  // worst path when no group is selected or the group has no path here, as
+  // happens mid run once the endpoint stops violating.
   //
   // An endpoint qualifies by hosting *a* path in the group, so repairing its
   // worst path would optimize whatever group that one belongs to instead.
   //
   // The path is owned by the graph, not the query, since asking for one path
   // end skips enumeration; it lives as long as a vertexWorstSlackPath() would.
-  sta::Path* groupPath(sta::Vertex* endpoint, const sta::MinMax* min_max) const;
+  sta::Path* findWorstSlackPath(sta::Vertex* endpoint,
+                                const sta::MinMax* min_max) const;
 
   using GroupSlacks = std::vector<std::pair<const sta::Pin*, sta::Slack>>;
 
@@ -143,7 +145,7 @@ class PathGroupFilter
 
  private:
   // Worst path end at `endpoint` within the group, nullptr when none.  Shared
-  // by groupSlack() and groupPath() so both answer from one query.
+  // by groupSlack() and findWorstSlackPath() so both answer from one query.
   sta::PathEnd* worstGroupEnd(sta::Vertex* endpoint,
                               const sta::MinMax* min_max) const;
   bool isPrimaryInput(const sta::Pin* pin) const;
