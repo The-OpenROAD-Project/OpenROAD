@@ -1563,6 +1563,9 @@ bool TritonCTS::separateMacroRegSinks(
               ++invertedLoads;
               if (invertedTerm == nullptr) {
                 invertedTerm = loadTerm;
+              } else {
+                // A second load already settles the classification below.
+                break;
               }
             }
           }
