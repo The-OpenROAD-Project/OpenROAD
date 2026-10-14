@@ -42,6 +42,7 @@ filegroup(
     srcs = [
         "helpers.tcl",
         "ram_sim.tcl",
+        "routed.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",

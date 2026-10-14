@@ -4,26 +4,22 @@
 
 source "helpers.tcl"
 source "ram_sim.tcl"
+source "routed.tcl"
 
-read_liberty ../../../test/asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz
-read_liberty ../../../test/asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz
-read_liberty ../../../test/asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz
-read_liberty ../../../test/asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib
-read_liberty ../../../test/asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz
+routed::read_asap7
 
-read_lef ../../../test/asap7/asap7_tech_1x_201209.lef
-read_lef ../../../test/asap7/asap7sc7p5t_28_R_1x_220121a.lef
-
-
-generate_ram_netlist \
+generate_ram {*}$routed::asap7 \
   -mask_size 8 -word_size 8 -num_words 8 -r_ports 2 -w_ports 1 \
   -storage_cell DFFHQNx1_ASAP7_75t_R -service_columns {4 10}
+routed::check
 
 set block [ord::get_db_block]
 set site [[lindex [[lindex [[ord::get_db] getLibs] 0] getSites] 0] getWidth]
 set spans {}
+# fillers and taps fill the routed block's empty columns
 foreach inst [$block getInsts] {
-  if { [$inst isPlaced] } {
+  set type [[$inst getMaster] getType]
+  if { [$inst isPlaced] && $type != "CORE_SPACER" && $type != "CORE_WELLTAP" } {
     set b [$inst getBBox]
     lappend spans [list [$b xMin] [$b xMax]]
   }

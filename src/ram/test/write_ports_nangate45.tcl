@@ -1,20 +1,20 @@
-# generate_ram_netlist with two write ports: each port writes the word it
+# generate_ram with two write ports: each port writes the word it
 # addresses, both may write in one cycle, and where both write the same
 # word the last port's data is kept. Checked by simulating the block.
 source "helpers.tcl"
 source "ram_sim.tcl"
+source "routed.tcl"
 
-read_liberty Nangate45/Nangate45_typ.lib
-read_lef Nangate45/Nangate45_tech.lef
-read_lef Nangate45/Nangate45.lef
+routed::read_nangate45
 
-generate_ram_netlist \
+generate_ram {*}$routed::nangate45 \
   -mask_size 7 \
   -word_size 7 \
   -num_words 7 \
   -r_ports 1 \
   -w_ports 2 \
   -storage_cell DFF_X1
+routed::check
 
 ram_sim::load
 ram_sim::exercise {
