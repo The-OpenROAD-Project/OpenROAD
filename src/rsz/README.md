@@ -332,6 +332,25 @@ and the utilization.
 report_design_area
 ```
 
+### Report Placement Density
+
+The `report_placement_density` command reports the placement density of the core, or with `-region` of the rectangle given by two opposite corners, for the placement as it currently stands in the database. Only the part of the region inside the core counts.
+
+The density is counted as the GUI's placement density heat map counts it with its default settings: the area of the placed instances inside the region over the area of the region. Fixed instances, macros, taps and endcaps count; filler cells, pads and covers do not, nor do placement blockages. The density goes over `1` where instances overlap.
+
+The instance area is kept in the heat map's default bins over the core: the bins of the last global placement, or 10 microns before global placement has run. A bin the region covers only in part adds that share of its instance area, as if the area were spread evenly over the bin, so the result is exact for a region made of whole bins. The report states the bin size.
+
+```tcl
+report_placement_density
+    [-region {x1 y1 x2 y2}]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-region` | The two opposite corners of the region to measure, in microns. The default is the core area. |
+
 ### Report Floating Nets
 
 The `report_floating_nets` command reports nets with connected loads but no connected drivers.

@@ -212,6 +212,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // callbacks then keep current, so later calls cost a walk over the bins
   // the region covers.
   PlacementDensity placementDensity(const odb::Rect& region);
+  // Reports the placement density of region, as placementDensity() counts
+  // it.  Backs report_placement_density.
+  void reportPlacementDensity(const odb::Rect& region);
   sta::dbSta* sta() const { return sta_; }
   const sta::MinMax* maxAnalysisMode() const { return max_; }
   const sta::StaState* staState() const { return this; }

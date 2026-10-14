@@ -229,6 +229,7 @@ TESTS = [
     "report_buffers_sky130hs",
     "report_buffers_no_lef",
     "report_design_area",
+    "report_placement_density",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",

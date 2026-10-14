@@ -73,7 +73,9 @@ class PlacementDensityMap : public odb::dbBlockCallBackObj
   // Area covered inside region, given in block coordinates.
   PlacementDensity getDensity(const odb::Rect& region);
 
-  // The bins as of the last query, mostly for tests.
+  // The bins as of the last query.
+  int getBinWidth() const { return bin_width_; }
+  int getBinHeight() const { return bin_height_; }
   int getBinCountX() const { return bin_count_x_; }
   int getBinCountY() const { return bin_count_y_; }
   odb::Rect getBinRect(int x, int y) const;

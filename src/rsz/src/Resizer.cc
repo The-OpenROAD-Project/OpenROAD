@@ -409,6 +409,49 @@ PlacementDensity Resizer::placementDensity(const odb::Rect& region)
   return density_map_->getDensity(region);
 }
 
+void Resizer::reportPlacementDensity(const odb::Rect& region)
+{
+  initBlock();
+  const double x1 = block_->dbuToMicrons(region.xMin());
+  const double y1 = block_->dbuToMicrons(region.yMin());
+  const double x2 = block_->dbuToMicrons(region.xMax());
+  const double y2 = block_->dbuToMicrons(region.yMax());
+  if (region.dx() == 0 || region.dy() == 0) {
+    logger_->error(RSZ,
+                   3216,
+                   "Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f}) is empty.",
+                   x1,
+                   y1,
+                   x2,
+                   y2);
+  }
+  const PlacementDensity density = placementDensity(region);
+  if (density.region_area == 0) {
+    logger_->report(
+        "Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f}) is outside the core.",
+        x1,
+        y1,
+        x2,
+        y2);
+    return;
+  }
+
+  // The instance area is fractional where the region covers part of a bin.
+  const double dbu_per_micron = block_->getDbUnitsPerMicron();
+  const auto to_um2 = [dbu_per_micron](const double dbu_area) {
+    return dbu_area / (dbu_per_micron * dbu_per_micron);
+  };
+  logger_->report("Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f})", x1, y1, x2, y2);
+  logger_->report("  Bin size:             {:.3f} x {:.3f} um",
+                  block_->dbuToMicrons(density_map_->getBinWidth()),
+                  block_->dbuToMicrons(density_map_->getBinHeight()));
+  logger_->report("  Area inside the core: {:12.3f} um^2",
+                  to_um2(static_cast<double>(density.region_area)));
+  logger_->report("  Instance area:        {:12.3f} um^2",
+                  to_um2(density.instance_area));
+  logger_->report("  Placement density:    {:12.3f}", density.getDensity());
+}
+
 ////////////////////////////////////////////////////////////////
 
 class VertexLevelLess

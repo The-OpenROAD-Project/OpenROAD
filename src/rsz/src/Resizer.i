@@ -268,6 +268,13 @@ design_area()
   return resizer->designArea();
 }
 
+void
+report_placement_density_cmd(int x1, int y1, int x2, int y2)
+{
+  Resizer *resizer = getResizer();
+  resizer->reportPlacementDensity(odb::Rect(x1, y1, x2, y2));
+}
+
 TmpNetSeq *
 find_floating_nets()
 {

@@ -1,0 +1,60 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+Region (10.070, 11.200) (90.250, 91.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:     6398.364 um^2
+  Instance area:             669.788 um^2
+  Placement density:           0.105
+Region (20.070, 21.200) (40.070, 41.200)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:      400.000 um^2
+  Instance area:              89.861 um^2
+  Placement density:           0.225
+Region (20.000, 20.000) (40.000, 40.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:      400.000 um^2
+  Instance area:              82.132 um^2
+  Placement density:           0.205
+Region (20.000, 20.000) (40.000, 40.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:      400.000 um^2
+  Instance area:              82.132 um^2
+  Placement density:           0.205
+Region (80.070, 81.200) (90.250, 91.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:       99.764 um^2
+  Instance area:               0.798 um^2
+  Placement density:           0.008
+Region (80.070, 81.200) (90.250, 91.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:       99.764 um^2
+  Instance area:               1.596 um^2
+  Placement density:           0.016
+Region (80.070, 81.200) (90.250, 91.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:       99.764 um^2
+  Instance area:               1.596 um^2
+  Placement density:           0.016
+Region (80.070, 81.200) (90.250, 91.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:       99.764 um^2
+  Instance area:               0.798 um^2
+  Placement density:           0.008
+Region (0.000, 0.000) (20.000, 20.000)
+  Bin size:             10.000 x 10.000 um
+  Area inside the core:       87.384 um^2
+  Instance area:               1.143 um^2
+  Placement density:           0.013
+Region (0.000, 0.000) (5.000, 5.000) is outside the core.
+[ERROR RSZ-3216] Region (20.000, 20.000) (20.000, 40.000) is empty.
+RSZ-3216
+[ERROR RSZ-3215] -region requires 4 values: x1 y1 x2 y2.
+RSZ-3215
+[ERROR STA-0571] y2 'abc' is not a float.
+STA-0571
+[ERROR STA-0564] report_placement_density positional arguments not supported.
+STA-0564
