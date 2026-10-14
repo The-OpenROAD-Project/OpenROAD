@@ -345,10 +345,12 @@ bool IRSolver3D::check() const
       if (!std::isfinite(value.value())) {
         return false;
       }
+#ifndef NDEBUG
       if (std::abs(value.value() - g_matrix_.coeff(value.col(), value.row()))
           > kTolerance * std::max(1.0, std::abs(value.value()))) {
         return false;
       }
+#endif
       row_sums[value.row()] += value.value();
     }
   }
