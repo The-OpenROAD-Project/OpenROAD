@@ -24,6 +24,7 @@ depsPrefixesFile=""
 compiler=gcc
 compilerSet=no
 useBazel=yes
+bazelGpu=no
 noGui=no
 installPrefix=""
 
@@ -56,7 +57,9 @@ OPTIONS:
                                                  or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
-  -gpu                                          Enable GPU to accelerate the process
+  -gpu                                          Build the opt-in GPU (Kokkos/CUDA)
+                                                 placement backends: -DENABLE_GPU=ON
+                                                 with CMake, --config=gpu with Bazel.
   -cmake-build                                  DEPRECATED: Force the CMake build instead
                                                  of Bazel. Bazel is the supported build
                                                  system and is used by default; CMake
@@ -168,7 +171,8 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=("-DGPU=ON")
+            cmakeOptions+=("-DENABLE_GPU=ON")
+            bazelGpu=yes
             ;;
         -cmake-build)
             echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
@@ -395,6 +399,9 @@ if [[ "$useBazel" == "yes" ]]; then
     # again repeats its flags (-O3 twice), which changes every compile
     # action key so no action hits the remote cache that CI fills.
     bazelArgs=("--jobs=${numThreads}" "--config=release")
+    if [[ "$bazelGpu" == "yes" ]]; then
+        bazelArgs+=("--config=gpu")
+    fi
     if [[ "$noGui" == "yes" ]]; then
         bazelArgs+=("--//:platform=cli")
     else
