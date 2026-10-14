@@ -59,6 +59,7 @@ def _genyacc_impl(ctx):
         arguments = [args],
         inputs = ctx.files.src,
         tools = depset(transitive = [
+            _tool_files(ctx.attr._bison),
             _tool_files(ctx.attr._m4),
             _tool_files(ctx.attr._bison_pkgdatadir),
         ]),
