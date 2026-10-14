@@ -22,6 +22,12 @@ follow.
 """
 
 
+def license_id(meta):
+    value = meta.get("license", "?")
+    # Older packages give {"type": "MIT", "url": ...}.
+    return value.get("type", "?") if isinstance(value, dict) else value
+
+
 def find_license(pkg_dir):
     by_name = {name.lower(): name for name in os.listdir(pkg_dir)}
     for candidate in _LICENSE_NAMES:
@@ -58,7 +64,7 @@ def main():
             continue
         with open(find_license(pkg_dir), encoding="utf-8") as f:
             text = f.read().strip()
-        entries[key] = (meta.get("license", "?"), source_url(meta), text)
+        entries[key] = (license_id(meta), source_url(meta), text)
 
     parts = [_HEADER]
     for (name, version), (spdx, source, text) in sorted(entries.items()):
