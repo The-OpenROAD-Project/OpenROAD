@@ -262,14 +262,15 @@ The `place_pins` command places all pins together. Use the following command to 
 
 ```tcl
 place_pins 
-    -hor_layers h_layers
-    -ver_layers v_layers
+    [-hor_layers h_layers]
+    [-ver_layers v_layers]
     [-corner_avoidance length]
     [-min_distance distance]
     [-min_distance_in_tracks]
     [-exclude region]
     [-group_pins pin_list]
     [-annealing]
+    [-minimize_displacement]
     [-write_pin_placement file_name]
 ```
 
@@ -285,7 +286,12 @@ place_pins
 | `-exclude` | A region where pins cannot be placed. Either `top\|bottom\|left\|right:edge_interval`, which is the edge interval from the selected edge; `begin:end` for begin-end of all edges. |
 | `-group_pins` | A list of pins to be placed together on the die boundary. |
 | `-annealing` | Flag to enable simulated annealing pin placement. |
+| `-minimize_displacement` | Rank slots by how far they are from where each pin already is, rather than by the wirelength of its net. Use it to legalize a pin placement that is already placed. |
 | `-write_pin_placement` | A file with the pin placement generated in the format of multiple calls for the `place_pin` command. |
+
+The layers and the spacing of the slots can be kept with `set_place_config`
+(see the gpl documentation). `place_pins` uses those settings for any switch it
+is not given; the switches given to `place_pins` apply only to that call.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*`

@@ -66,7 +66,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                      pbVec_,
                                      nbVec_,
                                      npVars_.debug_draw_bins,
-                                     npVars_.debug_inst);
+                                     npVars_.debug_inst,
+                                     npVars_.debug_pin);
   }
 
   init();
@@ -459,6 +460,8 @@ void NesterovPlace::runTimingDriven(int iter,
 
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
+    // fixPointers() may have moved the GPins the IO pins point at.
+    getTopLevelNB()->refreshIoPins();
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
@@ -856,6 +859,9 @@ void NesterovPlace::runRoutability(int iter,
 
       graphics_->deleteLabel(label_name);
     }
+
+    // GRT and RUDY read the IO pins from the db
+    getTopLevelNB()->updateDbIoPins();
 
     // recover the densityPenalty values
     // if further routability-driven is needed

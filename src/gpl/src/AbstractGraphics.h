@@ -53,7 +53,8 @@ class AbstractGraphics
       std::vector<std::shared_ptr<PlacerBase>>& pbVec,
       std::vector<std::shared_ptr<NesterovBase>>& nbVec,
       bool draw_bins,
-      odb::dbInst* inst)
+      odb::dbInst* inst,
+      odb::dbBTerm* pin)
       = 0;
 
   // Draw the graphics; optionally pausing afterwards
