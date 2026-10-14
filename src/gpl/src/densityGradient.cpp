@@ -3,12 +3,14 @@
 
 // Density gradient backends + dispatch. Mirrors wirelengthGradient.cpp.
 
+#include <Kokkos_Core.hpp>
 #include <cstddef>
 #include <memory>
 #include <vector>
 
 #include "backendContext.h"
 #include "densityGradientBackend.h"
+#include "kokkosRuntime.h"
 #include "nesterovBase.h"
 #include "point.h"
 
@@ -31,12 +33,14 @@ class CpuDensityGradientBackend : public DensityGradientBackend
   void getCellGradients(const std::vector<GCellHandle>& gCells,
                         std::vector<FloatPoint>& out) override
   {
-#pragma omp parallel for num_threads( \
-        static_cast<int>(nb_->getNbc()->getNumThreads()))
-    for (std::size_t i = 0; i < gCells.size(); ++i) {
-      const GCell* c = gCells[i];
-      out[i] = nb_->getDensityGradient(c);
-    }
+    const auto space
+        = hostExecutionSpace(static_cast<int>(nb_->getNbc()->getNumThreads()));
+    Kokkos::parallel_for("gpl::densityGradients",
+                         HostRange(space, 0, gCells.size()),
+                         [&](std::size_t i) {
+                           const GCell* c = gCells[i];
+                           out[i] = nb_->getDensityGradient(c);
+                         });
   }
 
   FloatPoint getCellGradient(const GCell* gCell) override

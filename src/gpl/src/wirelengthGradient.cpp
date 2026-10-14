@@ -3,17 +3,19 @@
 
 // WA wirelength gradient backends + dispatch. Mirrors hpwl.cpp.
 //
-// CpuWirelengthGradientBackend wraps the existing OMP loops in
+// CpuWirelengthGradientBackend wraps the Kokkos host loops in
 // NesterovBaseCommon. GpuWirelengthGradientBackend (a 5-kernel Kokkos
 // pipeline) is added on ENABLE_GPU. makeWirelengthGradientBackend() picks
 // per-process at run time via gpl::gpuEnabled().
 
+#include <Kokkos_Core.hpp>
 #include <cassert>
 #include <cstddef>
 #include <memory>
 #include <vector>
 
 #include "backendContext.h"
+#include "kokkosRuntime.h"
 #include "nesterovBase.h"
 #include "point.h"
 #include "wirelengthGradientBackend.h"
@@ -28,8 +30,8 @@ namespace gpl {
 
 namespace {
 
-// CPU backend: thin wrapper around the existing nbc methods. The OMP loops
-// live in NesterovBaseCommon::updateWireLengthForceWA_native.
+// CPU backend: thin wrapper around the existing nbc methods. The Kokkos host
+// loops live in NesterovBaseCommon::updateWireLengthForceWA_native.
 class CpuWirelengthGradientBackend : public WirelengthGradientBackend
 {
  public:
@@ -46,12 +48,15 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
                         std::vector<FloatPoint>& out) override
   {
     assert(out.size() == gCells.size());
-#pragma omp parallel for num_threads(static_cast<int>(nbc_->getNumThreads()))
-    for (std::size_t i = 0; i < gCells.size(); ++i) {
-      const GCell* gCell = gCells[i];
-      out[i] = nbc_->getWireLengthGradientWA(
-          gCell, last_wl_coef_x_, last_wl_coef_y_);
-    }
+    const auto space
+        = hostExecutionSpace(static_cast<int>(nbc_->getNumThreads()));
+    Kokkos::parallel_for("gpl::wirelengthGradients",
+                         HostRange(space, 0, gCells.size()),
+                         [&](std::size_t i) {
+                           const GCell* gCell = gCells[i];
+                           out[i] = nbc_->getWireLengthGradientWA(
+                               gCell, last_wl_coef_x_, last_wl_coef_y_);
+                         });
   }
 
   FloatPoint getCellGradient(const GCell* gCell) override
@@ -60,7 +65,7 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
         gCell, last_wl_coef_x_, last_wl_coef_y_);
   }
 
-  const char* name() const override { return "CPU (OpenMP)"; }
+  const char* name() const override { return "CPU (Kokkos)"; }
 
  private:
   NesterovBaseCommon* nbc_;
