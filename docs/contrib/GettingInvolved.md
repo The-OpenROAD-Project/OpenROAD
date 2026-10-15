@@ -35,9 +35,8 @@ versions of the other relevant repos in the project. Please look at the
 tool workflow in the developer guide [document](DeveloperGuide.md)
 to work with the app and its submodule repos in an efficient way.
 
-Please run clang-format on all the C++ source files that you change, before
-committing. In the root directory of the OpenROAD repository there is the
-file `.clang-format` that defines all coding formatting rules.
+Please run clang-format 23.1.2 on all the C++ source files that you change before committing, so local formatting matches CI.
+The `.clang-format` file in the repository root defines the formatting rules.
 
 Please pay attention to the
 [test directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)
