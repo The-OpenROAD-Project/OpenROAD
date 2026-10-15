@@ -346,3 +346,10 @@ doc_check_test(
     ],
     visibility = ["//visibility:public"],
 )
+
+regression_test(
+    name = "write_verilog_def_alias",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
