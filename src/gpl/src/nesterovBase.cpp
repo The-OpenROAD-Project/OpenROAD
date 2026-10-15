@@ -1101,12 +1101,12 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-  Kokkos::parallel_reduce(
+  std::vector<float> overflowAreas(bins_.size());
+  std::vector<float> overflowAreasUnscaled(bins_.size());
+  Kokkos::parallel_for(
       "gpl::updateBinDensity",
-      HostRange(hostExecutionSpace(1), 0, bins_.size()),
-      [&](std::size_t index,
-          int64_t& overflow_sum,
-          int64_t& unscaled_overflow_sum) {
+      HostRange(kokkos_ctx.space, 0, bins_.size()),
+      [&](std::size_t index) {
         auto it = bins_.begin() + index;
         Bin& bin = *it;  // Host iteration over the placement data
 
@@ -1125,14 +1125,14 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
             0.0f,
             static_cast<float>(bin.instPlacedArea())
                 + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-        overflow_sum += overflowArea;  // NOLINT
+        overflowAreas[index] = overflowArea;
 
         const float overflowAreaUnscaled
             = std::max(0.0f,
                        static_cast<float>(bin.getInstPlacedAreaUnscaled())
                            + static_cast<float>(bin.getNonPlaceAreaUnscaled())
                            - scaledBinArea);
-        unscaled_overflow_sum += overflowAreaUnscaled;
+        overflowAreasUnscaled[index] = overflowAreaUnscaled;
         if (overflowAreaUnscaled > 0) {
           debugPrint(log_,
                      GPL,
@@ -1158,9 +1158,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                      block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
                      block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
         }
-      },
-      Kokkos::Sum<int64_t>(sumOverflowArea_),
-      Kokkos::Sum<int64_t>(sumOverflowAreaUnscaled_));
+      });
+      for (float overflowArea : overflowAreas) {
+        sumOverflowArea_ += overflowArea;
+      }
+      for (float overflowAreaUnscaled : overflowAreasUnscaled) {
+        sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+      }
 }
 
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
