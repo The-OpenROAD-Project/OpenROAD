@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -339,9 +340,8 @@ class GridGraph
    */
   void extractWireCostView(GridGraphView<CostT>& view,
                            const std::vector<double>& net_costs) const;
-  void updateWireCostView(
-      GridGraphView<CostT>& view,
-      const std::shared_ptr<GRTreeNode>& routing_tree) const;
+  // Refreshes `view` on the 2D edges the net's tree charges (commitTree).
+  void updateWireCostView(GridGraphView<CostT>& view, const GRNet& net) const;
 
   // For visualization
   void write(const std::string& heatmap_file = "heatmap.txt") const;
@@ -353,6 +353,20 @@ class GridGraph
   std::vector<odb::Point> congestion_dirty_tiles_;
   std::vector<bool> congestion_tile_marked_;
 
+  // Per-direction inputs of the 2D wire-cost view (extractWireCostView).
+  struct WireCostViewContext
+  {
+    std::array<std::vector<int>, 2> layers;
+    std::array<CostT, 2> unit_length_short_cost;
+    std::array<double, 2> net_factor;
+  };
+  WireCostViewContext makeWireCostViewContext(
+      const std::vector<double>& net_costs) const;
+  // Cost of one 2D edge, shared by the full and incremental extraction.
+  CostT wireCostViewCell(const WireCostViewContext& context,
+                         int direction,
+                         int x,
+                         int y) const;
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]

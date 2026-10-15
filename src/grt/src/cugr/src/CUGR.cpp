@@ -826,15 +826,14 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     updateCriticalNets(net_indices);
   }
 
-  for (const int net_index : net_indices) {
-    if (gr_nets_[net_index] == nullptr) {
-      continue;
-    }
-    grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree(),
-                                 gr_nets_[net_index]->getNdrCosts());
-  }
+  // Reroute one net at a time against all others, committing each in turn.
   GridGraphView<CostT> wire_cost_view;
   grid_graph_->extractWireCostView(wire_cost_view);
+  // Debug verify_view: compare the updated view with a full extraction.
+  const bool verify_view = logger_->debugCheck(GRT, "verify_view", 1);
+  GridGraphView<CostT> full_view;
+  int view_mismatches = 0;
+  double view_max_drift = 0.0;
   sortNetIndices(net_indices,
                  resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
@@ -848,6 +847,8 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
+    grid_graph_->removeTreeUsage(*net);
+    grid_graph_->updateWireCostView(wire_cost_view, *net);
     // NDR nets need a per-net cost view; the shared one is NDR-blind.
     if (net->hasNdr()) {
       grid_graph_->extractWireCostView(ndr_wire_cost_view, net->getNdrCosts());
@@ -871,9 +872,34 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
-    grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
-    grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
+    grid_graph_->addTreeUsage(*net);
+    grid_graph_->updateWireCostView(wire_cost_view, *net);
+    if (verify_view) {
+      grid_graph_->extractWireCostView(full_view);
+      for (size_t d = 0; d < full_view.size(); d++) {
+        for (size_t x = 0; x < full_view[d].size(); x++) {
+          for (size_t y = 0; y < full_view[d][x].size(); y++) {
+            const double drift
+                = std::abs(full_view[d][x][y] - wire_cost_view[d][x][y]);
+            view_mismatches += drift != 0.0;
+            view_max_drift = std::max(view_max_drift, drift);
+          }
+        }
+      }
+    }
     grid.step();
+  }
+  if (verify_view) {
+    debugPrint(logger_,
+               GRT,
+               "verify_view",
+               1,
+               "iteration {}: {} nets rerouted, {} view cells differ from a "
+               "full extraction (max drift {:.3g}).",
+               iteration,
+               net_indices.size(),
+               view_mismatches,
+               view_max_drift);
   }
   collectReroutedNets(net_indices);
   debugNetTopology(stage, iteration);
