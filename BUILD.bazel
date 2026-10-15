@@ -247,6 +247,7 @@ cc_binary(
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
+    visibility = ["//bazel:__pkg__"],
     deps = OPENROAD_MAIN_DEPS + select(
         {
             ":platform_cli": [

@@ -44,6 +44,25 @@ py_test(
     imports = ["."],
 )
 
+# Stamps the real linked binary, so the slot layout in version/version.cc and
+# stamp_version.py stay in sync. Runs without --stamp.
+py_test(
+    name = "stamp_version_binary_test",
+    size = "small",
+    srcs = ["stamp_version_binary_test.py"],
+    args = [
+        "$(rootpath :stamp_version)",
+        "$(rootpath //:openroad_unstamped)",
+    ] + select({
+        "@platforms//os:macos": ["--codesign"],
+        "//conditions:default": [],
+    }),
+    data = [
+        ":stamp_version",
+        "//:openroad_unstamped",
+    ],
+)
+
 # Driver script that orchestrates man page generation inside Bazel's sandbox.
 py_binary(
     name = "manpages_impl",
