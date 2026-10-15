@@ -1252,37 +1252,6 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
       });
 }
 
-int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                               const double threshold) const
-{
-  if (!tree) {
-    return 0;
-  }
-  int num = 0;
-  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->getChildren()) {
-      if (node->getLayerIdx() != child->getLayerIdx()) {
-        continue;
-      }
-      const int layer = node->getLayerIdx();
-      const int direction = layer_directions_[layer];
-      const auto [lo, hi]
-          = std::minmax({(*node)[direction], (*child)[direction]});
-      const int r = (*node)[1 - direction];
-      for (int c = lo; c < hi; c++) {
-        const int x = (direction == MetalLayer::H) ? c : r;
-        const int y = (direction == MetalLayer::H) ? r : c;
-        const auto& edge = graph_edges_[layer][x][y];
-
-        if (edge.demand > edge.capacity * threshold) {
-          ++num;
-        }
-      }
-    }
-  });
-  return num;
-}
-
 std::string GridGraph::getPythonString(
     const std::shared_ptr<GRTreeNode>& routing_tree) const
 {

@@ -249,15 +249,7 @@ class CUGR
 
   std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
-   * @brief Builds the rip-up set of nets touching a congested edge.
-   *
-   * Populates `net_indices` with the indices of every net whose
-   * routing tree contains at least one edge whose
-   * `demand > capacity * threshold`. At threshold == 1.0 the result is
-   * the strict-overflow set (the default used by the pattern/maze
-   * stages); at threshold < 1.0 it widens to include near-overflow
-   * edges, which is how the iterative RRR loop catches the "many nets
-   * piled onto one layer, only a few overflow" failure mode.
+   * @brief Builds the rip-up set: the nets with a positive reliefScore.
    *
    * @param net_indices Output: cleared and refilled with the selected
    *                    net indices.
@@ -266,6 +258,19 @@ class CUGR
    */
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
+  // A pin gcell and its top pin-access layer; vias above it are climbs.
+  struct PinAccessTop
+  {
+    int x;
+    int y;
+    int top;
+  };
+  // The net's pin-access tops, one per pin gcell, sorted by gcell.
+  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
+  // The top at gcell (x, y) in pinAccessTops' result, or -1 off the pins.
+  static int pinAccessTop(const std::vector<PinAccessTop>& tops, int x, int y);
+  // Overflow the net's removal alone would relieve, pin-access pads excluded.
+  double reliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the

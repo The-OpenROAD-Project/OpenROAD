@@ -644,16 +644,101 @@ std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
   return widths;
 }
 
+std::vector<CUGR::PinAccessTop> CUGR::pinAccessTops(const GRNet& net) const
+{
+  const int net_min_layer
+      = std::max(constants_.min_routing_layer, net.getLayerRange().min_layer);
+  std::vector<PinAccessTop> tops;
+  tops.reserve(net.getPreferredAccessPoints().size());
+  for (const auto& [index, ap] : net.getPreferredAccessPoints()) {
+    tops.push_back({.x = ap.point.x(),
+                    .y = ap.point.y(),
+                    .top = std::max(ap.layers.high(), net_min_layer)});
+  }
+  auto gcell = [](const PinAccessTop& t) { return std::make_pair(t.x, t.y); };
+  std::ranges::sort(tops, {}, gcell);
+  // Keep one entry per gcell, at its highest top.
+  size_t kept = 0;
+  for (const PinAccessTop& t : tops) {
+    if (kept > 0 && gcell(tops[kept - 1]) == gcell(t)) {
+      tops[kept - 1].top = std::max(tops[kept - 1].top, t.top);
+    } else {
+      tops[kept++] = t;
+    }
+  }
+  tops.resize(kept);
+  return tops;
+}
+
+int CUGR::pinAccessTop(const std::vector<PinAccessTop>& tops,
+                       const int x,
+                       const int y)
+{
+  const auto it = std::ranges::lower_bound(
+      tops, std::make_pair(x, y), {}, [](const PinAccessTop& t) {
+        return std::make_pair(t.x, t.y);
+      });
+  return (it != tops.end() && it->x == x && it->y == y) ? it->top : -1;
+}
+
+double CUGR::reliefScore(const GRNet& net, const double threshold) const
+{
+  const auto& tree = net.getRoutingTree();
+  if (!tree) {
+    return 0.0;
+  }
+  double score = 0.0;
+  auto relieve = [&](const int layer, const PointT edge, const double demand) {
+    if (layer < constants_.min_routing_layer) {
+      return;
+    }
+    const GraphEdge e = grid_graph_->getEdge(layer, edge.x(), edge.y());
+    const double overflow = e.demand - e.capacity * threshold;
+    if (overflow > 0.0) {
+      score += std::min(demand, overflow);
+    }
+  };
+  grid_graph_->forEachTreeWireEdge(
+      tree, net.isAdopted(), [&](int layer, PointT cell, bool wrong_way) {
+        const double factor = net.getNdrCost(layer);
+        if (wrong_way) {
+          grid_graph_->forEachWrongWayFlankEdge(
+              layer, cell, [&](PointT edge, CapacityT pad) {
+                relieve(layer, edge, pad * factor);
+              });
+        } else {
+          relieve(layer, cell, factor);
+        }
+      });
+  const auto pin_tops = pinAccessTops(net);
+  grid_graph_->forEachViaColumn(tree, [&](PointT loc, int low, int high) {
+    const int access_top = pinAccessTop(pin_tops, loc.x(), loc.y());
+    grid_graph_->forEachStackFlankEdge(
+        low,
+        high,
+        loc,
+        net.getNdrCosts(),
+        [&](int layer, PointT edge, CapacityT pad, double factor) {
+          if (layer > access_top) {
+            relieve(layer, edge, pad * factor);
+          }
+        });
+  });
+  return score;
+}
+
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
                                const double threshold)
 {
   net_indices.clear();
   auto add_if_congested = [&](int index) {
-    const auto& net = gr_nets_[index];
+    GRNet* net = gr_nets_[index].get();
     if (net == nullptr || !net->getRoutingTree()) {
       return;
     }
-    if (grid_graph_->checkCongestion(net->getRoutingTree(), threshold) > 0) {
+    const double score = reliefScore(*net, threshold);
+    net->setReliefScore(score);
+    if (score > 0.0) {
       net_indices.push_back(index);
     }
   };
@@ -1663,7 +1748,7 @@ void CUGR::printStatistics() const
   }
 
   // Overflow is computed from edge.demand (which includes via-stub
-  // demand). This is the same metric used by CUGR's checkCongestion,
+  // demand). This is the same metric used by CUGR's reliefScore,
   // updateCongestedNets, and extractCongestionView.
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
@@ -2560,6 +2645,7 @@ void CUGR::reportCongestionSources(const std::string& tag)
   };
 
   int routed_nets = 0;
+  int selected_nets = 0;
   int wire_selected = 0;
   int via_owners = 0;
   int via_owners_missed = 0;
@@ -2570,13 +2656,7 @@ void CUGR::reportCongestionSources(const std::string& tag)
     }
     routed_nets++;
     const auto& costs = net->getNdrCosts();
-    const int net_min_layer = std::max(constants_.min_routing_layer,
-                                       net->getLayerRange().min_layer);
-    std::map<std::pair<int, int>, int> pin_top;
-    for (const auto& [index, ap] : net->getPreferredAccessPoints()) {
-      int& top = pin_top[{ap.point.x(), ap.point.y()}];
-      top = std::max({top, ap.layers.high(), net_min_layer});
-    }
+    const auto pin_tops = pinAccessTops(*net);
     bool on_overflowed_wire = false;
     bool avoidable_pad_on_overflow = false;
     grid_graph_->forEachTreeWireEdge(
@@ -2594,14 +2674,13 @@ void CUGR::reportCongestionSources(const std::string& tag)
           }
           demand[kWire][grid_graph_->edgeFlatIndex(layer, cell.x(), cell.y())]
               += factor;
-          // The same test updateCongestedNets applies.
+          // The wire-only test, to compare with the relief-score selection.
           on_overflowed_wire |= overflowed(layer, cell);
         });
     grid_graph_->forEachViaColumn(
         net->getRoutingTree(), [&](PointT loc, int low, int high) {
           via_count += high - low;
-          const auto pin = pin_top.find({loc.x(), loc.y()});
-          const int access_top = pin == pin_top.end() ? -1 : pin->second;
+          const int access_top = pinAccessTop(pin_tops, loc.x(), loc.y());
           const Source chosen = high - low == 1 ? kBendVia : kStackVia;
           grid_graph_->forEachStackFlankEdge(
               low,
@@ -2618,9 +2697,11 @@ void CUGR::reportCongestionSources(const std::string& tag)
                 }
               });
         });
+    const bool selected = reliefScore(*net, 1.0) > 0.0;
+    selected_nets += selected;
     wire_selected += on_overflowed_wire;
     via_owners += avoidable_pad_on_overflow;
-    via_owners_missed += avoidable_pad_on_overflow && !on_overflowed_wire;
+    via_owners_missed += avoidable_pad_on_overflow && !selected;
   }
 
   // Overflow as sources are added: pin access, wires, bends, then stacks.
@@ -2708,8 +2789,10 @@ void CUGR::reportCongestionSources(const std::string& tag)
                   on_overflowed[kStackVia],
                   share(kStackVia)));
   print(
-      fmt::format("nets: selected by wires={} owning avoidable pads on "
-                  "overflowed edges={} (not selected: {})",
+      fmt::format("nets: selected={} (with a wire on an overflowed edge={}) "
+                  "owning avoidable pads on overflowed edges={} (not "
+                  "selected: {})",
+                  selected_nets,
                   wire_selected,
                   via_owners,
                   via_owners_missed));

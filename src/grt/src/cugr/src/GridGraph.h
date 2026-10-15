@@ -198,26 +198,6 @@ class GridGraph
   void setCostMultiplier(double m) { cost_multiplier_ = m; }
   double getCostMultiplier() const { return cost_multiplier_; }
 
-  /**
-   * @brief Counts congested edges traversed by a routing tree.
-   *
-   * Walks the tree's wire segments and returns how many edges satisfy
-   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
-   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
-   * widens to include near-overflow ("congested but not yet
-   * overflowing") edges. Edges sitting exactly at capacity are
-   * intentionally *not* flagged — being full is not the same as being
-   * congested. Used by the RRR loop to extend the rip-up set beyond
-   * strictly-overflowed nets.
-   *
-   * @param tree      Routing tree to walk.
-   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
-   *
-   * @returns Number of tree edges meeting the predicate (>= 0).
-   */
-  int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                      double threshold) const;
-
   // Misc
   AccessPointMap selectAccessPoints(GRNet* net) const;
 
