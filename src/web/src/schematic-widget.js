@@ -310,7 +310,7 @@ export class SchematicWidget {
         }
         return isStaticMode(this.appState)
             ? 'The schematic is not available in saved reports.'
-            : 'Init error: netlistsvg is missing from the page.';
+            : 'Init error: netlistsvg or its skin is missing from the page.';
     }
 
     // Web-only: mirror the layout timing cone here when the timing widget asks
