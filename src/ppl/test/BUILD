@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -118,6 +119,7 @@ COMPULSORY_TESTS = [
     "pin_length",
     "pin_length_error",
     "pin_thick_multiplier",
+    "place_config",
     "place_pin1",
     "place_pin2",
     "place_pin3",
@@ -203,6 +205,24 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "TestMinimizeDisplacement",
+    size = "small",
+    srcs = ["cpp/TestMinimizeDisplacement.cpp"],
+    data = [
+        "gcd.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/ppl",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 py_test(
     name = "ppl_man_tcl_check",

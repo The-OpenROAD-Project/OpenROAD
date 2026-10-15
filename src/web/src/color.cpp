@@ -8,98 +8,111 @@
 
 namespace web {
 
-struct HSL
+namespace {
+
+// QColor's HSV, in its 16-bit fixed point: hue in hundredths of a degree
+// (65535 for an achromatic colour), saturation and value in [0, 65535].
+struct Hsv16
 {
-  double h;  // Hue (0-360)
-  double s;  // Saturation (0-1)
-  double l;  // Lightness (0-1)
+  int hue;
+  int sat;
+  int val;
 };
 
-// Converts your existing Color struct (RGB) to HSL
-static HSL rgb_to_hsl(const Color& rgb)
+constexpr int kMax16 = 65535;
+
+// qRound, for the non-negative values these conversions produce.
+int roundNonNegative(const float v)
 {
-  // Normalize R, G, B to 0-1
-  double r = rgb.r / 255.0;
-  double g = rgb.g / 255.0;
-  double b = rgb.b / 255.0;
+  return static_cast<int>(v + 0.5f);
+}
 
-  double vmin = std::min({r, g, b});
-  double vmax = std::max({r, g, b});
-  double delta = vmax - vmin;
-
-  HSL hsl;
-  hsl.l = (vmax + vmin) / 2.0;  // Lightness
-
-  if (delta == 0.0) {
-    hsl.h = 0.0;  // Achromatic (grey)
-    hsl.s = 0.0;  // Saturation
+// QColor(r, g, b).toHsv(): the 8-bit channels widen by 0x101.
+Hsv16 toHsv16(const Color& c)
+{
+  const float r = c.r * 0x101 / float(kMax16);
+  const float g = c.g * 0x101 / float(kMax16);
+  const float b = c.b * 0x101 / float(kMax16);
+  const float max = std::max({r, g, b});
+  const float delta = max - std::min({r, g, b});
+  Hsv16 hsv{.hue = kMax16, .sat = 0, .val = roundNonNegative(max * kMax16)};
+  if (delta == 0.0f) {
+    return hsv;
+  }
+  hsv.sat = roundNonNegative(delta / max * kMax16);
+  float hue;
+  if (r == max) {
+    hue = (g - b) / delta;
+  } else if (g == max) {
+    hue = 2.0f + (b - r) / delta;
   } else {
-    hsl.s = (hsl.l < 0.5) ? (delta / (vmax + vmin))
-                          : (delta / (2.0 - vmax - vmin));  // Saturation
-
-    // Hue
-    if (vmax == r) {
-      hsl.h = 60.0 * (g - b) / delta;
-    } else if (vmax == g) {
-      hsl.h = 60.0 * (2.0 + (b - r) / delta);
-    } else {  // vmax == b
-      hsl.h = 60.0 * (4.0 + (r - g) / delta);
-    }
-
-    if (hsl.h < 0.0) {
-      hsl.h += 360.0;  // Ensure hue is positive
-    }
+    hue = 4.0f + (r - g) / delta;
   }
-  return hsl;
+  hue *= 60.0f;
+  if (hue < 0.0f) {
+    hue += 360.0f;
+  }
+  hsv.hue = roundNonNegative(hue * 100.0f);
+  return hsv;
 }
 
-// Helper for HSL to RGB conversion
-static double hue_to_rgb(double p, double q, double t)
+// QColor::toRgb() from that HSV, then red()/green()/blue() back to 8 bits.
+Color fromHsv16(const Hsv16& hsv, const unsigned char a)
 {
-  if (t < 0.0) {
-    t += 1.0;
+  const auto to8 = [](const int v) {  // qt_div_257
+    const unsigned x = static_cast<unsigned>(v) + 128;
+    return static_cast<unsigned char>((x - (x >> 8)) >> 8);
+  };
+  if (hsv.sat == 0 || hsv.hue == kMax16) {
+    const unsigned char v = to8(hsv.val);
+    return {.r = v, .g = v, .b = v, .a = a};
   }
-  if (t > 1.0) {
-    t -= 1.0;
+  const float h = hsv.hue == 36000 ? 0.0f : hsv.hue / 6000.0f;
+  const float s = hsv.sat / float(kMax16);
+  const float v = hsv.val / float(kMax16);
+  const int i = static_cast<int>(h);
+  const float f = h - i;
+  const float p = v * (1.0f - s);
+  const float q = v * (1.0f - (s * f));
+  const float t = v * (1.0f - (s * (1.0f - f)));
+  float r = v;
+  float g = p;
+  float b = q;  // sector 5
+  switch (i) {
+    case 0:
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    default:
+      break;
   }
-  if (t < 1.0 / 6.0) {
-    return p + (q - p) * 6.0 * t;
-  }
-  if (t < 1.0 / 2.0) {
-    return q;
-  }
-  if (t < 2.0 / 3.0) {
-    return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
-  }
-  return p;
+  return {.r = to8(roundNonNegative(r * kMax16)),
+          .g = to8(roundNonNegative(g * kMax16)),
+          .b = to8(roundNonNegative(b * kMax16)),
+          .a = a};
 }
 
-// Converts an HSL struct back to your Color struct (RGB)
-static Color hsl_to_rgb(const HSL& hsl, const unsigned char a)
-{
-  Color rgb;
-  rgb.a = a;
-
-  if (hsl.s == 0.0) {
-    // Achromatic (grey)
-    unsigned char l = (unsigned char) std::round(hsl.l * 255.0);
-    rgb.r = l;
-    rgb.g = l;
-    rgb.b = l;
-  } else {
-    double q = (hsl.l < 0.5) ? (hsl.l * (1.0 + hsl.s))
-                             : (hsl.l + hsl.s - hsl.l * hsl.s);
-    double p = 2.0 * hsl.l - q;
-    double h_norm = hsl.h / 360.0;
-
-    rgb.r = (unsigned char) std::round(hue_to_rgb(p, q, h_norm + 1.0 / 3.0)
-                                       * 255.0);
-    rgb.g = (unsigned char) std::round(hue_to_rgb(p, q, h_norm) * 255.0);
-    rgb.b = (unsigned char) std::round(hue_to_rgb(p, q, h_norm - 1.0 / 3.0)
-                                       * 255.0);
-  }
-  return rgb;
-}
+}  // namespace
 
 // Turbo colormap (256 × RGB), copied verbatim from web::SpectrumGenerator so
 // the timing-cone overlay colors match the Qt GUI without linking libgui.
@@ -180,20 +193,36 @@ Color spectrumColor(double value, unsigned char alpha)
                .a = alpha};
 }
 
-// factor is a value > 1.0. 1.5 is a 50% increase in lightness.
-Color Color::lighter(double factor) const
+Color Color::lighter(const int factor) const
 {
-  HSL hsl = rgb_to_hsl(*this);
-  hsl.l = std::min(1.0, hsl.l * factor);
-  return hsl_to_rgb(hsl, a);
+  if (factor <= 0) {
+    return *this;
+  }
+  if (factor < 100) {
+    return darker(10000 / factor);
+  }
+  Hsv16 hsv = toHsv16(*this);
+  unsigned v = static_cast<unsigned>(factor) * hsv.val / 100;
+  if (v > kMax16) {
+    // Past full value, Qt spends the excess on desaturating instead.
+    hsv.sat = std::max(0, hsv.sat - static_cast<int>(v - kMax16));
+    v = kMax16;
+  }
+  hsv.val = static_cast<int>(v);
+  return fromHsv16(hsv, a);
 }
 
-// Factor is 0.0 - 1.0, e.g., 0.8 is 20% darker
-Color Color::darken(double factor) const
+Color Color::darker(const int factor) const
 {
-  HSL hsl = rgb_to_hsl(*this);
-  hsl.l = std::max(0.0, hsl.l * factor);
-  return hsl_to_rgb(hsl, a);
+  if (factor <= 0) {
+    return *this;
+  }
+  if (factor < 100) {
+    return lighter(10000 / factor);
+  }
+  Hsv16 hsv = toHsv16(*this);
+  hsv.val = hsv.val * 100 / factor;
+  return fromHsv16(hsv, a);
 }
 
 }  // namespace web

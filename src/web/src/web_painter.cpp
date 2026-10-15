@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "font_atlas.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "web/core.h"
@@ -192,14 +193,56 @@ void WebPainter::drawString(int x,
                                  .font = font_});
 }
 
-odb::Rect WebPainter::stringBoundaries(int /* x */,
-                                       int /* y */,
-                                       Anchor /* anchor */,
-                                       const std::string& /* s */)
+odb::Rect WebPainter::stringBoundaries(int x,
+                                       int y,
+                                       Anchor anchor,
+                                       const std::string& s)
 {
-  // Headless: we don't have a real font metrics engine.  Callers use this
-  // for hover-test / placement; return an empty rect.
-  return {};
+  // Measured with the font and anchoring the DrawStringOp rasterizer uses,
+  // so callers fitting text to shapes see the size that will be drawn.
+  const double ppd = getPixelsPerDBU();
+  if (s.empty() || ppd <= 0.0) {
+    return {x, y, x, y};
+  }
+  const int font_px = std::max(10, font_.size);
+  const int w = std::ceil(fontAtlasTextWidth(s, font_px) / ppd);
+  const int h = std::ceil(fontAtlasCellHeight(font_px) / ppd);
+
+  int x0 = x;
+  int y0 = y;
+  switch (anchor) {
+    case kBottomLeft:
+      break;
+    case kBottomRight:
+      x0 -= w;
+      break;
+    case kTopLeft:
+      y0 -= h;
+      break;
+    case kTopRight:
+      x0 -= w;
+      y0 -= h;
+      break;
+    case kCenter:
+      x0 -= w / 2;
+      y0 -= h / 2;
+      break;
+    case kBottomCenter:
+      x0 -= w / 2;
+      break;
+    case kTopCenter:
+      x0 -= w / 2;
+      y0 -= h;
+      break;
+    case kLeftCenter:
+      y0 -= h / 2;
+      break;
+    case kRightCenter:
+      x0 -= w;
+      y0 -= h / 2;
+      break;
+  }
+  return {x0, y0, x0 + w, y0 + h};
 }
 
 void WebPainter::drawRuler(int /* x0 */,

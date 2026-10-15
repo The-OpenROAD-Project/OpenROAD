@@ -433,12 +433,18 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
 int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
                                   const bool force_single_repair) const
 {
+  if (setup_context_.max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
   int repairs_per_pass = 1;
   if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
     repairs_per_pass
         += std::round((setup_context_.max_repairs_per_pass - 1)
                       * (-path_slack - setup_context_.min_viol)
                       / (setup_context_.max_viol - setup_context_.min_viol));
+    repairs_per_pass
+        = std::clamp(repairs_per_pass, 1, setup_context_.max_repairs_per_pass);
   }
   return force_single_repair ? 1 : repairs_per_pass;
 }
@@ -549,11 +555,29 @@ bool SetupLegacyBase::repairPins(
     prewarmTargets(prewarm_targets);
   }
 
+  // A target holds raw STA paths. Every accepted move invalidates the paths
+  // through the logic it touched, so a pass that repairs many pins has to
+  // bring timing up to date before it builds the next target from them.
+  // The update invalidates focus_path as well, so it is looked up again
+  // from its endpoint.
+  sta::Vertex* focus_vertex
+      = focus_path != nullptr ? focus_path->vertex(sta_) : nullptr;
+  bool timing_stale = false;
   for (const sta::Pin* driver_pin : pins) {
     if (changed >= repairs_per_pass) {
       break;
     }
 
+    if (timing_stale) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+      timing_stale = false;
+      if (focus_vertex != nullptr) {
+        focus_path = sta_->vertexWorstSlackPath(focus_vertex, max_);
+      }
+    }
+
+    const int changed_before = changed;
     Target target;
     const bool has_target
         = focus_path != nullptr
@@ -581,6 +605,7 @@ bool SetupLegacyBase::repairPins(
         && accepted_type.has_value()) {
       chosen_moves->emplace_back(driver_pin, *accepted_type);
     }
+    timing_stale = changed != changed_before;
   }
 
   return changed > 0;

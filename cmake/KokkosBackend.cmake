@@ -21,10 +21,23 @@ if(NOT Kokkos_FOUND)
     "-DKokkos_ROOT=/path/to/kokkos (or extend CMAKE_PREFIX_PATH).\n"
     "  - If not: build and install Kokkos from "
     "https://github.com/kokkos/kokkos with the desired backend "
-    "(CUDA / HIP / SYCL / OpenMP) and a target architecture that "
+    "(CUDA / HIP / SYCL / OpenMP), the Serial backend "
+    "(-DKokkos_ENABLE_SERIAL=ON), and a target architecture that "
     "matches the host GPU.\n"
     "  - A future etc/DependencyInstaller.sh -gpu option will "
     "automate this step.")
+endif()
+
+# gpl's host-side FFTs run on Kokkos::Serial so they stay single-threaded and
+# match the Bazel build (src/gpl/src/gpu/dct.cpp stops with an #error
+# otherwise). Kokkos's CMake turns Serial off by default once OpenMP or
+# Threads is enabled, so check here, before the build gets that far.
+if(NOT Kokkos_ENABLE_SERIAL)
+  message(FATAL_ERROR
+    "OpenROAD: ENABLE_GPU=ON requires Kokkos built with the Serial backend, "
+    "but the Kokkos found at ${Kokkos_DIR} has: ${Kokkos_DEVICES}.\n"
+    "  - Rebuild Kokkos with -DKokkos_ENABLE_SERIAL=ON (it can be combined "
+    "with OpenMP and CUDA/HIP/SYCL).")
 endif()
 
 # KokkosFFT — required by the gpl GPU FFT backend (src/gpl/src/gpu/dct.cpp).

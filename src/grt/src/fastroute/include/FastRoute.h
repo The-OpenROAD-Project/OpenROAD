@@ -241,6 +241,7 @@ class FastRouteCore
                              int layer,
                              odb::dbNet* db_net);
   void setVerbose(bool v);
+  void setAllowCongestion(bool allow_congestion);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
   void setResAwareNetsPercentage(float percentage);
@@ -759,6 +760,8 @@ class FastRouteCore
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
+  double dbu_per_micron_ = 0.0;
+  std::vector<float> layer_res_per_micron_;
   int num_threads_;
   // When false, nets_ contains borrowed pointers from a parent
   // FastRouteCore (snapshot-batch workers).  Workers must not outlive
@@ -797,6 +800,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
+  bool allow_congestion_ = false;
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;

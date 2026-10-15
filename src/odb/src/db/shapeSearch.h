@@ -26,13 +26,18 @@ class ShapeSearch
     kPin
   };
 
-  struct Shape : public Rect
+  struct Shape
   {
-    Shape(const Rect& bounds, Type type, int id)
-        : Rect(bounds), type(type), id(id)
+    Shape(const Rect& rect, Type type, int id) : rect(rect), type(type), id(id)
     {
     }
 
+    int xMin() const { return rect.xMin(); }
+    int yMin() const { return rect.yMin(); }
+    int xMax() const { return rect.xMax(); }
+    int yMax() const { return rect.yMax(); }
+
+    const Rect rect;
     const Type type;
     const int id;
     Shape* next{nullptr};

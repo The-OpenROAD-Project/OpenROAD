@@ -154,9 +154,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
+  // arc_delay_calc reduces the parasitics; nullptr uses the STA's.
   void estimateWireParasitic(const sta::Pin* drvr_pin,
                              const sta::Net* net,
-                             sta::SpefWriter* spef_writer = nullptr);
+                             sta::SpefWriter* spef_writer = nullptr,
+                             sta::ArcDelayCalc* arc_delay_calc = nullptr);
   void makeWireParasitic(sta::Net* net,
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
@@ -195,6 +197,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
       const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
       int threads,
       bool partial);
+  // Make the parasitic placeholders for every driver and net so threads
+  // only look up sta::Parasitics entries, which are not locked.
+  void ensureParasiticsForThreads();
   void clearParasitics();
 
   ////////////////////////////////////////////////////////////////
@@ -248,8 +253,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   bool isSkipNet(const sta::Net* net) const;
   void estimateWireParasiticSteiner(const sta::Pin* drvr_pin,
                                     const sta::Net* net,
-                                    sta::SpefWriter* spef_writer);
-  void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
+                                    sta::SpefWriter* spef_writer,
+                                    sta::ArcDelayCalc* arc_delay_calc);
+  void makePadParasitic(const sta::Net* net,
+                        sta::SpefWriter* spef_writer,
+                        sta::ArcDelayCalc* arc_delay_calc);
   bool isPadNet(const sta::Net* net) const;
   bool isPadPin(const sta::Pin* pin) const;
   bool isPad(const sta::Instance* inst) const;

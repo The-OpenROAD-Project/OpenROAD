@@ -169,9 +169,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Processing driver {}",
                network_->pathName(drvr_pin));
-    // Always get the flat net for the top level port.
+    // Always get the flat net for the top level port: in a hierarchical
+    // netlist the port's term net is the top module's dbModNet, which
+    // gain buffering cannot insert buffers on.
     sta::Net* net = network_->isTopLevelPort(drvr_pin)
-                        ? network_->net(network_->term(drvr_pin))
+                        ? db_network_->dbToSta(
+                              db_network_->flatNet(network_->term(drvr_pin)))
                         : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (!net) {
       continue;
@@ -730,7 +733,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   float cin;
   float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
-  static float gate_gain = 4.0f;  // use a fanout-of-4 rule for gates
+  const float gate_gain = resizer_->sizing_cap_ratio_;
   bool repaired_net = false;
 
   float load = 0.0;
