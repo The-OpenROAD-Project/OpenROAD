@@ -105,7 +105,7 @@ proc create_logic_port { args } {
 #
 # Arguments:
 #
-# - version: the UPF version string (e.g. 2.0)
+# - version: the UPF version string (OpenROAD implements 2.1)
 sta::define_cmd_args "upf_version" { version }
 proc upf_version { args } {
   upf::check_block_exists
