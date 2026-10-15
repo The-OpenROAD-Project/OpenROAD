@@ -465,7 +465,9 @@ CostT GridGraph::getWireCost(const int layer_index,
   const CapacityT demand_length = demand * net_factor * edge_length;
   const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demand_length * unit_length_wire_cost_;
+  // The RRR multiplier scales the congestion cost height, not only its slope.
   cost += demand_length * unit_length_short_costs_[layer_index]
+          * cost_multiplier_
           * (edge.capacity < 1.0
                  ? 1.0
                  : logistic(edge.capacity - edge.demand,
@@ -1398,7 +1400,7 @@ CostT GridGraph::wireCostViewCell(const WireCostViewContext& context,
   const int length = getEdgeLength(direction, edge_index);
   return length
          * (unit_length_wire_cost_
-            + context.unit_length_short_cost[direction]
+            + context.unit_length_short_cost[direction] * cost_multiplier_
                   * (capacity < 1.0 ? 1.0
                                     : logistic(effective_resource,
                                                constants_.maze_logistic_slope
