@@ -2743,7 +2743,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 // - It behaves differently to cope with the issue 9724.
 // - This redefinition may cause another issue later when
 // `Network::highestConnectedNet(Net *net)` is used elsewhere.
-const Net* dbNetwork::highestConnectedNet(Net* net) const
+const Net* dbNetwork::highestConnectedNet(const Net* net) const
 {
   const Net* flat = findFlatNet(net);
   return flat ? flat : net;
@@ -5987,7 +5987,7 @@ bool dbNetwork::isPGSupply(dbNet* net) const
   return net->isSpecial() && net->getSigType().isSupply();
 }
 
-Net* dbNetwork::highestNetAbove(Net* net) const
+const Net* dbNetwork::highestNetAbove(const Net* net) const
 {
   if (net == nullptr) {
     return nullptr;

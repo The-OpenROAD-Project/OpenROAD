@@ -149,27 +149,19 @@ class GridGraph
                     PointT v,
                     double net_factor = 1.0) const;
 
-  /**
-   * @brief Returns the cost of a via between `layer_index` and
-   *        `layer_index + 1` at `loc`.
-   *
-   * The unit via cost is constant; only the wire-patch demand each
-   * via implies is scaled by the per-layer NDR factor. A via that
-   * lands on M3-M5 may therefore use a different factor on its M3
-   * patches than on its M4 patches.
-   *
-   * @param layer_index Lower-layer index of the via (0-based).
-   * @param loc         Via location in gcell coordinates.
-   * @param net_costs   Per-layer NDR cost vector. Empty (default) =
-   *                    no NDR; out-of-range layers fall back to 1.0.
-   *
-   * @returns Total via cost (unit + wire patches).
-   */
-  CostT getViaCost(int layer_index,
-                   PointT loc,
-                   const std::vector<double>& net_costs = {}) const;
-
   CostT getUnitViaCost() const { return unit_via_cost_; }
+  // Unit cost of the via between `layer_index` and `layer_index + 1`,
+  // scaled by the larger NDR factor of the two layers in `net_costs`.
+  CostT getUnitViaCost(int layer_index,
+                       const std::vector<double>& net_costs) const;
+
+  // Congestion cost of the pad a via stack spanning [low, high] at `loc`
+  // puts on `layer`'s flanking edges (see forEachStackFlankEdgeImpl).
+  CostT getStackPadCost(int layer,
+                        int low,
+                        int high,
+                        PointT loc,
+                        const std::vector<double>& net_costs) const;
 
   // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
   // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
@@ -268,7 +260,7 @@ class GridGraph
       const std::vector<std::vector<std::vector<CapacityT>>>& snap);
 
   // Accumulates a tree's via-stub demand into a flat [layer][x][y] map
-  // (see edgeFlatIndex), mirroring commitVia's deposits; used to attribute
+  // (see edgeFlatIndex), mirroring commitTree's deposits; used to attribute
   // demand for reporting.
   void accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
                            const std::vector<double>& net_costs,
@@ -279,9 +271,10 @@ class GridGraph
     return (static_cast<size_t>(layer) * x_size_ + x) * y_size_ + y;
   }
 
-  // Non-template forEachViaFlankEdge for callers outside GridGraph.cpp.
-  void forEachViaFlankEdge(
-      int layer_index,
+  // Non-template forEachStackFlankEdgeImpl for callers outside GridGraph.cpp.
+  void forEachStackFlankEdge(
+      int low,
+      int high,
       PointT loc,
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
@@ -380,10 +373,6 @@ class GridGraph
                   PointT lower,
                   bool rip_up = false,
                   double net_factor = 1.0);
-  void commitVia(int layer_index,
-                 PointT loc,
-                 bool rip_up = false,
-                 const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {},
@@ -394,20 +383,38 @@ class GridGraph
                           PointT loc,
                           bool rip_up,
                           double layer_factor);
-  // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
-  CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
-  // Enumerates the flanking edges a via at `loc` (between `layer_index` and
-  // `layer_index + 1`) deposits demand on, with the layer's NDR factor:
-  // fn(l, edge_lower_point, demand, layer_factor).
+  // Track length of the pad a via stack spanning [low, high] puts on
+  // `layer`: the end pads on `low` and `high`, and on intermediate layers
+  // the larger of the overlapping pads of the vias below and above.
+  double stackPadLength(int layer, int low, int high) const;
   // Defined in GridGraph.cpp; all instantiations live there.
   template <typename F>
   void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
-  // No callbacks when via demand is disabled; via counts/costs stay separate.
+  // Enumerates the flanking edges the stack pad on `layer` deposits demand
+  // on: fn(edge_lower_point, demand, layer_factor). No callbacks when via
+  // demand is disabled; via counts/costs stay separate.
   template <typename F>
-  void forEachViaFlankEdgeImpl(int layer_index,
-                               PointT loc,
-                               const std::vector<double>& net_costs,
-                               F&& fn) const;
+  void forEachPadFlankEdge(int layer,
+                           int low,
+                           int high,
+                           PointT loc,
+                           const std::vector<double>& net_costs,
+                           F&& fn) const;
+  // Enumerates the flanking edges a via stack spanning layers [low, high] at
+  // `loc` deposits demand on, one pad per layer (a single via is a stack of
+  // one): fn(l, edge_lower_point, demand, layer_factor).
+  template <typename F>
+  void forEachStackFlankEdgeImpl(int low,
+                                 int high,
+                                 PointT loc,
+                                 const std::vector<double>& net_costs,
+                                 F&& fn) const;
+  // Enumerates a tree's via columns: its via edges at each (x, y) merged
+  // into maximal stacks wherever their layer spans overlap or touch, so a
+  // stack split across tree edges still puts one pad on each layer:
+  // fn(loc, low, high).
+  template <typename F>
+  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree, F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 

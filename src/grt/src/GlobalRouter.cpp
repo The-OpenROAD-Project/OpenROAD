@@ -829,6 +829,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
+    fastroute_->setAllowCongestion(allow_congestion_);
     routes = fastroute_->run();
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
