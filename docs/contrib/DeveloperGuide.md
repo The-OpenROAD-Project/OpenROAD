@@ -515,10 +515,17 @@ results, so subsequent runs only have to operate on changed files. It uses the
 etc/run-clang-tidy.sh --filter='src/odb/'
 ```
 
-Run `clang-format` on the files you changed:
+Use the existing Bazel LLVM formatter to match CI's clang-format 23.1.2, even when the system formatter has a different version.
+From the repository root, check its version:
 
 ```shell
-clang-format -i -style=file:.clang-format source_file.cpp
+bazelisk run @llvm//tools:clang-format -- --version
+```
+
+Use absolute file paths because Bazel can change the working directory:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- -i "$PWD/source_file.cpp"
 ```
 
 ### CMake (deprecated)

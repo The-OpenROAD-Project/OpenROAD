@@ -692,11 +692,8 @@ LayerCheck AntennaChecker::Impl::checkRatioViolations(odb::dbTechLayer* layer,
   LayerCheck check;
   check.layer = layer;
   check.par = checkPAR(layer, node_info, ratio_margin);
-  check.violated = check.par.violated;
-  if (!check.violated) {
-    check.car = checkCAR(layer, node_info);
-    check.violated = check.car->violated;
-  }
+  check.car = checkCAR(layer, node_info);
+  check.violated = check.par.violated || check.car.violated;
   if (layer->getRoutingLevel() != 0) {
     check.psr = checkPSR(layer, node_info, ratio_margin);
     check.csr = checkCSR(layer, node_info);
@@ -937,6 +934,12 @@ Violations AntennaChecker::Impl::getAntennaViolations(odb::dbNet* net,
   Violations antenna_violations;
   if (net->isSpecial()) {
     return antenna_violations;
+  }
+  // Repair loads the rules once and then calls this from many threads, so
+  // load them here only when missing (a new checker, as with
+  // check_net_violation); otherwise this only reads shared state.
+  if (block_ == nullptr || layer_info_.empty()) {
+    initAntennaRules();
   }
 
   NetCheck net_check;

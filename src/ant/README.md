@@ -32,17 +32,19 @@ Antenna violations can be repaired after global routing with the `repair_design`
 The `check_antennas` command will check for antenna violations.
 
 ```tcl
-check_antennas 
-    [-net net] 
+check_antennas
+    [-net net]
     [-verbose]
+    [-report_file report_file]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-verbose` | Report all antenna calculations for violating nets. |
+| `-verbose` | Report all antenna calculations for violating nets, or for the net given with `-net`. |
 | `-net` | Check antennas on the specified net. |
+| `-report_file` | Write the antenna calculations for violating nets to `report_file`; with `-verbose`, for every routed net. |
 
 ## Regression tests
 

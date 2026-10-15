@@ -27,6 +27,17 @@ the deprecated CMake build.
 
 ## Build and install with Bazel
 
+Install bazelisk and the system libraries the Bazel build needs. Bazel is the
+default build system of `DependencyInstaller.sh`:
+
+    sudo ./etc/DependencyInstaller.sh
+
+Add `-no-gui` to skip the X11/xcb libraries that only the GUI needs. To put
+bazelisk in `~/.local/bin` instead of `/usr/local/bin`, split the steps:
+
+    sudo ./etc/DependencyInstaller.sh -base
+    ./etc/DependencyInstaller.sh -common -local
+
 Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
 
     bazelisk run --//:platform=gui //:install
@@ -128,8 +139,8 @@ source .venv/bin/activate
 
 3. With virtual environment activated, run without `sudo`:
 ``` shell
-./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
+./etc/DependencyInstaller.sh -cmake -base
+./etc/DependencyInstaller.sh -cmake -common -local
 ```
 
 ### Install Dependencies
@@ -138,12 +149,12 @@ We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](
 
 Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
-sudo ./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
+sudo ./etc/DependencyInstaller.sh -cmake -base
+./etc/DependencyInstaller.sh -cmake -common -local
 ```
 
 ```{warning}
-`sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
+`sudo ./etc/DependencyInstaller.sh -cmake [-all|-common]` defaults to
 installing packages on /usr/local.
 To avoid this bahavior use -local flag or -prefix <PATH> argument.
 ```
