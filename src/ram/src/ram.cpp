@@ -400,11 +400,13 @@ vector<dbNet*> RamGen::buildDecoder(const std::string& prefix,
       inputs.push_back(
           group_lines[g][(value >> group_shift[g]) & group_mask[g]]);
     }
-    const std::string name
-        = is_final ? fmt::format("and_word{}", value)
+    // gate names get an and_ prefix so they never collide with net names
+    const std::string net_name
+        = is_final ? fmt::format("word{}", value)
                    : fmt::format("pre_a{}_{}_{}", lo + width - 1, lo, value);
-    lines[value] = is_final ? out_nets[value] : makeNet(prefix, name);
-    gates.push_back({name, inputs, lines[value], is_final ? value : -1});
+    lines[value] = is_final ? out_nets[value] : makeNet(prefix, net_name);
+    gates.push_back(
+        {"and_" + net_name, inputs, lines[value], is_final ? value : -1});
   }
   return lines;
 }
