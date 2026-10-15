@@ -18,6 +18,7 @@ or_integration_tests(
     top_level_term2
     via_access_layer
   PASSFAIL_TESTS
+    write_verilog_def_shared_inputs
     cpp_tests
 )
 
