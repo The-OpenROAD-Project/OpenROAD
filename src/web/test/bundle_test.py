@@ -84,6 +84,7 @@ class Scanner(unittest.TestCase):
         self.assertTrue(_is_identifier_url("http://www.w3.org/2000/svg#x"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
+        self.assertFalse(_is_identifier_url("https://lodash.com/lodash.js"))
 
     def test_finds_scheme_relative_fetches(self):
         for text in (
