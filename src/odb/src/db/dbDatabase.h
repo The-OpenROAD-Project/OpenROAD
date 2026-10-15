@@ -50,7 +50,11 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 141;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 142;  // Current revision number
+
+// Revision where the per-region bump list was added to _dbInst and
+// _dbChipRegion
+inline constexpr uint32_t kSchemaInstChipRegionList = 142;
 
 // Revision where _dbPolygon::min_spacing_ was added
 inline constexpr uint32_t kSchemaPolygonMinSpacing = 141;
@@ -355,6 +359,10 @@ class _dbDatabase : public _dbObject
   utl::Logger* getLogger() const;
   bool isSchema(uint32_t rev) const { return schema_minor_ >= rev; }
   bool isLessThanSchema(uint32_t rev) { return schema_minor_ < rev; }
+  // Rebuild the per-region bump lists and bump port bindings of databases
+  // older than kSchemaInstChipRegionList from their chip bump tables, and
+  // reconcile each bump pin's net with the chip bump's stored net.
+  static void rebuildChipRegionBumps(_dbDatabase* db);
   // User Code End Methods
 
   uint32_t magic1_;

@@ -23,6 +23,7 @@ class _dbModule;
 class _dbGroup;
 class _dbChipBump;
 class _dbChipRegion;
+class _dbBTerm;
 class dbInst;
 class dbIStream;
 class dbOStream;
@@ -62,8 +63,17 @@ class _dbInst : public _dbObject
   bool operator<(const _dbInst& rhs) const;
   void collectMemInfo(MemInfo& info);
   static void setInstBBox(_dbInst* inst);
+  // Error unless the inst's master has exactly one pin, as a bump must.
+  static void checkBumpMaster(_dbInst* inst, _dbChipRegion* chip_region);
+  // Prepend inst to the bump list of chip_region.
+  static void linkChipRegion(_dbInst* inst, _dbChipRegion* chip_region);
+  // Remove inst from its chip region's bump list and clear chip_region_.
+  static void unlinkChipRegion(_dbInst* inst);
 
   _dbInstFlags flags_;
+  // Port bound to this bump; set only while the inst has a chip region.
+  // Declared here to use the padding before name_.
+  dbId<_dbBTerm> bump_bterm_;
   char* name_;
   int x_;
   int y_;
@@ -89,6 +99,8 @@ class _dbInst : public _dbObject
   dbId<_dbHier> hierarchy_;
   dbId<_dbChipRegion> chip_region_;
   dbId<_dbChipBump> bump_;
+  // Next bump of chip_region_ (head is _dbChipRegion::bumps_).
+  dbId<_dbInst> chip_region_next_;
   dbVector<uint32_t> iterms_;
   dbId<_dbBox> halo_;
   uint32_t pin_access_idx_;

@@ -21,6 +21,7 @@ class dbOStream;
 class _dbDatabase;
 class _dbChipBump;
 class _dbTechLayer;
+class _dbInst;
 
 class _dbChipRegion : public _dbObject
 {
@@ -41,6 +42,7 @@ class _dbChipRegion : public _dbObject
   Rect box_;
   int z_min_;
   int z_max_;
+  dbId<_dbInst> bumps_;
   dbTable<_dbChipBump>* chip_bump_tbl_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj);

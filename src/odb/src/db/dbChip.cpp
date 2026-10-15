@@ -40,6 +40,8 @@
 // User Code Begin Includes
 #include <list>
 
+#include "dbChipBumpItr.h"
+#include "dbNullIterator.h"
 #include "odb/dbStream.h"
 #include "utl/Logger.h"
 // User Code End Includes
@@ -758,6 +760,16 @@ dbMarkerCategory* dbChip::findMarkerCategory(const char* name) const
     return (dbMarkerCategory*) obj->marker_categories_tbl_->getPtr(it->second);
   }
   return nullptr;
+}
+
+dbSet<dbInst> dbChip::getBumps() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  _dbBlock* block = (_dbBlock*) ((dbChip*) this)->getBlock();
+  if (block == nullptr) {
+    return dbSet<dbInst>(obj, &dbNullIterator::null_iterator);
+  }
+  return dbSet<dbInst>(obj, block->chip_bump_itr_);
 }
 
 dbChip* dbChip::create(dbDatabase* db_,

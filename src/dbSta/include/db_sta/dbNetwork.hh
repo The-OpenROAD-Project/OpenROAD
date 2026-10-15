@@ -196,7 +196,7 @@ class dbNetwork : public ConcreteNetwork
   odb::dbChipInst* staToDbChipInst(const Instance* instance) const;
   odb::dbChipNet* staToDbChipNet(const Net* net) const;
   // A bump's timing pin is its pad inst's single dbITerm (flat model);
-  // nullptr for spare (unbound) bumps.
+  // nullptr for spare bumps (no bound port).
   odb::dbITerm* bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const;
   // Raw chip-inst / chip-net -> their per-unfold-path objects (built in
   // setTopChip). Used by the chip-aware iterators to enumerate unfolded bumps.

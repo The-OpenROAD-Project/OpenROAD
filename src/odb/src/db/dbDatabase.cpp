@@ -28,6 +28,7 @@
 #include <atomic>
 #include <cassert>
 #include <cerrno>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -39,6 +40,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
@@ -46,14 +48,17 @@
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
+#include "dbChipBump.h"
 #include "dbChipBumpInstItr.h"
 #include "dbChipConnItr.h"
 #include "dbChipInstItr.h"
 #include "dbChipNetItr.h"
+#include "dbChipRegion.h"
 #include "dbChipRegionInstItr.h"
 #include "dbCore.h"
 #include "dbGDSLib.h"
 #include "dbITerm.h"
+#include "dbInst.h"
 #include "dbJournal.h"
 #include "dbLib.h"
 #include "dbNameCache.h"
@@ -435,6 +440,14 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     p->owner_ = oid;
   }
 
+  // Older databases have no per-region bump lists. Rebuild them from the
+  // chip bump tables, whose order is the order the bumps were created in.
+  // Every inst with a chip region has a chip bump in these databases.
+  // Linking prepends, so reverse each list to restore that order.
+  if (!obj.isSchema(kSchemaInstChipRegionList)) {
+    _dbDatabase::rebuildChipRegionBumps(&obj);
+  }
+
   // Set the revision of the database to the current revision
   obj.schema_major_ = kSchemaMajor;
   obj.schema_minor_ = kSchemaMinor;
@@ -598,6 +611,87 @@ _dbDatabase::~_dbDatabase()
 }
 
 // User Code Begin PrivateMethods
+void _dbDatabase::rebuildChipRegionBumps(_dbDatabase* db)
+{
+  // Bumps whose master does not have exactly one pin, per master, in the
+  // order the masters are first seen.
+  std::vector<std::pair<dbMaster*, int>> bad_masters;
+  int mismatches = 0;
+  std::vector<std::string> mismatch_names;
+  constexpr size_t kMaxMismatchNames = 3;
+
+  for (dbChip* chip : ((dbDatabase*) db)->getChips()) {
+    _dbBlock* block = (_dbBlock*) chip->getBlock();
+    for (dbChipRegion* region : chip->getChipRegions()) {
+      for (dbChipBump* bump : region->getChipBumps()) {
+        dbInst* inst = bump->getInst();
+        if (inst == nullptr) {
+          continue;
+        }
+        _dbInst* inst_impl = (_dbInst*) inst;
+        _dbChipBump* bump_impl = (_dbChipBump*) bump;
+        _dbInst::linkChipRegion(inst_impl, (_dbChipRegion*) region);
+        // Read the stored fields directly: dbChipBump's getters answer
+        // from the inst, which is being rebuilt here.
+        inst_impl->bump_bterm_ = bump_impl->bterm_;
+
+        dbMaster* master = inst->getMaster();
+        if (master->getMTerms().size() != 1) {
+          auto it = std::ranges::find(
+              bad_masters, master, &std::pair<dbMaster*, int>::first);
+          if (it == bad_masters.end()) {
+            bad_masters.emplace_back(master, 1);
+          } else {
+            ++it->second;
+          }
+        }
+        if (bump_impl->net_ == 0) {
+          continue;
+        }
+        dbNet* old_net = (dbNet*) block->net_tbl_->getPtr(bump_impl->net_);
+        // The bump's pin is its first iterm.
+        dbITerm* pin = inst->getITerm(0U);
+        dbNet* pin_net = pin->getNet();
+        if (pin_net == nullptr) {
+          // The pin was never connected: repair it from the bump's net.
+          pin->connect(old_net);
+        } else if (pin_net != old_net) {
+          // Keep the pin's connectivity.
+          ++mismatches;
+          if (mismatch_names.size() < kMaxMismatchNames) {
+            mismatch_names.push_back(inst->getName());
+          }
+        }
+      }
+      // Linking prepends; restore the bump table order.
+      region->getBumps().reverse();
+    }
+  }
+
+  utl::Logger* logger = db->getLogger();
+  for (const auto& [master, count] : bad_masters) {
+    logger->warn(utl::ODB,
+                 1226,
+                 "{} chip bump(s) use master {}, which has {} pins instead of "
+                 "one. Such bumps use their first pin.",
+                 count,
+                 master->getName(),
+                 master->getMTerms().size());
+  }
+  if (mismatches > 0) {
+    std::string names;
+    for (const std::string& name : mismatch_names) {
+      names += names.empty() ? name : ", " + name;
+    }
+    logger->warn(utl::ODB,
+                 1228,
+                 "{} chip bump(s) store a net that differs from their pin's "
+                 "net; the pin's net is kept (e.g. {}).",
+                 mismatches,
+                 names);
+  }
+}
+
 //
 // This constructor is used by dbDatabase::clear(), so the unique-id is
 // reset.

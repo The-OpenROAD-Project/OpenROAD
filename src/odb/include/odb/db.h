@@ -3189,6 +3189,37 @@ class dbInst : public dbObject
   dbChipBump* getChipBump() const;
 
   ///
+  /// Get the chip region this instance belongs to as a bump.
+  /// Returns nullptr if the instance has no chip region.
+  /// The region is meaningful for bump instances (master type COVER_BUMP);
+  /// this is not enforced.
+  ///
+  dbChipRegion* getChipRegion() const;
+
+  ///
+  /// Set the chip region of this instance, appending it to the region's
+  /// bump list. nullptr clears it. The instance must be in the top block
+  /// of the region's chip and its master must have exactly one pin. The
+  /// region of an instance with a chip bump cannot be changed.
+  ///
+  void setChipRegion(dbChipRegion* chip_region);
+
+  ///
+  /// Bind this bump instance to its port. The instance must have a chip
+  /// region and the port must be in the instance's block. nullptr clears
+  /// the binding. The binding is kept when the instance moves to another
+  /// region and is cleared when it leaves all regions, when it is
+  /// destroyed, or when the port is destroyed. It is set only on
+  /// instances with a chip region.
+  ///
+  void setBumpBTerm(dbBTerm* bterm);
+
+  ///
+  /// Get the port bound to this bump instance, or nullptr (a spare bump).
+  ///
+  dbBTerm* getBumpBTerm() const;
+
+  ///
   /// Create a new instance.
   /// If physical_only is true, the instance can only be added to a top module.
   /// If false, it will be added to the parent module.
@@ -7380,6 +7411,13 @@ class dbChip : public dbObject
   dbMarkerCategory* findMarkerCategory(const char* name) const;
 
   ///
+  /// Get the bump instances of this chip across all its chip regions, in
+  /// region order and, within a region, in insertion order. Empty if the
+  /// chip has no block or no regions.
+  ///
+  dbSet<dbInst> getBumps() const;
+
+  ///
   /// Create a new chip.
   /// Returns nullptr if there is no database technology.
   ///
@@ -7611,6 +7649,12 @@ class dbChipRegion : public dbObject
 
   // User Code Begin dbChipRegion
   Cuboid getCuboid() const;
+
+  ///
+  /// Get the bump instances of this region (dbInsts whose chip region is
+  /// this region), in insertion order.
+  ///
+  dbSet<dbInst> getBumps() const;
 
   dbChip* getChip() const;
 
@@ -11503,6 +11547,9 @@ class dbUnfoldedChipBumpInst : public dbObject
   dbUnfoldedChipRegionInst* getParentRegion() const;
 
   // User Code Begin dbUnfoldedChipBumpInst
+  // The bump instance in the master chip's block.
+  dbInst* getInst() const;
+
   Point3D getGlobalPosition() const;
   // User Code End dbUnfoldedChipBumpInst
 };

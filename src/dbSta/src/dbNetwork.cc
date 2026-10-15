@@ -1198,20 +1198,15 @@ odb::dbChipInst* dbNetwork::chipInstOf(odb::dbBlock* block) const
 // Resolve an unfolded bump to its pad inst's single dbITerm -- the bump's
 // timing pin (flat model: the pad iterm is the real leaf pin; it carries the
 // vertex id, its MTerm carries direction, and it sits directly on the
-// chiplet's inner net). Returns nullptr for spare bumps (no bound bterm) and
-// for pad insts with no iterm -- neither is a logical endpoint.
+// chiplet's inner net). Returns nullptr for spare bumps (no bound port),
+// which are not a logical endpoint.
 odb::dbITerm* dbNetwork::bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const
 {
-  odb::dbChipBump* cb = bump->getChipBumpInst()->getChipBump();
-  if (cb->getBTerm() == nullptr) {
+  odb::dbInst* pad_inst = bump->getInst();
+  if (pad_inst == nullptr || pad_inst->getBumpBTerm() == nullptr) {
     return nullptr;
   }
-  odb::dbInst* pad_inst = cb->getInst();
-  if (pad_inst == nullptr) {
-    return nullptr;
-  }
-  dbSet<dbITerm> iterms = pad_inst->getITerms();
-  return iterms.empty() ? nullptr : *iterms.begin();
+  return pad_inst->getITerm(0U);
 }
 
 void dbNetwork::buildUnfoldedMaps() const

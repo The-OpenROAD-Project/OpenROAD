@@ -84,6 +84,8 @@ class dbBPinItr;
 class dbNetITermItr;
 class dbInstITermItr;
 class dbRegionInstItr;
+class dbChipRegionBumpItr;
+class dbChipBumpItr;
 class dbModuleInstItr;
 class dbModuleModInstItr;
 class dbModuleModBTermItr;
@@ -296,6 +298,8 @@ class _dbBlock : public _dbObject
   dbRSegItr* r_seg_itr_;
   dbCCSegItr* cc_seg_itr_;
   dbRegionInstItr* region_inst_itr_;
+  dbChipRegionBumpItr* chip_region_bump_itr_;
+  dbChipBumpItr* chip_bump_itr_;
   dbModuleInstItr* module_inst_itr_;
   dbModuleModInstItr* module_modinst_itr_;
   dbModuleModBTermItr* module_modbterm_itr_;

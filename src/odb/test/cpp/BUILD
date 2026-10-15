@@ -68,6 +68,24 @@ cc_test(
 )
 
 cc_test(
+    name = "TestChipBumps",
+    srcs = [
+        "TestChipBumps.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+        "//test:regression_resources",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDbSet",
     srcs = ["TestDbSet.cpp"],
     deps = [

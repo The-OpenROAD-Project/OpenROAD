@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -178,19 +179,24 @@ void dbUnfoldedBuilder::unfoldBumps(_dbUnfoldedChipRegionInst* uf_region,
                                     dbChipRegionInst* region_inst)
 {
   auto& chip_bump_map = bump_map_[uf_region->parent_chip_];
+  // The chip bump inst of each bump dbInst, for the folded back reference.
+  std::unordered_map<dbInst*, dbChipBumpInst*> bump_insts;
   for (auto* bump_inst : region_inst->getChipBumpInsts()) {
-    dbChipBump* bump = bump_inst->getChipBump();
-    if (bump->getInst() == nullptr) {
-      continue;
-    }
+    bump_insts[bump_inst->getChipBump()->getInst()] = bump_inst;
+  }
+  for (dbInst* inst : region_inst->getChipRegion()->getBumps()) {
     _dbUnfoldedChipBumpInst* uf_bump
         = db_->unfolded_chip_bump_inst_tbl_->create();
-    uf_bump->chip_bump_inst_ = bump_inst->getImpl()->getOID();
+    uf_bump->inst_ = inst->getId();
+    auto it = bump_insts.find(inst);
+    if (it != bump_insts.end()) {
+      uf_bump->chip_bump_inst_ = it->second->getImpl()->getOID();
+    }
     uf_bump->parent_region_ = uf_region->getOID();
     uf_bump->region_next_ = uf_region->bump_;
     uf_region->bump_ = uf_bump->getOID();
 
-    chip_bump_map[bump_inst] = uf_bump->getOID();
+    chip_bump_map[inst] = uf_bump->getOID();
   }
   // Inserts were head-first; reverse to restore source order.
   ((dbUnfoldedChipRegionInst*) uf_region)->getBumps().reverse();
@@ -257,7 +263,7 @@ void dbUnfoldedBuilder::unfoldNets(dbChip* chip,
         continue;
       }
       auto& map = bump_map_[uf_chip->getOID()];
-      auto it = map.find(b_inst);
+      auto it = map.find(b_inst->getChipBump()->getInst());
       if (it != map.end()) {
         uf_net->connected_bumps_.push_back(it->second);
       }

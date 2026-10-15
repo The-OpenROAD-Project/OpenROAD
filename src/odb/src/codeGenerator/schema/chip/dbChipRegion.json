@@ -15,8 +15,9 @@
     { "name": "layer_", "type": "dbId<_dbTechLayer>", "flags": ["private"] },
     { "name": "box_", "type": "Rect"},
     { "name": "z_min_", "type": "int", "flags": ["private"] , "default": "0"},
-    { "name": "z_max_", "type": "int", "flags": ["private"] , "default": "0"}
+    { "name": "z_max_", "type": "int", "flags": ["private"] , "default": "0"},
+    { "name": "bumps_", "type": "dbId<_dbInst>", "flags": ["private"], "schema": "kSchemaInstChipRegionList" }
   ],
   "h_includes": ["odb/geom.h", "odb/dbTypes.h", "odb/dbId.h"],
-  "cpp_includes": ["dbTechLayer.h"]
+  "cpp_includes": ["dbTechLayer.h", "dbInst.h"]
 } 

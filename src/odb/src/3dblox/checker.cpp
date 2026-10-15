@@ -328,7 +328,9 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat)
       if (auto* marker = dbMarker::create(cat)) {
         for (auto* chip : group) {
           marker->addShape(chip->getCuboid());
-          marker->addSource(chip->getChipInstPath().back());
+          // TODO: use unfolded objects as marker sources; the current folded
+          // sources do not identify the right occurrence.
+          // marker->addSource(chip->getChipInstPath().back());
         }
         marker->setComment("Isolated chip set starting with "
                            + group[0]->getName());
@@ -368,8 +370,10 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat)
       if (auto* marker = dbMarker::create(cat)) {
         auto intersection = inst1->getCuboid().intersect(inst2->getCuboid());
         marker->addShape(intersection);
-        marker->addSource(inst1->getChipInstPath().back());
-        marker->addSource(inst2->getChipInstPath().back());
+        // TODO: use unfolded objects as marker sources; the current folded
+        // sources do not identify the right occurrence.
+        // marker->addSource(inst1->getChipInstPath().back());
+        // marker->addSource(inst2->getChipInstPath().back());
         marker->setComment(fmt::format(
             "Chips {} and {} overlap", inst1->getName(), inst2->getName()));
       }
@@ -404,7 +408,9 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat)
                       "Region {} is internal_ext but unused",
                       region->getChipRegionInst()->getChipRegion()->getName());
         if (auto* marker = dbMarker::create(cat)) {
-          marker->addSource(region->getChipRegionInst());
+          // TODO: use unfolded objects as marker sources; the current folded
+          // sources do not identify the right occurrence.
+          // marker->addSource(region->getChipRegionInst());
           marker->addShape(region->getCuboid());
           marker->setComment(fmt::format(
               "Unused internal_ext region: {}",
@@ -419,7 +425,9 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
 {
   auto describe = [](dbUnfoldedChipRegionInst* r, dbMarker* marker) {
     const Cuboid cuboid = r->getCuboid();
-    marker->addSource(r->getChipRegionInst());
+    // TODO: use unfolded objects as marker sources; the current folded
+    // sources do not identify the right occurrence.
+    // marker->addSource(r->getChipRegionInst());
     marker->addShape(
         Rect(cuboid.xMin(), cuboid.yMin(), cuboid.xMax(), cuboid.yMax()));
     return fmt::format("{}/{} (faces {})",
@@ -436,7 +444,9 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat)
         cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
       }
       if (auto* marker = dbMarker::create(cat)) {
-        marker->addSource(conn->getChipConn());
+        // TODO: use unfolded objects as marker sources; the current folded
+        // sources do not identify the right occurrence.
+        // marker->addSource(conn->getChipConn());
         const std::string conn_name = conn->getChipConn()->getName();
         const std::string top_desc = describe(conn->getTopRegion(), marker);
         const std::string bot_desc = describe(conn->getBottomRegion(), marker);
@@ -509,7 +519,9 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
           // max_markers_ limit; skip the addSource/addShape/setComment
           // chain to avoid a null-deref crash in that case.
           if (auto* marker = dbMarker::create(cat)) {
-            marker->addSource(bump->getChipBumpInst());
+            // TODO: use unfolded objects as marker sources; the current folded
+            // sources do not identify the right occurrence.
+            // marker->addSource(bump->getInst());
             marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
                                   p.y() - kBumpMarkerHalfSize,
                                   p.x() + kBumpMarkerHalfSize,
@@ -703,8 +715,10 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
                                                   "Logical Connectivity");
         }
         if (auto* marker = dbMarker::create(cat)) {
-          marker->addSource(top_bump->getChipBumpInst());
-          marker->addSource(bot_bump->getChipBumpInst());
+          // TODO: use unfolded objects as marker sources; the current folded
+          // sources do not identify the right occurrence.
+          // marker->addSource(top_bump->getInst());
+          // marker->addSource(bot_bump->getInst());
           marker->addShape(top_region->getCuboid().intersect(
               bot_region->getCuboid()));  // Mark overlap region
 
