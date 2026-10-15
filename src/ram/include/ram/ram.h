@@ -107,7 +107,8 @@ class RamGen
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
-                int max_tap_dist);
+                int max_tap_dist,
+                int max_and_inputs);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -282,7 +283,7 @@ class RamGen
   Grid ram_grid_;
   bool use_latch_{false};
   // widest AND the decoder may use, which caps the predecode groups per stage
-  const int max_and_inputs_;
+  int max_and_inputs_{2};
 };
 
 }  // namespace ram
