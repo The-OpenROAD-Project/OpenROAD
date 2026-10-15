@@ -253,5 +253,8 @@ regression_test(
     name = "write_verilog_def_shared_inputs",
     check_log = False,
     check_passfail = True,
-    data = [":regression_resources", "top_level_term2.def"],
+    data = [
+        "top_level_term2.def",
+        ":regression_resources",
+    ],
 )

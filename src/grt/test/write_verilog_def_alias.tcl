@@ -10,7 +10,7 @@ set text [read $stream]
 close $stream
 foreach bit {0 1 2} {
   set expected [format {assign net%d = req_msg[%d];} $bit $bit]
-  if {[string first $expected $text] < 0} {
+  if { [string first $expected $text] < 0 } {
     error "Missing input alias: $expected"
   }
 }

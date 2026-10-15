@@ -9,16 +9,16 @@ set previous "module preserved; endmodule\n"
 set stream [open $verilog_file w]
 puts -nonewline $stream $previous
 close $stream
-if {![catch {write_verilog $verilog_file} message]} {
+if { ![catch { write_verilog $verilog_file } message] } {
   error "Expected STA-2749 for distinct input ports sharing one net"
 }
-if {![string match {*STA-2749*} $message]} {
+if { ![string match {*STA-2749*} $message] } {
   error "Expected STA-2749, got: $message"
 }
 set stream [open $verilog_file r]
 set text [read $stream]
 close $stream
-if {$text ne $previous} {
+if { $text ne $previous } {
   error "Rejected write changed the existing output file"
 }
 puts "pass"
