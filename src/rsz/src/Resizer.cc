@@ -1197,6 +1197,10 @@ void Resizer::findBuffers()
 
 void Resizer::findBuffersNoPruning()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
   if (buffer_cells_.empty()) {
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
