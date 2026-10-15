@@ -85,11 +85,42 @@ add_subdirectory(sv-elab/third_party/slang EXCLUDE_FROM_ALL)
 unset(__get_git_revision_description)
 include(GetGitRevisionDescription)
 
-# Build sv-elab's frontend-only library (slang_frontend); skip the Yosys
-# plugin, which we don't build in the OpenROAD tree.
-set(SLANG_ELAB_BUILD_YOSYS_PLUGIN OFF CACHE BOOL "" FORCE)
+# Build sv-elab's frontend directly. Its CMake configuration only supports
+# building the Yosys plugin, which OpenROAD does not use.
+set(SV_ELAB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sv-elab/src)
+set(SV_ELAB_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/sv-elab)
 
-find_package(fmt CONFIG REQUIRED)
+# The frontend includes this plugin version header even though it does not use
+# either revision value.
+file(MAKE_DIRECTORY ${SV_ELAB_BINARY_DIR})
+file(WRITE ${SV_ELAB_BINARY_DIR}/version.h
+  "#pragma once\n\n#define YOSYS_SLANG_REVISION \"\"\n#define SLANG_REVISION \"\"\n")
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/sv-elab/cmake")
-add_subdirectory(sv-elab/src EXCLUDE_FROM_ALL)
+add_library(slang_frontend STATIC
+  ${SV_ELAB_SOURCE_DIR}/addressing.cc
+  ${SV_ELAB_SOURCE_DIR}/async_pattern.cc
+  ${SV_ELAB_SOURCE_DIR}/builder.cc
+  ${SV_ELAB_SOURCE_DIR}/diag.cc
+  ${SV_ELAB_SOURCE_DIR}/initialization.cc
+  ${SV_ELAB_SOURCE_DIR}/lvalue.cc
+  ${SV_ELAB_SOURCE_DIR}/naming.cc
+  ${SV_ELAB_SOURCE_DIR}/procedural.cc
+  ${SV_ELAB_SOURCE_DIR}/slang_frontend.cc
+  ${SV_ELAB_SOURCE_DIR}/variables.cc
+)
+
+target_compile_definitions(slang_frontend PUBLIC
+  SLANG_MUX_LOWERING
+  SLANG_NO_YOSYS
+)
+
+target_include_directories(slang_frontend
+  PUBLIC
+    ${SV_ELAB_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/sv-elab/third_party/hashlib
+  PRIVATE
+    ${SV_ELAB_BINARY_DIR}
+)
+
+target_link_libraries(slang_frontend PUBLIC slang::slang fmt::fmt)
+set_target_properties(slang_frontend PROPERTIES POSITION_INDEPENDENT_CODE ON)
