@@ -50,9 +50,12 @@ class Master
   // Signal pin shapes in master coordinates, by routing level
   void addPinShape(int level, const odb::Rect& rect);
   const std::vector<odb::Rect>& getPinShapes(int level) const;
+  // Cached db_master_->getSite()
+  odb::dbSite* getDbSite() const;
 
  private:
   odb::dbMaster* db_master_{nullptr};
+  odb::dbSite* db_site_{nullptr};
   odb::Rect boundary_box_;
   bool is_multi_row_{false};
   std::vector<MasterEdge> edges_;
@@ -141,6 +144,7 @@ class Node
   void setGroupId(int id);
   void addUsedLayer(int layer);
   void addPinLayer(int layer);
+  void orUsedLayers(uint8_t mask);
 
   bool adjustCurrOrient(const odb::dbOrientType& newOrient);
 

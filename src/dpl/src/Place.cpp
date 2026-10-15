@@ -15,7 +15,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -48,6 +47,98 @@ using std::vector;
 using utl::DPL;
 
 using utl::format_as;  // NOLINT(misc-unused-using-decls)
+
+namespace {
+struct PQ_entry
+{
+  int manhattan_distance;
+  GridPt p;
+  int sequence;
+  bool operator>(const PQ_entry& other) const
+  {
+    return std::tie(manhattan_distance, sequence)
+           > std::tie(other.manhattan_distance, other.sequence);
+  }
+};
+
+// Exposes the backing vector so its allocation can be reused across calls.
+struct ReusableHeap : std::priority_queue<PQ_entry,
+                                          std::vector<PQ_entry>,
+                                          std::greater<PQ_entry>>
+{
+  explicit ReusableHeap(std::vector<PQ_entry>&& backing)
+      : std::priority_queue<PQ_entry,
+                            std::vector<PQ_entry>,
+                            std::greater<PQ_entry>>(std::greater<PQ_entry>{},
+                                                    std::move(backing))
+  {
+  }
+  std::vector<PQ_entry> takeBacking() { return std::move(this->c); }
+};
+
+// Visited set for diamondSearch() over the inclusive search window.  A point
+// is visited iff its stamp equals the current generation, so starting a new
+// search needs no clearing.  Points outside the window are never enqueued, so
+// they report unvisited and inserting them is a no-op; this keeps the storage
+// bounded by the window even when the search center lies far outside it.
+class VisitedStamps
+{
+ public:
+  void beginSearch(const int x_min,
+                   const int y_min,
+                   const int x_max,
+                   const int y_max)
+  {
+    x_min_ = x_min;
+    y_min_ = y_min;
+    x_max_ = x_max;
+    y_max_ = y_max;
+    width_ = std::max(0, x_max - x_min + 1);
+    const int height = std::max(0, y_max - y_min + 1);
+    const size_t needed = static_cast<size_t>(width_) * height;
+    if (stamps_.size() < needed) {
+      stamps_.assign(needed, 0);
+      generation_ = 0;
+    }
+    if (++generation_ == 0) {
+      std::ranges::fill(stamps_, 0);
+      generation_ = 1;
+    }
+  }
+
+  bool contains(const GridPt& p) const
+  {
+    return inWindow(p) && stamps_[index(p)] == generation_;
+  }
+
+  void insert(const GridPt& p)
+  {
+    if (inWindow(p)) {
+      stamps_[index(p)] = generation_;
+    }
+  }
+
+ private:
+  bool inWindow(const GridPt& p) const
+  {
+    return p.x.v >= x_min_ && p.x.v <= x_max_ && p.y.v >= y_min_
+           && p.y.v <= y_max_;
+  }
+
+  size_t index(const GridPt& p) const
+  {
+    return static_cast<size_t>(p.y.v - y_min_) * width_ + (p.x.v - x_min_);
+  }
+
+  std::vector<uint32_t> stamps_;
+  uint32_t generation_ = 0;
+  int x_min_ = 0;
+  int y_min_ = 0;
+  int x_max_ = -1;
+  int y_max_ = -1;
+  int width_ = 0;
+};
+}  // namespace
 
 std::string Opendp::printBgBox(
     const boost::geometry::model::box<bgPoint>& queryBox)
@@ -902,20 +993,13 @@ PixelPt Opendp::diamondSearch(const Node* cell,
              y_min,
              y_max - 1);
 
-  struct PQ_entry
-  {
-    int manhattan_distance;
-    GridPt p;
-    int sequence;
-    bool operator>(const PQ_entry& other) const
-    {
-      return std::tie(manhattan_distance, sequence)
-             > std::tie(other.manhattan_distance, other.sequence);
-    }
-  };
-  std::priority_queue<PQ_entry, std::vector<PQ_entry>, std::greater<PQ_entry>>
-      positionsHeap;
-  std::unordered_set<GridPt> visited;
+  // thread_local scratch reused across calls to avoid per-call allocation.
+  static thread_local std::vector<PQ_entry> heap_backing;
+  static thread_local VisitedStamps visited;
+
+  heap_backing.clear();
+  visited.beginSearch(x_min.v, y_min.v, x_max.v, y_max.v);
+  ReusableHeap positionsHeap(std::move(heap_backing));
   int sequence = 0;
   GridPt center{x, y};
   positionsHeap.push(
@@ -931,8 +1015,10 @@ PixelPt Opendp::diamondSearch(const Node* cell,
     positionsHeap.pop();
 
     if (canBePlaced(cell, nearest.x, nearest.y)) {
-      return PixelPt(
+      const PixelPt result(
           grid_->gridPixel(nearest.x, nearest.y), nearest.x, nearest.y);
+      heap_backing = positionsHeap.takeBacking();
+      return result;
     }
 
     // Put neighbors in the queue
@@ -954,6 +1040,7 @@ PixelPt Opendp::diamondSearch(const Node* cell,
                           .sequence = sequence++});
     }
   }
+  heap_backing = positionsHeap.takeBacking();
   return PixelPt();
 }
 
@@ -1044,7 +1131,8 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
-  odb::dbSite* site = cell->getSite();
+  const Master* master = cell->getMaster();
+  odb::dbSite* site = master->getDbSite();
   for (GridY y1 = y; y1 < y_end; y1++) {
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
@@ -1109,7 +1197,7 @@ bool Opendp::checkPixels(const Node* cell,
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
 
   // Check for symmetry
-  auto* dbMaster = cell->getDbInst()->getMaster();
+  auto* dbMaster = master->getDbMaster();
   unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
   if (!checkMasterSym(masterSym, orient)) {
     return false;
@@ -1118,7 +1206,7 @@ bool Opendp::checkPixels(const Node* cell,
   // For multi-row cells, the bottom-row site/orient check above only covers
   // the bottom row; it doesn't ensure the master's power pin stack lines up
   // with the PDN rail stack across the span.  Reject wrong-parity landings.
-  if (cell->getMaster()->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
+  if (master->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
     return false;
   }
 

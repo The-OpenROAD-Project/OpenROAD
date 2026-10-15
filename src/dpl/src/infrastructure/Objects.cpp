@@ -79,6 +79,7 @@ void Master::setTopPowerType(const int top_pwr)
 void Master::setDbMaster(odb::dbMaster* db_master)
 {
   db_master_ = db_master;
+  db_site_ = db_master ? db_master->getSite() : nullptr;
 }
 odb::dbMaster* Master::getDbMaster() const
 {
@@ -91,6 +92,10 @@ void Master::addPinShape(const int level, const odb::Rect& rect)
 const std::vector<odb::Rect>& Master::getPinShapes(const int level) const
 {
   return pin_shapes_[level];
+}
+odb::dbSite* Master::getDbSite() const
+{
+  return db_site_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,6 +385,10 @@ void Node::addUsedLayer(int layer)
 void Node::addPinLayer(int layer)
 {
   pin_layers_ |= 1 << layer;
+}
+void Node::orUsedLayers(uint8_t mask)
+{
+  used_layers_ |= mask;
 }
 bool Node::adjustCurrOrient(const odb::dbOrientType& newOri)
 {

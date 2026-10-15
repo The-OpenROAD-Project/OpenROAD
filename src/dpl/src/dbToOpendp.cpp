@@ -271,11 +271,20 @@ void Opendp::createNetwork()
   ///////////////////////////////////
   using odb::dbInst;
   auto block_insts = block->getInsts();
-  std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::ranges::stable_sort(
-      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
+  // Sort instances by name for a deterministic order.  getName() returns by
+  // value, so each name is fetched once rather than in every comparison.
+  std::vector<std::pair<std::string, dbInst*>> insts_by_name;
+  insts_by_name.reserve(block_insts.size());
+  for (dbInst* inst : block_insts) {
+    insts_by_name.emplace_back(inst->getName(), inst);
+  }
+  network_->reserveNodesAndEdges(block_insts.size() + block->getBTerms().size(),
+                                 block->getNets().size());
+  std::ranges::stable_sort(insts_by_name, [](const auto& a, const auto& b) {
+    return a.first < b.first;
+  });
 
-  for (dbInst* inst : insts) {
+  for (const auto& [inst_name, inst] : insts_by_name) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       debugPrint(logger_,

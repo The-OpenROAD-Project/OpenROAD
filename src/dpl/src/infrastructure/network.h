@@ -49,7 +49,19 @@ class Network
   Edge* getEdge(odb::dbNet* net) const;
   Edge* getEdge(int i) const { return edges_[i].get(); }
   void setEdgeName(int i, const std::string& name) { edgeNames_[i] = name; }
-  const std::string& getEdgeName(int i) const { return edgeNames_.at(i); }
+  // Returns the name set by setEdgeName(), else the backing net's name.
+  std::string getEdgeName(int i) const
+  {
+    auto it = edgeNames_.find(i);
+    if (it != edgeNames_.end()) {
+      return it->second;
+    }
+    if (i >= 0 && i < static_cast<int>(edge_to_net_.size())
+        && edge_to_net_[i] != nullptr) {
+      return edge_to_net_[i]->getName();
+    }
+    return "";
+  }
 
   int getNumPins() const { return (int) pins_.size(); }
 
@@ -66,6 +78,12 @@ class Network
 
   // For creating and adding edges.
   void addEdge(odb::dbNet* net);
+
+  void reserveNodesAndEdges(size_t num_nodes, size_t num_edges)
+  {
+    nodes_.reserve(num_nodes);
+    edges_.reserve(num_edges);
+  }
 
   // For creating masters.
   Master* addMaster(odb::dbMaster* db_master,
@@ -94,11 +112,15 @@ class Network
   std::vector<odb::Rect> blockages_;          // The placement blockages ..
 
   std::unordered_map<int, std::string> edgeNames_;  // Names of edges...
+  // Backing nets indexed by edge id
+  std::vector<odb::dbNet*> edge_to_net_;
 
   std::unordered_map<odb::dbInst*, int> inst_to_node_idx_;
   std::unordered_map<odb::dbBTerm*, int> term_to_node_idx_;
   std::unordered_map<odb::dbMaster*, int> master_to_idx_;
   std::unordered_map<odb::dbNet*, int> net_to_edge_idx_;
+  // Routing-layer bitmask used by each mterm
+  std::unordered_map<odb::dbMTerm*, uint8_t> mterm_layers_;
   uint32_t cells_cnt_{0};
   uint32_t terminals_cnt_{0};
 };
