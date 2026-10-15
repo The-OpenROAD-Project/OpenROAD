@@ -188,10 +188,36 @@ class RamGen
 
   std::unique_ptr<Layout> generateTapColumn(int num_rows, int tapcell_col);
 
+  // One AND gate of the row decoder; row is the word line it drives, or -1
+  // for a predecode gate.
+  struct DecoderGate
+  {
+    std::string name;
+    std::vector<odb::dbNet*> inputs;
+    odb::dbNet* output;
+    int row;
+  };
+
+  std::vector<odb::dbNet*> buildDecoder(
+      const std::string& prefix,
+      int lo,
+      int width,
+      int count,
+      const std::vector<odb::dbNet*>& addr_nets,
+      const std::vector<odb::dbNet*>& inv_addr_nets,
+      const std::vector<odb::dbNet*>& out_nets,
+      std::vector<DecoderGate>& gates);
+
   void makeDecoderColumn(const std::string& prefix,
                          int num_rows,
-                         const std::vector<std::vector<odb::dbNet*>>& addr_nets,
+                         const std::vector<odb::dbNet*>& addr_nets,
+                         const std::vector<odb::dbNet*>& inv_addr_nets,
                          const std::vector<odb::dbNet*>& decoder_output_nets);
+  void makeAnd(Cell* cell,
+               const std::string& prefix,
+               const std::string& name,
+               const std::vector<odb::dbNet*>& inputs,
+               odb::dbNet* output);
   void makeBufferColumn(const std::string& prefix,
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
@@ -251,6 +277,8 @@ class RamGen
       aoi22_out_;
   Grid ram_grid_;
   bool use_latch_{false};
+  // widest AND the decoder may use, which caps the predecode groups per stage
+  const int max_and_inputs_;
 };
 
 }  // namespace ram

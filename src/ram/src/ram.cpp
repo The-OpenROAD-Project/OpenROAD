@@ -67,7 +67,9 @@ RamGen::RamGen(sta::dbNetwork* network,
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
-      ram_grid_(odb::horizontal)
+      ram_grid_(odb::horizontal),
+      // AND2 only for now; wider ANDs have weak drive strength
+      max_and_inputs_(2)
 {
 }
 
@@ -337,49 +339,142 @@ std::unique_ptr<Layout> RamGen::generateTapColumn(const int num_rows,
   return tapcell_layout;
 }
 
-void RamGen::makeDecoderColumn(
-    const std::string& prefix,
-    const int num_rows,
-    const std::vector<std::vector<dbNet*>>& addr_nets,
-    const std::vector<dbNet*>& decoder_output_nets)
+// Builds one-hot nets for values 0..count-1 of address bits [lo, lo+width).
+// The bits are split into groups that are decoded recursively (predecoders),
+// then each output ANDs together one line from every group.
+vector<dbNet*> RamGen::buildDecoder(const std::string& prefix,
+                                    const int lo,
+                                    const int width,
+                                    const int count,
+                                    const vector<dbNet*>& addr_nets,
+                                    const vector<dbNet*>& inv_addr_nets,
+                                    const vector<dbNet*>& out_nets,
+                                    vector<DecoderGate>& gates)
+{
+  if (width == 1) {
+    vector<dbNet*> lines = {inv_addr_nets[lo], addr_nets[lo]};
+    lines.resize(count);
+    return lines;
+  }
+
+  // ~2 bits per group, but never more groups than the AND has inputs
+  const int num_groups = std::clamp((width + 1) / 2, 2, max_and_inputs_);
+
+  vector<vector<dbNet*>> group_lines;
+  vector<int> group_shift;
+  vector<int> group_mask;
+  int bit = lo;
+  for (int g = 0; g < num_groups; ++g) {
+    const int size = width / num_groups + (g < width % num_groups ? 1 : 0);
+    const int shift = bit - lo;
+    // only decode values some output actually uses (non-power-of-2 counts)
+    const int sub_count = std::min(1 << size, ((count - 1) >> shift) + 1);
+    group_lines.push_back(buildDecoder(
+        prefix, bit, size, sub_count, addr_nets, inv_addr_nets, {}, gates));
+    group_shift.push_back(shift);
+    group_mask.push_back((1 << size) - 1);
+    bit += size;
+  }
+
+  const bool is_final = !out_nets.empty();
+  vector<dbNet*> lines(count);
+  for (int value = 0; value < count; ++value) {
+    vector<dbNet*> inputs;
+    for (int g = 0; g < num_groups; ++g) {
+      inputs.push_back(
+          group_lines[g][(value >> group_shift[g]) & group_mask[g]]);
+    }
+    const std::string name
+        = is_final ? fmt::format("and_word{}", value)
+                   : fmt::format("pre_a{}_{}_{}", lo + width - 1, lo, value);
+    lines[value] = is_final ? out_nets[value] : makeNet(prefix, name);
+    gates.push_back({name, inputs, lines[value], is_final ? value : -1});
+  }
+  return lines;
+}
+
+void RamGen::makeDecoderColumn(const std::string& prefix,
+                               const int num_rows,
+                               const vector<dbNet*>& addr_nets,
+                               const vector<dbNet*>& inv_addr_nets,
+                               const vector<dbNet*>& decoder_output_nets)
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
+  vector<std::unique_ptr<Cell>> row_cells(num_rows);
+  for (auto& cell : row_cells) {
+    cell = std::make_unique<Cell>();
+  }
 
-  const int layers = std::ceil(std::log2(num_rows)) - 1;
-
-  for (int word = 0; word < num_rows; ++word) {
-    auto word_cell = std::make_unique<Cell>();
-    dbNet* prev_net = decoder_output_nets[word];
-    if (layers == 0) {
-      // 2-word RAM: single address bit drives output net directly via buffer
-      makeInst(word_cell.get(),
+  const int num_row_bits = addr_nets.size();
+  if (num_row_bits == 1) {
+    // 2-row RAM: the address bit drives each word line through a buffer
+    const vector<dbNet*> lines = {inv_addr_nets[0], addr_nets[0]};
+    for (int row = 0; row < num_rows; ++row) {
+      makeInst(row_cells[row].get(),
                prefix,
-               fmt::format("buf_word{}", word),
+               fmt::format("buf_word{}", row),
                buffer_cell_,
-               {{buffer_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][0]},
-                {buffer_ports_[{PortRoleType::DataOut, 0}], prev_net}});
-    } else {
-      for (int i = 0; i < layers; ++i) {
-        dbNet* input_net = nullptr;
-        if (i == layers - 1) {
-          input_net = addr_nets[word][i + 1];
-        } else {
-          input_net  // NOLINTNEXTLINE(misc-include-cleaner)
-              = makeNet(prefix, fmt::format("layer_in{}_word{}", i, word));
-        }
-        makeInst(word_cell.get(),
-                 prefix,
-                 fmt::format("and_layer{}_word{}", i, word),
-                 and2_cell_,
-                 {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][i]},
-                  {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
-                  {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
-        prev_net = input_net;
+               {{buffer_ports_[{PortRoleType::DataIn, 0}], lines[row]},
+                {buffer_ports_[{PortRoleType::DataOut, 0}],
+                 decoder_output_nets[row]}});
+    }
+  } else {
+    vector<DecoderGate> gates;
+    buildDecoder(prefix,
+                 0,
+                 num_row_bits,
+                 num_rows,
+                 addr_nets,
+                 inv_addr_nets,
+                 decoder_output_nets,
+                 gates);
+
+    // Final decoder gates placed at each row (follows one-hot decoding)
+    // Goes first such that final decoder gate is closeet to word line select AND
+    vector<const DecoderGate*> predecode;
+    for (const DecoderGate& gate : gates) {
+      if (gate.row >= 0) {
+        makeAnd(row_cells[gate.row].get(),
+                prefix,
+                gate.name,
+                gate.inputs,
+                gate.output);
+      } else {
+        predecode.push_back(&gate);
       }
     }
-    decoder_layout->addCell(std::move(word_cell));
+    // Predecode gates, spread evenly
+    const int num_predecode = predecode.size();
+    for (int i = 0; i < num_predecode; ++i) {
+      const int row = i * num_rows / num_predecode;
+      makeAnd(row_cells[row].get(),
+              prefix,
+              predecode[i]->name,
+              predecode[i]->inputs,
+              predecode[i]->output);
+    }
+  }
+
+  for (auto& cell : row_cells) {
+    decoder_layout->addCell(std::move(cell));
   }
   ram_grid_.addLayout(std::move(decoder_layout));
+}
+
+void RamGen::makeAnd(Cell* cell,
+                     const std::string& prefix,
+                     const std::string& name,
+                     const vector<dbNet*>& inputs,
+                     dbNet* output)
+{
+  // Will change once we have an AND3/AND4 implementation
+  makeInst(cell,
+           prefix,
+           name,
+           and2_cell_,
+           {{and2_ports_[{PortRoleType::DataIn, 0}], inputs[0]},
+            {and2_ports_[{PortRoleType::DataIn, 1}], inputs[1]},
+            {and2_ports_[{PortRoleType::DataOut, 0}], output}});
 }
 
 void RamGen::makeBufferColumn(const std::string& prefix,
@@ -1297,9 +1392,10 @@ void RamGen::generate(const int mask_size,
 
   addr_inputs_.resize(total_ports);
   vector<vector<dbNet*>> inv_addr_nets(total_ports);
-  // for column muxing, deocder input nets uses only the upper address bits
+  // for column muxing, the decoder only uses the upper address bits
   // (num_row_bits) to determine row
-  vector<vector<vector<dbNet*>>> decoder_input_nets(total_ports);
+  vector<vector<dbNet*>> row_addr_nets(total_ports);
+  vector<vector<dbNet*>> row_inv_addr_nets(total_ports);
 
   vector<vector<dbNet*>> decoder_output_nets(total_ports);
   vector<vector<dbNet*>> read_select_nets(total_ports);
@@ -1329,21 +1425,9 @@ void RamGen::generate(const int mask_size,
     }
 
     // inputs to decoders
-    decoder_input_nets[p].assign(num_rows, vector<dbNet*>(num_row_bits));
-    for (int row = 0; row < num_rows; ++row) {
-      int row_num = row;
-      // start at right most bit
-      for (int input = 0; input < num_row_bits; ++input) {
-        if (row_num % 2 == 0) {
-          // places inverted address for each input
-          decoder_input_nets[p][row][input]
-              = inv_addr_nets[p][num_word_bits + input];
-        } else {  // puts original input in invert nets
-          decoder_input_nets[p][row][input]
-              = addr_inputs_[p][num_word_bits + input]->getNet();
-        }
-        row_num /= 2;
-      }
+    for (int i = num_word_bits; i < num_inputs; ++i) {
+      row_addr_nets[p].push_back(addr_inputs_[p][i]->getNet());
+      row_inv_addr_nets[p].push_back(inv_addr_nets[p][i]);
     }
 
     // output nets of each port decoder
@@ -1690,7 +1774,8 @@ void RamGen::generate(const int mask_size,
     // decoder column creation
     makeDecoderColumn(fmt::format("decoder_p{}", p),
                       num_rows,
-                      decoder_input_nets[p],
+                      row_addr_nets[p],
+                      row_inv_addr_nets[p],
                       decoder_output_nets[p]);
   }
 
