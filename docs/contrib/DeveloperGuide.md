@@ -314,13 +314,26 @@ dependencies make this vastly more complicated.
 
 ## Code Linting and Formatting
 
-OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
+OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted.
+For local `clang-tidy`, set up Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html).
 
 ```shell
 cmake . -B build  # generate build files
 # typically only run these commands on files you changed.
 clang-tidy -p ./build source_file.cpp
-clang-format -i -style=file:.clang-format source_file.cpp
+```
+
+Use the existing Bazel LLVM formatter to match CI's clang-format 23.1.2, even when the system formatter has a different version.
+From the repository root, check its version:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- --version
+```
+
+Use absolute file paths because Bazel can change the working directory:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- -i "$PWD/source_file.cpp"
 ```
 
 To run `clang-tidy` on all files, you can use the following script that runs

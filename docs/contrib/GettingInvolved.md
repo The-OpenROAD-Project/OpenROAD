@@ -37,6 +37,18 @@ to work with the app and its submodule repos in an efficient way.
 
 Please run clang-format 23.1.2 on all the C++ source files that you change before committing, so local formatting matches CI.
 The `.clang-format` file in the repository root defines the formatting rules.
+The existing Bazel LLVM tool provides this formatter version, independent of the system-installed formatter.
+From the repository root, check its version:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- --version
+```
+
+Format a changed file with an absolute path so the command also works from Bazel's run directory:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- -i "$PWD/path/to/changed.cpp"
+```
 
 Please pay attention to the
 [test directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/test)
