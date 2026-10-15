@@ -90,7 +90,7 @@ bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
   main_state.max_end_count = std::max(
       static_cast<int>(violating_ends.size() * config_.repair_tns_end_percent),
       1);
-  main_state.initial_tns = sta_->totalNegativeSlack(max_);
+  main_state.initial_tns = target_collector_->totalNegativeSlack();
   main_state.prev_tns = main_state.initial_tns;
   main_state.num_viols = violating_ends.size();
   main_state.fix_rate_threshold = inc_fix_rate_threshold_;
@@ -192,10 +192,11 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     const bool log_change_summary = logger_->debugCheck(RSZ, "repair_setup", 3);
     float prev_tns_local = 0.0;
     if (log_change_summary) {
-      prev_tns_local = sta_->totalNegativeSlack(max_);
+      prev_tns_local = target_collector_->totalNegativeSlack();
     }
 
-    sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
+    sta::Path* end_path
+        = target_collector_->findWorstSlackPath(endpoint_state.end);
     const bool changed = repairPath(
         end_path, endpoint_state.end_slack, endpoint_state.force_single_repair);
     if (!changed) {
@@ -243,7 +244,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                                      endpoint_state.prev_end_slack,
                                      endpoint_state.prev_worst_slack);
     if (log_change_summary) {
-      const float new_tns = sta_->totalNegativeSlack(max_);
+      const float new_tns = target_collector_->totalNegativeSlack();
       debugPrint(
           logger_,
           RSZ,
@@ -386,8 +387,8 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
-    sta_->worstSlack(max_, final_wns, final_worst);
-    const float final_tns = sta_->totalNegativeSlack(max_);
+    target_collector_->worstSlack(final_wns, final_worst);
+    const float final_tns = target_collector_->totalNegativeSlack();
     debugPrint(logger_,
                RSZ,
                "repair_setup",
