@@ -54,6 +54,11 @@ build --copt "-Wextra"             --host_copt "-Wextra"
 # external repos stay exempt.
 build --per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
 build --host_per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
+# Opt out locally while iterating: bazelisk build --config=no-werror ...
+# A plain --copt=-Wno-error cannot do it, as per_file_copt lands after copt.
+# Compile actions then differ from CI's, so src/ misses the remote cache.
+build:no-werror --per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Wno-error
+build:no-werror --host_per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Wno-error
 
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
