@@ -10,7 +10,7 @@ on:
 
 jobs:
   Clang-Format:
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     env:
       # Keep the version aligned with auto-format and generated ODB checks.
       CLANG_FORMAT_VERSION: "23.1.2"
