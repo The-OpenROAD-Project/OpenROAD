@@ -23,12 +23,19 @@ namespace gpl {
 
 using utl::GPL;
 
-size_t slackRampAnchorIndex(const size_t net_count)
+size_t slackRampAnchorIndex(const size_t net_count, const float nets_percentage)
 {
-  return std::min(net_count - 1, net_count * kSlackMinPercentile / 100);
+  if (nets_percentage <= 0.0f) {
+    return 0;
+  }
+  // net_count covers nets_percentage % of the constrained nets, so dividing by
+  // it expresses the anchor as a percentage of the whole design instead.
+  const auto anchor
+      = static_cast<size_t>(net_count * kSlackMinPercent / nets_percentage);
+  return std::min(net_count - 1, anchor);
 }
 
-float timingNetWeight(const float net_slack,
+float computeTimingNetWeight(const float net_slack,
                       const float slack_min,
                       const float slack_max,
                       const float net_weight_max)
@@ -170,7 +177,8 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
 
   // worst_slack_nets is sorted by increasing slack, so the ramp runs from the
   // anchor percentile up to the best slack still in the list.
-  const size_t slack_min_index = slackRampAnchorIndex(worst_slack_nets.size());
+  const size_t slack_min_index
+      = slackRampAnchorIndex(worst_slack_nets.size(), nets_percentage_);
   const auto worst_slack
       = rs_->resizeNetSlack(worst_slack_nets.front()).value();
   const auto slack_min
@@ -200,7 +208,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
       auto net_slack = net_slack_opt.value();
       if (net_slack < slack_max) {
         gNet->setTimingWeight(
-            timingNetWeight(net_slack, slack_min, slack_max, net_weight_max_));
+            computeTimingNetWeight(net_slack, slack_min, slack_max, net_weight_max_));
         weighted_net_count++;
       }
       debugPrint(log_,

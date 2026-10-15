@@ -24,16 +24,17 @@ namespace gpl {
 class NesterovBaseCommon;
 class GNet;
 
-// Bottom of the timing weight ramp, as a percentile of the worst-slack net
-// list: an order statistic keeps one outlier from rescaling every other net.
-inline constexpr size_t kSlackMinPercentile = 2;
+// Bottom of the timing weight ramp, as a percentage of all timing-constrained
+// nets: an order statistic keeps one outlier from rescaling every other net.
+inline constexpr double kSlackMinPercent = 0.2;
 
-// net_count must be non-zero.
-size_t slackRampAnchorIndex(size_t net_count);
+// Index into the worst-slack net list, which holds the worst nets_percentage %
+// of the constrained nets sorted by increasing slack. net_count must be > 0.
+size_t slackRampAnchorIndex(size_t net_count, float nets_percentage);
 
 // net_weight_max at or below slack_min, 1.0 at or above slack_max, linear in
 // between.
-float timingNetWeight(float net_slack,
+float computeTimingNetWeight(float net_slack,
                       float slack_min,
                       float slack_max,
                       float net_weight_max);
