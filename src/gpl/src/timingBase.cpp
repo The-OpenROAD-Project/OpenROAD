@@ -16,6 +16,7 @@
 #include "nesterovBase.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
@@ -36,9 +37,9 @@ size_t slackRampAnchorIndex(const size_t net_count, const float nets_percentage)
 }
 
 float computeTimingNetWeight(const float net_slack,
-                      const float slack_min,
-                      const float slack_max,
-                      const float net_weight_max)
+                             const float slack_min,
+                             const float slack_max,
+                             const float net_weight_max)
 {
   if (slack_max <= slack_min) {
     return 1.0f;
@@ -185,6 +186,13 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
       = rs_->resizeNetSlack(worst_slack_nets[slack_min_index]).value();
   const auto slack_max = rs_->resizeNetSlack(worst_slack_nets.back()).value();
 
+  if (sta::fuzzyInf(worst_slack)) {
+    log_->warn(GPL,
+               102,
+               "Timing-driven: no slacks found. Timing-driven mode disabled.");
+    return false;
+  }
+
   log_->info(GPL, 106, "Timing-driven: worst slack {}", worst_slack);
   debugPrint(log_,
              GPL,
@@ -207,8 +215,8 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
       }
       auto net_slack = net_slack_opt.value();
       if (net_slack < slack_max) {
-        gNet->setTimingWeight(
-            computeTimingNetWeight(net_slack, slack_min, slack_max, net_weight_max_));
+        gNet->setTimingWeight(computeTimingNetWeight(
+            net_slack, slack_min, slack_max, net_weight_max_));
         weighted_net_count++;
       }
       debugPrint(log_,

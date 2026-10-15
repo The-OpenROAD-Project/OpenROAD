@@ -68,27 +68,34 @@ TEST(SlackRampAnchorIndex, StaysInRange)
 
 TEST(TimingNetWeight, RampEndpoints)
 {
-  EXPECT_NEAR(computeTimingNetWeight(-1.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
-  EXPECT_NEAR(computeTimingNetWeight(1.0f, -1.0f, 1.0f, 5.0f), 1.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(-1.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(1.0f, -1.0f, 1.0f, 5.0f), 1.0f, kTolerance);
 }
 
 TEST(TimingNetWeight, RampIsLinearBetweenTheEndpoints)
 {
-  EXPECT_NEAR(computeTimingNetWeight(0.0f, -1.0f, 1.0f, 5.0f), 3.0f, kTolerance);
-  EXPECT_NEAR(computeTimingNetWeight(0.5f, -1.0f, 1.0f, 5.0f), 2.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(0.0f, -1.0f, 1.0f, 5.0f), 3.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(0.5f, -1.0f, 1.0f, 5.0f), 2.0f, kTolerance);
 }
 
 // Without the clamp, a design with a long slack tail would weight its worst
 // nets far above the configured max.
 TEST(TimingNetWeight, SaturatesBelowSlackMin)
 {
-  EXPECT_NEAR(computeTimingNetWeight(-2.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
-  EXPECT_NEAR(computeTimingNetWeight(-100.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(-2.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(-100.0f, -1.0f, 1.0f, 5.0f), 5.0f, kTolerance);
 }
 
 TEST(TimingNetWeight, SaturatesAboveSlackMax)
 {
-  EXPECT_NEAR(computeTimingNetWeight(2.0f, -1.0f, 1.0f, 5.0f), 1.0f, kTolerance);
+  EXPECT_NEAR(
+      computeTimingNetWeight(2.0f, -1.0f, 1.0f, 5.0f), 1.0f, kTolerance);
 }
 
 // A flat ramp carries no information to spread weights with.

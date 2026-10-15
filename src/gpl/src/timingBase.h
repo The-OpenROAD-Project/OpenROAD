@@ -35,9 +35,9 @@ size_t slackRampAnchorIndex(size_t net_count, float nets_percentage);
 // net_weight_max at or below slack_min, 1.0 at or above slack_max, linear in
 // between.
 float computeTimingNetWeight(float net_slack,
-                      float slack_min,
-                      float slack_max,
-                      float net_weight_max);
+                             float slack_min,
+                             float slack_max,
+                             float net_weight_max);
 
 class TimingBase
 {
