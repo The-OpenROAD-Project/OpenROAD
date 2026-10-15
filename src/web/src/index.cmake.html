@@ -45,7 +45,16 @@
     <script type="module">
         import * as THREE from 'https://esm.sh/three@0.160.0';
         window.THREE = THREE;
-        window.openroadSkin = await (await fetch('openroad_skin.svg')).text();
+        // Without the skin only the schematic panel is unready.
+        try {
+            const resp = await fetch('openroad_skin.svg');
+            if (!resp.ok) {
+                throw new Error(`${resp.status} ${resp.statusText}`);
+            }
+            window.openroadSkin = await resp.text();
+        } catch (err) {
+            console.error('Could not load the schematic skin:', err);
+        }
         await import('./main.js');
     </script>
 
