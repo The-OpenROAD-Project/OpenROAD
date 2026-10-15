@@ -63,8 +63,8 @@ CMAKE ONLY (deprecated; with Bazel these print a warning and have no effect):
   -cmake-build                                  DEPRECATED: Force the CMake build instead
                                                  of Bazel. Bazel is the supported build
                                                  system and is used by default; CMake
-                                                 support will be removed in a future
-                                                 release.
+                                                 support will be removed on Nov. 1,
+                                                 2026.
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
                                                  Note: use single quote after
                                                  -cmake= and double quotes if
