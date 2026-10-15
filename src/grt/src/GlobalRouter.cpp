@@ -60,6 +60,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
+#include "utl/Validate.h"
 #include "utl/algorithms.h"
 #include "utl/timer.h"
 
@@ -104,7 +105,6 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       rudy_(nullptr),
       heatmap_(nullptr),
       heatmap_rudy_(nullptr),
-      congestion_file_name_(nullptr),
       grouter_cbk_(nullptr),
       is_incremental_(false)
 {
@@ -287,11 +287,11 @@ void GlobalRouter::saveCongestion()
     fastroute_->saveCongestion();
   }
 
-  if (congestion_file_name_ != nullptr && *congestion_file_name_ != '\0') {
+  if (!congestion_file_name_.empty()) {
     odb::dbMarkerCategory* tool_category
         = block_->findMarkerCategory("Global route");
     if (tool_category != nullptr) {
-      tool_category->writeTR(congestion_file_name_);
+      tool_category->writeTR(congestion_file_name_.c_str());
     }
   }
 }
@@ -484,6 +484,39 @@ void GlobalRouter::reportIncrementalCongestion()
                   "Incremental global routing finished with congestion. Check "
                   "the congestion regions in the DRC Viewer.");
   }
+}
+
+// The setters are applied in the order the global_route command used: the
+// engine first (the critical nets percentage goes to the selected engine),
+// and resistance_aware before its nets percentage.
+void GlobalRouter::globalRoute(const GlobalRouteOptions& options)
+{
+  applyOptions(options);
+  globalRoute(options.save_guides);
+}
+
+void GlobalRouter::applyOptions(const GlobalRouteOptions& options)
+{
+  utl::validate(options, logger_);
+  if (options.use_cugr) {
+    setUseCUGR(*options.use_cugr);
+  }
+  setVerbose(options.verbose);
+  setGridOrigin(options.grid_origin[0], options.grid_origin[1]);
+  setCongestionIterations(options.congestion_iterations);
+  setCongestionReportFile(options.congestion_report_file.c_str());
+  setCongestionReportIterStep(options.congestion_report_iter_step);
+  if (options.critical_nets_percentage) {
+    setCriticalNetsPercentage(*options.critical_nets_percentage);
+  }
+  setSkipLargeFanoutNets(options.skip_large_fanout_nets);
+  setAllowCongestion(options.allow_congestion);
+  setResistanceAware(options.resistance_aware);
+  if (options.res_aware_nets_percentage) {
+    setResAwareNetsPercentage(*options.res_aware_nets_percentage);
+  }
+  setSnapshotBatchedWidth(options.snapshot_batched_width);
+  setInfiniteCapacity(options.infinite_capacity);
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -2786,7 +2819,7 @@ void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
 
 void GlobalRouter::setCongestionReportFile(const char* file_name)
 {
-  congestion_file_name_ = file_name;
+  congestion_file_name_ = file_name != nullptr ? file_name : "";
 }
 
 void GlobalRouter::setGridOrigin(int x, int y)
@@ -2917,8 +2950,8 @@ void GlobalRouter::configFastRoute()
   fastroute_->setResistanceAware(resistance_aware_);
   fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
 
-  if (congestion_file_name_ != nullptr) {
-    fastroute_->setCongestionReportFile(congestion_file_name_);
+  if (!congestion_file_name_.empty()) {
+    fastroute_->setCongestionReportFile(congestion_file_name_.c_str());
   }
 
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {

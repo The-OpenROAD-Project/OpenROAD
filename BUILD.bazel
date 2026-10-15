@@ -548,6 +548,14 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
+filegroup(
+    name = "options_swig-py",
+    srcs = [
+        "src/options-py.i",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
 # ---------------------------------------------------------------------------
 # Packaging aliases
 #

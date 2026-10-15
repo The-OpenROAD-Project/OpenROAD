@@ -7,6 +7,7 @@ swig_lib(NAME      rsz
          NAMESPACE rsz
          I_FILE    Resizer.i
          SWIG_INCLUDES ${OPENSTA_HOME}
+                       ${PROJECT_SOURCE_DIR}/src
          SCRIPTS   Resizer.tcl
 )
 
@@ -15,6 +16,7 @@ add_library(rsz_lib
     PreChecks.cc
     RecoverPower.cc
     RepairDesign.cc
+    RepairDesignOptions.cc
     RepairHold.cc
     Rebuffer.cc
     policy/SetupLegacyMtPolicy.cc

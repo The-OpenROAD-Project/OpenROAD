@@ -11,7 +11,7 @@ design = helpers.make_design(tech)
 design.readDef("./simple05.def")
 
 options = gpl.PlaceOptions()
-options.initialPlaceMaxIter = 0
+options.initial.max_iter = 0
 design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("simple05.def")

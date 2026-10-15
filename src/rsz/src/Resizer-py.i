@@ -4,12 +4,14 @@
 %{
 #include <memory>
 
+#include "rsz/RepairDesignOptions.hh"
 #include "rsz/Resizer.hh"
 
 using namespace rsz;
 %}
 
 %include "../../Exception-py.i"
+%include "../../options-py.i"
 %include <typemaps.i>
 %include <std_string.i>
 %include <std_vector.i>
@@ -51,6 +53,9 @@ using namespace rsz;
 %ignore rsz::Resizer::removeBuffers;
 
 %apply float& OUTPUT { sta::Delay& delay, sta::Slew& slew };
+
+%include "rsz/RepairDesignOptions.hh"
+%options_struct(rsz::RepairDesignOptions, RepairDesignOptions)
 
 %include "rsz/Resizer.hh"
 

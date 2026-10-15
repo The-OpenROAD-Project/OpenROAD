@@ -43,6 +43,11 @@ add_library(utl_lib
   src/ServiceRegistry.cpp
   src/SuppressStdout.cpp
   src/Logger.cpp
+  src/Json.cpp
+  src/OptionsArgs.cpp
+  src/OptionsRegistry.cpp
+  src/OptionsTcl.cpp
+  src/Validate.cpp
   src/Progress.cpp
   src/CommandLineProgress.cpp
   src/ThreadPool.cpp
@@ -70,7 +75,6 @@ target_link_libraries(utl_lib
     spdlog::spdlog
     ${TCL_LIBRARY}
     ${Boost_LIBRARIES}
-  PRIVATE
     Boost::headers
 )
 

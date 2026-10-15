@@ -28,7 +28,7 @@ namespace {
 // escalating until it pushes the wirelength/density gradients to Inf/NaN -
 // the same genuine numerical divergence (GPL-305/306) a pathological
 // incremental-placement input can hit in phase 1. This mirrors
-// Replace::doIncrementalPlace's own locked_options.nesterovPlaceMaxIter cap
+// Replace::doIncrementalPlace's own locked_options.nesterov.max_iter cap
 // (replace.cpp:196), just uncapped here so the test does not depend on
 // exactly how many iterations the escalation takes to overflow a float.
 class NesterovDivergenceRecoveryTest : public ::testing::Test
@@ -93,8 +93,9 @@ class NesterovDivergenceRecoveryTest : public ::testing::Test
 
     PlaceOptions options;
     options.density = 0.99f;
-    options.overflow = 1e-6f;  // unreachable given the clustered layout above
-    options.nesterovPlaceMaxIter = 20000;
+    // Unreachable given the clustered layout above.
+    options.nesterov.target_overflow = 1e-6f;
+    options.nesterov.max_iter = 20000;
 
     const PlacerBaseVars pb_vars(options);
     pbc_ = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);

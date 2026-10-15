@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2020-2025, The OpenROAD Authors
 
+%include "../../options.i"
+
 %{
 #include "ord/OpenRoad.hh"
 #include "gpl/Replace.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 #include "utl/cpu_topology.h"
-#include "utl/options.h"
 
 namespace ord {
 OpenRoad*
@@ -17,110 +18,12 @@ gpl::Replace*
 getReplace();
 }
 
-static gpl::PlaceOptions getOptions(
-    const std::map<std::string, std::string>& keys,
-    const std::map<std::string, std::string>& flags)
-{
-  using utl::checkFlag;
-  using utl::checkKey;
-
-  gpl::PlaceOptions options;
-  checkFlag(flags, "-timing_driven", options.timingDrivenMode);
-  checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
-  checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
-  checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
-  checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
-  checkFlag(
-      flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
-  checkFlag(
-      flags, "-disable_pin_density_adjust", options.disablePinDensityAdjust);
-  checkFlag(
-      flags, "-enable_routing_congestion", options.enable_routing_congestion);
-  checkFlag(flags, "-force_center_initial_place", options.forceCenterInitialPlace);
-  checkFlag(flags, "-skip_initial_place", [&](bool) {
-    options.initialPlaceMaxIter = 0;
-  });
-  checkKey(keys, "-initial_place_max_iter", options.initialPlaceMaxIter);
-  checkKey(keys, "-initial_place_max_fanout", options.initialPlaceMaxFanout);
-  checkKey(
-      keys, "-routability_check_overflow", options.routabilityCheckOverflow);
-  checkKey(
-      keys,
-      "-routability_snapshot_overflow",
-      options.routabilitySnapshotOverflow);
-  checkKey(keys, "-routability_max_density", options.routabilityMaxDensity);
-  checkKey(
-      keys, "-routability_target_rc_metric", options.routabilityTargetRcMetric);
-  checkKey(keys,
-           "-routability_inflation_ratio_coef",
-           options.routabilityInflationRatioCoef);
-  checkKey(keys,
-           "-routability_max_inflation_ratio",
-           options.routabilityMaxInflationRatio);
-  checkKey(keys,
-           "-routability_min_congestion_for_inflation",
-           options.routabilityMinCongestionForInflation);
-  checkKey(keys,
-           "-routability_max_inflation_total",
-           options.routabilityMaxInflationTotal);
-  checkKey(
-      keys, "-routability_net_weight_max", options.routabilityNetWeightMax);
-  checkKey(keys,
-           "-routability_congested_nets_percentage",
-           options.routabilityCongestedNetsPercentage);
-  checkKey(keys, "-pad_left", options.padLeft);
-  checkKey(keys, "-pad_right", options.padRight);
-  checkKey(keys,
-           "-routability_rc_coefficients",
-           std::tie(options.routabilityRcK1,
-                    options.routabilityRcK2,
-                    options.routabilityRcK3,
-                    options.routabilityRcK4));
-  checkKey(keys,
-           "-timing_driven_net_reweight_overflow",
-           options.timingNetWeightOverflows);
-  checkKey(keys, "-overflow", options.overflow);
-  checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
-  checkKey(
-      keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
-  checkKey(keys,
-           "-virtual_cts_max_skew_fraction",
-           options.virtualCtsMaxSkewFraction);
-  checkKey(keys, "-timing_driven_nets_percentage", options.timingDrivenNetsPercentage);
-  checkKey(keys, "-min_phi_coef", options.minPhiCoef);
-  checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
-  checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
-  checkKey(keys, "-init_wirelength_coef", options.initWireLengthCoef);
-  checkKey(keys, "-reference_hpwl", options.referenceHpwl);
-  checkKey(keys,
-           "-timing_driven_repair_tns_end_percent",
-           options.timingDrivenRepairTnsEndPercent);
-  checkKey(keys, "-random_seed", options.initialPlacePerturbationSeed);
-  checkKey(keys, "-perturb_dist", options.initialPlacePerturbationDist);
-
-  if (auto it = keys.find("-density"); it != keys.end()) {
-    if (it->second == "uniform") {
-      options.uniformTargetDensityMode = true;
-    } else {
-      options.density = std::stof(it->second);
-    }
-  }
-  if (auto it = keys.find("-bin_grid_count"); it != keys.end()) {
-    options.binGridCntX = std::stoi(it->second);
-    options.binGridCntY = options.binGridCntX;
-  }
-  checkFlag(flags, "-skip_io", [&](bool) { options.skipIo(); });
-  checkFlag(flags, "-place_ios", options.placeIosMode);
-  return options;
-}
-
 using ord::getOpenRoad;
 using ord::getReplace;
 using gpl::Replace;
 
 %}
 
-%include "../../options.i"
 %import <std_vector.i>
 %import "dbtypes.i"
 %import "dbenums.i"
@@ -170,11 +73,22 @@ static int placementThreads()
   return cores;
 }
 
+// The switches of global_placement are generated from PlaceOptions and
+// parsed by optionsFromArgs; the Tcl proc keeps only the switches that are
+// about how the command runs (-incremental, -skip_nesterov_place).
 void 
-replace_initial_place_cmd(const std::map<std::string, std::string>& keys,
-                          const std::map<std::string, std::string>& flags)
+replace_initial_place_cmd(Tcl_Obj* args,
+                          bool skip_nesterov_place,
+                          Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
+  if (options.place_ios && skip_nesterov_place) {
+    getOpenRoad()->getLogger()->error(
+        utl::GPL,
+        182,
+        "-place_ios cannot be used with -skip_nesterov_place placement.");
+  }
 
   Replace* replace = getReplace();
   int threads = placementThreads();
@@ -182,10 +96,10 @@ replace_initial_place_cmd(const std::map<std::string, std::string>& keys,
 }
 
 void 
-replace_nesterov_place_cmd(const std::map<std::string, std::string>& keys,
-                           const std::map<std::string, std::string>& flags)
+replace_nesterov_place_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = placementThreads();
   replace->doNesterovPlace(threads, options);
@@ -203,10 +117,14 @@ replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
 
 
 void
-replace_incremental_place_cmd(const std::map<std::string, std::string>& keys,
-                              const std::map<std::string, std::string>& flags)
+replace_incremental_place_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
+  if (options.place_ios) {
+    getOpenRoad()->getLogger()->error(
+        utl::GPL, 170, "-place_ios cannot be used with -incremental placement.");
+  }
   Replace* replace = getReplace();
   int threads = placementThreads();
   replace->doIncrementalPlace(threads, options);
@@ -214,11 +132,10 @@ replace_incremental_place_cmd(const std::map<std::string, std::string>& keys,
 
 
 float
-get_global_placement_uniform_density_cmd(
-  const std::map<std::string, std::string>& keys,
-  const std::map<std::string, std::string>& flags)
+get_global_placement_uniform_density_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = placementThreads();
   return replace->getUniformTargetDensity(options, threads);
@@ -258,11 +175,10 @@ set_debug_cmd(int pause_iterations,
 }
 
 float
-estimate_target_density_cmd(
-  const std::map<std::string, std::string>& keys,
-  const std::map<std::string, std::string>& flags)
+estimate_target_density_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
 

@@ -1,0 +1,214 @@
+global_placement [-skip_nesterov_place] [-incremental] [-options dict]
+   [-density density] [-uniform_density] [-bin_grid_count_x bin_grid_count_x]
+   [-bin_grid_count_y bin_grid_count_y] [-pad_left pad_left]
+   [-pad_right pad_right] [-skip_io] [-place_ios] [-no_pin_density_adjust]
+   [-routing_congestion] [-initial.max_iter max_iter]
+   [-initial.min_diff_length min_diff_length]
+   [-initial.max_solver_iter max_solver_iter] [-initial.max_fanout max_fanout]
+   [-initial.net_weight_scale net_weight_scale] [-initial.force_center]
+   [-initial.perturbation_seed perturbation_seed]
+   [-initial.perturbation_dist perturbation_dist] [-nesterov.max_iter max_iter]
+   [-nesterov.target_overflow target_overflow]
+   [-nesterov.init_density_penalty init_density_penalty]
+   [-nesterov.init_wirelength_coef init_wirelength_coef]
+   [-nesterov.min_phi_coef min_phi_coef] [-nesterov.max_phi_coef max_phi_coef]
+   [-nesterov.reference_hpwl reference_hpwl] [-nesterov.no_revert_if_diverge]
+   [-timing.enabled] [-timing.reweight_overflows reweight_overflows]
+   [-timing.net_weight_max net_weight_max]
+   [-timing.nets_percentage nets_percentage]
+   [-timing.keep_resize_below_overflow keep_resize_below_overflow]
+   [-timing.repair_timing]
+   [-timing.repair_tns_end_percent repair_tns_end_percent]
+   [-timing.repair_design.max_wire_length max_wire_length]
+   [-timing.repair_design.slew_margin slew_margin]
+   [-timing.repair_design.cap_margin cap_margin]
+   [-timing.repair_design.max_utilization max_utilization]
+   [-timing.repair_design.pre_placement]
+   [-timing.repair_design.match_cell_footprint] [-timing.repair_design.reroute]
+   [-timing.repair_design.verbose] [-virtual_cts.enabled]
+   [-virtual_cts.max_skew_fraction max_skew_fraction] [-routability.enabled]
+   [-routability.no_use_rudy] [-routability.check_overflow check_overflow]
+   [-routability.snapshot_overflow snapshot_overflow]
+   [-routability.max_density max_density]
+   [-routability.target_rc_metric target_rc_metric]
+   [-routability.inflation_ratio_coef inflation_ratio_coef]
+   [-routability.max_inflation_ratio max_inflation_ratio]
+   [-routability.min_congestion_for_inflation min_congestion_for_inflation]
+   [-routability.max_inflation_total max_inflation_total]
+   [-routability.net_weight_max net_weight_max]
+   [-routability.congested_nets_percentage congested_nets_percentage]
+   [-routability.rc_coefficients rc_coefficients]
+   [-routability.global_route.no_allow_congestion]
+   [-routability.global_route.congestion_iterations congestion_iterations]
+   [-routability.global_route.congestion_report_iter_step congestion_report_iter_step]
+   [-routability.global_route.congestion_report_file congestion_report_file]
+   [-routability.global_route.grid_origin grid_origin]
+   [-routability.global_route.critical_nets_percentage critical_nets_percentage]
+   [-routability.global_route.res_aware_nets_percentage res_aware_nets_percentage]
+   [-routability.global_route.resistance_aware]
+   [-routability.global_route.snapshot_batched_width snapshot_batched_width]
+   [-routability.global_route.skip_large_fanout_nets skip_large_fanout_nets]
+   [-routability.global_route.infinite_capacity]
+   [-routability.global_route.verbose] [-routability.global_route.use_cugr]
+   [-routability.global_route.save_guides] 
+---- describe
+-options                                               dict  The options as a nested dict of the fields below, or dotted keys (timing.nets_percentage); a switch after it overrides it.
+-density                                               float (in [0, 1]) = 0.7  Target density; 0.7 is 70%.
+-uniform_density                                       flag  Use the minimum feasible target density instead of density.
+-bin_grid_count_x                                      int (>= 0) = 0  Bin grid columns; 0 lets the placer choose. Powers of two from 64 work best.
+-bin_grid_count_y                                      int (>= 0) = 0  Bin grid rows; 0 lets the placer choose.
+-pad_left                                              int (>= 0) = 0  Left padding in sites.
+-pad_right                                             int (>= 0) = 0  Right padding in sites.
+-skip_io                                               flag  Ignore the IO pins when computing wirelength.
+-place_ios                                             flag  Place the movable IO pins concurrently with the cells, along the die perimeter. Not supported on a rectilinear die.
+-no_pin_density_adjust                                 flag  Grow the area of pin-dense instances.
+-routing_congestion                                    flag  Run the global router after placement, for the routing congestion heatmap.
+-initial.max_iter                                      int (>= 0) = 20  Iterations of the quadratic (BiCGSTAB) initial placement; 0 skips it. Initial placement improves HPWL by ~5% on large designs.
+-initial.min_diff_length                               int (> 0) = 1500  Minimum length change that counts as progress.
+-initial.max_solver_iter                               int (> 0) = 100  Iterations of the linear solver per placement iteration.
+-initial.max_fanout                                    int (> 0) = 200  Nets with more pins are ignored.
+-initial.net_weight_scale                              float (> 0) = 800  Scale of the net weights.
+-initial.force_center                                  flag  Start from the core (or region) center even when the instances already have locations.
+-initial.perturbation_seed                             int (>= 0) = 1  Seed of the random perturbation of the initial locations.
+-initial.perturbation_dist                             float = -1  Distance of the random perturbation in DBU; -1 for the internal default.
+-nesterov.max_iter                                     int (> 0) = 5000  Maximum Nesterov iterations.
+-nesterov.target_overflow                              float (in [0, 1]) = 0.1  Overflow at which the placement stops.
+-nesterov.init_density_penalty                         float (> 0) = 8e-05  Initial density penalty.
+-nesterov.init_wirelength_coef                         float (> 0) = 0.25  Initial wirelength coefficient.
+-nesterov.min_phi_coef                                 float (> 0) = 0.95  Lower bound of the step scaling (pcof_min); 0.95-1.05 works well.
+-nesterov.max_phi_coef                                 float (> 0) = 1.05  Upper bound of the step scaling (pcof_max); 1.00-1.20 works well.
+-nesterov.reference_hpwl                               float (>= 0) = 0  Wirelength change the density penalty controller measures against, in DBU; 0 derives it from the design.
+-nesterov.no_revert_if_diverge                         flag  Keep snapshots and revert to the last one when the placement diverges.
+-timing.enabled                                        flag  Reweight the nets with the worst slack, found by a virtual repair_design.
+-timing.reweight_overflows                             list of int (> 0) = {64 20}  Overflows at which the slacks are recomputed and the nets reweighted; fewer values cost less runtime.
+-timing.net_weight_max                                 float (> 0) = 5  Weight of the net with the worst slack; the weight falls to 1 at nets_percentage.
+-timing.nets_percentage                                float (in [0, 100]) = 10  Share of the nets, from the worst slack, that are reweighted.
+-timing.keep_resize_below_overflow                     float (in [0, 1]) = 1  Below this overflow the resizer's changes are kept (non-virtual repair_design).
+-timing.repair_timing                                  flag  Also run a conservative repair_timing when finding the slacks.
+-timing.repair_tns_end_percent                         float (in [0, 100]) = 1  TNS end percent of that repair_timing.
+-timing.repair_design.max_wire_length                  float, distance (>= 0) = 0  Maximum wire length; 0 picks the length that minimizes the wire delay for the set_wire_rc values.
+-timing.repair_design.slew_margin                      float (in [0, 100]) = 0  Slew margin in percent, to over-repair for the difference between estimated and routed parasitics.
+-timing.repair_design.cap_margin                       float (in [0, 100]) = 0  Capacitance margin in percent.
+-timing.repair_design.max_utilization                  float (in [0, 100]) = none  Percentage of the core area that may be used.
+-timing.repair_design.pre_placement                    flag  Run an initial sizing and buffering round before placement.
+-timing.repair_design.match_cell_footprint             flag  Obey the Liberty cell footprint when swapping gates.
+-timing.repair_design.reroute                          flag  Resistance-aware rerouting of nets with slew violations after global routing (experimental).
+-timing.repair_design.verbose                          flag  Report the repair progress.
+-virtual_cts.enabled                                   flag  Model the clock insertion delay per sink with a lightweight clock tree before each timing-driven iteration.
+-virtual_cts.max_skew_fraction                         float (in [0, 1]) = 0.1  Maximum clock insertion delay as a fraction of the clock period.
+-routability.enabled                                   flag  Inflate the cells in congested tiles until the target RC metric is met.
+-routability.no_use_rudy                               flag  Estimate congestion with RUDY; otherwise run the global router (global_route below).
+-routability.check_overflow                            float (in [0, 1]) = 0.3  Overflow below which congestion is checked.
+-routability.snapshot_overflow                         float (in [0, 1]) = 0.6  Overflow at which the placement is saved for a revert.
+-routability.max_density                               float (in [0, 1]) = 0.99  Maximum target density inflation may raise it to.
+-routability.target_rc_metric                          float (> 0) = 1.01  Routing congestion metric to reach; raise it when routability iterations take too long.
+-routability.inflation_ratio_coef                      float (> 0) = 2  Coefficient of the inflation ratio.
+-routability.max_inflation_ratio                       float (> 0) = 3  Maximum inflation of one cell.
+-routability.min_congestion_for_inflation              float (>= 0) = 0.95  Minimum tile congestion for its cells to be inflated.
+-routability.max_inflation_total                       float (> 0) = 0.3  Ceiling on the area inflation may add, as a fraction of the movable area.
+-routability.net_weight_max                            float (> 0) = 1  Wirelength weight of the nets that put the most wire into congested tiles; 1 disables it.
+-routability.congested_nets_percentage                 float (in [0, 100]) = 1  Share of those nets that is weighted.
+-routability.rc_coefficients                           list of 4 float (>= 0) = {1 1 0 0}  Coefficients {k1 k2 k3 k4} of the RC metric.
+-routability.global_route.no_allow_congestion          flag  Finish with congestion left instead of failing.
+-routability.global_route.congestion_iterations        int (>= 0) = 0  Rip-up and reroute iterations to remove congestion; CUGR saturates around 5.
+-routability.global_route.congestion_report_iter_step  int (>= 0) = 0  Iterations between congestion reports; 0 for none.
+-routability.global_route.congestion_report_file       string =   Congestion report file for the DRC viewer; empty for none.
+-routability.global_route.grid_origin                  list of 2 int = {0 0}  Origin {x y} of the routing grid in DBU.
+-routability.global_route.critical_nets_percentage     float (in [0, 100]) = 0  Share of the nets with the worst slack that get preference during congestion iterations; unset keeps the router's current setting.
+-routability.global_route.res_aware_nets_percentage    float (in [0, 100]) = none  Share of the nets routed resistance-aware; needs resistance_aware. Unset keeps the router's default.
+-routability.global_route.resistance_aware             flag  Resistance-aware layer assignment and 3D routing (experimental).
+-routability.global_route.snapshot_batched_width       int (>= 0) = 0  Batches per wave of snapshot-batched routing; 0 for the non-batched behavior (research use).
+-routability.global_route.skip_large_fanout_nets       int (>= 0) = 2147483647  Nets with more pins than this are not routed.
+-routability.global_route.infinite_capacity            flag  Unlimited gcell capacity, for testing.
+-routability.global_route.verbose                      flag  Report the full routing log.
+-routability.global_route.use_cugr                     flag  Route with CUGR instead of FastRoute; unset keeps the engine selected earlier (not ready for production).
+-routability.global_route.save_guides                  flag  Write the routes to the database as guides.
+---- markdown
+| Switch Name | Type | Default | Description |
+| ----- | ----- | ----- | ----- |
+| `-options` | dict |  | The options as a nested dict of the fields below, or dotted keys (timing.nets_percentage); a switch after it overrides it. |
+| `-density` | float (in [0, 1]) | `0.7` | Target density; 0.7 is 70%. |
+| `-uniform_density` | flag |  | Use the minimum feasible target density instead of density. |
+| `-bin_grid_count_x` | int (>= 0) | `0` | Bin grid columns; 0 lets the placer choose. Powers of two from 64 work best. |
+| `-bin_grid_count_y` | int (>= 0) | `0` | Bin grid rows; 0 lets the placer choose. |
+| `-pad_left` | int (>= 0) | `0` | Left padding in sites. |
+| `-pad_right` | int (>= 0) | `0` | Right padding in sites. |
+| `-skip_io` | flag |  | Ignore the IO pins when computing wirelength. |
+| `-place_ios` | flag |  | Place the movable IO pins concurrently with the cells, along the die perimeter. Not supported on a rectilinear die. |
+| `-no_pin_density_adjust` | flag |  | Grow the area of pin-dense instances. |
+| `-routing_congestion` | flag |  | Run the global router after placement, for the routing congestion heatmap. |
+| `-initial.max_iter` | int (>= 0) | `20` | Iterations of the quadratic (BiCGSTAB) initial placement; 0 skips it. Initial placement improves HPWL by ~5% on large designs. |
+| `-initial.min_diff_length` | int (> 0) | `1500` | Minimum length change that counts as progress. |
+| `-initial.max_solver_iter` | int (> 0) | `100` | Iterations of the linear solver per placement iteration. |
+| `-initial.max_fanout` | int (> 0) | `200` | Nets with more pins are ignored. |
+| `-initial.net_weight_scale` | float (> 0) | `800` | Scale of the net weights. |
+| `-initial.force_center` | flag |  | Start from the core (or region) center even when the instances already have locations. |
+| `-initial.perturbation_seed` | int (>= 0) | `1` | Seed of the random perturbation of the initial locations. |
+| `-initial.perturbation_dist` | float | `-1` | Distance of the random perturbation in DBU; -1 for the internal default. |
+| `-nesterov.max_iter` | int (> 0) | `5000` | Maximum Nesterov iterations. |
+| `-nesterov.target_overflow` | float (in [0, 1]) | `0.1` | Overflow at which the placement stops. |
+| `-nesterov.init_density_penalty` | float (> 0) | `8e-05` | Initial density penalty. |
+| `-nesterov.init_wirelength_coef` | float (> 0) | `0.25` | Initial wirelength coefficient. |
+| `-nesterov.min_phi_coef` | float (> 0) | `0.95` | Lower bound of the step scaling (pcof_min); 0.95-1.05 works well. |
+| `-nesterov.max_phi_coef` | float (> 0) | `1.05` | Upper bound of the step scaling (pcof_max); 1.00-1.20 works well. |
+| `-nesterov.reference_hpwl` | float (>= 0) | `0` | Wirelength change the density penalty controller measures against, in DBU; 0 derives it from the design. |
+| `-nesterov.no_revert_if_diverge` | flag |  | Keep snapshots and revert to the last one when the placement diverges. |
+| `-timing.enabled` | flag |  | Reweight the nets with the worst slack, found by a virtual repair_design. |
+| `-timing.reweight_overflows` | list of int (> 0) | `{64 20}` | Overflows at which the slacks are recomputed and the nets reweighted; fewer values cost less runtime. |
+| `-timing.net_weight_max` | float (> 0) | `5` | Weight of the net with the worst slack; the weight falls to 1 at nets_percentage. |
+| `-timing.nets_percentage` | float (in [0, 100]) | `10` | Share of the nets, from the worst slack, that are reweighted. |
+| `-timing.keep_resize_below_overflow` | float (in [0, 1]) | `1` | Below this overflow the resizer's changes are kept (non-virtual repair_design). |
+| `-timing.repair_timing` | flag |  | Also run a conservative repair_timing when finding the slacks. |
+| `-timing.repair_tns_end_percent` | float (in [0, 100]) | `1` | TNS end percent of that repair_timing. |
+| `-timing.repair_design.max_wire_length` | float, distance (>= 0) | `0` | Maximum wire length; 0 picks the length that minimizes the wire delay for the set_wire_rc values. |
+| `-timing.repair_design.slew_margin` | float (in [0, 100]) | `0` | Slew margin in percent, to over-repair for the difference between estimated and routed parasitics. |
+| `-timing.repair_design.cap_margin` | float (in [0, 100]) | `0` | Capacitance margin in percent. |
+| `-timing.repair_design.max_utilization` | float (in [0, 100]) | `none` | Percentage of the core area that may be used. |
+| `-timing.repair_design.pre_placement` | flag |  | Run an initial sizing and buffering round before placement. |
+| `-timing.repair_design.match_cell_footprint` | flag |  | Obey the Liberty cell footprint when swapping gates. |
+| `-timing.repair_design.reroute` | flag |  | Resistance-aware rerouting of nets with slew violations after global routing (experimental). |
+| `-timing.repair_design.verbose` | flag |  | Report the repair progress. |
+| `-virtual_cts.enabled` | flag |  | Model the clock insertion delay per sink with a lightweight clock tree before each timing-driven iteration. |
+| `-virtual_cts.max_skew_fraction` | float (in [0, 1]) | `0.1` | Maximum clock insertion delay as a fraction of the clock period. |
+| `-routability.enabled` | flag |  | Inflate the cells in congested tiles until the target RC metric is met. |
+| `-routability.no_use_rudy` | flag |  | Estimate congestion with RUDY; otherwise run the global router (global_route below). |
+| `-routability.check_overflow` | float (in [0, 1]) | `0.3` | Overflow below which congestion is checked. |
+| `-routability.snapshot_overflow` | float (in [0, 1]) | `0.6` | Overflow at which the placement is saved for a revert. |
+| `-routability.max_density` | float (in [0, 1]) | `0.99` | Maximum target density inflation may raise it to. |
+| `-routability.target_rc_metric` | float (> 0) | `1.01` | Routing congestion metric to reach; raise it when routability iterations take too long. |
+| `-routability.inflation_ratio_coef` | float (> 0) | `2` | Coefficient of the inflation ratio. |
+| `-routability.max_inflation_ratio` | float (> 0) | `3` | Maximum inflation of one cell. |
+| `-routability.min_congestion_for_inflation` | float (>= 0) | `0.95` | Minimum tile congestion for its cells to be inflated. |
+| `-routability.max_inflation_total` | float (> 0) | `0.3` | Ceiling on the area inflation may add, as a fraction of the movable area. |
+| `-routability.net_weight_max` | float (> 0) | `1` | Wirelength weight of the nets that put the most wire into congested tiles; 1 disables it. |
+| `-routability.congested_nets_percentage` | float (in [0, 100]) | `1` | Share of those nets that is weighted. |
+| `-routability.rc_coefficients` | list of 4 float (>= 0) | `{1 1 0 0}` | Coefficients {k1 k2 k3 k4} of the RC metric. |
+| `-routability.global_route.no_allow_congestion` | flag |  | Finish with congestion left instead of failing. |
+| `-routability.global_route.congestion_iterations` | int (>= 0) | `0` | Rip-up and reroute iterations to remove congestion; CUGR saturates around 5. |
+| `-routability.global_route.congestion_report_iter_step` | int (>= 0) | `0` | Iterations between congestion reports; 0 for none. |
+| `-routability.global_route.congestion_report_file` | string | `` | Congestion report file for the DRC viewer; empty for none. |
+| `-routability.global_route.grid_origin` | list of 2 int | `{0 0}` | Origin {x y} of the routing grid in DBU. |
+| `-routability.global_route.critical_nets_percentage` | float (in [0, 100]) | `0` | Share of the nets with the worst slack that get preference during congestion iterations; unset keeps the router's current setting. |
+| `-routability.global_route.res_aware_nets_percentage` | float (in [0, 100]) | `none` | Share of the nets routed resistance-aware; needs resistance_aware. Unset keeps the router's default. |
+| `-routability.global_route.resistance_aware` | flag |  | Resistance-aware layer assignment and 3D routing (experimental). |
+| `-routability.global_route.snapshot_batched_width` | int (>= 0) | `0` | Batches per wave of snapshot-batched routing; 0 for the non-batched behavior (research use). |
+| `-routability.global_route.skip_large_fanout_nets` | int (>= 0) | `2147483647` | Nets with more pins than this are not routed. |
+| `-routability.global_route.infinite_capacity` | flag |  | Unlimited gcell capacity, for testing. |
+| `-routability.global_route.verbose` | flag |  | Report the full routing log. |
+| `-routability.global_route.use_cugr` | flag |  | Route with CUGR instead of FastRoute; unset keeps the engine selected earlier (not ready for production). |
+| `-routability.global_route.save_guides` | flag |  | Write the routes to the database as guides. |
+---- report
+allow_congestion             false
+congestion_iterations        10 *
+congestion_report_iter_step  0
+congestion_report_file       
+grid_origin                  {5 5} *
+critical_nets_percentage     none
+res_aware_nets_percentage    none
+resistance_aware             false
+snapshot_batched_width       0
+skip_large_fanout_nets       2147483647
+infinite_capacity            false
+verbose                      false
+use_cugr                     true *
+save_guides                  true

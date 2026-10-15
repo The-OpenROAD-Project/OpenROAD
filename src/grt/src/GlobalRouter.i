@@ -20,6 +20,7 @@ using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
+%include "../../options.i"
 
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
@@ -210,12 +211,33 @@ void end_incremental()
   getGlobalRouter()->endIncremental(true);
 }
 
+// The switches of global_route are generated from GlobalRouteOptions and
+// parsed by optionsFromArgs; the Tcl proc keeps -guide_file and the
+// incremental bracket.
 void
-global_route()
+global_route_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
+  grt::GlobalRouteOptions route_options
+      = optionsFromArgs<grt::GlobalRouteOptions>(interp, args, "global_route");
+  // The command selects the engine on every call, as it always has; the
+  // C++ API keeps the current engine when use_cugr is unset.
+  if (!route_options.use_cugr) {
+    route_options.use_cugr = false;
+  }
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
   getGlobalRouter()->setNumThreads(num_threads);
-  getGlobalRouter()->globalRoute(true);
+  getGlobalRouter()->globalRoute(route_options);
+}
+
+// The options of an incremental global_route bracket; the engine selected
+// by the initial global_route is kept.
+void
+apply_route_options_cmd(Tcl_Obj* args, Tcl_Interp* interp)
+{
+  grt::GlobalRouteOptions route_options
+      = optionsFromArgs<grt::GlobalRouteOptions>(interp, args, "global_route");
+  route_options.use_cugr.reset();
+  getGlobalRouter()->applyOptions(route_options);
 }
 
 std::vector<int>

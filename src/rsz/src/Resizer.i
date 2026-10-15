@@ -100,6 +100,7 @@ using rsz::Resizer;
 ////////////////////////////////////////////////////////////////
 
 %include "../../Exception.i"
+%include "../../options.i"
 %include "std_string.i"
 
 %inline %{
@@ -302,24 +303,15 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
   resizer->repairTieFanout(tie_port, separation, verbose);
 }
 
+// The switches of repair_design are generated from RepairDesignOptions and
+// parsed by optionsFromArgs.
 void
-repair_design_cmd(double max_length,
-                  double slew_margin,
-                  double cap_margin,
-                  bool pre_placement,
-                  bool match_cell_footprint,
-                  bool reroute,
-                  bool verbose)
+repair_design_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length,
-                        slew_margin,
-                        cap_margin,
-                        pre_placement,
-                        match_cell_footprint,
-                        reroute,
-                        verbose);
+  resizer->repairDesign(
+      optionsFromArgs<rsz::RepairDesignOptions>(interp, args, "repair_design"));
 }
 
 int

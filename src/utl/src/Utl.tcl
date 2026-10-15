@@ -85,6 +85,40 @@ proc man { args } {
   }
 }
 
+sta::define_cmd_args "describe_options" { command [-markdown] }
+proc describe_options { args } {
+  sta::parse_key_args "describe_options" args keys {} flags {-markdown}
+  sta::check_argc_eq1 "describe_options" $args
+  utl::puts_lines [utl::describe_options_cmd [lindex $args 0] \
+    [info exists flags(-markdown)]]
+}
+
+sta::define_cmd_args "default_options" { command }
+proc default_options { args } {
+  sta::parse_key_args "default_options" args keys {} flags {}
+  sta::check_argc_eq1 "default_options" $args
+  return [utl::default_options_cmd [lindex $args 0]]
+}
+
+# report_options command ?switches...?
+sta::define_cmd_args "report_options" { command [switches...] } ;# checker off
+proc report_options { args } {
+  # The switches belong to the command named, so no parse_key_args here.
+  if { [llength $args] < 1 } {
+    utl::error UTL 113 "report_options requires a command name."
+  }
+  utl::puts_lines [utl::report_options_cmd [lindex $args 0] [lrange $args 1 end]]
+}
+
+namespace eval utl {
+# Prints a multi-line string one line at a time.
+proc puts_lines { text } {
+  foreach line [split [string trimright $text "\n"] "\n"] {
+    puts $line
+  }
+}
+}
+
 sta::define_cmd_args "tee" {-file filename
                             -variable name
                             [-append]

@@ -186,6 +186,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        src/replace-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/gpl
+                         ${PROJECT_SOURCE_DIR}/src/rsz/include
+                         ${PROJECT_SOURCE_DIR}/src/grt/include
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/gpl_py.py
   )
 

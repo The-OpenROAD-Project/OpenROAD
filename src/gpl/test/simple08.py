@@ -11,10 +11,10 @@ design = helpers.make_design(tech)
 design.readDef("./simple08.def")
 
 options = gpl.PlaceOptions()
-options.binGridCntX = 64
-options.binGridCntY = 64
+options.bin_grid_count_x = 64
+options.bin_grid_count_y = 64
 options.density = 0.75
-options.overflow = 0.2
+options.nesterov.target_overflow = 0.2
 design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("simple08.def")

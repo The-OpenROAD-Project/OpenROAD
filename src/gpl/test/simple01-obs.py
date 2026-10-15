@@ -11,8 +11,8 @@ design = helpers.make_design(tech)
 design.readDef("./simple01-obs.def")
 
 options = gpl.PlaceOptions()
-options.initialPlaceMaxIter = 0
-options.initDensityPenaltyFactor = 0.01
+options.initial.max_iter = 0
+options.nesterov.init_density_penalty = 0.01
 options.density = 0.8
 design.getReplace().doPlace(1, options)
 

@@ -4,6 +4,10 @@
 %{
 
 #include "utl/Logger.h"
+#include "utl/OptionsArgs.h"
+#include "utl/OptionsRegistry.h"
+#include "utl/OptionsTcl.h"
+#include "utl/Validate.h"
 #include "LoggerCommon.h"
     
 namespace ord {
@@ -30,6 +34,12 @@ using ord::getLogger;
 
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
+
+// A %inline function parameter named `interp` is filled in by SWIG and is
+// not an argument of the Tcl command.
+%typemap(in, numinputs=0) Tcl_Interp* interp {
+  $1 = interp;
+}
 %include "stdint.i"
 %import <std_string.i>
 
@@ -103,6 +113,62 @@ void startPrometheusEndpoint(uint16_t port)
 {
   utl::Logger* logger = ord::getLogger();
   logger->startPrometheusEndpoint(port);
+}
+
+// The options registered for a command.
+static const utl::OptionsEntry& findOptions(const std::string& command)
+{
+  const utl::OptionsEntry* entry = utl::OptionsRegistry::get().find(command);
+  if (entry == nullptr) {
+    std::string names;
+    for (const std::string& name : utl::OptionsRegistry::get().commands()) {
+      names += " " + name;
+    }
+    ord::getLogger()->error(utl::UTL,
+                            110,
+                            "No options are registered for {}; commands with "
+                            "options:{}",
+                            command,
+                            names);
+  }
+  return *entry;
+}
+
+// The usage synopsis of a command's generated switches, for
+// define_cmd_args.
+std::string options_synopsis_cmd(const std::string& command)
+{
+  return utl::argSynopsis(*findOptions(command).schema);
+}
+
+std::string describe_options_cmd(const std::string& command, bool markdown)
+{
+  const utl::SchemaBase& schema = *findOptions(command).schema;
+  return markdown ? utl::describeArgsMarkdown(schema)
+                  : utl::describeArgsText(schema);
+}
+
+// The defaults of a command as a dict for -options.
+std::string default_options_cmd(const std::string& command, Tcl_Interp* interp)
+{
+  return utl::jsonToTclString(interp, findOptions(command).schema->defaults());
+}
+
+// The values a command runs with for the given switches.
+std::string report_options_cmd(const std::string& command,
+                               Tcl_Obj* args,
+                               Tcl_Interp* interp)
+{
+  const utl::OptionsEntry& entry = findOptions(command);
+  utl::Logger* logger = ord::getLogger();
+  const boost::json::object given
+      = utl::parseArgs(utl::argvFromTcl(interp, args, logger),
+                       *entry.schema,
+                       entry.aliases,
+                       {},
+                       utl::tclDictParser(interp, *entry.schema, {}, logger),
+                       logger);
+  return utl::reportValues(*entry.schema, entry.schema->resolve(given, logger));
 }
 
 } // namespace

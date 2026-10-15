@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+#include "rsz/RepairDesignOptions.hh"
+
 namespace grt {
 class GlobalRouter;
 }
@@ -47,6 +49,10 @@ class TimingBase
   {
     repair_timing_ = run_repair_timing;
   }
+  void setRepairDesignOptions(const rsz::RepairDesignOptions& options)
+  {
+    repair_design_ = options;
+  }
   void setRepairTnsEndPercent(float percent)
   {
     repair_tns_end_percent_ = percent / 100.0f;
@@ -70,6 +76,7 @@ class TimingBase
   float nets_percentage_ = 10;
   bool repair_timing_ = false;
   float repair_tns_end_percent_ = 0.01;
+  rsz::RepairDesignOptions repair_design_;
   void initTimingOverflowChk();
 };
 

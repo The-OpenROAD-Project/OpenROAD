@@ -11,7 +11,7 @@ design = helpers.make_design(tech)
 design.readDef("./incremental01.def")
 
 options = gpl.PlaceOptions()
-options.initDensityPenaltyFactor = 0.1
+options.nesterov.init_density_penalty = 0.1
 design.getReplace().doIncrementalPlace(1, options)
 
 def_file = helpers.make_result_file("incremental01.def")

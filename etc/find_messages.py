@@ -76,6 +76,93 @@ warn_regexp_tcl = re.compile(
 )
 
 
+# Options schemas (utl/Validate.h) carry message ids too.  The tool comes
+# from the Schema constructor; each field with constraints and each
+# invariant has its own id, reported as an ERROR when the value is rejected.
+schema_regexp = re.compile(
+    r"""
+      Schema<[^>]+>\s*\(\s*
+      (?:utl::)?(?P<tool>[A-Z]{3})                     # tool
+      \s*,\s*
+      (?P<id>\d+)                                      # generic id
+      \s*\)
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
+
+schema_field_regexp = re.compile(
+    r"""
+      \.(?P<type>field|invariant)\s*\(\s*
+      (?:"[^"]*"\s*,\s*&[\w:]+\s*,\s*)?               # field: "name", &S::member,
+      (?P<id>\d+)                                      # id
+      \s*,\s*
+      (?P<message>("((?:[^"\\]|\\.)+?\s*)+" ))          # help or message
+    """,
+    re.VERBOSE | re.MULTILINE,
+)
+
+
+def add_message(
+    msgs, path, file_name, lines, start, tool, msg_id, message, message_type
+):
+    key = "{} {:04d}".format(tool, msg_id)
+
+    # remove quotes and join strings
+    message = message.replace("\n", "")
+    message = message.rstrip()[1:-1]
+    message = re.sub(r'"\s*"', "", message)
+
+    # Count the newlines before the match starts
+    line_num = lines[0:start].count("\n") + 1
+    position = "{}:{}".format(file_name, line_num)
+    file_link = os.path.join(path, file_name).strip("../").replace("\\", "/")
+    file_link = (
+        "https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}".format(
+            file_link, line_num
+        )
+    )
+    value = "{:25} {} {} {}".format(position, message, message_type, file_link)
+
+    msgs[key].add(value)
+
+
+def scan_schemas(path, file_name, lines, msgs):
+    schemas = list(re.finditer(schema_regexp, lines))
+    if not schemas:
+        return
+    for schema in schemas:
+        add_message(
+            msgs,
+            path,
+            file_name,
+            lines,
+            schema.start(),
+            schema.group("tool"),
+            int(schema.group("id")),
+            '"<option is unknown or has a value of the wrong type>"',
+            "ERROR",
+        )
+    for match in re.finditer(schema_field_regexp, lines):
+        # The tool of the nearest Schema constructor above the field.
+        tool = None
+        for schema in schemas:
+            if schema.start() < match.start():
+                tool = schema.group("tool")
+        if tool is None:
+            continue
+        add_message(
+            msgs,
+            path,
+            file_name,
+            lines,
+            match.start(),
+            tool,
+            int(match.group("id")),
+            match.group("message"),
+            "ERROR",
+        )
+
+
 def scan_file(path, file_name, msgs):
     # Grab the file contents as a single string
     with open(os.path.join(path, file_name), encoding="utf-8") as file_handle:
@@ -84,27 +171,20 @@ def scan_file(path, file_name, msgs):
     warn_regexp = warn_regexp_tcl if file_name.endswith("tcl") else warn_regexp_c
 
     for match in re.finditer(warn_regexp, lines):
-        tool = match.group("tool").strip('"')
-        msg_id = int(match.group("id"))
-        key = "{} {:04d}".format(tool, msg_id)
-
-        # remove quotes and join strings
-        message = match.group("message")
-        message = message.replace("\n", "")
-        message = message.rstrip()[1:-1]
-        message = re.sub(r'"\s*"', "", message)
-        message_type = match.group("type").upper()
-
-        # Count the newlines before the match starts
-        line_num = lines[0 : match.start()].count("\n") + 1
-        position = "{}:{}".format(file_name, line_num)
-        file_link = os.path.join(path, file_name).strip("../").replace("\\", "/")
-        file_link = "https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}".format(
-            file_link, line_num
+        add_message(
+            msgs,
+            path,
+            file_name,
+            lines,
+            match.start(),
+            match.group("tool").strip('"'),
+            int(match.group("id")),
+            match.group("message"),
+            match.group("type").upper(),
         )
-        value = "{:25} {} {} {}".format(position, message, message_type, file_link)
 
-        msgs[key].add(value)
+    if not file_name.endswith("tcl"):
+        scan_schemas(path, file_name, lines, msgs)
 
 
 def scan_dir(path, files, msgs):

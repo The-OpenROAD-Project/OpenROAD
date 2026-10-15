@@ -146,6 +146,7 @@ cc_library(
 cc_library(
     name = "grt_impl",
     srcs = [
+        "src/GlobalRouteOptions.cpp",
         "src/GlobalRouter.cpp",
         "src/Grid.cpp",
         "src/Grid.h",
@@ -157,6 +158,7 @@ cc_library(
         "src/Rudy.cpp",
     ],
     hdrs = [
+        "include/grt/GlobalRouteOptions.h",
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
         "include/grt/Rudy.h",
@@ -202,6 +204,7 @@ cc_library(
 cc_library(
     name = "grt",
     hdrs = [
+        "include/grt/GlobalRouteOptions.h",
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
         "include/grt/Rudy.h",
@@ -260,6 +263,7 @@ cc_library(
         "//src/stt",
         "//src/utl",
         "//src/web:core",
+        "@boost.json",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -279,6 +283,7 @@ tcl_wrap_cc(
     srcs = [
         "src/GlobalRouter.i",
         "//:error_swig",
+        "//:options_swig",
     ],
     module = "grt",
     namespace_prefix = "grt",
@@ -294,9 +299,11 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
+        "include/grt/GlobalRouteOptions.h",
         "include/grt/GlobalRouter.h",
         "src/GlobalRouter-py.i",
         "//:error_swig-py",
+        "//:options_swig-py",
     ],
     module = "grt_py",
     root_swig_src = "src/GlobalRouter-py.i",
@@ -304,6 +311,7 @@ python_wrap_cc(
         "include",
         "src",
     ],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -325,5 +333,9 @@ messages_txt(
 python_wrap_library(
     name = "py_wrap",
     includes = ["src"],
-    deps = [":grt"],
+    deps = [
+        ":grt",
+        "//src/utl",
+        "@boost.json",
+    ],
 )

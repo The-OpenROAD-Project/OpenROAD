@@ -217,6 +217,9 @@ cc_library(
     ],
     deps = [
         ":gpl_impl",
+        "//src/grt",
+        "//src/rsz",
+        "//src/utl",
     ],
 )
 
@@ -246,6 +249,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//src/web:core",
+        "@boost.json",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
@@ -286,6 +290,7 @@ python_wrap_cc(
         "include/gpl/Replace.h",
         "src/replace-py.i",
         "//:error_swig-py",
+        "//:options_swig-py",
     ],
     module = "gpl_py",
     root_swig_src = "src/replace-py.i",
@@ -294,6 +299,10 @@ python_wrap_cc(
         "src",
     ],
     visibility = ["//:__subpackages__"],
+    deps = [
+        "//src/grt:swig-py",
+        "//src/rsz:swig-py",
+    ],
 )
 
 filegroup(
@@ -315,5 +324,11 @@ messages_txt(
 python_wrap_library(
     name = "py_wrap",
     includes = ["src"],
-    deps = [":gpl"],
+    deps = [
+        ":gpl",
+        "//src/grt",
+        "//src/rsz",
+        "//src/utl",
+        "@boost.json",
+    ],
 )

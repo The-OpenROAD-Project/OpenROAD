@@ -90,6 +90,7 @@ test_suite(
         ":TestCpuTopology",
         ":TestMetrics",
         ":TestSuppressStdout",
+        ":TestValidate",
     ],
 )
 
@@ -186,6 +187,19 @@ cc_test(
     srcs = ["cpp/TestCpuTopology.cpp"],
     deps = [
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestValidate",
+    srcs = [
+        "cpp/TestValidate.cpp",
+    ],
+    deps = [
+        "//src/utl",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

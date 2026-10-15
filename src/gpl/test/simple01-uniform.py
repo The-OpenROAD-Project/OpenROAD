@@ -11,9 +11,9 @@ design = helpers.make_design(tech)
 design.readDef("./simple01.def")
 
 options = gpl.PlaceOptions()
-options.initDensityPenaltyFactor = 0.01
-options.uniformTargetDensityMode = True
-options.initialPlaceMaxIter = 0
+options.nesterov.init_density_penalty = 0.01
+options.uniform_density = True
+options.initial.max_iter = 0
 design.getReplace().doPlace(1, options)
 
 def_file = helpers.make_result_file("simple01-uniform.def")

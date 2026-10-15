@@ -3,7 +3,9 @@
 
 #include "grt/MakeGlobalRouter.h"
 
+#include <boost/json.hpp>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "AbstractRoutingCongestionDataSource.h"
@@ -12,6 +14,7 @@
 #include "heatMap.h"
 #include "heatMapRudy.h"
 #include "tcl.h"
+#include "utl/OptionsRegistry.h"
 #include "utl/decode.h"
 #include "web/heatMap.h"
 
@@ -57,6 +60,27 @@ void initTcl(Tcl_Interp* tcl_interp)
 {
   // Define swig TCL commands.
   Grt_Init(tcl_interp);
+  // The older switch names of global_route, as aliases of the switches
+  // generated from GlobalRouteOptions.  Registered first: the Tcl file
+  // builds its help from the schema.
+  utl::OptionsRegistry::get().add(
+      "global_route",
+      GlobalRouteOptions::schema(),
+      {
+          // CUGR's rip-up and reroute loop saturates around iteration 5,
+          // so -use_cugr lowers the default unless iterations were given.
+          {"-use_cugr",
+           {},
+           true,
+           "",
+           [](boost::json::object& o, const std::string&) {
+             o["use_cugr"] = true;
+             if (!o.contains("congestion_iterations")) {
+               o["congestion_iterations"] = 5;
+             }
+           }},
+          {"-infinite_cap", {"infinite_capacity"}, true, "true", {}},
+      });
   utl::evalTclInit(tcl_interp, grt::grt_tcl_inits);
 }
 

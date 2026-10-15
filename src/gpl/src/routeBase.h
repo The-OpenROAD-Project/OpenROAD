@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "grt/GlobalRouteOptions.h"
+
 namespace odb {
 class dbDatabase;
 class dbNet;
@@ -152,6 +154,9 @@ struct RouteBaseVars
 
   // targetRC metric coefficients.
   const float rcK1, rcK2, rcK3, rcK4;
+
+  // The global route run for congestion when not using RUDY.
+  const grt::GlobalRouteOptions globalRoute;
 };
 
 class RouteBase

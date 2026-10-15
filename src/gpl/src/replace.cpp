@@ -31,8 +31,8 @@
 #include "sta/StaState.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
+#include "utl/Validate.h"
 #include "utl/timer.h"
-#include "utl/validation.h"
 
 namespace gpl {
 
@@ -132,7 +132,7 @@ void Replace::checkHasCoreRows()
 // normal state there, so an unsupported design has to be rejected first.
 void Replace::checkPlaceIosSupported(const PlaceOptions& options)
 {
-  if (!options.placeIosMode) {
+  if (!options.place_ios) {
     return;
   }
   if (db_->getChip()->getBlock()->getDieAreaPolygon().getPoints().size() > 5) {
@@ -153,6 +153,7 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
 
 void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
+  utl::validate(options, log_);
   checkHasCoreRows();
   log_->info(GPL, 83, "Execute incremental mode global placement.");
   int placed_cnt = 0;
@@ -215,7 +216,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   // Phase 1: place the unplaced (new) objects with everything else locked,
   // capped at 600 iterations so it can't run away if it fails to converge.
   PlaceOptions locked_options = options;
-  locked_options.nesterovPlaceMaxIter = 600;
+  locked_options.nesterov.max_iter = 600;
 
   doInitialPlace(threads, locked_options);
 
@@ -241,7 +242,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
                195,
                "Phase 1 of incremental placement diverged before reaching "
                "overflow {:.3f}; continuing to phase 2 anyway.",
-               locked_options.overflow);
+               locked_options.nesterov.target_overflow);
     np_->clearDivergence();
   }
   // Phase 2 has no further fallback, so a divergence there must fail loudly.
@@ -257,7 +258,8 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   // target even without diverging, so check the actual overflow reached
   // rather than trusting the target alone.
   const bool phase1_missed_target
-      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
+      = !phase1_diverged
+        && np_->getAverageOverflow() > options.nesterov.target_overflow;
 
   if (phase1_diverged || phase1_missed_target) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
@@ -277,6 +279,7 @@ void Replace::doPlace(const int threads, const PlaceOptions& options)
 
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
+  utl::validate(options, log_);
   checkHasCoreRows();
   checkPlaceIosSupported(options);
   if (pbc_ == nullptr) {
@@ -379,7 +382,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
     for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
     }
-    if (options.placeIosMode) {
+    if (options.place_ios) {
       initIoPinPlace();
     }
   }
@@ -391,27 +394,17 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
 
   if (!tb_) {
     tb_ = std::make_shared<TimingBase>(nbc_, fr_, rs_, log_);
-    tb_->setTimingNetWeightOverflows(options.timingNetWeightOverflows);
-    tb_->setTimingNetWeightMax(options.timingNetWeightMax);
-    tb_->setTimingNetsPercentage(options.timingDrivenNetsPercentage);
-    tb_->setRepairTiming(options.timingDrivenRepairTiming);
-    tb_->setRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent);
+    tb_->setTimingNetWeightOverflows(options.timing.reweight_overflows);
+    tb_->setTimingNetWeightMax(options.timing.net_weight_max);
+    tb_->setTimingNetsPercentage(options.timing.nets_percentage);
+    tb_->setRepairTiming(options.timing.repair_timing);
+    tb_->setRepairTnsEndPercent(options.timing.repair_tns_end_percent);
+    tb_->setRepairDesignOptions(options.timing.repair_design);
   }
 
-  if (!cb_ && options.virtualCtsMode) {
-    float skew_fraction = options.virtualCtsMaxSkewFraction;
-    // Clamp to a sane range; a negative value yields negative insertion
-    // delays and values above the clock period make no physical sense.
-    if (skew_fraction < 0.0f || skew_fraction > 1.0f) {
-      log_->warn(GPL,
-                 165,
-                 "virtual_cts_max_skew_fraction {} out of range [0, 1]; "
-                 "clamping.",
-                 skew_fraction);
-      skew_fraction = std::clamp(skew_fraction, 0.0f, 1.0f);
-    }
+  if (!cb_ && options.virtual_cts.enabled) {
     cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
-    cb_->setMaxSkewFraction(skew_fraction);
+    cb_->setMaxSkewFraction(options.virtual_cts.max_skew_fraction);
   }
 
   if (!np_) {
@@ -448,8 +441,8 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
                                           log_);
   }
   // Ensure these get set even if np_ already exists.
-  np_->setTargetOverflow(options.overflow);
-  np_->setMaxIters(options.nesterovPlaceMaxIter);
+  np_->setTargetOverflow(options.nesterov.target_overflow);
+  np_->setMaxIters(options.nesterov.max_iter);
   return true;
 }
 
@@ -457,10 +450,11 @@ int Replace::doNesterovPlace(const int threads,
                              const PlaceOptions& options,
                              const int start_iter)
 {
+  utl::validate(options, log_);
   checkHasCoreRows();
   checkPlaceIosSupported(options);
 
-  if (options.placeIosMode) {
+  if (options.place_ios) {
     log_->info(GPL, 168, "Concurrent IO placement enabled.");
   }
 
@@ -469,7 +463,7 @@ int Replace::doNesterovPlace(const int threads,
   }
 
   log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
-  if (options.timingDrivenMode) {
+  if (options.timing.enabled) {
     rs_->resizeSlackPreamble();
   }
 
@@ -478,7 +472,7 @@ int Replace::doNesterovPlace(const int threads,
   int return_do_nesterov = np_->doNesterovPlace(start_iter);
 
   // Legalize the solved pins, moving each as little as possible.
-  if (options.placeIosMode) {
+  if (options.place_ios) {
     pin_placer_->runHungarianMatching(true);
   }
 
@@ -493,11 +487,8 @@ int Replace::doNesterovPlace(const int threads,
              "NP->doNesterovPlace() runtime: {} seconds ",
              elapsed.count());
 
-  if (options.enable_routing_congestion) {
-    fr_->setAllowCongestion(true);
-    fr_->setCongestionIterations(0);
-    fr_->setCriticalNetsPercentage(0);
-    fr_->globalRoute();
+  if (options.routing_congestion) {
+    fr_->globalRoute(options.routability.global_route);
   }
   return return_do_nesterov;
 }
@@ -523,6 +514,7 @@ NesterovBase* Replace::getTopLevelNB() const
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
                                        const int threads)
 {
+  utl::validate(options, log_);
   log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   log_->redirectStringBegin();
 
@@ -567,6 +559,7 @@ void Replace::setDebug(const int pause_iterations,
 float Replace::estimateTargetDensity(const PlaceOptions& options,
                                      const int threads)
 {
+  utl::validate(options, log_);
   log_->info(GPL, 98, "Initialize gpl and estimate target density.");
   log_->redirectStringBegin();
 
@@ -578,83 +571,328 @@ float Replace::estimateTargetDensity(const PlaceOptions& options,
   log_->redirectStringEnd();  // discard output
 
   if (initialized) {
-    density = getTopLevelNB()->estimateTargetDensity(options_no_io.overflow);
+    density = getTopLevelNB()->estimateTargetDensity(
+        options_no_io.nesterov.target_overflow);
   }
 
   return density;
 }
 
-void PlaceOptions::validate(utl::Logger* logger)
+const utl::Schema<InitialPlaceOptions>& InitialPlaceOptions::schema()
 {
-  utl::Validator val(logger, GPL);
+  using Options = InitialPlaceOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 440)
+            .field("max_iter",
+                   &Options::max_iter,
+                   410,
+                   "Iterations of the quadratic (BiCGSTAB) initial placement; "
+                   "0 skips it. Initial placement improves HPWL by ~5% on "
+                   "large designs.",
+                   utl::NonNegative{})
+            .field("min_diff_length",
+                   &Options::min_diff_length,
+                   432,
+                   "Minimum length change that counts as progress.",
+                   utl::Positive{})
+            .field("max_solver_iter",
+                   &Options::max_solver_iter,
+                   433,
+                   "Iterations of the linear solver per placement iteration.",
+                   utl::Positive{})
+            .field("max_fanout",
+                   &Options::max_fanout,
+                   411,
+                   "Nets with more pins are ignored.",
+                   utl::Positive{})
+            .field("net_weight_scale",
+                   &Options::net_weight_scale,
+                   434,
+                   "Scale of the net weights.",
+                   utl::Positive{})
+            .field("force_center",
+                   &Options::force_center,
+                   "Start from the core (or region) center even when the "
+                   "instances already have locations.")
+            .field("perturbation_seed",
+                   &Options::perturbation_seed,
+                   437,
+                   "Seed of the random perturbation of the initial locations.",
+                   utl::NonNegative{})
+            .field("perturbation_dist",
+                   &Options::perturbation_dist,
+                   "Distance of the random perturbation in DBU; -1 for the "
+                   "internal default.");
+  return schema;
+}
 
-  val.check_positive("bin_grid_count", binGridCntX, 400);
-  val.check_range("density", density, 0.0f, 1.0f, 401);
-  val.check_positive("init_density_penalty", initDensityPenaltyFactor, 402);
-  val.check_positive("init_wirelength_coef", initWireLengthCoef, 403);
-  val.check_positive("min_phi_coef", minPhiCoef, 404);
-  val.check_positive("max_phi_coef", maxPhiCoef, 405);
-  val.check_range("overflow", overflow, 0.0f, 1.0f, 406);
-  val.check_non_negative("pad_left", padLeft, 407);
-  val.check_non_negative("pad_right", padRight, 408);
-  val.check_non_negative("reference_hpwl", referenceHpwl, 409);
+const utl::Schema<NesterovOptions>& NesterovOptions::schema()
+{
+  using Options = NesterovOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 441)
+            .field("max_iter",
+                   &Options::max_iter,
+                   431,
+                   "Maximum Nesterov iterations.",
+                   utl::Positive{})
+            .field("target_overflow",
+                   &Options::target_overflow,
+                   406,
+                   "Overflow at which the placement stops.",
+                   utl::Range{0.0, 1.0})
+            .field("init_density_penalty",
+                   &Options::init_density_penalty,
+                   402,
+                   "Initial density penalty.",
+                   utl::Positive{})
+            .field("init_wirelength_coef",
+                   &Options::init_wirelength_coef,
+                   403,
+                   "Initial wirelength coefficient.",
+                   utl::Positive{})
+            .field("min_phi_coef",
+                   &Options::min_phi_coef,
+                   404,
+                   "Lower bound of the step scaling (pcof_min); 0.95-1.05 "
+                   "works well.",
+                   utl::Positive{})
+            .field("max_phi_coef",
+                   &Options::max_phi_coef,
+                   405,
+                   "Upper bound of the step scaling (pcof_max); 1.00-1.20 "
+                   "works well.",
+                   utl::Positive{})
+            .field("reference_hpwl",
+                   &Options::reference_hpwl,
+                   409,
+                   "Wirelength change the density penalty controller "
+                   "measures against, in DBU; 0 derives it from the design.",
+                   utl::NonNegative{})
+            .field("revert_if_diverge",
+                   &Options::revert_if_diverge,
+                   "Keep snapshots and revert to the last one when the "
+                   "placement diverges.");
+  return schema;
+}
 
-  val.check_non_negative("initial_place_max_iter", initialPlaceMaxIter, 410);
-  val.check_positive("initial_place_max_fanout", initialPlaceMaxFanout, 411);
+const utl::Schema<TimingOptions>& TimingOptions::schema()
+{
+  using Options = TimingOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 442)
+            .field("enabled",
+                   &Options::enabled,
+                   "Reweight the nets with the worst slack, found by a "
+                   "virtual repair_design.")
+            .field("reweight_overflows",
+                   &Options::reweight_overflows,
+                   422,
+                   "Overflows at which the slacks are recomputed and the "
+                   "nets reweighted; fewer values cost less runtime.",
+                   utl::Positive{})
+            .field("net_weight_max",
+                   &Options::net_weight_max,
+                   423,
+                   "Weight of the net with the worst slack; the weight "
+                   "falls to 1 at nets_percentage.",
+                   utl::Positive{})
+            .field("nets_percentage",
+                   &Options::nets_percentage,
+                   424,
+                   "Share of the nets, from the worst slack, that are "
+                   "reweighted.",
+                   utl::Percent{})
+            .field("keep_resize_below_overflow",
+                   &Options::keep_resize_below_overflow,
+                   425,
+                   "Below this overflow the resizer's changes are kept "
+                   "(non-virtual repair_design).",
+                   utl::Range{0.0, 1.0})
+            .field("repair_timing",
+                   &Options::repair_timing,
+                   "Also run a conservative repair_timing when finding the "
+                   "slacks.")
+            .field("repair_tns_end_percent",
+                   &Options::repair_tns_end_percent,
+                   438,
+                   "TNS end percent of that repair_timing.",
+                   utl::Percent{})
+            .group("repair_design",
+                   &Options::repair_design,
+                   "The repair_design run that finds the slacks.");
+  return schema;
+}
 
-  val.check_positive(
-      "routability_target_rc_metric", routabilityTargetRcMetric, 412);
-  val.check_range("routability_snapshot_overflow",
-                  routabilitySnapshotOverflow,
-                  0.0f,
-                  1.0f,
-                  413);
-  val.check_range(
-      "routability_check_overflow", routabilityCheckOverflow, 0.0f, 1.0f, 414);
-  val.check_range(
-      "routability_max_density", routabilityMaxDensity, 0.0f, 1.0f, 415);
-  val.check_positive(
-      "routability_inflation_ratio_coef", routabilityInflationRatioCoef, 416);
-  val.check_positive(
-      "routability_max_inflation_ratio", routabilityMaxInflationRatio, 417);
-  val.check_positive(
-      "routability_max_inflation_total", routabilityMaxInflationTotal, 426);
-  val.check_positive(
-      "routability_net_weight_max", routabilityNetWeightMax, 427);
-  val.check_range("routability_congested_nets_percentage",
-                  routabilityCongestedNetsPercentage,
-                  0.0f,
-                  100.0f,
-                  428);
-  val.check_non_negative(
-      "routability_rc_coefficients k1", routabilityRcK1, 418);
-  val.check_non_negative(
-      "routability_rc_coefficients k2", routabilityRcK2, 419);
-  val.check_non_negative(
-      "routability_rc_coefficients k3", routabilityRcK3, 420);
-  val.check_non_negative(
-      "routability_rc_coefficients k4", routabilityRcK4, 421);
+const utl::Schema<VirtualCtsOptions>& VirtualCtsOptions::schema()
+{
+  using Options = VirtualCtsOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 443)
+            .field("enabled",
+                   &Options::enabled,
+                   "Model the clock insertion delay per sink with a "
+                   "lightweight clock tree before each timing-driven "
+                   "iteration.")
+            .field("max_skew_fraction",
+                   &Options::max_skew_fraction,
+                   165,
+                   "Maximum clock insertion delay as a fraction of the clock "
+                   "period.",
+                   utl::Range{0.0, 1.0});
+  return schema;
+}
 
-  for (const auto& timingNetOverflow : timingNetWeightOverflows) {
-    val.check_positive(
-        "timing_driven_net_reweight_overflow", timingNetOverflow, 422);
-  }
-  val.check_positive("timing_driven_net_weight_max", timingNetWeightMax, 423);
-  val.check_range("timing_driven_nets_percentage",
-                  timingDrivenNetsPercentage,
-                  0.0f,
-                  100.0f,
-                  424);
-  val.check_range(
-      "keep_resize_below_overflow", keepResizeBelowOverflow, 0.0f, 1.0f, 425);
+const utl::Schema<RoutabilityOptions>& RoutabilityOptions::schema()
+{
+  using Options = RoutabilityOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 444)
+            .field("enabled",
+                   &Options::enabled,
+                   "Inflate the cells in congested tiles until the target "
+                   "RC metric is met.")
+            .field("use_rudy",
+                   &Options::use_rudy,
+                   "Estimate congestion with RUDY; otherwise run the global "
+                   "router (global_route below).")
+            .field("check_overflow",
+                   &Options::check_overflow,
+                   414,
+                   "Overflow below which congestion is checked.",
+                   utl::Range{0.0, 1.0})
+            .field("snapshot_overflow",
+                   &Options::snapshot_overflow,
+                   413,
+                   "Overflow at which the placement is saved for a revert.",
+                   utl::Range{0.0, 1.0})
+            .field("max_density",
+                   &Options::max_density,
+                   415,
+                   "Maximum target density inflation may raise it to.",
+                   utl::Range{0.0, 1.0})
+            .field("target_rc_metric",
+                   &Options::target_rc_metric,
+                   412,
+                   "Routing congestion metric to reach; raise it when "
+                   "routability iterations take too long.",
+                   utl::Positive{})
+            .field("inflation_ratio_coef",
+                   &Options::inflation_ratio_coef,
+                   416,
+                   "Coefficient of the inflation ratio.",
+                   utl::Positive{})
+            .field("max_inflation_ratio",
+                   &Options::max_inflation_ratio,
+                   417,
+                   "Maximum inflation of one cell.",
+                   utl::Positive{})
+            .field("min_congestion_for_inflation",
+                   &Options::min_congestion_for_inflation,
+                   436,
+                   "Minimum tile congestion for its cells to be inflated.",
+                   utl::NonNegative{})
+            .field("max_inflation_total",
+                   &Options::max_inflation_total,
+                   426,
+                   "Ceiling on the area inflation may add, as a fraction of "
+                   "the movable area.",
+                   utl::Positive{})
+            .field("net_weight_max",
+                   &Options::net_weight_max,
+                   427,
+                   "Wirelength weight of the nets that put the most wire "
+                   "into congested tiles; 1 disables it.",
+                   utl::Positive{})
+            .field("congested_nets_percentage",
+                   &Options::congested_nets_percentage,
+                   428,
+                   "Share of those nets that is weighted.",
+                   utl::Percent{})
+            .field("rc_coefficients",
+                   &Options::rc_coefficients,
+                   418,
+                   "Coefficients {k1 k2 k3 k4} of the RC metric.",
+                   utl::NonNegative{})
+            .group("global_route",
+                   &Options::global_route,
+                   "The global route run when not using RUDY, and for the "
+                   "congestion heatmap.");
+  return schema;
+}
+
+const utl::Schema<PlaceOptions>& PlaceOptions::schema()
+{
+  using Options = PlaceOptions;
+  static const utl::Schema<Options> schema
+      = utl::Schema<Options>(GPL, 430)
+            .field("density",
+                   &Options::density,
+                   401,
+                   "Target density; 0.7 is 70%.",
+                   utl::Range{0.0, 1.0})
+            .field("uniform_density",
+                   &Options::uniform_density,
+                   "Use the minimum feasible target density instead of "
+                   "density.")
+            .field("bin_grid_count_x",
+                   &Options::bin_grid_count_x,
+                   400,
+                   "Bin grid columns; 0 lets the placer choose. Powers of "
+                   "two from 64 work best.",
+                   utl::NonNegative{})
+            .field("bin_grid_count_y",
+                   &Options::bin_grid_count_y,
+                   439,
+                   "Bin grid rows; 0 lets the placer choose.",
+                   utl::NonNegative{})
+            .field("pad_left",
+                   &Options::pad_left,
+                   407,
+                   "Left padding in sites.",
+                   utl::NonNegative{})
+            .field("pad_right",
+                   &Options::pad_right,
+                   408,
+                   "Right padding in sites.",
+                   utl::NonNegative{})
+            .field("skip_io",
+                   &Options::skip_io,
+                   "Ignore the IO pins when computing wirelength.")
+            .field("place_ios",
+                   &Options::place_ios,
+                   "Place the movable IO pins concurrently with the cells, "
+                   "along the die perimeter. Not supported on a rectilinear "
+                   "die.")
+            .field("pin_density_adjust",
+                   &Options::pin_density_adjust,
+                   "Grow the area of pin-dense instances.")
+            .field("routing_congestion",
+                   &Options::routing_congestion,
+                   "Run the global router after placement, for the routing "
+                   "congestion heatmap.")
+            .group("initial", &Options::initial, "Initial placement.")
+            .group("nesterov", &Options::nesterov, "Nesterov placement.")
+            .group("timing", &Options::timing, "Timing-driven placement.")
+            .group("virtual_cts",
+                   &Options::virtual_cts,
+                   "Virtual clock tree for timing-driven placement.")
+            .group("routability",
+                   &Options::routability,
+                   "Routability-driven placement.")
+            .invariant(
+                169,
+                "place_ios cannot be used with skip_io placement.",
+                [](const Options& o) { return !(o.place_ios && o.skip_io); });
+  return schema;
 }
 
 void PlaceOptions::skipIo()
 {
-  skipIoMode = true;
-  initialPlaceMaxIter = 0;
-  timingDrivenMode = false;
-  routabilityDrivenMode = false;
+  skip_io = true;
+  initial.max_iter = 0;
+  timing.enabled = false;
+  routability.enabled = false;
 }
 
 }  // namespace gpl

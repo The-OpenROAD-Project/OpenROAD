@@ -19,6 +19,14 @@ or_integration_tests(
     error01
     incremental01
     nograd01
+    options_errors
+    options_describe
+    options01
+    options_py01
+    options_py_errors
+    options02
+    options03
+    options04
     simple01
     simple01-obs
     simple01-rd

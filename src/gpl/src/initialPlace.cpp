@@ -24,14 +24,14 @@ using T = Eigen::Triplet<float>;
 
 InitialPlaceVars::InitialPlaceVars(const PlaceOptions& options,
                                    const bool debug)
-    : maxIter(options.initialPlaceMaxIter),
-      minDiffLength(options.initialPlaceMinDiffLength),
-      maxSolverIter(options.initialPlaceMaxSolverIter),
-      maxFanout(options.initialPlaceMaxFanout),
-      netWeightScale(options.initialPlaceNetWeightScale),
+    : maxIter(options.initial.max_iter),
+      minDiffLength(options.initial.min_diff_length),
+      maxSolverIter(options.initial.max_solver_iter),
+      maxFanout(options.initial.max_fanout),
+      netWeightScale(options.initial.net_weight_scale),
       debug(debug),
-      forceCenter(options.forceCenterInitialPlace),
-      placeIosMode(options.placeIosMode)
+      forceCenter(options.initial.force_center),
+      placeIosMode(options.place_ios)
 {
 }
 

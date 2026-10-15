@@ -186,6 +186,7 @@ or_integration_tests(
     repair_tie13_hier
     repair_wire1
     repair_wire2
+    repair_design_options
     repair_wire3
     repair_wire4
     repair_wire5

@@ -114,7 +114,7 @@ class EstimateTargetDensityTest : public ::testing::Test
     // NesterovBase otherwise randomly perturbs each cell's initial location
     // by up to half a site height, which would scatter the deliberately
     // co-located cells in the kClustered layout across several bins.
-    options.initialPlacePerturbationDist = 0.0f;
+    options.initial.perturbation_dist = 0.0f;
     const PlacerBaseVars pb_vars(options);
     auto pbc = std::make_shared<PlacerBaseCommon>(db.get(), pb_vars, &logger_);
     auto pb = std::make_shared<PlacerBase>(

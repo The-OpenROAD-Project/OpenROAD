@@ -1167,16 +1167,17 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 ////////////////////////////////////////////////
 // NesterovBaseVars
 NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
-    : isSetBinCnt(options.binGridCntX != 0 && options.binGridCntY != 0),
-      useUniformTargetDensity(options.uniformTargetDensityMode),
-      placeIosMode(options.placeIosMode),
+    : isSetBinCnt(options.bin_grid_count_x != 0
+                  && options.bin_grid_count_y != 0),
+      useUniformTargetDensity(options.uniform_density),
+      placeIosMode(options.place_ios),
       targetDensity(options.density),
-      binCntX(isSetBinCnt ? options.binGridCntX : 0),
-      binCntY(isSetBinCnt ? options.binGridCntY : 0),
-      minPhiCoef(options.minPhiCoef),
-      maxPhiCoef(options.maxPhiCoef),
-      initialPlacePerturbationSeed(options.initialPlacePerturbationSeed),
-      initialPlacePerturbationDist(options.initialPlacePerturbationDist)
+      binCntX(isSetBinCnt ? options.bin_grid_count_x : 0),
+      binCntY(isSetBinCnt ? options.bin_grid_count_y : 0),
+      minPhiCoef(options.nesterov.min_phi_coef),
+      maxPhiCoef(options.nesterov.max_phi_coef),
+      initialPlacePerturbationSeed(options.initial.perturbation_seed),
+      initialPlacePerturbationDist(options.initial.perturbation_dist)
 {
 }
 
@@ -1184,23 +1185,23 @@ NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
 // NesterovPlaceVars
 NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
                                      int64_t design_hpwl)
-    : maxNesterovIter(options.nesterovPlaceMaxIter),
-      initDensityPenalty(options.initDensityPenaltyFactor),
-      initWireLengthCoef(options.initWireLengthCoef),
-      targetOverflow(options.overflow),
-      referenceHpwl(options.referenceHpwl > 0
-                        ? options.referenceHpwl
+    : maxNesterovIter(options.nesterov.max_iter),
+      initDensityPenalty(options.nesterov.init_density_penalty),
+      initWireLengthCoef(options.nesterov.init_wirelength_coef),
+      targetOverflow(options.nesterov.target_overflow),
+      referenceHpwl(options.nesterov.reference_hpwl > 0
+                        ? options.nesterov.reference_hpwl
                         : std::max(kReferenceHpwlFloor,
                                    kReferenceHpwlFraction
                                        * static_cast<float>(design_hpwl))),
-      routability_end_overflow(options.routabilityCheckOverflow),
-      routability_snapshot_overflow(options.routabilitySnapshotOverflow),
-      keepResizeBelowOverflow(options.keepResizeBelowOverflow),
-      timingDrivenMode(options.timingDrivenMode),
-      timingDrivenRepairTiming(options.timingDrivenRepairTiming),
-      timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
-      routability_driven_mode(options.routabilityDrivenMode),
-      disableRevertIfDiverge(options.disableRevertIfDiverge)
+      routability_end_overflow(options.routability.check_overflow),
+      routability_snapshot_overflow(options.routability.snapshot_overflow),
+      keepResizeBelowOverflow(options.timing.keep_resize_below_overflow),
+      timingDrivenMode(options.timing.enabled),
+      timingDrivenRepairTiming(options.timing.repair_timing),
+      timingDrivenRepairTnsEndPercent(options.timing.repair_tns_end_percent),
+      routability_driven_mode(options.routability.enabled),
+      disableRevertIfDiverge(!options.nesterov.revert_if_diverge)
 {
 }
 
