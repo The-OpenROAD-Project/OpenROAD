@@ -107,6 +107,14 @@ class CUGR
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Rewrite the usage of just `tiles` (GCell indices).  Capacity is left
+  // alone: rerouting moves demand between edges without changing what they
+  // can hold.
+  void updateDbCongestionTiles(const std::vector<odb::Point>& tiles);
+  // GCells whose reported usage changed since the last odb refresh.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const;
+  void clearCongestionDirtyTiles();
+  void gcellCongestion(int layer, int x, int y, double& cap, double& use) const;
   // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
   // overflow split into wire vs via-stub shares (proportional attribution);
   // sub-min layers shown as all-zero rows. Gated on verbose_.

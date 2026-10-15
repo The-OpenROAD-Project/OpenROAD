@@ -43,6 +43,7 @@
 #include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
+#include "grt/RoutingCongestion.h"
 #include "grt/Rudy.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -633,6 +634,9 @@ void GlobalRouter::updateDbCongestion()
   }
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
   }
 }
 
@@ -1547,6 +1551,16 @@ Rudy* GlobalRouter::getRudy()
   }
 
   return rudy_;
+}
+
+RoutingCongestion* GlobalRouter::getRoutingCongestion()
+{
+  odb::dbBlock* block = block_ != nullptr ? block_ : db_->getChip()->getBlock();
+  if (routing_congestion_ == nullptr) {
+    routing_congestion_
+        = std::make_unique<RoutingCongestion>(this, block, logger_);
+  }
+  return routing_congestion_.get();
 }
 
 bool GlobalRouter::findPinAccessPointPositions(
@@ -3040,6 +3054,9 @@ void GlobalRouter::readGuides(const char* file_name)
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
   }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
+  }
   saveGuidesFromFile(guides);
 }
 
@@ -3091,6 +3108,9 @@ void GlobalRouter::loadGuidesFromDB()
   }
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
   }
 }
 
@@ -6779,10 +6799,57 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     pa->updateDirtyPinAccess();
   }
 
-  if (use_cugr_) {
-    return updateDirtyRoutesCugr(save_guides);
+  std::vector<Net*> rerouted = use_cugr_
+                                   ? updateDirtyRoutesCugr(save_guides)
+                                   : updateDirtyRoutesFastRoute(save_guides);
+
+  updateDbCongestionTiles();
+  return rerouted;
+}
+
+void GlobalRouter::updateDbCongestionTiles()
+{
+  // The engines record a tile wherever they write an edge, so this covers a
+  // reroute, a rip-up, a released wire and a removed net alike -- cases a
+  // route-footprint diff cannot see, because the route it would compare
+  // against is already gone.
+  //
+  // Copied rather than referenced: the engine's list is cleared below, and
+  // the congestion service still needs it after that.
+  const std::vector<odb::Point> tiles
+      = use_cugr_ ? cugr_->getCongestionDirtyTiles()
+                  : fastroute_->getCongestionDirtyTiles();
+  if (tiles.empty()) {
+    return;
   }
-  return updateDirtyRoutesFastRoute(save_guides);
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  debugPrint(logger_,
+             GRT,
+             "congestion",
+             1,
+             "incremental congestion refresh: {} tiles",
+             tiles.size());
+  if (use_cugr_) {
+    cugr_->updateDbCongestionTiles(tiles);
+    cugr_->clearCongestionDirtyTiles();
+  } else {
+    fastroute_->updateDbCongestionTiles(min_layer, max_layer, tiles);
+    fastroute_->clearCongestionDirtyTiles();
+  }
+
+  if (heatmap_) {
+    heatmap_->invalidate();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    // Patch just these GCells rather than dropping the map: rebuilding it
+    // means rescanning every tile on every layer, which dwarfs the reroute
+    // that triggered it.
+    routing_congestion_->refreshTiles(tiles);
+  }
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
