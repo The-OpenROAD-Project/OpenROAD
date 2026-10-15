@@ -488,20 +488,45 @@ void AntennaChecker::Impl::calculatePAR(GateToLayerToNodeInfo& gate_info)
   }
 }
 
+// Whether layer's cumulative ratios continue from the layer just below it,
+// whatever its type (ANTENNACUMROUTINGPLUSCUT), rather than from the last
+// layer of its own type.
+static bool cumulatesRoutingPlusCut(odb::dbTechLayer* layer)
+{
+  return layer->hasDefaultAntennaRule()
+         && layer->getDefaultAntennaRule()->hasAntennaCumRoutingPlusCut();
+}
+
 // calculate CAR and CSR of wires and vias
 void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
                                         GateToLayerToNodeInfo& gate_info)
 {
-  odb::dbTech* tech = db_->getTech();
+  // Start below the first routing layer, so a contact layer's ratio (such as
+  // a block pin's ANTENNAMAXCUTCAR) counts.
+  odb::dbTechLayer* bottom = db_->getTech()->findRoutingLayer(1);
+  while (bottom && bottom->getLowerLayer()) {
+    bottom = bottom->getLowerLayer();
+  }
   for (auto& [gate, layer_to_node_info] : gate_info) {
     const PinAntenna& pin = pins.at(gate->getMTerm());
-    // Variables to store the accumulated values for vias and wires
-    NodeInfo sum_wire, sum_via;
-    // iterate from first_layer -> last layer, cumulate sum for wires and vias
-    for (odb::dbTechLayer* layer = tech->findRoutingLayer(1); layer;
+    // The cumulative ratios after the last layer of any type, the last
+    // routing layer and the last cut layer.
+    NodeInfo sum_any, sum_wire, sum_via;
+    for (odb::dbTechLayer* layer = bottom; layer;
          layer = layer->getUpperLayer()) {
-      const bool is_routing = layer->getRoutingLevel() != 0;
-      NodeInfo& sum = is_routing ? sum_wire : sum_via;
+      const odb::dbTechLayerType type = layer->getType();
+      if (type != odb::dbTechLayerType::ROUTING
+          && type != odb::dbTechLayerType::CUT) {
+        continue;
+      }
+      const bool is_routing = type == odb::dbTechLayerType::ROUTING;
+      NodeInfo& sum_own = is_routing ? sum_wire : sum_via;
+      NodeInfo sum = cumulatesRoutingPlusCut(layer) ? sum_any : sum_own;
+      if (is_routing) {
+        // Cuts have no side area, so side ratios follow the metal layers.
+        sum.psr = sum_wire.psr;
+        sum.diff_psr = sum_wire.diff_psr;
+      }
       // A block pin's MAX*CAR is the cumulative ratio its gates already have
       // from the block's own metal up to this layer.  It carries up through
       // the layers above, like any other layer's damage.
@@ -515,35 +540,36 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
       sum.diff_psr += max_csr;
 
       auto node_it = layer_to_node_info.find(layer);
-      if (node_it == layer_to_node_info.end()) {
-        continue;
+      if (node_it != layer_to_node_info.end()) {
+        NodeInfo& node_info = node_it->second;
+        // MAX*CAR already counts the pin's partial area on its layer, so the
+        // pin's own gates add only the rest of the node.
+        NodeInfo layer_damage = node_info;
+        if (max_car != 0.0 || max_csr != 0.0) {
+          if (max_car != 0.0) {
+            layer_damage.area -= valueOnLayer(
+                is_routing ? pin.partial_metal_area : pin.partial_cut_area,
+                layer);
+          }
+          if (max_csr != 0.0) {
+            layer_damage.side_area
+                -= valueOnLayer(pin.partial_metal_side_area, layer);
+          }
+          if (is_routing) {
+            calculateWirePar(layer, layer_damage);
+          } else {
+            calculateViaPar(layer, layer_damage);
+          }
+        }
+        sum += layer_damage;
+        // Updating the node with the accumulated values
+        node_info.car = sum.par;
+        node_info.csr = sum.psr;
+        node_info.diff_car = sum.diff_par;
+        node_info.diff_csr = sum.diff_psr;
       }
-      NodeInfo& node_info = node_it->second;
-      // MAX*CAR already counts the pin's partial area on its layer, so the
-      // pin's own gates add only the rest of the node.
-      NodeInfo layer_damage = node_info;
-      if (max_car != 0.0 || max_csr != 0.0) {
-        if (max_car != 0.0) {
-          layer_damage.area -= valueOnLayer(
-              is_routing ? pin.partial_metal_area : pin.partial_cut_area,
-              layer);
-        }
-        if (max_csr != 0.0) {
-          layer_damage.side_area
-              -= valueOnLayer(pin.partial_metal_side_area, layer);
-        }
-        if (is_routing) {
-          calculateWirePar(layer, layer_damage);
-        } else {
-          calculateViaPar(layer, layer_damage);
-        }
-      }
-      sum += layer_damage;
-      // Updating the node with the accumulated values
-      node_info.car = sum.par;
-      node_info.csr = sum.psr;
-      node_info.diff_car = sum.diff_par;
-      node_info.diff_csr = sum.diff_psr;
+      sum_own = sum;
+      sum_any = sum;
     }
   }
 }

@@ -43,6 +43,7 @@ class AntennaSyntheticTest : public tst::DbFixture
   void SetUp() override
   {
     tech_ = tst::makeTech(getDb());
+    addLayersBelowStack();
     stack_ = tst::makeLayerStack(tech_, 3, {.thickness = 1000});
     lib_ = tst::makeLib(getDb(), tech_);
     block_ = tst::makeBlock(getDb(), tech_, {0, 0, 200000, 200000});
@@ -55,6 +56,9 @@ class AntennaSyntheticTest : public tst::DbFixture
                               .rect = {0, 0, 100, 100},
                               .gate_area = kGateArea}});
   }
+
+  // Lets a fixture add layers below M1.
+  virtual void addLayersBelowStack() {}
 
   odb::dbTechLayer* m1() const { return stack_.metal(1); }
   odb::dbTechLayer* m2() const { return stack_.metal(2); }
@@ -722,6 +726,89 @@ TEST_F(AntennaSyntheticTest, PartialCutAreaAndMaxCutCar)
   const LayerCheck check = layerCheck(net, stack_.cut(1));
   EXPECT_NEAR(check.par.actual, (0.01 + 0.01) / kGateArea, 1e-9);
   EXPECT_NEAR(check.car.actual, 1.0 + 0.01 / kGateArea, 1e-9);
+}
+
+// ANTENNACUMROUTINGPLUSCUT joins the metal and cut sums into one chain:
+// CAR(M2) = PAR(M2) + CAR(V1) and CAR(V1) = PAR(V1) + CAR(M1).  Cuts have
+// no side area, so CSR still sums the metal layers.
+TEST_F(AntennaSyntheticTest, CumRoutingPlusCut)
+{
+  for (odb::dbTechLayer* layer : {m1(), m2()}) {
+    tst::applyAntennaRule(
+        layer,
+        {.car = 1000, .psr = 1000, .csr = 1000, .cum_routing_plus_cut = true});
+  }
+  tst::applyAntennaRule(stack_.cut(1),
+                        {.car = 1000, .cum_routing_plus_cut = true});
+  odb::dbNet* net = gateNet("n1");
+  routeUpToM2(net);
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck v1_check = layerCheck(net, stack_.cut(1));
+  const LayerCheck m2_check = layerCheck(net, m2());
+  ASSERT_TRUE(m1_check.psr && m2_check.psr && m2_check.csr);
+  EXPECT_NEAR(m1_check.car.actual, m1_check.par.actual, 1e-9);
+  EXPECT_NEAR(
+      v1_check.car.actual, v1_check.par.actual + m1_check.car.actual, 1e-9);
+  EXPECT_NEAR(
+      m2_check.car.actual, m2_check.par.actual + v1_check.car.actual, 1e-9);
+  EXPECT_NEAR(
+      m2_check.csr->actual, m1_check.psr->actual + m2_check.psr->actual, 1e-9);
+}
+
+// A stack with a contact layer CO below M1, like layer C in LEF/DEF
+// Appendix C's Example 1, where a block pin's ANTENNAMAXCUTCAR is given on
+// the contact.
+class AntennaContactTest : public AntennaSyntheticTest
+{
+ protected:
+  void addLayersBelowStack() override
+  {
+    contact_ = tst::addCutLayer(tech_, "CO");
+  }
+
+  // A gate net routed up to M2 whose pin has MAXCUTCAR 1.0 on CO.
+  odb::dbNet* netWithContactCar()
+  {
+    odb::dbTechAntennaPinModel* model
+        = useBareGatePin()->createDefaultAntennaModel();
+    model->addGateAreaEntry(kGateArea, m1());
+    model->addMaxCutCAREntry(1.0, contact_);
+    odb::dbNet* net = gateNet("n1");
+    routeUpToM2(net);
+    return net;
+  }
+
+  odb::dbTechLayer* contact_{nullptr};
+};
+
+// By default the contact's ratio accumulates with the other cuts.
+TEST_F(AntennaContactTest, MaxCutCarCarriesToCuts)
+{
+  tst::applyAntennaRule(m1(), {.car = 1000});
+  tst::applyAntennaRule(stack_.cut(1), {.car = 1000});
+  odb::dbNet* net = netWithContactCar();
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck v1_check = layerCheck(net, stack_.cut(1));
+  EXPECT_NEAR(m1_check.car.actual, m1_check.par.actual, 1e-9);
+  EXPECT_NEAR(v1_check.car.actual, 1.0 + v1_check.par.actual, 1e-9);
+}
+
+// With ANTENNACUMROUTINGPLUSCUT, Example 1's CAR(M1,G1) = PAR(M1,G1) + pin
+// A's CAR(C,G1), and the sum continues up through V1.
+TEST_F(AntennaContactTest, MaxCutCarCarriesToMetalWithRoutingPlusCut)
+{
+  tst::applyAntennaRule(m1(), {.car = 1000, .cum_routing_plus_cut = true});
+  tst::applyAntennaRule(stack_.cut(1),
+                        {.car = 1000, .cum_routing_plus_cut = true});
+  odb::dbNet* net = netWithContactCar();
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck v1_check = layerCheck(net, stack_.cut(1));
+  EXPECT_NEAR(m1_check.car.actual, 1.0 + m1_check.par.actual, 1e-9);
+  EXPECT_NEAR(
+      v1_check.car.actual, v1_check.par.actual + m1_check.car.actual, 1e-9);
 }
 
 }  // namespace
