@@ -63,8 +63,8 @@ OPTIONS:
   -cmake-build                                  DEPRECATED: Force the CMake build instead
                                                  of Bazel. Bazel is the supported build
                                                  system and is used by default; CMake
-                                                 support will be removed on Nov. 1,
-                                                 2026.
+                                                 support will be removed in a future
+                                                 release.
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
