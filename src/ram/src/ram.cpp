@@ -50,6 +50,24 @@ using std::vector;
 
 ////////////////////////////////////////////////////////////////
 
+// Number of inputs if func is a pure AND of ports, otherwise 0.
+// Liberty stores A&B&C as nested 2-input and_ nodes.
+static int andInputCount(const sta::FuncExpr* func)
+{
+  if (!func) {
+    return 0;
+  }
+  if (func->op() == sta::FuncExpr::Op::port) {
+    return 1;
+  }
+  if (func->op() != sta::FuncExpr::Op::and_) {
+    return 0;
+  }
+  const int left = andInputCount(func->left());
+  const int right = andInputCount(func->right());
+  return (left > 0 && right > 0) ? left + right : 0;
+}
+
 RamGen::RamGen(sta::dbNetwork* network,
                odb::dbDatabase* db,
                utl::Logger* logger,
@@ -430,7 +448,7 @@ void RamGen::makeDecoderColumn(const std::string& prefix,
                  gates);
 
     // Final decoder gates placed at each row (follows one-hot decoding)
-    // Goes first such that final decoder gate is closeet to word line select AND
+    // Goes first such that final decoder gate is left most
     vector<const DecoderGate*> predecode;
     for (const DecoderGate& gate : gates) {
       if (gate.row >= 0) {
@@ -775,20 +793,36 @@ void RamGen::findMasters()
   }
   tristate_ports_ = buildPortMap(tristate_cell_);
 
+  auto is_and = [](const int num_inputs) {
+    return [num_inputs](sta::LibertyPort* port) {
+      return port->direction()->isOutput()
+             && andInputCount(port->function()) == num_inputs;
+    };
+  };
   if (!and2_cell_) {
-    and2_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          if (!port->direction()->isOutput()) {
-            return false;
-          }
-          auto function = port->function();
-          return function && function->op() == sta::FuncExpr::Op::and_
-                 && function->left()->op() == sta::FuncExpr::Op::port
-                 && function->right()->op() == sta::FuncExpr::Op::port;
-        },
-        "and2");
+    and2_cell_ = findMaster(is_and(2), "and2");
   }
   and2_ports_ = buildPortMap(and2_cell_);
+
+  if (max_and_inputs_ < 2 || max_and_inputs_ > 4) {
+    logger_->error(RAM,
+                   44,
+                   "The decoder supports AND gates with 2 to 4 inputs, got {}.",
+                   max_and_inputs_);
+  }
+  // wider ANDs are only needed when the decoder is allowed to use them
+  if (max_and_inputs_ >= 3) {
+    if (!and3_cell_) {
+      and3_cell_ = findMaster(is_and(3), "and3");
+    }
+    and3_ports_ = buildPortMap(and3_cell_);
+  }
+  if (max_and_inputs_ >= 4) {
+    if (!and4_cell_) {
+      and4_cell_ = findMaster(is_and(4), "and4");
+    }
+    and4_ports_ = buildPortMap(and4_cell_);
+  }
 
   if (!use_latch_) {
     if (!storage_cell_) {
@@ -1301,6 +1335,8 @@ void RamGen::generate(const int mask_size,
   inv_cell_ = inv_cell;
   tapcell_ = tapcell;
   and2_cell_ = nullptr;
+  and3_cell_ = nullptr;
+  and4_cell_ = nullptr;
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
   aoi22_cell_ = nullptr;

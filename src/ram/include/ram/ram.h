@@ -252,6 +252,8 @@ class RamGen
   odb::dbMaster* tristate_cell_{nullptr};
   odb::dbMaster* inv_cell_{nullptr};
   odb::dbMaster* and2_cell_{nullptr};
+  odb::dbMaster* and3_cell_{nullptr};
+  odb::dbMaster* and4_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* aoi22_cell_{nullptr};
@@ -265,6 +267,8 @@ class RamGen
   std::map<PortRole, std::string> tristate_ports_;
   std::map<PortRole, std::string> inv_ports_;
   std::map<PortRole, std::string> and2_ports_;
+  std::map<PortRole, std::string> and3_ports_;
+  std::map<PortRole, std::string> and4_ports_;
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
   std::map<PortRole, std::string> latch_ports_;
