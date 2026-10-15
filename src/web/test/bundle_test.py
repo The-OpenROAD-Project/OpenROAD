@@ -15,8 +15,8 @@ _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
 _ENTRIES = ("src/web/src/entry-app.js",)
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
-# whole and in lower case: XML namespaces, ELK's model URIs, licence and
-# homepage links in the kept comments.
+# whole and in lower case: XML namespaces, ELK's model URIs, links in comments
+# and messages.
 _IDENTIFIER_URLS = {
     "http://www.w3.org/1999/xlink",
     "http://www.w3.org/2000/svg",
@@ -86,6 +86,7 @@ class Scanner(unittest.TestCase):
         self.assertTrue(_is_identifier_url("http://www.w3.org/2000/svg#x"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
+        self.assertFalse(_is_identifier_url("https://lodash.com/lodash.js"))
 
     def test_finds_scheme_relative_fetches(self):
         for text in (
