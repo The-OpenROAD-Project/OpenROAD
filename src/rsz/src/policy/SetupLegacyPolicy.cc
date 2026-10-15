@@ -313,7 +313,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  decreasing_slack_max_passes_);
     }
 
-    // Global guards keep the current endpoint state, then stop searching.
+    // Global guards stop searching and let post-loop cleanup finalize the
+    // endpoint journal.
     if (resizer_.overMaxArea()) {
       debugPrint(logger_,
                  RSZ,
@@ -322,7 +323,6 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  "{}{} Phase: Over max area, exiting",
                  phaseName(),
                  main_state.phase_marker);
-      acceptEndpointState(endpoint_state);
       break;
     }
     if (main_state.end_index == 1 && endpoint_state.worst_vertex != nullptr) {
@@ -334,12 +334,28 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     ++endpoint_state.pass;
     if (config_.max_iterations > 0
         && main_state.opto_iteration >= config_.max_iterations) {
-      acceptEndpointState(endpoint_state);
       break;
     }
   }
 
-  acceptEndpointState(endpoint_state);
+  if (endpoint_state.journal_open) {
+    if (endpoint_state.decreasing_slack_passes > 0) {
+      debugPrint(
+          logger_,
+          RSZ,
+          "repair_setup",
+          2,
+          "{}{} Phase: Restoring best slack; endpoint slack = {}, "
+          "WNS = {}",
+          phaseName(),
+          main_state.phase_marker,
+          delayAsString(endpoint_state.prev_end_slack, kDelayDigits, sta_),
+          delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_));
+      restoreEndpointState(endpoint_state);
+    } else {
+      acceptEndpointState(endpoint_state);
+    }
+  }
 }
 
 void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
