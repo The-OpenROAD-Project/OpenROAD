@@ -29,22 +29,26 @@ prebuilt binaries, docker images, and building from source with Bazel.
 
 ### Prerequisites
 
-Install `bazelisk` and the system libraries that the Bazel build needs:
+Install `bazelisk` and the system libraries that the Bazel build needs.
+Bazel is the default build system of `DependencyInstaller.sh`:
 
 ``` shell
-sudo ./etc/DependencyInstaller.sh -bazel
+sudo ./etc/DependencyInstaller.sh
 ```
 
 Add `-no-gui` to skip the GUI-only libraries when you build the CLI-only binary.
 Add `-bazel-dev` to install the Bazel developer tools, such as `buildifier`.
 
 ```{note}
-`DependencyInstaller.sh` installs to `/usr/local` by default.
-Use `-local` or `-prefix=<PATH>` to install somewhere else.
+`DependencyInstaller.sh` installs `bazelisk` to `/usr/local/bin` by default.
+To put it in `~/.local/bin`, split the steps:
+
+    sudo ./etc/DependencyInstaller.sh -base
+    ./etc/DependencyInstaller.sh -common -local
 ```
 
 On macOS, do not use `sudo`.
-`./etc/DependencyInstaller.sh -bazel` installs `bazelisk` with Homebrew.
+`./etc/DependencyInstaller.sh` installs `bazelisk` with Homebrew.
 Install the Xcode command line tools first with `xcode-select --install`.
 
 You can also install [bazelisk](https://bazel.build/install/bazelisk) yourself.

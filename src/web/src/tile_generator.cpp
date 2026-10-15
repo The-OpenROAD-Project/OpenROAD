@@ -1070,7 +1070,7 @@ namespace {
 struct BoolField
 {
   const char* key;
-  bool TileVisibility::*field;
+  bool TileVisibility::* field;
   bool default_val;
 };
 
