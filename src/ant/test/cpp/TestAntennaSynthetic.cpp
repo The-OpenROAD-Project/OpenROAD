@@ -686,6 +686,35 @@ TEST_F(AntennaSyntheticTest, MaxCarStartsCumulativeRatio)
               1e-9);
 }
 
+// Each MAX*CAR is cumulative through its layer, so the M2 value already
+// includes the M1 one and replaces it in the sum.
+TEST_F(AntennaSyntheticTest, MaxCarOnSuccessiveLayersReplaces)
+{
+  for (odb::dbTechLayer* layer : {m1(), m2()}) {
+    tst::applyAntennaRule(layer, {.car = 1000, .psr = 1000, .csr = 1000});
+  }
+  odb::dbTechAntennaPinModel* model
+      = useBareGatePin()->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addMaxAreaCAREntry(3.0, m1());
+  model->addMaxAreaCAREntry(4.0, m2());
+  model->addMaxSideAreaCAREntry(7.0, m1());
+  model->addMaxSideAreaCAREntry(9.0, m2());
+  odb::dbNet* net = gateNet("n1");
+  routeUpToM2(net);
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck m2_check = layerCheck(net, m2());
+  ASSERT_TRUE(m1_check.psr && m1_check.csr && m2_check.psr && m2_check.csr);
+  EXPECT_NEAR(m1_check.car.actual, 3.0 + m1_check.par.actual, 1e-9);
+  EXPECT_NEAR(m2_check.car.actual,
+              4.0 + m1_check.par.actual + m2_check.par.actual,
+              1e-9);
+  EXPECT_NEAR(m2_check.csr->actual,
+              9.0 + m1_check.psr->actual + m2_check.psr->actual,
+              1e-9);
+}
+
 // MAX*CAR counts the pin's partial area on its layer already (it covers
 // the metal "at or below the current pin layer"), so the pin's own gates
 // don't count it twice.  Other gates on the node do see it.
@@ -809,6 +838,21 @@ TEST_F(AntennaContactTest, MaxCutCarCarriesToMetalWithRoutingPlusCut)
   EXPECT_NEAR(m1_check.car.actual, 1.0 + m1_check.par.actual, 1e-9);
   EXPECT_NEAR(
       v1_check.car.actual, v1_check.par.actual + m1_check.car.actual, 1e-9);
+}
+
+// Example 1 notes that MAXCUTCAR 1.0 on C and MAXAREACAR 1.0 on M1 give the
+// same result: in one chain, the M1 value already includes the contact's.
+TEST_F(AntennaContactTest, MaxAreaCarReplacesMaxCutCarWithRoutingPlusCut)
+{
+  tst::applyAntennaRule(m1(), {.car = 1000, .cum_routing_plus_cut = true});
+  odb::dbMTerm* pin = useBareGatePin();
+  odb::dbTechAntennaPinModel* model = pin->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addMaxCutCAREntry(1.0, contact_);
+  model->addMaxAreaCAREntry(1.0, m1());
+
+  const LayerCheck check = layerCheck(gateNet("n1"), m1());
+  EXPECT_NEAR(check.car.actual, 1.0 + kPar, 1e-9);
 }
 
 }  // namespace

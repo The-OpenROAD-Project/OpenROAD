@@ -507,11 +507,20 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
   while (bottom && bottom->getLowerLayer()) {
     bottom = bottom->getLowerLayer();
   }
+  // A running cumulative ratio, and how much of it is the gate pin's own
+  // ANTENNAMAX*CAR.  Those values are cumulative through their layer, so a
+  // later one replaces the earlier one rather than adding to it.
+  struct Chain
+  {
+    NodeInfo sum;
+    double pin_car = 0.0;
+    double pin_csr = 0.0;
+  };
   for (auto& [gate, layer_to_node_info] : gate_info) {
     const PinAntenna& pin = pins.at(gate->getMTerm());
     // The cumulative ratios after the last layer of any type, the last
     // routing layer and the last cut layer.
-    NodeInfo sum_any, sum_wire, sum_via;
+    Chain chain_any, chain_wire, chain_via;
     for (odb::dbTechLayer* layer = bottom; layer;
          layer = layer->getUpperLayer()) {
       const odb::dbTechLayerType type = layer->getType();
@@ -520,13 +529,15 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
         continue;
       }
       const bool is_routing = type == odb::dbTechLayerType::ROUTING;
-      NodeInfo& sum_own = is_routing ? sum_wire : sum_via;
-      NodeInfo sum = cumulatesRoutingPlusCut(layer) ? sum_any : sum_own;
+      Chain& chain_own = is_routing ? chain_wire : chain_via;
+      Chain chain = cumulatesRoutingPlusCut(layer) ? chain_any : chain_own;
       if (is_routing) {
         // Cuts have no side area, so side ratios follow the metal layers.
-        sum.psr = sum_wire.psr;
-        sum.diff_psr = sum_wire.diff_psr;
+        chain.sum.psr = chain_wire.sum.psr;
+        chain.sum.diff_psr = chain_wire.sum.diff_psr;
+        chain.pin_csr = chain_wire.pin_csr;
       }
+      NodeInfo& sum = chain.sum;
       // A block pin's MAX*CAR is the cumulative ratio its gates already have
       // from the block's own metal up to this layer.  It carries up through
       // the layers above, like any other layer's damage.
@@ -534,10 +545,16 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
           is_routing ? pin.max_area_car : pin.max_cut_car, layer);
       const double max_csr
           = is_routing ? valueOnLayer(pin.max_side_area_car, layer) : 0.0;
-      sum.par += max_car;
-      sum.diff_par += max_car;
-      sum.psr += max_csr;
-      sum.diff_psr += max_csr;
+      if (max_car != 0.0) {
+        sum.par += max_car - chain.pin_car;
+        sum.diff_par += max_car - chain.pin_car;
+        chain.pin_car = max_car;
+      }
+      if (max_csr != 0.0) {
+        sum.psr += max_csr - chain.pin_csr;
+        sum.diff_psr += max_csr - chain.pin_csr;
+        chain.pin_csr = max_csr;
+      }
 
       auto node_it = layer_to_node_info.find(layer);
       if (node_it != layer_to_node_info.end()) {
@@ -568,8 +585,8 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
         node_info.diff_car = sum.diff_par;
         node_info.diff_csr = sum.diff_psr;
       }
-      sum_own = sum;
-      sum_any = sum;
+      chain_own = chain;
+      chain_any = chain;
     }
   }
 }
