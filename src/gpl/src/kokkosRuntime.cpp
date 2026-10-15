@@ -9,15 +9,18 @@
 
 namespace gpl {
 
-void ensureKokkosInitialized()
+void ensureKokkosInitialized(std::optional<int> num_threads)
 {
   static std::once_flag once;
-  std::call_once(once, [] {
+  std::call_once(once, [=] {
     if (Kokkos::is_initialized()) {
       return;
     }
     Kokkos::InitializationSettings settings;
     settings.set_disable_warnings(true);
+    if (num_threads) {
+      settings.set_num_threads(*num_threads);
+    }
     Kokkos::initialize(settings);
     std::atexit([] {
       if (Kokkos::is_initialized() && !Kokkos::is_finalized()) {
@@ -28,9 +31,9 @@ void ensureKokkosInitialized()
 }
 
 Kokkos::DefaultHostExecutionSpace hostExecutionSpace(
-    [[maybe_unused]] int num_threads)
+    int num_threads)
 {
-  ensureKokkosInitialized();
+  ensureKokkosInitialized(num_threads);
 #ifdef KOKKOS_ENABLE_OPENMP
   return Kokkos::DefaultHostExecutionSpace(num_threads);
 #else
