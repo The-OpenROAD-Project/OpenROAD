@@ -14,22 +14,30 @@ _PAGE = {
 _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
 _ENTRIES = ("src/web/src/entry-app.js",)
 
-# Absolute URLs the bundle quotes as names rather than fetches: XML namespaces,
-# ELK's model URIs, licence and homepage links in the kept comments.
-_IDENTIFIER_URLS = (
-    "http://www.w3.org/",
-    "http://www.eclipse.org/",
-    "http:///org/eclipse/",
-    "http://mths.be/",
-    "http://underscorejs.org/",
+# Absolute URLs the bundle quotes as names rather than fetches, each matched
+# whole: XML namespaces, ELK's model URIs, links in comments and messages.
+_IDENTIFIER_URLS = {
+    "http://www.w3.org/1999/xhtml",
+    "http://www.w3.org/1999/xlink",
+    "http://www.w3.org/2000/svg",
+    "http://www.w3.org/2000/xmlns/",
+    "http://www.w3.org/2001/xmlschema",
+    "http://www.w3.org/xml/1998/namespace",
+    "http://www.eclipse.org/elk/elkgraph",
+    "http://www.eclipse.org/emf/2002/ecore",
+    "http://www.eclipse.org/emf/2003/xmltype",
+    "http:///org/eclipse/emf/ecore/util/extendedmetadata",
+    "http://mths.be/fromcodepoint",
+    "http://underscorejs.org/license",
     "https://lodash.com/",
+    "https://lodash.com/license",
     "https://openjsf.org/",
-    "https://npms.io/",
+    "https://npms.io/search?q=ponyfill",
     "https://leafletjs.com",
-    "https://discourse.threejs.org/",
+    "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
-)
+}
 
 _URL = r"[^\"'`) >,;\n]*"
 # Schemes and hosts are case-insensitive, so the scan is too.
@@ -41,16 +49,8 @@ _SCHEME_RELATIVE = re.compile(
 
 
 def _is_identifier_url(url):
-    # An allowed prefix only matches up to a host or path boundary, so
-    # "https://leafletjs.com.example/l.js" is not "https://leafletjs.com".
-    for allowed in _IDENTIFIER_URLS:
-        if not url.startswith(allowed):
-            continue
-        if allowed.endswith("/") or len(url) == len(allowed):
-            return True
-        if url[len(allowed)] in "/?#":
-            return True
-    return False
+    # A fragment never reaches a server; a comment may end the URL's sentence.
+    return url.split("#", 1)[0].rstrip(".") in _IDENTIFIER_URLS
 
 
 def external_urls(text):
@@ -79,10 +79,12 @@ class Scanner(unittest.TestCase):
         self.assertEqual(len(external_urls("s.src='HTTPS://CDN.example/x.js'")), 1)
         self.assertEqual(external_urls('xmlns="http://www.w3.org/2000/svg"'), [])
 
-    def test_allows_an_identifier_only_up_to_its_boundary(self):
+    def test_allows_only_a_whole_identifier(self):
         self.assertTrue(_is_identifier_url("https://leafletjs.com"))
-        self.assertTrue(_is_identifier_url("https://leafletjs.com/reference"))
+        self.assertTrue(_is_identifier_url("http://www.w3.org/2000/svg#x"))
+        self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
+        self.assertFalse(_is_identifier_url("https://lodash.com/lodash.js"))
 
     def test_finds_scheme_relative_fetches(self):
         for text in (
