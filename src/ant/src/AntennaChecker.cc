@@ -789,16 +789,16 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
   odb::PtrMap<odb::dbTechLayer, odb::PtrSet<odb::dbITerm>> pin_added;
   // if checkGates is used by repair antennas
   if (pin_violation_count > 0) {
+    LayerValues diode_diff_areas;
+    if (diode_mterm) {
+      diode_mterm->getDiffArea(diode_diff_areas);
+    }
     for (const auto& [gate, violation_layers] : gates_with_violations) {
       for (odb::dbTechLayer* layer : violation_layers) {
         // when repair antenna is running, calculate number of diodes
         if (pin_added[layer].find(gate) == pin_added[layer].end()) {
-          double diode_diff_area = 0.0;
-          if (diode_mterm) {
-            LayerValues diode_diff_areas;
-            diode_mterm->getDiffArea(diode_diff_areas);
-            diode_diff_area = valueAtOrBelow(diode_diff_areas, layer);
-          }
+          const double diode_diff_area
+              = valueAtOrBelow(diode_diff_areas, layer);
           NodeInfo violation_info = gate_info[gate][layer];
           std::vector<odb::dbITerm*> gates = violation_info.iterms;
           odb::dbTechLayer* violation_layer = layer;
