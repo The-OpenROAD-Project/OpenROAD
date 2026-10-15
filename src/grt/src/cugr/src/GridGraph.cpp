@@ -1484,6 +1484,53 @@ void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
       });
 }
 
+double GridGraph::treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
+                               const bool adopted,
+                               const std::vector<double>& net_costs) const
+{
+  std::vector<size_t> edges;
+  auto add = [&](const int layer, const PointT edge) {
+    if (layer >= constants_.min_routing_layer) {
+      edges.push_back(edgeFlatIndex(layer, edge.x(), edge.y()));
+    }
+  };
+  forEachTreeWireEdgeImpl(
+      tree, adopted, [&](const int layer, const PointT cell, bool wrong_way) {
+        if (wrong_way) {
+          forEachWrongWayFlankEdgeImpl(
+              layer, cell, [&](const PointT edge, CapacityT) {
+                add(layer, edge);
+              });
+        } else {
+          add(layer, cell);
+        }
+      });
+  forEachViaColumnImpl(
+      tree, [&](const PointT loc, const int low, const int high) {
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            loc,
+            net_costs,
+            [&](const int layer, const PointT edge, CapacityT, double) {
+              add(layer, edge);
+            });
+      });
+  std::ranges::sort(edges);
+  const auto duplicates = std::ranges::unique(edges);
+  edges.erase(duplicates.begin(), duplicates.end());
+  double overflow = 0.0;
+  const size_t per_layer = static_cast<size_t>(x_size_) * y_size_;
+  for (const size_t index : edges) {
+    const int layer = index / per_layer;
+    const int x = (index % per_layer) / y_size_;
+    const int y = index % y_size_;
+    const GraphEdge& edge = graph_edges_[layer][x][y];
+    overflow += std::max<CapacityT>(0.0, edge.demand - edge.capacity);
+  }
+  return overflow;
+}
+
 void GridGraph::write(const std::string& heatmap_file) const
 {
   logger_->report("Writing congestion heatmap to file {}.", heatmap_file);

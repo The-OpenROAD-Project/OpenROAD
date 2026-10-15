@@ -918,6 +918,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
   sortNetIndices(net_indices,
                  resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
+  // A reroute that adds overflow is rolled back and retried next pass.
+  constexpr double kAcceptTolerance = 1e-9;
+  int rejected = 0;
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
@@ -928,7 +931,13 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
+    const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
+    const bool old_adopted = net->isAdopted();
+    const std::vector<double>& costs = net->getNdrCosts();
+    // Overflow change of the transaction, measured on the touched edges.
+    double delta = -grid_graph_->treeOverflow(old_tree, old_adopted, costs);
     grid_graph_->removeTreeUsage(*net);
+    delta += grid_graph_->treeOverflow(old_tree, old_adopted, costs);
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     // Checked where the maze reads the view, after every refresh so far.
     if (verify_view) {
@@ -971,7 +980,17 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
+    delta -= grid_graph_->treeOverflow(net->getRoutingTree(), false, costs);
     grid_graph_->addTreeUsage(*net);
+    delta += grid_graph_->treeOverflow(net->getRoutingTree(), false, costs);
+    if (delta > kAcceptTolerance) {
+      grid_graph_->removeTreeUsage(*net);
+      grid_graph_->updateWireCostView(wire_cost_view, *net);
+      net->setRoutingTree(old_tree);
+      net->setAdopted(old_adopted);
+      grid_graph_->addTreeUsage(*net);
+      rejected++;
+    }
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     grid.step();
   }
@@ -985,6 +1004,15 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
              net_indices.size(),
              view_mismatches,
              view_max_drift);
+  debugPrint(logger_,
+             GRT,
+             "rrr",
+             1,
+             "iteration {}: {} nets rerouted, {} kept their route (the new "
+             "one added overflow).",
+             iteration,
+             net_indices.size(),
+             rejected);
   collectReroutedNets(net_indices);
   debugNetTopology(stage, iteration);
 }
