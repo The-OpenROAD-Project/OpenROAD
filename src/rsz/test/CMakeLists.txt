@@ -158,6 +158,7 @@ or_integration_tests(
     repair_timing_path_group3
     repair_timing_path_group4
     repair_timing_path_group5
+    repair_timing_path_group6
     repair_slew1
     repair_slew2
     repair_slew3
