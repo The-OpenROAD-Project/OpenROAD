@@ -12,6 +12,12 @@ import re
 
 _LICENSE_NAMES = ("license", "license.md", "license.txt", "licence", "copying")
 
+_SHORTHAND_HOSTS = {
+    "github": "github.com",
+    "gitlab": "gitlab.com",
+    "bitbucket": "bitbucket.org",
+}
+
 _RULE = "=" * 78
 
 _HEADER = """\
@@ -47,8 +53,13 @@ def source_url(meta):
     url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
     url = re.sub(r"^(?:git|ssh)://(?:git@)?", "https://", url)
     url = re.sub(r"\.git$", "", url)
-    # npm reads a bare "user/repo" as a GitHub repository.
-    return url if "://" in url else f"https://github.com/{url}"
+    if "://" in url:
+        return url
+    # npm's shorthands: a bare "user/repo" is on GitHub, "host:user/repo" on host.
+    shorthand = re.fullmatch(r"(?:(github|gitlab|bitbucket):)?([\w.-]+/[\w.-]+)", url)
+    if not shorthand:
+        raise SystemExit(f"{meta['name']}: cannot read {url!r} as a source URL")
+    return f"https://{_SHORTHAND_HOSTS[shorthand[1] or 'github']}/{shorthand[2]}"
 
 
 def main():
