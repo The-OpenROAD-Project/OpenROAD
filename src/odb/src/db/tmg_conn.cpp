@@ -938,8 +938,7 @@ void tmg_conn::removeWireLoops()
               for (k2 = max_k + 1; k2 < connection_graph_->descentDepth() - 1;
                    k2++) {
                 connection_graph_->pt(connection_graph_->descentEdge(k2)->to)
-                    .descent_edge_index
-                    = -1;
+                    .descent_edge_index = -1;
               }
               connection_graph_->setDescentDepth(max_k + 1);
             }

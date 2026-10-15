@@ -41,8 +41,7 @@ class AbstractGraphics
   // Turns debug on and sets mode to Initial(place).
   virtual void debugForInitialPlace(
       std::shared_ptr<PlacerBaseCommon> pbc,
-      std::vector<std::shared_ptr<PlacerBase>>& pbVec)
-      = 0;
+      std::vector<std::shared_ptr<PlacerBase>>& pbVec) = 0;
 
   // Turns debug on and sets mode to Nesterov(place)
   virtual void debugForNesterovPlace(
@@ -54,8 +53,7 @@ class AbstractGraphics
       std::vector<std::shared_ptr<NesterovBase>>& nbVec,
       bool draw_bins,
       odb::dbInst* inst,
-      odb::dbBTerm* pin)
-      = 0;
+      odb::dbBTerm* pin) = 0;
 
   // Draw the graphics; optionally pausing afterwards
   void cellPlot(bool pause = false) { cellPlotImpl(pause); }
@@ -124,19 +122,16 @@ class AbstractGraphics
   virtual void addFrameLabelImpl(const odb::Rect& bbox,
                                  std::string_view label,
                                  std::string_view label_name,
-                                 int image_width_px)
-      = 0;
+                                 int image_width_px) = 0;
   virtual void saveLabeledImageImpl(std::string_view path,
                                     std::string_view label,
                                     std::string_view heatmap_control,
-                                    int image_width_px)
-      = 0;
+                                    int image_width_px) = 0;
   virtual void gifAddFrameImpl(int key,
                                const odb::Rect& region,
                                int width_px,
                                double dbu_per_pixel,
-                               std::optional<int> delay)
-      = 0;
+                               std::optional<int> delay) = 0;
 };
 
 }  // namespace gpl

@@ -46,7 +46,6 @@ using namespace odb;
 %immutable ant::DesignCheck::nets;
 %immutable ant::NetCheck::pins;
 %immutable ant::PinCheck::layers;
-%immutable ant::LayerCheck::car;
 %immutable ant::LayerCheck::psr;
 %immutable ant::LayerCheck::csr;
 
