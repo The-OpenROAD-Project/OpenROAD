@@ -53,7 +53,8 @@ class AbstractGraphics
       std::vector<std::shared_ptr<PlacerBase>>& pbVec,
       std::vector<std::shared_ptr<NesterovBase>>& nbVec,
       bool draw_bins,
-      odb::dbInst* inst)
+      odb::dbInst* inst,
+      odb::dbBTerm* pin)
       = 0;
 
   // Draw the graphics; optionally pausing afterwards
@@ -85,9 +86,6 @@ class AbstractGraphics
   // Note that even if set, the graphics may still be disabled under conditions
   // #2 and #3 of enabled() above.
   virtual void setDebugOn(bool set_on) = 0;
-
-  // Called before db_inst is destroyed so a selection can be dropped.
-  virtual void instDestroyed(odb::dbInst* db_inst) {}
 
   void addFrameLabel(const odb::Rect& bbox,
                      std::string_view label,

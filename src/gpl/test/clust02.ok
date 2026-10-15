@@ -13,11 +13,12 @@
 [INFO IFP-0104] Effective utilization:                0.003
 [INFO IFP-0105] Number of instances:                    100
 Alpha = 60.0, Beta = 1.0, #paths = 0, max size = 50
-Total ILP Cost: 4114.724
+Total ILP Cost: 4144.466
 Total Timing Critical Path Displacement: 0.0
-Average slot-to-flop displacement: 5.488
-Final Objective Value: 4114.724
+Average slot-to-flop displacement: 5.293
+Final Objective Value: 4144.466
 Sizes used
-  1-bit: 2
-  2-bit: 49
+  1-bit: 4
+  2-bit: 42
+  4-bit: 3
 No differences found.

@@ -71,6 +71,153 @@ struct EdgeKeyHash
   }
 };
 
+bool isSamePoint(const GRPoint& a, const GRPoint& b)
+{
+  return a.getLayerIdx() == b.getLayerIdx() && a.x() == b.x() && a.y() == b.y();
+}
+
+// True if the tree edge parent -> child passes through point strictly
+// between its endpoints, either inside a via stack or along a wire.
+bool edgePassesThrough(const GRTreeNode& parent,
+                       const GRTreeNode& child,
+                       const GRPoint& point)
+{
+  if (parent.getLayerIdx() != child.getLayerIdx()) {
+    const auto [low, high]
+        = std::minmax({parent.getLayerIdx(), child.getLayerIdx()});
+    return parent.x() == point.x() && parent.y() == point.y()
+           && child.x() == point.x() && child.y() == point.y()
+           && low < point.getLayerIdx() && point.getLayerIdx() < high;
+  }
+  if (parent.getLayerIdx() != point.getLayerIdx()) {
+    return false;
+  }
+  if (parent.x() == point.x() && child.x() == point.x()) {
+    const auto [low, high] = std::minmax({parent.y(), child.y()});
+    return low < point.y() && point.y() < high;
+  }
+  if (parent.y() == point.y() && child.y() == point.y()) {
+    const auto [low, high] = std::minmax({parent.x(), child.x()});
+    return low < point.x() && point.x() < high;
+  }
+  return false;
+}
+
+// Splits the first edge of tree that passes through point and returns the
+// new node there, or nullptr if no edge does. Both halves commit the same
+// demand as the original edge.
+std::shared_ptr<GRTreeNode> splitEdgeAt(const std::shared_ptr<GRTreeNode>& tree,
+                                        const GRPoint& point)
+{
+  std::shared_ptr<GRTreeNode> parent;
+  std::shared_ptr<GRTreeNode> child;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    if (parent) {
+      return;
+    }
+    for (const auto& c : node->getChildren()) {
+      if (edgePassesThrough(*node, *c, point)) {
+        parent = node;
+        child = c;
+        return;
+      }
+    }
+  });
+  if (!parent) {
+    return nullptr;
+  }
+  auto middle = std::make_shared<GRTreeNode>(point);
+  parent->removeChild(child);
+  middle->addChild(std::move(child));
+  parent->addChild(middle);
+  return middle;
+}
+
+// Returns the first node of tree on one of points or, failing that, the node
+// made by splitting an edge that passes through one of them; nullptr if the
+// tree reaches none of them.
+std::shared_ptr<GRTreeNode> findOrSplitAt(
+    const std::shared_ptr<GRTreeNode>& tree,
+    const std::vector<GRPoint>& points)
+{
+  std::shared_ptr<GRTreeNode> found;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    if (found) {
+      return;
+    }
+    for (const GRPoint& point : points) {
+      if (isSamePoint(*node, point)) {
+        found = node;
+        return;
+      }
+    }
+  });
+  if (found) {
+    return found;
+  }
+  for (const GRPoint& point : points) {
+    if (auto node = splitEdgeAt(tree, point)) {
+      return node;
+    }
+  }
+  return nullptr;
+}
+
+std::vector<GRPoint> treePoints(const std::shared_ptr<GRTreeNode>& tree)
+{
+  std::vector<GRPoint> points;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    points.emplace_back(*node);
+  });
+  return points;
+}
+
+// Finds where two trees touch and returns one node of each there, splitting
+// an edge if the contact is inside it; {nullptr, nullptr} if they don't.
+std::pair<std::shared_ptr<GRTreeNode>, std::shared_ptr<GRTreeNode>>
+findTreeJoin(const std::shared_ptr<GRTreeNode>& tree_a,
+             const std::shared_ptr<GRTreeNode>& tree_b)
+{
+  // Each search lands on a point where the other tree has a node.
+  if (auto node_a = findOrSplitAt(tree_a, treePoints(tree_b))) {
+    return {node_a, findOrSplitAt(tree_b, {GRPoint(*node_a)})};
+  }
+  if (auto node_b = findOrSplitAt(tree_b, treePoints(tree_a))) {
+    return {findOrSplitAt(tree_a, {GRPoint(*node_b)}), node_b};
+  }
+  return {nullptr, nullptr};
+}
+
+bool findPath(const std::shared_ptr<GRTreeNode>& curr,
+              const std::shared_ptr<GRTreeNode>& target,
+              std::vector<std::shared_ptr<GRTreeNode>>& path)
+{
+  path.push_back(curr);
+  if (curr == target) {
+    return true;
+  }
+  for (const auto& child : curr->getChildren()) {
+    if (findPath(child, target, path)) {
+      return true;
+    }
+  }
+  path.pop_back();
+  return false;
+}
+
+// Makes node, which must belong to tree, its root by reversing the edges on
+// the path to it.
+void rerootAt(const std::shared_ptr<GRTreeNode>& tree,
+              const std::shared_ptr<GRTreeNode>& node)
+{
+  std::vector<std::shared_ptr<GRTreeNode>> path;
+  findPath(tree, node, path);
+  for (size_t i = 0; i + 1 < path.size(); ++i) {
+    path[i]->removeChild(path[i + 1]);
+    path[i + 1]->addChild(path[i]);
+  }
+}
+
 }  // namespace
 
 CUGR::CUGR(odb::dbDatabase* db,
@@ -115,6 +262,12 @@ void CUGR::init(const int min_routing_layer,
                                      clock_nets,
                                      verbose_);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
+  debugPrint(logger_,
+             GRT,
+             "report",
+             1,
+             "CUGR via congestion demand: {}",
+             constants_.via_demand_enabled ? "enabled" : "disabled");
   // Instantiate the global routing netlist
   const std::vector<CUGRNet>& base_nets = design_->getAllNets();
   gr_nets_.reserve(base_nets.size());
@@ -2110,17 +2263,22 @@ void CUGR::saveCongestion()
   // Walk every routed net's tree to gather per 3D edge (layer, x, y):
   //   - wire_count: number of same-layer wire segments crossing the edge
   //   - wire_nets:  the nets that own those wires
-  //   - via_nets:   the nets that own vias whose stub demand commitVia()
-  //                 attributes to this edge (the same neighbours commitVia
+  //   - via_nets:   the nets that own vias whose stub demand commitTree()
+  //                 attributes to this edge (the same neighbours commitTree
   //                 itself touches)
   std::unordered_map<EdgeKey, int, EdgeKeyHash> wire_count;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> wire_nets;
   std::unordered_map<EdgeKey, odb::PtrSet<odb::dbNet>, EdgeKeyHash> via_nets;
 
-  auto attribute_via = [&](int via_layer, int vx, int vy, odb::dbNet* db_net) {
-    // Same edges commitVia() deposits stub demand on.
-    grid_graph_->forEachViaFlankEdge(
-        via_layer,
+  auto attribute_via = [&](int low,
+                           int high,
+                           int vx,
+                           int vy,
+                           odb::dbNet* db_net) {
+    // Same edges commitTree() deposits stub demand on.
+    grid_graph_->forEachStackFlankEdge(
+        low,
+        high,
         {vx, vy},
         {},
         [&](int l, PointT edge_loc, CapacityT /*demand*/, double /*factor*/) {
@@ -2158,13 +2316,9 @@ void CUGR::saveCongestion()
                 }
               }
             } else {
-              const int min_l
-                  = std::min(node->getLayerIdx(), child->getLayerIdx());
-              const int max_l
-                  = std::max(node->getLayerIdx(), child->getLayerIdx());
-              for (int via_l = min_l; via_l < max_l; via_l++) {
-                attribute_via(via_l, node->x(), node->y(), db_net);
-              }
+              const auto [min_l, max_l]
+                  = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+              attribute_via(min_l, max_l, node->x(), node->y(), db_net);
             }
           }
         });
@@ -2281,6 +2435,8 @@ void CUGR::verifyDemandConsistency(const char* tag)
   const auto recomputed = grid_graph_->snapshotDemand();
   grid_graph_->restoreDemand(live);  // leave the grid exactly as found
 
+  // Differences within tol are rounding noise; they are neither counted nor
+  // reported, so the report is stable across builds.
   constexpr double tol = 1e-6;
   double max_diff = 0.0;
   // With all trees removed, demand must be zero; any residual is a leak.
@@ -2291,14 +2447,14 @@ void CUGR::verifyDemandConsistency(const char* tag)
     for (size_t x = 0; x < live[l].size(); x++) {
       for (size_t y = 0; y < live[l][x].size(); y++) {
         const double diff = std::abs(recomputed[l][x][y] - live[l][x][y]);
-        max_diff = std::max(max_diff, diff);
-        const double residual = std::abs(base[l][x][y]);
-        max_residual_base = std::max(max_residual_base, residual);
         if (diff > tol) {
           mismatches++;
+          max_diff = std::max(max_diff, diff);
         }
+        const double residual = std::abs(base[l][x][y]);
         if (residual > tol) {
           leaked_edges++;
+          max_residual_base = std::max(max_residual_base, residual);
         }
       }
     }
@@ -2316,12 +2472,12 @@ void CUGR::verifyDemandConsistency(const char* tag)
              leaked_edges);
 }
 
-void CUGR::mergeNet(odb::dbNet* preserved_net,
+bool CUGR::mergeNet(odb::dbNet* preserved_net,
                     odb::dbNet* removed_net,
                     const std::vector<GSegment>& connection)
 {
   if (!design_) {
-    return;
+    return true;
   }
 
   auto preserved_it = db_net_map_.find(preserved_net);
@@ -2331,7 +2487,7 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
     if (preserved_it != db_net_map_.end()) {
       updateNet(preserved_net);
     }
-    return;
+    return true;
   }
 
   GRNet* preserved_gr = preserved_it->second;
@@ -2340,184 +2496,113 @@ void CUGR::mergeNet(odb::dbNet* preserved_net,
   auto& preserved_tree = preserved_gr->getRoutingTree();
   auto& removed_tree = removed_gr->getRoutingTree();
 
-  if (preserved_tree && removed_tree) {
-    if (connection.empty()) {
-      // Find intersection node
-      std::shared_ptr<GRTreeNode> node_a = nullptr;
-      std::shared_ptr<GRTreeNode> node_b = nullptr;
-      GRTreeNode::preorder(
-          preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n1) {
-            if (node_a) {
-              return;
-            }
-            GRTreeNode::preorder(
-                removed_tree, [&](const std::shared_ptr<GRTreeNode>& n2) {
-                  if (node_a) {
-                    return;
-                  }
-                  if (n1->getLayerIdx() == n2->getLayerIdx()
-                      && n1->x() == n2->x() && n1->y() == n2->y()) {
-                    node_a = n1;
-                    node_b = n2;
-                  }
-                });
-          });
-      if (node_a && node_b) {
-        // Reroot removed_tree at node_b
-        std::function<bool(std::shared_ptr<GRTreeNode>,
-                           std::vector<std::shared_ptr<GRTreeNode>>&)>
-            find_path;
-        find_path
-            = [&](std::shared_ptr<GRTreeNode> curr,
-                  std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
-          path.push_back(curr);
-          if (curr == node_b) {
-            return true;
-          }
-          for (auto& child : curr->getChildren()) {
-            if (find_path(child, path)) {
-              return true;
-            }
-          }
-          path.pop_back();
-          return false;
-        };
-        std::vector<std::shared_ptr<GRTreeNode>> path;
-        if (find_path(removed_tree, path)) {
-          for (size_t i = 0; i < path.size() - 1; ++i) {
-            path[i]->removeChild(path[i + 1]);
-            path[i + 1]->addChild(path[i]);
-          }
-        }
-        node_a->addChild(std::move(node_b));
-      } else {
-        preserved_tree->addChild(removed_tree);
-      }
-    } else {
-      auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
-        const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
-        return (dbu_coord - min_coord) / design_->getGridlineSize();
-      };
-
-      // 1. Build adjacency list of connection segments
-      using Coord = std::tuple<int, int, int>;  // layer, x, y
-      std::map<Coord, std::vector<Coord>> adj;
-      for (const auto& seg : connection) {
-        Coord u(seg.init_layer - 1,
-                dbu_to_tile(seg.init_x, true),
-                dbu_to_tile(seg.init_y, false));
-        Coord v(seg.final_layer - 1,
-                dbu_to_tile(seg.final_x, true),
-                dbu_to_tile(seg.final_y, false));
-        if (u != v) {
-          adj[u].push_back(v);
-          adj[v].push_back(u);
-        }
-      }
-
-      // 2. Find intersection between preserved_tree and connection
-      std::shared_ptr<GRTreeNode> node_a = nullptr;
-      GRTreeNode::preorder(
-          preserved_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_a
-                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
-              node_a = n;
-            }
-          });
-      if (!node_a) {
-        node_a = preserved_tree;
-      }
-
-      // 3. Find intersection between removed_tree and connection
-      std::shared_ptr<GRTreeNode> node_b = nullptr;
-      GRTreeNode::preorder(
-          removed_tree, [&](const std::shared_ptr<GRTreeNode>& n) {
-            if (!node_b
-                && adj.find({n->getLayerIdx(), n->x(), n->y()}) != adj.end()) {
-              node_b = n;
-            }
-          });
-      if (!node_b) {
-        node_b = removed_tree;
-      }
-
-      // 4. Reroot removed_tree at node_b
-      std::function<bool(std::shared_ptr<GRTreeNode>,
-                         std::vector<std::shared_ptr<GRTreeNode>>&)>
-          find_path;
-      find_path = [&](std::shared_ptr<GRTreeNode> curr,
-                      std::vector<std::shared_ptr<GRTreeNode>>& path) -> bool {
-        path.push_back(curr);
-        if (curr == node_b) {
-          return true;
-        }
-        for (auto& child : curr->getChildren()) {
-          if (find_path(child, path)) {
-            return true;
-          }
-        }
-        path.pop_back();
-        return false;
-      };
-      std::vector<std::shared_ptr<GRTreeNode>> path;
-      if (find_path(removed_tree, path)) {
-        for (size_t i = 0; i < path.size() - 1; ++i) {
-          path[i]->removeChild(path[i + 1]);
-          path[i + 1]->addChild(path[i]);
-        }
-      }
-
-      // 5. DFS to build connection tree and commit demand
-      std::set<Coord> visited;
-      const auto& ndr = preserved_gr->getNdrCosts();
-      std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
-      build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
-        visited.insert(curr);
-        if (curr
-            == std::make_tuple(
-                node_b->getLayerIdx(), node_b->x(), node_b->y())) {
-          if (parent_node != node_b) {
-            parent_node->addChild(node_b);
-          }
-        }
-        for (const auto& next : adj[curr]) {
-          if (visited.find(next) == visited.end()) {
-            std::shared_ptr<GRTreeNode> child_node;
-            if (next
-                == std::make_tuple(
-                    node_b->getLayerIdx(), node_b->x(), node_b->y())) {
-              child_node = node_b;
-            } else {
-              child_node = std::make_shared<GRTreeNode>(
-                  std::get<0>(next), std::get<1>(next), std::get<2>(next));
-            }
-            parent_node->addChild(child_node);
-
-            // Commit grid usage if it's a wire (same layer)
-            if (std::get<0>(curr) == std::get<0>(next)) {
-              auto temp = std::make_shared<GRTreeNode>(
-                  std::get<0>(curr), std::get<1>(curr), std::get<2>(curr));
-              temp->addChild(std::make_shared<GRTreeNode>(
-                  std::get<0>(next), std::get<1>(next), std::get<2>(next)));
-              grid_graph_->addTreeUsage(temp, ndr);
-            }
-
-            build_tree(next, std::move(child_node));
-          }
-        }
-      };
-
-      Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
-      build_tree(start_coord, std::move(node_a));
+  if (!preserved_tree || !removed_tree) {
+    // Nothing to graft; let the caller reroute the survivor. The removed net
+    // keeps its tree, so removeNet still releases that tree's demand.
+    return false;
+  }
+  // The trees can overlap where they meet, in wires as well as via columns,
+  // and a net pays for each edge once. So once the join is found, release
+  // both trees and commit the merged tree as a whole.
+  auto release_trees = [&] {
+    grid_graph_->removeTreeUsage(*preserved_gr);
+    grid_graph_->removeTreeUsage(*removed_gr);
+  };
+  if (connection.empty()) {
+    // The routes overlap in the buffer gcell (connectRouting passes the
+    // bridging vias otherwise), but the trees may touch only inside an edge,
+    // such as a via stack, which CUGR keeps as one edge.
+    auto [node_a, node_b] = findTreeJoin(preserved_tree, removed_tree);
+    if (!node_a) {
+      // Linking the roots would add a diagonal or wrong-way edge that
+      // commitTree rejects (GRT-1252); let the caller reroute instead.
+      return false;
     }
+    release_trees();
+    rerootAt(removed_tree, node_b);
+    node_a->addChild(node_b);
+  } else {
+    auto dbu_to_tile = [&](int dbu_coord, bool is_x) -> int {
+      const int min_coord = grid_graph_->getGridline(is_x ? 0 : 1, 0);
+      return (dbu_coord - min_coord) / design_->getGridlineSize();
+    };
+
+    // 1. Build adjacency list of connection segments
+    using Coord = std::tuple<int, int, int>;  // layer, x, y
+    std::map<Coord, std::vector<Coord>> adj;
+    for (const auto& seg : connection) {
+      Coord u(seg.init_layer - 1,
+              dbu_to_tile(seg.init_x, true),
+              dbu_to_tile(seg.init_y, false));
+      Coord v(seg.final_layer - 1,
+              dbu_to_tile(seg.final_x, true),
+              dbu_to_tile(seg.final_y, false));
+      if (u != v) {
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+      }
+    }
+
+    // 2. Find where each tree touches the connection. A tree can pass a
+    // connection point inside an edge, such as the via stack down to the
+    // buffer pin, so split that edge to get a node there.
+    std::vector<GRPoint> points;
+    points.reserve(adj.size());
+    for (const auto& [coord, neighbors] : adj) {
+      points.push_back(std::make_from_tuple<GRPoint>(coord));
+    }
+    std::shared_ptr<GRTreeNode> node_a = findOrSplitAt(preserved_tree, points);
+    std::shared_ptr<GRTreeNode> node_b = findOrSplitAt(removed_tree, points);
+    if (!node_a || !node_b) {
+      // The removed tree would be left detached with its demand still
+      // committed; let the caller reroute instead.
+      return false;
+    }
+    release_trees();
+
+    // 3. Reroot removed_tree at node_b
+    rerootAt(removed_tree, node_b);
+
+    // 4. DFS to build the connection tree
+    std::set<Coord> visited;
+    std::function<void(Coord, std::shared_ptr<GRTreeNode>)> build_tree;
+    build_tree = [&](Coord curr, std::shared_ptr<GRTreeNode> parent_node) {
+      visited.insert(curr);
+      if (curr
+          == std::make_tuple(node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+        if (parent_node != node_b) {
+          parent_node->addChild(node_b);
+        }
+      }
+      for (const auto& next : adj[curr]) {
+        if (visited.find(next) == visited.end()) {
+          std::shared_ptr<GRTreeNode> child_node;
+          if (next
+              == std::make_tuple(
+                  node_b->getLayerIdx(), node_b->x(), node_b->y())) {
+            child_node = node_b;
+          } else {
+            child_node = std::make_shared<GRTreeNode>(
+                std::get<0>(next), std::get<1>(next), std::get<2>(next));
+          }
+          parent_node->addChild(child_node);
+          build_tree(next, std::move(child_node));
+        }
+      }
+    };
+
+    Coord start_coord(node_a->getLayerIdx(), node_a->x(), node_a->y());
+    build_tree(start_coord, std::move(node_a));
   }
 
   // Grafting an adopted tree into a native survivor must carry the
   // adopted mark, or the combined tree's release trips GRT-1252.
   preserved_gr->setAdopted(preserved_gr->isAdopted()
                            || removed_gr->isAdopted());
+  grid_graph_->addTreeUsage(*preserved_gr);
 
   merged_nets_.insert(removed_net);
+  return true;
 }
 
 // Above-universe layers and off-grid tiles have no edge; getEdge indexes
@@ -2603,16 +2688,16 @@ bool CUGR::hasJumperResources(odb::dbNet* db_net,
   if (gr_net != nullptr && gr_net->getRoutingTree() != nullptr) {
     accumulate_wire(layer_0 - 2, -1.0);
   }
+  // The adopted route commits each endpoint's two vias as one stack.
   for (const PointT& endpoint : endpoints) {
-    for (int layer = layer_0 - 2; layer < layer_0; layer++) {
-      grid_graph_->forEachViaFlankEdge(
-          layer,
-          endpoint,
-          costs,
-          [&](int l, PointT loc, CapacityT demand, double factor) {
-            edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
-          });
-    }
+    grid_graph_->forEachStackFlankEdge(
+        layer_0 - 2,
+        layer_0,
+        endpoint,
+        costs,
+        [&](int l, PointT loc, CapacityT demand, double factor) {
+          edge_demands[{l, loc.x(), loc.y()}] += demand * factor;
+        });
   }
   for (const auto& [edge, demand] : edge_demands) {
     const auto& [layer, x, y] = edge;

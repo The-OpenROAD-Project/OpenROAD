@@ -66,7 +66,8 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                                      pbVec_,
                                      nbVec_,
                                      npVars_.debug_draw_bins,
-                                     npVars_.debug_inst);
+                                     npVars_.debug_inst,
+                                     npVars_.debug_pin);
   }
 
   init();
@@ -459,6 +460,8 @@ void NesterovPlace::runTimingDriven(int iter,
 
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
+    // fixPointers() may have moved the GPins the IO pins point at.
+    getTopLevelNB()->refreshIoPins();
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
@@ -505,7 +508,7 @@ void NesterovPlace::runTimingDriven(int iter,
 
     if (!virtual_td_iter) {
       for (auto& nesterov : nbVec_) {
-        nesterov->updateGCellState();
+        nesterov->updateGCellState(wireLengthCoefX_, wireLengthCoefY_);
         // updates order in routability:
         // 1. change areas
         // 2. set target density with delta area
@@ -564,8 +567,6 @@ void NesterovPlace::runTimingDriven(int iter,
         nesterov->checkConsistency();
       }
 
-      refreshCurGradients();
-
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {
@@ -575,8 +576,6 @@ void NesterovPlace::runTimingDriven(int iter,
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       }
-
-      reset_nesterov_momentum_ = true;
     }
 
     // problem occured
@@ -584,22 +583,6 @@ void NesterovPlace::runTimingDriven(int iter,
     if (!shouldTdProceed) {
       npVars_.timingDrivenMode = false;
     }
-  }
-}
-
-// Evaluate every gradient at curSLP on the repaired
-// netlist, in the same order as init().
-void NesterovPlace::refreshCurGradients()
-{
-  for (auto& nb : nbVec_) {
-    nb->updateDensityCenterCurSLP();
-    nb->updateDensityFieldBin();
-  }
-
-  nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-  for (auto& nb : nbVec_) {
-    npUpdateCurGradient(nb);
   }
 }
 
@@ -876,6 +859,9 @@ void NesterovPlace::runRoutability(int iter,
 
       graphics_->deleteLabel(label_name);
     }
+
+    // GRT and RUDY read the IO pins from the db
+    getTopLevelNB()->updateDbIoPins();
 
     // recover the densityPenalty values
     // if further routability-driven is needed
@@ -1244,12 +1230,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
-    if (reset_nesterov_momentum_) {
-      curA = 1.0;
-      reset_nesterov_momentum_ = false;
-      log_->info(GPL, 111, "Timing-driven: restarting Nesterov momentum.");
-    }
-
     const float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
@@ -1494,9 +1474,6 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
   if (db_inst == nullptr) {
     log_->warn(GPL, 328, "Trying to destroy odb::dbInst* nullptr");
     return;
-  }
-  if (graphics_) {
-    graphics_->instDestroyed(db_inst);
   }
 
   bool destroyed = false;

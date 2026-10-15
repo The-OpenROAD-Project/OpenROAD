@@ -176,6 +176,20 @@ cc_test(
 )
 
 cc_test(
+    name = "TestLefIn",
+    srcs = ["TestLefIn.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/lefin",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestLef58Properties",
     srcs = ["TestLef58Properties.cpp"],
     data = ["//src/odb/test:regression_resources"],
@@ -278,6 +292,17 @@ cc_test(
         "//src/odb/src/defin",
         "//src/tst:nangate45_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestShapeDestroy",
+    srcs = ["TestShapeDestroy.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
