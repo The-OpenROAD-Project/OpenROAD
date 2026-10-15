@@ -695,7 +695,10 @@ bool DbInstancePinIterator::hasNext()
   if (top_) {
     while (bitr_ != bitr_end_) {
       dbBTerm* bterm = *bitr_;
-      if (!network_->isPGSupply(bterm)) {
+      // Keep real supply ports (they never become graph vertices); hide only
+      // signal-typed ports that sit on a supply net.  DbNetTermIterator uses
+      // the same predicate so the pin walk and the term walk agree.
+      if (!network_->isSupplyOnlyByNet(bterm)) {
         next_ = network_->dbToSta(bterm);
         bitr_++;
         return true;
@@ -877,7 +880,9 @@ Term* DbNetTermIterator::next()
   while (iter_ != end_) {
     dbBTerm* bterm = *iter_;
     iter_++;
-    if (!network_->isPGSupply(bterm)) {
+    // Same predicate as DbInstancePinIterator's top branch, so a supply port
+    // visible in the pin walk is also visible here.
+    if (!network_->isSupplyOnlyByNet(bterm)) {
       return network_->dbToStaTerm(bterm);
     }
   }
@@ -5973,6 +5978,23 @@ bool dbNetwork::isPGSupply(dbBTerm* bterm) const
 {
   if (bterm->getSigType().isSupply()) {
     return true;
+  }
+
+  return isPGSupply(bterm->getNet());
+}
+
+// A BTerm whose own sig type is POWER/GROUND is a real supply port.  dbNetwork
+// reports power/ground direction for it, so Graph::makePinVertex() never makes
+// a vertex, and write_verilog needs it visible to emit the "assign <port> =
+// <net>;" alias when the port and its supply net have different names
+// (#10414).  A signal-typed BTerm that merely sits on a special supply net is
+// the bump-style port from #8957: its direction is bidirect, so exposing it
+// would add two graph vertices (load plus bidirect driver).  Keep the former,
+// hide the latter.
+bool dbNetwork::isSupplyOnlyByNet(dbBTerm* bterm) const
+{
+  if (bterm->getSigType().isSupply()) {
+    return false;
   }
 
   return isPGSupply(bterm->getNet());
