@@ -117,6 +117,12 @@ bool dbDft::isScanInserted() const
   return obj->scan_inserted_;
 }
 
+dbSet<dbScanPin> dbDft::getScanPins() const
+{
+  _dbDft* obj = (_dbDft*) this;
+  return dbSet<dbScanPin>(obj, obj->scan_pins_);
+}
+
 dbSet<dbScanChain> dbDft::getScanChains() const
 {
   _dbDft* obj = (_dbDft*) this;

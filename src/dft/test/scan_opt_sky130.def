@@ -1,0 +1,154 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN _4bitadder ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 18800 18800 ) ;
+ROW ROW_0 unithd 0 0 N DO 40 BY 1 STEP 460 0 ;
+ROW ROW_1 unithd 0 2720 FS DO 40 BY 1 STEP 460 0 ;
+ROW ROW_2 unithd 0 5440 N DO 40 BY 1 STEP 460 0 ;
+ROW ROW_3 unithd 0 8160 FS DO 40 BY 1 STEP 460 0 ;
+ROW ROW_4 unithd 0 10880 N DO 40 BY 1 STEP 460 0 ;
+ROW ROW_5 unithd 0 13600 FS DO 40 BY 1 STEP 460 0 ;
+TRACKS X 230 DO 41 STEP 460 LAYER li1 ;
+TRACKS Y 170 DO 55 STEP 340 LAYER li1 ;
+TRACKS X 170 DO 55 STEP 340 LAYER met1 ;
+TRACKS Y 170 DO 55 STEP 340 LAYER met1 ;
+TRACKS X 230 DO 41 STEP 460 LAYER met2 ;
+TRACKS Y 230 DO 41 STEP 460 LAYER met2 ;
+TRACKS X 340 DO 27 STEP 680 LAYER met3 ;
+TRACKS Y 340 DO 27 STEP 680 LAYER met3 ;
+TRACKS X 460 DO 20 STEP 920 LAYER met4 ;
+TRACKS Y 460 DO 20 STEP 920 LAYER met4 ;
+TRACKS X 1700 DO 5 STEP 3400 LAYER met5 ;
+TRACKS Y 1700 DO 5 STEP 3400 LAYER met5 ;
+COMPONENTS 19 ;
+    - _10_ sky130_fd_sc_hd__nand2_2 + PLACED ( 15180 8160 ) FS ;
+    - _11_ sky130_fd_sc_hd__and2_2 + PLACED ( 7820 5440 ) N ;
+    - _12_ sky130_fd_sc_hd__xor2_2 + PLACED ( 9200 8160 ) FS ;
+    - _13_ sky130_fd_sc_hd__xnor2_2 + PLACED ( 11040 5440 ) N ;
+    - _14_ sky130_fd_sc_hd__a31o_2 + PLACED ( 14720 0 ) N ;
+    - _15_ sky130_fd_sc_hd__and2_2 + PLACED ( 0 0 ) N ;
+    - _16_ sky130_fd_sc_hd__or2_2 + PLACED ( 5060 5440 ) N ;
+    - _17_ sky130_fd_sc_hd__nand2b_2 + PLACED ( 1840 5440 ) N ;
+    - _18_ sky130_fd_sc_hd__xnor2_2 + PLACED ( 460 10880 ) N ;
+    - _19_ sky130_fd_sc_hd__a21o_2 + PLACED ( 0 8160 ) FS ;
+    - _20_ sky130_fd_sc_hd__xnor2_2 + PLACED ( 3220 8160 ) FS ;
+    - _21_ sky130_fd_sc_hd__xnor2_2 + PLACED ( 460 2720 ) FS ;
+    - _22_ sky130_fd_sc_hd__or2_2 + PLACED ( 11960 13600 ) FS ;
+    - _23_ sky130_fd_sc_hd__and2_2 + PLACED ( 14260 13600 ) FS ;
+    - _24_ sky130_fd_sc_hd__sdfrtp_2 + PLACED ( 6440 2720 ) FS ;
+    - _25_ sky130_fd_sc_hd__sdfrtp_2 + PLACED ( 6440 10880 ) N ;
+    - _26_ sky130_fd_sc_hd__sdfrtp_2 + PLACED ( 0 13600 ) FS ;
+    - _27_ sky130_fd_sc_hd__sdfrtp_2 + PLACED ( 2760 0 ) N ;
+    - _28_ sky130_fd_sc_hd__conb_1 + PLACED ( 460 5440 ) N ;
+END COMPONENTS
+PINS 18 ;
+    - a[0] + NET a[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 15870 242 ) N ;
+    - a[1] + NET a[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 9430 242 ) N ;
+    - a[2] + NET a[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 8510 242 ) N ;
+    - a[3] + NET a[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 13110 242 ) N ;
+    - b[0] + NET b[0] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 10350 242 ) N ;
+    - b[1] + NET b[1] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 11270 242 ) N ;
+    - b[2] + NET b[2] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 5750 242 ) N ;
+    - b[3] + NET b[3] + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 4830 242 ) N ;
+    - c[0] + NET c[0] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 6670 242 ) N ;
+    - c[1] + NET c[1] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 14950 242 ) N ;
+    - c[2] + NET c[2] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 7590 242 ) N ;
+    - c[3] + NET c[3] + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 14030 242 ) N ;
+    - clk + NET clk + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 3910 242 ) N ;
+    - rstn + NET rstn + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 12190 242 ) N ;
+    - sce + NET sce + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 2070 242 ) N ;
+    - sci + NET sci + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 16790 242 ) N ;
+    - sco + NET sco + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met2 ( -70 -242 ) ( 70 243 )
+        + PLACED ( 2990 242 ) N ;
+    - tm + NET tm + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 298 70 )
+        + PLACED ( 18502 1530 ) N ;
+END PINS
+NETS 32 ;
+    - _00_ ( _23_ A ) ( _13_ A ) ( _10_ Y ) + USE SIGNAL ;
+    - _01_ ( _14_ B1 ) ( _11_ X ) + USE SIGNAL ;
+    - _02_ ( _14_ A3 ) ( _13_ B ) ( _12_ X ) + USE SIGNAL ;
+    - _03_ ( _19_ A1 ) ( _18_ A ) ( _14_ X ) + USE SIGNAL ;
+    - _04_ ( _19_ B1 ) ( _17_ A_N ) ( _15_ X ) + USE SIGNAL ;
+    - _05_ ( _19_ A2 ) ( _17_ B ) ( _16_ X ) + USE SIGNAL ;
+    - _06_ ( _18_ B ) ( _17_ Y ) + USE SIGNAL ;
+    - _07_ ( _21_ A ) ( _19_ X ) + USE SIGNAL ;
+    - _08_ ( _21_ B ) ( _20_ Y ) + USE SIGNAL ;
+    - _09_ ( _23_ B ) ( _22_ X ) + USE SIGNAL ;
+    - a[0] ( PIN a[0] ) ( _22_ B ) ( _14_ A2 ) ( _10_ B ) + USE SIGNAL ;
+    - a[1] ( PIN a[1] ) ( _12_ B ) ( _11_ B ) + USE SIGNAL ;
+    - a[2] ( PIN a[2] ) ( _16_ B ) ( _15_ B ) + USE SIGNAL ;
+    - a[3] ( PIN a[3] ) ( _20_ B ) + USE SIGNAL ;
+    - b[0] ( PIN b[0] ) ( _22_ A ) ( _14_ A1 ) ( _10_ A ) + USE SIGNAL ;
+    - b[1] ( PIN b[1] ) ( _12_ A ) ( _11_ A ) + USE SIGNAL ;
+    - b[2] ( PIN b[2] ) ( _16_ A ) ( _15_ A ) + USE SIGNAL ;
+    - b[3] ( PIN b[3] ) ( _20_ A ) + USE SIGNAL ;
+    - c[0] ( PIN c[0] ) ( _24_ Q ) + USE SIGNAL ;
+    - c[1] ( PIN c[1] ) ( _25_ Q ) + USE SIGNAL ;
+    - c[2] ( PIN c[2] ) ( _26_ Q ) + USE SIGNAL ;
+    - c[3] ( PIN c[3] ) ( _27_ Q ) + USE SIGNAL ;
+    - clk ( PIN clk ) ( _27_ CLK ) ( _26_ CLK ) ( _25_ CLK ) ( _24_ CLK ) + USE SIGNAL ;
+    - delay_next\[0\] ( _24_ D ) ( _23_ X ) + USE SIGNAL ;
+    - delay_next\[1\] ( _25_ D ) ( _13_ Y ) + USE SIGNAL ;
+    - delay_next\[2\] ( _26_ D ) ( _18_ Y ) + USE SIGNAL ;
+    - delay_next\[3\] ( _27_ D ) ( _21_ Y ) + USE SIGNAL ;
+    - rstn ( PIN rstn ) ( _27_ RESET_B ) ( _26_ RESET_B ) ( _25_ RESET_B ) ( _24_ RESET_B ) + USE SIGNAL ;
+    - sce ( PIN sce ) + USE SIGNAL ;
+    - sci ( PIN sci ) + USE SIGNAL ;
+    - sco ( PIN sco ) ( _28_ LO ) + USE SIGNAL ;
+    - tm ( PIN tm ) + USE SIGNAL ;
+END NETS
+END DESIGN

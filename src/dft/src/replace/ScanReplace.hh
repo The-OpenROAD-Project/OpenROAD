@@ -103,6 +103,8 @@ class ScanReplace
                           odb::dbMaster* master_scan_cell,
                           const std::unique_ptr<ScanCandidate>& scan_candidate);
 
+  void writeToOdb(odb::dbMaster* master);
+
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
