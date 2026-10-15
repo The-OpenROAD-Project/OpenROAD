@@ -1,6 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Keep the assembly rules used by OpenRCX and PSM in sync. OpenRCX defines
+# set_extraction_rules_file before PSM is initialized.
+rename set_extraction_rules_file psm::set_extraction_rules_file
+proc set_extraction_rules_file { args } {
+  set result [psm::set_extraction_rules_file {*}$args]
+  if { [lsearch -exact $args "-assembly"] >= 0 } {
+    psm::set_assembly_rules_file_cmd [file nativename [lindex $args end]]
+  }
+  return $result
+}
+
 sta::define_cmd_args "check_power_grid" {
   -net power_net
   [-error_file error_file]
@@ -81,14 +92,15 @@ proc analyze_power_grid { args } {
 
   if { [psm::is_3d_design [[ord::get_db] getChip]] } {
     sta::check_argc_eq0 "analyze_power_grid" $args
-    foreach key {-vsrc -source_type -allow_reuse -em_outfile} {
+    foreach key {-source_type -allow_reuse -em_outfile} {
       if { [info exists keys($key)] || [info exists flags($key)] } {
         utl::error PSM 157 "$key is not supported for a 3D assembly."
       }
     }
     return [psm::analyze_3d_power_grid_cmd \
       $keys(-net) [sta::parse_scene_or_default keys] true \
-      $error_file $voltage_file [info exists flags(-enable_em)]]
+      $error_file $voltage_source_file $voltage_file \
+      [info exists flags(-enable_em)]]
   }
 
   set enable_em [info exists flags(-enable_em)]
@@ -213,43 +225,28 @@ sta::define_cmd_args "set_pdnsim_net_voltage" {
   [-corner corner]
   [-chiplet chipA]
   [-port port]
-  [-nominal_voltage voltage]
 }
 
 proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
-    keys {-net -corner -voltage -chiplet -port -nominal_voltage} flags {}
+    keys {-net -corner -voltage -chiplet -port} flags {}
 
   if { [psm::is_3d_design [[ord::get_db] getChip]] } {
     sta::check_argc_eq0 "set_pdnsim_net_voltage" $args
-    set set_source [expr { [info exists keys(-port)] || [info exists keys(-voltage)] }]
-    set required {-net -chiplet}
-    if { $set_source } { lappend required -port -voltage }
+    set required {-net -voltage -chiplet -port}
     foreach key $required {
       if { ![info exists keys($key)] } {
         utl::error PSM 134 "Missing mandatory argument $key."
       }
     }
-    set port ""
-    set voltage 0.0
-    if { $set_source } {
-      sta::check_float "-voltage" $keys(-voltage)
-      set port $keys(-port)
-      set voltage $keys(-voltage)
-    }
-    set set_nominal [info exists keys(-nominal_voltage)]
-    set nominal_voltage 0.0
-    if { $set_nominal } {
-      sta::check_float "-nominal_voltage" $keys(-nominal_voltage)
-      set nominal_voltage $keys(-nominal_voltage)
-    }
+    sta::check_float "-voltage" $keys(-voltage)
 
     return [psm::set_pdnsim_chiplet_voltage_cmd \
-      $keys(-net) $keys(-chiplet) $port $voltage \
-      [sta::parse_scene_or_default keys] $set_source $set_nominal $nominal_voltage]
+      $keys(-net) $keys(-chiplet) $keys(-port) $keys(-voltage) \
+      [sta::parse_scene_or_default keys]]
   }
 
-  foreach key {-chiplet -port -nominal_voltage} {
+  foreach key {-chiplet -port} {
     if { [info exists keys($key)] } {
       utl::error PSM 158 "$key requires a 3D assembly."
     }

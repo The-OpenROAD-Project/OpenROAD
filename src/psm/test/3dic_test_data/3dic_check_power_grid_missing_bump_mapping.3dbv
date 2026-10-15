@@ -31,9 +31,9 @@ ChipletDef:
           - [130, 0]
 
     external:
-        APR_tech_file: [../../../test/Nangate45/Nangate45_tech.lef]
-        LEF_file: [../../../test/Nangate45/Nangate45_stdcell.lef, ../../../test/Nangate45/fake_bumps.lef]
-        liberty_file: [../../../test/Nangate45/Nangate45_typ.lib]
+        APR_tech_file: [../Nangate45/Nangate45_tech.lef]
+        LEF_file: [../Nangate45/Nangate45_stdcell.lef, ../Nangate45/fake_bumps.lef]
+        liberty_file: [../Nangate45/Nangate45_typ.lib]
         DEF_file: [3dic_frontside_a.def]
 
 
@@ -53,10 +53,10 @@ ChipletDef:
           - [0, 130]
           - [130, 130]
           - [130, 0]
-        bmap: 3dic_frontside_b.bmap
+        bmap: 3dic_check_power_grid_missing_bump_mapping.bmap
 
     external:
-      APR_tech_file: [../../../test/Nangate45/Nangate45_tech.lef]
-      LEF_file: [../../../test/Nangate45/Nangate45_stdcell.lef, ../../../test/Nangate45/fake_bumps.lef]
-      # liberty_file: [../../../test/Nangate45/Nangate45_typ.lib]  #  this is already loaded during the chiplet a's run
-      DEF_file: [3dic_check_power_grid_bump_pad_disconnected_pdn_net_b.def]
+      APR_tech_file: [../Nangate45/Nangate45_tech.lef]
+      LEF_file: [../Nangate45/Nangate45_stdcell.lef, ../Nangate45/fake_bumps.lef]
+      # liberty_file: [../Nangate45/Nangate45_typ.lib]  #  this is already loaded during the chiplet a's run
+      DEF_file: [3dic_frontside_b.def]
