@@ -2253,6 +2253,8 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     if (sizing_leakage_limit_) {
       source_cell_leakage = cellLeakage(source_cell);
     }
+    // Larger cells that pass every restriction except the leakage limit.
+    std::vector<sta::LibertyCell*> leakage_limited_cells;
     for (sta::LibertyCell* equiv_cell : *equiv_cells) {
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
@@ -2270,13 +2272,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         continue;
       }
 
+      bool exceeds_leakage_limit = false;
       if (sizing_leakage_limit_ && source_cell_leakage) {
         std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
-        if (equiv_cell_leakage
-            && (*equiv_cell_leakage / *source_cell_leakage
-                > sizing_leakage_limit_.value())) {
-          continue;
-        }
+        exceeds_leakage_limit = equiv_cell_leakage
+                                && (*equiv_cell_leakage / *source_cell_leakage
+                                    > sizing_leakage_limit_.value());
       }
 
       if (sizing_keep_site_) {
@@ -2309,7 +2310,41 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      if (exceeds_leakage_limit) {
+        if (equiv_cell_master->getArea() > source_cell_area) {
+          leakage_limited_cells.push_back(equiv_cell);
+        }
+        continue;
+      }
+
       swappable_cells.push_back(equiv_cell);
+    }
+
+    // The leakage limit is relative to the source cell, so a cell with
+    // unusually low leakage can lose every larger size and become impossible
+    // to upsize.  Keep the smallest larger cell in that case so there is
+    // always at least one upsizing step.
+    const bool has_larger_cell
+        = std::ranges::any_of(swappable_cells, [&](sta::LibertyCell* cell) {
+            return db_network_->staToDb(cell)->getArea() > source_cell_area;
+          });
+    if (!has_larger_cell && !leakage_limited_cells.empty()) {
+      sta::LibertyCell* next_larger = *std::ranges::min_element(
+          leakage_limited_cells,
+          [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+            return db_network_->staToDb(cell1)->getArea()
+                   < db_network_->staToDb(cell2)->getArea();
+          });
+      // Preserve the equivalent cell order.
+      sta::LibertyCellSeq ordered_cells;
+      for (sta::LibertyCell* equiv_cell : *equiv_cells) {
+        if (equiv_cell == next_larger
+            || std::ranges::find(swappable_cells, equiv_cell)
+                   != swappable_cells.end()) {
+          ordered_cells.push_back(equiv_cell);
+        }
+      }
+      swappable_cells = std::move(ordered_cells);
     }
   } else {
     swappable_cells.push_back(source_cell);
