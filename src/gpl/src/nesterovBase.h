@@ -814,6 +814,10 @@ struct NesterovBaseVars
   float maxPhiCoef;  // may be updated after initialization
   const int initialPlacePerturbationSeed;
   const float initialPlacePerturbationDist;
+  // -cluster_pull_weight/-cluster_pull_iters: rtl_macro_placer's clusters
+  // (-keep_clustering_data) pulled to their centroids, fading to zero.
+  const float clusterPullWeight;
+  const int clusterPullIters;
 
   static constexpr float minWireLengthForceBar = -300;
 };
@@ -1506,6 +1510,23 @@ class NesterovBase
   int64_t prev_reported_hpwl_ = 0;
 
   bool isDiverged_ = false;
+
+  // Cluster pull: rtl_macro_placer's clusters, each a dbGroup of type
+  // VISUAL_DEBUG under the root group, pulled to their area-weighted
+  // centroids with a force that fades linearly to zero over
+  // nbVars_.clusterPullIters iterations. When updateClusterPull() returns
+  // false the pull is off and the gradient is exactly what it is without
+  // it.
+  bool updateClusterPull();
+  void cacheClusterPull();
+  int cluster_pull_iter_ = 0;
+  float cluster_pull_weight_now_ = 0;
+  bool cluster_pull_reported_ = false;
+  bool cluster_pull_cached_ = false;
+  std::unordered_map<odb::dbGroup*, int> cluster_pull_ids_;
+  std::vector<int> cluster_pull_cluster_;
+  std::vector<FloatPoint> cluster_pull_grads_;
+  std::vector<char> cluster_pull_member_;
 
   const NesterovPlaceVars* npVars_ = nullptr;
 

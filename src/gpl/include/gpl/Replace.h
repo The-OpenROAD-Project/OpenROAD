@@ -83,6 +83,11 @@ struct PlaceOptions
   float virtualCtsMaxSkewFraction = 0.10f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
+  // rtl_macro_placer -keep_clustering_data's clusters pulled to their
+  // centroids during Nesterov placement, the weight fading linearly from
+  // clusterPullWeight to 0 at iteration clusterPullIters. 0 is off.
+  float clusterPullWeight = 0;
+  int clusterPullIters = 150;
   float initDensityPenaltyFactor = 0.00008;
   float initWireLengthCoef = 0.25;
   // Scale the density-penalty controller measures a wirelength change
