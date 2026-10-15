@@ -2919,6 +2919,11 @@ void FastRouteCore::setVerbose(bool v)
   verbose_ = v;
 }
 
+void FastRouteCore::setAllowCongestion(bool allow_congestion)
+{
+  allow_congestion_ = allow_congestion;
+}
+
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
