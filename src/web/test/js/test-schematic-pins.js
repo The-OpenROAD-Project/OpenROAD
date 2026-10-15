@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Renders cells through the netlistsvg the viewer bundles, with OpenROAD's
-// skin, and checks that every pin's wire belongs to that pin's net.
+// Renders cells through the same netlistsvg package and skin as the viewer,
+// and checks that every pin's wire belongs to that pin's net.
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
