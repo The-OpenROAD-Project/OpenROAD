@@ -927,7 +927,8 @@ void CUGR::route(bool incremental)
   patternRoute(net_indices);
   reportCongestionSources("stage 1 pattern");
 
-  if (!incremental) {
+  // Debug switch no_res_aware_stage skips stage 2.
+  if (!incremental && !logger_->debugCheck(GRT, "no_res_aware_stage", 1)) {
     // Stage 2: resistance-aware re-route of the critical nets (full route
     // only, not congestion-gated; it ignores the congested set).
     patternRouteResAware(net_indices);
