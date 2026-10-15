@@ -15,6 +15,7 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
@@ -57,6 +58,8 @@ void RepairHold::init()
   db_network_ = resizer_->db_network_;
   estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
+  clk_tree_pins_.clear();
+  clk_tree_pins_valid_ = false;
 }
 
 bool RepairHold::repairHold(
@@ -475,7 +478,18 @@ void RepairHold::findHoldViolations(sta::VertexSeq& ends,
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
   for (sta::Vertex* end : ends) {
     const sta::Slack slack = sta_->slack(end, min_);
-    if (!sta_->isClock(end->pin(), sta_->cmdMode()) && slack < hold_margin) {
+    // Skip endpoints that lie on the clock network so we do not try to fix
+    // hold on the clock tree itself.  isClock() reports any pin in a clock
+    // network's combinational fanout, which incorrectly includes register
+    // data (D) pins that sample a signal sourced from a clock (e.g. a clock
+    // used as data crossing into a different sampling-clock domain).  Such
+    // register data pins are genuine hold endpoints: they carry a timing
+    // check (hasChecks()).  Only exclude clock pins that are NOT data check
+    // endpoints, so real cross-clock-domain hold violations are not silently
+    // skipped.  See OpenROAD issue #8075.
+    const bool clk_tree_endpoint
+        = sta_->isClock(end->pin(), sta_->cmdMode()) && !end->hasChecks();
+    if (!clk_tree_endpoint && slack < hold_margin) {
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -533,6 +547,76 @@ class RepairHoldPredicate : public sta::SearchPred1
   }
 };
 
+bool RepairHold::isClockTreeDriver(const sta::Pin* drvr_pin)
+{
+  if (!sta_->isClock(drvr_pin, sta_->cmdMode())) {
+    return false;
+  }
+  if (!clk_tree_pins_valid_) {
+    findClockTreePins();
+  }
+  return clk_tree_pins_.contains(drvr_pin);
+}
+
+// Walk backward from every clock sink in the clock network (register or
+// timing-check clock pins and clock output ports) through clock-network
+// fanin.  The pins reached form the clock tree proper.  Clock-network pins
+// that only feed data pins (clock used as data) are not included.
+void RepairHold::findClockTreePins()
+{
+  clk_tree_pins_.clear();
+  const sta::Mode* mode = sta_->cmdMode();
+  sta_->ensureClkNetwork(mode);
+  sta::ClkNetwork* clk_network = mode->clkNetwork();
+  std::vector<const sta::Pin*> queue;
+  for (const sta::Clock* clk : mode->sdc()->clocks()) {
+    const sta::PinSet* clk_pins = clk_network->pins(clk);
+    if (clk_pins == nullptr) {
+      continue;
+    }
+    for (const sta::Pin* pin : *clk_pins) {
+      const bool clk_sink = network_->isRegClkPin(pin)
+                            || network_->isCheckClk(pin)
+                            || (network_->isTopLevelPort(pin)
+                                && network_->direction(pin)->isAnyOutput());
+      if (clk_sink && clk_tree_pins_.insert(pin).second) {
+        queue.push_back(pin);
+      }
+    }
+  }
+  while (!queue.empty()) {
+    const sta::Pin* pin = queue.back();
+    queue.pop_back();
+    sta::Vertex* vertex;
+    sta::Vertex* bidir_drvr_vertex;
+    graph_->pinVertices(pin, vertex, bidir_drvr_vertex);
+    for (sta::Vertex* to_vertex : {vertex, bidir_drvr_vertex}) {
+      if (to_vertex == nullptr) {
+        continue;
+      }
+      sta::VertexInEdgeIterator edge_iter(to_vertex, graph_);
+      while (edge_iter.hasNext()) {
+        sta::Edge* edge = edge_iter.next();
+        if (edge->role()->isTimingCheck()) {
+          continue;
+        }
+        const sta::Pin* from_pin = edge->from(graph_)->pin();
+        if (clk_network->isClock(from_pin)
+            && clk_tree_pins_.insert(from_pin).second) {
+          queue.push_back(from_pin);
+        }
+      }
+    }
+  }
+  clk_tree_pins_valid_ = true;
+  debugPrint(logger_,
+             RSZ,
+             "repair_hold",
+             2,
+             "found {} clock tree pins",
+             clk_tree_pins_.size());
+}
+
 void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                sta::LibertyCell* buffer_cell,
                                const double setup_margin,
@@ -565,8 +649,11 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
         sta::Vertex* path_vertex = path_vertices[i];
         sta::Pin* path_pin = path_vertex->pin();
 
-        if (path_vertex->isDriver(network_)
-            && resizer_->okToBufferNet(path_pin)) {
+        // Hold paths that start at a clock source (clock used as data)
+        // run through clock-network drivers.  Only buffer on the data
+        // side so the clock latency of other sinks is not changed.
+        if (path_vertex->isDriver(network_) && resizer_->okToBufferNet(path_pin)
+            && !isClockTreeDriver(path_pin)) {
           sta::PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);

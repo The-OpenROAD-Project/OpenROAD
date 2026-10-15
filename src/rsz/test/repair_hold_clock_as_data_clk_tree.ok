@@ -1,0 +1,30 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 6 components and 30 component-terminals.
+[INFO ODB-0133]     Created 8 nets and 15 connections.
+=== before repair ===
+clk1 net: clk1 dbuf/A i1/A
+i1z net: i1/Z r1/CK
+r1/CK arrival_max_rise: 0.017601
+r1/CK arrival_min_rise: 0.017601
+i1/A hold slack: -0.501438
+(clk1 ^) r -0.59:2.55 f ---:---
+(clk1 v) r ---:--- f 0.42:1.54
+(clk1 ^) r -0.50:2.46 f -0.50:2.46
+[INFO RSZ-0046] Found 2 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.587 |  -1.088 | r2/D
+    final |       0 |      45 |            0 |  +225.0% |   0.015 |   0.000 | r3/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 45 hold buffers.
+=== after repair ===
+clk1 net: clk1 dbuf/A i1/A
+i1z net: i1/Z r1/CK
+r1/CK arrival_max_rise: 0.017601
+r1/CK arrival_min_rise: 0.017601
+i1/A hold slack: 0.014702
+(clk1 ^) r 0.01:1.95 f ---:---
+(clk1 v) r ---:--- f 1.01:0.95
+(clk1 ^) r 0.03:1.93 f 0.01:1.94
