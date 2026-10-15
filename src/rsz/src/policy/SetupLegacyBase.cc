@@ -98,7 +98,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   const sta::Slack end_slack = sta_->slack(end_vertex, max_);
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, max_);
+  sta::Path* end_path = target_collector_->findWorstSlackPath(end_vertex);
   if (end_path == nullptr) {
     return false;
   }
@@ -305,9 +305,10 @@ void SetupLegacyBase::saveImprovedCheckpoint(
 void SetupLegacyBase::refreshEndpointSlacks(
     SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
-  endpoint_state.end_slack = sta_->slack(endpoint_state.end, max_);
-  sta_->worstSlack(
-      max_, endpoint_state.worst_slack, endpoint_state.worst_vertex);
+  endpoint_state.end_slack
+      = target_collector_->endpointSlack(endpoint_state.end);
+  target_collector_->worstSlack(endpoint_state.worst_slack,
+                                endpoint_state.worst_vertex);
 }
 
 bool SetupLegacyBase::reachedIterationLimit(const int iteration,
@@ -573,7 +574,7 @@ bool SetupLegacyBase::repairPins(
       sta_->findRequireds();
       timing_stale = false;
       if (focus_vertex != nullptr) {
-        focus_path = sta_->vertexWorstSlackPath(focus_vertex, max_);
+        focus_path = target_collector_->findWorstSlackPath(focus_vertex);
       }
     }
 
@@ -887,6 +888,9 @@ void SetupLegacyBase::printProgress(const int iteration,
     target_collector_->collectViolatingStartpoints();
   }
 
+  // Re-run the group query so the reported numbers reflect the edits made
+  // since the endpoints were collected.
+  target_collector_->refreshGroupSlacks();
   const sta::Slack wns = target_collector_->getWns();
   const sta::Slack en_tns = target_collector_->getTns(false);
   const sta::Pin* worst_pin
@@ -956,7 +960,7 @@ bool SetupLegacyBase::terminateProgress(const int iteration,
     fix_rate_threshold *= 2.0;
   }
   if (iteration % opto_small_interval_ == 0) {
-    float curr_tns = sta_->totalNegativeSlack(max_);
+    float curr_tns = target_collector_->totalNegativeSlack();
     float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
     prev_tns = curr_tns;
     if (iteration > 1000 && inc_fix_rate < fix_rate_threshold) {

@@ -11,7 +11,7 @@ permissions:
 jobs:
   auto-format:
     name: Auto-format on push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: github.repository_owner == 'The-OpenROAD-Project'
     env:
       BUILDIFIER_VERSION: v8.2.1
