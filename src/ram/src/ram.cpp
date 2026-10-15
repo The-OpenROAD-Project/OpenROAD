@@ -485,14 +485,22 @@ void RamGen::makeAnd(Cell* cell,
                      const vector<dbNet*>& inputs,
                      dbNet* output)
 {
-  // Will change once we have an AND3/AND4 implementation
-  makeInst(cell,
-           prefix,
-           name,
-           and2_cell_,
-           {{and2_ports_[{PortRoleType::DataIn, 0}], inputs[0]},
-            {and2_ports_[{PortRoleType::DataIn, 1}], inputs[1]},
-            {and2_ports_[{PortRoleType::DataOut, 0}], output}});
+  dbMaster* master = and2_cell_;
+  std::map<PortRole, std::string>* ports = &and2_ports_;
+  if (inputs.size() == 3) {
+    master = and3_cell_;
+    ports = &and3_ports_;
+  } else if (inputs.size() == 4) {
+    master = and4_cell_;
+    ports = &and4_ports_;
+  }
+
+  vector<std::pair<std::string, dbNet*>> connections;
+  for (int i = 0; i < static_cast<int>(inputs.size()); ++i) {
+    connections.emplace_back((*ports)[{PortRoleType::DataIn, i}], inputs[i]);
+  }
+  connections.emplace_back((*ports)[{PortRoleType::DataOut, 0}], output);
+  makeInst(cell, prefix, name, master, connections);
 }
 
 void RamGen::makeBufferColumn(const std::string& prefix,
