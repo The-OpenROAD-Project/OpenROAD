@@ -436,7 +436,7 @@ set_opt_config
 | Switch Name | Description |
 | ----- | ----- |
 | `-limit_sizing_area` | Exclude cells from sizing if their area exceeds <float_value> times the current cell's area. For example, with 2.0, only cells with an area <= 2X the current cell's area are considered. The area is determined from LEF, not Liberty. |
-| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. |
+| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. If no larger cell is within the limit, the smallest larger cell is still allowed so the current cell can always be upsized. |
 | `-keep_sizing_site` | Ensure cells retain their original site type during sizing. This prevents short cells from being replaced by tall cells (or vice versa) in mixed-row designs. |
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
