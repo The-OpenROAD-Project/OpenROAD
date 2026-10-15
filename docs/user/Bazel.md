@@ -1,12 +1,12 @@
-# Testing local changes with Bazel
+# Building and testing with Bazel
 
 ```{note}
-Bazel is the supported build system for OpenROAD. The CMake build is
-deprecated and will be removed in a future release; see
-[Installing OpenROAD](Build.md).
+Bazel is the supported build system for OpenROAD.
+For installation steps, see [Installing OpenROAD](Build.md).
+The deprecated CMake build will be removed on Nov. 1, 2026.
 ```
 
-First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
+First [install Bazelisk](https://bazel.build/install/bazelisk) or run `sudo ./etc/DependencyInstaller.sh -bazel`, then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
     bazelisk test --jobs=4 src/...
 
@@ -30,12 +30,12 @@ To list all tests use bazelisk query with [Bazel query language](https://bazel.b
 List all tests below a folder containing `asap7`:
 
     $ bazelisk query   'filter("asap7", kind(".*_test rule", //src/pdn/...))'
-    //src/pdn/test:asap7_M1_M3_followpins-tcl
+    //src/pdn/test:asap7_M1_M3_followpins-tcl_test
     ...
 
 Run specific test:
 
-    baselisk test --test_output=errors //src/upf/test:levelshifter-tcl
+    bazelisk test --test_output=errors //src/upf/test:levelshifter-tcl_test
 
 To run or list tests below a folder:
 
@@ -48,32 +48,27 @@ Bazel build configuration is a big topic as it covers cross compilation as well 
 As a start, browse `.bazelrc` and also run:
 
     $ bazelisk build
-    [wait until it starts building then hist ctrl-c, this warms up the cache with information about available configs]
+    [wait until it starts building then hit ctrl-c, this warms up the cache with information about available configs]
     $ bazelisk config
-    Available configurations:
-    5e5e8a80a777eb91e67b2d19d33945262b2897b636da1007246cf68b6b6ec51d k8-fastbuild
-    781deb76199c2d7f1a6c7d54da3ea8dad03e6956c04db58addba49068e4d3797 k8-fastbuild
-    96deab75888eab9e42bcc5778aa824b18bb8ee745dfa1950a18536d75ee05e01 k8-opt-exec-ST-d57f47055a04 (exec)
-    dd6f5325b352d3c63abe45b22d15914f75da7e2f140ace0017440dfc00f49114 k8-opt-exec-ST-d57f47055a04 (exec)
-    f37096aa0a6acd138beca4ff4d66b677012cd1d0d54befaa35983993505dad60 fastbuild-noconfig
-    f6ad5d5ec52c67510c6642c6d8df81fb134760a95c43d1f8e0369ad2c8964a81 k8-opt-exec-ST-6f5a6fb95be7 (exec)
 
-Without offering any deeper insight some comments about what is shown above:
+The output lists each configuration with a full hash and a textual shorthand, such as `k8-opt` or `k8-opt-exec-ST-<hash> (exec)`.
+The shorthand is used in the names of the `bazel-out/` folders.
 
 - Each configuration has a textual shorthand used in folder names followed by a full hash
-- `fastbuild` is the default compromise between optimization and fast builds
+- `opt` is the default compilation mode (`build -c opt` in `.bazelrc`); the other modes are `fastbuild` and `dbg`
 - `exec` means host, appears with `ST` and an extra hash at the end
 - `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
 ### LTO
 
-The default Bazel build (`fastbuild`) does not enable Link Time Optimization
-(LTO). `-c opt` enables optimization without LTO; `--config=opt` adds LTO
-on top, which improves runtime by ~11% at the cost of a much longer
-(single-threaded) link step. Use `--config=opt` for production binaries
-shipped to end users; keep the default for the local edit-rebuild loop.
-The CMake build has LTO on by default in Release mode -- see the
-[CMake LTO option](Build.md#lto-options).
+The default Bazel build is `-c opt`, the optimized compilation mode.
+It does not add `-O3` or Link Time Optimization (LTO).
+`--config=opt` (`build:opt` in `.bazelrc`) adds `-O3` and ThinLTO.
+ThinLTO improves runtime at the cost of a longer link step, which Bazel
+splits into parallel, cached actions. `--config=release` includes
+`--config=opt` and also stamps the git version. Use `--config=opt` or
+`--config=release` for production binaries shipped to end users; keep the
+default for the local edit-rebuild loop.
 
 ## Is it compiling, or hitting the cache?
 
@@ -241,7 +236,7 @@ Or more forcefully:
 
 Or "nuke it from orbit":
 
-    baselisk shutdown
+    bazelisk shutdown
     sudo pkill -9 java
     sudo rm -rf ~/.cache/bazel
 
@@ -448,8 +443,8 @@ exec-configuration build tools stay uninstrumented.
 
 ## GPU build (`--config=gpu`)
 
-`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
-and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. Kokkos 5.2.2 and
+`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`).
+Kokkos 5.2.2 and
 KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
 hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
 (`bazel/gpu/kokkos/configure.bzl`). Only the CUDA toolkit remains
@@ -516,20 +511,16 @@ configuration headers that Kokkos's and KokkosFFT's CMake builds generate
 - The first GPU build downloads the two pinned source archives and compiles
   Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
   OpenROAD GPU sources for the new target.
-- The CMake `ENABLE_GPU` flow continues to use the Kokkos and KokkosFFT
-  installations selected by its CMake configuration. That Kokkos must include
-  the Serial backend (`-DKokkos_ENABLE_SERIAL=ON`), which Kokkos's CMake turns
-  off by default once OpenMP is enabled; configuration stops with a message
-  otherwise.
 - After upgrading CUDA in place, run `bazelisk shutdown` (or change
   `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
   file list.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
-    OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+    bazelisk build :openroad
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
 
-`$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad` points to the `cfg=exec` optimized configuration which is Bazel builds to run tests on host with e.g. `bazelisk test ...`
+`bazel-bin/openroad` is the optimized binary that `bazelisk build :openroad` produces. Tests such as `bazelisk test ...` build OpenROAD from the same sources and flags, but in the execution configuration (see [Some OpenROAD and OpenSTA Bazel Specifics](#some-openroad-and-opensta-bazel-specifics)).
 
 ## Testing debug build of OpenROAD with ORFS
 
@@ -596,7 +587,7 @@ In the OpenROAD Bazel build:
 
 ### ⚠️ Avoiding Redundant Builds
 
-By default, `bazel test` would:
+By default, `bazelisk test` would:
 1. First build test dependencies in the **target** configuration.
 2. Then build tools like OpenROAD/OpenSTA again in the **host** configuration to actually run the tests.
 
@@ -649,8 +640,8 @@ To test, run:
 > **Note:** To test the credential helper, make sure to restart Bazel to avoid using a previous
 cached authorization:
 
-    bazel shutdown
-    bazel build BoomTile_final_scripts
+    bazelisk shutdown
+    bazelisk build BoomTile_final_scripts
 
 To gain write access to the https://storage.googleapis.com/megaboom-bazel-artifacts bucket,
 reach out to Tom Spyrou, Precision Innovations (https://www.linkedin.com/in/tomspyrou/).

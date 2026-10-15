@@ -175,7 +175,7 @@ while [ "$#" -gt 0 ]; do
             bazelGpu=yes
             ;;
         -cmake-build)
-            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
+            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed on Nov. 1, 2026." >&2
             useBazel=no
             ;;
         -bazel)
