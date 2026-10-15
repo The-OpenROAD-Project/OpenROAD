@@ -107,7 +107,7 @@ module top (clk,
     .Z(\u_mid2/u_leaf3/n2 ));
  BUF_X8 \u_mid2/u_leaf3/buf2  (.A(\u_mid2/u_leaf3/n2 ),
     .Z(\u_mid2/u_leaf3/n3 ));
- BUF_X8 \u_mid2/u_leaf3/buf3  (.A(\u_mid2/u_leaf3/n3 ),
+ BUF_X4 \u_mid2/u_leaf3/buf3  (.A(\u_mid2/u_leaf3/n3 ),
     .Z(\u_mid2/u_leaf3/n4 ));
  BUF_X4 \u_mid2/u_leaf3/buf4  (.A(\u_mid2/u_leaf3/n4 ),
     .Z(\u_mid2/u_leaf3/n5 ));

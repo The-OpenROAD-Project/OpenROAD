@@ -256,6 +256,15 @@ class GridGraph
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
+  // GCells whose reported usage changed since the last odb refresh, recorded
+  // where the demand was written rather than inferred from routes.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const
+  {
+    return congestion_dirty_tiles_;
+  }
+  void clearCongestionDirtyTiles();
+  void markAllCongestionTiles();
+
   void restoreDemand(
       const std::vector<std::vector<std::vector<CapacityT>>>& snap);
 
@@ -325,6 +334,12 @@ class GridGraph
   void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
+  void markCongestionTile(int layer_index, int x, int y);
+  // GCells whose reported usage changed since the last odb refresh, with a
+  // per-tile flag alongside so the list dedupes without a hash lookup.
+  std::vector<odb::Point> congestion_dirty_tiles_;
+  std::vector<bool> congestion_tile_marked_;
+
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]

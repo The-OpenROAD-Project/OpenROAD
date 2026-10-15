@@ -105,7 +105,7 @@ module leaf3 (clk,
     .Z(n2));
  BUF_X8 buf2 (.A(n2),
     .Z(n3));
- BUF_X8 buf3 (.A(n3),
+ BUF_X4 buf3 (.A(n3),
     .Z(n4));
  BUF_X4 buf4 (.A(n4),
     .Z(n5));

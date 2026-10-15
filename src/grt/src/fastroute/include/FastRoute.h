@@ -179,6 +179,17 @@ class FastRouteCore
                    uint8_t& blockage_h,
                    uint8_t& blockage_v);
   void updateDbCongestion(int min_routing_layer, int max_routing_layer);
+  // Rewrite the usage of just `tiles` (GCell indices).
+  void updateDbCongestionTiles(int min_routing_layer,
+                               int max_routing_layer,
+                               const std::vector<odb::Point>& tiles);
+  // GCells whose reported usage changed since the last refresh, recorded at
+  // the point the edges were written.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const
+  {
+    return congestion_dirty_tiles_;
+  }
+  void clearCongestionDirtyTiles();
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);
@@ -330,6 +341,9 @@ class FastRouteCore
       int grid_count,
       std::unordered_set<GSegment, GSegmentHash>& net_segs,
       GRoute& route);
+  // Usage odb should report for one GCell on layer index `k`.
+  int gcellUsage(int k, int x, int y) const;
+  void markCongestionTile(int x, int y);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void clearNetRoute(int netID);
   void clearNets();
@@ -787,6 +801,10 @@ class FastRouteCore
   int h_capacity_;
   int x_grid_;
   int y_grid_;
+  // GCells whose reported usage changed since the last odb refresh, with a
+  // per-tile flag alongside so the list dedupes without a hash lookup.
+  std::vector<odb::Point> congestion_dirty_tiles_;
+  std::vector<bool> congestion_tile_marked_;
   int x_grid_max_;
   int y_grid_max_;
   int x_corner_;

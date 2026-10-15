@@ -892,7 +892,7 @@ COMPONENTS 35 ;
     - u_mid2/dff_out1 DFF_X1 + PLACED ( 22040 0 ) N ;
     - u_mid2/u_leaf3/buf1 BUF_X4 + PLACED ( 380 2800 ) FS ;
     - u_mid2/u_leaf3/buf2 BUF_X8 + PLACED ( 0 8400 ) FS ;
-    - u_mid2/u_leaf3/buf3 BUF_X8 + PLACED ( 380 11200 ) N ;
+    - u_mid2/u_leaf3/buf3 BUF_X4 + PLACED ( 380 11200 ) N ;
     - u_mid2/u_leaf3/buf4 BUF_X4 + PLACED ( 0 14000 ) FS ;
     - u_mid2/u_leaf3/dff1 DFF_X1 + PLACED ( 15580 8400 ) FS ;
     - u_mid2/u_leaf3/dff2 DFF_X1 + PLACED ( 7980 16800 ) N ;
