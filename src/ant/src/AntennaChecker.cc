@@ -139,21 +139,6 @@ void AntennaChecker::Impl::initAntennaRules()
   layer_info_ = std::move(layer_info);
 }
 
-double AntennaChecker::Impl::gateArea(odb::dbMTerm* mterm)
-{
-  double max_gate_area = 0;
-  if (mterm->hasDefaultAntennaModel()) {
-    odb::dbTechAntennaPinModel* pin_model = mterm->getDefaultAntennaModel();
-    std::vector<std::pair<double, odb::dbTechLayer*>> gate_areas;
-    pin_model->getGateArea(gate_areas);
-
-    for (const auto& [gate_area, layer] : gate_areas) {
-      max_gate_area = std::max(max_gate_area, gate_area);
-    }
-  }
-  return max_gate_area;
-}
-
 void AntennaChecker::Impl::saveGates(odb::dbNet* db_net,
                                      LayerToGraphNodes& node_by_layer_map,
                                      const int node_count)
@@ -284,11 +269,6 @@ void AntennaChecker::Impl::saveGates(odb::dbNet* db_net,
   }
 }
 
-bool AntennaChecker::Impl::isValidGate(odb::dbMTerm* mterm)
-{
-  return mterm->getIoType() == odb::dbIoType::INPUT && gateArea(mterm) > 0.0;
-}
-
 void AntennaChecker::Impl::calculateWirePar(odb::dbTechLayer* tech_layer,
                                             NodeInfo& info)
 {
@@ -389,30 +369,24 @@ void AntennaChecker::Impl::calculateViaPar(odb::dbTechLayer* tech_layer,
 
 void AntennaChecker::Impl::calculateAreas(
     const LayerToGraphNodes& node_by_layer_map,
+    PinAntennas& pins,
     GateToLayerToNodeInfo& gate_info)
 {
-  struct GateData
-  {
-    bool is_valid = false;
-    double gate_area = 0.0;
-    double diff_area = 0.0;
-  };
-  odb::PtrMap<odb::dbMTerm, GateData> gate_data;
-  auto getGateData = [&](odb::dbMTerm* mterm) -> const GateData& {
-    auto [iter, inserted] = gate_data.try_emplace(mterm);
+  auto getPin = [&](odb::dbMTerm* mterm) -> const PinAntenna& {
+    auto [iter, inserted] = pins.try_emplace(mterm);
     if (inserted) {
-      iter->second = {.is_valid = isValidGate(mterm),
-                      .gate_area = gateArea(mterm),
-                      .diff_area = diffArea(mterm)};
+      iter->second = readPinAntenna(mterm);
     }
     return iter->second;
   };
 
   for (const auto& it : node_by_layer_map) {
+    odb::dbTechLayer* layer = it.first;
+    const bool is_routing = layer->getRoutingLevel() != 0;
     double wire_thickness = 0.0;
-    if (it.first->getRoutingLevel() != 0) {
+    if (is_routing) {
       uint32_t wire_thickness_dbu = 0;
-      it.first->getThickness(wire_thickness_dbu);
+      layer->getThickness(wire_thickness_dbu);
       wire_thickness = block_->dbuToMicrons(wire_thickness_dbu);
     }
     // group the layer nodes by the iterms they reach
@@ -425,7 +399,7 @@ void AntennaChecker::Impl::calculateAreas(
           continue;
         }
         nodes_by_iterm[gate.iterm].push_back(i);
-        if (getGateData(gate.iterm->getMTerm()).is_valid) {
+        if (getPin(gate.iterm->getMTerm()).is_gate) {
           has_gate[i] = true;
         }
       }
@@ -456,13 +430,15 @@ void AntennaChecker::Impl::calculateAreas(
       NodeInfo& info = info_by_group[group];
       const auto area = static_cast<int64_t>(gtl::area(it.second[i]->pol));
       info.area += block_->dbuAreaToMicrons(area);
-      if (it.first->getRoutingLevel() != 0) {
+      if (is_routing) {
         // Calculate side area of wire
         info.side_area += block_->dbuToMicrons(gtl::perimeter(it.second[i]->pol)
                                                * wire_thickness);
       }
     }
-    // each iterm contributes once to every group it touches
+    // each iterm contributes once to every group it touches: its gate and
+    // diffusion areas on this layer, and any metal inside its block that
+    // LEF reports as partial area
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
       std::set<size_t> iterm_groups;
       for (const int node_id : node_ids) {
@@ -471,21 +447,26 @@ void AntennaChecker::Impl::calculateAreas(
           iterm_groups.insert(group);
         }
       }
-      const GateData& data = getGateData(iterm->getMTerm());
+      const PinAntenna& pin = getPin(iterm->getMTerm());
       for (const size_t group : iterm_groups) {
         NodeInfo& info = info_by_group[group];
-        if (data.is_valid) {
+        if (pin.is_gate) {
           info.iterms.push_back(iterm);
         }
-        info.iterm_gate_area += data.gate_area;
-        info.iterm_diff_area += data.diff_area;
+        info.iterm_gate_area += valueAtOrBelow(pin.gate_area, layer);
+        info.iterm_diff_area += valueAtOrBelow(pin.diff_area, layer);
+        if (is_routing) {
+          info.area += valueOnLayer(pin.partial_metal_area, layer);
+          info.side_area += valueOnLayer(pin.partial_metal_side_area, layer);
+        } else {
+          info.area += valueOnLayer(pin.partial_cut_area, layer);
+        }
       }
     }
     // every gate of a group shares the same record
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
-      if (getGateData(iterm->getMTerm()).is_valid) {
-        gate_info[iterm][it.first]
-            = info_by_group[groups.find(node_ids.front())];
+      if (getPin(iterm->getMTerm()).is_gate) {
+        gate_info[iterm][layer] = info_by_group[groups.find(node_ids.front())];
       }
     }
   }
@@ -508,36 +489,61 @@ void AntennaChecker::Impl::calculatePAR(GateToLayerToNodeInfo& gate_info)
 }
 
 // calculate CAR and CSR of wires and vias
-void AntennaChecker::Impl::calculateCAR(GateToLayerToNodeInfo& gate_info)
+void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
+                                        GateToLayerToNodeInfo& gate_info)
 {
+  odb::dbTech* tech = db_->getTech();
   for (auto& [gate, layer_to_node_info] : gate_info) {
+    const PinAntenna& pin = pins.at(gate->getMTerm());
     // Variables to store the accumulated values for vias and wires
     NodeInfo sum_wire, sum_via;
     // iterate from first_layer -> last layer, cumulate sum for wires and vias
-    odb::dbTech* tech = db_->getTech();
-    odb::dbTechLayer* iter_layer = tech->findRoutingLayer(1);
-    while (iter_layer) {
-      if (layer_to_node_info.find(iter_layer) != layer_to_node_info.end()) {
-        NodeInfo& node_info = layer_to_node_info[iter_layer];
-        if (iter_layer->getRoutingLevel() == 0) {
-          // Accumulating the PAR of vias in sumVia
-          sum_via += node_info;
-          // Updating the node with the accumulated values
-          node_info.car += sum_via.par;
-          node_info.csr += sum_via.psr;
-          node_info.diff_car += sum_via.diff_par;
-          node_info.diff_csr += sum_via.diff_psr;
+    for (odb::dbTechLayer* layer = tech->findRoutingLayer(1); layer;
+         layer = layer->getUpperLayer()) {
+      const bool is_routing = layer->getRoutingLevel() != 0;
+      NodeInfo& sum = is_routing ? sum_wire : sum_via;
+      // A block pin's MAX*CAR is the cumulative ratio its gates already have
+      // from the block's own metal up to this layer.  It carries up through
+      // the layers above, like any other layer's damage.
+      const double max_car = valueOnLayer(
+          is_routing ? pin.max_area_car : pin.max_cut_car, layer);
+      const double max_csr
+          = is_routing ? valueOnLayer(pin.max_side_area_car, layer) : 0.0;
+      sum.par += max_car;
+      sum.diff_par += max_car;
+      sum.psr += max_csr;
+      sum.diff_psr += max_csr;
+
+      auto node_it = layer_to_node_info.find(layer);
+      if (node_it == layer_to_node_info.end()) {
+        continue;
+      }
+      NodeInfo& node_info = node_it->second;
+      // MAX*CAR already counts the pin's partial area on its layer, so the
+      // pin's own gates add only the rest of the node.
+      NodeInfo layer_damage = node_info;
+      if (max_car != 0.0 || max_csr != 0.0) {
+        if (max_car != 0.0) {
+          layer_damage.area -= valueOnLayer(
+              is_routing ? pin.partial_metal_area : pin.partial_cut_area,
+              layer);
+        }
+        if (max_csr != 0.0) {
+          layer_damage.side_area
+              -= valueOnLayer(pin.partial_metal_side_area, layer);
+        }
+        if (is_routing) {
+          calculateWirePar(layer, layer_damage);
         } else {
-          // Accumulating the PAR of wires in sumWire
-          sum_wire += node_info;
-          // Updating the node with the accumulated values
-          node_info.car += sum_wire.par;
-          node_info.csr += sum_wire.psr;
-          node_info.diff_car += sum_wire.diff_par;
-          node_info.diff_csr += sum_wire.diff_psr;
+          calculateViaPar(layer, layer_damage);
         }
       }
-      iter_layer = iter_layer->getUpperLayer();
+      sum += layer_damage;
+      // Updating the node with the accumulated values
+      node_info.car = sum.par;
+      node_info.csr = sum.psr;
+      node_info.diff_car = sum.diff_par;
+      node_info.diff_csr = sum.diff_psr;
     }
   }
 }
@@ -746,7 +752,9 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
         if (pin_added[layer].find(gate) == pin_added[layer].end()) {
           double diode_diff_area = 0.0;
           if (diode_mterm) {
-            diode_diff_area = diffArea(diode_mterm);
+            LayerValues diode_diff_areas;
+            diode_mterm->getDiffArea(diode_diff_areas);
+            diode_diff_area = valueAtOrBelow(diode_diff_areas, layer);
           }
           NodeInfo violation_info = gate_info[gate][layer];
           std::vector<odb::dbITerm*> gates = violation_info.iterms;
@@ -910,12 +918,13 @@ int AntennaChecker::Impl::analyzeNet(odb::dbNet* db_net,
   if (wire) {
     LayerToGraphNodes node_by_layer_map;
     GateToLayerToNodeInfo gate_info;
+    PinAntennas pins;
     buildLayerMaps(db_net, node_by_layer_map);
 
-    calculateAreas(node_by_layer_map, gate_info);
+    calculateAreas(node_by_layer_map, pins, gate_info);
 
     calculatePAR(gate_info);
-    calculateCAR(gate_info);
+    calculateCAR(pins, gate_info);
 
     pin_violations = checkGates(db_net,
                                 diode_mterm,
@@ -1127,17 +1136,6 @@ bool AntennaChecker::Impl::haveRoutedNets()
     }
   }
   return false;
-}
-
-double AntennaChecker::Impl::diffArea(odb::dbMTerm* mterm)
-{
-  double max_diff_area = 0.0;
-  std::vector<std::pair<double, odb::dbTechLayer*>> diff_areas;
-  mterm->getDiffArea(diff_areas);
-  for (const auto& [area, layer] : diff_areas) {
-    max_diff_area = std::max(max_diff_area, area);
-  }
-  return max_diff_area;
 }
 
 void AntennaChecker::Impl::setReportFileName(const char* file_name)

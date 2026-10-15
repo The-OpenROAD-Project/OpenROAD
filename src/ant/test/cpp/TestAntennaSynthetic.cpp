@@ -74,6 +74,65 @@ class AntennaSyntheticTest : public tst::DbFixture
                              .diff_area = diff_area}});
   }
 
+  // Makes later gateNet calls place a new master like GATE whose pin A has
+  // no antenna data, and returns that pin.  Tests add the per-layer LEF
+  // values they need, as a block's LEF would give them.
+  odb::dbMTerm* useBareGatePin()
+  {
+    const std::string name = "BLOCK" + std::to_string(next_master_++);
+    gate_ = tst::makeMaster(
+        lib_,
+        name.c_str(),
+        100,
+        100,
+        {{.name = "A", .layer = m1(), .rect = {0, 0, 100, 100}}});
+    return gate_->findMTerm("A");
+  }
+
+  // A plain GATE instance on net at the far end of gateNet's wire, touching
+  // it without overlapping.
+  void addFarGate(odb::dbNet* net, odb::dbMaster* master)
+  {
+    const std::string name = net->getName() + "_far";
+    makeInst(block_,
+             master,
+             name.c_str(),
+             {.location = {10100, 0},
+              .status = odb::dbPlacementStatus::PLACED,
+              .iterms = {{net->getConstName(), "A"}}});
+  }
+
+  // Extends gateNet's wire from its far end up through V1 to a 10 um M2
+  // wire.
+  void routeUpToM2(odb::dbNet* net)
+  {
+    tst::RoutePath(net)
+        .on(m1(), {50, 50})
+        .to({10050, 50})
+        .via(stack_.via(1))
+        .to({10050, 10050});
+  }
+
+  // The checks for the named gate pin of net on layer.
+  LayerCheck layerCheck(odb::dbNet* net,
+                        const std::string& pin,
+                        odb::dbTechLayer* layer)
+  {
+    const NetCheck net_check = checker_.checkNet(net);
+    for (const PinCheck& pin_check : net_check.pins) {
+      if (pinName(pin_check.gate) != pin) {
+        continue;
+      }
+      for (const LayerCheck& check : pin_check.layers) {
+        if (check.layer == layer) {
+          return check;
+        }
+      }
+    }
+    ADD_FAILURE() << "No check for " << pin << " on " << layer->getName();
+    return {};
+  }
+
   // A gate at (0, y) with an M1 wire running 10 um to its right.  With
   // driver_master, a driver pin sits at the far end of the wire, touching
   // it without overlapping, so the wire's area is the same either way.
@@ -529,6 +588,140 @@ TEST_F(AntennaSyntheticTest, DiodeCountCapped)
       = checker_.getAntennaViolations(net, diode->findMTerm("X"), 0);
   ASSERT_EQ(violations.size(), 1);
   EXPECT_EQ(violations[0].diode_count_per_gate, 11);
+}
+
+// A pin's gate area holds from the layer LEF gives it on, so a gate
+// checked on M1 uses its M1 area rather than a larger one given for M2.
+TEST_F(AntennaSyntheticTest, GateAreaPerLayer)
+{
+  tst::applyAntennaRule(m1(), {.par = 100});
+  odb::dbTechAntennaPinModel* model
+      = useBareGatePin()->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addGateAreaEntry(4 * kGateArea, m2());
+
+  const LayerCheck check = layerCheck(gateNet("n1"), m1());
+  EXPECT_NEAR(check.par.actual, kPar, 1e-9);
+}
+
+TEST_F(AntennaSyntheticTest, DiffusionAreaPerLayer)
+{
+  // 1.0 / (0.5 + 1.0 * 1.0) on M1, where the driver has 1.0 of diffusion.
+  tst::applyAntennaRule(m1(),
+                        {.diff_par = constantPwl(100), .gate_plus_diff = 1.0});
+  odb::dbMaster* drv = driver(/*diff_area=*/1.0);
+  drv->findMTerm("X")->addDiffAreaEntry(3.0, m2());
+
+  const LayerCheck check = layerCheck(gateNet("n1", 0, drv), m1());
+  EXPECT_NEAR(check.par.actual, kWireArea / (kGateArea + 1.0), 1e-9);
+}
+
+// ANTENNAPARTIALMETALAREA and ANTENNAPARTIALMETALSIDEAREA are metal inside
+// a block, connected to its pin, that the router doesn't see.  They add to
+// the pin layer's area and side area.
+TEST_F(AntennaSyntheticTest, PartialMetalArea)
+{
+  tst::applyAntennaRule(m1(), {.par = 100, .psr = 1000});
+  odb::dbMTerm* pin = useBareGatePin();
+  pin->createDefaultAntennaModel()->addGateAreaEntry(kGateArea, m1());
+  pin->addPartialMetalAreaEntry(1.5, m1());
+  pin->addPartialMetalSideAreaEntry(10, m1());
+  pin->addPartialMetalAreaEntry(100, m2());  // no M2 metal on the net
+
+  const LayerCheck check = layerCheck(gateNet("n1"), m1());
+  EXPECT_NEAR(check.par.actual, (kWireArea + 1.5) / kGateArea, 1e-9);
+  ASSERT_TRUE(check.psr);
+  EXPECT_NEAR(check.psr->actual, (kWireSideArea + 10) / kGateArea, 1e-9);
+}
+
+// The partial metal is part of the node, so it charges every gate on it.
+TEST_F(AntennaSyntheticTest, PartialMetalAreaChargesOtherGates)
+{
+  tst::applyAntennaRule(m1(), {.par = 100});
+  odb::dbMaster* plain_gate = gate_;
+  odb::dbMTerm* pin = useBareGatePin();
+  pin->createDefaultAntennaModel()->addGateAreaEntry(kGateArea, m1());
+  pin->addPartialMetalAreaEntry(1.5, m1());
+  odb::dbNet* net = gateNet("n1");
+  addFarGate(net, plain_gate);
+
+  const double par = (kWireArea + 1.5) / (2 * kGateArea);
+  EXPECT_NEAR(layerCheck(net, "n1_g/A", m1()).par.actual, par, 1e-9);
+  const LayerCheck far = layerCheck(net, "n1_far/A", m1());
+  EXPECT_NEAR(far.par.actual, par, 1e-9);
+  EXPECT_NEAR(far.car.actual, par, 1e-9);
+}
+
+// ANTENNAMAXAREACAR and ANTENNAMAXSIDEAREACAR are the cumulative ratios
+// the block's own metal has given the pin's gates up to a layer.  The
+// checker continues the sum from there, as in LEF/DEF Appendix C Example 1:
+// CAR(M1,G1) = PAR(M1,G1) + pin A's CAR.
+TEST_F(AntennaSyntheticTest, MaxCarStartsCumulativeRatio)
+{
+  for (odb::dbTechLayer* layer : {m1(), m2()}) {
+    tst::applyAntennaRule(layer, {.car = 1000, .psr = 1000, .csr = 1000});
+  }
+  odb::dbTechAntennaPinModel* model
+      = useBareGatePin()->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addMaxAreaCAREntry(3.0, m1());
+  model->addMaxSideAreaCAREntry(7.0, m1());
+  odb::dbNet* net = gateNet("n1");
+  routeUpToM2(net);
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck m2_check = layerCheck(net, m2());
+  ASSERT_TRUE(m1_check.psr && m1_check.csr && m2_check.psr && m2_check.csr);
+  EXPECT_NEAR(m1_check.car.actual, 3.0 + m1_check.par.actual, 1e-9);
+  EXPECT_NEAR(m1_check.csr->actual, 7.0 + m1_check.psr->actual, 1e-9);
+  EXPECT_NEAR(m2_check.car.actual,
+              3.0 + m1_check.par.actual + m2_check.par.actual,
+              1e-9);
+  EXPECT_NEAR(m2_check.csr->actual,
+              7.0 + m1_check.psr->actual + m2_check.psr->actual,
+              1e-9);
+}
+
+// MAX*CAR counts the pin's partial area on its layer already (it covers
+// the metal "at or below the current pin layer"), so the pin's own gates
+// don't count it twice.  Other gates on the node do see it.
+TEST_F(AntennaSyntheticTest, MaxCarIncludesPartialArea)
+{
+  tst::applyAntennaRule(m1(), {.par = 100, .car = 100});
+  odb::dbMaster* plain_gate = gate_;
+  odb::dbMTerm* pin = useBareGatePin();
+  odb::dbTechAntennaPinModel* model = pin->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addMaxAreaCAREntry(4.0, m1());
+  pin->addPartialMetalAreaEntry(1.5, m1());
+  odb::dbNet* net = gateNet("n1");
+  addFarGate(net, plain_gate);
+
+  const double par = (kWireArea + 1.5) / (2 * kGateArea);
+  const LayerCheck block = layerCheck(net, "n1_g/A", m1());
+  EXPECT_NEAR(block.par.actual, par, 1e-9);
+  EXPECT_NEAR(block.car.actual, 4.0 + kWireArea / (2 * kGateArea), 1e-9);
+  const LayerCheck far = layerCheck(net, "n1_far/A", m1());
+  EXPECT_NEAR(far.car.actual, par, 1e-9);
+}
+
+// ANTENNAPARTIALCUTAREA and ANTENNAMAXCUTCAR do the same for the cut layer
+// above the pin.
+TEST_F(AntennaSyntheticTest, PartialCutAreaAndMaxCutCar)
+{
+  tst::applyAntennaRule(stack_.cut(1), {.par = 100, .car = 100});
+  odb::dbMTerm* pin = useBareGatePin();
+  odb::dbTechAntennaPinModel* model = pin->createDefaultAntennaModel();
+  model->addGateAreaEntry(kGateArea, m1());
+  model->addMaxCutCAREntry(1.0, stack_.cut(1));
+  pin->addPartialCutAreaEntry(0.01, stack_.cut(1));
+  odb::dbNet* net = gateNet("n1");
+  routeUpToM2(net);
+
+  // The net's own cut is 0.1 um x 0.1 um.
+  const LayerCheck check = layerCheck(net, stack_.cut(1));
+  EXPECT_NEAR(check.par.actual, (0.01 + 0.01) / kGateArea, 1e-9);
+  EXPECT_NEAR(check.car.actual, 1.0 + 0.01 / kGateArea, 1e-9);
 }
 
 }  // namespace

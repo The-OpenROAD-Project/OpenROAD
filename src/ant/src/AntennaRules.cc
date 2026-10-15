@@ -3,8 +3,10 @@
 
 #include "AntennaRules.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -120,6 +122,73 @@ double getPwlFactor(const odb::dbTechLayerAntennaRule::pwl_pair& pwl_info,
     return pwl_info_ratio1 + (ref_value - pwl_info_index1) * slope;
   }
   return default_value;
+}
+
+namespace {
+
+int layerNumber(const odb::dbTechLayer* layer)
+{
+  // An entry without a layer sorts below every layer.
+  return layer ? layer->getNumber() : -1;
+}
+
+}  // namespace
+
+double valueAtOrBelow(const LayerValues& entries, const odb::dbTechLayer* layer)
+{
+  const std::pair<double, odb::dbTechLayer*>* at_or_below = nullptr;
+  const std::pair<double, odb::dbTechLayer*>* lowest = nullptr;
+  // Later entries win ties, as LEF uses the last of repeated statements.
+  for (const auto& entry : entries) {
+    const int number = layerNumber(entry.second);
+    if (number <= layer->getNumber()
+        && (at_or_below == nullptr
+            || number >= layerNumber(at_or_below->second))) {
+      at_or_below = &entry;
+    }
+    if (lowest == nullptr || number <= layerNumber(lowest->second)) {
+      lowest = &entry;
+    }
+  }
+  if (at_or_below != nullptr) {
+    return at_or_below->first;
+  }
+  return lowest != nullptr ? lowest->first : 0.0;
+}
+
+double valueOnLayer(const LayerValues& entries, const odb::dbTechLayer* layer)
+{
+  std::optional<double> on_layer;
+  std::optional<double> any_layer;
+  for (const auto& [value, entry_layer] : entries) {
+    if (entry_layer == layer) {
+      on_layer = value;
+    } else if (entry_layer == nullptr) {
+      any_layer = value;
+    }
+  }
+  return on_layer.value_or(any_layer.value_or(0.0));
+}
+
+PinAntenna readPinAntenna(odb::dbMTerm* mterm)
+{
+  PinAntenna pin;
+  mterm->getDiffArea(pin.diff_area);
+  mterm->getPartialMetalArea(pin.partial_metal_area);
+  mterm->getPartialMetalSideArea(pin.partial_metal_side_area);
+  mterm->getPartialCutArea(pin.partial_cut_area);
+  if (mterm->hasDefaultAntennaModel()) {
+    odb::dbTechAntennaPinModel* model = mterm->getDefaultAntennaModel();
+    model->getGateArea(pin.gate_area);
+    model->getMaxAreaCAR(pin.max_area_car);
+    model->getMaxSideAreaCAR(pin.max_side_area_car);
+    model->getMaxCutCAR(pin.max_cut_car);
+  }
+  pin.is_gate = mterm->getIoType() == odb::dbIoType::INPUT
+                && std::ranges::any_of(pin.gate_area, [](const auto& entry) {
+                     return entry.first > 0.0;
+                   });
+  return pin;
 }
 
 }  // namespace ant
