@@ -13,14 +13,15 @@ _PAGE = {
 }
 _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
 
-# Absolute URLs the bundle quotes as names rather than fetches: XML namespaces,
-# homepage links in the kept comments.
-_IDENTIFIER_URLS = (
-    "http://www.w3.org/",
+# Absolute URLs the bundle quotes as names rather than fetches, each matched
+# whole: XML namespaces, homepage links in the kept comments.
+_IDENTIFIER_URLS = {
+    "http://www.w3.org/1999/xlink",
+    "http://www.w3.org/2000/svg",
     "https://leafletjs.com",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
-)
+}
 
 # Libraries the page still loads from CDNs, until the bundle takes them over.
 _STILL_REMOTE = (
@@ -38,16 +39,8 @@ _SCHEME_RELATIVE = re.compile(
 
 
 def _is_identifier_url(url):
-    # An allowed prefix only matches up to a host or path boundary, so
-    # "https://leafletjs.com.example/l.js" is not "https://leafletjs.com".
-    for allowed in _IDENTIFIER_URLS:
-        if not url.startswith(allowed):
-            continue
-        if allowed.endswith("/") or len(url) == len(allowed):
-            return True
-        if url[len(allowed)] in "/?#":
-            return True
-    return False
+    # A fragment never reaches a server; a comment may end the URL's sentence.
+    return url.split("#", 1)[0].rstrip(".") in _IDENTIFIER_URLS
 
 
 def external_urls(text):
@@ -76,9 +69,10 @@ class Scanner(unittest.TestCase):
         self.assertEqual(len(external_urls("s.src='HTTPS://CDN.example/x.js'")), 1)
         self.assertEqual(external_urls('xmlns="http://www.w3.org/2000/svg"'), [])
 
-    def test_allows_an_identifier_only_up_to_its_boundary(self):
+    def test_allows_only_a_whole_identifier(self):
         self.assertTrue(_is_identifier_url("https://leafletjs.com"))
-        self.assertTrue(_is_identifier_url("https://leafletjs.com/reference"))
+        self.assertTrue(_is_identifier_url("http://www.w3.org/2000/svg#x"))
+        self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
 
     def test_finds_scheme_relative_fetches(self):
