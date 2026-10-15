@@ -17,6 +17,7 @@ swig_lib(NAME         dpl
 add_library(dpl_lib
   src/Opendp.cpp
   src/dbToOpendp.cpp
+  src/PlacementDensity.cpp
   src/infrastructure/Grid.cpp
   src/CheckPlacement.cpp
   src/infrastructure/Objects.cpp
