@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -268,6 +269,9 @@ void Grid::makeShapes(const Shape::ShapeTreeMap& global_shapes,
   // make vias
   makeVias(all_shapes, obstructions, local_obstructions);
 
+  // connect anything the vias could not reach
+  connectUnreachedPins(all_shapes, local_obstructions);
+
   // find and repair disconnected channels
   RepairChannelStraps::repairGridChannels(
       this,
@@ -522,6 +526,16 @@ odb::Rect Grid::getGridArea() const
 odb::Rect Grid::getGridBoundary() const
 {
   return getGridArea();
+}
+
+odb::Rect Grid::getPadRingArea() const
+{
+  const odb::Rect boundary = getGridBoundary();
+  const std::optional<odb::Rect> pads = getDomain()->getPadRingInnerArea();
+  if (!pads) {
+    return boundary;
+  }
+  return boundary.intersect(*pads);
 }
 
 Region Grid::getDomainRegion() const
@@ -2150,6 +2164,14 @@ void InstanceGrid::getIntersections(std::vector<ViaPtr>& vias,
   }
 
   Grid::getIntersections(vias, inst_shapes);
+}
+
+void InstanceGrid::connectUnreachedPins(
+    const Shape::ShapeTreeMap& global_shapes,
+    Shape::ObstructionTreeMap& obstructions)
+{
+  MacroEdgeConnectionStraps::connectUnreachedPins(
+      this, global_shapes, obstructions);
 }
 
 std::vector<odb::dbNet*> InstanceGrid::getNets(bool starts_with_power) const

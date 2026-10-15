@@ -16,13 +16,13 @@
 [INFO ODB-0132]     Created 2 special nets and 290 connections.
 [INFO ODB-0133]     Created 98 nets and 162 connections.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
-[INFO GPL-0002] DBU: 1000
+[INFO GPL-0002] DBU: 4000
 [INFO GPL-0003] SiteSize: (  0.054  0.270 ) um
 [INFO GPL-0004] CoreBBox: (  0.486  0.540 ) ( 11.502 11.340 ) um
 [INFO GPL-0016] Core area:                     118.973 um^2
 [INFO GPL-0036] Movable instances area:         15.528 um^2
 [INFO GPL-0037] Total instances area:           17.860 um^2
-[INFO GPL-0035] Pin density area adjust:        -1.121 um^2
+[INFO GPL-0035] Pin density area adjust:        -1.093 um^2
 [INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:               145
 [INFO GPL-0007] Movable instances:                  65
@@ -35,23 +35,23 @@
 [INFO GPL-0014] Region name: top-level.
 [INFO GPL-0015] Region area:                   118.973 um^2
 [INFO GPL-0017] Fixed instances area:            2.333 um^2
-[INFO GPL-0018] Movable instances area:         14.406 um^2
-[INFO GPL-0019] Utilization:                    12.351 %
-[INFO GPL-0020] Standard cells area:            14.406 um^2
+[INFO GPL-0018] Movable instances area:         14.434 um^2
+[INFO GPL-0019] Utilization:                    12.375 %
+[INFO GPL-0020] Standard cells area:            14.434 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 65	Core center = 0	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000007 HPWL: 607347
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000006 HPWL: 464249
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 463366
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 463419
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 463137
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000007 HPWL: 2429388
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 1896737
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 1885176
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1883679
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000007 HPWL: 1882336
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.5000
 [INFO GPL-0024] Movable insts average area:      0.222 um^2
-[INFO GPL-0025] Ideal bin area:                  0.443 um^2
-[INFO GPL-0026] Ideal bin count:                   268
+[INFO GPL-0025] Ideal bin area:                  0.444 um^2
+[INFO GPL-0026] Ideal bin count:                   267
 [INFO GPL-0027] Total bin area:                118.973 um^2
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       0.689 *  0.675 um
@@ -60,9 +60,9 @@
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.4321 |  3.976800e+02 |   +0.00% |  2.14e-11 |      
+        0 |   0.3190 |  3.954153e+02 |   +0.00% |  5.16e-12 |      
 [INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
-[INFO GPL-0101]    Iter: 1, overflow: 0.432, keep resizer changes at: 1, HPWL: 397680
+[INFO GPL-0101]    Iter: 1, overflow: 0.319, keep resizer changes at: 1, HPWL: 1581661
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
@@ -84,41 +84,43 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
        60 |     +0.0% |       0 |        0 |         4
     final |     +0.0% |       0 |        0 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 6.3500667e-09
+[INFO GPL-0106] Timing-driven: worst slack 6.3502696e-09
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
 [INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
 [INFO GPL-0110] Timing-driven: new target density: 0.5
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-       10 |   0.4143 |  4.010570e+02 |   +0.85% |  3.48e-11 |      
-       20 |   0.3666 |  4.005160e+02 |   -0.13% |  5.67e-11 |      
-       30 |   0.3655 |  4.004940e+02 |   -0.01% |  9.23e-11 |      
-       40 |   0.3891 |  4.004700e+02 |   -0.01% |  1.50e-10 |      
-       50 |   0.3881 |  4.004970e+02 |   +0.01% |  2.45e-10 |      
-       60 |   0.3829 |  4.004940e+02 |   -0.00% |  3.99e-10 |      
-       70 |   0.3843 |  4.004890e+02 |   -0.00% |  6.50e-10 |      
-       80 |   0.3837 |  4.005010e+02 |   +0.00% |  1.06e-09 |      
-       90 |   0.3845 |  4.004930e+02 |   -0.00% |  1.72e-09 |      
-      100 |   0.3853 |  4.004920e+02 |   -0.00% |  2.81e-09 |      
-      110 |   0.3858 |  4.004900e+02 |   -0.00% |  4.57e-09 |      
-      120 |   0.3859 |  4.004890e+02 |   -0.00% |  7.45e-09 |      
-      130 |   0.3847 |  4.004870e+02 |   -0.00% |  1.21e-08 |      
-      140 |   0.3835 |  4.004840e+02 |   -0.00% |  1.98e-08 |      
-      150 |   0.3821 |  4.004790e+02 |   -0.00% |  3.22e-08 |      
-      160 |   0.3812 |  4.004700e+02 |   -0.00% |  5.25e-08 |      
-      170 |   0.3802 |  4.004570e+02 |   -0.00% |  8.54e-08 |      
-      180 |   0.3660 |  4.004550e+02 |   -0.00% |  1.39e-07 |      
-      190 |   0.3479 |  4.004130e+02 |   -0.01% |  2.27e-07 |      
-      200 |   0.3405 |  4.003930e+02 |   -0.00% |  3.34e-07 |      
-      210 |   0.2650 |  4.006740e+02 |   +0.07% |  4.92e-07 |      
-      220 |   0.2612 |  4.004410e+02 |   -0.06% |  7.25e-07 |      
-      230 |   0.2712 |  4.004080e+02 |   -0.01% |  1.07e-06 |      
-      240 |   0.2442 |  4.003790e+02 |   -0.01% |  1.57e-06 |      
-      250 |   0.2299 |  4.003490e+02 |   -0.01% |  2.32e-06 |      
-      260 |   0.2008 |  4.003320e+02 |   -0.00% |  3.41e-06 |      
+       10 |   0.3541 |  4.025445e+02 |   +1.80% |  7.68e-12 |      
+       20 |   0.3879 |  4.004940e+02 |   -0.51% |  1.13e-11 |      
+       30 |   0.3868 |  4.005040e+02 |   +0.00% |  1.67e-11 |      
+       40 |   0.3545 |  4.005077e+02 |   +0.00% |  2.46e-11 |      
+       50 |   0.3521 |  4.004712e+02 |   -0.01% |  3.62e-11 |      
+       60 |   0.3624 |  4.004875e+02 |   +0.00% |  5.33e-11 |      
+       70 |   0.3460 |  4.005355e+02 |   +0.01% |  7.85e-11 |      
+       80 |   0.2918 |  4.006418e+02 |   +0.03% |  1.16e-10 |      
+       90 |   0.2967 |  4.003655e+02 |   -0.07% |  1.70e-10 |      
+      100 |   0.3174 |  4.001198e+02 |   -0.06% |  2.51e-10 |      
+      110 |   0.3161 |  4.004692e+02 |   +0.09% |  3.70e-10 |      
+      120 |   0.3222 |  4.005987e+02 |   +0.03% |  5.45e-10 |      
+      130 |   0.3225 |  4.005020e+02 |   -0.02% |  8.03e-10 |      
+      140 |   0.3232 |  4.003678e+02 |   -0.03% |  1.18e-09 |      
+      150 |   0.3131 |  4.003355e+02 |   -0.01% |  1.74e-09 |      
+      160 |   0.3227 |  4.002945e+02 |   -0.01% |  2.57e-09 |      
+      170 |   0.3193 |  4.004205e+02 |   +0.03% |  3.78e-09 |      
+      180 |   0.3278 |  4.004420e+02 |   +0.01% |  5.57e-09 |      
+      190 |   0.3238 |  4.003938e+02 |   -0.01% |  8.20e-09 |      
+      200 |   0.2997 |  4.002985e+02 |   -0.02% |  1.21e-08 |      
+      210 |   0.2950 |  4.000908e+02 |   -0.05% |  1.78e-08 |      
+      220 |   0.2774 |  4.000160e+02 |   -0.02% |  2.62e-08 |      
+      230 |   0.2606 |  3.999577e+02 |   -0.01% |  3.86e-08 |      
+      240 |   0.2377 |  3.999608e+02 |   +0.00% |  5.69e-08 |      
+      250 |   0.2555 |  3.998537e+02 |   -0.03% |  8.39e-08 |      
+      260 |   0.2355 |  4.000460e+02 |   +0.05% |  1.24e-07 |      
+      270 |   0.2048 |  4.000225e+02 |   -0.01% |  1.82e-07 |      
+      280 |   0.2003 |  4.001020e+02 |   +0.02% |  2.68e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 263, overflow: 0.193, keep resizer changes at: 1, HPWL: 400342
+[INFO GPL-0101]    Iter: 284, overflow: 0.193, keep resizer changes at: 1, HPWL: 1601002
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        98
@@ -140,26 +142,27 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
        60 |     +0.0% |       0 |        0 |         4
     final |     +0.0% |       0 |        0 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 6.3523764e-09
+[INFO GPL-0106] Timing-driven: worst slack 6.3520833e-09
 [INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
 [INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
 [INFO GPL-0110] Timing-driven: new target density: 0.5
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      270 |   0.1356 |  4.038380e+02 |   +0.88% |  5.03e-06 |      
-      278 |   0.0911 |  4.017660e+02 |          |  7.13e-06 |      
+      290 |   0.1580 |  4.060253e+02 |   +1.48% |  3.95e-07 |      
+      300 |   0.1060 |  4.005230e+02 |   -1.36% |  5.82e-07 |      
+      302 |   0.0885 |  4.003275e+02 |          |  6.53e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 278
-[INFO GPL-1002] Placed Cell Area               14.4064
+[INFO GPL-1001] Global placement finished at iteration 302
+[INFO GPL-1002] Placed Cell Area               14.4343
 [INFO GPL-1003] Available Free Area           116.6400
 [INFO GPL-1004] Minimum Feasible Density        0.1300 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.1372
-[INFO GPL-1008]     - For 80% usage of free space: 0.1544
-[INFO GPL-1009]     - For 50% usage of free space: 0.2470
-[INFO GPL-1011] Original area (um^2): 14.41
+[INFO GPL-1007]     - For 90% usage of free space: 0.1375
+[INFO GPL-1008]     - For 80% usage of free space: 0.1547
+[INFO GPL-1009]     - For 50% usage of free space: 0.2475
+[INFO GPL-1011] Original area (um^2): 14.43
 [INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
-[INFO GPL-1014] Final placement area: 14.41 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 401.79
+[INFO GPL-1014] Final placement area: 14.43 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 400.20
 No differences found.

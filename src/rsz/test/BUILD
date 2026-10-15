@@ -53,11 +53,15 @@ TESTS = [
     "remove_buffers1",
     "remove_buffers2",
     "remove_buffers3",
+    "remove_buffers_dont_touch_rejected",
+    "remove_buffers_disconnected_input_rejected",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
     "remove_buffers5_hier",
     "remove_buffers6",
+    "remove_buffers_survivor_hier",
+    "remove_buffers_survivor_port_nets",
     "repair_cap1",
     "repair_cap2",
     "repair_cap3",
@@ -149,6 +153,7 @@ TESTS = [
     "repair_setup_size_down_fanout_only",
     "repair_setup_sizeup_match_only",
     "repair_setup_split_load_hier_only",
+    "repair_setup_startpoint_fanout_input_port",
     "repair_setup_startpoint_fanout_only",
     "repair_setup_swap_pins_dont_touch_sequence",
     "repair_setup_tns",
@@ -275,6 +280,7 @@ PASSFAIL_TESTS = [
     "repair_setup_legacy_mt",
     "repair_setup_mt1",
     "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -283,6 +289,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # as CMake runs every PASSFAIL test.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "gain_buffering_top_port_hier",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -515,8 +522,10 @@ cc_test(
         "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
+        "remove_buffers3.def",
     ],
     deps = [
+        "//src/est",
         "//src/odb/src/db",
         "//src/odb/src/defin",
         "//src/rsz:rsz_impl",

@@ -383,7 +383,7 @@ class dbNetwork : public ConcreteNetwork
   bool isGround(const Net* net) const override;
   NetPinIterator* pinIterator(const Net* net) const override;
   NetTermIterator* termIterator(const Net* net) const override;
-  const Net* highestConnectedNet(Net* net) const override;
+  const Net* highestConnectedNet(const Net* net) const override;
 
   // Get the flat net (odb::dbNet) with the Net*.
   // If the net is a hierarchical net (odb::dbModNet), return nullptr
@@ -412,7 +412,7 @@ class dbNetwork : public ConcreteNetwork
   // This ensures parasitic externality checks in ensureParasiticNode work
   // correctly: net_ is always a flat net, so the comparison net != net_
   // must also operate on flat nets.
-  Net* highestNetAbove(Net* net) const override;
+  const Net* highestNetAbove(const Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
