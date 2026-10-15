@@ -10,14 +10,14 @@
 #include "odb/dbIterator.h"
 
 namespace odb {
-class _dbChipBumpInst;
+class _dbChipITerm;
 
-class dbChipBumpInstItr : public dbIterator
+class dbChipITermItr : public dbIterator
 {
  public:
-  dbChipBumpInstItr(dbTable<_dbChipBumpInst>* chip_bump_inst_tbl)
+  dbChipITermItr(dbTable<_dbChipITerm>* chip_iterm_tbl)
   {
-    chip_bump_inst_tbl_ = chip_bump_inst_tbl;
+    chip_iterm_tbl_ = chip_iterm_tbl;
   }
 
   bool reversible() const override;
@@ -31,7 +31,7 @@ class dbChipBumpInstItr : public dbIterator
   dbObject* getObject(uint32_t id, ...) override;
 
  private:
-  dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
+  dbTable<_dbChipITerm>* chip_iterm_tbl_;
 };
 
 }  // namespace odb

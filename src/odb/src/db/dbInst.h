@@ -21,7 +21,7 @@ class _dbRegion;
 class _dbDatabase;
 class _dbModule;
 class _dbGroup;
-class _dbChipBump;
+class _dbChipBTerm;
 class _dbChipRegion;
 class dbInst;
 class dbIStream;
@@ -88,7 +88,7 @@ class _dbInst : public _dbObject
   dbId<_dbInst> module_prev_;
   dbId<_dbHier> hierarchy_;
   dbId<_dbChipRegion> chip_region_;
-  dbId<_dbChipBump> bump_;
+  dbId<_dbChipBTerm> bump_;
   dbVector<uint32_t> iterms_;
   dbId<_dbBox> halo_;
   uint32_t pin_access_idx_;

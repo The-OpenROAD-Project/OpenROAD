@@ -36,11 +36,11 @@ class CheckerLogicalConnFixture : public CheckerFixture
   }
 
   // Create a bump on a chip region.
-  dbChipBump* createBump(dbChip* chip,
-                         dbChipRegion* region,
-                         const char* bump_name,
-                         int x,
-                         int y)
+  dbChipBTerm* createBump(dbChip* chip,
+                          dbChipRegion* region,
+                          const char* bump_name,
+                          int x,
+                          int y)
   {
     dbBlock* block = chip->getBlock();
     dbTechLayer* layer = tech_->findLayer("layer1");
@@ -51,7 +51,7 @@ class CheckerLogicalConnFixture : public CheckerFixture
     inst->setPlacementStatus(dbPlacementStatus::PLACED);
 
     // Chip-level bump association
-    dbChipBump* chip_bump = dbChipBump::create(region, inst);
+    dbChipBTerm* chip_bterm = dbChipBTerm::create(region, inst);
 
     // Net + BTerm for wire-graph connectivity
     std::string net_name = std::string(bump_name) + "_net";
@@ -67,10 +67,10 @@ class CheckerLogicalConnFixture : public CheckerFixture
     bpin->setPlacementStatus(dbPlacementStatus::PLACED);
     dbBox::create(bpin, layer, x, y, x + 100, y + 100);
 
-    chip_bump->setNet(net);
-    chip_bump->setBTerm(bterm);
+    chip_bterm->setNet(net);
+    chip_bterm->setBTerm(bterm);
 
-    return chip_bump;
+    return chip_bterm;
   }
 
   void check()
@@ -107,12 +107,12 @@ TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_matching_nets)
   auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
-  auto inst1_bump1 = *ri1->getChipBumpInsts().begin();
-  auto inst2_bump2 = *ri2->getChipBumpInsts().begin();
+  auto inst1_bump1 = *ri1->getChipITerms().begin();
+  auto inst2_bump2 = *ri2->getChipITerms().begin();
 
   auto* chip_net = dbChipNet::create(top_chip_, "net1");
-  chip_net->addBumpInst(inst1_bump1, {inst1});
-  chip_net->addBumpInst(inst2_bump2, {inst2});
+  chip_net->addChipITerm(inst1_bump1, {inst1});
+  chip_net->addChipITerm(inst2_bump2, {inst2});
 
   check();
 
@@ -142,14 +142,14 @@ TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_mismatching_nets)
   auto* conn1 = dbChipConn::create("c1", top_chip_, {inst2}, ri2, {inst1}, ri1);
   conn1->setThickness(0);
 
-  auto inst1_bump1 = *ri1->getChipBumpInsts().begin();
-  auto inst2_bump2 = *ri2->getChipBumpInsts().begin();
+  auto inst1_bump1 = *ri1->getChipITerms().begin();
+  auto inst2_bump2 = *ri2->getChipITerms().begin();
 
   auto* chip_net1 = dbChipNet::create(top_chip_, "net1");
-  chip_net1->addBumpInst(inst1_bump1, {inst1});
+  chip_net1->addChipITerm(inst1_bump1, {inst1});
 
   auto* chip_net2 = dbChipNet::create(top_chip_, "net2");
-  chip_net2->addBumpInst(inst2_bump2, {inst2});
+  chip_net2->addChipITerm(inst2_bump2, {inst2});
 
   check();
 

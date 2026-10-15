@@ -19,14 +19,14 @@ class _dbChipRegion;
 class _dbNet;
 class _dbBTerm;
 
-class _dbChipBump : public _dbObject
+class _dbChipBTerm : public _dbObject
 {
  public:
-  _dbChipBump(_dbDatabase*);
+  _dbChipBTerm(_dbDatabase*);
 
-  bool operator==(const _dbChipBump& rhs) const;
-  bool operator!=(const _dbChipBump& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbChipBump& rhs) const;
+  bool operator==(const _dbChipBTerm& rhs) const;
+  bool operator!=(const _dbChipBTerm& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbChipBTerm& rhs) const;
   void collectMemInfo(MemInfo& info);
 
   dbId<_dbInst> inst_;
@@ -35,7 +35,7 @@ class _dbChipBump : public _dbObject
   dbId<_dbNet> net_;
   dbId<_dbBTerm> bterm_;
 };
-dbIStream& operator>>(dbIStream& stream, _dbChipBump& obj);
-dbOStream& operator<<(dbOStream& stream, const _dbChipBump& obj);
+dbIStream& operator>>(dbIStream& stream, _dbChipBTerm& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbChipBTerm& obj);
 }  // namespace odb
 // Generator Code End Header

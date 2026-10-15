@@ -15,7 +15,7 @@
 #include <cstdint>
 
 #include "dbChip.h"
-#include "dbChipBumpInst.h"
+#include "dbChipITerm.h"
 #include "dbChipRegionInst.h"
 #include "odb/dbSet.h"
 #include "odb/dbTransform.h"
@@ -268,16 +268,16 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
     regioninst->chip_region_inst_next_ = chipinst->chip_region_insts_;
     chipinst->chip_region_insts_ = regioninst->getOID();
     chipinst->region_insts_map_[region->getId()] = regioninst->getOID();
-    // create chipBumpInsts
-    for (auto bump : region->getChipBumps()) {
-      _dbChipBumpInst* bumpinst = db->chip_bump_inst_tbl_->create();
-      bumpinst->chip_bump_ = bump->getImpl()->getOID();
+    // create chipITerms
+    for (auto bump : region->getChipBTerms()) {
+      _dbChipITerm* bumpinst = db->chip_iterm_tbl_->create();
+      bumpinst->chip_bterm_ = bump->getImpl()->getOID();
       bumpinst->chip_region_inst_ = regioninst->getOID();
-      bumpinst->region_next_ = regioninst->chip_bump_insts_;
-      regioninst->chip_bump_insts_ = bumpinst->getOID();
+      bumpinst->region_next_ = regioninst->chip_iterms_;
+      regioninst->chip_iterms_ = bumpinst->getOID();
     }
-    // reverse the chip_bump_insts_ list
-    ((dbChipRegionInst*) regioninst)->getChipBumpInsts().reverse();
+    // reverse the chip_iterms_ list
+    ((dbChipRegionInst*) regioninst)->getChipITerms().reverse();
   }
   // reverse the chip_region_insts_ list
   ((dbChipInst*) chipinst)->getRegions().reverse();
@@ -300,13 +300,12 @@ void dbChipInst::destroy(dbChipInst* chipInst)
         = db->chip_region_inst_tbl_->getPtr(region_inst_id);
     region_inst_id = region_inst->chip_region_inst_next_;
     db->chip_region_inst_tbl_->destroy(region_inst);
-    // remove chipBumpInsts
-    uint32_t bump_inst_id = region_inst->chip_bump_insts_;
+    // remove chipITerms
+    uint32_t bump_inst_id = region_inst->chip_iterms_;
     while (bump_inst_id != 0) {
-      _dbChipBumpInst* bump_inst
-          = db->chip_bump_inst_tbl_->getPtr(bump_inst_id);
+      _dbChipITerm* bump_inst = db->chip_iterm_tbl_->getPtr(bump_inst_id);
       bump_inst_id = bump_inst->region_next_;
-      db->chip_bump_inst_tbl_->destroy(bump_inst);
+      db->chip_iterm_tbl_->destroy(bump_inst);
     }
   }
   // Get parent chip

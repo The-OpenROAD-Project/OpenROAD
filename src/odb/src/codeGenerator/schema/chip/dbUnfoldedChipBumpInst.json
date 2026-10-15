@@ -3,9 +3,10 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "chip_bump_inst_",
-      "type": "dbId<_dbChipBumpInst>",
+      "name": "chip_iterm_",
+      "type": "dbId<_dbChipITerm>",
       "flags": ["no-set"],
+      "getterFunctionName": "getChipITerm",
       "parent": "dbDatabase"
     },
     {
@@ -30,8 +31,8 @@
     "odb/dbId.h"
   ],
   "cpp_includes": [
-    "dbChipBumpInst.h",
-    "dbChipBump.h",
+    "dbChipITerm.h",
+    "dbChipBTerm.h",
     "dbInst.h",
     "dbUnfoldedChipRegionInst.h",
     "dbUnfoldedChipInst.h",

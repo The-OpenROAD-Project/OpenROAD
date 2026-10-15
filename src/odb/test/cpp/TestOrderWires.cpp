@@ -61,9 +61,9 @@ class TestOrderWires : public tst::Fixture
 
     dbChipRegion* chip_region = dbChipRegion::create(
         db_->getChip(), "R1", dbChipRegion::Side::FRONT, nullptr);
-    dbChipBump* chip_bump = dbChipBump::create(chip_region, bump);
-    chip_bump->setNet(bump_net.net);
-    chip_bump->setBTerm(bterm);
+    dbChipBTerm* chip_bterm = dbChipBTerm::create(chip_region, bump);
+    chip_bterm->setNet(bump_net.net);
+    chip_bterm->setBTerm(bterm);
 
     bump_net.receiver_iterm->getAvgXY(&bump_net.receiver_x,
                                       &bump_net.receiver_y);

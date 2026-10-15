@@ -113,11 +113,11 @@ class dbAlignmentMarkerRule;
 class dbBusPort;
 class dbCellEdgeSpacing;
 class dbChip;
-class dbChipBump;
-class dbChipBumpInst;
+class dbChipBTerm;
 class dbChipCapNode;
 class dbChipConn;
 class dbChipInst;
+class dbChipITerm;
 class dbChipNet;
 class dbChipPath;
 class dbChipRegion;
@@ -1551,10 +1551,10 @@ class dbBTerm : public dbObject
   dbBlock* getBlock() const;
 
   ///
-  /// Get the chip bump associated with this block-terminal.
-  /// Returns nullptr if no chip bump is associated.
+  /// Get the chip bterm associated with this block-terminal.
+  /// Returns nullptr if no chip bterm is associated.
   ///
-  dbChipBump* getChipBump() const;
+  dbChipBTerm* getChipBTerm() const;
 
   ///
   /// Get the hierarchical parent iterm of this bterm.
@@ -3183,10 +3183,10 @@ class dbInst : public dbObject
   uint32_t getPinAccessIdx() const;
 
   ///
-  /// Get the chip bump associated with this instance.
-  /// Returns a pointer to the dbChipBump object if present, otherwise nullptr.
+  /// Get the chip bterm associated with this instance.
+  /// Returns a pointer to the dbChipBTerm object if present, otherwise nullptr.
   ///
-  dbChipBump* getChipBump() const;
+  dbChipBTerm* getChipBTerm() const;
 
   ///
   /// Create a new instance.
@@ -7400,10 +7400,10 @@ class dbChip : public dbObject
   // User Code End dbChip
 };
 
-class dbChipBump : public dbObject
+class dbChipBTerm : public dbObject
 {
  public:
-  // User Code Begin dbChipBump
+  // User Code Begin dbChipBTerm
   dbChip* getChip() const;
 
   dbChipRegion* getChipRegion() const;
@@ -7418,27 +7418,15 @@ class dbChipBump : public dbObject
 
   void setBTerm(dbBTerm* bterm);
 
-  static dbChipBump* create(dbChipRegion* chip_region, dbInst* inst);
+  static dbChipBTerm* create(dbChipRegion* chip_region, dbInst* inst);
 
-  // User Code End dbChipBump
-};
-
-class dbChipBumpInst : public dbObject
-{
- public:
-  // User Code Begin dbChipBumpInst
-
-  dbChipBump* getChipBump() const;
-
-  dbChipRegionInst* getChipRegionInst() const;
-
-  // User Code End dbChipBumpInst
+  // User Code End dbChipBTerm
 };
 
 // A capacitance node in the inter-chip parasitic network of a dbChipNet,
 // the inter-chip analog of dbCapNode. It is an electrical node of the
 // network carrying a lumped capacitance to ground. A terminal node
-// corresponds to a bump landing and references the dbChipBumpInst where
+// corresponds to a bump landing and references the dbChipITerm where
 // the vertical connection meets a die or RDL pin; this is how the per-die
 // parasitic networks are stitched together across the stack at the bumps.
 class dbChipCapNode : public dbObject
@@ -7451,9 +7439,9 @@ class dbChipCapNode : public dbObject
   // User Code Begin dbChipCapNode
   dbChipNet* getChipNet() const;
 
-  dbChipBumpInst* getChipBumpInst() const;
+  dbChipITerm* getChipITerm() const;
 
-  void setChipBumpInst(dbChipBumpInst* chip_bump_inst);
+  void setChipITerm(dbChipITerm* chip_iterm);
 
   dbBTerm* getBTerm() const;
 
@@ -7534,6 +7522,18 @@ class dbChipInst : public dbObject
   // User Code End dbChipInst
 };
 
+class dbChipITerm : public dbObject
+{
+ public:
+  // User Code Begin dbChipITerm
+
+  dbChipBTerm* getChipBTerm() const;
+
+  dbChipRegionInst* getChipRegionInst() const;
+
+  // User Code End dbChipITerm
+};
+
 class dbChipNet : public dbObject
 {
  public:
@@ -7548,13 +7548,13 @@ class dbChipNet : public dbObject
 
   dbSet<dbChipRSeg> getChipRSegs() const;
 
-  uint32_t getNumBumpInsts() const;
+  uint32_t getNumChipITerms() const;
 
-  dbChipBumpInst* getBumpInst(uint32_t index,
-                              std::vector<dbChipInst*>& path) const;
+  dbChipITerm* getChipITerm(uint32_t index,
+                            std::vector<dbChipInst*>& path) const;
 
-  void addBumpInst(dbChipBumpInst* bump_inst,
-                   const std::vector<dbChipInst*>& path);
+  void addChipITerm(dbChipITerm* bump_inst,
+                    const std::vector<dbChipInst*>& path);
 
   static dbChipNet* create(dbChip* chip, const std::string& name);
 
@@ -7607,7 +7607,7 @@ class dbChipRegion : public dbObject
 
   Rect getBox() const;
 
-  dbSet<dbChipBump> getChipBumps() const;
+  dbSet<dbChipBTerm> getChipBTerms() const;
 
   // User Code Begin dbChipRegion
   Cuboid getCuboid() const;
@@ -7636,7 +7636,7 @@ class dbChipRegionInst : public dbObject
 
   dbChipRegion* getChipRegion() const;
 
-  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+  dbSet<dbChipITerm> getChipITerms() const;
 
   // User Code End dbChipRegionInst
 };
@@ -7689,7 +7689,7 @@ class dbDatabase : public dbObject
 
   dbSet<dbChipConn> getChipConns() const;
 
-  dbSet<dbChipBumpInst> getChipBumpInsts() const;
+  dbSet<dbChipITerm> getChipITerms() const;
 
   dbSet<dbChipNet> getChipNets() const;
 
@@ -11498,7 +11498,7 @@ class dbTechLayerWrongDirSpacingRule : public dbObject
 class dbUnfoldedChipBumpInst : public dbObject
 {
  public:
-  dbChipBumpInst* getChipBumpInst() const;
+  dbChipITerm* getChipITerm() const;
 
   dbUnfoldedChipRegionInst* getParentRegion() const;
 

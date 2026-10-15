@@ -95,7 +95,7 @@ inline constexpr uint32_t kSchemaLef58AntennaGatePlusDiff = 129;
 // Revision where dbChipPath was added to dbChip
 inline constexpr uint32_t kSchemaChipPath = 128;
 
-// Revision where chip_bump_ back-reference was added to dbBTerm
+// Revision where chip_bterm_ back-reference was added to dbBTerm
 inline constexpr uint32_t kSchemaBtermChipBump = 127;
 
 // Revision where dbTechLayer::wrong_way_min_width_ was added
@@ -125,7 +125,7 @@ inline constexpr uint32_t kSchemaFloatGCellData = 119;
 // Revision where dbTech was moved from dbBlock to dbChip
 inline constexpr uint32_t kSchemaChipTech = 118;
 
-// Revision where dbChipBump was added
+// Revision where dbChipBTerm was added
 inline constexpr uint32_t kSchemaChipBump = 117;
 
 // Revision where dbChipRegion was added
@@ -316,7 +316,7 @@ class _dbProperty;
 class _dbChipInst;
 class _dbChipRegionInst;
 class _dbChipConn;
-class _dbChipBumpInst;
+class _dbChipITerm;
 class _dbChipNet;
 class _dbUnfoldedChipInst;
 class _dbUnfoldedChipRegionInst;
@@ -328,7 +328,7 @@ class dbPropertyItr;
 class dbChipInstItr;
 class dbChipRegionInstItr;
 class dbChipConnItr;
-class dbChipBumpInstItr;
+class dbChipITermItr;
 class dbChipNetItr;
 class dbUnfoldedChipRegionInstItr;
 class dbUnfoldedChipBumpInstItr;
@@ -371,7 +371,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipInst>* chip_inst_tbl_;
   dbTable<_dbChipRegionInst>* chip_region_inst_tbl_;
   dbTable<_dbChipConn>* chip_conn_tbl_;
-  dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
+  dbTable<_dbChipITerm>* chip_iterm_tbl_;
   dbTable<_dbChipNet>* chip_net_tbl_;
   dbTable<_dbUnfoldedChipInst>* unfolded_chip_inst_tbl_;
   dbTable<_dbUnfoldedChipRegionInst>* unfolded_chip_region_inst_tbl_;
@@ -388,7 +388,7 @@ class _dbDatabase : public _dbObject
   dbChipInstItr* chip_inst_itr_;
   dbChipRegionInstItr* chip_region_inst_itr_;
   dbChipConnItr* chip_conn_itr_;
-  dbChipBumpInstItr* chip_bump_inst_itr_;
+  dbChipITermItr* chip_iterm_itr_;
   dbUnfoldedChipRegionInstItr* unfolded_region_itr_;
   dbUnfoldedChipBumpInstItr* unfolded_bump_itr_;
   dbChipNetItr* chip_net_itr_;

@@ -37,13 +37,13 @@ class BumpsFixture : public CheckerFixture
 
   // Create a bump on a chip region.
   // - Creates dbInst at (x,y) in the chip's block
-  // - Creates dbChipBump on the region
-  // Returns the dbChipBump for further use.
-  dbChipBump* createBump(dbChip* chip,
-                         dbChipRegion* region,
-                         const char* bump_name,
-                         int x,
-                         int y)
+  // - Creates dbChipBTerm on the region
+  // Returns the dbChipBTerm for further use.
+  dbChipBTerm* createBump(dbChip* chip,
+                          dbChipRegion* region,
+                          const char* bump_name,
+                          int x,
+                          int y)
   {
     dbBlock* block = chip->getBlock();
 
@@ -53,9 +53,9 @@ class BumpsFixture : public CheckerFixture
     inst->setPlacementStatus(dbPlacementStatus::PLACED);
 
     // Chip-level bump association
-    dbChipBump* chip_bump = dbChipBump::create(region, inst);
+    dbChipBTerm* chip_bterm = dbChipBTerm::create(region, inst);
 
-    return chip_bump;
+    return chip_bterm;
   }
   dbLib* lib_;
   dbMaster* bump_master_;

@@ -18,8 +18,8 @@
         "flags":["private"]
       },
       {
-        "name":"chip_bump_insts_",
-        "type":"dbId<_dbChipBumpInst>",
+        "name":"chip_iterms_",
+        "type":"dbId<_dbChipITerm>",
         "flags":["private"]
       }
   ],

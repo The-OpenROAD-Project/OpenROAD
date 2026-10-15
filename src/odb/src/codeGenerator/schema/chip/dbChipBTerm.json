@@ -1,5 +1,6 @@
 {
-  "name": "dbChipBump",
+  "name": "dbChipBTerm",
+  "hash": "0xEC4D30D9",
   "type": "dbObject",
   "fields": [
     { "name": "inst_", "type":"dbId<_dbInst>", "flags": ["private"] },

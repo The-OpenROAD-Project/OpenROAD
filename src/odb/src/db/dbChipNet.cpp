@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "dbChip.h"
-#include "dbChipBumpInst.h"
+#include "dbChipITerm.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbCore.h"
@@ -62,7 +62,7 @@ dbIStream& operator>>(dbIStream& stream, _dbChipNet& obj)
   stream >> obj.name_;
   stream >> obj.chip_;
   stream >> obj.chip_net_next_;
-  stream >> obj.bump_insts_paths_;
+  stream >> obj.chip_iterms_paths_;
   if (obj.getDatabase()->isSchema(kSchemaChipParasitics)) {
     stream >> obj.first_cap_node_;
   }
@@ -77,7 +77,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipNet& obj)
   stream << obj.name_;
   stream << obj.chip_;
   stream << obj.chip_net_next_;
-  stream << obj.bump_insts_paths_;
+  stream << obj.chip_iterms_paths_;
   stream << obj.first_cap_node_;
   stream << obj.first_r_seg_;
   return stream;
@@ -89,7 +89,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   info.children["name"].add(name_);
-  info.children["bump_insts_paths"].add(bump_insts_paths_);
+  info.children["chip_iterms_paths"].add(chip_iterms_paths_);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -137,21 +137,21 @@ dbSet<dbChipRSeg> dbChipNet::getChipRSegs() const
   return dbSet<dbChipRSeg>(chip_net, chip->chip_net_r_seg_itr_);
 }
 
-uint32_t dbChipNet::getNumBumpInsts() const
+uint32_t dbChipNet::getNumChipITerms() const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
-  return obj->bump_insts_paths_.size();
+  return obj->chip_iterms_paths_.size();
 }
 
-dbChipBumpInst* dbChipNet::getBumpInst(uint32_t index,
-                                       std::vector<dbChipInst*>& path) const
+dbChipITerm* dbChipNet::getChipITerm(uint32_t index,
+                                     std::vector<dbChipInst*>& path) const
 {
   _dbChipNet* obj = (_dbChipNet*) this;
-  if (index >= obj->bump_insts_paths_.size()) {
+  if (index >= obj->chip_iterms_paths_.size()) {
     return nullptr;
   }
   _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  const auto& bump_inst_path = obj->bump_insts_paths_[index];
+  const auto& bump_inst_path = obj->chip_iterms_paths_[index];
 
   // Fill the path vector
   path.clear();
@@ -159,12 +159,11 @@ dbChipBumpInst* dbChipNet::getBumpInst(uint32_t index,
     path.push_back((dbChipInst*) db->chip_inst_tbl_->getPtr(inst_id));
   }
 
-  return (dbChipBumpInst*) db->chip_bump_inst_tbl_->getPtr(
-      bump_inst_path.second);
+  return (dbChipITerm*) db->chip_iterm_tbl_->getPtr(bump_inst_path.second);
 }
 
-void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
-                            const std::vector<dbChipInst*>& path)
+void dbChipNet::addChipITerm(dbChipITerm* bump_inst,
+                             const std::vector<dbChipInst*>& path)
 {
   _dbChipNet* obj = (_dbChipNet*) this;
   if (bump_inst == nullptr) {
@@ -185,8 +184,8 @@ void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
     path_ids.emplace_back(inst->getImpl()->getOID());
   }
 
-  obj->bump_insts_paths_.emplace_back(std::move(path_ids),
-                                      bump_inst->getImpl()->getOID());
+  obj->chip_iterms_paths_.emplace_back(std::move(path_ids),
+                                       bump_inst->getImpl()->getOID());
 }
 
 dbChipNet* dbChipNet::create(dbChip* chip, const std::string& name)

@@ -66,10 +66,10 @@ struct ChipHierarchyFixture : public SimpleDbFixture
     dbMaster* io_master
         = createMaster1X1(lib2, "io_master", 100, 100, "in", "out");
     dbInst* io_cell = dbInst::create(io_chip->getBlock(), io_master, "io_bump");
-    io_bump = dbChipBump::create(io_chip_region_r1, io_cell);
+    io_bump = dbChipBTerm::create(io_chip_region_r1, io_cell);
     io_master = createMaster1X1(lib1, "io_master", 100, 100, "in", "out");
     io_cell = dbInst::create(memory_chip->getBlock(), io_master, "io_bump");
-    dbChipBump::create(memory_chip_region_r1, io_cell);
+    dbChipBTerm::create(memory_chip_region_r1, io_cell);
   }
   void createChipInsts()
   {
@@ -105,7 +105,7 @@ struct ChipHierarchyFixture : public SimpleDbFixture
   dbChipRegion* memory_chip_region_r2;
   dbChipRegion* memory_chip_region_r3;
   dbChipRegion* io_chip_region_r1;
-  dbChipBump* io_bump;
+  dbChipBTerm* io_bump;
 };
 
 TEST_F(ChipHierarchyFixture, test_chip_creation)
@@ -231,7 +231,7 @@ TEST_F(ChipHierarchyFixture, test_chip_complex_destroy)
   // Clean up remaining instances
   dbChipInst::destroy(memory_inst);
   dbChipInst::destroy(io_inst);
-  EXPECT_EQ(db_->getChipBumpInsts().size(), 0);
+  EXPECT_EQ(db_->getChipITerms().size(), 0);
   EXPECT_EQ(db_->getChipRegionInsts().size(), 0);
   EXPECT_EQ(system_chip->getChipInsts().size(), 0);
   EXPECT_EQ(system_chip->findChipInst("cpu_inst"), nullptr);
@@ -338,7 +338,7 @@ TEST_F(ChipHierarchyFixture, test_chip_conns)
                std::exception);
 }
 
-TEST_F(ChipHierarchyFixture, test_chip_bumps)
+TEST_F(ChipHierarchyFixture, test_chip_bterms)
 {
   EXPECT_EQ(io_bump->getInst()->getName(), "io_bump");
   EXPECT_EQ(io_bump->getChip(), io_chip);
@@ -347,37 +347,37 @@ TEST_F(ChipHierarchyFixture, test_chip_bumps)
   EXPECT_EQ(io_bump->getBTerm(), nullptr);
   dbNet* net = dbNet::create(io_chip->getBlock(), "net1");
   dbBTerm* bterm = dbBTerm::create(net, "bterm1");
-  // Before setBTerm, getChipBump returns nullptr
-  EXPECT_EQ(bterm->getChipBump(), nullptr);
+  // Before setBTerm, getChipBTerm returns nullptr
+  EXPECT_EQ(bterm->getChipBTerm(), nullptr);
   io_bump->setNet(net);
   io_bump->setBTerm(bterm);
   EXPECT_EQ(io_bump->getNet(), net);
   EXPECT_EQ(io_bump->getBTerm(), bterm);
-  // After setBTerm, getChipBump returns the bump (back-reference)
-  EXPECT_EQ(bterm->getChipBump(), io_bump);
+  // After setBTerm, getChipBTerm returns the bump (back-reference)
+  EXPECT_EQ(bterm->getChipBTerm(), io_bump);
 
-  EXPECT_EQ(io_chip_region_r1->getChipBumps().size(), 1);
-  EXPECT_EQ(*io_chip_region_r1->getChipBumps().begin(), io_bump);
+  EXPECT_EQ(io_chip_region_r1->getChipBTerms().size(), 1);
+  EXPECT_EQ(*io_chip_region_r1->getChipBTerms().begin(), io_bump);
 
-  EXPECT_EQ(db_->getChipBumpInsts().size(), 2);
+  EXPECT_EQ(db_->getChipITerms().size(), 2);
 
   EXPECT_EQ(io_inst->getRegions().size(), 1);
   auto io_inst_region_r1 = *io_inst->getRegions().begin();
-  EXPECT_EQ(io_inst_region_r1->getChipBumpInsts().size(), 1);
+  EXPECT_EQ(io_inst_region_r1->getChipITerms().size(), 1);
   auto io_inst_region_r1_bump_inst
-      = *io_inst_region_r1->getChipBumpInsts().begin();
-  EXPECT_EQ(io_inst_region_r1_bump_inst->getChipBump(), io_bump);
-  EXPECT_EQ(io_bump->getInst()->getChipBump(), io_bump);
+      = *io_inst_region_r1->getChipITerms().begin();
+  EXPECT_EQ(io_inst_region_r1_bump_inst->getChipBTerm(), io_bump);
+  EXPECT_EQ(io_bump->getInst()->getChipBTerm(), io_bump);
   EXPECT_EQ(io_inst_region_r1_bump_inst->getChipRegionInst(),
             io_inst_region_r1);
 
   // test chip nets
   dbChipNet* chip_net = dbChipNet::create(system_chip, "net1");
   EXPECT_EQ(chip_net->getChip(), system_chip);
-  EXPECT_EQ(chip_net->getNumBumpInsts(), 0);
+  EXPECT_EQ(chip_net->getNumChipITerms(), 0);
   EXPECT_EQ(system_chip->getChipNets().size(), 1);
   EXPECT_EQ(db_->getChipNets().size(), 1);
-  chip_net->addBumpInst(io_inst_region_r1_bump_inst, {io_inst});
+  chip_net->addChipITerm(io_inst_region_r1_bump_inst, {io_inst});
   dbChipRegionInst* memory_inst_region_r1 = nullptr;
   for (auto region : memory_inst->getRegions()) {
     if (region->getChipRegion() == memory_chip_region_r1) {
@@ -385,20 +385,20 @@ TEST_F(ChipHierarchyFixture, test_chip_bumps)
       break;
     }
   }
-  EXPECT_EQ(memory_inst_region_r1->getChipBumpInsts().size(), 1);
+  EXPECT_EQ(memory_inst_region_r1->getChipITerms().size(), 1);
   auto memory_inst_region_r1_bump_inst
-      = (*memory_inst_region_r1->getChipBumpInsts().begin());
-  chip_net->addBumpInst(memory_inst_region_r1_bump_inst, {memory_inst});
-  EXPECT_EQ(chip_net->getNumBumpInsts(), 2);
+      = (*memory_inst_region_r1->getChipITerms().begin());
+  chip_net->addChipITerm(memory_inst_region_r1_bump_inst, {memory_inst});
+  EXPECT_EQ(chip_net->getNumChipITerms(), 2);
   std::vector<dbChipInst*> path;
-  EXPECT_EQ(chip_net->getBumpInst(0, path), io_inst_region_r1_bump_inst);
+  EXPECT_EQ(chip_net->getChipITerm(0, path), io_inst_region_r1_bump_inst);
   EXPECT_EQ(path.size(), 1);
   EXPECT_EQ(path[0], io_inst);
   dbInst* io_cell = memory_chip->getBlock()->findInst("io_bump");
-  EXPECT_THROW(dbChipBump::create(io_chip_region_r1, io_cell), std::exception);
+  EXPECT_THROW(dbChipBTerm::create(io_chip_region_r1, io_cell), std::exception);
 }
 
-TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
+TEST_F(SimpleDbFixture, test_chip_bterm_serialization)
 {
   createSimpleDB();
 
@@ -413,17 +413,17 @@ TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
   bump_master->setType(dbMasterType::COVER_BUMP);
   bump_master->setFrozen();
   dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
-  dbChipBump* bump = dbChipBump::create(region, bump_inst);
+  dbChipBTerm* bump = dbChipBTerm::create(region, bump_inst);
   ASSERT_NE(bump, nullptr);
 
   // Associate a bterm with the bump
   dbBTerm* bterm = dbBTerm::create(dbNet::create(block, "SIG1"), "SIG1");
   bump->setBTerm(bterm);
-  ASSERT_EQ(bterm->getChipBump(), bump);
+  ASSERT_EQ(bterm->getChipBTerm(), bump);
 
   // Write the database to a temp file
   std::filesystem::create_directory("results");
-  const std::string tmp_path = "results/test_chip_bump_bterm_serialization.odb";
+  const std::string tmp_path = "results/test_chip_bterm_serialization.odb";
   {
     std::ofstream out;
     out.exceptions(std::ifstream::failbit | std::ifstream::badbit
@@ -451,19 +451,19 @@ TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
 
   dbChipRegion* region2 = db2->getChip()->findChipRegion("bump_region");
   ASSERT_NE(region2, nullptr);
-  ASSERT_EQ(region2->getChipBumps().size(), 1);
-  dbChipBump* bump2 = *region2->getChipBumps().begin();
+  ASSERT_EQ(region2->getChipBTerms().size(), 1);
+  dbChipBTerm* bump2 = *region2->getChipBTerms().begin();
   ASSERT_NE(bump2, nullptr);
 
   // Verify the back-reference survived serialization
-  EXPECT_EQ(bterm2->getChipBump(), bump2);
+  EXPECT_EQ(bterm2->getChipBTerm(), bump2);
   EXPECT_EQ(bump2->getBTerm(), bterm2);
 }
 
 TEST_F(ChipHierarchyFixture, test_chip_parasitics)
 {
   auto io_bump_inst
-      = *(*io_inst->getRegions().begin())->getChipBumpInsts().begin();
+      = *(*io_inst->getRegions().begin())->getChipITerms().begin();
 
   dbChipRegionInst* memory_region = nullptr;
   for (auto region : memory_inst->getRegions()) {
@@ -474,21 +474,21 @@ TEST_F(ChipHierarchyFixture, test_chip_parasitics)
   }
 
   ASSERT_NE(memory_region, nullptr);
-  auto memory_bump_inst = *memory_region->getChipBumpInsts().begin();
+  auto memory_bump_inst = *memory_region->getChipITerms().begin();
 
   dbChipNet* net = dbChipNet::create(system_chip, "net1");
-  net->addBumpInst(io_bump_inst, {io_inst});
-  net->addBumpInst(memory_bump_inst, {memory_inst});
+  net->addChipITerm(io_bump_inst, {io_inst});
+  net->addChipITerm(memory_bump_inst, {memory_inst});
 
   dbChipCapNode* source = dbChipCapNode::create(net);
   source->setCapacitance(1.5);
-  source->setChipBumpInst(io_bump_inst);
+  source->setChipITerm(io_bump_inst);
   dbChipCapNode* target = dbChipCapNode::create(net);
-  target->setChipBumpInst(memory_bump_inst);
+  target->setChipITerm(memory_bump_inst);
 
   EXPECT_EQ(net->getChipCapNodes().size(), 2);
   EXPECT_FLOAT_EQ(source->getCapacitance(), 1.5);
-  EXPECT_EQ(source->getChipBumpInst(), io_bump_inst);
+  EXPECT_EQ(source->getChipITerm(), io_bump_inst);
   EXPECT_EQ(source->getChipNet(), net);
 
   // getBTerm resolves through the bump, and is null until the bump has one.

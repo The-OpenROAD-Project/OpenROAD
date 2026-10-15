@@ -509,7 +509,7 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat)
           // max_markers_ limit; skip the addSource/addShape/setComment
           // chain to avoid a null-deref crash in that case.
           if (auto* marker = dbMarker::create(cat)) {
-            marker->addSource(bump->getChipBumpInst());
+            marker->addSource(bump->getChipITerm());
             marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
                                   p.y() - kBumpMarkerHalfSize,
                                   p.x() + kBumpMarkerHalfSize,
@@ -703,8 +703,8 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat)
                                                   "Logical Connectivity");
         }
         if (auto* marker = dbMarker::create(cat)) {
-          marker->addSource(top_bump->getChipBumpInst());
-          marker->addSource(bot_bump->getChipBumpInst());
+          marker->addSource(top_bump->getChipITerm());
+          marker->addSource(bot_bump->getChipITerm());
           marker->addShape(top_region->getCuboid().intersect(
               bot_region->getCuboid()));  // Mark overlap region
 

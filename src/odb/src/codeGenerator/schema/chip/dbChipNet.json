@@ -24,8 +24,8 @@
             ]
         },
         {
-            "name": "bump_insts_paths_",
-            "type": "std::vector<std::pair<std::vector<dbId<_dbChipInst>>, dbId<_dbChipBumpInst>>>",
+            "name": "chip_iterms_paths_",
+            "type": "std::vector<std::pair<std::vector<dbId<_dbChipInst>>, dbId<_dbChipITerm>>>",
             "flags": [
                 "private"
             ]
@@ -56,7 +56,7 @@
     "cpp_includes": [
         "dbChipRegionInst.h",
         "dbChipInst.h",
-        "dbChipBumpInst.h",
+        "dbChipITerm.h",
         "dbChip.h"
     ]
 }

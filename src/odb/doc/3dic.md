@@ -54,7 +54,7 @@ counterpart on the composition side:
 |---|---|
 | `dbChip` | `dbChipInst` |
 | `dbChipRegion` | `dbChipRegionInst` |
-| `dbChipBump` | `dbChipBumpInst` |
+| `dbChipBTerm` | `dbChipITerm` |
 
 Two more classes describe how instances relate to each other:
 `dbChipConn` (physical bonding between two region instances) and
@@ -151,15 +151,15 @@ and a side:
 | `INTERNAL` | inside the die |
 | `INTERNAL_EXT` | inside the die, but connectable from outside |
 
-### `dbChipBump`
+### `dbChipBTerm`
 
-A `dbChipBump` defines one bump inside a region. Rather than
+A `dbChipBTerm` defines one bump inside a region. Rather than
 introducing a new geometric primitive, a bump wraps a `dbInst` placed
 in the chip's block; the bump cell is a real placed instance with a
 master, pins, and physical geometry:
 
 ```cpp
-dbChipBump* bump = dbChipBump::create(region, bump_inst);
+dbChipBTerm* bump = dbChipBTerm::create(region, bump_inst);
 bump->setNet(internal_net);   // the dbNet it terminates inside the die
 bump->setBTerm(bterm);        // the boundary terminal it exposes
 ```
@@ -172,15 +172,15 @@ return ordinary block-level objects.
 
 When a `dbChipInst` is created, ODB automatically creates one
 `dbChipRegionInst` for every region of the master, and one
-`dbChipBumpInst` for every bump of every region. No explicit creation
+`dbChipITerm` for every bump of every region. No explicit creation
 is needed or possible.
 
 ![Regions and bumps, masters and instances](images/3dic/regions_and_bumps.png)
 
 This second layer of instances is what gives every physical bump in
 the system a distinct identity: `mem_inst_0` and `mem_inst_1` share
-one set of `dbChipBump` definitions, but each has its own
-`dbChipBumpInst`s at its own location in space.
+one set of `dbChipBTerm` definitions, but each has its own
+`dbChipITerm`s at its own location in space.
 
 ---
 
@@ -216,12 +216,12 @@ surfaces (the bonding layer).
 
 A `dbChipNet` is the logical counterpart: a net that connects bump
 instances across chips, owned by a parent chip. Like connections, it
-identifies each bump by a `(path, dbChipBumpInst)` pair:
+identifies each bump by a `(path, dbChipITerm)` pair:
 
 ```cpp
 dbChipNet* net = dbChipNet::create(top_design, "net_a");
-net->addBumpInst(compute_bump_a, {cpu_inst, compute_inst});
-net->addBumpInst(interposer_bump_a, {interposer_inst});
+net->addChipITerm(compute_bump_a, {cpu_inst, compute_inst});
+net->addChipITerm(interposer_bump_a, {interposer_inst});
 ```
 
 `dbChipNet` is to bump instances what `dbNet` is to `dbITerm`s, one
@@ -275,7 +275,7 @@ instances appear as two separate leaves with different world
 transforms even though they share a master.
 
 Each unfolded object keeps a pointer back to its folded source
-(`getChipBumpInst()`, `getChipRegionInst()`, ...), so analyses can
+(`getChipITerm()`, `getChipRegionInst()`, ...), so analyses can
 cross back into the folded model at any time.
 
 Two properties worth remembering:
@@ -308,7 +308,7 @@ The mapping to ODB objects is direct:
 |---|---|
 | `ChipletDef` (`.3dbv`) | `dbChip` + its `dbBlock` |
 | `regions:` on a def | `dbChipRegion` |
-| `bmap:` file | `dbChipBump` per bump cell |
+| `bmap:` file | `dbChipBTerm` per bump cell |
 | `APR_tech_file:` | `dbTech` |
 | `Design:` (`.3dbx`) | top-level `HIER` `dbChip` |
 | `ChipletInst:` | `dbChipInst` |

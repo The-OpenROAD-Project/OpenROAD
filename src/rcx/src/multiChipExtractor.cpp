@@ -137,7 +137,7 @@ void MultiChipExtractor::extractInterChipParasitics()
 
   int bond_count = 0;
   for (odb::dbChipNet* chip_net : top_chip->getChipNets()) {
-    const uint32_t bump_count = chip_net->getNumBumpInsts();
+    const uint32_t bump_count = chip_net->getNumChipITerms();
 
     // Skip chip nets whose bump does not connect to a bump in the other chip.
     if (bump_count < 2) {
@@ -159,10 +159,10 @@ void MultiChipExtractor::extractInterChipParasitics()
     // contribution from the bumps.
     std::vector<odb::dbChipInst*> path;
     odb::dbChipCapNode* source = odb::dbChipCapNode::create(chip_net);
-    source->setChipBumpInst(chip_net->getBumpInst(0, path));
+    source->setChipITerm(chip_net->getChipITerm(0, path));
 
     odb::dbChipCapNode* target = odb::dbChipCapNode::create(chip_net);
-    target->setChipBumpInst(chip_net->getBumpInst(1, path));
+    target->setChipITerm(chip_net->getChipITerm(1, path));
 
     odb::dbChipRSeg* r_seg = odb::dbChipRSeg::create(chip_net, source, target);
     r_seg->setResistance(inter_chip_model_.resistance);

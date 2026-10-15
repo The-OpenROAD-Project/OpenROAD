@@ -21,7 +21,7 @@ class _dbBPin;
 class _dbITerm;
 class _dbDatabase;
 class _dbChipRegion;
-class _dbChipBump;
+class _dbChipBTerm;
 class dbIStream;
 class dbOStream;
 
@@ -84,7 +84,7 @@ class _dbBTerm : public _dbObject
   dbId<_dbBTerm> mirrored_bterm_;
   bool is_mirrored_;
   dbId<_dbChipRegion> chip_region_;
-  dbId<_dbChipBump> chip_bump_;
+  dbId<_dbChipBTerm> chip_bterm_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm);

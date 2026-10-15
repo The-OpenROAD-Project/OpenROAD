@@ -15,7 +15,7 @@
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
-#include "dbChipBump.h"
+#include "dbChipBTerm.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -78,7 +78,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       sta_vertex_id_(0),
       constraint_region_(b.constraint_region_),
       chip_region_(b.chip_region_),
-      chip_bump_(b.chip_bump_)
+      chip_bterm_(b.chip_bterm_)
 {
   if (b.name_) {
     name_ = safe_strdup(b.name_);
@@ -167,7 +167,7 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
     return false;
   }
 
-  if (chip_bump_ != rhs.chip_bump_) {
+  if (chip_bterm_ != rhs.chip_bterm_) {
     return false;
   }
 
@@ -196,7 +196,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm.mirrored_bterm_;
   stream << bterm.is_mirrored_;
   stream << bterm.chip_region_;
-  stream << bterm.chip_bump_;
+  stream << bterm.chip_bterm_;
 
   return stream;
 }
@@ -234,7 +234,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   }
   if (bterm.getDatabase()->isSchema(kSchemaBtermChipBump)) {
     stream >> bterm.chip_region_;
-    stream >> bterm.chip_bump_;
+    stream >> bterm.chip_bterm_;
   }
 
   return stream;
@@ -526,16 +526,16 @@ dbBlock* dbBTerm::getBlock() const
   return (dbBlock*) getImpl()->getOwner();
 }
 
-dbChipBump* dbBTerm::getChipBump() const
+dbChipBTerm* dbBTerm::getChipBTerm() const
 {
   const _dbBTerm* obj = (const _dbBTerm*) this;
-  if (obj->chip_bump_ == 0) {
+  if (obj->chip_bterm_ == 0) {
     return nullptr;
   }
   _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
   _dbChip* chip = (_dbChip*) block->getOwner();
   _dbChipRegion* region = chip->chip_region_tbl_->getPtr(obj->chip_region_);
-  return (dbChipBump*) region->chip_bump_tbl_->getPtr(obj->chip_bump_);
+  return (dbChipBTerm*) region->chip_bterm_tbl_->getPtr(obj->chip_bterm_);
 }
 
 Rect dbBTerm::getBBox()
@@ -820,7 +820,7 @@ void dbBTerm::destroy(dbBTerm* bterm_)
   if (bterm->net_) {
     bterm->disconnectNet(bterm, block);
   }
-  if (auto bump = (_dbChipBump*) (bterm_->getChipBump())) {
+  if (auto bump = (_dbChipBTerm*) (bterm_->getChipBTerm())) {
     bump->bterm_ = 0;
   }
   for (auto callback : block->callbacks_) {
