@@ -26,6 +26,7 @@ or_integration_tests(
     options_py_errors
     options02
     options03
+    options04
     simple01
     simple01-obs
     simple01-rd

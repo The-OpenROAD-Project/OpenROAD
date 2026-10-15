@@ -338,32 +338,4 @@ std::string reportValues(const SchemaBase& schema,
   return result;
 }
 
-////////////////////////////////////////////////////////////////
-
-boost::json::object legacyToJson(
-    const std::map<std::string, std::string>& keys,
-    const std::map<std::string, std::string>& flags,
-    const LegacyArgs& table)
-{
-  boost::json::object result;
-  for (const LegacyArg& entry : table) {
-    std::string value;
-    if (const auto it = keys.find(entry.arg); it != keys.end()) {
-      value = it->second;
-    } else if (flags.find(entry.arg) != flags.end()) {
-      value = entry.value;
-    } else {
-      continue;
-    }
-    if (entry.custom) {
-      entry.custom(result, value);
-      continue;
-    }
-    for (const std::string& path : entry.paths) {
-      result[path] = value;
-    }
-  }
-  return result;
-}
-
 }  // namespace utl

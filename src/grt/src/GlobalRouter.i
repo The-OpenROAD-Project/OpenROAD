@@ -211,40 +211,14 @@ void end_incremental()
   getGlobalRouter()->endIncremental(true);
 }
 
-// The legacy switches of global_route, mapped onto GlobalRouteOptions.  The
-// order matters: -use_cugr lowers the default congestion iterations unless
-// -congestion_iterations was given, so that entry comes first.
-static const utl::LegacyArgs kGlobalRouteArgs = {
-    {"-congestion_iterations", {"congestion_iterations"}, "", {}},
-    {"-use_cugr", {}, "true", [](boost::json::object& o, const std::string&) {
-       o["use_cugr"] = true;
-       if (!o.contains("congestion_iterations")) {
-         o["congestion_iterations"] = 5;
-       }
-     }},
-    {"-congestion_report_file", {"congestion_report_file"}, "", {}},
-    {"-congestion_report_iter_step", {"congestion_report_iter_step"}, "", {}},
-    {"-grid_origin", {"grid_origin"}, "", {}},
-    {"-critical_nets_percentage", {"critical_nets_percentage"}, "", {}},
-    {"-res_aware_nets_percentage", {"res_aware_nets_percentage"}, "", {}},
-    {"-skip_large_fanout_nets", {"skip_large_fanout_nets"}, "", {}},
-    {"-snapshot_batched_width", {"snapshot_batched_width"}, "", {}},
-    {"-allow_congestion", {"allow_congestion"}, "true", {}},
-    {"-resistance_aware", {"resistance_aware"}, "true", {}},
-    {"-infinite_cap", {"infinite_capacity"}, "true", {}},
-    {"-verbose", {"verbose"}, "true", {}},
-};
-
-// global_route: the -options dict plus the legacy switches.
+// The switches of global_route are generated from GlobalRouteOptions and
+// parsed by optionsFromArgs; the Tcl proc keeps -guide_file and the
+// incremental bracket.
 void
-global_route_cmd(Tcl_Obj* options,
-                 const std::map<std::string, std::string>& keys,
-                 const std::map<std::string, std::string>& flags,
-                 Tcl_Interp* interp)
+global_route_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
   grt::GlobalRouteOptions route_options
-      = optionsFromTcl<grt::GlobalRouteOptions>(
-          interp, options, keys, flags, kGlobalRouteArgs);
+      = optionsFromArgs<grt::GlobalRouteOptions>(interp, args, "global_route");
   // The command selects the engine on every call, as it always has; the
   // C++ API keeps the current engine when use_cugr is unset.
   if (!route_options.use_cugr) {
@@ -258,14 +232,10 @@ global_route_cmd(Tcl_Obj* options,
 // The options of an incremental global_route bracket; the engine selected
 // by the initial global_route is kept.
 void
-apply_route_options_cmd(Tcl_Obj* options,
-                        const std::map<std::string, std::string>& keys,
-                        const std::map<std::string, std::string>& flags,
-                        Tcl_Interp* interp)
+apply_route_options_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
   grt::GlobalRouteOptions route_options
-      = optionsFromTcl<grt::GlobalRouteOptions>(
-          interp, options, keys, flags, kGlobalRouteArgs);
+      = optionsFromArgs<grt::GlobalRouteOptions>(interp, args, "global_route");
   route_options.use_cugr.reset();
   getGlobalRouter()->applyOptions(route_options);
 }

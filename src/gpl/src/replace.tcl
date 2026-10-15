@@ -1,123 +1,27 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2018-2025, The OpenROAD Authors
 
-# The options are declared in gpl::PlaceOptions (C++); see
-# `describe_options global_placement` for the dict keys, defaults and limits.
-sta::define_cmd_args "global_placement" {\
-    [-options options_dict]\
-    [-skip_initial_place]\
-    [-force_center_initial_place]\
+# The switches are generated from gpl::PlaceOptions (C++): one per field,
+# -timing.nets_percentage for timing.nets_percentage, a flag for a bool.
+# The older names (-timing_driven, -init_density_penalty, ...) are aliases.
+# See `describe_options global_placement`.
+sta::define_cmd_args "global_placement" [concat {\
     [-skip_nesterov_place]\
-    [-timing_driven]\
-    [-timing_driven_repair_timing]\
-    [-routability_driven]\
-    [-virtual_cts]\
-    [-incremental]\
-    [-skip_io]\
-    [-place_ios]\
-    [-bin_grid_count grid_count]\
-    [-density target_density]\
-    [-init_density_penalty init_density_penalty]\
-    [-init_wirelength_coef init_wirelength_coef]\
-    [-min_phi_coef min_phi_coef]\
-    [-max_phi_coef max_phi_coef]\
-    [-reference_hpwl reference_hpwl]\
-    [-overflow overflow]\
-    [-initial_place_max_iter initial_place_max_iter]\
-    [-initial_place_max_fanout initial_place_max_fanout]\
-    [-routability_use_grt]\
-    [-routability_target_rc_metric routability_target_rc_metric]\
-    [-routability_check_overflow routability_check_overflow]\
-    [-routability_snapshot_overflow routability_snapshot_overflow]\
-    [-routability_max_density routability_max_density]\
-    [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
-    [-routability_max_inflation_ratio routability_max_inflation_ratio]\
-    [-routability_min_congestion_for_inflation routability_min_congestion_for_inflation]\
-    [-routability_max_inflation_total routability_max_inflation_total]\
-    [-routability_net_weight_max routability_net_weight_max]\
-    [-routability_congested_nets_percentage routability_congested_nets_percentage]\
-    [-routability_rc_coefficients routability_rc_coefficients]\
-    [-keep_resize_below_overflow keep_resize_below_overflow]\
-    [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
-    [-timing_driven_net_weight_max timing_driven_net_weight_max]\
-    [-timing_driven_nets_percentage timing_driven_nets_percentage]\
-    [-virtual_cts_max_skew_fraction virtual_cts_max_skew_fraction]\
-    [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
-    [-pad_left pad_left]\
-    [-pad_right pad_right]\
-    [-disable_revert_if_diverge]\
-    [-disable_pin_density_adjust]\
-    [-random_seed random_seed]\
-    [-perturb_dist perturb_dist]\
-    [-enable_routing_congestion]
-}
+    [-incremental]} [utl::options_synopsis_cmd global_placement]]
 
 proc global_placement { args } {
   sta::parse_key_args "global_placement" args \
-    keys {-options -bin_grid_count -density \
-      -init_density_penalty -init_wirelength_coef \
-      -min_phi_coef -max_phi_coef -overflow \
-      -reference_hpwl \
-      -initial_place_max_iter -initial_place_max_fanout \
-      -routability_check_overflow -routability_snapshot_overflow \
-      -routability_max_density \
-      -routability_target_rc_metric \
-      -routability_inflation_ratio_coef \
-      -routability_max_inflation_ratio \
-      -routability_min_congestion_for_inflation \
-      -routability_max_inflation_total \
-      -routability_net_weight_max \
-      -routability_congested_nets_percentage \
-      -routability_rc_coefficients \
-      -timing_driven_net_reweight_overflow \
-      -timing_driven_net_weight_max \
-      -timing_driven_nets_percentage \
-      -timing_driven_repair_tns_end_percent \
-      -keep_resize_below_overflow \
-      -virtual_cts_max_skew_fraction \
-      -random_seed \
-      -perturb_dist \
-      -pad_left -pad_right} \
-    flags {-skip_initial_place \
-      -force_center_initial_place \
-      -skip_nesterov_place \
-      -timing_driven \
-      -timing_driven_repair_timing \
-      -routability_driven \
-      -virtual_cts \
-      -routability_use_grt \
-      -skip_io \
-      -place_ios \
-      -incremental \
-      -disable_revert_if_diverge \
-      -disable_pin_density_adjust \
-      -enable_routing_congestion}
+    keys {} \
+    flags {-skip_nesterov_place -incremental} 0
 
-  sta::check_argc_eq0 "global_placement" $args
-
-  # The conflicts between options are checked by PlaceOptions; these two
-  # are conflicts with the way the command is run.
-  if { [info exists flags(-place_ios)] } {
-    if { [info exists flags(-incremental)] } {
-      utl::error GPL 170 "-place_ios cannot be used with -incremental placement."
-    }
-    if { [info exists flags(-skip_nesterov_place)] } {
-      utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
-    }
-  }
-
-  set options {}
-  if { [info exists keys(-options)] } {
-    set options $keys(-options)
-  }
-
+  set skip_nesterov_place [info exists flags(-skip_nesterov_place)]
   if { [info exists flags(-incremental)] } {
-    gpl::replace_incremental_place_cmd $options [array get keys] [array get flags]
+    gpl::replace_incremental_place_cmd $args
   } else {
-    gpl::replace_initial_place_cmd $options [array get keys] [array get flags]
+    gpl::replace_initial_place_cmd $args $skip_nesterov_place
 
-    if { ![info exists flags(-skip_nesterov_place)] } {
-      gpl::replace_nesterov_place_cmd $options [array get keys] [array get flags]
+    if { !$skip_nesterov_place } {
+      gpl::replace_nesterov_place_cmd $args
     }
   }
   gpl::replace_reset_cmd
@@ -386,19 +290,17 @@ sta::define_cmd_args "estimate_target_density" {\
     [-pad_right pad_right]\
 }
 
+# Takes the switches of global_placement; the ones listed matter.
 proc estimate_target_density { args } {
   sta::parse_key_args "estimate_target_density" args \
-    keys {-bin_grid_count -overflow \
-      -pad_left -pad_right} \
-    flags {}
-  sta::check_argc_eq0 "estimate_target_density" $args
+    keys {} \
+    flags {} 0
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 187 "No design block found."
   }
 
-  set density_estimation [gpl::estimate_target_density_cmd \
-    [array get keys] [array get flags]]
+  set density_estimation [gpl::estimate_target_density_cmd $args]
   gpl::replace_reset_cmd
 
   return $density_estimation
@@ -447,12 +349,15 @@ proc get_global_placement_uniform_density { args } {
     keys { -pad_left -pad_right } \
     flags {} ;# checker off
 
+  set switches {}
+  foreach key [array names keys] {
+    lappend switches $key $keys($key)
+  }
+
   set uniform_density 0
   if { [ord::db_has_core_rows] } {
     sta::check_argc_eq0 "get_global_placement_uniform_density" $args
-
-    set uniform_density [gpl::get_global_placement_uniform_density_cmd \
-      [array get keys] [array get flags]]
+    set uniform_density [gpl::get_global_placement_uniform_density_cmd $switches]
     gpl::replace_reset_cmd
   } else {
     utl::error GPL 131 "No rows defined in design. Use initialize_floorplan to add rows."

@@ -44,6 +44,7 @@ add_library(utl_lib
   src/SuppressStdout.cpp
   src/Logger.cpp
   src/Json.cpp
+  src/OptionsArgs.cpp
   src/OptionsRegistry.cpp
   src/OptionsTcl.cpp
   src/Validate.cpp

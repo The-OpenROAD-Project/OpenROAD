@@ -100,15 +100,14 @@ proc default_options { args } {
   return [utl::default_options_cmd [lindex $args 0]]
 }
 
-sta::define_cmd_args "report_options" { command [-options options_dict] }
+# report_options command ?switches...?
+sta::define_cmd_args "report_options" { command [switches...] } ;# checker off
 proc report_options { args } {
-  sta::parse_key_args "report_options" args keys {-options} flags {}
-  sta::check_argc_eq1 "report_options" $args
-  set options {}
-  if { [info exists keys(-options)] } {
-    set options $keys(-options)
+  # The switches belong to the command named, so no parse_key_args here.
+  if { [llength $args] < 1 } {
+    utl::error UTL 113 "report_options requires a command name."
   }
-  utl::puts_lines [utl::report_options_cmd [lindex $args 0] $options]
+  utl::puts_lines [utl::report_options_cmd [lindex $args 0] [lrange $args 1 end]]
 }
 
 namespace eval utl {

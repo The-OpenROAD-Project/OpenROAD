@@ -21,9 +21,12 @@ void initResizer(Tcl_Interp* tcl_interp)
   // Define swig TCL commands.
   Rsz_Init(tcl_interp);
   // Eval encoded sta TCL sources.
-  utl::evalTclInit(tcl_interp, rsz::rsz_tcl_inits);
+  // The switches of repair_design are generated from RepairDesignOptions;
+  // the old names are the field names, so no aliases.  Registered first:
+  // the Tcl file builds its help from the schema.
   utl::OptionsRegistry::get().add("repair_design",
                                   RepairDesignOptions::schema());
+  utl::evalTclInit(tcl_interp, rsz::rsz_tcl_inits);
 }
 
 }  // namespace rsz

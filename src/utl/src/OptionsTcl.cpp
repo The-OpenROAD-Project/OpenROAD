@@ -5,6 +5,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "utl/Logger.h"
 
@@ -13,6 +14,23 @@ using Tcl_Size = int;
 #endif
 
 namespace utl {
+
+std::vector<std::string> argvFromTcl(Tcl_Interp* interp,
+                                     Tcl_Obj* list,
+                                     Logger* logger)
+{
+  Tcl_Size count = 0;
+  Tcl_Obj** elems = nullptr;
+  if (Tcl_ListObjGetElements(interp, list, &count, &elems) != TCL_OK) {
+    logger->error(UTL, 111, "{} is not a list.", Tcl_GetString(list));
+  }
+  std::vector<std::string> result;
+  result.reserve(count);
+  for (Tcl_Size i = 0; i < count; ++i) {
+    result.emplace_back(Tcl_GetString(elems[i]));
+  }
+  return result;
+}
 
 namespace {
 
@@ -112,23 +130,25 @@ boost::json::object tclToJson(Tcl_Interp* interp,
   return convertDict(interp, dict, schema, "", scaler, logger);
 }
 
-void scaleUnits(boost::json::object& options,
-                const SchemaBase& schema,
-                const UnitScaler& scaler)
+DictParser tclDictParser(Tcl_Interp* interp,
+                         const SchemaBase& schema,
+                         const UnitScaler& scaler,
+                         Logger* logger)
 {
-  if (!scaler) {
-    return;
-  }
-  for (auto& [key, item] : options) {
-    const FieldMeta* meta = schema.findPath(key);
-    if (meta == nullptr || meta->unit == Unit::kNone || !item.is_string()) {
-      continue;
+  return [interp, &schema, scaler, logger](const std::string& text) {
+    Tcl_Obj* dict
+        = Tcl_NewStringObj(text.data(), static_cast<Tcl_Size>(text.size()));
+    Tcl_IncrRefCount(dict);
+    boost::json::object result;
+    try {
+      result = tclToJson(interp, dict, schema, scaler, logger);
+    } catch (...) {
+      Tcl_DecrRefCount(dict);
+      throw;
     }
-    double value = 0;
-    if (val::parseDouble(item.get_string(), value)) {
-      item = scaler(meta->unit, value);
-    }
-  }
+    Tcl_DecrRefCount(dict);
+    return result;
+  };
 }
 
 Tcl_Obj* jsonToTcl(Tcl_Interp* interp, const boost::json::value& value)

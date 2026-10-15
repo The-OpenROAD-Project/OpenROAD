@@ -141,36 +141,23 @@ proc balance_row_usage { args } {
   rsz::balance_row_usage_cmd
 }
 
-# The options are declared in rsz::RepairDesignOptions (C++); see
-# `describe_options repair_design` for the dict keys, defaults and limits.
-sta::define_cmd_args "repair_design" {[-options options_dict] \
-                                      [-max_wire_length max_wire_length] \
-                                      [-max_utilization util] \
-                                      [-slew_margin slack_margin] \
-                                      [-cap_margin cap_margin] \
-                                      [-buffer_gain gain] \
-                                      [-pre_placement] \
-                                      [-match_cell_footprint] \
-                                      [-reroute] \
-                                      [-verbose]}
+# The switches are generated from rsz::RepairDesignOptions (C++); see
+# `describe_options repair_design`.  -buffer_gain is a deprecated alias of
+# -pre_placement.
+sta::define_cmd_args "repair_design" [concat {\
+    [-buffer_gain gain]} [utl::options_synopsis_cmd repair_design]]
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
-    keys {-options -max_wire_length -max_utilization -slew_margin -cap_margin \
-          -buffer_gain} \
-    flags {-match_cell_footprint -verbose -pre_placement -reroute}
+    keys {-buffer_gain} \
+    flags {} 0
 
   if { [info exists keys(-buffer_gain)] } {
     utl::warn "RSZ" 149 "-buffer_gain is deprecated"
+    lappend args -pre_placement
   }
-  sta::check_argc_eq0 "repair_design" $args
   est::check_parasitics
-
-  set options {}
-  if { [info exists keys(-options)] } {
-    set options $keys(-options)
-  }
-  rsz::repair_design_cmd $options [array get keys] [array get flags]
+  rsz::repair_design_cmd $args
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

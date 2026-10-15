@@ -1,4 +1,5 @@
-# repair_design -options gives the same repair as repair_wire2's switches.
+# The repair_design switches generated from RepairDesignOptions give the
+# same repair as repair_wire2.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -12,8 +13,8 @@ estimate_parasitics -placement
 set_load 0 [get_net out1]
 set_load 0 [get_net out2]
 
-report_options repair_design -options {max_wire_length 1000}
-repair_design -options {max_wire_length 1000}
+report_options repair_design -max_wire_length 1000 -slew_margin 5
+repair_design -max_wire_length 1000
 
 report_long_wires 6
 report_checks -unconstrained -fields {input slew cap} -digits 3 -rise_to out1

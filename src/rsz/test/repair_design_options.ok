@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 2 special nets and 8 connections.
 [INFO ODB-0133]     Created 5 nets and 8 connections.
 max_wire_length       1000 *
-slew_margin           0
+slew_margin           5 *
 cap_margin            0
 max_utilization       none
 pre_placement         false

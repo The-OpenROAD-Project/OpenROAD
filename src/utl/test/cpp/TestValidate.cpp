@@ -9,6 +9,7 @@
 
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
+#include "utl/OptionsArgs.h"
 #include "utl/Validate.h"
 
 namespace utl {
@@ -380,31 +381,119 @@ TEST_F(ValidateTest, ToJsonRoundTripsAndReportsChanges)
   EXPECT_NE(text.find("density           0.7\n"), std::string::npos);
 }
 
-TEST_F(ValidateTest, LegacySwitchesBecomeADictionary)
+TEST_F(ValidateTest, SwitchesAreGeneratedFromTheSchema)
 {
-  const LegacyArgs table = {
-      {"-density", {"density"}, "", {}},
-      {"-verbose", {"verbose", "inner.verbose"}, "true", {}},
-      {"-quiet", {"inner.verbose"}, "false", {}},
+  const std::vector<ArgSpec> specs = argSpecs(Options::schema());
+  std::vector<std::string> names;
+  for (const ArgSpec& spec : specs) {
+    names.push_back(spec.name);
+  }
+  EXPECT_EQ(names,
+            (std::vector<std::string>{"-density",
+                                      "-iterations",
+                                      "-pad",
+                                      "-overflows",
+                                      "-coefficients",
+                                      "-version",
+                                      "-seed",
+                                      "-verbose",
+                                      "-length",
+                                      "-inner.iterations",
+                                      "-inner.no_verbose",  // on by default
+                                      "-inner.origin"}));
+  EXPECT_TRUE(specs[7].is_flag);
+  EXPECT_FALSE(specs[10].flag_value);
+  EXPECT_EQ(
+      argSynopsis(Options::schema()),
+      "[-options dict] [-density density] [-iterations iterations] [-pad pad] "
+      "[-overflows overflows] [-coefficients coefficients] "
+      "[-version version] [-seed seed] [-verbose] [-length length] "
+      "[-inner.iterations iterations] [-inner.no_verbose] "
+      "[-inner.origin origin]");
+  const std::string text = describeArgsText(Options::schema());
+  EXPECT_NE(text.find("int (>= 0) = 0  Iteration count."), std::string::npos);
+  EXPECT_NE(text.find("-inner.no_verbose  flag  Report progress."),
+            std::string::npos);
+  const std::string markdown = describeArgsMarkdown(Options::schema());
+  EXPECT_NE(markdown.find("| `-verbose` | flag |  | Report progress. |"),
+            std::string::npos);
+}
+
+TEST_F(ValidateTest, SwitchesAndAliasesBecomeADictionary)
+{
+  const ArgAliases aliases = {
+      {"-dens", {"density"}, false, "", {}},
+      {"-quiet", {"inner.verbose"}, true, "false", {}},
       {"-origin",
        {},
+       false,
        "",
        [](boost::json::object& o, const std::string& v) {
          o["inner.origin"] = v + " " + v;
        }},
   };
-  const std::map<std::string, std::string> keys
-      = {{"-density", "0.5"}, {"-origin", "3"}, {"-options", "{}"}};
-  const std::map<std::string, std::string> flags = {{"-verbose", "1"}};
-  const boost::json::object json = legacyToJson(keys, flags, table);
-  EXPECT_EQ(json, parse(R"({"density": "0.5", "verbose": "true",
-                     "inner.verbose": "true", "inner.origin": "3 3"})"));
+  // Scales a distance from microns to meters.
+  const UnitScaler scaler
+      = [](Unit, const double value) { return value * 1e-6; };
+  // -options in these tests is JSON text.
+  const DictParser dict_parser = [](const std::string& text) {
+    return boost::json::parse(text).as_object();
+  };
+  auto parse = [&](const std::vector<std::string>& argv) {
+    return parseArgs(
+        argv, Options::schema(), aliases, scaler, dict_parser, &logger_);
+  };
+  EXPECT_EQ(parse({"-dens",
+                   "0.5",
+                   "-verbose",
+                   "-inner.no_verbose",
+                   "-inner.iterations",
+                   "3",
+                   "-origin",
+                   "4",
+                   "-length",
+                   "2"}),
+            this->parse(R"({"density": "0.5", "verbose": true,
+                           "inner.verbose": false, "inner.iterations": "3",
+                           "inner.origin": "4 4", "length": 2e-6})"));
+  // A unique prefix is accepted.
+  EXPECT_EQ(parse({"-iter", "7", "-qui"}),
+            this->parse(R"({"iterations": "7", "inner.verbose": "false"})"));
+
+  // -options takes the whole struct; later switches and dicts override
+  // earlier ones, and a later dict adds to a group instead of replacing it.
+  EXPECT_EQ(
+      parse({"-pad",
+             "1",
+             "-options",
+             R"({"pad": 2, "inner": {"iterations": 3, "verbose": false}})",
+             "-opt",
+             R"({"inner": {"origin": [1, 2]}})",
+             "-inner.iterations",
+             "4"}),
+      this->parse(R"({"pad": 2, "inner": {"iterations": 3,
+                           "verbose": false, "origin": [1, 2]},
+                           "inner.iterations": "4"})"));
 
   Options options;
-  Options::schema().apply(options, json, &logger_);
+  Options::schema().apply(
+      options, parse({"-dens", "0.5", "-origin", "3"}), &logger_);
   EXPECT_FLOAT_EQ(options.density, 0.5);
-  EXPECT_TRUE(options.verbose);
   EXPECT_EQ(options.inner.origin, (std::array<int, 2>{3, 3}));
+
+  auto message = [&](const std::vector<std::string>& argv) {
+    return report([&] { parse(argv); });
+  };
+  EXPECT_EQ(message({"-densty", "0.5"}),
+            "[ERROR UTL-0899] -densty is not a known keyword or flag.\n");
+  EXPECT_EQ(message({"-in", "1"}),
+            "[ERROR UTL-0899] -in is ambiguous: -inner.iterations "
+            "-inner.no_verbose -inner.origin\n");
+  EXPECT_EQ(message({"-density"}),
+            "[ERROR UTL-0899] -density missing value.\n");
+  EXPECT_EQ(message({"-options"}),
+            "[ERROR UTL-0899] -options missing value.\n");
+  EXPECT_EQ(message({"5"}), "[ERROR UTL-0899] unexpected argument 5.\n");
 }
 
 TEST_F(ValidateTest, ValueFormatting)

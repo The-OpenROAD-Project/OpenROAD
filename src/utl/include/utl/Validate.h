@@ -64,7 +64,6 @@
 #include <functional>
 #include <initializer_list>
 #include <limits>
-#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -1087,36 +1086,5 @@ void validate(const S& value, Logger* logger)
                 "the struct must publish a static schema()");
   S::schema().enforce(value, logger);
 }
-
-////////////////////////////////////////////////////////////////
-// Legacy command switches.
-//
-// A command that predates its options struct keeps accepting its `-key value`
-// and `-flag` switches.  A table maps each switch onto the dotted path(s) it
-// sets; the switches are turned into a dictionary and applied like any other.
-
-struct LegacyArg
-{
-  // The switch, e.g. "-timing_driven".
-  std::string arg;
-  // The dotted path(s) the switch sets.
-  std::vector<std::string> paths;
-  // The value a flag sets ("true", "false", "0" ...).  A key switch leaves
-  // this empty and uses the value given on the command line.
-  std::string value;
-  // Replaces paths/value: builds the dictionary entries from the switch's
-  // value by hand, for switches with no one-to-one field.
-  std::function<void(boost::json::object& options, const std::string& value)>
-      custom;
-};
-using LegacyArgs = std::vector<LegacyArg>;
-
-// The dictionary set by the keys and flags of a command invocation.  A switch
-// that is not in the table is ignored (the command's own switches, such as
-// -options, are parsed elsewhere).  Dotted paths are kept as dotted keys.
-boost::json::object legacyToJson(
-    const std::map<std::string, std::string>& keys,
-    const std::map<std::string, std::string>& flags,
-    const LegacyArgs& table);
 
 }  // namespace utl

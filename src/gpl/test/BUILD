@@ -28,6 +28,7 @@ TESTS = [
     "options01",
     "options02",
     "options03",
+    "options04",
     "options_describe",
     "options_errors",
     "options_py01",

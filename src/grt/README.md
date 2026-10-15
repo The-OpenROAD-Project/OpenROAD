@@ -16,53 +16,58 @@ FastRoute4.1 algorithm.
 This command performs global routing with the option to use a `guide_file`.
 You may also choose to use incremental global routing using `-start_incremental`.
 
-The options can also be given as one dict with `-options`, whose keys are the
-fields of `grt::GlobalRouteOptions` (`describe_options global_route`); the
-switches below are aliases for those keys. The same dict is what
-`global_placement -options {routability {global_route {...}}}` takes.
+The switches are generated from the fields of `grt::GlobalRouteOptions`
+(`src/grt/include/grt/GlobalRouteOptions.h`), the struct the Python
+`grt.GlobalRouteOptions` class and the global route inside
+`global_placement -routability.enabled -routability.no_use_rudy` share.
+`-guide_file` and the incremental bracket are switches of the command
+itself. `describe_options global_route` prints the table below.
 
 ```tcl
 global_route
-    [-options options_dict]
     [-guide_file out_file]
-    [-congestion_iterations iterations]
-    [-congestion_report_file file_name]
-    [-congestion_report_iter_step steps]
-    [-grid_origin {x y}]
-    [-critical_nets_percentage percent]
-    [-skip_large_fanout_nets fanout]
-    [-allow_congestion]
-    [-snapshot_batched_width width]
-    [-verbose]
     [-start_incremental]
     [-end_incremental]
-    [-use_cugr]
+    [-options dict]
+    [-allow_congestion]
+    [-congestion_iterations congestion_iterations]
+    [-congestion_report_iter_step congestion_report_iter_step]
+    [-congestion_report_file congestion_report_file]
+    [-grid_origin grid_origin]
+    [-critical_nets_percentage critical_nets_percentage]
+    [-res_aware_nets_percentage res_aware_nets_percentage]
     [-resistance_aware]
-    [-res_aware_nets_percentage percent]
-    [-infinite_cap]
+    [-snapshot_batched_width snapshot_batched_width]
+    [-skip_large_fanout_nets skip_large_fanout_nets]
+    [-infinite_capacity]
+    [-verbose]
+    [-use_cugr]
+    [-no_save_guides]
 ```
 
 #### Options
 
-| Switch Name | Description |
-| ----- | ----- |
-| `-options` | A dict of the options below by field name, e.g. `{congestion_iterations 10 grid_origin {0 0}}`. See `describe_options global_route`. |
-| `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
-| `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
-| `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
-| `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
-| `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-skip_large_fanout_nets` | Skips routing for nets with a fanout higher than the specified limit. Nets above this pin count threshold are ignored by the global router and will not have routing guides, meaning they will also be skipped during detailed routing. This option is useful in debugging or estimation flows where high-fanout nets (such as pre-CTS clock nets) can be ignored. The default value is 0, indicating no fanout limit. The default value is `MAX_INT`. The allowed values are integers `[0, MAX_INT]`. |
-| `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
-| `-verbose` | This flag enables the full reporting of the global routing. |
-| `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
-| `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
-| `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
-| `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
-| `-res_aware_nets_percentage` | Set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. |
-| `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
-| `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
+| Switch Name | Type | Default | Description |
+| ----- | ----- | ----- | ----- |
+| `-options` | dict |  | The options as a nested dict of the fields below, or dotted keys (timing.nets_percentage); a switch after it overrides it. |
+| `-allow_congestion` | flag |  | Finish with congestion left instead of failing. |
+| `-congestion_iterations` | int (>= 0) | `50` | Rip-up and reroute iterations to remove congestion; CUGR saturates around 5. |
+| `-congestion_report_iter_step` | int (>= 0) | `0` | Iterations between congestion reports; 0 for none. |
+| `-congestion_report_file` | string | `` | Congestion report file for the DRC viewer; empty for none. |
+| `-grid_origin` | list of 2 int | `{0 0}` | Origin {x y} of the routing grid in DBU. |
+| `-critical_nets_percentage` | float (in [0, 100]) | `none` | Share of the nets with the worst slack that get preference during congestion iterations; unset keeps the router's current setting. |
+| `-res_aware_nets_percentage` | float (in [0, 100]) | `none` | Share of the nets routed resistance-aware; needs resistance_aware. Unset keeps the router's default. |
+| `-resistance_aware` | flag |  | Resistance-aware layer assignment and 3D routing (experimental). |
+| `-snapshot_batched_width` | int (>= 0) | `0` | Batches per wave of snapshot-batched routing; 0 for the non-batched behavior (research use). |
+| `-skip_large_fanout_nets` | int (>= 0) | `2147483647` | Nets with more pins than this are not routed. |
+| `-infinite_capacity` | flag |  | Unlimited gcell capacity, for testing. |
+| `-verbose` | flag |  | Report the full routing log. |
+| `-use_cugr` | flag |  | Route with CUGR instead of FastRoute; unset keeps the engine selected earlier (not ready for production). |
+| `-no_save_guides` | flag |  | Write the routes to the database as guides. |
+| `-guide_file` | string | | Write the routing guides to this file. |
+| `-start_incremental` | flag | | Start recording the nets that change, for an incremental global route. |
+| `-end_incremental` | flag | | Route the nets that changed since `-start_incremental`. |
+| `-infinite_cap` | flag | | Alias of `-infinite_capacity`. |
 
 ### Set Routing Layers
 

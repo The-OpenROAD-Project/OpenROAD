@@ -140,38 +140,18 @@ proc set_global_routing_random { args } {
   grt::set_perturbation_amount $perturbation
 }
 
-# The options are declared in grt::GlobalRouteOptions (C++); see
-# `describe_options global_route` for the dict keys, defaults and limits.
-sta::define_cmd_args "global_route" {[-options options_dict] \
-                                  [-guide_file out_file] \
-                                  [-congestion_iterations iterations] \
-                                  [-congestion_report_file file_name] \
-                                  [-congestion_report_iter_step steps] \
-                                  [-grid_origin origin] \
-                                  [-critical_nets_percentage percent] \
-                                  [-res_aware_nets_percentage percent] \
-                                  [-skip_large_fanout_nets fanout] \
-                                  [-allow_congestion] \
-                                  [-snapshot_batched_width width] \
-                                  [-verbose] \
-                                  [-start_incremental] \
-                                  [-end_incremental] \
-                                  [-use_cugr] \
-                                  [-resistance_aware] \
-                                  [-infinite_cap]
-}
+# The switches are generated from grt::GlobalRouteOptions (C++); see
+# `describe_options global_route`.  -guide_file and the incremental bracket
+# are about how the command runs and stay here.
+sta::define_cmd_args "global_route" [concat {\
+    [-guide_file out_file]\
+    [-start_incremental]\
+    [-end_incremental]} [utl::options_synopsis_cmd global_route]]
 
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
-    keys {-options -guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -res_aware_nets_percentage \
-          -congestion_report_iter_step \
-          -skip_large_fanout_nets -snapshot_batched_width
-         } \
-    flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
-          -end_incremental -use_cugr}
-
-  sta::check_argc_eq0 "global_route" $args
+    keys {-guide_file} \
+    flags {-start_incremental -end_incremental} 0
 
   if { ![ord::db_has_tech] } {
     utl::error GRT 51 "Missing dbTech."
@@ -184,22 +164,17 @@ proc global_route { args } {
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]
 
-  set options {}
-  if { [info exists keys(-options)] } {
-    set options $keys(-options)
-  }
-
   if { $start_incremental && $end_incremental } {
     utl::error GRT 295 "Only one of -start_incremental or -end_incremental can be used."
   } elseif { $start_incremental } {
     # The incremental bracket keeps the engine of the initial global_route.
-    grt::apply_route_options_cmd $options [array get keys] [array get flags]
+    grt::apply_route_options_cmd $args
     grt::start_incremental
   } elseif { $end_incremental } {
-    grt::apply_route_options_cmd $options [array get keys] [array get flags]
+    grt::apply_route_options_cmd $args
     grt::end_incremental
   } else {
-    grt::global_route_cmd $options [array get keys] [array get flags]
+    grt::global_route_cmd $args
   }
 
   if { [info exists keys(-guide_file)] } {

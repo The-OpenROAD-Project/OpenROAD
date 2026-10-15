@@ -144,20 +144,21 @@ When neither the liberty libraries nor the SDC constrain fanout,
 `repair_design` uses a default limit of 50 load pins to build a buffer tree
 for high-fanout nets. Use `set_max_fanout` to constrain fanout explicitly.
 
-The options can also be given as one dict with `-options`, whose keys are the
-fields of `rsz::RepairDesignOptions` (`describe_options repair_design`); the
-switches below are aliases for those keys. The same dict is what
-`global_placement -options {timing {repair_design {...}}}` takes.
+The switches are generated from the fields of `rsz::RepairDesignOptions`
+(`src/rsz/include/rsz/RepairDesignOptions.hh`), the struct the Python
+`rsz.RepairDesignOptions` class and the `repair_design` run inside
+`global_placement -timing.enabled` share. `describe_options repair_design`
+prints the table below.
 
 ```tcl
-repair_design 
-    [-options options_dict]
-    [-max_wire_length max_length]
+repair_design
+    [-buffer_gain gain] (deprecated)
+    [-options dict]
+    [-max_wire_length max_wire_length]
     [-slew_margin slew_margin]
     [-cap_margin cap_margin]
-    [-max_utilization util]
+    [-max_utilization max_utilization]
     [-pre_placement]
-    [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
     [-reroute]
     [-verbose]
@@ -165,18 +166,18 @@ repair_design
 
 #### Options
 
-| Switch Name | Description |
-| ----- | ----- |
-| `-options` | A dict of the options below by field name, e.g. `{max_wire_length 1000 slew_margin 5}`. See `describe_options repair_design`. |
-| `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
-| `-slew_margin` | Add a slew margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
-| `-cap_margin` | Add a capactitance margin. The default value is `0`, the allowed values are integers `[0, 100]`. |
-| `-max_utilization` | Defines the percentage of core area used. |
-| `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
-| `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
-| `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
-| `-reroute` | Enable resistance-aware wire rerouting to fix slew violations post-GRT (experimental). |
-| `-verbose` | Enable verbose logging on progress of the repair. |
+| Switch Name | Type | Default | Description |
+| ----- | ----- | ----- | ----- |
+| `-options` | dict |  | The options as a nested dict of the fields below, or dotted keys (timing.nets_percentage); a switch after it overrides it. |
+| `-max_wire_length` | float, distance (>= 0) | `0` | Maximum wire length; 0 picks the length that minimizes the wire delay for the set_wire_rc values. |
+| `-slew_margin` | float (in [0, 100]) | `0` | Slew margin in percent, to over-repair for the difference between estimated and routed parasitics. |
+| `-cap_margin` | float (in [0, 100]) | `0` | Capacitance margin in percent. |
+| `-max_utilization` | float (in [0, 100]) | `none` | Percentage of the core area that may be used. |
+| `-pre_placement` | flag |  | Run an initial sizing and buffering round before placement. |
+| `-match_cell_footprint` | flag |  | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | flag |  | Resistance-aware rerouting of nets with slew violations after global routing (experimental). |
+| `-verbose` | flag |  | Report the repair progress. |
+| `-buffer_gain` | | | Deprecated alias for `-pre_placement`. The value is ignored. |
 
 #### Instance Name Prefixes
 

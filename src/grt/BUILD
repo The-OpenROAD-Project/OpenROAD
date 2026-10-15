@@ -263,6 +263,7 @@ cc_library(
         "//src/stt",
         "//src/utl",
         "//src/web:core",
+        "@boost.json",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

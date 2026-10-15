@@ -4,6 +4,7 @@
 %{
 
 #include "utl/Logger.h"
+#include "utl/OptionsArgs.h"
 #include "utl/OptionsRegistry.h"
 #include "utl/OptionsTcl.h"
 #include "utl/Validate.h"
@@ -114,11 +115,11 @@ void startPrometheusEndpoint(uint16_t port)
   logger->startPrometheusEndpoint(port);
 }
 
-// The options struct registered for a command.
-static const utl::SchemaBase& findOptions(const std::string& command)
+// The options registered for a command.
+static const utl::OptionsEntry& findOptions(const std::string& command)
 {
-  const utl::SchemaBase* schema = utl::OptionsRegistry::get().find(command);
-  if (schema == nullptr) {
+  const utl::OptionsEntry* entry = utl::OptionsRegistry::get().find(command);
+  if (entry == nullptr) {
     std::string names;
     for (const std::string& name : utl::OptionsRegistry::get().commands()) {
       names += " " + name;
@@ -130,29 +131,44 @@ static const utl::SchemaBase& findOptions(const std::string& command)
                             command,
                             names);
   }
-  return *schema;
+  return *entry;
+}
+
+// The usage synopsis of a command's generated switches, for
+// define_cmd_args.
+std::string options_synopsis_cmd(const std::string& command)
+{
+  return utl::argSynopsis(*findOptions(command).schema);
 }
 
 std::string describe_options_cmd(const std::string& command, bool markdown)
 {
-  const utl::SchemaBase& schema = findOptions(command);
-  return markdown ? utl::describeMarkdown(schema) : utl::describeText(schema);
+  const utl::SchemaBase& schema = *findOptions(command).schema;
+  return markdown ? utl::describeArgsMarkdown(schema)
+                  : utl::describeArgsText(schema);
 }
 
+// The defaults of a command as a dict for -options.
 std::string default_options_cmd(const std::string& command, Tcl_Interp* interp)
 {
-  return utl::jsonToTclString(interp, findOptions(command).defaults());
+  return utl::jsonToTclString(interp, findOptions(command).schema->defaults());
 }
 
+// The values a command runs with for the given switches.
 std::string report_options_cmd(const std::string& command,
-                               Tcl_Obj* options,
+                               Tcl_Obj* args,
                                Tcl_Interp* interp)
 {
-  const utl::SchemaBase& schema = findOptions(command);
+  const utl::OptionsEntry& entry = findOptions(command);
   utl::Logger* logger = ord::getLogger();
   const boost::json::object given
-      = utl::tclToJson(interp, options, schema, {}, logger);
-  return utl::reportValues(schema, schema.resolve(given, logger));
+      = utl::parseArgs(utl::argvFromTcl(interp, args, logger),
+                       *entry.schema,
+                       entry.aliases,
+                       {},
+                       utl::tclDictParser(interp, *entry.schema, {}, logger),
+                       logger);
+  return utl::reportValues(*entry.schema, entry.schema->resolve(given, logger));
 }
 
 } // namespace

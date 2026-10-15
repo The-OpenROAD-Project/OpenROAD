@@ -18,78 +18,6 @@ gpl::Replace*
 getReplace();
 }
 
-// The legacy switches of global_placement, mapped onto PlaceOptions.  Later
-// entries override earlier ones, so -skip_io comes last.
-static const utl::LegacyArgs kGlobalPlacementArgs = {
-    {"-timing_driven", {"timing.enabled"}, "true", {}},
-    {"-timing_driven_repair_timing", {"timing.repair_timing"}, "true", {}},
-    {"-routability_driven", {"routability.enabled"}, "true", {}},
-    {"-virtual_cts", {"virtual_cts.enabled"}, "true", {}},
-    {"-routability_use_grt", {"routability.use_rudy"}, "false", {}},
-    {"-disable_revert_if_diverge", {"nesterov.revert_if_diverge"}, "false", {}},
-    {"-disable_pin_density_adjust", {"pin_density_adjust"}, "false", {}},
-    {"-enable_routing_congestion", {"routing_congestion"}, "true", {}},
-    {"-force_center_initial_place", {"initial.force_center"}, "true", {}},
-    {"-skip_initial_place", {"initial.max_iter"}, "0", {}},
-    {"-initial_place_max_iter", {"initial.max_iter"}, "", {}},
-    {"-initial_place_max_fanout", {"initial.max_fanout"}, "", {}},
-    {"-random_seed", {"initial.perturbation_seed"}, "", {}},
-    {"-perturb_dist", {"initial.perturbation_dist"}, "", {}},
-    {"-overflow", {"nesterov.target_overflow"}, "", {}},
-    {"-min_phi_coef", {"nesterov.min_phi_coef"}, "", {}},
-    {"-max_phi_coef", {"nesterov.max_phi_coef"}, "", {}},
-    {"-init_density_penalty", {"nesterov.init_density_penalty"}, "", {}},
-    {"-init_wirelength_coef", {"nesterov.init_wirelength_coef"}, "", {}},
-    {"-reference_hpwl", {"nesterov.reference_hpwl"}, "", {}},
-    {"-routability_check_overflow", {"routability.check_overflow"}, "", {}},
-    {"-routability_snapshot_overflow", {"routability.snapshot_overflow"}, "", {}},
-    {"-routability_max_density", {"routability.max_density"}, "", {}},
-    {"-routability_target_rc_metric", {"routability.target_rc_metric"}, "", {}},
-    {"-routability_inflation_ratio_coef", {"routability.inflation_ratio_coef"}, "", {}},
-    {"-routability_max_inflation_ratio", {"routability.max_inflation_ratio"}, "", {}},
-    {"-routability_min_congestion_for_inflation",
-     {"routability.min_congestion_for_inflation"}, "", {}},
-    {"-routability_max_inflation_total", {"routability.max_inflation_total"}, "", {}},
-    {"-routability_net_weight_max", {"routability.net_weight_max"}, "", {}},
-    {"-routability_congested_nets_percentage",
-     {"routability.congested_nets_percentage"}, "", {}},
-    {"-routability_rc_coefficients", {"routability.rc_coefficients"}, "", {}},
-    {"-timing_driven_net_reweight_overflow", {"timing.reweight_overflows"}, "", {}},
-    {"-timing_driven_net_weight_max", {"timing.net_weight_max"}, "", {}},
-    {"-timing_driven_nets_percentage", {"timing.nets_percentage"}, "", {}},
-    {"-timing_driven_repair_tns_end_percent", {"timing.repair_tns_end_percent"}, "", {}},
-    {"-keep_resize_below_overflow", {"timing.keep_resize_below_overflow"}, "", {}},
-    {"-virtual_cts_max_skew_fraction", {"virtual_cts.max_skew_fraction"}, "", {}},
-    {"-pad_left", {"pad_left"}, "", {}},
-    {"-pad_right", {"pad_right"}, "", {}},
-    {"-bin_grid_count", {"bin_grid_count_x", "bin_grid_count_y"}, "", {}},
-    {"-place_ios", {"place_ios"}, "true", {}},
-    {"-density", {}, "", [](boost::json::object& o, const std::string& value) {
-       if (value == "uniform") {
-         o["uniform_density"] = true;
-       } else {
-         o["density"] = value;
-       }
-     }},
-    {"-skip_io", {}, "", [](boost::json::object& o, const std::string&) {
-       // PlaceOptions::skipIo()
-       o["skip_io"] = true;
-       o["initial.max_iter"] = 0;
-       o["timing.enabled"] = false;
-       o["routability.enabled"] = false;
-     }},
-};
-
-static gpl::PlaceOptions getOptions(
-    Tcl_Interp* interp,
-    Tcl_Obj* options,
-    const std::map<std::string, std::string>& keys,
-    const std::map<std::string, std::string>& flags)
-{
-  return optionsFromTcl<gpl::PlaceOptions>(
-      interp, options, keys, flags, kGlobalPlacementArgs);
-}
-
 using ord::getOpenRoad;
 using ord::getReplace;
 using gpl::Replace;
@@ -145,13 +73,22 @@ static int placementThreads()
   return cores;
 }
 
+// The switches of global_placement are generated from PlaceOptions and
+// parsed by optionsFromArgs; the Tcl proc keeps only the switches that are
+// about how the command runs (-incremental, -skip_nesterov_place).
 void 
-replace_initial_place_cmd(Tcl_Obj* options_dict,
-                          const std::map<std::string, std::string>& keys,
-                          const std::map<std::string, std::string>& flags,
+replace_initial_place_cmd(Tcl_Obj* args,
+                          bool skip_nesterov_place,
                           Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(interp, options_dict, keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
+  if (options.place_ios && skip_nesterov_place) {
+    getOpenRoad()->getLogger()->error(
+        utl::GPL,
+        182,
+        "-place_ios cannot be used with -skip_nesterov_place placement.");
+  }
 
   Replace* replace = getReplace();
   int threads = placementThreads();
@@ -159,12 +96,10 @@ replace_initial_place_cmd(Tcl_Obj* options_dict,
 }
 
 void 
-replace_nesterov_place_cmd(Tcl_Obj* options_dict,
-                           const std::map<std::string, std::string>& keys,
-                           const std::map<std::string, std::string>& flags,
-                           Tcl_Interp* interp)
+replace_nesterov_place_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(interp, options_dict, keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = placementThreads();
   replace->doNesterovPlace(threads, options);
@@ -182,12 +117,14 @@ replace_run_mbff_cmd(int max_sz, float alpha, float beta, int num_paths,
 
 
 void
-replace_incremental_place_cmd(Tcl_Obj* options_dict,
-                              const std::map<std::string, std::string>& keys,
-                              const std::map<std::string, std::string>& flags,
-                              Tcl_Interp* interp)
+replace_incremental_place_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(interp, options_dict, keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
+  if (options.place_ios) {
+    getOpenRoad()->getLogger()->error(
+        utl::GPL, 170, "-place_ios cannot be used with -incremental placement.");
+  }
   Replace* replace = getReplace();
   int threads = placementThreads();
   replace->doIncrementalPlace(threads, options);
@@ -195,12 +132,10 @@ replace_incremental_place_cmd(Tcl_Obj* options_dict,
 
 
 float
-get_global_placement_uniform_density_cmd(
-  const std::map<std::string, std::string>& keys,
-  const std::map<std::string, std::string>& flags,
-  Tcl_Interp* interp)
+get_global_placement_uniform_density_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(interp, nullptr, keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = placementThreads();
   return replace->getUniformTargetDensity(options, threads);
@@ -240,12 +175,10 @@ set_debug_cmd(int pause_iterations,
 }
 
 float
-estimate_target_density_cmd(
-  const std::map<std::string, std::string>& keys,
-  const std::map<std::string, std::string>& flags,
-  Tcl_Interp* interp)
+estimate_target_density_cmd(Tcl_Obj* args, Tcl_Interp* interp)
 {
-  gpl::PlaceOptions options = getOptions(interp, nullptr, keys, flags);
+  gpl::PlaceOptions options
+      = optionsFromArgs<gpl::PlaceOptions>(interp, args, "global_placement");
   Replace* replace = getReplace();
   int threads = ord::OpenRoad::openRoad()->getThreadCount();
 

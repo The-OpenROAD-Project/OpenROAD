@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Tcl side of options structs: a Tcl dict becomes the dictionary a schema
-// applies, and a dictionary becomes a Tcl dict.
+// Tcl side of options structs: the switches a command received as the argv
+// list parseArgs() takes, a Tcl dict as the dictionary a schema applies
+// (the value of -options), and a dictionary back as a Tcl dict.
 
 #pragma once
 
 #include <tcl.h>
 
 #include <boost/json.hpp>
-#include <functional>
+#include <string>
+#include <vector>
 
+#include "utl/OptionsArgs.h"
 #include "utl/Validate.h"
 
 namespace utl {
 
 class Logger;
 
-// Converts a value in the user's units to the SI unit the C++ API takes.
-using UnitScaler = std::function<double(Unit unit, double value)>;
+// The elements of a Tcl list as strings.
+std::vector<std::string> argvFromTcl(Tcl_Interp* interp,
+                                     Tcl_Obj* list,
+                                     Logger* logger);
 
 // Converts a Tcl dict to a dictionary, guided by the schema: the value of a
 // group is itself a dict, the value of a list field is a Tcl list, and any
@@ -31,11 +36,11 @@ boost::json::object tclToJson(Tcl_Interp* interp,
                               const UnitScaler& scaler,
                               Logger* logger);
 
-// Scales the string values of a flat dictionary of dotted keys (as
-// legacyToJson builds) whose field has a unit, the way tclToJson does.
-void scaleUnits(boost::json::object& options,
-                const SchemaBase& schema,
-                const UnitScaler& scaler);
+// tclToJson as the parser parseArgs() applies to the value of -options.
+DictParser tclDictParser(Tcl_Interp* interp,
+                         const SchemaBase& schema,
+                         const UnitScaler& scaler,
+                         Logger* logger);
 
 // Converts a dictionary to a Tcl dict (nested dicts and lists).  The result
 // has a zero reference count.

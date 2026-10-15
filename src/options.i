@@ -1,18 +1,23 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-// Tcl side of options structs (utl/Validate.h).  A command passes its
-// `-options` dict plus its legacy keys and flags to a %inline function that
-// builds the struct with optionsFromTcl<S>().
+// Tcl side of options structs (utl/Validate.h, utl/OptionsArgs.h).  A
+// command's Tcl proc parses its own switches with sta::parse_key_args and
+// passes the rest of $args to a %inline function that builds the struct
+// with optionsFromArgs<S>().  The switches are generated from the struct's
+// schema; the command's older switch names are registered as aliases.
 
 %{
 #include <map>
 #include <string>
+#include <vector>
 
 #include "ord/OpenRoad.hh"
 #include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/OptionsArgs.h"
+#include "utl/OptionsRegistry.h"
 #include "utl/OptionsTcl.h"
 #include "utl/Validate.h"
 
@@ -42,29 +47,27 @@ static utl::UnitScaler staUnitScaler()
   };
 }
 
-// Builds an options struct from a command invocation: the -options dict
-// first, then the legacy switches (which override it).  The struct is
-// validated.
+// Builds the options struct of a registered command from the switches the
+// Tcl proc left in $args.  The struct is validated.
 template <typename S>
-S optionsFromTcl(Tcl_Interp* interp,
-                 Tcl_Obj* options,
-                 const std::map<std::string, std::string>& keys,
-                 const std::map<std::string, std::string>& flags,
-                 const utl::LegacyArgs& legacy)
+S optionsFromArgs(Tcl_Interp* interp, Tcl_Obj* args, const char* command)
 {
   utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-  S result;
-  if (options != nullptr) {
-    S::schema().applyObject(
-        result,
-        utl::tclToJson(interp, options, S::schema(), staUnitScaler(), logger),
-        "",
-        logger);
+  const utl::OptionsEntry* entry = utl::OptionsRegistry::get().find(command);
+  if (entry == nullptr || entry->schema != &S::schema()) {
+    logger->error(utl::UTL, 112, "{} is not registered with its options.", command);
   }
-  boost::json::object legacy_options = utl::legacyToJson(keys, flags, legacy);
-  utl::scaleUnits(legacy_options, S::schema(), staUnitScaler());
-  S::schema().applyObject(result, legacy_options, "", logger);
-  S::schema().enforce(result, logger);
+  S result;
+  S::schema().apply(
+      result,
+      utl::parseArgs(
+          utl::argvFromTcl(interp, args, logger),
+          S::schema(),
+          entry->aliases,
+          staUnitScaler(),
+          utl::tclDictParser(interp, S::schema(), staUnitScaler(), logger),
+          logger),
+      logger);
   return result;
 }
 

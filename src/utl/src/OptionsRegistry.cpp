@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace utl {
@@ -15,22 +16,24 @@ OptionsRegistry& OptionsRegistry::get()
   return registry;
 }
 
-void OptionsRegistry::add(const std::string& command, const SchemaBase& schema)
+void OptionsRegistry::add(const std::string& command,
+                          const SchemaBase& schema,
+                          ArgAliases aliases)
 {
-  for (auto& [name, existing] : schemas_) {
+  for (auto& [name, entry] : entries_) {
     if (name == command) {
-      existing = &schema;
+      entry = {&schema, std::move(aliases)};
       return;
     }
   }
-  schemas_.emplace_back(command, &schema);
+  entries_.emplace_back(command, OptionsEntry{&schema, std::move(aliases)});
 }
 
-const SchemaBase* OptionsRegistry::find(const std::string& command) const
+const OptionsEntry* OptionsRegistry::find(const std::string& command) const
 {
-  for (const auto& [name, schema] : schemas_) {
+  for (const auto& [name, entry] : entries_) {
     if (name == command) {
-      return schema;
+      return &entry;
     }
   }
   return nullptr;
@@ -39,8 +42,8 @@ const SchemaBase* OptionsRegistry::find(const std::string& command) const
 std::vector<std::string> OptionsRegistry::commands() const
 {
   std::vector<std::string> result;
-  result.reserve(schemas_.size());
-  for (const auto& [name, schema] : schemas_) {
+  result.reserve(entries_.size());
+  for (const auto& [name, entry] : entries_) {
     result.push_back(name);
   }
   std::sort(result.begin(), result.end());
