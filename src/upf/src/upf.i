@@ -14,7 +14,7 @@
   using namespace upf;
 %}
 
-
+%include "../../Exception.i"
 
 %inline %{
   void create_power_domain_cmd(const char* name)
@@ -65,11 +65,11 @@
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), net, port);
   }
 
-  void set_power_domain_supply_cmd(const char* domain, const char* supply)
+  void set_power_domain_supply_cmd(const char* domain, const char* handle, const char* ref)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
     upf::set_power_domain_supply(
-        getOpenRoad()->getLogger(), db->getChip()->getBlock(), domain, supply);
+        getOpenRoad()->getLogger(), db->getChip()->getBlock(), domain, handle, ref);
   }
 
   void set_isolation_supply_cmd(const char* isolation, const char* key, const char* value)

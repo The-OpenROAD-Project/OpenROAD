@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "isolation",
     "isolation_select",
     "supply",
+    "supply_hier",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS

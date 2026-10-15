@@ -29,42 +29,47 @@ bool create_logic_port(utl::Logger* logger,
                        const std::string& name,
                        const std::string& direction);
 
-// Accepts and validates the UPF version declared by the file.
-// OpenROAD does not implement version-specific behavior, so the version is
-// stored on the block (as a property) and otherwise treated as a no-op.
+// Records the UPF version declared by the file on the block (as a property).
+// OpenROAD implements IEEE 1801-2013 (UPF 2.1); any other version is accepted
+// but triggers a warning.
 bool set_upf_version(utl::Logger* logger,
                      odb::dbBlock* block,
                      const std::string& version);
 
-// Declares a supply port. Supply ports/nets are tracked as block properties
-// (no dedicated odb object exists) so that connect_supply_net can validate
-// references and write_upf can round-trip them.
+// Declares a supply port with direction in, out or inout. Supply ports/nets
+// are tracked as block properties (no dedicated odb object exists) so that
+// connect_supply_net can validate references.
 bool create_supply_port(utl::Logger* logger,
                         odb::dbBlock* block,
                         const std::string& name,
                         const std::string& direction);
 
-// Declares a supply net (optionally belonging to a power domain).
+// Declares a supply net (optionally belonging to a power domain). With
+// reuse, makes an existing supply net that was created with a domain also
+// available in `domain`; the original domain is kept.
 bool create_supply_net(utl::Logger* logger,
                        odb::dbBlock* block,
                        const std::string& name,
                        const std::string& domain,
                        bool reuse);
 
-// Connects a previously declared supply net to a supply port.
+// Connects a previously declared supply net to a port. The port is a rooted
+// name: a supply port, a design port or a hierarchical pin/port name.
 bool connect_supply_net(utl::Logger* logger,
                         odb::dbBlock* block,
                         const std::string& net,
                         const std::string& port);
 
-// Stores the -supply association of a power domain. No supply-set object
-// exists in odb, so the handle list is persisted as a property on the domain.
+// Stores one -supply {handle [ref]} association of a power domain. No
+// supply-set object exists in odb, so it is persisted as a property on the
+// domain (one property per handle).
 bool set_power_domain_supply(utl::Logger* logger,
                              odb::dbBlock* block,
                              const std::string& domain,
-                             const std::string& supply);
+                             const std::string& handle,
+                             const std::string& ref);
 
-// Stores a supply association (-isolation_supply / -source / -sink) of an
+// Stores a supply association (-isolation_supply_set / -source / -sink) of an
 // isolation strategy as a property, since odb has no field for it.
 bool set_isolation_supply(utl::Logger* logger,
                           odb::dbBlock* block,

@@ -26,6 +26,8 @@ proc write_upf { args } {
 # Arguments:
 #
 # - elements: list of module paths that belong to this domain OR '.' for top domain
+# - include_scope: deprecated in UPF 2.1, equivalent to adding '.' to -elements
+# - supply: {supply_set_handle [supply_set_ref]}, may be given multiple times
 # - name: domain name
 sta::define_cmd_args "create_power_domain" { \
     [-elements elements] \
@@ -36,8 +38,9 @@ sta::define_cmd_args "create_power_domain" { \
 proc create_power_domain { args } {
   upf::check_block_exists
 
+  ord::parse_list_args "create_power_domain" args list {-supply}
   sta::parse_key_args "create_power_domain" args \
-    keys {-elements -supply} flags {-include_scope}
+    keys {-elements} flags {-include_scope}
 
   sta::check_argc_eq1 "create_power_domain" $args
 
@@ -49,10 +52,12 @@ proc create_power_domain { args } {
   }
 
   if { [info exists flags(-include_scope)] } {
-    # -include_scope means "this domain owns the entire current scope".
-    # Represent it the same way the top domain is represented: a single
-    # '.' element. This maps cleanly onto the existing element list.
-    lappend elements "."
+    # -include_scope is deprecated in UPF 2.1. It is still accepted for older
+    # files and mapped onto its UPF 2.1 equivalent, the '.' element.
+    utl::warn UPF 90 "-include_scope is deprecated in UPF 2.1; use -elements {.} instead"
+    if { [lsearch -exact $elements "."] < 0 } {
+      lappend elements "."
+    }
   }
 
   upf::create_power_domain_cmd $domain_name
@@ -60,11 +65,14 @@ proc create_power_domain { args } {
     upf::update_power_domain_cmd $domain_name $el
   }
 
-  if { [info exists keys(-supply)] } {
-    # -supply takes {supply_set_handle_name supply_set_ref} pairs. OpenROAD
-    # has no supply-set object, so store the raw handle list on the domain
-    # for round-tripping and downstream inspection rather than dropping it.
-    upf::set_power_domain_supply_cmd $domain_name $keys(-supply)
+  # -supply {supply_set_handle [supply_set_ref]} may be repeated. OpenROAD has
+  # no supply-set object, so each association is stored on the domain.
+  foreach supply_arg $list(-supply) {
+    if { [llength $supply_arg] < 1 || [llength $supply_arg] > 2 } {
+      utl::error UPF 89 "-supply expects {supply_set_handle \[supply_set_ref\]}, got {$supply_arg}"
+    }
+    lassign [upf::process_list_arg $supply_arg 2] handle ref
+    upf::set_power_domain_supply_cmd $domain_name $handle $ref
   }
 }
 
@@ -112,7 +120,7 @@ proc upf_version { args } {
 #
 # Arguments:
 #
-# - direction: direction of the port (in | out)
+# - direction: direction of the port (in | out | inout), defaults to in
 # - domain: (accepted for compatibility; not used by OpenROAD)
 # - port_name: supply port name
 sta::define_cmd_args "create_supply_port" { \
@@ -129,7 +137,7 @@ proc create_supply_port { args } {
   sta::check_argc_eq1 "create_supply_port" $args
 
   set port_name [lindex $args 0]
-  set direction ""
+  set direction "in"
 
   if { [info exists keys(-direction)] } {
     set direction $keys(-direction)
@@ -143,7 +151,8 @@ proc create_supply_port { args } {
 # Arguments:
 #
 # - domain: power domain this supply net belongs to
-# - reuse: tolerate redeclaration of an existing supply net
+# - reuse: make an existing supply net (created with -domain) also available
+#   in -domain; -domain is required with -reuse
 # - net_name: supply net name
 sta::define_cmd_args "create_supply_net" { \
     [-domain domain] \
@@ -177,7 +186,8 @@ proc create_supply_net { args } {
 #
 # Arguments:
 #
-# - ports: a supply port to connect the net to
+# - ports: list of rooted port names to connect the net to (supply ports,
+#   design ports or hierarchical port/pin names)
 # - net_name: supply net name
 sta::define_cmd_args "connect_supply_net" { \
     [-ports ports] \
@@ -199,11 +209,10 @@ proc connect_supply_net { args } {
   }
 
   if { [llength $ports] == 0 } {
-    upf::connect_supply_net_cmd $net_name ""
-  } else {
-    foreach port $ports {
-      upf::connect_supply_net_cmd $net_name $port
-    }
+    utl::error UPF 91 "connect_supply_net $net_name: -ports must list at least one port"
+  }
+  foreach port $ports {
+    upf::connect_supply_net_cmd $net_name $port
   }
 }
 
@@ -289,7 +298,7 @@ sta::define_cmd_args "set_isolation" { \
     [-clamp_value clamp_value] \
     [-isolation_signal isolation_signal] \
     [-isolation_sense isolation_sense] \
-    [-isolation_supply isolation_supply] \
+    [-isolation_supply_set isolation_supply_set] \
     [-sink sink] \
     [-source source] \
     [-location location] \
@@ -301,7 +310,7 @@ proc set_isolation { args } {
 
   sta::parse_key_args "set_isolation" args \
     keys {-domain -applies_to -clamp_value -isolation_signal
-          -isolation_sense -isolation_supply -sink -source -location} \
+          -isolation_sense -isolation_supply_set -sink -source -location} \
     flags {-update}
 
   sta::check_argc_eq1 "set_isolation" $args
@@ -350,12 +359,12 @@ proc set_isolation { args } {
   upf::set_isolation_cmd $name $domain $update $applies_to $clamp_value \
     $isolation_signal $isolation_sense $location
 
-  # -isolation_supply / -source / -sink have no dedicated odb field. Persist
-  # them as properties on the isolation strategy so they round-trip and remain
-  # queryable. -source/-sink accept supply-set handle pairs in UPF; we store
-  # the raw value.
-  if { [info exists keys(-isolation_supply)] } {
-    upf::set_isolation_supply_cmd $name "isolation_supply" $keys(-isolation_supply)
+  # -isolation_supply_set / -source / -sink have no dedicated odb field.
+  # Persist them as properties on the isolation strategy so they remain
+  # queryable. They reference supply sets in UPF; the raw value is stored.
+  if { [info exists keys(-isolation_supply_set)] } {
+    upf::set_isolation_supply_cmd $name "isolation_supply_set" \
+      $keys(-isolation_supply_set)
   }
   if { [info exists keys(-source)] } {
     upf::set_isolation_supply_cmd $name "source" $keys(-source)

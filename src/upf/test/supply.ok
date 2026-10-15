@@ -1,15 +1,43 @@
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
-PASS: __upf_version = '2.0'
+PASS: __upf_version = '2.1'
 PASS: __upf_supply_port:VDD = 'in'
 PASS: __upf_supply_port:VSS = 'in'
-PASS: __upf_supply_net:VDD_NET = 'PD_D1'
+PASS: __upf_supply_port:VOUT = 'out'
+PASS: __upf_supply_port:VBIDIR = 'inout'
+PASS: __upf_supply_net:VDD_NET = 'PD_D1 PD_D2'
 PASS: __upf_supply_net:VSS_NET = 'PD_D1'
 PASS: __upf_supply_net_conn:VDD_NET = 'VDD'
-PASS: __upf_supply_net_conn:VSS_NET = 'VSS'
-PASS: PD_TOP -include_scope element '.' present
-PASS: __upf_supply = 'primary VDD_NET'
-PASS: __upf_iso_isolation_supply = 'VDD_NET'
-PASS: __upf_iso_source = 'VDD_NET'
-PASS: __upf_iso_sink = 'VSS_NET'
+PASS: __upf_supply_net_conn:VSS_NET = 'VSS in1 d1/_0_/VGND'
+PASS: PD_TOP element '.' present
+PASS: __upf_supply:primary = 'SS_D1'
+PASS: __upf_supply:default_isolation = ''
+PASS: __upf_iso_isolation_supply_set = 'SS_D1'
+PASS: __upf_iso_source = 'SS_TOP'
+PASS: __upf_iso_sink = 'SS_D1'
 PASS: __upf_supply_net_conn:VDD_NET = 'VDD VSS'
+[WARNING UPF-0086] Couldn't find port NO_SUCH_PORT while connecting supply net VDD_NET
+[WARNING UPF-0086] Couldn't find port d1/_0_/NO_SUCH_PIN while connecting supply net VDD_NET
+PASS: __upf_supply_net_conn:VDD_NET = 'VDD VSS'
+[ERROR UPF-0091] connect_supply_net VDD_NET: -ports must list at least one port
+PASS: error raised by:  connect_supply_net VDD_NET 
+[ERROR UPF-0091] connect_supply_net VDD_NET: -ports must list at least one port
+PASS: error raised by:  connect_supply_net VDD_NET -ports {} 
+[WARNING UPF-0081] Invalid -direction 'sideways' for supply port VBAD (expected in, out or inout)
+PASS: VBAD not created
+PASS: __upf_supply_net:VDD_NET = 'PD_D1 PD_D2'
+[WARNING UPF-0084] Supply net VDD_NET already exists
+PASS: __upf_supply_net:VDD_NET = 'PD_D1 PD_D2'
+[ERROR UPF-0092] -reuse requires -domain for supply net VDD_NET
+PASS: error raised by:  create_supply_net VDD_NET -reuse 
+[ERROR UPF-0093] -reuse was specified but supply net NO_SUCH_NET does not exist
+PASS: error raised by:  create_supply_net NO_SUCH_NET -domain PD_D2 -reuse 
+[ERROR UPF-0094] -reuse was specified but supply net NODOMAIN_NET was not created with -domain
+PASS: error raised by:  create_supply_net NODOMAIN_NET -domain PD_D2 -reuse 
+PASS: __upf_supply_net:NODOMAIN_NET = ''
+[ERROR UPF-0089] -supply expects {supply_set_handle [supply_set_ref]}, got {a b c}
+PASS: error raised by:  create_power_domain PD_BAD_SUPPLY -supply {a b c} 
+[WARNING UPF-0090] -include_scope is deprecated in UPF 2.1; use -elements {.} instead
+PASS: PD_OLD element '.' present
+[WARNING UPF-0080] UPF version 2.0 is not supported. OpenROAD implements UPF 2.1 (IEEE 1801-2013); commands are interpreted with UPF 2.1 semantics.
+PASS: __upf_version = '2.0'

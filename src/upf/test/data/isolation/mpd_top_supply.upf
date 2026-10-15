@@ -1,27 +1,35 @@
-upf_version 2.0
+upf_version 2.1
 
 create_power_domain PD_TOP \
-  -include_scope
+  -elements {.}
 
+# -supply may be repeated; the supply set reference is optional
 create_power_domain PD_D1 \
   -elements {d1} \
-  -supply {primary VDD_NET}
+  -supply {primary SS_D1} \
+  -supply {default_isolation}
 
-# Supply ports and nets
-create_supply_port VDD -direction in
+create_power_domain PD_D2 \
+  -elements {d2}
+
+# Supply ports: the default direction is in
+create_supply_port VDD
 create_supply_port VSS -direction in
+create_supply_port VOUT -direction out
+create_supply_port VBIDIR -direction inout
 
 create_supply_net VDD_NET -domain PD_D1
 create_supply_net VSS_NET -domain PD_D1
-# Redeclaration tolerated with -reuse
-create_supply_net VDD_NET -domain PD_D1 -reuse
+# -reuse makes VDD_NET available in PD_D2 as well
+create_supply_net VDD_NET -domain PD_D2 -reuse
 
+# -ports takes rooted names: supply ports, design ports and hierarchical pins
 connect_supply_net VDD_NET -ports VDD
-connect_supply_net VSS_NET -ports VSS
+connect_supply_net VSS_NET -ports {VSS in1 d1/_0_/VGND}
 
 set_isolation iso_d_1 \
   -domain PD_D1 \
   -clamp_value 0 \
-  -isolation_supply VDD_NET \
-  -source VDD_NET \
-  -sink VSS_NET
+  -isolation_supply_set SS_D1 \
+  -source SS_TOP \
+  -sink SS_D1
