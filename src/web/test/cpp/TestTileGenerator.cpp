@@ -659,7 +659,7 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     }
   }
 
-  LabelWash measureLabelWash(bool TileVisibility::*cover
+  LabelWash measureLabelWash(bool TileVisibility::* cover
                              = &TileVisibility::placement_blockages,
                              TileVisibility vis = labelOnlyVis())
   {
@@ -4053,7 +4053,7 @@ TEST_F(TileGeneratorTest, OverlayFlagsParsedFromJson)
   struct FlagCase
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
   const FlagCase cases[] = {
