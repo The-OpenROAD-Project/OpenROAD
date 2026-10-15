@@ -1,6 +1,6 @@
-[INFO ODB-0227] LEF file: ../../../test/Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
-[INFO ODB-0227] LEF file: ../../../test/Nangate45/Nangate45_stdcell.lef, created 135 library cells
-[INFO ODB-0227] LEF file: ../../../test/Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/fake_bumps.lef, created 1 library cells
 [INFO ODB-0128] Design: flop_chip_a
 [INFO ODB-0252]     Updated 5 pins.
 [INFO ODB-0131]     Created 3 components and 14 component-terminals.
@@ -13,28 +13,6 @@
 [INFO ODB-0253]     Updated 5 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
-[INFO RCX-0431] Defined process_corner Typical with ext_model_index 0
-[INFO RCX-0435] Reading extraction model file ../../../test/Nangate45/Nangate45.rcx_rules ...
-[INFO RCX-0433] A process corner Typical for Extraction RC Model 0 has already been defined, skipping definition
-[INFO RCX-0023] Running parasitics extraction for chip chiplet_a.
-[INFO RCX-0431] Defined process_corner Typical with ext_model_index 0
-[INFO RCX-0436] RC segment generation chiplet_a (max_merge_res 50.0) ...
-[INFO RCX-0040] Final 24 rc segments
-[INFO RCX-0439] Coupling Cap extraction chiplet_a ...
-[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0442] 45% of 20 wires extracted
-[INFO RCX-0442] 100% of 20 wires extracted
-[INFO RCX-0045] Extract 5 nets, 29 rsegs, 29 caps, 1 ccs
-[INFO RCX-0023] Running parasitics extraction for chip chiplet_b.
-[INFO RCX-0431] Defined process_corner Typical with ext_model_index 0
-[INFO RCX-0436] RC segment generation chiplet_b (max_merge_res 50.0) ...
-[INFO RCX-0040] Final 23 rc segments
-[INFO RCX-0439] Coupling Cap extraction chiplet_b ...
-[INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
-[INFO RCX-0442] 44% of 18 wires extracted
-[INFO RCX-0442] 100% of 18 wires extracted
-[INFO RCX-0045] Extract 5 nets, 28 rsegs, 28 caps, 1 ccs
-[INFO RCX-0533] Extracted 4 inter-chip bonds.
 [INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
 [INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 1.09986 to 1.1 V.
 ########## IR report #################

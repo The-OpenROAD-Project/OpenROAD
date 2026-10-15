@@ -79,6 +79,12 @@ get_3d_chip_rsegs(odb::dbChipNet* net)
 
 // Internal regression helpers; these are not registered as user commands.
 void
+set_assembly_rules_file_cmd(const char* rules_file)
+{
+  getPDNSim()->setAssemblyRulesFile(rules_file);
+}
+
+void
 clear_3d_power_grid_cmd()
 {
   getPDNSim()->clear3DPowerGrid();
@@ -123,22 +129,11 @@ set_pdnsim_chiplet_voltage_cmd(const char* chip_net_name,
                               const char* chip_name,
                               const char* port_name,
                               double voltage,
-                              Scene* corner,
-                              bool set_source = true,
-                              bool set_nominal = false,
-                              double nominal_voltage = 0.0)
+                              Scene* corner)
 {
-  std::optional<double> source;
-  std::optional<double> nominal;
-  if (set_source) {
-    source = voltage;
-  }
-  if (set_nominal) {
-    nominal = nominal_voltage;
-  }
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setChipletVoltage(
-      chip_net_name, chip_name, port_name, source, corner, nominal);
+      chip_net_name, chip_name, port_name, voltage, corner);
 }
 
 bool
@@ -146,12 +141,14 @@ analyze_3d_power_grid_cmd(const char* chip_net_name,
                           Scene* corner,
                           bool use_sta = true,
                           const char* error_file = "",
+                          const char* voltage_source_file = "",
                           const char* voltage_file = "",
                           bool enable_em = false)
 {
   PDNSim* pdnsim = getPDNSim();
   return pdnsim->analyze3DPowerGrid(chip_net_name, corner, use_sta,
-                                  error_file, voltage_file, enable_em);
+                                    error_file, voltage_source_file,
+                                    voltage_file, enable_em);
 }
 
 double

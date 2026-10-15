@@ -85,14 +85,14 @@ class IRSolver
   using UserVoltages = odb::PtrMap<odb::dbNet, std::map<sta::Scene*, Voltage>>;
   using UserPowers = odb::PtrMap<odb::dbInst, std::map<sta::Scene*, Power>>;
 
-  IRSolver(odb::dbNet* net,
-           bool floorplanning,
+  IRSolver(std::unique_ptr<IRNetwork> network,
            sta::dbSta* sta,
            est::EstimateParasitics* estimate_parasitics,
            utl::Logger* logger,
            const UserVoltages& user_voltages,
            const UserPowers& user_powers,
-           const PDNSim::GeneratedSourceSettings& generated_source_settings);
+           const PDNSim::GeneratedSourceSettings& generated_source_settings,
+           sta::Scene* corner = nullptr);
   // Defined in the source file, since the shorts are only forward declared
   ~IRSolver();
 
@@ -157,45 +157,34 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
-  template <typename T>
-  using ValueNodeMap = std::map<const Node*, T>;
-
-  using NodeConductances
-      = std::map<Node*,
-                 std::vector<std::pair<Connection*, Connection::Conductance>>>;
-  struct MatrixSource
-  {
-    std::size_t source_index;
-    std::size_t node_index;
-    Voltage voltage;
-  };
-
-  static odb::PtrMap<odb::dbInst, Power> buildNodeCurrentMap(
-      const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
-      const odb::PtrMap<odb::dbInst, Power>& powers,
-      Voltage power_voltage,
-      ValueNodeMap<Current>& currents);
-  static void buildCondMatrixAndVoltages(
-      bool negate_currents,
-      const NodeConductances& node_connections,
-      const ValueNodeMap<Current>& currents,
-      const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector,
-      utl::Logger* logger);
-  static void addSourcesToMatrixAndVoltages(
-      const std::vector<MatrixSource>& sources,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      Eigen::VectorXd& j_vector,
-      utl::Logger* logger);
-  static Eigen::VectorXd solve(
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-      const Eigen::VectorXd& j_vector,
-      utl::Logger* logger,
-      const std::map<Node*, std::size_t>& node_index,
-      IRNetwork* debug_network = nullptr);
+  void buildAssemblySystem();
+  bool checkAssemblySystem() const;
+  void addCurrentLoad(odb::dbChipInst* chip_inst,
+                      const std::string& terminal,
+                      Current current);
+  void addStaLoads(odb::dbNet* net,
+                   const odb::PtrMap<odb::dbInst, float>& powers,
+                   Voltage power_voltage);
+  bool checkCurrentVector() const;
+  void addVoltageSource(odb::dbChipInst* chip_inst,
+                        const std::string& terminal,
+                        Voltage voltage);
+  void addVoltageSourcesFromSourceFile(const std::string& source_file);
+  bool solveAssembly();
+  bool hasValidSources() const;
+  std::size_t getNodeCount() const;
+  std::size_t getNonZeroCount() const;
+  std::size_t getCurrentLoadCount() const;
+  Current getTotalCurrent() const;
+  std::size_t getVoltageSourceCount() const;
+  bool hasAssemblySolution() const;
+  const Eigen::VectorXd& getVoltageVector() const;
+  std::optional<Voltage> getVoltage(odb::dbChipInst* chip_inst,
+                                    const std::string& terminal) const;
 
  private:
+  struct AssemblyData;
+
   using LayerPolygons
       = odb::PtrMap<odb::dbTechLayer, std::vector<odb::Polygon>>;
 
@@ -234,8 +223,10 @@ class IRSolver
 
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
-  Connection::ConnectionMap<Current> generateCurrentMap(
+  std::vector<std::pair<Connection*, Current>> generateCurrentMap(
       sta::Scene* corner) const;
+  std::vector<Node*> getReportNodes() const;
+  std::string getAnalysisNetName() const;
 
   Connection::ConnectionMap<Connection::Conductance> generateConductanceMap(
       sta::Scene* corner,
@@ -250,6 +241,9 @@ class IRSolver
   SourceNodes generateSourceNodesGenericBumps() const;
   SourceNodes generateSourceNodesFromShapes(
       const std::set<odb::Rect>& shapes) const;
+  SourceNodes generateSourceNodesFromShapes(
+      IRNetwork* network,
+      const std::set<odb::Rect>& shapes) const;
   Voltage generateSourceNodesFromSourceFile(const std::string& source_file,
                                             sta::Scene* corner,
                                             SourceNodes& sources) const;
@@ -258,27 +252,17 @@ class IRSolver
   void reportMissingBTerm() const;
   void reportShortedNodes() const;
 
-  NodeConductances getNodeConnectionMap(
-      const Connection::ConnectionMap<Connection::Conductance>& conductance)
-      const;
-  IRSolver::Power buildNodeCurrentMap(sta::Scene* corner,
-                                      ValueNodeMap<Current>& currents) const;
-  std::map<Node*, std::size_t> assignNodeIDs(const Node::NodeSet& nodes,
-                                             std::size_t start = 0) const;
-  std::map<Node*, std::size_t> assignNodeIDs(const SourceNodes& nodes,
-                                             std::size_t start = 0) const;
+  IRSolver::Power buildNodeCurrentMap(
+      sta::Scene* corner,
+      std::map<const Node*, Current>& currents) const;
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
-  static void dumpVector(const Eigen::VectorXd& vector,
-                         const std::string& name,
-                         utl::Logger* logger);
-  static void dumpMatrix(
-      const Eigen::SparseMatrix<Connection::Conductance>& matrix,
-      const std::string& name,
-      utl::Logger* logger);
   void dumpConductance(
       const Connection::ConnectionMap<Connection::Conductance>& cond,
       const std::string& name) const;
+
+  bool buildSourceMap(std::map<std::size_t, Voltage>& sources) const;
+  bool checkAssemblySolution() const;
 
   odb::dbNet* net_;
 
@@ -287,6 +271,7 @@ class IRSolver
   sta::dbSta* sta_;
 
   std::unique_ptr<IRNetwork> network_;
+  std::unique_ptr<AssemblyData> assembly_;
 
   std::unique_ptr<DebugGui> gui_;
 
@@ -299,8 +284,8 @@ class IRSolver
 
   std::optional<bool> connected_;
 
-  std::map<sta::Scene*, ValueNodeMap<Voltage>> voltages_;
-  std::map<sta::Scene*, ValueNodeMap<Current>> currents_;
+  std::map<sta::Scene*, std::map<const Node*, Voltage>> voltages_;
+  std::map<sta::Scene*, std::map<const Node*, Current>> currents_;
 
   std::vector<std::unique_ptr<IRShort>> shorts_;
   odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> short_check_trees_;

@@ -4,14 +4,17 @@
 #include "ir_network.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iterator>
 #include <list>
 #include <map>
 #include <memory>
+#include <queue>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -75,6 +78,21 @@ IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
   construct();
 }
 
+IRNetwork::IRNetwork(odb::dbChipNet* chip_net,
+                     utl::Logger* logger,
+                     bool floorplanning,
+                     std::optional<double> bond_resistance)
+    : net_(nullptr),
+      chip_net_(chip_net),
+      logger_(logger),
+      floorplanning_(floorplanning),
+      bond_resistance_(bond_resistance)
+{
+  construct();
+}
+
+IRNetwork::~IRNetwork() = default;
+
 void IRNetwork::initMinimumNodePitch()
 {
   min_node_pitch_.clear();
@@ -112,6 +130,12 @@ odb::dbTech* IRNetwork::getTech() const
 
 bool IRNetwork::hasNodes() const
 {
+  if (isAssembly()) {
+    return std::ranges::any_of(chiplet_networks_, [](const auto& chiplet) {
+      return chiplet.network->hasNodes();
+    });
+  }
+
   for (const auto& [layer, nodes] : nodes_) {
     if (!nodes.empty()) {
       return true;
@@ -134,6 +158,11 @@ void IRNetwork::reset()
 
 void IRNetwork::construct()
 {
+  if (isAssembly()) {
+    constructAssembly();
+    return;
+  }
+
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Construct: {}");
 
@@ -173,6 +202,228 @@ void IRNetwork::construct()
   if (logger_->debugCheck(utl::PSM, "construct", 1)) {
     reportStats();
   }
+}
+
+IRNetwork::ChipletNetwork* IRNetwork::findChipletNetwork(
+    odb::dbChipBumpInst* bump_inst)
+{
+  if (bump_inst == nullptr) {
+    logger_->error(
+        utl::PSM, 97, "dbChipCapNode on {} has no bump.", chip_net_->getName());
+  }
+
+  odb::dbChipInst* chip_inst = bump_inst->getChipRegionInst()->getChipInst();
+  odb::dbNet* net = bump_inst->getChipBump()->getNet();
+  const auto network = std::ranges::find_if(
+      chiplet_networks_, [chip_inst, net](const ChipletNetwork& candidate) {
+        return candidate.chip_inst == chip_inst && candidate.net == net;
+      });
+  if (network == chiplet_networks_.end()) {
+    logger_->error(utl::PSM,
+                   98,
+                   "Cannot find the chiplet PDN for an endpoint on {}.",
+                   chip_net_->getName());
+  }
+  return &*network;
+}
+
+Node* IRNetwork::findBondEndpoint(odb::dbChipCapNode* cap_node)
+{
+  if (cap_node == nullptr) {
+    logger_->error(utl::PSM,
+                   170,
+                   "dbChipRSeg on {} has no cap node.",
+                   chip_net_->getName());
+  }
+
+  odb::dbChipBumpInst* bump_inst = cap_node->getChipBumpInst();
+  ChipletNetwork* chiplet = findChipletNetwork(bump_inst);
+  odb::dbInst* bump = bump_inst->getChipBump()->getInst();
+  Node* node = nullptr;
+  for (const auto& candidate : chiplet->network->getITermNodes()) {
+    if (candidate->getITerm()->getInst() == bump) {
+      if (node != nullptr) {
+        logger_->error(utl::PSM,
+                       141,
+                       "Bump {} has more than one terminal on net {}.",
+                       bump->getName(),
+                       chiplet->net->getName());
+      }
+      node = candidate.get();
+    }
+  }
+  if (node == nullptr) {
+    logger_->error(utl::PSM,
+                   100,
+                   "Cannot map bump {} on chiplet {} into its PDN.",
+                   bump->getName(),
+                   chiplet->chip_inst->getName());
+  }
+  return node;
+}
+
+void IRNetwork::addChipletNetwork(odb::dbChipBumpInst* bump_inst,
+                                  odb::dbChipInst* chip_inst)
+{
+  odb::dbNet* net = bump_inst->getChipBump()->getNet();
+  if (net == nullptr) {
+    logger_->error(utl::PSM,
+                   95,
+                   "A bump on chiplet {} has no internal dbNet.",
+                   chip_inst->getName());
+  }
+
+  const auto network = std::ranges::find_if(
+      chiplet_networks_, [chip_inst, net](const ChipletNetwork& candidate) {
+        return candidate.chip_inst == chip_inst && candidate.net == net;
+      });
+  if (network == chiplet_networks_.end()) {
+    chiplet_networks_.push_back(
+        {chip_inst,
+         net,
+         std::make_unique<IRNetwork>(net, logger_, floorplanning_)});
+  }
+}
+
+void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
+{
+  Node* source = findBondEndpoint(rseg->getSourceCapNode());
+  Node* target = findBondEndpoint(rseg->getTargetCapNode());
+  if (!std::isfinite(rseg->getResistance()) || rseg->getResistance() <= 0.0) {
+    logger_->error(utl::PSM,
+                   96,
+                   "dbChipRSeg on {} must have positive resistance.",
+                   chip_net_->getName());
+  }
+  odb::dbChipBumpInst* source_bump
+      = rseg->getSourceCapNode()->getChipBumpInst();
+  odb::dbChipBumpInst* target_bump
+      = rseg->getTargetCapNode()->getChipBumpInst();
+  odb::dbChipInst* source_chip
+      = source_bump->getChipRegionInst()->getChipInst();
+  odb::dbChipInst* target_chip
+      = target_bump->getChipRegionInst()->getChipInst();
+  if (source_chip == target_chip) {
+    logger_->error(utl::PSM,
+                   106,
+                   "Inter-chip bond on {} does not cross between chiplets.",
+                   chip_net_->getName());
+  }
+
+  odb::dbNet* source_net = source_bump->getChipBump()->getNet();
+  odb::dbNet* target_net = target_bump->getChipBump()->getNet();
+  if (source_net->getSigType() != target_net->getSigType()) {
+    logger_->error(utl::PSM,
+                   166,
+                   "Inter-chip bond on {} shorts {}/{} ({}) to {}/{} ({}).",
+                   chip_net_->getName(),
+                   source_chip->getName(),
+                   source_net->getName(),
+                   source_net->getSigType().getString(),
+                   target_chip->getName(),
+                   target_net->getName(),
+                   target_net->getSigType().getString());
+  }
+  interdie_connections_.push_back(std::make_unique<FixedResistanceConnection>(
+      source, target, rseg->getResistance()));
+}
+
+// OpenRCX bond extraction is deferred until it supports multiple bump pairs
+// on the same assembly net. PSM creates the ODB resistors in the meantime.
+void IRNetwork::createMatchedInterDieResistors(double resistance)
+{
+  std::unordered_set<odb::dbChipBumpInst*> net_bumps;
+  for (uint32_t index = 0; index < chip_net_->getNumBumpInsts(); index++) {
+    std::vector<odb::dbChipInst*> path;
+    net_bumps.insert(chip_net_->getBumpInst(index, path));
+  }
+
+  for (odb::dbUnfoldedChipConn* connection :
+       chip_net_->getDb()->getUnfoldedChipConns()) {
+    odb::dbUnfoldedChipRegionInst* top = connection->getTopRegion();
+    odb::dbUnfoldedChipRegionInst* bottom = connection->getBottomRegion();
+    if (top == nullptr || bottom == nullptr) {
+      continue;
+    }
+
+    std::map<odb::Point, odb::dbChipBumpInst*> bottom_bumps;
+    for (odb::dbUnfoldedChipBumpInst* bump : bottom->getBumps()) {
+      odb::dbChipBumpInst* bump_inst = bump->getChipBumpInst();
+      if (net_bumps.contains(bump_inst)) {
+        const odb::Point3D position = bump->getGlobalPosition();
+        bottom_bumps[{position.x(), position.y()}] = bump_inst;
+      }
+    }
+
+    for (odb::dbUnfoldedChipBumpInst* bump : top->getBumps()) {
+      odb::dbChipBumpInst* bump_inst = bump->getChipBumpInst();
+      if (!net_bumps.contains(bump_inst)) {
+        continue;
+      }
+      const odb::Point3D position = bump->getGlobalPosition();
+      const auto match = bottom_bumps.find({position.x(), position.y()});
+      if (match != bottom_bumps.end()) {
+        odb::dbChipCapNode* source = odb::dbChipCapNode::create(chip_net_);
+        source->setChipBumpInst(match->second);
+        odb::dbChipCapNode* target = odb::dbChipCapNode::create(chip_net_);
+        target->setChipBumpInst(bump_inst);
+        odb::dbChipRSeg* resistor
+            = odb::dbChipRSeg::create(chip_net_, source, target);
+        resistor->setResistance(resistance);
+      }
+    }
+  }
+}
+
+void IRNetwork::constructAssembly()
+{
+  interdie_connections_.clear();
+  chiplet_networks_.clear();
+
+  for (uint32_t index = 0; index < chip_net_->getNumBumpInsts(); index++) {
+    std::vector<odb::dbChipInst*> path;
+    odb::dbChipBumpInst* bump_inst = chip_net_->getBumpInst(index, path);
+    if (bump_inst == nullptr || path.size() != 1) {
+      logger_->error(utl::PSM,
+                     94,
+                     "dbChipNet {} requires a flat assembly with one chip "
+                     "instance per bump path.",
+                     chip_net_->getName());
+    }
+    addChipletNetwork(bump_inst, path.back());
+  }
+
+  if (chip_net_->getChipRSegs().empty() && bond_resistance_) {
+    createMatchedInterDieResistors(*bond_resistance_);
+  }
+  for (odb::dbChipRSeg* rseg : chip_net_->getChipRSegs()) {
+    addInterDieConnection(rseg);
+  }
+  bond_state_ = getBondState();
+}
+
+std::vector<IRNetwork::BondState> IRNetwork::getBondState() const
+{
+  std::vector<BondState> state;
+  for (odb::dbChipRSeg* bond : chip_net_->getChipRSegs()) {
+    odb::dbChipCapNode* source = bond->getSourceCapNode();
+    odb::dbChipCapNode* target = bond->getTargetCapNode();
+    odb::dbChipBumpInst* source_bump = source->getChipBumpInst();
+    odb::dbChipBumpInst* target_bump = target->getChipBumpInst();
+    state.push_back({bond->getId(),
+                     source->getId(),
+                     target->getId(),
+                     source_bump == nullptr ? 0 : source_bump->getId(),
+                     target_bump == nullptr ? 0 : target_bump->getId(),
+                     bond->getResistance()});
+  }
+  std::ranges::sort(state, {}, &BondState::id);
+  return state;
+}
+
+bool IRNetwork::hasSameBonds() const
+{
+  return !isAssembly() || getBondState() == bond_state_;
 }
 
 void IRNetwork::recoverMemory()
@@ -1100,9 +1351,18 @@ IRNetwork::NodePtrMap<Connection> IRNetwork::getConnectionMap() const
 
   NodePtrMap<Connection> mapping;
 
-  for (const auto& conn : connections_) {
-    mapping[conn->getNode0()].push_back(conn.get());
-    mapping[conn->getNode1()].push_back(conn.get());
+  const auto add_connection = [&mapping](Connection* connection) {
+    mapping[connection->getNode0()].push_back(connection);
+    mapping[connection->getNode1()].push_back(connection);
+  };
+  if (isAssembly()) {
+    for (Connection* connection : getAllConnections()) {
+      add_connection(connection);
+    }
+  } else {
+    for (const auto& connection : connections_) {
+      add_connection(connection.get());
+    }
   }
 
   for (auto& [node, conns] : mapping) {
@@ -1110,6 +1370,41 @@ IRNetwork::NodePtrMap<Connection> IRNetwork::getConnectionMap() const
   }
 
   return mapping;
+}
+
+std::size_t IRNetwork::getConnectionCount() const
+{
+  if (!isAssembly()) {
+    return connections_.size();
+  }
+  std::size_t count = interdie_connections_.size();
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    count += chiplet.network->getConnectionCount();
+  }
+  return count;
+}
+
+std::vector<Connection*> IRNetwork::getAllConnections() const
+{
+  std::vector<Connection*> connections;
+  connections.reserve(getConnectionCount());
+  if (isAssembly()) {
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      const auto local_connections = chiplet.network->getAllConnections();
+      connections.insert(connections.end(),
+                         local_connections.begin(),
+                         local_connections.end());
+    }
+    for (const auto& connection : interdie_connections_) {
+      connections.push_back(connection.get());
+    }
+    return connections;
+  }
+
+  for (const auto& connection : connections_) {
+    connections.push_back(connection.get());
+  }
+  return connections;
 }
 
 void IRNetwork::cleanupOverlappingNodes(NodePtrMap<Connection>& connection_map)
@@ -1365,6 +1660,14 @@ odb::dbTechLayer* IRNetwork::getTopLayer() const
 odb::PtrSet<odb::dbTechLayer> IRNetwork::getLayers() const
 {
   odb::PtrSet<odb::dbTechLayer> layers;
+  if (isAssembly()) {
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      const auto local_layers = chiplet.network->getLayers();
+      layers.insert(local_layers.begin(), local_layers.end());
+    }
+    return layers;
+  }
+
   for (const auto& [layer, nodes] : nodes_) {
     layers.insert(layer);
   }
@@ -1402,8 +1705,125 @@ odb::PtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping()
   return inst_nodes;
 }
 
+odb::PtrMap<odb::dbInst, Node::NodeSet> IRNetwork::getInstanceNodeMapping(
+    odb::dbNet* net) const
+{
+  if (!isAssembly()) {
+    return net == net_ ? getInstanceNodeMapping()
+                       : odb::PtrMap<odb::dbInst, Node::NodeSet>{};
+  }
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    if (chiplet.net == net) {
+      return chiplet.network->getInstanceNodeMapping();
+    }
+  }
+  return {};
+}
+
+std::vector<odb::dbNet*> IRNetwork::getNets() const
+{
+  if (!isAssembly()) {
+    return {net_};
+  }
+  std::vector<odb::dbNet*> nets;
+  nets.reserve(chiplet_networks_.size());
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    nets.push_back(chiplet.net);
+  }
+  return nets;
+}
+
+std::vector<std::pair<odb::dbChipInst*, odb::dbNet*>>
+IRNetwork::getChipletNets() const
+{
+  std::vector<std::pair<odb::dbChipInst*, odb::dbNet*>> result;
+  result.reserve(chiplet_networks_.size());
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    result.emplace_back(chiplet.chip_inst, chiplet.net);
+  }
+  return result;
+}
+
+IRNetwork* IRNetwork::getChipletNetwork(odb::dbChipInst* chip_inst) const
+{
+  const auto chiplet = std::ranges::find_if(
+      chiplet_networks_, [chip_inst](const ChipletNetwork& candidate) {
+        return candidate.chip_inst == chip_inst;
+      });
+  return chiplet == chiplet_networks_.end() ? nullptr : chiplet->network.get();
+}
+
+std::vector<std::pair<odb::dbChipInst*, ITermNode*>>
+IRNetwork::getChipletITermNodes() const
+{
+  std::vector<std::pair<odb::dbChipInst*, ITermNode*>> result;
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    for (const auto& node : chiplet.network->getITermNodes()) {
+      result.emplace_back(chiplet.chip_inst, node.get());
+    }
+  }
+  return result;
+}
+
+std::map<Node*, odb::dbChipInst*> IRNetwork::getNodeChiplets() const
+{
+  std::map<Node*, odb::dbChipInst*> result;
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    for (Node* node : chiplet.network->getAllNodes()) {
+      result[node] = chiplet.chip_inst;
+    }
+  }
+  return result;
+}
+
+Node* IRNetwork::findTerminalNode(odb::dbChipInst* chip_inst,
+                                  const std::string& terminal) const
+{
+  Node* result = nullptr;
+  for (const ChipletNetwork& chiplet : chiplet_networks_) {
+    if (chiplet.chip_inst != chip_inst) {
+      continue;
+    }
+    for (const auto& node : chiplet.network->getBPinNodes()) {
+      if (node->getBPin()->getBTerm()->getName() == terminal) {
+        if (result != nullptr) {
+          logger_->error(
+              utl::PSM,
+              142,
+              "Port {} has multiple shapes; choose a single-shape source port.",
+              terminal);
+        }
+        result = node.get();
+      }
+    }
+    for (const auto& node : chiplet.network->getITermNodes()) {
+      odb::dbITerm* iterm = node->getITerm();
+      const std::string name = std::string(iterm->getInst()->getName()) + "/"
+                               + iterm->getMTerm()->getName();
+      if (name == terminal) {
+        if (result != nullptr) {
+          logger_->error(utl::PSM, 143, "Terminal {} is ambiguous.", terminal);
+        }
+        result = node.get();
+      }
+    }
+  }
+  return result;
+}
+
 void IRNetwork::reportStats() const
 {
+  if (isAssembly()) {
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      logger_->report("Chiplet {}, net {}:",
+                      chiplet.chip_inst->getName(),
+                      chiplet.net->getName());
+      chiplet.network->reportStats();
+    }
+    logger_->report("Inter-chip connections: {}", interdie_connections_.size());
+    return;
+  }
+
   std::size_t count = 0;
   for (const auto& [layer, shape] : shapes_) {
     count += shape.size();
@@ -1472,6 +1892,12 @@ void IRNetwork::dumpNodes(const std::string& name) const
 
 bool IRNetwork::belongsTo(Node* node) const
 {
+  if (isAssembly()) {
+    return std::ranges::any_of(chiplet_networks_, [node](const auto& chiplet) {
+      return chiplet.network->belongsTo(node);
+    });
+  }
+
   for (const auto& [layer, nodes] : nodes_) {
     if (std::ranges::find_if(
             nodes, [node](const auto& other) { return other.get() == node; })
@@ -1499,6 +1925,19 @@ bool IRNetwork::belongsTo(Node* node) const
 
 bool IRNetwork::belongsTo(Connection* connection) const
 {
+  if (isAssembly()) {
+    if (std::ranges::any_of(chiplet_networks_,
+                            [connection](const auto& chiplet) {
+                              return chiplet.network->belongsTo(connection);
+                            })) {
+      return true;
+    }
+    return std::ranges::any_of(interdie_connections_,
+                               [connection](const auto& candidate) {
+                                 return candidate.get() == connection;
+                               });
+  }
+
   return std::ranges::find_if(connections_,
                               [connection](const auto& other) {
                                 return other.get() == connection;
@@ -1506,8 +1945,42 @@ bool IRNetwork::belongsTo(Connection* connection) const
          != connections_.end();
 }
 
+IRNetwork::Nodes IRNetwork::getAllNodes() const
+{
+  Nodes nodes;
+  if (isAssembly()) {
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      const Nodes local_nodes = chiplet.network->getAllNodes();
+      nodes.insert(local_nodes.begin(), local_nodes.end());
+    }
+    return nodes;
+  }
+
+  for (const auto& [layer, layer_nodes] : nodes_) {
+    for (const auto& node : layer_nodes) {
+      nodes.insert(node.get());
+    }
+  }
+  for (const auto& node : iterm_nodes_) {
+    nodes.insert(node.get());
+  }
+  for (const auto& node : bpin_nodes_) {
+    nodes.insert(node.get());
+  }
+  return nodes;
+}
+
 std::size_t IRNetwork::getNodeCount(bool include_iterms) const
 {
+  if (isAssembly()) {
+    std::size_t count = 0;
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      count += chiplet.network->getNodeCount(true);
+      count += chiplet.network->getBPinNodes().size();
+    }
+    return count;
+  }
+
   std::size_t count = 0;
   for (const auto& [layer, nodes] : nodes_) {
     count += nodes.size();
@@ -1552,6 +2025,13 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
 
 void IRNetwork::clearVisitedNodes()
 {
+  if (isAssembly()) {
+    for (const ChipletNetwork& chiplet : chiplet_networks_) {
+      chiplet.network->clearVisitedNodes();
+    }
+    return;
+  }
+
   for (const auto& [layer, nodes] : nodes_) {
     for (const auto& node : nodes) {
       node->setVisited(false);
@@ -1563,6 +2043,48 @@ void IRNetwork::clearVisitedNodes()
   for (const auto& node : bpin_nodes_) {
     node->setVisited(false);
   }
+}
+
+bool IRNetwork::isConnected() const
+{
+  return !getAllNodes().empty() && getDisconnectedNodes().empty();
+}
+
+IRNetwork::Nodes IRNetwork::getDisconnectedNodes() const
+{
+  const Nodes nodes = getAllNodes();
+  if (nodes.empty()) {
+    return {};
+  }
+
+  const NodePtrMap<Connection> connection_map = getConnectionMap();
+  std::unordered_set<Node*> visited;
+  std::queue<Node*> pending;
+  Node* start = *nodes.begin();
+  visited.insert(start);
+  pending.push(start);
+  while (!pending.empty()) {
+    Node* node = pending.front();
+    pending.pop();
+    const auto connections = connection_map.find(node);
+    if (connections == connection_map.end()) {
+      continue;
+    }
+    for (Connection* connection : connections->second) {
+      Node* neighbor = connection->getOtherNode(node);
+      if (visited.insert(neighbor).second) {
+        pending.push(neighbor);
+      }
+    }
+  }
+
+  Nodes disconnected;
+  for (Node* node : nodes) {
+    if (!visited.contains(node)) {
+      disconnected.insert(node);
+    }
+  }
+  return disconnected;
 }
 
 }  // namespace psm

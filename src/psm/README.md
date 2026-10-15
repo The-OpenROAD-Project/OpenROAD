@@ -34,6 +34,13 @@ The following 3D extensions are planned and are not included yet:
 - SPICE export of the connected chiplet network through `write_pg_spice`.
 - Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
 
+For 3D analysis, first set the assembly rules file:
+
+```tcl
+set_extraction_rules_file -assembly assembly.rules
+```
+
+PSM applies this interchip resistance to every bump pair between the chiplets.
 
 ```tcl
 analyze_power_grid
@@ -55,7 +62,7 @@ analyze_power_grid
 | `-net` | Name of the net to analyze, power or ground net name. |
 | `-corner` | Corner to use for analysis. |
 | `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
-| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). |
+| `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). For 3D ICs see the example [here](doc/vsrc_desciption_3d.md). |
 | `-enable_em` | Reports maximum and average power-grid segment currents. |
 | `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. Currently not supported for 3D ICs. |
 | `-voltage_file` | Write per-instance voltage into the file. |
