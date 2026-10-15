@@ -295,6 +295,9 @@ class CUGR
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
+  // Debug prints after a maze pass: the total overflow (group rrr) and, after
+  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
+  void debugPass(const std::string& tag);
   void iterativeRRR(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.

@@ -941,11 +941,13 @@ void CUGR::route(bool incremental)
     updateCongestedNets(net_indices);
   }
 
+  debugPass("stage 3");
   if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
   mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0);
   reportCongestionSources("stage 4 maze");
+  debugPass("stage 4");
   if (!incremental) {
     updateCongestedNets(net_indices);
   }
@@ -1195,6 +1197,29 @@ void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
   debug_.renderer->drawAndPause(std::move(frame));
 }
 
+void CUGR::debugPass(const std::string& tag)
+{
+  if (logger_->debugCheck(GRT, "rrr", 1)) {
+    debugPrint(
+        logger_, GRT, "rrr", 1, "{}: total overflow {}.", tag, totalOverflow());
+  }
+  if (!hasTiming() || !logger_->debugCheck(GRT, "rrr_timing", 1)) {
+    return;
+  }
+  updateNetSlacks({});
+  sta::Slack wns = 0.0;
+  sta::Vertex* vertex = nullptr;
+  sta_->worstSlack(sta::MinMax::max(), wns, vertex);
+  debugPrint(logger_,
+             GRT,
+             "rrr_timing",
+             1,
+             "{}: WNS {:.4g} TNS {:.5g}",
+             tag,
+             wns,
+             sta_->totalNegativeSlack(sta::MinMax::max()));
+}
+
 void CUGR::iterativeRRR(std::vector<int>& net_indices)
 {
   // Gate on the integer overflow metric: sub-track overflow is left for
@@ -1286,6 +1311,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       mazeRoute(net_indices, CugrStage::iterativeRRR, i);
     }
     reportCongestionSources(fmt::format("rrr iteration {}", i));
+    debugPass(fmt::format("rrr iteration {}", i));
   }
   grid_graph_->setCostMultiplier(1.0);
   if (verbose_ && soft_ndr_demotions > 0) {
