@@ -207,10 +207,13 @@ TEST_F(PinValueTest, AtOrBelowPrefersLayerEntryOverUnlayered)
   EXPECT_DOUBLE_EQ(valueAtOrBelow(entries, stack_.metal(3)), 2.0);
 }
 
-TEST_F(PinValueTest, BelowLowestEntryUsesLowest)
+// A device a block reaches only through upper metal is not connected while
+// the layers below are built.
+TEST_F(PinValueTest, BelowLowestEntryIsZero)
 {
   const LayerValues entries{{3.0, stack_.metal(3)}, {2.0, stack_.metal(2)}};
-  EXPECT_DOUBLE_EQ(valueAtOrBelow(entries, stack_.metal(1)), 2.0);
+  EXPECT_DOUBLE_EQ(valueAtOrBelow(entries, stack_.metal(1)), 0);
+  EXPECT_DOUBLE_EQ(valueAtOrBelow(entries, stack_.cut(1)), 0);
 }
 
 // LEF uses the last of repeated statements.
@@ -262,7 +265,7 @@ TEST_F(PinValueTest, ReadPinAntenna)
   model->addMaxCutCAREntry(1, v1);
 
   const PinAntenna pin = readPinAntenna(a);
-  EXPECT_TRUE(pin.is_gate);
+  EXPECT_TRUE(pin.is_input);
   EXPECT_EQ(pin.gate_area, (LayerValues{{0.5, m1}}));
   EXPECT_EQ(pin.diff_area, (LayerValues{{0.25, m1}}));
   EXPECT_EQ(pin.partial_metal_area, (LayerValues{{1.5, m1}}));
@@ -272,9 +275,21 @@ TEST_F(PinValueTest, ReadPinAntenna)
   EXPECT_EQ(pin.max_side_area_car, (LayerValues{{20, m1}}));
   EXPECT_EQ(pin.max_cut_car, (LayerValues{{1, v1}}));
 
-  // Only input pins with gate area are gates.
-  EXPECT_FALSE(readPinAntenna(master->findMTerm("Y")).is_gate);
-  EXPECT_FALSE(readPinAntenna(master->findMTerm("Z")).is_gate);
+  // Only input pins with gate area are gates, from their gate's layer up.
+  EXPECT_TRUE(isGateOn(pin, m1));
+  EXPECT_FALSE(isGateOn(readPinAntenna(master->findMTerm("Y")), m1));
+  EXPECT_FALSE(isGateOn(readPinAntenna(master->findMTerm("Z")), m1));
+}
+
+TEST_F(PinValueTest, GateFromItsLayerUp)
+{
+  PinAntenna pin;
+  pin.is_input = true;
+  pin.gate_area = {{0.5, stack_.metal(2)}};
+  EXPECT_FALSE(isGateOn(pin, stack_.metal(1)));
+  EXPECT_FALSE(isGateOn(pin, stack_.cut(1)));
+  EXPECT_TRUE(isGateOn(pin, stack_.metal(2)));
+  EXPECT_TRUE(isGateOn(pin, stack_.metal(3)));
 }
 
 }  // namespace

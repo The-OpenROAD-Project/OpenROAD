@@ -620,6 +620,47 @@ TEST_F(AntennaSyntheticTest, DiffusionAreaPerLayer)
   EXPECT_NEAR(check.par.actual, kWireArea / (kGateArea + 1.0), 1e-9);
 }
 
+// A block pin whose gate is reached only through upper metal, like the
+// OpenRAM-style blocks whose pins are on met1 but whose gate area is given
+// on met4, is not a gate below that layer: neither checked nor protecting
+// the gates it touches there.  Its partial metal still charges them.
+TEST_F(AntennaSyntheticTest, BlockGateOnlyFromItsLayerUp)
+{
+  tst::applyAntennaRule(m1(), {.par = 100});
+  odb::dbMaster* plain_gate = gate_;
+  odb::dbMTerm* pin = useBareGatePin();
+  pin->createDefaultAntennaModel()->addGateAreaEntry(kGateArea, m2());
+  pin->addPartialMetalAreaEntry(1.5, m1());
+  odb::dbNet* net = gateNet("n1");
+  addFarGate(net, plain_gate);
+
+  const NetCheck net_check = checker_.checkNet(net);
+  ASSERT_EQ(net_check.pins.size(), 1);
+  EXPECT_EQ(pinName(net_check.pins[0].gate), "n1_far/A");
+  ASSERT_EQ(net_check.pins[0].layers.size(), 1);
+  EXPECT_NEAR(net_check.pins[0].layers[0].par.actual,
+              (kWireArea + 1.5) / kGateArea,
+              1e-9);
+}
+
+// Diffusion reached only through upper metal doesn't protect lower layers.
+TEST_F(AntennaSyntheticTest, DiffusionOnlyFromItsLayerUp)
+{
+  tst::applyAntennaRule(m1(), {.par = 100, .diff_par = constantPwl(200)});
+  odb::dbMaster* drv = tst::makeMaster(lib_,
+                                       "BLOCK_DRV",
+                                       100,
+                                       100,
+                                       {{.name = "X",
+                                         .io_type = odb::dbIoType::OUTPUT,
+                                         .layer = m1(),
+                                         .rect = {0, 0, 100, 100}}});
+  drv->findMTerm("X")->addDiffAreaEntry(1.0, m2());
+
+  const LayerCheck check = layerCheck(gateNet("n1", 0, drv), m1());
+  EXPECT_DOUBLE_EQ(check.par.required, 100);
+}
+
 // ANTENNAPARTIALMETALAREA and ANTENNAPARTIALMETALSIDEAREA are metal inside
 // a block, connected to its pin, that the router doesn't see.  They add to
 // the pin layer's area and side area.

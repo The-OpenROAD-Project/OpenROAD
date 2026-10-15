@@ -54,7 +54,8 @@ using LayerValues = std::vector<std::pair<double, odb::dbTechLayer*>>;
 
 // The value that holds when checking layer: the entry for the nearest layer
 // at or below it, so a gate area given on M1 still applies on V1 and M2.
-// Below the lowest entry, the lowest entry applies.  Zero without entries.
+// Entries only above layer give zero: in a block, a device reached only
+// through upper metal is not connected while the lower layers are built.
 double valueAtOrBelow(const LayerValues& entries,
                       const odb::dbTechLayer* layer);
 
@@ -69,8 +70,7 @@ double valueOnLayer(const LayerValues& entries, const odb::dbTechLayer* layer);
 // values come from the default (OXIDE1) antenna model.
 struct PinAntenna
 {
-  // An input pin with gate area, which the checker protects.
-  bool is_gate{false};
+  bool is_input{false};
   LayerValues gate_area;                // ANTENNAGATEAREA
   LayerValues diff_area;                // ANTENNADIFFAREA
   LayerValues partial_metal_area;       // ANTENNAPARTIALMETALAREA
@@ -82,5 +82,9 @@ struct PinAntenna
 };
 
 PinAntenna readPinAntenna(odb::dbMTerm* mterm);
+
+// Whether the pin is a gate the checker protects on layer: an input pin
+// with gate area there.
+bool isGateOn(const PinAntenna& pin, const odb::dbTechLayer* layer);
 
 }  // namespace ant

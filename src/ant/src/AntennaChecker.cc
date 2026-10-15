@@ -399,7 +399,7 @@ void AntennaChecker::Impl::calculateAreas(
           continue;
         }
         nodes_by_iterm[gate.iterm].push_back(i);
-        if (getPin(gate.iterm->getMTerm()).is_gate) {
+        if (isGateOn(getPin(gate.iterm->getMTerm()), layer)) {
           has_gate[i] = true;
         }
       }
@@ -450,7 +450,7 @@ void AntennaChecker::Impl::calculateAreas(
       const PinAntenna& pin = getPin(iterm->getMTerm());
       for (const size_t group : iterm_groups) {
         NodeInfo& info = info_by_group[group];
-        if (pin.is_gate) {
+        if (isGateOn(pin, layer)) {
           info.iterms.push_back(iterm);
         }
         info.iterm_gate_area += valueAtOrBelow(pin.gate_area, layer);
@@ -465,7 +465,7 @@ void AntennaChecker::Impl::calculateAreas(
     }
     // every gate of a group shares the same record
     for (const auto& [iterm, node_ids] : nodes_by_iterm) {
-      if (getPin(iterm->getMTerm()).is_gate) {
+      if (isGateOn(getPin(iterm->getMTerm()), layer)) {
         gate_info[iterm][layer] = info_by_group[groups.find(node_ids.front())];
       }
     }

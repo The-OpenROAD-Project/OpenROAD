@@ -3,7 +3,6 @@
 
 #include "AntennaRules.hh"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -137,7 +136,6 @@ int layerNumber(const odb::dbTechLayer* layer)
 double valueAtOrBelow(const LayerValues& entries, const odb::dbTechLayer* layer)
 {
   const std::pair<double, odb::dbTechLayer*>* at_or_below = nullptr;
-  const std::pair<double, odb::dbTechLayer*>* lowest = nullptr;
   // Later entries win ties, as LEF uses the last of repeated statements.
   for (const auto& entry : entries) {
     const int number = layerNumber(entry.second);
@@ -146,14 +144,8 @@ double valueAtOrBelow(const LayerValues& entries, const odb::dbTechLayer* layer)
             || number >= layerNumber(at_or_below->second))) {
       at_or_below = &entry;
     }
-    if (lowest == nullptr || number <= layerNumber(lowest->second)) {
-      lowest = &entry;
-    }
   }
-  if (at_or_below != nullptr) {
-    return at_or_below->first;
-  }
-  return lowest != nullptr ? lowest->first : 0.0;
+  return at_or_below != nullptr ? at_or_below->first : 0.0;
 }
 
 double valueOnLayer(const LayerValues& entries, const odb::dbTechLayer* layer)
@@ -184,11 +176,13 @@ PinAntenna readPinAntenna(odb::dbMTerm* mterm)
     model->getMaxSideAreaCAR(pin.max_side_area_car);
     model->getMaxCutCAR(pin.max_cut_car);
   }
-  pin.is_gate = mterm->getIoType() == odb::dbIoType::INPUT
-                && std::ranges::any_of(pin.gate_area, [](const auto& entry) {
-                     return entry.first > 0.0;
-                   });
+  pin.is_input = mterm->getIoType() == odb::dbIoType::INPUT;
   return pin;
+}
+
+bool isGateOn(const PinAntenna& pin, const odb::dbTechLayer* layer)
+{
+  return pin.is_input && valueAtOrBelow(pin.gate_area, layer) > 0.0;
 }
 
 }  // namespace ant
