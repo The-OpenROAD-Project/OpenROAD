@@ -620,6 +620,7 @@ void FastRouteCore::updateEdge3DUsage(int x,
   auto& edge = horizontal ? h_edges_3D_[layer][y][x] : v_edges_3D_[layer][y][x];
   const auto old_usage = edge.usage;
   edge.usage += delta;
+  markCongestionTile(x, y);
   if (overflow_3d_valid_ && old_usage != edge.usage
       && graph2d_.isUsedGrid(x, y, direction)) {
     auto& totals = horizontal ? h_overflow_3d_ : v_overflow_3d_;
@@ -1903,6 +1904,37 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
   }
 }
 
+// Every 3D edge usage change funnels through updateEdge3DUsage(), so marking
+// the tile there catches rerouting, rip-up, wire-resource release and net
+// removal alike -- anything that moves an edge, whether or not it leaves a
+// route behind to infer it from.
+void FastRouteCore::markCongestionTile(const int x, const int y)
+{
+  if (x < 0 || y < 0 || x >= x_grid_ || y >= y_grid_) {
+    return;
+  }
+  if (congestion_tile_marked_.size()
+      != static_cast<size_t>(x_grid_) * y_grid_) {
+    congestion_tile_marked_.assign(static_cast<size_t>(x_grid_) * y_grid_,
+                                   false);
+    congestion_dirty_tiles_.clear();
+  }
+  const size_t index = static_cast<size_t>(x) * y_grid_ + y;
+  if (!congestion_tile_marked_[index]) {
+    congestion_tile_marked_[index] = true;
+    congestion_dirty_tiles_.emplace_back(x, y);
+  }
+}
+
+void FastRouteCore::clearCongestionDirtyTiles()
+{
+  for (const odb::Point& tile : congestion_dirty_tiles_) {
+    congestion_tile_marked_[static_cast<size_t>(tile.x()) * y_grid_ + tile.y()]
+        = false;
+  }
+  congestion_dirty_tiles_.clear();
+}
+
 void FastRouteCore::updateDbCongestion(int min_routing_layer,
                                        int max_routing_layer)
 {
@@ -1956,21 +1988,59 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
 
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
-        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
-            && y_grid_ > 1) {
-          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
-          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
-          uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
-          uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH + usageV);
-        } else {
-          uint8_t blockageH = h_edges_3D_[k][y][x].red;
-          uint8_t blockageV = v_edges_3D_[k][y][x].red;
-          uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
-          uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH + usageV);
-        }
+        db_gcell->setUsage(layer, x, y, gcellUsage(k, x, y));
       }
+    }
+  }
+  clearCongestionDirtyTiles();
+}
+
+// The usage odb reports for one GCell on layer index `k`.  Shared by the full
+// rebuild and the incremental refresh so the two cannot drift apart.
+int FastRouteCore::gcellUsage(const int k, const int x, const int y) const
+{
+  // The top-right cell has no edge of its own and mirrors its diagonal
+  // neighbour.
+  if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1 && y_grid_ > 1) {
+    const uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+    const uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+    const uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+    const uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+    return usageH + usageV;
+  }
+  const uint8_t blockageH = h_edges_3D_[k][y][x].red;
+  const uint8_t blockageV = v_edges_3D_[k][y][x].red;
+  const uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
+  const uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
+  return usageH + usageV;
+}
+
+void FastRouteCore::updateDbCongestionTiles(
+    const int min_routing_layer,
+    const int max_routing_layer,
+    const std::vector<odb::Point>& tiles)
+{
+  if (h_edges_3D_.num_elements() == 0 || tiles.empty()) {
+    return;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr) {
+    // Nothing to refresh into; the caller still owes a full rebuild.
+    return;
+  }
+  auto db_tech = db_->getTech();
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
+    auto layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    for (const odb::Point& tile : tiles) {
+      const int x = tile.x();
+      const int y = tile.y();
+      if (x < 0 || y < 0 || x >= x_grid_ || y >= y_grid_) {
+        continue;
+      }
+      db_gcell->setUsage(layer, x, y, gcellUsage(k, x, y));
     }
   }
 }
