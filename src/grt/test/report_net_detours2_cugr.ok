@@ -8,25 +8,25 @@ Detour metric (final routed WL vs initial Steiner WL):
   Nets analyzed: 490
   Total initial Steiner WL: 6991.05um
   Total final routed WL:    6988.20um
-  Total detour:             -2.85um (ratio 1.000)
+  Total detour:             -2.85um (ratio 1.00)
   Worst 3 nets by detour ratio:
     initial_um    final_um    delta_um    ratio  net
-         22.80       22.80        0.00    1.000  _221_
-        290.70      290.70        0.00    1.000  clk
-          2.85        2.85        0.00    1.000  _222_
-[INFO GRT-0332] Net _285_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.000
-[INFO GRT-0332] Net _286_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.000
-[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.000
-[INFO GRT-0332] Net _285_ detour: initial 11.40um, final 11.40um, delta 0.00um, ratio 1.000
-[INFO GRT-0332] Net _286_ detour: initial 8.55um, final 8.55um, delta 0.00um, ratio 1.000
-[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.000
+         22.80       22.80        0.00     1.00  _221_
+        290.70      290.70        0.00     1.00  clk
+          2.85        2.85        0.00     1.00  _222_
+[INFO GRT-0332] Net _285_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _286_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _285_ detour: initial 11.40um, final 11.40um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _286_ detour: initial 8.55um, final 8.55um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.00
 Detour metric (final routed WL vs initial Steiner WL):
   Nets analyzed: 492
   Total initial Steiner WL: 7030.95um
   Total final routed WL:    7028.10um
-  Total detour:             -2.85um (ratio 1.000)
+  Total detour:             -2.85um (ratio 1.00)
   Worst 3 nets by detour ratio:
     initial_um    final_um    delta_um    ratio  net
-          2.85        2.85        0.00    1.000  _222_
-        290.70      290.70        0.00    1.000  clk
-          5.70        5.70        0.00    1.000  _223_
+          2.85        2.85        0.00     1.00  _222_
+        290.70      290.70        0.00     1.00  clk
+          5.70        5.70        0.00     1.00  _223_

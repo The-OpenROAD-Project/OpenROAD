@@ -522,8 +522,6 @@ void GlobalRouter::globalRoute(bool save_guides)
       if (verbose_) {
         reportResources();
       }
-      // Also captures the initial Steiner wirelength per net for the detour
-      // metric, once the pins are synced to CUGR's access points.
       findRoutingCugr(nets, /*incremental=*/false);
     } else {
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
@@ -1179,8 +1177,6 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
     }
-    // After the pins are rebuilt and, for guide-restored nets, moved to the
-    // covered access points.
     updateInitialSteinerWirelength(net);
     net->setIsMergedNet(false);
     net->setDirtyNet(false);
@@ -4644,10 +4640,8 @@ void GlobalRouter::computeWirelength()
 }
 
 // Build the initial Steiner topology for a net using the same STT builder that
-// FastRoute uses, and return its total wirelength in dbu. Each pin is taken at
-// the center of the gcell holding its access point, the same reference
-// computeNetPlanarWirelength() uses for the route, and pins sharing a gcell
-// collapse into one point. A local net (all pins in one gcell) has 0 length.
+// FastRoute uses, and return its total wirelength in dbu, taking each pin at
+// its gcell center.
 // Read-only: this does not feed the routing engine.
 int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 {
@@ -4672,7 +4666,6 @@ int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
     return 0;
   }
 
-  // A two-gcell net's Steiner WL is just the HPWL of its gcells.
   if (x.size() == 2) {
     return std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
   }
@@ -4681,11 +4674,8 @@ int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
   return tree.length;
 }
 
-// Final routed wirelength of a net counting only the planar length of its
-// segments, with each segment end taken at its gcell center like the pins in
-// computeNetInitialSteinerWirelength(). Unlike computeNetWirelength(), no
-// per-segment tile is added, so a route matching the Steiner tree has a detour
-// ratio of 1.
+// Planar routed wirelength between gcell centers, without the per-segment tile
+// of computeNetWirelength().
 int GlobalRouter::computeNetPlanarWirelength(odb::dbNet* db_net)
 {
   auto iter = routes_.find(db_net);
@@ -4715,10 +4705,6 @@ void GlobalRouter::computeInitialSteinerWirelengths(
   }
 }
 
-// Refresh one net's initial Steiner wirelength from its current on-grid pin
-// positions. Called whenever incremental routing rebuilds or re-syncs a net's
-// pins, so the other nets' values are kept. Nets with fewer than two pins have
-// nothing to route and are left out of the detour metric.
 void GlobalRouter::updateInitialSteinerWirelength(Net* net)
 {
   odb::dbNet* db_net = net->getDbNet();
@@ -4729,9 +4715,7 @@ void GlobalRouter::updateInitialSteinerWirelength(Net* net)
   initial_steiner_wl_[db_net] = computeNetInitialSteinerWirelength(net);
 }
 
-// Ratio of the final routed wirelength to the initial Steiner wirelength. A
-// local net (all pins in one gcell) has 0 on both sides and a ratio of 1; a
-// route with wire where the Steiner tree needs none has an infinite ratio.
+// Ratio of the final routed wirelength to the initial Steiner wirelength.
 static double detourRatio(const int64_t initial_wl, const int64_t final_wl)
 {
   if (initial_wl > 0) {
@@ -4767,7 +4751,7 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
   logger_->info(GRT,
                 332,
                 "Net {} detour: initial {:.2f}um, final {:.2f}um, delta "
-                "{:.2f}um, ratio {:.3f}",
+                "{:.2f}um, ratio {:.2f}",
                 net->getName(),
                 block_->dbuToMicrons(initial_wl),
                 block_->dbuToMicrons(final_wl),
@@ -4811,7 +4795,7 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
   int64_t total_initial = 0;
   int64_t total_final = 0;
   for (const auto& [net, initial_wl] : initial_steiner_wl_) {
-    // Skip local nets (all pins in one gcell): they have no wire to detour.
+    // Skip local nets.
     if (initial_wl == 0 || !routes_.contains(net)) {
       continue;
     }
@@ -4843,7 +4827,7 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                   block_->dbuToMicrons(total_initial));
   logger_->report("  Total final routed WL:    {:.2f}um",
                   block_->dbuToMicrons(total_final));
-  logger_->report("  Total detour:             {:.2f}um (ratio {:.3f})",
+  logger_->report("  Total detour:             {:.2f}um (ratio {:.2f})",
                   block_->dbuToMicrons(total_final - total_initial),
                   total_ratio);
 
@@ -4858,7 +4842,7 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                   "ratio");
   for (int i = 0; i < n; i++) {
     const DetourEntry& e = entries[i];
-    logger_->report("    {:>10.2f}  {:>10.2f}  {:>10.2f}  {:>7.3f}  {}",
+    logger_->report("    {:>10.2f}  {:>10.2f}  {:>10.2f}  {:>7.2f}  {}",
                     block_->dbuToMicrons(e.initial_wl),
                     block_->dbuToMicrons(e.final_wl),
                     block_->dbuToMicrons(e.delta),
