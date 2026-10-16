@@ -26,7 +26,7 @@ namespace rsz {
 //
 // prepareRequirements() requests kArcDelayState so worker threads can read the
 // prepared timing snapshot without touching shared STA state. Produces multiple
-// SizeUpMtCandidate instances (up to max_candidate_generation) so
+// SizeUpMtCandidate instances so
 // the policy can evaluate them in parallel and pick the best.
 class SizeUpMtGenerator : public MoveGenerator
 {

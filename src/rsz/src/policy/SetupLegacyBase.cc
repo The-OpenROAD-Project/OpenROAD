@@ -539,22 +539,6 @@ bool SetupLegacyBase::repairPins(
   }
 
   const sta::Slack focus_slack = target_collector_->getCurrentEndpointSlack();
-  if (targetPrewarmEnabled()) {
-    std::vector<Target> prewarm_targets;
-    prewarm_targets.reserve(pins.size());
-    for (const sta::Pin* driver_pin : pins) {
-      Target target;
-      const bool has_target
-          = focus_path != nullptr
-                ? makePinTargetOnPath(
-                      driver_pin, focus_path, focus_slack, target)
-                : makePinTarget(driver_pin, focus_slack, target);
-      if (has_target) {
-        prewarm_targets.push_back(std::move(target));
-      }
-    }
-    prewarmTargets(prewarm_targets);
-  }
 
   // A target holds raw STA paths. Every accepted move invalidates the paths
   // through the logic it touched, so a pass that repairs many pins has to
@@ -836,11 +820,6 @@ bool SetupLegacyBase::repairPath(sta::Path* path,
   targets.reserve(ranked_targets.size());
   for (std::pair<Target, sta::Delay>& ranked_target : ranked_targets) {
     targets.push_back(std::move(ranked_target.first));
-  }
-
-  // Prewarm for legacy MT policy
-  if (targetPrewarmEnabled()) {
-    prewarmTargets(targets);
   }
 
   // Drive ranked targets through the configured generator list until this

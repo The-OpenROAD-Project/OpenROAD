@@ -254,7 +254,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   int move_count_;
   std::map<const sta::Pin*, int> visit_count_;
   std::vector<MoveStateData> moves_;
-  // Moves tracked outside any ECO journal (e.g. MeasuredVtSwapPolicy);
+  // Moves tracked outside any ECO journal (e.g. SetupCritVtSwapPolicy);
   // flushed directly by commitMoves() / rejectMoves().
   std::vector<MoveStateData> pending_moves_;
   // One pending-move level per open ECO journal, innermost on top. Mirrors

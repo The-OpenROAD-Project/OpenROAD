@@ -260,7 +260,6 @@ TESTS = [
     "report_floating_nets2",
     "report_floating_nets3",
     "report_move_tracker",
-    "repair_setup_legacy_mt_tracker",
     "report_overdriven_nets1",
     "report_overdriven_nets2",
     "report_overdriven_nets3",
@@ -281,7 +280,6 @@ TESTS = [
     "repair_setup_vt_swap",
     "repair_setup_vtswap_legacy_asap7",
     "repair_setup_vt_swap2",
-    "measured_vt_swap",
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
@@ -299,8 +297,6 @@ PASSFAIL_TESTS = [
     # build directory structure not compatible with Bazel
     # "cpp_tests",
     "repair_timing_fixed",
-    "repair_setup_legacy_mt",
-    "repair_setup_mt1",
     "repair_design_fixed_driver",
     "gain_buffering_top_port_hier",
 ]
@@ -355,7 +351,6 @@ extra_deps = {
     "repair_setup4_sequence": ["repair_setup4.tcl"],
     "repair_setup6_multi": ["repair_setup6.tcl"],
     "repair_setup7_multi": ["repair_setup7.tcl"],
-    "repair_setup_legacy_mt_tracker": ["report_move_tracker.tcl"],
     "repair_setup_phase_endpoint_fanin": ["repair_setup1.tcl"],
     "repair_setup_phase_startpoint_fanout": ["repair_setup1.tcl"],
     "repair_setup_phase_tns": ["repair_setup1.tcl"],

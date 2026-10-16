@@ -31,7 +31,7 @@ class MoveCommitter;
 //   - resizer       : the shared rsz::Resizer (OpenDB + STA access)
 //   - committer     : the run-scoped MoveCommitter (journal + accounting)
 //   - run_config    : frozen user options (skip flags, margins, sequence)
-//   - policy_config : policy-selected tunables (max_candidate_generation, ...)
+//   - policy_config : policy-selected tunables
 // All four references outlive every generator, so generators may store
 // references directly and do not need to copy or own any of these.
 struct GeneratorContext

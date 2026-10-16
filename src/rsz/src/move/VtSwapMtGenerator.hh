@@ -21,9 +21,7 @@ namespace rsz {
 // multiple VtSwapMtCandidate instances for parallel evaluation.
 //
 // prepareRequirements() requests kArcDelayState so worker threads can read the
-// prepared timing snapshot without touching shared STA state. The number of
-// candidates produced is bounded by a positive max_candidate_generation in
-// OptimizationPolicyConfig.
+// prepared timing snapshot without touching shared STA state.
 class VtSwapMtGenerator : public MoveGenerator
 {
  public:

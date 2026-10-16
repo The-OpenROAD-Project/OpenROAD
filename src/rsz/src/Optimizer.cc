@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "GlobalSizingPolicy.hh"
-#include "MeasuredVtSwapPolicy.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
@@ -19,9 +18,7 @@
 #include "SetupDirectionalPolicy.hh"
 #include "SetupLastGaspPolicy.hh"
 #include "SetupLegacyBase.hh"
-#include "SetupLegacyMtPolicy.hh"
 #include "SetupLegacyPolicy.hh"
-#include "SetupMt1Policy.hh"
 #include "SetupReroutePolicy.hh"
 #include "SetupTnsPolicy.hh"
 #include "SetupWnsPolicy.hh"
@@ -49,11 +46,10 @@ namespace {
 
 bool isLegacyCompatiblePhase(const std::string_view phase_name)
 {
-  return phase_name == "LEGACY" || phase_name == "LEGACY_MT"
-         || phase_name == "WNS" || phase_name == "WNS_PATH"
-         || phase_name == "WNS_CONE" || phase_name == "TNS"
-         || phase_name == "ENDPOINT_FANIN" || phase_name == "STARTPOINT_FANOUT"
-         || phase_name == "LAST_GASP";
+  return phase_name == "LEGACY" || phase_name == "WNS"
+         || phase_name == "WNS_PATH" || phase_name == "WNS_CONE"
+         || phase_name == "TNS" || phase_name == "ENDPOINT_FANIN"
+         || phase_name == "STARTPOINT_FANOUT" || phase_name == "LAST_GASP";
 }
 
 bool containsPhase(const std::vector<std::string>& phase_names,
@@ -98,10 +94,6 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupLegacyPolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  if (phase_name == "LEGACY_MT") {
-    return std::make_unique<SetupLegacyMtPolicy>(
-        resizer_, committer_, setup_context, config_);
-  }
   if (phase_name == "WNS" || phase_name == "WNS_PATH") {
     return std::make_unique<SetupWnsPolicy>(
         resizer_, committer_, setup_context, config_, /*use_cone=*/false);
@@ -134,20 +126,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupReroutePolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  if (phase_name == "MT1") {
-    return std::make_unique<SetupMt1Policy>(
-        resizer_, committer_, setup_context, config_);
-  }
-  if (phase_name == "MEASURED_VT_SWAP") {
-    return std::make_unique<MeasuredVtSwapPolicy>(
-        resizer_, committer_, setup_context, config_);
-  }
   if (phase_name == "GLOBAL_SIZING") {
     return std::make_unique<GlobalSizingPolicy>(
         resizer_, committer_, setup_context, config_);
   }
-  // Only public phase names are listed; experimental top-level tokens
-  // (LEGACY_MT, MT1, MEASURED_VT_SWAP) are accepted but undocumented.
   resizer_.logger()->error(
       utl::RSZ,
       217,

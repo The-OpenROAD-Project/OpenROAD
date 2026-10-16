@@ -84,7 +84,6 @@ class MoveCommitter
                                    sta::Vertex* vertex,
                                    float endpoint_slack,
                                    RepairTargetCollector& violator_collector);
-  void trackPreparedViolator(const Target& target);
   void trackMove(const sta::Pin* pin,
                  MoveType move_type,
                  TrackedMoveStateType state);

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "DelayEstimator.hh"
+#include "OptimizationPolicyConfig.hh"
 #include "OptimizerTypes.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -39,7 +40,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
-#include "utl/env.h"
 
 namespace rsz {
 
@@ -106,10 +106,8 @@ std::string formatDeltaWithUnit(float estimated,
   return fmt::format("{:+.3f} {}", (estimated - golden) * scale, unit);
 }
 
-bool slewBiasEnabled()
-{
-  return utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 0) > 0;
-}
+// The report measures the estimator with the policies' STA slew bias.
+constexpr bool kStaSlewBias = OptimizationPolicyConfig{}.sta_slew_bias;
 
 void printMetricRow(utl::Logger* logger,
                     const std::string& metric,
@@ -132,7 +130,7 @@ const std::vector<std::string_view>&
 DelayEstimatorReporter::knownEstimatorNames()
 {
   static const std::vector<std::string_view> kNames
-      = {"legacy", "delay_estimator", "legacy_mt", "mt"};
+      = {"legacy", "stage_window"};
   return kNames;
 }
 
@@ -142,9 +140,8 @@ DelayEstimatorReporter::parseEstimatorKind(const std::string& estimator)
   if (estimator == "legacy") {
     return EstimatorKind::kLegacy;
   }
-  if (estimator == "delay_estimator" || estimator == "legacy_mt"
-      || estimator == "mt") {
-    return EstimatorKind::kDelayEstimator;
+  if (estimator == "stage_window") {
+    return EstimatorKind::kStageWindow;
   }
   return std::nullopt;
 }
@@ -226,7 +223,7 @@ void DelayEstimatorReporter::reportAccuracyForSizing(
 
   const int normalized_levels = std::clamp(delay_levels, 0, kMaxDelayLevels);
   const int report_levels
-      = kind == EstimatorKind::kDelayEstimator ? normalized_levels : 0;
+      = kind == EstimatorKind::kStageWindow ? normalized_levels : 0;
 
   // Phase 1: locate the worst path stage driven by `inst`.
   const std::optional<TargetMatch> before_match
@@ -1028,7 +1025,7 @@ std::optional<ArcDelayState> DelayEstimatorReporter::contextForTarget(
     return target.arc_delay;
   }
   return DelayEstimator::buildContext(
-      resizer_, target, delay_levels, fail_reason, slewBiasEnabled());
+      resizer_, target, delay_levels, fail_reason, kStaSlewBias);
 }
 
 void DelayEstimatorReporter::prepareTargetContext(
@@ -1062,7 +1059,7 @@ void DelayEstimatorReporter::prepareTargetContext(
                                                   min_max,
                                                   delay_levels,
                                                   &ignored_reason,
-                                                  slewBiasEnabled());
+                                                  kStaSlewBias);
 }
 
 float DelayEstimatorReporter::pathWireDelay(const sta::PathExpanded& expanded,
