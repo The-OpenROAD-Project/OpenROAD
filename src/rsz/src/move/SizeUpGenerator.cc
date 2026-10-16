@@ -151,6 +151,13 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   const int lib_ap = scene->libertyIndex(min_max);
   sta::LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_.getSwappableCells(cell);
+  debugPrint(resizer_.logger(),
+             utl::RSZ,
+             "size_up_move",
+             3,
+             "upsizeCell {}: {} swappable cells",
+             cell->name(),
+             swappable_cells.size());
   if (swappable_cells.empty()) {
     return nullptr;
   }
@@ -159,6 +166,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   // local replacement.
   const std::string& in_port_name = in_port->name();
   const std::string& drvr_port_name = drvr_port->name();
+  /*
   std::ranges::sort(
       swappable_cells.begin(),
       swappable_cells.end(),
@@ -166,6 +174,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
                                       const sta::LibertyCell* cell2) {
         return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
       });
+  */
 
   const sta::LibertyPort* scene_drvr_port
       = static_cast<const sta::LibertyPort*>(drvr_port)->scenePort(lib_ap);
@@ -175,34 +184,91 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return nullptr;
   }
 
-  const float drive = scene_drvr_port->driveResistance();
   const float delay = resizer_.gateDelay(drvr_port, load_cap, scene, min_max)
                       + prev_drive * scene_input_port->capacitance();
-
-  // Accept the first cell that improves both drive resistance and estimated
-  // stage delay.
-  for (sta::LibertyCell* swappable : swappable_cells) {
-    sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
-    if (swappable_corner == nullptr) {
-      continue;
-    }
-    sta::LibertyPort* swappable_drvr
-        = swappable_corner->findLibertyPort(drvr_port_name);
-    sta::LibertyPort* swappable_input
-        = swappable_corner->findLibertyPort(in_port_name);
-    if (swappable_drvr == nullptr || swappable_input == nullptr) {
-      continue;
-    }
-    const float swappable_drive = swappable_drvr->driveResistance();
-    const float swappable_delay
-        = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
-          + prev_drive * swappable_input->capacitance();
-    if (swappable_drive < drive && swappable_delay < delay) {
-      return swappable;
+  const std::optional<float> leak = resizer_.cellLeakage(cell);
+  float cost = 0.0;
+  if (leak && *leak > 0.0f) {
+    cost = *leak;
+  } else {
+    odb::dbMaster* master = resizer_.dbNetwork()->staToDb(cell);
+    if (master && master->getArea() > 0) {
+      cost = master->getArea();
+    } else {
+      cost = cell->area();
     }
   }
 
-  return nullptr;
+  sta::LibertyCell* best_cell = nullptr;
+  float best_score = 0.0f;
+  float score = 0.0f;
+  for (sta::LibertyCell* swappable : swappable_cells) {
+    if (swappable == cell) {
+      continue;
+    }
+    sta::LibertyCell* scen_cell = swappable->sceneCell(lib_ap);
+    if (scen_cell == nullptr) {
+      continue;
+    }
+
+    sta::LibertyPort* swappable_drvr
+        = scen_cell->findLibertyPort(drvr_port_name);
+    sta::LibertyPort* swappable_input
+        = scen_cell->findLibertyPort(in_port_name);
+    const float swappable_delay
+        = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
+          + prev_drive * swappable_input->capacitance();
+
+    if (swappable_delay >= delay) {
+      continue;
+    }
+
+    float swappable_cost = 0.0;
+    const std::optional<float> leak = resizer_.cellLeakage(scen_cell);
+    if (leak && *leak > 0.0f) {
+      swappable_cost = *leak;
+    } else {
+      // If leakage is not available, use LEF area
+      // If LEF area is not available, use liberty area
+      odb::dbMaster* master = resizer_.dbNetwork()->staToDb(scen_cell);
+      if (master && master->getArea() > 0) {
+        swappable_cost = master->getArea();
+      } else {
+        swappable_cost = scen_cell->area();
+      }
+    }
+
+    // score = (old_delay - new_delay) / (new_power / old_power)
+    // The higher the score, the better.
+    // Accept 1.0 as the min power ratio because improving delay costs power
+    score = (delay - swappable_delay)
+            / std::max<float>(1.0, swappable_cost / cost);
+    if (score > best_score) {
+      best_cell = swappable;
+      best_score = score;
+    }
+    debugPrint(resizer_.logger(),
+               utl::RSZ,
+               "size_up_move",
+               3,
+               "   cand {}: new_d={} old_d={} new_c/old_c={:.4g} "
+               "score={:.4g}",
+               swappable->name(),
+               delayAsString(swappable_delay, 4, resizer_.staState()),
+               delayAsString(delay, 4, resizer_.staState()),
+               swappable_cost / cost,
+               score);
+  }
+
+  debugPrint(resizer_.logger(),
+             utl::RSZ,
+             "size_up_move",
+             3,
+             "   best cand {}: score={:.4g}",
+             best_cell->name(),
+             best_score);
+
+  return best_cell;
 }
 
 }  // namespace rsz

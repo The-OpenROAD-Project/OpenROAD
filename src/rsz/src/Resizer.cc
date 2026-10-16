@@ -6885,6 +6885,22 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
+    if (network_->isRegClkPin(pin)) {
+      continue;
+    }
+
+    if (db_network_ != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      db_network_->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm != nullptr
+          && (db_network_->isScanEnable(iterm)
+              || db_network_->isScanIn(iterm))) {
+        continue;
+      }
+    }
+
     const float old_cap
         = inputPinCapacitance(network_, pin, current_cell, max_);
     const float new_cap = inputPinCapacitance(network_, pin, replacement, max_);
