@@ -72,11 +72,11 @@ AntennaModel makeAntennaModel(odb::dbTechLayer* tech_layer, utl::Logger* logger)
     if ((psr_ratio != 0 || !diff_psr.indices.empty())
         && layer_type == odb::dbTechLayerType::ROUTING
         && wire_thickness_dbu == 0) {
-      logger->warn(utl::ANT,
-                   13,
-                   "No THICKNESS is provided for layer {}.  Checks on this "
-                   "layer will not be correct.",
-                   tech_layer->getConstName());
+      logger->error(utl::ANT,
+                    13,
+                    "Layer {} has a side area antenna rule but no THICKNESS; "
+                    "add THICKNESS to the LEF.",
+                    tech_layer->getConstName());
     }
   }
 

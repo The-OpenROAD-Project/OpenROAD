@@ -1,12 +1,13 @@
 # Installing OpenROAD
 
-```{warning}
-**The CMake build is deprecated.** Bazel is the supported build system for
-OpenROAD. CMake support is no longer developed and will be removed in a
-future release. Building from source should use
-[Bazel](#build-and-install-with-bazel); see [Bazel](Bazel.md) for testing,
-profiling and build configurations.
+OpenROAD is built with [Bazel](Bazel.md).
+Install the [prerequisites](#prerequisites), then build and install with GUI support:
+
+``` shell
+bazelisk run --//:platform=gui //:install
 ```
+
+See [Bazel](Bazel.md) for testing, profiling and build configurations.
 
 ## Clone Repository
 
@@ -21,34 +22,162 @@ OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`
 
 ```{note}
 There are several methods for obtaining OpenROAD (in order of recommendation):
-prebuilt binaries, docker images, building from source with Bazel, and finally
-the deprecated CMake build.
+prebuilt binaries, docker images, and building from source with Bazel.
 ```
 
 ## Build and install with Bazel
 
-Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
+### Prerequisites
+
+Install `bazelisk` and the system libraries that the Bazel build needs.
+Bazel is the default build system of `DependencyInstaller.sh`:
+
+``` shell
+sudo ./etc/DependencyInstaller.sh
+```
+
+Add `-no-gui` to skip the GUI-only libraries when you build the CLI-only binary.
+Add `-bazel-dev` to install the Bazel developer tools, such as `buildifier`.
+
+```{note}
+`DependencyInstaller.sh` installs `bazelisk` to `/usr/local/bin` by default.
+To put it in `~/.local/bin`, split the steps:
+
+    sudo ./etc/DependencyInstaller.sh -base
+    ./etc/DependencyInstaller.sh -common -local
+```
+
+On macOS, do not use `sudo`.
+`./etc/DependencyInstaller.sh` installs `bazelisk` with Homebrew.
+Install the Xcode command line tools first with `xcode-select --install`.
+
+You can also install [bazelisk](https://bazel.build/install/bazelisk) yourself.
+`bazelisk` reads the `.bazelversion` file and downloads the matching Bazel.
+
+### Build and install with the GUI
+
+Build OpenROAD with GUI support and install into `../install/OpenROAD/bin`:
 
     bazelisk run --//:platform=gui //:install
 
-To install to a custom location, e.g. /tmp/myinstall
+To install to a custom location, e.g. `/tmp/myinstall`:
 
     bazelisk run --//:platform=gui //:install -- /tmp/myinstall
 
-To produce an openroad.tar file with install files
+To produce an `openroad.tar` file with the install files:
 
     bazelisk build --//:platform=gui //:tarfile
 
-The tarfile is located at bazel-bin/packaging/openroad.tar.
+The tarfile is located at `bazel-bin/packaging/openroad.tar`.
+
+The install process installs the binary `openroad` and the runfile directory
+`openroad.runfiles`, which contains runtime data needed by the binary.
+It also installs the man pages into `share/openroad/man`.
+
+### Build the CLI-only binary
+
+The default platform is `cli`, which does not build the GUI.
+Install the prerequisites with `-bazel -no-gui`, then run:
+
+    bazelisk run --//:platform=cli //:install
+
+To only build the binary, without installing it:
+
+    bazelisk build :openroad
+
+The binary is `bazel-bin/openroad`.
+For a GUI build, add `--//:platform=gui` to the command.
+
+### Build options
+
+Pass these options to `bazelisk build` or `bazelisk run`.
+
+| Option                         | Purpose                                      |
+|--------------------------------|----------------------------------------------|
+| `-c opt`                       | Optimized build. This is the default.        |
+| `-c dbg`                       | Debug build.                                 |
+| `--cxxopt=<flag>`              | Additional compiler flags.                   |
+| `--config=release`             | Embed the git version string.                |
+| `--jobs=<N>`                   | Limit the number of parallel build jobs.     |
+| `//:install -- <dir>`          | Install into `<dir>`.                        |
+
+Bazel downloads its own toolchain and libraries, so you do not need to point it to the Tcl or `zlib` libraries.
 
 To embed the real git version string, add `--config=release`:
 
     bazelisk run --config=release --//:platform=gui //:install
 
-The install process will install the binary "openroad" and the runfile directory
-"openroad.runfiles" which contains runtime data needed by the binary.
+### Using `etc/Build.sh`
 
-See [Bazel](Bazel.md) for more details on testing, profiling and build configurations.
+`./etc/Build.sh` is a wrapper that builds and installs with Bazel.
+It always builds with `--config=release`.
+Run `./etc/Build.sh -help` for all options.
+
+| `Build.sh` flag              | Bazel option                              |
+|------------------------------|-------------------------------------------|
+| (default)                    | `--//:platform=gui`                       |
+| `-no-gui`                    | `--//:platform=cli`                       |
+| `-gpu`                       | `--config=gpu`                            |
+| `-threads=<N>`               | `--jobs=<N>`                              |
+| `-prefix=<DIR>`              | `//:install -- <DIR>`                     |
+| `-local`                     | `//:install -- ~/.local`                  |
+
+``` shell
+./etc/Build.sh -no-gui -prefix=/tmp/myinstall
+```
+
+Every `./etc/Build.sh` run writes `build/openroad_build.log`.
+Attach it when you file an issue in the "Relevant log output" section of the
+[issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
+A direct `bazelisk` run does not write a log file.
+
+The other flags in the `-help` output configure the legacy build and have no effect here.
+The exceptions are `-clean` and `-dir`, which only remove and name the `build/` directory that holds the log.
+
+### Man pages
+
+Build the man pages with:
+
+    bazelisk build //docs:man_pages
+
+`//:install` installs them as well.
+
+### Link time optimization (LTO)
+
+The default build is `-c opt`, which enables optimization without LTO.
+`--config=opt` adds ThinLTO, and `--config=release` includes `--config=opt`.
+See [Bazel](Bazel.md#lto) for details.
+
+### Build with Address Sanitizer
+
+Run the tests with the `asan` config:
+
+    bazelisk test --config=asan --test_tag_filters=-py src/...
+
+Address Sanitizer adds instrumentation for detecting memory errors.
+OpenROAD runs slower and uses more RAM with it.
+See [Bazel](Bazel.md) for details.
+
+### System wide OpenROAD install
+
+```{warning}
+Only use the following instructions if you know what you are doing.
+```
+
+Install into `/usr/local`:
+
+``` shell
+bazelisk run --//:platform=gui //:install -- /usr/local
+```
+
+or:
+
+``` shell
+./etc/Build.sh -prefix=/usr/local
+```
+
+The install script writes below the given directory, so your user must be able to write to it.
+The `DESTDIR` variable has no Bazel equivalent.
 
 ## Build with Prebuilt Binaries
 
@@ -70,147 +199,16 @@ this [Docker guide](https://docs.docker.com/config/containers/resource_constrain
 
 We recommend to use a Docker image of a supported OS
 and install OpenROAD using the prebuilt binaries from
-Precision Innovations. 
-You can start the container in an interactive mode using 
-the command below. 
+Precision Innovations.
+You can start the container in an interactive mode using
+the command below.
 
 ```shell
 docker run -it ubuntu:22.04
 ```
 
-Now you are ready to install the prebuilt binaries. 
-Please refer to the instructions for installing prebuilt binaries 
+Now you are ready to install the prebuilt binaries.
+Please refer to the instructions for installing prebuilt binaries
 [above](#build-with-prebuilt-binaries).
 
-## Build Locally with CMake (deprecated)
-
-```{warning}
-The CMake build is deprecated and will be removed in a future release. The
-CMake configure step prints the same warning. New users and new setups should
-use [Bazel](#build-and-install-with-bazel) instead; the instructions in this
-section are kept for existing CMake-based setups only.
-```
-
-The default build type is `RELEASE` to compile optimized code.
-The resulting executable is in `build/bin/openroad`.
-
-Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show below.
-
-| Argument               | Value                     |
-|------------------------|---------------------------|
-| `CMAKE_BUILD_TYPE`     | DEBUG, RELEASE            |
-| `CMAKE_CXX_FLAGS`      | Additional compiler flags |
-| `TCL_LIBRARY`          | Path to Tcl library       |
-| `TCL_HEADER`           | Path to `tcl.h`           |
-| `ZLIB_ROOT`            | Path to `zlib`            |
-| `CMAKE_INSTALL_PREFIX` | Path to install binary    |
-
-```{note}
-There is a `openroad_build.log` file that is generated
-with every build in the build directory. In case of filing issues,
-it can be uploaded in the "Relevant log output" section of OpenROAD
-[issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
-```
-
-### Only for macOS Setup
-
-On macOS, it is recommended to use a Python virtual environment to isolate dependencies and avoid system conflicts.
-
-1. Create a virtual environment in the OpenROAD directory:
-``` shell
-python3 -m venv .venv
-```
-
-2. Activate the virtual environment:
-``` shell
-source .venv/bin/activate
-```
-
-3. With virtual environment activated, run without `sudo`:
-``` shell
-./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
-```
-
-### Install Dependencies
-
-We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
-
-Alternatively, if you are building OpenROAD standalone, you may use our helper script:
-``` shell
-sudo ./etc/DependencyInstaller.sh -base
-./etc/DependencyInstaller.sh -common -local
-```
-
-```{warning}
-`sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
-installing packages on /usr/local.
-To avoid this bahavior use -local flag or -prefix <PATH> argument.
-```
-
-### Build OpenROAD
-
-`./etc/Build.sh` builds with Bazel by default; the `-cmake-build` flag selects
-the deprecated CMake build used in the rest of this section.
-
-To build with the default options in release mode:
-
-``` shell
-./etc/Build.sh -cmake-build
-```
-
-#### Custom Library Path
-
-To build with debug option enabled and if the Tcl library is not on the default path.
-
-``` shell
-./etc/Build.sh -cmake-build -cmake="-DCMAKE_BUILD_TYPE=DEBUG -DTCL_LIB=/path/to/tcl/lib"
-```
-
-#### Enable `manpages`
-
-To build the `manpages`:
-``` shell
-./etc/Build.sh -cmake-build -build-man
-```
-
-#### LTO Options
-
-By default, OpenROAD is built with link time optimizations enabled.
-This adds about 1 minute to compile times and improves the runtime
-by about 11%. If you would like to disable LTO pass
-`-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
-
-#### Build with Address Sanitizer
-
-To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
-Setting the `ASAN` variable to `ON` adds necessary compile and link options
-for using Address Sanitizer.
-
-```{note}
-Address Sanitizer adds instrumentation for detecting memory errors.
-Enabling this option will cause OpenROAD to run slower and consume more RAM.
-```
-
-#### System wide OpenROAD Install
-
-```{warning}
-Only use the following instructions if you know what you are doing.
-```
-
-``` shell
-sudo make install
-```
-
-The default install directory is `/usr/local`.
-To install in a different directory with CMake use:
-
-``` shell
-./etc/Build.sh -cmake-build -cmake="-DCMAKE_INSTALL_PREFIX=<prefix_path>"
-```
-
-Alternatively, you can use the `DESTDIR` variable with make.
-
-``` shell
-make -C build DESTDIR=<prefix_path> install
-```
+The deprecated CMake build, which will be removed on Nov. 1, 2026, is described in [Building with CMake](Build-CMake.md).

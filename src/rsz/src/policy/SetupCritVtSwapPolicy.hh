@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -25,8 +26,12 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
  private:
   bool swapVTCritCells(int& num_viols);
   sta::Pin* outputPin(sta::Instance* inst);
+  // Vertices a path of the selected path group can pass through, found
+  // forward from the group's startpoints; nullopt when no group is selected.
+  std::optional<std::unordered_set<sta::Vertex*>> findGroupFanout();
   void traverseFaninCone(
       sta::Vertex* endpoint,
+      const std::unordered_set<sta::Vertex*>* group_fanout,
       std::vector<std::pair<sta::Instance*, float>>& crit_insts,
       std::unordered_set<sta::Instance*>& crit_inst_set,
       std::unordered_set<sta::Vertex*>& visited,

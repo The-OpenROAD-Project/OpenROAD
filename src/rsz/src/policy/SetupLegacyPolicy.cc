@@ -90,7 +90,7 @@ bool SetupLegacyPolicy::initializeMainRepair(MainRepairState& main_state,
   main_state.max_end_count = std::max(
       static_cast<int>(violating_ends.size() * config_.repair_tns_end_percent),
       1);
-  main_state.initial_tns = sta_->totalNegativeSlack(max_);
+  main_state.initial_tns = target_collector_->totalNegativeSlack();
   main_state.prev_tns = main_state.initial_tns;
   main_state.num_viols = violating_ends.size();
   main_state.fix_rate_threshold = inc_fix_rate_threshold_;
@@ -192,10 +192,11 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     const bool log_change_summary = logger_->debugCheck(RSZ, "repair_setup", 3);
     float prev_tns_local = 0.0;
     if (log_change_summary) {
-      prev_tns_local = sta_->totalNegativeSlack(max_);
+      prev_tns_local = target_collector_->totalNegativeSlack();
     }
 
-    sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
+    sta::Path* end_path
+        = target_collector_->findWorstSlackPath(endpoint_state.end);
     const bool changed = repairPath(
         end_path, endpoint_state.end_slack, endpoint_state.force_single_repair);
     if (!changed) {
@@ -243,7 +244,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                                      endpoint_state.prev_end_slack,
                                      endpoint_state.prev_worst_slack);
     if (log_change_summary) {
-      const float new_tns = sta_->totalNegativeSlack(max_);
+      const float new_tns = target_collector_->totalNegativeSlack();
       debugPrint(
           logger_,
           RSZ,
@@ -312,7 +313,8 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  decreasing_slack_max_passes_);
     }
 
-    // Global guards keep the current endpoint state, then stop searching.
+    // Global guards stop searching and let post-loop cleanup finalize the
+    // endpoint journal.
     if (resizer_.overMaxArea()) {
       debugPrint(logger_,
                  RSZ,
@@ -321,7 +323,6 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  "{}{} Phase: Over max area, exiting",
                  phaseName(),
                  main_state.phase_marker);
-      acceptEndpointState(endpoint_state);
       break;
     }
     if (main_state.end_index == 1 && endpoint_state.worst_vertex != nullptr) {
@@ -333,12 +334,28 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
     ++endpoint_state.pass;
     if (config_.max_iterations > 0
         && main_state.opto_iteration >= config_.max_iterations) {
-      acceptEndpointState(endpoint_state);
       break;
     }
   }
 
-  acceptEndpointState(endpoint_state);
+  if (endpoint_state.journal_open) {
+    if (endpoint_state.decreasing_slack_passes > 0) {
+      debugPrint(
+          logger_,
+          RSZ,
+          "repair_setup",
+          2,
+          "{}{} Phase: Restoring best slack; endpoint slack = {}, "
+          "WNS = {}",
+          phaseName(),
+          main_state.phase_marker,
+          delayAsString(endpoint_state.prev_end_slack, kDelayDigits, sta_),
+          delayAsString(endpoint_state.prev_worst_slack, kDelayDigits, sta_));
+      restoreEndpointState(endpoint_state);
+    } else {
+      acceptEndpointState(endpoint_state);
+    }
+  }
 }
 
 void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
@@ -386,8 +403,8 @@ void SetupLegacyPolicy::runMainRepairLoop(const ViolatingEnds& violating_ends,
   if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
     sta::Slack final_wns;
     sta::Vertex* final_worst;
-    sta_->worstSlack(max_, final_wns, final_worst);
-    const float final_tns = sta_->totalNegativeSlack(max_);
+    target_collector_->worstSlack(final_wns, final_worst);
+    const float final_tns = target_collector_->totalNegativeSlack();
     debugPrint(logger_,
                RSZ,
                "repair_setup",
