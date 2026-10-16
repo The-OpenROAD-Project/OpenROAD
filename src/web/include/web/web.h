@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -68,6 +71,135 @@ BindAddressKind classifyBindAddress(std::string_view address);
 // nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
 std::string browserHostForBind(const boost::asio::ip::address& address);
 
+// Whether serve() launches a browser on the machine it runs on.  kAuto skips it
+// where that browser would not be the user's (issue #11389).
+enum class BrowserLaunch
+{
+  kAuto,
+  kAlways,
+  kNever
+};
+
+// What the launch policy looks at, read by serve() and passed in so the policy
+// stays testable.  Owned strings: a later getenv() may invalidate earlier ones.
+struct BrowserEnv
+{
+  bool ssh_session = false;     // $SSH_CONNECTION or $SSH_CLIENT set
+  bool batch_job = false;       // a scheduler's job id ($LSB_JOBID, ...) set
+  std::string display;          // $DISPLAY, X11 platforms only
+  std::string host_name;        // this machine, to read $DISPLAY against
+  std::string vscode_ipc_hook;  // $VSCODE_IPC_HOOK_CLI
+  std::string browser;          // $BROWSER
+  bool no_browser = false;      // $OPENROAD_NO_BROWSER
+  // $DISPLAY is a bare ":N" whose X socket this user owns (VNC, x2go).
+  bool own_local_display = false;
+  // $DISPLAY or $WAYLAND_DISPLAY set; always true off X11 platforms.
+  bool has_display = true;
+  // This machine's interface addresses, to read an IP in $DISPLAY against.
+  std::vector<boost::asio::ip::address> local_addresses;
+  bool wsl = false;  // $WSL_DISTRO_NAME: the browser is the Windows one
+};
+
+// True when $DISPLAY names an X server on another machine, or one ssh -X
+// forwards here (TCP, numbered from 10).  Otherwise socket displays (":N",
+// "unix:N"), loopback, and this machine's name or addresses are local.
+bool displayIsRemote(
+    std::string_view display,
+    std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses = {});
+
+// The X socket of a bare ":N" or "unix:N" display, or "" for any other form.
+std::string localDisplaySocket(std::string_view display);
+
+// True when $BROWSER is VS Code's helpers/browser.sh, which opens a URL where
+// the editor runs.
+bool launchesThroughBrowserEnv(const BrowserEnv& env);
+
+// Why serve() is not launching a browser, so the message can say it without
+// restating the policy.
+enum class LaunchSkip
+{
+  kNone,
+  kFlag,           // -no_browser / -web_no_browser
+  kOptOut,         // OPENROAD_NO_BROWSER
+  kSshSession,     // driven from another machine over ssh
+  kBatchJob,       // a scheduler put this process on a farm host
+  kRemoteDisplay,  // $DISPLAY belongs to another machine (issue #11389)
+  kNoDisplay       // nowhere to draw at all
+};
+
+// Apply the kAuto policy, and say which clause decided.  kNone means launch.
+LaunchSkip browserLaunchSkipReason(BrowserLaunch mode, const BrowserEnv& env);
+
+// The reason, as a clause that reads inside "Not launching a browser here
+// (...)".  Empty for kNone.
+std::string_view browserSkipReasonText(LaunchSkip reason);
+
+// Parse the mode name web_server_cmd passes.  Anything unrecognized is kAuto:
+// the mode never keeps the server from starting.
+BrowserLaunch browserLaunchFromString(std::string_view mode);
+
+// How to reach the viewer from another machine, printed with WEB-0001: a tunnel
+// for a loopback bind, and the url to open through it when it differs; this
+// host's url for a wildcard one.  Both urls end in `target`.
+std::string reachabilityHint(BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             std::string_view host,
+                             uint16_t port,
+                             std::string_view target);
+
+// A fresh 128-bit hex token, gating every request that can reach the Tcl
+// interpreter (issue #11389).  Empty when the entropy source cannot be read.
+std::string generateAuthToken();
+
+// True if the `token` of a parsed query matches `expected`, compared in
+// constant time.  An empty `expected` matches nothing.
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  std::string_view expected);
+
+// The same check straight off a request target, for the callers that have no
+// parsed query of their own (the WebSocket upgrade).
+bool requestTokenAllowed(std::string_view target, std::string_view expected);
+
+// The redirect for a redeemed ticket: the request's raw query with `ticket`
+// swapped for `token`, so viewer options like ?mergetiles=0 survive.
+std::string authRedirectTarget(std::string_view target, std::string_view token);
+
+// One server session's credentials: the token every gated request carries, and
+// a one-shot ticket that keeps the token off the browser's command line.
+class SessionAuth
+{
+ public:
+  SessionAuth(std::string token,
+              std::string ticket,
+              std::chrono::seconds ticket_ttl);
+
+  const std::string& token() const { return token_; }
+  const std::string& ticket() const { return ticket_; }
+
+  // True for the first caller that presents the live ticket, and only then:
+  // redeeming spends it, and an expired ticket is already spent.
+  bool redeemTicket(std::string_view candidate);
+
+  // Spend the ticket unredeemed: once its launch failed or was skipped, no
+  // browser of ours will ever present it.
+  void revokeTicket();
+
+  // True for the first refused WebSocket upgrade of this session only.
+  bool firstRejection() { return !rejected_.exchange(true); }
+
+ private:
+  const std::string token_;
+  const std::string ticket_;
+  std::atomic<bool> spent_{false};
+  std::atomic<bool> rejected_{false};
+  const std::chrono::steady_clock::time_point expiry_;
+};
+
+// How long a launch ticket stays redeemable.  Long enough for a cold browser
+// start, short enough that what `ps` saw stops working soon after.
+inline constexpr std::chrono::seconds kTicketTtl{300};
+
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.
 inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
@@ -95,7 +227,8 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight);
+    int max_in_flight,
+    std::shared_ptr<SessionAuth> auth);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -125,16 +258,19 @@ class WebServer
   // Start the web server on the given port, listening on `bind_address` — an
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
-  // a no-op if the server is already running.
-  void serve(int port, const std::string& bind_address);
+  // a no-op if the server is already running.  Logs the reason and throws if
+  // the server cannot start.
+  void serve(int port, const std::string& bind_address, BrowserLaunch launch);
 
   // For -web startup scripts, called on the main thread before they run.
-  // Calls serve(port, bind_address), so the browser follows the scripts'
-  // log and the scripts see web::Gui::enabled() (e.g. global_placement_debug
-  // engages, as under -gui).  Until endStartupScripts(), browser requests
-  // (Tcl, tiles, selection, search indexing) run only while a script is
-  // paused, and are answered "busy" otherwise; see ScriptGate.
-  void serveDuringStartupScripts(int port, const std::string& bind_address);
+  // Calls serve(port, bind_address, launch), so the browser follows the
+  // scripts' log and the scripts see web::Gui::enabled() (e.g.
+  // global_placement_debug engages, as under -gui).  Until endStartupScripts(),
+  // browser requests (Tcl, tiles, selection, search indexing) run only while a
+  // script is paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port,
+                                 const std::string& bind_address,
+                                 BrowserLaunch launch);
 
   // Call on the main thread once the startup scripts are done: lets browser
   // requests in, or, when `exiting`, turns them away so the exit can join

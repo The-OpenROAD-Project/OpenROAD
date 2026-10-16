@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { applyArrowStep, boundsEqual, computeBoundsTransforms, computeScaleBar,
          cssColorToHex, fittedTileSizeCss, installWheelPanning, isValidHexColor,
          kArrowStepDefault, kZoomMargin, maxUsefulZoom, MAX_TILE_ZOOM,
-         niceRoundParts }
+         niceRoundParts, websocketUrlFrom }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -537,5 +537,48 @@ describe('applyArrowStep', () => {
         assert.doesNotThrow(() => applyArrowStep(undefined, 100));
         assert.doesNotThrow(() => applyArrowStep({}, 100));
         assert.doesNotThrow(() => applyArrowStep({ keyboard: {} }, 100));
+    });
+});
+
+describe('websocketUrlFrom', () => {
+    // A page served over https may not open a plain ws:// socket.
+    it('uses wss when the page came over https', () => {
+        assert.equal(websocketUrlFrom({ protocol: 'https:', host: 'h:1',
+                                        search: '?token=x' }),
+                     'wss://h:1/ws?token=x');
+    });
+
+    // The server gates the socket on the token it put in the page url
+    // (issue #11389), so the page has to hand it back.
+    it('carries the token from the page url', () => {
+        assert.equal(websocketUrlFrom({ host: 'farm-42:8080',
+                                        search: '?token=deadbeef' }),
+                     'ws://farm-42:8080/ws?token=deadbeef');
+    });
+
+    it('keeps the token when other options share the query', () => {
+        assert.equal(websocketUrlFrom({ host: 'localhost:8080',
+                                        search: '?mergetiles=0&token=abc' }),
+                     'ws://localhost:8080/ws?token=abc');
+    });
+
+    // Decoded on the way in and re-encoded on the way out, so the server
+    // reads back the bytes the page was given.
+    it('escapes a token that needs it', () => {
+        assert.equal(websocketUrlFrom({ host: 'h:1', search: '?token=a%2Bb' }),
+                     'ws://h:1/ws?token=a%2Bb');
+    });
+
+    // A page opened without a token still connects and is refused by the
+    // server; building a broken url here would hide that behind a typo.
+    it('omits the query when there is no token', () => {
+        assert.equal(websocketUrlFrom({ host: 'h:1', search: '' }),
+                     'ws://h:1/ws');
+        assert.equal(websocketUrlFrom({ host: 'h:1' }), 'ws://h:1/ws');
+    });
+
+    it('falls back to the default host when there is none', () => {
+        assert.equal(websocketUrlFrom({ host: '', search: '?token=x' }),
+                     'ws://localhost:8080/ws?token=x');
     });
 });

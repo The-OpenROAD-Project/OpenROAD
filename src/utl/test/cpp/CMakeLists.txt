@@ -91,3 +91,15 @@ gtest_discover_tests(TestCsvParser
 add_dependencies(build_and_test
   TestCsvParser
 )
+
+add_executable(TestRandomBytes TestRandomBytes.cpp)
+
+target_link_libraries(TestRandomBytes ${TEST_LIBS})
+
+gtest_discover_tests(TestRandomBytes
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_dependencies(build_and_test
+  TestRandomBytes
+)
