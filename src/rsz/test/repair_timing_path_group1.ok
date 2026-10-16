@@ -73,9 +73,9 @@ Path Type: max
             0.300   data required time
 -----------------------------------------------------------
             0.300   data required time
-           -0.481   data arrival time
+           -0.477   data arrival time
 -----------------------------------------------------------
-           -0.181   slack (VIOLATED)
+           -0.177   slack (VIOLATED)
 
 
 [INFO RSZ-0228] Created path group 'reg2reg'.
