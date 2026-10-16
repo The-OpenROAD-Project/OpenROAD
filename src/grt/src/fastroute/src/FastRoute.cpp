@@ -2325,7 +2325,6 @@ NetRouteMap FastRouteCore::run()
   float overflow_reduction_percent = -1;
   // Iterations since the minimum overflow last improved.
   int minofl_stagnant = 0;
-  // Loop parameters that the iterations change, restored on a soft-NDR restart
   const int initial_thresh_m = THRESH_M;
   const int initial_via = VIA;
   const float initial_logistic_coef = logistic_coef;
@@ -2336,10 +2335,8 @@ NetRouteMap FastRouteCore::run()
                                  "timer",
                                  1,
                                  "Congestion iterations: {}");
-    // Save the routing before the overflow iterations when an NDR net can be
-    // demoted. The routes found while the NDR nets are congested can have
-    // detours that the restarted iterations cannot recover from, so the first
-    // soft-NDR demotion restarts the iterations from this routing.
+    // Restored by the first soft-NDR demotion, discarding the detours found
+    // while the NDR nets were congested
     std::vector<StTree> initial_sttrees;
     if (has_non_soft_ndr_nets_ && total_overflow_ > 0
         && overflow_iterations_ > 0) {
@@ -2603,11 +2600,8 @@ NetRouteMap FastRouteCore::run()
           L = 1;
 
           if (!initial_sttrees.empty()) {
-            // The first demotion restarts the loop from the routing saved
-            // before the first iteration, discarding the routes found while
-            // the NDR nets were congested. Later demotions keep the routing of
-            // the restarted iterations: restoring it again would discard the
-            // progress made since the first demotion.
+            // Only the first demotion restores the initial routing, so later
+            // demotions keep the progress made since the first one
             restoreInitialRoutes(std::move(initial_sttrees));
             past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
             debugPrint(logger_,
@@ -2623,8 +2617,6 @@ NetRouteMap FastRouteCore::run()
             // The best routing saved by copyRS predates the restart
             freeRR();
 
-            // Reset the remaining loop parameters to their values before the
-            // first iteration
             THRESH_M = initial_thresh_m;
             VIA = initial_via;
             logistic_coef = initial_logistic_coef;
@@ -2801,14 +2793,10 @@ std::vector<StTree> FastRouteCore::saveInitialRoutes() const
   return initial_sttrees;
 }
 
-// Restore the routes saved by saveInitialRoutes and clear the congestion
-// history, so the overflow iterations restart from the routing they started
-// with. The usage of every net is re-added with its current edge cost, so the
-// nets demoted to soft-NDR since the routes were saved use the unit cost.
 void FastRouteCore::restoreInitialRoutes(std::vector<StTree> initial_sttrees)
 {
-  // Remove the usage of all the current routes first, so the NDR nets reserve
-  // capacity against the restored routes only
+  // Remove the usage of every net before re-adding any, so the NDR nets
+  // reserve capacity against the restored routes only
   for (const int net_id : net_ids_) {
     updatePlanarNetUsage(
         sttrees_[net_id], nets_[net_id], -nets_[net_id]->getEdgeCost());
@@ -2819,12 +2807,9 @@ void FastRouteCore::restoreInitialRoutes(std::vector<StTree> initial_sttrees)
     sttrees_[net_id] = std::move(initial_sttrees[idx]);
     updatePlanarNetUsage(
         sttrees_[net_id], nets_[net_id], nets_[net_id]->getEdgeCost());
-    // Clear the critical flags, which the overflow iterations set from the
-    // detours of the discarded routes
     nets_[net_id]->setIsCritical(false);
   }
 
-  // Reset the congestion history, as done before the first overflow iteration
   graph2d_.InitLastUsage(1);
 }
 
