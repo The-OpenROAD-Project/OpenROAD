@@ -43,6 +43,9 @@ cc_library(
         "src/RepairHold.hh",
         "src/RepairTargetCollector.cc",
         "src/Resizer.cc",
+        "src/ResizerObserver.hh",
+        "src/SkewBudget.cc",
+        "src/SkewBudget.hh",
         "src/SwapArithModules.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
@@ -169,6 +172,8 @@ cc_library(
         "//src/utl",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
         "@spdlog",
     ],
 )
