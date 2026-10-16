@@ -197,6 +197,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
       const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
       int threads,
       bool partial);
+  // Make the parasitic placeholders for every driver and net so threads
+  // only look up sta::Parasitics entries, which are not locked.
+  void ensureParasiticsForThreads();
   void clearParasitics();
 
   ////////////////////////////////////////////////////////////////
@@ -242,7 +245,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // Resolve one WireRC category for the current technology; a category left
   // unset for a tech falls back to the defaults (nullptr entry) independently.
   template <typename T>
-  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
+  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::* category) const;
   void ensureParasitics();
   bool isSkipPin(const sta::Pin* pin) const;
   bool hasIdealClocks(const sta::Mode* mode) const;
