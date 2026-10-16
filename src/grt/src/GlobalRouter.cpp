@@ -2907,6 +2907,7 @@ void GlobalRouter::initGridAndNets()
   }
   block_ = db_->getChip()->getBlock();
   routes_.clear();
+  initial_steiner_wl_.clear();
   nets_to_route_.clear();
   for (auto [ignored, net] : db_net_map_) {
     delete net;
@@ -4722,6 +4723,21 @@ static double detourRatio(const int64_t initial_wl, const int64_t final_wl)
     return static_cast<double>(final_wl) / initial_wl;
   }
   return final_wl == 0 ? 1.0 : std::numeric_limits<double>::infinity();
+}
+
+// Routes read from guides or segments have no Steiner wirelength yet.
+bool GlobalRouter::hasInitialSteinerWirelengths()
+{
+  block_ = db_->getChip()->getBlock();
+  loadGuidesFromDB();
+  for (const auto& [db_net, route] : routes_) {
+    auto it = db_net_map_.find(db_net);
+    if (it != db_net_map_.end() && it->second != nullptr
+        && !initial_steiner_wl_.contains(db_net)) {
+      updateInitialSteinerWirelength(it->second);
+    }
+  }
+  return !initial_steiner_wl_.empty();
 }
 
 void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)

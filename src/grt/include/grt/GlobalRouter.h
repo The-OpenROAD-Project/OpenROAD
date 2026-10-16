@@ -355,10 +355,7 @@ class GlobalRouter
   // Read-only reporting; does not alter routing.
   void reportNetDetour(odb::dbNet* net, const char* file_name);
   void reportNetDetours(int top_n, const char* file_name);
-  bool hasInitialSteinerWirelengths() const
-  {
-    return !initial_steiner_wl_.empty();
-  }
+  bool hasInitialSteinerWirelengths();
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
   // Report wire resistance
