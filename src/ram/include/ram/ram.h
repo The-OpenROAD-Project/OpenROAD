@@ -135,7 +135,7 @@ class RamGen
                               int w_ports);
 
   double reportTiming();
-  void reportPower();
+  void reportPower(double clock_period, int word_size);
 
  private:
   void findMasters();

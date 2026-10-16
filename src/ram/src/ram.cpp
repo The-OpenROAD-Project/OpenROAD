@@ -2104,7 +2104,7 @@ double RamGen::reportTiming()
     return pins;
   };
 
-  auto collect_all_outputs = [&]() -> sta::PinSet* {
+  auto collect_endpoints = [&]() -> sta::PinSet* {
     auto* pins = new sta::PinSet(network_);
     for (auto* inst : block_->getInsts()) {
       for (auto* iterm : inst->getITerms()) {
@@ -2113,7 +2113,7 @@ double RamGen::reportTiming()
           continue;
         }
         auto* lp = network_->libertyPort(pin);
-        if (lp && lp->direction()->isAnyOutput()) {
+        if (lp && (lp->direction()->isAnyOutput() || lp->isClockGateEnable())) {
           pins->insert(pin);
         }
       }
@@ -2137,7 +2137,7 @@ double RamGen::reportTiming()
                                 sta_->cmdSdc());
 
   sta::ExceptionTo* setup_to
-      = sta_->makeExceptionTo(collect_all_outputs(),
+      = sta_->makeExceptionTo(collect_endpoints(),
                               nullptr,
                               nullptr,
                               sta::RiseFallBoth::riseFall(),
@@ -2180,7 +2180,7 @@ double RamGen::reportTiming()
                                 sta_->cmdSdc());
 
   sta::ExceptionTo* hold_to
-      = sta_->makeExceptionTo(collect_all_outputs(),
+      = sta_->makeExceptionTo(collect_endpoints(),
                               nullptr,
                               nullptr,
                               sta::RiseFallBoth::riseFall(),
@@ -2238,7 +2238,7 @@ double RamGen::reportTiming()
   return time_unit->staToUser(setup_delay);
 }
 
-void RamGen::reportPower()
+void RamGen::reportPower(const double clock_period, const int word_size)
 {
   sta_->updateTiming(false);
 
@@ -2248,9 +2248,21 @@ void RamGen::reportPower()
   sta::Unit* power_unit = sta_->units()->powerUnit();
   logger_->info(RAM,
                 46,
-                "RAM estimated power: {} {}",
+                "RAM estimated power at maximum frequency: {} {}",
                 power_unit->asString(total.total()),
                 power_unit->scaleAbbrevSuffix());
+
+  if (clock_period <= 0.0 || word_size <= 0) {
+    return;
+  }
+  const double period = sta_->units()->timeUnit()->userToSta(clock_period);
+  const double energy_per_bit = total.total() * period / word_size;
+  const sta::Unit energy_unit(1e-15F, "J", 3);
+  logger_->info(RAM,
+                48,
+                "RAM estimated energy efficiency: {} {}/bit",
+                energy_unit.asString(energy_per_bit),
+                energy_unit.scaleAbbrevSuffix());
 }
 
 }  // namespace ram
