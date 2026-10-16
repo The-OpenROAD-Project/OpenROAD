@@ -786,6 +786,9 @@ TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
   EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
   // X11UseLocalhost no: this host's own name.
   EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+  // A container reaching the forwarded display on the machine it runs on.
+  EXPECT_TRUE(displayIsRemote("host.docker.internal:10.0", "a1b2c3d4"));
+  EXPECT_TRUE(displayIsRemote("host.containers.internal:10.0", "a1b2c3d4"));
 }
 
 TEST(DisplayIsRemote, ThisMachineByEitherName)
@@ -1050,14 +1053,16 @@ TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
 TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
 {
   // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
-  // 127.0.0.1, where nothing is bound.
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.2"),
                              "farm-42",
                              8080,
                              "/?token=abc"),
             "To reach it from another machine, forward the port: ssh -L "
-            "8080:127.0.0.2:8080 farm-42");
+            "8080:127.0.0.2:8080 farm-42, then open "
+            "http://localhost:8080/?token=abc");
 }
 
 TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)

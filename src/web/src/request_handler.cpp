@@ -533,11 +533,9 @@ bool displayIsRemote(
   if (host.size() >= 2 && host.front() == '[' && host.back() == ']') {
     host = host.substr(1, host.size() - 2);
   }
-  // A leading '/' is a socket path on this machine; XQuartz sets one.  The
-  // container names are the machine the container runs on.
-  if (host.empty() || host.front() == '/' || boost::beast::iequals(host, "unix")
-      || boost::beast::iequals(host, "host.docker.internal")
-      || boost::beast::iequals(host, "host.containers.internal")) {
+  // A leading '/' is a socket path on this machine; XQuartz sets one.
+  if (host.empty() || host.front() == '/'
+      || boost::beast::iequals(host, "unix")) {
     return false;
   }
   // A local X server is reached through its socket; a TCP display on this
@@ -545,7 +543,10 @@ bool displayIsRemote(
   unsigned number = 0;
   const bool forwarded = parseDisplayNumber(display.substr(colon + 1), number)
                          && number >= kSshDisplayOffset;
-  if (boost::beast::iequals(host, "localhost")) {
+  // The container names are the machine the container runs on.
+  if (boost::beast::iequals(host, "localhost")
+      || boost::beast::iequals(host, "host.docker.internal")
+      || boost::beast::iequals(host, "host.containers.internal")) {
     return forwarded;
   }
   boost::system::error_code ec;
@@ -667,9 +668,15 @@ std::string reachabilityHint(const BindAddressKind kind,
   if (kind == BindAddressKind::kLoopback) {
     // The far end of the tunnel is the address the listener is actually on:
     // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
-    return "To reach it from another machine, forward the port: ssh -L "
-           + port_str + ":" + browserHostForBind(address) + ":" + port_str + " "
-           + std::string(host);
+    const std::string far_end = browserHostForBind(address);
+    std::string hint
+        = "To reach it from another machine, forward the port: ssh -L "
+          + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
+    // ssh listens on localhost there, not on the address in the url above.
+    if (far_end != "localhost") {
+      hint += ", then open http://localhost:" + port_str + std::string(target);
+    }
+    return hint;
   }
   if (address.is_unspecified()) {
     // Bound to every interface, but browserHostForBind() had no address to

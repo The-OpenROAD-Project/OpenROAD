@@ -91,7 +91,8 @@ started on the remote host still wants the profile in `$HOME` that the browser
 on the workstation already holds — with a shared home it refuses to start at
 all. Pass `-browser` to try anyway. The forwarded display is recognised even
 where the ssh variables did not follow, as inside `docker_shell` or under
-`sudo`: sshd numbers it from `localhost:10`.
+`sudo`: sshd numbers it from `localhost:10`, or `host.docker.internal:10`
+inside a container.
 
 Two kinds of ssh session do launch, because the browser they reach is the
 user's own:
