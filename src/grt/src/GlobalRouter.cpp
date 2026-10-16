@@ -4640,8 +4640,9 @@ void GlobalRouter::computeWirelength()
 // Build the initial Steiner topology for a net using the same STT builder that
 // FastRoute uses, and return its total wirelength in dbu. Pin positions are the
 // on-grid (track-snapped) positions in dbu, so the result is directly
-// comparable with the final routed wirelength from computeNetWirelength().
-// Read-only: this does not feed the routing engine.
+// comparable with the final routed wirelength from
+// computeNetPlanarWirelength(). Read-only: this does not feed the routing
+// engine.
 int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 {
   std::vector<Pin>& pins = net->getPins();
@@ -4671,6 +4672,25 @@ int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 
   stt::Tree tree = stt_builder_->makeSteinerTree(x, y, driver_index);
   return tree.length;
+}
+
+// Final routed wirelength of a net counting only the planar length of its
+// segments. Unlike computeNetWirelength(), no per-segment tile is added, so the
+// result is comparable with the initial Steiner wirelength (a route matching
+// the Steiner tree has a detour ratio of 1).
+int GlobalRouter::computeNetPlanarWirelength(odb::dbNet* db_net)
+{
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return 0;
+  }
+  int net_wl = 0;
+  for (const GSegment& segment : iter->second) {
+    net_wl += std::abs(segment.final_x - segment.init_x)
+              + std::abs(segment.final_y - segment.init_y);
+  }
+
+  return net_wl;
 }
 
 void GlobalRouter::computeInitialSteinerWirelengths(
@@ -4707,7 +4727,7 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
   }
 
   const int64_t initial_wl = init_iter->second;
-  const int64_t final_wl = computeNetWirelength(net);
+  const int64_t final_wl = computeNetPlanarWirelength(net);
   const int64_t delta = final_wl - initial_wl;
   const double ratio
       = (initial_wl > 0) ? static_cast<double>(final_wl) / initial_wl : 1.0;
@@ -4762,7 +4782,7 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
     if (!routes_.contains(net)) {
       continue;
     }
-    const int64_t final_wl = computeNetWirelength(net);
+    const int64_t final_wl = computeNetPlanarWirelength(net);
     // Only nets with a meaningful (multi-pin) initial topology are useful.
     if (initial_wl <= 0) {
       continue;
