@@ -986,164 +986,168 @@ void tmg_conn::removeWireLoops()
 
 void tmg_conn::identifyCandidateSections()
 {
-  for (int terminal_index = 0; terminal_index < terminals_.size();
-       terminal_index++) {
-    CandidateSections& candidate_sections = candidate_sections_[terminal_index];
-    int candidate_section_count = 0;
-    Terminal* x = &terminals_[terminal_index];
-    if (x->iterm) {
-      dbMTerm* mterm = x->iterm->getMTerm();
-      const dbTransform transform = x->iterm->getInst()->getTransform();
-      for (dbMPin* mpin : mterm->getMPins()) {
-        dbSet<dbBox> boxes = mpin->getGeometry();
-        for (int ipass = 0; ipass < 2; ipass++) {
-          for (dbBox* box : boxes) {
-            if (ipass == 1 && box->isVia()) {
-              dbTechVia* tv = box->getTechVia();
-              const int rt_t = tv->getTopLayer()->getRoutingLevel();
-              if (rt_t <= 1) {
-                continue;
-              }
-              Rect rect = box->getBox();
-              transform.apply(rect);
-              shape_search_->searchStart(rt_t, rect, ShapeSearch::Type::kPin);
-              int klast = -1;
-              int k;
-              while (shape_search_->searchNext(&k)) {
-                if (k != klast) {
-                  klast = k;
-                  int ii;
-                  for (ii = 0; ii < candidate_section_count; ii++) {
-                    const CandidateSection& candidate_section
-                        = candidate_sections[ii];
-                    if (k == candidate_section.index) {
-                      break;
-                    }
-                  }
-                  if (ii < candidate_section_count) {
-                    continue;
-                  }
-                  if (candidate_section_count == kMaxCandidateSections) {
-                    break;
-                  }
-                  CandidateSection& candidate_section
-                      = candidate_sections[candidate_section_count];
-                  candidate_section.index = k;
-                  candidate_section.terminal_box = rect;
-                  candidate_section.routing_level = rt_t;
-                  candidate_section_count++;
-                }
-              }
-              const int rt_b = tv->getBottomLayer()->getRoutingLevel();
-              if (rt_b == 0) {
-                continue;
-              }
-              shape_search_->searchStart(rt_b, rect, ShapeSearch::Type::kPin);
-              klast = -1;
-              while (shape_search_->searchNext(&k)) {
-                if (k != klast) {
-                  klast = k;
-                  int ii;
-                  for (ii = 0; ii < candidate_section_count; ii++) {
-                    const CandidateSection& candidate_section
-                        = candidate_sections[ii];
-                    if (k == candidate_section.index) {
-                      break;
-                    }
-                  }
-                  if (ii < candidate_section_count) {
-                    continue;
-                  }
-                  if (candidate_section_count == kMaxCandidateSections) {
-                    break;
-                  }
-                  CandidateSection& candidate_section
-                      = candidate_sections[candidate_section_count];
-                  candidate_section.index = k;
-                  candidate_section.terminal_box = rect;
-                  candidate_section.routing_level = rt_b;
-                  candidate_section_count++;
-                }
-              }
-            } else if (ipass == 0 && !box->isVia()) {
-              const int rt = box->getTechLayer()->getRoutingLevel();
-              Rect rect = box->getBox();
-              transform.apply(rect);
-              shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
-              int klast = -1;
-              int k;
-              while (shape_search_->searchNext(&k)) {
-                if (k != klast) {
-                  klast = k;
-                  int ii;
-                  for (ii = 0; ii < candidate_section_count; ii++) {
-                    const CandidateSection& candidate_section
-                        = candidate_sections[ii];
-                    if (k == candidate_section.index) {
-                      break;
-                    }
-                  }
-                  if (ii < candidate_section_count
-                      && candidate_section_count >= 8) {
-                    continue;
-                  }
-                  if (candidate_section_count == kMaxCandidateSections) {
-                    break;
-                  }
-                  CandidateSection& candidate_section
-                      = candidate_sections[candidate_section_count];
-                  candidate_section.index = k;
-                  candidate_section.terminal_box = rect;
-                  candidate_section.routing_level = rt;
-                  candidate_section_count++;
-                }
-              }
+  for (int i = 0; i < terminals_.size(); i++) {
+    identifyCandidateSections(i);
+  }
+}
+
+void tmg_conn::identifyCandidateSections(const int terminal_index)
+{
+  CandidateSections& candidate_sections = candidate_sections_[terminal_index];
+  int candidate_section_count = 0;
+  Terminal* x = &terminals_[terminal_index];
+  if (x->iterm) {
+    dbMTerm* mterm = x->iterm->getMTerm();
+    const dbTransform transform = x->iterm->getInst()->getTransform();
+    for (dbMPin* mpin : mterm->getMPins()) {
+      dbSet<dbBox> boxes = mpin->getGeometry();
+      for (int ipass = 0; ipass < 2; ipass++) {
+        for (dbBox* box : boxes) {
+          if (ipass == 1 && box->isVia()) {
+            dbTechVia* tv = box->getTechVia();
+            const int rt_t = tv->getTopLayer()->getRoutingLevel();
+            if (rt_t <= 1) {
+              continue;
             }
-          }
-        }
-      }  // mpins
-    } else {
-      // bterm
-      dbShape pin;
-      if (x->bterm->getFirstPin(pin)) {
-        if (pin.isVia()) {
-          // TODO
-        } else {
-          const int rt = pin.getTechLayer()->getRoutingLevel();
-          const Rect rect = x->sliced_bpin_box.value_or(pin.getBox());
-          shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
-          int klast = -1;
-          int k;
-          while (shape_search_->searchNext(&k)) {
-            if (k != klast) {
-              klast = k;
-              int ii;
-              for (ii = 0; ii < candidate_section_count; ii++) {
-                const CandidateSection& candidate_section
-                    = candidate_sections[ii];
-                if (k == candidate_section.index) {
+            Rect rect = box->getBox();
+            transform.apply(rect);
+            shape_search_->searchStart(rt_t, rect, ShapeSearch::Type::kPin);
+            int klast = -1;
+            int k;
+            while (shape_search_->searchNext(&k)) {
+              if (k != klast) {
+                klast = k;
+                int ii;
+                for (ii = 0; ii < candidate_section_count; ii++) {
+                  const CandidateSection& candidate_section
+                      = candidate_sections[ii];
+                  if (k == candidate_section.index) {
+                    break;
+                  }
+                }
+                if (ii < candidate_section_count) {
+                  continue;
+                }
+                if (candidate_section_count == kMaxCandidateSections) {
                   break;
                 }
+                CandidateSection& candidate_section
+                    = candidate_sections[candidate_section_count];
+                candidate_section.index = k;
+                candidate_section.terminal_box = rect;
+                candidate_section.routing_level = rt_t;
+                candidate_section_count++;
               }
-              if (ii < candidate_section_count) {
-                continue;
+            }
+            const int rt_b = tv->getBottomLayer()->getRoutingLevel();
+            if (rt_b == 0) {
+              continue;
+            }
+            shape_search_->searchStart(rt_b, rect, ShapeSearch::Type::kPin);
+            klast = -1;
+            while (shape_search_->searchNext(&k)) {
+              if (k != klast) {
+                klast = k;
+                int ii;
+                for (ii = 0; ii < candidate_section_count; ii++) {
+                  const CandidateSection& candidate_section
+                      = candidate_sections[ii];
+                  if (k == candidate_section.index) {
+                    break;
+                  }
+                }
+                if (ii < candidate_section_count) {
+                  continue;
+                }
+                if (candidate_section_count == kMaxCandidateSections) {
+                  break;
+                }
+                CandidateSection& candidate_section
+                    = candidate_sections[candidate_section_count];
+                candidate_section.index = k;
+                candidate_section.terminal_box = rect;
+                candidate_section.routing_level = rt_b;
+                candidate_section_count++;
               }
-              if (candidate_section_count == kMaxCandidateSections) {
-                break;
+            }
+          } else if (ipass == 0 && !box->isVia()) {
+            const int rt = box->getTechLayer()->getRoutingLevel();
+            Rect rect = box->getBox();
+            transform.apply(rect);
+            shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
+            int klast = -1;
+            int k;
+            while (shape_search_->searchNext(&k)) {
+              if (k != klast) {
+                klast = k;
+                int ii;
+                for (ii = 0; ii < candidate_section_count; ii++) {
+                  const CandidateSection& candidate_section
+                      = candidate_sections[ii];
+                  if (k == candidate_section.index) {
+                    break;
+                  }
+                }
+                if (ii < candidate_section_count
+                    && candidate_section_count >= 8) {
+                  continue;
+                }
+                if (candidate_section_count == kMaxCandidateSections) {
+                  break;
+                }
+                CandidateSection& candidate_section
+                    = candidate_sections[candidate_section_count];
+                candidate_section.index = k;
+                candidate_section.terminal_box = rect;
+                candidate_section.routing_level = rt;
+                candidate_section_count++;
               }
-              CandidateSection& candidate_section
-                  = candidate_sections[candidate_section_count];
-              candidate_section.index = k;
-              candidate_section.terminal_box = rect;
-              candidate_section.routing_level = rt;
-              candidate_section_count++;
             }
           }
         }
       }
+    }  // mpins
+  } else {
+    // bterm
+    dbShape pin;
+    if (x->bterm->getFirstPin(pin)) {
+      if (pin.isVia()) {
+        // TODO
+      } else {
+        const int rt = pin.getTechLayer()->getRoutingLevel();
+        const Rect rect = x->sliced_bpin_box.value_or(pin.getBox());
+        shape_search_->searchStart(rt, rect, ShapeSearch::Type::kPin);
+        int klast = -1;
+        int k;
+        while (shape_search_->searchNext(&k)) {
+          if (k != klast) {
+            klast = k;
+            int ii;
+            for (ii = 0; ii < candidate_section_count; ii++) {
+              const CandidateSection& candidate_section
+                  = candidate_sections[ii];
+              if (k == candidate_section.index) {
+                break;
+              }
+            }
+            if (ii < candidate_section_count) {
+              continue;
+            }
+            if (candidate_section_count == kMaxCandidateSections) {
+              break;
+            }
+            CandidateSection& candidate_section
+                = candidate_sections[candidate_section_count];
+            candidate_section.index = k;
+            candidate_section.terminal_box = rect;
+            candidate_section.routing_level = rt;
+            candidate_section_count++;
+          }
+        }
+      }
     }
-    candidate_section_count_[terminal_index] = candidate_section_count;
   }
+  candidate_section_count_[terminal_index] = candidate_section_count;
 }
 
 void tmg_conn::identifyTerminalWirePoints()

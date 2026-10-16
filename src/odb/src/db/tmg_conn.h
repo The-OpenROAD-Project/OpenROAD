@@ -195,6 +195,7 @@ class tmg_conn
   void removeShortLoops();
   void removeWireLoops();
   void identifyCandidateSections();
+  void identifyCandidateSections(int terminal_index);
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
