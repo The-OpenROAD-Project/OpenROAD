@@ -469,6 +469,7 @@ class GlobalRouter
   // builder) for each net before overflow-removal routing runs. Read-only,
   // does not affect routing.
   void computeInitialSteinerWirelengths(const std::vector<Net*>& nets);
+  void updateInitialSteinerWirelength(Net* net);
   int computeNetInitialSteinerWirelength(Net* net);
   int computeNetPlanarWirelength(odb::dbNet* db_net);
   std::vector<Pin*> getAllPorts();

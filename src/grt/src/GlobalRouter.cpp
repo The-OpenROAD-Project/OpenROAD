@@ -522,6 +522,8 @@ void GlobalRouter::globalRoute(bool save_guides)
       if (verbose_) {
         reportResources();
       }
+      // Also captures the initial Steiner wirelength per net for the detour
+      // metric, once the pins are synced to CUGR's access points.
       findRoutingCugr(nets, /*incremental=*/false);
     } else {
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
@@ -1177,6 +1179,9 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
     }
+    // After the pins are rebuilt and, for guide-restored nets, moved to the
+    // covered access points.
+    updateInitialSteinerWirelength(net);
     net->setIsMergedNet(false);
     net->setDirtyNet(false);
     net->clearLastPinPositions();
@@ -1780,6 +1785,7 @@ void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
       routes_[db_net] = std::move(route);
     }
     updatePinAccessPoints(net, db_net);
+    updateInitialSteinerWirelength(net);
   }
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
@@ -4696,15 +4702,20 @@ int GlobalRouter::computeNetPlanarWirelength(odb::dbNet* db_net)
 void GlobalRouter::computeInitialSteinerWirelengths(
     const std::vector<Net*>& nets)
 {
-  initial_steiner_wl_.clear();
   for (Net* net : nets) {
-    if (net == nullptr) {
-      continue;
+    if (net != nullptr) {
+      updateInitialSteinerWirelength(net);
     }
-    odb::dbNet* db_net = net->getDbNet();
-    const int wl = computeNetInitialSteinerWirelength(net);
-    initial_steiner_wl_[db_net] = wl;
   }
+}
+
+// Refresh one net's initial Steiner wirelength from its current on-grid pin
+// positions. Called whenever incremental routing rebuilds or re-syncs a net's
+// pins, so the other nets' values are kept.
+void GlobalRouter::updateInitialSteinerWirelength(Net* net)
+{
+  initial_steiner_wl_[net->getDbNet()]
+      = computeNetInitialSteinerWirelength(net);
 }
 
 void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
@@ -5387,6 +5398,7 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   // Drop the destroyed net from the dirty set for both routers so
   // updateDirtyRoutes never dereferences a dangling dbNet.
   dirty_nets_.erase(db_net);
+  initial_steiner_wl_.erase(db_net);
 
   if (use_cugr_) {
     cugr_->removeNet(db_net);
@@ -7115,7 +7127,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
   // Restored nets keep their guide-derived route; sync pins to the access
   // points restoreNetRoute recorded so later dirty rounds compare cleanly.
   for (odb::dbNet* db_net : restored_nets) {
-    updatePinAccessPoints(getNet(db_net), db_net);
+    Net* net = getNet(db_net);
+    updatePinAccessPoints(net, db_net);
+    updateInitialSteinerWirelength(net);
   }
   // Keep odb guides in lockstep with routes_ so an rsz journal restore can
   // recover the pre-change routing (the guide edits are ECO-journaled).
