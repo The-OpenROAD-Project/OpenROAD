@@ -80,12 +80,17 @@ class LatencyBalancer
   }
 
   int run();
+  sta::ArcDelay computeBufferDelay(double extra_out_cap);
+  std::pair<double, double> getMinMaxBufferDelay();
+  // Fills dlyBuffers_ and buffersDelay_, skipping cells with no usable delay.
+  // Public: TritonCTS calls it on the quantum_balancer to size the useful-skew
+  // emit_threshold / max_skew before computeSkewBudget.
+  void computeBuffersDelay(double extra_out_cap);
+  double usefulSkewTarget(odb::dbInst* inst, bool& has_useful_skew) const;
 
  private:
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
-  // Fills dlyBuffers_ and buffersDelay_, skipping cells with no usable delay.
-  void computeBuffersDelay(double extra_out_cap);
   int64_t computeWireLumpedDelay(const std::string& load,
                                  double wl,
                                  double& wireCap);

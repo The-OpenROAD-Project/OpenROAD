@@ -2787,6 +2787,27 @@ void TritonCTS::repairClockNets()
 // Balance macro cell latencies with register latencies.
 // This is needed only if special insertion delay handling
 // is invoked.
+int TritonCTS::runLatencyBalancers(double capPerDBU, double resPerDBU)
+{
+  int totalDelayBuff = 0;
+  for (auto& builder : std::ranges::reverse_view(builders_)) {
+    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
+      LatencyBalancer balancer = LatencyBalancer(builder.get(),
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_.get(),
+                                                 capPerDBU,
+                                                 resPerDBU);
+      totalDelayBuff += balancer.run();
+    }
+  }
+  return totalDelayBuff;
+}
+
 void TritonCTS::balanceMacroRegisterLatencies()
 {
   if (!options_->insertionDelayEnabled()) {
@@ -2804,19 +2825,40 @@ void TritonCTS::balanceMacroRegisterLatencies()
   double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  for (auto& builder : std::ranges::reverse_view(builders_)) {
-    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-      LatencyBalancer balancer = LatencyBalancer(builder.get(),
-                                                 options_,
-                                                 logger_,
-                                                 db_,
-                                                 network_,
-                                                 openSta_,
-                                                 techChar_.get(),
-                                                 capPerDBU,
-                                                 resPerDBU);
-      totalDelayBuff += balancer.run();
+  const bool useful_skew = options_->applyUsefulSkew();
+
+  // Pass 1: classic latency balancing (always runs).
+  options_->setUsefulSkew(false);
+  totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU);
+
+  if (useful_skew) {
+    options_->setUsefulSkew(true);
+    // Calculate useful skew for all registers on RSZ
+    LatencyBalancer quantum_balancer(nullptr,
+                                     options_,
+                                     logger_,
+                                     db_,
+                                     network_,
+                                     openSta_,
+                                     techChar_.get(),
+                                     capPerDBU,
+                                     resPerDBU);
+    rsz::Resizer::SkewBudgetOptions budget_opts;
+    budget_opts.one_sided = true;
+    budget_opts.paths_per_endpoint = 200;
+    quantum_balancer.computeBuffersDelay(0.0);
+    const auto [min_buf_delay, max_buf_delay]
+        = quantum_balancer.getMinMaxBufferDelay();
+    if (max_buf_delay <= 0.0) {
+      logger_->warn(CTS, 300, "No usable delay buffer; skipping useful skew.");
+    } else {
+      budget_opts.emit_threshold = min_buf_delay;
+      budget_opts.quantum = 0;
+      budget_opts.max_skew = 8.0f * max_buf_delay;
+      resizer_->computeSkewBudget(budget_opts);
+
+      // Pass 2: realize the useful-skew schedule.
+      totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU);
     }
   }
   if (totalDelayBuff) {
