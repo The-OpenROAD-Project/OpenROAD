@@ -840,17 +840,6 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       inserted_buffer_count_++;
       sta::Pin* buffer_op_pin = nullptr;
       resizer_->getBufferPins(inst, new_input_pin, buffer_op_pin);
-      // When group_set contains a top-level port (dbBTerm),
-      // dbNet::insertBufferBeforeLoads keeps the original net attached to the
-      // port and moves drvr_pin and new_input_pin onto the newly created net.
-      sta::Net* drvr_net
-          = network_->isTopLevelPort(drvr_pin)
-                ? db_network_->dbToSta(
-                      db_network_->flatNet(network_->term(drvr_pin)))
-                : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
-      if (drvr_net != nullptr) {
-        net = drvr_net;
-      }
     }
 
     // 4. New buffer input pin is enqueued as a new sink
