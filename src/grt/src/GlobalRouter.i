@@ -43,6 +43,12 @@ have_routes()
 }
 
 bool
+have_congested_routes()
+{
+  return getGlobalRouter()->haveCongestedRoutes();
+}
+
+bool
 have_detailed_routes()
 {
   return getGlobalRouter()->haveDetailedRoutes();

@@ -21,6 +21,9 @@ proc estimate_parasitics { args } {
     if { [grt::have_routes] } {
       # should check for layer rc
       est::estimate_parasitics_cmd "global_routing" $filename
+    } elseif { [grt::have_congested_routes] } {
+      utl::error EST 8 "The global routes are congested.\
+        Use global_route -allow_congestion to estimate parasitics from them."
     } else {
       utl::error EST 5 "Run global_route before estimating parasitics for global routing."
     }

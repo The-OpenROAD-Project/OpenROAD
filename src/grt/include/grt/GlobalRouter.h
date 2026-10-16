@@ -268,6 +268,9 @@ class GlobalRouter
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  // Routes exist but are congested and the congestion was not accepted
+  // (-allow_congestion), so haveRoutes() is false.
+  bool haveCongestedRoutes();
   bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
