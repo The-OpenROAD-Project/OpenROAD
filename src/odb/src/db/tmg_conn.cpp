@@ -77,9 +77,7 @@ void tmg_conn::analyzeNet()
 {
   loadWire();
 
-  if (wire_points_.empty()) {
-    net_->setWireOrdered(false);
-  } else {
+  if (!wire_points_.empty()) {
     loadTerminals();
     identifyShorts();
     removeWireLoops();
@@ -92,7 +90,8 @@ void tmg_conn::analyzeNet()
     connection_graph_->relocateShorts(this);
     treeReorder(false);
 
-    net_->setWireOrdered(true);
+    dbWire* wire = net_->getWire();
+    wire->setOrdered(true);
   }
 
   clear();

@@ -32,6 +32,10 @@ bool _dbWire::operator==(const _dbWire& rhs) const
     return false;
   }
 
+  if (flags_.ordered != rhs.flags_.ordered) {
+    return false;
+  }
+
   if (data_ != rhs.data_) {
     return false;
   }
@@ -98,6 +102,18 @@ bool dbWire::isGlobalWire()
 {
   _dbWire* wire = (_dbWire*) this;
   return wire->flags_.is_global == 1;
+}
+
+bool dbWire::isOrdered()
+{
+  _dbWire* wire = (_dbWire*) this;
+  return wire->flags_.ordered == 1;
+}
+
+void dbWire::setOrdered(bool ordered)
+{
+  _dbWire* wire = (_dbWire*) this;
+  wire->flags_.ordered = ordered ? 1 : 0;
 }
 
 void dbWire::addOneSeg(unsigned char op,
@@ -1207,7 +1223,6 @@ dbWire* dbWire::create(dbNet* net_, bool global_wire)
     net->wire_ = wire->getOID();
   }
 
-  net->flags_.wire_ordered = 0;
   for (auto callback : block->callbacks_) {
     callback->inDbWireCreate((dbWire*) wire);
   }
@@ -1248,7 +1263,6 @@ void dbWire::destroy(dbWire* wire_)
       net->global_wire_ = 0;
     } else {
       net->wire_ = 0;
-      net->flags_.wire_ordered = 0;
     }
   } else {
     wire_->getImpl()->getLogger()->warn(utl::ODB, 62, "This wire has no net");
