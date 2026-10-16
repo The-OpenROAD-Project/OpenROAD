@@ -13,7 +13,7 @@ proc spef_body { filename } {
   set stream [open $filename r]
   set body {}
   foreach line [split [read $stream] "\n"] {
-    if { ![string match "\*DATE*" $line] } {
+    if { ![string match {\*DATE*} $line] } {
       lappend body $line
     }
   }
