@@ -285,8 +285,13 @@ sudo ./etc/DependencyInstaller.sh -bazel
 bazelisk run --//:platform=gui //:install
 ```
 
-See [Installing OpenROAD](docs/user/Build.md) for the CLI-only build,
-prebuilt binaries and Docker.
+See [Installing OpenROAD](docs/user/Build.md) for the CLI-only build.
+To skip the build, use one of these options:
+
+- [Prebuilt binaries](docs/user/Build.md#build-with-prebuilt-binaries),
+  from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
+- [Docker](docs/user/Build.md#build-with-docker).
+
 See [Building and testing with Bazel](docs/user/Bazel.md) for tests and build configurations.
 
 > **The CMake build is deprecated and will be removed on Nov. 1, 2026.**
