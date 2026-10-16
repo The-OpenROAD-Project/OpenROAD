@@ -130,6 +130,7 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_net_detours1",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
