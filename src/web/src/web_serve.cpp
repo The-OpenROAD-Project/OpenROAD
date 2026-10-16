@@ -148,9 +148,7 @@ BrowserEnv currentBrowserEnv(utl::Logger* logger,
   env.has_display
       = !env.display.empty() || !envOrEmptyString("WAYLAND_DISPLAY").empty();
   const std::string socket = localDisplaySocket(env.display);
-  struct stat st
-  {
-  };
+  struct stat st = {};
   env.own_local_display = !socket.empty() && ::stat(socket.c_str(), &st) == 0
                           && S_ISSOCK(st.st_mode) && st.st_uid == getuid();
   env.local_addresses = localAddresses();

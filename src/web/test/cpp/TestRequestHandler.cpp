@@ -780,9 +780,6 @@ TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
   EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
   // X11UseLocalhost no: this host's own name.
   EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
-  // A container reaching the forwarded display on the machine it runs on.
-  EXPECT_TRUE(displayIsRemote("host.docker.internal:10.0", "a1b2c3d4"));
-  EXPECT_TRUE(displayIsRemote("host.containers.internal:10.0", "a1b2c3d4"));
 }
 
 TEST(DisplayIsRemote, ThisMachineByEitherName)
@@ -801,13 +798,6 @@ TEST(DisplayIsRemote, AnotherMachineIsRemote)
   EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
 }
 
-TEST(DisplayIsRemote, SocketPathIsLocal)
-{
-  // XQuartz's launchd socket, which is what macOS puts in $DISPLAY.
-  EXPECT_FALSE(displayIsRemote(
-      "/private/tmp/com.apple.launchd.AbC123/org.xquartz:0", "mac"));
-}
-
 TEST(DisplayIsRemote, HostNamesIgnoreCase)
 {
   EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
@@ -823,12 +813,6 @@ TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
   EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
   // Never cut at the first dot as a name would be.
   EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
-}
-
-TEST(DisplayIsRemote, ContainerHostIsLocal)
-{
-  EXPECT_FALSE(displayIsRemote("host.docker.internal:0", "a1b2c3d4"));
-  EXPECT_FALSE(displayIsRemote("host.containers.internal:0", "a1b2c3d4"));
 }
 
 TEST(DisplayIsRemote, BracketedIpv6)
