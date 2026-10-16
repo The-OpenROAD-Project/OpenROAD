@@ -101,8 +101,8 @@ struct BrowserEnv
 };
 
 // True when $DISPLAY names an X server on another machine, or one ssh -X
-// forwards here (TCP, numbered from 10).  Otherwise socket paths, loopback,
-// this machine's name or addresses, and a container's host are local.
+// forwards here (TCP, numbered from 10).  Otherwise socket displays (":N",
+// "unix:N"), loopback, and this machine's name or addresses are local.
 bool displayIsRemote(
     std::string_view display,
     std::string_view host_name,

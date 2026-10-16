@@ -533,9 +533,8 @@ bool displayIsRemote(
   if (host.size() >= 2 && host.front() == '[' && host.back() == ']') {
     host = host.substr(1, host.size() - 2);
   }
-  // A leading '/' is a socket path on this machine; XQuartz sets one.
-  if (host.empty() || host.front() == '/'
-      || boost::beast::iequals(host, "unix")) {
+  // No host, or "unix", is this machine's socket.
+  if (host.empty() || boost::beast::iequals(host, "unix")) {
     return false;
   }
   // A local X server is reached through its socket; a TCP display on this
@@ -543,10 +542,7 @@ bool displayIsRemote(
   unsigned number = 0;
   const bool forwarded = parseDisplayNumber(display.substr(colon + 1), number)
                          && number >= kSshDisplayOffset;
-  // The container names are the machine the container runs on.
-  if (boost::beast::iequals(host, "localhost")
-      || boost::beast::iequals(host, "host.docker.internal")
-      || boost::beast::iequals(host, "host.containers.internal")) {
+  if (boost::beast::iequals(host, "localhost")) {
     return forwarded;
   }
   boost::system::error_code ec;

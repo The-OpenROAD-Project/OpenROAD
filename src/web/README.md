@@ -91,8 +91,7 @@ started on the remote host still wants the profile in `$HOME` that the browser
 on the workstation already holds — with a shared home it refuses to start at
 all. Pass `-browser` to try anyway. The forwarded display is recognised even
 where the ssh variables did not follow, as inside `docker_shell` or under
-`sudo`: sshd numbers it from `localhost:10`, or `host.docker.internal:10`
-inside a container.
+`sudo`: sshd numbers it from `localhost:10`.
 
 Two kinds of ssh session do launch, because the browser they reach is the
 user's own:
@@ -110,9 +109,8 @@ A batch job is skipped before either: `LSB_JOBID`, `SLURM_JOB_ID`, `JOB_ID` or
 the submitting shell's environment — `$DISPLAY` and the VS Code variables
 included. So is any session whose `$DISPLAY` names another machine, which is
 the same situation reached without a scheduler. The Windows side of a WSL
-session, which launches with or without an X server, and the host of a
-container (`host.docker.internal`) are the user's own, not another machine.
-`WEB-0120` says which of these decided.
+session, which launches with or without an X server, is the user's own, not
+another machine. `WEB-0120` says which of these decided.
 
 Inside a `tmux` or `screen` session that outlived the connection that started
 it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
