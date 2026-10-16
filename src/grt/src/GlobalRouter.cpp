@@ -4644,35 +4644,36 @@ void GlobalRouter::computeWirelength()
 }
 
 // Build the initial Steiner topology for a net using the same STT builder that
-// FastRoute uses, and return its total wirelength in dbu. Pin positions are the
-// on-grid (track-snapped) positions in dbu, so the result is directly
-// comparable with the final routed wirelength from
-// computeNetPlanarWirelength(). Read-only: this does not feed the routing
-// engine.
+// FastRoute uses, and return its total wirelength in dbu. Each pin is taken at
+// the center of the gcell holding its access point, the same reference
+// computeNetPlanarWirelength() uses for the route, and pins sharing a gcell
+// collapse into one point. A local net (all pins in one gcell) has 0 length.
+// Read-only: this does not feed the routing engine.
 int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 {
-  std::vector<Pin>& pins = net->getPins();
-  const int pin_count = static_cast<int>(pins.size());
-  if (pin_count < 2) {
-    return 0;
-  }
-
   std::vector<int> x;
   std::vector<int> y;
-  x.reserve(pin_count);
-  y.reserve(pin_count);
+  std::map<odb::Point, int> point_index;
   int driver_index = 0;
-  for (int i = 0; i < pin_count; i++) {
-    const odb::Point& pos = pins[i].getOnGridPosition();
-    x.push_back(pos.getX());
-    y.push_back(pos.getY());
-    if (pins[i].isDriver()) {
-      driver_index = i;
+  for (Pin& pin : net->getPins()) {
+    const odb::Point center = grid_->getPositionOnGrid(pin.getOnGridPosition());
+    const auto [it, inserted]
+        = point_index.try_emplace(center, static_cast<int>(x.size()));
+    if (inserted) {
+      x.push_back(center.getX());
+      y.push_back(center.getY());
+    }
+    if (pin.isDriver()) {
+      driver_index = it->second;
     }
   }
 
-  // A two-pin net's Steiner WL is just the HPWL of its pins.
-  if (pin_count == 2) {
+  if (x.size() < 2) {
+    return 0;
+  }
+
+  // A two-gcell net's Steiner WL is just the HPWL of its gcells.
+  if (x.size() == 2) {
     return std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
   }
 
@@ -4681,9 +4682,10 @@ int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 }
 
 // Final routed wirelength of a net counting only the planar length of its
-// segments. Unlike computeNetWirelength(), no per-segment tile is added, so the
-// result is comparable with the initial Steiner wirelength (a route matching
-// the Steiner tree has a detour ratio of 1).
+// segments, with each segment end taken at its gcell center like the pins in
+// computeNetInitialSteinerWirelength(). Unlike computeNetWirelength(), no
+// per-segment tile is added, so a route matching the Steiner tree has a detour
+// ratio of 1.
 int GlobalRouter::computeNetPlanarWirelength(odb::dbNet* db_net)
 {
   auto iter = routes_.find(db_net);
@@ -4692,8 +4694,12 @@ int GlobalRouter::computeNetPlanarWirelength(odb::dbNet* db_net)
   }
   int net_wl = 0;
   for (const GSegment& segment : iter->second) {
-    net_wl += std::abs(segment.final_x - segment.init_x)
-              + std::abs(segment.final_y - segment.init_y);
+    const odb::Point init
+        = grid_->getPositionOnGrid(odb::Point(segment.init_x, segment.init_y));
+    const odb::Point final = grid_->getPositionOnGrid(
+        odb::Point(segment.final_x, segment.final_y));
+    net_wl += std::abs(final.getX() - init.getX())
+              + std::abs(final.getY() - init.getY());
   }
 
   return net_wl;
@@ -4711,11 +4717,27 @@ void GlobalRouter::computeInitialSteinerWirelengths(
 
 // Refresh one net's initial Steiner wirelength from its current on-grid pin
 // positions. Called whenever incremental routing rebuilds or re-syncs a net's
-// pins, so the other nets' values are kept.
+// pins, so the other nets' values are kept. Nets with fewer than two pins have
+// nothing to route and are left out of the detour metric.
 void GlobalRouter::updateInitialSteinerWirelength(Net* net)
 {
-  initial_steiner_wl_[net->getDbNet()]
-      = computeNetInitialSteinerWirelength(net);
+  odb::dbNet* db_net = net->getDbNet();
+  if (net->getNumPins() < 2) {
+    initial_steiner_wl_.erase(db_net);
+    return;
+  }
+  initial_steiner_wl_[db_net] = computeNetInitialSteinerWirelength(net);
+}
+
+// Ratio of the final routed wirelength to the initial Steiner wirelength. A
+// local net (all pins in one gcell) has 0 on both sides and a ratio of 1; a
+// route with wire where the Steiner tree needs none has an infinite ratio.
+static double detourRatio(const int64_t initial_wl, const int64_t final_wl)
+{
+  if (initial_wl > 0) {
+    return static_cast<double>(final_wl) / initial_wl;
+  }
+  return final_wl == 0 ? 1.0 : std::numeric_limits<double>::infinity();
 }
 
 void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
@@ -4740,8 +4762,7 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
   const int64_t initial_wl = init_iter->second;
   const int64_t final_wl = computeNetPlanarWirelength(net);
   const int64_t delta = final_wl - initial_wl;
-  const double ratio
-      = (initial_wl > 0) ? static_cast<double>(final_wl) / initial_wl : 1.0;
+  const double ratio = detourRatio(initial_wl, final_wl);
 
   logger_->info(GRT,
                 332,
@@ -4790,16 +4811,13 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
   int64_t total_initial = 0;
   int64_t total_final = 0;
   for (const auto& [net, initial_wl] : initial_steiner_wl_) {
-    if (!routes_.contains(net)) {
+    // Skip local nets (all pins in one gcell): they have no wire to detour.
+    if (initial_wl == 0 || !routes_.contains(net)) {
       continue;
     }
     const int64_t final_wl = computeNetPlanarWirelength(net);
-    // Only nets with a meaningful (multi-pin) initial topology are useful.
-    if (initial_wl <= 0) {
-      continue;
-    }
     const int64_t delta = final_wl - initial_wl;
-    const double ratio = static_cast<double>(final_wl) / initial_wl;
+    const double ratio = detourRatio(initial_wl, final_wl);
     entries.push_back({net, initial_wl, final_wl, delta, ratio});
     total_initial += initial_wl;
     total_final += final_wl;
