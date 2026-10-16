@@ -15,6 +15,7 @@
 #include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,10 @@
 #include "tile_generator.h"
 #include "utl/Logger.h"
 #include "web/core.h"
+
+namespace boost::asio {
+class io_context;
+}
 
 namespace web {
 
@@ -515,6 +520,14 @@ struct SessionState
 // friends), and matching "/?mergetiles=0" against the asset table simply fails,
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
+
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
 
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.
 // Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
