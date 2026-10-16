@@ -12,6 +12,13 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// The WebSocket for the page at `loc`: wss when the page came over https.
+export function websocketUrlFrom(loc) {
+    const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
+    const host = loc?.host || 'localhost:8080';
+    return `${scheme}://${host}/ws`;
+}
+
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
 // an `s_` prefix.  Callers add request-specific fields (visible_layers,
