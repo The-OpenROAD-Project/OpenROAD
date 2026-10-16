@@ -137,7 +137,8 @@ std::string_view browserSkipReasonText(LaunchSkip reason);
 BrowserLaunch browserLaunchFromString(std::string_view mode);
 
 // How to reach the viewer from another machine, printed with WEB-0001: a tunnel
-// for a loopback bind, this host's url for a wildcard one.
+// for a loopback bind, and the url to open through it when it differs; this
+// host's url for a wildcard one.
 std::string reachabilityHint(BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              std::string_view host,
