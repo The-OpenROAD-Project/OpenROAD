@@ -59,6 +59,7 @@ class TestSetupLegacyPolicy : public SetupLegacyPolicy
   using SetupLegacyBase::EndpointRepairState;
   using SetupLegacyBase::refreshEndpointSlacks;
   using SetupLegacyBase::repairBudget;
+  using SetupLegacyBase::terminateProgress;
   using SetupLegacyPolicy::MainRepairState;
   using SetupLegacyPolicy::repairEndpoint;
   using SetupLegacyPolicy::SetupLegacyPolicy;
@@ -785,6 +786,64 @@ TEST_F(TestResizer, SetupLegacyPolicyResetsForceSingleRepairAfterImprovingPass)
   EXPECT_TRUE(policy.recordedForceSingleRepair()[0]);
   EXPECT_FALSE(policy.recordedForceSingleRepair()[1]);
   EXPECT_FALSE(endpoint_state.force_single_repair);
+}
+
+// With a positive slack margin, repair can continue after TNS reaches 0. The
+// fix rate is TNS based, so it must not end that margin-only repair.
+TEST_F(TestResizer, TerminateProgressIgnoresFixRateWhenTnsIsZero)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  sta::Pin* out1_pin = findTopPin("out1");
+  ASSERT_NE(out1_pin, nullptr);
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+  const sta::Slack out1_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out1_pin), max);
+  auto set_out1_slack = [&](const float slack) {
+    sta_->setOutputDelay(out1_pin,
+                         sta::RiseFallBoth::riseFall(),
+                         clk,
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         /*add=*/false,
+                         out1_base_slack - staTime(slack),
+                         sdc);
+    sta_->updateTiming(true);
+  };
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig run_config;
+  run_config.setup_slack_margin = staTime(0.10f);
+  TestSetupLegacyPolicy policy(resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(policy.start());
+
+  // Past iteration 1000, on a fix-rate check interval.
+  constexpr int kIteration = 1100;
+  float threshold = 0.0001f;
+
+  // TNS went from -0.20 to 0: no TNS progress left, but margin work remains.
+  set_out1_slack(0.05f);
+  ASSERT_EQ(sta_->totalNegativeSlack(max), 0.0f);
+  float prev_tns = 0.0f;
+  EXPECT_FALSE(policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
+
+  // A true violation that stopped improving still ends the repair.
+  set_out1_slack(-0.20f);
+  prev_tns = sta_->totalNegativeSlack(max);
+  EXPECT_TRUE(policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
 }
 
 TEST_F(TestResizer, GainBufferingBuffersOnlyNegativeSlackOutputPorts)
