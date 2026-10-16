@@ -1,5 +1,5 @@
 {
-  "lockFileVersion": 26,
+  "lockFileVersion": 28,
   "registryFileHashes": {
     "https://bcr.bazel.build/bazel_registry.json": "8a28e4aff06ee60aed2a8c281907fb8bcbf3b753c91fb5a5c57da3215d5b3497",
     "https://bcr.bazel.build/modules/abc/0.64-yosyshq.bcr.2/MODULE.bazel": "37effc7404ffedfa6c69d229c5d08dd13e66b983a7759475ed5df1183a0b3c70",
@@ -847,7 +847,7 @@
     },
     "@@aspect_rules_py+//py:extensions.bzl%py_tools": {
       "general": {
-        "bzlTransitiveDigest": "xns7wEevQBAPlZhp9T4RvtauwGK3OuNp81bdDz8Eh3c=",
+        "bzlTransitiveDigest": "9+iIMkrC2hpd3kWbJ/sYOC2D2LjIOgrn6Du7Yfaw2xY=",
         "usagesDigest": "9BiP3ASHlGl4doGhzXJwK17taNzv/q6x/IZ4Hb6LxNY=",
         "recordedInputs": [
           "REPO_MAPPING:aspect_rules_py+,aspect_tools_telemetry_report aspect_tools_telemetry++telemetry+aspect_tools_telemetry_report",
@@ -900,7 +900,7 @@
     },
     "@@aspect_rules_py+//uv/private/tomltool:extension.bzl%tomltool": {
       "general": {
-        "bzlTransitiveDigest": "xDAnIOvmAeCjerfDjvmd2jCfrzIN253S8r891NfuVcY=",
+        "bzlTransitiveDigest": "EPffob4sIYD8gBrh41uBPLpG14CZaLRmgRYdXxdimQs=",
         "usagesDigest": "tQ76lH+Nn5OlAFLvBbnfvnCzNIiwGgY6tOumYZXH44w=",
         "recordedInputs": [
           "REPO_MAPPING:aspect_rules_py+,bazel_tools bazel_tools"
@@ -966,7 +966,7 @@
     },
     "@@cel-spec+//:extensions.bzl%non_module_dependencies": {
       "general": {
-        "bzlTransitiveDigest": "5HptDFT94uAUuSK3GeTffOHH+ORTqenNosbGlyhOn2E=",
+        "bzlTransitiveDigest": "/k4rP0NLDKXnXnc+iNRpIr5FMPa6XRM1utbdeU0e1yI=",
         "usagesDigest": "HFQJtQrL9nKaFZEjgwaHVMHALMW+cafu696xy7J4ueM=",
         "recordedInputs": [
           "REPO_MAPPING:cel-spec+,bazel_tools bazel_tools"
@@ -1149,7 +1149,7 @@
     },
     "@@envoy_api+//bazel:repositories.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "n1zOOgDdtj2rv86PgHcIgkXqpQ38yI8dmHKMoxyx5GA=",
+        "bzlTransitiveDigest": "PHeDljr2GgWcX+U7P7asavLkAjzkJr5o2W8+DPg7sRE=",
         "usagesDigest": "cxAa0VVo9d210JBUBw6wpuGp8jg+ltqw3tzH0tPtIEg=",
         "recordedInputs": [
           "REPO_MAPPING:envoy_api+,bazel_tools bazel_tools",
@@ -1357,7 +1357,7 @@
     },
     "@@grpc+//bazel:grpc_deps.bzl%grpc_repo_deps_ext": {
       "general": {
-        "bzlTransitiveDigest": "VzoHk5bKHxGROEvSnUd/hlIKAVYpfyVlCyR/IwR1ROI=",
+        "bzlTransitiveDigest": "9h9a2cAlrp7Qz3E3FDAiA/T72/wNSyv++7Xoe1J51ic=",
         "usagesDigest": "JRy5mn8l60PheiZTvsAmif/CiZhfYCkdmx6ULADtUrg=",
         "recordedInputs": [
           "REPO_MAPPING:grpc+,bazel_tools bazel_tools",
@@ -1380,7 +1380,7 @@
     },
     "@@kepler-formal+//bazel:deps.bzl%deps": {
       "general": {
-        "bzlTransitiveDigest": "xc60Sk1GgNTjSR6D4dIYGN7v6tTHbK/l3xex1h3aINg=",
+        "bzlTransitiveDigest": "GO+8bSTCxdkcJQQ4dIAuwtP7eyEvGSoiYTnnCppnD6g=",
         "usagesDigest": "NGlTnl+c579bDhWB6NLbqkJQOniqcySno1qy4bSTx4k=",
         "recordedInputs": [
           "REPO_MAPPING:kepler-formal+,bazel_tools bazel_tools"
@@ -1619,7 +1619,7 @@
     },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
-        "bzlTransitiveDigest": "Ga4z8lQy1YQ5rAMy+dOl0dqcCEBnYNCXku8x3YQmDZI=",
+        "bzlTransitiveDigest": "+Kp6j204mBZ3mxlIDDR0gBoP45BZ4jYRhRAcB8sU0qc=",
         "usagesDigest": "QI2z8ZUR+mqtbwsf2fLqYdJAkPOHdOV+tF2yVAUgRzw=",
         "recordedInputs": [
           "REPO_MAPPING:rules_kotlin+,bazel_tools bazel_tools"
@@ -1705,7 +1705,7 @@
     },
     "@@rules_multitool+//multitool:extension.bzl%multitool": {
       "general": {
-        "bzlTransitiveDigest": "7ZXZR0D5VHmH6+5t1aQv0TyDRMn1LhUROhZrD0PsCA0=",
+        "bzlTransitiveDigest": "s+rg9YTYK9CxhExLmokBLy6sbL6I8ELJ7FgNiXGKZu4=",
         "usagesDigest": "ZVm5YLWTHZE8lFq+UcA2T2lhKEur8bIVk9tvjn8SO2U=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -1954,7 +1954,7 @@
     },
     "@@rules_rust+//crate_universe/private:internal_extensions.bzl%cu_nr": {
       "general": {
-        "bzlTransitiveDigest": "igOHH0UAEDxaQQcMDBLzR6uqbhZmNy551sQABjzGlZA=",
+        "bzlTransitiveDigest": "JX/hoYdEh3wMiIlXoY6UgjuietDn4CnBXf7tjUubLsA=",
         "usagesDigest": "dQ7SQZ7uSSL3vVKSMBKRxKJUm9OVrZZA+S1/QQfT570=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -5973,5 +5973,6 @@
         "url": "https://download.visualstudio.microsoft.com/download/pr/fdc37f6e-59f6-4054-838a-b476eeaa6ec3/1d82370739911457e0a2f6be15d8b5f569531b352b2eabb961429eea1e99e356/VisualStudio.vsman"
       }
     }
-  }
+  },
+  "factsVersions": {}
 }
