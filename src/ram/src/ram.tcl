@@ -302,6 +302,6 @@ proc generate_ram { args } {
   if { $clock_period > 0 } {
     create_clock -name ram_clk -period $clock_period [get_ports clk]
   }
-  
+
   ram::ram_report_power $clock_period $keys(-word_size)
 }
