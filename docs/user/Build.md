@@ -183,7 +183,26 @@ The `DESTDIR` variable has no Bazel equivalent.
 
 Courtesy of [Precision Innovations](https://precisioninno.com/), there are prebuilt binaries
 of OpenROAD with self-contained dependencies released on a regular basis.
-Refer to this [link](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildWithPrebuilt.html) for instructions.
+Download them from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
+
+Each release has one `.deb` package per supported Ubuntu version.
+Install the one that matches your system.
+For example, on Ubuntu 22.04:
+
+```shell
+sudo apt install ./openroad_<version>_amd64-ubuntu-22.04.deb
+```
+
+Check the installation:
+
+```shell
+openroad -version
+```
+
+```{note}
+Older releases are on the
+[Precision Innovations GitHub releases page](https://github.com/Precision-Innovations/OpenROAD/releases).
+```
 
 ## Build with Docker
 
@@ -197,18 +216,16 @@ this [Docker guide](https://docs.docker.com/config/containers/resource_constrain
 
 ### Installation
 
-We recommend to use a Docker image of a supported OS
-and install OpenROAD using the prebuilt binaries from
-Precision Innovations.
-You can start the container in an interactive mode using
-the command below.
+Use a Docker image of a supported OS and install OpenROAD in it
+with the prebuilt binaries.
+Start a container in interactive mode:
 
 ```shell
 docker run -it ubuntu:22.04
 ```
 
-Now you are ready to install the prebuilt binaries.
-Please refer to the instructions for installing prebuilt binaries
-[above](#build-with-prebuilt-binaries).
+Inside the container, download the `.deb` package for the image's Ubuntu version
+from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
+Then install it as described in [Build with Prebuilt Binaries](#build-with-prebuilt-binaries).
 
 The deprecated CMake build, which will be removed on Nov. 1, 2026, is described in [Building with CMake](Build-CMake.md).
