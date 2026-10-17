@@ -2,16 +2,24 @@
 // Copyright (c) 2020-2026, The OpenROAD Authors
 
 #include <cstdint>
+#include <list>
 #include <map>
 #include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/obj/frBoundary.h"
+#include "db/obj/frGCellPattern.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frShape.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frViaDef.h"
+#include "drt/TritonRoute.h"
+#include "dst/Distributed.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -20,6 +28,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/ServiceRegistry.h"
 
 using odb::dbTechLayerType;
 
@@ -58,6 +67,20 @@ struct GCFixture : public Fixture
     worker.main();
   }
 
+  std::list<std::unique_ptr<frMarker>> collectMarkers(const odb::Rect& box,
+                                                      int threads)
+  {
+    utl::ServiceRegistry services(logger.get());
+    dst::Distributed distributed(logger.get());
+    TritonRoute router(nullptr, logger.get(), &services, &distributed, nullptr);
+    router.design_.swap(design);
+    router.getRouterConfiguration()->MAX_THREADS = threads;
+    std::list<std::unique_ptr<frMarker>> markers;
+    router.getDRCMarkers(markers, box);
+    router.design_.swap(design);
+    return markers;
+  }
+
   FlexGCWorker worker;
 };
 
@@ -66,6 +89,115 @@ class FixtureWithParam : public GCFixture,
                          public ::testing::WithParamInterface<T>
 {
 };
+
+class GCWorkerBoundaryFixture : public FixtureWithParam<int>
+{
+ protected:
+  void makeBoundaryDesign(bool connected,
+                          int wire_y = 3300,
+                          int x = 27290,
+                          int grid_spacing = 4200)
+  {
+    auto* tech = design->getTech();
+    tech->setDBUPerUU(2000);
+    addLayer(tech, "v1", dbTechLayerType::CUT);
+    addLayer(tech, "m2", dbTechLayerType::ROUTING);
+    addLayer(tech, "v2", dbTechLayerType::CUT);
+    addLayer(tech, "m3", dbTechLayerType::ROUTING);
+    fr2DLookupTbl<frCoord, frCoord, frCoord> spacing_table(
+        "WIDTH", {0}, "PARALLELRUNLENGTH", {0}, {{140}});
+    auto spacing = std::make_unique<frSpacingTablePrlConstraint>(spacing_table);
+    tech->getLayer(4)->setMinSpacing(spacing.get());
+    tech->addUConstraint(std::move(spacing));
+
+    auto* via = makeViaDef("v2", 5, {-70, -140}, {70, 140});
+    static_cast<frRect*>(via->getCutFigs()[0].get())
+        ->setBBox(odb::Rect(-70, -70, 70, 70));
+    static_cast<frRect*>(via->getLayer2Figs()[0].get())
+        ->setBBox(odb::Rect(-140, -70, 140, 70));
+    auto* net = makeNet("n1");
+    makeVia(via, net, {x, 3020});
+    makePathsegExt(net, 4, {x, wire_y}, {x + 380, wire_y}, 140);
+    if (connected) {
+      makePathsegExt(net, 4, {x, 2740}, {x, wire_y}, 140);
+    }
+
+    frBoundary boundary;
+    boundary.setPoints({{0, 0}, {50000, 0}, {50000, 24000}, {0, 24000}});
+    design->getTopBlock()->setBoundaries({boundary});
+    design->getTopBlock()->setGCellPatterns(
+        {{false, 0, static_cast<frUInt4>(grid_spacing), 13},
+         {true, 0, static_cast<frUInt4>(grid_spacing), 7}});
+    initRegionQuery();
+  }
+
+  void checkRegions(bool violation, int x = 27290)
+  {
+    const odb::Rect gap(x - 70, 3160, x + 70, 3230);
+    for (const auto& box : {odb::Rect(0, 0, 50000, 24000),
+                            odb::Rect(x - 90, 3140, x + 90, 3240),
+                            odb::Rect(30000, 3300, 30500, 3400)}) {
+      const auto markers = collectMarkers(box, GetParam());
+      const bool expected = violation && box.intersects(gap);
+      ASSERT_EQ(markers.size(), expected ? 1 : 0);
+      if (expected) {
+        testMarker(markers.front().get(),
+                   4,
+                   frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+                   gap);
+      }
+    }
+  }
+};
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal)
+{
+  makeBoundaryDesign(true);
+  // The right worker imports the via's M3 landing and the horizontal M2
+  // wire, but omits the connecting vertical M2 wire outside its extBox.
+  worker.setExtBox(odb::Rect(27400, -2000, 52000, 26000));
+  worker.setDrcBox(odb::Rect(28900, -500, 50500, 24500));
+  worker.init(design.get());
+  worker.main();
+  ASSERT_EQ(worker.getMarkers().size(), 1);
+  testMarker(worker.getMarkers()[0].get(),
+             4,
+             frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+             odb::Rect(27220, 3160, 27360, 3230));
+  EXPECT_FALSE(
+      worker.getDrcBox().intersects(worker.getMarkers()[0]->getBBox()));
+  checkRegions(false);
+}
+
+TEST_P(GCWorkerBoundaryFixture, legal_gap)
+{
+  makeBoundaryDesign(false, 3370);
+  checkRegions(false);
+}
+
+TEST_P(GCWorkerBoundaryFixture, real_gap)
+{
+  makeBoundaryDesign(false);
+  checkRegions(true);
+}
+
+TEST_P(GCWorkerBoundaryFixture, shifted_grid)
+{
+  makeBoundaryDesign(true, 3300, 27290, 4000);
+  checkRegions(false);
+}
+
+TEST_P(GCWorkerBoundaryFixture, straddling_marker)
+{
+  // This real marker crosses the right worker's drcBox edge at x = 28900
+  // and must still be reported exactly once.
+  makeBoundaryDesign(false, 3300, 28880);
+  checkRegions(true, 28880);
+}
+
+INSTANTIATE_TEST_SUITE_P(Threads,
+                         GCWorkerBoundaryFixture,
+                         ::testing::Values(1, 4));
 
 // Two touching metal shape from different nets generate a short
 TEST_F(GCFixture, metal_short)
