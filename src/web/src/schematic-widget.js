@@ -141,6 +141,7 @@ export class SchematicWidget {
         this._timingNodes = [];
         this._timingIsCapturePath = false;
         this._timingRequestId = 0;
+        this._timingSchematicActive = false;
         this._timingLegend = this._buildTimingLegend();
 
         // Map from SVG element id → ODB instance name.
@@ -260,11 +261,16 @@ export class SchematicWidget {
             return Promise.resolve(false);
         }
 
+        this.showTimingPath(null);
+        const requestId = this._timingRequestId;
         const previousSelectedInstanceName
             = this.appState.selectedInstanceName || null;
         this.appState.selectedInstanceName = snapshot.selectedInstanceName;
-        return Promise.resolve(this.renderNetlist(this._cloneJson(snapshot.netlist)))
+        return Promise.resolve(this.renderNetlist(
+            this._cloneJson(snapshot.netlist),
+            () => requestId === this._timingRequestId))
             .then((didRender) => {
+                if (requestId !== this._timingRequestId) return false;
                 if (didRender === false) {
                     if (this.appState.selectedInstanceName
                         === snapshot.selectedInstanceName) {
@@ -416,6 +422,7 @@ export class SchematicWidget {
         this._timingIsCapturePath = nextPath !== null
             && nextNodes === nextPath.capture_nodes;
         if (!this._timingPath) {
+            this._timingSchematicActive = false;
             this._applyTimingPath();
             const cells = this._topModule(this._currentNetlist)?.cells;
             if (cells) {
@@ -434,10 +441,13 @@ export class SchematicWidget {
     // Show an explicit empty state when there is nothing to draw; if the
     // server is unavailable, fall back to styling the current schematic.
     async _loadPathSchematic(requestId) {
+        const previousSnapshot = this._timingSchematicActive
+            ? null : this._currentSchematicSnapshot();
         const order = this._timingPathInstances(this._timingNodes);
         const wm = this.appState.websocketManager;
         if (order.length === 0) {
             this._showTimingEmptyState(this._timingEmptyStateMessage());
+            this._enterTimingSchematic(previousSnapshot);
             return false;
         }
         if (!wm || !this._netlistsvgReady) {
@@ -457,15 +467,15 @@ export class SchematicWidget {
             if (!cells || Object.keys(cells).length === 0) {
                 this._showTimingEmptyState(
                     'No schematic cells found for this timing path.');
+                this._enterTimingSchematic(previousSnapshot);
                 return false;
             }
-            const previousSnapshot = this._currentSchematicSnapshot();
             // renderNetlist re-applies timing styling once the SVG exists.
             const didRender = await this.renderNetlist(
                 netlist, () => requestId === this._timingRequestId);
+            if (requestId !== this._timingRequestId) return false;
             if (didRender) {
-                // Keep the pre-path view reachable through Back.
-                this._pushSchematicHistory(previousSnapshot);
+                this._enterTimingSchematic(previousSnapshot);
             }
             return didRender;
         } catch (err) {
@@ -476,6 +486,14 @@ export class SchematicWidget {
             this._applyTimingPath();
             this.setStatus(`Path schematic error: ${err}`);
             return false;
+        }
+    }
+
+    _enterTimingSchematic(previousSnapshot) {
+        if (!this._timingSchematicActive) {
+            // Preserve the pre-path view once while browsing rows and tabs.
+            this._pushSchematicHistory(previousSnapshot);
+            this._timingSchematicActive = true;
         }
     }
 
@@ -619,6 +637,7 @@ export class SchematicWidget {
             }
             el.classList.remove(TIMING_OVERLAY_CLASS);
         }
+        this.svgContainer.classList.remove('schematic-timing-active');
     }
 
     _styleTimingElement(el, style, fill = null) {
@@ -629,6 +648,10 @@ export class SchematicWidget {
                     el.style.getPropertyValue(prop));
             }
             el.classList.add(TIMING_OVERLAY_CLASS);
+            // Dark mode inverts the SVG at the root until an overlay has to
+            // be held out of the inversion; only then is it worth paying for
+            // a filter per shape. Kept in step with TIMING_OVERLAY_CLASS.
+            this.svgContainer.classList.add('schematic-timing-active');
         }
         el.style.setProperty('stroke', style.color);
         if (fill !== null) {
@@ -728,7 +751,10 @@ export class SchematicWidget {
 
         // Resolve a clicked cell group or skin child shape to an ODB instance.
         const hit = this._cellHitFromTarget(e.target);
-        if (!hit) return;
+        if (!hit) {
+            this._clearCellHighlight();
+            return;
+        }
 
         const name = this._svgIdToInstName.get(hit.cellId);
         if (!name) return;
@@ -931,6 +957,8 @@ export class SchematicWidget {
             return Promise.resolve(false);
         }
 
+        this.showTimingPath(null);
+        const requestId = this._timingRequestId;
         this.setStatus(`Loading schematic for ${instName}…`);
 
         const { faninDepth, fanoutDepth } = this._schematicDepths();
@@ -940,21 +968,26 @@ export class SchematicWidget {
             wm.request({ type: 'schematic_cone', inst_name: instName,
                          fanin_depth: faninDepth, fanout_depth: fanoutDepth })
                 .then(data => {
+                    if (requestId !== this._timingRequestId) return false;
                     const cells = data.modules && data.modules.top && data.modules.top.cells;
                     if (!cells || Object.keys(cells).length === 0) {
                         this.setStatus('No cells found for selected instance.');
                         return false;
                     }
-                    return Promise.resolve(this.renderNetlist(data)).then((didRender) => {
-                        if (didRender === false) {
-                            return false;
-                        }
-                        // A fresh refresh replaces the expansion history.
-                        this._clearSchematicHistory();
-                        return true;
-                    });
+                    return Promise.resolve(this.renderNetlist(
+                        data, () => requestId === this._timingRequestId))
+                        .then((didRender) => {
+                            if (didRender === false
+                                || requestId !== this._timingRequestId) {
+                                return false;
+                            }
+                            // A fresh refresh replaces the expansion history.
+                            this._clearSchematicHistory();
+                            return true;
+                        });
                 })
                 .catch(err => {
+                    if (requestId !== this._timingRequestId) return false;
                     this.setStatus(`Error: ${err}`);
                     return false;
                 }));
@@ -1223,14 +1256,7 @@ export class SchematicWidget {
             || this._cellGroupForSvgId(instName);
     }
 
-    _addCellHitTarget(group, cellId) {
-        let bbox;
-        try {
-            bbox = this._groupBoundsWithoutText(group);
-        } catch (_) {
-            return;
-        }
-
+    _addCellHitTarget(group, cellId, bbox) {
         if (!bbox
             || bbox.width <= 0
             || bbox.height <= 0
@@ -1253,16 +1279,36 @@ export class SchematicWidget {
         group.insertBefore(hitTarget, group.firstChild);
     }
 
-    _registerSvgCellHitTarget(instName, group) {
-        if (!this._svgEl || !instName || !group) {
-            return;
+    _registerSvgCellHitTargets(instNames) {
+        const records = [];
+        for (const instName of instNames) {
+            const group = this._cellGroupForInstance(instName);
+            if (!group) continue;
+
+            // Skin and generic cells expose different id forms.
+            const cellId = 'cell_' + instName;
+            this._svgIdToInstName.set(cellId, instName);
+            this._svgIdToInstName.set(instName, instName);
+            records.push({ group, cellId });
         }
 
-        // Skin and generic cells expose different id forms.
-        const prefixed = 'cell_' + instName;
-        this._svgIdToInstName.set(prefixed, instName);
-        this._svgIdToInstName.set(instName, instName);
-        this._addCellHitTarget(group, prefixed);
+        // Exclude labels from every body measurement in one layout pass.
+        // Insert targets only after measuring all groups to avoid alternating
+        // DOM writes and geometry reads for each cell before the first paint.
+        const labels = records.flatMap(({ group }) =>
+            Array.from(group.querySelectorAll('text')));
+        this._measureHidden(labels, () => {
+            for (const record of records) {
+                try {
+                    record.bbox = boundsFromBBox(record.group.getBBox());
+                } catch (_) {
+                    // Hidden or otherwise unmeasurable groups have no target.
+                }
+            }
+        });
+        for (const { group, cellId, bbox } of records) {
+            this._addCellHitTarget(group, cellId, bbox);
+        }
     }
 
     async renderNetlist(yosysJson, isCurrent = null) {
@@ -1320,11 +1366,7 @@ export class SchematicWidget {
             // check each known instance name against that pattern.
             const cells = yosysJson.modules && yosysJson.modules.top
                         && yosysJson.modules.top.cells || {};
-            for (const instName of Object.keys(cells)) {
-                this._registerSvgCellHitTarget(
-                    instName,
-                    this._cellGroupForInstance(instName));
-            }
+            this._registerSvgCellHitTargets(Object.keys(cells));
             if (this._svgEl) {
                 // Remove any CSS size constraints — transform-based zoom handles sizing
                 this._svgEl.style.maxWidth = '';
@@ -1399,12 +1441,6 @@ export class SchematicWidget {
                 else el.setAttribute('display', display);
             }
         }
-    }
-
-    _groupBoundsWithoutText(group) {
-        return this._measureHidden(
-            group.querySelectorAll('text'),
-            () => boundsFromBBox(group.getBBox()));
     }
 
     _parseSvgNumber(value) {
@@ -1644,8 +1680,16 @@ export class SchematicWidget {
 
     _wireObstacleRects(cellGroups) {
         if (!this._svgEl) return [];
-        const insideCell = (element) =>
-            cellGroups.some((group) => group.contains(element));
+        // Rescanning every cell per wire is O(wires × cells); walking up from
+        // the wire against a Set is O(tree depth) instead.
+        const cellSet = new Set(cellGroups);
+        const insideCell = (element) => {
+            for (let el = element; el && el !== this._svgEl;
+                 el = el.parentElement) {
+                if (cellSet.has(el)) return true;
+            }
+            return false;
+        };
 
         return Array.from(this._svgEl.querySelectorAll('path,line,polyline'))
             .filter((element) => !insideCell(element))

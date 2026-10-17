@@ -420,6 +420,11 @@ On `"found": false`, `edge` and `is_point` are absent.
 Build a cone of influence around an instance (fanin/fanout) and return
 it as a Yosys-format netlist for the netlistsvg renderer.
 
+For 3DBlox designs, instance names use the chip-instance prefix, for example
+`die0/buf1`. Returned cell, port, and net names use the same prefix to keep
+objects on different dies distinct. `schematic_path` and `schematic_inspect`
+accept these qualified instance names as well.
+
 | Field           | Type     | Required | Description                                |
 | --------------- | -------- | :------: | ------------------------------------------ |
 | `inst_name`     | `string` |    ✓     | Anchor instance name.                      |
@@ -602,11 +607,16 @@ single stage emphasized.
 | `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
 | `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
 | `unconstrained` | `bool` | optional, `>= 0` only   | Must match the `timing_report` that produced `path_index`.     |
+| `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
+| `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
+| `slack_max`  | `double` | optional, `>= 0` only    | Report upper slack bound. Defaults to `+FLT_MAX`.             |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
 
-The server re-runs the report to resolve `path_index`, so `unconstrained`
-has to match the value used for the `timing_report` request the index came
-from — otherwise the index resolves against a different path list.
+The server re-runs the report to resolve `path_index`, so `unconstrained`,
+`max_paths`, `slack_min`, and `slack_max` must match the `timing_report`
+request the index came from. Histogram drill-down passes its filtered query
+along with both path and stage highlights so the index resolves against the
+displayed path list.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

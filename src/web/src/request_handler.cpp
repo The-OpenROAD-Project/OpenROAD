@@ -1045,13 +1045,24 @@ static void clearSelectionHighlights(SessionState& state)
 }
 
 static void setSelectionHighlights(SessionState& state,
-                                   const web::Selected& sel)
+                                   const web::Selected& sel,
+                                   const odb::dbTransform& world_xfm = {})
 {
   collectHighlightShapes(sel,
                          state.highlight_rects,
                          state.highlight_polys,
                          state.highlight_lines,
                          state.flywires_only);
+  for (odb::Rect& rect : state.highlight_rects) {
+    world_xfm.apply(rect);
+  }
+  for (odb::Polygon& polygon : state.highlight_polys) {
+    world_xfm.apply(polygon);
+  }
+  for (FlightLine& line : state.highlight_lines) {
+    world_xfm.apply(line.p1);
+    world_xfm.apply(line.p2);
+  }
   state.highlight_source = sel ? SessionState::HighlightSource::kInspected
                                : SessionState::HighlightSource::kNone;
 }
@@ -3771,14 +3782,16 @@ static odb::dbITerm* findItermForPort(const std::vector<odb::dbITerm*>& iterms,
   return nullptr;
 }
 
-// Check whether an output function references the Q or QN state.
-static bool outputPortReferencesState(sta::LibertyPort* output_port,
-                                      const sta::LibertyPort* state_port)
+// Match a direct state output, including the inversion of its complement.
+static bool outputPortMatchesState(sta::LibertyPort* output_port,
+                                   const sta::LibertyPort* state_port,
+                                   const sta::LibertyPort* inverted_state_port)
 {
   const sta::FuncExpr* function
       = output_port != nullptr ? output_port->function() : nullptr;
-  return state_port != nullptr && function != nullptr
-         && function->hasPort(state_port);
+  return (state_port != nullptr && simplePortExpr(function) == state_port)
+         || (inverted_state_port != nullptr
+             && activeLowPortExpr(function) == inverted_state_port);
 }
 
 static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
@@ -3791,9 +3804,11 @@ static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
   for (odb::dbITerm* output_iterm : signal_outputs) {
     sta::LibertyPort* output_port
         = network->libertyPort(network->dbToSta(output_iterm));
-    if (outputPortReferencesState(output_port, sequential.output())) {
+    if (outputPortMatchesState(
+            output_port, sequential.output(), sequential.outputInv())) {
       output = output_iterm;
-    } else if (outputPortReferencesState(output_port, sequential.outputInv())) {
+    } else if (outputPortMatchesState(
+                   output_port, sequential.outputInv(), sequential.output())) {
       output_inv = output_iterm;
     }
   }
@@ -4017,6 +4032,50 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
   return result;
 }
 
+// Keep schematic names in the same chiplet namespace as timing-path nodes.
+static std::string schematicName(const std::vector<ChipletNode>& chiplets,
+                                 odb::dbBlock* block,
+                                 const std::string& local_name)
+{
+  for (const ChipletNode& node : chiplets) {
+    if (node.inst && node.block == block) {
+      return node.name + odb::kChipletPathDelimiter + local_name;
+    }
+  }
+  return local_name;
+}
+
+static odb::dbInst* findSchematicInst(const std::vector<ChipletNode>& chiplets,
+                                      const std::string& inst_name)
+{
+  const std::string_view name(inst_name);
+  bool prefix_matched = false;
+  for (const ChipletNode& node : chiplets) {
+    if (!node.inst || !node.block || name.size() <= node.name.size()
+        || !name.starts_with(node.name)
+        || name[node.name.size()] != odb::kChipletPathDelimiter) {
+      continue;
+    }
+    prefix_matched = true;
+    if (odb::dbInst* inst
+        = node.block->findInst(inst_name.c_str() + node.name.size() + 1)) {
+      return inst;
+    }
+  }
+  if (prefix_matched) {
+    return nullptr;
+  }
+
+  // Unqualified names belong to the root block. A blockless 3DBlox root
+  // requires a chiplet prefix rather than guessing between die-local names.
+  for (const ChipletNode& node : chiplets) {
+    if (!node.inst && node.block) {
+      return node.block->findInst(inst_name.c_str());
+    }
+  }
+  return nullptr;
+}
+
 // Emit one Yosys-format cell object for `inst` into `cells`.  The cell is
 // always emitted verbatim (master name + real pin names) so netlistsvg renders
 // it with its instance and port labels.  When it classifies as a standard
@@ -4027,7 +4086,8 @@ static void emitSchematicCell(boost::json::object& cells,
                               odb::dbInst* inst,
                               sta::dbNetwork* network,
                               odb::PtrMap<odb::dbNet, int>& net_to_id,
-                              int& next_net_id)
+                              int& next_net_id,
+                              const std::string& inst_name)
 {
   boost::json::object cell;
   cell["hide_name"] = 0;
@@ -4089,13 +4149,14 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["port_directions"] = std::move(port_directions);
   cell["connections"] = std::move(connections);
 
-  cells[inst->getName()] = std::move(cell);
+  cells[inst_name] = std::move(cell);
 }
 
 // Cone/path requests wire only nets touching their selected instances.
 static boost::json::object buildSchematicNetlist(
     const odb::PtrSet<odb::dbInst>& insts,
-    sta::dbNetwork* network)
+    sta::dbNetwork* network,
+    const std::vector<ChipletNode>& chiplets)
 {
   odb::PtrMap<odb::dbNet, int> net_to_id;
   int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
@@ -4119,19 +4180,27 @@ static boost::json::object buildSchematicNetlist(
       boost::json::object p;
       p["direction"] = ioTypeToDirection(bterm->getIoType());
       p["bits"] = bits;
-      ports[bterm->getName()] = std::move(p);
+      ports[schematicName(chiplets, bterm->getBlock(), bterm->getName())]
+          = std::move(p);
     }
     boost::json::object n;
     n["hide_name"] = 0;
     n["bits"] = bits;
     n["attributes"] = boost::json::object{};
-    netnames[net->getName()] = std::move(n);
+    netnames[schematicName(chiplets, net->getBlock(), net->getName())]
+        = std::move(n);
   }
   top["ports"] = std::move(ports);
 
   boost::json::object cells;
   for (odb::dbInst* inst : insts) {
-    emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
+    emitSchematicCell(
+        cells,
+        inst,
+        network,
+        net_to_id,
+        next_net_id,
+        schematicName(chiplets, inst->getBlock(), inst->getName()));
   }
   top["cells"] = std::move(cells);
   top["netnames"] = std::move(netnames);
@@ -4157,12 +4226,12 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         = static_cast<int>(req.json.at("fanin_depth").as_int64());
     const int fanout_depth
         = static_cast<int>(req.json.at("fanout_depth").as_int64());
-    odb::dbBlock* block = gen_->getBlock();
-    if (!block) {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* target_inst = block->findInst(inst_name.c_str());
+    odb::dbInst* target_inst = findSchematicInst(chiplets, inst_name);
     if (!target_inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
     }
@@ -4257,7 +4326,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    writePayload(resp, buildSchematicNetlist(all_insts, network));
+    writePayload(resp, buildSchematicNetlist(all_insts, network, chiplets));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -4276,8 +4345,8 @@ WebSocketResponse SelectHandler::handleSchematicPath(
   static constexpr size_t kMaxPathInsts = 400;
 
   try {
-    odb::dbBlock* block = gen_->getBlock();
-    if (!block) {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
@@ -4287,14 +4356,14 @@ WebSocketResponse SelectHandler::handleSchematicPath(
         break;
       }
       const std::string name = std::string(name_val.as_string());
-      if (odb::dbInst* inst = block->findInst(name.c_str())) {
+      if (odb::dbInst* inst = findSchematicInst(chiplets, name)) {
         all_insts.insert(inst);
       }
     }
 
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    writePayload(resp, buildSchematicNetlist(all_insts, network));
+    writePayload(resp, buildSchematicNetlist(all_insts, network, chiplets));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -4342,7 +4411,8 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : block->getInsts()) {
-      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
+      emitSchematicCell(
+          cells, inst, network, net_to_id, next_net_id, inst->getName());
     }
     top["cells"] = std::move(cells);
 
@@ -4460,14 +4530,22 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     consumeStaleSelection(state);
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
-    odb::dbBlock* block = gen_->getBlock();
-    if (!block) {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* inst = block->findInst(inst_name.c_str());
+    odb::dbInst* inst = findSchematicInst(chiplets, inst_name);
     if (!inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
+    }
+
+    odb::dbTransform world_xfm;
+    for (const ChipletNode& node : chiplets) {
+      if (node.block == inst->getBlock()) {
+        world_xfm = node.world_xfm;
+        break;
+      }
     }
 
     web::Selected sel = web::DescriptorRegistry::instance()->makeSelected(inst);
@@ -4484,7 +4562,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      setSelectionHighlights(state, sel);
+      setSelectionHighlights(state, sel, world_xfm);
       runDeselectAction(state.current_inspected, sel);
       state.current_inspected = sel;
       state.navigation_history.clear();
@@ -4499,7 +4577,8 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
                         /*can_navigate_back=*/false,
                         use_dbu,
                         gen_->getLogger(),
-                        hl_group);
+                        hl_group,
+                        world_xfm);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
@@ -4707,9 +4786,11 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(
           is_setup,
-          /*max_paths=*/100,
-          /*slack_min=*/-std::numeric_limits<float>::max(),
-          /*slack_max=*/std::numeric_limits<float>::max(),
+          jsonOr(req.json, "max_paths", 100),
+          static_cast<float>(jsonOr<double>(
+              req.json, "slack_min", -std::numeric_limits<float>::max())),
+          static_cast<float>(jsonOr<double>(
+              req.json, "slack_max", std::numeric_limits<float>::max())),
           unconstrained);
       if (path_index < static_cast<int>(paths.size())) {
         // chiplets() covers both cases: for a single-die design its root node

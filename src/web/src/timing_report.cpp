@@ -111,6 +111,7 @@ void TimingReport::expandPath(sta::Path* path,
     db_network->staToDb(pin, term, port, moditerm);
 
     std::string pin_name;
+    std::string inst_name = term ? term->getInst()->getName() : "";
     odb::dbBlock* block = nullptr;
     if (term) {
       pin_name = term->getName();
@@ -125,7 +126,12 @@ void TimingReport::expandPath(sta::Path* path,
     // back off, and what dbNetwork composes for the unfolded model.
     if (block != nullptr) {
       if (odb::dbChipInst* chip_inst = db_network->chipInstOf(block)) {
-        pin_name.insert(0, chip_inst->getName() + odb::kChipletPathDelimiter);
+        const std::string prefix
+            = chip_inst->getName() + odb::kChipletPathDelimiter;
+        pin_name.insert(0, prefix);
+        if (term) {
+          inst_name.insert(0, prefix);
+        }
       }
     }
 
@@ -149,16 +155,15 @@ void TimingReport::expandPath(sta::Path* path,
       total_fanout += node_fanout;
     }
 
-    nodes.push_back(
-        TimingNode{.pin_name = std::move(pin_name),
-                   .inst_name = term ? term->getInst()->getName() : "",
-                   .fanout = node_fanout,
-                   .is_rising = is_rising,
-                   .is_clock = pin_is_clock,
-                   .time = (arrival_cur + offset) / time_scale,
-                   .delay = pin_delay / time_scale,
-                   .slew = slew / time_scale,
-                   .load = cap / cap_scale});
+    nodes.push_back(TimingNode{.pin_name = std::move(pin_name),
+                               .inst_name = std::move(inst_name),
+                               .fanout = node_fanout,
+                               .is_rising = is_rising,
+                               .is_clock = pin_is_clock,
+                               .time = (arrival_cur + offset) / time_scale,
+                               .delay = pin_delay / time_scale,
+                               .slew = slew / time_scale,
+                               .load = cap / cap_scale});
 
     arrival_prev = arrival_cur;
   }

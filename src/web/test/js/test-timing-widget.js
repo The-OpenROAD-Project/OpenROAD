@@ -483,6 +483,35 @@ describe('TimingWidget unconstrained paths', () => {
         assert.equal(widget._updateBtn.disabled, false);
         assert.equal(widget._updateBtn.textContent, 'Update');
     });
+
+    it('keeps histogram paths when an earlier Update finishes later', async () => {
+        const pending = [];
+        const app = createMockApp({
+            timing_report: () => {
+                const request = deferred();
+                pending.push(request);
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        const update = widget.update();
+        assert.equal(widget._updateBtn.disabled, true);
+
+        widget.showPaths('setup', [makePath(0.0, 'histogram')]);
+        assert.equal(widget._updateBtn.disabled, false);
+        assert.equal(widget._updateBtn.textContent, 'Update');
+        pending.forEach(request => request.resolve({
+            paths: [makePath(0.0, 'stale-update')],
+        }));
+        assert.equal(await update, false);
+
+        assert.equal(widget._setupPaths[0].end_pin, 'histogram');
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+    });
 });
 
 describe('TimingWidget schematic hand-off', () => {

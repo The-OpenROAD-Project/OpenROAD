@@ -8,6 +8,7 @@
 #include <exception>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -21,10 +22,17 @@
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
+#include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sequential.hh"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
 #include "web/core.h"
@@ -4832,6 +4840,94 @@ TEST_F(SchematicHandlerTest, RegistersWithBidirectionalSignalsStayBoxes)
   }
 }
 
+TEST_F(SchematicHandlerTest, RegistersMatchInvertedStateExpressions)
+{
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  sta::LibertyCell* liberty_cell
+      = sta_->getDbNetwork()->libertyCell(block_->findInst("g_dff"));
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  const sta::Sequential& sequential = liberty_cell->sequentials().front();
+
+  for (const bool invert_q : {false, true}) {
+    SCOPED_TRACE(invert_q);
+    delete liberty_cell->findLibertyPort("Q")->function();
+    liberty_cell->findLibertyPort("Q")->setFunction(
+        invert_q ? sta::FuncExpr::makeNot(
+                       sta::FuncExpr::makePort(sequential.outputInv()))
+                 : sta::FuncExpr::makePort(sequential.output()));
+    delete liberty_cell->findLibertyPort("QN")->function();
+    liberty_cell->findLibertyPort("QN")->setFunction(
+        invert_q ? sta::FuncExpr::makePort(sequential.outputInv())
+                 : sta::FuncExpr::makeNot(
+                       sta::FuncExpr::makePort(sequential.output())));
+
+    const auto cells = fullCells();
+    const auto& cell = cells.at("g_dff").as_object();
+    ASSERT_TRUE(cell.contains("gate_kind"));
+    EXPECT_EQ(cell.at("gate_kind").as_string(), "dff");
+    const auto& ports = cell.at("gate_ports").as_object();
+    EXPECT_EQ(ports.at("Q").as_string(), "Q");
+    EXPECT_EQ(ports.at("QN").as_string(), "QN");
+  }
+}
+
+TEST_F(SchematicHandlerTest, InvertingOnlyRegisterOutputUsesQnPort)
+{
+  odb::dbLib* test_lib
+      = odb::dbLib::create(getDb(), "qn_only_lib", getDb()->getTech());
+  odb::dbMaster* master = odb::dbMaster::create(test_lib, "DFF_X1");
+  master->setWidth(1000);
+  master->setHeight(1000);
+  master->setType(odb::dbMasterType::CORE);
+  odb::dbMTerm::create(
+      master, "D", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master, "CK", odb::dbIoType::INPUT, odb::dbSigType::CLOCK);
+  odb::dbMTerm::create(
+      master, "QN", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  master->setFrozen();
+  sta_->getDbNetwork()->readLefAfter(test_lib);
+  odb::dbInst* inst = makeInst(block_, master, "g_qn", {});
+  sta::LibertyCell* liberty_cell = sta_->getDbNetwork()->libertyCell(inst);
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  delete liberty_cell->findLibertyPort("QN")->function();
+  liberty_cell->findLibertyPort("QN")->setFunction(sta::FuncExpr::makeNot(
+      sta::FuncExpr::makePort(liberty_cell->sequentials().front().output())));
+
+  const auto cells = fullCells();
+  const auto& cell = cells.at("g_qn").as_object();
+  ASSERT_TRUE(cell.contains("gate_kind"));
+  EXPECT_EQ(cell.at("gate_kind").as_string(), "dff");
+  const auto& ports = cell.at("gate_ports").as_object();
+  EXPECT_FALSE(ports.contains("Q"));
+  EXPECT_EQ(ports.at("QN").as_string(), "QN");
+}
+
+TEST_F(SchematicHandlerTest, RegistersWithCompoundStateOutputsStayBoxes)
+{
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  sta::LibertyCell* liberty_cell
+      = sta_->getDbNetwork()->libertyCell(block_->findInst("g_dff"));
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  delete liberty_cell->findLibertyPort("Q")->function();
+  liberty_cell->findLibertyPort("Q")->setFunction(sta::FuncExpr::makeAnd(
+      sta::FuncExpr::makePort(liberty_cell->sequentials().front().output()),
+      sta::FuncExpr::makePort(liberty_cell->findLibertyPort("D"))));
+
+  const auto cells = fullCells();
+  EXPECT_FALSE(cells.at("g_dff").as_object().contains("gate_kind"));
+  EXPECT_TRUE(cells.at("g_dff")
+                  .as_object()
+                  .at("connections")
+                  .as_object()
+                  .contains("Q"));
+}
+
 TEST_F(SchematicHandlerTest, SchematicPathUsesRequestedInstances)
 {
   makeGate("BUF_X1", "g_buf", {{"i", "A"}, {"o", "Z"}});
@@ -4853,6 +4949,327 @@ TEST_F(SchematicHandlerTest, SchematicPathUsesRequestedInstances)
                           .as_object();
   EXPECT_EQ(cells.size(), 1);
   EXPECT_TRUE(cells.contains("g_buf"));
+}
+
+class TimingHighlightHandlerTest : public SchematicHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SchematicHandlerTest::SetUp();
+    std::vector<odb::dbInst*> flops;
+    for (int path = 0; path < 3; ++path) {
+      const std::string prefix = "path" + std::to_string(path);
+      const std::string input = prefix + "_in";
+      std::string net = prefix + "_0";
+      tst::InstOptions options;
+      options.status = odb::dbPlacementStatus::PLACED;
+      options.location = odb::Point(1000, 10000 * (path + 1));
+      options.iterms
+          = {{input.c_str(), "D"}, {"clk", "CK"}, {net.c_str(), "Q"}};
+      flops.push_back(makeInst(block_,
+                               lib_->findMaster("DFF_X1"),
+                               (prefix + "_launch").c_str(),
+                               options));
+      // Independent chains have distinct slack and layout locations, so a
+      // wrong path index cannot accidentally produce the same overlay.
+      const int buffers = 1 + 2 * path;
+      for (int buffer = 0; buffer < buffers; ++buffer) {
+        const std::string output = prefix + "_" + std::to_string(buffer + 1);
+        options.location = odb::Point(5000 * (buffer + 1), 10000 * (path + 1));
+        options.iterms = {{net.c_str(), "A"}, {output.c_str(), "Z"}};
+        makeInst(block_,
+                 lib_->findMaster("BUF_X1"),
+                 (prefix + "_buf" + std::to_string(buffer)).c_str(),
+                 options);
+        net = output;
+      }
+      const std::string output = prefix + "_out";
+      options.location = odb::Point(5000 * (buffers + 1), 10000 * (path + 1));
+      options.iterms
+          = {{net.c_str(), "D"}, {"clk", "CK"}, {output.c_str(), "Q"}};
+      flops.push_back(makeInst(block_,
+                               lib_->findMaster("DFF_X1"),
+                               (prefix + "_capture").c_str(),
+                               options));
+    }
+    sta_->postReadDef(block_);
+    auto* network = sta_->getDbNetwork();
+    network->setBlock(block_);
+    sta::PinSet clock_pins(network);
+    for (odb::dbInst* flop : flops) {
+      clock_pins.insert(network->dbToSta(flop->findITerm("CK")));
+    }
+    sta::FloatSeq waveform{0.0f, 0.5e-9f};
+    sta_->makeClock(
+        "clk", clock_pins, false, 1.0e-9f, waveform, "", sta_->cmdMode());
+    timing_report_ = std::make_shared<TimingReport>(getSta());
+    timing_handler_
+        = std::make_unique<TimingHandler>(gen_, timing_report_, tcl_eval_);
+  }
+
+  std::shared_ptr<TimingReport> timing_report_;
+  std::unique_ptr<TimingHandler> timing_handler_;
+};
+
+TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
+{
+  const auto paths
+      = timing_report_->getReport(true,
+                                  100,
+                                  -std::numeric_limits<float>::max(),
+                                  std::numeric_limits<float>::max());
+  ASSERT_EQ(paths.size(), 3);
+  ASSERT_LT(paths[0].slack, paths[1].slack);
+  ASSERT_LT(paths[1].slack, paths[2].slack);
+  const float slack_min = (paths[0].slack + paths[1].slack) / 2;
+  const float slack_max = (paths[1].slack + paths[2].slack) / 2;
+  const auto filtered
+      = timing_report_->getReport(true, 1, slack_min, slack_max);
+  ASSERT_EQ(filtered.size(), 1);
+  ASSERT_EQ(filtered.front().end_pin, paths[1].end_pin);
+  ASSERT_NE(filtered.front().end_pin, paths.front().end_pin);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingReport;
+  req.json = {{"is_setup", true},
+              {"max_paths", 1},
+              {"slack_min", slack_min},
+              {"slack_max", slack_max},
+              {"unconstrained", false}};
+  const auto report_response = timing_handler_->handleTimingReport(req);
+  ASSERT_EQ(report_response.type, WebSocketResponse::kJson)
+      << payloadStr(report_response);
+  const auto report_json = boost::json::parse(payloadStr(report_response));
+  const auto& reported_paths = report_json.as_object().at("paths").as_array();
+  ASSERT_EQ(reported_paths.size(), 1);
+  EXPECT_EQ(reported_paths.front().as_object().at("end_pin").as_string(),
+            filtered.front().end_pin);
+
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json["path_index"] = 0;
+  for (const bool stage : {false, true}) {
+    SCOPED_TRACE(stage);
+    std::vector<ColoredRect> expected_rects;
+    std::vector<FlightLine> expected_lines;
+    collectTimingPathShapes(
+        gen_->chiplets(), filtered.front(), expected_rects, expected_lines);
+    ASSERT_FALSE(expected_lines.empty());
+    if (stage) {
+      req.json["pin_name"] = filtered.front().end_pin;
+      const size_t path_lines = expected_lines.size();
+      collectTimingStageShapes(gen_->chiplets(),
+                               filtered.front(),
+                               filtered.front().end_pin,
+                               Color{.r = 255, .g = 255, .b = 0, .a = 180},
+                               expected_rects,
+                               expected_lines);
+      ASSERT_GT(expected_lines.size(), path_lines);
+    }
+
+    SessionState state;
+    const auto response = timing_handler_->handleTimingHighlight(req, state);
+    ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+    ASSERT_EQ(state.timing_rects.size(), expected_rects.size());
+    for (size_t i = 0; i < expected_rects.size(); ++i) {
+      EXPECT_EQ(state.timing_rects[i].rect, expected_rects[i].rect);
+      EXPECT_EQ(state.timing_rects[i].color, expected_rects[i].color);
+      EXPECT_EQ(state.timing_rects[i].layer, expected_rects[i].layer);
+      EXPECT_EQ(state.timing_rects[i].filled, expected_rects[i].filled);
+    }
+    ASSERT_EQ(state.timing_lines.size(), expected_lines.size());
+    for (size_t i = 0; i < expected_lines.size(); ++i) {
+      EXPECT_EQ(state.timing_lines[i].p1, expected_lines[i].p1);
+      EXPECT_EQ(state.timing_lines[i].p2, expected_lines[i].p2);
+      EXPECT_EQ(state.timing_lines[i].color, expected_lines[i].color);
+    }
+  }
+}
+
+TEST_F(TimingHighlightHandlerTest, HighlightHonorsTheReportPathLimit)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true}, {"max_paths", 1}, {"path_index", 1}};
+  SessionState state;
+  const auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  EXPECT_TRUE(state.timing_rects.empty());
+  EXPECT_TRUE(state.timing_lines.empty());
+}
+
+class ChipletSchematicHandlerTest : public SchematicHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SchematicHandlerTest::SetUp();
+    odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buffer, nullptr);
+    tst::InstOptions options;
+    options.iterms = {{"in", "A"}, {"out", "Z"}};
+    makeInst(block_, buffer, "buf", options);
+    makeBTerm(block_, "in");
+    tst::BTermOptions output_options;
+    output_options.io_type = odb::dbIoType::OUTPUT;
+    makeBTerm(block_, "out", output_options);
+
+    odb::dbChip* other
+        = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+    odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+    other_block->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    other_buffer_ = makeInst(other_block, buffer, "buf", options);
+    makeBTerm(other_block, "in");
+    makeBTerm(other_block, "out", output_options);
+
+    // A flattened local name must not claim a request for the other die,
+    // including when that die has no instance with the requested local name.
+    makeGate("INV_X1", "die1/buf", {{"decoy_in", "A"}, {"decoy_out", "ZN"}});
+    makeGate(
+        "INV_X1", "die1/missing", {{"decoy_in", "A"}, {"decoy_out", "ZN"}});
+
+    odb::dbChip* root = odb::dbChip::create(
+        getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+    odb::dbChipInst::create(root, chip_, "die0");
+    odb::dbChipInst::create(root, other, "die1")
+        ->setLoc(odb::Point3D(kOtherOffsetX, kOtherOffsetY, 0));
+    getDb()->setTopChip(root);
+
+    gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  static constexpr int kOtherOffsetX = 400000;
+  static constexpr int kOtherOffsetY = 250000;
+  odb::dbInst* other_buffer_ = nullptr;
+};
+
+TEST_F(ChipletSchematicHandlerTest, PathKeepsSameNamedCellsAndNetsDistinct)
+{
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  WebSocketRequest req;
+  req.id = 3;
+  req.type = WebSocketRequest::kSchematicPath;
+  req.json = parseObj(
+      R"({"inst_names":["die0/buf","die1/buf","die1/missing","unknown/buf"]})");
+  const auto resp = handler_->handleSchematicPath(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const auto json = boost::json::parse(payloadStr(resp));
+  const auto& top
+      = json.as_object().at("modules").as_object().at("top").as_object();
+  const auto& cells = top.at("cells").as_object();
+  ASSERT_EQ(cells.size(), 2);
+  const auto& ports = top.at("ports").as_object();
+  const auto& nets = top.at("netnames").as_object();
+  EXPECT_EQ(ports.size(), 4);
+  EXPECT_EQ(nets.size(), 4);
+
+  std::set<int> bits;
+  for (const std::string die : {"die0", "die1"}) {
+    ASSERT_TRUE(cells.contains(die + "/buf"));
+    const auto& cell = cells.at(die + "/buf").as_object();
+    EXPECT_EQ(cell.at("type").as_string(), "BUF_X1");
+    const auto& connections = cell.at("connections").as_object();
+    for (const auto& [net, pin] :
+         {std::pair{"in", "A"}, std::pair{"out", "Z"}}) {
+      const int bit = connections.at(pin).as_array().front().to_number<int>();
+      EXPECT_TRUE(bits.insert(bit).second);
+      ASSERT_TRUE(ports.contains(die + "/" + net));
+      ASSERT_TRUE(nets.contains(die + "/" + net));
+      EXPECT_EQ(ports.at(die + "/" + net)
+                    .as_object()
+                    .at("bits")
+                    .as_array()
+                    .front()
+                    .to_number<int>(),
+                bit);
+      EXPECT_EQ(nets.at(die + "/" + net)
+                    .as_object()
+                    .at("bits")
+                    .as_array()
+                    .front()
+                    .to_number<int>(),
+                bit);
+    }
+  }
+}
+
+TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheQualifiedInstance)
+{
+  WebSocketRequest req;
+  req.id = 4;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json = parseObj(
+      R"({"inst_name":"die1/buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const auto json = boost::json::parse(payloadStr(resp));
+  const auto& cells = json.as_object()
+                          .at("modules")
+                          .as_object()
+                          .at("top")
+                          .as_object()
+                          .at("cells")
+                          .as_object();
+  ASSERT_EQ(cells.size(), 1);
+  ASSERT_TRUE(cells.contains("die1/buf"));
+  EXPECT_EQ(cells.at("die1/buf").as_object().at("type").as_string(), "BUF_X1");
+}
+
+TEST_F(ChipletSchematicHandlerTest, ConeRejectsAnUnqualifiedInstance)
+{
+  WebSocketRequest req;
+  req.id = 6;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json
+      = parseObj(R"({"inst_name":"buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Instance not found: buf"),
+            std::string::npos);
+}
+
+TEST_F(ChipletSchematicHandlerTest, InspectResolvesTheQualifiedInstance)
+{
+  struct ScopedInstDescriptor
+  {
+    ScopedInstDescriptor() : registry(web::DescriptorRegistry::instance())
+    {
+      registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
+    }
+    ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
+    web::DescriptorRegistry* registry;
+  } scoped_inst_descriptor;
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 5;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  ASSERT_TRUE(state.current_inspected);
+  EXPECT_EQ(std::any_cast<odb::dbInst*>(state.current_inspected.getObject()),
+            other_buffer_);
+
+  const odb::Rect local = other_buffer_->getBBox()->getBox();
+  const odb::Rect expected(local.xMin() + kOtherOffsetX,
+                           local.yMin() + kOtherOffsetY,
+                           local.xMax() + kOtherOffsetX,
+                           local.yMax() + kOtherOffsetY);
+  const auto json = parseObj(payloadStr(resp));
+  ASSERT_TRUE(json.contains("bbox")) << payloadStr(resp);
+  const auto& bbox = json.at("bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4);
+  EXPECT_EQ(odb::Rect(bbox[0].to_number<int>(),
+                      bbox[1].to_number<int>(),
+                      bbox[2].to_number<int>(),
+                      bbox[3].to_number<int>()),
+            expected);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
 }
 
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)

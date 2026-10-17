@@ -22,7 +22,10 @@ export class TimingWidget {
         this._sortAscending = true;
         // Options that produced the path indices currently shown in the table.
         // These deliberately change only when a complete report is committed.
-        this._reportOptions = { unconstrained: false };
+        this._reportOptions = {
+            setup: { max_paths: 100, unconstrained: false },
+            hold: { max_paths: 100, unconstrained: false },
+        };
         this._updateGeneration = 0;
 
         this._build();
@@ -371,7 +374,15 @@ export class TimingWidget {
         this._coneStatus.textContent = '';
     }
 
-    showPaths(tab, paths) {
+    showPaths(tab, paths, reportOptions = {}) {
+        // Histogram drill-down supplies constrained paths and replaces only
+        // one side. Keep the other side's report options with its path list.
+        ++this._updateGeneration;
+        this._updateBtn.disabled = false;
+        this._updateBtn.textContent = 'Update';
+        this._reportOptions[tab] = {
+            max_paths: 100, unconstrained: false, ...reportOptions,
+        };
         this._currentTab = tab;
         // Copy so sorting never reorders the caller's array.
         if (tab === 'setup') {
@@ -396,10 +407,11 @@ export class TimingWidget {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
         const unconstrained = this._unconstrainedBox.checked;
+        const reportOptions = { max_paths: 100, unconstrained };
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100, unconstrained }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100, unconstrained }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, ...reportOptions }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, ...reportOptions }),
             ]);
             if (generation !== this._updateGeneration) {
                 return false;
@@ -409,7 +421,10 @@ export class TimingWidget {
             // server-side overlay indices, so it must not be sorted.
             this._setupPaths = [...(setupData.paths || [])];
             this._holdPaths = [...(holdData.paths || [])];
-            this._reportOptions = { unconstrained };
+            this._reportOptions = {
+                setup: { ...reportOptions },
+                hold: { ...reportOptions },
+            };
             this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
@@ -529,7 +544,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-            unconstrained: this._reportOptions.unconstrained,
+            ...this._reportOptions[this._currentTab],
         }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
     }
@@ -641,7 +656,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-            unconstrained: this._reportOptions.unconstrained,
+            ...this._reportOptions[this._currentTab],
             pin_name: nodes[idx].pin,
         }).then(() => this._refreshOverlay());
     }

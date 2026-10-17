@@ -27,7 +27,8 @@ namespace web {
 struct TimingNode
 {
   std::string pin_name;
-  // Owning instance, empty for block ports; avoids parsing hierarchical pins.
+  // Owning instance, chiplet-qualified in 3DBlox and empty for block ports;
+  // avoids parsing hierarchical pins.
   std::string inst_name = "";
   int fanout = 0;
   bool is_rising = false;

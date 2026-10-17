@@ -2643,16 +2643,24 @@ body {
     pointer-events: none;
 }
 
-/* Upstream inverts the whole SVG; invert individual shapes here so timing
-   overlays keep their red/cyan/green colors in dark mode. */
-html[data-theme="dark"] .schematic-svg-container svg path:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg rect:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg circle:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg ellipse:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg line:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg polyline:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg polygon:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-svg-container svg text:not(.schematic-timing-node) {
+/* Upstream inverts the whole SVG. With no timing path up there is nothing to
+   exclude, so one root filter inverts the schematic in a single pass instead
+   of giving every shape its own filter. */
+html[data-theme="dark"] .schematic-svg-container:not(.schematic-timing-active) svg {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* While a path is highlighted the overlay must stay out of the inversion, so
+   shapes are inverted one by one to keep their red/cyan/green colors. The
+   transparent hit-target rects paint nothing, so they are skipped too. */
+html[data-theme="dark"] .schematic-timing-active svg path:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg rect:not(.schematic-timing-node):not([data-openroad-hit-target]),
+html[data-theme="dark"] .schematic-timing-active svg circle:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg ellipse:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg line:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg polyline:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg polygon:not(.schematic-timing-node),
+html[data-theme="dark"] .schematic-timing-active svg text:not(.schematic-timing-node) {
     filter: invert(1) hue-rotate(180deg);
 }
 

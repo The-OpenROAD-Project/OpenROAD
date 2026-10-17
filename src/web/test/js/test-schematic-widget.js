@@ -66,7 +66,7 @@ function makeCell(widget, instName, { identify = 'id', bounds = rect(0, 0, 30, 3
     if (identify === 'id') {
         widget._svgIdToInstName.set(group.id, instName);
     } else {
-        widget._registerSvgCellHitTarget(instName, group);
+        widget._registerSvgCellHitTargets([instName]);
     }
 
     return {
@@ -792,6 +792,112 @@ describe('SchematicWidget render ordering', () => {
     });
 });
 
+describe('SchematicWidget cell hit target layout', () => {
+    for (const failedIndex of [null, 1]) {
+        const description = failedIndex === null
+            ? 'batches body measurements before inserting hit targets'
+            : 'restores all text and skips only a cell whose measurement fails';
+        it(description, async () => {
+            const { widget, container } = makeWidget();
+            const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+            globalThis.requestAnimationFrame = () => {};
+            try {
+                const cellCount = 20;
+                const cells = Object.fromEntries(Array.from(
+                    { length: cellCount }, (_, index) => [`u${index}`, {}]));
+                widget.skin = '<svg></svg>';
+                widget.netlistsvg = {
+                    render: () => Promise.resolve(`<svg>${Object.keys(cells).map(
+                        name => `<g id="cell_${name}"><path/><text>${name}</text>`
+                            + '<text>port</text></g>').join('')}</svg>`),
+                };
+
+                const events = [];
+                const displays = [];
+                const labels = [];
+                const groups = [];
+                const measuredHidden = [];
+                let layoutDirty = true;
+                let layoutFlushes = 0;
+                const ensureLabels = widget._ensureOpenRoadSymbolLabels.bind(widget);
+                widget._ensureOpenRoadSymbolLabels = json => {
+                    ensureLabels(json);
+                    groups.push(...widget._svgEl.querySelectorAll('g'));
+                    labels.push(...widget._svgEl.querySelectorAll('text'));
+                    labels.forEach((label, index) => {
+                        const display = [null, 'inline', 'none'][index % 3];
+                        displays.push(display);
+                        if (display !== null) label.setAttribute('display', display);
+                        const setAttribute = label.setAttribute.bind(label);
+                        const removeAttribute = label.removeAttribute.bind(label);
+                        label.setAttribute = (name, value) => {
+                            if (name === 'display') {
+                                events.push('write');
+                                layoutDirty = true;
+                            }
+                            setAttribute(name, value);
+                        };
+                        label.removeAttribute = name => {
+                            if (name === 'display') {
+                                events.push('write');
+                                layoutDirty = true;
+                            }
+                            removeAttribute(name);
+                        };
+                    });
+                    groups.forEach((group, index) => {
+                        group.getBBox = () => {
+                            events.push('measure');
+                            if (layoutDirty) layoutFlushes += 1;
+                            layoutDirty = false;
+                            measuredHidden.push(labels.every(
+                                label => label.getAttribute('display') === 'none'));
+                            if (index === failedIndex) throw new Error('measurement failed');
+                            return { x: index, y: 2, width: 30, height: 40 };
+                        };
+                        const insertBefore = group.insertBefore.bind(group);
+                        group.insertBefore = (element, before) => {
+                            events.push('insert');
+                            layoutDirty = true;
+                            return insertBefore(element, before);
+                        };
+                    });
+                };
+
+                assert.equal(await widget.renderNetlist({ modules: { top: { cells } } }), true);
+
+                const targetCount = cellCount - (failedIndex === null ? 0 : 1);
+                assert.deepEqual(events, [
+                    ...Array(labels.length).fill('write'),
+                    ...Array(cellCount).fill('measure'),
+                    ...Array(labels.length).fill('write'),
+                    ...Array(targetCount).fill('insert'),
+                ]);
+                assert.equal(layoutFlushes, 1);
+                assert.equal(measuredHidden.every(Boolean), true);
+                assert.deepEqual(labels.map(label => label.getAttribute('display')), displays);
+                groups.forEach((group, index) => {
+                    const target = group.querySelector('rect[data-openroad-hit-target]');
+                    assert.equal(Boolean(target), index !== failedIndex);
+                    if (target) {
+                        assert.equal(group.firstChild, target);
+                        assert.equal(target.getAttribute('x'), String(index));
+                        assert.equal(target.getAttribute('y'), '2');
+                        assert.equal(target.getAttribute('width'), '30');
+                        assert.equal(target.getAttribute('height'), '40');
+                        assert.equal(target.getAttribute('class'), `cell_u${index}`);
+                    }
+                    assert.equal(widget._svgIdToInstName.get(`cell_u${index}`), `u${index}`);
+                    assert.equal(widget._svgIdToInstName.get(`u${index}`), `u${index}`);
+                });
+            } finally {
+                globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+                container.element.remove();
+            }
+        });
+    }
+});
+
 describe('SchematicWidget timing path overlay', () => {
     // A timing_report data_nodes entry; `inst` is what the overlay joins on.
     function node(inst, extra = {}) {
@@ -933,6 +1039,37 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
+    // Dark mode inverts the whole SVG at the root unless this class is set,
+    // so it has to track whether any shape is being held out of the inversion.
+    it('marks the container only while overlay shapes are in the SVG', () => {
+        const { widget, container } = makeWidget();
+        const { groups } = makeCells(widget, ['u1']);
+        const marked = () =>
+            widget.svgContainer.classList.contains('schematic-timing-active');
+
+        assert.equal(marked(), false);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+        assert.equal(overlayIn(groups.u1).length, 1);
+        assert.equal(marked(), true);
+
+        widget.showTimingPath(null);
+        assert.equal(marked(), false);
+        container.element.remove();
+    });
+
+    it('leaves the container unmarked when no path cell is on screen', () => {
+        const { widget, container } = makeWidget();
+        makeCells(widget, ['other']);
+
+        widget.showTimingPath(timingPath([node('u1')]));
+
+        assert.equal(
+            widget.svgContainer.classList.contains('schematic-timing-active'),
+            false);
+        container.element.remove();
+    });
+
     it('reports when the path has no cells in the current schematic', () => {
         const { widget, container } = makeWidget();
         makeCells(widget, ['other']);
@@ -1045,6 +1182,196 @@ describe('SchematicWidget timing path overlay', () => {
             `<g id="cell_${instName}"><path class="cell_${instName}"></path></g>`)
             .join('');
         return `<svg>${cells}</svg>`;
+    }
+
+    // Exercise renderNetlist's timing reapplication, only replacing server
+    // requests and netlistsvg's asynchronous SVG layout.
+    function makeRenderingPathWidget(request = msg => {
+        if (msg.type === 'schematic_path') {
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        }
+        if (msg.type === 'schematic_cone') {
+            return Promise.resolve(netlistWith(msg.inst_name));
+        }
+        return Promise.resolve({ selected: [{ name: msg.inst_name }] });
+    }) {
+        const { widget, container } = makeWidget({
+            websocketManager: { request },
+        });
+        widget._netlistsvgReady = true;
+        widget.fitView = () => {};
+        widget.netlistsvg = {
+            render: (_skin, json) => Promise.resolve(renderedPathSvg(
+                Object.keys(json.modules.top.cells))),
+        };
+        return { widget, container };
+    }
+
+    function assertPlainSchematic(widget, instNames) {
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells),
+                         instNames);
+        assert.equal(widget._timingPath, null);
+        assert.equal(widget.svgContainer.querySelector('.schematic-empty-state'), null);
+        assert.equal(widget.svgContainer.classList.contains('schematic-empty'), false);
+        assert.equal(widget._svgEl.getAttribute('aria-hidden'), null);
+        assert.equal(widget._svgEl.querySelector('.schematic-timing-node'), null);
+        assert.equal(legendOf(widget).hidden, true);
+        assert.equal(widget.controls.querySelector('#schematic-status').textContent,
+                     `${instNames.length} cell${instNames.length === 1 ? '' : 's'}`);
+    }
+
+    it('keeps the original view reachable after many path and detail-tab selections', async () => {
+        const { widget, container } = makeRenderingPathWidget();
+        await widget.renderNetlist(netlistWith('previous'));
+
+        for (let i = 0; i < 55; i++) {
+            const path = timingPath([node(`data${i}`)]);
+            path.capture_nodes = [node(`capture${i}`, { clk: true })];
+            await widget.showTimingPath(path, path.data_nodes);
+            await widget.showTimingPath(path, path.data_nodes);
+            await widget.showTimingPath(path, path.capture_nodes);
+        }
+
+        assert.equal(widget._schematicHistory.length, 1);
+        assert.ok(widget._schematicHistory[0].netlist.modules.top.cells.previous);
+        assert.equal(await widget._goBackSchematic(), true);
+        assertPlainSchematic(widget, ['previous']);
+        assert.equal(widget._schematicHistory.length, 0);
+        assert.equal(widget.controls.querySelector('#schematic-back').disabled, true);
+        container.element.remove();
+    });
+
+    for (const navigation of ['Refresh', 'Back']) {
+        it(`lets ${navigation} replace an empty capture state with a schematic`, async () => {
+            const { widget, container } = makeRenderingPathWidget();
+            await widget.renderNetlist(netlistWith('previous'));
+            const path = timingPath([node('data')]);
+            await widget.showTimingPath(path, path.data_nodes);
+            await widget.showTimingPath(path, path.capture_nodes);
+            assert.ok(widget.svgContainer.querySelector('.schematic-empty-state'));
+
+            widget.appState.selectedInstanceName = 'refreshed';
+            const didRender = await (navigation === 'Refresh'
+                ? widget.refresh() : widget._goBackSchematic());
+
+            assert.equal(didRender, true);
+            assertPlainSchematic(widget,
+                [navigation === 'Refresh' ? 'refreshed' : 'previous']);
+            assert.equal(widget._schematicHistory.length, 0);
+            assert.equal(widget.controls.querySelector('#schematic-back').disabled, true);
+            container.element.remove();
+        });
+    }
+
+    for (const emptyKind of ['capture path', 'server response']) {
+        it(`preserves the previous view when the first selected ${emptyKind} is empty`, async () => {
+            const { widget, container } = makeRenderingPathWidget(
+                () => Promise.resolve(netlistWith()));
+            await widget.renderNetlist(netlistWith('previous'));
+            const path = timingPath([node('missing')]);
+
+            await widget.showTimingPath(path,
+                emptyKind === 'capture path' ? path.capture_nodes : path.data_nodes);
+
+            assert.ok(widget.svgContainer.querySelector('.schematic-empty-state'));
+            assert.equal(widget.controls.querySelector('#schematic-back').disabled, false);
+            assert.equal(widget._schematicHistory.length, 1);
+            assert.equal(await widget._goBackSchematic(), true);
+            assertPlainSchematic(widget, ['previous']);
+            assert.equal(widget._schematicHistory.length, 0);
+            container.element.remove();
+        });
+    }
+
+    for (const navigation of ['Refresh', 'Back']) {
+        for (const pendingStage of ['response', 'layout']) {
+            it(`ignores a timing ${pendingStage} that finishes after ${navigation}`, async () => {
+                let release;
+                const { widget, container } = makeRenderingPathWidget(msg => {
+                    if (msg.type === 'schematic_path' && pendingStage === 'response') {
+                        return new Promise(resolve => { release = resolve; });
+                    }
+                    return Promise.resolve(netlistWith(
+                        msg.type === 'schematic_path' ? 'late' : msg.inst_name));
+                });
+                await widget.renderNetlist(netlistWith('previous'));
+                widget._pushSchematicHistory({
+                    netlist: netlistWith('previous'),
+                    selectedInstanceName: null,
+                });
+                if (pendingStage === 'layout') {
+                    const render = widget.netlistsvg.render;
+                    widget.netlistsvg.render = (skin, json) => {
+                        if (json.modules.top.cells.late) {
+                            return new Promise(resolve => { release = resolve; });
+                        }
+                        return render(skin, json);
+                    };
+                }
+
+                const pendingPath = widget.showTimingPath(timingPath([node('late')]));
+                // Let a resolved path response enter netlistsvg layout.
+                await Promise.resolve();
+                widget.appState.selectedInstanceName = 'refreshed';
+                assert.equal(await (navigation === 'Refresh'
+                    ? widget.refresh() : widget._goBackSchematic()), true);
+
+                release(pendingStage === 'response'
+                    ? netlistWith('late') : renderedPathSvg(['late']));
+                assert.equal(await pendingPath, false);
+                assertPlainSchematic(widget,
+                    [navigation === 'Refresh' ? 'refreshed' : 'previous']);
+                assert.equal(widget._schematicHistory.length, 0);
+                container.element.remove();
+            });
+        }
+    }
+
+    for (const navigation of ['Refresh', 'Back']) {
+        it(`keeps a newer timing selection when pending ${navigation} finishes`, async () => {
+            let release;
+            const { widget, container } = makeRenderingPathWidget(msg => {
+                if (msg.type === 'schematic_cone') {
+                    return new Promise(resolve => { release = resolve; });
+                }
+                return Promise.resolve(netlistWith(...msg.inst_names));
+            });
+            await widget.renderNetlist(netlistWith('base'));
+            widget.appState.selectedInstanceName = 'base';
+            if (navigation === 'Back') {
+                widget._pushSchematicHistory({
+                    netlist: netlistWith('previous'),
+                    selectedInstanceName: 'previous',
+                });
+                const render = widget.netlistsvg.render;
+                widget.netlistsvg.render = (skin, json) => {
+                    if (json.modules.top.cells.previous) {
+                        return new Promise(resolve => { release = resolve; });
+                    }
+                    return render(skin, json);
+                };
+            }
+
+            const pendingNavigation = navigation === 'Refresh'
+                ? widget.refresh() : widget._goBackSchematic();
+            await Promise.resolve();
+            widget.appState.selectedInstanceName = 'selected';
+            const path = timingPath([node('selected')]);
+            await widget.showTimingPath(path);
+
+            release(navigation === 'Refresh'
+                ? netlistWith('base') : renderedPathSvg(['previous']));
+            assert.equal(await pendingNavigation, false);
+            assert.strictEqual(widget._timingPath, path);
+            assert.equal(widget.appState.selectedInstanceName, 'selected');
+            assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells),
+                             ['selected']);
+            assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
+            assert.equal(legendOf(widget).hidden, false);
+            assert.equal(widget._schematicHistory.length, 1);
+            assert.ok(widget._schematicHistory[0].netlist.modules.top.cells.base);
+            container.element.remove();
+        });
     }
 
     it('ignores a schematic response for an older timing path', async () => {
@@ -1266,6 +1593,54 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
+    it('clears cell selection on a background click without clearing timing colors', async () => {
+        const requests = [];
+        const { widget, container } = makeWidget({
+            websocketManager: {
+                request: request => {
+                    requests.push(request);
+                    return Promise.resolve({ selected: [{ name: request.inst_name }] });
+                },
+            },
+        });
+        const { svg, group, path } = makeInteractiveCell(widget, 'u1');
+        const wire = document.createElementNS(svgNS, 'line');
+        svg.appendChild(wire);
+        const timing = timingPath([node('u1')]);
+        await widget.showTimingPath(timing);
+        widget._toggleSelectMode();
+        const zoomTo = widget.controls.querySelector('#schematic-zoom-to');
+
+        for (const target of [svg, wire]) {
+            path.dispatchEvent(new window.MouseEvent('mousedown', {
+                bubbles: true,
+                button: 0,
+                detail: 1,
+            }));
+            assert.ok(group.querySelector('#_schematic_highlight'));
+            assert.strictEqual(widget._selectedCell, group);
+            assert.equal(zoomTo.disabled, false);
+            const inspectCount = requests.length;
+            assert.equal(requests.at(-1).type, 'schematic_inspect');
+
+            target.dispatchEvent(new window.MouseEvent('mousedown', {
+                bubbles: true,
+                button: 0,
+                detail: 1,
+            }));
+
+            assert.equal(group.querySelector('#_schematic_highlight'), null);
+            assert.equal(widget._selectedCell, null);
+            assert.equal(zoomTo.disabled, true);
+            assert.equal(requests.length, inspectCount);
+            assert.strictEqual(widget._timingPath, timing);
+            assertColor(path.style.stroke, '#ff0000');
+            assert.equal(overlayIn(group).length, 1);
+            assert.equal(legendOf(widget).hidden, false);
+        }
+        container.element.remove();
+    });
+
     it('maps simple gates to upstream skin types and A/B/Y pids', () => {
         const got = canonicalizeCell(cell({
             type: 'NOR2_X1', gate_kind: 'nor',
@@ -1451,6 +1826,61 @@ describe('canonicalizeForSkin', () => {
     it('returns the input unchanged when there is no top module', () => {
         const json = { foo: 1 };
         assert.strictEqual(canonicalizeForSkin(json), json);
+    });
+});
+
+describe('SchematicWidget wire obstacles', () => {
+    it('excludes wires nested anywhere inside a cell group', () => {
+        const { widget, container } = makeWidget();
+        const svg = document.createElementNS(svgNS, 'svg');
+        const cellGroup = document.createElementNS(svgNS, 'g');
+        const skinLayer = document.createElementNS(svgNS, 'g');
+        const cellStroke = document.createElementNS(svgNS, 'path');
+        cellStroke.getBoundingClientRect = () => rect(0, 0, 10, 10);
+        skinLayer.appendChild(cellStroke);
+        cellGroup.appendChild(skinLayer);
+
+        const netWire = document.createElementNS(svgNS, 'line');
+        netWire.getBoundingClientRect = () => rect(20, 30, 60, 30);
+        const degenerate = document.createElementNS(svgNS, 'polyline');
+        degenerate.getBoundingClientRect = () => rect(70, 70, 70, 70);
+        svg.append(cellGroup, netWire, degenerate);
+        widget._svgEl = svg;
+
+        assert.deepEqual(widget._wireObstacleRects([cellGroup]), [{
+            left: 15, right: 65, top: 25, bottom: 35, width: 50, height: 10,
+        }]);
+        container.element.remove();
+    });
+
+    it('keeps cell membership checks off the cell count', () => {
+        const { widget, container } = makeWidget();
+        const svg = document.createElementNS(svgNS, 'svg');
+        const cellGroups = [];
+        const wires = [];
+        for (let index = 0; index < 40; index++) {
+            cellGroups.push(svg.appendChild(
+                document.createElementNS(svgNS, 'g')));
+            const wire = document.createElementNS(svgNS, 'path');
+            wire.getBoundingClientRect = () => rect(index, 0, index + 10, 10);
+            wires.push(svg.appendChild(wire));
+        }
+        widget._svgEl = svg;
+
+        let probes = 0;
+        for (const group of cellGroups) {
+            const contains = group.contains.bind(group);
+            group.contains = (element) => {
+                probes += 1;
+                return contains(element);
+            };
+        }
+
+        assert.equal(widget._wireObstacleRects(cellGroups).length, wires.length);
+        // Testing each wire against every cell would probe 40 x 40 times.
+        assert.ok(probes <= wires.length,
+                  `membership probes scaled with cell count (${probes})`);
+        container.element.remove();
     });
 });
 

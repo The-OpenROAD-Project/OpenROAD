@@ -787,17 +787,22 @@ export class ChartsWidget {
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
+        const tab = this._currentTab;
+        const reportOptions = {
+            max_paths: 50,
+            slack_min: bar.lower,
+            slack_max: bar.upper,
+            unconstrained: false,
+        };
         try {
             const resp = await this._app.websocketManager.request({
                 type: 'timing_report',
-                is_setup: this._currentTab === 'setup',
-                max_paths: 50,
-                slack_min: bar.lower,
-                slack_max: bar.upper,
+                is_setup: tab === 'setup',
+                ...reportOptions,
             });
             if (this._app.timingWidget) {
                 this._app.timingWidget.showPaths(
-                    this._currentTab, resp.paths || []);
+                    tab, resp.paths || [], reportOptions);
                 if (this._app.focusComponent) {
                     this._app.focusComponent('TimingWidget');
                 }
