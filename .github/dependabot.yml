@@ -33,9 +33,10 @@ updates:
           - "*"
 
   - package-ecosystem: "npm"
-    # Not /src/web: its bumps also need src/web/dist rebuilt, the steps in
-    # src/web/dist/README.md.
+    # A /src/web bump fails the bundle check until src/web/dist is rebuilt, by
+    # the steps in src/web/dist/README.md.
     directories:
+      - "/src/web"
       - "/src/web/test"
     schedule:
       interval: "daily"

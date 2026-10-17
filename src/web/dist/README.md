@@ -29,11 +29,11 @@ After changing the JavaScript, CSS, HTML or skin under `src/web/src/`,
 `esbuild.config.mjs`, or a dependency in `src/web/package.json`:
 
 ```sh
-bazel run //src/web/dist:dist
+bazelisk run //src/web/dist:dist
 ```
 
-Then commit what it changed. `bazel test //src/web/dist:all` tells you locally
-whether they are in sync, and the `Are-Web-Bundles-Generated` workflow fails a
-PR whose copy is stale.
+Then commit what it changed. `bazelisk test //src/web/dist:all` tells you
+locally whether they are in sync, and the `Are-Web-Bundles-Generated` workflow
+fails a PR whose copy is stale.
 
 [issue]: https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065

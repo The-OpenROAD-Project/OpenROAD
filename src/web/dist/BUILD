@@ -4,7 +4,7 @@
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 # The CMake build's copy of //src/web's bundle (see README.md); regenerate
-# everything but this file and README.md with: bazel run //src/web/dist:dist
+# everything but this file and README.md with: bazelisk run //src/web/dist:dist
 write_source_files(
     name = "dist",
     files = {
