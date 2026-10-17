@@ -19,6 +19,30 @@ struct OptimizationPolicyConfig
   // Correct the table slew of the fanin driver stage with STA slews sampled
   // at three loads.  The accuracy report uses the same setting.
   bool sta_slew_bias{true};
+
+  // Charge the slower fanin driver of a larger input pin to the other loads
+  // of the fanin net.
+  bool fanin_side_loss{false};
+  float fanin_side_loss_weight{3.0f};
+  // Weight of fanin loads off every violating worst path.
+  float fanin_side_offpath_weight{0.0f};
+  // A side path may fall below the worst slack by this fraction of the
+  // candidate's own gain.
+  float side_floor_margin{1.0f};
+  // Also score the opposite output transition of a resized cell.
+  bool dual_rf_eval{false};
+
+  // --- VtSwapMt and SizeUpMt ------------------------------------------------
+
+  // Drop replacements that do not drive at least as strong on rise and fall.
+  bool dual_rf_drive_guard{true};
+
+  // Weight of the SizeUpMt score; VtSwapMt keeps 1.
+  float size_up_mt_score_scale{0.75f};
+
+  // Largest drive-resistance ratio (current / replacement) of a size-up;
+  // zero means no bound.
+  float size_up_mt_max_drive_ratio{0.0f};
 };
 
 }  // namespace rsz

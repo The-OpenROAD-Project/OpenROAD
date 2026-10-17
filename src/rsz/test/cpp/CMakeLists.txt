@@ -175,6 +175,8 @@ add_dependencies(build_and_test TestNestedJournal
 )
 
 add_executable(TestResizerMt
+    TestCellSwapMt.cc
+    TestDelayEstimatorMt.cc
     TestRepairSetupProfiler.cc
     TestResizerMt.cc
 )

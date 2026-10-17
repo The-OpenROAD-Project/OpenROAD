@@ -17,6 +17,7 @@
 #include "sta/PathExpanded.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -56,6 +57,10 @@ const char* failReasonName(const FailReason reason)
       return "missing_candidate_port";
     case FailReason::kMissingCandidateTimingArc:
       return "missing_candidate_timing_arc";
+    case FailReason::kSideSlackFloorViolation:
+      return "side_slack_floor_violation";
+    case FailReason::kDualRfNonImproving:
+      return "dual_rf_non_improving";
   }
   return "unknown_fail_reason";
 }
@@ -197,6 +202,16 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
       reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
+bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
+                              const sta::LibertyPort* candidate)
+{
+  const sta::MinMax* min_max = sta::MinMax::max();
+  return candidate->driveResistance(sta::RiseFall::rise(), min_max)
+             <= current->driveResistance(sta::RiseFall::rise(), min_max)
+         && candidate->driveResistance(sta::RiseFall::fall(), min_max)
+                <= current->driveResistance(sta::RiseFall::fall(), min_max);
+}
+
 const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
 {
   const sta::Path* d_path = nullptr;
@@ -284,13 +299,13 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
 
 bool Target::isPrepared(const PrepareCacheMask mask) const
 {
-  if ((mask & ~kArcDelayStateCache) != 0) {
+  if ((mask & ~kEstimatorContextCache) != 0) {
     return false;
   }
-  if ((mask & kArcDelayStateCache) == 0) {
+  if ((mask & kEstimatorContextCache) == 0) {
     return true;
   }
-  return arc_delay.has_value();
+  return estimator_context.has_value();
 }
 
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const

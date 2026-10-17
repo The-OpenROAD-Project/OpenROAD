@@ -40,6 +40,14 @@ class MoveCandidate
  protected:
   MoveCandidate(Resizer& resizer, const Target& target);
   MoveResult rejectedMove() const;
+  // The side costs of swapping the target cell for `replacement`, charged
+  // against the own-path gain of delay_est: the flip-flop input-side checks,
+  // then the fanin side paths.  Updates estimate's penalties and score
+  // (adjusted gain times score_scale) and rejects it once the gain is gone.
+  void chargeCellSwapSideCosts(const DelayEstimate& delay_est,
+                               const sta::LibertyCell* replacement,
+                               float score_scale,
+                               Estimate& estimate) const;
 
   // === Candidate identity ===================================================
   Resizer& resizer_;

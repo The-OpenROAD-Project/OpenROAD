@@ -52,9 +52,9 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
 
   // === Run lifetime and active context ====================================
 
-  // mode 0 disables every output; see OptimizerRunConfig::profile_mode.
+  // Mode::kOff disables every output; see OptimizerRunConfig::profile_mode.
   explicit RepairSetupProfiler(Resizer& resizer,
-                               int mode = 0,
+                               Mode mode = Mode::kOff,
                                const std::string& directory = "");
   ~RepairSetupProfiler() override;
 

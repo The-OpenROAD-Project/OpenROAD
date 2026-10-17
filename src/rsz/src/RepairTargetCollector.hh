@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -178,6 +179,15 @@ class RepairTargetCollector
       const
   {
     return violating_endpoints_;
+  }
+
+  const std::unordered_set<const sta::Pin*>& critPathLoadPins() const
+  {
+    return crit_path_load_pins_;
+  }
+  void setRecordCritPathLoadPins(const bool record)
+  {
+    record_crit_path_load_pins_ = record;
   }
 
   // Public startpoint collection for STARTPOINT_FANOUT Phase
@@ -382,6 +392,15 @@ class RepairTargetCollector
   std::map<const sta::Pin*, pinData> pin_data_;
   vector<std::pair<const sta::Pin*, sta::Slack>> violating_endpoints_;
   vector<std::pair<const sta::Pin*, sta::Slack>> violating_startpoints_;
+  // Load pins that take the full side-loss weight; cleared at each scan.  With
+  // record_crit_path_load_pins_, the scan adds the main worst path of every
+  // violating endpoint.  Target collection adds each path it expands, latch
+  // D-side segments included, so the set also grows with the endpoints
+  // evaluated since the scan.
+  mutable std::unordered_set<const sta::Pin*> crit_path_load_pins_;
+  // True makes the scan walk the worst path of every violating endpoint so
+  // crit_path_load_pins_ covers endpoints beyond the current target chunk.
+  bool record_crit_path_load_pins_{false};
 
   // === Endpoint iteration state ============================================
   // Endpoint pass tracking

@@ -178,9 +178,10 @@ class DelayEstimatorReporter
       int target_index) const;
 
   // === Path / context utilities ============================================
-  std::optional<ArcDelayState> contextForTarget(const Target& target,
-                                                int delay_levels,
-                                                FailReason* fail_reason) const;
+  std::optional<EstimatorContext> contextForTarget(
+      const Target& target,
+      int delay_levels,
+      FailReason* fail_reason) const;
   void prepareTargetContext(Target& target,
                             sta::Instance* inst,
                             sta::Pin* driver_pin,

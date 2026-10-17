@@ -3,7 +3,9 @@
 
 #include "VtSwapMtCandidate.hh"
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -21,14 +23,14 @@ using utl::RSZ;
 
 namespace {
 
-Estimate makeRejectedEstimate(const float score = 0.0f)
+Estimate makeRejectedEstimate(const std::string_view reason,
+                              const std::optional<float> raw_gain
+                              = std::nullopt)
 {
-  return {.legal = false, .score = score};
-}
-
-Estimate makeAcceptedEstimate(const float score)
-{
-  return {.legal = true, .score = score};
+  return {.legal = false,
+          .score = raw_gain.value_or(0.0f),
+          .raw_gain = raw_gain,
+          .reason = reason};
 }
 
 const char* applyLogFormat(const bool accepted)
@@ -41,39 +43,39 @@ const char* applyLogFormat(const bool accepted)
 
 VtSwapMtCandidate::VtSwapMtCandidate(Resizer& resizer,
                                      const Target& target,
-                                     sta::Pin* driver_pin,
                                      sta::Instance* inst,
-                                     sta::LibertyCell* current_cell,
-                                     sta::LibertyCell* candidate_cell,
-                                     const ArcDelayState& arc_delay)
+                                     sta::LibertyCell* candidate_cell)
     : MoveCandidate(resizer, target),
-      driver_pin_(driver_pin),
       inst_(inst),
-      current_cell_(current_cell),
-      candidate_cell_(candidate_cell),
-      arc_delay_(arc_delay)
+      current_cell_(resizer.network()->libertyCell(inst)),
+      candidate_cell_(candidate_cell)
 {
 }
 
 Estimate VtSwapMtCandidate::estimate()
 {
   // Reuse the pre-built local delay context to score the candidate without
-  // mutating the design.
-  if (!resizer_.replacementPreservesMaxCap(inst_, candidate_cell_)) {
-    return makeRejectedEstimate();
-  }
-
-  const DelayEstimate delay_est
-      = DelayEstimator::estimate(arc_delay_, candidate_cell_);
+  // mutating the design.  The generator already applied the max-cap check.
+  const DelayEstimate delay_est = DelayEstimator::estimate(
+      target().estimator_context.value(), candidate_cell_);
   if (!delay_est.legal) {
     // Preserve the computed score for non-improving swaps so policy ranking can
     // still compare rejected candidates consistently.
     if (delay_est.reason == FailReason::kEstimateNonImproving) {
-      return makeRejectedEstimate(delay_est.arrival_impr);
+      return makeRejectedEstimate(failReasonName(delay_est.reason),
+                                  delay_est.arrival_impr);
     }
-    return makeRejectedEstimate();
+    return makeRejectedEstimate(failReasonName(delay_est.reason));
   }
-  return makeAcceptedEstimate(delay_est.arrival_impr);
+
+  Estimate estimate{.legal = true,
+                    .raw_gain = delay_est.arrival_impr,
+                    .reason = failReasonName(FailReason::kEstimateLegal)};
+  estimate.score = delay_est.arrival_impr;
+
+  // VtSwapMt keeps score scale 1; the side costs come off the raw gain.
+  chargeCellSwapSideCosts(delay_est, candidate_cell_, 1.0f, estimate);
+  return estimate;
 }
 
 MoveResult VtSwapMtCandidate::apply()
@@ -86,7 +88,7 @@ MoveResult VtSwapMtCandidate::apply()
              "opt_moves",
              1,
              applyLogFormat(accepted),
-             getDrvPinName(),
+             resizer_.network()->pathName(target().driver_pin),
              current_cell_->name(),
              candidate_cell_->name());
   return {
@@ -96,11 +98,6 @@ MoveResult VtSwapMtCandidate::apply()
       .touched_instances = accepted ? std::vector<sta::Instance*>{inst_}
                                     : std::vector<sta::Instance*>{},
   };
-}
-
-std::string VtSwapMtCandidate::getDrvPinName() const
-{
-  return resizer_.network()->pathName(driver_pin_);
 }
 
 }  // namespace rsz

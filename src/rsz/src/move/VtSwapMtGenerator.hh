@@ -20,8 +20,9 @@ namespace rsz {
 // MT-safe generator that enumerates VT-equivalent cells and produces
 // multiple VtSwapMtCandidate instances for parallel evaluation.
 //
-// prepareRequirements() requests kArcDelayState so worker threads can read the
-// prepared timing snapshot without touching shared STA state.
+// prepareRequirements() asks for kEstimatorContextCache and
+// kInputCapBudgetCache, so generate() runs on worker threads without live
+// STA.
 class VtSwapMtGenerator : public MoveGenerator
 {
  public:
@@ -32,7 +33,7 @@ class VtSwapMtGenerator : public MoveGenerator
   MoveType type() const override { return MoveType::kVtSwap; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kArcDelayStateCache;
+    return kEstimatorContextCache | kInputCapBudgetCache;
   }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(

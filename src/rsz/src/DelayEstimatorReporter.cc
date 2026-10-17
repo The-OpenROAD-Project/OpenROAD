@@ -698,7 +698,7 @@ DelayEstimatorReporter::buildLegacyProfile(const Target& target,
   // Per-stage rows are best-effort.  If the context for input_slew capture
   // is unavailable, return the legal/fail_reason already computed above
   // and skip the optional stage tables instead of overwriting the result.
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = contextForTarget(target, 0, nullptr);
   if (!context.has_value()) {
     return profile;
@@ -762,7 +762,7 @@ DelayEstimatorReporter::buildDelayEstimatorProfile(
   EstimatorProfile profile;
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = contextForTarget(target, delay_levels, &fail_reason);
   if (!context.has_value()) {
     profile.fail_reason = fail_reason;
@@ -841,7 +841,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
 {
   std::vector<FixedStage> fixed_stages;
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = contextForTarget(target, delay_levels, &fail_reason);
   if (!context.has_value()) {
     return fixed_stages;
@@ -1015,14 +1015,14 @@ DelayEstimatorReporter::buildGoldenStageRow(const FixedStage& fixed_stage) const
 
 // === Path / context utilities =============================================
 
-std::optional<ArcDelayState> DelayEstimatorReporter::contextForTarget(
+std::optional<EstimatorContext> DelayEstimatorReporter::contextForTarget(
     const Target& target,
     const int delay_levels,
     FailReason* fail_reason) const
 {
-  if (target.arc_delay.has_value()
-      && target.arc_delay->delay_estimation_levels == delay_levels) {
-    return target.arc_delay;
+  if (target.estimator_context.has_value()
+      && target.estimator_context->delay_estimation_levels == delay_levels) {
+    return target.estimator_context;
   }
   return DelayEstimator::buildContext(
       resizer_, target, delay_levels, fail_reason, kStaSlewBias);
@@ -1050,16 +1050,16 @@ void DelayEstimatorReporter::prepareTargetContext(
   }
 
   FailReason ignored_reason = FailReason::kNone;
-  target.arc_delay = DelayEstimator::buildContext(resizer_,
-                                                  inst,
-                                                  driver_pin,
-                                                  expanded,
-                                                  path_index,
-                                                  scene,
-                                                  min_max,
-                                                  delay_levels,
-                                                  &ignored_reason,
-                                                  kStaSlewBias);
+  target.estimator_context = DelayEstimator::buildContext(resizer_,
+                                                          inst,
+                                                          driver_pin,
+                                                          expanded,
+                                                          path_index,
+                                                          scene,
+                                                          min_max,
+                                                          delay_levels,
+                                                          &ignored_reason,
+                                                          kStaSlewBias);
 }
 
 float DelayEstimatorReporter::pathWireDelay(const sta::PathExpanded& expanded,

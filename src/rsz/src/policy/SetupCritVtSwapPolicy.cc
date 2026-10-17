@@ -55,6 +55,16 @@ void SetupCritVtSwapPolicy::iterate()
     return;
   }
 
+  // The timing the sweep starts from, which no earlier phase may have sampled.
+  if (RepairSetupProfiler::enabled()) {
+    const ProfileScope collection("qor_collection");
+    sta::Slack wns;
+    sta::Vertex* worst_vertex;
+    target_collector_->worstSlack(wns, worst_vertex);
+    RepairSetupProfiler::qor(
+        "phase_before", wns, target_collector_->totalNegativeSlack());
+  }
+
   const ProfileIteration iteration("crit_instance_sweep");
   committer_.capturePrePhaseSlack();
   if (swapVTCritCells(num_viols)) {

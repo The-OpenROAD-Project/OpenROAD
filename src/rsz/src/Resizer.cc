@@ -7515,6 +7515,97 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
   return true;
 }
 
+std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
+    sta::Instance* inst)
+{
+  std::vector<InputCapBudget> budgets;
+  sta::LibertyCell* current_cell = network_->libertyCell(inst);
+  if (current_cell == nullptr) {
+    return budgets;
+  }
+
+  // One STA capacitance check per fanin driver, shared by every replacement.
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    sta::Pin* pin = pin_iter->next();
+    if (!network_->direction(pin)->isAnyInput()) {
+      continue;
+    }
+
+    sta::PinSet* drivers = network_->drivers(pin);
+    sta::LibertyPort* port = network_->libertyPort(pin);
+    if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+
+    InputCapBudget budget;
+    budget.port = port;
+    budget.current_cap = inputPinCapacitance(network_, pin, current_cell, max_);
+    budget.driver_limits.reserve(drivers->size());
+    for (const sta::Pin* driver_pin : *drivers) {
+      float cap;
+      float max_cap;
+      float cap_slack;
+      const sta::Scene* corner;
+      const sta::RiseFall* tr;
+      sta_->checkCapacitance(driver_pin,
+                             sta_->scenes(),
+                             max_,
+                             cap,
+                             max_cap,
+                             cap_slack,
+                             tr,
+                             corner);
+      if (max_cap > 0.0 && corner != nullptr) {
+        budget.driver_limits.push_back({.cap = cap,
+                                        .max_cap = max_cap,
+                                        .negative_slack = cap_slack < 0.0});
+      }
+    }
+
+    budgets.push_back(std::move(budget));
+  }
+
+  return budgets;
+}
+
+bool Resizer::replacementFitsInputCapBudgets(
+    const std::vector<InputCapBudget>& budgets,
+    const sta::LibertyCell* replacement) const
+{
+  if (replacement == nullptr) {
+    return false;
+  }
+
+  for (const InputCapBudget& budget : budgets) {
+    const sta::LibertyPort* cell_port
+        = replacement->findLibertyPort(budget.port->name());
+
+    float new_cap = 0.0f;
+    if (cell_port != nullptr) {
+      for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+        new_cap = std::max(new_cap, cell_port->capacitance(rf, max_));
+      }
+    }
+
+    const float cap_delta = new_cap - budget.current_cap;
+    if (cap_delta <= 0.0f) {
+      continue;
+    }
+
+    for (const DriverCapLimit& limit : budget.driver_limits) {
+      // Same acceptance rule as checkMaxCapOK().
+      const float driver_cap = limit.cap + cap_delta;
+      if (driver_cap > (limit.negative_slack ? limit.cap : limit.max_cap)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 bool Resizer::estimateInputSlewImpact(
     sta::Instance* instance,
     const sta::Scene* scene,
