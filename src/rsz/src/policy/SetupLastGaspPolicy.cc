@@ -10,6 +10,7 @@
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
 #include "policy/OptimizationPolicy.hh"
@@ -34,6 +35,7 @@ static constexpr int kDelayDigits = 3;
 void SetupLastGaspPolicy::iterate()
 {
   if (config_.skip_last_gasp) {
+    RepairSetupProfiler::event("skip_phase_disabled");
     markRunComplete(false);
     return;
   }
@@ -56,22 +58,10 @@ void SetupLastGaspPolicy::iterate()
     } else {
       runLastGaspLoop(violating_ends, last_gasp_state);
       num_viols = last_gasp_state.num_viols;
-      if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
-        sta::Slack final_wns;
-        sta::Vertex* final_worst;
-        target_collector_->worstSlack(final_wns, final_worst);
-        const float final_tns = target_collector_->totalNegativeSlack();
-        debugPrint(logger_,
-                   RSZ,
-                   "repair_setup",
-                   1,
-                   "LAST_GASP{} Phase complete. WNS: {}, TNS: {}",
-                   phase_marker,
-                   delayAsString(final_wns, kDelayDigits, sta_),
-                   delayAsString(final_tns, 1, sta_));
-      }
+      reportPhaseComplete("LAST_GASP", phase_marker);
     }
   }
+
   committer_.printTrackerPhaseSummary(
       "LAST_GASP Phase Summary", "LAST_GASP Phase Endpoint Profiler", true);
   markRunComplete(true);
@@ -92,8 +82,9 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
 
   violating_ends = collectViolatingEndpoints(config_.setup_slack_margin);
   last_gasp_state.num_viols = violating_ends.size();
-  const float curr_tns = target_collector_->totalNegativeSlack();
+  const float curr_tns = totalNegativeSlack();
   if (sta::fuzzyGreaterEqual(curr_tns, 0)) {
+    RepairSetupProfiler::stop("nonnegative_tns");
     debugPrint(logger_,
                RSZ,
                "repair_setup",
@@ -104,6 +95,7 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
     return false;
   }
   if (violating_ends.empty()) {
+    RepairSetupProfiler::stop("no_violating_endpoints");
     debugPrint(logger_,
                RSZ,
                "repair_setup",
@@ -184,6 +176,8 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
                         curr_tns,
                         last_gasp_state.prev_worst_slack,
                         last_gasp_state.prev_tns)) {
+    RepairSetupProfiler::event("checkpoint_misses");
+    RepairSetupProfiler::stop("non_improving_pass");
     debugPrint(
         logger_,
         RSZ,
@@ -220,6 +214,7 @@ bool SetupLastGaspPolicy::advanceLastGaspProgress(
   last_gasp_state.prev_tns = curr_tns;
   if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
                              config_.setup_slack_margin)) {
+    RepairSetupProfiler::stop("endpoint_repaired");
     --last_gasp_state.num_viols;
     acceptEndpointState(endpoint_state);
     return false;
@@ -233,6 +228,7 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     SetupLastGaspPolicy::LastGaspState& last_gasp_state)
 {
   while (endpoint_state.pass <= max_last_gasp_passes_) {
+    const ProfileIteration iteration("last_gasp_pass");
     ++last_gasp_state.opto_iteration;
 
     if (terminateProgress(last_gasp_state.opto_iteration,
@@ -257,30 +253,33 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     }
     if (sta::fuzzyGreaterEqual(endpoint_state.end_slack,
                                config_.setup_slack_margin)) {
+      RepairSetupProfiler::stop("endpoint_repaired");
       --last_gasp_state.num_viols;
       acceptEndpointState(endpoint_state);
       break;
     }
 
-    sta::Path* end_path
-        = target_collector_->findWorstSlackPath(endpoint_state.end);
+    sta::Path* end_path = endpointWorstPath(endpoint_state.end);
     const bool changed = repairPath(end_path,
                                     endpoint_state.end_slack,
                                     /*force_single_repair=*/false);
     if (!changed) {
+      RepairSetupProfiler::stop("no_change");
       finishEndpointSearch(endpoint_state);
       break;
     }
 
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    resizer_.updateParasiticsAndTiming();
     refreshEndpointSlacks(endpoint_state);
-    const float curr_tns = target_collector_->totalNegativeSlack();
+    const float curr_tns = totalNegativeSlack();
+    RepairSetupProfiler::qor(
+        "pass_after", endpoint_state.worst_slack, curr_tns);
     if (!advanceLastGaspProgress(endpoint_state, last_gasp_state, curr_tns)) {
       break;
     }
 
     if (resizer_.overMaxArea()) {
+      RepairSetupProfiler::stop("max_area");
       acceptEndpointState(endpoint_state);
       break;
     }
@@ -294,8 +293,13 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     ++endpoint_state.pass;
     if (reachedIterationLimit(last_gasp_state.opto_iteration,
                               config_.max_iterations)) {
+      RepairSetupProfiler::stop("max_iterations");
       acceptEndpointState(endpoint_state);
       break;
+    }
+
+    if (endpoint_state.pass > max_last_gasp_passes_) {
+      RepairSetupProfiler::stop("max_passes");
     }
   }
 
@@ -316,6 +320,9 @@ void SetupLastGaspPolicy::runLastGaspLoop(
 {
   for (const auto& end_original_slack : violating_ends) {
     if (shouldStopLastGasp(last_gasp_state)) {
+      RepairSetupProfiler::stop(last_gasp_state.two_cons_terminations
+                                    ? "consecutive_terminations"
+                                    : "max_iterations");
       break;
     }
 
@@ -332,6 +339,9 @@ void SetupLastGaspPolicy::runLastGaspLoop(
           last_gasp_state.opto_iteration, true, last_gasp_state.phase_marker);
     }
     if (shouldStopLastGasp(last_gasp_state)) {
+      RepairSetupProfiler::stop(last_gasp_state.two_cons_terminations
+                                    ? "consecutive_terminations"
+                                    : "max_iterations");
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",

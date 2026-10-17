@@ -255,6 +255,8 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_vt_swap]\
                                         [-skip_crit_vt_swap]\
                                         [-skip_crpr]\
+                                        [-profile_mode mode]\
+                                        [-profile_dir dir]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_iterations iterations]\
@@ -271,7 +273,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases -policy -policies -path_group \
+            -phases -policy -policies -path_group -profile_mode -profile_dir \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_buffer_to_inverters \
@@ -339,6 +341,18 @@ proc repair_timing { args } {
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
   set skip_crpr [info exists flags(-skip_crpr)]
+  # Setup repair profiler level and output directory; 0 writes nothing.
+  set profile_mode 0
+  if { [info exists keys(-profile_mode)] } {
+    set profile_mode $keys(-profile_mode)
+    if { [lsearch -exact {0 1 2} $profile_mode] == -1 } {
+      utl::error RSZ 3243 "-profile_mode must be 0, 1 or 2."
+    }
+  }
+  set profile_dir ""
+  if { [info exists keys(-profile_dir)] } {
+    set profile_dir $keys(-profile_dir)
+  }
   rsz::set_max_utilization [rsz::parse_max_util keys]
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
@@ -411,7 +425,7 @@ proc repair_timing { args } {
           $sequence $phases $path_group \
           $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
           $skip_buffer_removal $skip_buffer_to_inverters $skip_last_gasp $skip_vt_swap \
-          $skip_crit_vt_swap]
+          $skip_crit_vt_swap $profile_mode $profile_dir]
       }
       if { $hold } {
         if { $skip_crpr } {

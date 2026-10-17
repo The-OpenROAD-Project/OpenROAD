@@ -272,6 +272,8 @@ repair_timing
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
 | `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
+| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing, `1` records the WNS/TNS trajectory, `2` adds the pass events. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. |
+| `-profile_dir` | Directory of the profiler output; the default is `repair_setup_profile` under the current directory. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_iterations` | Defines the maximum number of iterations executed when repairing setup and hold violations. The default is `-1`, which disables the limit of iterations. |

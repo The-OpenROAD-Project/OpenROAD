@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "BufferedNet.hh"
+#include "RepairSetupProfiler.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -2156,6 +2157,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   if (user_pin) {
     filtered_pins = {user_pin};
   }
+
   sta_->findRequireds();
 
   initial_design_area_ = resizer_->computeDesignArea();
@@ -2404,6 +2406,8 @@ bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
 
 int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 {
+  const ProfileScope profile("buffer_tree_generation");
+  RepairSetupProfiler::event("buffer_tree_plan_requests");
   if (network_->isTopLevelPort(drvr_pin)) {
     logger_->warn(RSZ,
                   2020,
@@ -2444,7 +2448,10 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    sta_->findRequireds();
+    {
+      const ProfileScope sta_profile("incremental_sta");
+      sta_->findRequireds();
+    }
     annotateLoadSlacks(bnet, drvr);
 
     const bool allow_topology_rewrite
@@ -2496,8 +2503,12 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
         drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
 
     int inserted_count;
-    inserted_count = exportBufferTree(
-        bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
+    {
+      const ProfileScope apply_profile("apply_buffer_tree");
+      RepairSetupProfiler::event("buffer_tree_apply_requests");
+      inserted_count = exportBufferTree(
+          bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
+    }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
 

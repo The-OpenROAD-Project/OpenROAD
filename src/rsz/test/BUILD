@@ -607,7 +607,11 @@ cc_test(
 
 cc_test(
     name = "TestResizerMt",
-    srcs = ["cpp/TestResizerMt.cc"],
+    srcs = [
+        "cpp/TestRepairSetupProfiler.cc",
+        "cpp/TestResizerMt.cc",
+        "cpp/TestResizerMtFixture.hh",
+    ],
     args = ["--gtest_filter=TestResizerMtThreadPool.*"],
     data = [
         "Nangate45/Nangate45.lef",

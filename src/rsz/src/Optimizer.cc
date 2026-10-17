@@ -14,6 +14,7 @@
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupContext.hh"
+#include "RepairSetupProfiler.hh"
 #include "SetupCritVtSwapPolicy.hh"
 #include "SetupDirectionalPolicy.hh"
 #include "SetupLastGaspPolicy.hh"
@@ -142,13 +143,21 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
 
 bool Optimizer::run()
 {
+  RepairSetupProfiler profile(
+      resizer_, config_.profile_mode, config_.profile_dir);
+
+  const ProfileScope optimizer_scope("optimizer_overhead");
+  profile.runConfig(config_);
   // Keep the footprint override local to this optimizer run.
   utl::SetAndRestore<bool> match_cell_footprint_override(
       resizer_.matchCellFootprint(), config_.match_cell_footprint);
 
   // Common initialize
-  resizer_.runRepairSetupPreamble();
-  committer_.init();
+  {
+    const ProfileScope scope("init_onetime");
+    resizer_.runRepairSetupPreamble();
+    committer_.init();
+  }
 
   // Keep incremental parasitics enabled across the full optimizer run so every
   // policy sees the same ECO invalidation/update behavior.
@@ -178,11 +187,18 @@ bool Optimizer::run()
   RepairSetupContext setup_context(resizer_);
   setup_context.phase_pipeline_active = true;
   for (int i = 0; i < phase_count; ++i) {
+    const std::string& phase_name = phase_names[i];
+    profile.phase(phase_name, i + 1);
     setup_context.phase_index = i;
     std::unique_ptr<OptimizationPolicy> policy
-        = makePolicyForPhase(phase_names[i], setup_context);
-    if (!policy->start()) {
-      return false;
+        = makePolicyForPhase(phase_name, setup_context);
+
+    {
+      const ProfileScope scope("init_onetime");
+      if (!policy->start()) {
+        profile.complete(false);
+        return false;
+      }
     }
     while (!policy->converged()) {
       policy->iterate();
@@ -191,7 +207,11 @@ bool Optimizer::run()
   }
 
   // Final report
-  return last_policy->finalizeAndReport(setup_context.initial_design_area);
+  const ProfileScope report_scope("final_reporting");
+  const bool result = last_policy->finalizeAndReport();
+  profile.complete(result);
+
+  return result;
 }
 
 // Single-endpoint setup repair (test/debug) - bypasses the phase pipeline.

@@ -174,7 +174,10 @@ gtest_discover_tests(TestNestedJournal
 add_dependencies(build_and_test TestNestedJournal
 )
 
-add_executable(TestResizerMt TestResizerMt.cc)
+add_executable(TestResizerMt
+    TestRepairSetupProfiler.cc
+    TestResizerMt.cc
+)
 target_link_libraries(TestResizerMt
         OpenSTA
         GTest::gtest

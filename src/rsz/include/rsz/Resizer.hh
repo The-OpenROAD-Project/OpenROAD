@@ -370,7 +370,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
-                   bool skip_crit_vt_swap);
+                   bool skip_crit_vt_swap,
+                   int profile_mode = 0,
+                   const char* profile_dir = "");
   // For testing.
   void repairSetup(const sta::Pin* end_pin);
   // For testing.
@@ -894,6 +896,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
+
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,

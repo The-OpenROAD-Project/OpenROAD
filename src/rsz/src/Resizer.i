@@ -375,7 +375,9 @@ repair_setup(double setup_margin,
              bool skip_buffer_to_inverters,
              bool skip_last_gasp,
              bool skip_vt_swap,
-             bool skip_crit_vt_swap)
+             bool skip_crit_vt_swap,
+             int profile_mode,
+             const char* profile_dir)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -386,7 +388,8 @@ repair_setup(double setup_margin,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
-                       skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
+                       skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                       profile_mode, profile_dir);
 }
 
 std::string

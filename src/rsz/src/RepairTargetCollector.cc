@@ -21,6 +21,7 @@
 #include "OptimizerTypes.hh"
 #include "PathGroupFilter.hh"
 #include "Rebuffer.hh"
+#include "RepairSetupProfiler.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
@@ -219,6 +220,7 @@ void RepairTargetCollector::printHistogram(int numBins) const
 void RepairTargetCollector::init(float slack_margin,
                                  const bool collect_startpoints)
 {
+  const ProfileScope profile("target_collection");
   graph_ = sta_->graph();
   search_ = sta_->search();
   sdc_ = sta_->cmdMode()->sdc();
@@ -857,6 +859,7 @@ void RepairTargetCollector::refreshGroupSlacks()
 
 void RepairTargetCollector::collectViolatingEndpoints()
 {
+  const ProfileScope profile("endpoint_scan");
   violating_endpoints_.clear();
 
   if (restrictedToPathGroup()) {
@@ -948,6 +951,7 @@ void RepairTargetCollector::checkStartpointCache() const
 
 void RepairTargetCollector::collectViolatingStartpoints()
 {
+  const ProfileScope profile("target_collection");
   violating_startpoints_.clear();
 
   // The set of startpoints is fixed for the life of this collector; only
@@ -1121,6 +1125,7 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
 std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
     const std::function<bool(sta::Pin*)>& is_valid_target) const
 {
+  const ProfileScope profile("target_collection");
   std::vector<VertexSlack> violated_endpoints;
   violated_endpoints.reserve(violating_endpoints_.size());
   for (const PinSlack& endpoint_data : violating_endpoints_) {
