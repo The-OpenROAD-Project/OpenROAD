@@ -66,7 +66,7 @@ void SetupCritVtSwapPolicy::iterate()
   }
 
   const ProfileIteration iteration("crit_instance_sweep");
-  committer_.capturePrePhaseSlack();
+  committer_.tracker().capturePrePhaseSlack();
   if (swapVTCritCells(num_viols)) {
     resizer_.updateParasiticsAndTiming();
   }

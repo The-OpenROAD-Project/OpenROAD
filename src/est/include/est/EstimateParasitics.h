@@ -169,6 +169,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void parasiticsInvalid(const odb::dbNet* net);
   void eraseParasitics(const sta::Net* net);
   bool parasiticsValid() const;
+  size_t invalidNetCount() const { return parasitics_invalid_.size(); }
 
   ParasiticsSrc getParasiticsSrc() { return parasitics_src_; }
   void setParasiticsSrc(ParasiticsSrc src);

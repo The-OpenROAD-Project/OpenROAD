@@ -285,6 +285,9 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   Target target;
   target.views = kPathDriverView;
   target.endpoint_path = endpoint_path;
+  target.endpoint_pin = endpoint_path != nullptr
+                            ? endpoint_path->pin(resizer.staState())
+                            : nullptr;
   target.driver_path = expanded.path(path_index);
   target.scene = endpoint_path != nullptr
                      ? endpoint_path->scene(resizer.staState())
@@ -303,19 +306,11 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   return target;
 }
 
-bool Target::isPrepared(const PrepareCacheMask mask) const
-{
-  if ((mask & ~kEstimatorContextCache) != 0) {
-    return false;
-  }
-  if ((mask & kEstimatorContextCache) == 0) {
-    return true;
-  }
-  return estimator_context.has_value();
-}
-
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const
 {
+  if (endpoint_pin != nullptr) {
+    return endpoint_pin;
+  }
   return endpoint_path != nullptr ? endpoint_path->pin(resizer.staState())
                                   : nullptr;
 }
