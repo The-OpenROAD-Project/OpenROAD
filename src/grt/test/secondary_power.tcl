@@ -1,0 +1,14 @@
+# Test routing secondary power net from gate pin to the nearby pre-routed strap
+source "helpers.tcl"
+read_lef "Nangate45/Nangate45.lef"
+read_def "secondary_power.def"
+
+set guide_file [make_result_file secondary_power.guide]
+
+set_routing_layers -signal metal1-metal4
+
+global_route -verbose
+
+write_guides $guide_file
+
+diff_file secondary_power.guideok $guide_file

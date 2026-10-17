@@ -54,6 +54,17 @@ using odb::dbTechLayerType;
 
 namespace drt {
 
+static bool isSecondaryPowerNet(odb::dbNet* db_net)
+{
+  // A secondary power net is a supply net with pre-routed power straps (SWires)
+  // and specific cell ITerms/BTerms (e.g. level shifter secondary power pin).
+  // We check !isWildConnected() to exclude main power grid nets (VDD/VSS) which
+  // use wildcard connections (e.g. '* VDD') or global_connect.
+  return db_net->getSigType().isSupply() && !db_net->getSWires().empty()
+         && (!db_net->getITerms().empty() || !db_net->getBTerms().empty())
+         && !db_net->isWildConnected();
+}
+
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
                    utl::Logger* loggerIn,
@@ -1020,9 +1031,98 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
     }
   }
 }
+void io::Parser::addSecondaryPowerStrapTerms(frNet* net_in, odb::dbNet* db_net)
+{
+  int min_y = std::numeric_limits<int>::max();
+  int max_y = std::numeric_limits<int>::min();
+  int min_x = std::numeric_limits<int>::max();
+  int max_x = std::numeric_limits<int>::min();
+  for (auto iterm : db_net->getITerms()) {
+    odb::Rect bbox = iterm->getBBox();
+    min_x = std::min(min_x, bbox.xMin());
+    max_x = std::max(max_x, bbox.xMax());
+    min_y = std::min(min_y, bbox.yMin());
+    max_y = std::max(max_y, bbox.yMax());
+  }
+  min_x -= 5700;
+  max_x += 5700;
+  min_y -= 5700;
+  max_y += 5700;
+
+  int term_idx = 0;
+  for (auto swire : db_net->getSWires()) {
+    for (auto box : swire->getWires()) {
+      if (box->isVia() || box->getTechLayer()->isBackside()) {
+        continue;
+      }
+      frCoord beginX, beginY, endX, endY, width;
+      getSBoxCoords(box, beginX, beginY, endX, endY, width);
+      if (getTech()->name2layer_.find(box->getTechLayer()->getName())
+          == getTech()->name2layer_.end()) {
+        continue;
+      }
+      frLayerNum layerNum = getTech()
+                                ->name2layer_[box->getTechLayer()->getName()]
+                                ->getLayerNum();
+
+      auto uTermIn = std::make_unique<frBTerm>(db_net->getName() + "_strap_"
+                                               + std::to_string(term_idx++));
+      auto termIn = uTermIn.get();
+      termIn->addToNet(net_in);
+      net_in->addBTerm(termIn);
+      termIn->setType(db_net->getSigType());
+
+      auto pinIn = std::make_unique<frBPin>();
+      pinIn->setId(0);
+      odb::Rect bbox(beginX, beginY, endX, endY);
+      setBTerms_addPinFig_helper(pinIn.get(), bbox, layerNum);
+
+      auto pa = std::make_unique<frPinAccess>();
+      int midX = (beginX + endX) / 2;
+      int midY = (beginY + endY) / 2;
+      if (endX - beginX > 5700) {
+        int start_x = std::max(beginX, min_x);
+        int stop_x = std::min(endX, max_x);
+        for (int x = start_x + 2850; x <= stop_x; x += 5700) {
+          auto ap_step = std::make_unique<frAccessPoint>();
+          ap_step->setPoint(odb::Point(x, midY));
+          ap_step->setLayer(layerNum);
+          pa->addAccessPoint(std::move(ap_step));
+        }
+      } else if (endY - beginY > 5700) {
+        int start_y = std::max(beginY, min_y);
+        int stop_y = std::min(endY, max_y);
+        for (int y = start_y + 2850; y <= stop_y; y += 5700) {
+          auto ap_step = std::make_unique<frAccessPoint>();
+          ap_step->setPoint(odb::Point(midX, y));
+          ap_step->setLayer(layerNum);
+          pa->addAccessPoint(std::move(ap_step));
+        }
+      } else {
+        auto ap = std::make_unique<frAccessPoint>();
+        ap->setPoint(odb::Point(midX, midY));
+        ap->setLayer(layerNum);
+        pa->addAccessPoint(std::move(ap));
+      }
+
+      pinIn->addPinAccess(std::move(pa));
+      termIn->addPin(std::move(pinIn));
+      getBlock()->addTerm(std::move(uTermIn));
+    }
+  }
+}
+
 void io::Parser::setNets(odb::dbBlock* block)
 {
   for (auto db_net : block->getNets()) {
+    if (isSecondaryPowerNet(db_net)) {
+      std::unique_ptr<frNet> snet_in
+          = std::make_unique<frNet>(db_net->getName() + "_snet", router_cfg_);
+      snet_in->setIsSpecial(true);
+      snet_in->setType(db_net->getSigType());
+      updateNetRouting(snet_in.get(), db_net);
+      getBlock()->addSNet(std::move(snet_in));
+    }
     addNet(db_net);
   }
 }
@@ -1037,12 +1137,14 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   bool has_jumpers = db_net->hasJumpers();
   bool is_abuted = db_net->isConnectedByAbutment();
   if (!is_special && db_net->getSigType().isSupply()) {
-    logger_->error(DRT,
-                   305,
-                   "Net {} of signal type {} is not routable by TritonRoute. "
-                   "Move to special nets.",
-                   db_net->getName(),
-                   db_net->getSigType().getString());
+    if (!isSecondaryPowerNet(db_net)) {
+      logger_->error(DRT,
+                     305,
+                     "Net {} of signal type {} is not routable by TritonRoute. "
+                     "Move to special nets.",
+                     db_net->getName(),
+                     db_net->getSigType().getString());
+    }
   }
   std::unique_ptr<frNet> net_in
       = std::make_unique<frNet>(db_net->getName(), router_cfg_);
@@ -1053,16 +1155,20 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   if (db_net->getSigType() == odb::dbSigType::CLOCK) {
     net_in->updateIsClock(true);
   }
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     net_in->setIsSpecial(true);
   }
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
   net_in->setAutoTaperEnabled(db_net->isAutoTaperEnabled());
   updateNetRouting(net_in.get(), db_net);
-  net_in->setType(db_net->getSigType());
+  if (isSecondaryPowerNet(db_net)) {
+    net_in->setType(odb::dbSigType::SIGNAL);
+  } else {
+    net_in->setType(db_net->getSigType());
+  }
   frNet* raw_net_in = net_in.get();
-  if (is_special) {
+  if (is_special && !isSecondaryPowerNet(db_net)) {
     getBlock()->addSNet(std::move(net_in));
   } else {
     getBlock()->addNet(std::move(net_in));

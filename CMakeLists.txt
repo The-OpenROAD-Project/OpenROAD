@@ -45,7 +45,9 @@ cmake_policy(SET CMP0074 NEW)
 # behavior. Setting both CMP0074 and CMP0144 ensures that both older and
 # newer find modules correctly respect custom dependency paths, which is
 # critical for builds in non-standard environments.
-cmake_policy(SET CMP0144 NEW)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+  cmake_policy(SET CMP0144 NEW)
+endif()
 
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
