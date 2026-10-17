@@ -82,6 +82,7 @@ class HierRTLMP
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
   void setMinChannelSize(int width, int height);
+  void setAnnealingSteps(int steps) { max_num_step_ = steps; }
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
 
@@ -319,7 +320,7 @@ class HierRTLMP
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
-  const int max_num_step_ = 2000;
+  int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
 
   // probability of each action
