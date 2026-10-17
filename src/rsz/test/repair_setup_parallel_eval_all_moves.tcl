@@ -1,5 +1,6 @@
 # Exercise every PARALLEL_EVAL move: the Mt forms of the serial moves (split load,
-# pin swap) join the default VtSwapMt, SizeUpMt and RebufferMt batches.
+# buffer removal, pin swap) join the default VtSwapMt, SizeUpMt and RebufferMt
+# batches.
 source "helpers.tcl"
 source asap7/asap7.vars
 
@@ -30,6 +31,6 @@ estimate_parasitics -placement
 
 repair_timing -setup \
   -phases PARALLEL_EVAL \
-  -sequence "sizeup buffer split swap" \
+  -sequence "sizeup buffer split unbuffer swap" \
   -max_iterations 4 \
   -verbose

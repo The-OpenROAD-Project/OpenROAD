@@ -31,6 +31,7 @@
 #include "SwapPinsGenerator.hh"
 #include "SwapPinsMtGenerator.hh"
 #include "UnbufferGenerator.hh"
+#include "UnbufferMtGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -266,6 +267,9 @@ void OptimizationPolicy::prepareTarget(Target& target,
   }
   if ((mask & kSwapPinsInputCache) != 0) {
     SwapPinsMtGenerator::prepareInputs(context, target);
+  }
+  if ((mask & kUnbufferInputCache) != 0) {
+    UnbufferMtGenerator::prepareInputs(context, target);
   }
 }
 

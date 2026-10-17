@@ -298,6 +298,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   sta::Slack best_checkpoint_wns_{0.0f};
   // Endpoints a batch may target under -repair_tns.
   size_t max_end_repairs_{std::numeric_limits<size_t>::max()};
+  // An unbuffer move in -sequence runs in every batch, not only in the tail's
+  // single-move batches.
+  bool unbuffer_in_sequence_{false};
 
   // Moves of the batch under evaluation.
   std::vector<sta::Instance*> batch_instances_;

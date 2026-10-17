@@ -81,6 +81,8 @@ add_library(rsz_lib
     move/SwapPinsMtGenerator.cc
     move/UnbufferCandidate.cc
     move/UnbufferGenerator.cc
+    move/UnbufferMtCandidate.cc
+    move/UnbufferMtGenerator.cc
     move/VtSwapCandidate.cc
     move/VtSwapGenerator.cc
     move/VtSwapMtCandidate.cc

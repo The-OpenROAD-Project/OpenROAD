@@ -191,13 +191,14 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyWnsTailHonorsSequenceAndSkips)
   base.skip_buffering = true;
   const std::vector<MoveType> size_up_only{MoveType::kSizeUp};
 
-  // Under the default sequence the tail adds its pin swaps.
+  // Under the default sequence the tail adds its pin swaps and buffer
+  // removal.
   SetupParallelEvalPolicy default_policy(
       resizer_, committer, setup_context, base);
   ASSERT_TRUE(default_policy.start());
   ASSERT_TRUE(default_policy.startWnsTail("test"));
-  const std::vector<MoveType> default_tail{MoveType::kSizeUp,
-                                           MoveType::kSwapPins};
+  const std::vector<MoveType> default_tail{
+      MoveType::kSizeUp, MoveType::kSwapPins, MoveType::kUnbuffer};
   EXPECT_EQ(generatorTypes(default_policy), default_tail);
 
   // The -skip_* options keep each of them out.

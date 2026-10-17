@@ -149,6 +149,12 @@ class WnsTail
   int batches() const { return batches_; }
   double workStart() const { return work_start_; }
   double workBudget() const { return budget_work_; }
+  // Buffer removal runs only in the single-move batches of a stalled greedy
+  // stage, because a removal cannot be salvaged in place.
+  bool unbufferAllowed() const
+  {
+    return active_ && batch_cap_ == 1 && greedy_stalled_;
+  }
 
   // Bookkeeping after a batch: the stall counter and the next batch cap.
   void afterBatch(sta::Slack best_wns_before,

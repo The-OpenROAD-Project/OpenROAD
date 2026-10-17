@@ -47,6 +47,7 @@ class Resizer;
 class SequentialTimingEstimator;
 struct SplitLoadMtInput;
 struct SwapPinsMtInput;
+struct UnbufferMtInput;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
@@ -149,9 +150,10 @@ inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
 inline constexpr PrepareCacheMask kRebufferInputCache = 1u << 3;
 inline constexpr PrepareCacheMask kSplitLoadInputCache = 1u << 4;
 inline constexpr PrepareCacheMask kSwapPinsInputCache = 1u << 5;
+inline constexpr PrepareCacheMask kUnbufferInputCache = 1u << 6;
 inline constexpr PrepareCacheMask kGenerationInputCaches
     = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache
-      | kSwapPinsInputCache;
+      | kSwapPinsInputCache | kUnbufferInputCache;
 
 // The functionally equivalent input ports of a cell by input port.  The
 // library stays fixed within a run, so the policy shares one cache across
@@ -432,6 +434,7 @@ struct Target
   // when it has none for this target.  The candidates share these.
   std::shared_ptr<const SplitLoadMtInput> split_load_input;
   std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
+  std::shared_ptr<const UnbufferMtInput> unbuffer_input;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
