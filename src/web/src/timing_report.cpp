@@ -149,14 +149,16 @@ void TimingReport::expandPath(sta::Path* path,
       total_fanout += node_fanout;
     }
 
-    nodes.push_back(TimingNode{.pin_name = std::move(pin_name),
-                               .fanout = node_fanout,
-                               .is_rising = is_rising,
-                               .is_clock = pin_is_clock,
-                               .time = (arrival_cur + offset) / time_scale,
-                               .delay = pin_delay / time_scale,
-                               .slew = slew / time_scale,
-                               .load = cap / cap_scale});
+    nodes.push_back(
+        TimingNode{.pin_name = std::move(pin_name),
+                   .inst_name = term ? term->getInst()->getName() : "",
+                   .fanout = node_fanout,
+                   .is_rising = is_rising,
+                   .is_clock = pin_is_clock,
+                   .time = (arrival_cur + offset) / time_scale,
+                   .delay = pin_delay / time_scale,
+                   .slew = slew / time_scale,
+                   .load = cap / cap_scale});
 
     arrival_prev = arrival_cur;
   }
@@ -164,10 +166,12 @@ void TimingReport::expandPath(sta::Path* path,
   logic_depth = static_cast<int>(logic_insts.size());
 }
 
-std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
-                                                       int max_paths,
-                                                       float slack_min,
-                                                       float slack_max) const
+std::vector<TimingPathSummary> TimingReport::getReport(
+    bool is_setup,
+    int max_paths,
+    float slack_min,
+    float slack_max,
+    bool include_unconstrained) const
 {
   std::vector<TimingPathSummary> result;
   if (!sta_) {
@@ -191,7 +195,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       /*from*/ nullptr,
       /*thrus*/ nullptr,
       /*to*/ nullptr,
-      /*unconstrained*/ false,
+      /*unconstrained*/ include_unconstrained,
       scenes,
       is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
       /*group_count*/ max_paths,
@@ -889,6 +893,7 @@ boost::json::object serializeTimingNode(const TimingNode& n)
 {
   boost::json::object o;
   o["pin"] = n.pin_name;
+  o["inst"] = n.inst_name;
   o["fanout"] = n.fanout;
   o["rise"] = n.is_rising;
   o["clk"] = n.is_clock;
