@@ -280,12 +280,20 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             const int path_index,
                             const sta::Slack slack,
-                            const Resizer& resizer)
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin)
 {
   Target target;
   target.views = kPathDriverView;
   target.endpoint_path = endpoint_path;
+  target.endpoint_pin = endpoint_path != nullptr
+                            ? endpoint_path->pin(resizer.staState())
+                            : nullptr;
+  target.violated_endpoint_pin = violated_endpoint_pin;
   target.driver_path = expanded.path(path_index);
+  target.driver_rf = target.driver_path != nullptr
+                         ? target.driver_path->transition(resizer.staState())
+                         : nullptr;
   target.scene = endpoint_path != nullptr
                      ? endpoint_path->scene(resizer.staState())
                      : nullptr;
@@ -295,6 +303,12 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   target.driver_pin = target.driver_path != nullptr
                           ? target.driver_path->pin(resizer.staState())
                           : nullptr;
+  const int load_index = path_index + 1;
+  const sta::Path* load_path = load_index < static_cast<int>(expanded.size())
+                                   ? expanded.path(load_index)
+                                   : nullptr;
+  target.load_pin
+      = load_path != nullptr ? load_path->pin(resizer.staState()) : nullptr;
   target.path_index = path_index;
   target.slack = slack;
   if (resizer.network()->instance(target.driver_pin) != nullptr) {
@@ -303,21 +317,19 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   return target;
 }
 
-bool Target::isPrepared(const PrepareCacheMask mask) const
-{
-  if ((mask & ~kEstimatorContextCache) != 0) {
-    return false;
-  }
-  if ((mask & kEstimatorContextCache) == 0) {
-    return true;
-  }
-  return estimator_context.has_value();
-}
-
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const
 {
+  if (endpoint_pin != nullptr) {
+    return endpoint_pin;
+  }
   return endpoint_path != nullptr ? endpoint_path->pin(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Pin* Target::violatedEndpointPin(const Resizer& resizer) const
+{
+  return violated_endpoint_pin != nullptr ? violated_endpoint_pin
+                                          : endpointPin(resizer);
 }
 
 sta::Pin* Target::resolvedPin(const Resizer& resizer) const

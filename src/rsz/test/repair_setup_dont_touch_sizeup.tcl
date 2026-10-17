@@ -1,4 +1,4 @@
-# Check LEGACY setup size-up honors dont_touch instances.
+# Check LEGACY and PARALLEL_EVAL setup size-up honor dont_touch instances.
 
 source "helpers.tcl"
 
@@ -28,7 +28,7 @@ proc check_instance_refs { before_refs stage } {
 proc run_sizeup_repair { repair_policy before_refs } {
   puts "Repair policy: $repair_policy"
   repair_timing -setup \
-    -phases $repair_policy \
+    -policy $repair_policy \
     -sequence "sizeup" \
     -skip_last_gasp \
     -skip_crit_vt_swap
@@ -54,6 +54,19 @@ foreach inst [get_cells *] {
 puts "Dont-touch instances: [dict size $before_refs]"
 
 run_sizeup_repair "LEGACY" $before_refs
+
+# Restore the target cell through a manual ECO before testing PARALLEL_EVAL.
+set target_inst r1
+set target_ref [dict get $before_refs $target_inst]
+set target_lib_cell "NangateOpenCellLibrary/$target_ref"
+unset_dont_touch $target_inst
+if { [replace_cell $target_inst $target_lib_cell] == 0 } {
+  error "failed to restore $target_inst to $target_lib_cell"
+}
+set_dont_touch $target_inst
+puts "Manual ECO: restored $target_inst to $target_ref."
+
+run_sizeup_repair "PARALLEL_EVAL" $before_refs
 
 report_worst_slack -max
 report_tns -digits 3

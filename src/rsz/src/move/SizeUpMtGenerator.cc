@@ -4,7 +4,6 @@
 #include "SizeUpMtGenerator.hh"
 
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -33,7 +32,18 @@ bool SizeUpMtGenerator::isApplicable(const Target& target) const
   sta::Instance* target_inst = target.inst(resizer_);
   return MoveGenerator::isApplicable(target) && target_inst != nullptr
          && !resizer_.dontTouch(target_inst) && !resizer_.isFixed(target_inst)
-         && target.isPrepared(kEstimatorContextCache);
+         && target.estimator_context.has_value();
+}
+
+void SizeUpMtGenerator::prepareInputs(Target& target) const
+{
+  prepareInputCapBudgets(target);
+
+  // Build the replacement options of the target arc here, so generate() on a
+  // worker only reads the cache.
+  const SelectedArc& target_arc = target.estimator_context->target().arc;
+  findSizeUpOptions(
+      target_arc.outputPort(), target_arc.scene, target_arc.min_max);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
@@ -44,8 +54,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
   const float score_scale = policy_config_.size_up_mt_score_scale;
-  const SizeUpOptions& options = findSizeUpOptions(
-      target_arc.outputPort(), target_arc.scene, target_arc.min_max);
+  const SizeUpOptions& options = size_up_options_.at(
+      {target_arc.outputPort(), target_arc.scene, target_arc.min_max});
   if (options.dual_rf_rejects > 0) {
     RepairSetupProfiler::event("dual_rf_drive_guard_rejects",
                                options.dual_rf_rejects,
@@ -76,7 +86,6 @@ const SizeUpMtGenerator::SizeUpOptions& SizeUpMtGenerator::findSizeUpOptions(
     const sta::MinMax* min_max) const
 {
   const SizeUpOptionKey key{drvr_port, scene, min_max};
-  const std::lock_guard<std::mutex> lock(size_up_options_mutex_);
   std::map<SizeUpOptionKey, SizeUpOptions>::iterator cached
       = size_up_options_.find(key);
   if (cached == size_up_options_.end()) {

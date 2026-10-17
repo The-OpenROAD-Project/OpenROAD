@@ -39,10 +39,10 @@ struct RepairSetupContext
   // every phase start, since a phase can edit outside the committer.
   double progress_design_area{0.0};
   int progress_area_at_edit{-1};
-  // WNS of what the run repaired, captured by finalizeAndReport before the
-  // end-of-run reports read it, so the progress table and the RSZ-62 verdict
-  // cannot disagree. Under `repair_timing -path_group` this is the group's
-  // WNS, which costs a path query per violating endpoint to compute.
+  // WNS of what the run repaired, captured by Optimizer::reportRunResult()
+  // before the end-of-run reports read it, so the progress table and the
+  // RSZ-62 verdict cannot disagree. Under `repair_timing -path_group` this is
+  // the group's WNS, which takes a path query per violating endpoint.
   sta::Slack final_wns{0.0};
 
   // Legacy-derived setup phases share one preamble per repair_setup run.

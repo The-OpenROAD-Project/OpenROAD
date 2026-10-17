@@ -21,12 +21,17 @@ add_library(rsz_lib
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
     RepairSetupProfiler.cc
+    RepairSetupAnalysis.cc
+    RepairSetupAnalysisSnapshot.cc
+    RepairSetupAnalysisReport.cc
+    RepairSetupAnalysisTarget.cc
     MoveTracker.cc
     policy/OptimizationPolicy.cc
     policy/OptimizationPolicy.hh
     policy/ProgressReporter.cc
     Optimizer.cc
     OptimizerTypes.cc
+    OptimizationPolicyConfig.cc
     DelayEstimator.cc
     DelayEstimatorBufferTree.cc
     DelayEstimatorReporter.cc
@@ -38,6 +43,10 @@ add_library(rsz_lib
     policy/SetupLegacyPolicy.cc
     policy/SetupTnsPolicy.cc
     policy/SetupWnsPolicy.cc
+    policy/BottleneckAnalysis.cc
+    policy/BatchSelector.cc
+    policy/ParallelEvalState.cc
+    policy/SetupParallelEvalPolicy.cc
     policy/SetupReroutePolicy.cc
     policy/GlobalSizingPolicy.cc
     Resizer.cc
@@ -55,10 +64,13 @@ add_library(rsz_lib
     move/MoveGenerator.cc
     move/RebufferMtCandidate.cc
     move/RebufferMtGenerator.cc
+    move/RebufferPlannerPool.cc
     move/RerouteCandidate.cc
     move/RerouteGenerator.cc
     move/SizeDownFanoutCandidate.cc
     move/SizeDownFanoutGenerator.cc
+    move/SizeDownFanoutMtCandidate.cc
+    move/SizeDownFanoutMtGenerator.cc
     move/SizeUpCandidate.cc
     move/SizeUpGenerator.cc
     move/SizeUpMatchCandidate.cc
@@ -67,10 +79,16 @@ add_library(rsz_lib
     move/SizeUpMtGenerator.cc
     move/SplitLoadCandidate.cc
     move/SplitLoadGenerator.cc
+    move/SplitLoadMtCandidate.cc
+    move/SplitLoadMtGenerator.cc
     move/SwapPinsCandidate.cc
     move/SwapPinsGenerator.cc
+    move/SwapPinsMtCandidate.cc
+    move/SwapPinsMtGenerator.cc
     move/UnbufferCandidate.cc
     move/UnbufferGenerator.cc
+    move/UnbufferMtCandidate.cc
+    move/UnbufferMtGenerator.cc
     move/VtSwapCandidate.cc
     move/VtSwapGenerator.cc
     move/VtSwapMtCandidate.cc

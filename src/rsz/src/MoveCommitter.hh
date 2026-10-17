@@ -65,6 +65,11 @@ class MoveCommitter
 
   void init();
   MoveResult commit(MoveCandidate& candidate);
+  // Brings parasitics and required times up to date for the profile mode 3
+  // observation of a move.  The estimated nets stay pending (see
+  // EstimateParasitics::updateParasiticsForObserver()), so the observation
+  // leaves the work a policy counts unchanged.
+  void updateTimingForObserver();
 
   // === MoveTracker reporting ===============================================
   // Tracker-style reporting is enabled by the existing RSZ move_tracker debug
@@ -106,16 +111,15 @@ class MoveCommitter
   void printSlackDistribution(const std::string& title);
   void printTopBinEndpoints(const std::string& title, int max_endpoints = 20);
   void printCriticalEndpointPathHistogram(const std::string& title);
-  void captureInitialSlackDistribution();
-  void captureOriginalEndpointSlack();
-  void capturePrePhaseSlack();
+  // The move tracker; while its report is off it ignores the capture calls.
+  MoveTracker& tracker() { return *move_tracker_; }
   int getVisitCount(const sta::Pin* pin) const;
   void clearTrackedMoves();
 
   // === ECO journal lifecycle ===============================================
   // ECO journal lifecycle for setup-repair endpoint loops.
   void beginJournal();
-  void commitJournal();
+  void commitJournal(bool update_timing = true);
   void restoreJournal();
 
   // === Move accounting ======================================================
@@ -123,6 +127,12 @@ class MoveCommitter
   // applied.
   void acceptPendingMoves();
   void rejectPendingMoves();
+  // Remove one native cell move from the current pending level after the
+  // caller swapped the cell back inside the open journal. Does not edit the
+  // database or settle the profiler; returns false if the result is
+  // unsupported or not pending.
+  bool rejectPendingCellMove(const MoveResult& result,
+                             const sta::Pin* driver_pin);
 
   int pendingMoves(MoveType type) const;
   int committedMoves(MoveType type) const;

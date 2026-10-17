@@ -28,13 +28,12 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!target.isPrepared(kEstimatorContextCache)) {
-    return candidates;
-  }
-
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  sta::LibertyCell* current_cell = estimator_context.target().arc.currentCell();
+  // The arc holds the cell of its scene.  The Resizer caches, warmed before
+  // the workers start, key on the link cell.
+  sta::LibertyCell* current_cell
+      = resizer_.network()->libertyCell(target.inst(resizer_));
   const std::vector<sta::LibertyCell*> candidate_cells
       = selectCandidateCells(current_cell);
 
@@ -77,7 +76,7 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
   // Screen out targets that cannot legally change VT in the current library
   // set.
   if (!MoveGenerator::isApplicable(target)
-      || !target.isPrepared(kEstimatorContextCache)) {
+      || !target.estimator_context.has_value()) {
     return false;
   }
 

@@ -37,7 +37,7 @@ using namespace rsz;
                                   const std::vector<rsz::MoveType>&,
                                   const char*, const char*,
                                   bool, bool, bool, bool, bool, bool, bool, bool, bool,
-                                  int, const char*);
+                                  rsz::RepairEffort, int, const char*);
 
 %ignore rsz::Resizer::computeNewDelaysSlews;
 %ignore rsz::Resizer::estimateSlewsAfterBufferRemoval;
@@ -94,6 +94,7 @@ using namespace rsz;
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap,
+                   const char* effort = "high",
                    int profile_mode = 0,
                    const char* profile_dir = "")
   {
@@ -107,6 +108,8 @@ using namespace rsz;
                               skip_pin_swap, skip_gate_cloning, skip_size_down_fanout,
                               skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
                               skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                              rsz::Resizer::repairEffortFromString(
+                                  effort ? effort : "high"),
                               profile_mode, profile_dir ? profile_dir : "");
   }
 }

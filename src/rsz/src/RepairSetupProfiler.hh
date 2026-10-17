@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -21,6 +22,8 @@ namespace rsz {
 
 class MoveCandidate;
 class Resizer;
+class RepairSetupAnalysis;
+class RepairSetupAnalysisReport;
 
 // Run-local diagnostics.  Workers merge their counters after the join and
 // never write files or touch the main-thread profiler.
@@ -28,6 +31,18 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
 {
  public:
   // === Types ===============================================================
+
+  // A counted event made on a worker thread, where no profiler is current.  A
+  // worker binds a sink with deferCounts() (see DeferredCountScope) and the
+  // main thread replays the sink after the join.
+  struct DeferredCount
+  {
+    std::string name;
+    std::string move;
+    uint64_t value{0};
+  };
+
+  using DeferredCounts = std::vector<DeferredCount>;
 
   // One logical record can update a counter, emit a trace row, or both.
   struct EventOptions
@@ -49,9 +64,10 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   // The -profile_mode levels; each one adds to the one below.
   enum class Mode
   {
-    kOff = 0,     // no output
-    kTiming = 1,  // stats, timing and metadata
-    kEvents = 2,  // the event trace and the design edits
+    kOff = 0,       // no output
+    kTiming = 1,    // stats, timing and metadata
+    kEvents = 2,    // the event trace and the design edits
+    kAnalysis = 3,  // the per-move analysis
   };
 
   // === Run lifetime and active context ====================================
@@ -66,6 +82,11 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   static RepairSetupProfiler* current() { return current_; }
   // Test whether this thread has an active profiler.
   static bool enabled() { return current_ != nullptr; }
+  // Test whether per-move analysis is enabled for this run.
+  static bool analysis()
+  {
+    return enabled() && current_->mode_ == Mode::kAnalysis;
+  }
 
   // === Events and move candidates =========================================
 
@@ -79,15 +100,31 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
                     std::string_view move = "");
   // Record a trace-only event with a detail string.
   static void event(std::string_view name, std::string_view detail);
+  // Bind a deferred-count sink to the current worker thread.
+  static void deferCounts(DeferredCounts* sink) { deferred_counts_ = sink; }
+  // Merge a worker's deferred counts on the main thread.
+  static void replay(const DeferredCounts& counts);
   // Assign an identity and count a generated move candidate.
   static void moveGenerated(MoveCandidate& candidate);
+  // Record what one generator made for a target: skip_no_candidates when it
+  // made nothing, else every candidate through moveGenerated().
+  static void movesGenerated(MoveType type, const CandidateVector& candidates);
   // Record a candidate estimate and its rejection reason.
   static void moveEstimated(MoveCandidate& candidate, const Estimate& estimate);
   // Record selection using the candidate's original target.
   static void moveSelected(MoveCandidate& candidate);
+  // Mode 3 observes the move on observed_target, which a serial pass refreshed
+  // from current STA; null skips the observation of the move.
+  static void moveSelected(MoveCandidate& candidate,
+                           const Target* observed_target,
+                           const sta::Pin* original_endpoint);
 
   // === Timing, events and journals ========================================
 
+  // The endpoint the policy repairs (MoveCommitter::setCurrentEndpoint()).
+  static void endpoint(const sta::Pin* pin);
+  // Worker-local time of one "estimation" or "generation" task.
+  static void workerTime(std::string_view task, double seconds);
   // Record WNS and TNS at a named observation point.
   static void qor(const char* point, double wns, double tns);
   // A stop reason: the stop_<reason> counter and the "stop" event.
@@ -101,7 +138,17 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   // Record the apply result and the post-move analysis snapshot.
   static void endApply(MoveCandidate& candidate, const MoveResult& result);
 
-  void phase(const std::string& name, int index);
+  // An in-place salvage swaps an applied candidate back inside the batch
+  // journal.  The edits between begin and end keep the move's identity, and
+  // end rejects the move the way an undone journal would.
+  static void beginRevert(MoveCandidate& candidate);
+  // Settle a selectively reverted move under its original identity.
+  static void endRevert(const char* detail);
+
+  // === Phase and iteration lifecycle ======================================
+
+  // Flush the previous phase and begin a new one.
+  void beginPhase(const std::string& name, int index);
   // Write one run metadata field.
   void metadata(const std::string& key, const std::string& value);
   // The repair_timing options of this run.
@@ -150,8 +197,11 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   {
     uint64_t id{0};
     uint64_t move_id{0};
-    Estimate estimate;
-    bool estimated{false};
+    // Unset until the policy estimates the candidate.
+    std::optional<Estimate> estimate;
+    std::shared_ptr<RepairSetupAnalysis> observer;
+    // False when mode 3 skips the analysis of this move.
+    bool observed{true};
   };
 
   // Applied move identities waiting for an ECO journal to settle.
@@ -163,6 +213,8 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
 
   // === Aggregation and output =============================================
 
+  // RSZ-2032 for an output directory or file that cannot be opened.
+  void errorCannotOpen(const std::string& directory) const;
   // Accumulate a value at iteration, phase and run scope.
   void add(const Key& key, double value);
   // Write pending counters and flush the trace files.
@@ -191,6 +243,10 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
 
   inline static thread_local RepairSetupProfiler* current_{nullptr};
   inline static thread_local uint64_t journal_depth_{0};
+  inline static thread_local DeferredCounts* deferred_counts_{nullptr};
+
+  // === Run and output state ================================================
+
   Resizer& resizer_;
   Mode mode_{Mode::kOff};
   Clock::time_point start_;
@@ -212,10 +268,18 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   uint64_t event_id_{0}, candidate_id_{0}, move_id_{0}, journal_id_{0};
   uint64_t active_move_{0}, active_candidate_{0};
   std::string active_type_;
+  // The mode 3 observer of the move between beginApply() and endApply().
+  std::shared_ptr<RepairSetupAnalysis> active_observer_;
+  // The endpoint() of the current phase.
+  const sta::Pin* endpoint_{nullptr};
+
+  // === Timing and candidate records =======================================
+
   std::vector<Stage> stages_;
   std::map<Key, double> delta_, phase_total_, run_total_;
   std::unordered_map<const MoveCandidate*, Candidate> candidates_;
   std::vector<Journal> journals_;
+  std::unique_ptr<RepairSetupAnalysisReport> analysis_report_;
 };
 
 // Times a nested profiler stage for the lifetime of this scope.
@@ -242,6 +306,20 @@ class ProfileScope
   RepairSetupProfiler* profiler_;
 };
 
+// Binds the deferred-count sink of the current worker thread for a scope.
+class DeferredCountScope
+{
+ public:
+  explicit DeferredCountScope(RepairSetupProfiler::DeferredCounts* sink)
+  {
+    RepairSetupProfiler::deferCounts(sink);
+  }
+  ~DeferredCountScope() { RepairSetupProfiler::deferCounts(nullptr); }
+  DeferredCountScope(const DeferredCountScope&) = delete;
+  DeferredCountScope& operator=(const DeferredCountScope&) = delete;
+};
+
+// Marks an iteration boundary and flushes its counters when the scope ends.
 class ProfileIteration
 {
  public:

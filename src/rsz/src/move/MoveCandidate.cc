@@ -3,9 +3,13 @@
 
 #include "MoveCandidate.hh"
 
+#include <memory>
+
 #include "OptimizerTypes.hh"
 #include "SequentialTimingEstimator.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 
 namespace rsz {
 
@@ -21,6 +25,62 @@ MoveResult MoveCandidate::rejectedMove() const
       .type = type(),
       .touched_instances = {},
   };
+}
+
+std::vector<const sta::Pin*> MoveCandidate::faninSidePins(
+    const EstimatorContext& estimator_context)
+{
+  std::vector<const sta::Pin*> pins;
+  for (const FaninSideNet& side_net : estimator_context.fanin_side_nets) {
+    for (const SideLoad& load : side_net.loads) {
+      if (load.pin != nullptr) {
+        pins.push_back(load.pin);
+      }
+    }
+  }
+
+  return pins;
+}
+
+MoveImpact MoveCandidate::impact() const
+{
+  MoveImpact impact;
+  if (!target_.estimator_context.has_value()) {
+    return impact;
+  }
+
+  sta::Network* network = resizer_.network();
+  for (const DelayStageState& stage : target_.estimator_context->path_stages) {
+    sta::Pin* driver_pin = stage.driver_pin;
+    if (driver_pin == nullptr) {
+      continue;
+    }
+
+    appendUnique(impact.timing_dependency_instances,
+                 network->instance(driver_pin));
+    appendUnique(impact.timing_dependency_nets, network->net(driver_pin));
+  }
+
+  return impact;
+}
+
+MoveImpact MoveCandidate::cellSwapImpact(sta::Instance* inst) const
+{
+  MoveImpact impact = MoveCandidate::impact();
+  impact.complete = true;
+  appendUnique(impact.write_instances, inst);
+  appendUnique(impact.timing_effect_instances, inst);
+
+  // A new cell changes its input capacitances and output timing, so every
+  // net on its pins is in the effect cone.
+  sta::Network* network = resizer_.network();
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    appendUnique(impact.timing_effect_nets, network->net(pin_iter->next()));
+  }
+
+  return impact;
 }
 
 void MoveCandidate::chargeCellSwapSideCosts(const DelayEstimate& delay_est,

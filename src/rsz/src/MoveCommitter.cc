@@ -7,6 +7,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <stack>
 #include <string>
@@ -20,6 +21,7 @@
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -55,7 +57,9 @@ MoveStateType moveTrackerState(const TrackedMoveStateType state)
 
 }  // namespace
 
-MoveCommitter::MoveCommitter(Resizer& resizer) : resizer_(resizer)
+MoveCommitter::MoveCommitter(Resizer& resizer)
+    : resizer_(resizer),
+      move_tracker_(std::make_unique<MoveTracker>(resizer, false))
 {
 }
 
@@ -74,26 +78,45 @@ void MoveCommitter::init()
 
   const bool report_enabled
       = resizer_.logger()->debugCheck(RSZ, "move_tracker", 1);
-  if (report_enabled) {
-    move_tracker_ = std::make_unique<MoveTracker>(resizer_, report_enabled);
-  } else {
-    move_tracker_.reset();
-  }
+  move_tracker_ = std::make_unique<MoveTracker>(resizer_, report_enabled);
 }
 
 bool MoveCommitter::moveTrackerEnabled(const int level) const
 {
-  return move_tracker_ != nullptr && move_tracker_->reportEnabled()
+  return move_tracker_->reportEnabled()
          && resizer_.logger()->debugCheck(RSZ, "move_tracker", level);
+}
+
+void MoveCommitter::updateTimingForObserver()
+{
+  const ProfileScope profile("analysis_observation");
+  est::EstimateParasitics* parasitics = resizer_.estimateParasitics();
+  if (!parasitics->parasiticsValid()) {
+    const ProfileScope rc_profile("incremental_rc");
+    parasitics->updateParasiticsForObserver();
+  }
+
+  const ProfileScope sta_profile("incremental_sta");
+  resizer_.sta()->findRequireds();
 }
 
 MoveResult MoveCommitter::commit(MoveCandidate& candidate)
 {
+  // Profile mode 3 observes each move on current timing.
+  const bool observed = RepairSetupProfiler::analysis();
+  if (observed) {
+    updateTimingForObserver();
+  }
+
   RepairSetupProfiler::beginApply(candidate);
   MoveResult result;
   {
     const ProfileScope profile("apply");
     result = candidate.apply();
+  }
+
+  if (observed) {
+    updateTimingForObserver();
   }
   RepairSetupProfiler::endApply(candidate, result);
   if (result.accepted) {
@@ -110,6 +133,7 @@ MoveResult MoveCommitter::commit(MoveCandidate& candidate)
 
 void MoveCommitter::setCurrentEndpoint(const sta::Pin* endpoint_pin)
 {
+  RepairSetupProfiler::endpoint(endpoint_pin);
   if (moveTrackerEnabled()) {
     move_tracker_->setCurrentEndpoint(endpoint_pin);
   }
@@ -267,7 +291,7 @@ void MoveCommitter::printTrackerFinalReports(
 
 int MoveCommitter::getVisitCount(const sta::Pin* pin) const
 {
-  return move_tracker_ != nullptr ? move_tracker_->getVisitCount(pin) : 0;
+  return move_tracker_->getVisitCount(pin);
 }
 
 void MoveCommitter::printMoveSummary(const std::string& title)
@@ -302,27 +326,6 @@ void MoveCommitter::printMissedOpportunitiesReport(const std::string& title)
 {
   if (moveTrackerEnabled()) {
     move_tracker_->printMissedOpportunitiesReport(title);
-  }
-}
-
-void MoveCommitter::captureOriginalEndpointSlack()
-{
-  if (moveTrackerEnabled()) {
-    move_tracker_->captureOriginalEndpointSlack();
-  }
-}
-
-void MoveCommitter::capturePrePhaseSlack()
-{
-  if (moveTrackerEnabled()) {
-    move_tracker_->capturePrePhaseSlack();
-  }
-}
-
-void MoveCommitter::captureInitialSlackDistribution()
-{
-  if (moveTrackerEnabled()) {
-    move_tracker_->captureInitialSlackDistribution();
   }
 }
 
@@ -481,18 +484,16 @@ void MoveCommitter::beginJournal()
   pending_move_results_.emplace();
   // Mirror the journal level in the tracker so a nested restore rejects only
   // its own moves.
-  if (move_tracker_) {
-    move_tracker_->beginJournal();
-  }
+  move_tracker_->beginJournal();
 }
 
-void MoveCommitter::commitJournal()
+void MoveCommitter::commitJournal(const bool update_timing)
 {
   if (!canManageJournal() || pending_move_results_.empty()) {
     return;
   }
   // Refresh timing only once after a batch of ECO edits becomes permanent
-  if (ecoHasPendingChanges()) {
+  if (update_timing && ecoHasPendingChanges()) {
     resizer_.updateParasiticsAndTiming();
   }
   // Close the reversible batch. odb::commitEco appends the inner journal to its
@@ -500,9 +501,7 @@ void MoveCommitter::commitJournal()
   commitEcoJournal();
   // Mirror the journal commit in the tracker: an outermost commit finalizes
   // the tracked moves, a nested commit merges them into the parent level.
-  if (move_tracker_) {
-    move_tracker_->commitJournal();
-  }
+  move_tracker_->commitJournal();
 
   std::vector<MoveResult> top = std::move(pending_move_results_.top());
   pending_move_results_.pop();
@@ -543,9 +542,7 @@ void MoveCommitter::restoreJournal()
   restoreEcoJournal();
   // Mirror the journal restore in the tracker so its moves are rejected,
   // whether this is an outermost or a nested restore.
-  if (move_tracker_) {
-    move_tracker_->restoreJournal();
-  }
+  move_tracker_->restoreJournal();
 
   // Unrecord just this level's accepted results; the parent's accumulated
   // pending state (if any) must survive.
@@ -575,6 +572,14 @@ void MoveCommitter::restoreJournal()
   if (had_eco_changes) {
     resizer_.updateParasiticsAndTiming();
     resizer_.invalidateVertexOrdering();
+  }
+
+  if (RepairSetupProfiler::analysis()) {
+    const ProfileScope scope("analysis_observation");
+    RepairSetupProfiler::qor(
+        "rollback",
+        resizer_.sta()->worstSlack(resizer_.maxAnalysisMode()),
+        resizer_.sta()->totalNegativeSlack(resizer_.maxAnalysisMode()));
   }
 
   if (pending_move_results_.empty()) {
@@ -623,6 +628,38 @@ void MoveCommitter::rejectPendingMoves()
 
   rejectTrackedMoves();
   logCommittedTotals();
+}
+
+bool MoveCommitter::rejectPendingCellMove(const MoveResult& result,
+                                          const sta::Pin* driver_pin)
+{
+  if (!result.accepted || result.move_count != 1
+      || result.touched_instances.size() != 1
+      || (result.type != MoveType::kSizeUp && result.type != MoveType::kVtSwap)
+      || pending_move_results_.empty()) {
+    return false;
+  }
+
+  // Match the latest application, leaving earlier moves on this instance
+  // intact.
+  std::vector<MoveResult>& pending = pending_move_results_.top();
+  const std::vector<MoveResult>::reverse_iterator move = std::find_if(
+      pending.rbegin(), pending.rend(), [&](const MoveResult& item) {
+        return item.accepted && item.type == result.type && item.move_count == 1
+               && item.touched_instances == result.touched_instances;
+      });
+  if (move == pending.rend()) {
+    return false;
+  }
+
+  // The accepted inverse remains in OpenDB, but the original result must not
+  // be accepted or rejected again when the parent journal is closed.
+  unrecordAcceptedResult(*move);
+  resizer_.addRejectedLegacyMoveCount(1);
+  move_tracker_->rejectPendingMove(driver_pin, moveName(result.type));
+
+  pending.erase(std::next(move).base());
+  return true;
 }
 
 int MoveCommitter::pendingMoves(const MoveType type) const

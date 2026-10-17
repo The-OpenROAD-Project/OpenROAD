@@ -16,6 +16,7 @@
 #include "DelayEstimator.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairSetupContext.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
@@ -33,7 +34,6 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
@@ -73,11 +73,13 @@ char phaseMarkerForIndex(int phase_index)
 OptimizationPolicy::OptimizationPolicy(Resizer& resizer,
                                        MoveCommitter& committer,
                                        RepairSetupContext& setup_context,
-                                       const OptimizerRunConfig& config)
+                                       const OptimizerRunConfig& config,
+                                       OptimizationPolicyConfig policy_config)
     : resizer_(resizer),
       committer_(committer),
       setup_context_(setup_context),
       config_(config),
+      policy_config_(std::move(policy_config)),
       target_collector_(&setup_context_.target_collector),
       progress_(resizer, committer, setup_context)
 {
@@ -95,6 +97,7 @@ bool OptimizationPolicy::start()
   max_ = resizer_.maxAnalysisMode();
   resetRun();
   estimator_cache_.clear();
+  equiv_pin_cache_.clear();
   // Start every phase with the progress table's area cache invalid. The
   // cache is keyed on MoveCommitter::netlistEdits(), which only counts
   // edits made through the committer; GlobalSizingPolicy replaces cells
@@ -112,117 +115,15 @@ bool OptimizationPolicy::start()
   return true;
 }
 
-bool OptimizationPolicy::finalizeAndReport()
-{
-  RepairTargetCollector final_targets(&resizer_);
-  final_targets.init(config_.setup_slack_margin,
-                     setup_context_.progress_header_show_startpoint_metrics);
-  setup_context_.final_wns = final_targets.getWns();
-  progress_.printFinal(final_targets, showStartpointMetrics());
-  committer_.printTrackerFinalReports(finalReportPins());
-  return reportRepairSummary();
-}
-
-const std::vector<const sta::Pin*>& OptimizationPolicy::finalReportPins() const
-{
-  return target_collector_->getViolatingPins();
-}
-
-bool OptimizationPolicy::reportRepairSummary() const
-{
-  const ProfileScope profile("reporting");
-  bool repaired = false;
-
-  const int buffer_moves = committer_.summaryCommittedMoves(MoveType::kBuffer);
-  const int size_up_moves = committer_.summaryCommittedMoves(MoveType::kSizeUp);
-  const int size_down_fanout_moves
-      = committer_.summaryCommittedMoves(MoveType::kSizeDownFanout);
-  const int swap_pins_moves
-      = committer_.summaryCommittedMoves(MoveType::kSwapPins);
-  const int clone_moves = committer_.summaryCommittedMoves(MoveType::kClone);
-  const int split_load_moves
-      = committer_.summaryCommittedMoves(MoveType::kSplitLoad);
-  const int unbuffer_moves
-      = committer_.summaryCommittedMoves(MoveType::kUnbuffer);
-  const int vt_swap_moves = committer_.summaryCommittedMoves(MoveType::kVtSwap);
-  const int size_up_match_moves
-      = committer_.summaryCommittedMoves(MoveType::kSizeUpMatch);
-  const int reroute_moves
-      = committer_.summaryCommittedMoves(MoveType::kReroute);
-  const int buffer_to_inverters_moves
-      = committer_.summaryCommittedMoves(MoveType::kBufferToInverters);
-
-  if (unbuffer_moves > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ, 59, "Removed {} buffers.", unbuffer_moves);
-  }
-  if (buffer_moves > 0 || split_load_moves > 0) {
-    repaired = true;
-    if (split_load_moves == 0) {
-      logger_->info(utl::RSZ, 40, "Inserted {} buffers.", buffer_moves);
-    } else {
-      logger_->info(utl::RSZ,
-                    45,
-                    "Inserted {} buffers, {} to split loads.",
-                    buffer_moves + split_load_moves,
-                    split_load_moves);
-    }
-  }
-  if (buffer_to_inverters_moves > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ,
-                  109,
-                  "Replaced {} buffers with inverters.",
-                  buffer_to_inverters_moves);
-  }
-  logger_->metric("design__instance__count__setup_buffer",
-                  buffer_moves + split_load_moves);
-  if (size_up_moves + size_down_fanout_moves + size_up_match_moves
-          + vt_swap_moves
-      > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ,
-                  51,
-                  "Resized {} instances: {} up, {} up match, {} down, {} VT",
-                  size_up_moves + size_up_match_moves + size_down_fanout_moves
-                      + vt_swap_moves,
-                  size_up_moves,
-                  size_up_match_moves,
-                  size_down_fanout_moves,
-                  vt_swap_moves);
-  }
-  if (swap_pins_moves > 0) {
-    repaired = true;
-    logger_->info(
-        utl::RSZ, 43, "Swapped pins on {} instances.", swap_pins_moves);
-  }
-  if (clone_moves > 0) {
-    repaired = true;
-    logger_->info(utl::RSZ, 49, "Cloned {} instances.", clone_moves);
-  }
-  if (reroute_moves > 0) {
-    repaired = true;
-    logger_->info(
-        utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
-  }
-
-  if (sta::fuzzyLess(setup_context_.final_wns, config_.setup_slack_margin)) {
-    repaired = true;
-    logger_->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
-  }
-  if (resizer_.overMaxArea()) {
-    logger_->error(utl::RSZ, 25, "max utilization reached.");
-  }
-
-  return repaired;
-}
-
 GeneratorContext OptimizationPolicy::makeGeneratorContext() const
 {
-  return GeneratorContext{.resizer = resizer_,
-                          .committer = committer_,
-                          .run_config = config_,
-                          .policy_config = policy_config_};
+  return GeneratorContext{
+      .resizer = resizer_,
+      .committer = committer_,
+      .run_config = config_,
+      .policy_config = policy_config_,
+      .critical_load_pins = &target_collector_->critPathLoadPins(),
+      .equiv_pin_cache = &equiv_pin_cache_};
 }
 
 void OptimizationPolicy::buildMoveGenerators(
@@ -286,7 +187,7 @@ PrepareCacheMask OptimizationPolicy::accumulatePrepareRequirements() const
     }
     prepare_mask |= generator->prepareRequirements();
   }
-  return prepare_mask & ~kGenerationInputCaches;
+  return prepare_mask;
 }
 
 MoveGenerator* OptimizationPolicy::findGenerator(const MoveType type) const
@@ -328,9 +229,6 @@ void OptimizationPolicy::prewarmTargets(
       = findGenerator(MoveType::kVtSwap) != nullptr;
   prewarmTargetLibertyCaches(
       targets, prewarm_swappable_cells, prewarm_vt_equiv_cells);
-  if (prewarm_swappable_cells || prewarm_vt_equiv_cells) {
-    prewarmTargetDriverCaches(targets);
-  }
 }
 
 bool OptimizationPolicy::generatorEnabled(const MoveType) const
@@ -347,50 +245,60 @@ void OptimizationPolicy::prepareTarget(Target& target,
   if ((mask & kSequentialEstimatorCache) != 0) {
     prepareSequentialEstimator(target);
   }
+}
 
-  // Generation inputs: each Mt generator's live STA reads, so that its
-  // generate() runs on a worker thread.
-  if ((mask & kGenerationInputCaches) == 0) {
-    return;
+std::optional<EstimatorContext> OptimizationPolicy::buildPolicyContext(
+    Resizer& resizer,
+    const Target& target,
+    const OptimizationPolicyConfig& policy_config,
+    const std::unordered_set<const sta::Pin*>* critical_load_pins,
+    const bool include_latch_fanin,
+    DelayEstimatorCache* cache,
+    FailReason* fail_reason)
+{
+  const FaninSideLoadOptions fanin_side_loads{
+      .critical_load_pins = critical_load_pins,
+      .off_path_weight = policy_config.fanin_side_offpath_weight};
+  std::optional<EstimatorContext> context = DelayEstimator::buildContext(
+      resizer,
+      target,
+      policy_config.delay_estimation_levels,
+      fail_reason,
+      policy_config.sta_slew_bias,
+      include_latch_fanin,
+      cache,
+      policy_config.fanin_side_loss ? &fanin_side_loads : nullptr,
+      policy_config.dual_rf_eval);
+
+  if ((policy_config.fanin_side_loss || policy_config.dual_rf_eval
+       || policy_config.rebuffer_mt_side_loads)
+      && context.has_value()) {
+    // Side paths may not be pushed below the current global worst slack.
+    context->side_slack_floor = sta::delayAsFloat(
+        resizer.sta()->worstSlack(resizer.maxAnalysisMode()));
+    context->side_floor_margin = policy_config.side_floor_margin;
+    context->fanin_side_loss_weight = policy_config.fanin_side_loss_weight;
   }
-  if ((mask & kInputCapBudgetCache) != 0) {
-    prepareInputCapBudgets(target);
-  }
+  return context;
 }
 
 void OptimizationPolicy::prepareEstimatorContext(Target& target) const
 {
-  if (target.isPrepared(kEstimatorContextCache) || !target.canBePathDriver()) {
+  if (target.estimator_context.has_value() || !target.canBePathDriver()) {
     return;
   }
 
   FailReason fail_reason = FailReason::kNone;
-  const FaninSideLoadOptions fanin_side_loads{
-      .critical_load_pins = &target_collector_->critPathLoadPins(),
-      .off_path_weight = policy_config_.fanin_side_offpath_weight};
   {
     const ProfileScope profile("prepare_context");
-    target.estimator_context = DelayEstimator::buildContext(
-        resizer_,
-        target,
-        policy_config_.delay_estimation_levels,
-        &fail_reason,
-        policy_config_.sta_slew_bias,
-        /* include_latch_fanin */ true,
-        &estimator_cache_,
-        policy_config_.fanin_side_loss ? &fanin_side_loads : nullptr,
-        policy_config_.dual_rf_eval);
-  }
-
-  if ((policy_config_.fanin_side_loss || policy_config_.dual_rf_eval)
-      && target.estimator_context.has_value()) {
-    // Side paths may not be pushed below the current global worst slack.
-    target.estimator_context->side_slack_floor
-        = sta::delayAsFloat(sta_->worstSlack(max_));
-    target.estimator_context->side_floor_margin
-        = policy_config_.side_floor_margin;
-    target.estimator_context->fanin_side_loss_weight
-        = policy_config_.fanin_side_loss_weight;
+    target.estimator_context
+        = buildPolicyContext(resizer_,
+                             target,
+                             policy_config_,
+                             &target_collector_->critPathLoadPins(),
+                             /* include_latch_fanin */ true,
+                             &estimator_cache_,
+                             &fail_reason);
   }
 
   if (!target.estimator_context.has_value() && RepairSetupProfiler::enabled()) {
@@ -412,13 +320,6 @@ void OptimizationPolicy::prepareSequentialEstimator(Target& target) const
       = SequentialTimingEstimator::prepare(resizer_, target);
   if (target.sequential_timing_estimator != nullptr) {
     RepairSetupProfiler::event("sequential_targets_prepared");
-  }
-}
-
-void OptimizationPolicy::prepareInputCapBudgets(Target& target) const
-{
-  if (!target.input_cap_budgets.has_value()) {
-    target.input_cap_budgets = resizer_.inputCapBudgets(target.inst(resizer_));
   }
 }
 
@@ -474,42 +375,10 @@ void OptimizationPolicy::prewarmTargetLibertyCaches(
   }
 }
 
-bool OptimizationPolicy::hasSetupViolations(const OptimizerRunConfig& config,
-                                            const sta::MinMax* max) const
-{
-  const ProfileScope profile("qor_collection");
-  return sta::fuzzyLess(resizer_.sta()->worstSlack(max),
-                        config.setup_slack_margin);
-}
-
 sta::Slack OptimizationPolicy::totalNegativeSlack() const
 {
   const ProfileScope profile("qor_collection");
   return target_collector_->totalNegativeSlack();
-}
-
-void OptimizationPolicy::prewarmTargetDriverCaches(
-    const std::vector<Target>& targets) const
-{
-  std::unordered_set<const sta::Pin*> pins;
-  for (const Target& target : targets) {
-    sta::Instance* inst = target.inst(resizer_);
-    if (inst == nullptr) {
-      continue;
-    }
-
-    std::unique_ptr<sta::InstancePinIterator> pin_iter(
-        network_->pinIterator(inst));
-    while (pin_iter->hasNext()) {
-      pins.insert(pin_iter->next());
-    }
-  }
-
-  // Warm up dbNetwork's net-driver cache on the caller thread so MT workers do
-  // not populate net_drvr_pin_map_ while checking replacement legality.
-  for (const sta::Pin* pin : pins) {
-    static_cast<void>(network_->drivers(pin));
-  }
 }
 
 void OptimizationPolicy::prewarmStaForPrepareStage() const

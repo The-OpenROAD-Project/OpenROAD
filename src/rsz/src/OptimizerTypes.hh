@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
@@ -26,6 +27,7 @@ class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
+class Net;
 class Path;
 class PathExpanded;
 class Pin;
@@ -39,9 +41,14 @@ class Vertex;
 }  // namespace sta
 
 namespace rsz {
+class BufferedNet;
 class MoveCandidate;
 class Resizer;
 class SequentialTimingEstimator;
+struct SizeDownFanoutMtLoad;
+struct SplitLoadMtInput;
+struct SwapPinsMtInput;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
 namespace rsz {
@@ -51,6 +58,8 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
+// The serial and Mt pin-swap generators simulate cell functions the same way.
+inline constexpr int kMsgUnknownFuncExprOp = 91;
 
 enum class FailReason : uint8_t
 {
@@ -126,19 +135,21 @@ bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
 
 // === Target preparation flags ==============================================
 
+// The target-level data the generators read, prepared for every target of a
+// prepare stage.  A generator's own inputs come from its prepareInputs().
 using PrepareCacheMask = uint32_t;
 
 inline constexpr PrepareCacheMask kNoPrepareCache = 0;
 inline constexpr PrepareCacheMask kEstimatorContextCache = 1u << 0;
 // The flip-flop input-side checks a cell swap of the target may disturb
 // (SequentialTimingEstimator); needs kEstimatorContextCache.
-inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
+inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 2;
 
-// Generation inputs: one Mt generator's live STA reads, prepared on the main
-// thread so its generate() can run on a worker.  Without them, the cell-swap
-// generators read live STA.
-inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
-inline constexpr PrepareCacheMask kGenerationInputCaches = kInputCapBudgetCache;
+// The functionally equivalent input ports of a cell by input port.  The
+// library stays fixed within a run, so the policy shares one cache across
+// the targets of SwapPinsMt.
+using EquivPinCache = std::unordered_map<const sta::LibertyPort*,
+                                         std::vector<sta::LibertyPort*>>;
 
 // === Prepared timing data ===================================================
 
@@ -351,6 +362,18 @@ struct WireRC
 // can also expose the instance reached through driver_pin.
 using TargetViewMask = uint8_t;
 
+// Current slack and driver-to-load wire delay of one load on a RebufferMt
+// target net, with the weight the side-load model gives it.
+struct RebufferLoadTiming
+{
+  float slack{0.0f};
+  float wire_delay{0.0f};
+  float weight{1.0f};
+};
+
+using RebufferLoadTimingMap
+    = std::unordered_map<const sta::Pin*, RebufferLoadTiming>;
+
 inline constexpr TargetViewMask kPathDriverView = 1u << 0;
 inline constexpr TargetViewMask kInstanceView = 1u << 1;
 
@@ -365,6 +388,16 @@ struct Target
   // - kInstanceView: target instance output pin
   sta::Pin* driver_pin{nullptr};
 
+  // The current path-segment endpoint survives STA refresh; Path* cannot.
+  const sta::Pin* endpoint_pin{nullptr};
+
+  // Original failing endpoint that caused this target to be collected.  This
+  // differs from endpoint_pin for latch D-side fanin segments.  The endpoint
+  // collector sets it; the LEGACY policies leave it null.
+  const sta::Pin* violated_endpoint_pin{nullptr};
+  // Transition of the selected driver path.
+  const sta::RiseFall* driver_rf{nullptr};
+
   // Endpoint-side timing path handle.  Expanding this path exposes the full
   // startpoint-to-endpoint chain.
   const sta::Path* endpoint_path{nullptr};
@@ -373,6 +406,10 @@ struct Target
   // Selected driver stage on `path`.  inputPath() and prevDriverPath() walk
   // backward from this stage with Path::prevPath().
   const sta::Path* driver_path{nullptr};
+  // The load the driver feeds on the path, captured while the path is valid:
+  // a through-filtered path end does not survive the next search.  Null when
+  // the path ends at the driver.
+  const sta::Pin* load_pin{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
   // scene and min_max are captured at construction (while endpoint_path is
@@ -386,20 +423,36 @@ struct Target
   // Prepared flip-flop input-side checks for candidate Q-path swaps.
   std::shared_ptr<const SequentialTimingEstimator> sequential_timing_estimator;
 
-  // === Generation inputs (kGenerationInputCaches) ===========================
+  // === Generation inputs (MoveGenerator::prepareInputs()) ===================
   // Fanin max-cap headroom of the target instance (the cell-swap
   // generators); the STA capacitance check behind it is main-thread only.
   std::optional<std::vector<Resizer::InputCapBudget>> input_cap_budgets;
+  // RebufferMt: the driver net as a buffered-net tree and, with the
+  // side-load model, the current timing of its loads (empty without it).
+  BufferedNetPtr rebuffer_net;
+  RebufferLoadTimingMap rebuffer_load_timing;
+  // SplitLoadMt: the split prepareInputs() chose from live STA, null when it
+  // has none.  SwapPinsMt: the arc delays prepareInputs() measured through
+  // the equivalent inputs, from which generate() picks the fastest; null when
+  // the gate has none.
+  // UnbufferMt: the delay that removing the target's buffer is estimated to
+  // save, unset when the buffer cannot be removed.
+  // SizeDownFanoutMt: the measured loads generate() decides from, empty when no
+  // load has a smaller cell.  The candidates share these.
+  std::shared_ptr<const SplitLoadMtInput> split_load_input;
+  std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
+  std::optional<float> unbuffer_gain;
+  std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>>
+      size_down_fanout_loads;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  // Check whether the per-target fields required by a prepare mask are set.
-  bool isPrepared(PrepareCacheMask mask) const;
 
   // === Lazy STA/OpenDB resolution ==========================================
   std::string name(const Resizer& resizer) const;
   const sta::Pin* endpointPin(const Resizer& resizer) const;
+  const sta::Pin* violatedEndpointPin(const Resizer& resizer) const;
   sta::Pin* resolvedPin(const Resizer& resizer) const;
   sta::Instance* inst(const Resizer& resizer) const;
   sta::Vertex* vertex(const Resizer& resizer) const;
@@ -414,11 +467,33 @@ struct Target
   const sta::Path* prevDriverPath(const Resizer& resizer) const;
 };
 
+// What a candidate's ECO writes and what its timing reads, from prepared data.
+// The batch selector rejects write conflicts and candidates whose timing
+// depends on a batch member.
+struct MoveImpact
+{
+  // False when an estimator could not enumerate all reads and writes.
+  bool complete{false};
+  // Database objects mutated by applying the candidate.
+  std::vector<sta::Instance*> write_instances;
+  std::vector<sta::Net*> write_nets;
+  // Connectivity changed by a structural move.
+  std::vector<const sta::Pin*> reconnect_pins;
+  std::vector<sta::Instance*> reconnect_instances;
+  // Objects whose timing the candidate can alter after application.
+  std::vector<sta::Instance*> timing_effect_instances;
+  std::vector<sta::Net*> timing_effect_nets;
+  // Objects whose timing the candidate estimate read before application.
+  std::vector<sta::Instance*> timing_dependency_instances;
+  std::vector<sta::Net*> timing_dependency_nets;
+};
+
 Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             int path_index,
                             sta::Slack slack,
-                            const Resizer& resizer);
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin = nullptr);
 
 // === Estimation inputs and results =========================================
 
@@ -515,6 +590,8 @@ struct TargetEvaluation
   std::vector<Estimate> estimates;
   MoveCandidate* best_candidate{nullptr};
   Estimate best_estimate;
+  // Worker-local profiling time, merged only after all estimates complete.
+  double worker_elapsed{0.0};
 
   bool hasBestCandidate() const { return best_candidate != nullptr; }
   MoveCandidate& bestCandidate() const { return *best_candidate; }
@@ -548,9 +625,11 @@ struct OptimizerRunConfig
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  // Stop-rule preset of PARALLEL_EVAL; the other policies ignore it.
+  RepairEffort effort{RepairEffort::kHigh};
   // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
-  // pass events.  Files go to profile_dir, or "repair_setup_profile" when
-  // empty, with one run_N per call.
+  // pass events, 3 adds the per-move analysis.  Files go to profile_dir, or
+  // "repair_setup_profile" when empty, with one run_N per call.
   int profile_mode{0};
   std::string profile_dir;
   std::vector<MoveType> sequence;
