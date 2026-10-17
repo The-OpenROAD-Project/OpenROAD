@@ -328,8 +328,17 @@ class _dbBlock : public _dbObject
   std::list<dbBlockCallBackObj*> callbacks_;
   void* extmi_;
 
+  struct JournalStackEntry
+  {
+    dbJournal* journal;
+    // True when a nested beginEco suspended this journal; it resumes
+    // recording once the nested ECO is committed or undone.  False when
+    // endEco stopped it.
+    bool resume;
+  };
+
   dbJournal* journal_;
-  std::stack<dbJournal*> journal_stack_;
+  std::stack<JournalStackEntry> journal_stack_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBlock& block);
