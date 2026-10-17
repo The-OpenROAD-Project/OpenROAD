@@ -66,6 +66,7 @@ genrule(
         "src/timing-widget.js",
         "src/drc-widget.js",
         "src/selection-browser.js",
+        "src/grid-layout.js",
         "src/main.js",
     ],
     outs = ["src/report_assets.cpp"],
@@ -107,6 +108,7 @@ genrule(
           " $(location src/timing-widget.js)" +
           " $(location src/drc-widget.js)" +
           " $(location src/selection-browser.js)" +
+          " $(location src/grid-layout.js)" +
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
 )
