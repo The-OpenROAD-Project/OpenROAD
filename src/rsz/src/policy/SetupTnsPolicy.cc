@@ -72,7 +72,8 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       "repair_setup",
       10,
       fmt::format("TNS{} Phase Time: {{}}", phase_marker));
-  committer_.capturePrePhaseSlack();
+
+  committer_.tracker().capturePrePhaseSlack();
   setup_context_.overall_no_progress_count = 0;
   target_collector_->resetEndpointPasses();
   debugPrint(logger_,

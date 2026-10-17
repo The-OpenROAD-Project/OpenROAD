@@ -891,6 +891,9 @@ void Rebuffer::errorAreaRecoveryUnreproducible()
 
 void Rebuffer::warnPathTraceFailed(const sta::Pin* load_pin)
 {
+  if (countWorkerWarning(2006)) {
+    return;
+  }
   logger_->warn(RSZ,
                 2006,
                 "failed to trace timing path for load {} when buffering {}",
@@ -900,6 +903,9 @@ void Rebuffer::warnPathTraceFailed(const sta::Pin* load_pin)
 
 void Rebuffer::warnNoDesignRuleSolution()
 {
+  if (countWorkerWarning(2009)) {
+    return;
+  }
   logger_->warn(RSZ,
                 2009,
                 "Skipping buffering because no valid buffering solution "
@@ -910,12 +916,25 @@ void Rebuffer::warnNoDesignRuleSolution()
 
 void Rebuffer::warnNoViableBuffering(const sta::Pin* drvr_pin, const int rounds)
 {
+  if (countWorkerWarning(2021)) {
+    return;
+  }
   logger_->warn(RSZ,
                 2021,
                 "cannot find a viable buffering solution on pin {} after {} "
                 "rounds of buffering (no solution meets design rules)",
                 network_->name(drvr_pin),
                 rounds);
+}
+
+bool Rebuffer::countWorkerWarning(const int id)
+{
+  // Only a worker planner owns a delay calculator (see initForPlanning()).
+  if (owned_delay_calc_ == nullptr) {
+    return false;
+  }
+  ++worker_warning_counts_[id];
+  return true;
 }
 
 bool Rebuffer::timingOrder(const RankedOption& lhs, const RankedOption& rhs)
@@ -1819,14 +1838,16 @@ static float bufferCin(const sta::LibertyCell* cell)
   return a->capacitance();
 }
 
-void Rebuffer::init()
+void Rebuffer::init(const bool find_max_wire_length)
 {
   logger_ = resizer_->logger_;
   dbStaState::init(resizer_->sta_);
   db_network_ = resizer_->db_network_;
   estimate_parasitics_ = resizer_->estimate_parasitics_;
-  resizer_max_wire_length_
-      = resizer_->metersToDbu(resizer_->findMaxWireLength());
+  if (find_max_wire_length) {
+    resizer_max_wire_length_
+        = resizer_->metersToDbu(resizer_->findMaxWireLength());
+  }
   sta_->checkCapacitancesPreamble(sta_->scenes());
   sta_->checkSlewsPreamble();
   sta_->checkFanoutPreamble();
@@ -1869,7 +1890,11 @@ void Rebuffer::initOnCorner(sta::Scene* corner)
 
 void Rebuffer::initForPlanning(sta::Scene* corner, const bool worker)
 {
-  init();
+  // A worker planner skips the max wire length search, which takes nearly all
+  // of a planner's set-up and whose result no planner reads.  The Resizer's
+  // planner, which RebufferMtGenerator::startPhase() initializes first, still
+  // runs it, so the buffers are found and the wire RC is checked once.
+  init(/*find_max_wire_length=*/!worker);
   owned_delay_calc_.reset(worker ? arc_delay_calc_->copy() : nullptr);
   initOnCorner(corner);
 }

@@ -38,6 +38,7 @@
 #undef protected
 
 #include "DelayEstimator.hh"
+#include "Rebuffer.hh"
 #include "RepairSetupProfiler.hh"
 #include "SequentialTimingEstimator.hh"
 #include "rsz/Resizer.hh"
@@ -48,6 +49,9 @@
 #include "RepairSetupContext.hh"
 #undef protected
 #undef private
+#include "BatchSelector.hh"
+#include "BottleneckAnalysis.hh"
+#include "BufferGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
@@ -86,6 +90,14 @@
 #include "tst/IntegratedFixture.h"
 #undef protected
 #include "MoveGenerator.hh"
+#include "RebufferMtGenerator.hh"
+
+#define private public
+#define protected public
+#include "SetupParallelEvalPolicy.hh"
+#undef protected
+#undef private
+
 #include "utl/ThreadPool.h"
 
 namespace rsz {

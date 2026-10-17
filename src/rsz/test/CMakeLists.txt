@@ -266,6 +266,14 @@ or_integration_tests(
     report_buffers_no_lef
     repair_setup_vt_swap
     repair_setup_vtswap_legacy_asap7
+    repair_setup_parallel_eval
+    repair_setup_parallel_eval_vt_swap
+    repair_setup_parallel_eval_vt_swap_corners
+    repair_setup_parallel_eval_default_sequence
+    repair_setup_parallel_eval_effort
+    repair_setup_parallel_eval_threads
+    repair_setup_parallel_eval_max_util
+    repair_setup_parallel_eval_path_group
     repair_setup_vt_swap2
     repair_fanout7_skip_pin_swap
     global_sizing

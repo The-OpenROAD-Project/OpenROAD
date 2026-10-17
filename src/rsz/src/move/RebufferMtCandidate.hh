@@ -34,6 +34,8 @@ class RebufferMtCandidate : public MoveCandidate
   Estimate estimate() override;
   MoveResult apply() override;
   MoveType type() const override { return MoveType::kBuffer; }
+  MoveImpact impact() const override;
+  std::vector<const sta::Pin*> guardedSidePins() const override;
   float scaledScore() const { return raw_score_ * score_scale_; }
 
  private:
