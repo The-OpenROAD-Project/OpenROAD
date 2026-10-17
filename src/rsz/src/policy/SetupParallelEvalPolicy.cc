@@ -33,6 +33,7 @@
 #include "SizeUpMtCandidate.hh"
 #include "SizeUpMtGenerator.hh"
 #include "SplitLoadMtGenerator.hh"
+#include "SwapPinsMtGenerator.hh"
 #include "VtSwapMtCandidate.hh"
 #include "VtSwapMtGenerator.hh"
 #include "db_sta/dbNetwork.hh"
@@ -104,11 +105,13 @@ std::unique_ptr<MoveGenerator> makeParallelEvalGenerator(
       return std::make_unique<RebufferMtGenerator>(context);
     case MoveType::kVtSwap:
       return std::make_unique<VtSwapMtGenerator>(context);
+    case MoveType::kSwapPins:
+      // estimate() only compares the prepared arc delays.
+      return std::make_unique<SwapPinsMtGenerator>(context);
     // This Mt form chooses like the serial move in prepareInputs() and scores
     // the choice from the prepared path window.
     case MoveType::kSplitLoad:
       return std::make_unique<SplitLoadMtGenerator>(context);
-    case MoveType::kSwapPins:
     case MoveType::kSizeDownFanout:
     case MoveType::kUnbuffer:
     case MoveType::kClone:
@@ -194,12 +197,10 @@ void SetupParallelEvalPolicy::selectMoveSequence()
     }
 
     // BufferToInverters has no gain estimate to rank it.  Clone, SizeUpMatch
-    // and Reroute have no Mt form; SwapPins, Unbuffer and SizeDownFanout have
-    // none yet.
+    // and Reroute have no Mt form; Unbuffer and SizeDownFanout have none yet.
     if (type == MoveType::kBufferToInverters || type == MoveType::kClone
         || type == MoveType::kSizeUpMatch || type == MoveType::kReroute
-        || type == MoveType::kSwapPins || type == MoveType::kUnbuffer
-        || type == MoveType::kSizeDownFanout) {
+        || type == MoveType::kUnbuffer || type == MoveType::kSizeDownFanout) {
       logger_->warn(utl::RSZ,
                     2028,
                     "PARALLEL_EVAL has no form of move '{}'; it is skipped.",
@@ -1569,6 +1570,7 @@ bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
   // The stalled main loop left the worst path's instances on the tabu list;
   // the tail exists to work on exactly those.
   tabu_.clearTemporary();
+  addTailGenerators();
 
   RepairSetupProfiler::event(
       "wns_tail_begin",
@@ -1584,6 +1586,19 @@ bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
              sta::delayAsFloat(checkpoint_wns_));
 
   return true;
+}
+
+void SetupParallelEvalPolicy::addTailGenerators()
+{
+  // Pin swaps join the tail when the default sequence left them out.
+  for (const MoveType type : {MoveType::kSwapPins}) {
+    if (tailMayAddMove(type)) {
+      move_generators_.push_back(
+          makeParallelEvalGenerator(type, makeGeneratorContext()));
+      move_generators_.back()->startPhase(thread_pool_->threadCount());
+      RepairSetupProfiler::event("wns_tail_generator", 1, moveName(type));
+    }
+  }
 }
 
 bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
@@ -1617,6 +1632,14 @@ bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
   }
 
   return false;
+}
+
+bool SetupParallelEvalPolicy::tailMayAddMove(const MoveType type) const
+{
+  // An explicit -sequence is the complete move set of the run, and the
+  // -skip_* options apply to the tail as they do to the batches.
+  return config_.sequence.empty() && moveEnabled(type)
+         && findGenerator(type) == nullptr;
 }
 
 void SetupParallelEvalPolicy::applyTailStopRules(const int batch_moves)

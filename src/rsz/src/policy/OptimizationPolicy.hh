@@ -171,6 +171,7 @@ class OptimizationPolicy
   // Main-thread caches; library configuration stays fixed until the next
   // start().
   mutable DelayEstimatorCache estimator_cache_;
+  mutable EquivPinCache equiv_pin_cache_;
   bool converged_{false};
   bool result_{false};
   bool is_experimental{false};

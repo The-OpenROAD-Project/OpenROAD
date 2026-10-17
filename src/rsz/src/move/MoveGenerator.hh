@@ -45,6 +45,8 @@ struct GeneratorContext
   // Load pins on the worst paths of violating endpoints, or null.  Side-load
   // models weight only these pins fully.
   const std::unordered_set<const sta::Pin*>* critical_load_pins{nullptr};
+  // Equivalent input ports found so far, or null to compute them per target.
+  EquivPinCache* equiv_pin_cache{nullptr};
 };
 
 // === Move generator interface ==============================================

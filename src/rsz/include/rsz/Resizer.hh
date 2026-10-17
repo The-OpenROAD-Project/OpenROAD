@@ -750,6 +750,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             sta::LibertyPort** swap_port,
                             sta::ArcDelay* base_delay = nullptr,
                             sta::ArcDelay* candidate_delay = nullptr);
+  // The arc delays findSwapPinCandidate() compares, under the annotated
+  // input slews and load_cap: through input_port (base_delay, -INF without
+  // an arc) and through every other input of the cell (port_delays).
+  void swapPinDelays(sta::LibertyPort* input_port,
+                     sta::LibertyPort* drvr_port,
+                     float load_cap,
+                     const sta::Scene* scene,
+                     const sta::MinMax* min_max,
+                     sta::ArcDelay& base_delay,
+                     std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Scene* scene,

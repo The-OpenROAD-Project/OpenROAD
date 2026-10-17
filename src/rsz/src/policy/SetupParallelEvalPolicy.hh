@@ -266,6 +266,11 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // Starts the tail if it is on and has not run.  False when the run should
   // stop instead.
   bool startWnsTail(const char* reason);
+  // The generators the tail adds for moves the batches did not run.
+  void addTailGenerators();
+  // Whether the tail may add a generator for a move the batches did not run.
+  bool tailMayAddMove(MoveType type) const;
+  // Apply the WNS-tail stall and work-budget stop rules.
   void applyTailStopRules(int batch_moves);
 
   // === State ================================================================

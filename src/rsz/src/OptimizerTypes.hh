@@ -46,6 +46,7 @@ class MoveCandidate;
 class Resizer;
 class SequentialTimingEstimator;
 struct SplitLoadMtInput;
+struct SwapPinsMtInput;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
@@ -56,6 +57,8 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
+// The serial and Mt pin-swap generators simulate cell functions the same way.
+inline constexpr int kMsgUnknownFuncExprOp = 91;
 
 enum class FailReason : uint8_t
 {
@@ -145,8 +148,16 @@ inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
 inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
 inline constexpr PrepareCacheMask kRebufferInputCache = 1u << 3;
 inline constexpr PrepareCacheMask kSplitLoadInputCache = 1u << 4;
+inline constexpr PrepareCacheMask kSwapPinsInputCache = 1u << 5;
 inline constexpr PrepareCacheMask kGenerationInputCaches
-    = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache;
+    = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache
+      | kSwapPinsInputCache;
+
+// The functionally equivalent input ports of a cell by input port.  The
+// library stays fixed within a run, so the policy shares one cache across
+// the targets of SwapPinsMt.
+using EquivPinCache = std::unordered_map<const sta::LibertyPort*,
+                                         std::vector<sta::LibertyPort*>>;
 
 // === Prepared timing data ===================================================
 
@@ -420,6 +431,7 @@ struct Target
   // The move each Mt generator decided on from live STA; null (or empty)
   // when it has none for this target.  The candidates share these.
   std::shared_ptr<const SplitLoadMtInput> split_load_input;
+  std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
