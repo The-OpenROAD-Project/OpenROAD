@@ -4,6 +4,7 @@ or_integration_tests(
     down_access_term
     drc_test
     ispd18_sample
+    ispd18_sample_adaptive
     ispd18_sample_incr
     ndr_vias1
     ndr_vias2
@@ -34,3 +35,9 @@ target_include_directories(WatermarkCostTest PRIVATE ../src)
 target_link_libraries(WatermarkCostTest PRIVATE drt_lib GTest::gtest_main)
 gtest_discover_tests(WatermarkCostTest)
 add_dependencies(build_and_test WatermarkCostTest)
+
+add_executable(AdaptiveStrategyTest AdaptiveStrategyTest.cpp)
+target_include_directories(AdaptiveStrategyTest PRIVATE ../src)
+target_link_libraries(AdaptiveStrategyTest PRIVATE drt_lib GTest::gtest_main)
+gtest_discover_tests(AdaptiveStrategyTest)
+add_dependencies(build_and_test AdaptiveStrategyTest)

@@ -847,6 +847,7 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & unidirectional_layer_names_;
   // Appended last so the archive layout of existing members is unchanged.
   (ar) & WATERMARK_WRONGWAY_MULT;
+  (ar) & ADAPTIVE_STRATEGY;
 }
 
 }  // namespace drt

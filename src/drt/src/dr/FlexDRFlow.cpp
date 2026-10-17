@@ -10,7 +10,7 @@ namespace drt {
 
 FlexDRFlow::State FlexDRFlow::determineNextFlow(const FlowContext& context)
 {
-  if (context.num_violations > STUBBORN_FLOW_VIOLATION_THRESHOLD
+  if (context.num_violations > stubborn_flow_violation_threshold_
       || context.args.ripupMode == RipUpMode::ALL
       || context.args.ripupMode == RipUpMode::INCR || fixing_max_spacing_) {
     current_state_ = State::OPTIMIZATION;
@@ -55,6 +55,11 @@ void FlexDRFlow::setLastIterationEffective(bool value)
 void FlexDRFlow::setFixingMaxSpacing(bool value)
 {
   fixing_max_spacing_ = value;
+}
+
+void FlexDRFlow::setStubbornFlowViolationThreshold(int threshold)
+{
+  stubborn_flow_violation_threshold_ = threshold;
 }
 
 bool FlexDRFlow::isArgsChanged(const FlowContext& context) const
