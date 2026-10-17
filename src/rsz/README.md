@@ -238,6 +238,9 @@ repair_timing
     [-skip_vt_swap]
     [-skip_crit_vt_swap]
     [-skip_crpr]
+    [-effort low|medium|high]
+    [-profile_mode mode]
+    [-profile_dir dir]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_iterations iterations]
@@ -259,7 +262,7 @@ repair_timing
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
-| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". The experimental `PARALLEL_EVAL` policy is described in [PARALLEL_EVAL Policy](#parallel_eval-policy). |
 | `-path_group` | Restrict setup and hold repair to one path group: `reg2reg`, `in2reg`, `reg2out`, `in2out` or `gated_clock`. Any other name warns and repairs every path group, which is the default. A supported group that the SDC has no `group_path` for is created, so timing reports group paths the same way `repair_timing` optimizes them. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
@@ -271,8 +274,9 @@ repair_timing
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
 | `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
+| `-effort` | Optimization effort of the `PARALLEL_EVAL` policy: `low`, `medium` or `high` (default). `low` stops when the batches stall and skips the WNS tail on the worst endpoints. `medium` declares the batch stall after half as many batches, asks twice the progress to reset it, and gives the WNS tail a quarter of the maximum tail endpoints and a quarter of the work budget of `high`. `high` runs the full tail. Other policies ignore the option, and `repair_timing` warns when `-phases` does not list `PARALLEL_EVAL`. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
-| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing, `1` records the WNS/TNS trajectory, `2` adds the pass events. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. |
+| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing, `1` records the WNS/TNS trajectory, `2` adds the pass and batch events. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. |
 | `-profile_dir` | Directory of the profiler output; the default is `repair_setup_profile` under the current directory. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
@@ -308,6 +312,44 @@ startpoint's worst path can leave the group.
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
 this option be used with global routing based parasitics.
+
+#### PARALLEL_EVAL Policy
+
+`-phases PARALLEL_EVAL` repairs setup timing in batches: worker threads
+estimate the moves of many targets at once, the non-conflicting moves with the
+best estimates are committed as one batch, and one timing update judges the
+batch against its checkpoint. Batches stop when they stall, and a WNS tail
+then works on the worst endpoints one batch at a time. The policy differs from
+`LEGACY` in these ways:
+
+- Threads: `set_thread_count` gives the policy its workers (the thread count
+  minus one). The result does not depend on the thread count. Endpoint scans
+  of 4096 endpoints or more also run on the workers. Buffer tree planning on
+  the workers counts its warnings instead of logging them, and the phase ends
+  with one warning that lists the counts; a single-thread run logs each one.
+- Area: a batch that leaves the design above `-max_utilization` is undone,
+  and the first such batch prints a warning. The design area counts the
+  standard cells, not macros or fillers. Without `-max_utilization` there is
+  no area limit, as in `LEGACY`.
+- Iterations: `-max_iterations` counts batches, the WNS tail included.
+- Retries: an instance in three undone batches is not tried again in the
+  run, the WNS tail included.
+- Progress: without `-verbose` the progress table prints the first and the
+  final row only; `-verbose` prints a row per batch.
+- Effort: `-effort` tunes the stall and WNS tail limits.
+- Moves: `-sequence` lists the moves of the batches; the default is
+  `vt_swap sizeup buffer split`, and the `-skip_*` options apply. Buffering
+  plans up to three buffer trees per driver with fewer than 20 loads.
+- Endpoints: `-repair_tns` limits each batch to that share of the violating
+  endpoints, as `LEGACY` limits the endpoints it repairs.
+- Path groups: under `-path_group` a batch is judged by the group's WNS and
+  TNS, as in `LEGACY`. The paths beside a move are still kept above the
+  design's worst slack, whatever group they belong to.
+- No effect: `-max_passes` and `-max_repairs_per_pass` drive the
+  per-endpoint policies only; `repair_timing` warns when they are given and
+  `-phases` lists only `PARALLEL_EVAL`.
+- Profiling: `-profile_mode` records the batch decisions under
+  `-profile_dir`.
 
 #### Instance Name Prefixes
 

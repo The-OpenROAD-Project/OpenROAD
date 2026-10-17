@@ -152,7 +152,7 @@ void ProgressReporter::printFinal(RepairTargetCollector& collector,
   resizer_.logger()->report(kRule);
 }
 
-double ProgressReporter::areaGrowthPercent() const
+double ProgressReporter::designArea() const
 {
   // computeDesignArea() walks every instance, and most rows follow passes that
   // changed nothing.  The committer's edit count only grows, so a new count
@@ -163,13 +163,18 @@ double ProgressReporter::areaGrowthPercent() const
     context_.progress_design_area = resizer_.computeDesignArea();
     context_.progress_area_at_edit = edits;
   }
+  return context_.progress_design_area;
+}
 
+double ProgressReporter::areaGrowthPercent() const
+{
+  const double design_area = designArea();
   const double initial_area = context_.initial_design_area;
   if (std::abs(initial_area) <= 0.0) {
     return std::numeric_limits<double>::infinity();
   }
 
-  return (context_.progress_design_area - initial_area) / initial_area * 100.0;
+  return (design_area - initial_area) / initial_area * 100.0;
 }
 
 }  // namespace rsz

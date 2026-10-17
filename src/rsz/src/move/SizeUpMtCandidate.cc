@@ -116,6 +116,11 @@ MoveResult SizeUpMtCandidate::apply()
   };
 }
 
+MoveImpact SizeUpMtCandidate::impact() const
+{
+  return cellSwapImpact(inst_);
+}
+
 std::string SizeUpMtCandidate::logName() const
 {
   return resizer_.network()->pathName(target().driver_pin);

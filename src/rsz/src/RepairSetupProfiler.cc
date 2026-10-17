@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -47,8 +48,8 @@ std::string number(const double value)
 }
 
 // The phases the profiler covers completely; others are marked partial.
-constexpr std::array<std::string_view, 3> kCoveredPhases
-    = {"LEGACY", "LAST_GASP", "CRIT_VT_SWAP"};
+constexpr std::array<std::string_view, 4> kCoveredPhases
+    = {"LEGACY", "LAST_GASP", "CRIT_VT_SWAP", "PARALLEL_EVAL"};
 
 }  // namespace
 
@@ -208,6 +209,9 @@ void RepairSetupProfiler::event(const std::string_view name,
     if (enabled()) {
       current_->add({"count", std::string(metric), std::string(options.move)},
                     static_cast<double>(*options.count));
+    } else if (deferred_counts_ != nullptr) {
+      deferred_counts_->push_back(
+          {std::string(metric), std::string(options.move), *options.count});
     }
   }
 
@@ -238,6 +242,13 @@ void RepairSetupProfiler::event(const std::string_view name,
   event(name, {.count = std::nullopt, .detail = detail, .trace = true});
 }
 
+void RepairSetupProfiler::replay(const DeferredCounts& counts)
+{
+  for (const DeferredCount& deferred : counts) {
+    event(deferred.name, deferred.value, deferred.move);
+  }
+}
+
 void RepairSetupProfiler::enter(const char* stage)
 {
   stages_.push_back({stage, Clock::now(), 0.0});
@@ -256,6 +267,16 @@ void RepairSetupProfiler::leave()
   add({"time", stage.name, ""}, wall - stage.children);
   add({"inclusive_time", stage.name, ""}, wall);
   event(stage.name + "_calls");
+}
+
+void RepairSetupProfiler::workerTime(const std::string_view task,
+                                     const double seconds)
+{
+  if (enabled()) {
+    event(std::string(task) + "_tasks");
+    current_->add({"worker_time", "candidate_" + std::string(task), ""},
+                  seconds);
+  }
 }
 
 void RepairSetupProfiler::accountRootStageInterval()
@@ -391,6 +412,10 @@ void RepairSetupProfiler::emit(const std::string& name,
 
 void RepairSetupProfiler::stop(const std::string_view reason)
 {
+  if (!enabled()) {
+    return;
+  }
+
   const std::string metric = "stop_" + std::string(reason);
   event("stop", {.metric = metric, .detail = reason, .trace = true});
 }
@@ -547,6 +572,55 @@ void RepairSetupProfiler::endApply(MoveCandidate& candidate,
                                                    candidate.type());
     }
   }
+
+  profiler.active_move_ = 0;
+  profiler.active_candidate_ = 0;
+  profiler.active_type_.clear();
+}
+
+void RepairSetupProfiler::beginRevert(MoveCandidate& candidate)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  RepairSetupProfiler& profiler = *current_;
+  assert(profiler.active_move_ == 0);
+  const Candidate& info = profiler.candidates_.at(&candidate);
+  assert(info.move_id != 0);
+
+  // The inverse swap is recorded under the original move's identity.
+  profiler.active_move_ = info.move_id;
+  profiler.active_candidate_ = info.id;
+  profiler.active_type_ = moveName(candidate.type());
+}
+
+void RepairSetupProfiler::endRevert(const char* detail)
+{
+  if (!enabled()) {
+    return;
+  }
+
+  RepairSetupProfiler& profiler = *current_;
+  assert(profiler.active_move_ != 0 && !profiler.journals_.empty());
+  std::vector<std::pair<uint64_t, MoveType>>& moves
+      = profiler.journals_.back().moves;
+  const std::vector<std::pair<uint64_t, MoveType>>::iterator move
+      = std::find_if(moves.begin(),
+                     moves.end(),
+                     [&](const std::pair<uint64_t, MoveType>& item) {
+                       return item.first == profiler.active_move_;
+                     });
+  // Remove the original identity before its parent journal can settle it.
+  if (move != moves.end()) {
+    moves.erase(move);
+  }
+
+  event("move_reverted",
+        {.metric = "reverted",
+         .move = profiler.active_type_,
+         .detail = detail,
+         .trace = true});
 
   profiler.active_move_ = 0;
   profiler.active_candidate_ = 0;
