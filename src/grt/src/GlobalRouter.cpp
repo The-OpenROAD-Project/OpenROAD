@@ -1784,6 +1784,8 @@ void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
     for (odb::dbNet* db_net : cugr_->takeIncrementalExtraReroutes()) {
       const auto it = db_net_map_.find(db_net);
       if (it != db_net_map_.end() && it->second != nullptr) {
+        // Their detailed wires, if any, describe the old route.
+        destroyNetWire(it->second);
         nets.push_back(it->second);
       }
     }
