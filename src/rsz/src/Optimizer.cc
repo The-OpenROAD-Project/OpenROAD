@@ -144,7 +144,9 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
 bool Optimizer::run()
 {
   RepairSetupProfiler profile(
-      resizer_, config_.profile_mode, config_.profile_dir);
+      resizer_,
+      static_cast<RepairSetupProfiler::Mode>(config_.profile_mode),
+      config_.profile_dir);
 
   const ProfileScope optimizer_scope("optimizer_overhead");
   profile.runConfig(config_);

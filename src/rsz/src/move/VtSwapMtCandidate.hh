@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "DelayEstimator.hh"
 #include "MoveCandidate.hh"
@@ -17,10 +18,10 @@ class LibertyCell;
 
 namespace rsz {
 
-// MT-safe VT-swap candidate scored from a prepared ArcDelayState.
+// MT-safe VT-swap candidate scored from a prepared EstimatorContext.
 //
 // Same concept as VtSwapCandidate but estimate() reads from a prepared
-// ArcDelayState (built on the main thread and stored on Target) and
+// EstimatorContext (built on the main thread and stored on Target) and
 // evaluates the Liberty table model locally, making it thread-safe for
 // parallel evaluation on worker threads. apply() still runs on the main
 // thread via Resizer::replaceCell.
@@ -28,13 +29,11 @@ class VtSwapMtCandidate : public MoveCandidate
 {
  public:
   // === Construction =========================================================
+  // Scores from target.estimator_context, which must be prepared.
   VtSwapMtCandidate(Resizer& resizer,
                     const Target& target,
-                    sta::Pin* driver_pin,
                     sta::Instance* inst,
-                    sta::LibertyCell* current_cell,
-                    sta::LibertyCell* candidate_cell,
-                    const ArcDelayState& arc_delay);
+                    sta::LibertyCell* candidate_cell);
 
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
@@ -42,14 +41,10 @@ class VtSwapMtCandidate : public MoveCandidate
   MoveType type() const override { return MoveType::kVtSwap; }
 
  private:
-  std::string getDrvPinName() const;
-
   // === Candidate state ======================================================
-  sta::Pin* driver_pin_{nullptr};
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};
   sta::LibertyCell* candidate_cell_{nullptr};
-  ArcDelayState arc_delay_;
 };
 
 }  // namespace rsz

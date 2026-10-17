@@ -109,6 +109,12 @@ class MoveGenerator
                        const std::string& drvr_port_name,
                        int lib_ap_index) const;
 
+  // === Shared fanin max-cap helper =========================================
+  // The cell-swap generators' fanin max-cap headroom: the prepared
+  // kInputCapBudgetCache, else a fresh main-thread capture.
+  std::vector<Resizer::InputCapBudget> inputCapBudgets(
+      const Target& target) const;
+
   // === Shared generator dependencies =======================================
   Resizer& resizer_;
   MoveCommitter& committer_;

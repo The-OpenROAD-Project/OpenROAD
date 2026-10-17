@@ -3,13 +3,13 @@
 
 #include "VtSwapMtGenerator.hh"
 
-#include <cstddef>
 #include <memory>
 #include <vector>
 
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupProfiler.hh"
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -28,24 +28,46 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!target.isPrepared(kArcDelayStateCache)) {
+  if (!target.isPrepared(kEstimatorContextCache)) {
     return candidates;
   }
 
-  const ArcDelayState& arc_delay = target.arc_delay.value();
-  sta::LibertyCell* current_cell = arc_delay.target().arc.currentCell();
+  const EstimatorContext& estimator_context = target.estimator_context.value();
+  const SelectedArc& target_arc = estimator_context.target().arc;
+  sta::LibertyCell* current_cell = estimator_context.target().arc.currentCell();
   const std::vector<sta::LibertyCell*> candidate_cells
       = selectCandidateCells(current_cell);
+
+  // Fanin max-cap headroom is instance-level, captured once per target.
+  const std::vector<Resizer::InputCapBudget> budgets = inputCapBudgets(target);
   candidates.reserve(candidate_cells.size());
   for (sta::LibertyCell* candidate_cell : candidate_cells) {
-    candidates.push_back(
-        std::make_unique<VtSwapMtCandidate>(resizer_,
-                                            target,
-                                            target.driver_pin,
-                                            target.inst(resizer_),
-                                            current_cell,
-                                            candidate_cell,
-                                            arc_delay));
+    if (policy_config_.dual_rf_drive_guard) {
+      sta::LibertyCell* candidate_scene
+          = candidate_cell->sceneCell(target_arc.scene, target_arc.min_max);
+      sta::LibertyPort* candidate_output
+          = candidate_scene != nullptr ? candidate_scene->findLibertyPort(
+                                             target_arc.outputPort()->name())
+                                       : nullptr;
+      if (candidate_output != nullptr
+          && !driveResNoHigherOnBothRf(target_arc.outputPort(),
+                                       candidate_output)) {
+        RepairSetupProfiler::event(
+            "dual_rf_drive_guard_rejects", 1, moveName(MoveType::kVtSwap));
+        continue;
+      }
+    }
+
+    // The same decision as replacementPreservesMaxCap(), from the captured
+    // headroom.
+    if (!resizer_.replacementFitsInputCapBudgets(budgets, candidate_cell)) {
+      RepairSetupProfiler::event(
+          "max_cap_rejects", 1, moveName(MoveType::kVtSwap));
+      continue;
+    }
+
+    candidates.push_back(std::make_unique<VtSwapMtCandidate>(
+        resizer_, target, target.inst(resizer_), candidate_cell));
   }
   return candidates;
 }
@@ -55,7 +77,7 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
   // Screen out targets that cannot legally change VT in the current library
   // set.
   if (!MoveGenerator::isApplicable(target)
-      || !target.isPrepared(kArcDelayStateCache)) {
+      || !target.isPrepared(kEstimatorContextCache)) {
     return false;
   }
 

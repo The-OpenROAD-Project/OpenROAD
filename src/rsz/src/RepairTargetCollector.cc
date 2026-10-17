@@ -861,6 +861,7 @@ void RepairTargetCollector::collectViolatingEndpoints()
 {
   const ProfileScope profile("endpoint_scan");
   violating_endpoints_.clear();
+  crit_path_load_pins_.clear();
 
   if (restrictedToPathGroup()) {
     // One query for the whole group, already carrying each endpoint's slack
@@ -879,6 +880,35 @@ void RepairTargetCollector::collectViolatingEndpoints()
 
   // Preserve equal-slack STA endpoint order for legacy QoR parity.
   std::ranges::stable_sort(violating_endpoints_, slackLess);
+
+  if (record_crit_path_load_pins_) {
+    // Side loss weights a load fully only on a violating endpoint's worst path.
+    // Record those pins for every violating endpoint, beyond the current chunk.
+    const ProfileScope crit_profile("scan_crit_paths");
+    for (const PinSlack& endpoint_data : violating_endpoints_) {
+      sta::Vertex* endpoint = graph_->pinLoadVertex(endpoint_data.first);
+      sta::Path* path
+          = endpoint != nullptr ? findWorstSlackPath(endpoint) : nullptr;
+      if (path == nullptr) {
+        continue;
+      }
+
+      sta::PathExpanded expanded(path, sta_);
+      const int path_count = static_cast<int>(expanded.size());
+      for (int index = static_cast<int>(expanded.startIndex());
+           index < path_count;
+           ++index) {
+        const sta::Path* point = expanded.path(index);
+        sta::Vertex* vertex = point->vertex(sta_);
+        if (vertex != nullptr && !vertex->isDriver(network_)) {
+          crit_path_load_pins_.insert(point->pin(sta_));
+        }
+      }
+    }
+
+    RepairSetupProfiler::event("scan_crit_path_load_pins",
+                               crit_path_load_pins_.size());
+  }
 
   debugPrint(logger_,
              RSZ,
@@ -1058,8 +1088,17 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* driver_path = expanded.path(index);
     sta::Vertex* vertex = driver_path->vertex(sta_);
     sta::Pin* pin = driver_path->pin(sta_);
-    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
-        || network_->isTopLevelPort(pin)) {
+    if (vertex == nullptr || pin == nullptr) {
+      continue;
+    }
+
+    if (!vertex->isDriver(network_)) {
+      // Load pins on this worst path carry the endpoint slack one-for-one.
+      crit_path_load_pins_.insert(pin);
+      continue;
+    }
+
+    if (network_->isTopLevelPort(pin)) {
       continue;
     }
 

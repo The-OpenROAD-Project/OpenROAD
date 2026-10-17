@@ -29,6 +29,7 @@ add_library(rsz_lib
     OptimizerTypes.cc
     DelayEstimator.cc
     DelayEstimatorReporter.cc
+    SequentialTimingEstimator.cc
     LRSubproblem.cc
     policy/SetupCritVtSwapPolicy.cc
     policy/SetupDirectionalPolicy.cc

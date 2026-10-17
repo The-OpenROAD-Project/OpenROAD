@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+#include "DelayEstimator.hh"
 #include "OptimizerTypes.hh"
 #include "ProgressReporter.hh"
 #include "rsz/Resizer.hh"
@@ -89,6 +90,8 @@ class OptimizationPolicy
   virtual void buildMoveGenerators(const std::vector<MoveType>& move_types,
                                    const GeneratorContext& context);
 
+  // The enabled generators' target-level caches; the generation inputs are
+  // left to a policy that prepares them per generator.
   PrepareCacheMask accumulatePrepareRequirements() const;
   MoveGenerator* findGenerator(MoveType type) const;
 
@@ -106,7 +109,9 @@ class OptimizationPolicy
   void prepareTarget(Target& target, PrepareCacheMask mask) const;
 
   // Build the immutable arc-delay snapshot consumed by MT-safe candidates.
-  void prepareArcDelayState(Target& target) const;
+  void prepareEstimatorContext(Target& target) const;
+  // Capture the target instance's fanin max-cap headroom.
+  void prepareInputCapBudgets(Target& target) const;
 
   // Prewarm Liberty-cell caches used by MT generator candidate selection.
   void prewarmTargetLibertyCaches(const std::vector<Target>& targets,
@@ -162,6 +167,9 @@ class OptimizationPolicy
   GeneratorVector move_generators_;
   std::vector<MoveType> move_sequence_;
   std::unique_ptr<utl::ThreadPool> thread_pool_;
+  // Main-thread caches; library configuration stays fixed until the next
+  // start().
+  mutable DelayEstimatorCache estimator_cache_;
   bool converged_{false};
   bool result_{false};
   bool is_experimental{false};

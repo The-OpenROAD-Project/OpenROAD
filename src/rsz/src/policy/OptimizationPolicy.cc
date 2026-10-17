@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -19,6 +20,7 @@
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "RerouteGenerator.hh"
+#include "SequentialTimingEstimator.hh"
 #include "SizeDownFanoutGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
@@ -92,6 +94,7 @@ bool OptimizationPolicy::start()
   estimate_parasitics_ = resizer_.estimateParasitics();
   max_ = resizer_.maxAnalysisMode();
   resetRun();
+  estimator_cache_ = DelayEstimatorCache{};
   // Start every phase with the progress table's area cache invalid. The
   // cache is keyed on MoveCommitter::netlistEdits(), which only counts
   // edits made through the committer; GlobalSizingPolicy replaces cells
@@ -283,7 +286,7 @@ PrepareCacheMask OptimizationPolicy::accumulatePrepareRequirements() const
     }
     prepare_mask |= generator->prepareRequirements();
   }
-  return prepare_mask;
+  return prepare_mask & ~kGenerationInputCaches;
 }
 
 MoveGenerator* OptimizationPolicy::findGenerator(const MoveType type) const
@@ -338,24 +341,74 @@ bool OptimizationPolicy::generatorEnabled(const MoveType) const
 void OptimizationPolicy::prepareTarget(Target& target,
                                        const PrepareCacheMask mask) const
 {
-  if ((mask & kArcDelayStateCache) != 0) {
-    prepareArcDelayState(target);
+  if ((mask & kEstimatorContextCache) != 0) {
+    prepareEstimatorContext(target);
+  }
+
+  // Generation inputs: each Mt generator's live STA reads, so that its
+  // generate() runs on a worker thread.
+  if ((mask & kGenerationInputCaches) == 0) {
+    return;
+  }
+  if ((mask & kInputCapBudgetCache) != 0) {
+    prepareInputCapBudgets(target);
   }
 }
 
-void OptimizationPolicy::prepareArcDelayState(Target& target) const
+void OptimizationPolicy::prepareEstimatorContext(Target& target) const
 {
-  if (target.isPrepared(kArcDelayStateCache) || !target.canBePathDriver()) {
+  if (target.isPrepared(kEstimatorContextCache) || !target.canBePathDriver()) {
     return;
   }
 
   FailReason fail_reason = FailReason::kNone;
-  target.arc_delay
-      = DelayEstimator::buildContext(resizer_,
-                                     target,
-                                     policy_config_.delay_estimation_levels,
-                                     &fail_reason,
-                                     policy_config_.sta_slew_bias);
+  const FaninSideLoadOptions fanin_side_loads{
+      .critical_load_pins = &target_collector_->critPathLoadPins(),
+      .off_path_weight = policy_config_.fanin_side_offpath_weight};
+  {
+    const ProfileScope profile("prepare_context");
+    target.estimator_context = DelayEstimator::buildContext(
+        resizer_,
+        target,
+        policy_config_.delay_estimation_levels,
+        &fail_reason,
+        policy_config_.sta_slew_bias,
+        /* include_latch_fanin */ true,
+        &estimator_cache_,
+        policy_config_.fanin_side_loss ? &fanin_side_loads : nullptr,
+        policy_config_.dual_rf_eval);
+  }
+
+  if ((policy_config_.fanin_side_loss || policy_config_.dual_rf_eval)
+      && target.estimator_context.has_value()) {
+    // Side paths may not be pushed below the current global worst slack.
+    target.estimator_context->side_slack_floor
+        = sta::delayAsFloat(sta_->worstSlack(max_));
+    target.estimator_context->side_floor_margin
+        = policy_config_.side_floor_margin;
+    target.estimator_context->fanin_side_loss_weight
+        = policy_config_.fanin_side_loss_weight;
+  }
+
+  if (target.estimator_context.has_value()) {
+    target.sequential_timing_estimator
+        = SequentialTimingEstimator::prepare(resizer_, target);
+    if (target.sequential_timing_estimator != nullptr) {
+      RepairSetupProfiler::event("sequential_targets_prepared");
+    }
+  }
+
+  if (!target.estimator_context.has_value() && RepairSetupProfiler::enabled()) {
+    RepairSetupProfiler::event(std::string("prepare_reject_")
+                               + failReasonName(fail_reason));
+  }
+}
+
+void OptimizationPolicy::prepareInputCapBudgets(Target& target) const
+{
+  if (!target.input_cap_budgets.has_value()) {
+    target.input_cap_budgets = resizer_.inputCapBudgets(target.inst(resizer_));
+  }
 }
 
 void OptimizationPolicy::prewarmTargetLibertyCaches(

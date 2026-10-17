@@ -897,6 +897,27 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
 
+  // Fanin max-cap state of one instance, captured once.  It lets
+  // replacementFitsInputCapBudgets() screen many cells without new STA checks,
+  // with the same decision as replacementPreservesMaxCap().
+  struct DriverCapLimit
+  {
+    float cap{0.0f};
+    float max_cap{0.0f};
+    bool negative_slack{false};
+  };
+
+  struct InputCapBudget
+  {
+    const sta::LibertyPort* port{nullptr};
+    float current_cap{0.0f};
+    std::vector<DriverCapLimit> driver_limits;
+  };
+
+  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst);
+  bool replacementFitsInputCapBudgets(
+      const std::vector<InputCapBudget>& budgets,
+      const sta::LibertyCell* replacement) const;
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,

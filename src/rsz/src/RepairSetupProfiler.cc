@@ -53,11 +53,10 @@ constexpr std::array<std::string_view, 3> kCoveredPhases
 }  // namespace
 
 RepairSetupProfiler::RepairSetupProfiler(Resizer& resizer,
-                                         const int mode,
+                                         const Mode mode,
                                          const std::string& directory)
-    : resizer_(resizer)
+    : resizer_(resizer), mode_(mode)
 {
-  mode_ = static_cast<Mode>(std::clamp(mode, 0, 2));
   if (mode_ == Mode::kOff) {
     return;
   }
@@ -333,6 +332,17 @@ void RepairSetupProfiler::moveEstimated(MoveCandidate& candidate,
     event(estimate.legal ? "estimate_legal" : "estimate_rejected",
           1,
           moveName(candidate.type()));
+    if (estimate.sequential_penalty.has_value()) {
+      event("sequential_estimated", 1, moveName(candidate.type()));
+      if (*estimate.sequential_penalty > 0.0f) {
+        event("sequential_penalized", 1, moveName(candidate.type()));
+      }
+    }
+
+    if (estimate.side_loss.has_value() && *estimate.side_loss > 0.0f) {
+      event("side_loss_penalized", 1, moveName(candidate.type()));
+    }
+
     if (!estimate.reason.empty()) {
       event("estimate_reason:" + std::string(estimate.reason),
             1,
@@ -494,6 +504,23 @@ void RepairSetupProfiler::beginApply(MoveCandidate& candidate)
     if (info.estimate.raw_gain.has_value()) {
       profiler.observation("estimate",
                            {{"raw_gain_s", *info.estimate.raw_gain}});
+    }
+
+    if (info.estimate.sequential_penalty.has_value()) {
+      profiler.observation(
+          "estimate",
+          {{"sequential_penalty_s", *info.estimate.sequential_penalty}});
+    }
+
+    if (info.estimate.sequential_side_loss.has_value()) {
+      profiler.observation(
+          "estimate",
+          {{"sequential_side_loss_s", *info.estimate.sequential_side_loss}});
+    }
+
+    if (info.estimate.side_loss.has_value()) {
+      profiler.observation("estimate",
+                           {{"side_loss_s", *info.estimate.side_loss}});
     }
   }
 }

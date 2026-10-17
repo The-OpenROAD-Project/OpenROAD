@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -40,6 +41,7 @@ class Vertex;
 namespace rsz {
 class MoveCandidate;
 class Resizer;
+class SequentialTimingEstimator;
 }  // namespace rsz
 
 namespace rsz {
@@ -71,7 +73,13 @@ enum class FailReason : uint8_t
 
   // Candidate timing context.
   kMissingCandidatePort,
-  kMissingCandidateTimingArc
+  kMissingCandidateTimingArc,
+
+  // A modeled side path pushed below the prepared global worst slack.
+  kSideSlackFloorViolation,
+
+  // The opposite output transition of the target would fall below the floor.
+  kDualRfNonImproving
 };
 
 // === Fail-reason labels =====================================================
@@ -107,12 +115,23 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             ArcMatchMode match_mode,
                                             ArcMatchType* match_type);
 
+// True when candidate drive resistance is at most the current value on both
+// rise and fall.
+bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
+                              const sta::LibertyPort* candidate);
+
 // === Target preparation flags ==============================================
 
 using PrepareCacheMask = uint32_t;
 
 inline constexpr PrepareCacheMask kNoPrepareCache = 0;
-inline constexpr PrepareCacheMask kArcDelayStateCache = 1u << 0;
+inline constexpr PrepareCacheMask kEstimatorContextCache = 1u << 0;
+
+// Generation inputs: one Mt generator's live STA reads, prepared on the main
+// thread so its generate() can run on a worker.  Without them, the cell-swap
+// generators read live STA.
+inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
+inline constexpr PrepareCacheMask kGenerationInputCaches = kInputCapBudgetCache;
 
 // === Prepared timing data ===================================================
 
@@ -183,6 +202,16 @@ struct SlewBiasModel
   std::array<SlewBiasSample, 3> samples;
 };
 
+// A target cell arc that drives the opposite output transition through the
+// selected input.  Workers use it to charge a candidate that speeds up one
+// transition but slows the other.
+struct OppositeRfArc
+{
+  const sta::TimingArc* ref_arc{nullptr};
+  float input_slew{0.0f};
+  float current_model_delay{0.0f};
+};
+
 // Snapshot of one timing stage's electrical state needed for table-model delay
 // estimation.  MT policies prepare this on the main thread and then worker
 // threads read it from Target without touching STA analysis state.
@@ -198,7 +227,33 @@ struct DelayStageState
   float current_slew{0.0f};         // STA graph merged slew baseline
   std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
   SlewBiasModel sta_slew_bias;
+  // Target stage only: the opposite-transition arcs, empty when dual_rf_eval
+  // is off.
+  std::vector<OppositeRfArc> opposite_rf_arcs;
   int path_index{-1};
+};
+
+// One load pin whose slack pays for the delay a candidate adds to it: a load
+// on a target fanin net, or a load a split moves to a new driver.  weight
+// scales the charged loss: a pin on a violating worst path moves its endpoint
+// one for one, other pins only lose slack locally.
+struct SideLoad
+{
+  const sta::Pin* pin{nullptr};
+  float slack{0.0f};
+  float weight{1.0f};
+};
+
+// One input net of the target instance.  A new cell changes every input pin
+// capacitance, so each fanin driver slows its other loads.  The selected-arc
+// net takes the window's exact delta, the others the drive resistance.
+struct FaninSideNet
+{
+  const sta::LibertyPort* input_port{nullptr};
+  float input_cap{0.0f};
+  float delay_per_cap{0.0f};
+  bool selected_arc{false};
+  std::vector<SideLoad> loads;
 };
 
 // Prepared delay-estimator context for a target stage and its optional
@@ -206,11 +261,24 @@ struct DelayStageState
 // one entry (the target stage) after a successful buildContext; consumers
 // access electrical state via target() rather than duplicated top-level
 // fields.
-struct ArcDelayState
+struct EstimatorContext
 {
   std::vector<DelayStageState> path_stages;
   int target_stage_index{0};
   int delay_estimation_levels{0};
+
+  // The target's fanin nets and their other loads, empty when fanin_side_loss
+  // is off.
+  std::vector<FaninSideNet> fanin_side_nets;
+  // The worst slack at prepare time.  A side path may fall below it by at most
+  // side_floor_margin times the candidate's gain, or the checkpoint would fail.
+  float side_slack_floor{-std::numeric_limits<float>::infinity()};
+  float side_floor_margin{1.0f};
+  // Weight of the summed side loss before it is subtracted from the gain.
+  float fanin_side_loss_weight{1.0f};
+  // Worst slack of the opposite output transition at the target driver; the
+  // dual rise/fall check treats that transition as one more side path.
+  float opposite_rf_slack{std::numeric_limits<float>::infinity()};
   // Cached sum of stage.current_delay across path_stages; populated once at
   // build time so per-candidate scoring does not re-walk the window.
   float current_total_delay{0.0f};
@@ -218,6 +286,11 @@ struct ArcDelayState
   const DelayStageState& target() const
   {
     return path_stages[target_stage_index];
+  }
+  // The lowest slack a side path may fall to for a candidate that gains gain.
+  float sideSlackFloor(const float gain) const
+  {
+    return side_slack_floor - side_floor_margin * std::max(gain, 0.0f);
   }
 };
 
@@ -228,6 +301,10 @@ struct DelayEstimate
   bool legal{false};
   float candidate_delay{0.0f};
   float arrival_impr{0.0f};
+  int side_paths_evaluated{0};
+  // The weighted slack loss of the side paths in the negative-slack region,
+  // zero when none.
+  float side_loss{0.0f};
   FailReason reason{FailReason::kNone};
 };
 
@@ -285,7 +362,13 @@ struct Target
   const sta::MinMax* min_max{nullptr};
 
   // === Prepared data for MT generation/estimation ==========================
-  std::optional<ArcDelayState> arc_delay;
+  std::optional<EstimatorContext> estimator_context;
+  std::shared_ptr<const SequentialTimingEstimator> sequential_timing_estimator;
+
+  // === Generation inputs (kGenerationInputCaches) ===========================
+  // Fanin max-cap headroom of the target instance (the cell-swap
+  // generators); the STA capacitance check behind it is main-thread only.
+  std::optional<std::vector<Resizer::InputCapBudget>> input_cap_budgets;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
@@ -361,8 +444,19 @@ struct Estimate
   float score{0.0f};
   // Unscaled arrival_impr in seconds; absent if estimation did not complete.
   std::optional<float> raw_gain{};
-  // Non-owning static label from failReasonName(), "min_score", or "max_cap".
+  // Non-owning static label: failReasonName() or a candidate's own literal
+  // such as "side_loss_non_improving" or "min_score".
   std::string_view reason{};
+  // A reject by a modelled side cost alone while the own path gains.  The WNS
+  // tail may admit it and let the batch STA judge the side cost.  The moves
+  // set it for their side-loss, sequential-check and score-floor rejects;
+  // only SizeUpMt sets it for an opposite-transition reject.
+  bool tail_admissible{false};
+  // Opposite-side constraint loss stays separate from primary timing gain.
+  std::optional<float> sequential_penalty{};
+  std::optional<float> sequential_side_loss{};
+  // Estimated side-path slack loss charged against the local gain.
+  std::optional<float> side_loss{};
 };
 
 // Result of applying one candidate ECO (MoveCandidate::apply()).  The

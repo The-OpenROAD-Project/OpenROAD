@@ -103,7 +103,7 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
   return oss.str();
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
+TEST_F(TestResizerMt, BuildEstimatorContextAndEstimateLvtCandidate)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -116,15 +116,16 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
-  const DelayStageState& target_stage = arc_delay.target();
+
+  const EstimatorContext& estimator_context = context.value();
+  const DelayStageState& target_stage = estimator_context.target();
   ASSERT_NE(target_stage.arc.inputPort(), nullptr);
   ASSERT_NE(target_stage.arc.outputPort(), nullptr);
   EXPECT_EQ(target_stage.arc.inputPort()->name(), "A");
   EXPECT_EQ(target_stage.arc.outputPort()->name(), "Z");
-  ASSERT_EQ(arc_delay.path_stages.size(), 1);
-  EXPECT_EQ(arc_delay.target_stage_index, 0);
-  EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
+  ASSERT_EQ(estimator_context.path_stages.size(), 1);
+  EXPECT_EQ(estimator_context.target_stage_index, 0);
+  EXPECT_EQ(estimator_context.delay_estimation_levels, 0);
   EXPECT_GT(target_stage.load_cap, 0.0f);
   EXPECT_GT(target_stage.current_delay, 0.0f);
 
@@ -133,34 +134,34 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_GT(estimate.arrival_impr, 0.0f);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
+TEST_F(TestResizerMt, BuildEstimatorContextWithOneLevelPathWindow)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
   const Target target = makeTarget("path_out", "path_target", "ZN");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = DelayEstimator::buildContext(resizer, target, 1, &fail_reason);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
   if (!context.has_value()) {
     return;
   }
 
-  const ArcDelayState& arc_delay = context.value();
-  EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
-  ASSERT_EQ(arc_delay.path_stages.size(), 3);
-  ASSERT_EQ(arc_delay.target_stage_index, 1);
-  EXPECT_EQ(arc_delay.path_stages[0].arc.outputPort()->name(), "Z");
-  EXPECT_EQ(arc_delay.path_stages[1].arc.outputPort()->name(), "ZN");
-  EXPECT_EQ(arc_delay.path_stages[2].arc.outputPort()->name(), "Z");
-  for (const DelayStageState& stage : arc_delay.path_stages) {
+  const EstimatorContext& estimator_context = context.value();
+  EXPECT_EQ(estimator_context.delay_estimation_levels, 1);
+  ASSERT_EQ(estimator_context.path_stages.size(), 3);
+  ASSERT_EQ(estimator_context.target_stage_index, 1);
+  EXPECT_EQ(estimator_context.path_stages[0].arc.outputPort()->name(), "Z");
+  EXPECT_EQ(estimator_context.path_stages[1].arc.outputPort()->name(), "ZN");
+  EXPECT_EQ(estimator_context.path_stages[2].arc.outputPort()->name(), "Z");
+  for (const DelayStageState& stage : estimator_context.path_stages) {
     EXPECT_GT(stage.current_delay, 0.0f);
     EXPECT_GT(stage.current_slew, 0.0f);
   }
@@ -170,7 +171,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
@@ -182,7 +183,7 @@ TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
   const Target target = makeTarget("path_out", "path_target", "ZN");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = DelayEstimator::buildContext(resizer, target, 1, &fail_reason, true);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
 
@@ -200,6 +201,73 @@ TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
+TEST_F(TestResizerMt, SlewBiasCacheReusesSamplingUntilClear)
+{
+  resizer_.runRepairSetupPreamble();
+  sta::Scene* scene = sta_->cmdScene();
+  for (const char* name : {"path_pre1/Z", "path_side_buf/Z"}) {
+    const sta::Pin* driver = sta_->network()->findPin(name);
+    ASSERT_NE(driver, nullptr);
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float pin_cap = 0.0f;
+      float sdc_wire_cap = 0.0f;
+      float fanout = 0.0f;
+      bool has_net_load = false;
+      sta_->graphDelayCalc()->netCaps(driver,
+                                      rf,
+                                      scene,
+                                      sta::MinMax::max(),
+                                      pin_cap,
+                                      sdc_wire_cap,
+                                      fanout,
+                                      has_net_load);
+      scene->parasitics(sta::MinMax::max())
+          ->makePiElmore(driver, rf, sta::MinMax::max(), 1e-15f, 1.0f, pin_cap);
+    }
+  }
+  sta_->updateTiming(true);
+  const Target target = makeTarget("path_out", "path_target", "ZN");
+  const std::optional<EstimatorContext> context
+      = DelayEstimator::buildContext(resizer_, target, 1);
+  ASSERT_TRUE(context.has_value());
+  ASSERT_GT(context->target_stage_index, 0);
+
+  DelayEstimatorCache cache;
+  const float max_load_delta
+      = cache.maxEquivalentInputCapIncrease(resizer_, context->target());
+  ASSERT_GT(max_load_delta, 0.0f);
+  const DelayStageState& fanin_stage
+      = context->path_stages[context->target_stage_index - 1];
+
+  ProfileTestDirectory directory;
+  {
+    RepairSetupProfiler profiler(resizer_,
+                                 RepairSetupProfiler::Mode::kTiming,
+                                 directory.root().string());
+    profiler.phase("PARALLEL_EVAL", 1);
+    const ProfileIteration iteration("test_pass");
+    const SlewBiasModel first
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    const SlewBiasModel cached
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    EXPECT_EQ(cached.valid, first.valid);
+    cache.clear();
+    const SlewBiasModel after_clear
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    EXPECT_EQ(after_clear.valid, first.valid);
+    profiler.complete(true);
+  }
+
+  const std::string stats
+      = readProfileFile(directory.root() / "run_1/stats.csv");
+  EXPECT_NE(stats.find(",\"count\",\"slew_bias_model_hits\",\"\",1,1,1\n"),
+            std::string::npos)
+      << stats;
+  EXPECT_NE(stats.find(",\"count\",\"slew_bias_model_misses\",\"\",2,2,2\n"),
+            std::string::npos)
+      << stats;
+}
+
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
 {
   Resizer& resizer = resizer_;
@@ -212,19 +280,20 @@ TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
+
+  const EstimatorContext& estimator_context = context.value();
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1");
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_FALSE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kMissingCandidatePort);
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
+TEST_F(TestResizerMt, BuildEstimatorContextCapturesOutputSlewMergeArcs)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -236,14 +305,15 @@ TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
-  const SelectedArc& target_arc = arc_delay.target().arc;
+
+  const EstimatorContext& estimator_context = context.value();
+  const SelectedArc& target_arc = estimator_context.target().arc;
   ASSERT_NE(target_arc.inputPort(), nullptr);
   ASSERT_NE(target_arc.outputPort(), nullptr);
   EXPECT_EQ(target_arc.inputPort()->name(), "A1");
   EXPECT_EQ(target_arc.outputPort()->name(), "ZN");
-  EXPECT_GE(arc_delay.target().output_slew_merge_arcs.size(), 1);
-  EXPECT_GT(arc_delay.target().current_model_slew, 0.0f);
+  EXPECT_GE(estimator_context.target().output_slew_merge_arcs.size(), 1);
+  EXPECT_GT(estimator_context.target().current_model_slew, 0.0f);
 
   sta::Vertex* driver_vertex = sta_->graph()->pinDrvrVertex(target.driver_pin);
   ASSERT_NE(driver_vertex, nullptr);
@@ -251,14 +321,14 @@ TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
       = target_arc.scene->dcalcAnalysisPtIndex(target_arc.min_max);
   const float graph_slew = sta::delayAsFloat(sta_->graph()->slew(
       driver_vertex, target_arc.outputRiseFall(), dcalc_ap));
-  EXPECT_FLOAT_EQ(arc_delay.target().current_slew, graph_slew);
+  EXPECT_FLOAT_EQ(estimator_context.target().current_slew, graph_slew);
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1_L");
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
@@ -267,15 +337,16 @@ TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
-  const Target target = makeTarget("out0", "target", "Z");
+  Target target = makeTarget("out0", "target", "Z");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> arc_delay
+  const std::optional<EstimatorContext> estimator_context
       = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
-  ASSERT_TRUE(arc_delay.has_value()) << failReasonName(fail_reason);
-  if (!arc_delay.has_value()) {
+  ASSERT_TRUE(estimator_context.has_value()) << failReasonName(fail_reason);
+  if (!estimator_context.has_value()) {
     return;
   }
+  target.estimator_context = estimator_context;
 
   sta::Instance* target_inst = target.inst(resizer);
   sta::LibertyCell* current_cell = sta_->network()->libertyCell(target_inst);
@@ -285,13 +356,7 @@ TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
       = sta_->network()->findLibertyCell("BUF_X1_L");
   ASSERT_NE(candidate_cell, nullptr);
 
-  VtSwapMtCandidate candidate(resizer,
-                              target,
-                              target.driver_pin,
-                              target_inst,
-                              current_cell,
-                              candidate_cell,
-                              arc_delay.value());
+  VtSwapMtCandidate candidate(resizer, target, target_inst, candidate_cell);
 
   const Estimate estimate = candidate.estimate();
   ASSERT_TRUE(estimate.legal);

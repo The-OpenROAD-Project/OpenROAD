@@ -608,11 +608,12 @@ cc_test(
 cc_test(
     name = "TestResizerMt",
     srcs = [
+        "cpp/TestCellSwapMt.cc",
+        "cpp/TestDelayEstimatorMt.cc",
         "cpp/TestRepairSetupProfiler.cc",
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
     ],
-    args = ["--gtest_filter=TestResizerMtThreadPool.*"],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_lvt.lef",
