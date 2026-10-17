@@ -55,7 +55,10 @@ constexpr float kBufferTreeTargetEffectiveLoadCapFactor = 0.65f;
 constexpr float kBufferTreeSideEffectiveLoadCapFactor = 0.875f;
 constexpr float kBufferTreeDirectLoadCapFactor = 0.60f;
 // A final buffer whose downstream cap per input slew reaches the ratio takes
-// its output slew at the lower effective-load fraction.
+// its output slew at the lower effective-load fraction.  Such a buffer drives
+// the longest RC load for its drive, where the wire resistance hides the most
+// downstream cap from it (the effective cap of STA's delay calculator), so a
+// lookup at the path fraction overstates its output slew.
 constexpr float kBufferTreeHighCapSlewRatio = 2.5e-3f;
 constexpr float kBufferTreeHighCapSlewFactor = 0.60f;
 // A stage that keeps part of its load keeps its slew at least to this power
