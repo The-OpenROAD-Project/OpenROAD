@@ -18,6 +18,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "packing.h"
 #include "shapes.h"
 
 namespace sta {
@@ -146,6 +147,9 @@ class HierRTLMP
   void runCoarseShaping();
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
+  // Why `problem` does not fit, with the outline changes that would fix it.
+  std::string explainOutline(const PackingProblem& problem,
+                             const PackingResult& result) const;
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
   TilingList generateTilingsForMacroCluster(int macro_width,
