@@ -713,6 +713,72 @@ TEST_F(TestResizerMt, ParallelEvalKeptInstancesSkipDeletedOnes)
             std::vector<sta::Instance*>{records[0].inst});
 }
 
+namespace {
+
+// The loads the RebufferMt candidate trees put behind a buffer, in order.
+std::vector<const sta::Pin*> loadsBehindBuffers(
+    const CandidateVector& candidates)
+{
+  std::vector<const sta::Pin*> loads;
+  for (const std::unique_ptr<MoveCandidate>& candidate : candidates) {
+    const RebufferTreePlan& plan
+        = static_cast<const RebufferMtCandidate&>(*candidate).plan();
+    for (const BufferTreeLoadPath& load_path : plan.load_paths) {
+      if (std::ranges::any_of(
+              load_path.stages, [](const BufferTreePathStage& stage) {
+                return stage.type == BufferTreeStageType::kBuffer;
+              })) {
+        loads.push_back(load_path.load_pin);
+      }
+    }
+  }
+  return loads;
+}
+
+}  // namespace
+
+// The tree export leaves a dont-touch load on the driver net, so RebufferMt
+// makes no candidate from a tree that puts one behind a buffer.
+TEST_F(TestResizerMt, RebufferMtDropsTreeWithDontTouchLoadBehindBuffer)
+{
+  // Placed loads give RebufferMt a Steiner tree to plan on.
+  int x = 1000;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    inst->setLocation(x, 1000);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    x += 200000;
+  }
+  ep_.setHWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);
+  ep_.estimateWireParasitics();
+  resizer_.runRepairSetupPreamble();
+
+  MoveCommitter committer(resizer_);
+  committer.init();
+  OptimizerRunConfig run_config;
+  const OptimizationPolicyConfig policy_config
+      = OptimizationPolicyConfig::forParallelEval(RepairEffort::kHigh);
+  RebufferMtGenerator generator(
+      makeGeneratorContext(resizer_, committer, run_config, policy_config));
+  generator.startPhase(0);
+  Target target = makeTarget("out0", "target", "Z");
+  target.fanout = 3;
+  target.estimator_context = DelayEstimator::buildContext(resizer_, target, 0);
+  ASSERT_TRUE(generator.isApplicable(target));
+  generator.prepareInputs(target);
+
+  // Mark a load that a tree puts behind a buffer as dont-touch and plan again.
+  const std::vector<const sta::Pin*> buffered
+      = loadsBehindBuffers(generator.generate(target));
+  ASSERT_FALSE(buffered.empty());
+  const sta::Pin* load_pin = buffered.front();
+  db_network_->staToDb(db_network_->instance(load_pin))->setDoNotTouch(true);
+  const std::vector<const sta::Pin*> buffered_after
+      = loadsBehindBuffers(generator.generate(target));
+  generator.finishPhase();
+  EXPECT_EQ(std::ranges::count(buffered_after, load_pin), 0);
+}
+
 TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheViolatingCone)
 {
   resizer_.runRepairSetupPreamble();

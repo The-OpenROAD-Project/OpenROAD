@@ -91,6 +91,7 @@
 #include "tst/IntegratedFixture.h"
 #undef protected
 #include "MoveGenerator.hh"
+#include "RebufferMtCandidate.hh"
 #include "RebufferMtGenerator.hh"
 #include "SplitLoadMtCandidate.hh"
 #include "SplitLoadMtGenerator.hh"
