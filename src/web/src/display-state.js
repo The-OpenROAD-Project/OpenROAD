@@ -46,6 +46,9 @@ const DISPLAY_STATE_KEYS = [
     { key: 'or_arrow_step', store: 'cookie' },
     { key: 'or_font_family', store: 'cookie' },
     { key: 'or_font_scale', store: 'cookie' },
+    { key: 'or_control_smoothing', store: 'cookie' },
+    { key: 'or_double_buffer', store: 'cookie' },
+    { key: 'or_defer_tile_updates', store: 'cookie' },
 ];
 
 // Storage accessors, tolerant of a browser with Web Storage disabled (the

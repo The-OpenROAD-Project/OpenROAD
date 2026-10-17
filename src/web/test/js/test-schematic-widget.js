@@ -268,8 +268,8 @@ describe('scopeCssSelector', () => {
 
 
 // syncCone only reads `detail` and writes the two depth inputs, so exercise it
-// on a stand-in rather than building a whole widget (which needs Leaflet and a
-// live socket).
+// on a stand-in rather than building a whole widget (which needs a live
+// socket).
 describe('SchematicWidget.syncCone', () => {
     function makeStub() {
         const controls = document.createElement('div');

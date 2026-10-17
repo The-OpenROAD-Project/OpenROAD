@@ -5,11 +5,15 @@
 // the shared TileGenerator) so they render into the overlay tiles and into
 // save_image, matching the Qt GUI.  This client module provides the
 // interactive layer the Qt GUI lacks: create-by-click, drag-to-reposition,
-// and edit/delete via the Inspector.  Each label gets a small draggable handle
-// marker in a dedicated Leaflet pane; the label text itself is drawn by the
-// server on the overlay.
+// and edit/delete via the Inspector.  Each label gets a small draggable DOM
+// handle pinned over the view; the label text itself is drawn by the server
+// on the overlay.
 
-import { dbuToLatLng, latLngToDbu } from './coordinates.js';
+import { dbuToWorld, worldToDbu } from './coordinates.js';
+
+const HANDLES = 'label-handles';
+// A press that moves further than this drags the handle instead of clicking.
+const kDragTolerancePx = 3;
 
 export class LabelManager {
     constructor(app, visibility, updateInspector, focusComponent) {
@@ -22,19 +26,6 @@ export class LabelManager {
         this._anchors = [];         // anchor names the server accepts
         this._mode = false;         // placement mode (next click creates a label)
         this._selectedName = null;
-
-        this._pane = null;
-        this._handleGroup = null;
-        this._initLayers();
-    }
-
-    _initLayers() {
-        const map = this._app.map;
-        if (!map) return;
-        this._pane = map.createPane('label-pane');
-        this._pane.style.zIndex = '690';
-        this._pane.style.pointerEvents = 'auto';
-        this._handleGroup = L.layerGroup([], { pane: 'label-pane' }).addTo(map);
     }
 
     isActive() {
@@ -42,9 +33,8 @@ export class LabelManager {
     }
 
     updateVisibility() {
-        if (this._pane) {
-            this._pane.style.display = this._visibility.labels ? '' : 'none';
-        }
+        this._app.view?.setMarkerGroupVisible(HANDLES,
+                                              !!this._visibility.labels);
     }
 
     toggleLabelMode() {
@@ -57,13 +47,8 @@ export class LabelManager {
         this._setCursor(false);
     }
 
-    // Toggled as a class, not an inline style: .leaflet-container carries
-    // `cursor: default !important`, which an inline declaration of normal
-    // priority cannot override.
     _setCursor(on) {
-        const c = this._app.map?.getContainer();
-        if (!c) return;
-        c.classList.toggle('label-mode-cursor', on);
+        this._app.view?.setCursorMode('label', on);
     }
 
     _wm() {
@@ -136,41 +121,73 @@ export class LabelManager {
     }
 
     _renderHandles() {
-        if (!this._handleGroup) return;
-        this._handleGroup.clearLayers();
-        const scale = this._app.designScale;
-        if (!scale) return;
-        const maxDXDY = this._app.designMaxDXDY;
-        const ox = this._app.designOriginX;
-        const oy = this._app.designOriginY;
+        const view = this._app.view;
+        if (!view) return;
+        view.clearMarkers(HANDLES);
+        const app = this._app;
+        if (!app.designScale) return;
 
         for (const label of this._labels) {
-            const ll = dbuToLatLng(label.x, label.y, scale, maxDXDY, ox, oy);
-            const selected = label.name === this._selectedName;
-            const marker = L.marker(ll, {
-                pane: 'label-pane',
-                draggable: true,
-                keyboard: false,
-                icon: L.divIcon({
-                    className: 'label-handle'
-                        + (selected ? ' label-handle-selected' : ''),
-                    html: '',
-                    iconSize: [10, 10],
-                }),
-                title: label.text,
-            });
-            marker.on('click', (e) => {
-                L.DomEvent.stopPropagation(e);
-                this._select(label.name);
-            });
-            marker.on('dragend', (e) => {
-                const p = e.target.getLatLng();
-                const { dbuX, dbuY } = latLngToDbu(
-                    p.lat, p.lng, scale, maxDXDY, ox, oy);
-                this._commitMove(label, Math.round(dbuX), Math.round(dbuY));
-            });
-            this._handleGroup.addLayer(marker);
+            const el = document.createElement('div');
+            el.className = 'label-handle'
+                + (label.name === this._selectedName
+                    ? ' label-handle-selected' : '');
+            el.title = label.text;
+            this._installDrag(el, label);
+            view.addMarker(HANDLES, label.name,
+                           dbuToWorld(label.x, label.y, app.designScale,
+                                      app.designOriginX, app.designOriginY),
+                           el, { center: true });
         }
+    }
+
+    // Press and release selects the label; a drag moves it.
+    _installDrag(el, label) {
+        const view = this._app.view;
+        const toWorld = (e) => {
+            const r = view.getContainer().getBoundingClientRect();
+            return view.unproject([e.clientX - r.left, e.clientY - r.top]);
+        };
+        let press = null;
+        el.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            e.stopPropagation();
+            e.preventDefault();
+            el.setPointerCapture?.(e.pointerId);
+            press = { x: e.clientX, y: e.clientY, moved: false };
+        });
+        el.addEventListener('pointermove', (e) => {
+            if (!press) return;
+            if (Math.abs(e.clientX - press.x) > kDragTolerancePx
+                || Math.abs(e.clientY - press.y) > kDragTolerancePx) {
+                press.moved = true;
+            }
+            if (press.moved) {
+                view.moveMarker(HANDLES, label.name, toWorld(e));
+            }
+        });
+        const finish = (e, commit) => {
+            if (!press) return;
+            const p = press;
+            press = null;
+            el.releasePointerCapture?.(e.pointerId);
+            if (!commit) {
+                this._renderHandles();
+            } else if (!p.moved) {
+                this._select(label.name);
+            } else {
+                const app = this._app;
+                const [wx, wy] = toWorld(e);
+                const { dbuX, dbuY } = worldToDbu(
+                    wx, wy, app.designScale,
+                    app.designOriginX, app.designOriginY);
+                this._commitMove(label, Math.round(dbuX), Math.round(dbuY));
+            }
+        };
+        el.addEventListener('pointerup', (e) => finish(e, true));
+        el.addEventListener('pointercancel', (e) => finish(e, false));
+        // The view's own click and double-click handling skips markers.
+        el.addEventListener('click', (e) => e.stopPropagation());
     }
 
     // Move the label to a new position with a single atomic update (no

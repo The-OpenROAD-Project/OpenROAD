@@ -7,8 +7,10 @@ import { dom } from './setup-dom.js';
 
 const {
     anyGroupOn, layerRangeSet, nonSolidPatterns, populateDisplayControls,
+    serverGroupLayers,
 } = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
+const { makeFakeView } = await import('./fake-view.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
 const COUNT = 10;
@@ -111,19 +113,6 @@ describe('anyGroupOn', () => {
 describe('layer row selection', () => {
     let app, requests, inspected, focused, techData;
 
-    // Minimal stand-ins: the tree only ever calls addTo/removeLayer and
-    // refreshTiles on these.
-    class FakeTileLayer {
-        constructor(wm, name, opts) {
-            this.name = name;
-            this.options = opts || {};
-        }
-        addTo() { return this; }
-        refreshTiles() { this.refreshes = (this.refreshes || 0) + 1; }
-    }
-    class FakeHeatMapLayer {
-        constructor() {}
-    }
 
     beforeEach(() => {
         requests = [];
@@ -140,7 +129,7 @@ describe('layer row selection', () => {
             visibleChiplets: null,
             hasLiberty: false,
             showDbu: false,
-            map: { hasLayer: () => false, removeLayer() {} },
+            view: makeFakeView(),
             websocketManager: {
                 request(msg) {
                     requests.push(msg);
@@ -174,8 +163,7 @@ describe('layer row selection', () => {
     });
 
     function render() {
-        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
-                                () => {}, FakeHeatMapLayer);
+        populateDisplayControls(app, {}, {}, techData, () => {}, null);
         return app.displayControlsEl;
     }
 
@@ -276,44 +264,43 @@ describe('layer row selection', () => {
           layers_by: [['inst_pins', 'inst_pin_names']] },
     ];
 
-    it('builds a pane per listed overlay at its pane order', () => {
-        techData.overlays = OVERLAYS;
-        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
-                                () => {}, FakeHeatMapLayer);
-        assert.deepEqual(
-            app.overlayLayers.map(({ def, layer }) =>
-                [def.name, layer.name, layer.options.zIndex]),
-            [['_access_points', '_access_points', 1000],
-             ['_gcell_grid', '_gcell_grid', 1002],
-             ['_inst_labels', '_inst_labels', 999]]);
+    it('puts each listed overlay in the slot its paint order picks', () => {
+        techData.overlays = [
+            ...OVERLAYS,
+            { name: '_mfg_grid', z_index: 2,
+              shown_by: [['mfg_grid']], layers_by: [] },
+        ];
+        render();
+        // Under every routing layer, which follow it.
+        assert.deepEqual(app.baseSlot.items.slice(0, 4).map((i) => i.layer),
+                         ['_instances', '_pins', '_modules', '_mfg_grid']);
+        assert.deepEqual(app.topSlot.items.map((i) => i.layer),
+                         ['_inst_labels', '_access_points', '_gcell_grid']);
     });
 
-    // A layer toggle refreshes the overlays that draw by the visible layers
-    // under the current visibility, and only those: always the access points,
+    // A layer toggle refreshes the top slot when an overlay in it draws by the
+    // visible layers under the current visibility: always the access points,
     // the names only while pin names are shown, never the gcell grid.
-    for (const [pinNames, want] of [
-        [false, { _access_points: 1, _gcell_grid: 0, _inst_labels: 0 }],
-        [true, { _access_points: 1, _gcell_grid: 0, _inst_labels: 1 }],
+    for (const [overlays, pinNames, want] of [
+        [OVERLAYS, false, 1],
+        [OVERLAYS.slice(1), false, 0],
+        [OVERLAYS.slice(1), true, 1],
     ]) {
-        it(`a layer toggle refreshes ${JSON.stringify(want)} `
-           + `with pin names ${pinNames ? 'on' : 'off'}`, () => {
-            techData.overlays = OVERLAYS;
+        it(`a layer toggle refreshes the top slot ${want} time(s) with `
+           + `${overlays.map((o) => o.name).join(', ')} and pin names `
+           + `${pinNames ? 'on' : 'off'}`, () => {
+            techData.overlays = overlays;
             populateDisplayControls(
                 app,
                 { inst_names: true, inst_pins: true, inst_pin_names: pinNames,
                   access_points: true, gcell_grid: true },
-                {}, FakeTileLayer, techData, () => {}, FakeHeatMapLayer);
-            const overlays = app.overlayLayers.map(({ layer }) => layer);
-            app.map.hasLayer = (layer) => overlays.includes(layer);
-            const before = new Map(
-                overlays.map((layer) => [layer, layer.refreshes || 0]));
+                {}, techData, () => {}, null);
+            const before = app.topSlot.refreshes;
             const cb = layerRow(app.displayControlsEl, 'metal1')
                 .querySelector('input.vis-cb');
             cb.checked = false;
             cb.dispatchEvent(new dom.window.Event('change'));
-            const got = Object.fromEntries(overlays.map((layer) =>
-                [layer.name, (layer.refreshes || 0) - before.get(layer)]));
-            assert.deepEqual(got, want);
+            assert.equal(app.topSlot.refreshes - before, want);
         });
     }
 
@@ -500,35 +487,12 @@ describe('layer row selection', () => {
 describe('routing layer opacity', () => {
     // Layer transparency is baked into the tile pixels: the server paints
     // layer shapes at the palette alpha of 180/255, the same alpha the Qt GUI
-    // brush carries (displayControls.cpp).  A pane opacity below 1 would apply
+    // brush carries (displayControls.cpp).  A layer opacity below 1 would apply
     // that transparency a second time — 0.7 * 180/255 = 0.49 instead of 0.71 —
     // and the browser would render the layout ~30% darker than the Qt GUI.
-    // Pinned on both paths because the legacy panes and the merged draw list
-    // set the value independently.
-    let created, mergedItems, app, techData;
-
-    class RecordingTileLayer {
-        constructor(wm, name, opts) {
-            created.push({ name, opts: opts || {} });
-            this.name = name;
-            this.options = opts || {};
-        }
-        addTo() { return this; }
-        refreshTiles() {}
-    }
-    class RecordingMergedLayer {
-        constructor(wm, items, opts) {
-            mergedItems.push(...items);
-            this.options = opts || {};
-        }
-        addTo() { return this; }
-        refreshTiles() {}
-        setItems() {}
-    }
+    let app, techData;
 
     beforeEach(() => {
-        created = [];
-        mergedItems = [];
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
@@ -540,12 +504,7 @@ describe('routing layer opacity', () => {
             visibleChiplets: null,
             hasLiberty: false,
             showDbu: false,
-            map: {
-                hasLayer: () => false,
-                removeLayer() {},
-                getContainer: () => document.createElement('div'),
-                on() {},
-            },
+            view: makeFakeView(),
             websocketManager: { request: () => Promise.resolve({}) },
             updateInspector: () => {},
             focusComponent: () => {},
@@ -565,30 +524,61 @@ describe('routing layer opacity', () => {
                 ],
                 instances: [],
             },
+            // As the tech response lists them, in its order.
+            overlays: [
+                { name: '_access_points', z_index: 1000,
+                  shown_by: [['access_points']], layers_by: [[]] },
+                { name: '_mfg_grid', z_index: 2,
+                  shown_by: [['mfg_grid']], layers_by: [] },
+                { name: '_gcell_grid', z_index: 1002,
+                  shown_by: [['gcell_grid']], layers_by: [] },
+                { name: '_inst_labels', z_index: 999,
+                  shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+                  layers_by: [['inst_pins', 'inst_pin_names']] },
+            ],
         };
     });
 
-    const render = () => populateDisplayControls(
-        app, {}, {}, RecordingTileLayer, techData, () => {}, class {});
+    const render = (visibility = {}) => populateDisplayControls(
+        app, visibility, {}, techData, () => {}, null);
 
-    it('creates legacy per-layer panes fully opaque', () => {
+    it('gives the routing layers in the base draw list an opacity of 1', () => {
         render();
-        const routing = created.filter(l => l.name.startsWith('metal'));
-        assert.ok(routing.length >= 2, 'metal layers should get panes');
-        for (const layer of routing) {
-            assert.equal(layer.opts.opacity, 1, layer.name);
-        }
-    });
-
-    it('gives merged draw items an opacity of 1', () => {
-        app.mergeTiles = true;
-        app.MergedTileLayer = RecordingMergedLayer;
-        render();
-        const routing = mergedItems.filter(i => i.layer.startsWith('metal'));
-        assert.ok(routing.length >= 2, 'metal layers should reach the merge');
+        const routing = app.baseSlot.items.filter(
+            (i) => i.layer.startsWith('metal'));
+        assert.equal(routing.length, 2, 'metal layers should reach the merge');
         for (const item of routing) {
             assert.equal(item.opacity, 1, item.layer);
         }
+    });
+
+    it('stacks the base slot bottom-up as the Qt GUI paints', () => {
+        render();
+        assert.deepEqual(app.baseSlot.items.map((i) => i.layer),
+                         ['_instances', '_pins', '_modules', '_mfg_grid',
+                          'metal1', 'metal2']);
+        assert.deepEqual(app.topSlot.items.map((i) => i.layer),
+                         ['_inst_labels', '_access_points', '_gcell_grid']);
+        assert.ok(app.baseSlot.opts.order < app.topSlot.opts.order);
+        assert.deepEqual(app.allLayers, [app.baseSlot, app.topSlot]);
+    });
+
+    it('starts the pseudo layers from the restored visibility', () => {
+        render({ pins: true, module_view: false, gcell_grid: true });
+        assert.equal(app.pinsLayer.visible, true);
+        assert.equal(app.modulesLayer.visible, false);
+        const overlay = (name) => app.overlayLayers.find(
+            ({ def }) => def.name === name).layer;
+        assert.equal(overlay('_gcell_grid').visible, true);
+        assert.equal(overlay('_access_points').visible, false);
+    });
+
+    it('replaces its slots when the panel is rebuilt', () => {
+        render();
+        const first = app.baseSlot;
+        render();
+        assert.equal(first.removed, true);
+        assert.notEqual(app.baseSlot, first);
     });
 });
 
@@ -598,19 +588,6 @@ describe('routing layer opacity', () => {
 
 describe('renderer display controls', () => {
     const wait = () => new Promise((r) => setTimeout(r, 0));
-
-    class FakeTileLayer {
-        constructor() {}
-        addTo() { return this; }
-        redraw() {}
-        setZIndex() { return this; }
-        setOpacity() { return this; }
-        on() { return this; }
-        remove() {}
-    }
-    class FakeHeatMapLayer {
-        constructor() {}
-    }
 
     const CONTROLS = [
         { group: 'Detailed Router', name: 'Maze search',
@@ -637,7 +614,7 @@ describe('renderer display controls', () => {
             visibleChiplets: null,
             hasLiberty: false,
             showDbu: false,
-            map: { hasLayer: () => false, removeLayer() {} },
+            view: makeFakeView(),
             websocketManager: {
                 request(msg) {
                     requests.push(msg);
@@ -666,8 +643,7 @@ describe('renderer display controls', () => {
     };
 
     function render(app, visibility) {
-        populateDisplayControls(app, visibility, {}, FakeTileLayer, techData,
-                                () => {}, FakeHeatMapLayer);
+        populateDisplayControls(app, visibility, {}, techData, () => {}, null);
         return app.displayControlsEl.querySelector('.renderer-controls');
     }
 
@@ -857,8 +833,7 @@ describe('renderer display controls', () => {
     it('puts the heat map settings above the Background row', async () => {
         const { app } = makeApp([]);
         populateDisplayControls(app, { debug_renderers: true }, {},
-                               FakeTileLayer, techData, () => {},
-                               FakeHeatMapLayer);
+                                techData, () => {}, null);
         await wait();
 
         const children = Array.from(app.displayControlsEl.children);
@@ -882,18 +857,6 @@ describe('renderer display controls', () => {
 describe('flipped chiplet layer order', () => {
     let app;
 
-    class FakeTileLayer {
-        constructor(wm, name, opts) {
-            this.name = name;
-            this.options = opts || {};
-        }
-        addTo() { return this; }
-        refreshTiles() {}
-    }
-    class FakeHeatMapLayer {
-        constructor() {}
-    }
-
     beforeEach(() => {
         window.sessionStorage.clear();
         app = {
@@ -906,7 +869,7 @@ describe('flipped chiplet layer order', () => {
             visibleChiplets: null,
             hasLiberty: false,
             showDbu: false,
-            map: { hasLayer: () => false, removeLayer() {} },
+            view: makeFakeView(),
             websocketManager: { request: () => Promise.resolve({}) },
             updateInspector() {},
             focusComponent() {},
@@ -944,15 +907,13 @@ describe('flipped chiplet layer order', () => {
         };
     }
 
-    // The draw order: app.allLayers in the order the panes were created, which
-    // is also the order their z-indices ascend.
-    function drawOrder(flipped) {
-        populateDisplayControls(app, {}, {}, FakeTileLayer,
-                                techDataWith(flipped), () => {},
-                                FakeHeatMapLayer);
-        return app.allLayers
-            .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
-            .map(l => l.name);
+    // The draw order: the base slot's draw list, bottom-most first.
+    function drawOrder(flipped, names = ['metal1', 'metal2', 'bs1'],
+                       techData = techDataWith(flipped)) {
+        populateDisplayControls(app, {}, {}, techData, () => {}, null);
+        return app.baseSlot.items
+            .map(i => i.layer)
+            .filter(name => names.includes(name));
     }
 
     it('paints an upright chiplet backside-first, then M1 up to Mtop', () => {
@@ -965,19 +926,12 @@ describe('flipped chiplet layer order', () => {
         assert.deepEqual(drawOrder(true), ['metal2', 'metal1', 'bs1']);
     });
 
-    it('keeps z-indices ascending in draw order either way', () => {
+    it('lists each layer once in the draw list either way', () => {
         for (const flipped of [false, true]) {
-            app.allLayers = [];
-            populateDisplayControls(app, {}, {}, FakeTileLayer,
-                                    techDataWith(flipped), () => {},
-                                    FakeHeatMapLayer);
-            const z = app.allLayers
-                .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
-                .map(l => l.options.zIndex);
-            assert.deepEqual(z, [...z].sort((a, b) => a - b),
-                             `z-indices out of order (flipped=${flipped})`);
-            assert.equal(new Set(z).size, z.length,
-                         `duplicate z-index (flipped=${flipped})`);
+            const order = drawOrder(flipped);
+            assert.equal(new Set(order).size, order.length,
+                         `duplicate entry (flipped=${flipped})`);
+            assert.equal(order.length, 3);
         }
     });
 
@@ -1015,12 +969,7 @@ describe('flipped chiplet layer order', () => {
                 }],
             },
         };
-        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
-                                () => {}, FakeHeatMapLayer);
-        const order = app.allLayers
-            .filter(l => ['lo', 'up'].includes(l.name))
-            .sort((a, b) => a.options.zIndex - b.options.zIndex)
-            .map(l => l.name);
+        const order = drawOrder(true, ['lo', 'up'], techData);
         assert.deepEqual(order, ['lo', 'up'],
                          'the lower die must still be painted first');
     });
@@ -1029,11 +978,9 @@ describe('flipped chiplet layer order', () => {
     // layer order, so turning a die over must not recolor it.
     it('does not recolor a chiplet when its draw order reverses', () => {
         const colorIndexByName = (flipped) => {
-            app.allLayers = [];
             app.displayControlsEl = document.createElement('div');
-            populateDisplayControls(app, {}, {}, FakeTileLayer,
-                                    techDataWith(flipped), () => {},
-                                    FakeHeatMapLayer);
+            populateDisplayControls(app, {}, {}, techDataWith(flipped),
+                                    () => {}, null);
             const out = {};
             for (const row of
                      app.displayControlsEl.querySelectorAll('.vis-leaf')) {
@@ -1046,5 +993,26 @@ describe('flipped chiplet layer order', () => {
             return out;
         };
         assert.deepEqual(colorIndexByName(true), colorIndexByName(false));
+    });
+});
+
+describe('serverGroupLayers', () => {
+    const app = (over = {}) => ({ forceComposite: false,
+                                  websocketManager: {}, ...over });
+
+    it('fetches each layer by default', () => {
+        assert.equal(serverGroupLayers(app()), 0);
+        assert.equal(serverGroupLayers(app({ groupLayers: 5 })), 0);
+    });
+
+    it('groups only with ?composite=1, K from ?grouplayers', () => {
+        assert.equal(serverGroupLayers(app({ forceComposite: true })), 3);
+        assert.equal(serverGroupLayers(app({ forceComposite: true,
+                                             groupLayers: 5 })), 5);
+    });
+
+    it('fetches each layer in a saved report', () => {
+        assert.equal(serverGroupLayers(app({ forceComposite: true,
+            websocketManager: { isStaticMode: true } })), 0);
     });
 });

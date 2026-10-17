@@ -134,7 +134,7 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
+  EXPECT_TRUE(contains(html, "deck.gl@9.4.0/dist.min.js"));
   EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
 }
 
@@ -155,11 +155,22 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
 
   EXPECT_TRUE(contains(html, "class WebSocketManager"));
   EXPECT_TRUE(contains(html, "fromCache"));
-  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
-  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
-  EXPECT_TRUE(contains(html, "function computeGroupCount"));
+  EXPECT_TRUE(contains(html, "function tileRequestBuilder"));
+  EXPECT_TRUE(contains(html, "function createLayoutView"));
+  EXPECT_TRUE(contains(html, "function createCompositeSource"));
   EXPECT_TRUE(contains(html, "TimingWidget"));
   EXPECT_TRUE(contains(html, "ChartsWidget"));
+}
+
+// The inlined modules run as one script: an export the embedder did not rewrite
+// is a SyntaxError that stops the whole report (embed_report_assets.py).
+TEST_F(SaveReportTest, InlinedJSHasNoExports)
+{
+  const std::string path = tempHtml("no_exports");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  EXPECT_FALSE(contains(html, "\nexport "));
 }
 
 TEST_F(SaveReportTest, GoldenLayoutFromCDN)

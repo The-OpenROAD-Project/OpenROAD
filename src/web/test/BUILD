@@ -43,6 +43,9 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+# Tests that drive a module against a stand-in for layout-view.js.
+VIEW_TEST_DATA = DOM_TEST_DATA + ["js/fake-view.js"]
+
 test_suite(
     name = "cpp_tests",
     tests = [
@@ -99,7 +102,7 @@ js_test(
 
 js_test(
     name = "context_menu_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-context-menu.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -113,7 +116,7 @@ js_test(
 
 js_test(
     name = "capture_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-capture.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -126,13 +129,6 @@ js_test(
 )
 
 js_test(
-    name = "websocket_tile_layer_test",
-    data = JS_FILES,
-    entry_point = "js/test-websocket-tile-layer.js",
-    no_copy_to_bin = JS_FILES,
-)
-
-js_test(
     name = "checkbox_tree_model_test",
     data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
@@ -141,7 +137,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -176,21 +172,21 @@ js_test(
 
 js_test(
     name = "inspector_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-inspector.js",
     no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "ruler_test",
-    data = JS_FILES,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-ruler.js",
     no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "label_manager_test",
-    data = JS_FILES,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -204,21 +200,21 @@ js_test(
 
 js_test(
     name = "drc_widget_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-drc-widget.js",
     no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "selection_browser_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-selection-browser.js",
     no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "menu_bar_test",
-    data = DOM_TEST_DATA,
+    data = VIEW_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -259,9 +255,61 @@ js_test(
 )
 
 js_test(
-    name = "merged_tile_layer_test",
+    name = "view_math_test",
+    data = JS_FILES,
+    entry_point = "js/test-view-math.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "zoom_swap_test",
+    data = JS_FILES,
+    entry_point = "js/test-zoom-swap.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_grid_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-grid.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_sources_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-sources.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "view_input_test",
     data = DOM_TEST_DATA,
-    entry_point = "js/test-merged-tile-layer.js",
+    entry_point = "js/test-view-input.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "layout_view_test",
+    data = DOM_TEST_DATA + ["js/fake-deck.js"],
+    entry_point = "js/test-layout-view.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "imports_without_globals_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-imports-without-globals.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "report_bundle_test",
+    data = DOM_TEST_DATA + [
+        "js/fake-deck.js",
+        "//src/web:report_assets",
+    ],
+    entry_point = "js/test-report-bundle.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -283,13 +331,6 @@ js_test(
     name = "dpr_test",
     data = JS_FILES,
     entry_point = "js/test-dpr.js",
-    no_copy_to_bin = JS_FILES,
-)
-
-js_test(
-    name = "device_pixels_test",
-    data = JS_FILES,
-    entry_point = "js/test-device-pixels.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -401,6 +442,7 @@ cc_test(
         "//src/utl",
         "//src/web",
         "//src/web:core",
+        "//third-party/lodepng",
         "@boost.asio",
         "@boost.beast",
         "@boost.json",

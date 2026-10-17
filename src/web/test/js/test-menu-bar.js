@@ -9,6 +9,7 @@ import {
     canonicalShortcut,
     eventShortcut,
 } from '../../src/menu-bar.js';
+import { makeFakeView } from './fake-view.js';
 
 function waitForMicrotasks() {
     return new Promise(resolve => setTimeout(resolve, 0));
@@ -275,11 +276,18 @@ function optionsApp(overrides = {}) {
         rulerStyle: 'euclidian',
         wheelZoom: true,
         polyDecomp: false,
+        // Rendering preferences (#11340), at their Qt-like defaults.
+        controlSmoothing: false,
+        doubleBuffer: true,
+        deferTileUpdates: true,
         calls: [],
         toggleShowDbu() { this.calls.push('showDbu'); },
         toggleRulerStyle() { this.calls.push('rulerStyle'); },
         toggleWheelZoom() { this.calls.push('wheelZoom'); },
         togglePolyDecomp() { this.calls.push('polyDecomp'); },
+        toggleControlSmoothing() { this.calls.push('controlSmoothing'); },
+        toggleDoubleBuffer() { this.calls.push('doubleBuffer'); },
+        toggleDeferTileUpdates() { this.calls.push('deferTileUpdates'); },
         showArrowStepDialog() { this.calls.push('arrowStep'); },
         showAppFontDialog() { this.calls.push('font'); },
         focusComponent() {},
@@ -376,5 +384,40 @@ describe('Options menu', () => {
         createMenuBar(optionsApp({ designScale: null }));
         const row = rowByLabel(openMenu('Options'), 'polygon decomposition');
         assert.ok(row.classList.contains('disabled'));
+    });
+
+    // Rendering preferences (#11340).  Web-only: Qt has no smoothing to switch
+    // off and already draws off-screen.
+    it('offers the three rendering preferences, ticked from the app', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const app = optionsApp();
+        createMenuBar(app);
+        const rows = openMenu('Options');
+        const tick = (label) =>
+            rowByLabel(rows, label).querySelector('.menu-check').textContent;
+        assert.equal(tick('Smooth zoom and pan'), '', 'off by default');
+        assert.equal(tick('Double buffering'), '✓');
+        assert.equal(tick('Defer tile updates while panning'), '✓');
+
+        rowByLabel(openMenu('Options'), 'Smooth zoom and pan').click();
+        rowByLabel(openMenu('Options'), 'Double buffering').click();
+        rowByLabel(openMenu('Options'), 'Defer tile updates').click();
+        assert.deepEqual(app.calls, ['controlSmoothing', 'doubleBuffer',
+                                     'deferTileUpdates']);
+    });
+});
+
+describe('View menu', () => {
+    it('drives the layout view', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const view = makeFakeView();
+        createMenuBar({ view, fitRect: [0, 0, 10, 20], focusComponent() {},
+                        websocketManager: { request: () => Promise.resolve({}) } });
+        for (const label of ['Fit', 'Zoom In', 'Zoom Out']) {
+            rowByLabel(openMenu('View'), label).click();
+        }
+        assert.deepEqual(view.calls.map((c) => c[0]),
+                         ['fitWorldRect', 'zoomIn', 'zoomOut']);
+        assert.deepEqual(view.calls[0][1], [0, 0, 10, 20]);
     });
 });

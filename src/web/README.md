@@ -249,7 +249,7 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
+The report requires an internet connection to load deck.gl and GoldenLayout
 CSS/JS from CDN.
 
 #### Examples
@@ -542,8 +542,8 @@ The module has two parts:
   Tiles are rendered from ODB geometry and encoded as PNG using lodepng.
 
 - **JavaScript frontend** (`src/main.js`, `src/index.html`, `src/style.css`) —
-  A single-page application using Leaflet.js for the map and GoldenLayout for
-  resizable panels. Communicates with the server over a binary WebSocket
+  A single-page application using deck.gl (WebGL) for the layout view and
+  GoldenLayout for resizable panels. Communicates with the server over a binary WebSocket
   protocol.
 
 ## Server API

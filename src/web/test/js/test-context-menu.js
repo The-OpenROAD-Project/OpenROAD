@@ -5,22 +5,16 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ContextMenu } from '../../src/context-menu.js';
+import { makeFakeView } from './fake-view.js';
 
-// Build a mock `app` whose map records setZoomAround/fitBounds calls.
+// Build a mock `app` whose view records the navigation calls.
 function makeApp(overrides = {}) {
-    const calls = [];
+    const view = makeFakeView({ zoom: 5 });
+    const calls = view.calls;
     const app = {
-        map: {
-            _zoom: 5,
-            options: { zoomDelta: 1 },
-            on() {},
-            getZoom() { return this._zoom; },
-            setZoomAround(latlng, z) { calls.push(['setZoomAround', latlng, z]); },
-            fitBounds(b) { calls.push(['fitBounds', b]); },
-            getContainer() { return document.body; },
-        },
-        fitBounds: [[0, 0], [10, 10]],
-        lastSelectionBounds: [[1, 1], [2, 2]],
+        view,
+        fitRect: [0, 0, 10, 10],
+        lastSelectionBounds: [1, 1, 2, 2],
         hasSelection: true,
         selHasInst: true,
         selHasNet: true,
@@ -45,7 +39,7 @@ function clickItem(label) {
 function openMenu(app) {
     document.body.innerHTML = '';
     const cm = new ContextMenu(app);
-    cm.show({ originalEvent: { clientX: 5, clientY: 5 } });
+    cm.show({ clientX: 5, clientY: 5 });
     return cm;
 }
 
@@ -181,10 +175,9 @@ describe('ContextMenu refreshes the panels after a server action', () => {
 
     it('Selections resets the inspector and drops the client-side outline',
        async () => {
-        const removed = [];
+        let cleared = 0;
         const { app, hooks } = appWithHooks();
-        app.highlightRect = {};
-        app.map.removeLayer = (l) => removed.push(l);
+        app.clearSelectionOutline = () => { cleared++; };
         openMenu(app);
         clickItem('Selections');
         await settle();
@@ -192,8 +185,7 @@ describe('ContextMenu refreshes the panels after a server action', () => {
                          [['updateInspector', null]]);
         assert.ok(hooks.includes('stopSelectionAnimation'));
         assert.ok(hooks.includes('refreshOverlay'));
-        assert.equal(removed.length, 1, 'selection outline removed');
-        assert.equal(app.highlightRect, null);
+        assert.equal(cleared, 1, 'selection outline removed');
         assert.equal(app.lastSelectionBounds, null);
     });
 
@@ -232,5 +224,24 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         assert.ok(toast, 'shared toast element should exist');
         assert.ok(toast.classList.contains('visible'));
         assert.ok(toast.textContent.includes('Nothing connected'));
+    });
+});
+
+describe('ContextMenu follows the view', () => {
+    it('hides when the view starts to move', () => {
+        const { app } = makeApp();
+        const cm = openMenu(app);
+        assert.notEqual(cm._el.style.display, 'none');
+        app.view.emit('movestart');
+        assert.equal(cm._el.style.display, 'none');
+    });
+
+    it('opens at the pointer position of the DOM event', () => {
+        const { app } = makeApp();
+        document.body.innerHTML = '';
+        const cm = new ContextMenu(app);
+        cm.show({ clientX: 40, clientY: 30 });
+        assert.equal(cm._el.style.left, '40px');
+        assert.equal(cm._el.style.top, '30px');
     });
 });

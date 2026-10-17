@@ -1867,7 +1867,7 @@ void WebServer::saveReport(const std::string& filename,
   // ── Render tiles at a fixed zoom level ──
 
   // Pick z so the design fits in a typical panel (~500px).
-  // In Leaflet CRS.Simple, the design spans 256 units = 256*2^z pixels.
+  // At zoom z the design spans 256*2^z pixels (256 px tiles).
   // z=1 → 512px, a good fit for most panel sizes.
   constexpr int kZ = 1;
   const int num_tiles = 1 << kZ;
@@ -1956,8 +1956,7 @@ void WebServer::saveReport(const std::string& filename,
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js" integrity="sha384-NrpHmp6N6IhXZ+gSV+uRLo+Hqprkw4BfdGzmxgWXhjakjkAabyfQxokSmn/aK0VB" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
 <link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
 <link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>

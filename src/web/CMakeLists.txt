@@ -77,16 +77,19 @@ set(WEB_ASSET_FILES
     src/theme.js
     src/tile-merge.js
     src/tile-request.js
-    src/device-pixels.js
     src/layer-extents.js
-    src/merged-tile-layer.js
+    src/view-math.js
+    src/zoom-swap.js
+    src/tile-grid.js
+    src/tile-sources.js
+    src/layout-view.js
+    src/view-input.js
     src/display-state.js
     src/coordinates.js
     src/ui-utils.js
     src/checkbox-tree-model.js
     src/vis-tree.js
     src/websocket-manager.js
-    src/websocket-tile-layer.js
     src/display-controls.js
     src/inspector.js
     src/ruler.js
@@ -134,10 +137,13 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-manager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-merge.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-request.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/device-pixels.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/layer-extents.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/websocket-tile-layer.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/merged-tile-layer.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/view-math.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/zoom-swap.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-grid.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/tile-sources.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/layout-view.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/view-input.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/display-controls.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/inspector.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ruler.js
