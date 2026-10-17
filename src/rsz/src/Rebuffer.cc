@@ -4,7 +4,6 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -1545,9 +1544,9 @@ size_t Rebuffer::BufferDelayKeyHash::operator()(const BufferDelayKey& key) const
   size_t seed = 0;
   boost::hash_combine(seed, key.port);
   boost::hash_combine(seed, key.scene);
-  boost::hash_combine(seed, key.load_bits);
-  boost::hash_combine(seed, key.rise_slew_bits);
-  boost::hash_combine(seed, key.fall_slew_bits);
+  boost::hash_combine(seed, key.load_cap);
+  boost::hash_combine(seed, key.rise_slew);
+  boost::hash_combine(seed, key.fall_slew);
   return seed;
 }
 
@@ -1556,8 +1555,6 @@ Rebuffer::gateDelaysForLoad(sta::LibertyPort* output,
                             const sta::Scene* scene,
                             const float load_cap)
 {
-  auto float_bits
-      = [](const float value) { return std::bit_cast<uint32_t>(value); };
   sta::Slew slews[sta::RiseFall::index_count];
 
   // Annotated input slews make gateDelays() depend on the current instance.
@@ -1575,11 +1572,9 @@ Rebuffer::gateDelaysForLoad(sta::LibertyPort* output,
   const BufferDelayKey key{
       .port = output,
       .scene = scene,
-      .load_bits = float_bits(load_cap),
-      .rise_slew_bits
-      = float_bits(resizer_->tgt_slews_[sta::RiseFall::riseIndex()]),
-      .fall_slew_bits
-      = float_bits(resizer_->tgt_slews_[sta::RiseFall::fallIndex()])};
+      .load_cap = load_cap,
+      .rise_slew = resizer_->tgt_slews_[sta::RiseFall::riseIndex()],
+      .fall_slew = resizer_->tgt_slews_[sta::RiseFall::fallIndex()]};
   BufferDelayCache::iterator cached = buffer_delay_cache_.find(key);
   if (cached == buffer_delay_cache_.end()) {
     std::array<sta::ArcDelay, sta::RiseFall::index_count> gate_delays;

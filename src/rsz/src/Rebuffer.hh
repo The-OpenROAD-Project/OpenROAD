@@ -410,9 +410,9 @@ class Rebuffer : public sta::dbStaState
   {
     const sta::LibertyPort* port{nullptr};
     const sta::Scene* scene{nullptr};
-    uint32_t load_bits{0};
-    uint32_t rise_slew_bits{0};
-    uint32_t fall_slew_bits{0};
+    float load_cap{0.0f};
+    float rise_slew{0.0f};
+    float fall_slew{0.0f};
     bool operator==(const BufferDelayKey& other) const = default;
   };
 

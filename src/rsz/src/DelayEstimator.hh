@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -128,10 +127,10 @@ class DelayEstimatorCache
     {
       // Liberty arc contributing to the merged output slew.
       const sta::TimingArc* ref_arc{nullptr};
-      // Bitwise input slew used for this arc.
-      uint32_t input_slew_bits{0};
+      // Input slew used for this arc.
+      float input_slew{0.0f};
 
-      // Compares the arc and its exact input-slew bits.
+      // Compares the arc and its input slew.
       bool operator==(const MergeArc&) const = default;
     };
 
@@ -145,18 +144,18 @@ class DelayEstimatorCache
     const sta::MinMax* min_max{nullptr};
     // Current Liberty cell of the fanin driver in this scene.
     const sta::LibertyCell* current_cell{nullptr};
-    // Bitwise input slew at the fanin driver.
-    uint32_t input_slew_bits{0};
-    // Bitwise current load capacitance at the fanin driver.
-    uint32_t load_cap_bits{0};
-    // Bitwise maximum load increase covered by the sample.
-    uint32_t max_load_delta_bits{0};
-    // Bitwise c2 capacitance of the reduced Pi parasitic.
-    uint32_t pi_c2_bits{0};
-    // Bitwise resistance of the reduced Pi parasitic.
-    uint32_t pi_r_bits{0};
-    // Bitwise c1 capacitance of the reduced Pi parasitic.
-    uint32_t pi_c1_bits{0};
+    // Input slew at the fanin driver.
+    float input_slew{0.0f};
+    // Current load capacitance at the fanin driver.
+    float load_cap{0.0f};
+    // Maximum load increase covered by the sample.
+    float max_load_delta{0.0f};
+    // c2 capacitance of the reduced Pi parasitic.
+    float pi_c2{0.0f};
+    // Resistance of the reduced Pi parasitic.
+    float pi_r{0.0f};
+    // c1 capacitance of the reduced Pi parasitic.
+    float pi_c1{0.0f};
     // Additional arcs that affect the driver's merged output slew.
     std::vector<MergeArc> merge_arcs;
 
