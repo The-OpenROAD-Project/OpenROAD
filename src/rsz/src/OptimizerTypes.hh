@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +12,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
@@ -357,6 +359,10 @@ struct Estimate
 {
   bool legal{false};
   float score{0.0f};
+  // Unscaled arrival_impr in seconds; absent if estimation did not complete.
+  std::optional<float> raw_gain{};
+  // Non-owning static label from failReasonName(), "min_score", or "max_cap".
+  std::string_view reason{};
 };
 
 // Result of applying one candidate ECO (MoveCandidate::apply()).  The
@@ -427,6 +433,11 @@ struct OptimizerRunConfig
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
+  // pass events.  Files go to profile_dir, or "repair_setup_profile" when
+  // empty, with one run_N per call.
+  int profile_mode{0};
+  std::string profile_dir;
   std::vector<MoveType> sequence;
   std::string phases;
 };

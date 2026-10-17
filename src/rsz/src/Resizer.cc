@@ -40,6 +40,7 @@
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
 #include "boost/functional/hash.hpp"
@@ -320,6 +321,20 @@ float inputPinCapacitance(sta::Network* network,
     cap = std::max(cap, cell_port->capacitance(rf, min_max));
   }
   return cap;
+}
+
+// The incremental RC update of the invalid nets, then the required times.
+// The repair setup profiler times the two steps.
+void updateIncrementalTiming(est::EstimateParasitics* parasitics,
+                             sta::dbSta* sta)
+{
+  {
+    const ProfileScope scope("incremental_rc");
+    parasitics->updateParasitics();
+  }
+
+  const ProfileScope scope("incremental_sta");
+  sta->findRequireds();
 }
 
 }  // namespace
@@ -5439,7 +5454,9 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
-                          bool skip_crit_vt_swap)
+                          bool skip_crit_vt_swap,
+                          int profile_mode,
+                          const char* profile_dir)
 {
   utl::Timer timer;
   OptimizerRunConfig config;
@@ -5462,6 +5479,8 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.profile_mode = profile_mode;
+  config.profile_dir = profile_dir != nullptr ? profile_dir : "";
 
   // Scoped so a -path_group restriction never leaks past this command.
   utl::SetAndRestore<std::string> path_group_override(
@@ -5647,11 +5666,18 @@ void Resizer::initForJournalRestore()
 void Resizer::updateParasiticsAndTiming()
 {
   if (estimate_parasitics_->isIncrementalParasiticsEnabled()) {
-    estimate_parasitics_->updateParasitics();
-  } else {
+    updateIncrementalTiming(estimate_parasitics_, sta_);
+    return;
+  }
+
+  {
+    const ProfileScope scope("full_rc");
+    RepairSetupProfiler::event("full_rc_requests");
     estimate_parasitics_->estimateParasitics(
         estimate_parasitics_->getParasiticsSrc());
   }
+
+  const ProfileScope scope("incremental_sta");
   sta_->findRequireds();
 }
 
@@ -5682,18 +5708,21 @@ int Resizer::rejectedLegacyMoveCount() const
 
 void Resizer::journalBegin()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
+  RepairSetupProfiler::journalBegin();
 }
 
 void Resizer::journalEnd()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   if (!odb::dbDatabase::ecoEmpty(block_)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    updateIncrementalTiming(estimate_parasitics_, sta_);
   }
   odb::dbDatabase::commitEco(block_);
+  RepairSetupProfiler::journalEnd(false);
 }
 
 void Resizer::journalMakeBuffer(sta::Instance* buffer)
@@ -5712,11 +5741,15 @@ void Resizer::journalMakeBuffer(sta::Instance* buffer)
 // STA findRequireds() is performed also.
 void Resizer::journalRestore()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
+    RepairSetupProfiler::event("journal_undo_begin",
+                               {.count = std::nullopt, .trace = true});
     odb::dbDatabase::undoEco(block_);
+    RepairSetupProfiler::journalEnd(true);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -5726,9 +5759,11 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics on the touched nets during undo.
+  RepairSetupProfiler::event("journal_undo_begin",
+                             {.count = std::nullopt, .trace = true});
   odb::dbDatabase::undoEco(block_);
-  estimate_parasitics_->updateParasitics();
-  sta_->findRequireds();
+  RepairSetupProfiler::journalEnd(true);
+  updateIncrementalTiming(estimate_parasitics_, sta_);
 
   // ECO undo can change the graph topology seen by later passes.
   invalidateVertexOrdering();

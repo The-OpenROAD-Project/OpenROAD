@@ -20,9 +20,11 @@ add_library(rsz_lib
     Rebuffer.cc
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
+    RepairSetupProfiler.cc
     MoveTracker.cc
     policy/OptimizationPolicy.cc
     policy/OptimizationPolicy.hh
+    policy/ProgressReporter.cc
     Optimizer.cc
     OptimizerTypes.cc
     DelayEstimator.cc

@@ -11,6 +11,7 @@
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupProfiler.hh"
 #include "SizeUpCandidate.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -143,6 +144,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
                                               const sta::Scene* scene,
                                               const sta::MinMax* min_max) const
 {
+  const ProfileScope profile("candidate_generation");
   if (scene == nullptr || min_max == nullptr || in_port == nullptr
       || drvr_port == nullptr) {
     return nullptr;
@@ -151,6 +153,8 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   const int lib_ap = scene->libertyIndex(min_max);
   sta::LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_.getSwappableCells(cell);
+  RepairSetupProfiler::event(
+      "legacy_lib_options", swappable_cells.size(), moveName(type()));
   if (swappable_cells.empty()) {
     return nullptr;
   }
@@ -167,6 +171,8 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
         return weakerCellFirst(cell1, cell2, drvr_port_name, lib_ap);
       });
 
+  // Separate delay evaluation from candidate enumeration and ordering.
+  const ProfileScope estimation("candidate_estimation");
   const sta::LibertyPort* scene_drvr_port
       = static_cast<const sta::LibertyPort*>(drvr_port)->scenePort(lib_ap);
   const sta::LibertyPort* scene_input_port
@@ -194,10 +200,12 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
       continue;
     }
     const float swappable_drive_r = swappable_drvr->driveResistance();
+    RepairSetupProfiler::event("legacy_lib_estimated", 1, moveName(type()));
     const float swappable_delay
         = resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max)
           + prev_drive * swappable_input->capacitance();
     if (swappable_drive_r <= drive_r && swappable_delay < delay) {
+      RepairSetupProfiler::event("legacy_lib_selected", 1, moveName(type()));
       return swappable;
     }
   }

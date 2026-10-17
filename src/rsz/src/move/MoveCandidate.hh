@@ -35,10 +35,10 @@ class MoveCandidate
   virtual Estimate estimate() { return {.legal = true, .score = 1.0f}; }
   virtual MoveResult apply() = 0;
   virtual MoveType type() const = 0;
+  const Target& target() const { return target_; }
 
  protected:
   MoveCandidate(Resizer& resizer, const Target& target);
-  const Target& target() const { return target_; }
   MoveResult rejectedMove() const;
 
   // === Candidate identity ===================================================
