@@ -84,7 +84,7 @@ void SetupDirectionalPolicy::repairSetupDirectional(
       fmt::format("{}{} Phase Time: {{}}", phase_name, phase_marker));
   const char* point_type = use_startpoints ? "startpoint" : "endpoint";
   const char* point_type_cap = use_startpoints ? "Startpoint" : "Endpoint";
-  committer_.capturePrePhaseSlack();
+  committer_.tracker().capturePrePhaseSlack();
   const float margin_percentages[] = {0.20f, 0.50f, 1.00f};
   const sta::Slack diminishing_returns_threshold(1e-11f);
 

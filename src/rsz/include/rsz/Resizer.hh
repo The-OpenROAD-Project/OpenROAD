@@ -116,6 +116,16 @@ enum class MoveType : uint8_t
   kCount
 };
 
+// How long repair_timing -setup keeps working once WNS and TNS converge.
+// Only PARALLEL_EVAL reads it: low skips the WNS tail, medium stalls the
+// batches and the tail sooner, and high runs the full tail.
+enum class RepairEffort : uint8_t
+{
+  kLow,
+  kMedium,
+  kHigh
+};
+
 // Voltage Threshold (VT) category identifier
 struct VTCategory
 {
@@ -372,6 +382,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_last_gasp,
                    bool skip_vt_swap,
                    bool skip_crit_vt_swap,
+                   RepairEffort effort = RepairEffort::kHigh,
                    int profile_mode = 0,
                    const char* profile_dir = "");
   // For testing.
@@ -555,6 +566,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
+  void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
+                                                   sta::Pin* driver_pin,
+                                                   int delay_levels);
   void reportDelayEstimatorAccuracy(sta::Instance* inst,
                                     sta::LibertyCell* replacement,
                                     const std::string& estimator,
@@ -565,6 +579,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  // "low" or "medium"; anything else is the default, high.
+  static RepairEffort repairEffortFromString(const std::string& effort);
   void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(sta::Vertex* drvr);
@@ -737,6 +753,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             sta::LibertyPort** swap_port,
                             sta::ArcDelay* base_delay = nullptr,
                             sta::ArcDelay* candidate_delay = nullptr);
+  // The arc delays findSwapPinCandidate() compares, under the annotated
+  // input slews and load_cap: through input_port (base_delay, -INF without
+  // an arc) and through every other input of the cell (port_delays).
+  void swapPinDelays(sta::LibertyPort* input_port,
+                     sta::LibertyPort* drvr_port,
+                     float load_cap,
+                     const sta::Scene* scene,
+                     const sta::MinMax* min_max,
+                     sta::ArcDelay& base_delay,
+                     std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Scene* scene,
@@ -986,6 +1012,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void journalRestore();
   void journalMakeBuffer(sta::Instance* buffer);
   void initForJournalRestore();
+  // An ECO undo skips the incremental area updates of the undone edits.
+  void recountDesignAreaAfterUndo();
   void updateParasiticsAndTiming();
   void invalidateParasitics(sta::Net* net);
   void addAcceptedLegacyMoveCount(int count);

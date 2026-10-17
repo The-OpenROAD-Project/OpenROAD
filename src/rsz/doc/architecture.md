@@ -231,7 +231,6 @@ struct Target
 
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  bool isPrepared(PrepareCacheMask mask) const;
 };
 ```
 
@@ -343,7 +342,6 @@ owned by `Resizer` / `dbNetwork`, not by individual `Target` objects.
 |---|---|---|
 | Swappable-cell cache | SizeUp and SizeUpMt candidate selection | Avoid repeated `getSwappableCells()` and VT metadata work. |
 | VT-equivalent-cell cache | VtSwap and VtSwapMt candidate selection | Avoid repeated `getVTEquivCells()` and VT metadata work. |
-| Driver-pin cache | MT max-cap checks | Force `dbNetwork::drivers()` lazy cache population on the caller thread before worker-side checks. |
 
 The prewarm stage is a pragmatic guard for experimental MT policies. Some APIs
 look read-only from the caller but can populate internal caches on first use.
@@ -366,7 +364,7 @@ for (Target& target : targets) {
 }
 ```
 
-Generators declare per-target data requirements with mask constants:
+Generators declare this data with mask constants:
 
 ```cpp
 PrepareCacheMask prepareRequirements() const override
@@ -543,6 +541,11 @@ Current generator/candidate families:
 | SplitLoad | `SplitLoadGenerator` | `SplitLoadCandidate` |
 
 - Currently, only VtSwap and SizeUp moves have simple multi-threading versions, which should be enhanced further.
+
+A generator that keeps state per worker thread sets it up in `startPhase()`,
+which learns the worker count, and releases it in `finishPhase()`.
+`PARALLEL_EVAL` calls both on the main thread from its `start()` and
+`finish()`; the default keeps no state.
 
 ## Threading Model
 

@@ -4,6 +4,8 @@
 #pragma once
 
 #include <memory>
+#include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -55,10 +57,11 @@ char phaseMarkerForIndex(int phase_index);
 //                             main thread (legacy path)
 //
 // Optimizer (sequencer) creates one or more OptimizationPolicy instances per
-// run and drives each through start() -> iterate()* -> converged()/result() in
-// that order.  start() returns false when the policy determines that the
-// optimizer run should stop before iterate().  Policies share run-level setup
-// state through RepairSetupContext.
+// run and drives each through start() -> iterate() until converged() ->
+// finish() in that order.  start() returns false when the policy determines
+// that the optimizer run should stop before iterate().  Policies share
+// run-level setup state through RepairSetupContext, and the Optimizer prints
+// the final report of the run after the last phase.
 //
 // Shared helpers below (makeGeneratorContext, buildMoveGenerators,
 // accumulatePrepareRequirements, findGenerator, prepareTargets,
@@ -70,19 +73,41 @@ class OptimizationPolicy
   using GeneratorVector = std::vector<std::unique_ptr<MoveGenerator>>;
 
   // === Policy interface =====================================================
+  // policy_config carries the policy's tunables; the default is the serial
+  // policies' values (OptimizationPolicyConfig.hh).
   OptimizationPolicy(Resizer& resizer,
                      MoveCommitter& committer,
                      RepairSetupContext& setup_context,
-                     const OptimizerRunConfig& config);
+                     const OptimizerRunConfig& config,
+                     OptimizationPolicyConfig policy_config = {});
   virtual ~OptimizationPolicy();
 
   virtual const char* name() const = 0;
   virtual bool start();
   virtual void iterate() = 0;
+  // Called once after the phase converges, before the next phase starts:
+  // undoes the phase-local setup of start().
+  virtual void finish() {}
 
   bool converged() const { return converged_; }
   bool result() const { return result_; }
-  bool finalizeAndReport();
+  // Only startpoint-oriented policies opt in to StTNS progress reporting.
+  virtual bool showStartpointMetrics() const { return false; }
+
+  // === Estimator context ====================================================
+  // The estimator context of `target` under `policy_config`: the window with
+  // the policy's slew bias and side models, and the side-path floors of the
+  // current timing.  The policies prepare their targets with it, and the
+  // accuracy report builds the PARALLEL_EVAL context the same way.  A null
+  // `critical_load_pins` counts every side load fully.
+  static std::optional<EstimatorContext> buildPolicyContext(
+      Resizer& resizer,
+      const Target& target,
+      const OptimizationPolicyConfig& policy_config,
+      const std::unordered_set<const sta::Pin*>* critical_load_pins,
+      bool include_latch_fanin,
+      DelayEstimatorCache* cache,
+      FailReason* fail_reason);
 
  protected:
   // === Generator setup ======================================================
@@ -90,8 +115,8 @@ class OptimizationPolicy
   virtual void buildMoveGenerators(const std::vector<MoveType>& move_types,
                                    const GeneratorContext& context);
 
-  // The enabled generators' target-level caches; the generation inputs are
-  // left to a policy that prepares them per generator.
+  // The target-level data the enabled generators read.  Each generator's own
+  // inputs come from its prepareInputs(), called right before generate().
   PrepareCacheMask accumulatePrepareRequirements() const;
   MoveGenerator* findGenerator(MoveType type) const;
 
@@ -111,28 +136,16 @@ class OptimizationPolicy
   void prepareEstimatorContext(Target& target) const;
   // Prepare the flip-flop input-side checks of a cell swap of the target.
   void prepareSequentialEstimator(Target& target) const;
-  // Capture the target instance's fanin max-cap headroom.
-  void prepareInputCapBudgets(Target& target) const;
-
   // Prewarm Liberty-cell caches used by MT generator candidate selection.
   void prewarmTargetLibertyCaches(const std::vector<Target>& targets,
                                   bool prewarm_swappable_cells,
                                   bool prewarm_vt_equiv_cells) const;
 
-  // Prewarm dbNetwork driver caches touched by replacement legality checks.
-  void prewarmTargetDriverCaches(const std::vector<Target>& targets) const;
-
   // === Run lifecycle helpers ===============================================
-  bool hasSetupViolations(const OptimizerRunConfig& config,
-                          const sta::MinMax* max) const;
   // TNS of what the run repairs: the path group's under -path_group.
   sta::Slack totalNegativeSlack() const;
   void prewarmStaForPrepareStage() const;
   std::unique_ptr<utl::ThreadPool> makeWorkerThreadPool() const;
-  // Only startpoint-oriented policies opt in to StTNS progress reporting.
-  virtual bool showStartpointMetrics() const { return false; }
-  virtual const std::vector<const sta::Pin*>& finalReportPins() const;
-  bool reportRepairSummary() const;
   // Reset run state at the beginning of start(); call once per run.
   void resetRun()
   {
@@ -161,7 +174,7 @@ class OptimizationPolicy
   sta::Graph* graph_{nullptr};
   est::EstimateParasitics* estimate_parasitics_{nullptr};
   const sta::MinMax* max_{nullptr};
-  OptimizationPolicyConfig policy_config_{};
+  OptimizationPolicyConfig policy_config_;
   RepairTargetCollector* target_collector_;
   // The progress table shared by every policy.
   ProgressReporter progress_;
@@ -171,6 +184,7 @@ class OptimizationPolicy
   // Main-thread caches; library configuration stays fixed until the next
   // start().
   mutable DelayEstimatorCache estimator_cache_;
+  mutable EquivPinCache equiv_pin_cache_;
   bool converged_{false};
   bool result_{false};
   bool is_experimental{false};

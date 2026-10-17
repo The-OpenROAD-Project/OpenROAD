@@ -17,12 +17,14 @@ TEST_F(TestResizerMt, RepairSetupProfilerOffProducesNoOutput)
       RepairSetupProfiler profiler(
           resizer_, RepairSetupProfiler::Mode::kOff, directory.root().string());
       EXPECT_FALSE(RepairSetupProfiler::enabled());
+      EXPECT_FALSE(RepairSetupProfiler::analysis());
       const ProfileScope scope("prepare");
       const ProfileIteration iteration("test_pass");
       RepairSetupProfiler::event("off_marker");
       RepairSetupProfiler::event("off_event");
+      RepairSetupProfiler::workerTime("estimation", 1.0);
       RepairSetupProfiler::qor("off_qor", -1.0, -2.0);
-      profiler.phase("LEGACY", 1);
+      profiler.beginPhase("LEGACY", 1);
       profiler.complete(true);
     });
     EXPECT_TRUE(testing::internal::GetCapturedStdout().empty());
@@ -43,7 +45,8 @@ TEST_F(TestResizerMt, RepairSetupProfilerConsecutiveCallsKeepFreshFiles)
                                    RepairSetupProfiler::Mode::kTiming,
                                    directory.root().string());
       EXPECT_TRUE(RepairSetupProfiler::enabled());
-      profiler.phase("LEGACY", 1);
+      EXPECT_FALSE(RepairSetupProfiler::analysis());
+      profiler.beginPhase("LEGACY", 1);
       const ProfileIteration iteration("test_pass");
       RepairSetupProfiler::event(run == 1 ? "first_only" : "second_only");
       RepairSetupProfiler::qor("test_qor", -1.0, -2.0);
@@ -53,6 +56,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerConsecutiveCallsKeepFreshFiles)
     EXPECT_EQ(RepairSetupProfiler::current(), nullptr);
     const std::filesystem::path run_dir
         = directory.root() / ("run_" + std::to_string(run));
+    EXPECT_FALSE(std::filesystem::exists(run_dir / "analysis"));
     for (size_t index = 0; index < filenames.size(); ++index) {
       const std::string contents = readProfileFile(run_dir / filenames[index]);
       EXPECT_FALSE(contents.empty());
@@ -90,7 +94,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerEventSummaryAndTrace)
         RepairSetupProfiler::Mode::kEvents}) {
     {
       RepairSetupProfiler profiler(resizer_, mode, directory.root().string());
-      profiler.phase("LEGACY", 1);
+      profiler.beginPhase("LEGACY", 1);
       const ProfileIteration iteration("test_pass");
       RepairSetupProfiler::event(
           "retry",
@@ -139,7 +143,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerNestedCommitThenOuterUndo)
     RepairSetupProfiler profiler(resizer_,
                                  RepairSetupProfiler::Mode::kEvents,
                                  directory.root().string());
-    profiler.phase("LEGACY", 1);
+    profiler.beginPhase("LEGACY", 1);
     const ProfileIteration iteration("legacy_pass");
     const auto commit = [&](MoveCandidate& candidate) {
       RepairSetupProfiler::moveGenerated(candidate);
@@ -153,7 +157,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerNestedCommitThenOuterUndo)
     committer.beginJournal();
     EXPECT_TRUE(commit(inner).accepted);
     EXPECT_FALSE(commit(rejected).accepted);
-    committer.commitJournal();
+    committer.commitJournal(false);
     EXPECT_EQ(committer.pendingMoves(MoveType::kBuffer), 5);
     EXPECT_EQ(committer.committedMoves(MoveType::kBuffer), 0);
     committer.restoreJournal();

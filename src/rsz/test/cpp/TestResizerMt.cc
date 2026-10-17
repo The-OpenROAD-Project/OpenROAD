@@ -244,7 +244,7 @@ TEST_F(TestResizerMt, SlewBiasCacheReusesSamplingUntilClear)
     RepairSetupProfiler profiler(resizer_,
                                  RepairSetupProfiler::Mode::kTiming,
                                  directory.root().string());
-    profiler.phase("PARALLEL_EVAL", 1);
+    profiler.beginPhase("PARALLEL_EVAL", 1);
     const ProfileIteration iteration("test_pass");
     const SlewBiasModel first
         = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);

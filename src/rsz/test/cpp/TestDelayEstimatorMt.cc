@@ -521,7 +521,7 @@ TEST_F(TestResizerMtSequential, FlipFlopPreparationCountsCandidateCells)
     RepairSetupProfiler profiler(resizer_,
                                  RepairSetupProfiler::Mode::kTiming,
                                  directory.root().string());
-    profiler.phase("PARALLEL_EVAL", 1);
+    profiler.beginPhase("PARALLEL_EVAL", 1);
     const Target target = makeTarget("out0", "dq_seq", "Q");
     ASSERT_NE(SequentialTimingEstimator::prepare(resizer_, target), nullptr);
     profiler.complete(true);
@@ -705,7 +705,7 @@ TEST_F(TestResizerMtSequential,
   EXPECT_GT(sta_->slack(data_vertex, sta::MinMax::max()), 0.0f);
 }
 
-TEST(TestResizerMtThreadPool, OppositeRfSideLossChargesNegativeRegionOnly)
+TEST(TestDelayEstimatorRules, OppositeRfSideLossChargesNegativeRegionOnly)
 {
   // Violating opposite transition: every picosecond of growth is lost.
   EXPECT_FLOAT_EQ(oppositeRfSideLoss(-10e-12f, 3e-12f), 3e-12f);

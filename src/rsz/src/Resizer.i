@@ -376,6 +376,7 @@ repair_setup(double setup_margin,
              bool skip_last_gasp,
              bool skip_vt_swap,
              bool skip_crit_vt_swap,
+             const char* effort,
              int profile_mode,
              const char* profile_dir)
 {
@@ -389,6 +390,7 @@ repair_setup(double setup_margin,
                        skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
                        skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                       Resizer::repairEffortFromString(effort),
                        profile_mode, profile_dir);
 }
 
@@ -640,6 +642,16 @@ void report_delay_estimator_accuracy_cmd(Instance* inst,
   Resizer* resizer = getResizer();
   resizer->reportDelayEstimatorAccuracy(
       inst, replacement, std::string(estimator), delay_levels);
+}
+
+void report_delay_estimator_accuracy_for_rebuffering_cmd(Instance* inst,
+                                                         Pin* driver_pin,
+                                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracyForRebufferTree(
+      inst, driver_pin, delay_levels);
 }
 
 bool is_valid_accuracy_estimator_cmd(const char* name)

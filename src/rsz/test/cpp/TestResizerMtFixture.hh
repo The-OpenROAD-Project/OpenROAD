@@ -38,6 +38,9 @@
 #undef protected
 
 #include "DelayEstimator.hh"
+#include "Rebuffer.hh"
+#include "RepairSetupAnalysis.hh"
+#include "RepairSetupAnalysisTarget.hh"
 #include "RepairSetupProfiler.hh"
 #include "SequentialTimingEstimator.hh"
 #include "rsz/Resizer.hh"
@@ -48,12 +51,13 @@
 #include "RepairSetupContext.hh"
 #undef protected
 #undef private
+#include "BatchSelector.hh"
+#include "BottleneckAnalysis.hh"
+#include "BufferGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
-#define private public
-#include "SizeUpMatchGenerator.hh"
-#undef private
+#include "SizeUpCandidate.hh"
 #include "SizeUpMtCandidate.hh"
 #define private public
 #include "SizeUpMtGenerator.hh"
@@ -61,6 +65,7 @@
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
@@ -86,6 +91,19 @@
 #include "tst/IntegratedFixture.h"
 #undef protected
 #include "MoveGenerator.hh"
+#include "RebufferMtGenerator.hh"
+#include "SplitLoadMtCandidate.hh"
+#include "SplitLoadMtGenerator.hh"
+#include "SwapPinsMtCandidate.hh"
+#include "UnbufferMtCandidate.hh"
+#include "UnbufferMtGenerator.hh"
+
+#define private public
+#define protected public
+#include "SetupParallelEvalPolicy.hh"
+#undef protected
+#undef private
+
 #include "utl/ThreadPool.h"
 
 namespace rsz {

@@ -22,6 +22,7 @@
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
+#include "RepairSetupAnalysisTarget.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "SizeUpGenerator.hh"
@@ -384,8 +385,8 @@ bool SetupLegacyBase::prepareForPhasePipeline()
   }
 
   if (committer_.moveTrackerEnabled()) {
-    committer_.captureInitialSlackDistribution();
-    committer_.captureOriginalEndpointSlack();
+    committer_.tracker().captureInitialSlackDistribution();
+    committer_.tracker().captureOriginalEndpointSlack();
   }
   if (!config_.phases.empty()) {
     reportCustomPhaseSetup();
@@ -669,21 +670,17 @@ bool SetupLegacyBase::tryCandidateSequence(
     int& changed,
     std::optional<MoveType>& accepted_type)
 {
+  // Mode 3 observes each move on a copy of the target refreshed from current
+  // STA.  The repair keeps the target it was given, as in the other modes.
+  RepairSetupAnalysisTarget analysis_target(resizer_, target);
+
   CandidateVector candidates;
 
   {
     const ProfileScope profile("candidate_generation");
     candidates = generator.generate(target);
-    if (candidates.empty()) {
-      RepairSetupProfiler::event("skip_no_candidates", 1, generator.name());
-    }
-
     // Generation can return candidates that the serial pass never estimates.
-    if (RepairSetupProfiler::enabled()) {
-      for (const std::unique_ptr<MoveCandidate>& candidate : candidates) {
-        RepairSetupProfiler::moveGenerated(*candidate);
-      }
-    }
+    RepairSetupProfiler::movesGenerated(generator.type(), candidates);
   }
   for (auto& candidate : candidates) {
     Estimate estimate;
@@ -697,10 +694,19 @@ bool SetupLegacyBase::tryCandidateSequence(
       continue;
     }
 
+    // Profile mode 3 refreshes the target from current timing.
+    if (RepairSetupProfiler::analysis()) {
+      committer_.updateTimingForObserver();
+    }
+
+    // A failed refresh skips the observation of the move, not the move.
+    const Target* observed_target
+        = analysis_target.refresh() ? &analysis_target.target() : nullptr;
     {
       const ProfileScope profile("batch_selection");
       RepairSetupProfiler::event("winners", 1, moveName(candidate->type()));
-      RepairSetupProfiler::moveSelected(*candidate);
+      RepairSetupProfiler::moveSelected(
+          *candidate, observed_target, analysis_target.originalEndpoint());
     }
     committer_.trackMoveAttempt(target.driver_pin, generator.type());
     const MoveResult result = committer_.commit(*candidate);
@@ -758,11 +764,11 @@ bool SetupLegacyBase::tryRepairTarget(
     MoveGenerator& generator = *generator_ptr;
     const MoveType type = generator.type();
     if (rejected_types != nullptr && rejected_types->contains(type)) {
-      RepairSetupProfiler::event("skip_rejected_move", 1, generator.name());
+      RepairSetupProfiler::event("skip_rejected_move", 1, moveName(type));
       continue;
     }
     if (!generator.isApplicable(live_target)) {
-      RepairSetupProfiler::event("skip_not_applicable", 1, generator.name());
+      RepairSetupProfiler::event("skip_not_applicable", 1, moveName(type));
       continue;
     }
 
