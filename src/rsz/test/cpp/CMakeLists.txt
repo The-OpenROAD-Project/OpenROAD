@@ -177,7 +177,9 @@ add_dependencies(build_and_test TestNestedJournal
 add_executable(TestResizerMt
     TestCellSwapMt.cc
     TestDelayEstimatorMt.cc
+    TestParallelEvalPolicy.cc
     TestRepairSetupProfiler.cc
+    TestRepairTargetCollector.cc
     TestResizerMt.cc
 )
 target_link_libraries(TestResizerMt

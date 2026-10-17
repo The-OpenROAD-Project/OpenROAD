@@ -384,8 +384,8 @@ bool SetupLegacyBase::prepareForPhasePipeline()
   }
 
   if (committer_.moveTrackerEnabled()) {
-    committer_.captureInitialSlackDistribution();
-    committer_.captureOriginalEndpointSlack();
+    committer_.tracker().captureInitialSlackDistribution();
+    committer_.tracker().captureOriginalEndpointSlack();
   }
   if (!config_.phases.empty()) {
     reportCustomPhaseSetup();
@@ -675,7 +675,8 @@ bool SetupLegacyBase::tryCandidateSequence(
     const ProfileScope profile("candidate_generation");
     candidates = generator.generate(target);
     if (candidates.empty()) {
-      RepairSetupProfiler::event("skip_no_candidates", 1, generator.name());
+      RepairSetupProfiler::event(
+          "skip_no_candidates", 1, moveName(generator.type()));
     }
 
     // Generation can return candidates that the serial pass never estimates.
@@ -758,11 +759,11 @@ bool SetupLegacyBase::tryRepairTarget(
     MoveGenerator& generator = *generator_ptr;
     const MoveType type = generator.type();
     if (rejected_types != nullptr && rejected_types->contains(type)) {
-      RepairSetupProfiler::event("skip_rejected_move", 1, generator.name());
+      RepairSetupProfiler::event("skip_rejected_move", 1, moveName(type));
       continue;
     }
     if (!generator.isApplicable(live_target)) {
-      RepairSetupProfiler::event("skip_not_applicable", 1, generator.name());
+      RepairSetupProfiler::event("skip_not_applicable", 1, moveName(type));
       continue;
     }
 

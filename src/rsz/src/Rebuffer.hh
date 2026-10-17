@@ -87,7 +87,10 @@ struct RebufferTreePlan
   float tree_input_cap{0.0f};
   // Driver pin slack of the tree minus that of the current net.
   float driver_slack_gain{0.0f};
-  // The tree the serial Rebuffer would build; it keeps a beam slot.
+  // The anchor tree: the lineage of top-ranked options through the beam
+  // rounds, kept in a reserved slot and exempt from the score gates.  Its
+  // selector is the top-K one, so it is not the tree the serial Rebuffer would
+  // build.
   bool anchor_tree{false};
   int buffer_count{0};
   int load_count{0};
@@ -111,6 +114,12 @@ class Rebuffer : public sta::dbStaState
   // delay calculator, because OpenSTA's keeps per-call scratch state.
   void initForPlanning(sta::Scene* corner, bool worker = false);
 
+  // The warnings a worker planner counted instead of logging them, by
+  // message ID (see countWorkerWarning()).
+  const std::map<int, int>& workerWarningCounts() const
+  {
+    return worker_warning_counts_;
+  }
   // The driver's net as a BufferedNet on the planner's corner, or nullptr
   // with a warning when the driver cannot be buffered.  Main thread only: the
   // global-route reader behind it is not thread-safe.
@@ -127,7 +136,9 @@ class Rebuffer : public sta::dbStaState
                             const char* instance_base_name);
 
  protected:
-  void init();
+  // find_max_wire_length is false for a worker planner (see
+  // initForPlanning()).
+  void init(bool find_max_wire_length = true);
   void initOnCorner(sta::Scene* corner);
 
   void annotateLoadSlacks(BufferedNetPtr& tree, sta::Vertex* root_vertex);
@@ -191,7 +202,8 @@ class Rebuffer : public sta::dbStaState
 
   // === Messages =============================================================
   // The messages the serial and the RebufferMt planning share, each with one
-  // ID.
+  // ID.  The warnings of tree planning may come from a worker planner, which
+  // counts them instead.
   void warnTopPortDriver(const sta::Pin* drvr_pin);
   void warnBufferedNetFailed(const sta::Pin* drvr_pin);
   void warnPathTraceFailed(const sta::Pin* load_pin);
@@ -199,6 +211,10 @@ class Rebuffer : public sta::dbStaState
   void warnNoViableBuffering(const sta::Pin* drvr_pin, int rounds);
   void errorAreaRecoveryFailed();
   void errorAreaRecoveryUnreproducible();
+  // True when a worker planner counted the warning `id` instead of logging
+  // it, which would make the log depend on the thread schedule.
+  bool countWorkerWarning(int id);
+  std::map<int, int> worker_warning_counts_;
 
   // === Option ranking =======================================================
   // A beam option with the measures the rankings compare.

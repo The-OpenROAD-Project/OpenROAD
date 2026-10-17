@@ -37,10 +37,13 @@ class ProgressReporter
   // header yet, show_startpoint_metrics picks the layout.
   void printFinal(RepairTargetCollector& collector,
                   bool show_startpoint_metrics) const;
+  // The design area at the committer's current edit count: computeDesignArea()
+  // walks every instance, so the area is walked once per edit and shared with
+  // the utilization checks of the policies.
+  double designArea() const;
 
  private:
-  // Recomputed only when the committer's edit count changed, because
-  // computeDesignArea() walks every instance.
+  // The area growth since the run started, from designArea().
   double areaGrowthPercent() const;
 
   Resizer& resizer_;

@@ -5455,6 +5455,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap,
+                          RepairEffort effort,
                           int profile_mode,
                           const char* profile_dir)
 {
@@ -5479,6 +5480,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.effort = effort;
   config.profile_mode = profile_mode;
   config.profile_dir = profile_dir != nullptr ? profile_dir : "";
 
@@ -5661,6 +5663,16 @@ void Resizer::swapArithModules(int path_count,
 void Resizer::initForJournalRestore()
 {
   init();
+}
+
+void Resizer::recountDesignAreaAfterUndo()
+{
+  // init() counts the area before the undo, so overMaxArea() would still see
+  // the undone edits.  Only overMaxArea() reads the tracked area, so the
+  // walk runs only under a -max_utilization limit.
+  if (max_area_) {
+    initDesignArea();
+  }
 }
 
 void Resizer::updateParasiticsAndTiming()
@@ -6715,6 +6727,19 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
     result.push_back(moveTypeFromString(lower));
   }
   return result;
+}
+
+RepairEffort Resizer::repairEffortFromString(const std::string& effort)
+{
+  if (effort == "low") {
+    return RepairEffort::kLow;
+  }
+
+  if (effort == "medium") {
+    return RepairEffort::kMedium;
+  }
+
+  return RepairEffort::kHigh;
 }
 
 bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const

@@ -42,6 +42,11 @@ class SizeUpMtCandidate : public MoveCandidate
   Estimate estimate() override;
   MoveResult apply() override;
   MoveType type() const override { return MoveType::kSizeUp; }
+  MoveImpact impact() const override;
+  std::vector<const sta::Pin*> guardedSidePins() const override
+  {
+    return faninSidePins(target().estimator_context.value());
+  }
 
  private:
   std::string logName() const;
