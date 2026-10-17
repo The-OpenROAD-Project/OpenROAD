@@ -64,6 +64,7 @@ detailed_route
     [-save_guide_updates]
     [-repair_pdn_vias layer]
     [-single_step_dr]
+    [-adaptive_strategy]
 ```
 
 #### Options
@@ -95,6 +96,7 @@ detailed_route
 | `-no_pin_access` | Disables pin access for routing. |
 | `-save_guide_updates` | Flag to save guides updates. |
 | `-repair_pdn_vias` | This option is used for PDKs where M1 and M2 power rails run in parallel. |
+| `-adaptive_strategy` | Enable closed-loop adaptive search-and-repair schedule. The default value is disabled. |
 
 #### Developer arguments
 
