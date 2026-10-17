@@ -168,6 +168,58 @@ This is the bridge between the chip-level model and the classic
 block-level model: `getInst()`, `getNet()`, and `getBTerm()` all
 return ordinary block-level objects.
 
+### Bump instances and region membership
+
+Physically, a bump of a chip is a placed `dbInst` in the chip's top
+block that belongs to a chip region. Its master is normally a LEF
+`CLASS COVER BUMP` cell (`dbMasterType::COVER_BUMP`); this is expected
+but not enforced. The master must have exactly one pin. A `dbInst`
+records its region:
+
+```cpp
+inst->setChipRegion(region);   // add to the region's bump list
+inst->getChipRegion();         // nullptr when the inst has no region
+inst->setChipRegion(nullptr);  // remove it from its region
+```
+
+`dbChipBump::create(region, inst)` sets the instance's region as well.
+The region must belong to the chip whose top block holds the
+instance, and the region of an instance that has a `dbChipBump` cannot
+be changed. Instances placed by a standalone bump map
+(`read_3dblox_bmap`) have no region and are not chiplet bumps.
+
+The bumps can be iterated without going through `dbChipBump`:
+
+```cpp
+for (dbInst* bump : region->getBumps()) { ... }  // one region
+for (dbInst* bump : chip->getBumps()) { ... }    // all regions of a chip
+```
+
+A bump added through the API goes to the front of its region's list,
+so `dbChipRegion::getBumps()` returns the newest bump first. The 3DBlox
+reader reverses each region's list after reading its bump map, so a
+chip read from 3DBlox lists its bumps in bump map row order.
+`dbChip::getBumps()` visits the regions in creation order and each
+region's bumps in list order. It is empty for a chip with no block or
+no regions.
+
+The rest of a bump is reached from its instance:
+
+| What | How |
+|---|---|
+| pin | the instance's single `dbITerm` (`inst->getITerm(0U)`) |
+| internal net | that `dbITerm`'s `getNet()` |
+| port | `inst->getBumpBTerm()`, the `dbBTerm` bound to the bump |
+
+The port is stored on the instance rather than derived from the net,
+because a net can carry more than one `dbBTerm`. The 3DBlox reader binds
+it from the bump map's port column; `inst->setBumpBTerm(bterm)` binds it
+directly. Only an instance with a chip region can be bound, and the port
+must be in the instance's block. The binding is kept when the instance
+moves to another region and is cleared when it leaves all regions, when
+it is destroyed, or when the port is destroyed. A bump with no bound
+port (`getBumpBTerm()` returns nullptr) is a spare bump.
+
 ### Region and bump instances
 
 When a `dbChipInst` is created, ODB automatically creates one
@@ -254,7 +306,7 @@ level, and produces one *unfolded* object per physical occurrence:
 |---|---|---|
 | `dbUnfoldedChipInst` | leaf chip occurrence | `getChipInstPath()`, `getTransform()`, `getCuboid()` |
 | `dbUnfoldedChipRegionInst` | region occurrence | `getEffectiveSide()`, `getSurfaceZ()`, `getCuboid()` |
-| `dbUnfoldedChipBumpInst` | bump occurrence | `getGlobalPosition()` |
+| `dbUnfoldedChipBumpInst` | bump occurrence | `getInst()`, `getGlobalPosition()` |
 | `dbUnfoldedChipConn` | resolved connection | `getTopRegion()`, `getBottomRegion()` |
 | `dbUnfoldedChipNet` | materialized net | `getConnectedBumps()` |
 

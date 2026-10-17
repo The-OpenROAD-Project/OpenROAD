@@ -465,6 +465,7 @@ test_suite(
         "//src/odb/test/cpp:TestAbstractLef",
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",
+        "//src/odb/test/cpp:TestChipBumps",
         "//src/odb/test/cpp:TestChips",
         "//src/odb/test/cpp:TestDbStream",
         "//src/odb/test/cpp:TestDbWire",

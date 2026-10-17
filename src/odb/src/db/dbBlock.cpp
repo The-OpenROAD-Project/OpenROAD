@@ -47,6 +47,9 @@
 #include "dbCapNode.h"
 #include "dbCapNodeItr.h"
 #include "dbChip.h"
+#include "dbChipBumpItr.h"
+#include "dbChipRegion.h"
+#include "dbChipRegionBumpItr.h"
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -369,6 +372,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   cc_seg_itr_ = new dbCCSegItr(cc_seg_tbl_);
 
   region_inst_itr_ = new dbRegionInstItr(inst_tbl_);
+  chip_region_bump_itr_ = new dbChipRegionBumpItr(inst_tbl_);
+  chip_bump_itr_ = new dbChipBumpItr(inst_tbl_);
 
   module_inst_itr_ = new dbModuleInstItr(inst_tbl_);
 
@@ -476,6 +481,8 @@ _dbBlock::~_dbBlock()
   delete r_seg_itr_;
   delete cc_seg_itr_;
   delete region_inst_itr_;
+  delete chip_region_bump_itr_;
+  delete chip_bump_itr_;
   delete module_inst_itr_;
   delete module_modinst_itr_;
   delete module_modinstmoditerm_itr_;
@@ -3008,6 +3015,11 @@ void dbBlock::destroy(dbBlock* block_)
   // Deleting top block
   if (block->parent_ == 0) {
     chip->top_ = 0;
+    // The bump lists of the chip regions point into this block's insts.
+    for (dbChipRegion* region : ((dbChip*) chip)->getChipRegions()) {
+      _dbChipRegion* region_impl = (_dbChipRegion*) region;
+      region_impl->bumps_ = 0;
+    }
   } else {
     // unlink this block from the parent
     _dbBlock* parent = chip->block_tbl_->getPtr(block->parent_);

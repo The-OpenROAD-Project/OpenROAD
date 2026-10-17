@@ -26,6 +26,7 @@ add_executable(TestNetTrack TestNetTrack.cpp)
 add_executable(TestMaster TestMaster.cpp)
 add_executable(TestGDSIn TestGDSIn.cpp)
 add_executable(TestChips TestChips.cpp)
+add_executable(TestChipBumps TestChipBumps.cpp)
 add_executable(Test3DBloxParser Test3DBloxParser.cpp)
 add_executable(Test3DBloxChecker Test3DBloxChecker.cpp Test3DBloxCheckerLogicalConn.cpp Test3DBloxCheckerBumps.cpp Test3DBloxCheckerAlignmentMarkers.cpp)
 add_executable(Test3DBloxVerilogWriter Test3DBloxVerilogWriter.cpp)
@@ -143,6 +144,11 @@ target_link_libraries(TestChips
         odb_test_helper
         ${GTEST_LIBS}
 )
+target_link_libraries(TestChipBumps
+        db
+        odb_test_helper
+        ${GTEST_LIBS}
+)
 target_link_libraries(Test3DBloxParser
         3dblox
         db
@@ -222,6 +228,7 @@ add_dependencies(build_and_test
         TestNetTrack
         TestMaster
         TestChips
+        TestChipBumps
         Test3DBloxParser
         Test3DBloxChecker
         Test3DBloxVerilogWriter
