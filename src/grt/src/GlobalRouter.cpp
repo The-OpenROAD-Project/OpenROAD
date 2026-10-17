@@ -1779,6 +1779,15 @@ void GlobalRouter::updatePinAccessPoints()
 void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
 {
   cugr_->route(incremental);
+  if (incremental) {
+    // Nets CUGR moved to clear overflow need new routes and guides too.
+    for (odb::dbNet* db_net : cugr_->takeIncrementalExtraReroutes()) {
+      const auto it = db_net_map_.find(db_net);
+      if (it != db_net_map_.end() && it->second != nullptr) {
+        nets.push_back(it->second);
+      }
+    }
+  }
   for (Net* net : nets) {
     odb::dbNet* db_net = net->getDbNet();
     GRoute route = cugr_->getNetRoute(db_net);
@@ -7163,6 +7172,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
     if (reroute) {
       cugr_->updateNet(db_net);
       dirty_nets.push_back(net);
+    } else if (!restored) {
+      // CUGR keeps the net's previous pins, so it must not reroute it.
+      cugr_->markNetStale(db_net);
     }
   }
 

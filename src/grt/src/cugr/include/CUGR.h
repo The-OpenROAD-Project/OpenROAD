@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <csignal>
 #include <map>
 #include <memory>
@@ -104,6 +105,10 @@ class CUGR
   // configuration survives, and init() rebuilds design_/grid_graph_.
   void clear();
   void route(bool incremental);
+  // Takes the nets the last incremental route() moved to relieve overflow.
+  std::vector<odb::dbNet*> takeIncrementalExtraReroutes();
+  // Keeps the overflow relief off a net whose pins here are out of date.
+  void markNetStale(odb::dbNet* db_net);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
@@ -308,8 +313,12 @@ class CUGR
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
+   * @param reroute_all_candidates Reroute every incremental candidate.
    */
-  void iterativeRRR(std::vector<int>& net_indices);
+  void iterativeRRR(std::vector<int>& net_indices,
+                    bool reroute_all_candidates = true);
+  // Incremental only: reroutes the nets sharing the overflow a call added.
+  void relieveIncrementalOverflow(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
   void sortNetIndices(std::vector<int>& net_indices,
@@ -403,6 +412,17 @@ class CUGR
   std::vector<int> parasitics_dirty_nets_;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
+  // Per net index: 1 if a reroute must lower the overflow to be kept.
+  std::vector<char> strict_accept_;
+  // Nets added by relieveIncrementalOverflow whose new route was kept.
+  std::vector<int> incremental_extra_reroutes_;
+  // True while relieveIncrementalOverflow runs its maze passes.
+  bool relieving_overflow_ = false;
+  // Indices of the nets markNetStale flagged.
+  std::unordered_set<int> stale_nets_;
+  // Overflow per (layer, x, y) edge the last full route left; the relief
+  // ignores it.
+  std::vector<std::pair<std::array<int, 3>, double>> overflow_baseline_;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
