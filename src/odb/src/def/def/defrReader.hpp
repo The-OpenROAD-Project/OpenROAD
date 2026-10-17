@@ -659,11 +659,11 @@ using DEFI_CONTEXT_WARNING_LOG_FUNCTION
 extern void defrSetContextWarningLogFunction(DEFI_CONTEXT_WARNING_LOG_FUNCTION);
 
 // Routine to set the user defined malloc routine
-using DEFI_MALLOC_FUNCTION = void* (*) (size_t);
+using DEFI_MALLOC_FUNCTION = void* (*)(size_t);
 extern void defrSetMallocFunction(DEFI_MALLOC_FUNCTION);
 
 // Routine to set the user defined realloc routine
-using DEFI_REALLOC_FUNCTION = void* (*) (void*, size_t);
+using DEFI_REALLOC_FUNCTION = void* (*)(void*, size_t);
 extern void defrSetReallocFunction(DEFI_REALLOC_FUNCTION);
 
 // Routine to set the user defined free routine

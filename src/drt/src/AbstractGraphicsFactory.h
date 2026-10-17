@@ -22,8 +22,7 @@ class AbstractGraphicsFactory
                      frDesign* design,
                      odb::dbDatabase* db,
                      utl::Logger* logger,
-                     RouterConfiguration* router_cfg)
-      = 0;
+                     RouterConfiguration* router_cfg) = 0;
   virtual bool guiActive() = 0;
   virtual std::unique_ptr<AbstractDRGraphics> makeUniqueDRGraphics() = 0;
   virtual std::unique_ptr<AbstractTAGraphics> makeUniqueTAGraphics() = 0;
