@@ -4,6 +4,7 @@
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -373,5 +374,23 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+    ],
+)
+
+# Not a test: runs the macro placer on a design as long as asked, for a
+# developer's machine. bazelisk run //src/mpl/test:mpl_bench -- <odb> ...
+cc_binary(
+    name = "mpl_bench",
+    testonly = 1,
+    srcs = ["cpp/mpl_bench.cpp"],
+    tags = ["manual"],
+    deps = [
+        "//src/dbSta",
+        "//src/mpl",
+        "//src/odb/src/db",
+        "//src/par",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@tcl_lang//:tcl",
     ],
 )
