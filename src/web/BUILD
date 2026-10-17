@@ -147,11 +147,14 @@ js_library(
     deps = _BUNDLED_PACKAGES,
 )
 
-# The stylesheets import the bundled libraries' CSS.
+# The stylesheets import Golden Layout's and Leaflet's CSS.
 js_library(
     name = "css",
     srcs = glob(["src/*.css"]),
-    deps = _BUNDLED_PACKAGES,
+    deps = [
+        ":node_modules/golden-layout",
+        ":node_modules/leaflet",
+    ],
 )
 
 # $(SRCS) expands to every package directory, dependencies included.

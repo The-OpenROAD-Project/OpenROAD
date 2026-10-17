@@ -15,7 +15,8 @@ _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
 _ENTRIES = ("src/web/src/entry-app.js",)
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
-# whole: XML namespaces, ELK's model URIs, links in comments and messages.
+# whole and in lower case: XML namespaces, ELK's model URIs, links in comments
+# and messages.
 _IDENTIFIER_URLS = {
     "http://www.w3.org/1999/xhtml",
     "http://www.w3.org/1999/xlink",

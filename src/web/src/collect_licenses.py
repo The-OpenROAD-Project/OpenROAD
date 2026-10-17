@@ -60,7 +60,9 @@ def source_url(meta):
         raise SystemExit(f"{meta['name']} names no repository or homepage")
     url = re.sub(r"^git\+", "", url)
     url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
-    url = re.sub(r"^(?:git|ssh)://(?:git@)?", "https://", url)
+    url = re.sub(r"^(?:git|ssh|http)://(?:git@)?", "https://", url)
+    # A fragment names a commit or an anchor, not where the source is.
+    url = re.sub(r"#.*$", "", url)
     url = re.sub(r"\.git$", "", url)
     if "://" in url:
         return url
