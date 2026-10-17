@@ -42,6 +42,7 @@ add_library(mpl_lib
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
   src/packing.cpp
+  src/packingAdapter.cpp
   src/SimulatedAnnealingCore.cpp
   src/SACoreHardMacro.cpp
   src/SACoreSoftMacro.cpp

@@ -360,3 +360,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "mpl_packing_adapter_unittest",
+    srcs = ["cpp/TestPackingAdapter.cpp"],
+    deps = [
+        "//src/mpl:packing",
+        "//src/mpl:packing_adapter",
+        "//src/mpl:pusher",
+        "//src/mpl:shapes",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

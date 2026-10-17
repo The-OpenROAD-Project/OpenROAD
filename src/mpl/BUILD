@@ -86,6 +86,25 @@ cc_library(
 )
 
 cc_library(
+    name = "packing_adapter",
+    srcs = [
+        "src/packingAdapter.cpp",
+    ],
+    hdrs = [
+        "src/packingAdapter.h",
+    ],
+    includes = [
+        "src",
+    ],
+    deps = [
+        ":packing",
+        ":pusher",
+        ":shapes",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
     name = "mpl_impl",
     srcs = [
         "src/SACoreHardMacro.cpp",
