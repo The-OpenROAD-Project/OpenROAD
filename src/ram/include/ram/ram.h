@@ -282,7 +282,7 @@ class RamGen
       aoi22_out_;
   Grid ram_grid_;
   bool use_latch_{false};
-  // widest AND the decoder may use, which caps the predecode groups per stage
+  // widest AND the predecode stages may use (the final stage is always AND2)
   int max_and_inputs_{2};
 };
 

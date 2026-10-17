@@ -373,8 +373,10 @@ vector<dbNet*> RamGen::buildDecoder(const std::string& prefix,
     return lines;
   }
 
-  // ~2 bits per group, but never more groups than the AND has inputs
-  const int num_groups = std::clamp((width + 1) / 2, 2, max_and_inputs_);
+  // the final stage is always AND2, best for area
+  const bool is_final = !out_nets.empty();
+  const int num_groups
+      = is_final ? 2 : std::clamp((width + 1) / 2, 2, max_and_inputs_);
 
   vector<vector<dbNet*>> group_lines;
   vector<int> group_shift;
@@ -392,7 +394,6 @@ vector<dbNet*> RamGen::buildDecoder(const std::string& prefix,
     bit += size;
   }
 
-  const bool is_final = !out_nets.empty();
   vector<dbNet*> lines(count);
   for (int value = 0; value < count; ++value) {
     vector<dbNet*> inputs;

@@ -116,7 +116,7 @@ proc generate_ram_netlist { args } {
         The generated layout may not pass Design Rule Checks."
   }
 
-  # widest AND gate the row decoder may use
+  # widest AND gate the row decoder's predecode stages may use
   set max_and_inputs 2
   if { [info exists keys(-max_and_inputs)] } {
     set max_and_inputs $keys(-max_and_inputs)
