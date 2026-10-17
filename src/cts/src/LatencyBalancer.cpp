@@ -237,9 +237,13 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 
         if (inst2builder_.find(sinkName) != inst2builder_.end()) {
           auto builder = inst2builder_[sinkName];
-          float builerAvgArrival = computeAveSinkArrivals(builder);
-          worseDelay_ = std::max(worseDelay_, builerAvgArrival);
-          graph_[sinkId].arrival = builerAvgArrival;
+          const std::optional<float> builerAvgArrival
+              = computeAveSinkArrivals(builder);
+          // Without an arrival the node puts no constraint on balancing.
+          if (builerAvgArrival) {
+            worseDelay_ = std::max(worseDelay_, *builerAvgArrival);
+            graph_[sinkId].arrival = *builerAvgArrival;
+          }
           continue;
         }
 
@@ -247,8 +251,11 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
-            float arrival
+            const std::optional<float> arrival
                 = getVertexClkArrival(sinkVertex, clkInputNet, sinkIterm);
+            if (!arrival) {
+              continue;
+            }
             float insDelay = 0.0;
             sta::LibertyCell* libCell
                 = network_->libertyCell(network_->dbToSta(sinkInst));
@@ -270,15 +277,15 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                 }
               }
             }
-            worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
-            graph_[sinkId].arrival = arrival + insDelay;
+            worseDelay_ = std::max(worseDelay_, (*arrival + insDelay));
+            graph_[sinkId].arrival = *arrival + insDelay;
             debugPrint(logger_,
                        CTS,
                        "insertion delay",
                        2,
                        "Sink {}: average sink arrival is {:0.3e}",
                        sinkIterm->getName(),
-                       arrival);
+                       *arrival);
           }
           continue;
         }
@@ -300,12 +307,13 @@ odb::dbITerm* LatencyBalancer::getFirstInput(odb::dbInst* inst) const
   return nullptr;
 }
 
-float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
-                                           odb::dbNet* topNet,
-                                           odb::dbITerm* iterm)
+// Measured from the clock root: edge time and source latency vary by mode.
+std::optional<float> LatencyBalancer::getVertexClkArrival(
+    sta::Vertex* sinkVertex,
+    odb::dbNet* topNet,
+    odb::dbITerm* iterm)
 {
   sta::VertexPathIterator pathIter(sinkVertex, openSta_);
-  float clkPathArrival = 0.0;
   while (pathIter.hasNext()) {
     sta::Path* path = pathIter.next();
     const sta::ClockEdge* clockEdge = path->clkEdge(openSta_);
@@ -341,16 +349,17 @@ float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
         pathStartNet = port->getNet();
       }
       if (pathStartNet == topNet) {
-        clkPathArrival = path->arrival();
-        return clkPathArrival;
+        return sta::delayAsFloat(path->arrival())
+               - sta::delayAsFloat(start->arrival());
       }
     }
   }
   logger_->warn(CTS, 179, "No paths found for pin {}.", iterm->getName());
-  return clkPathArrival;
+  return std::nullopt;
 }
 
-float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
+std::optional<float> LatencyBalancer::computeAveSinkArrivals(
+    TreeBuilder* builder)
 {
   Clock clock = builder->getClock();
   odb::dbNet* topInputClockNet = builder->getTopInputNet();
@@ -376,6 +385,9 @@ float LatencyBalancer::computeAveSinkArrivals(TreeBuilder* builder)
              clock.getName(),
              builder->getAveSinkArrival());
 
+  if (numSinks == 0) {
+    return std::nullopt;
+  }
   return aveArrival;
 }
 
@@ -392,7 +404,11 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
         sta::Pin* pin = network_->dbToSta(iterm);
         if (pin) {
           sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
-          float arrival = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
+          const std::optional<float> arrival
+              = getVertexClkArrival(sinkVertex, topClokcNet, iterm);
+          if (!arrival) {
+            return;
+          }
           // add insertion delay
           float insDelay = 0.0;
           sta::LibertyCell* libCell
@@ -415,7 +431,7 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
               }
             }
           }
-          sumArrivals += (arrival + insDelay);
+          sumArrivals += (*arrival + insDelay);
           numSinks++;
         }
       } else {
