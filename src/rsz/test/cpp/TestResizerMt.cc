@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -19,20 +17,15 @@
 #include <vector>
 
 #include "DelayEstimator.hh"
-#include "RepairSetupContext.hh"
-#include "rsz/Resizer.hh"
-#define private public
-#define protected public
-#include "SetupLegacyMtPolicy.hh"
-#undef protected
-#undef private
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupContext.hh"
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -48,13 +41,6 @@
 #include "tst/IntegratedFixture.h"
 #undef protected
 #include "MoveGenerator.hh"
-
-#define private public
-#define protected public
-#include "SetupMt1Policy.hh"
-#undef protected
-#undef private
-
 #include "utl/ThreadPool.h"
 
 namespace rsz {
@@ -167,39 +153,6 @@ class TestResizerMt : public tst::IntegratedFixture
   }
 };
 
-static std::vector<std::string> evaluationSignature(
-    const std::vector<TargetEvaluation>& evaluations)
-{
-  std::vector<std::string> signature;
-  signature.reserve(evaluations.size());
-  for (const TargetEvaluation& evaluation : evaluations) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(9);
-    oss << "c=" << evaluation.candidates.size();
-    oss << ";e=" << evaluation.estimates.size();
-    oss << ";best=" << evaluation.hasBestCandidate();
-    oss << ";bestLegal=" << evaluation.best_estimate.legal;
-    oss << ";bestScore=" << evaluation.best_estimate.score;
-    for (size_t index = 0; index < evaluation.candidates.size(); ++index) {
-      oss << "|" << moveName(evaluation.candidates[index]->type());
-      oss << ":" << evaluation.estimates[index].legal;
-      oss << ":" << evaluation.estimates[index].score;
-    }
-    signature.push_back(oss.str());
-  }
-  return signature;
-}
-
-static std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
-    SetupMt1Policy& policy,
-    const std::vector<Target>& targets)
-{
-  return policy.thread_pool_->parallelMap(
-      targets, [&policy](const Target& target) -> TargetEvaluation {
-        return policy.generateAndEstimateTarget(target);
-      });
-}
-
 static void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
 {
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
@@ -294,32 +247,6 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
       << (corner != nullptr ? "corner" : "null");
   return oss.str();
 }
-
-class ScopedEnv
-{
- public:
-  ScopedEnv(const char* name, const char* value) : name_(name)
-  {
-    const char* old_value = std::getenv(name_);
-    if (old_value != nullptr) {
-      old_value_ = old_value;
-    }
-    setenv(name_, value, 1);
-  }
-
-  ~ScopedEnv()
-  {
-    if (old_value_.has_value()) {
-      setenv(name_, old_value_->c_str(), 1);
-    } else {
-      unsetenv(name_);
-    }
-  }
-
- private:
-  const char* name_;
-  std::optional<std::string> old_value_;
-};
 
 TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
 {
@@ -418,41 +345,6 @@ TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
-{
-  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
-  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupLegacyMtPolicy policy(resizer, committer, setup_context, config);
-  // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start());
-}
-
-TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
-{
-  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
-  ScopedEnv max_moves("RSZ_VTSWAP_MAX_MOVES", "100");
-  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start());
-}
-
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
 {
   Resizer& resizer = resizer_;
@@ -516,7 +408,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, Mt1CandidateEstimateUsesSelectedArcAndCachedState)
+TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -725,7 +617,7 @@ TEST(TestResizerMtThreadPool,
     targets[index] = index;
   }
 
-  // Model the Mt1 nesting pattern: outer multi-target fanout, two generate
+  // Model a nested pattern: outer multi-target fanout, two generate
   // tasks per target, and ten estimate tasks per generate task.
   std::vector<std::vector<std::vector<int>>> nested_results
       = thread_pool.parallelMap(targets, [&thread_pool](const int& target) {
@@ -820,150 +712,6 @@ TEST(TestResizerMtThreadPool, ParallelMapWaitsForAllTasksBeforeRethrow)
                std::runtime_error);
 
   EXPECT_EQ(completed.load(std::memory_order_relaxed), 3);
-}
-
-TEST_F(TestResizerMt,
-       SetupMt1PolicyThreadPoolSupportsNestedMultiTargetGenerateEstimate)
-{
-  sta_->setThreadCount(4);
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  policy.start();
-
-  ASSERT_NE(policy.thread_pool_, nullptr);
-  ASSERT_GE(policy.thread_pool_->threadCount(), 1u);
-
-  std::vector<Target> targets;
-  targets.push_back(makeTarget("path_out", "path_pre1", "Z"));
-  targets.push_back(makeTarget("path_out", "path_target", "ZN"));
-  targets.push_back(makeTarget("out0", "target", "Z"));
-  ASSERT_EQ(targets.size(), 3u);
-
-  // Fully warm up swappable-cell and leakage caches on the main thread before
-  // worker threads perform target-local generation and estimation.
-  warmupAllSwappableCells(resizer, sta_->network());
-  policy.prewarmTargets(targets);
-  policy.prepareTargets(targets);
-  for (const Target& target : targets) {
-    ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
-  }
-
-  // Exercise the same production path: prepared targets are walked serially,
-  // while each target uses the shared pool for move-type and candidate fanout.
-  std::vector<TargetEvaluation> evaluations
-      = policy.generateAndEstimateTargets(targets);
-
-  ASSERT_EQ(evaluations.size(), targets.size());
-
-  int evaluations_with_candidates = 0;
-  int evaluations_with_multiple_estimates = 0;
-  int evaluations_with_legal_best = 0;
-  for (size_t index = 0; index < evaluations.size(); ++index) {
-    const TargetEvaluation& evaluation = evaluations[index];
-    ASSERT_NE(targets[index].driver_pin, nullptr);
-    EXPECT_EQ(evaluation.candidates.size(), evaluation.estimates.size());
-
-    if (!evaluation.candidates.empty()) {
-      ++evaluations_with_candidates;
-    }
-    if (evaluation.estimates.size() >= 2) {
-      ++evaluations_with_multiple_estimates;
-    }
-
-    for (const std::unique_ptr<MoveCandidate>& candidate :
-         evaluation.candidates) {
-      ASSERT_NE(candidate, nullptr);
-      EXPECT_TRUE(candidate->type() == MoveType::kVtSwap
-                  || candidate->type() == MoveType::kSizeUp);
-    }
-
-    if (evaluation.hasBestCandidate()) {
-      ++evaluations_with_legal_best;
-      const MoveCandidate* best_candidate = &evaluation.bestCandidate();
-      size_t best_candidate_index = 0;
-      while (best_candidate_index < evaluation.candidates.size()
-             && evaluation.candidates[best_candidate_index].get()
-                    != best_candidate) {
-        ++best_candidate_index;
-      }
-      ASSERT_LT(best_candidate_index, evaluation.candidates.size());
-      ASSERT_LT(best_candidate_index, evaluation.estimates.size());
-      EXPECT_TRUE(evaluation.best_estimate.legal);
-      EXPECT_FLOAT_EQ(evaluation.best_estimate.score,
-                      evaluation.estimates[best_candidate_index].score);
-    }
-  }
-
-  EXPECT_GE(evaluations_with_candidates, 2);
-  EXPECT_GE(evaluations_with_multiple_estimates, 2);
-  EXPECT_GE(evaluations_with_legal_best, 1);
-}
-
-TEST_F(TestResizerMt, NestedTargetParallelGenerateEstimateIsDeterministic)
-{
-  sta_->setThreadCount(8);
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  sta_->updateTiming(true);
-
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  policy.start();
-
-  ASSERT_NE(policy.thread_pool_, nullptr);
-  ASSERT_EQ(policy.thread_pool_->threadCount(), 7u);
-
-  std::vector<Target> targets;
-  targets.reserve(12);
-  for (int repeat = 0; repeat < 4; ++repeat) {
-    targets.push_back(makeTarget("path_out", "path_pre1", "Z"));
-    targets.push_back(makeTarget("path_out", "path_target", "ZN"));
-    targets.push_back(makeTarget("out0", "target", "Z"));
-  }
-
-  // Match the production Mt1 pipeline: prewarm shared Liberty/cell caches
-  // before worker threads perform target-local generation and estimation.
-  policy.prewarmTargets(targets);
-  policy.prepareTargets(targets);
-  for (const Target& target : targets) {
-    ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
-  }
-
-  const std::vector<TargetEvaluation> baseline_evaluations
-      = generateAndEstimateTargetsInParallel(policy, targets);
-  const std::vector<std::string> baseline_signature
-      = evaluationSignature(baseline_evaluations);
-  ASSERT_EQ(baseline_signature.size(), targets.size());
-
-  constexpr int kRepeatCount = 3;
-  for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
-    const std::vector<TargetEvaluation> evaluations
-        = generateAndEstimateTargetsInParallel(policy, targets);
-    const std::vector<std::string> signature = evaluationSignature(evaluations);
-    EXPECT_EQ(signature, baseline_signature)
-        << "Nested parallel target generate/estimate produced a different "
-           "signature at repeat "
-        << repeat
-        << ". If this fails or crashes, inspect live STA access in "
-           "SizeUpMtGenerator::generate(), VtSwapMtCandidate::estimate(), "
-           "Resizer::replacementPreservesMaxCap(), and "
-           "Sta::checkCapacitance().";
-  }
 }
 
 }  // namespace rsz

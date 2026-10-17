@@ -92,7 +92,7 @@ MoveResult MoveCommitter::commit(MoveCandidate& candidate)
   if (result.accepted) {
     recordAcceptedResult(result);
     // Only the journaled path needs the per-level result trail; non-journaled
-    // commits (e.g. MeasuredVtSwapPolicy) flush via acceptPendingMoves and
+    // commits (e.g. SetupCritVtSwapPolicy) flush via acceptPendingMoves and
     // never restore.
     if (!pending_move_results_.empty()) {
       pending_move_results_.top().push_back(result);
@@ -172,32 +172,6 @@ void MoveCommitter::trackViolatorWithTimingInfo(
             : sta::Slack(0.0f);
   trackViolatorWithInfo(
       pin, gate_type, load_delay, intrinsic_delay, pin_slack, endpoint_slack);
-}
-
-void MoveCommitter::trackPreparedViolator(const Target& target)
-{
-  if (!moveTrackerEnabled()) {
-    return;
-  }
-
-  if (!target.isPrepared(kArcDelayStateCache)) {
-    return;
-  }
-
-  const sta::Pin* endpoint_pin = target.endpointPin(resizer_);
-  if (endpoint_pin != nullptr) {
-    setCurrentEndpoint(endpoint_pin);
-  }
-
-  const ArcDelayState& arc_delay = target.arc_delay.value();
-  const DelayStageState& target_stage = arc_delay.target();
-  const sta::LibertyCell* current_cell = target_stage.arc.currentCell();
-  trackViolatorWithInfo(target.driver_pin,
-                        current_cell->name(),
-                        target_stage.current_delay,
-                        0.0f,
-                        target.slack,
-                        target.slack);
 }
 
 void MoveCommitter::trackMove(const sta::Pin* pin,

@@ -596,7 +596,9 @@ report_buffers
 The `report_delay_estimator_accuracy` command compares a delay
 estimator's predictions against the reference STA delay for a candidate
 library cell at the given instance.  It is intended as a developer aid
-for evaluating estimator accuracy when sizing.
+for evaluating estimator accuracy when sizing.  The estimator runs with the
+STA slew bias of the setup repair policies, which corrects the table slew of
+the fanin driver stage with STA slews sampled at three loads.
 
 ```tcl
 report_delay_estimator_accuracy
@@ -612,7 +614,7 @@ report_delay_estimator_accuracy
 | ----- | ----- |
 | `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
 | `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
-| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-estimator` | Delay estimator to evaluate. Required. `legacy`: the estimate of the LEGACY moves, the gate delay at the current load plus the fanin drive resistance times the input pin cap. `stage_window`: Liberty tables propagated over a window of stages around the target (see `-delay_levels`), as the Mt moves estimate. |
 | `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
 
 ### Optimizing Arithmetic Modules

@@ -51,26 +51,6 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 
 LEGACY / SetupLegacyPolicy:
   select legacy target -> generate -> estimate -> commit first accepted move      <- [ST]
-
-MEASURED_VT_SWAP / MeasuredVtSwapPolicy (EXPERIMENTAL):
-  select target -> generate candidates -> measure by ECO journal -> commit best   <- [ST]
-
-LEGACY_MT / SetupLegacyMtPolicy (EXPERIMENTAL):
-  select legacy target
-  prewarm target vector                 <- [ST] Liberty/driver-cache warmup
-  prepared_target = prepareTarget(t)    <- [ST] target ArcDelayState build
-  candidates = generate(prepared)       <- [ST] legacy-order generation
-  estimates = estimate(candidates)      <- [MT] only for VtSwap/SizeUp candidates
-  commit(first_or_best_candidate)       <- [ST] apply
-
-MT1 / SetupMt1Policy (EXPERIMENTAL):
-  select target batch
-  prewarm(targets)                      <- [ST] Liberty/driver-cache warmup
-  prepareTargets(targets)               <- [ST] target ArcDelayState build
-  for each target                       <- [ST] target-level scheduling
-    candidates = generate(prepared)     <- [MT] parallel move-type fanout
-    estimates = estimate(candidates)    <- [MT] parallel candidate scoring
-  commit(best_candidates)               <- [ST] sequential apply
 ```
 
 **Key components**
@@ -88,9 +68,6 @@ OptimizationPolicy (interface)
   SetupDirectionalPolicy: Legacy endpoint-fanin / startpoint-fanout phases
   SetupLastGaspPolicy   : Legacy last-gasp phase
   SetupCritVtSwapPolicy : Legacy critical-VT-swap phase
-  SetupLegacyMtPolicy   : Legacy phase flow with MT scoring for selected moves
-  MeasuredVtSwapPolicy  : Single-threaded VT-swap-only with measured estimate
-  SetupMt1Policy        : Batched multi-threaded VT-swap + size-up policy
 
 MoveGenerator / MoveCandidate
   Own move-local legality and ECO plan
@@ -119,12 +96,10 @@ flowchart TD
     G -->|WNS / TNS / directional| I[Legacy phase policies]
     G -->|LAST_GASP| J[SetupLastGaspPolicy]
     G -->|CRIT_VT_SWAP| K[SetupCritVtSwapPolicy]
-    G -->|experimental| L[SetupLegacyMtPolicy / SetupMt1Policy / MeasuredVtSwapPolicy]
     H --> M[MoveGenerator]
     I --> M
     J --> M
     K --> M
-    L --> M
     M --> N[MoveCandidate]
     N --> O[MoveCommitter]
 ```
@@ -177,10 +152,6 @@ repair_timing -setup -phases "LEGACY LAST_GASP CRIT_VT_SWAP"
 # Run selected legacy-compatible phases.
 repair_timing -setup -phases "WNS TNS LAST_GASP"
 
-# Experimental top-level policies are accepted as phase tokens.
-repair_timing -setup -phases "LEGACY_MT"
-repair_timing -setup -phases "MT1"
-
 # Alias spelling; prefer -phases for new scripts.
 repair_timing -setup -policy "LEGACY"
 ```
@@ -197,9 +168,6 @@ Public phase tokens:
 | `STARTPOINT_FANOUT` | `SetupDirectionalPolicy` | Legacy startpoint-fanout phase. |
 | `LAST_GASP` | `SetupLastGaspPolicy` | Legacy last-gasp repair phase. |
 | `CRIT_VT_SWAP` | `SetupCritVtSwapPolicy` | Legacy critical VT-swap post phase. |
-
-Experimental tokens are accepted but intentionally not listed in the user-facing
-error message: `LEGACY_MT`, `MT1`, and `MEASURED_VT_SWAP`.
 
 `-phases` controls phase/policy ordering. `-sequence` still controls the move
 ordering inside legacy-style phases.
@@ -330,21 +298,9 @@ Phase selection:
 | `STARTPOINT_FANOUT` | `SetupDirectionalPolicy` | Legacy startpoint-fanout phase. |
 | `LAST_GASP` | `SetupLastGaspPolicy` | Legacy last-gasp phase. |
 | `CRIT_VT_SWAP` | `SetupCritVtSwapPolicy` | Legacy critical VT-swap post phase. |
-| `LEGACY_MT` | `SetupLegacyMtPolicy` | Experimental legacy ordering with MT candidate scoring for selected moves. |
-| `MT1` | `SetupMt1Policy` | Experimental batched MT policy for `VtSwap` and `SizeUp`. |
-| `MEASURED_VT_SWAP` | `MeasuredVtSwapPolicy` | Experimental VT-swap policy that measures candidate impact by ECO journal and STA update. |
 
 Multiple policies are implemented to show how to implement new policies.
 > NOTE: New policies except for `LEGACY` are not production quality yet.
-
-
-### Legacy vs. LegacyMt vs. Mt1
-
-| Policy | Target ordering | Move ordering | MT usage |
-|---|---|---|---|
-| `SetupLegacyPolicy` | Endpoint-by-endpoint, path-driver targets | Legacy sequence; first accepted move commits | None |
-| `SetupLegacyMtPolicy` | Same as `SetupLegacyPolicy` | Same as `SetupLegacyPolicy` | Prewarm/prepare support plus parallel candidate scoring for `VtSwap` and `SizeUp`; generation and other move types stay serial |
-| `SetupMt1Policy` | Batched worst-endpoint path-driver targets per iteration | `VtSwapMt` and `SizeUpMt` only | Target loop is serial; move-type fanout and candidate estimation use the shared thread pool; commit stays serial |
 
 
 ### Stage Pipeline
@@ -404,7 +360,6 @@ The prepare stage computes expensive target-local data once before MT-safe
 generation/estimation.
 
 ```cpp
-// Batch path used by SetupMt1Policy.
 PrepareCacheMask mask = accumulatePrepareRequirements();
 for (Target& target : targets) {
   prepareTarget(target, mask);
@@ -506,7 +461,7 @@ Current estimator approximations:
 | Fanout input slew | Propagated from the estimated upstream output slew. |
 | Interconnect slew | Preserves the current receiver/driver slew ratio; it does not recalculate full RC waveform degradation. |
 | Arc matching | Exact match is preferred; the target candidate can use relaxed port/RF matching when needed. |
-| STA slew bias | `RSZ_MT_SLEW_BIAS > 0` enables three-point load-dependent sampling on the main thread and interpolation in workers. |
+| STA slew bias | Three-point load-dependent sampling on the main thread and interpolation in workers. |
 
 `DelayEstimatorReporter` is a diagnostic layer, not part of the MT contract. It
 is used by Tcl command `report_delay_estimator_accuracy` to compare
@@ -514,14 +469,13 @@ estimator prediction against a measured STA result:
 
 ```tcl
 report_delay_estimator_accuracy \
-  -inst u1 -lib_cell BUF_X4 -estimator delay_estimator -delay_levels 1
+  -inst u1 -lib_cell BUF_X4 -estimator stage_window -delay_levels 1
 
 report_delay_estimator_accuracy \
   -inst u1 -lib_cell BUF_X4 -estimator legacy
 ```
 
-Supported estimator names are `legacy`, `delay_estimator`, `legacy_mt`, and
-`mt`; `legacy_mt` and `mt` are aliases for `delay_estimator`. `-delay_levels`
+Supported estimator names are `legacy` and `stage_window`. `-delay_levels`
 accepts `0`, `1`, or `2` for non-legacy estimators. The reporter runs on the
 main thread, finds the worst setup target for the instance, builds the requested
 estimator profile, applies the candidate cell inside an ECO journal, updates
@@ -587,10 +541,8 @@ Current generator/candidate families:
 | VtSwap | `VtSwapGenerator`, `VtSwapMtGenerator` | `VtSwapCandidate`, `VtSwapMtCandidate` |
 | Unbuffer | `UnbufferGenerator` | `UnbufferCandidate` |
 | SplitLoad | `SplitLoadGenerator` | `SplitLoadCandidate` |
-| MeasuredVtSwap | `MeasuredVtSwapGenerator` | `MeasuredVtSwapCandidate` |
 
 - Currently, only VtSwap and SizeUp moves have simple multi-threading versions, which should be enhanced further.
-- MeasuredVtSwap calculates delay impact by using expensive network editing and undo. It is added for test purposes to compare measured VT-swap impact with `DelayEstimator` results.
 
 ## Threading Model
 
@@ -625,19 +577,6 @@ Threading rules:
 | Support zero worker threads | `ThreadPool::submit()` runs tasks inline when no workers exist, so callers can still use `parallelMap()` / `parallelFor()` without a separate serial branch. |
 | Support nested `parallelMap()` / `parallelFor()` | Worker threads waiting on child tasks help drain the same pool, so nested fork-join work does not self-deadlock. |
 
-Parallelization currently used by policy implementation:
-
-```text
-SetupLegacyMtPolicy:
-  one target at a time
-    -> selected candidate scoring for VtSwap/SizeUp in parallel
-
-SetupMt1Policy:
-  targets are iterated serially
-    -> move generators for one target run through ThreadPool
-       -> candidate estimates for that target run through ThreadPool
-```
-
 
 ## File Changes
 
@@ -650,7 +589,7 @@ SetupMt1Policy:
 | Removed | `SizeUpMove.cc`, `SizeUpMove.hh` | Replaced by `move/SizeUpGenerator.*`, `move/SizeUpCandidate.*`, `move/SizeUpMt*`, `move/SizeUpMatch*`. |
 | Removed | `SizeDownMove.cc`, `SizeDownMove.hh` | Replaced by `move/SizeDownFanoutGenerator.*`, `move/SizeDownFanoutCandidate.*`. |
 | Removed | `SwapPinsMove.cc`, `SwapPinsMove.hh` | Replaced by `move/SwapPinsGenerator.*`, `move/SwapPinsCandidate.*`. |
-| Removed | `VTSwapMove.cc`, `VTSwapMove.hh` | Replaced by `move/VtSwapGenerator.*`, `move/VtSwapCandidate.*`, `move/VtSwapMt*`, `move/MeasuredVtSwap*`. |
+| Removed | `VTSwapMove.cc`, `VTSwapMove.hh` | Replaced by `move/VtSwapGenerator.*`, `move/VtSwapCandidate.*`, `move/VtSwapMt*`. |
 | Removed | `UnbufferMove.cc`, `UnbufferMove.hh` | Replaced by `move/UnbufferGenerator.*`, `move/UnbufferCandidate.*`. |
 | Removed | `SplitLoadMove.cc`, `SplitLoadMove.hh` | Replaced by `move/SplitLoadGenerator.*`, `move/SplitLoadCandidate.*`. |
 | Renamed/refactored | `ViolatorCollector.*` -> `RepairTargetCollector.*` | Setup-repair target and violator collection. |
@@ -659,9 +598,6 @@ SetupMt1Policy:
 | Added | `RepairSetupContext.hh` | Shared per-run setup state passed across phase policies. |
 | Added | `policy/SetupLegacyBase.cc`, `policy/SetupLegacyBase.hh` | Shared legacy setup-repair implementation used by legacy phase policies. |
 | Added | `policy/SetupLegacyPolicy.*`, `policy/SetupWnsPolicy.*`, `policy/SetupTnsPolicy.*`, `policy/SetupDirectionalPolicy.*`, `policy/SetupLastGaspPolicy.*`, `policy/SetupCritVtSwapPolicy.*` | Legacy-compatible repair setup phase policies. |
-| Added | `policy/SetupLegacyMtPolicy.cc`, `policy/SetupLegacyMtPolicy.hh` | Hybrid legacy policy with MT scoring for selected move types. |
-| Added | `policy/SetupMt1Policy.cc`, `policy/SetupMt1Policy.hh` | Experimental batched MT policy. |
-| Added | `policy/MeasuredVtSwapPolicy.cc`, `policy/MeasuredVtSwapPolicy.hh` | Experimental measured VT-swap policy. |
 | Modified | `rsz/Resizer.hh` | Owns the shared `MoveType` enum used by legacy and optimizer code. |
 | Added | `OptimizerTypes.cc`, `OptimizerTypes.hh` | Shared target, estimate, config, message IDs, move labels, and prepare-stage data structures. |
 | Added | `DelayEstimator.cc`, `DelayEstimator.hh` | Arc delay state construction and candidate delay estimation helpers. |

@@ -225,7 +225,6 @@ or_integration_tests(
     report_floating_nets2
     report_floating_nets3
     report_move_tracker
-    repair_setup_legacy_mt_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3
@@ -268,7 +267,6 @@ or_integration_tests(
     repair_setup_vt_swap
     repair_setup_vtswap_legacy_asap7
     repair_setup_vt_swap2
-    measured_vt_swap
     repair_fanout7_skip_pin_swap
     global_sizing
     global_sizing_threads
@@ -281,8 +279,6 @@ or_integration_tests(
     latch_borrow_chain
   PASSFAIL_TESTS
     repair_timing_fixed
-    repair_setup_legacy_mt
-    repair_setup_mt1
     repair_design_fixed_driver
     gain_buffering_top_port_hier
     cpp_tests

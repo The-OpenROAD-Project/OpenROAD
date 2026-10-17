@@ -94,7 +94,6 @@ class OptimizationPolicy
   // Main-thread prewarm stage: populate shared Resizer/dbNetwork lazy caches
   // before MT workers call generator code that reads those services.
   virtual void prewarmTargets(const std::vector<Target>& targets) const;
-  virtual bool targetPrewarmEnabled() const;
   virtual bool generatorEnabled(MoveType type) const;
 
   // Main-thread prepare stage: capture per-target STA state before MT workers
@@ -129,11 +128,6 @@ class OptimizationPolicy
                           double initial_design_area) const;
   virtual const std::vector<const sta::Pin*>& finalReportPins() const;
   bool reportRepairSummary() const;
-  // Load every policy-tunable envar into policy_config_ once at start time.
-  // Each subclass reads only the fields it actually consumes from
-  // policy_config_; loading unused fields is harmless.
-  void loadPolicyEnvars();
-
   // Reset run state at the beginning of start(); call once per run.
   void resetRun()
   {

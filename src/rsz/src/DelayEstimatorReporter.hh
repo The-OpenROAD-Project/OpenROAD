@@ -51,8 +51,12 @@ class DelayEstimatorReporter
  public:
   enum class EstimatorKind
   {
+    // The estimate of the serial moves: the gate delay at the current load
+    // plus the fanin drive resistance times the input pin cap.
     kLegacy,
-    kDelayEstimator
+    // Liberty tables propagated over a window of stages around the target,
+    // as the Mt moves estimate.
+    kStageWindow
   };
 
   // Canonical user-facing names accepted by the Tcl command and the

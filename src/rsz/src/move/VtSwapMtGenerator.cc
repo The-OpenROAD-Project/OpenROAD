@@ -85,16 +85,6 @@ std::vector<sta::LibertyCell*> VtSwapMtGenerator::selectCandidateCells(
       candidates.push_back(cell);
     }
   }
-
-  if (policy_config_.max_candidate_generation <= 0
-      || candidates.size()
-             <= static_cast<size_t>(policy_config_.max_candidate_generation)) {
-    return candidates;
-  }
-
-  // Keep the leakage-ascending order returned by getVTEquivCells() and trim
-  // only the suffix.
-  candidates.resize(policy_config_.max_candidate_generation);
   return candidates;
 }
 

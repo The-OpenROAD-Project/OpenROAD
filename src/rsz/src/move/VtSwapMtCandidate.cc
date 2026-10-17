@@ -33,8 +33,8 @@ Estimate makeAcceptedEstimate(const float score)
 
 const char* applyLogFormat(const bool accepted)
 {
-  return accepted ? "ACCEPT vt_swap_mt1 {}: {} -> {}"
-                  : "REJECT vt_swap_mt1 {}: {} -> {} swap failed";
+  return accepted ? "ACCEPT vt_swap_mt {}: {} -> {}"
+                  : "REJECT vt_swap_mt {}: {} -> {} swap failed";
 }
 
 }  // namespace

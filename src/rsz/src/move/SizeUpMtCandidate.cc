@@ -54,7 +54,7 @@ MoveResult SizeUpMtCandidate::apply()
                RSZ,
                "opt_moves",
                1,
-               "REJECT size_up_mt1 {}: {} -> {} max-cap re-check failed",
+               "REJECT size_up_mt {}: {} -> {} max-cap re-check failed",
                logName(),
                current_cell_->name(),
                replacement_->name());
@@ -73,7 +73,7 @@ MoveResult SizeUpMtCandidate::apply()
                RSZ,
                "opt_moves",
                1,
-               "ACCEPT size_up_mt1 {}: {} -> {}",
+               "ACCEPT size_up_mt {}: {} -> {}",
                logName(),
                current_cell_name,
                replacement_name);
@@ -89,7 +89,7 @@ MoveResult SizeUpMtCandidate::apply()
              RSZ,
              "opt_moves",
              1,
-             "REJECT size_up_mt1 {}: {} -> {} replace failed",
+             "REJECT size_up_mt {}: {} -> {} replace failed",
              logName(),
              current_cell_->name(),
              replacement_->name());

@@ -40,7 +40,6 @@
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
-#include "utl/env.h"
 #include "utl/mem_stats.h"
 
 namespace rsz {
@@ -101,7 +100,6 @@ bool OptimizationPolicy::start()
   // between two legacy-derived phases would otherwise leave the later
   // phase printing the pre-sizing area. One area walk per phase.
   setup_context_.progress_area_at_edit = -1;
-  loadPolicyEnvars();
   if (is_experimental) {
     logger_->warn(utl::RSZ,
                   2024,
@@ -302,25 +300,6 @@ bool OptimizationPolicy::reportRepairSummary() const
   return repaired;
 }
 
-void OptimizationPolicy::loadPolicyEnvars()
-{
-  // VtSwap candidate cap (per target, per generator); 0 means unlimited.
-  policy_config_.max_candidate_generation
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_CANDIDATES", 0);
-  // Hard cap on accepted moves; 0 means unlimited (per OptimizationPolicyConfig
-  // docs).
-  policy_config_.max_committed_moves
-      = utl::readEnvarNonNegativeInt("RSZ_VTSWAP_MAX_MOVES", 0);
-  // Number of fanin/fanout stages included in MT delay estimation; 0 keeps
-  // target-stage-only scoring.
-  policy_config_.delay_estimation_levels
-      = utl::readEnvarInt("RSZ_MT_DELAY_LEVELS", 1);
-  // Experimental STA slew-bias sampling. Negative values are treated the same
-  // as 0.
-  policy_config_.delay_estimator_sta_slew_bias
-      = utl::readEnvarInt("RSZ_MT_SLEW_BIAS", 1) > 0;
-}
-
 GeneratorContext OptimizationPolicy::makeGeneratorContext() const
 {
   return GeneratorContext{.resizer = resizer_,
@@ -432,11 +411,6 @@ void OptimizationPolicy::prewarmTargets(
   }
 }
 
-bool OptimizationPolicy::targetPrewarmEnabled() const
-{
-  return false;
-}
-
 bool OptimizationPolicy::generatorEnabled(const MoveType) const
 {
   return true;
@@ -457,12 +431,12 @@ void OptimizationPolicy::prepareArcDelayState(Target& target) const
   }
 
   FailReason fail_reason = FailReason::kNone;
-  target.arc_delay = DelayEstimator::buildContext(
-      resizer_,
-      target,
-      policy_config_.delay_estimation_levels,
-      &fail_reason,
-      policy_config_.delay_estimator_sta_slew_bias);
+  target.arc_delay
+      = DelayEstimator::buildContext(resizer_,
+                                     target,
+                                     policy_config_.delay_estimation_levels,
+                                     &fail_reason,
+                                     policy_config_.sta_slew_bias);
 }
 
 void OptimizationPolicy::prewarmTargetLibertyCaches(

@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "OptimizationPolicyConfig.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 
@@ -46,7 +47,6 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
-inline constexpr int kMsgPolicyCommittedMoves = 2023;
 
 enum class FailReason : uint8_t
 {
@@ -429,27 +429,6 @@ struct OptimizerRunConfig
   bool skip_crit_vt_swap{false};
   std::vector<MoveType> sequence;
   std::string phases;
-};
-
-// Policy-to-generator configuration channel for tunable knobs that do not
-// belong in the OptimizerRunConfig.
-struct OptimizationPolicyConfig
-{
-  // Cap on how many per-target candidates a generator expands. A value of 0
-  // means unlimited.
-  int max_candidate_generation{0};
-
-  // Experimental. Hard cap on accepted moves for policies that support bounded
-  // commits. A value of 0 means unlimited.
-  int max_committed_moves{0};
-
-  // Number of timing stages to include before and after the target stage in MT
-  // delay estimation. 0 preserves target-stage-only scoring.
-  int delay_estimation_levels{0};
-
-  // Experimental. Enable load-dependent STA output-slew bias sampling for
-  // the fanin neighbor stage in MT delay estimation.
-  bool delay_estimator_sta_slew_bias{false};
 };
 
 // === Move type labels ======================================================
