@@ -50,6 +50,7 @@ struct RouterConfiguration
   bool DO_PA = true;
   bool SINGLE_STEP_DR = false;
   bool SAVE_GUIDE_UPDATES = false;
+  bool ADAPTIVE_STRATEGY = false;
 
   std::string VIAINPIN_BOTTOMLAYER_NAME;
   std::string VIAINPIN_TOPLAYER_NAME;

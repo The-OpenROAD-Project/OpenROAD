@@ -1,0 +1,15 @@
+source "helpers.tcl"
+
+read_lef testcase/ispd18_sample/ispd18_sample.input.lef
+read_def testcase/ispd18_sample/ispd18_sample.input.def
+read_guides testcase/ispd18_sample/ispd18_sample.input.guide
+set_routing_layers -signal Metal1-Metal9
+detailed_route -output_drc [make_result_file ispd18_sample_adaptive.output.drc.rpt] \
+  -output_maze [make_result_file ispd18_sample_adaptive.output.maze.log] \
+  -output_guide_coverage [make_result_file ispd18_sample_adaptive.coverage.csv] \
+  -adaptive_strategy \
+  -verbose 0
+
+set def_file [make_result_file ispd18_sample_adaptive.def]
+write_def $def_file
+diff_files ispd18_sample.defok $def_file

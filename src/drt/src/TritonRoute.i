@@ -92,7 +92,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int minAccessPoints,
                         bool saveGuideUpdates,
                         const char* repairPDNLayerName,
-                        int drcReportIterStep)
+                        int drcReportIterStep,
+                        bool adaptiveStrategy = false)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
@@ -115,7 +116,8 @@ void detailed_route_cmd(const char* outputMazeFile,
                     minAccessPoints,
                     saveGuideUpdates,
                     repairPDNLayerName,
-                    num_threads});
+                    num_threads,
+                    adaptiveStrategy});
   router->main();
   router->setDistributed(false);
 }

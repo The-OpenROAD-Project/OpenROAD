@@ -28,6 +28,7 @@ sta::define_cmd_args "detailed_route" {
     [-save_guide_updates]
     [-repair_pdn_vias layer]
     [-single_step_dr]
+    [-adaptive_strategy]
 }
 
 proc detailed_route { args } {
@@ -38,7 +39,7 @@ proc detailed_route { args } {
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
       -cloud_size -min_access_points -repair_pdn_vias -drc_report_iter_step} \
     flags {-disable_via_gen -distributed -clean_patches -no_pin_access \
-           -single_step_dr -save_guide_updates}
+           -single_step_dr -save_guide_updates -adaptive_strategy}
   sta::check_argc_eq0 "detailed_route" $args
 
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
@@ -48,6 +49,7 @@ proc detailed_route { args } {
   # development.  It is not listed in the help string intentionally.
   set single_step_dr [expr [info exists flags(-single_step_dr)]]
   set save_guide_updates [expr [info exists flags(-save_guide_updates)]]
+  set adaptive_strategy [expr [info exists flags(-adaptive_strategy)]]
 
   if { [info exists keys(-repair_pdn_vias)] } {
     set repair_pdn_vias $keys(-repair_pdn_vias)
@@ -166,7 +168,8 @@ proc detailed_route { args } {
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $via_access_layer $or_seed $or_k $verbose \
     $clean_patches $no_pin_access $single_step_dr $min_access_points \
-    $save_guide_updates $repair_pdn_vias $drc_report_iter_step
+    $save_guide_updates $repair_pdn_vias $drc_report_iter_step \
+    $adaptive_strategy
 }
 
 proc detailed_route_num_drvs { args } {
