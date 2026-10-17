@@ -21,6 +21,19 @@ namespace rsz {
 
 using utl::RSZ;
 
+namespace {
+
+void appendReconnectedLoad(MoveImpact& impact,
+                           sta::Network* network,
+                           const sta::Pin* load_pin)
+{
+  appendUnique(impact.reconnect_pins, load_pin);
+  appendUnique(impact.reconnect_instances, network->instance(load_pin));
+  appendUnique(impact.timing_effect_instances, network->instance(load_pin));
+}
+
+}  // namespace
+
 RebufferMtCandidate::RebufferMtCandidate(
     Resizer& resizer,
     const Target& target,
@@ -73,6 +86,36 @@ Estimate RebufferMtCandidate::estimate()
 
   estimate.legal = true;
   return estimate;
+}
+
+std::vector<const sta::Pin*> RebufferMtCandidate::guardedSidePins() const
+{
+  std::vector<const sta::Pin*> pins;
+  pins.reserve(side_contexts_.size());
+  for (const BufferTreeSidePathContext& side : side_contexts_) {
+    pins.push_back(side.load_pin);
+  }
+
+  return pins;
+}
+
+MoveImpact RebufferMtCandidate::impact() const
+{
+  MoveImpact impact = MoveCandidate::impact();
+  impact.complete = true;
+
+  sta::Network* network = resizer_.network();
+  sta::Net* net = plan_.flat_net;
+  appendUnique(impact.write_nets, net);
+  appendUnique(impact.timing_effect_nets, net);
+  sta::Instance* driver_inst = network->instance(target().driver_pin);
+  appendUnique(impact.write_instances, driver_inst);
+  appendUnique(impact.timing_effect_instances, driver_inst);
+
+  for (const BufferTreeLoadPath& load_path : plan_.load_paths) {
+    appendReconnectedLoad(impact, network, load_path.load_pin);
+  }
+  return impact;
 }
 
 MoveResult RebufferMtCandidate::apply()

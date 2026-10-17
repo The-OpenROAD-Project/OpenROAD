@@ -705,7 +705,7 @@ TEST_F(TestResizerMtSequential,
   EXPECT_GT(sta_->slack(data_vertex, sta::MinMax::max()), 0.0f);
 }
 
-TEST(TestResizerMtThreadPool, OppositeRfSideLossChargesNegativeRegionOnly)
+TEST(TestDelayEstimatorRules, OppositeRfSideLossChargesNegativeRegionOnly)
 {
   // Violating opposite transition: every picosecond of growth is lost.
   EXPECT_FLOAT_EQ(oppositeRfSideLoss(-10e-12f, 3e-12f), 3e-12f);

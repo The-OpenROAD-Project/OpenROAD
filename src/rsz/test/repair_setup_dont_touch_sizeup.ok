@@ -20,5 +20,16 @@ Repair policy: LEGACY
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
 All dont-touch instances preserved after LEGACY.
+Manual ECO: restored r1 to DFF_X1.
+Repair policy: PARALLEL_EVAL
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[WARNING RSZ-0062] Unable to repair all setup violations.
+All dont-touch instances preserved after PARALLEL_EVAL.
 worst slack max -0.23
 tns max -0.230

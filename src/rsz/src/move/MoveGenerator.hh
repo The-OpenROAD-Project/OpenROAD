@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -40,6 +42,11 @@ struct GeneratorContext
   MoveCommitter& committer;  // For move conflict check in pending moves.
   const OptimizerRunConfig& run_config;
   const OptimizationPolicyConfig& policy_config;
+  // Load pins on the worst paths of violating endpoints, or null.  Side-load
+  // models weight only these pins fully.
+  const std::unordered_set<const sta::Pin*>* critical_load_pins{nullptr};
+  // Equivalent input ports found so far, or null to compute them per target.
+  EquivPinCache* equiv_pin_cache{nullptr};
 };
 
 // === Move generator interface ==============================================
@@ -58,6 +65,9 @@ struct GeneratorContext
 //   3. generate() -- expand one Target into zero or more concrete
 //      MoveCandidate objects.  Candidates are owned by unique_ptr and
 //      returned up to the policy which decides which to estimate/commit.
+//   5. startPhase()/finishPhase() -- set up and release the generator's
+//      state for one phase, such as a planner per worker thread.  The default
+//      keeps none.
 //
 // Thread-safety: generate()/isApplicable() run on worker threads for MT
 // policies.  Implementations should read prepared Target fields and avoid STA
@@ -92,6 +102,14 @@ class MoveGenerator
   }
   virtual std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) = 0;
+
+  // === Phase lifecycle =====================================================
+  // Main thread, from the policy's start(): until finishPhase(), up to
+  // `worker_count` worker threads call generate() at once; with zero, the
+  // main thread calls it.
+  virtual void startPhase(size_t worker_count) {}
+  // Main thread, from the policy's finish(), after the last generate().
+  virtual void finishPhase() {}
 
  protected:
   // === Target-view requirements ============================================
