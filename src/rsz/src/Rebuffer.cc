@@ -81,9 +81,8 @@ bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
     case BnetType::via:
     case BnetType::junction:
       return true;
-    default:
-      return true;
   }
+  return true;
 }
 
 }  // namespace
@@ -2320,8 +2319,6 @@ BufferedNetPtr Rebuffer::cloneBufferedNetTree(const BufferedNetPtr& tree)
                                         resizer_,
                                         estimate_parasitics_);
       break;
-    default:
-      logger_->critical(RSZ, 1009, "unhandled BufferedNet type");
   }
 
   cloned->setSlackTransition(tree->slackTransition());
@@ -2391,8 +2388,6 @@ void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
       buildLoadPaths(tree->ref(), prefix, load_paths);
       buildLoadPaths(tree->ref2(), prefix, load_paths);
       return;
-    default:
-      logger_->critical(RSZ, 1011, "unhandled BufferedNet type");
   }
 }
 
@@ -2449,8 +2444,6 @@ void Rebuffer::appendTreeSignature(const BufferedNetPtr& tree,
       appendTreeSignature(tree->ref(), signature);
       appendTreeSignature(tree->ref2(), signature);
       return;
-    default:
-      logger_->critical(RSZ, 1012, "unhandled BufferedNet type");
   }
 }
 

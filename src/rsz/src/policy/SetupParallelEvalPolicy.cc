@@ -812,9 +812,19 @@ bool SetupParallelEvalPolicy::generatorAllowed(
         return false;
       }
       return true;
-    default:
+    case MoveType::kClone:
+    case MoveType::kSizeUp:
+    case MoveType::kSizeUpMatch:
+    case MoveType::kSizeDownFanout:
+    case MoveType::kSwapPins:
+    case MoveType::kVtSwap:
+    case MoveType::kSplitLoad:
+    case MoveType::kReroute:
+    case MoveType::kBufferToInverters:
+    case MoveType::kCount:
       return true;
   }
+  return true;
 }
 
 TargetEvaluation SetupParallelEvalPolicy::collectGenerated(GenerationTask& task)
