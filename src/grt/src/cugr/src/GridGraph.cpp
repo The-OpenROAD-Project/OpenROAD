@@ -831,6 +831,58 @@ void GridGraph::commit(const int layer_index,
 {
   graph_edges_[layer_index][lower.x()][lower.y()].demand += demand * net_factor;
   congestion_info_dirty_ = true;
+  markCongestionTile(layer_index, lower.x(), lower.y());
+}
+
+// Every demand change funnels through commit(), so marking the tile here
+// catches rerouting, rip-up and net removal alike -- anything that moves an
+// edge, whether or not it leaves a route behind to infer it from.
+void GridGraph::markCongestionTile(const int layer_index,
+                                   const int x,
+                                   const int y)
+{
+  const int x_size = getXSize();
+  const int y_size = getYSize();
+  if (x < 0 || y < 0 || x >= x_size || y >= y_size) {
+    return;
+  }
+  if (congestion_tile_marked_.size() != static_cast<size_t>(x_size) * y_size) {
+    congestion_tile_marked_.assign(static_cast<size_t>(x_size) * y_size, false);
+    congestion_dirty_tiles_.clear();
+  }
+  const size_t index = static_cast<size_t>(x) * y_size + y;
+  if (!congestion_tile_marked_[index]) {
+    congestion_tile_marked_[index] = true;
+    congestion_dirty_tiles_.emplace_back(x, y);
+  }
+  // The last cell along the layer's preferred direction has no edge of its
+  // own and reports its predecessor's, so this edge is also its source.
+  const bool is_h = getLayerDirection(layer_index) == MetalLayer::H;
+  if (is_h && x == x_size - 2) {
+    markCongestionTile(layer_index, x_size - 1, y);
+  } else if (!is_h && y == y_size - 2) {
+    markCongestionTile(layer_index, x, y_size - 1);
+  }
+}
+
+void GridGraph::markAllCongestionTiles()
+{
+  const int x_size = getXSize();
+  const int y_size = getYSize();
+  congestion_tile_marked_.assign(static_cast<size_t>(x_size) * y_size, true);
+  congestion_dirty_tiles_.clear();
+  congestion_dirty_tiles_.reserve(static_cast<size_t>(x_size) * y_size);
+  for (int x = 0; x < x_size; x++) {
+    for (int y = 0; y < y_size; y++) {
+      congestion_dirty_tiles_.emplace_back(x, y);
+    }
+  }
+}
+
+void GridGraph::clearCongestionDirtyTiles()
+{
+  congestion_tile_marked_.assign(congestion_tile_marked_.size(), false);
+  congestion_dirty_tiles_.clear();
 }
 
 void GridGraph::commitWire(const int layer_index,
@@ -1037,6 +1089,7 @@ void GridGraph::restoreDemand(
       }
     }
   }
+  markAllCongestionTiles();
 }
 
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,

@@ -1935,19 +1935,6 @@ class dbNet : public dbObject
   void setSelect(bool value);
 
   ///
-  /// Returns the wire-ordered flag value. This flag specified that the
-  /// wires of this net have been ordered into a single dbWire.
-  ///
-  bool isWireOrdered();
-
-  ///
-  /// Set the wire-ordered flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setWireOrdered(bool value);
-
-  ///
   /// rc_graph flag set when Rseg and CapNodes were created
   ///
   void setRCgraph(bool value);
@@ -3723,6 +3710,16 @@ class dbWire : public dbObject
   /// Returns true if this wire is a global-wire
   ///
   bool isGlobalWire();
+
+  ///
+  /// Returns true if this wire has been ordered.
+  ///
+  bool isOrdered();
+
+  ///
+  /// Set the ordered flag.
+  ///
+  void setOrdered(bool ordered);
 
   ///
   /// Get the bounding box of this wire

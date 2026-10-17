@@ -1847,39 +1847,97 @@ void CUGR::updateDbCongestion()
       continue;
     }
 
-    // Write per-cell capacity/usage matching FastRoute's semantics:
-    //   capacity = original (pre-blockage, pre-adjustment) track count
-    //   usage    = routing demand + lost capacity (blockage + adjustment)
-    // Boundary cells without a corresponding edge replicate the previous
-    // cell's value, again matching FastRoute's last_cell_cap fall-through.
-    // Iterate along the layer's preferred direction in the inner loop so
-    // the fall-through carries forward correctly for both H and V.
-    const int direction = grid_graph_->getLayerDirection(layer);
-    const bool is_h = direction == MetalLayer::H;
-    const int outer_size = is_h ? y_size : x_size;
-    const int inner_size = is_h ? x_size : y_size;
-    for (int o = 0; o < outer_size; o++) {
-      double last_cap = 0;
-      double last_use = 0;
-      for (int i = 0; i < inner_size; i++) {
-        const int x = is_h ? i : o;
-        const int y = is_h ? o : i;
+    for (int x = 0; x < x_size; x++) {
+      for (int y = 0; y < y_size; y++) {
         double cap, use;
-        if (i == inner_size - 1) {
-          cap = last_cap;
-          use = last_use;
-        } else {
-          const GraphEdge& edge = grid_graph_->getEdge(layer, x, y);
-          const double initial
-              = grid_graph_->getInitialEdgeCapacity(layer, x, y);
-          cap = initial;
-          use = edge.demand + (initial - edge.capacity);
-        }
+        gcellCongestion(layer, x, y, cap, use);
         db_gcell->setCapacity(db_layer, x, y, cap);
         db_gcell->setUsage(db_layer, x, y, use);
-        last_cap = cap;
-        last_use = use;
       }
+    }
+  }
+  grid_graph_->clearCongestionDirtyTiles();
+}
+
+// Per-cell capacity/usage matching FastRoute's semantics:
+//   capacity = original (pre-blockage, pre-adjustment) track count
+//   usage    = routing demand + lost capacity (blockage + adjustment)
+// The last cell along the layer's preferred direction has no edge of its own
+// and reports its predecessor's values, matching FastRoute's last_cell_cap
+// fall-through.  Derived from the cell's own position rather than carried
+// across a loop, so an incremental refresh cannot drift from a rebuild.
+void CUGR::gcellCongestion(const int layer,
+                           const int x,
+                           const int y,
+                           double& cap,
+                           double& use) const
+{
+  const bool is_h = grid_graph_->getLayerDirection(layer) == MetalLayer::H;
+  const int inner_size
+      = is_h ? grid_graph_->getXSize() : grid_graph_->getYSize();
+  int edge_x = x;
+  int edge_y = y;
+  if ((is_h ? x : y) == inner_size - 1) {
+    if (inner_size < 2) {
+      cap = 0;
+      use = 0;
+      return;
+    }
+    if (is_h) {
+      edge_x--;
+    } else {
+      edge_y--;
+    }
+  }
+  const GraphEdge& edge = grid_graph_->getEdge(layer, edge_x, edge_y);
+  const double initial
+      = grid_graph_->getInitialEdgeCapacity(layer, edge_x, edge_y);
+  cap = initial;
+  use = edge.demand + (initial - edge.capacity);
+}
+
+const std::vector<odb::Point>& CUGR::getCongestionDirtyTiles() const
+{
+  static const std::vector<odb::Point> kEmpty;
+  return grid_graph_ ? grid_graph_->getCongestionDirtyTiles() : kEmpty;
+}
+
+void CUGR::clearCongestionDirtyTiles()
+{
+  if (grid_graph_) {
+    grid_graph_->clearCongestionDirtyTiles();
+  }
+}
+
+void CUGR::updateDbCongestionTiles(const std::vector<odb::Point>& tiles)
+{
+  if (!grid_graph_ || !design_ || tiles.empty()) {
+    return;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr) {
+    // Nothing to refresh into; the caller still owes a full rebuild.
+    return;
+  }
+  const int x_size = grid_graph_->getXSize();
+  const int y_size = grid_graph_->getYSize();
+  odb::dbTech* db_tech = db_->getTech();
+  for (int layer = constants_.min_routing_layer;
+       layer < grid_graph_->getNumLayers();
+       layer++) {
+    odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
+    if (db_layer == nullptr) {
+      continue;
+    }
+    for (const odb::Point& tile : tiles) {
+      const int x = tile.x();
+      const int y = tile.y();
+      if (x < 0 || y < 0 || x >= x_size || y >= y_size) {
+        continue;
+      }
+      double cap, use;
+      gcellCongestion(layer, x, y, cap, use);
+      db_gcell->setUsage(db_layer, x, y, use);
     }
   }
 }

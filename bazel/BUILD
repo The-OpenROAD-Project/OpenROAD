@@ -3,7 +3,7 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
 
@@ -15,6 +15,52 @@ config_setting(
     name = "stamp",
     values = {"stamp": "1"},
     visibility = ["//visibility:public"],
+)
+
+# The Bazel replacement for the CMake-generated ord/Version.hh. The version
+# is written into the linked binary by stamped_binary.bzl.
+cc_library(
+    name = "openroad_version",
+    srcs = ["version/version.cc"],
+    hdrs = ["version/ord/Version.hh"],
+    includes = ["version"],
+    visibility = ["//:__pkg__"],
+)
+
+# Writes the version into a linked binary for stamped_binary.bzl.
+py_binary(
+    name = "stamp_version",
+    srcs = ["stamp_version.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "stamp_version_test",
+    size = "small",
+    srcs = [
+        "stamp_version.py",
+        "stamp_version_test.py",
+    ],
+    imports = ["."],
+)
+
+# Stamps the real linked binary, so the slot layout in version/version.cc and
+# stamp_version.py stay in sync. Runs without --stamp.
+py_test(
+    name = "stamp_version_binary_test",
+    size = "small",
+    srcs = ["stamp_version_binary_test.py"],
+    args = [
+        "$(rootpath :stamp_version)",
+        "$(rootpath //:openroad_unstamped)",
+    ] + select({
+        "@platforms//os:macos": ["--codesign"],
+        "//conditions:default": [],
+    }),
+    data = [
+        ":stamp_version",
+        "//:openroad_unstamped",
+    ],
 )
 
 # Driver script that orchestrates man page generation inside Bazel's sandbox.
