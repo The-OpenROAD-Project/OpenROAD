@@ -216,7 +216,9 @@ struct OptimizationPolicyConfig
   // PARALLEL_EVAL turns the guard off.
   bool dual_rf_drive_guard{true};
 
-  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.
+  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.  Set by
+  // an Fmax sweep when the two moves started to share one pool, so that a VT
+  // swap wins over a size-up of similar gain.
   float size_up_mt_score_scale{0.75f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;
