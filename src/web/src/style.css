@@ -2643,25 +2643,30 @@ body {
     pointer-events: none;
 }
 
-/* Upstream inverts the whole SVG. With no timing path up there is nothing to
-   exclude, so one root filter inverts the schematic in a single pass instead
-   of giving every shape its own filter. */
-html[data-theme="dark"] .schematic-svg-container:not(.schematic-timing-active) svg {
-    filter: invert(1) hue-rotate(180deg);
+/* The skin paints the whole schematic through a few inherited declarations
+   (svg{stroke}, text{fill}, .splitjoinBody{fill}) rather than per-element
+   attributes, so dark mode re-points those instead of inverting anything.
+   A filter would have to run per shape to spare the timing overlay, and its
+   paint cost would scale with element count on every pan; this costs nothing
+   at paint time and leaves overlay colors byte-exact, since those are set as
+   inline styles and so outrank these rules. */
+html[data-theme="dark"] .schematic-svg-container svg {
+    stroke: var(--fg-primary);
 }
 
-/* While a path is highlighted the overlay must stay out of the inversion, so
-   shapes are inverted one by one to keep their red/cyan/green colors. The
-   transparent hit-target rects paint nothing, so they are skipped too. */
-html[data-theme="dark"] .schematic-timing-active svg path:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg rect:not(.schematic-timing-node):not([data-openroad-hit-target]),
-html[data-theme="dark"] .schematic-timing-active svg circle:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg ellipse:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg line:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg polyline:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg polygon:not(.schematic-timing-node),
-html[data-theme="dark"] .schematic-timing-active svg text:not(.schematic-timing-node) {
-    filter: invert(1) hue-rotate(180deg);
+html[data-theme="dark"] .schematic-svg-container svg text,
+html[data-theme="dark"] .schematic-svg-container svg .splitjoinBody {
+    fill: var(--fg-primary);
+}
+
+/* Junction dots carry netlistsvg's inline fill until renderNetlist moves it
+   onto this class; the skin's hollow inversion bubbles keep svg{fill:none}. */
+.schematic-svg-container svg .schematic-net-dot {
+    fill: #000;
+}
+
+html[data-theme="dark"] .schematic-svg-container svg .schematic-net-dot {
+    fill: var(--fg-primary);
 }
 
 /* ─── DRC Widget ─────────────────────────────────────────────────────────── */

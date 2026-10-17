@@ -1039,37 +1039,6 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
-    // Dark mode inverts the whole SVG at the root unless this class is set,
-    // so it has to track whether any shape is being held out of the inversion.
-    it('marks the container only while overlay shapes are in the SVG', () => {
-        const { widget, container } = makeWidget();
-        const { groups } = makeCells(widget, ['u1']);
-        const marked = () =>
-            widget.svgContainer.classList.contains('schematic-timing-active');
-
-        assert.equal(marked(), false);
-
-        widget.showTimingPath(timingPath([node('u1')]));
-        assert.equal(overlayIn(groups.u1).length, 1);
-        assert.equal(marked(), true);
-
-        widget.showTimingPath(null);
-        assert.equal(marked(), false);
-        container.element.remove();
-    });
-
-    it('leaves the container unmarked when no path cell is on screen', () => {
-        const { widget, container } = makeWidget();
-        makeCells(widget, ['other']);
-
-        widget.showTimingPath(timingPath([node('u1')]));
-
-        assert.equal(
-            widget.svgContainer.classList.contains('schematic-timing-active'),
-            false);
-        container.element.remove();
-    });
-
     it('reports when the path has no cells in the current schematic', () => {
         const { widget, container } = makeWidget();
         makeCells(widget, ['other']);
@@ -1826,6 +1795,30 @@ describe('canonicalizeForSkin', () => {
     it('returns the input unchanged when there is no top module', () => {
         const json = { foo: 1 };
         assert.strictEqual(canonicalizeForSkin(json), json);
+    });
+});
+
+describe('SchematicWidget net junction dots', () => {
+    it('moves netlistsvg inline fills onto a class, sparing skin bubbles', () => {
+        const { widget, container } = makeWidget();
+        const svg = document.createElementNS(svgNS, 'svg');
+        // netlistsvg emits junction dots with an inline fill.
+        const dot = document.createElementNS(svgNS, 'circle');
+        dot.setAttribute('style', 'fill:#000');
+        dot.setAttribute('class', 'net_4');
+        // The skin's inversion bubbles are hollow and carry no inline fill.
+        const bubble = document.createElementNS(svgNS, 'circle');
+        bubble.setAttribute('class', 'cell_u1');
+        svg.append(dot, bubble);
+        widget._svgEl = svg;
+
+        widget._tagNetJunctionDots();
+
+        assert.equal(dot.style.getPropertyValue('fill'), '');
+        assert.ok(dot.classList.contains('schematic-net-dot'));
+        assert.ok(!bubble.classList.contains('schematic-net-dot'));
+        assert.equal(bubble.getAttribute('style'), null);
+        container.element.remove();
     });
 });
 

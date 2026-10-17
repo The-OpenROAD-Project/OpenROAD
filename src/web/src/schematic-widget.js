@@ -27,6 +27,9 @@ const TIMING_NODE_STYLE = {
 };
 const TIMING_STYLE_PROPS = ['stroke', 'fill'];
 
+// Net junction dots, retagged at render time so the theme can color them.
+const NET_DOT_CLASS = 'schematic-net-dot';
+
 function svgEl(tag, attrs) {
     const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (const [k, v] of Object.entries(attrs)) {
@@ -636,7 +639,6 @@ export class SchematicWidget {
             }
             el.classList.remove(TIMING_OVERLAY_CLASS);
         }
-        this.svgContainer.classList.remove('schematic-timing-active');
     }
 
     _styleTimingElement(el, style, fill = null) {
@@ -647,10 +649,6 @@ export class SchematicWidget {
                     el.style.getPropertyValue(prop));
             }
             el.classList.add(TIMING_OVERLAY_CLASS);
-            // Dark mode inverts the SVG at the root until an overlay has to
-            // be held out of the inversion; only then is it worth paying for
-            // a filter per shape. Kept in step with TIMING_OVERLAY_CLASS.
-            this.svgContainer.classList.add('schematic-timing-active');
         }
         el.style.setProperty('stroke', style.color);
         if (fill !== null) {
@@ -1363,6 +1361,7 @@ export class SchematicWidget {
             const cells = yosysJson.modules && yosysJson.modules.top
                         && yosysJson.modules.top.cells || {};
             this._registerSvgCellHitTargets(Object.keys(cells));
+            this._tagNetJunctionDots();
             if (this._svgEl) {
                 // Remove any CSS size constraints — transform-based zoom handles sizing
                 this._svgEl.style.maxWidth = '';
@@ -1436,6 +1435,18 @@ export class SchematicWidget {
                 if (display === null) el.removeAttribute('display');
                 else el.setAttribute('display', display);
             }
+        }
+    }
+
+    // netlistsvg writes net junction dots with an inline fill:#000, which no
+    // stylesheet can re-point. Move it onto a class so the theme owns the
+    // color, and leave the skin's hollow inversion bubbles alone.
+    _tagNetJunctionDots() {
+        if (!this._svgEl) return;
+        for (const dot of this._svgEl.querySelectorAll('circle[style]')) {
+            if (!dot.style.getPropertyValue('fill')) continue;
+            dot.style.removeProperty('fill');
+            dot.classList.add(NET_DOT_CLASS);
         }
     }
 

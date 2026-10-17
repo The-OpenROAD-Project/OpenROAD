@@ -279,10 +279,10 @@ path, rect, circle, polygon {
     <rect width="30" height="40" s:generic="body" class="$cell_id"/>
 
     <g transform="translate(30, 10)" s:x="30" s:y="10" s:pid="out0">
-      <text x="5" y="-4" style="fill:#000; stroke:none" class="$cell_id">out0</text>
+      <text x="5" y="-4" class="$cell_id">out0</text>
     </g>
     <g transform="translate(30, 30)" s:x="30" s:y="30" s:pid="out1">
-      <text x="5" y="-4" style="fill:#000;stroke:none" class="$cell_id">out1</text>
+      <text x="5" y="-4" class="$cell_id">out1</text>
     </g>
     <g transform="translate(0, 10)" s:x="0" s:y="10" s:pid="in0">
       <text x="-3" y="-4" class="inputPortLabel $cell_id">in0</text>
