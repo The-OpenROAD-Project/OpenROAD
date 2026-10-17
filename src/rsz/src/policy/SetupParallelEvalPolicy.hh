@@ -305,7 +305,8 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // single-move batches.
   bool unbuffer_in_sequence_{false};
 
-  // Moves of the batch under evaluation.
+  // Moves of the batch under evaluation.  The candidates and the swaps point
+  // into the pool of iterate() and are cleared when it returns.
   std::vector<sta::Instance*> batch_instances_;
   std::vector<MoveCandidate*> batch_candidates_;
   // Cell swaps eligible for in-place salvage of the current batch.

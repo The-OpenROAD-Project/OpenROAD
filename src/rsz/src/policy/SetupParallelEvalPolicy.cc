@@ -232,6 +232,7 @@ void SetupParallelEvalPolicy::resetRunState()
   batch_journal_open_ = false;
   batch_instances_.clear();
   batch_candidates_.clear();
+  batch_swaps_.clear();
   rebuffer_targets_in_batch_ = 0;
   tail_.reset();
   tabu_.reset();
@@ -310,6 +311,10 @@ void SetupParallelEvalPolicy::iterate()
 
   applyStopRules(batch_moves);
   printTrackerBatchSummary();
+
+  // The candidates belong to the pool, which ends here.
+  batch_candidates_.clear();
+  batch_swaps_.clear();
 }
 
 bool SetupParallelEvalPolicy::judgeBatch(BatchPool& pool,
