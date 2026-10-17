@@ -12,22 +12,34 @@ _PAGE = {
     "app.min.js": "src/web/bundle/app.min.js",
 }
 _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
+_ENTRIES = ("src/web/src/entry-app.js",)
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
-# whole: XML namespaces, homepage links in the kept comments.
+# whole and in lower case: XML namespaces, ELK's model URIs, links in comments
+# and messages.
 _IDENTIFIER_URLS = {
     "http://www.w3.org/1999/xlink",
     "http://www.w3.org/2000/svg",
+    "http://www.w3.org/2000/xmlns/",
+    "http://www.w3.org/2001/xmlschema",
+    "http://www.w3.org/xml/1998/namespace",
+    "http://www.eclipse.org/elk/elkgraph",
+    "http://www.eclipse.org/emf/2002/ecore",
+    "http://www.eclipse.org/emf/2003/xmltype",
+    "http:///org/eclipse/emf/ecore/util/extendedmetadata",
+    "http://mths.be/fromcodepoint",
+    "http://underscorejs.org/license",
+    "https://lodash.com/",
+    "https://lodash.com/license",
+    "https://openjsf.org/",
+    "https://npms.io/search?q=ponyfill",
     "https://leafletjs.com",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
 }
 
 # Libraries the page still loads from CDNs, until the bundle takes them over.
-_STILL_REMOTE = (
-    "https://nturley.github.io/netlistsvg/",
-    "https://esm.sh/three@0.160.0",
-)
+_STILL_REMOTE = ("https://esm.sh/three@0.160.0",)
 
 _URL = r"[^\"'`) >,;\n]*"
 # Schemes and hosts are case-insensitive, so the scan is too.
@@ -74,6 +86,7 @@ class Scanner(unittest.TestCase):
         self.assertTrue(_is_identifier_url("http://www.w3.org/2000/svg#x"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
+        self.assertFalse(_is_identifier_url("https://lodash.com/lodash.js"))
 
     def test_finds_scheme_relative_fetches(self):
         for text in (
@@ -108,8 +121,29 @@ class Page(unittest.TestCase):
 
     def test_ships_the_bundled_licences(self):
         text = _read(_LICENSES)
-        for package in ("golden-layout", "leaflet"):
-            self.assertIn(package, text)
+        # netlistsvg's dependencies too: the bundle carries their code.
+        for package in (
+            "clone",
+            "elkjs",
+            "golden-layout",
+            "leaflet",
+            "lodash",
+            "netlistsvg",
+            "onml",
+            "sax",
+        ):
+            self.assertIn(f"\n{package} ", text)
+        # EPL-1.0 asks where elkjs's source can be obtained; every entry says.
+        self.assertEqual(text.count("\nSource: https://"), text.count("=" * 78) // 2)
+        self.assertIn("\nSource: https://github.com/OpenKieler/elkjs\n", text)
+
+
+class Entries(unittest.TestCase):
+    # main.js builds the panels as it loads; the globals they read come first.
+    def test_import_main_last(self):
+        for entry in _ENTRIES:
+            imports = re.findall(r"^import '\./([\w.-]+)';$", _read(entry), re.M)
+            self.assertEqual(imports[-1], "main.js", entry)
 
 
 if __name__ == "__main__":

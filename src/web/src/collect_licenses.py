@@ -8,8 +8,15 @@
 import argparse
 import json
 import os
+import re
 
 _LICENSE_NAMES = ("license", "license.md", "license.txt", "licence", "copying")
+
+_SHORTHAND_HOSTS = {
+    "github": "github.com",
+    "gitlab": "gitlab.com",
+    "bitbucket": "bitbucket.org",
+}
 
 _RULE = "=" * 78
 
@@ -35,24 +42,50 @@ def find_license(pkg_dir):
     raise SystemExit(f"{pkg_dir} has no licence file")
 
 
+def source_url(meta):
+    """Where the package's source can be obtained, as an https URL."""
+    repo = meta.get("repository") or {}
+    url = repo.get("url") if isinstance(repo, dict) else repo
+    url = url or meta.get("homepage")
+    if not url:
+        raise SystemExit(f"{meta['name']} names no repository or homepage")
+    url = re.sub(r"^git\+", "", url)
+    url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
+    url = re.sub(r"^(?:git|ssh|http)://(?:git@)?", "https://", url)
+    # A fragment names a commit or an anchor, not where the source is.
+    url = re.sub(r"#.*$", "", url)
+    url = re.sub(r"\.git$", "", url)
+    if "://" in url:
+        return url
+    # npm's shorthands: a bare "user/repo" is on GitHub, "host:user/repo" on host.
+    shorthand = re.fullmatch(r"(?:(github|gitlab|bitbucket):)?([\w.-]+/[\w.-]+)", url)
+    if not shorthand:
+        raise SystemExit(f"{meta['name']}: cannot read {url!r} as a source URL")
+    return f"https://{_SHORTHAND_HOSTS[shorthand[1] or 'github']}/{shorthand[2]}"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
     parser.add_argument("packages", nargs="+", help="npm package directories")
     args = parser.parse_args()
 
-    entries = []
+    # A package reached through several dependents is listed once per path.
+    entries = {}
     for pkg_dir in args.packages:
         with open(os.path.join(pkg_dir, "package.json"), encoding="utf-8") as f:
             meta = json.load(f)
+        key = (meta["name"], meta["version"])
+        if key in entries:
+            continue
         with open(find_license(pkg_dir), encoding="utf-8") as f:
             text = f.read().strip()
-        entries.append((meta["name"], meta["version"], license_id(meta), text))
-    entries.sort()
+        entries[key] = (license_id(meta), source_url(meta), text)
 
     parts = [_HEADER]
-    for name, version, spdx, text in entries:
-        parts.append(f"{_RULE}\n{name} {version} ({spdx})\n{_RULE}\n\n{text}\n")
+    for (name, version), (spdx, source, text) in sorted(entries.items()):
+        heading = f"{name} {version} ({spdx})\nSource: {source}"
+        parts.append(f"{_RULE}\n{heading}\n{_RULE}\n\n{text}\n")
 
     with open(args.output, "w", encoding="utf-8") as out:
         out.write("\n".join(parts))
