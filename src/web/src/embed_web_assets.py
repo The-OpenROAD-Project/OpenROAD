@@ -16,6 +16,7 @@ MIME_TYPES = {
     ".css": "text/css",
     ".json": "application/json",
     ".svg": "image/svg+xml",
+    ".txt": "text/plain; charset=utf-8",
 }
 
 # One escape per byte value, so the loop below is a table lookup.

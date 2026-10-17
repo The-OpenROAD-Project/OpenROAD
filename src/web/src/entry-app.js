@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+// The served page's bundle: the viewer and the libraries it is built on.
+
+import './leaflet-global.js';
+import './main.js';

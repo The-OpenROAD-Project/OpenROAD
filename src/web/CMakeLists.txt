@@ -72,7 +72,6 @@ swig_lib(NAME         web
 )
 
 set(WEB_ASSET_FILES
-    src/index.html
     src/style.css
     src/theme.js
     src/tile-merge.js
@@ -113,8 +112,13 @@ set(WEB_ASSET_FILES
     src/main.js
 )
 
+# Only the Bazel build bundles the browser libraries into index.html; this one
+# serves the sources, with index.cmake.html as the page.
+set(WEB_INDEX_HTML ${CMAKE_CURRENT_BINARY_DIR}/web/index.html)
+configure_file(src/index.cmake.html ${WEB_INDEX_HTML} COPYONLY)
+
 # Prepend CMAKE_CURRENT_SOURCE_DIR to each asset file.
-set(WEB_ASSET_PATHS "")
+set(WEB_ASSET_PATHS ${WEB_INDEX_HTML})
 foreach(f ${WEB_ASSET_FILES})
   list(APPEND WEB_ASSET_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
 endforeach()
@@ -175,7 +179,7 @@ add_custom_command(
     ${WEB_ASSET_PATHS}
   DEPENDS
     src/embed_web_assets.py
-    ${WEB_ASSET_FILES}
+    ${WEB_ASSET_PATHS}
   COMMENT "Generating web_assets.cpp"
 )
 

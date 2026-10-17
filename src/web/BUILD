@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm_web//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -108,46 +111,92 @@ genrule(
     tools = [":embed_report_assets"],
 )
 
+py_binary(
+    name = "inline_styles",
+    srcs = ["src/inline_styles.py"],
+    main = "src/inline_styles.py",
+)
+
+py_binary(
+    name = "collect_licenses",
+    srcs = ["src/collect_licenses.py"],
+    main = "src/collect_licenses.py",
+)
+
+# ── The browser bundle ──────────────────────────────────────────────────────
+# The viewer and its npm libraries, bundled and minified for web_assets below.
+# The CMake build still serves the sources and index.cmake.html.
+
+npm_link_all_packages(name = "node_modules")
+
+# What the bundle carries, and so whose licences ship with it.
+_BUNDLED_PACKAGES = [
+    "golden-layout",
+    "leaflet",
+]
+
+js_library(
+    name = "app_js",
+    srcs = glob(["src/*.js"]) + ["esbuild.config.mjs"],
+    deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
+)
+
+# The stylesheets import the bundled libraries' CSS.
+js_library(
+    name = "css",
+    srcs = glob(["src/*.css"]),
+    deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
+)
+
+genrule(
+    name = "third_party_licenses",
+    srcs = [":node_modules/%s/dir" % p for p in _BUNDLED_PACKAGES],
+    outs = ["bundle/THIRD_PARTY_LICENSES.txt"],
+    cmd = "$(execpath :collect_licenses) --output $@ " +
+          " ".join(["$(execpath :node_modules/%s/dir)" % p for p in _BUNDLED_PACKAGES]),
+    tools = [":collect_licenses"],
+)
+
+[esbuild(
+    name = name,
+    config = "esbuild.config.mjs",
+    entry_point = "src/%s" % entry,
+    minify = True,
+    output = output,
+    # No .map is served; esbuild.config.mjs cannot set this key.
+    sourcemap = "",
+    deps = [":app_js" if entry.endswith(".js") else ":css"],
+) for name, entry, output in [
+    ("app_bundle", "entry-app.js", "bundle/app.min.js"),
+    ("vendor_css", "vendor.css", "vendor.min.css"),
+    ("app_css", "style.css", "app.min.css"),
+    ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
+    ("gl_theme_light_bundle", "gl-theme-light.css", "gl-light.min.css"),
+]]
+
+_STYLES = [
+    "app.min.css",
+    "gl-dark.min.css",
+    "gl-light.min.css",
+    "vendor.min.css",
+]
+
+genrule(
+    name = "index_html",
+    srcs = ["src/index.html"] + _STYLES,
+    outs = ["bundle/index.html"],
+    cmd = "$(execpath :inline_styles) --html $(location src/index.html)" +
+          " --output $@ " +
+          " ".join(["--style $(location %s)" % s for s in _STYLES]),
+    tools = [":inline_styles"],
+)
+
+# Served by file name.  The schematic still fetches its skin.
 _WEB_ASSET_FILES = [
-    "src/index.html",
-    "src/style.css",
-    "src/theme.js",
-    "src/tile-merge.js",
-    "src/tile-request.js",
-    "src/device-pixels.js",
-    "src/layer-extents.js",
-    "src/merged-tile-layer.js",
-    "src/display-state.js",
-    "src/3d-viewer-widget.js",
-    "src/coordinates.js",
-    "src/ui-utils.js",
-    "src/checkbox-tree-model.js",
-    "src/vis-tree.js",
-    "src/websocket-manager.js",
-    "src/websocket-tile-layer.js",
-    "src/display-controls.js",
-    "src/inspector.js",
-    "src/ruler.js",
-    "src/label-manager.js",
-    "src/tcl-completer.js",
-    "src/hierarchy-browser.js",
-    "src/menu-bar.js",
-    "src/options-dialogs.js",
-    "src/context-menu.js",
-    "src/search-nav.js",
-    "src/capture.js",
-    "src/toolbar.js",
-    "src/image-export.js",
-    "src/edit-dialogs.js",
-    "src/title.js",
-    "src/clock-tree-widget.js",
-    "src/schematic-widget.js",
+    "bundle/THIRD_PARTY_LICENSES.txt",
+    "bundle/app.min.js",
+    "bundle/index.html",
     "src/openroad_skin.svg",
-    "src/charts-widget.js",
-    "src/timing-widget.js",
-    "src/drc-widget.js",
-    "src/selection-browser.js",
-    "src/main.js",
 ]
 
 genrule(
@@ -359,6 +408,14 @@ tcl_wrap_cc(
 )
 
 exports_files(["README.md"])
+
+exports_files(
+    [
+        "package.json",
+        "pnpm-lock.yaml",
+    ],
+    visibility = ["//src/web/test:__pkg__"],
+)
 
 messages_txt(
     visibility = ["//docs:__pkg__"],
