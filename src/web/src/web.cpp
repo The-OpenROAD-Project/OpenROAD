@@ -1949,7 +1949,7 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — the libraries from CDNs, as index.cmake.html loads them.
+  // HTML head — the libraries from CDNs, at src/web/package.json's versions.
   // The 3D view is unavailable here, so three.js is not loaded.
   out << R"(<!DOCTYPE html>
 <html>
