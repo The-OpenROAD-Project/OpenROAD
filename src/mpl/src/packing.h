@@ -148,4 +148,12 @@ PackingFixes findFixes(const PackingProblem& problem,
 // The height that goes with `width` under smallestSameAspect().
 int sameAspectHeight(const PackingProblem& problem, int width, int height_step);
 
+// A user-facing explanation of why `problem` does not fit and what single
+// change would make it fit, in microns. `result` must be kDoesNotFit and
+// `dbu_per_micron` positive; throws std::invalid_argument otherwise.
+std::string explainDoesNotFit(const PackingProblem& problem,
+                              const PackingResult& result,
+                              const PackingFixes& fixes,
+                              int dbu_per_micron);
+
 }  // namespace mpl

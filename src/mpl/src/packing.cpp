@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <limits>
 #include <map>
@@ -866,6 +867,112 @@ PackingFixes findFixes(const PackingProblem& problem,
   fixes.same_aspect
       = smallestSameAspect(problem, width_step, height_step, limits);
   return fixes;
+}
+
+namespace {
+
+std::string microns(const int64_t dbu, const int dbu_per_micron)
+{
+  char text[32];
+  std::snprintf(
+      text, sizeof(text), "%.3f", static_cast<double>(dbu) / dbu_per_micron);
+  return text;
+}
+
+// "123.456" or "between 123.456 and 130.000" when a check was undecided.
+std::string fixText(const DimensionFix& fix, const int dbu_per_micron)
+{
+  if (fix.lower == fix.upper) {
+    return microns(fix.upper, dbu_per_micron);
+  }
+  return "between " + microns(fix.lower, dbu_per_micron) + " and "
+         + microns(fix.upper, dbu_per_micron);
+}
+
+}  // namespace
+
+std::string explainDoesNotFit(const PackingProblem& problem,
+                              const PackingResult& result,
+                              const PackingFixes& fixes,
+                              const int dbu_per_micron)
+{
+  requireValid(problem);
+  if (result.status != PackingStatus::kDoesNotFit || dbu_per_micron <= 0) {
+    throw std::invalid_argument(
+        "packing: explainDoesNotFit needs a kDoesNotFit result and a "
+        "positive dbu_per_micron");
+  }
+  auto um = [dbu_per_micron](const int64_t dbu) {
+    return microns(dbu, dbu_per_micron);
+  };
+  std::string text = "The blocks, halos included, cannot fit in the "
+                     + um(problem.width) + " x " + um(problem.height)
+                     + " um outline (proven).\n  Cause: ";
+  int64_t area = 0;
+  for (const PackingBlock& block : problem.blocks) {
+    if (block.isFixed()) {
+      continue;
+    }
+    int64_t least = std::numeric_limits<int64_t>::max();
+    for (const Tiling& shape : block.shapes) {
+      least = std::min(least, shape.area());
+    }
+    for (const SoftShape& shape : block.soft_shapes) {
+      least = std::min(least, shape.area - shape.width.max + 1);
+    }
+    area += least;
+  }
+  switch (result.cause) {
+    case PackingCause::kBlockTooWide:
+    case PackingCause::kBlockTooTall: {
+      const PackingBlock& block = problem.blocks[result.block];
+      const bool wide = result.cause == PackingCause::kBlockTooWide;
+      text += block.name + " is " + (wide ? "wider" : "taller")
+              + " than the outline in every shape it can take.";
+      break;
+    }
+    case PackingCause::kArea: {
+      const double square
+          = static_cast<double>(dbu_per_micron) * dbu_per_micron;
+      char numbers[96];
+      std::snprintf(
+          numbers,
+          sizeof(numbers),
+          "%.1f um^2, the outline has %.1f um^2",
+          area / square,
+          static_cast<double>(problem.width) * problem.height / square);
+      text += std::string("the blocks need at least ") + numbers
+              + "; no arrangement helps.";
+      break;
+    }
+    case PackingCause::kArrangement:
+    case PackingCause::kNone:
+      text += "the area suffices ("
+              + std::to_string(
+                  100 * area
+                  / (static_cast<int64_t>(problem.width) * problem.height))
+              + "% of the outline), but no arrangement of the blocks does.";
+      break;
+  }
+  text += "\n  It fits with any one of:";
+  if (fixes.height.found) {
+    text += "\n    same width " + um(problem.width)
+            + " um: height >= " + fixText(fixes.height, dbu_per_micron) + " um";
+  } else {
+    text += "\n    same width " + um(problem.width) + " um: no height suffices";
+  }
+  if (fixes.width.found) {
+    text += "\n    same height " + um(problem.height)
+            + " um: width >= " + fixText(fixes.width, dbu_per_micron) + " um";
+  } else {
+    text
+        += "\n    same height " + um(problem.height) + " um: no width suffices";
+  }
+  if (fixes.same_aspect.found) {
+    text += "\n    same aspect ratio: width >= "
+            + fixText(fixes.same_aspect, dbu_per_micron) + " um";
+  }
+  return text;
 }
 
 }  // namespace mpl

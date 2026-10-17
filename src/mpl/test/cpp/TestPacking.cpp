@@ -394,5 +394,54 @@ TEST(PackingFix, BlockWiderThanAnyHeightAllowsIsNotFixedByHeight)
   EXPECT_FALSE(smallestHeight(problem, 1).found);
 }
 
+// An explanation of a fit, or in units it cannot convert to, is a bug.
+TEST(PackingExplain, MisuseIsRefused)
+{
+  const PackingProblem problem{10, 10, {rigid(20, 5)}};
+  const PackingResult result = checkPacking(problem);
+  ASSERT_EQ(result.status, PackingStatus::kDoesNotFit);
+  EXPECT_THROW(explainDoesNotFit(problem, result, {}, 0),
+               std::invalid_argument);
+  PackingResult fits = result;
+  fits.status = PackingStatus::kFits;
+  EXPECT_THROW(explainDoesNotFit(problem, fits, {}, 1000),
+               std::invalid_argument);
+}
+
+// The explanation states the facts a user acts on: that it is proven, the
+// cause, and each single change with its number.
+TEST(PackingExplain, ArrangementNamesEachFix)
+{
+  const int s = 1000;  // 1 um at 1000 DBU per um
+  const PackingProblem problem{
+      2 * s - 1, 2 * s - 1, {rigid(s, s), rigid(s, s)}};
+  const PackingResult result = checkPacking(problem);
+  ASSERT_EQ(result.status, PackingStatus::kDoesNotFit);
+  const PackingFixes fixes = findFixes(problem, 1, 1);
+  const std::string text = explainDoesNotFit(problem, result, fixes, 1000);
+  EXPECT_NE(text.find("(proven)"), std::string::npos) << text;
+  EXPECT_NE(text.find("no arrangement"), std::string::npos) << text;
+  // Two 1 um squares side by side: 2 um wide at the same height.
+  EXPECT_NE(text.find("same height 1.999 um: width >= 2.000 um"),
+            std::string::npos)
+      << text;
+  EXPECT_NE(text.find("same width 1.999 um: height >= 2.000 um"),
+            std::string::npos)
+      << text;
+}
+
+TEST(PackingExplain, TooWideBlockIsNamedAndHeightCannotHelp)
+{
+  PackingBlock wide = rigid(3000, 100);
+  wide.name = "sram0";
+  const PackingProblem problem{2000, 2000, {wide}};
+  const PackingResult result = checkPacking(problem);
+  const std::string text
+      = explainDoesNotFit(problem, result, findFixes(problem, 1, 1), 1000);
+  EXPECT_NE(text.find("sram0 is wider"), std::string::npos) << text;
+  EXPECT_NE(text.find("no height suffices"), std::string::npos) << text;
+  EXPECT_NE(text.find("width >= 3.000 um"), std::string::npos) << text;
+}
+
 }  // namespace
 }  // namespace mpl
