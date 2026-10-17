@@ -1362,7 +1362,8 @@ bool dbNet::isConnectedByAbutment()
   }
 
   bool first_mterm = true;
-  std::vector<std::pair<dbTechLayer*, Rect>> first_pin_boxes;
+  boost::container::small_vector<std::pair<dbTechLayer*, Rect>, 8>
+      first_pin_boxes;
   for (dbITerm* iterm : getITerms()) {
     dbMTerm* mterm = iterm->getMTerm();
     dbMaster* master = mterm->getMaster();
