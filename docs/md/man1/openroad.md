@@ -90,13 +90,31 @@ OpenROAD binary.
 
   - Write Verilog (.v) file based on current database.
 
-- read_db filename
+- read_db [-hier] filename
 
-  - Read OpenDB (.odb) database files.
+  - Read OpenDB (.odb) database files. If the database carries timing
+    constraints (stored by write_db -sdc) and the design is linked with
+    liberty, they are restored, so the design arrives constrained without
+    reading a separate .sdc file; without liberty the record is left in the
+    database untouched. ord::sdc_in_db_kind reports which form the current
+    block carries (native, text or none), so a flow does
 
-- write_db filename
+        read_db design.odb
+        if { [ord::sdc_in_db_kind] eq "none" } { read_sdc design.sdc }
 
-  - Write OpenDB (.odb) database files.
+- write_db [-sdc] [-compression level] filename
+
+  - Write OpenDB (.odb) database files. With -sdc, the timing constraints
+    are stored in the database alongside the design. Without it, a linked
+    design is written without constraints (any record the database carried
+    is dropped, since it could be stale); an odb-only session with no
+    liberty carries an existing record through unchanged.
+    Every mode's constraints are stored, each tagged with its mode name,
+    and read_db puts them back mode by mode; the scenes that bind a mode
+    to liberty and parasitics are not in the database and remain the
+    flow's to define. Constraints scoped to an analysis corner are not
+    stored: rather than leave them out silently, write_db -sdc stores
+    nothing and says which corner stopped it.
 
 - write_abstract_lef filename
 
