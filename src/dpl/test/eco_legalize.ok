@@ -1,0 +1,40 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     294
+Diamond Move Success:            294 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement        630.2 u
+average displacement        1.1 u
+max displacement            8.6 u
+original HPWL            6950.8 u
+legalized HPWL           7619.8 u
+delta HPWL                   10 %
+
+[INFO DPL-1111] ECO legalization: 3 ECO cell(s), window +/- 20 sites horizontally, +/- 4 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                       6
+Diamond Move Success:              6 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+[INFO DPL-1115] ECO legalization: 6 cell(s) in legalize set (3 ECO + 3 overlapping), 0 extra neighbor(s) displaced, max ECO displacement 1.400 um (7.4 sites); 543 of 549 cells provably unmoved.
+eco_legalize: 6 cells in legalize set
+eco_legalize: total cells 549, moved 3 (eco 3, displaced neighbors 2)
+eco_legalize: PASS (overlaps resolved, ECO cells on-site, 546/549 cells provably unmoved, no full re-place)

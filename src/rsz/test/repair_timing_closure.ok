@@ -1,0 +1,106 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+setup violated before yes
+hold violated before yes
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 32 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.082 |       -1.7 |       -1.5 |     32 | _869_/D
+     102* |      21 |      24 |       16 |      0 |     3 |    +2.2% |   -0.002 |       -0.0 |       -0.0 |     32 | _869_/D
+    final |      21 |      25 |       16 |      0 |     3 |    +2.3% |   -0.002 |       -0.0 |       -0.0 |      2 | _880_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 21 buffers.
+[INFO RSZ-0040] Inserted 16 buffers.
+[INFO RSZ-0051] Resized 25 instances: 25 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+[INFO DPL-1111] ECO legalization: 37 ECO cell(s), window +/- 20 sites horizontally, +/- 4 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                     100
+Diamond Move Success:            100 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+[INFO DPL-1115] ECO legalization: 100 cell(s) in legalize set (37 ECO + 63 overlapping), 0 extra neighbor(s) displaced, max ECO displacement 2.147 um (11.3 sites); 466 of 566 cells provably unmoved.
+[INFO RSZ-0046] Found 35 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |  -0.055 |  -1.173 | _863_/D
+    final |       0 |      21 |            0 |   +10.2% |   0.001 |   0.000 | _896_/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 21 hold buffers.
+[INFO DPL-1111] ECO legalization: 88 ECO cell(s), window +/- 20 sites horizontally, +/- 4 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                     192
+Diamond Move Success:            192 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+[INFO DPL-1115] ECO legalization: 192 cell(s) in legalize set (88 ECO + 104 overlapping), 0 extra neighbor(s) displaced, max ECO displacement 2.311 um (12.2 sites); 462 of 654 cells provably unmoved.
+  iter  1: setup WNS    -0.0014  hold WNS     0.0000  cells 125  bufs 104
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.001 |       -0.0 |       -0.0 |      1 | _880_/D
+       2* |       0 |       1 |        0 |      0 |     0 |    +0.1% |    0.000 |        0.0 |        0.0 |      1 | _869_/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.1% |    0.000 |        0.0 |        0.0 |      0 | _869_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
+[INFO DPL-1111] ECO legalization: 1 ECO cell(s), window +/- 20 sites horizontally, +/- 4 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                       1
+Diamond Move Success:              1 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+[INFO DPL-1115] ECO legalization: 1 cell(s) in legalize set (1 ECO + 0 overlapping), 0 extra neighbor(s) displaced, max ECO displacement 0.514 um (2.7 sites); 653 of 654 cells provably unmoved.
+[INFO RSZ-0033] No hold violations found.
+  iter  2: setup WNS     0.0000  hold WNS     0.0000  cells 1  bufs 0
+
+================ timing-closure convergence loop ===============
+  iter   setupWNS   setupTNS    holdWNS    holdTNS  cells  bufs
+  ----------------------------------------------------------------
+     0    -0.0818    -1.5008    -0.0549    -0.9665      0     0
+     1    -0.0014    -0.0014     0.0000     0.0000    125   104
+     2     0.0000     0.0000     0.0000     0.0000      1     0
+  ----------------------------------------------------------------
+  setup WNS (ns)       -0.0818 ->       0.0000
+  setup TNS (ns)       -1.5008 ->       0.0000
+  hold  WNS (ns)       -0.0549 ->       0.0000
+  hold  TNS (ns)       -0.9665 ->       0.0000
+  ----------------------------------------------------------------
+  iterations run  : 2 / 10 (cap)
+  stop reason     : converged
+  setup closed    : yes
+  hold  closed    : yes
+================================================================
+setup closed after yes
+hold closed after yes
+terminated within max_iters yes
+stop reason converged yes
+setup not regressed overall yes
+every iteration keeps setup >= baseline yes
+setup trajectory non-decreasing yes
+dont_touch present yes
+dont_touch master unchanged yes
+trajectory rows 3
+iterations run 2
