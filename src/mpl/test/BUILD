@@ -377,6 +377,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mpl_real_designs_unittest",
+    srcs = [
+        "cpp/PackingTestUtil.h",
+        "cpp/RealDesigns.inc",
+        "cpp/TestRealDesigns.cpp",
+    ],
+    shard_count = 4,
+    deps = [
+        "//src/mpl:packing",
+        "//src/mpl:shapes",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 # Not a test: runs the macro placer on a design as long as asked, for a
 # developer's machine. bazelisk run //src/mpl/test:mpl_bench -- <odb> ...
 cc_binary(
