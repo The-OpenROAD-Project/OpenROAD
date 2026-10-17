@@ -976,4 +976,60 @@ TEST_F(TestResizer,
             target_a1_slack_before);
 }
 
+TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
+{
+  // Place BUF_X1 and BUF_X4 in the LVT category while leaving BUF_X2 in RVT,
+  // and give all three the same dbMaster area so they qualify as VT-equivalent.
+  // Because cellLeakage(BUF_X1) < cellLeakage(BUF_X2) < cellLeakage(BUF_X4),
+  // sorting by leakage alone separates the two LVT cells with the RVT cell and
+  // prevents adjacent deduplication from collapsing the duplicate LVT entry.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  ASSERT_NE(lvt_implant, nullptr);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  buf_x2_master->setWidth(buf_x1_master->getWidth());
+  buf_x2_master->setHeight(buf_x1_master->getHeight());
+  buf_x4_master->setWidth(buf_x1_master->getWidth());
+  buf_x4_master->setHeight(buf_x1_master->getHeight());
+
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x4_master, lvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  sta::LibertyCell* buf_x1_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x1_master));
+  sta::LibertyCell* buf_x2_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x2_master));
+  sta::LibertyCell* buf_x4_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x4_master));
+  ASSERT_NE(buf_x1_cell, nullptr);
+  ASSERT_NE(buf_x2_cell, nullptr);
+  ASSERT_NE(buf_x4_cell, nullptr);
+
+  const VTCategory lvt_cat = resizer_.cellVTType(buf_x1_master);
+  const VTCategory rvt_cat = resizer_.cellVTType(buf_x2_master);
+  EXPECT_NE(lvt_cat, rvt_cat);
+  EXPECT_EQ(lvt_cat, resizer_.cellVTType(buf_x4_master));
+
+  const sta::LibertyCellSeq vt_equiv = resizer_.getVTEquivCells(buf_x2_cell);
+  ASSERT_EQ(vt_equiv.size(), 2u);
+  odb::dbMaster* first_master = db_network_->staToDb(vt_equiv[0]);
+  odb::dbMaster* second_master = db_network_->staToDb(vt_equiv[1]);
+  ASSERT_NE(first_master, nullptr);
+  ASSERT_NE(second_master, nullptr);
+  EXPECT_NE(resizer_.cellVTType(first_master),
+            resizer_.cellVTType(second_master));
+  EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
+            resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
 }  // namespace rsz
