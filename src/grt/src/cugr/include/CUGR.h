@@ -281,31 +281,31 @@ class CUGR
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   // iterativeRRR re-enters this stage, so the caller labels the debug dump.
-  void mazeRoute(std::vector<int>& net_indices, CugrStage stage, int iteration);
+  // Returns the total overflow change of the accepted reroutes (<= 0).
+  double mazeRoute(std::vector<int>& net_indices,
+                   CugrStage stage,
+                   int iteration);
 
+  // Debug groups rrr and rrr_timing: overflow and WNS/TNS after a pass.
+  void debugPass(const std::string& tag);
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
    *
    * Wraps the maze stage in a loop that sharpens the logistic cost
    * slope each pass (so `PatternRoute` and the maze cost surface
-   * penalise full edges more aggressively) and widens the rip-up set
-   * to nets sitting on near-full edges (not just strictly-overflowed
-   * ones). Designed for the per-layer over-concentration failure mode
-   * where many nets pile onto a single low layer while upper layers
-   * stay idle.
+   * penalise full edges more aggressively) and reroutes the nets whose
+   * removal relieves overflow (`updateCongestedNets`).
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
    * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Emits `GRT-0117` per iteration and, in full route only,
+   * cost. Stops after two passes that each remove less than one track
+   * (`GRT-0124`). Emits `GRT-0117` per iteration and, in full route only,
    * `GRT-0118` if overflow remains when the loop ends (incremental
    * defers to the session-end `GRT-0128`).
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
-  // Debug prints after a maze pass: the total overflow (group rrr) and, after
-  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
-  void debugPass(const std::string& tag);
   void iterativeRRR(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
