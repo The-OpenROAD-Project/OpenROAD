@@ -197,6 +197,9 @@ struct OptimizationPolicyConfig
   // Charge the slower fanin driver of a larger input pin to the other loads
   // of the fanin net.  PARALLEL_EVAL turns it on.
   bool fanin_side_loss{false};
+  // The side loss counts this many times against the gain.  Calibrated on
+  // applied moves: once the estimated side loss reached about a quarter of
+  // the gain, the measured TNS no longer improved, and 3 fit best.
   float fanin_side_loss_weight{3.0f};
   // Weight of fanin loads off every violating worst path.
   float fanin_side_offpath_weight{0.0f};
