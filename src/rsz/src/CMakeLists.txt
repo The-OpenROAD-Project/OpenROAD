@@ -3,6 +3,8 @@
 
 include("openroad")
 
+find_package(ortools REQUIRED)
+
 swig_lib(NAME      rsz
          NAMESPACE rsz
          I_FILE    Resizer.i
@@ -43,6 +45,7 @@ add_library(rsz_lib
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
     RepairTargetCollector.cc
+    SkewBudget.cc
 
     move/BufferCandidate.cc
     move/BufferGenerator.cc
@@ -111,6 +114,7 @@ target_link_libraries(rsz_lib
     dbSta_lib
     grt_lib
     utl_lib
+    ortools::ortools
 )
 
 target_link_libraries(rsz
