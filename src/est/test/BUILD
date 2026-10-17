@@ -49,6 +49,13 @@ filegroup(
     ],
 ) for test_name in TESTS]
 
+regression_test(
+    name = "estimate_parasitics_source",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
 cc_test(
     name = "TestEstimateParasitics",
     srcs = ["cpp/TestEstimateParasitics.cc"],

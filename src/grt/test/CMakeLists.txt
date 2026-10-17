@@ -148,6 +148,7 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    congested_routes_are_reported
     congestion_markers_cugr
     congestion_acceptance_is_recorded
     congestion_report_file_cugr

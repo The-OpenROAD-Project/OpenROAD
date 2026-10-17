@@ -407,6 +407,8 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_layer_range` | Parses a range from `layer_range` argument of format (%s-%s). `cmd` argument is not used. |
 | `check_region` | Checks the defined region if its within the die area. |
 | `have_detailed_route` | Checks if block has detailed route already. |
+| `design_is_placed` | Checks if every pin and every instance on a signal net is placed. |
+| `have_congested_routes` | Checks if block has global routes that are congested and were not accepted with `-allow_congestion`. |
 
 ## Regression tests
 
