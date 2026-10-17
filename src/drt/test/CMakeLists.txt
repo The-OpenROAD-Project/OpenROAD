@@ -35,3 +35,18 @@ target_include_directories(WatermarkCostTest PRIVATE ../src)
 target_link_libraries(WatermarkCostTest PRIVATE drt_lib GTest::gtest_main)
 gtest_discover_tests(WatermarkCostTest)
 add_dependencies(build_and_test WatermarkCostTest)
+
+add_executable(PinAccessTest PinAccessTest.cpp)
+target_include_directories(PinAccessTest PRIVATE ../src)
+target_link_libraries(PinAccessTest
+  PRIVATE
+    drt_lib
+    dst_lib
+    tst_base
+    utl_lib
+    GTest::gtest_main
+)
+gtest_discover_tests(PinAccessTest
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_dependencies(build_and_test PinAccessTest)
