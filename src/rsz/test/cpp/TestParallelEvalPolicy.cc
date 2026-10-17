@@ -128,8 +128,8 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   OptimizerRunConfig config;
   SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
   ASSERT_TRUE(policy.start());
-  const std::vector<MoveType> without_vt_swap{MoveType::kSizeUp,
-                                              MoveType::kBuffer};
+  const std::vector<MoveType> without_vt_swap{
+      MoveType::kSizeUp, MoveType::kBuffer, MoveType::kSplitLoad};
   EXPECT_EQ(policy.move_sequence_, without_vt_swap);
 
   OptimizerRunConfig requested;
@@ -140,7 +140,8 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   const std::vector<MoveType> size_up_only{MoveType::kSizeUp};
   EXPECT_EQ(explicit_policy.move_sequence_, size_up_only);
 
-  // -skip_buffering removes the default RebufferMt the same way.
+  // -skip_buffering removes the default RebufferMt and SplitLoadMt the same
+  // way.
   OptimizerRunConfig skipped;
   skipped.skip_buffering = true;
   SetupParallelEvalPolicy filtered(resizer_, committer, setup_context, skipped);

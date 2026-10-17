@@ -270,6 +270,7 @@ or_integration_tests(
     repair_setup_parallel_eval_vt_swap
     repair_setup_parallel_eval_vt_swap_corners
     repair_setup_parallel_eval_default_sequence
+    repair_setup_parallel_eval_all_moves
     repair_setup_parallel_eval_effort
     repair_setup_parallel_eval_threads
     repair_setup_parallel_eval_max_util

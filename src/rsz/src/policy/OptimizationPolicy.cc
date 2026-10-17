@@ -27,6 +27,7 @@
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SplitLoadGenerator.hh"
+#include "SplitLoadMtGenerator.hh"
 #include "SwapPinsGenerator.hh"
 #include "UnbufferGenerator.hh"
 #include "VtSwapGenerator.hh"
@@ -256,6 +257,9 @@ void OptimizationPolicy::prepareTarget(Target& target,
   }
   if ((mask & kRebufferInputCache) != 0) {
     RebufferMtGenerator::prepareInputs(context, target);
+  }
+  if ((mask & kSplitLoadInputCache) != 0) {
+    SplitLoadMtGenerator::prepareInputs(context, target);
   }
 }
 
