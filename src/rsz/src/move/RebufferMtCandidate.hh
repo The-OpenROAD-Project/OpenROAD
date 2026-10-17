@@ -23,7 +23,6 @@ class RebufferMtCandidate : public MoveCandidate
   // non-empty, estimate() charges their buffered-detour loss against the gain.
   RebufferMtCandidate(Resizer& resizer,
                       const Target& target,
-                      const EstimatorContext& estimator_context,
                       const RebufferTreePlan& plan,
                       float score_scale,
                       float min_score,
@@ -42,7 +41,6 @@ class RebufferMtCandidate : public MoveCandidate
   std::string logName() const;
 
   // === Candidate state ======================================================
-  const EstimatorContext& estimator_context_;
   RebufferTreePlan plan_;
   std::vector<BufferTreeSidePathContext> side_contexts_;
   const float score_scale_;

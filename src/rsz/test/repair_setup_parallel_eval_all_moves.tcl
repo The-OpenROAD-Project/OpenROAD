@@ -1,6 +1,7 @@
-# Exercise every PARALLEL_EVAL move: the Mt forms of the serial moves (split load,
-# buffer removal, pin swap) join the default VtSwapMt, SizeUpMt and RebufferMt
-# batches.
+# Exercise every PARALLEL_EVAL move but vt_swap: the Mt forms of the serial moves
+# (split load, fanout size-down, buffer removal, pin swap) join SizeUpMt and
+# RebufferMt.  VtSwapMt stays out, so the other moves get to commit; all but
+# buffer removal do on this design, which TestUnbufferMt covers instead.
 source "helpers.tcl"
 source asap7/asap7.vars
 
@@ -31,6 +32,6 @@ estimate_parasitics -placement
 
 repair_timing -setup \
   -phases PARALLEL_EVAL \
-  -sequence "sizeup buffer split unbuffer swap" \
+  -sequence "sizeup buffer split size_down unbuffer swap" \
   -max_iterations 4 \
   -verbose

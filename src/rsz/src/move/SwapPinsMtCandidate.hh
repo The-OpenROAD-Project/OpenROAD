@@ -11,7 +11,6 @@
 #include "rsz/Resizer.hh"
 
 namespace sta {
-class Instance;
 class LibertyPort;
 class Pin;
 }  // namespace sta
@@ -32,8 +31,6 @@ struct SwapPinsMtInput
     float slack{0.0f};
   };
 
-  sta::Instance* drvr{nullptr};
-  sta::LibertyPort* drvr_port{nullptr};
   sta::LibertyPort* input_port{nullptr};
   float input_delay{0.0f};
   std::vector<Equivalent> equivalents;

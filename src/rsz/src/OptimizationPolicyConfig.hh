@@ -236,11 +236,12 @@ struct OptimizationPolicyConfig
 
   ParallelEvalPolicyConfig parallel_eval;
 
-  // --- SplitLoadMt ----------------------------------------------------------
+  // --- SplitLoadMt and SizeDownFanoutMt -------------------------------------
 
-  // Weight of the SplitLoadMt score in the shared pool, below SizeUpMt because
-  // its model ignores the wire change.
+  // Weights of their scores in the shared pool, below SizeUpMt because their
+  // model ignores the wire change.  SwapPinsMt keeps 1.
   float split_load_mt_score_scale{0.50f};
+  float size_down_fanout_mt_score_scale{0.75f};
 };
 
 }  // namespace rsz

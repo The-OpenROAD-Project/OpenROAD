@@ -253,6 +253,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   bool finishIfNoSetupViolations();
   // Ends the run at the -max_utilization area, where nothing may run.
   bool finishAtMaxArea();
+  // Ends the run at a hard limit with `reason`: the open journal rolls back to
+  // the last checkpoint and a running tail stops.
+  void stopAtCheckpoint(const char* reason);
   // Ends the run when the evaluated endpoints yield no target.
   void finishWithoutTargets();
   // Apply the batch-stage stall, miss, and work-budget stop rules.

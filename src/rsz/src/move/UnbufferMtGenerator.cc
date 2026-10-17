@@ -36,21 +36,17 @@ using utl::RSZ;
 
 constexpr int kBufferRemovalMaxFanout = 10;
 
+// The buffer, its upstream driver and the scene the removal checks read.
 struct UnbufferSelectionContext
 {
   Resizer& resizer;
-  MoveCommitter& committer;
   const Target& target;
   float setup_slack_margin;
 
   UnbufferSelectionContext(Resizer& resizer,
-                           MoveCommitter& committer,
                            const Target& target,
                            float setup_slack_margin)
-      : resizer(resizer),
-        committer(committer),
-        target(target),
-        setup_slack_margin(setup_slack_margin)
+      : resizer(resizer), target(target), setup_slack_margin(setup_slack_margin)
   {
   }
 
@@ -68,33 +64,17 @@ struct UnbufferSelectionContext
   const sta::MinMax* min_max{nullptr};
 };
 
-bool validTarget(const Target& target)
-{
-  // Buffer removal needs one upstream driver stage and one buffer stage on the
-  // path.
-  return target.canBePathDriver() && target.path_index >= 2;
-}
-
 bool resolveDriverContext(UnbufferSelectionContext& ctx)
 {
-  // Resolve the buffer instance and its timing corner first.
+  // The buffer instance and its timing corner; isApplicable() checked that
+  // the driver is a buffer.
   ctx.drvr_pin = ctx.target.driver_pin;
-  if (ctx.drvr_pin == nullptr) {
-    ctx.drvr_pin = ctx.target.endpoint_path->pin(ctx.resizer.staState());
-  }
-  if (ctx.drvr_pin == nullptr) {
-    return false;
-  }
-
   ctx.drvr = ctx.resizer.network()->instance(ctx.drvr_pin);
   ctx.drvr_port = ctx.resizer.network()->libertyPort(ctx.drvr_pin);
-  ctx.drvr_cell
-      = ctx.drvr_port != nullptr ? ctx.drvr_port->libertyCell() : nullptr;
+  ctx.drvr_cell = ctx.drvr_port->libertyCell();
   ctx.scene = ctx.target.activeScene(ctx.resizer);
   ctx.min_max = ctx.target.minMax(ctx.resizer);
-  return ctx.drvr != nullptr && ctx.drvr_cell != nullptr
-         && ctx.drvr_cell->isBuffer() && ctx.scene != nullptr
-         && ctx.min_max != nullptr;
+  return ctx.scene != nullptr && ctx.min_max != nullptr;
 }
 
 // The buffer's input pin and the upstream driver on the target path.
@@ -120,29 +100,6 @@ bool resolvePathContext(UnbufferSelectionContext& ctx)
   ctx.prev_drvr_pin
       = prev_drvr_vertex != nullptr ? prev_drvr_vertex->pin() : nullptr;
   return ctx.drvr_input_pin != nullptr && ctx.prev_drvr_pin != nullptr;
-}
-
-bool passesMoveConflictGuard(const UnbufferSelectionContext& ctx)
-{
-  // The moves that block the serial removal, except a resize: batches size
-  // most buffers on the worst paths, and the batch STA judges their removal.
-  for (const MoveType type : {MoveType::kSwapPins,
-                              MoveType::kClone,
-                              MoveType::kSplitLoad,
-                              MoveType::kBuffer}) {
-    if (ctx.committer.hasMoves(type, ctx.drvr)) {
-      debugPrint(ctx.resizer.logger(),
-                 RSZ,
-                 "unbuffer_move",
-                 4,
-                 "buffer {} is not removed because of an earlier {}",
-                 ctx.resizer.dbNetwork()->name(ctx.drvr),
-                 moveName(type));
-      return false;
-    }
-  }
-
-  return true;
 }
 
 bool passesFanoutGuard(const UnbufferSelectionContext& ctx)
@@ -336,12 +293,7 @@ bool isEligible(UnbufferSelectionContext& ctx)
              "unbuffer_move",
              4,
              "checking unbuffer eligibility for {}",
-             ctx.target.driver_pin != nullptr
-                 ? ctx.resizer.network()->pathName(ctx.target.driver_pin)
-                 : "");
-  if (!validTarget(ctx.target)) {
-    return false;
-  }
+             ctx.resizer.network()->pathName(ctx.target.driver_pin));
   if (!resolveDriverContext(ctx)) {
     debugPrint(ctx.resizer.logger(),
                RSZ,
@@ -362,8 +314,7 @@ bool isEligible(UnbufferSelectionContext& ctx)
     return false;
   }
   const sta::Scene* cap_corner = nullptr;
-  if (!passesMoveConflictGuard(ctx) || !passesFanoutGuard(ctx)
-      || !passesCapGuard(ctx, cap_corner)) {
+  if (!passesFanoutGuard(ctx) || !passesCapGuard(ctx, cap_corner)) {
     return false;
   }
   // The slack guard and the gain estimate read the scene of the upstream
@@ -397,21 +348,43 @@ UnbufferMtGenerator::UnbufferMtGenerator(const GeneratorContext& context)
 {
 }
 
-void UnbufferMtGenerator::prepareInputs(const GeneratorContext& context,
-                                        Target& target)
+bool UnbufferMtGenerator::isApplicable(const Target& target) const
+{
+  // The path has the buffer and the stage that drives it.
+  if (!MoveGenerator::isApplicable(target) || target.path_index < 2) {
+    return false;
+  }
+
+  sta::Network* network = resizer_.network();
+  const sta::LibertyPort* port = network->libertyPort(target.driver_pin);
+  sta::Instance* buffer = network->instance(target.driver_pin);
+  if (port == nullptr || !port->libertyCell()->isBuffer()
+      || buffer == nullptr) {
+    return false;
+  }
+
+  // The moves that block the serial removal, except a resize: batches size
+  // most buffers on the worst paths, and the batch STA judges their removal.
+  for (const MoveType type : {MoveType::kSwapPins,
+                              MoveType::kClone,
+                              MoveType::kSplitLoad,
+                              MoveType::kBuffer}) {
+    if (committer_.hasMoves(type, buffer)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void UnbufferMtGenerator::prepareInputs(Target& target) const
 {
   UnbufferSelectionContext ctx{
-      context.resizer,
-      context.committer,
-      target,
-      static_cast<float>(context.run_config.setup_slack_margin)};
+      resizer_, target, static_cast<float>(run_config_.setup_slack_margin)};
   if (!isEligible(ctx)) {
     return;
   }
 
-  target.unbuffer_input
-      = std::make_shared<const UnbufferMtInput>(UnbufferMtInput{
-          .buffer = ctx.drvr, .estimated_gain = estimateRemovalGain(ctx)});
+  target.unbuffer_gain = estimateRemovalGain(ctx);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> UnbufferMtGenerator::generate(
@@ -420,13 +393,11 @@ std::vector<std::unique_ptr<MoveCandidate>> UnbufferMtGenerator::generate(
   // The batch ranks the removal by its estimate and skips one that estimates
   // as a loss.
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (target.unbuffer_input == nullptr
-      || target.unbuffer_input->estimated_gain <= 0.0f) {
+  if (!target.unbuffer_gain.has_value() || *target.unbuffer_gain <= 0.0f) {
     return candidates;
   }
 
-  candidates.push_back(std::make_unique<UnbufferMtCandidate>(
-      resizer_, target, target.unbuffer_input));
+  candidates.push_back(std::make_unique<UnbufferMtCandidate>(resizer_, target));
   return candidates;
 }
 

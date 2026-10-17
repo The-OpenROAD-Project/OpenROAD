@@ -91,7 +91,11 @@
 #undef protected
 #include "MoveGenerator.hh"
 #include "RebufferMtGenerator.hh"
+#include "SplitLoadMtCandidate.hh"
+#include "SplitLoadMtGenerator.hh"
 #include "SwapPinsMtCandidate.hh"
+#include "UnbufferMtCandidate.hh"
+#include "UnbufferMtGenerator.hh"
 
 #define private public
 #define protected public

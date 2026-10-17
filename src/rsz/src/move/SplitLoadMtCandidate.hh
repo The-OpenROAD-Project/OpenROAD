@@ -21,10 +21,17 @@ class Pin;
 
 namespace rsz {
 
-// Models the loading change when a split buffer takes over selected loads.
-// Main-thread preparation estimates wire capacitance from pin bounding boxes.
-struct LoadSplitModel
+// The split prepareInputs() chose for one target: the loads the new buffer
+// takes over, the cell it is inserted as, the cell apply() resizes it to,
+// and the loading change that scores the move.  The wire capacitances are
+// estimated from pin bounding boxes.
+struct SplitLoadMtInput
 {
+  sta::Net* drvr_net{nullptr};
+  odb::Point drvr_loc;
+  sta::PinSeq load_pins;
+  sta::LibertyCell* buffer_cell{nullptr};
+  sta::LibertyCell* resized_cell{nullptr};
   // Loads moved from the original driver to the new buffer.
   std::vector<SideLoad> moved_loads;
   // Pin capacitance of the moved loads.
@@ -33,19 +40,6 @@ struct LoadSplitModel
   float target_wire_cap_saved{0.0f};
   // Wire capacitance of the new net from the new driver to the moved loads.
   float moved_wire_cap{0.0f};
-};
-
-// The split the main thread prepared for one target (kSplitLoadInputCache):
-// the loads the new buffer takes over, the cell it is inserted as, the cell
-// apply() resizes it to, and the split model that scores the move.
-struct SplitLoadMtInput
-{
-  sta::Net* drvr_net{nullptr};
-  odb::Point drvr_loc;
-  sta::PinSet load_pins;
-  sta::LibertyCell* buffer_cell{nullptr};
-  sta::LibertyCell* resized_cell{nullptr};
-  LoadSplitModel model;
   // The target driver drives the buffer input in place of the moved loads
   // and the wire to them.
   float target_load_delta{0.0f};

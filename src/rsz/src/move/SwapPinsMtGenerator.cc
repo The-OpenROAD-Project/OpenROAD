@@ -36,8 +36,6 @@
 
 namespace rsz {
 
-using utl::RSZ;
-
 namespace {
 
 using LibertyPortVec = std::vector<sta::LibertyPort*>;
@@ -205,48 +203,31 @@ LibertyPortVec equivCellPins(utl::Logger* logger,
 
 // === Driver and swap-port selection =========================================
 
-bool resolveDriverContext(Resizer& resizer,
-                          const Target& target,
-                          sta::Pin*& drvr_pin,
-                          sta::Instance*& drvr,
-                          sta::LibertyPort*& drvr_port,
-                          const sta::Scene*& scene,
-                          const sta::MinMax*& min_max)
-{
-  drvr_pin = target.driver_pin;
-  if (drvr_pin == nullptr) {
-    drvr_pin = target.endpoint_path->pin(resizer.staState());
-  }
-  if (drvr_pin == nullptr) {
-    return false;
-  }
-
-  drvr_port = resizer.network()->libertyPort(drvr_pin);
-  if (drvr_port == nullptr) {
-    return false;
-  }
-
-  sta::LibertyCell* cell = drvr_port->libertyCell();
-  if (cell == nullptr || cell->isBuffer() || cell->isInverter()) {
-    return false;
-  }
-
-  drvr = resizer.network()->instance(drvr_pin);
-  scene = target.activeScene(resizer);
-  min_max = target.minMax(resizer);
-  return drvr != nullptr;
-}
-
-// The input port the path enters the target gate through.
-bool loadInputPort(Resizer& resizer,
-                   const Target& target,
-                   sta::LibertyPort*& input_port)
+// The input port the path enters the target gate through, or null.
+sta::LibertyPort* pathInputPort(Resizer& resizer, const Target& target)
 {
   const sta::Path* drvr_path = target.driverPath(resizer);
   const sta::TimingArc* in_arc
       = drvr_path != nullptr ? drvr_path->prevArc(resizer.staState()) : nullptr;
-  input_port = in_arc != nullptr ? in_arc->from() : nullptr;
-  return input_port != nullptr && !input_port->direction()->isOutput();
+  sta::LibertyPort* input_port = in_arc != nullptr ? in_arc->from() : nullptr;
+  return input_port != nullptr && !input_port->direction()->isOutput()
+             ? input_port
+             : nullptr;
+}
+
+// The inputs of cell interchangeable with input_port, simulated once per run
+// and kept in the policy's cache.
+LibertyPortVec equivalentInputs(utl::Logger* logger,
+                                EquivPinCache& cache,
+                                const sta::LibertyCell* cell,
+                                sta::LibertyPort* input_port)
+{
+  EquivPinCache::iterator cached = cache.find(input_port);
+  if (cached == cache.end()) {
+    cached = cache.emplace(input_port, equivCellPins(logger, cell, input_port))
+                 .first;
+  }
+  return cached->second;
 }
 
 }  // namespace
@@ -258,67 +239,42 @@ SwapPinsMtGenerator::SwapPinsMtGenerator(const GeneratorContext& context)
 
 bool SwapPinsMtGenerator::isApplicable(const Target& target) const
 {
-  return MoveGenerator::isApplicable(target) && target.path_index > 0;
+  // The path enters the gate through an input, the gate has inputs to swap
+  // (a buffer or inverter has one), and it may change but has not swapped
+  // yet.
+  if (!MoveGenerator::isApplicable(target) || target.path_index <= 0) {
+    return false;
+  }
+
+  sta::Network* network = resizer_.network();
+  const sta::LibertyPort* drvr_port = network->libertyPort(target.driver_pin);
+  const sta::LibertyCell* cell
+      = drvr_port != nullptr ? drvr_port->libertyCell() : nullptr;
+  sta::Instance* drvr = network->instance(target.driver_pin);
+  return cell != nullptr && !cell->isBuffer() && !cell->isInverter()
+         && drvr != nullptr && !resizer_.dontTouch(drvr)
+         && !committer_.hasMoves(MoveType::kSwapPins, drvr);
 }
 
-void SwapPinsMtGenerator::prepareInputs(const GeneratorContext& context,
-                                        Target& target)
+void SwapPinsMtGenerator::prepareInputs(Target& target) const
 {
-  Resizer& resizer = context.resizer;
-  sta::Pin* drvr_pin = nullptr;
-  sta::Instance* drvr = nullptr;
-  sta::LibertyPort* drvr_port = nullptr;
-  const sta::Scene* scene = nullptr;
-  const sta::MinMax* min_max = nullptr;
-  if (!resolveDriverContext(
-          resizer, target, drvr_pin, drvr, drvr_port, scene, min_max)) {
-    return;
-  }
-  if (resizer.dontTouch(drvr)) {
-    debugPrint(resizer.logger(),
-               RSZ,
-               "swap_pins_move",
-               2,
-               "REJECT SwapPinsMove {}: {} is \"don't touch\"",
-               resizer.network()->pathName(drvr_pin),
-               resizer.network()->pathName(drvr));
-    return;
-  }
-  if (context.committer.hasMoves(MoveType::kSwapPins, drvr)) {
-    debugPrint(resizer.logger(),
-               RSZ,
-               "swap_pins_move",
-               2,
-               "REJECT SwapPinsMove {}: Already swapped {}",
-               resizer.network()->pathName(drvr_pin),
-               resizer.network()->pathName(drvr));
+  Resizer& resizer = resizer_;
+  sta::Pin* drvr_pin = target.driver_pin;
+  sta::Instance* drvr = resizer.network()->instance(drvr_pin);
+  sta::LibertyPort* drvr_port = resizer.network()->libertyPort(drvr_pin);
+  const sta::Scene* scene = target.activeScene(resizer);
+  const sta::MinMax* min_max = target.minMax(resizer);
+
+  sta::LibertyPort* input_port = pathInputPort(resizer, target);
+  if (input_port == nullptr) {
     return;
   }
 
-  sta::LibertyPort* input_port = nullptr;
-  if (!loadInputPort(resizer, target, input_port)) {
-    return;
-  }
-
-  // The equivalent inputs of this port, simulated once per run.
-  LibertyPortVec local_equiv_ports;
-  const LibertyPortVec* equiv_ports = &local_equiv_ports;
-  if (context.equiv_pin_cache != nullptr) {
-    EquivPinCache::iterator cached = context.equiv_pin_cache->find(input_port);
-    if (cached == context.equiv_pin_cache->end()) {
-      cached = context.equiv_pin_cache
-                   ->emplace(input_port,
-                             equivCellPins(resizer.logger(),
-                                           drvr_port->libertyCell(),
-                                           input_port))
-                   .first;
-    }
-    equiv_ports = &cached->second;
-  } else {
-    local_equiv_ports
-        = equivCellPins(resizer.logger(), drvr_port->libertyCell(), input_port);
-  }
-  if (equiv_ports->empty()) {
+  const LibertyPortVec equiv_ports = equivalentInputs(resizer.logger(),
+                                                      *equiv_pin_cache_,
+                                                      drvr_port->libertyCell(),
+                                                      input_port);
+  if (equiv_ports.empty()) {
     return;
   }
 
@@ -342,10 +298,10 @@ void SwapPinsMtGenerator::prepareInputs(const GeneratorContext& context,
 
   // The equivalent inputs that can take the critical signal, each with its
   // delay and, for the side model, the signal it displaces.
-  const bool side_model = context.policy_config.fanin_side_loss
-                          && target.estimator_context.has_value();
+  const bool side_model
+      = policy_config_.fanin_side_loss && target.estimator_context.has_value();
   std::vector<SwapPinsMtInput::Equivalent> equivalents;
-  for (sta::LibertyPort* port : *equiv_ports) {
+  for (sta::LibertyPort* port : equiv_ports) {
     if (!port_delays.contains(port) || !port->direction()->isInput()
         || sta::LibertyPort::equiv(input_port, port)
         || sta::LibertyPort::equiv(drvr_port, port)) {
@@ -371,9 +327,7 @@ void SwapPinsMtGenerator::prepareInputs(const GeneratorContext& context,
   }
 
   target.swap_pins_input = std::make_shared<const SwapPinsMtInput>(
-      SwapPinsMtInput{.drvr = drvr,
-                      .drvr_port = drvr_port,
-                      .input_port = input_port,
+      SwapPinsMtInput{.input_port = input_port,
                       .input_delay = input_delay,
                       .equivalents = std::move(equivalents)});
 }

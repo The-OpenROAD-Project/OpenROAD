@@ -147,22 +147,20 @@ bool RebufferMtGenerator::isApplicable(const Target& target) const
   return MoveGenerator::isApplicable(target) && target.fanout > 1
          && target.fanout < kRebufferMaxFanout
          && resizer_.okToBufferNet(target.driver_pin)
-         && target.isPrepared(kEstimatorContextCache);
+         && target.estimator_context.has_value();
 }
 
-void RebufferMtGenerator::prepareInputs(const GeneratorContext& context,
-                                        Target& target)
+void RebufferMtGenerator::prepareInputs(Target& target) const
 {
-  target.rebuffer_net
-      = context.resizer.rebuffer().makeBufferedNet(target.driver_pin);
+  target.rebuffer_net = resizer_.rebuffer().makeBufferedNet(target.driver_pin);
   // Without the side-load model the loads behind a new buffer cost nothing.
   target.rebuffer_load_timing.clear();
-  if (context.policy_config.rebuffer_mt_side_loads) {
+  if (policy_config_.rebuffer_mt_side_loads) {
     target.rebuffer_load_timing
-        = collectLoadTiming(context.resizer,
+        = collectLoadTiming(resizer_,
                             target,
-                            context.critical_load_pins,
-                            context.policy_config.fanin_side_offpath_weight);
+                            critical_load_pins_,
+                            policy_config_.fanin_side_offpath_weight);
   }
 }
 
@@ -271,7 +269,6 @@ void RebufferMtGenerator::addTreePlanCandidates(
     candidates.push_back(std::make_unique<RebufferMtCandidate>(
         resizer_,
         target,
-        target.estimator_context.value(),
         plan,
         policy_config_.rebuffer_mt_score_scale,
         policy_config_.rebuffer_mt_min_score,

@@ -24,16 +24,13 @@ class UnbufferMtGenerator : public MoveGenerator
   // === MoveGenerator API ====================================================
   MoveType type() const override { return MoveType::kUnbuffer; }
   const char* name() const override { return "UnbufferMtMove"; }
-  PrepareCacheMask prepareRequirements() const override
-  {
-    return kUnbufferInputCache;
-  }
+  bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
-  // kUnbufferInputCache: the live STA reads behind one removal.  Leaves
-  // target.unbuffer_input unset when the buffer stays.
-  static void prepareInputs(const GeneratorContext& context, Target& target);
+  // The live STA reads behind one removal.  Leaves target.unbuffer_gain
+  // unset when the buffer stays.
+  void prepareInputs(Target& target) const override;
 };
 
 }  // namespace rsz

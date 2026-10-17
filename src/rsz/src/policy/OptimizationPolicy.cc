@@ -17,7 +17,6 @@
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
-#include "RebufferMtGenerator.hh"
 #include "RepairSetupContext.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
@@ -27,11 +26,8 @@
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
 #include "SplitLoadGenerator.hh"
-#include "SplitLoadMtGenerator.hh"
 #include "SwapPinsGenerator.hh"
-#include "SwapPinsMtGenerator.hh"
 #include "UnbufferGenerator.hh"
-#include "UnbufferMtGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -191,7 +187,7 @@ PrepareCacheMask OptimizationPolicy::accumulatePrepareRequirements() const
     }
     prepare_mask |= generator->prepareRequirements();
   }
-  return prepare_mask & ~kGenerationInputCaches;
+  return prepare_mask;
 }
 
 MoveGenerator* OptimizationPolicy::findGenerator(const MoveType type) const
@@ -249,33 +245,11 @@ void OptimizationPolicy::prepareTarget(Target& target,
   if ((mask & kSequentialEstimatorCache) != 0) {
     prepareSequentialEstimator(target);
   }
-
-  // Generation inputs: each Mt generator's live STA reads, so that its
-  // generate() runs on a worker thread.
-  if ((mask & kGenerationInputCaches) == 0) {
-    return;
-  }
-  const GeneratorContext context = makeGeneratorContext();
-  if ((mask & kInputCapBudgetCache) != 0) {
-    prepareInputCapBudgets(target);
-  }
-  if ((mask & kRebufferInputCache) != 0) {
-    RebufferMtGenerator::prepareInputs(context, target);
-  }
-  if ((mask & kSplitLoadInputCache) != 0) {
-    SplitLoadMtGenerator::prepareInputs(context, target);
-  }
-  if ((mask & kSwapPinsInputCache) != 0) {
-    SwapPinsMtGenerator::prepareInputs(context, target);
-  }
-  if ((mask & kUnbufferInputCache) != 0) {
-    UnbufferMtGenerator::prepareInputs(context, target);
-  }
 }
 
 void OptimizationPolicy::prepareEstimatorContext(Target& target) const
 {
-  if (target.isPrepared(kEstimatorContextCache) || !target.canBePathDriver()) {
+  if (target.estimator_context.has_value() || !target.canBePathDriver()) {
     return;
   }
 
@@ -328,13 +302,6 @@ void OptimizationPolicy::prepareSequentialEstimator(Target& target) const
       = SequentialTimingEstimator::prepare(resizer_, target);
   if (target.sequential_timing_estimator != nullptr) {
     RepairSetupProfiler::event("sequential_targets_prepared");
-  }
-}
-
-void OptimizationPolicy::prepareInputCapBudgets(Target& target) const
-{
-  if (!target.input_cap_budgets.has_value()) {
-    target.input_cap_budgets = resizer_.inputCapBudgets(target.inst(resizer_));
   }
 }
 

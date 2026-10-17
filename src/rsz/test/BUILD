@@ -625,6 +625,8 @@ cc_test(
         "cpp/TestRepairTargetCollector.cc",
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
+        "cpp/TestSplitLoadMt.cc",
+        "cpp/TestUnbufferMt.cc",
     ],
     data = [
         "Nangate45/Nangate45.lef",
@@ -632,6 +634,7 @@ cc_test(
         "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
+        "cpp/TestSplitLoadMt.v",
     ],
     deps = [
         "//src/dbSta",

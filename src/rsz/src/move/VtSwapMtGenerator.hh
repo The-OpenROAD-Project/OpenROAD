@@ -20,9 +20,9 @@ namespace rsz {
 // MT-safe generator that enumerates VT-equivalent cells and produces
 // multiple VtSwapMtCandidate instances for parallel evaluation.
 //
-// prepareRequirements() asks for the estimator context, the flip-flop
-// input-side checks and the input-cap budgets, so generate() runs on worker
-// threads without live STA.
+// prepareRequirements() asks for the estimator context and the flip-flop
+// input-side checks, and prepareInputs() captures the input-cap budgets, so
+// generate() runs on worker threads without live STA.
 class VtSwapMtGenerator : public MoveGenerator
 {
  public:
@@ -33,10 +33,13 @@ class VtSwapMtGenerator : public MoveGenerator
   MoveType type() const override { return MoveType::kVtSwap; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kEstimatorContextCache | kSequentialEstimatorCache
-           | kInputCapBudgetCache;
+    return kEstimatorContextCache | kSequentialEstimatorCache;
   }
   bool isApplicable(const Target& target) const override;
+  void prepareInputs(Target& target) const override
+  {
+    prepareInputCapBudgets(target);
+  }
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 

@@ -30,6 +30,7 @@
 #include "RebufferMtGenerator.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
+#include "SizeDownFanoutMtGenerator.hh"
 #include "SizeUpMtCandidate.hh"
 #include "SizeUpMtGenerator.hh"
 #include "SplitLoadMtGenerator.hh"
@@ -107,15 +108,19 @@ std::unique_ptr<MoveGenerator> makeParallelEvalGenerator(
     case MoveType::kVtSwap:
       return std::make_unique<VtSwapMtGenerator>(context);
     case MoveType::kSwapPins:
-      // estimate() only compares the prepared arc delays.
+      // generate() picks the input with the fastest prepared arc delay, and
+      // estimate() charges the displaced signal's side loss.
       return std::make_unique<SwapPinsMtGenerator>(context);
-    // These Mt forms choose like the serial move in prepareInputs() and score
-    // the choice from the prepared path window.
+    // SplitLoadMt chooses like the serial move in prepareInputs() and scores
+    // the choice from the prepared path window.  UnbufferMt decides there
+    // whether the buffer can go and estimates the gain that estimate() uses.
+    // SizeDownFanoutMt measures there and chooses in generate().
     case MoveType::kSplitLoad:
       return std::make_unique<SplitLoadMtGenerator>(context);
+    case MoveType::kSizeDownFanout:
+      return std::make_unique<SizeDownFanoutMtGenerator>(context);
     case MoveType::kUnbuffer:
       return std::make_unique<UnbufferMtGenerator>(context);
-    case MoveType::kSizeDownFanout:
     case MoveType::kClone:
     case MoveType::kSizeUpMatch:
     case MoveType::kReroute:
@@ -199,10 +204,9 @@ void SetupParallelEvalPolicy::selectMoveSequence()
     }
 
     // BufferToInverters has no gain estimate to rank it.  Clone, SizeUpMatch
-    // and Reroute have no Mt form; SizeDownFanout has none yet.
+    // and Reroute have no Mt form.
     if (type == MoveType::kBufferToInverters || type == MoveType::kClone
-        || type == MoveType::kSizeUpMatch || type == MoveType::kReroute
-        || type == MoveType::kSizeDownFanout) {
+        || type == MoveType::kSizeUpMatch || type == MoveType::kReroute) {
       logger_->warn(utl::RSZ,
                     2028,
                     "PARALLEL_EVAL has no form of move '{}'; it is skipped.",
@@ -355,15 +359,28 @@ bool SetupParallelEvalPolicy::finishIfNoSetupViolations()
 
 bool SetupParallelEvalPolicy::finishAtMaxArea()
 {
-  // Like LEGACY, nothing runs at the -max_utilization area.  The verdict keeps
-  // batches below it, so only a design that starts there stops here.
-  if (!resizer_.overMaxArea()) {
+  // Like LEGACY, nothing runs at the -max_utilization area.  The walked area of
+  // the verdict decides, because removeBuffer() leaves the tracked area of
+  // overMaxArea() unchanged.  The verdict keeps batches below the limit, so
+  // normally only a design that starts there stops here.
+  if (withinMaxUtilization()) {
     return false;
   }
 
-  RepairSetupProfiler::stop("max_area");
-  markRunComplete(false);
+  stopAtCheckpoint("max_area");
   return true;
+}
+
+void SetupParallelEvalPolicy::stopAtCheckpoint(const char* reason)
+{
+  // An open speculative run has not reached a checkpoint, so it is undone.
+  RepairSetupProfiler::stop(reason);
+  restoreBatchCheckpoint();
+  if (tail_.active()) {
+    RepairSetupProfiler::event("wns_tail_batches", tail_.batches());
+    tail_.stop();
+  }
+  markRunComplete(false);
 }
 
 void SetupParallelEvalPolicy::finishWithoutTargets()
@@ -765,8 +782,7 @@ SetupParallelEvalPolicy::GenerationTask SetupParallelEvalPolicy::planGeneration(
 
     // Prepare the generator's live STA reads here, so its generate() can run
     // on a worker.
-    prepareTarget(target,
-                  generator->prepareRequirements() & kGenerationInputCaches);
+    generator->prepareInputs(target);
     task.generators.push_back(generator.get());
   }
 
@@ -1517,13 +1533,7 @@ void SetupParallelEvalPolicy::applyStopRules(const int batch_moves)
   // -max_iterations ends the run: it starts no WNS tail and stops a running
   // one.
   if (config_.max_iterations > 0 && batch_index_ >= config_.max_iterations) {
-    RepairSetupProfiler::stop("max_iterations");
-    restoreBatchCheckpoint();
-    if (tail_.active()) {
-      RepairSetupProfiler::event("wns_tail_batches", tail_.batches());
-      tail_.stop();
-    }
-    markRunComplete(false);
+    stopAtCheckpoint("max_iterations");
     return;
   }
 
@@ -1612,9 +1622,10 @@ bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
 
 void SetupParallelEvalPolicy::addTailGenerators()
 {
-  // Pin swaps and buffer removal join the tail when the default sequence left
-  // them out.  Buffer removal runs only in single-move batches.
-  for (const MoveType type : {MoveType::kSwapPins, MoveType::kUnbuffer}) {
+  // Pin swaps, buffer removal and size down join the tail when the default
+  // sequence left them out.  Buffer removal runs only in single-move batches.
+  for (const MoveType type :
+       {MoveType::kSwapPins, MoveType::kUnbuffer, MoveType::kSizeDownFanout}) {
     if (tailMayAddMove(type)) {
       move_generators_.push_back(
           makeParallelEvalGenerator(type, makeGeneratorContext()));

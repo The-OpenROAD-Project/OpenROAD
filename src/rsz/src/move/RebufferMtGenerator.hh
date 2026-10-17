@@ -26,6 +26,16 @@ class Resizer;
 // MT form of Rebuffer.  The main thread stages the driver net and its load
 // timing.  A worker plans buffer trees with its own planner, and a winning
 // candidate commits exactly the tree it scored.
+//
+// generate() is the one exception to the worker rules of MoveGenerator: the
+// worker planner reads STA results, namely the worst-slack paths of the
+// loads, the input slews of the driver, clock arrivals and slew limits.  The
+// reads are safe because the main thread keeps the timing fixed while the
+// workers generate, startPhase() creates the slew-limit checker on the main
+// thread, and these queries never update the search.  The planner writes
+// only its own state and the slack marks on the net copy that prepareInputs()
+// built for the target.  The planner's debug prints (set_debug_level RSZ
+// rebuffer) also come from the workers.
 class RebufferMtGenerator : public MoveGenerator
 {
  public:
@@ -37,7 +47,7 @@ class RebufferMtGenerator : public MoveGenerator
   const char* name() const override { return "RebufferMtMove"; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kEstimatorContextCache | kRebufferInputCache;
+    return kEstimatorContextCache;
   }
   bool isApplicable(const Target& target) const override;
   // Plans the prepared net with a worker planner from the pool, or with the
@@ -45,9 +55,9 @@ class RebufferMtGenerator : public MoveGenerator
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
-  // kRebufferInputCache: the driver net as a buffered-net tree and, with
-  // rebuffer_mt_side_loads, the current timing of its loads.
-  static void prepareInputs(const GeneratorContext& context, Target& target);
+  // The driver net as a buffered-net tree and, with rebuffer_mt_side_loads,
+  // the current timing of its loads.
+  void prepareInputs(Target& target) const override;
 
   // Readies the Resizer's planner for prepareInputs() and makes one planner
   // per worker thread.

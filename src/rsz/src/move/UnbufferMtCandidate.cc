@@ -4,7 +4,6 @@
 #include "UnbufferMtCandidate.hh"
 
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -16,17 +15,14 @@
 
 namespace rsz {
 
-UnbufferMtCandidate::UnbufferMtCandidate(
-    Resizer& resizer,
-    const Target& target,
-    std::shared_ptr<const UnbufferMtInput> input)
-    : MoveCandidate(resizer, target), input_(std::move(input))
+UnbufferMtCandidate::UnbufferMtCandidate(Resizer& resizer, const Target& target)
+    : MoveCandidate(resizer, target)
 {
 }
 
 MoveImpact UnbufferMtCandidate::impact() const
 {
-  sta::Instance* buffer = input_->buffer;
+  sta::Instance* buffer = target().inst(resizer_);
   MoveImpact impact = MoveCandidate::impact();
   impact.complete = true;
   impact.write_instances.push_back(buffer);
@@ -74,14 +70,16 @@ MoveImpact UnbufferMtCandidate::impact() const
 
 Estimate UnbufferMtCandidate::estimate()
 {
+  const float gain = target().unbuffer_gain.value();
   return {.legal = true,
-          .score = input_->estimated_gain,
-          .raw_gain = input_->estimated_gain};
+          .score = gain,
+          .raw_gain = gain,
+          .reason = failReasonName(FailReason::kEstimateLegal)};
 }
 
 MoveResult UnbufferMtCandidate::apply()
 {
-  sta::Instance* buffer = input_->buffer;
+  sta::Instance* buffer = target().inst(resizer_);
   const bool accepted = resizer_.removeBuffer(buffer);
   return {
       .accepted = accepted,

@@ -191,14 +191,16 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyWnsTailHonorsSequenceAndSkips)
   base.skip_buffering = true;
   const std::vector<MoveType> size_up_only{MoveType::kSizeUp};
 
-  // Under the default sequence the tail adds its pin swaps and buffer
-  // removal.
+  // Under the default sequence the tail adds its pin swaps, buffer removal
+  // and size down.
   SetupParallelEvalPolicy default_policy(
       resizer_, committer, setup_context, base);
   ASSERT_TRUE(default_policy.start());
   ASSERT_TRUE(default_policy.startWnsTail("test"));
-  const std::vector<MoveType> default_tail{
-      MoveType::kSizeUp, MoveType::kSwapPins, MoveType::kUnbuffer};
+  const std::vector<MoveType> default_tail{MoveType::kSizeUp,
+                                           MoveType::kSwapPins,
+                                           MoveType::kUnbuffer,
+                                           MoveType::kSizeDownFanout};
   EXPECT_EQ(generatorTypes(default_policy), default_tail);
 
   // The -skip_* options keep each of them out.
@@ -315,7 +317,60 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyHasNoUtilizationCap)
   EXPECT_TRUE(policy.withinMaxUtilization());
 }
 
-TEST_F(TestResizerMt, JournalRestoreRecountsDesignArea)
+TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopReadsTheWalkedArea)
+{
+  // -max_utilization is a share of the core area, which the fixture lacks.
+  const odb::Rect core(0, 0, 200000, 200000);
+  block_->setDieArea(core);
+  block_->setCoreArea(core);
+  prepareUniqueViolatingEndpoint();
+  Target removal = makeTarget("path_out", "path_pre1", "Z");
+  Target upsize = makeTarget("out2", "target", "Z");
+  sta::LibertyCell* larger = db_network_->findLibertyCell("BUF_X2");
+  ASSERT_NE(larger, nullptr);
+
+  // Put the limit half an upsize above the current area, which counts the LEF
+  // master areas.
+  auto master_area = [this](const char* name) {
+    const odb::dbMaster* master = db_->findMaster(name);
+    return resizer_.dbuToMeters(master->getWidth())
+           * resizer_.dbuToMeters(master->getHeight());
+  };
+  const double area = resizer_.designArea();
+  const double upsize_area = master_area("BUF_X2") - master_area("BUF_X1");
+  resizer_.setMaxUtilization((area + 0.5 * upsize_area) / resizer_.coreArea());
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig config;
+  config.sequence = {MoveType::kUnbuffer, MoveType::kSizeUp};
+  SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
+  ASSERT_TRUE(policy.start());
+
+  // A requested unbuffer move shares a batch with an upsize.  The removal
+  // leaves the tracked area unchanged, so only that area crosses the limit,
+  // and the run goes on.
+  policy.openBatchJournal();
+  UnbufferMtCandidate unbuffer(resizer_, removal);
+  SizeUpMtCandidate size_up(
+      resizer_, upsize, upsize.inst(resizer_), larger, 1.0f);
+  ASSERT_TRUE(committer.commit(unbuffer).accepted);
+  ASSERT_TRUE(committer.commit(size_up).accepted);
+  ASSERT_TRUE(resizer_.overMaxArea());
+  EXPECT_TRUE(policy.withinMaxUtilization());
+  EXPECT_FALSE(policy.finishAtMaxArea());
+  EXPECT_FALSE(policy.converged());
+
+  // A limit the batch really crosses ends the run at the checkpoint, which
+  // undoes the open batch.
+  resizer_.setMaxUtilization(0.5 * area / resizer_.coreArea());
+  EXPECT_TRUE(policy.finishAtMaxArea());
+  EXPECT_TRUE(policy.converged());
+  EXPECT_FALSE(policy.batch_journal_open_);
+  EXPECT_NE(block_->findInst("path_pre1"), nullptr);
+  EXPECT_EQ(block_->findInst("target")->getMaster(), db_->findMaster("BUF_X1"));
+}
+
+TEST_F(TestResizerMt, SetupParallelEvalPolicyRollbackRecountsDesignArea)
 {
   // -max_utilization is a share of the core area, which the fixture lacks.
   const odb::Rect core(0, 0, 200000, 200000);
