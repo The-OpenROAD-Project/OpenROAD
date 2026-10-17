@@ -131,6 +131,8 @@ cc_library(
         "//src/mpl:__subpackages__",
     ],
     deps = [
+        ":packing",
+        ":packing_adapter",
         ":pusher",
         ":shapes",
         ":snapper",
