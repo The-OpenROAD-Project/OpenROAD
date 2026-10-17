@@ -1176,7 +1176,9 @@ NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
       minPhiCoef(options.minPhiCoef),
       maxPhiCoef(options.maxPhiCoef),
       initialPlacePerturbationSeed(options.initialPlacePerturbationSeed),
-      initialPlacePerturbationDist(options.initialPlacePerturbationDist)
+      initialPlacePerturbationDist(options.initialPlacePerturbationDist),
+      clusterPullWeight(options.clusterPullWeight),
+      clusterPullIters(options.clusterPullIters)
 {
 }
 
@@ -3328,6 +3330,9 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
+    if (nbVars_.clusterPullWeight > 0) {
+      log_->error(GPL, 336, "-cluster_pull_weight is not on the GPU path.");
+    }
     SumGradSlot target = SumGradSlot::Cur;
     SlpSlot coord_slot = SlpSlot::Cur;
     if (&sumGrads == &prevSLPSumGrads_) {
@@ -3382,6 +3387,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   // Two-phase: parallel per-cell compute, then deterministic serial reduce.
 
+  const bool cluster_pull = updateClusterPull();
+
   const size_t numGCells = nb_gcells_.size();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < numGCells; i++) {
@@ -3396,6 +3403,15 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     FloatPoint sumPrecondi(
         wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
         wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
+
+    if (cluster_pull && cluster_pull_member_[i]) {
+      // The pull is bounded by the weight, like that many pins, and
+      // preconditioned as that many pins.
+      sumGrads[i].x += cluster_pull_grads_[i].x;
+      sumGrads[i].y += cluster_pull_grads_[i].y;
+      sumPrecondi.x += cluster_pull_weight_now_;
+      sumPrecondi.y += cluster_pull_weight_now_;
+    }
 
     sumPrecondi.x
         = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
@@ -3426,6 +3442,137 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
   debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
+}
+
+bool NesterovBase::updateClusterPull()
+{
+  cluster_pull_weight_now_ = 0;
+  if (nbVars_.clusterPullWeight <= 0) {
+    return false;
+  }
+  if (cluster_pull_iter_ >= nbVars_.clusterPullIters) {
+    if (cluster_pull_reported_) {
+      log_->info(GPL,
+                 335,
+                 "Cluster pull faded out at iteration {}.",
+                 cluster_pull_iter_);
+      cluster_pull_reported_ = false;
+    }
+    return false;
+  }
+  cluster_pull_weight_now_
+      = nbVars_.clusterPullWeight
+        * (1.0f
+           - static_cast<float>(cluster_pull_iter_)
+                 / static_cast<float>(nbVars_.clusterPullIters));
+
+  const size_t numGCells = nb_gcells_.size();
+  if (!cluster_pull_cached_) {
+    cacheClusterPull();
+  }
+
+  // Centroids serially, in cell order, so the sums are the same at any
+  // thread count. Areas are summed here too: a cell's density size
+  // changes under routability inflation and timing-driven resizing.
+  const size_t numClusters = cluster_pull_ids_.size();
+  std::vector<double> sum_x(numClusters, 0);
+  std::vector<double> sum_y(numClusters, 0);
+  std::vector<double> sum_area(numClusters, 0);
+  for (size_t i = 0; i < numGCells; i++) {
+    if (!cluster_pull_member_[i]) {
+      continue;
+    }
+    GCell* gCell = nb_gcells_[i];
+    const double area = static_cast<double>(gCell->dDx()) * gCell->dDy();
+    const int c = cluster_pull_cluster_[i];
+    sum_x[c] += area * gCell->dCx();
+    sum_y[c] += area * gCell->dCy();
+    sum_area[c] += area;
+  }
+
+  // A cell inside its cluster's packed radius feels a pull growing with
+  // its distance; outside it, the full weight.
+  const double density = std::max(targetDensity_, 0.01f);
+  const float weight = cluster_pull_weight_now_;
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t i = 0; i < numGCells; i++) {
+    if (!cluster_pull_member_[i]) {
+      continue;
+    }
+    const int c = cluster_pull_cluster_[i];
+    GCell* gCell = nb_gcells_[i];
+    const double dx = sum_x[c] / sum_area[c] - gCell->dCx();
+    const double dy = sum_y[c] / sum_area[c] - gCell->dCy();
+    const double radius2 = sum_area[c] / density / 4.0;
+    const double norm = std::sqrt(dx * dx + dy * dy + radius2);
+    cluster_pull_grads_[i] = FloatPoint(weight * dx / norm, weight * dy / norm);
+  }
+  return true;
+}
+
+// Cells to clusters, and which cells are pulled (clusters of two or more
+// cells). Static while the cells are; createCbkGCell, destroyCbkGCell,
+// destroyFillerGCell and restoreRemovedFillers change or reorder
+// nb_gcells_ and drop the cache.
+void NesterovBase::cacheClusterPull()
+{
+  const size_t numGCells = nb_gcells_.size();
+  std::vector<int> cluster(numGCells, -1);
+  for (size_t i = 0; i < numGCells; i++) {
+    GCell* gCell = nb_gcells_[i];
+    if (!gCell->isInstance() || gCell->isLocked()) {
+      continue;
+    }
+    odb::dbGroup* group = gCell->insts()[0]->dbInst()->getGroup();
+    if (group == nullptr || group->getType() != odb::dbGroupType::VISUAL_DEBUG
+        || group->getParentGroup() == nullptr) {
+      continue;
+    }
+    const auto [it, inserted] = cluster_pull_ids_.try_emplace(
+        group, static_cast<int>(cluster_pull_ids_.size()));
+    cluster[i] = it->second;
+  }
+
+  const size_t numClusters = cluster_pull_ids_.size();
+  std::vector<double> area(numClusters, 0);
+  std::vector<int> count(numClusters, 0);
+  for (size_t i = 0; i < numGCells; i++) {
+    if (cluster[i] < 0) {
+      continue;
+    }
+    GCell* gCell = nb_gcells_[i];
+    area[cluster[i]] += static_cast<double>(gCell->dDx()) * gCell->dDy();
+    count[cluster[i]]++;
+  }
+
+  cluster_pull_cluster_ = std::move(cluster);
+  cluster_pull_member_.assign(numGCells, 0);
+  cluster_pull_grads_.assign(numGCells, FloatPoint(0, 0));
+  int pulled_clusters = 0;
+  int pulled_cells = 0;
+  for (size_t c = 0; c < numClusters; c++) {
+    if (count[c] >= 2 && area[c] > 0) {
+      pulled_clusters++;
+      pulled_cells += count[c];
+    }
+  }
+  for (size_t i = 0; i < numGCells; i++) {
+    const int c = cluster_pull_cluster_[i];
+    cluster_pull_member_[i] = c >= 0 && count[c] >= 2 && area[c] > 0;
+  }
+  cluster_pull_cached_ = true;
+
+  if (!cluster_pull_reported_) {
+    log_->info(GPL,
+               334,
+               "Cluster pull: {} clusters, {} cells, weight {:g} fading to 0 "
+               "at iteration {}.",
+               pulled_clusters,
+               pulled_cells,
+               cluster_pull_weight_now_,
+               nbVars_.clusterPullIters);
+    cluster_pull_reported_ = true;
+  }
 }
 
 void NesterovBase::nbUpdatePrevGradient(float wlCoeffX, float wlCoeffY)
@@ -3608,6 +3755,8 @@ void NesterovBase::updateNextIter(const int iter)
   if (isConverged_) {
     return;
   }
+
+  cluster_pull_iter_ = iter + 1;
 
   // swap vector pointers
   std::swap(prevSLPCoordi_, curSLPCoordi_);
@@ -4273,6 +4422,7 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
 
 void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
 {
+  cluster_pull_cached_ = false;
   debugPrint(log_,
              GPL,
              "callbacks",
@@ -4355,6 +4505,7 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
     odb::dbInst* db_inst)
 {
+  cluster_pull_cached_ = false;
   debugPrint(log_,
              GPL,
              "callbacks",
@@ -4595,6 +4746,7 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 {
+  cluster_pull_cached_ = false;
   debugPrint(log_,
              GPL,
              "callbacks",
@@ -4649,6 +4801,7 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
 void NesterovBase::restoreRemovedFillers()
 {
+  cluster_pull_cached_ = false;
   pullCoordsFromDevice();
   log_->info(GPL,
              80,

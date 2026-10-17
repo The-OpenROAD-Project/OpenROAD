@@ -87,6 +87,8 @@ static gpl::PlaceOptions getOptions(
            "-virtual_cts_max_skew_fraction",
            options.virtualCtsMaxSkewFraction);
   checkKey(keys, "-timing_driven_nets_percentage", options.timingDrivenNetsPercentage);
+  checkKey(keys, "-cluster_pull_weight", options.clusterPullWeight);
+  checkKey(keys, "-cluster_pull_iters", options.clusterPullIters);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);

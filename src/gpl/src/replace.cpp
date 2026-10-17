@@ -647,6 +647,8 @@ void PlaceOptions::validate(utl::Logger* logger)
                   424);
   val.check_range(
       "keep_resize_below_overflow", keepResizeBelowOverflow, 0.0f, 1.0f, 425);
+  val.check_range("cluster_pull_weight", clusterPullWeight, 0.0f, 1000.0f, 337);
+  val.check_positive("cluster_pull_iters", clusterPullIters, 338);
 }
 
 void PlaceOptions::skipIo()
