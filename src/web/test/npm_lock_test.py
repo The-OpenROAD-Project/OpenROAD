@@ -9,7 +9,7 @@ import unittest
 
 import yaml
 
-_FIX = "bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only"
+_FIX = "bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only"
 
 
 class LockMatchesManifest(unittest.TestCase):

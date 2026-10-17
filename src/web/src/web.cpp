@@ -1957,7 +1957,8 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head — the libraries from CDNs, as index.cmake.html loads them.
+  // The 3D view is unavailable here, so three.js is not loaded.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
@@ -2054,7 +2055,6 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>

@@ -445,7 +445,7 @@ npm_web.npm_translate_lock(
 use_repo(npm_web, "npm_web")
 
 # Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:
-#   bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+#   bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
 pnpm = use_extension(
     "@aspect_rules_js//npm:extensions.bzl",
     "pnpm",

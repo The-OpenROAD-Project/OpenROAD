@@ -141,14 +141,11 @@ js_library(
     deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
 )
 
-# The stylesheets import only these two libraries' CSS.
+# The stylesheets import the bundled libraries' CSS.
 js_library(
     name = "css",
     srcs = glob(["src/*.css"]),
-    deps = [
-        ":node_modules/golden-layout",
-        ":node_modules/leaflet",
-    ],
+    deps = [":node_modules/" + p for p in _BUNDLED_PACKAGES],
 )
 
 genrule(
