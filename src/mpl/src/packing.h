@@ -102,4 +102,50 @@ struct PackingLimits
 PackingResult checkPacking(const PackingProblem& problem,
                            const PackingLimits& limits = {});
 
+// The smallest outline dimension at which the problem fits, searched on
+// multiples of `step` (a row height, a site width). `lower` is proven not to
+// fit below it, `upper` proven to fit; they are equal unless a check was
+// undecided. A bigger outline never makes a packing impossible, so the
+// search is a bisection over exact checks.
+// Steps must be positive; like checkPacking(), the searches throw
+// std::invalid_argument otherwise.
+struct DimensionFix
+{
+  bool found{false};  // no outline up to the search limit fits
+  int lower{0};
+  int upper{0};
+};
+
+// Keep the width, grow or shrink the height.
+DimensionFix smallestHeight(const PackingProblem& problem,
+                            int step,
+                            const PackingLimits& limits = {});
+// Keep the height, grow or shrink the width.
+DimensionFix smallestWidth(const PackingProblem& problem,
+                           int step,
+                           const PackingLimits& limits = {});
+// Keep the aspect ratio; the result is the width, on multiples of
+// `width_step`; the height follows as ceil(width * height / problem.width)
+// rounded up to `height_step`.
+DimensionFix smallestSameAspect(const PackingProblem& problem,
+                                int width_step,
+                                int height_step,
+                                const PackingLimits& limits = {});
+
+// The three single changes to the outline that make a problem fit.
+struct PackingFixes
+{
+  DimensionFix height;       // at the same width
+  DimensionFix width;        // at the same height
+  DimensionFix same_aspect;  // the width; the height keeps the ratio
+};
+
+PackingFixes findFixes(const PackingProblem& problem,
+                       int width_step,
+                       int height_step,
+                       const PackingLimits& limits = {});
+
+// The height that goes with `width` under smallestSameAspect().
+int sameAspectHeight(const PackingProblem& problem, int width, int height_step);
+
 }  // namespace mpl

@@ -707,4 +707,165 @@ PackingResult checkPacking(const PackingProblem& problem,
   return ladder(problem, used);
 }
 
+namespace {
+
+int64_t roundUp(const int64_t value, const int step)
+{
+  return (value + step - 1) / step * step;
+}
+
+// Bisect over multiples of `step` for the smallest value at which
+// `resize(value)` fits. `fits(value)` must be monotone.
+template <typename Resize>
+DimensionFix bisect(const PackingProblem& problem,
+                    const int step,
+                    const int64_t limit,
+                    const PackingLimits& limits,
+                    Resize resize)
+{
+  if (step <= 0) {
+    throw std::invalid_argument("packing: the search step is "
+                                + std::to_string(step));
+  }
+  // A bisection asks some 30 questions; they share one budget, and an
+  // undecided one widens the range rather than stalling the error.
+  PackingLimits each = limits;
+  each.deterministic_time = limits.deterministic_time / 30;
+  auto check = [&](const int64_t value) {
+    return checkPacking(resize(problem, static_cast<int>(value)), each).status;
+  };
+  // proven_lo: largest value proven not to fit; lo: largest value not
+  // known to fit (proven or undecided); hi: smallest value proven to fit.
+  DimensionFix fix;
+  int64_t proven_lo = 0;
+  int64_t lo = 0;
+  int64_t hi = step;
+  const int64_t top = roundUp(limit, step);
+  for (;; hi = std::min(roundUp(hi * 2, step), top)) {
+    if (hi <= lo) {
+      return fix;  // nothing up to the search limit fits
+    }
+    const PackingStatus status = check(hi);
+    if (status == PackingStatus::kFits) {
+      break;
+    }
+    if (status == PackingStatus::kDoesNotFit) {
+      proven_lo = hi;
+    }
+    lo = hi;
+  }
+  while (hi - lo > step) {
+    const int64_t probe
+        = std::min(roundUp(lo + (hi - lo) / 2, step), hi - step);
+    switch (check(probe)) {
+      case PackingStatus::kFits:
+        hi = probe;
+        break;
+      case PackingStatus::kDoesNotFit:
+        proven_lo = std::max(proven_lo, probe);
+        lo = probe;
+        break;
+      case PackingStatus::kUndecided:
+        lo = probe;
+        break;
+    }
+  }
+  fix.found = true;
+  fix.upper = static_cast<int>(hi);
+  fix.lower = static_cast<int>(std::min(proven_lo + step, hi));
+  return fix;
+}
+
+int64_t searchLimit(const PackingProblem& problem)
+{
+  int64_t limit = std::max(problem.width, problem.height);
+  for (const PackingBlock& block : problem.blocks) {
+    int64_t largest = 0;
+    for (const Tiling& shape : block.shapes) {
+      largest = std::max<int64_t>(largest, shape.width() + shape.height());
+    }
+    for (const SoftShape& shape : block.soft_shapes) {
+      largest = std::max<int64_t>(largest, shape.area);
+    }
+    if (block.isFixed()) {
+      largest += std::max(*block.fixed_x, *block.fixed_y);
+    }
+    limit += largest;
+  }
+  return std::min<int64_t>(limit, std::numeric_limits<int>::max() / 2);
+}
+
+}  // namespace
+
+DimensionFix smallestHeight(const PackingProblem& problem,
+                            const int step,
+                            const PackingLimits& limits)
+{
+  return bisect(problem,
+                step,
+                searchLimit(problem),
+                limits,
+                [](PackingProblem copy, const int value) {
+                  copy.height = value;
+                  return copy;
+                });
+}
+
+DimensionFix smallestWidth(const PackingProblem& problem,
+                           const int step,
+                           const PackingLimits& limits)
+{
+  return bisect(problem,
+                step,
+                searchLimit(problem),
+                limits,
+                [](PackingProblem copy, const int value) {
+                  copy.width = value;
+                  return copy;
+                });
+}
+
+int sameAspectHeight(const PackingProblem& problem,
+                     const int width,
+                     const int height_step)
+{
+  requireValid(problem);
+  if (height_step <= 0) {
+    throw std::invalid_argument("packing: the height step is "
+                                + std::to_string(height_step));
+  }
+  const int64_t w = problem.width;
+  return static_cast<int>(roundUp(
+      (width * static_cast<int64_t>(problem.height) + w - 1) / w, height_step));
+}
+
+DimensionFix smallestSameAspect(const PackingProblem& problem,
+                                const int width_step,
+                                const int height_step,
+                                const PackingLimits& limits)
+{
+  return bisect(problem,
+                width_step,
+                searchLimit(problem),
+                limits,
+                [&problem, height_step](PackingProblem copy, const int value) {
+                  copy.width = value;
+                  copy.height = sameAspectHeight(problem, value, height_step);
+                  return copy;
+                });
+}
+
+PackingFixes findFixes(const PackingProblem& problem,
+                       const int width_step,
+                       const int height_step,
+                       const PackingLimits& limits)
+{
+  PackingFixes fixes;
+  fixes.height = smallestHeight(problem, height_step, limits);
+  fixes.width = smallestWidth(problem, width_step, limits);
+  fixes.same_aspect
+      = smallestSameAspect(problem, width_step, height_step, limits);
+  return fixes;
+}
+
 }  // namespace mpl

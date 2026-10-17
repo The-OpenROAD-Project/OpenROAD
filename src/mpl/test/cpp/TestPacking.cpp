@@ -7,9 +7,11 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -309,6 +311,87 @@ TEST(Packing, IdenticalBlocksAgreeWithExhaustiveSearch)
       }
     }
   }
+}
+
+// A planted W x H perfect packing kept at width W must need exactly
+// height H: the area alone forbids less, the plant proves H suffices.
+TEST(PackingFix, SmallestHeightOfPlantedPackingIsItsHeight)
+{
+  std::mt19937 rng(4);
+  for (int pieces = 2; pieces <= 8; pieces++) {
+    const PackingProblem problem{
+        1000, 300, plantGuillotine(1000, 700, pieces, rng)};
+    const DimensionFix fix = smallestHeight(problem, 1);
+    ASSERT_TRUE(fix.found) << pieces;
+    EXPECT_EQ(fix.lower, 700) << pieces;
+    EXPECT_EQ(fix.upper, 700) << pieces;
+  }
+}
+
+TEST(PackingFix, SmallestWidthOfPlantedPackingIsItsWidth)
+{
+  std::mt19937 rng(5);
+  for (int pieces = 2; pieces <= 8; pieces++) {
+    const PackingProblem problem{
+        3000, 700, plantGuillotine(1000, 700, pieces, rng)};
+    const DimensionFix fix = smallestWidth(problem, 1);
+    ASSERT_TRUE(fix.found) << pieces;
+    EXPECT_EQ(fix.lower, 1000) << pieces;
+    EXPECT_EQ(fix.upper, 1000) << pieces;
+  }
+}
+
+// A grid without a step has no smallest outline to search for.
+TEST(PackingFix, NonPositiveStepIsRefused)
+{
+  const PackingProblem problem{100, 100, {rigid(10, 10)}};
+  EXPECT_THROW(smallestHeight(problem, 0), std::invalid_argument);
+  EXPECT_THROW(smallestWidth(problem, -1), std::invalid_argument);
+  EXPECT_THROW(smallestSameAspect(problem, 1, 0), std::invalid_argument);
+  EXPECT_THROW(sameAspectHeight({0, 100, {}}, 10, 1), std::invalid_argument);
+}
+
+// Every proposed fix, applied, fits; one step less does not.
+TEST(PackingFix, FixesAreTightOnTheGrid)
+{
+  const int step = 7;
+  const PackingProblem problem{
+      50, 50, {rigid(30, 30), rigid(30, 30), rigid(20, 45)}};
+  for (const auto& [name, fix, apply] :
+       std::vector<std::tuple<std::string,
+                              DimensionFix,
+                              std::function<PackingProblem(int)>>>{
+           {"height",
+            smallestHeight(problem, step),
+            [&](int v) { return PackingProblem{50, v, problem.blocks}; }},
+           {"width",
+            smallestWidth(problem, step),
+            [&](int v) { return PackingProblem{v, 50, problem.blocks}; }},
+       }) {
+    ASSERT_TRUE(fix.found) << name;
+    EXPECT_EQ(fix.lower, fix.upper) << name;
+    EXPECT_EQ(fix.upper % step, 0) << name;
+    EXPECT_EQ(checkPacking(apply(fix.upper)).status, PackingStatus::kFits)
+        << name;
+    EXPECT_EQ(checkPacking(apply(fix.upper - step)).status,
+              PackingStatus::kDoesNotFit)
+        << name;
+  }
+}
+
+TEST(PackingFix, SameAspectKeepsTheRatio)
+{
+  // 2:1 outline; two 60 x 60 squares need 120 wide, so 120 x 60.
+  const PackingProblem problem{100, 50, {rigid(60, 60), rigid(60, 60)}};
+  const DimensionFix fix = smallestSameAspect(problem, 1, 1);
+  ASSERT_TRUE(fix.found);
+  EXPECT_EQ(fix.upper, 120);
+}
+
+TEST(PackingFix, BlockWiderThanAnyHeightAllowsIsNotFixedByHeight)
+{
+  const PackingProblem problem{100, 100, {rigid(150, 10)}};
+  EXPECT_FALSE(smallestHeight(problem, 1).found);
 }
 
 }  // namespace
