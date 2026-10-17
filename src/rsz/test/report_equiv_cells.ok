@@ -58,6 +58,7 @@ sky130_fd_sc_hd__clkdlybuf4s50_2           11.261  3.00 4.36e-12  3.69   EL
 [INFO RSZ-0146] Capacitance ratio for early cell sizing has been unset.
 [INFO RSZ-0148] Capacitance ratio for early buffer sizing has been unset.
 [INFO RSZ-0166] Buffer pruning has been enabled.
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
 The following 20 cells are equivalent to sky130_fd_sc_hd__buf_1 with matching cell_footprint:
 =============================================================================
           Cell                              Area   Area Leakage  Leakage  VT
