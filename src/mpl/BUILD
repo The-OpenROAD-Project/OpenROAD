@@ -64,6 +64,28 @@ cc_library(
 )
 
 cc_library(
+    name = "packing",
+    srcs = [
+        "src/packing.cpp",
+    ],
+    hdrs = [
+        "src/packing.h",
+    ],
+    includes = [
+        "src",
+    ],
+    deps = [
+        ":shapes",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/sat:cp_model_cc_proto",
+        "@or-tools//ortools/sat:cp_model_checker",
+        "@or-tools//ortools/sat:cp_model_solver",
+        "@or-tools//ortools/sat:sat_parameters_cc_proto",
+        "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+cc_library(
     name = "mpl_impl",
     srcs = [
         "src/SACoreHardMacro.cpp",

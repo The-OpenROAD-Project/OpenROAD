@@ -347,3 +347,16 @@ doc_check_test(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_test(
+    name = "mpl_packing_unittest",
+    srcs = [
+        "cpp/PackingTestUtil.h",
+        "cpp/TestPacking.cpp",
+    ],
+    deps = [
+        "//src/mpl:packing",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
