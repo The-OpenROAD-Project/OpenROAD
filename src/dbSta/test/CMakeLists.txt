@@ -79,6 +79,7 @@ or_integration_tests(
     write_verilog9_hier
   PASSFAIL_TESTS
     check_ip_liberty_pins
+    check_ip_multilayer_alignment
 )
 
 if(ENABLE_TESTS)

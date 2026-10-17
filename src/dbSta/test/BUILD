@@ -109,6 +109,7 @@ ALL_TESTS = [
 
 PASSFAIL_TESTS = [
     "check_ip_liberty_pins",
+    "check_ip_multilayer_alignment",
 ]
 
 filegroup(
