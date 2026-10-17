@@ -6,15 +6,32 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
 #include "RepairSetupProfiler.hh"
+#include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 
 namespace rsz {
+
+std::vector<sta::Instance*> keptInstances(
+    const sta::dbNetwork* network,
+    const std::vector<InstanceRecord>& records)
+{
+  std::vector<sta::Instance*> kept;
+  for (const InstanceRecord& record : records) {
+    odb::dbInst* db_inst = network->block()->findInst(record.name.c_str());
+    if (db_inst != nullptr && network->dbToSta(db_inst) == record.inst) {
+      kept.push_back(record.inst);
+    }
+  }
+  return kept;
+}
 
 // === WorkMeter ==============================================================
 
@@ -293,14 +310,14 @@ bool WnsTail::maySpeculate() const
   return speculative_batches_ < config_.wns_tail_speculate && greedy_stalled_;
 }
 
-void WnsTail::keepSpeculative(const std::vector<sta::Instance*>& instances)
+void WnsTail::keepSpeculative(const std::vector<InstanceRecord>& instances)
 {
   ++speculative_batches_;
   speculative_instances_.insert(
       speculative_instances_.end(), instances.begin(), instances.end());
 }
 
-std::vector<sta::Instance*> WnsTail::endSpeculation()
+std::vector<InstanceRecord> WnsTail::endSpeculation()
 {
   speculative_batches_ = 0;
   return std::exchange(speculative_instances_, {});

@@ -213,11 +213,12 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void noteMissedBatch(bool utilization_legal);
   // Keeps a missed batch on speculation in the WNS tail, else undoes it.
   void settleMissedBatch(int batch_moves);
-  // Undoes the current batch; a failed speculative run first puts all its
+  // Undoes the current batch; a failed speculative run also puts all its
   // instances on the tabu.
   void undoMissedBatch();
-  // Rolls back the current batch and puts its instances on the tabu.
-  void undoBatch();
+  // Rolls back the current batch and puts its instances, and the
+  // `speculative` instances of a failed run, on the tabu.
+  void undoBatch(const std::vector<InstanceRecord>& speculative = {});
   // Restore the last saved design before another batch is attempted.
   void restoreBatchCheckpoint();
   // Restores the batch journal and takes back its moves.  The callers count the
@@ -307,7 +308,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
 
   // Moves of the batch under evaluation.  The candidates and the swaps point
   // into the pool of iterate() and are cleared when it returns.
-  std::vector<sta::Instance*> batch_instances_;
+  std::vector<InstanceRecord> batch_instances_;
   std::vector<MoveCandidate*> batch_candidates_;
   // Cell swaps eligible for in-place salvage of the current batch.
   std::vector<SwapRecord> batch_swaps_;

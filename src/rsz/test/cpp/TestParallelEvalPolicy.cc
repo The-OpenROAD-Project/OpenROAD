@@ -691,6 +691,28 @@ TEST(TestParallelEvalRules, ParallelEvalCheckpointPrioritizesWns)
       -10.1f, -100.0f, -10.15f, -90.0f, -10.0f, 0.1f));
 }
 
+// The tabu takes only instances a rollback kept: a deleted instance can hand
+// its address to the next instance OpenDB creates.
+TEST_F(TestResizerMt, ParallelEvalKeptInstancesSkipDeletedOnes)
+{
+  odb::dbInst* kept_db_inst = block_->findInst("target");
+  ASSERT_NE(kept_db_inst, nullptr);
+  odb::dbInst* deleted_db_inst
+      = odb::dbInst::create(block_, db_->findMaster("BUF_X1"), "deleted_probe");
+  ASSERT_NE(deleted_db_inst, nullptr);
+  const std::vector<InstanceRecord> records{
+      {.inst = db_network_->dbToSta(kept_db_inst), .name = "target"},
+      {.inst = db_network_->dbToSta(deleted_db_inst), .name = "deleted_probe"}};
+
+  // The next instance may take the address of the deleted one.
+  odb::dbInst::destroy(deleted_db_inst);
+  ASSERT_NE(odb::dbInst::create(block_, db_->findMaster("BUF_X1"), "new_probe"),
+            nullptr);
+
+  EXPECT_EQ(keptInstances(db_network_, records),
+            std::vector<sta::Instance*>{records[0].inst});
+}
+
 TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheViolatingCone)
 {
   resizer_.runRepairSetupPreamble();

@@ -653,17 +653,16 @@ void SetupParallelEvalPolicy::settleMissedBatch(const int batch_moves)
 
 void SetupParallelEvalPolicy::undoMissedBatch()
 {
+  std::vector<InstanceRecord> speculative;
   if (tail_.speculating()) {
     // Every batch of the failed run goes on the tabu list, or the first one
     // would be picked again at once.  Only the last batch counts toward the
     // undo limit.
     RepairSetupProfiler::event("wns_tail_speculation_failed");
-    for (sta::Instance* inst : tail_.endSpeculation()) {
-      tabu_.addTabu(inst, batch_index_);
-    }
+    speculative = tail_.endSpeculation();
   }
 
-  undoBatch();
+  undoBatch(speculative);
 }
 
 std::vector<Target> SetupParallelEvalPolicy::collectTargets(
@@ -979,6 +978,9 @@ int SetupParallelEvalPolicy::commitBatch(
 
     const Target& target = candidate.target();
     sta::Instance* inst = target.inst(resizer_);
+    // The name is read before the move, which may delete the instance.
+    InstanceRecord record{
+        .inst = inst, .name = resizer_.dbNetwork()->staToDb(inst)->getName()};
 
     std::optional<SwapRecord> swap = recordSwap(candidate, inst);
     const MoveResult result = committer_.commit(candidate);
@@ -986,7 +988,7 @@ int SetupParallelEvalPolicy::commitBatch(
       continue;
     }
 
-    batch_instances_.push_back(inst);
+    batch_instances_.push_back(std::move(record));
     batch_candidates_.push_back(&candidate);
     if (swap.has_value() && result.move_count == 1
         && result.touched_instances.size() == 1
@@ -1488,7 +1490,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
   return true;
 }
 
-void SetupParallelEvalPolicy::undoBatch()
+void SetupParallelEvalPolicy::undoBatch(
+    const std::vector<InstanceRecord>& speculative)
 {
   if (!batch_journal_open_) {
     return;
@@ -1499,9 +1502,17 @@ void SetupParallelEvalPolicy::undoBatch()
   noteTimingUpdate();
   rollBackJournal();
 
+  // The rollback deleted the instances the open journal created, such as the
+  // buffers of a speculative run, so only the instances it kept go on the
+  // tabu.
+  const sta::dbNetwork* db_network = resizer_.dbNetwork();
+  for (sta::Instance* inst : keptInstances(db_network, speculative)) {
+    tabu_.addTabu(inst, batch_index_);
+  }
+
   // The same targets would win again from this state, so skip them for a
   // few batches.
-  for (sta::Instance* inst : batch_instances_) {
+  for (sta::Instance* inst : keptInstances(db_network, batch_instances_)) {
     if (tabu_.recordUndo(inst, batch_index_)) {
       RepairSetupProfiler::event("undo_blocked_instances");
     }

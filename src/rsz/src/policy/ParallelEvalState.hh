@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -14,10 +15,30 @@
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 
+namespace sta {
+class dbNetwork;
+}  // namespace sta
+
 namespace rsz {
 
 // Run state of SetupParallelEvalPolicy.  These classes hold counters and
 // decisions only; the policy owns the journal, the STA and the generators.
+
+// An instance and its OpenDB name, read while the instance exists.  A journal
+// rollback deletes the instances the journal created, and OpenDB gives the
+// address of a deleted instance to the next instance it creates or restores,
+// so the name tells whether the instance at the address is the same one.
+struct InstanceRecord
+{
+  sta::Instance* inst{nullptr};
+  std::string name;
+};
+
+// The instances of `records` that are still there after a rollback.  The
+// recorded addresses are compared, never dereferenced.
+std::vector<sta::Instance*> keptInstances(
+    const sta::dbNetwork* network,
+    const std::vector<InstanceRecord>& records);
 
 // The work the run spent, in reference seconds (see "Work meter" in
 // ParallelEvalPolicyConfig).  The stall rules read it instead of the wall
@@ -174,11 +195,11 @@ class WnsTail
 
   // Missed batches kept in the open journal since the last checkpoint.
   bool maySpeculate() const;
-  void keepSpeculative(const std::vector<sta::Instance*>& instances);
+  void keepSpeculative(const std::vector<InstanceRecord>& instances);
   bool speculating() const { return speculative_batches_ > 0; }
   int speculativeBatches() const { return speculative_batches_; }
   // Ends the speculative run and returns the instances it committed.
-  std::vector<sta::Instance*> endSpeculation();
+  std::vector<InstanceRecord> endSpeculation();
 
  private:
   const ParallelEvalPolicyConfig& config_;
@@ -197,7 +218,7 @@ class WnsTail
   double budget_work_{0.0};
   // Missed tail batches retained until a later checkpoint or rollback.
   int speculative_batches_{0};
-  std::vector<sta::Instance*> speculative_instances_;
+  std::vector<InstanceRecord> speculative_instances_;
   bool greedy_stalled_{false};
 };
 
