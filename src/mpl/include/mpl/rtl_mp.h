@@ -79,6 +79,9 @@ class MacroPlacer
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
+  // The step budget of each annealing run (default 2000); runs also stop
+  // once their best result has not improved for a fifth of it.
+  void setAnnealingSteps(int steps);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

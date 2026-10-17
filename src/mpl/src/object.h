@@ -450,6 +450,8 @@ class SoftMacro
 
   // Debug
   void reportShapeCurve(utl::Logger* logger) const;
+  const IntervalList& getWidthIntervals() const { return width_intervals_; }
+  const IntervalList& getHeightIntervals() const { return height_intervals_; }
 
  private:
   int findIntervalIndex(const IntervalList& interval_list,

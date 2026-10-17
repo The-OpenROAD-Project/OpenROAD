@@ -29,25 +29,78 @@ cc_library(
 )
 
 cc_library(
-    name = "pusher",
+    name = "shapes",
     srcs = [
-        "src/object.cpp",
-        "src/pusher.cpp",
         "src/shapes.cpp",
     ],
     hdrs = [
-        "src/mpl-util.h",
-        "src/object.h",
-        "src/pusher.h",
         "src/shapes.h",
     ],
     includes = [
         "src",
     ],
+)
+
+cc_library(
+    name = "pusher",
+    srcs = [
+        "src/object.cpp",
+        "src/pusher.cpp",
+    ],
+    hdrs = [
+        "src/mpl-util.h",
+        "src/object.h",
+        "src/pusher.h",
+    ],
+    includes = [
+        "src",
+    ],
     deps = [
+        ":shapes",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.random",
+    ],
+)
+
+cc_library(
+    name = "packing",
+    srcs = [
+        "src/packing.cpp",
+    ],
+    hdrs = [
+        "src/packing.h",
+    ],
+    includes = [
+        "src",
+    ],
+    deps = [
+        ":shapes",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/sat:cp_model_cc_proto",
+        "@or-tools//ortools/sat:cp_model_checker",
+        "@or-tools//ortools/sat:cp_model_solver",
+        "@or-tools//ortools/sat:sat_parameters_cc_proto",
+        "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+cc_library(
+    name = "packing_adapter",
+    srcs = [
+        "src/packingAdapter.cpp",
+    ],
+    hdrs = [
+        "src/packingAdapter.h",
+    ],
+    includes = [
+        "src",
+    ],
+    deps = [
+        ":packing",
+        ":pusher",
+        ":shapes",
+        "//src/odb/src/db",
     ],
 )
 
@@ -78,7 +131,10 @@ cc_library(
         "//src/mpl:__subpackages__",
     ],
     deps = [
+        ":packing",
+        ":packing_adapter",
         ":pusher",
+        ":shapes",
         ":snapper",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
@@ -124,6 +180,7 @@ cc_library(
     deps = [
         ":mpl_impl",
         ":pusher",
+        ":shapes",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",

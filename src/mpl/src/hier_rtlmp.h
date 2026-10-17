@@ -18,6 +18,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "packing.h"
 #include "shapes.h"
 
 namespace sta {
@@ -81,6 +82,7 @@ class HierRTLMP
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
   void setMinChannelSize(int width, int height);
+  void setAnnealingSteps(int steps) { max_num_step_ = steps; }
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
 
@@ -146,6 +148,9 @@ class HierRTLMP
   void runCoarseShaping();
   void setRootShapes();
   void calculateChildrenTilings(Cluster* parent);
+  // Why `problem` does not fit, with the outline changes that would fix it.
+  std::string explainOutline(const PackingProblem& problem,
+                             const PackingResult& result) const;
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
   TilingList generateTilingsForMacroCluster(int macro_width,
@@ -315,7 +320,7 @@ class HierRTLMP
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
-  const int max_num_step_ = 2000;
+  int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
 
   // probability of each action
