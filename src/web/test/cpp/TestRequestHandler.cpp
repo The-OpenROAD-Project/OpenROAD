@@ -18,6 +18,10 @@
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -31,6 +35,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -660,6 +665,51 @@ TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
   EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
   EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
   EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
 }
 
 // The cache stores blank tiles as an empty entry, so a hit has to come back as
