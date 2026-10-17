@@ -1402,9 +1402,10 @@ bool SetupParallelEvalPolicy::salvageMissedBatch(
         return false;
       }
 
-      // Once the batch is rolled back, later passes re-commit as well.  This
-      // restore is not counted as a timing update; the update below is.
+      // Once the batch is rolled back, later passes re-commit as well.  The
+      // restore updates timing, so it counts like an undo.
       in_place = false;
+      noteTimingUpdate();
       rollBackJournal();
       openBatchJournal();
       batch_moves = commitBatch(evaluations, selection, &skip);
