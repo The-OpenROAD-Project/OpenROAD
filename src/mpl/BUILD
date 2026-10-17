@@ -29,22 +29,34 @@ cc_library(
 )
 
 cc_library(
-    name = "pusher",
+    name = "shapes",
     srcs = [
-        "src/object.cpp",
-        "src/pusher.cpp",
         "src/shapes.cpp",
     ],
     hdrs = [
-        "src/mpl-util.h",
-        "src/object.h",
-        "src/pusher.h",
         "src/shapes.h",
     ],
     includes = [
         "src",
     ],
+)
+
+cc_library(
+    name = "pusher",
+    srcs = [
+        "src/object.cpp",
+        "src/pusher.cpp",
+    ],
+    hdrs = [
+        "src/mpl-util.h",
+        "src/object.h",
+        "src/pusher.h",
+    ],
+    includes = [
+        "src",
+    ],
     deps = [
+        ":shapes",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.random",
@@ -79,6 +91,7 @@ cc_library(
     ],
     deps = [
         ":pusher",
+        ":shapes",
         ":snapper",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
@@ -124,6 +137,7 @@ cc_library(
     deps = [
         ":mpl_impl",
         ":pusher",
+        ":shapes",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",
