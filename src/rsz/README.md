@@ -276,7 +276,7 @@ repair_timing
 | `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
 | `-effort` | Optimization effort of the `PARALLEL_EVAL` policy: `low`, `medium` or `high` (default). `low` stops when the batches stall and skips the WNS tail on the worst endpoints. `medium` declares the batch stall after half as many batches, asks twice the progress to reset it, and gives the WNS tail a quarter of the maximum tail endpoints and a quarter of the work budget of `high`. `high` runs the full tail. Other policies ignore the option, and `repair_timing` warns when `-phases` does not list `PARALLEL_EVAL`. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
-| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing, `1` records the WNS/TNS trajectory, `2` adds the pass and batch events. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. |
+| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing. `1` records a lightweight runtime breakdown, counters, and WNS/TNS trajectory. `2` includes mode 1 data and adds pass/batch/move events and OpenDB edits for diagnosing repair decisions; the trace adds I/O overhead. `3` adds per-move analysis. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. Mode 3 updates parasitics and timing before and after every move to observe it, so its result can differ slightly from mode 0. |
 | `-profile_dir` | Directory of the profiler output; the default is `repair_setup_profile` under the current directory. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
@@ -662,6 +662,28 @@ report_delay_estimator_accuracy
 | `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
 | `-estimator` | Delay estimator to evaluate. Required. `legacy`: the estimate of the LEGACY moves, the gate delay at the current load plus the fanin drive resistance times the input pin cap. `stage_window`: Liberty tables propagated over a window of stages around the target (see `-delay_levels`), as the Mt moves estimate. |
 | `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
+
+### Reporting Rebuffering Delay Estimator Accuracy
+
+The `report_delay_estimator_accuracy_for_rebuffering` command plans and scores
+the Rebuffer trees of a driver as RebufferMt does in `PARALLEL_EVAL`, and
+compares the estimate of the tree it scores best, including its target and
+side-load paths, with post-ECO STA.
+
+```tcl
+report_delay_estimator_accuracy_for_rebuffering
+    -inst instance
+    [-driver_pin pin]
+    [-delay_levels level]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Instance whose output net is rebuffered. Required. |
+| `-driver_pin` | Output pin of `-inst` to rebuffer. Without it, the report takes the worst setup path through any output pin of `-inst` and rebuffers the output pin on that path. |
+| `-delay_levels` | Stages before and after the driver stage in the estimator window: `0`, `1`, or `2`. Default `1`. |
 
 ### Optimizing Arithmetic Modules
 

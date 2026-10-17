@@ -36,6 +36,21 @@ class RebufferMtCandidate : public MoveCandidate
   MoveImpact impact() const override;
   std::vector<const sta::Pin*> guardedSidePins() const override;
   float scaledScore() const { return raw_score_ * score_scale_; }
+  // The tree plan and its side contexts, for the accuracy report.
+  const RebufferTreePlan& plan() const { return plan_; }
+  const std::vector<BufferTreeSidePathContext>& sideContexts() const
+  {
+    return side_contexts_;
+  }
+  // The RebufferMt estimate of a tree: the target gain, with the slack the side
+  // loads lose below zero charged against it.  Shared with the accuracy
+  // report.
+  static DelayEstimate estimateTree(
+      const EstimatorContext& estimator_context,
+      const RebufferTreePlan& plan,
+      const std::vector<BufferTreeSidePathContext>& side_contexts,
+      std::vector<StageEvaluation>* trace = nullptr,
+      std::vector<BufferTreeSidePathEvaluation>* side_evaluations = nullptr);
 
  private:
   std::string logName() const;

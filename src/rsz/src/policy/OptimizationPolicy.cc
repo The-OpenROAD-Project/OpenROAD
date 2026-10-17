@@ -247,6 +247,41 @@ void OptimizationPolicy::prepareTarget(Target& target,
   }
 }
 
+std::optional<EstimatorContext> OptimizationPolicy::buildPolicyContext(
+    Resizer& resizer,
+    const Target& target,
+    const OptimizationPolicyConfig& policy_config,
+    const std::unordered_set<const sta::Pin*>* critical_load_pins,
+    const bool include_latch_fanin,
+    DelayEstimatorCache* cache,
+    FailReason* fail_reason)
+{
+  const FaninSideLoadOptions fanin_side_loads{
+      .critical_load_pins = critical_load_pins,
+      .off_path_weight = policy_config.fanin_side_offpath_weight};
+  std::optional<EstimatorContext> context = DelayEstimator::buildContext(
+      resizer,
+      target,
+      policy_config.delay_estimation_levels,
+      fail_reason,
+      policy_config.sta_slew_bias,
+      include_latch_fanin,
+      cache,
+      policy_config.fanin_side_loss ? &fanin_side_loads : nullptr,
+      policy_config.dual_rf_eval);
+
+  if ((policy_config.fanin_side_loss || policy_config.dual_rf_eval
+       || policy_config.rebuffer_mt_side_loads)
+      && context.has_value()) {
+    // Side paths may not be pushed below the current global worst slack.
+    context->side_slack_floor = sta::delayAsFloat(
+        resizer.sta()->worstSlack(resizer.maxAnalysisMode()));
+    context->side_floor_margin = policy_config.side_floor_margin;
+    context->fanin_side_loss_weight = policy_config.fanin_side_loss_weight;
+  }
+  return context;
+}
+
 void OptimizationPolicy::prepareEstimatorContext(Target& target) const
 {
   if (target.estimator_context.has_value() || !target.canBePathDriver()) {
@@ -254,33 +289,16 @@ void OptimizationPolicy::prepareEstimatorContext(Target& target) const
   }
 
   FailReason fail_reason = FailReason::kNone;
-  const FaninSideLoadOptions fanin_side_loads{
-      .critical_load_pins = &target_collector_->critPathLoadPins(),
-      .off_path_weight = policy_config_.fanin_side_offpath_weight};
   {
     const ProfileScope profile("prepare_context");
-    target.estimator_context = DelayEstimator::buildContext(
-        resizer_,
-        target,
-        policy_config_.delay_estimation_levels,
-        &fail_reason,
-        policy_config_.sta_slew_bias,
-        /* include_latch_fanin */ true,
-        &estimator_cache_,
-        policy_config_.fanin_side_loss ? &fanin_side_loads : nullptr,
-        policy_config_.dual_rf_eval);
-  }
-
-  if ((policy_config_.fanin_side_loss || policy_config_.dual_rf_eval
-       || policy_config_.rebuffer_mt_side_loads)
-      && target.estimator_context.has_value()) {
-    // Side paths may not be pushed below the current global worst slack.
-    target.estimator_context->side_slack_floor
-        = sta::delayAsFloat(sta_->worstSlack(max_));
-    target.estimator_context->side_floor_margin
-        = policy_config_.side_floor_margin;
-    target.estimator_context->fanin_side_loss_weight
-        = policy_config_.fanin_side_loss_weight;
+    target.estimator_context
+        = buildPolicyContext(resizer_,
+                             target,
+                             policy_config_,
+                             &target_collector_->critPathLoadPins(),
+                             /* include_latch_fanin */ true,
+                             &estimator_cache_,
+                             &fail_reason);
   }
 
   if (!target.estimator_context.has_value() && RepairSetupProfiler::enabled()) {

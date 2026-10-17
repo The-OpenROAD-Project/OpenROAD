@@ -823,16 +823,8 @@ TargetEvaluation SetupParallelEvalPolicy::collectGenerated(GenerationTask& task)
   TargetEvaluation evaluation;
   for (size_t index = 0; index < task.generators.size(); ++index) {
     CandidateVector& generated = task.generated[index];
-    if (generated.empty()) {
-      RepairSetupProfiler::event(
-          "skip_no_candidates", 1, moveName(task.generators[index]->type()));
-    }
-
-    if (profiling) {
-      for (const std::unique_ptr<MoveCandidate>& candidate : generated) {
-        RepairSetupProfiler::moveGenerated(*candidate);
-      }
-    }
+    RepairSetupProfiler::movesGenerated(task.generators[index]->type(),
+                                        generated);
 
     evaluation.candidates.reserve(evaluation.candidates.size()
                                   + generated.size());
@@ -1134,7 +1126,7 @@ int SetupParallelEvalPolicy::effectiveBatchCap(const size_t fep_count) const
 
 void SetupParallelEvalPolicy::noteTimingUpdate()
 {
-  work_.addTimingUpdate(resizer_.estimateParasitics()->invalidNetCount());
+  work_.addTimingUpdate(resizer_.estimateParasitics()->pendingNetCount());
 }
 
 void SetupParallelEvalPolicy::updateTiming()
@@ -1300,9 +1292,10 @@ std::optional<float> SetupParallelEvalPolicy::selfStageDelayDelta(
     baseline += stage.current_delay;
   }
 
-  // Slew changes elsewhere in the batch move untouched arcs by a hair; only
-  // a visible fraction of the stage delay counts as a slowdown.
-  return delta - 0.01f * std::abs(baseline);
+  // Only a visible fraction of the stage delay counts as a slowdown.
+  return delta
+         - policy_config_.parallel_eval.culprit_delay_ratio
+               * std::abs(baseline);
 }
 
 std::optional<float> SetupParallelEvalPolicy::graphStageDelay(

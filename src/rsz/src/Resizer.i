@@ -644,6 +644,16 @@ void report_delay_estimator_accuracy_cmd(Instance* inst,
       inst, replacement, std::string(estimator), delay_levels);
 }
 
+void report_delay_estimator_accuracy_for_rebuffering_cmd(Instance* inst,
+                                                         Pin* driver_pin,
+                                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracyForRebufferTree(
+      inst, driver_pin, delay_levels);
+}
+
 bool is_valid_accuracy_estimator_cmd(const char* name)
 {
   return Resizer::isValidDelayEstimatorName(std::string(name));

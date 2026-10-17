@@ -65,6 +65,11 @@ class MoveCommitter
 
   void init();
   MoveResult commit(MoveCandidate& candidate);
+  // Brings parasitics and required times up to date for the profile mode 3
+  // observation of a move.  The estimated nets stay pending (see
+  // EstimateParasitics::updateParasiticsForObserver()), so the observation
+  // leaves the work a policy counts unchanged.
+  void updateTimingForObserver();
 
   // === MoveTracker reporting ===============================================
   // Tracker-style reporting is enabled by the existing RSZ move_tracker debug

@@ -12,15 +12,12 @@
 
 #include "OptimizerTypes.hh"
 #include "boost/functional/hash.hpp"
-#include "sta/SearchClass.hh"
 
 namespace sta {
-class dbSta;
 class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
-class MinMaxAll;
 class PathExpanded;
 class Pin;
 class Pvt;
@@ -291,13 +288,6 @@ class DelayEstimator
       const std::vector<BufferTreeSidePathContext>& side_contexts,
       std::vector<StageEvaluation>* trace = nullptr,
       std::vector<BufferTreeSidePathEvaluation>* side_evaluations = nullptr);
-  // The setup path ends through any of through_pins, up to count per path
-  // group, sorted by slack.
-  static sta::PathEndSeq findPathEndsThrough(
-      sta::dbSta* sta,
-      const std::vector<sta::Pin*>& through_pins,
-      const sta::MinMaxAll* min_max_all,
-      int count);
 };
 
 }  // namespace rsz

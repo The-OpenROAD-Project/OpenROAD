@@ -8,7 +8,8 @@
 
 namespace rsz {
 
-TEST_F(TestResizerMt, BufferCatalogPreservesEstimatesAcrossThreadCounts)
+TEST_F(TestResizerMt,
+       SetupParallelEvalPolicyPreservesEstimatesAcrossThreadCounts)
 {
   ep_.setHWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);
   ep_.setVWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);

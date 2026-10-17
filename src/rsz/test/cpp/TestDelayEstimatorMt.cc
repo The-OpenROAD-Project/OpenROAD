@@ -521,7 +521,7 @@ TEST_F(TestResizerMtSequential, FlipFlopPreparationCountsCandidateCells)
     RepairSetupProfiler profiler(resizer_,
                                  RepairSetupProfiler::Mode::kTiming,
                                  directory.root().string());
-    profiler.phase("PARALLEL_EVAL", 1);
+    profiler.beginPhase("PARALLEL_EVAL", 1);
     const Target target = makeTarget("out0", "dq_seq", "Q");
     ASSERT_NE(SequentialTimingEstimator::prepare(resizer_, target), nullptr);
     profiler.complete(true);

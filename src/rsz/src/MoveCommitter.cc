@@ -21,6 +21,7 @@
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -86,13 +87,36 @@ bool MoveCommitter::moveTrackerEnabled(const int level) const
          && resizer_.logger()->debugCheck(RSZ, "move_tracker", level);
 }
 
+void MoveCommitter::updateTimingForObserver()
+{
+  const ProfileScope profile("analysis_observation");
+  est::EstimateParasitics* parasitics = resizer_.estimateParasitics();
+  if (!parasitics->parasiticsValid()) {
+    const ProfileScope rc_profile("incremental_rc");
+    parasitics->updateParasiticsForObserver();
+  }
+
+  const ProfileScope sta_profile("incremental_sta");
+  resizer_.sta()->findRequireds();
+}
+
 MoveResult MoveCommitter::commit(MoveCandidate& candidate)
 {
+  // Profile mode 3 observes each move on current timing.
+  const bool observed = RepairSetupProfiler::analysis();
+  if (observed) {
+    updateTimingForObserver();
+  }
+
   RepairSetupProfiler::beginApply(candidate);
   MoveResult result;
   {
     const ProfileScope profile("apply");
     result = candidate.apply();
+  }
+
+  if (observed) {
+    updateTimingForObserver();
   }
   RepairSetupProfiler::endApply(candidate, result);
   if (result.accepted) {
@@ -109,6 +133,7 @@ MoveResult MoveCommitter::commit(MoveCandidate& candidate)
 
 void MoveCommitter::setCurrentEndpoint(const sta::Pin* endpoint_pin)
 {
+  RepairSetupProfiler::endpoint(endpoint_pin);
   if (moveTrackerEnabled()) {
     move_tracker_->setCurrentEndpoint(endpoint_pin);
   }
@@ -547,6 +572,14 @@ void MoveCommitter::restoreJournal()
   if (had_eco_changes) {
     resizer_.updateParasiticsAndTiming();
     resizer_.invalidateVertexOrdering();
+  }
+
+  if (RepairSetupProfiler::analysis()) {
+    const ProfileScope scope("analysis_observation");
+    RepairSetupProfiler::qor(
+        "rollback",
+        resizer_.sta()->worstSlack(resizer_.maxAnalysisMode()),
+        resizer_.sta()->totalNegativeSlack(resizer_.maxAnalysisMode()));
   }
 
   if (pending_move_results_.empty()) {

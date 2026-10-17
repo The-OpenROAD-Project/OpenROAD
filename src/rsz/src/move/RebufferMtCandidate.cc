@@ -56,8 +56,7 @@ Estimate RebufferMtCandidate::estimate()
   const EstimatorContext& estimator_context
       = target().estimator_context.value();
   const DelayEstimate delay_est
-      = DelayEstimator::estimateBufferTreeWithSidePaths(
-          estimator_context, plan_, side_contexts_, nullptr, nullptr);
+      = estimateTree(estimator_context, plan_, side_contexts_);
   raw_score_ = delay_est.arrival_impr - delay_est.side_loss;
   Estimate estimate{.reason = failReasonName(delay_est.reason)};
   estimate.score = scaledScore();
@@ -86,6 +85,17 @@ Estimate RebufferMtCandidate::estimate()
 
   estimate.legal = true;
   return estimate;
+}
+
+DelayEstimate RebufferMtCandidate::estimateTree(
+    const EstimatorContext& estimator_context,
+    const RebufferTreePlan& plan,
+    const std::vector<BufferTreeSidePathContext>& side_contexts,
+    std::vector<StageEvaluation>* trace,
+    std::vector<BufferTreeSidePathEvaluation>* side_evaluations)
+{
+  return DelayEstimator::estimateBufferTreeWithSidePaths(
+      estimator_context, plan, side_contexts, trace, side_evaluations);
 }
 
 std::vector<const sta::Pin*> RebufferMtCandidate::guardedSidePins() const

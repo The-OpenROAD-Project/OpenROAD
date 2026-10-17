@@ -178,6 +178,7 @@ add_executable(TestResizerMt
     TestCellSwapMt.cc
     TestDelayEstimatorMt.cc
     TestParallelEvalPolicy.cc
+    TestRepairSetupAnalysis.cc
     TestRepairSetupProfiler.cc
     TestRepairTargetCollector.cc
     TestResizerMt.cc

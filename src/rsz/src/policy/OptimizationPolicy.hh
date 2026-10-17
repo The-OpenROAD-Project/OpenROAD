@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -92,6 +93,21 @@ class OptimizationPolicy
   bool result() const { return result_; }
   // Only startpoint-oriented policies opt in to StTNS progress reporting.
   virtual bool showStartpointMetrics() const { return false; }
+
+  // === Estimator context ====================================================
+  // The estimator context of `target` under `policy_config`: the window with
+  // the policy's slew bias and side models, and the side-path floors of the
+  // current timing.  The policies prepare their targets with it, and the
+  // accuracy report builds the PARALLEL_EVAL context the same way.  A null
+  // `critical_load_pins` counts every side load fully.
+  static std::optional<EstimatorContext> buildPolicyContext(
+      Resizer& resizer,
+      const Target& target,
+      const OptimizationPolicyConfig& policy_config,
+      const std::unordered_set<const sta::Pin*>* critical_load_pins,
+      bool include_latch_fanin,
+      DelayEstimatorCache* cache,
+      FailReason* fail_reason);
 
  protected:
   // === Generator setup ======================================================
