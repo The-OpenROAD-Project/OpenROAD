@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -922,18 +923,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
+  // The load a driver can still take under its max-cap limit: none once the
+  // limit is violated, and no bound without a limit.
+  float maxCapIncrease(const sta::Pin* drvr_pin);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
-
-  // One driver's current load, cap limit, and violation state.
-  struct DriverCapLimit
-  {
-    // Total load currently driven on this net.
-    float cap{0.0f};
-    // Effective max-cap limit for this driver.
-    float max_cap{0.0f};
-    // True when the driver's current max-cap check has negative slack.
-    bool negative_slack{false};
-  };
 
   // Cached fanin max-cap headroom for one input pin of a candidate cell.
   struct InputCapBudget
@@ -942,8 +935,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     const sta::LibertyPort* port{nullptr};
     // Input capacitance of that current port.
     float current_cap{0.0f};
-    // Limits for all drivers that STA associates with the input net.
-    std::vector<DriverCapLimit> driver_limits;
+    // The smallest maxCapIncrease() of the drivers of the input net.
+    float max_cap_increase{std::numeric_limits<float>::infinity()};
   };
 
   // Capture fanin max-cap state once before screening equivalent cells.

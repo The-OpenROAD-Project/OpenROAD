@@ -7527,7 +7527,7 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
                        swap_port);
 }
 
-bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
+float Resizer::maxCapIncrease(const sta::Pin* drvr_pin)
 {
   float cap;
   float max_cap;
@@ -7538,13 +7538,18 @@ bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
       drvr_pin, sta_->scenes(), max_, cap, max_cap, cap_slack, tr, corner);
 
   if (max_cap > 0.0 && corner != nullptr) {
-    const float new_cap = cap + cap_delta;
+    // A violating driver may not get worse.
     if (cap_slack < 0.0) {
-      return new_cap <= cap;
+      return 0.0f;
     }
-    return new_cap <= max_cap;
+    return max_cap - cap;
   }
-  return true;
+  return std::numeric_limits<float>::infinity();
+}
+
+bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
+{
+  return cap_delta <= maxCapIncrease(drvr_pin);
 }
 
 bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
@@ -7617,26 +7622,9 @@ std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
     InputCapBudget budget;
     budget.port = port;
     budget.current_cap = inputPinCapacitance(network_, pin, current_cell, max_);
-    budget.driver_limits.reserve(drivers->size());
     for (const sta::Pin* driver_pin : *drivers) {
-      float cap;
-      float max_cap;
-      float cap_slack;
-      const sta::Scene* corner;
-      const sta::RiseFall* tr;
-      sta_->checkCapacitance(driver_pin,
-                             sta_->scenes(),
-                             max_,
-                             cap,
-                             max_cap,
-                             cap_slack,
-                             tr,
-                             corner);
-      if (max_cap > 0.0 && corner != nullptr) {
-        budget.driver_limits.push_back({.cap = cap,
-                                        .max_cap = max_cap,
-                                        .negative_slack = cap_slack < 0.0});
-      }
+      budget.max_cap_increase
+          = std::min(budget.max_cap_increase, maxCapIncrease(driver_pin));
     }
 
     budgets.push_back(std::move(budget));
@@ -7665,16 +7653,9 @@ bool Resizer::replacementFitsInputCapBudgets(
     }
 
     const float cap_delta = new_cap - budget.current_cap;
-    if (cap_delta <= 0.0f) {
-      continue;
-    }
-
-    for (const DriverCapLimit& limit : budget.driver_limits) {
-      // Same acceptance rule as checkMaxCapOK().
-      const float driver_cap = limit.cap + cap_delta;
-      if (driver_cap > (limit.negative_slack ? limit.cap : limit.max_cap)) {
-        return false;
-      }
+    // Same acceptance rule as checkMaxCapOK() for every driver.
+    if (cap_delta > 0.0f && cap_delta > budget.max_cap_increase) {
+      return false;
     }
   }
 
