@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: data/sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING UPF-0086] Couldn't find port d1/no_such_inst/in1 while connecting supply net VDD_NET
+[WARNING UPF-0086] Couldn't find port d1/no_such_port while connecting supply net VDD_NET
+PASS: VDD_NET connected to 'd1/in1 in2'

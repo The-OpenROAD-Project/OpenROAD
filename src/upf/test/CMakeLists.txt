@@ -5,6 +5,8 @@ or_integration_tests(
     write
     isolation
     isolation_select
+    supply
+    supply_hier
 )
 
 if(ENABLE_TESTS)
