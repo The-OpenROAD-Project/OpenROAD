@@ -322,6 +322,17 @@ cc_test(
 )
 
 cc_test(
+    name = "timing_base_test",
+    srcs = ["timing_base_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "estimate_target_density_test",
     srcs = ["estimate_target_density_test.cpp"],
     deps = [
