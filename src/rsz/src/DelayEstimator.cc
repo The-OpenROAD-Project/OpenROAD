@@ -19,6 +19,7 @@
 #include "DelayEstimatorInternal.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupProfiler.hh"
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -1045,6 +1046,29 @@ float DelayEstimatorCache::maxEquivalentInputCapIncrease(
   }
 
   return cached->second;
+}
+
+size_t DelayEstimatorCache::SlewBiasModelKey::Hash::operator()(
+    const SlewBiasModelKey& key) const
+{
+  size_t seed = 0;
+  boost::hash_combine(seed, key.driver_pin);
+  boost::hash_combine(seed, key.ref_arc);
+  boost::hash_combine(seed, key.scene);
+  boost::hash_combine(seed, key.min_max);
+  boost::hash_combine(seed, key.current_cell);
+  boost::hash_combine(seed, key.input_slew_bits);
+  boost::hash_combine(seed, key.load_cap_bits);
+  boost::hash_combine(seed, key.max_load_delta_bits);
+  boost::hash_combine(seed, key.pi_c2_bits);
+  boost::hash_combine(seed, key.pi_r_bits);
+  boost::hash_combine(seed, key.pi_c1_bits);
+  boost::hash_combine(seed, key.merge_arcs.size());
+  for (const MergeArc& arc : key.merge_arcs) {
+    boost::hash_combine(seed, arc.ref_arc);
+    boost::hash_combine(seed, arc.input_slew_bits);
+  }
+  return seed;
 }
 
 // Every input read by buildSlewBiasModel(): the stage identity and slews, the

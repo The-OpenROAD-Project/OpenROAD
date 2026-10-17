@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "boost/functional/hash.hpp"
 
 namespace sta {
 class Instance;
@@ -164,28 +163,11 @@ class DelayEstimatorCache
     // Compares every fixed field and the merge-arc sequence.
     bool operator==(const SlewBiasModelKey&) const = default;
 
-    // Hashes the same fields used by equality for Boost's cache lookup.
-    friend size_t hash_value(const SlewBiasModelKey& key)
+    // Hashes the same fields as operator== for the cache lookup.
+    struct Hash
     {
-      size_t seed = 0;
-      boost::hash_combine(seed, key.driver_pin);
-      boost::hash_combine(seed, key.ref_arc);
-      boost::hash_combine(seed, key.scene);
-      boost::hash_combine(seed, key.min_max);
-      boost::hash_combine(seed, key.current_cell);
-      boost::hash_combine(seed, key.input_slew_bits);
-      boost::hash_combine(seed, key.load_cap_bits);
-      boost::hash_combine(seed, key.max_load_delta_bits);
-      boost::hash_combine(seed, key.pi_c2_bits);
-      boost::hash_combine(seed, key.pi_r_bits);
-      boost::hash_combine(seed, key.pi_c1_bits);
-      boost::hash_combine(seed, key.merge_arcs.size());
-      for (const MergeArc& arc : key.merge_arcs) {
-        boost::hash_combine(seed, arc.ref_arc);
-        boost::hash_combine(seed, arc.input_slew_bits);
-      }
-      return seed;
-    }
+      size_t operator()(const SlewBiasModelKey& key) const;
+    };
   };
 
   // Captures the driver and parasitic state read by the slew-bias sampler.
@@ -198,9 +180,8 @@ class DelayEstimatorCache
   std::unordered_map<const sta::LibertyPort*, float>
       max_equiv_input_cap_increase_by_port;
   // Reuses sampled slew-bias models for identical driver states.
-  using SlewBiasModelMap = std::unordered_map<SlewBiasModelKey,
-                                              SlewBiasModel,
-                                              boost::hash<SlewBiasModelKey>>;
+  using SlewBiasModelMap = std::
+      unordered_map<SlewBiasModelKey, SlewBiasModel, SlewBiasModelKey::Hash>;
   SlewBiasModelMap slew_bias_models;
 };
 
