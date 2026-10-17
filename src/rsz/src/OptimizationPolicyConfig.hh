@@ -37,12 +37,28 @@ struct OptimizationPolicyConfig
   // Drop replacements that do not drive at least as strong on rise and fall.
   bool dual_rf_drive_guard{true};
 
-  // Weight of the SizeUpMt score; VtSwapMt keeps 1.
+  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.
   float size_up_mt_score_scale{0.75f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;
   // zero means no bound.
   float size_up_mt_max_drive_ratio{0.0f};
+
+  // --- RebufferMt -----------------------------------------------------------
+
+  // Weight of the RebufferMt score in the shared pool.
+  float rebuffer_mt_score_scale{0.10f};
+
+  // Minimum and maximum raw score of a buffer tree, in seconds; a maximum of
+  // zero or less turns the upper gate off.
+  float rebuffer_mt_min_score{5.0e-12f};
+  float rebuffer_mt_max_score{45.0e-12f};
+
+  // Buffer trees generated per target.
+  int rebuffer_mt_max_candidates{3};
+
+  // Let one-buffer trees compete in the score pool.
+  bool allow_rebuffer_mt_single_buffer{false};
 };
 
 }  // namespace rsz

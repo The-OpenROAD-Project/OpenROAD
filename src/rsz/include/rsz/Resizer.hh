@@ -187,6 +187,7 @@ struct LibraryAnalysisData
 
 class OdbCallBack;
 
+// Owns timing-driven netlist repair and its OpenDB/STA services.
 class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 {
  public:
@@ -897,24 +898,31 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                   const sta::LibertyCell* replacement);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
 
-  // Fanin max-cap state of one instance, captured once.  It lets
-  // replacementFitsInputCapBudgets() screen many cells without new STA checks,
-  // with the same decision as replacementPreservesMaxCap().
+  // One driver's current load, cap limit, and violation state.
   struct DriverCapLimit
   {
+    // Total load currently driven on this net.
     float cap{0.0f};
+    // Effective max-cap limit for this driver.
     float max_cap{0.0f};
+    // True when the driver's current max-cap check has negative slack.
     bool negative_slack{false};
   };
 
+  // Cached fanin max-cap headroom for one input pin of a candidate cell.
   struct InputCapBudget
   {
+    // Current cell's Liberty input port matched to candidate ports.
     const sta::LibertyPort* port{nullptr};
+    // Input capacitance of that current port.
     float current_cap{0.0f};
+    // Limits for all drivers that STA associates with the input net.
     std::vector<DriverCapLimit> driver_limits;
   };
 
+  // Capture fanin max-cap state once before screening equivalent cells.
   std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst);
+  // Test a replacement using captured headroom without new STA queries.
   bool replacementFitsInputCapBudgets(
       const std::vector<InputCapBudget>& budgets,
       const sta::LibertyCell* replacement) const;

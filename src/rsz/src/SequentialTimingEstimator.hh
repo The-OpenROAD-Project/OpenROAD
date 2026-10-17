@@ -20,14 +20,16 @@ struct Target;
 class SequentialTimingEstimator
 {
  public:
+  // Scoring verdict and input-side slack loss for one candidate swap.
   struct Result
   {
+    // False when input-side timing cannot be scored or is illegal.
     bool legal{false};
     // Maximum criticality-weighted side slack loss, in seconds; reduces gain.
     float weighted_side_slack_loss{0.0f};
     // Maximum unweighted side slack loss, in seconds; for diagnostics.
     float max_side_slack_loss{0.0f};
-    // Static storage, so it outlives the estimator.
+    // Static reason label; it remains valid after the estimator is destroyed.
     std::string_view reason;
   };
 
@@ -44,9 +46,12 @@ class SequentialTimingEstimator
   Result estimate(const sta::LibertyCell* candidate_cell) const;
 
  private:
+  // Prepared STA and Liberty context shared by candidate evaluations.
   struct PreparedFlipFlopTiming;
+  // Retains the immutable context while worker threads score candidates.
   explicit SequentialTimingEstimator(
       std::shared_ptr<const PreparedFlipFlopTiming> prepared_timing);
+  // Timing and equivalent-cell models captured on the main thread.
   const std::shared_ptr<const PreparedFlipFlopTiming> prepared_timing_;
 };
 

@@ -12,12 +12,15 @@
 
 #include "OptimizerTypes.hh"
 #include "boost/functional/hash.hpp"
+#include "sta/SearchClass.hh"
 
 namespace sta {
+class dbSta;
 class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
+class MinMaxAll;
 class PathExpanded;
 class Pin;
 class Pvt;
@@ -28,6 +31,7 @@ class TimingArc;
 
 namespace rsz {
 class Resizer;
+struct RebufferTreePlan;
 struct Target;
 
 // Negative-region slack lost by the opposite output transition when its delay
@@ -55,12 +59,11 @@ inline float sideLoadWeight(
              : off_path_weight;
 }
 
-// Per-stage trace entry that the estimate functions (estimate(),
-// estimateInsertion() and the buffer-tree estimates) produce when given a
-// trace.  Captures the inputs and outputs of the table-model lookup that was
-// applied (with the candidate at the target stage) so diagnostic tools can
-// present per-stage detail without re-implementing the estimator's stage
-// walk.
+// Per-stage trace entry that the estimate functions (estimate() and the
+// buffer-tree estimates) produce when given a trace.  Captures the inputs and
+// outputs of the table-model lookup that was applied (with the candidate at the
+// target stage) so diagnostic tools can present per-stage detail without
+// re-implementing the estimator's stage walk.
 struct StageEvaluation
 {
   int path_index{-1};
@@ -71,9 +74,35 @@ struct StageEvaluation
   // buffer tree, which have no cell and carry their wire delay here.
   float stage_delay{0.0f};
   float output_slew{0.0f};
+  float wire_delay{0.0f};
   // True when the target candidate lookup used relaxed (port-name+RF)
   // matching because no exact conditional/default arc was found.
   bool arc_match_relaxed{false};
+};
+
+// === Buffer-tree side paths ================================================
+
+// A side path of a buffer tree: the worst path through one load the tree
+// moves, with its current timing.
+struct BufferTreeSidePathContext
+{
+  const sta::Pin* load_pin{nullptr};
+  float current_driver_to_load_delay{0.0f};
+  float current_slack{0.0f};
+  // TNS-loss weight of the side load.  The side slack floor ignores it.
+  float weight{1.0f};
+};
+
+// The estimate of one side path, for the accuracy report.
+struct BufferTreeSidePathEvaluation
+{
+  const sta::Pin* load_pin{nullptr};
+  // False when the side path has no estimate or falls below the side slack
+  // floor.
+  bool legal{false};
+  float arrival_impr{0.0f};
+  float slack_after{0.0f};
+  std::vector<StageEvaluation> trace;
 };
 
 // === Delay estimator API ====================================================
@@ -233,6 +262,24 @@ class DelayEstimator
   static DelayEstimate estimate(const EstimatorContext& context,
                                 const sta::LibertyCell* candidate_cell,
                                 std::vector<StageEvaluation>* trace = nullptr);
+
+  // === Buffer-tree estimation (DelayEstimatorBufferTree.cc) =================
+  // The target path through the tree, less the summed negative-region slack
+  // loss of the side paths.  A side path pushed below the side_slack_floor
+  // guard makes the estimate illegal, as a fanin side load does.
+  static DelayEstimate estimateBufferTreeWithSidePaths(
+      const EstimatorContext& context,
+      const RebufferTreePlan& plan,
+      const std::vector<BufferTreeSidePathContext>& side_contexts,
+      std::vector<StageEvaluation>* trace = nullptr,
+      std::vector<BufferTreeSidePathEvaluation>* side_evaluations = nullptr);
+  // The setup path ends through any of through_pins, up to count per path
+  // group, sorted by slack.
+  static sta::PathEndSeq findPathEndsThrough(
+      sta::dbSta* sta,
+      const std::vector<sta::Pin*>& through_pins,
+      const sta::MinMaxAll* min_max_all,
+      int count);
 };
 
 }  // namespace rsz

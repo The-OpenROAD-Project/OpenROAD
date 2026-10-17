@@ -57,6 +57,12 @@ const char* failReasonName(const FailReason reason)
       return "missing_candidate_port";
     case FailReason::kMissingCandidateTimingArc:
       return "missing_candidate_timing_arc";
+
+    // Buffer insertion timing context.
+    case FailReason::kInvalidBufferInsertion:
+      return "invalid_buffer_insertion";
+    case FailReason::kMissingBufferTimingArc:
+      return "missing_buffer_timing_arc";
     case FailReason::kSideSlackFloorViolation:
       return "side_slack_floor_violation";
     case FailReason::kDualRfNonImproving:

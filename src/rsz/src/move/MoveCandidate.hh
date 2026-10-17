@@ -51,7 +51,7 @@ class MoveCandidate
 
   // === Candidate identity ===================================================
   Resizer& resizer_;
-  const Target& target_;  // From the active poilicy target vector
+  const Target& target_;  // From the active policy target vector.
 };
 
 }  // namespace rsz

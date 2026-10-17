@@ -39,7 +39,7 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
       = selectCandidateCells(current_cell);
 
   // Fanin max-cap headroom is instance-level, captured once per target.
-  const std::vector<Resizer::InputCapBudget> budgets = inputCapBudgets(target);
+  const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
   candidates.reserve(candidate_cells.size());
   for (sta::LibertyCell* candidate_cell : candidate_cells) {
     if (policy_config_.dual_rf_drive_guard) {

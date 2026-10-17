@@ -28,6 +28,7 @@ add_library(rsz_lib
     Optimizer.cc
     OptimizerTypes.cc
     DelayEstimator.cc
+    DelayEstimatorBufferTree.cc
     DelayEstimatorReporter.cc
     SequentialTimingEstimator.cc
     LRSubproblem.cc
@@ -52,6 +53,8 @@ add_library(rsz_lib
     move/CloneGenerator.cc
     move/MoveCandidate.cc
     move/MoveGenerator.cc
+    move/RebufferMtCandidate.cc
+    move/RebufferMtGenerator.cc
     move/RerouteCandidate.cc
     move/RerouteGenerator.cc
     move/SizeDownFanoutCandidate.cc

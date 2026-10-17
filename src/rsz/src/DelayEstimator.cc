@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "DelayEstimatorInternal.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupProfiler.hh"
 #include "db_sta/dbSta.hh"
@@ -44,13 +45,18 @@
 
 namespace rsz {
 
+using estimator_detail::estimateOutputSlew;
+using estimator_detail::estimateReceiverInputSlew;
+using estimator_detail::kMinSlewRatioDenominator;
+using estimator_detail::lookupArcDelayAndSlew;
+using estimator_detail::lookupBufferDelayAndSlew;
+using estimator_detail::makeEstimate;
+
 namespace {
 
 constexpr float kSlewMatchAbsTolerance = 1.0e-15f;
 constexpr float kSlewMatchRelTolerance = 1.0e-6f;
-constexpr float kMinSlewRatioDenominator = 1.0e-15f;
-// Sibling gate delay growth per unit of input slew growth, and the slew growth
-// per unit of driver delay growth used when no slew model is available.
+// Converts positive side-input slew growth into sibling gate delay growth.
 constexpr float kSideSlewDelayFactor = 0.3f;
 // Estimates side-input slew growth from driver delay growth when the side net
 // has no selected-arc slew model.
@@ -362,14 +368,19 @@ bool lookupArcDelayAndSlewForArc(const sta::Scene* scene,
   return found;
 }
 
+}  // namespace
+
+// Shared with DelayEstimatorBufferTree.cc.
+namespace estimator_detail {
+
 bool lookupArcDelayAndSlew(const SelectedArc& arc,
                            const float input_slew,
                            const float load_cap,
                            const sta::LibertyCell* cell,
                            float& delay,
                            float& output_slew,
-                           ArcMatchMode match_mode = ArcMatchMode::kExact,
-                           bool* match_relaxed_out = nullptr)
+                           ArcMatchMode match_mode,
+                           bool* match_relaxed_out)
 {
   return lookupArcDelayAndSlewForArc(arc.scene,
                                      arc.min_max,
@@ -383,6 +394,77 @@ bool lookupArcDelayAndSlew(const SelectedArc& arc,
                                      match_mode,
                                      match_relaxed_out);
 }
+
+bool lookupBufferDelayAndSlew(const DelayStageState& target_stage,
+                              const sta::LibertyCell* buffer_cell,
+                              const float input_slew,
+                              const float load_cap,
+                              float& delay,
+                              float& output_slew)
+{
+  delay = 0.0f;
+  output_slew = 0.0f;
+  if (buffer_cell == nullptr) {
+    return false;
+  }
+
+  sta::LibertyCell* scene_cell
+      = const_cast<sta::LibertyCell*>(buffer_cell)
+            ->sceneCell(target_stage.arc.scene, target_stage.arc.min_max);
+  if (scene_cell == nullptr) {
+    return false;
+  }
+
+  sta::LibertyPort* buffer_input = nullptr;
+  sta::LibertyPort* buffer_output = nullptr;
+  scene_cell->bufferPorts(buffer_input, buffer_output);
+  if (buffer_input == nullptr || buffer_output == nullptr) {
+    return false;
+  }
+
+  const sta::TimingArcSetSeq& arc_sets
+      = scene_cell->timingArcSets(buffer_input, buffer_output);
+
+  bool found_arc = false;
+  for (const sta::TimingArcSet* arc_set : arc_sets) {
+    if (arc_set->role()->isTimingCheck()) {
+      continue;
+    }
+
+    for (const sta::TimingArc* arc : arc_set->arcs()) {
+      const sta::RiseFall* input_rf = arc->fromEdge()->asRiseFall();
+      const sta::RiseFall* output_rf = arc->toEdge()->asRiseFall();
+      if (input_rf != target_stage.arc.outputRiseFall()
+          || output_rf != target_stage.arc.outputRiseFall()) {
+        continue;
+      }
+
+      float candidate_delay = 0.0f;
+      float candidate_slew = 0.0f;
+      if (!gateDelayAndSlewFromTableModel(target_stage.arc.pvt,
+                                          arc,
+                                          input_slew,
+                                          load_cap,
+                                          candidate_delay,
+                                          candidate_slew)) {
+        continue;
+      }
+
+      if (!found_arc
+          || target_stage.arc.min_max->compare(candidate_delay, delay)) {
+        delay = candidate_delay;
+        output_slew = candidate_slew;
+        found_arc = true;
+      }
+    }
+  }
+
+  return found_arc;
+}
+
+}  // namespace estimator_detail
+
+namespace {
 
 const sta::TimingArc* findCellTimingArcLike(const sta::TimingArc* graph_arc,
                                             sta::LibertyCell* scene_cell)
@@ -1040,7 +1122,8 @@ SlewBiasModel DelayEstimatorCache::getOrSampleSlewBias(
   return model;
 }
 
-namespace {
+// Shared with DelayEstimatorBufferTree.cc.
+namespace estimator_detail {
 
 // Estimate the post-ECO driver output slew for the selected transition.  When
 // an STA slew-bias model is prepared for this stage, correct only the stable
@@ -1053,8 +1136,8 @@ float estimateOutputSlew(const DelayStageState& stage,
                          const float path_input_slew,
                          const float load_cap,
                          const float selected_output_slew,
-                         ArcMatchMode merge_arc_mode = ArcMatchMode::kExact,
-                         bool* slew_relaxed_out = nullptr)
+                         ArcMatchMode merge_arc_mode,
+                         bool* slew_relaxed_out)
 {
   if (canUseSlewBias(stage, cell, path_input_slew)) {
     float table_delay = 0.0f;
@@ -1137,6 +1220,41 @@ float estimateReceiverInputSlew(const DelayStageState& driver_stage,
          / current_driver_output_slew;
 }
 
+float wireElmoreDelay(const WireRC& wire, const float load_cap)
+{
+  if (wire.res <= 0.0f || wire.cap < 0.0f || load_cap < 0.0f) {
+    return 0.0f;
+  }
+  return wire.res * (load_cap + 0.5f * wire.cap);
+}
+
+}  // namespace estimator_detail
+
+namespace {
+
+float currentPathWireDelay(const Resizer& resizer,
+                           const sta::PathExpanded& expanded,
+                           const int path_index,
+                           const SelectedArc& selected_arc)
+{
+  if (path_index + 1 >= expanded.size()) {
+    return 0.0f;
+  }
+
+  const sta::Path* next_path = expanded.path(path_index + 1);
+  sta::Edge* wire_edge = next_path != nullptr
+                             ? next_path->prevEdge(resizer.staState())
+                             : nullptr;
+  if (wire_edge == nullptr || !wire_edge->isWire()) {
+    return 0.0f;
+  }
+
+  const int dcalc_ap
+      = selected_arc.scene->dcalcAnalysisPtIndex(selected_arc.min_max);
+  return sta::delayAsFloat(resizer.graph()->wireArcDelay(
+      wire_edge, selected_arc.outputRiseFall(), dcalc_ap));
+}
+
 std::optional<DelayStageState> buildDelayStageState(
     const Resizer& resizer,
     sta::Instance* inst,
@@ -1185,6 +1303,8 @@ std::optional<DelayStageState> buildDelayStageState(
   stage.load_cap = load_cap;
   stage.current_model_delay = current_model_delay;
   stage.current_delay = current_delay;
+  stage.current_wire_delay
+      = currentPathWireDelay(resizer, expanded, path_index, *selected_arc);
   stage.output_slew_merge_arcs = collectOutputSlewMergeArcs(
       resizer, *selected_arc, driver_pin, current_cell, load_cap);
 
@@ -1431,6 +1551,11 @@ bool includeLatchFaninStages(const Resizer& resizer,
   return true;
 }
 
+}  // namespace
+
+// Shared with DelayEstimatorBufferTree.cc.
+namespace estimator_detail {
+
 DelayEstimate makeEstimate(const float current_delay,
                            const float candidate_delay)
 {
@@ -1441,6 +1566,10 @@ DelayEstimate makeEstimate(const float current_delay,
           .reason = arrival_impr > 0.0f ? FailReason::kEstimateLegal
                                         : FailReason::kEstimateNonImproving};
 }
+
+}  // namespace estimator_detail
+
+namespace {
 
 // Record each input net of the target: the driver's delay per load and the
 // worst slack of each load pin.  The selected-arc net skips the target pin,

@@ -51,13 +51,4 @@ bool MoveGenerator::weakerCellFirst(const sta::LibertyCell* lhs,
          > std::tie(rhs_drive_resistance, rhs_intrinsic);
 }
 
-std::vector<Resizer::InputCapBudget> MoveGenerator::inputCapBudgets(
-    const Target& target) const
-{
-  if (target.input_cap_budgets.has_value()) {
-    return *target.input_cap_budgets;
-  }
-  return resizer_.inputCapBudgets(target.inst(resizer_));
-}
-
 }  // namespace rsz

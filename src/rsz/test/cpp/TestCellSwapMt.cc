@@ -85,7 +85,9 @@ TEST_F(TestResizerMt, SizeUpMtGeneratorCachesLibraryOptionsPerDriverPort)
       generator.buildSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max)
           .cells);
 
-  // Generation consumes the cached options without changing the candidates.
+  // Generation consumes the cached options without changing the candidates;
+  // generate() reads the prepared fanin headroom.
+  target.input_cap_budgets = resizer_.inputCapBudgets(target.inst(resizer_));
   const CandidateVector candidates = generator.generate(target);
   EXPECT_EQ(candidates.size(), first.cells.size());
   EXPECT_EQ(generator.size_up_options_.size(), 1u);

@@ -75,6 +75,10 @@ enum class FailReason : uint8_t
   kMissingCandidatePort,
   kMissingCandidateTimingArc,
 
+  // Buffer insertion timing context.
+  kInvalidBufferInsertion,
+  kMissingBufferTimingArc,
+
   // A modeled side path pushed below the prepared global worst slack.
   kSideSlackFloorViolation,
 
@@ -126,6 +130,9 @@ using PrepareCacheMask = uint32_t;
 
 inline constexpr PrepareCacheMask kNoPrepareCache = 0;
 inline constexpr PrepareCacheMask kEstimatorContextCache = 1u << 0;
+// The flip-flop input-side checks a cell swap of the target may disturb
+// (SequentialTimingEstimator); needs kEstimatorContextCache.
+inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
 
 // Generation inputs: one Mt generator's live STA reads, prepared on the main
 // thread so its generate() can run on a worker.  Without them, the cell-swap
@@ -194,9 +201,12 @@ struct SlewBiasSample
   float sta_slew{0.0f};
 };
 
+// Three sampled corrections from Liberty output slew to current STA slew.
 struct SlewBiasModel
 {
+  // False when no stable correction could be sampled.
   bool valid{false};
+  // Arc that controls the merged output slew at the sampled operating point.
   const sta::TimingArc* table_worst_arc{nullptr};
   float input_slew{0.0f};
   std::array<SlewBiasSample, 3> samples;
@@ -223,6 +233,7 @@ struct DelayStageState
   float load_cap{0.0f};
   float current_model_delay{0.0f};  // Table-model cell delay baseline
   float current_delay{0.0f};        // STA graph cell delay baseline
+  float current_wire_delay{0.0f};   // Selected path wire delay after driver
   float current_model_slew{0.0f};   // Table-model merged slew baseline
   float current_slew{0.0f};         // STA graph merged slew baseline
   std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
@@ -308,6 +319,14 @@ struct DelayEstimate
   FailReason reason{FailReason::kNone};
 };
 
+// Lumped resistance and capacitance of one estimated wire segment.
+struct WireRC
+{
+  float length{0.0f};
+  float res{0.0f};
+  float cap{0.0f};
+};
+
 // === Optimization target model =============================================
 
 // One optimization target selected by a policy.  A Target is the handle a
@@ -335,6 +354,7 @@ using TargetViewMask = uint8_t;
 inline constexpr TargetViewMask kPathDriverView = 1u << 0;
 inline constexpr TargetViewMask kInstanceView = 1u << 1;
 
+// Repairable instance or path driver with timing context prepared for moves.
 struct Target
 {
   // === Target identity ======================================================
@@ -363,6 +383,7 @@ struct Target
 
   // === Prepared data for MT generation/estimation ==========================
   std::optional<EstimatorContext> estimator_context;
+  // Prepared flip-flop input-side checks for candidate Q-path swaps.
   std::shared_ptr<const SequentialTimingEstimator> sequential_timing_estimator;
 
   // === Generation inputs (kGenerationInputCaches) ===========================

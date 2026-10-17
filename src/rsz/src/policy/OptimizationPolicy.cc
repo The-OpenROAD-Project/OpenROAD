@@ -94,7 +94,7 @@ bool OptimizationPolicy::start()
   estimate_parasitics_ = resizer_.estimateParasitics();
   max_ = resizer_.maxAnalysisMode();
   resetRun();
-  estimator_cache_ = DelayEstimatorCache{};
+  estimator_cache_.clear();
   // Start every phase with the progress table's area cache invalid. The
   // cache is keyed on MoveCommitter::netlistEdits(), which only counts
   // edits made through the committer; GlobalSizingPolicy replaces cells
@@ -344,6 +344,9 @@ void OptimizationPolicy::prepareTarget(Target& target,
   if ((mask & kEstimatorContextCache) != 0) {
     prepareEstimatorContext(target);
   }
+  if ((mask & kSequentialEstimatorCache) != 0) {
+    prepareSequentialEstimator(target);
+  }
 
   // Generation inputs: each Mt generator's live STA reads, so that its
   // generate() runs on a worker thread.
@@ -390,17 +393,25 @@ void OptimizationPolicy::prepareEstimatorContext(Target& target) const
         = policy_config_.fanin_side_loss_weight;
   }
 
-  if (target.estimator_context.has_value()) {
-    target.sequential_timing_estimator
-        = SequentialTimingEstimator::prepare(resizer_, target);
-    if (target.sequential_timing_estimator != nullptr) {
-      RepairSetupProfiler::event("sequential_targets_prepared");
-    }
-  }
-
   if (!target.estimator_context.has_value() && RepairSetupProfiler::enabled()) {
     RepairSetupProfiler::event(std::string("prepare_reject_")
                                + failReasonName(fail_reason));
+  }
+}
+
+void OptimizationPolicy::prepareSequentialEstimator(Target& target) const
+{
+  // Only SizeUpMt and VtSwapMt read it, so a run without them skips the
+  // flip-flop snapshots.
+  if (target.sequential_timing_estimator != nullptr
+      || !target.estimator_context.has_value()) {
+    return;
+  }
+
+  target.sequential_timing_estimator
+      = SequentialTimingEstimator::prepare(resizer_, target);
+  if (target.sequential_timing_estimator != nullptr) {
+    RepairSetupProfiler::event("sequential_targets_prepared");
   }
 }
 

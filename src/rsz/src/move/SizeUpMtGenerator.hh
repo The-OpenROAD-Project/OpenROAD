@@ -27,9 +27,9 @@ namespace rsz {
 // MT-safe generator that enumerates same-VT cells that do not weaken output
 // drive for one target using a prepared EstimatorContext.
 //
-// prepareRequirements() asks for kEstimatorContextCache and
-// kInputCapBudgetCache, so generate() runs on worker threads without live
-// STA.  Produces multiple SizeUpMtCandidate instances so
+// prepareRequirements() asks for the estimator context, the flip-flop
+// input-side checks and the input-cap budgets, so generate() runs on worker
+// threads without live STA.  Produces multiple SizeUpMtCandidate instances so
 // the policy can evaluate them in parallel and pick the best.
 class SizeUpMtGenerator : public MoveGenerator
 {
@@ -41,7 +41,8 @@ class SizeUpMtGenerator : public MoveGenerator
   MoveType type() const override { return MoveType::kSizeUp; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kEstimatorContextCache | kInputCapBudgetCache;
+    return kEstimatorContextCache | kSequentialEstimatorCache
+           | kInputCapBudgetCache;
   }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
