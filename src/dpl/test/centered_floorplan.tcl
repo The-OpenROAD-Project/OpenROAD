@@ -10,4 +10,4 @@ check_placement
 
 set def_file [make_result_file centered_floorplan.def]
 write_def $def_file
-diff_file centered_floorplan.defok $def_file
+diff_files centered_floorplan.defok $def_file

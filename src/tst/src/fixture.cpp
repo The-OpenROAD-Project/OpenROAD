@@ -48,10 +48,7 @@ odb::dbLib* Fixture::loadLibaryLef(odb::dbTech* tech,
                                    const char* name,
                                    const std::string& lef_file)
 {
-  odb::lefin lef_reader(
-      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-  auto path = getFilePath(lef_file);
-  odb::dbLib* lib = lef_reader.createLib(tech, name, path.c_str());
+  odb::dbLib* lib = loadLibLef(tech, name, lef_file);
   sta_->postReadLef(/*tech=*/nullptr, lib);
   return lib;
 }
@@ -60,11 +57,7 @@ odb::dbLib* Fixture::loadTechAndLib(const char* tech_name,
                                     const char* lib_name,
                                     const std::string& lef_file)
 {
-  odb::lefin lef_reader(
-      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
-  auto path = getFilePath(lef_file);
-  odb::dbLib* lib
-      = lef_reader.createTechAndLib(tech_name, lib_name, path.c_str());
+  odb::dbLib* lib = loadTechAndLibLef(tech_name, lib_name, lef_file);
   sta_->postReadLef(/*tech=*/nullptr, lib);
   return lib;
 }

@@ -11,4 +11,4 @@ place_tapcells -distance 20 \
 
 write_def $def_file
 
-diff_file disallow_one_site_gaps.defok $def_file
+diff_files disallow_one_site_gaps.defok $def_file

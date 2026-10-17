@@ -38,6 +38,7 @@ endif()
 add_library(utl_lib
   src/Metrics.cpp
   src/CFileUtils.cpp
+  src/CsvParser.cpp
   src/ScopedTemporaryFile.cpp
   src/ServiceRegistry.cpp
   src/SuppressStdout.cpp

@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "ir.h"
-#include "log_stubs.h"
 #include "slang/ast/expressions/Operator.h"
 #include "slang_frontend.h"
 #include "syn/ir/Bundle.h"
@@ -256,7 +255,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     }
 
     default:
-      log_error("Unsupported unary operator\n");
+      reportError(graph_->logger(), 70, "Unsupported unary operator");
   }
 }
 
@@ -592,7 +591,7 @@ ir::Value BackendGraphBuilder::Biop(ast::BinaryOperator op,
     }
 
     default:
-      log_error("Unsupported binary operator\n");
+      reportError(graph_->logger(), 71, "Unsupported binary operator");
   }
 }
 
@@ -662,8 +661,8 @@ ir::Value BackendGraphBuilder::Bwmux(ir::Value a, ir::Value b, ir::Value s)
 
 ir::Value BackendGraphBuilder::Bmux(ir::Value a, ir::Value s)
 {
-  log_assert(a.size() % (1 << s.size()) == 0);
-  log_assert(a.size() >= 1ull << s.size());
+  assert(a.size() % (1 << s.size()) == 0);
+  assert(a.size() >= 1ull << s.size());
 
   uint64_t width = a.size() >> s.size();
   auto& g = graph();
@@ -753,11 +752,11 @@ void BackendGraphBuilder::add_instance(std::string_view cell_type,
 void BackendGraphBuilder::connect(ir::Value target, ir::Value source)
 {
   auto& g = graph();
-  log_assert(target.size() == source.size());
+  assert(target.size() == source.size());
   for (uint64_t i = 0; i < target.size(); i++) {
     syn::Net target_net = ir::Net(target[i]).raw_;
     auto [inst, offset] = g.resolve(target_net);
-    log_assert(inst->is<syn::Buffer>());
+    assert(inst->is<syn::Buffer>());
     inst->as<syn::Buffer>()->setA(offset, ir::Net(source[i]).raw_);
   }
 }
@@ -868,7 +867,9 @@ void BackendGraphBuilder::add_dual_edge_aldff(const std::string&,
                                               ir::Value ad,
                                               bool aload_polarity)
 {
-  log_error("no support\n");
+  reportError(graph_->logger(),
+              72,
+              "Flops with a dual-edge asynchronous load are unsupported");
 }
 
 void BackendGraphBuilder::add_memory_init(std::string_view,

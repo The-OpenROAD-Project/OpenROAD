@@ -21,4 +21,4 @@ set def_file [make_result_file group_pins5.def]
 
 write_def $def_file
 
-diff_file group_pins5.defok $def_file
+diff_files group_pins5.defok $def_file

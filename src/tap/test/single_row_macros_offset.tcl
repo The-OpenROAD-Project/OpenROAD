@@ -28,4 +28,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file single_row_macros_offset.defok $def_file
+diff_files single_row_macros_offset.defok $def_file

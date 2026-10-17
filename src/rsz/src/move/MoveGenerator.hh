@@ -91,8 +91,7 @@ class MoveGenerator
     return kNoPrepareCache;
   }
   virtual std::vector<std::unique_ptr<MoveCandidate>> generate(
-      const Target& target)
-      = 0;
+      const Target& target) = 0;
 
  protected:
   // === Target-view requirements ============================================

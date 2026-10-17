@@ -146,7 +146,7 @@ int GlobalSizingPolicy::applyPresize(const GlobalSizingConfig::PresizeMode mode,
       network_->leafInstanceIterator());
   while (iit->hasNext()) {
     sta::Instance* inst = iit->next();
-    if (!resizer_.isEditableLogicStdCell(inst)) {
+    if (!resizer_.isEditableLogicStdCell(inst) || resizer_.isFixed(inst)) {
       continue;
     }
     bool is_clock = false;

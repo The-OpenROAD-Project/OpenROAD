@@ -23,6 +23,6 @@ source $tcl_file
 
 write_def $def_file
 
-diff_file write_pin_placement3.defok $def_file
+diff_files write_pin_placement3.defok $def_file
 
-diff_file write_pin_placement3.tclok $tcl_file
+diff_files write_pin_placement3.tclok $tcl_file

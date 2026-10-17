@@ -11,11 +11,11 @@
 [DEBUG RSZ-move_tracker] Scanned 29 driver pins, found 6 with negative slack
 [DEBUG RSZ-move_tracker] Scanned 34 endpoints, found 4 with negative slack
 [INFO RSZ-0221] Using custom phase sequence: LEGACY_MT LAST_GASP
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
-       9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      4 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.4 |      4 | r2/D
+       9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      4 | r2/D
 [DEBUG RSZ-move_tracker] LEGACY Phase Summary:
 [DEBUG RSZ-move_tracker] Current Summary: Not Attempted: 0 Attempts: 5 Rejects: 0 Commits: 5 
 [DEBUG RSZ-move_tracker] Overall attempt_rate: 100.00% (5) reject_rate: 0.00% (0) commit_rate: 100.00% (5)
@@ -42,7 +42,7 @@
 [DEBUG RSZ-move_tracker] Maximum (WNS)                            |               |               |               |        |      -0.333 |       0.013 |       0.013 |       0.000
 [DEBUG RSZ-move_tracker] Total (TNS)                              |               |               |               |        |      -0.333 |       0.000 |       0.000 |       0.000
 [DEBUG RSZ-move_tracker] Endpoint effort distribution: 1 low (1-10), 0 medium (11-50), 0 high (51+)
-    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      0 | r2/D
+    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |      0 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0211] 
 [INFO RSZ-0212] === Optimization Analysis Reports ===

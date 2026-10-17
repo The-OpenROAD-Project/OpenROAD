@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "db/infra/frPoint.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
@@ -105,9 +104,9 @@ frAccessPoint* getPrefAp(const frInstTerm* iterm, const int pin_idx)
   }
   return pref_ap;
 }
-std::vector<Point3D> getAccessPoints(const frBlockObject* pin)
+std::vector<odb::Point3D> getAccessPoints(const frBlockObject* pin)
 {
-  std::vector<Point3D> result;
+  std::vector<odb::Point3D> result;
   if (pin->typeId() == frcInstTerm) {
     auto iterm = static_cast<const frInstTerm*>(pin);
     auto transform = iterm->getInst()->getNoRotationTransform();
@@ -153,7 +152,7 @@ bool isPinCoveredByGuides(const frBlockObject* pin,
   for (const auto& ap_loc : getAccessPoints(pin)) {
     for (const auto& guide : guides) {
       if (guide.getLayerNum() == ap_loc.z()
-          && guide.getBBox().intersects(ap_loc)) {
+          && guide.getBBox().intersects(ap_loc.xy())) {
         return true;
       }
     }
@@ -169,28 +168,29 @@ bool isPinCoveredByGuides(const frBlockObject* pin,
  *
  * @return The chosen best gcell index
  */
-Point3D findBestPinLocation(frDesign* design,
-                            frBlockObject* pin,
-                            const std::vector<frRect>& guides)
+odb::Point3D findBestPinLocation(frDesign* design,
+                                 frBlockObject* pin,
+                                 const std::vector<frRect>& guides)
 {
-  std::map<Point3D, int> gcell_to_ap_count;  // map from gcell index to number
-                                             // of accesspoints it holds.
+  std::map<odb::Point3D, int>
+      gcell_to_ap_count;  // map from gcell index to number
+                          // of accesspoints it holds.
   frCoord min_dist_to_guides = std::numeric_limits<frCoord>::max();
   for (const auto& ap_loc : getAccessPoints(pin)) {
-    auto ap_gcell_idx = design->getTopBlock()->getGCellIdx(ap_loc);
+    auto ap_gcell_idx = design->getTopBlock()->getGCellIdx(ap_loc.xy());
     auto gcell_center = design->getTopBlock()->getGCellCenter(ap_gcell_idx);
     for (const auto& guide : guides) {
       auto dist = odb::manhattanDistance(guide.getBBox(), gcell_center);
       if (dist < min_dist_to_guides) {
         gcell_to_ap_count.clear();
         min_dist_to_guides = dist;
-        gcell_to_ap_count[Point3D(ap_gcell_idx, ap_loc.z())]++;
+        gcell_to_ap_count[odb::Point3D(ap_gcell_idx, ap_loc.z())]++;
       } else if (dist == min_dist_to_guides) {
-        gcell_to_ap_count[Point3D(ap_gcell_idx, ap_loc.z())]++;
+        gcell_to_ap_count[odb::Point3D(ap_gcell_idx, ap_loc.z())]++;
       }
     }
   }
-  Point3D best_pin_loc_idx;
+  odb::Point3D best_pin_loc_idx;
   int highest_count = 0;
   for (const auto& [gcell_idx, count] : gcell_to_ap_count) {
     if (count > highest_count) {
@@ -209,7 +209,7 @@ Point3D findBestPinLocation(frDesign* design,
  * @param best_pin_loc_coords The gcell center point of the chosen pin shape
  *
  */
-int findClosestGuide(const Point3D& best_pin_loc_coords,
+int findClosestGuide(const odb::Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
                      const frCoord layer_change_penalty,
                      const RouterConfiguration* router_cfg)
@@ -219,7 +219,7 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
   int min_dist = std::numeric_limits<int>::max();
   int guide_idx = 0;
   for (const auto& guide : guides) {
-    dist = odb::manhattanDistance(guide.getBBox(), best_pin_loc_coords);
+    dist = odb::manhattanDistance(guide.getBBox(), best_pin_loc_coords.xy());
     dist += abs(guide.getLayerNum() - best_pin_loc_coords.z())
             * layer_change_penalty;
     if (guide.getLayerNum() < router_cfg->BOTTOM_ROUTING_LAYER) {
@@ -255,7 +255,7 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
  * @param gcell_half_size_vert Half the vertical size of the gcell
  *
  */
-void adjustGuidePoint(Point3D& guide_pt,
+void adjustGuidePoint(odb::Point3D& guide_pt,
                       const odb::Rect& guide_bbox,
                       const frCoord gcell_half_size_horz,
                       const frCoord gcell_half_size_vert)
@@ -304,7 +304,7 @@ void extendGuide(frDesign* design,
                  const frCoord gcell_half_size_horz,
                  const frCoord gcell_half_size_vert,
                  frRect& guide,
-                 Point3D& guide_pt)
+                 odb::Point3D& guide_pt)
 {
   const odb::Rect& guide_bbox = guide.getBBox();
   // connect best_pin_loc to guide_pt by trying to extend the closest guide
@@ -341,7 +341,7 @@ void extendGuide(frDesign* design,
  * @param gcell_half_size_horz Half the horizontal size of the gcell
  * @param gcell_half_size_vert Half the vertical size of the gcell
  */
-void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
+void fillGuidesUpToZ(const odb::Point3D& best_pin_loc_coords,
                      const int start_z,
                      const frCoord gcell_half_size_horz,
                      const frCoord gcell_half_size_vert,
@@ -901,7 +901,7 @@ void GuideProcessor::buildGCellPatterns()
 }
 
 void GuideProcessor::connectGuidesWithBestPinLoc(
-    Point3D& guide_pt,
+    odb::Point3D& guide_pt,
     const odb::Point& best_pin_loc_coords,
     const frCoord gcell_half_size_horz,
     const frCoord gcell_half_size_vert,
@@ -939,12 +939,12 @@ void GuideProcessor::connectGuidesWithBestPinLoc(
 
 void GuideProcessor::patchGuides_helper(frNet* net,
                                         std::vector<frRect>& guides,
-                                        const Point3D& best_pin_loc_idx,
-                                        const Point3D& best_pin_loc_coords,
+                                        const odb::Point3D& best_pin_loc_idx,
+                                        const odb::Point3D& best_pin_loc_coords,
                                         const int closest_guide_idx)
 {
-  Point3D guide_pt(
-      getClosestPoint(guides[closest_guide_idx], best_pin_loc_coords),
+  odb::Point3D guide_pt(
+      getClosestPoint(guides[closest_guide_idx], best_pin_loc_coords.xy()),
       guides[closest_guide_idx].getLayerNum());
   const odb::Rect& guide_bbox = guides[closest_guide_idx].getBBox();
   const frCoord gcell_half_size_horz
@@ -954,7 +954,7 @@ void GuideProcessor::patchGuides_helper(frNet* net,
   adjustGuidePoint(
       guide_pt, guide_bbox, gcell_half_size_horz, gcell_half_size_vert);
   extendGuide(getDesign(),
-              best_pin_loc_coords,
+              best_pin_loc_coords.xy(),
               gcell_half_size_horz,
               gcell_half_size_vert,
               guides[closest_guide_idx],
@@ -963,7 +963,7 @@ void GuideProcessor::patchGuides_helper(frNet* net,
     return;
   }
   connectGuidesWithBestPinLoc(guide_pt,
-                              best_pin_loc_coords,
+                              best_pin_loc_coords.xy(),
                               gcell_half_size_horz,
                               gcell_half_size_vert,
                               net,
@@ -991,11 +991,11 @@ void GuideProcessor::patchGuides(frNet* net,
   // no guide was found that overlaps with any of the pin shapes, then we patch
   // the guides
 
-  const Point3D best_pin_loc_idx
+  const odb::Point3D best_pin_loc_idx
       = findBestPinLocation(getDesign(), pin, guides);
   // The x/y/z coordinates of best_pin_loc_idx
-  const Point3D best_pin_loc_coords(
-      getDesign()->getTopBlock()->getGCellCenter(best_pin_loc_idx),
+  const odb::Point3D best_pin_loc_coords(
+      getDesign()->getTopBlock()->getGCellCenter(best_pin_loc_idx.xy()),
       best_pin_loc_idx.z());
   // get the guide that is closest to the gCell
   // TODO: test passing layer_change_penalty = gcell size
@@ -1049,7 +1049,7 @@ void splitByPins(
     const frCoord track_idx,
     const frCoord begin_idx,
     const frCoord end_idx,
-    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map,
     std::set<frCoord>& split_indices)
 {
   const auto& layer_pins = pin_helper.at(layer_num);
@@ -1068,10 +1068,10 @@ void splitByPins(
       for (const auto pin : pins) {
         if (is_horizontal) {
           pin_gcell_map[pin].insert(
-              Point3D(along_routing_dir_idx, track_idx, layer_num));
+              odb::Point3D(along_routing_dir_idx, track_idx, layer_num));
         } else {
           pin_gcell_map[pin].insert(
-              Point3D(track_idx, along_routing_dir_idx, layer_num));
+              odb::Point3D(track_idx, along_routing_dir_idx, layer_num));
         }
       }
       ++it;
@@ -1159,8 +1159,8 @@ void addSplitRect(const frCoord track_idx,
 void GuideProcessor::genGuides_split(
     std::vector<frRect>& rects,
     const TrackIntervalsByLayer& intvs,
-    const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    const std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
+    frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map,
     bool via_access_only) const
 {
   rects.clear();
@@ -1276,7 +1276,7 @@ void GuideProcessor::genGuides_split(
 }
 
 void GuideProcessor::mapPinShapesToGCells(
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* term) const
 {
   const auto pin_shapes = getPinShapes(term);
@@ -1289,7 +1289,7 @@ void GuideProcessor::mapPinShapesToGCells(
         {box.xMax() - 1, box.yMax() - 1});
     for (int x = min_idx.x(); x <= max_idx.x(); x++) {
       for (int y = min_idx.y(); y <= max_idx.y(); y++) {
-        gcell_pin_map[Point3D(x, y, layer_num)].insert(term);
+        gcell_pin_map[odb::Point3D(x, y, layer_num)].insert(term);
       }
     }
   }
@@ -1297,7 +1297,7 @@ void GuideProcessor::mapPinShapesToGCells(
 
 void GuideProcessor::initGCellPinMap(
     const frNet* net,
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const
+    std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map) const
 {
   for (auto instTerm : net->getInstTerms()) {
     mapTermAccessPointsToGCells(gcell_pin_map, instTerm);
@@ -1308,20 +1308,20 @@ void GuideProcessor::initGCellPinMap(
 }
 
 void GuideProcessor::mapTermAccessPointsToGCells(
-    std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+    std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
     frBlockObject* pin) const
 {
   for (const auto& ap_loc : getAccessPoints(pin)) {
     for (const auto& idx :
-         getDesign()->getTopBlock()->getGCellIndices(ap_loc)) {
-      gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
+         getDesign()->getTopBlock()->getGCellIndices(ap_loc.xy())) {
+      gcell_pin_map[odb::Point3D(idx, ap_loc.z())].insert(pin);
     }
   }
 }
 
 void GuideProcessor::initPinGCellMap(
     frNet* net,
-    frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map)
 {
   for (auto& instTerm : net->getInstTerms()) {
     pin_gcell_map[instTerm];
@@ -1391,8 +1391,8 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
   }
   genGuides_prep(rects, intvs);
 
-  std::map<Point3D, frBlockObjectSet> gcell_pin_map;
-  frBlockObjectMap<std::set<Point3D>> pin_gcell_map;
+  std::map<odb::Point3D, frBlockObjectSet> gcell_pin_map;
+  frBlockObjectMap<std::set<odb::Point3D>> pin_gcell_map;
   std::vector<frBlockObject*> pins;
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);
@@ -1481,7 +1481,7 @@ GuidePathFinder::GuidePathFinder(
     const bool force_feed_through,
     const std::vector<frRect>& rects,
     const std::vector<frBlockObject*>& pins,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map)
     : design_(design),
       logger_(logger),
       router_cfg_(router_cfg),
@@ -1500,7 +1500,7 @@ GuidePathFinder::GuidePathFinder(
 
 void GuidePathFinder::buildNodeMap(
     const std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map)
 {
   node_map_.clear();
   for (int i = 0; i < (int) rects.size(); i++) {
@@ -1524,12 +1524,12 @@ void GuidePathFinder::buildNodeMap(
   node_count_ = node_idx;  // total node cnt
 }
 
-std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
+std::vector<std::vector<odb::Point3D>> GuidePathFinder::getPinToGCellList(
     const std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+    const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map,
     const std::vector<frBlockObject*>& pins) const
 {
-  std::vector<std::vector<Point3D>> pin_to_gcell(getPinCount());
+  std::vector<std::vector<odb::Point3D>> pin_to_gcell(getPinCount());
   for (int i = 0; i < getNodeCount(); i++) {
     if (!visited_[i]) {
       continue;
@@ -1549,10 +1549,10 @@ std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
     const odb::Rect box = rect.getBBox();
     const auto layer_num = rect.getLayerNum();
     auto pin = pins[true_pin_idx];
-    if (pin_gcell_map.at(pin).find(Point3D(box.ll(), layer_num))
+    if (pin_gcell_map.at(pin).find(odb::Point3D(box.ll(), layer_num))
         != pin_gcell_map.at(pin).end()) {
       pin_to_gcell[true_pin_idx].emplace_back(box.ll(), layer_num);
-    } else if (pin_gcell_map.at(pin).find(Point3D(box.ur(), layer_num))
+    } else if (pin_gcell_map.at(pin).find(odb::Point3D(box.ur(), layer_num))
                != pin_gcell_map.at(pin).end()) {
       pin_to_gcell[true_pin_idx].emplace_back(box.ur(), layer_num);
     } else {
@@ -1565,13 +1565,13 @@ std::vector<std::vector<Point3D>> GuidePathFinder::getPinToGCellList(
 
 std::vector<std::pair<frBlockObject*, odb::Point>> GuidePathFinder::getGRPins(
     const std::vector<frBlockObject*>& pins,
-    const std::vector<std::vector<Point3D>>& pin_to_gcell) const
+    const std::vector<std::vector<odb::Point3D>>& pin_to_gcell) const
 {
   std::vector<std::pair<frBlockObject*, odb::Point>> gr_pins;
   for (int i = 0; i < getPinCount(); i++) {
     auto pin = pins[i];
     for (auto& pt : pin_to_gcell[i]) {
-      odb::Point abs_pt = getDesign()->getTopBlock()->getGCellCenter(pt);
+      odb::Point abs_pt = getDesign()->getTopBlock()->getGCellCenter(pt.xy());
       gr_pins.emplace_back(pin, abs_pt);
     }
   }
@@ -1580,7 +1580,7 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuidePathFinder::getGRPins(
 
 void GuidePathFinder::updateNodeMap(
     const std::vector<frRect>& rects,
-    const std::vector<std::vector<Point3D>>& pin_to_gcell)
+    const std::vector<std::vector<odb::Point3D>>& pin_to_gcell)
 {
   node_map_.clear();
   // pin_to_gcell tells pin residency in gcell
@@ -1595,8 +1595,8 @@ void GuidePathFinder::updateNodeMap(
     }
     const auto& rect = rects[i];
     odb::Rect box = rect.getBBox();
-    node_map_[Point3D(box.ll(), rect.getLayerNum())].insert(i);
-    node_map_[Point3D(box.ur(), rect.getLayerNum())].insert(i);
+    node_map_[odb::Point3D(box.ll(), rect.getLayerNum())].insert(i);
+    node_map_[odb::Point3D(box.ur(), rect.getLayerNum())].insert(i);
   }
 }
 
@@ -1619,14 +1619,15 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
                      pt.z());
     }
     // no upper/lower guide
-    if (node_map_.find(Point3D(pt, pt.z() + 2)) == node_map_.end()
-        && node_map_.find(Point3D(pt, pt.z() - 2)) == node_map_.end()) {
+    if (node_map_.find(odb::Point3D(pt.xy(), pt.z() + 2)) == node_map_.end()
+        && node_map_.find(odb::Point3D(pt.xy(), pt.z() - 2))
+               == node_map_.end()) {
       auto& rect = rects[idx];
       odb::Rect box = rect.getBBox();
       if (box.ll() == box.ur()) {
         continue;
       }
-      if (box.ll() == pt) {
+      if (box.ll() == pt.xy()) {
         rect.setBBox(odb::Rect(box.xMax(), box.yMax(), box.xMax(), box.yMax()));
       } else {
         rect.setBBox(odb::Rect(box.xMin(), box.yMin(), box.xMin(), box.yMin()));
@@ -1638,7 +1639,7 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 
 void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
 {
-  auto hasVisitedIndices = [this](const Point3D& pt) {
+  auto hasVisitedIndices = [this](const odb::Point3D& pt) {
     if (node_map_.find(pt) == node_map_.end()) {
       return false;
     }
@@ -1655,8 +1656,8 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
         continue;
       }
       // Check if there is a connection to upper or lower layer
-      if (hasVisitedIndices(Point3D(pt, pt.z() + 2))
-          || hasVisitedIndices(Point3D(pt, pt.z() - 2))) {
+      if (hasVisitedIndices(odb::Point3D(pt.xy(), pt.z() + 2))
+          || hasVisitedIndices(odb::Point3D(pt.xy(), pt.z() - 2))) {
         continue;
       }
       auto& rect1 = rects[first_idx];
@@ -1668,11 +1669,11 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
         box2.merge(box1);
         rect2.setBBox(box2);
         node_map_[pt].clear();
-        Point3D to_be_updated_pos;
-        if (box1.ll() == pt) {
-          to_be_updated_pos = Point3D(box1.ur(), pt.z());
+        odb::Point3D to_be_updated_pos;
+        if (box1.ll() == pt.xy()) {
+          to_be_updated_pos = odb::Point3D(box1.ur(), pt.z());
         } else {
-          to_be_updated_pos = Point3D(box1.ll(), pt.z());
+          to_be_updated_pos = odb::Point3D(box1.ll(), pt.z());
         }
         auto it = node_map_[to_be_updated_pos].find(first_idx);
         node_map_[to_be_updated_pos].erase(it);
@@ -1686,10 +1687,10 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
 std::vector<std::pair<frBlockObject*, odb::Point>>
 GuidePathFinder::commitPathToGuides(
     std::vector<frRect>& rects,
-    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
+    const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map)
 {
   // find pin in which guide
-  std::vector<std::vector<Point3D>> pin_to_gcell
+  std::vector<std::vector<odb::Point3D>> pin_to_gcell
       = getPinToGCellList(rects, pin_gcell_map, pins_);
   int pin_idx = 0;
   for (auto& guides : pin_to_gcell) {
@@ -1771,8 +1772,8 @@ void GuidePathFinder::constructAdjList()
       }
       // add intersecting guide2guide edge excludes pin
       if (!isPinIdx(idx1)
-          && node_map_.find({pt, layer_num + 2}) != node_map_.end()) {
-        for (auto neighbor_idx : node_map_.at({pt, layer_num + 2})) {
+          && node_map_.find({pt.xy(), layer_num + 2}) != node_map_.end()) {
+        for (auto neighbor_idx : node_map_.at({pt.xy(), layer_num + 2})) {
           if (!isPinIdx(neighbor_idx)) {
             adj_list_[idx1].push_back(neighbor_idx);
             adj_list_[neighbor_idx].push_back(idx1);

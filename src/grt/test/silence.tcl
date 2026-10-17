@@ -9,4 +9,4 @@ global_route
 
 write_guides $guide_file
 
-diff_file silence.guideok $guide_file
+diff_files silence.guideok $guide_file

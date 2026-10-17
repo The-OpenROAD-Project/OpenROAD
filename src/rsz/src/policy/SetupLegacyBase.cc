@@ -98,7 +98,7 @@ bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
   }
 
   const sta::Slack end_slack = sta_->slack(end_vertex, max_);
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, max_);
+  sta::Path* end_path = target_collector_->findWorstSlackPath(end_vertex);
   if (end_path == nullptr) {
     return false;
   }
@@ -189,6 +189,10 @@ void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
           break;
         case MoveType::kReroute:
           move_sequence_.push_back(MoveType::kReroute);
+          break;
+        case MoveType::kBufferToInverters:
+          pushMoveIfEnabled(!config_.skip_buffer_to_inverters,
+                            MoveType::kBufferToInverters);
           break;
         case MoveType::kCount:
           break;
@@ -301,9 +305,10 @@ void SetupLegacyBase::saveImprovedCheckpoint(
 void SetupLegacyBase::refreshEndpointSlacks(
     SetupLegacyBase::EndpointRepairState& endpoint_state)
 {
-  endpoint_state.end_slack = sta_->slack(endpoint_state.end, max_);
-  sta_->worstSlack(
-      max_, endpoint_state.worst_slack, endpoint_state.worst_vertex);
+  endpoint_state.end_slack
+      = target_collector_->endpointSlack(endpoint_state.end);
+  target_collector_->worstSlack(endpoint_state.worst_slack,
+                                endpoint_state.worst_vertex);
 }
 
 bool SetupLegacyBase::reachedIterationLimit(const int iteration,
@@ -429,12 +434,18 @@ std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
 int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
                                   const bool force_single_repair) const
 {
+  if (setup_context_.max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
   int repairs_per_pass = 1;
   if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
     repairs_per_pass
         += std::round((setup_context_.max_repairs_per_pass - 1)
                       * (-path_slack - setup_context_.min_viol)
                       / (setup_context_.max_viol - setup_context_.min_viol));
+    repairs_per_pass
+        = std::clamp(repairs_per_pass, 1, setup_context_.max_repairs_per_pass);
   }
   return force_single_repair ? 1 : repairs_per_pass;
 }
@@ -545,11 +556,29 @@ bool SetupLegacyBase::repairPins(
     prewarmTargets(prewarm_targets);
   }
 
+  // A target holds raw STA paths. Every accepted move invalidates the paths
+  // through the logic it touched, so a pass that repairs many pins has to
+  // bring timing up to date before it builds the next target from them.
+  // The update invalidates focus_path as well, so it is looked up again
+  // from its endpoint.
+  sta::Vertex* focus_vertex
+      = focus_path != nullptr ? focus_path->vertex(sta_) : nullptr;
+  bool timing_stale = false;
   for (const sta::Pin* driver_pin : pins) {
     if (changed >= repairs_per_pass) {
       break;
     }
 
+    if (timing_stale) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+      timing_stale = false;
+      if (focus_vertex != nullptr) {
+        focus_path = target_collector_->findWorstSlackPath(focus_vertex);
+      }
+    }
+
+    const int changed_before = changed;
     Target target;
     const bool has_target
         = focus_path != nullptr
@@ -577,6 +606,7 @@ bool SetupLegacyBase::repairPins(
         && accepted_type.has_value()) {
       chosen_moves->emplace_back(driver_pin, *accepted_type);
     }
+    timing_stale = changed != changed_before;
   }
 
   return changed > 0;
@@ -615,7 +645,13 @@ void SetupLegacyBase::logRepairTarget(const Target& target) const
 int SetupLegacyBase::repairProgressIncrement(const MoveType type,
                                              const int repairs_per_pass)
 {
-  return type == MoveType::kUnbuffer ? repairs_per_pass : 1;
+  switch (type) {
+    case MoveType::kUnbuffer:
+    case MoveType::kBufferToInverters:
+      return repairs_per_pass;
+    default:
+      return 1;
+  }
 }
 
 bool SetupLegacyBase::allowsBatchRepair(const MoveType type)
@@ -831,36 +867,32 @@ int SetupLegacyBase::totalMoves(const MoveType type) const
 
 void SetupLegacyBase::printProgress(const int iteration,
                                     const bool force,
-                                    const char phase_marker,
-                                    const bool use_startpoint_metrics) const
+                                    const char phase_marker) const
 {
+  const bool show_startpoint_metrics = showStartpointMetrics();
   const bool start = iteration == 0;
+  const bool metrics_changed
+      = setup_context_.progress_header_printed
+        && setup_context_.progress_header_show_startpoint_metrics
+               != show_startpoint_metrics;
 
-  if (start) {
-    setup_context_.progress_header_printed = true;
-    logger_->report(
-        "   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |"
-        "   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  ");
-    logger_->report(
-        "          | Buffers |  Gates  | Buffers  |  Gates | Swaps |"
-        "          |          |            |            | Endpts | St/EnPt ");
-    logger_->report(
-        "---------------------------------------------------------------"
-        "---------------------------------------------------------------");
+  if (start || metrics_changed) {
+    printProgressHeader();
   }
 
   if (iteration % print_interval_ != 0 && !force) {
     return;
   }
 
-  // StTNS is printed in every progress row, so collect startpoints only when a
-  // row is actually emitted.
-  target_collector_->collectViolatingStartpoints();
+  if (show_startpoint_metrics) {
+    target_collector_->collectViolatingStartpoints();
+  }
 
+  // Re-run the group query so the reported numbers reflect the edits made
+  // since the endpoints were collected.
+  target_collector_->refreshGroupSlacks();
   const sta::Slack wns = target_collector_->getWns();
-  const sta::Slack st_tns = target_collector_->getTns(true);
   const sta::Slack en_tns = target_collector_->getTns(false);
-  const bool show_startpoint_metrics = use_startpoint_metrics;
   const sta::Pin* worst_pin
       = target_collector_->getWorstPin(show_startpoint_metrics);
 
@@ -885,9 +917,9 @@ void SetupLegacyBase::printProgress(const int iteration,
         = area_growth / setup_context_.initial_design_area * 100.0;
   }
 
-  logger_->report(
+  const std::string progress_prefix = fmt::format(
       "{: >9s} | {: >7d} | {: >7d} | {: >8d} | {: >6d} | {: >5d} "
-      "| {: >+7.1f}% | {: >8s} | {: >10s} | {: >10s} | {: >6d} | {}",
+      "| {: >+7.1f}% | {: >8s}",
       itr_field,
       totalMoves(MoveType::kUnbuffer),
       totalMoves(MoveType::kSizeUp) + totalMoves(MoveType::kSizeDownFanout)
@@ -896,11 +928,21 @@ void SetupLegacyBase::printProgress(const int iteration,
       totalMoves(MoveType::kClone),
       totalMoves(MoveType::kSwapPins),
       area_growth_percent,
-      delayAsString(wns, 3, sta_),
-      delayAsString(st_tns, 1, sta_),
-      delayAsString(en_tns, 1, sta_),
-      std::max(0, target_collector_->getNumViolatingEndpoints()),
-      worst_pin != nullptr ? network_->pathName(worst_pin) : "");
+      delayAsString(wns, 3, sta_));
+
+  const std::string startpoint_tns_field
+      = show_startpoint_metrics
+            ? fmt::format(
+                  " | {: >10s}",
+                  delayAsString(target_collector_->getTns(true), 1, sta_))
+            : "";
+
+  logger_->report("{}{} | {: >10s} | {: >6d} | {}",
+                  progress_prefix,
+                  startpoint_tns_field,
+                  delayAsString(en_tns, 1, sta_),
+                  std::max(0, target_collector_->getNumViolatingEndpoints()),
+                  worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
   debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
 }
@@ -918,7 +960,7 @@ bool SetupLegacyBase::terminateProgress(const int iteration,
     fix_rate_threshold *= 2.0;
   }
   if (iteration % opto_small_interval_ == 0) {
-    float curr_tns = sta_->totalNegativeSlack(max_);
+    float curr_tns = target_collector_->totalNegativeSlack();
     float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
     prev_tns = curr_tns;
     if (iteration > 1000 && inc_fix_rate < fix_rate_threshold) {

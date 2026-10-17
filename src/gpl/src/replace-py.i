@@ -2,7 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #ifdef BAZEL
-%module(package="src.gpl") gpl
+%module(package="src.gpl") gpl_py
 #else
 %module gpl
 #endif

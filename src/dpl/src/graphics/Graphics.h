@@ -11,16 +11,16 @@
 
 #include "DplObserver.h"
 #include "dpl/Opendp.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace dpl {
 
 class Opendp;
 class Node;
 
-class Graphics : public gui::Renderer, public DplObserver
+class Graphics : public web::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp,
@@ -66,7 +66,7 @@ class Graphics : public gui::Renderer, public DplObserver
   void clearCurrentIterMovers() override;
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   static bool guiActive();
 
@@ -130,7 +130,7 @@ class Graphics : public gui::Renderer, public DplObserver
   // colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
 
-  gui::Chart* violations_chart_ = nullptr;
+  web::Chart* violations_chart_ = nullptr;
 };
 
 }  // namespace dpl

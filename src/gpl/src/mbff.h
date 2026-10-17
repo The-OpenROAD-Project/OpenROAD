@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -34,9 +35,31 @@ namespace gpl {
 
 inline constexpr const char* kOrigNameProp = "orig_name";
 
-struct Point;
-struct Tray;
-struct Flop;
+struct Point
+{
+  float x;
+  float y;
+};
+
+struct Tray
+{
+  Point pt;
+  std::vector<Point> slots;
+  std::vector<int> cand;
+};
+
+struct Flop
+{
+  Point pt;
+  int idx;
+  float prob;
+
+  bool operator<(const Flop& a) const
+  {
+    return std::tie(prob, idx) < std::tie(a.prob, a.idx);
+  }
+};
+
 class AbstractGraphics;
 
 class MBFF

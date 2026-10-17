@@ -195,7 +195,7 @@ class TimingPathDetailModel : public QAbstractTableModel
   static constexpr int kClockSummaryRow = 1;
 };
 
-class TimingPathRenderer : public gui::Renderer
+class TimingPathRenderer : public web::Renderer
 {
  public:
   TimingPathRenderer();
@@ -204,22 +204,22 @@ class TimingPathRenderer : public gui::Renderer
   void highlightNode(const TimingPathNode* node);
   void clearHighlightNodes();
 
-  void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(web::Painter& /* painter */) override;
   const char* getDisplayControlGroupName() override { return "Timing Path"; }
 
   TimingPath* getPathToRender() { return path_; }
 
  private:
-  void highlightStage(gui::Painter& painter,
-                      const gui::Descriptor* net_descriptor,
-                      const gui::Descriptor* inst_descriptor);
+  void highlightStage(web::Painter& painter,
+                      const web::Descriptor* net_descriptor,
+                      const web::Descriptor* inst_descriptor);
 
   void drawNodesList(TimingNodeList* nodes,
-                     gui::Painter& painter,
-                     const gui::Descriptor* net_descriptor,
-                     const gui::Descriptor* inst_descriptor,
-                     const gui::Descriptor* bterm_descriptor,
-                     const Painter::Color& clock_color,
+                     web::Painter& painter,
+                     const web::Descriptor* net_descriptor,
+                     const web::Descriptor* inst_descriptor,
+                     const web::Descriptor* bterm_descriptor,
+                     const web::Painter::Color& clock_color,
                      bool draw_clock,
                      bool draw_signal);
 
@@ -235,12 +235,12 @@ class TimingPathRenderer : public gui::Renderer
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
   absl::Mutex rendering_;
 
-  static const gui::Painter::Color kInstHighlightColor;
-  static const gui::Painter::Color kPathInstColor;
-  static const gui::Painter::Color kTermColor;
-  static const gui::Painter::Color kSignalColor;
-  static const gui::Painter::Color kClockColor;
-  static const gui::Painter::Color kCaptureClockColor;
+  static const web::Painter::Color kInstHighlightColor;
+  static const web::Painter::Color kPathInstColor;
+  static const web::Painter::Color kTermColor;
+  static const web::Painter::Color kSignalColor;
+  static const web::Painter::Color kClockColor;
+  static const web::Painter::Color kCaptureClockColor;
 
   static constexpr const char* kDataPathLabel = "Data path";
   static constexpr const char* kLaunchClockLabel = "Launch clock";
@@ -248,7 +248,7 @@ class TimingPathRenderer : public gui::Renderer
   static constexpr const char* kLegendLabel = "Legend";
 };
 
-class TimingConeRenderer : public gui::Renderer
+class TimingConeRenderer : public web::Renderer
 {
  public:
   TimingConeRenderer();
@@ -257,7 +257,7 @@ class TimingConeRenderer : public gui::Renderer
   void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
   void setPin(const sta::Pin* pin, bool fanin, bool fanout);
 
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
  private:
   sta::dbSta* sta_;
@@ -267,7 +267,7 @@ class TimingConeRenderer : public gui::Renderer
   ConeDepthMap map_;
   float min_timing_;
   float max_timing_;
-  SpectrumGenerator color_generator_;
+  web::SpectrumGenerator color_generator_;
 
   bool isSupplyPin(const sta::Pin* pin) const;
 };
@@ -347,7 +347,7 @@ class PinSetWidget : public QWidget
 
  signals:
   void addRemoveTriggered(PinSetWidget*);
-  void inspect(const Selected& selected);
+  void inspect(const web::Selected& selected);
 
  public slots:
   void clearPins() { setPins({}); }
@@ -390,6 +390,9 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const { return sta_->isIncludeUnconstrainedPaths(); }
 
+  void setClkGatingChecks(bool value);
+  bool getClkGatingChecks() const { return sta_->isIncludeClkGatingChecks(); }
+
   void setOnePathPerEndpoint(bool value);
   bool getOnePathPerEndpoint() const { return sta_->isOnePathPerEndpoint(); }
 
@@ -408,13 +411,13 @@ class TimingControlsDialog : public QDialog
   std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
   const sta::ClockSet* getClocks();
 
-  const sta::Pin* convertTerm(Gui::Term term) const;
+  const sta::Pin* convertTerm(web::Gui::Term term) const;
 
   sta::Scene* getScene() const { return sta_->getScene(); }
   void setScene(sta::Scene* scene) { sta_->setScene(scene); }
 
  signals:
-  void inspect(const Selected& selected);
+  void inspect(const web::Selected& selected);
   void expandClock(bool expand);
 
  public slots:
@@ -433,6 +436,7 @@ class TimingControlsDialog : public QDialog
   DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;
+  QCheckBox* clk_gating_checks_;
   QCheckBox* one_path_per_endpoint_;
   QCheckBox* expand_clk_;
 

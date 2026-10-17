@@ -343,29 +343,52 @@ INSTANTIATE_TEST_SUITE_P(CornerToCornerSuite,
                          CornerToCornerFixture,
                          testing::Values(true, false));
 
-// Check violation for corner spacing on a concave corner
-TEST_F(GCFixture, DISABLED_corner_concave)
+using ConcaveCornerFixture = FixtureWithParam<std::pair<int, int>>;
+
+// Check violations for corner spacing on concave corners in every orientation.
+TEST_P(ConcaveCornerFixture, corner_concave)
 {
-  // Setup
+  const auto [x_sign, y_sign] = GetParam();
   makeCornerConstraint(2, /* no eol */ -1, frCornerTypeEnum::CONCAVE);
 
   frNet* n1 = makeNet("n1");
 
-  makePathsegExt(n1, 2, {0, 0}, {500, 0});
-  makePathsegExt(n1, 2, {0, 0}, {0, 500});
-  makePathseg(n1, 2, {200, 200}, {1000, 200});
+  constexpr int base = 1000;
+
+  makePathsegExt(n1,
+                 2,
+                 {std::min(base, base + x_sign * 500), base},
+                 {std::max(base, base + x_sign * 500), base});
+  makePathsegExt(n1,
+                 2,
+                 {base, std::min(base, base + y_sign * 500)},
+                 {base, std::max(base, base + y_sign * 500)});
+  makePathseg(n1,
+              2,
+              {std::min(base + x_sign * 200, base + x_sign * 1000),
+               base + y_sign * 200},
+              {std::max(base + x_sign * 200, base + x_sign * 1000),
+               base + y_sign * 200});
 
   runGC();
 
-  // Test the results
   auto& markers = worker.getMarkers();
-
-  EXPECT_EQ(worker.getMarkers().size(), 1);
+  ASSERT_EQ(markers.size(), 1);
   testMarker(markers[0].get(),
              2,
              frConstraintTypeEnum::frcLef58CornerSpacingConstraint,
-             odb::Rect(50, 50, 200, 200));
+             odb::Rect(std::min(base + x_sign * 50, base + x_sign * 200),
+                       std::min(base + y_sign * 50, base + y_sign * 150),
+                       std::max(base + x_sign * 50, base + x_sign * 200),
+                       std::max(base + y_sign * 50, base + y_sign * 150)));
 }
+
+INSTANTIATE_TEST_SUITE_P(ConcaveCornerSuite,
+                         ConcaveCornerFixture,
+                         testing::Values(std::make_pair(1, 1),
+                                         std::make_pair(1, -1),
+                                         std::make_pair(-1, 1),
+                                         std::make_pair(-1, -1)));
 
 // Check violation for parallel-run-length (PRL) spacing tables
 // This test runs over a variety of width / prl / spacing values

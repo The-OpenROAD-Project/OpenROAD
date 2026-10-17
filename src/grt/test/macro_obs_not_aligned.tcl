@@ -13,4 +13,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file macro_obs_not_aligned.guideok $guide_file
+diff_files macro_obs_not_aligned.guideok $guide_file

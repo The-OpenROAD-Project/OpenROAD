@@ -169,7 +169,7 @@ class FlexPA
     unique_insts_.setDesign(in);
   }
   void applyPatternsFile(const char* file_path);
-  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def);
+  ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def) const;
   bool isSkipInstTermLocal(frInstTerm* in);
   bool isSkipInstTerm(frInstTerm* in);
   bool isSkipInst(frInst* inst);
@@ -286,7 +286,7 @@ class FlexPA
       const odb::Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<std::pair<int, const frViaDef*>>& via_defs);
+      std::vector<const frViaDef*>& via_defs);
 
   /**
    * @brief Contructs a vector with all pin figures in each layer
@@ -406,6 +406,26 @@ class FlexPA
                      frLayerNum layer_num,
                      frCoord low,
                      frCoord high);
+
+  /**
+   * @brief Gets a subset of the available via defs on a given layer as a
+   * vector.
+   *
+   * @param layer_num layer in which the vias exist
+   * @param inst_term optional param for when the caller wants to avoid certain
+   * via_defs depending on the inst_term
+   * @param max_vias maximum number of via defs to return. Callers that need
+   * every via def on the layer can pass
+   * std::numeric_limits<int>::max(); callers splitting a combined budget
+   * across multiple calls (e.g. up vias and down vias) are responsible for
+   * subtracting what earlier calls already returned.
+   *
+   * @return a vector of the priority vias
+   */
+  std::vector<const frViaDef*> getPriorityViaDefs(frLayerNum layer_num,
+                                                  frInstTerm* inst_term
+                                                  = nullptr,
+                                                  int max_vias = 2) const;
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
@@ -611,8 +631,8 @@ class FlexPA
    * @param polyset polys auxilary set (same information as polys)
    * @param pin access pin
    * @param inst_term instance terminal
-   * @param deep_search TODO: I understand one of its uses but not why "deep
-   * search"
+   * @param try_all_vias If all vias will be tested instead of only the priority
+   * ones
    */
   template <typename T>
   void filterViaAccess(
@@ -621,7 +641,7 @@ class FlexPA
       const gtl::polygon_90_set_data<frCoord>& polyset,
       T* pin,
       frInstTerm* inst_term,
-      bool deep_search = false);
+      bool try_all_vias = false);
 
   /**
    * @brief checks if an access point can have planar access, alters the point

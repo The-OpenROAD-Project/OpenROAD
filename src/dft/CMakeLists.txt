@@ -33,6 +33,7 @@ target_link_libraries(dft
     odb
     dbSta
     OpenSTA
+    rsz
 )
 
 target_link_libraries(dft

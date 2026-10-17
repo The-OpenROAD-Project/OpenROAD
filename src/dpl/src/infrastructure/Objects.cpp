@@ -84,6 +84,14 @@ odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
+void Master::addPinShape(const int level, const odb::Rect& rect)
+{
+  pin_shapes_[level].push_back(rect);
+}
+const std::vector<odb::Rect>& Master::getPinShapes(const int level) const
+{
+  return pin_shapes_[level];
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -277,6 +285,10 @@ uint8_t Node::getUsedLayers() const
 {
   return used_layers_;
 }
+uint8_t Node::getPinLayers() const
+{
+  return pin_layers_;
+}
 void Node::setId(int id)
 {
   id_ = id;
@@ -364,6 +376,10 @@ void Node::setGroupId(int id)
 void Node::addUsedLayer(int layer)
 {
   used_layers_ |= 1 << layer;
+}
+void Node::addPinLayer(int layer)
+{
+  pin_layers_ |= 1 << layer;
 }
 bool Node::adjustCurrOrient(const odb::dbOrientType& newOri)
 {

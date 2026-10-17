@@ -5,8 +5,8 @@
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 Net clk
  Pin capacitance: 29.975-33.238
- Wire capacitance: 17.626-17.626
- Total capacitance: 47.601-50.864
+ Wire capacitance: 17.033-17.033
+ Total capacitance: 47.008-50.270
  Number of drivers: 1
  Number of loads: 35
  Number of pins: 36

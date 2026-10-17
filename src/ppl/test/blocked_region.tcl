@@ -12,4 +12,4 @@ set def_file [make_result_file blocked_region.def]
 
 write_def $def_file
 
-diff_file blocked_region.defok $def_file
+diff_files blocked_region.defok $def_file

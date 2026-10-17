@@ -78,7 +78,7 @@ bool SizeUpGenerator::resolveDriverContext(const Target& target,
   }
 
   inst = resizer_.network()->instance(drvr_pin);
-  if (inst == nullptr || resizer_.dontTouch(inst)
+  if (inst == nullptr || resizer_.dontTouch(inst) || resizer_.isFixed(inst)
       || !resizer_.isLogicStdCell(inst)) {
     return false;
   }

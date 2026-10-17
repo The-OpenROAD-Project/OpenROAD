@@ -25,4 +25,4 @@ global_route -use_cugr -critical_nets_percentage 30 -resistance_aware -verbose
 
 write_guides $guide_file
 
-diff_file resistance_aware_cugr.guideok $guide_file
+diff_files resistance_aware_cugr.guideok $guide_file

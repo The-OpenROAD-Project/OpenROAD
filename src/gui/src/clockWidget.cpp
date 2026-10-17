@@ -69,7 +69,7 @@ ClockTreeRenderer::ClockTreeRenderer(ClockTree* tree)
   addDisplayControl(kRenderLabel, true);
 }
 
-void ClockTreeRenderer::drawObjects(Painter& painter)
+void ClockTreeRenderer::drawObjects(web::Painter& painter)
 {
   if (tree_ == nullptr) {
     return;
@@ -79,16 +79,16 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
     return;
   }
 
-  auto* descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
+  auto* descriptor = web::Gui::get()->getDescriptor<odb::dbNet*>();
   if (descriptor == nullptr) {
     return;
   }
 
-  ColorGenerator generator;
+  web::ColorGenerator generator;
   drawTree(painter, descriptor, generator, tree_, 0);
 
   if (path_to_ != nullptr) {
-    painter.setPen(Painter::kCyan, true, kPenWidth);
+    painter.setPen(web::Painter::kCyan, true, kPenWidth);
     auto* network = tree_->getNetwork();
     sta::Pin* pin = network->dbToSta(path_to_);
     if (pin == nullptr) {
@@ -102,21 +102,22 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
 
       network->staToDb(output_pin, iterm, bterm, moditerm);
       descriptor->highlight(
-          DbNetDescriptor::NetWithSink{network->staToDb(net), iterm}, painter);
+          web::DbNetDescriptor::NetWithSink{network->staToDb(net), iterm},
+          painter);
     }
   }
 }
 
-void ClockTreeRenderer::drawTree(Painter& painter,
-                                 const Descriptor* descriptor,
-                                 ColorGenerator& colorgenerator,
+void ClockTreeRenderer::drawTree(web::Painter& painter,
+                                 const web::Descriptor* descriptor,
+                                 web::ColorGenerator& colorgenerator,
                                  ClockTree* tree,
                                  int depth)
 {
   odb::dbNet* net = tree->getNetwork()->staToDb(tree->getNet());
   descriptor->highlight(net, painter);
 
-  const Painter::Color pen_color = painter.getPenColor();
+  const web::Painter::Color pen_color = painter.getPenColor();
   const bool change_color = depth < max_depth_ && tree->getSinkCount() > 1;
   if (change_color) {
     depth++;
@@ -131,9 +132,10 @@ void ClockTreeRenderer::drawTree(Painter& painter,
   setPen(painter, pen_color);
 }
 
-void ClockTreeRenderer::setPen(Painter& painter, const Painter::Color& color)
+void ClockTreeRenderer::setPen(web::Painter& painter,
+                               const web::Painter::Color& color)
 {
-  painter.setPenAndBrush(color, true, Painter::kSolid, kPenWidth);
+  painter.setPenAndBrush(color, true, web::Painter::kSolid, kPenWidth);
 }
 
 void ClockTreeRenderer::setPathTo(odb::dbITerm* term)
@@ -890,7 +892,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::getItemFromName(
 }
 
 std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
-    const SelectionSet& selections)
+    const web::SelectionSet& selections)
 {
   std::set<ClockNodeGraphicsViewItem*> nodes;
   for (const auto& selection : selections) {
@@ -903,7 +905,7 @@ std::set<ClockNodeGraphicsViewItem*> ClockTreeView::getNodes(
   return nodes;
 }
 
-bool ClockTreeView::changeSelection(const SelectionSet& selections)
+bool ClockTreeView::changeSelection(const web::SelectionSet& selections)
 {
   std::set<ClockNodeGraphicsViewItem*> nodes = getNodes(selections);
   if (!nodes.empty()) {
@@ -1138,7 +1140,7 @@ void ClockTreeView::updateRendererState() const
       break;
   }
 
-  auto* gui = Gui::get();
+  auto* gui = web::Gui::get();
   if (enable) {
     gui->registerRenderer(renderer_.get());
     scene_->setClearPathEnable(true);
@@ -1651,7 +1653,7 @@ void ClockWidget::populate(sta::Scene* scene)
 
 void ClockWidget::hideEvent(QHideEvent* event)
 {
-  auto* gui = Gui::get();
+  auto* gui = web::Gui::get();
   for (const auto& view : views_) {
     gui->unregisterRenderer(view->getRenderer());
   }
@@ -1759,17 +1761,17 @@ void ClockWidget::fit()
   }
 }
 
-void ClockWidget::findInCts(const Selected& selection)
+void ClockWidget::findInCts(const web::Selected& selection)
 {
   if (!selection) {
     return;
   }
-  findInCts(SelectionSet({
+  findInCts(web::SelectionSet({
       selection,
   }));
 }
 
-void ClockWidget::findInCts(const SelectionSet& selections)
+void ClockWidget::findInCts(const web::SelectionSet& selections)
 {
   if (views_.empty()) {
     return;

@@ -1458,10 +1458,27 @@ void PlacerBase::initInstsForUnusableSites()
           i++;
         }
         int endX = i;
+        int endY = j + 1;
+        for (; endY < siteCountY; endY++) {
+          const int64_t base_idx = static_cast<int64_t>(endY) * siteCountX;
+          auto first = siteGrid.begin() + base_idx + startX;
+          auto last = siteGrid.begin() + base_idx + endX;
+          if (!std::all_of(first, last, [](SiteInfo s) {
+                return s == SiteInfo::Blocked;
+              })) {
+            break;
+          }
+        }
+        for (int y = j; y < endY; y++) {
+          const int64_t base_idx = static_cast<int64_t>(y) * siteCountX;
+          std::fill(siteGrid.begin() + base_idx + startX,
+                    siteGrid.begin() + base_idx + endX,
+                    SiteInfo::FixedInst);
+        }
         Instance dummy_gcell(region_bbox_.xMin() + (siteSizeX_ * startX),
                              region_bbox_.yMin() + (siteSizeY_ * j),
                              region_bbox_.xMin() + (siteSizeX_ * endX),
-                             region_bbox_.yMin() + (siteSizeY_ * (j + 1)));
+                             region_bbox_.yMin() + (siteSizeY_ * endY));
         instStor_.push_back(dummy_gcell);
       }
     }

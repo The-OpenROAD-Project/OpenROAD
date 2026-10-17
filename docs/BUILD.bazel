@@ -1,21 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@openroad-pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//bazel:man_pages.bzl", "man_pages")
 
 man_pages(
     name = "man_pages",
-    docs_srcs = [
-        "Makefile",
-        "src/man_fontfix.tmac",
-        # md/man1 holds the only checked-in markdown. md/man2 and md/man3 are
-        # written by this rule's own preprocess step, so globbing them would
-        # declare the action's outputs as its inputs: the input set would vary
-        # with leftover files from previous builds, and rewriting them trips
-        # --guard_against_concurrent_changes ("modified during execution").
-    ] + glob(["md/man1/**/*.md"]),
+    # md/man1 holds the only checked-in markdown. md/man2 and md/man3 are
+    # generated, and a local `make preprocess` leaves them in the source tree,
+    # so globbing them would make the inputs depend on leftover files.
+    docs_srcs = glob(["md/man1/**/*.md"]),
     messages = [
         # The ORD messages, from src/ itself.
         "//:messages_txt",
@@ -87,12 +83,20 @@ man_pages(
         "//src/web:README.md",
     ],
     scripts = [
-        "//docs/src/scripts:link_readmes.sh",
         "//docs/src/scripts:md_roff_compat.py",
         "//docs/src/scripts:manpage.py",
         "//docs/src/scripts:extract_utils.py",
     ],
+    stamp = select({
+        "//bazel:stamp": True,
+        "//conditions:default": False,
+    }),
     visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "man_pages_build_test",
+    targets = [":man_pages"],
 )
 
 # Replicates the ReadTheDocs Sphinx build locally (hermetic Python deps).
@@ -112,11 +116,11 @@ py_test(
             "_build/**",
             "_readthedocs/**",
             "main/**",
-            # Everything docs/.gitignore lists as intermediate output: the man
-            # page build (//docs:man_pages) writes these into the source tree,
-            # so globbing them would make this test's inputs -- and so its
-            # cache key and result -- depend on whether man pages happen to
-            # have been built here. conf.py excludes all four from the Sphinx
+            # Everything docs/.gitignore lists as intermediate output: a local
+            # man page build (make in docs/) writes these into the source
+            # tree, so globbing them would make this test's inputs -- and so
+            # its cache key and result -- depend on whether man pages happen
+            # to have been built here. conf.py excludes all four from the Sphinx
             # build anyway.
             "cat/**",
             "html/**",

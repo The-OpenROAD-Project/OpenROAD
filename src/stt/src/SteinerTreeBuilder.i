@@ -7,7 +7,7 @@
 #include "LinesRenderer.h"
 #include "stt/pd.h"
 #include "stt/flute.h"
-#include "gui/gui.h"
+#include "web/core.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include <vector>
@@ -101,7 +101,7 @@ highlight_stt_tree(std::vector<int> x,
   auto builder = getSteinerTreeBuilder();
   auto tree = builder->makeSteinerTree(x, y, drvr_index, alpha);
 
-  gui::Gui *gui = gui::Gui::get();
+  web::Gui *gui = web::Gui::get();
   stt::highlightSteinerTree(tree, gui);
 }
 
@@ -112,7 +112,7 @@ highlight_pd_tree(std::vector<int> x,
                   float alpha)
 {
   utl::Logger *logger = ord::getLogger();
-  gui::Gui *gui = gui::Gui::get();
+  web::Gui *gui = web::Gui::get();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
   stt::highlightSteinerTree(tree, gui);
 }
@@ -121,7 +121,7 @@ void
 highlight_flute_tree(std::vector<int> x,
                      std::vector<int> y)
 {
-  gui::Gui *gui = gui::Gui::get();
+  web::Gui *gui = web::Gui::get();
   auto builder = getSteinerTreeBuilder();
   stt::Tree tree = builder->flute(x, y, 3);
   stt::highlightSteinerTree(tree, gui);

@@ -53,7 +53,10 @@ class PlacementDRC
                         GridY y,
                         const odb::dbOrientType& orient) const;
   bool checkBlockedLayers(const Node* cell) const;
-  bool checkBlockedLayers(const Node* cell, GridX x, GridY y) const;
+  bool checkBlockedLayers(const Node* cell,
+                          GridX x,
+                          GridY y,
+                          const odb::dbOrientType& orient) const;
   bool checkFixedSupplyVias(const Node* cell) const;
   bool checkFixedSupplyVias(const Node* cell,
                             GridX x,

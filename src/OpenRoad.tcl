@@ -548,7 +548,7 @@ proc ensure_units_initialized { } {
 proc clear { } {
   sta::clear_network
   sta::clear_sta
-  grt::clear
+  grt::clear_route_guides
   [get_db] clear
 }
 

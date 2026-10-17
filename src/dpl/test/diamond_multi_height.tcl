@@ -11,4 +11,4 @@ check_placement
 
 set def_file [make_result_file diamond_multi_height.def]
 write_def $def_file
-diff_file diamond_multi_height.defok $def_file
+diff_files diamond_multi_height.defok $def_file

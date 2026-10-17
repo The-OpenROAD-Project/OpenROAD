@@ -24,4 +24,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file pin_access1.guideok $guide_file
+diff_files pin_access1.guideok $guide_file

@@ -7,12 +7,12 @@
 
 #include "AbstractIOPlacerRenderer.h"
 #include "Netlist.h"
-#include "gui/gui.h"
 #include "ppl/IOPlacer.h"
+#include "web/core.h"
 
 namespace ppl {
 
-class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
+class IOPlacerRenderer : public web::Renderer, public AbstractIOPlacerRenderer
 {
  public:
   IOPlacerRenderer();
@@ -25,7 +25,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 
   void redrawAndPause() override;
 
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
  private:
   bool isDrawingNeeded() const;

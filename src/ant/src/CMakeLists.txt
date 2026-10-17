@@ -13,6 +13,8 @@ swig_lib(NAME      ant
 
 add_library(ant_lib
     AntennaChecker.cc
+    AntennaReport.cc
+    AntennaRules.cc
     Polygon.cc
     WireBuilder.cc
 )
@@ -36,7 +38,6 @@ target_link_libraries(ant_lib
 
 target_link_libraries(ant
   PUBLIC
-    absl::synchronization
     ant_lib
     grt_lib
     utl_lib

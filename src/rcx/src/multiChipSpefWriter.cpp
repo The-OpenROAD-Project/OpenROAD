@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -159,7 +160,7 @@ std::string MultiChipSpefWriter::bondNodeName(odb::dbChipCapNode* cap_node)
   for (uint32_t i = 0; i < chip_net->getNumBumpInsts(); ++i) {
     std::vector<odb::dbChipInst*> candidate_path;
     if (chip_net->getBumpInst(i, candidate_path) == bump_inst) {
-      chip_inst_path = candidate_path;
+      chip_inst_path = std::move(candidate_path);
       break;
     }
   }

@@ -39,8 +39,8 @@ class _dbScanChain : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
   std::variant<dbBTerm*, dbITerm*> getPin(const dbId<_dbScanPin>& scan_pin_id);
-  void setPin(dbId<_dbScanPin> _dbScanChain::*field, dbBTerm* pin);
-  void setPin(dbId<_dbScanPin> _dbScanChain::*field, dbITerm* pin);
+  void setPin(dbId<_dbScanPin> _dbScanChain::* field, dbBTerm* pin);
+  void setPin(dbId<_dbScanPin> _dbScanChain::* field, dbITerm* pin);
   // User Code End Methods
 
   std::string name_;

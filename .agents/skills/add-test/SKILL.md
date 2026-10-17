@@ -3,8 +3,8 @@ name: add-test
 description: >
   Add integration or unit tests to an OpenROAD module. Handles the
   complete workflow: writing the Tcl/C++ test, generating golden files,
-  and registering the test in BOTH CMake and Bazel build systems (the
-  most common mistake is forgetting Bazel registration). Use when asked
+  and registering the test in Bazel (CMake is deprecated and CMake
+  test registration is not required). Use when asked
   to add tests, improve test coverage, create regression tests, or write
   unit tests for any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl,
   odb, pad, pdn, psm, rcx, rsz, sta, stt, tap, upf, utl, etc.).
@@ -78,8 +78,8 @@ Run the test and capture output:
 ```bash
 cd src/MODULE/test
 
-# Run with openroad to generate output
-openroad -no_splash -no_init -exit TEST_NAME.tcl > TEST_NAME.ok 2>&1
+# Run with the Bazel-built binary (bazelisk build //:openroad) to generate output
+../../../bazel-bin/openroad -no_splash -no_init -exit TEST_NAME.tcl > TEST_NAME.ok 2>&1
 
 # Remove the openroad banner from the .ok file if present
 # The .ok file should contain only the test's stdout
@@ -88,59 +88,63 @@ openroad -no_splash -no_init -exit TEST_NAME.tcl > TEST_NAME.ok 2>&1
 If the test uses `diff_file`, also generate the golden output file
 (e.g., `TEST_NAME.defok`) by running once and copying the result file.
 
-## 4. Register in BOTH build systems
+## 4. Register in Bazel
 
-This is the most common mistake. **Every test must be in both CMake AND
-Bazel.** CMake-only tests silently pass locally but are missing from
-Bazel CI.
-
-### CMake -- `src/MODULE/test/CMakeLists.txt`
-
-Find the `or_integration_tests()` call. The first positional argument
-is the **module name**, followed by the `TESTS` keyword and the list:
-
-```cmake
-or_integration_tests(
-  "MODULE"           # <-- module name (e.g. "rsz")
-  TESTS
-    existing_test1
-    existing_test2
-    TEST_NAME        # <-- add here
-)
-```
-
-Some modules also have a `PASSFAIL_TESTS` section after `TESTS` -- add
-to the appropriate list. Look at the module's existing `CMakeLists.txt`
-before editing.
+Register every test in Bazel. A test missing from `BUILD` does not run in
+CI. CMake is deprecated and will be removed on Nov. 1, 2026, so CMake
+test registration is not required. This applies to tests only. A new
+source file or tool still needs its CMake entry until CMake is removed,
+because the macOS CI job builds with CMake (it runs no `ctest`).
 
 ### Bazel -- `src/MODULE/test/BUILD`
 
-The typical pattern is a `TESTS` list consumed by a list comprehension
-that calls `regression_test()` for each name:
+Most modules list the tests in `COMPULSORY_TESTS`, and some use `TESTS`.
+A list comprehension calls `regression_test()` for each name. Add the
+test to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`).
+Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the
+module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a
+`manual` tag. Check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default.
 
 ```python
-TESTS = [
+COMPULSORY_TESTS = [
     "buffer_ports1",
-    "buffer_ports10",
-    "buffer_ports11",
     "TEST_NAME",     # <-- add here, in the existing sort order
     # (other tests omitted)
 ]
 
+ALL_TESTS = COMPULSORY_TESTS  # some modules add other lists here
+
 [
     regression_test(
         name = test_name,
+        data = [":" + test_name + "_resources"],  # copy from the module
+        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
     )
-    for test_name in TESTS
+    for test_name in ALL_TESTS
 ]
 ```
 
-Some modules split tests across multiple lists (`TESTS`,
+Copy the `data` and `tags` arguments from the existing call in the same
+`BUILD` file. The macro adds the test file, `//test:regression_resources`,
+the OpenROAD binary and `data` to the runfiles. It does not add
+`TEST_NAME.ok` or the input files. The module's `data` filegroup must
+carry them. If it lists input files by name, add yours there. See
+`src/exa/test/BUILD` (one `test_resources` filegroup with a broad glob)
+and `src/ant/test/BUILD` (one `<name>_resources` filegroup per test).
+
+`regression_test()` creates the target `TEST_NAME-tcl_test` for a `.tcl`
+test and `TEST_NAME-py_test` for a `.py` test.
+
+Some modules split tests across multiple lists (`COMPULSORY_TESTS`,
 `PASSFAIL_TESTS`, `BIG_TESTS`, etc.) and define a combined
-`ALL_TESTS = TESTS + PASSFAIL_TESTS + ...` that the comprehension
-iterates over. Read the existing `BUILD` to find which list to
-extend, and insert the new test name in whatever sort order that
+`ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + ...` that the
+comprehension iterates over. Read the existing `BUILD` to find which list
+to extend, and insert the new test name in whatever sort order that
 file already uses (most modules are alphabetical).
+
+### CMake (deprecated, not required)
+
+Skip `src/MODULE/test/CMakeLists.txt`. The macOS CI job runs no `ctest`.
 
 ## 5. Write unit tests (C++, if applicable)
 
@@ -197,27 +201,12 @@ TEST_F(TestFeature, HandlesEdgeCase) {
 }
 ```
 
-### CMake registration -- `src/MODULE/test/cpp/CMakeLists.txt`
-
-```cmake
-add_executable(TestName TestName.cpp)
-target_link_libraries(TestName
-    MODULE_lib
-    GTest::gtest
-    GTest::gtest_main
-    tst
-    odb
-)
-gtest_discover_tests(TestName
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
-)
-add_dependencies(build_and_test TestName)
-```
-
 ### Bazel registration -- `src/MODULE/test/BUILD`
 
 Add the `cc_test` target alongside the existing `regression_test`
-entries. Most modules keep C++ tests in the same BUILD file:
+entries. Most modules keep C++ tests in the same BUILD file; some use
+`src/MODULE/test/cpp/BUILD` (for example `src/odb/test/cpp/BUILD`).
+Keep the paths the module already uses:
 
 ```python
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
@@ -235,19 +224,31 @@ cc_test(
 )
 ```
 
+CMake test registration is not required. The deprecated CMake build uses
+`add_executable`, `gtest_discover_tests`, and `add_dependencies` in
+`src/MODULE/test/cpp/CMakeLists.txt`.
+
 ## 6. Run and verify
 
-`./regression` is a thin ctest wrapper that filters by module label, so
-the standard ctest flags apply. Use `-R` to match a single test by name:
+Run a Tcl or Python test by its Bazel target name. Add
+`--test_output=errors` to see the log of a failing test:
 
 ```bash
-cd src/MODULE/test
-./regression -R TEST_NAME
+bazelisk test --test_output=errors //src/MODULE/test:TEST_NAME-tcl_test
 
-# Verify test is discoverable in both systems
-cd ../../../build
-ctest -N | grep MODULE.*TEST_NAME
+# C++ unit test: the target name is the cc_test name
+bazelisk test //src/MODULE/test:TestName
+
+# Run all tests of the module
+bazelisk test //src/MODULE/test/...
+
+# Verify Bazel sees the test
+bazelisk query //src/MODULE/test:all | grep TEST_NAME
 ```
+
+Legacy (CMake only, deprecated): `./regression -R TEST_NAME` in
+`src/MODULE/test` runs `ctest` in `build/`. It does not see Bazel
+targets.
 
 ## 7. Format and commit
 
@@ -257,7 +258,6 @@ clang-format -i <changed-cpp-files>
 
 git add src/MODULE/test/TEST_NAME.tcl \
         src/MODULE/test/TEST_NAME.ok \
-        src/MODULE/test/CMakeLists.txt \
         src/MODULE/test/BUILD
 git commit -s -m "MODULE: add TEST_NAME test
 
@@ -266,10 +266,10 @@ Test for DESCRIPTION."
 
 ## Checklist
 
-- [ ] Test runs successfully: `./regression -R TEST_NAME`
+- [ ] Test runs successfully: `bazelisk test //src/MODULE/test:TEST_NAME-tcl_test`
 - [ ] Golden file generated and committed
-- [ ] Registered in CMake `CMakeLists.txt`
 - [ ] Registered in Bazel `BUILD`
+- [ ] CMake test registration is skipped (not required); new source files or tools still need their CMake entry
 - [ ] Test data is minimal (reuse existing files when possible)
 - [ ] C++ files formatted with clang-format
 - [ ] Commit is signed off (`-s`)

@@ -21,4 +21,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file endcap_corners.defok $def_file
+diff_files endcap_corners.defok $def_file

@@ -1,5 +1,5 @@
-# repair_antennas -diode_only with CUGR routing: the first iteration's 11
-# diodes leave one violation, so -iterations 2 exercises the repair loop
+# repair_antennas -diode_only with CUGR routing: the first iteration
+# leaves one violation, so -iterations 2 exercises the repair loop
 # re-checking and inserting again after the incremental reroute.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
@@ -19,8 +19,8 @@ check_placement
 
 set guide_file [make_result_file repair_antennas_only_diodes_cugr.guide]
 write_guides $guide_file
-diff_file repair_antennas_only_diodes_cugr.guideok $guide_file
+diff_files repair_antennas_only_diodes_cugr.guideok $guide_file
 
 set def_file [make_result_file repair_antennas_only_diodes_cugr.def]
 write_def $def_file
-diff_file repair_antennas_only_diodes_cugr.defok $def_file
+diff_files repair_antennas_only_diodes_cugr.defok $def_file

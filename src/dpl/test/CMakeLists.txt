@@ -6,6 +6,8 @@ or_integration_tests(
   TESTS
     aes
     blockage01
+    blocked_via_layers
+    blocked_via_pins
     cell_on_block1
     cell_on_block2
     centered_floorplan
@@ -18,6 +20,8 @@ or_integration_tests(
     check7
     check8
     check9
+    check_fixed_only
+    check_placeable_only
     diamond01
     diamond_multi_height
     diamond_one_site_gap

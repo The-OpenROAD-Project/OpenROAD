@@ -119,8 +119,11 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
   getPeakMemory("End RC_Network: ");
 
   if (_lefRC) {
-    // update dbNet object flags
-    update_wireAltered_v2(inets);
+    if (!_allNet) {
+      for (dbNet* net : inets) {
+        net->setMark(false);
+      }
+    }
     return;
   }
   if (_couplingFlag > 1) {
@@ -221,23 +224,6 @@ bool extMain::couplingExtEnd_v2()
   logger_->warn(RCX, 510, "Nothing is extracted out of {} nets!", numOfNet);
   return false;
 }
-void extMain::update_wireAltered_v2(std::vector<dbNet*>& inets)
-{
-  if (_allNet) {
-    for (dbNet* net : _block->getNets()) {
-      if (net->getSigType().isSupply()) {
-        continue;
-      }
-      net->setWireAltered(false);
-    }
-  } else {
-    for (dbNet* net : inets) {
-      net->setMark(false);
-      net->setWireAltered(false);
-    }
-  }
-}
-
 void extMain::setExtractionOptions_v2(ExtractOptions options)
 {
   skip_via_wires(

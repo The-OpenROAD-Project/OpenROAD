@@ -76,6 +76,8 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
                                       const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
+  int cur_min_spacing = -1;
+  int cur_design_rule_width = -1;
   odb::PtrSet<dbVia> vias;
 
   for (GenericBox* generic_box : boxes) {
@@ -113,9 +115,14 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
         layer_name = layer->getName();
       }
 
-      if (cur_layer != layer) {
-        fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+      const int min_spacing = box->getMinSpacing();
+      const int design_rule_width = box->getDesignRuleWidth();
+      if (cur_layer != layer || cur_min_spacing != min_spacing
+          || cur_design_rule_width != design_rule_width) {
+        writeGeomLayer(out, indent, layer_name, min_spacing, design_rule_width);
         cur_layer = layer;
+        cur_min_spacing = min_spacing;
+        cur_design_rule_width = design_rule_width;
       }
 
       writeBox(out, indent, box);
@@ -132,6 +139,8 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
                                       const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
+  int cur_min_spacing = -1;
+  int cur_design_rule_width = -1;
 
   for (dbPolygon* box : boxes) {
     if (box == nullptr) {
@@ -147,15 +156,36 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
       layer_name = layer->getName();
     }
 
-    if (cur_layer != layer) {
-      fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+    const int min_spacing = box->getMinSpacing();
+    const int design_rule_width = box->getDesignRuleWidth();
+    if (cur_layer != layer || cur_min_spacing != min_spacing
+        || cur_design_rule_width != design_rule_width) {
+      writeGeomLayer(out, indent, layer_name, min_spacing, design_rule_width);
       cur_layer = layer;
+      cur_min_spacing = min_spacing;
+      cur_design_rule_width = design_rule_width;
     }
 
-    writePolygon(out, indent, box);
+    writeBox(out, indent, box);
   }
 
   return {};
+}
+
+void lefout::writeGeomLayer(std::ostream& out,
+                            const char* indent,
+                            const std::string& layer_name,
+                            const int min_spacing,
+                            const int design_rule_width)
+{
+  fmt::print(out, "{}LAYER {}", indent, layer_name);
+  // LEF allows at most one of these per LAYER statement; -1 means unset
+  if (min_spacing >= 0) {
+    fmt::print(out, " SPACING {:.11g}", lefdist(min_spacing));
+  } else if (design_rule_width >= 0) {
+    fmt::print(out, " DESIGNRULEWIDTH {:.11g}", lefdist(design_rule_width));
+  }
+  fmt::print(out, " ;\n");
 }
 
 void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
@@ -174,18 +204,25 @@ void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
              lefdist(y2));
 }
 
+void lefout::writeBox(std::ostream& out,
+                      const std::string& indent,
+                      dbPolygon* polygon)
+{
+  writePolygon(out, indent, polygon->getPolygon());
+}
+
 void lefout::writePolygon(std::ostream& out,
                           const std::string& indent,
-                          dbPolygon* polygon)
+                          const Polygon& polygon)
 {
   fmt::print(out, "{}  POLYGON  ", indent.c_str());
-
-  for (const Point& pt : polygon->getPolygon().getPoints()) {
+  const auto points = polygon.getPoints();
+  for (size_t i = 0; i < points.size() - 1; i++) {
+    const Point& pt = points[i];
     int x = pt.x();
     int y = pt.y();
     fmt::print(out, "{:.11g} {:.11g} ", lefdist(x), lefdist(y));
   }
-
   fmt::print(out, ";\n");
 }
 
@@ -233,13 +270,38 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
   ObstructionMap obstructions;
   getObstructions(db_block, obstructions);
 
-  fmt::print(out, "{}", "  OBS\n");
+  dbTechLayer* overlap = nullptr;
+  const Polygon die_area = db_block->getDieAreaPolygon();
   dbBox* block_bounding_box = db_block->getBBox();
+  bool is_polygon_floorplan = !die_area.isRect();
+  if (is_polygon_floorplan) {
+    // find overlap layer
+    for (dbTechLayer* layer : db_block->getTech()->getLayers()) {
+      if (layer->getType() == odb::dbTechLayerType::OVERLAP) {
+        overlap = layer;
+        break;
+      }
+    }
+
+    if (overlap == nullptr) {
+      logger_->warn(utl::ODB, 33, "No overlap layer found for obstructions.");
+    }
+  }
+
+  fmt::print(out, "  OBS\n");
+  if (is_polygon_floorplan && overlap != nullptr) {
+    fmt::print(out, "    LAYER {} ;\n", overlap->getName());
+    writePolygon(out, "   ", die_area);
+  }
   for (const auto& [tech_layer, polySet] : obstructions) {
     fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers_) {
-      writeBox(out, "   ", block_bounding_box);
+      if (is_polygon_floorplan) {
+        writePolygon(out, "   ", die_area);
+      } else {
+        writeBox(out, "   ", block_bounding_box);
+      }
     } else {
       const int bloat = determineBloat(tech_layer);
       boost::polygon::polygon_90_set_data<int> shrink_poly = polySet;
@@ -267,6 +329,9 @@ void lefout::getObstructions(dbBlock* db_block,
                              ObstructionMap& obstructions) const
 {
   for (dbObstruction* obs : db_block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
     insertObstruction(obs->getBBox(), obstructions);
   }
 

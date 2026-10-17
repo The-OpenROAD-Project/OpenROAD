@@ -66,4 +66,4 @@ place_inst \
 
 set def_file [make_result_file place_inst.def]
 write_def $def_file
-diff_file $def_file place_inst.defok
+diff_files $def_file place_inst.defok

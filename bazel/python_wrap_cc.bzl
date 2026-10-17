@@ -9,6 +9,7 @@ cc_library(srcs=[":python_foo"])
 python_wrap_cc(name = "python_foo", srcs=["exception.i"],...)
 """
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load(
     "//bazel:swig_common.bzl",
     "get_transitive_includes",
@@ -147,3 +148,47 @@ python_wrap_cc = rule(
         ),
     },
 )
+
+# Dependencies every SWIG Python wrapper needs, beyond its own tool.
+_PYTHON_WRAP_COMMON_DEPS = [
+    "//:ord",
+    "//src/odb/src/db",
+    "//src/utl",
+    "@boost.stacktrace",
+    "@rules_python//python/cc:current_py_cc_headers",
+]
+
+def python_wrap_library(
+        name,
+        srcs = [],
+        deps = [],
+        includes = [],
+        wrapper = ":swig-py",
+        local_defines = ["BAZEL=1"]):
+    """Compiles a tool's SWIG Python wrapper for linking into //:_openroad.so.
+
+    Every module's wrapper goes into that one library, so all of them share
+    one copy of the C++ state; python/modules/_openroad_loader.py loads each
+    module's init function from it.
+
+    Args:
+      name: The library name.
+      srcs: Headers the wrapper includes, beyond the tool's libraries.
+      deps: The tool's own libraries; the common dependencies are added.
+      includes: Include directories the wrapper needs, relative to the package.
+      wrapper: The python_wrap_cc target to compile.
+      local_defines: Defines for compiling the wrapper.
+    """
+    cc_library(
+        name = name,
+        srcs = srcs + [wrapper],
+        includes = includes,
+        local_defines = local_defines + [PYTHON_STABLE_API_DEFINE],
+        visibility = ["//:__pkg__"],
+        # A tool's own deps may name a common dep relative to its package.
+        deps = {
+            str(native.package_relative_label(dep)): None
+            for dep in deps + _PYTHON_WRAP_COMMON_DEPS
+        }.keys(),
+        alwayslink = True,
+    )

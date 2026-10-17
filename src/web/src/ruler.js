@@ -214,7 +214,9 @@ export class RulerManager {
         // Point snap threshold: max(10 pixels in DBU, 10 DBU)
         const zoom = app.map.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
-        const dbuPerPixel = app.designMaxDXDY / (256 * numTiles);
+        // designScale is CSS px per DBU at zoom 0, so it already carries the
+        // tile size the map was built with -- which is not a constant.
+        const dbuPerPixel = 1 / (app.designScale * numTiles);
         const pointThreshold = Math.max(Math.round(10 * dbuPerPixel), 10);
 
         // Direction constraint when measuring
@@ -435,7 +437,7 @@ export class RulerManager {
         // Endcap ticks — perpendicular to each segment direction
         const zoom = this._app.map.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
-        const dbuPerPixel = maxDXDY / (256 * numTiles);
+        const dbuPerPixel = 1 / (scale * numTiles);
         const tickLen = 8 * dbuPerPixel;
 
         const addTick = (pt, segDx, segDy) => {

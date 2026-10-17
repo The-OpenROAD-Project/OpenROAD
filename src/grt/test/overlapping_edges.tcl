@@ -12,4 +12,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file overlapping_edges.guideok $guide_file
+diff_files overlapping_edges.guideok $guide_file

@@ -24,4 +24,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file abutting_macros_step_no_corners.defok $def_file
+diff_files abutting_macros_step_no_corners.defok $def_file

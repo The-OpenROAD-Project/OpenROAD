@@ -3,14 +3,23 @@
 
 // Standalone stubs for Yosys log/assert functions.
 //
-// When building slang-elab without Yosys (SLANG_NO_YOSYS), the shared
-// frontend code still references log_assert, log_error, log_warning, etc.
-// This header provides minimal implementations so the code compiles and
-// behaves sanely without pulling in any Yosys headers.
+// When building slang-elab without Yosys (SLANG_NO_YOSYS), the vendored
+// frontend in third-party/slang-elab/ still references log_assert, log_abort,
+// stringf, etc. This header provides minimal implementations so that code
+// compiles and behaves sanely without pulling in any Yosys headers.
+//
+// The diagnostic entry points -- log, log_warning and log_error -- are only
+// declared here; diagnostics.cc defines them and routes them to utl::Logger,
+// so a message raised by the vendored frontend reaches the user the same way
+// as any other OpenROAD diagnostic. They cannot be inline: utl/Logger.h
+// transitively brings spdlog's bundled fmt, slang brings a different version,
+// and mixing the two in one TU collides on fmt::vNN.
+//
+// Only the vendored code needs any of this. OpenROAD's own elab sources call
+// assert() and utl::Logger directly.
 
 #pragma once
 
-#include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -18,38 +27,21 @@
 
 namespace Yosys {
 
-[[gnu::format(printf, 1, 2)]]
-inline void log(const char* fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  va_end(ap);
-}
+// Defined in diagnostics.cc, on top of utl::Logger.
+[[gnu::format(printf, 1, 2)]] void log(const char* fmt, ...);
+[[gnu::format(printf, 1, 2)]] void log_warning(const char* fmt, ...);
+[[gnu::format(printf, 1, 2)]] [[noreturn]] void log_error(const char* fmt, ...);
 
+// Nothing in this build calls log_flush or ys_debug, but the vendored
+// frontend names them in unguarded using-declarations, so they have to exist.
+// utl::Logger does its own flushing.
 inline void log_flush()
 {
-  fflush(stderr);
 }
 
-[[gnu::format(printf, 1, 2)]] [[noreturn]]
-inline void log_error(const char* fmt, ...)
+inline int ys_debug(int = 0)
 {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  va_end(ap);
-  std::abort();
-}
-
-[[gnu::format(printf, 1, 2)]]
-inline void log_warning(const char* fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  fprintf(stderr, "Warning: ");
-  vfprintf(stderr, fmt, ap);
-  va_end(ap);
+  return 0;
 }
 
 #ifndef log_debug
@@ -58,11 +50,6 @@ inline void log_debug(const char*, ...)
 {
 }
 #endif
-
-inline int ys_debug(int = 0)
-{
-  return 0;
-}
 
 inline int ceil_log2(int x)
 {

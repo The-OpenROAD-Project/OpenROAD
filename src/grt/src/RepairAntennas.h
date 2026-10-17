@@ -23,7 +23,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/wOrder.h"
 
 // Forward declaration protects FastRoute code from any
 // header file from the DB. FastRoute code keeps independent.

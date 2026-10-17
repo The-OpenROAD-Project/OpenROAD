@@ -9,18 +9,18 @@
 #include <string>
 #include <vector>
 
-#include "gui/heatMap.h"
 #include "odb/PtrSetMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
 #include "sta/Sta.hh"
+#include "web/heatMap.h"
 
 namespace psm {
 
 IRDropDataSource::IRDropDataSource(PDNSim* psm,
                                    sta::Sta* sta,
                                    utl::Logger* logger)
-    : gui::RealValueHeatMapDataSource(logger,
+    : web::RealValueHeatMapDataSource(logger,
                                       "V",
                                       "IR Drop",
                                       "IRDrop",
@@ -55,6 +55,13 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       "Layer:",
       [this]() {
         std::vector<std::string> layers;
+        // setChip() leaves tech_ unset for a chip with no block, which is
+        // what the root chip of a 3DBlox stack is.  The other callbacks in
+        // this source already guard for it; this one is queried whenever the
+        // settings are serialized, design or no design.
+        if (tech_ == nullptr) {
+          return layers;
+        }
         for (auto* layer : tech_->getLayers()) {
           if (layer->getType() == odb::dbTechLayerType::ROUTING) {
             layers.push_back(layer->getName());
@@ -97,7 +104,7 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
 
 void IRDropDataSource::setChip(odb::dbChip* chip)
 {
-  gui::HeatMapDataSource::setChip(chip);
+  web::HeatMapDataSource::setChip(chip);
   if (chip != nullptr) {
     odb::dbBlock* block = chip->getBlock();
     tech_ = block != nullptr ? block->getTech() : nullptr;

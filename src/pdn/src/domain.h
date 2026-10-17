@@ -4,10 +4,12 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "odb/dbTypes.h"
+#include "polygon.h"
 
 namespace odb {
 class dbBlock;
@@ -69,6 +71,9 @@ class VoltageDomain
 
   // returns the area of the region or core
   odb::Rect getDomainArea() const;
+  // returns the outline of the region or core.  On a rectangular floorplan
+  // this is getDomainArea(); on a polygon one it follows the real outline.
+  Region getDomainRegion() const;
 
   void addGrid(std::unique_ptr<Grid> grid);
   void resetGrids();
@@ -82,6 +87,11 @@ class VoltageDomain
   void report() const;
 
   void checkSetup() const;
+
+  std::optional<odb::Rect> getPadRingInnerArea() const
+  {
+    return pad_ring_inner_area_;
+  }
 
  private:
   std::string name_;
@@ -98,6 +108,8 @@ class VoltageDomain
 
   std::vector<std::unique_ptr<Grid>> grids_;
 
+  std::optional<odb::Rect> pad_ring_inner_area_;
+
   int getRegionRectCount(odb::dbRegion* region) const;
   odb::Rect getRegionBoundary(odb::dbRegion* region) const;
   // returns just the rows associated with the region
@@ -109,6 +121,7 @@ class VoltageDomain
   void determinePowerGroundNets();
 
   odb::dbNet* findDomainNet(const odb::dbSigType& type) const;
+  void populatePadRingInnerArea();
 };
 
 }  // namespace pdn

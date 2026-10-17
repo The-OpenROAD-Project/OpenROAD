@@ -23,4 +23,4 @@ set def_file [make_result_file large_groups4.def]
 
 write_def $def_file
 
-diff_file large_groups4.defok $def_file
+diff_files large_groups4.defok $def_file

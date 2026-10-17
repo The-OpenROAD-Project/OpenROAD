@@ -28,7 +28,7 @@ def _hier_case_test_impl(ctx):
 
     ctx.actions.write(
         output = script,
-        content = """#!/bin/bash
+        content = """#!/usr/bin/env bash
 set -eu
 exec "{runner}" --gtest_filter='{filter}' "$@"
 """.format(

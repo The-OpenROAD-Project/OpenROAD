@@ -11,4 +11,4 @@ set def_file [make_result_file cut_rows_min_width.def]
 check_placement -verbose
 
 write_def $def_file
-diff_file cut_rows_min_width.defok $def_file
+diff_files cut_rows_min_width.defok $def_file

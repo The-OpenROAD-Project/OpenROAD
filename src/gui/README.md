@@ -955,11 +955,9 @@ timing groups display the internal clock latency inline:
 
 ![Clock insertion annotation in Data Path Details](../../docs/images/timing_report_clk_insertion.png)
 
-To view this, run the MockArray example and look at reg2reg paths:
-
-```
-bazelisk run --//:platform=gui //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
-```
+To view this, open a design with macros whose Liberty models define these
+groups (e.g. models written by `write_timing_model`) and look at reg2reg
+paths.
 
 ## License
 

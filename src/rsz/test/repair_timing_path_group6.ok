@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[INFO RSZ-0228] Created path group 'reg2reg'.
+[INFO RSZ-0228] Created path group 'in2reg'.
+-- reg2reg before
+Startpoint                           Endpoint                                Slack
+---------------------------------------------------------------------------------
+dpath.a_reg.out[13]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL) dpath.a_reg.out[7]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -93.530
+
+-- in2reg before
+Startpoint                           Endpoint                                Slack
+---------------------------------------------------------------------------------
+req_msg[7] (input)                   dpath.b_reg.out[7]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -28.822
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove VtSwapMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 34 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 34 out of 34 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: CRIT_VT_SWAP
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+    final |       0 |     150 |        0 |      0 |     0 |    +0.0% |  -52.685 |    -1402.5 |     34 | dpath.b_reg.out\[3\]$_DFFE_PP_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 150 instances: 0 up, 0 up match, 0 down, 150 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+-- reg2reg after
+Startpoint                           Endpoint                                Slack
+---------------------------------------------------------------------------------
+dpath.b_reg.out[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL) dpath.b_reg.out[3]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -52.685
+
+-- in2reg after
+Startpoint                           Endpoint                                Slack
+---------------------------------------------------------------------------------
+req_msg[4] (input)                   dpath.b_reg.out[4]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -24.649
+
+VT swapped cells off every reg2reg path: 0

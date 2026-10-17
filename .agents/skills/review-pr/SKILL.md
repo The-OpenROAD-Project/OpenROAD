@@ -76,7 +76,7 @@ Any change affecting placement, routing, timing, or physical design:
 ### Priority 3: Testing
 
 - Does every code change have an accompanying test?
-- Are tests registered in **both CMake and Bazel**?
+- Are tests registered in **Bazel** (`BUILD`)? CMake is deprecated; do not ask for CMake test registration. A new source file or tool still needs its CMake entry (the macOS CI job builds with CMake).
 - Do golden files look reasonable?
 - Are test inputs minimal?
 

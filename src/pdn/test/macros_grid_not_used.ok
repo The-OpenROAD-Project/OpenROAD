@@ -51,6 +51,7 @@ Connect:
 Pin layers: TopMetal2
 Grid name: sg13g2_sram_R0 - wishbone\/bd_ram\/ram0\/mem\/itech.ADDR\[0\].WORD\[0\].iRM_IHPSG13_1P_256x48_c2_bm_bist.memory
 Type: Instance
+Orientation: MX
 Straps:
   Type: Strap
     Layer: TopMetal1

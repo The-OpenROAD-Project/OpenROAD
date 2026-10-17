@@ -13,9 +13,11 @@ check "same-net location" {[$block findInst same_net] getLocation} "7600 5600"
 check "signal-pin blocked location" {
   [$block findInst signal_blocked] getLocation
 } "11780 5600"
+# The supply-via check exempts this same-net tie-off, but the always-on
+# blocked-layer check rejects any signal pin over power via metal, net or not.
 check "signal-pin same-net location" {
   [$block findInst signal_same_net] getLocation
-} "15200 5600"
+} "15580 5600"
 
 # A later manual move beneath the via must be reported as a supply-via failure,
 # independently from the blocked-layer category.

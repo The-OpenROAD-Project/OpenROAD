@@ -89,7 +89,7 @@ target_include_directories(mpl
 
 target_link_libraries(mpl
     mpl_lib
-    gui
+    gui_core
 )
 
 if(ENABLE_TESTS)

@@ -59,8 +59,8 @@ void SetupLastGaspPolicy::iterate()
       if (logger_->debugCheck(RSZ, "repair_setup", 1)) {
         sta::Slack final_wns;
         sta::Vertex* final_worst;
-        sta_->worstSlack(max_, final_wns, final_worst);
-        const float final_tns = sta_->totalNegativeSlack(max_);
+        target_collector_->worstSlack(final_wns, final_worst);
+        const float final_tns = target_collector_->totalNegativeSlack();
         debugPrint(logger_,
                    RSZ,
                    "repair_setup",
@@ -92,7 +92,7 @@ bool SetupLastGaspPolicy::initializeLastGaspRepair(
 
   violating_ends = collectViolatingEndpoints(config_.setup_slack_margin);
   last_gasp_state.num_viols = violating_ends.size();
-  const float curr_tns = sta_->totalNegativeSlack(max_);
+  const float curr_tns = target_collector_->totalNegativeSlack();
   if (sta::fuzzyGreaterEqual(curr_tns, 0)) {
     debugPrint(logger_,
                RSZ,
@@ -262,7 +262,8 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
       break;
     }
 
-    sta::Path* end_path = sta_->vertexWorstSlackPath(endpoint_state.end, max_);
+    sta::Path* end_path
+        = target_collector_->findWorstSlackPath(endpoint_state.end);
     const bool changed = repairPath(end_path,
                                     endpoint_state.end_slack,
                                     /*force_single_repair=*/false);
@@ -274,7 +275,7 @@ void SetupLastGaspPolicy::repairLastGaspEndpoint(
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
     refreshEndpointSlacks(endpoint_state);
-    const float curr_tns = sta_->totalNegativeSlack(max_);
+    const float curr_tns = target_collector_->totalNegativeSlack();
     if (!advanceLastGaspProgress(endpoint_state, last_gasp_state, curr_tns)) {
       break;
     }

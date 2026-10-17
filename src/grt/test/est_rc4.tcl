@@ -24,5 +24,5 @@ report_net -corner corner0 -digits 3 clk
 report_net -corner corner1 -digits 3 clk
 
 set spef_folder [file dirname $spef_file]
-diff_file est_rc4_corner0.spefok [file join $spef_folder est_rc4-tcl_corner0.spef]
-diff_file est_rc4_corner1.spefok [file join $spef_folder est_rc4-tcl_corner1.spef]
+diff_files est_rc4_corner0.spefok [file join $spef_folder est_rc4-tcl_corner0.spef]
+diff_files est_rc4_corner1.spefok [file join $spef_folder est_rc4-tcl_corner1.spef]

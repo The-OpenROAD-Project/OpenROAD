@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   Clang-Tidy-Bazel:
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -102,7 +102,7 @@ jobs:
           } > pr-meta.txt
 
       - name: Upload clang-tidy artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: clang-tidy-bazel
           path: |

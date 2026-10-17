@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -32,10 +30,10 @@ filegroup(
 
 # ---- SWIG / Python bindings ----
 #
-# The Python targets (swig-py, _odb.so, odb_py) stay in this package
-# because the generated odb.py import path encodes the Bazel package
-# path (src.odb.odb); moving them would break every downstream Python
-# consumer. The TCL SWIG, tcl_encode, swig_common, and ui targets
+# The Python targets (swig-py, py_wrap, odb_py) stay in this package
+# because the generated odb_py.py import path encodes the Bazel package
+# path (src.odb.odb_py), which other generated wrappers import; moving
+# them would break every downstream Python consumer. The TCL SWIG, tcl_encode, swig_common, and ui targets
 # live in //src/odb/src/swig.
 
 python_wrap_cc(
@@ -47,7 +45,7 @@ python_wrap_cc(
         "//:src/Exception.i",
         "//src/odb/src/swig:swig_imports_py",
     ],
-    module = "odb",
+    module = "odb_py",
     root_swig_src = "//src/odb/src/swig:common/odb.i",
     swig_includes = [
         "include",
@@ -59,25 +57,10 @@ python_wrap_cc(
     ],
 )
 
-cc_binary(
-    name = "_odb.so",
-    srcs = [":swig-py"],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    includes = ["src/swig/common"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/swig:swig_common",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
+# The odb module is part of //:openroad_py.
+alias(
     name = "odb_py",
-    srcs = [":swig-py"],
-    data = [":_odb.so"],
-    imports = ["."],
+    actual = "//:openroad_py",
     visibility = ["//visibility:public"],
 )
 
@@ -129,4 +112,11 @@ messages_txt(
         "//docs:__pkg__",
         "//src/odb/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src/swig/common"],
+    local_defines = [],
+    deps = ["//src/odb/src/swig:swig_common"],
 )

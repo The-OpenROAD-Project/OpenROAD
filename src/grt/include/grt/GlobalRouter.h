@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -156,6 +157,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setCUGRViaDemand(bool enabled);
   void setResAwareNetsPercentage(float percentage);
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
@@ -335,6 +337,9 @@ class GlobalRouter
   // estimation is electrically connected (correct-by-construction).
   void addImplicitVias(GRoute& route);
 
+  // Remove duplicate vias from ODB guides, including reversed layer pairs.
+  void dedupViaSegments(GRoute& route);
+
   // Report wire length
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
@@ -379,6 +384,9 @@ class GlobalRouter
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
+
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
+  RoutingCongestion* getRoutingCongestion();
 
   void writePinLocations(const char* file_name);
 
@@ -538,6 +546,9 @@ class GlobalRouter
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Refresh odb's congestion only for the GCells the routing engine recorded
+  // as changed.  Clears the engine's list.
+  void updateDbCongestionTiles();
 
   // db functions
   void initGrid(int max_layer);
@@ -606,6 +617,10 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  // Whether the congestion of the current routes was accepted, decided
+  // when they were routed; later changes to allow_congestion_ do not
+  // withdraw it.
+  bool congestion_accepted_{false};
   bool incremental_congestion_report_pending_{false};
   // Block property recording which engine produced the persisted guides.
   static constexpr char kUseCugrProperty[] = "grt_use_cugr";
@@ -642,6 +657,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 

@@ -12,6 +12,7 @@ swig_lib(NAME      rsz
 
 add_library(rsz_lib
     BufferedNet.cc
+    PathGroupFilter.cc
     PreChecks.cc
     RecoverPower.cc
     RepairDesign.cc
@@ -47,6 +48,8 @@ add_library(rsz_lib
     move/BufferGenerator.cc
     move/CloneCandidate.cc
     move/CloneGenerator.cc
+    move/BufferToInvertersCandidate.cc
+    move/BufferToInvertersGenerator.cc
     move/MeasuredVtSwapCandidate.cc
     move/MeasuredVtSwapGenerator.cc
     move/MoveCandidate.cc
@@ -119,7 +122,7 @@ target_link_libraries(rsz
     OpenSTA
     dbSta
     grt
-    gui
+    gui_core
     utl_lib
 )
 
