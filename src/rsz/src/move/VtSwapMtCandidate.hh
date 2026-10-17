@@ -38,6 +38,11 @@ class VtSwapMtCandidate : public MoveCandidate
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
   MoveResult apply() override;
+  MoveImpact impact() const override;
+  std::vector<const sta::Pin*> guardedSidePins() const override
+  {
+    return faninSidePins(target().estimator_context.value());
+  }
   MoveType type() const override { return MoveType::kVtSwap; }
 
  private:

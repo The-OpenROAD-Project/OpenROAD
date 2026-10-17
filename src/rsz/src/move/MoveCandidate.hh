@@ -3,10 +3,23 @@
 
 #pragma once
 
+#include <algorithm>
+#include <type_traits>
+#include <vector>
+
 #include "OptimizerTypes.hh"
 #include "rsz/Resizer.hh"
 
 namespace rsz {
+
+// Appends a non-null value that the list does not hold yet.
+template <typename T>
+void appendUnique(std::vector<T>& values, const std::type_identity_t<T> value)
+{
+  if (value != nullptr && std::ranges::find(values, value) == values.end()) {
+    values.push_back(value);
+  }
+}
 
 // === Move candidate interface ==============================================
 
@@ -35,10 +48,20 @@ class MoveCandidate
   virtual Estimate estimate() { return {.legal = true, .score = 1.0f}; }
   virtual MoveResult apply() = 0;
   virtual MoveType type() const = 0;
+  // What applying the move writes and what its estimate read.  The base
+  // impact holds the target path's stages the estimate read.
+  virtual MoveImpact impact() const;
+  // Side pins whose slack the estimate charged; PARALLEL_EVAL checks them
+  // after the batch STA to find moves whose side effects were underestimated.
+  virtual std::vector<const sta::Pin*> guardedSidePins() const { return {}; }
+  static std::vector<const sta::Pin*> faninSidePins(
+      const EstimatorContext& estimator_context);
   const Target& target() const { return target_; }
 
  protected:
   MoveCandidate(Resizer& resizer, const Target& target);
+  // The base impact plus a new cell on inst: inst and every net on its pins.
+  MoveImpact cellSwapImpact(sta::Instance* inst) const;
   MoveResult rejectedMove() const;
   // The side costs of swapping the target cell for `replacement`, charged
   // against the own-path gain of delay_est: the flip-flop input-side checks,

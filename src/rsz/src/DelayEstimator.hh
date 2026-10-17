@@ -262,6 +262,24 @@ class DelayEstimator
   static DelayEstimate estimate(const EstimatorContext& context,
                                 const sta::LibertyCell* candidate_cell,
                                 std::vector<StageEvaluation>* trace = nullptr);
+  // Scores a load change of the target stage over the same window as
+  // estimate(); the target keeps its cell.
+  static DelayEstimate estimateLoadChange(const EstimatorContext& context,
+                                          float target_load_delta);
+  // Delay of buffer_cell driving load_cap, on the output transition of the
+  // target stage.
+  static bool findBufferDelay(const EstimatorContext& context,
+                              const sta::LibertyCell* buffer_cell,
+                              float input_slew,
+                              float load_cap,
+                              float& delay);
+  // Charges the moved loads for an arrival change of delay_delta, like fanin
+  // side loads: the weighted negative-region loss goes to side_loss, and a load
+  // pushed below the side slack floor makes the estimate illegal.
+  static void chargeMovedLoads(const EstimatorContext& context,
+                               const std::vector<SideLoad>& loads,
+                               float delay_delta,
+                               DelayEstimate& estimate);
 
   // === Buffer-tree estimation (DelayEstimatorBufferTree.cc) =================
   // The target path through the tree, less the summed negative-region slack

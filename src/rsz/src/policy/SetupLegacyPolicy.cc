@@ -36,7 +36,7 @@ static constexpr int kDelayDigits = 3;
 
 void SetupLegacyPolicy::iterate()
 {
-  committer_.capturePrePhaseSlack();
+  committer_.tracker().capturePrePhaseSlack();
   buildMainMoveSequence(/*log_sequence=*/false);
 
   MainRepairState main_state;

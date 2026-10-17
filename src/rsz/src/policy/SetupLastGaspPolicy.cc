@@ -40,7 +40,7 @@ void SetupLastGaspPolicy::iterate()
     return;
   }
 
-  committer_.capturePrePhaseSlack();
+  committer_.tracker().capturePrePhaseSlack();
   int& num_viols = setup_context_.violation_count;
   const char phase_marker = phaseMarkerForIndex(setup_context_.phase_index);
   {

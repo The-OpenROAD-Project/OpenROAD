@@ -34,7 +34,10 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
 
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  sta::LibertyCell* current_cell = estimator_context.target().arc.currentCell();
+  // The arc holds the cell of its scene.  The Resizer caches, warmed before
+  // the workers start, key on the link cell.
+  sta::LibertyCell* current_cell
+      = resizer_.network()->libertyCell(target.inst(resizer_));
   const std::vector<sta::LibertyCell*> candidate_cells
       = selectCandidateCells(current_cell);
 

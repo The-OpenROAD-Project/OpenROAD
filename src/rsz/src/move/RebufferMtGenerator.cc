@@ -5,7 +5,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <map>
 #include <memory>
+#include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -15,12 +19,18 @@
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
 #include "RebufferMtCandidate.hh"
+#include "RebufferPlannerPool.hh"
+#include "RepairSetupProfiler.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -51,8 +61,85 @@ const sta::Pin* targetLoadPin(const Target& target, Resizer& resizer)
 }  // namespace
 
 RebufferMtGenerator::RebufferMtGenerator(const GeneratorContext& context)
-    : MoveGenerator(context)
+    : MoveGenerator(context), planners_(context.resizer)
 {
+}
+
+RebufferLoadTimingMap RebufferMtGenerator::collectLoadTiming(
+    Resizer& resizer,
+    const Target& target,
+    const std::unordered_set<const sta::Pin*>* critical_load_pins,
+    const float off_path_weight)
+{
+  const ProfileScope profile("prepare_rebuffer_side_loads");
+  RebufferLoadTimingMap load_timing;
+  const SelectedArc& arc = target.estimator_context->target().arc;
+  sta::dbSta* sta = resizer.sta();
+  sta::Graph* graph = sta->graph();
+  sta::Vertex* driver_vertex = graph->pinDrvrVertex(target.driver_pin);
+  if (driver_vertex == nullptr) {
+    return load_timing;
+  }
+
+  const int dcalc_ap = arc.scene->dcalcAnalysisPtIndex(arc.min_max);
+
+  // Wire edges from the driver reach every load on the net.
+  sta::VertexOutEdgeIterator edge_iter(driver_vertex, graph);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    if (!edge->isWire()) {
+      continue;
+    }
+
+    sta::Vertex* load_vertex = edge->to(graph);
+    const sta::Slack slack = sta->slack(load_vertex, arc.min_max);
+    if (sta::delayInf(slack, sta)) {
+      continue;
+    }
+
+    // Loads off every violating worst path only lose pin slack, not TNS.
+    load_timing[load_vertex->pin()]
+        = {.slack = sta::delayAsFloat(slack),
+           .wire_delay = sta::delayAsFloat(
+               graph->wireArcDelay(edge, arc.outputRiseFall(), dcalc_ap)),
+           .weight = sideLoadWeight(
+               load_vertex->pin(), critical_load_pins, off_path_weight)};
+  }
+
+  RepairSetupProfiler::event("rebuffer_side_loads_collected",
+                             load_timing.size());
+  return load_timing;
+}
+
+std::vector<BufferTreeSidePathContext> RebufferMtGenerator::makeSideContexts(
+    const RebufferTreePlan& plan,
+    const RebufferLoadTimingMap& load_timing)
+{
+  std::vector<BufferTreeSidePathContext> contexts;
+  if (load_timing.empty()) {
+    return contexts;
+  }
+
+  for (const BufferTreeLoadPath& load_path : plan.load_paths) {
+    if (load_path.load_pin == nullptr
+        || load_path.load_pin == plan.target_load_pin) {
+      continue;
+    }
+
+    const RebufferLoadTimingMap::const_iterator timing
+        = load_timing.find(load_path.load_pin);
+    if (timing == load_timing.end()) {
+      continue;
+    }
+
+    contexts.push_back(
+        {.load_pin = load_path.load_pin,
+         .current_driver_to_load_delay = timing->second.wire_delay,
+         .current_slack = timing->second.slack,
+         .weight = timing->second.weight});
+  }
+
+  return contexts;
 }
 
 bool RebufferMtGenerator::isApplicable(const Target& target) const
@@ -63,20 +150,78 @@ bool RebufferMtGenerator::isApplicable(const Target& target) const
          && target.isPrepared(kEstimatorContextCache);
 }
 
+void RebufferMtGenerator::prepareInputs(const GeneratorContext& context,
+                                        Target& target)
+{
+  target.rebuffer_net
+      = context.resizer.rebuffer().makeBufferedNet(target.driver_pin);
+  // Without the side-load model the loads behind a new buffer cost nothing.
+  target.rebuffer_load_timing.clear();
+  if (context.policy_config.rebuffer_mt_side_loads) {
+    target.rebuffer_load_timing
+        = collectLoadTiming(context.resizer,
+                            target,
+                            context.critical_load_pins,
+                            context.policy_config.fanin_side_offpath_weight);
+  }
+}
+
 std::vector<std::unique_ptr<MoveCandidate>> RebufferMtGenerator::generate(
     const Target& target)
 {
-  // The main thread reads the net itself and charges no side loads.
-  Rebuffer& rebuffer_planner = resizer_.rebuffer();
+  // The net and load timing prepareInputs() staged on the main thread, planned
+  // with a worker planner leased for this call.  Without worker planners the
+  // lease hands out the Resizer's planner.
+  const RebufferPlannerPool::Lease lease(planners_);
   return generateWith(target,
-                      rebuffer_planner,
-                      rebuffer_planner.makeBufferedNet(target.driver_pin));
+                      lease.planner(),
+                      target.rebuffer_net,
+                      target.rebuffer_load_timing);
+}
+
+void RebufferMtGenerator::startPhase(const size_t worker_count)
+{
+  // prepareInputs() stages nets with the Resizer's planner, which also plans
+  // when the phase has no worker threads.  Each worker thread plans with a
+  // planner of its own.
+  const ProfileScope profile("rebuffer_planner_init");
+  sta::Scene* scene = resizer_.sta()->cmdScene();
+  resizer_.rebuffer().initForPlanning(scene);
+  planners_.reset(scene, worker_count);
+}
+
+void RebufferMtGenerator::finishPhase()
+{
+  // The worker planners counted their warnings, so the log does not depend
+  // on the thread schedule.  One line reports the counts by message ID.
+  const std::map<int, int> warning_counts = planners_.workerWarningCounts();
+  if (!warning_counts.empty()) {
+    int total = 0;
+    std::string counts;
+    for (const std::pair<const int, int>& id_count : warning_counts) {
+      counts += fmt::format("{}RSZ-{:04d} x{}",
+                            counts.empty() ? "" : ", ",
+                            id_count.first,
+                            id_count.second);
+      total += id_count.second;
+    }
+    resizer_.logger()->warn(utl::RSZ,
+                            2034,
+                            "{} RebufferMt planning warnings on worker threads "
+                            "were not logged: {}. Run with set_thread_count 1 "
+                            "to log them.",
+                            total,
+                            counts);
+  }
+
+  planners_.reset(resizer_.sta()->cmdScene(), 0);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> RebufferMtGenerator::generateWith(
     const Target& target,
     Rebuffer& rebuffer_planner,
-    BufferedNetPtr net) const
+    BufferedNetPtr net,
+    const RebufferLoadTimingMap& load_timing) const
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
 
@@ -94,13 +239,14 @@ std::vector<std::unique_ptr<MoveCandidate>> RebufferMtGenerator::generateWith(
   const std::vector<RebufferTreePlan> plans
       = rebuffer_planner.makeRebufferTreePlans(
           target.driver_pin, std::move(net), load_pin, max_tree_candidates);
-  addTreePlanCandidates(target, plans, candidates);
+  addTreePlanCandidates(target, plans, load_timing, candidates);
   return candidates;
 }
 
 void RebufferMtGenerator::addTreePlanCandidates(
     const Target& target,
     const std::vector<RebufferTreePlan>& plans,
+    const RebufferLoadTimingMap& load_timing,
     std::vector<std::unique_ptr<MoveCandidate>>& candidates) const
 {
   for (const RebufferTreePlan& plan : plans) {
@@ -128,7 +274,8 @@ void RebufferMtGenerator::addTreePlanCandidates(
         target.estimator_context.value(),
         plan,
         policy_config_.rebuffer_mt_score_scale,
-        policy_config_.rebuffer_mt_min_score));
+        policy_config_.rebuffer_mt_min_score,
+        makeSideContexts(plan, load_timing)));
   }
 }
 

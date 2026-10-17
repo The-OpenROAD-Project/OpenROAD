@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
@@ -26,6 +27,7 @@ class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
+class Net;
 class Path;
 class PathExpanded;
 class Pin;
@@ -39,9 +41,13 @@ class Vertex;
 }  // namespace sta
 
 namespace rsz {
+class BufferedNet;
 class MoveCandidate;
 class Resizer;
 class SequentialTimingEstimator;
+struct SplitLoadMtInput;
+struct SwapPinsMtInput;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
 namespace rsz {
@@ -51,6 +57,8 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
+// The serial and Mt pin-swap generators simulate cell functions the same way.
+inline constexpr int kMsgUnknownFuncExprOp = 91;
 
 enum class FailReason : uint8_t
 {
@@ -136,9 +144,20 @@ inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
 
 // Generation inputs: one Mt generator's live STA reads, prepared on the main
 // thread so its generate() can run on a worker.  Without them, the cell-swap
-// generators read live STA.
+// generators and RebufferMt read live STA.  The other generators need them.
 inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
-inline constexpr PrepareCacheMask kGenerationInputCaches = kInputCapBudgetCache;
+inline constexpr PrepareCacheMask kRebufferInputCache = 1u << 3;
+inline constexpr PrepareCacheMask kSplitLoadInputCache = 1u << 4;
+inline constexpr PrepareCacheMask kSwapPinsInputCache = 1u << 5;
+inline constexpr PrepareCacheMask kGenerationInputCaches
+    = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache
+      | kSwapPinsInputCache;
+
+// The functionally equivalent input ports of a cell by input port.  The
+// library stays fixed within a run, so the policy shares one cache across
+// the targets of SwapPinsMt.
+using EquivPinCache = std::unordered_map<const sta::LibertyPort*,
+                                         std::vector<sta::LibertyPort*>>;
 
 // === Prepared timing data ===================================================
 
@@ -351,6 +370,18 @@ struct WireRC
 // can also expose the instance reached through driver_pin.
 using TargetViewMask = uint8_t;
 
+// Current slack and driver-to-load wire delay of one load on a RebufferMt
+// target net, with the weight the side-load model gives it.
+struct RebufferLoadTiming
+{
+  float slack{0.0f};
+  float wire_delay{0.0f};
+  float weight{1.0f};
+};
+
+using RebufferLoadTimingMap
+    = std::unordered_map<const sta::Pin*, RebufferLoadTiming>;
+
 inline constexpr TargetViewMask kPathDriverView = 1u << 0;
 inline constexpr TargetViewMask kInstanceView = 1u << 1;
 
@@ -364,6 +395,9 @@ struct Target
   // - kPathDriverView: target driver output pin
   // - kInstanceView: target instance output pin
   sta::Pin* driver_pin{nullptr};
+
+  // The current path-segment endpoint survives STA refresh; Path* cannot.
+  const sta::Pin* endpoint_pin{nullptr};
 
   // Endpoint-side timing path handle.  Expanding this path exposes the full
   // startpoint-to-endpoint chain.
@@ -390,6 +424,14 @@ struct Target
   // Fanin max-cap headroom of the target instance (the cell-swap
   // generators); the STA capacitance check behind it is main-thread only.
   std::optional<std::vector<Resizer::InputCapBudget>> input_cap_budgets;
+  // RebufferMt: the driver net as a buffered-net tree and, with the
+  // side-load model, the current timing of its loads (empty without it).
+  BufferedNetPtr rebuffer_net;
+  RebufferLoadTimingMap rebuffer_load_timing;
+  // The move each Mt generator decided on from live STA; null (or empty)
+  // when it has none for this target.  The candidates share these.
+  std::shared_ptr<const SplitLoadMtInput> split_load_input;
+  std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
@@ -412,6 +454,27 @@ struct Target
 
   // previous driver of the driver_path
   const sta::Path* prevDriverPath(const Resizer& resizer) const;
+};
+
+// What a candidate's ECO writes and what its timing reads, from prepared data.
+// The batch selector rejects write conflicts and candidates whose timing
+// depends on a batch member.
+struct MoveImpact
+{
+  // False when an estimator could not enumerate all reads and writes.
+  bool complete{false};
+  // Database objects mutated by applying the candidate.
+  std::vector<sta::Instance*> write_instances;
+  std::vector<sta::Net*> write_nets;
+  // Connectivity changed by a structural move.
+  std::vector<const sta::Pin*> reconnect_pins;
+  std::vector<sta::Instance*> reconnect_instances;
+  // Objects whose timing the candidate can alter after application.
+  std::vector<sta::Instance*> timing_effect_instances;
+  std::vector<sta::Net*> timing_effect_nets;
+  // Objects whose timing the candidate estimate read before application.
+  std::vector<sta::Instance*> timing_dependency_instances;
+  std::vector<sta::Net*> timing_dependency_nets;
 };
 
 Target makePathDriverTarget(const sta::Path* endpoint_path,
@@ -515,6 +578,8 @@ struct TargetEvaluation
   std::vector<Estimate> estimates;
   MoveCandidate* best_candidate{nullptr};
   Estimate best_estimate;
+  // Worker-local profiling time, merged only after all estimates complete.
+  double worker_elapsed{0.0};
 
   bool hasBestCandidate() const { return best_candidate != nullptr; }
   MoveCandidate& bestCandidate() const { return *best_candidate; }
@@ -548,6 +613,8 @@ struct OptimizerRunConfig
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  // Stop-rule preset of PARALLEL_EVAL; the other policies ignore it.
+  RepairEffort effort{RepairEffort::kHigh};
   // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
   // pass events.  Files go to profile_dir, or "repair_setup_profile" when
   // empty, with one run_N per call.

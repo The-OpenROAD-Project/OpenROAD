@@ -5455,6 +5455,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
                           bool skip_crit_vt_swap,
+                          RepairEffort effort,
                           int profile_mode,
                           const char* profile_dir)
 {
@@ -5479,6 +5480,7 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.effort = effort;
   config.profile_mode = profile_mode;
   config.profile_dir = profile_dir != nullptr ? profile_dir : "";
 
@@ -5661,6 +5663,16 @@ void Resizer::swapArithModules(int path_count,
 void Resizer::initForJournalRestore()
 {
   init();
+}
+
+void Resizer::recountDesignAreaAfterUndo()
+{
+  // init() counts the area before the undo, so overMaxArea() would still see
+  // the undone edits.  Only overMaxArea() reads the tracked area, so the
+  // walk runs only under a -max_utilization limit.
+  if (max_area_) {
+    initDesignArea();
+  }
 }
 
 void Resizer::updateParasiticsAndTiming()
@@ -6313,26 +6325,17 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
   delete pin_iter;
 }
 
-void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
-                                   sta::LibertyPort* drvr_port,
-                                   const sta::LibertyPortSeq& equiv_ports,
-                                   const float load_cap,
-                                   const sta::Scene* scene,
-                                   const sta::MinMax* min_max,
-                                   sta::LibertyPort** swap_port,
-                                   sta::ArcDelay* base_delay_out,
-                                   sta::ArcDelay* candidate_delay_out)
+void Resizer::swapPinDelays(
+    sta::LibertyPort* input_port,
+    sta::LibertyPort* drvr_port,
+    const float load_cap,
+    const sta::Scene* scene,
+    const sta::MinMax* min_max,
+    sta::ArcDelay& base_delay,
+    std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays)
 {
   sta::LibertyCell* cell = drvr_port->libertyCell();
-  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
-  sta::ArcDelay base_delay = -sta::INF;
-  if (base_delay_out != nullptr) {
-    *base_delay_out = 0.0;
-  }
-  if (candidate_delay_out != nullptr) {
-    *candidate_delay_out = 0.0;
-  }
-
+  base_delay = -sta::INF;
   for (sta::TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() != drvr_port || arc_set->role()->isTimingCheck()) {
       continue;
@@ -6369,6 +6372,29 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
       }
     }
   }
+}
+
+void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
+                                   sta::LibertyPort* drvr_port,
+                                   const sta::LibertyPortSeq& equiv_ports,
+                                   const float load_cap,
+                                   const sta::Scene* scene,
+                                   const sta::MinMax* min_max,
+                                   sta::LibertyPort** swap_port,
+                                   sta::ArcDelay* base_delay_out,
+                                   sta::ArcDelay* candidate_delay_out)
+{
+  if (base_delay_out != nullptr) {
+    *base_delay_out = 0.0;
+  }
+  if (candidate_delay_out != nullptr) {
+    *candidate_delay_out = 0.0;
+  }
+
+  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
+  sta::ArcDelay base_delay;
+  swapPinDelays(
+      input_port, drvr_port, load_cap, scene, min_max, base_delay, port_delays);
 
   const sta::ArcDelay reference_delay = base_delay;
   for (sta::LibertyPort* port : equiv_ports) {
@@ -6715,6 +6741,19 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
     result.push_back(moveTypeFromString(lower));
   }
   return result;
+}
+
+RepairEffort Resizer::repairEffortFromString(const std::string& effort)
+{
+  if (effort == "low") {
+    return RepairEffort::kLow;
+  }
+
+  if (effort == "medium") {
+    return RepairEffort::kMedium;
+  }
+
+  return RepairEffort::kHigh;
 }
 
 bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
