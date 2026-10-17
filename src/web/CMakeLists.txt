@@ -3,6 +3,8 @@
 
 include("openroad")
 
+find_package(ZLIB REQUIRED)
+
 # The Qt-free half of what used to be the gui: the data model every other
 # module draws through -- Painter, Renderer, Descriptor/Selected,
 # HeatMapDataSource -- published through gui/core.h.  It lives here because
@@ -188,6 +190,7 @@ target_sources(web
     src/glyph_cache.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
+    src/asset_gzip.cpp
     src/web.cpp
     src/web_serve.cpp
     src/web_chart.cpp
@@ -209,6 +212,7 @@ target_link_libraries(web
     lodepng
     stb_truetype
     utl_lib
+    ZLIB::ZLIB
 )
 
 # libdeflate compresses tile PNGs several times faster than lodepng's built-in

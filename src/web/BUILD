@@ -228,6 +228,7 @@ cc_library(
 cc_library(
     name = "web",
     srcs = [
+        "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
@@ -242,7 +243,6 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_gif.cpp",
         "src/web_gif.h",
@@ -269,6 +269,7 @@ cc_library(
         "src/request_handler.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -299,6 +300,7 @@ cc_library(
         "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
+        "@zlib",
     ],
 )
 
