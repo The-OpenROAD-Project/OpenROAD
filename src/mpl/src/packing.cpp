@@ -4,12 +4,15 @@
 #include "packing.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <istream>
 #include <limits>
 #include <map>
 #include <numeric>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -973,6 +976,101 @@ std::string explainDoesNotFit(const PackingProblem& problem,
             + fixText(fixes.same_aspect, dbu_per_micron) + " um";
   }
   return text;
+}
+
+void writePackingProblem(std::ostream& out,
+                         const std::string& tag,
+                         const PackingProblem& problem)
+{
+  out << "P " << tag << " " << problem.width << " " << problem.height << " "
+      << problem.blocks.size() << "\n";
+  for (const PackingBlock& block : problem.blocks) {
+    std::string name = block.name.empty() ? "_" : block.name;
+    std::replace_if(
+        name.begin(),
+        name.end(),
+        [](const char c) {
+          return std::isspace(static_cast<unsigned char>(c)) != 0;
+        },
+        '_');
+    out << "B " << name;
+    if (block.isFixed()) {
+      out << " F " << *block.fixed_x << " " << *block.fixed_y << " "
+          << block.shapes.front().width() << " "
+          << block.shapes.front().height();
+    } else if (block.isSoft()) {
+      out << " S " << block.soft_shapes.size();
+      for (const SoftShape& shape : block.soft_shapes) {
+        out << " " << shape.width.min << " " << shape.width.max << " "
+            << shape.area;
+      }
+    } else {
+      out << " R " << block.shapes.size();
+      for (const Tiling& shape : block.shapes) {
+        out << " " << shape.width() << " " << shape.height();
+      }
+    }
+    out << "\n";
+  }
+}
+
+bool readPackingProblem(std::istream& in,
+                        std::string& tag,
+                        PackingProblem& problem)
+{
+  std::string token;
+  if (!(in >> token)) {
+    return false;
+  }
+  auto fail = [](const std::string& what) {
+    throw std::runtime_error("malformed packing problem: " + what);
+  };
+  size_t count = 0;
+  if (token != "P"
+      || !(in >> tag >> problem.width >> problem.height >> count)) {
+    fail("expected P <tag> <width> <height> <blocks>");
+  }
+  problem.blocks.clear();
+  for (size_t i = 0; i < count; i++) {
+    PackingBlock block;
+    std::string kind;
+    if (!(in >> token >> block.name >> kind) || token != "B") {
+      fail("expected B <name> <kind> in " + tag);
+    }
+    if (kind == "F") {
+      int x, y, w, h;
+      if (!(in >> x >> y >> w >> h)) {
+        fail("fixed block " + block.name);
+      }
+      block.fixed_x = x;
+      block.fixed_y = y;
+      block.shapes.emplace_back(w, h);
+    } else if (kind == "R" || kind == "S") {
+      size_t k = 0;
+      if (!(in >> k) || k == 0) {
+        fail("shape count of " + block.name);
+      }
+      for (size_t j = 0; j < k; j++) {
+        if (kind == "R") {
+          int w, h;
+          if (!(in >> w >> h)) {
+            fail("rigid shape of " + block.name);
+          }
+          block.shapes.emplace_back(w, h);
+        } else {
+          SoftShape shape;
+          if (!(in >> shape.width.min >> shape.width.max >> shape.area)) {
+            fail("soft piece of " + block.name);
+          }
+          block.soft_shapes.push_back(shape);
+        }
+      }
+    } else {
+      fail("block kind " + kind);
+    }
+    problem.blocks.push_back(block);
+  }
+  return true;
 }
 
 }  // namespace mpl

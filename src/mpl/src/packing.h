@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iosfwd>
 #include <optional>
 #include <string>
 #include <vector>
@@ -155,5 +156,19 @@ std::string explainDoesNotFit(const PackingProblem& problem,
                               const PackingResult& result,
                               const PackingFixes& fixes,
                               int dbu_per_micron);
+
+// A plain-text form of a problem, one line per item, for reproducers:
+//   P <tag> <width> <height> <blocks>
+//   B <name> F <x> <y> <width> <height>        a fixed block
+//   B <name> R <k> <width> <height> ...        k rigid shapes
+//   B <name> S <k> <min> <max> <area> ...      k soft pieces
+// Names must not contain white space.
+void writePackingProblem(std::ostream& out,
+                         const std::string& tag,
+                         const PackingProblem& problem);
+// Returns false at the end of the input; throws on malformed input.
+bool readPackingProblem(std::istream& in,
+                        std::string& tag,
+                        PackingProblem& problem);
 
 }  // namespace mpl

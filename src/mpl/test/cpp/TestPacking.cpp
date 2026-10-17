@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <functional>
 #include <random>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -250,6 +251,49 @@ TEST(Packing, SameInputSameAnswer)
     EXPECT_EQ(a.placement[i].x, b.placement[i].x);
     EXPECT_EQ(a.placement[i].y, b.placement[i].y);
   }
+}
+
+// A problem written out and read back is the same problem, every kind of
+// block included, so a reproducer can be shared as text.
+TEST(PackingText, RoundTrips)
+{
+  PackingBlock soft_block = soft(1000, 10, 100);
+  soft_block.soft_shapes.push_back({Interval(200, 300), 5000});
+  PackingBlock several;
+  several.shapes = {Tiling(10, 20), Tiling(20, 10)};
+  const PackingProblem problem{
+      500, 400, {rigid(30, 40), fixedAt(5, 6, 7, 8), soft_block, several}};
+  std::stringstream text;
+  writePackingProblem(text, "case", problem);
+  std::string tag;
+  PackingProblem back;
+  ASSERT_TRUE(readPackingProblem(text, tag, back));
+  EXPECT_EQ(tag, "case");
+  EXPECT_EQ(back.width, 500);
+  EXPECT_EQ(back.height, 400);
+  ASSERT_EQ(back.blocks.size(), problem.blocks.size());
+  for (size_t i = 0; i < problem.blocks.size(); i++) {
+    const PackingBlock& a = problem.blocks[i];
+    const PackingBlock& b = back.blocks[i];
+    EXPECT_EQ(a.shapes, b.shapes) << i;
+    EXPECT_EQ(a.fixed_x, b.fixed_x) << i;
+    EXPECT_EQ(a.fixed_y, b.fixed_y) << i;
+    ASSERT_EQ(a.soft_shapes.size(), b.soft_shapes.size()) << i;
+    for (size_t k = 0; k < a.soft_shapes.size(); k++) {
+      EXPECT_EQ(a.soft_shapes[k].width.min, b.soft_shapes[k].width.min);
+      EXPECT_EQ(a.soft_shapes[k].width.max, b.soft_shapes[k].width.max);
+      EXPECT_EQ(a.soft_shapes[k].area, b.soft_shapes[k].area);
+    }
+  }
+  EXPECT_FALSE(readPackingProblem(text, tag, back));
+}
+
+TEST(PackingText, MalformedInputIsRefused)
+{
+  std::stringstream text("P case 10 10 1\nB b0 Q 1 2\n");
+  std::string tag;
+  PackingProblem problem;
+  EXPECT_THROW(readPackingProblem(text, tag, problem), std::runtime_error);
 }
 
 // Identical rectangles that cannot rotate: an exhaustive search on a small
