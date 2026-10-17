@@ -1,0 +1,114 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_LVT_FF_nldm_211120.lib.gz line 14814, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13156, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13189, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13222, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13255, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13288, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13321, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 13354, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14748, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14781, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_SLVT_FF_nldm_211120.lib.gz line 14814, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: riscv_top
+[INFO ODB-0130]     Created 560 pins.
+[INFO ODB-0131]     Created 987 components and 4902 component-terminals.
+[INFO ODB-0133]     Created 1362 nets and 2928 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove VtSwapMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 58 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 58 out of 58 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -375.692 |   -11554.6 |     58 | capture_76/D
+     247* |      10 |     121 |       17 |      4 |    23 |    +0.9% |   -5.675 |      -39.5 |     58 | capture_98/D
+    final |      10 |     135 |       17 |      4 |    23 |    +0.9% |   -5.758 |      -10.5 |      3 | capture_98/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 10 buffers.
+[INFO RSZ-0040] Inserted 17 buffers.
+[INFO RSZ-0051] Resized 135 instances: 42 up, 0 up match, 0 down, 93 VT
+[INFO RSZ-0043] Swapped pins on 23 instances.
+[INFO RSZ-0049] Cloned 4 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: launch_125 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: capture_98 (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock clk (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_125/CLK (DFFHQx4_ASAP7_75t_SL)
+  34.7029   34.7029 v launch_125/Q (DFFHQx4_ASAP7_75t_SL)
+  21.9635   56.6663 v inst1_neighbor31/Y (AND5x2_ASAP7_75t_SL)
+  27.3911   84.0574 v inst4/Y (AO21x2_ASAP7_75t_SL)
+  20.4190  104.4764 v inst5/Y (BUFx6f_ASAP7_75t_SL)
+  11.6227  116.0991 v inst6/Y (OR2x2_ASAP7_75t_SL)
+  19.9126  136.0117 v inst7/Y (OA211x2_ASAP7_75t_SL)
+  13.2043  149.2160 v inst8/Y (AO21x1_ASAP7_75t_SL)
+  19.3410  168.5571 v inst9/Y (OA22x2_ASAP7_75t_SL)
+  21.4715  190.0286 v inst10/Y (AND4x2_ASAP7_75t_SL)
+  15.6915  205.7200 ^ inst11/Y (INVx3_ASAP7_75t_SL)
+  11.7277  217.4478 v inst12/CON (HAxp5_ASAP7_75t_SL)
+  21.7116  239.1594 ^ inst12/SN (HAxp5_ASAP7_75t_SL)
+  15.9051  255.0645 ^ inst13/Y (OR2x2_ASAP7_75t_SL)
+  13.1552  268.2197 ^ inst14/Y (OA21x2_ASAP7_75t_SL)
+   5.0879  273.3076 v inst15/Y (OAI21x1_ASAP7_75t_SL)
+  15.6533  288.9608 v inst16/Y (AO21x2_ASAP7_75t_SL)
+  12.9877  301.9485 v inst17/Y (AO21x1_ASAP7_75t_SL)
+  12.8587  314.8073 v inst18/Y (XNOR2x2_ASAP7_75t_SL)
+  20.3481  335.1554 v inst19/Y (AO222x2_ASAP7_75t_SL)
+  19.6084  354.7638 v inst20/Y (AO21x2_ASAP7_75t_SL)
+  17.2449  372.0087 v inst21/Y (BUFx12f_ASAP7_75t_SL)
+  31.8462  403.8549 v inst22/Y (BUFx12f_ASAP7_75t_SL)
+  41.2284  445.0833 ^ inst23/Y (NAND2x2_ASAP7_75t_SL)
+  31.3574  476.4407 v inst24/Y (OAI21x1_ASAP7_75t_SL)
+  25.7713  502.2119 v inst25/Y (AO21x2_ASAP7_75t_SL)
+  33.1026  535.3146 v inst26/Y (AO21x1_ASAP7_75t_SL)
+   7.5407  542.8553 ^ inst27/Y (AOI21x1_ASAP7_75t_SL)
+   4.3885  547.2438 v inst28/Y (OAI21x1_ASAP7_75t_SL)
+  17.8491  565.0928 v inst29/Y (OA21x2_ASAP7_75t_SL)
+  33.9984  599.0913 v inst30/Y (BUFx12f_ASAP7_75t_SL)
+  31.5664  630.6577 v inst30_neighbor1/Y (AO21x2_ASAP7_75t_SL)
+  15.0786  645.7363 v capture_98/D (DFFHQx4_ASAP7_75t_R)
+           645.7363   data arrival time
+
+ 650.0000  650.0000   clock clk (rise edge)
+   0.0000  650.0000   clock network delay (ideal)
+   0.0000  650.0000   clock reconvergence pessimism
+           650.0000 ^ capture_98/CLK (DFFHQx4_ASAP7_75t_R)
+ -10.0214  639.9786   library setup time
+           639.9786   data required time
+-------------------------------------------------------------
+           639.9786   data required time
+          -645.7363   data arrival time
+-------------------------------------------------------------
+            -5.7576   slack (VIOLATED)
+
+

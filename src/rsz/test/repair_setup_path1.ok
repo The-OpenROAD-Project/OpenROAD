@@ -1,0 +1,75 @@
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
+[INFO ODB-0128] Design: riscv
+[INFO ODB-0130]     Created 98 pins.
+[INFO ODB-0131]     Created 177 components and 877 component-terminals.
+[INFO ODB-0133]     Created 247 nets and 523 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 20 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 20 out of 20 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -8.087 |      -52.3 |     20 | aluout[31]
+     106* |       6 |      40 |        7 |      0 |    16 |    +7.5% |   -4.378 |      -17.9 |     20 | aluout[31]
+    final |       6 |      40 |        7 |      0 |    16 |    +7.5% |   -4.378 |      -17.9 |     11 | aluout[31]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 6 buffers.
+[INFO RSZ-0040] Inserted 7 buffers.
+[INFO RSZ-0051] Resized 40 instances: 40 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 16 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: instr[24] (input port clocked by clk)
+Endpoint: aluout[31] (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock clk (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   1.8000    1.8000 v input external delay
+   0.0000    1.8000 v instr[24] (in)
+   0.1498    1.9498 v inst0/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_20)
+   0.2085    2.1583 v inst1/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_20)
+   0.3082    2.4665 v inst2/Z (gf180mcu_fd_sc_mcu9t5v0__or2_4)
+   0.4427    2.9092 v inst3/Z (gf180mcu_fd_sc_mcu9t5v0__or3_4)
+   0.2941    3.2032 v inst4/Z (gf180mcu_fd_sc_mcu9t5v0__and2_4)
+   0.2330    3.4362 v inst5/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_12)
+   0.3592    3.7954 ^ inst6/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi22_4)
+   0.1632    3.9586 v inst7/ZN (gf180mcu_fd_sc_mcu9t5v0__clkinv_3)
+   0.4175    4.3761 v inst8/Z (gf180mcu_fd_sc_mcu9t5v0__mux2_2)
+   0.5900    4.9661 ^ inst9/Z (gf180mcu_fd_sc_mcu9t5v0__xor2_2)
+   0.4415    5.4076 v inst10/S (gf180mcu_fd_sc_mcu9t5v0__addh_4)
+   0.2339    5.6415 v inst11/Z (gf180mcu_fd_sc_mcu9t5v0__buf_4)
+   0.1869    5.8284 ^ inst12/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi21_4)
+   0.2082    6.0366 ^ inst13/Z (gf180mcu_fd_sc_mcu9t5v0__buf_4)
+   0.1280    6.1646 v inst14/ZN (gf180mcu_fd_sc_mcu9t5v0__oai21_4)
+   0.3347    6.4993 ^ inst15/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi21_4)
+   0.1645    6.6638 v inst16/ZN (gf180mcu_fd_sc_mcu9t5v0__oai21_4)
+   0.4664    7.1302 ^ inst17/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi221_2)
+   0.5129    7.6431 v inst18/ZN (gf180mcu_fd_sc_mcu9t5v0__xnor2_2)
+   0.4200    8.0632 ^ inst19/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi221_4)
+   0.1317    8.1949 v inst20/ZN (gf180mcu_fd_sc_mcu9t5v0__nor3_4)
+   0.2332    8.4281 v inst21/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_2)
+   0.0000    8.4281 v aluout[31] (out)
+             8.4281   data arrival time
+
+   5.8500    5.8500   clock clk (rise edge)
+   0.0000    5.8500   clock network delay (ideal)
+   0.0000    5.8500   clock reconvergence pessimism
+  -1.8000    4.0500   output external delay
+             4.0500   data required time
+-------------------------------------------------------------
+             4.0500   data required time
+            -8.4281   data arrival time
+-------------------------------------------------------------
+            -4.3781   slack (VIOLATED)
+
+

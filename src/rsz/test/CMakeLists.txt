@@ -130,6 +130,22 @@ or_integration_tests(
     repair_setup_buffer_to_inverters_hier
     repair_setup_unbuffer_legacy_bufx2
     repair_setup_unbuffer_legacy_bufx8
+    repair_setup_path1
+    repair_setup_path2
+    repair_setup_path3
+    repair_setup_path4
+    repair_setup_path5
+    repair_setup_path6
+    repair_setup_path7
+    repair_setup_path11
+    repair_setup_path12
+    repair_setup_path13
+    repair_setup_path14
+    repair_setup_path15
+    repair_setup_path16
+    repair_setup_path17
+    repair_setup_path18
+    repair_setup_path19
     repair_setup1
     repair_setup2
     repair_setup3

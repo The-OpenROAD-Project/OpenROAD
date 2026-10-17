@@ -118,6 +118,9 @@ class TestResizerMt : public tst::IntegratedFixture
       return {};
     }
 
+    // The worst slack path reads required times, which updateTiming() leaves
+    // to the caller.
+    sta_->findRequireds();
     sta::Path* path = sta_->vertexWorstSlackPath(endpoint, sta::MinMax::max());
     if (path == nullptr) {
       ADD_FAILURE() << "missing worst slack path for " << endpoint_name;
