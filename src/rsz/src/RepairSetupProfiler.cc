@@ -81,24 +81,31 @@ RepairSetupProfiler::RepairSetupProfiler(Resizer& resizer,
     }
   }
 
+  // The event trace, events.csv, starts at mode 2.
+  const bool trace_events = mode_ >= Mode::kEvents;
   if (!error) {
     stats_.open(directory_ + "/stats.csv");
-    events_.open(directory_ + "/events.csv");
+    if (trace_events) {
+      events_.open(directory_ + "/events.csv");
+    }
     timing_.open(directory_ + "/timing.csv");
     metadata_.open(directory_ + "/metadata.csv");
   }
-  if (error || !stats_ || !events_ || !timing_ || !metadata_) {
+  if (error || !stats_ || (trace_events && !events_) || !timing_
+      || !metadata_) {
     errorCannotOpen(directory_.empty() ? root.string() : directory_);
   }
 
   stats_ << "phase_id,phase,iteration,iteration_kind,category,metric,move,"
             "delta,phase_total,run_total\n";
-  events_ << "event_id,elapsed_s,phase,iteration,move_id,candidate_id,journal_"
-             "id,event,move,object,before,after,detail\n";
+  if (trace_events) {
+    events_ << "event_id,elapsed_s,phase,iteration,move_id,candidate_id,"
+               "journal_id,event,move,object,before,after,detail\n";
+    events_ << std::setprecision(17);
+  }
   timing_ << "event_id,elapsed_s,phase,iteration,move_id,point,metric,value\n";
   metadata_ << "key,value\n";
   stats_ << std::setprecision(17);
-  events_ << std::setprecision(17);
   timing_ << std::setprecision(17);
   start_ = Clock::now();
   if (mode_ == Mode::kAnalysis) {
