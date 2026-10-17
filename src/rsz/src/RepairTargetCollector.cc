@@ -863,6 +863,13 @@ void RepairTargetCollector::collectViolatingEndpoints()
   violating_endpoints_.clear();
   crit_path_load_pins_.clear();
 
+  // RebufferMt plans read required times without a refresh, so make them
+  // all current here.  This is a no-op when timing is up to date.
+  {
+    const ProfileScope sta_profile("incremental_sta");
+    sta_->findRequireds();
+  }
+
   if (restrictedToPathGroup()) {
     // One query for the whole group, already carrying each endpoint's slack
     // in it. Testing endpoints one at a time would repeat the same search

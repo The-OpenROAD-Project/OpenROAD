@@ -104,16 +104,20 @@ class MoveGenerator
   const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
                                         const std::string& port_name,
                                         int lib_ap_index) const;
+  // Compare equivalent cells by drive strength in the requested library.
   bool weakerCellFirst(const sta::LibertyCell* lhs,
                        const sta::LibertyCell* rhs,
                        const std::string& drvr_port_name,
                        int lib_ap_index) const;
 
   // === Shared fanin max-cap helper =========================================
-  // The cell-swap generators' fanin max-cap headroom: the prepared
-  // kInputCapBudgetCache, else a fresh main-thread capture.
-  std::vector<Resizer::InputCapBudget> inputCapBudgets(
-      const Target& target) const;
+  // The cell-swap generators' fanin max-cap headroom, prepared as
+  // kInputCapBudgetCache before generate().
+  const std::vector<Resizer::InputCapBudget>& inputCapBudgets(
+      const Target& target) const
+  {
+    return *target.input_cap_budgets;
+  }
 
   // === Shared generator dependencies =======================================
   Resizer& resizer_;

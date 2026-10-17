@@ -42,7 +42,10 @@
 namespace rsz {
 namespace {
 
+// A side check's slack loss counts fully at or below zero slack and fades out
+// by this much slack.
 constexpr double kSideSlackWeightCutoff = 10.0e-12;
+// Rounding allowance before a side check counts as a new violation.
 constexpr double kSideSlackViolationTolerance = 0.001e-12;
 
 struct PreparedInputTiming

@@ -4,6 +4,7 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -14,11 +15,13 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "BufferedNet.hh"
 #include "RepairSetupProfiler.hh"
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -37,6 +40,7 @@
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/StaState.hh"
@@ -58,9 +62,37 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
+namespace {
+
+// The slack a tree may give back for area in RebufferMt planning: 1 ps while
+// the best tree still violates, 20 ps once it has margin (slackLossFloor()).
+constexpr float kNegativeSlackLossBudget = 1.0e-12f;
+constexpr float kPositiveSlackLossBudget = 20.0e-12f;
+
+// Direct load or next-buffer stages are lumped loads; wires and branches are
+// distributed loads for buffer Liberty lookup.
+bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
+{
+  switch (tree->type()) {
+    case BnetType::load:
+    case BnetType::buffer:
+      return false;
+    case BnetType::wire:
+    case BnetType::via:
+    case BnetType::junction:
+      return true;
+    default:
+      return true;
+  }
+}
+
+}  // namespace
+
 Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
+
+Rebuffer::~Rebuffer() = default;
 
 void Rebuffer::annotateLoadSlacks(BnetPtr& tree, sta::Vertex* root_vertex)
 {
@@ -87,12 +119,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, sta::Vertex* root_vertex)
             while (req_path && arrival_path->vertex(sta_) != root_vertex) {
               arrival_path = arrival_path->prevPath();
               if (!arrival_path) {
-                logger_->warn(
-                    RSZ,
-                    2006,
-                    "failed to trace timing path for load {} when buffering {}",
-                    network_->name(load_pin),
-                    network_->name(pin_));
+                warnPathTraceFailed(load_pin);
                 break;
               }
             }
@@ -223,14 +250,14 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
           driver_path->minMax(sta_));
 
       auto dcalc_result
-          = arc_delay_calc_->gateDelay(nullptr,
-                                       driver_arc,
-                                       slew,
-                                       bnet->cap() + drvr_port_->capacitance(),
-                                       nullptr,
-                                       load_pin_index_map,
-                                       driver_path->scene(sta_),
-                                       driver_path->minMax(sta_));
+          = delayCalc()->gateDelay(nullptr,
+                                   driver_arc,
+                                   slew,
+                                   bnet->cap() + drvr_port_->capacitance(),
+                                   nullptr,
+                                   load_pin_index_map,
+                                   driver_path->scene(sta_),
+                                   driver_path->minMax(sta_));
       rf_delay = dcalc_result.gateDelay();
 
       sta::Arrival prev_arrival = driver_path->isClock(sta_)
@@ -534,7 +561,7 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
       // Find a buffer size with smallest input pin capacitance such that
       // crit2 stays being the critical branch; if none can be found
       // abort rewriting
-      for (BufferSize size : buffer_sizes_) {
+      for (const BufferSize& size : buffer_sizes_) {
         sta::LibertyPort *in, *out;
         size.cell->bufferPorts(in, out);
 
@@ -582,9 +609,11 @@ static std::optional<int> findWireLayer(BnetPtr node)
   return {};
 }
 
-// Find initial timing-optimized buffering choice over the provided tree
-BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
-                                  bool allow_topology_rewrite)
+// Find ranked timing-optimized buffering choices over the provided tree.
+std::vector<Rebuffer::RankedOption> Rebuffer::bufferForTimingTopK(
+    const BnetPtr& tree,
+    bool allow_topology_rewrite,
+    int max_plans)
 {
   sta::LibertyPort* strong_driver;
   {
@@ -823,18 +852,169 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
       tree);
 
   if (top_opts.empty()) {
-    logger_->warn(
-        RSZ,
-        2009,
-        "Skipping buffering because no valid buffering solution satisfying the "
-        "design rules can be found for net connected to pin {}.",
-        network_->name(pin_));
-    return nullptr;
+    warnNoDesignRuleSolution();
+    return {};
   }
 
-  FixedDelay best_slack = -FixedDelay::INF;
-  BufferedNetPtr best_option = nullptr;
-  int best_index = 0;
+  return selectTimingOptions(top_opts, max_plans);
+}
+
+void Rebuffer::warnTopPortDriver(const sta::Pin* drvr_pin)
+{
+  logger_->warn(RSZ,
+                2020,
+                "rebuffering does not support top port as the driver pin: {}",
+                network_->name(drvr_pin));
+}
+
+void Rebuffer::warnBufferedNetFailed(const sta::Pin* drvr_pin)
+{
+  logger_->warn(RSZ,
+                75,
+                "makeBufferedNet failed for driver {}",
+                network_->pathName(drvr_pin));
+}
+
+void Rebuffer::errorAreaRecoveryFailed()
+{
+  logger_->error(RSZ, 2022, "failed area recovery");
+}
+
+void Rebuffer::errorAreaRecoveryUnreproducible()
+{
+  logger_->error(
+      RSZ,
+      501,
+      "buffering pin {} failed: area recovery cannot reproduce solution",
+      network_->name(pin_));
+}
+
+void Rebuffer::warnPathTraceFailed(const sta::Pin* load_pin)
+{
+  logger_->warn(RSZ,
+                2006,
+                "failed to trace timing path for load {} when buffering {}",
+                network_->name(load_pin),
+                network_->name(pin_));
+}
+
+void Rebuffer::warnNoDesignRuleSolution()
+{
+  logger_->warn(RSZ,
+                2009,
+                "Skipping buffering because no valid buffering solution "
+                "satisfying the design rules can be found for net "
+                "connected to pin {}.",
+                network_->name(pin_));
+}
+
+void Rebuffer::warnNoViableBuffering(const sta::Pin* drvr_pin, const int rounds)
+{
+  logger_->warn(RSZ,
+                2021,
+                "cannot find a viable buffering solution on pin {} after {} "
+                "rounds of buffering (no solution meets design rules)",
+                network_->name(drvr_pin),
+                rounds);
+}
+
+bool Rebuffer::timingOrder(const RankedOption& lhs, const RankedOption& rhs)
+{
+  if (lhs.unconstrained != rhs.unconstrained) {
+    return lhs.unconstrained;
+  }
+  if (lhs.slack.toSeconds() != rhs.slack.toSeconds()) {
+    return lhs.slack > rhs.slack;
+  }
+  if (lhs.option->cap() != rhs.option->cap()) {
+    return lhs.option->cap() < rhs.option->cap();
+  }
+  if (lhs.option->area() != rhs.option->area()) {
+    return lhs.option->area() < rhs.option->area();
+  }
+  return lhs.option->bufferCount() < rhs.option->bufferCount();
+}
+
+bool Rebuffer::areaOrder(const RankedOption& lhs, const RankedOption& rhs)
+{
+  if (lhs.meets_target != rhs.meets_target) {
+    return lhs.meets_target;
+  }
+  if (lhs.preserves_best_slack != rhs.preserves_best_slack) {
+    return lhs.preserves_best_slack;
+  }
+  if (!lhs.preserves_best_slack
+      && lhs.slack.toSeconds() != rhs.slack.toSeconds()) {
+    return lhs.slack > rhs.slack;
+  }
+  if (lhs.meets_target && lhs.preserves_best_slack
+      && lhs.option->area() != rhs.option->area()) {
+    return lhs.option->area() < rhs.option->area();
+  }
+  if (lhs.option->cap() != rhs.option->cap()) {
+    return lhs.option->cap() < rhs.option->cap();
+  }
+  if (lhs.option->bufferCount() != rhs.option->bufferCount()) {
+    return lhs.option->bufferCount() < rhs.option->bufferCount();
+  }
+  if (lhs.slack.toSeconds() != rhs.slack.toSeconds()) {
+    return lhs.slack > rhs.slack;
+  }
+  return lhs.index < rhs.index;
+}
+
+FixedDelay Rebuffer::slackLossFloor(const FixedDelay best_slack) const
+{
+  const float slack_loss_budget = best_slack.toSeconds() < 0.0f
+                                      ? kNegativeSlackLossBudget
+                                      : kPositiveSlackLossBudget;
+  return best_slack - FixedDelay(slack_loss_budget, resizer_);
+}
+
+std::vector<Rebuffer::RankedOption> Rebuffer::selectTimingOptions(
+    const BnetSeq& top_opts,
+    const int max_plans)
+{
+  if (max_plans == 1) {
+    FixedDelay best_slack = -FixedDelay::INF;
+    BufferedNetPtr best_option = nullptr;
+    int best_index = 0;
+    int i = 1;
+    debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
+    for (const BufferedNetPtr& p : top_opts) {
+      // Find slack for drvr_pin into option.
+      std::optional<FixedDelay> slack = evaluateOption(p, i);
+
+      if (!slack) {
+        // ignore this option as it doesn't pass ERC
+        continue;
+      }
+
+      if (best_option == nullptr
+          || p->slackTransition() == nullptr /* buffer tree unconstrained */
+          || slack.value() > best_slack) {
+        best_slack = slack.value();
+        best_option = p;
+        best_index = i;
+      }
+      i++;
+    }
+
+    if (best_option) {
+      debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
+      return {RankedOption{
+          .option = best_option,
+          .slack = best_slack,
+          .unconstrained = best_option->slackTransition() == nullptr,
+          .index = best_index}};
+    }
+
+    debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
+    return {};
+  }
+
+  std::vector<RankedOption> ranked_options;
+  ranked_options.reserve(top_opts.size());
   int i = 1;
   debugPrint(logger_, RSZ, "rebuffer", 2, "timing-optimized options");
   for (const BufferedNetPtr& p : top_opts) {
@@ -846,22 +1026,44 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
       continue;
     }
 
-    if (best_option == nullptr
-        || p->slackTransition() == nullptr /* buffer tree unconstrained */
-        || slack.value() > best_slack) {
-      best_slack = slack.value();
-      best_option = p;
-      best_index = i;
-    }
+    ranked_options.push_back({.option = p,
+                              .slack = slack.value(),
+                              .unconstrained = p->slackTransition() == nullptr,
+                              .index = i});
     i++;
   }
-  if (best_option) {
-    debugPrint(logger_, RSZ, "rebuffer", 2, "best option {}", best_index);
+
+  std::ranges::sort(ranked_options, timingOrder);
+
+  if (!ranked_options.empty()) {
+    debugPrint(logger_,
+               RSZ,
+               "rebuffer",
+               2,
+               "best option {}",
+               ranked_options.front().index);
   } else {
     debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
   }
 
-  return best_option;
+  const int selected_count
+      = std::min(max_plans, static_cast<int>(ranked_options.size()));
+  ranked_options.erase(ranked_options.begin() + selected_count,
+                       ranked_options.end());
+  return ranked_options;
+}
+
+// Find initial timing-optimized buffering choice over the provided tree.
+BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
+                                  bool allow_topology_rewrite)
+{
+  const std::vector<RankedOption> top_options
+      = bufferForTimingTopK(tree, allow_topology_rewrite, 1);
+  if (top_options.empty()) {
+    return nullptr;
+  }
+
+  return top_options.front().option;
 }
 
 static void pruneCapVsAreaOptions(sta::StaState* sta, BufferedNetSeq& options)
@@ -917,10 +1119,8 @@ void Rebuffer::insertAssuredOption(BnetSeq& opts,
   opts.insert(it, std::move(assured_opt));
 }
 
-// Recover area on a rebuffering choice without regressing timing
-BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
-                                     FixedDelay slack_target,
-                                     float alpha)
+FixedDelay Rebuffer::annotateArrivalDelays(const BufferedNetPtr& root,
+                                           FixedDelay slack_target)
 {
   sta::Delay slack_correction;
   std::tie(std::ignore, slack_correction, std::ignore) = drvrPinTiming(root);
@@ -931,7 +1131,6 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
     slack_correction = 0;
     slack_target = -FixedDelay::INF;
   }
-
   // spread down arrival delay from the root of the tree to each
   // point on the tree
   visitTree(
@@ -956,7 +1155,15 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
       root,
       -FixedDelay(slack_correction, resizer_));
 
-  BnetSeq top_opts = visitTree(
+  return slack_target;
+}
+
+BnetSeq Rebuffer::areaRecoveryOptions(const BufferedNetPtr& root,
+                                      const FixedDelay slack_target,
+                                      const float alpha,
+                                      const bool strict_assured)
+{
+  return visitTree(
       [&](auto& recurse, int level, const BnetPtr& node, int upstream_wl)
           -> BufferedNetSeq {
         switch (node->type()) {
@@ -977,12 +1184,17 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
 
             FixedDelay threshold = FixedDelay::lerp(
                 node->slack(), slack_target + node->arrivalDelay(), alpha);
-            insertBufferOptions(opts,
-                                level,
-                                /*next_segment_wl=*/upstream_wl,
-                                /*area_oriented=*/true,
-                                threshold,
-                                /*exemplar=*/node.get());
+            const bool valid_options
+                = insertBufferOptions(opts,
+                                      level,
+                                      /*next_segment_wl=*/upstream_wl,
+                                      /*area_oriented=*/true,
+                                      threshold,
+                                      /*exemplar=*/node.get(),
+                                      strict_assured);
+            if (!valid_options) {
+              return {};
+            }
             return opts;
           }
           case BnetType::junction: {
@@ -1038,6 +1250,12 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
               }
             }
 
+            if (!assured_found && assured_fallback == nullptr) {
+              if (!strict_assured) {
+                return {};
+              }
+              errorAreaRecoveryUnreproducible();
+            }
             if (!assured_found) {
               insertAssuredOption(opts, assured_fallback, level);
             }
@@ -1060,6 +1278,103 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
       },
       root,
       0);
+}
+
+// Recover area on rebuffering choices without regressing timing.
+std::vector<Rebuffer::RankedOption> Rebuffer::recoverAreaTopK(
+    const BufferedNetPtr& root,
+    FixedDelay slack_target,
+    float alpha,
+    int max_plans,
+    bool strict_assured)
+{
+  slack_target = annotateArrivalDelays(root, slack_target);
+  const BnetSeq top_opts
+      = areaRecoveryOptions(root, slack_target, alpha, strict_assured);
+
+  std::vector<RankedOption> ranked_options;
+  ranked_options.reserve(top_opts.size());
+  FixedDelay best_slack = -FixedDelay::INF;
+  BufferedNetPtr best_slack_option = nullptr;
+  int best_slack_index = 0;
+  int i = 1;
+  debugPrint(logger_, RSZ, "rebuffer", 2, "area-optimized options");
+  for (const BufferedNetPtr& p : top_opts) {
+    // Find slack for drvr_pin into option.
+    std::optional<FixedDelay> slack = evaluateOption(p, i);
+
+    if (!slack) {
+      // ignore this option as it doesn't pass ERC
+      continue;
+    }
+
+    if (best_slack_option == nullptr
+        || p->slackTransition() == nullptr /* buffer tree unconstrained */
+        || slack.value() > best_slack) {
+      best_slack = slack.value();
+      best_slack_option = p;
+      best_slack_index = i;
+    }
+
+    const bool unconstrained = p->slackTransition() == nullptr;
+    ranked_options.push_back(
+        {.option = p,
+         .slack = slack.value(),
+         .unconstrained = unconstrained,
+         .meets_target = slack.value() >= slack_target || unconstrained,
+         .preserves_best_slack = false,
+         .index = i});
+    i++;
+  }
+
+  const FixedDelay slack_floor = slackLossFloor(best_slack);
+  for (RankedOption& option : ranked_options) {
+    option.preserves_best_slack
+        = option.slack >= slack_floor || option.unconstrained;
+  }
+
+  std::ranges::sort(ranked_options, areaOrder);
+
+  if (!ranked_options.empty() && ranked_options.front().meets_target) {
+    debugPrint(logger_,
+               RSZ,
+               "rebuffer",
+               2,
+               "best option {} (area optimized)",
+               ranked_options.front().index);
+    const int selected_count
+        = std::min(max_plans, static_cast<int>(ranked_options.size()));
+    ranked_options.erase(ranked_options.begin() + selected_count,
+                         ranked_options.end());
+    return ranked_options;
+  }
+
+  if (best_slack_option) {
+    debugPrint(logger_,
+               RSZ,
+               "rebuffer",
+               2,
+               "best option {} (closest to meeting timing target)",
+               best_slack_index);
+    return {RankedOption{
+        .option = best_slack_option,
+        .slack = best_slack,
+        .unconstrained = best_slack_option->slackTransition() == nullptr,
+        .index = best_slack_index}};
+  }
+
+  debugPrint(logger_, RSZ, "rebuffer", 2, "no available option");
+  return {};
+}
+
+// Recover area on a rebuffering choice without regressing timing.
+BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
+                                     FixedDelay slack_target,
+                                     float alpha)
+{
+  slack_target = annotateArrivalDelays(root, slack_target);
+  const BnetSeq top_opts
+      = areaRecoveryOptions(root, slack_target, alpha, /*strict_assured=*/true);
 
   FixedDelay best_slack = -FixedDelay::INF;
   float best_area = std::numeric_limits<float>::max();
@@ -1193,19 +1508,69 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
   FixedDelay delay = FixedDelay::ZERO;
 
   if (rf) {
+    sta::LibertyPort *input, *output;
+    cell->bufferPorts(input, output);
     for (auto rf1 : rf->range()) {
       const sta::Scene* scene = arrival_paths_[rf1->index()]->scene(sta_);
-      sta::LibertyPort *input, *output;
-      cell->bufferPorts(input, output);
-      sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-      sta::Slew slews[sta::RiseFall::index_count];
-      resizer_->gateDelays(output, load_cap, scene, max_, gate_delays, slews);
+      const std::array<sta::ArcDelay, sta::RiseFall::index_count>& gate_delays
+          = gateDelaysForLoad(output, scene, load_cap);
       delay = std::max<FixedDelay>(
           delay, FixedDelay(gate_delays[rf1->index()], resizer_));
     }
   }
 
   return delay;
+}
+
+size_t Rebuffer::BufferDelayKeyHash::operator()(const BufferDelayKey& key) const
+{
+  size_t seed = 0;
+  boost::hash_combine(seed, key.port);
+  boost::hash_combine(seed, key.scene);
+  boost::hash_combine(seed, key.load_bits);
+  boost::hash_combine(seed, key.rise_slew_bits);
+  boost::hash_combine(seed, key.fall_slew_bits);
+  return seed;
+}
+
+const std::array<sta::ArcDelay, sta::RiseFall::index_count>&
+Rebuffer::gateDelaysForLoad(sta::LibertyPort* output,
+                            const sta::Scene* scene,
+                            const float load_cap)
+{
+  auto float_bits
+      = [](const float value) { return std::bit_cast<uint32_t>(value); };
+  sta::Slew slews[sta::RiseFall::index_count];
+
+  // Annotated input slews make gateDelays() depend on the current instance.
+  if (!resizer_->input_slew_map_.empty()) {
+    resizer_->gateDelays(output,
+                         load_cap,
+                         scene,
+                         max_,
+                         delayCalc(),
+                         uncached_gate_delays_.data(),
+                         slews);
+    return uncached_gate_delays_;
+  }
+
+  const BufferDelayKey key{
+      .port = output,
+      .scene = scene,
+      .load_bits = float_bits(load_cap),
+      .rise_slew_bits
+      = float_bits(resizer_->tgt_slews_[sta::RiseFall::riseIndex()]),
+      .fall_slew_bits
+      = float_bits(resizer_->tgt_slews_[sta::RiseFall::fallIndex()])};
+  BufferDelayCache::iterator cached = buffer_delay_cache_.find(key);
+  if (cached == buffer_delay_cache_.end()) {
+    std::array<sta::ArcDelay, sta::RiseFall::index_count> gate_delays;
+    resizer_->gateDelays(
+        output, load_cap, scene, max_, delayCalc(), gate_delays.data(), slews);
+    cached = buffer_delay_cache_.emplace(key, gate_delays).first;
+  }
+
+  return cached->second;
 }
 
 BnetPtr Rebuffer::addWire(const BnetPtr& p,
@@ -1252,16 +1617,17 @@ BnetPtr Rebuffer::addWire(const BnetPtr& p,
   return z;
 }
 
-void Rebuffer::insertBufferOptions(
+bool Rebuffer::insertBufferOptions(
     BufferedNetSeq& opts,
     int level,
     int next_segment_wl,
     bool area_oriented /*=false*/,
     FixedDelay slack_threshold /*=0; used for area mode only*/,
-    BufferedNet* exemplar /*=nullptr; used for area mode only*/)
+    BufferedNet* exemplar /*=nullptr; used for area mode only*/,
+    bool strict_assured /*=true*/)
 {
   if (opts.empty()) {
-    return;
+    return true;
   }
 
   BufferSize& strong_driver = buffer_sizes_.back();
@@ -1315,7 +1681,7 @@ void Rebuffer::insertBufferOptions(
     }
   };
 
-  for (BufferSize buffer_size : buffer_sizes_) {
+  for (const BufferSize& buffer_size : buffer_sizes_) {
     sta::LibertyCell* buffer_cell = buffer_size.cell;
     sta::LibertyPort *in, *out;
     buffer_cell->bufferPorts(in, out);
@@ -1434,16 +1800,16 @@ void Rebuffer::insertBufferOptions(
     }
 
     if (!assured_satisfied) {
-      logger_->error(
-          RSZ,
-          501,
-          "buffering pin {} failed: area recovery cannot reproduce solution",
-          network_->name(pin_),
-          delayAsString(slack_threshold.toSeconds(), 3, this));
+      if (!strict_assured) {
+        opts.clear();
+        return false;
+      }
+      errorAreaRecoveryUnreproducible();
     }
   }
 
   new_opts.swap(opts);
+  return true;
 }
 
 static float bufferCin(const sta::LibertyCell* cell)
@@ -1479,14 +1845,15 @@ void Rebuffer::init()
         .long_wire_asymptotics = {}});
   }
 
-  std::ranges::sort(buffer_sizes_, [=](BufferSize a, BufferSize b) {
-    const float cin_a = bufferCin(a.cell);
-    const float cin_b = bufferCin(b.cell);
-    if (cin_a != cin_b) {
-      return cin_a < cin_b;
-    }
-    return a.cell->id() < b.cell->id();
-  });
+  std::ranges::sort(buffer_sizes_,
+                    [=](const BufferSize& a, const BufferSize& b) {
+                      const float cin_a = bufferCin(a.cell);
+                      const float cin_b = bufferCin(b.cell);
+                      if (cin_a != cin_b) {
+                        return cin_a < cin_b;
+                      }
+                      return a.cell->id() < b.cell->id();
+                    });
 
   buffer_sizes_index_.clear();
   for (auto& size : buffer_sizes_) {
@@ -1498,6 +1865,13 @@ void Rebuffer::initOnCorner(sta::Scene* corner)
 {
   corner_ = corner;
   characterizeBuffers();
+}
+
+void Rebuffer::initForPlanning(sta::Scene* corner, const bool worker)
+{
+  init();
+  owned_delay_calc_.reset(worker ? arc_delay_calc_->copy() : nullptr);
+  initOnCorner(corner);
 }
 
 float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
@@ -1519,14 +1893,14 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
         for (sta::TimingArc* arc : arc_set->arcs()) {
           sta::LoadPinIndexMap load_pin_index_map(network_);
           sta::ArcDcalcResult dcalc_result
-              = arc_delay_calc_->gateDelay(nullptr,
-                                           arc,
-                                           in_slew,
-                                           load_cap,
-                                           nullptr,
-                                           load_pin_index_map,
-                                           corner_,
-                                           max_);
+              = delayCalc()->gateDelay(nullptr,
+                                       arc,
+                                       in_slew,
+                                       load_cap,
+                                       nullptr,
+                                       load_pin_index_map,
+                                       corner_,
+                                       max_);
           const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
           slew = std::max(slew, drvr_slew);
         }
@@ -1572,7 +1946,8 @@ sta::Delay Rebuffer::characterizationDelay(BufferSize& size, float load_cap)
   sta::ArcDelay gate_delays[sta::RiseFall::index_count];
   sta::Slew slews[sta::RiseFall::index_count];
   size.cell->bufferPorts(input, output);
-  resizer_->gateDelays(output, load_cap, corner_, max_, gate_delays, slews);
+  resizer_->gateDelays(
+      output, load_cap, corner_, max_, delayCalc(), gate_delays, slews);
   return std::max(gate_delays[sta::RiseFall::rise()->index()],
                   gate_delays[sta::RiseFall::fall()->index()]);
 }
@@ -1874,6 +2249,238 @@ std::vector<sta::Instance*> Rebuffer::collectImportedTreeBufferInstances(
   return insts;
 }
 
+BufferedNetPtr Rebuffer::cloneBufferedNetTree(const BufferedNetPtr& tree)
+{
+  if (tree == nullptr) {
+    return nullptr;
+  }
+
+  BufferedNetPtr cloned;
+  switch (tree->type()) {
+    case BnetType::load:
+      cloned = make_shared<BufferedNet>(
+          BnetType::load, tree->location(), tree->loadPin(), corner_, resizer_);
+      break;
+    case BnetType::wire:
+      cloned = make_shared<BufferedNet>(BnetType::wire,
+                                        tree->location(),
+                                        tree->layer(),
+                                        cloneBufferedNetTree(tree->ref()),
+                                        corner_,
+                                        resizer_,
+                                        estimate_parasitics_);
+      break;
+    case BnetType::via:
+      cloned = make_shared<BufferedNet>(BnetType::via,
+                                        tree->location(),
+                                        tree->layer(),
+                                        tree->refLayer(),
+                                        cloneBufferedNetTree(tree->ref()),
+                                        corner_,
+                                        resizer_);
+      break;
+    case BnetType::junction:
+      cloned = make_shared<BufferedNet>(BnetType::junction,
+                                        tree->location(),
+                                        cloneBufferedNetTree(tree->ref()),
+                                        cloneBufferedNetTree(tree->ref2()),
+                                        resizer_);
+      break;
+    case BnetType::buffer:
+      cloned = make_shared<BufferedNet>(BnetType::buffer,
+                                        tree->location(),
+                                        tree->bufferCell(),
+                                        cloneBufferedNetTree(tree->ref()),
+                                        corner_,
+                                        resizer_,
+                                        estimate_parasitics_);
+      break;
+    default:
+      logger_->critical(RSZ, 1009, "unhandled BufferedNet type");
+  }
+
+  cloned->setSlackTransition(tree->slackTransition());
+  cloned->setSlack(tree->slack());
+  cloned->setDelay(tree->delay());
+  cloned->setArrivalDelay(tree->arrivalDelay());
+
+  return cloned;
+}
+
+void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
+                              std::vector<BufferTreePathStage>& prefix,
+                              std::vector<BufferTreeLoadPath>& load_paths)
+{
+  switch (tree->type()) {
+    case BnetType::load:
+      load_paths.push_back({.load_pin = tree->loadPin(), .stages = prefix});
+      return;
+    case BnetType::wire: {
+      const BufferedNetPtr child = tree->ref();
+      double layer_res = 0.0;
+      double layer_cap = 0.0;
+      tree->wireRC(
+          corner_, resizer_, estimate_parasitics_, layer_res, layer_cap);
+      const float wire_length
+          = static_cast<float>(resizer_->dbuToMeters(tree->length()));
+      WireRC wire_rc{.length = wire_length,
+                     .res = static_cast<float>(wire_length * layer_res),
+                     .cap = static_cast<float>(wire_length * layer_cap)};
+      prefix.push_back({.type = BufferTreeStageType::kWire,
+                        .wire_rc = wire_rc,
+                        .downstream_cap = child->cap()});
+      buildLoadPaths(child, prefix, load_paths);
+      prefix.pop_back();
+      return;
+    }
+    case BnetType::via: {
+      const BufferedNetPtr child = tree->ref();
+      const float via_res = static_cast<float>(
+          tree->viaResistance(corner_, resizer_, estimate_parasitics_));
+      prefix.push_back(
+          {.type = BufferTreeStageType::kVia,
+           .wire_rc = {.length = 0.0f, .res = via_res, .cap = 0.0f},
+           .downstream_cap = child->cap()});
+      buildLoadPaths(child, prefix, load_paths);
+      prefix.pop_back();
+      return;
+    }
+    case BnetType::buffer: {
+      const BufferedNetPtr child = tree->ref();
+      sta::LibertyPort* input = nullptr;
+      sta::LibertyPort* output = nullptr;
+      tree->bufferCell()->bufferPorts(input, output);
+      const float output_cap = output != nullptr ? output->capacitance() : 0.0f;
+      const bool drives_distributed_load
+          = drivesDistributedLoadBeforeNextBuffer(child);
+      prefix.push_back({.type = BufferTreeStageType::kBuffer,
+                        .buffer_cell = tree->bufferCell(),
+                        .wire_rc = {},
+                        .downstream_cap = child->cap() + output_cap,
+                        .drives_distributed_load = drives_distributed_load});
+      buildLoadPaths(child, prefix, load_paths);
+      prefix.pop_back();
+      return;
+    }
+    case BnetType::junction:
+      buildLoadPaths(tree->ref(), prefix, load_paths);
+      buildLoadPaths(tree->ref2(), prefix, load_paths);
+      return;
+    default:
+      logger_->critical(RSZ, 1011, "unhandled BufferedNet type");
+  }
+}
+
+Rebuffer::TreeSignature Rebuffer::treeSignature(const BufferedNetPtr& tree)
+{
+  TreeSignature signature;
+  appendTreeSignature(tree, signature);
+  return signature;
+}
+
+void Rebuffer::appendTreeSignature(const BufferedNetPtr& tree,
+                                   TreeSignature& signature)
+{
+  auto pointer_bits = [](const void* pointer) {
+    return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(pointer));
+  };
+  auto int_bits = [](const int value) {
+    return static_cast<uint64_t>(static_cast<int64_t>(value));
+  };
+  if (tree == nullptr) {
+    signature.push_back(0);
+    return;
+  }
+
+  // Each node type fixes its child count, so a type-tagged pre-order walk is
+  // unambiguous without brackets.
+  signature.push_back(static_cast<uint64_t>(tree->type()) + 1);
+  switch (tree->type()) {
+    case BnetType::load:
+      signature.push_back(pointer_bits(tree->loadPin()));
+      return;
+    case BnetType::wire:
+      signature.push_back(int_bits(tree->location().x()));
+      signature.push_back(int_bits(tree->location().y()));
+      signature.push_back(int_bits(tree->layer()));
+      appendTreeSignature(tree->ref(), signature);
+      return;
+    case BnetType::via:
+      signature.push_back(int_bits(tree->location().x()));
+      signature.push_back(int_bits(tree->location().y()));
+      signature.push_back(int_bits(tree->layer()));
+      signature.push_back(int_bits(tree->refLayer()));
+      appendTreeSignature(tree->ref(), signature);
+      return;
+    case BnetType::buffer:
+      signature.push_back(pointer_bits(tree->bufferCell()));
+      signature.push_back(int_bits(tree->location().x()));
+      signature.push_back(int_bits(tree->location().y()));
+      appendTreeSignature(tree->ref(), signature);
+      return;
+    case BnetType::junction:
+      signature.push_back(int_bits(tree->location().x()));
+      signature.push_back(int_bits(tree->location().y()));
+      appendTreeSignature(tree->ref(), signature);
+      appendTreeSignature(tree->ref2(), signature);
+      return;
+    default:
+      logger_->critical(RSZ, 1012, "unhandled BufferedNet type");
+  }
+}
+
+bool BufferTreeLoadPath::hasBufferAfter(const size_t index) const
+{
+  for (size_t later_index = index + 1; later_index < stages.size();
+       ++later_index) {
+    if (stages[later_index].type == BufferTreeStageType::kBuffer) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const BufferTreeLoadPath* RebufferTreePlan::loadPath(
+    const sta::Pin* load_pin) const
+{
+  for (const BufferTreeLoadPath& load_path : load_paths) {
+    if (load_path.load_pin == load_pin) {
+      return &load_path;
+    }
+  }
+  return nullptr;
+}
+
+const BufferTreeLoadPath* RebufferTreePlan::targetPath() const
+{
+  return loadPath(target_load_pin);
+}
+
+RebufferTreePlan Rebuffer::makePlanFromTree(const BufferedNetPtr& tree,
+                                            const PlanRequest& request)
+{
+  BufferedNetPtr plan_tree = cloneBufferedNetTree(tree);
+
+  // The load paths list every load of the tree, so the target path exists
+  // exactly when the target load is one of them.
+  std::vector<BufferTreeLoadPath> load_paths;
+  std::vector<BufferTreePathStage> load_path_prefix;
+  buildLoadPaths(plan_tree, load_path_prefix, load_paths);
+
+  const FixedDelay final_slack = slackAtDriverPin(plan_tree);
+  return RebufferTreePlan{
+      .tree = plan_tree,
+      .flat_net = request.flat_net,
+      .driver_pin = const_cast<sta::Pin*>(request.drvr_pin),
+      .parent = request.parent,
+      .target_load_pin = request.target_load_pin,
+      .load_paths = std::move(load_paths),
+      .tree_input_cap = plan_tree->cap(),
+      .driver_slack_gain = (final_slack - request.original_slack).toSeconds(),
+      .buffer_count = plan_tree->bufferCount(),
+      .load_count = plan_tree->loadCount()};
+}
+
 int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                sta::Net* net,  // Original Driver Net (flat)
                                int level,
@@ -2088,6 +2695,8 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
   pin_ = drvr_pin;
   drvr_port_ = network_->libertyPort(drvr_pin);
   drvr_load_high_water_mark_ = 0;
+  // The gate-delay memo serves the planning of one driver.
+  buffer_delay_cache_.clear();
 
   {
     float fanout, max_fanout, fanout_slack;
@@ -2404,118 +3013,410 @@ bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
   return false;
 }
 
+// Keep the anchor tree in a beam: it replaces its structural twin among the
+// selected options, else the last slot or a free one.  Signatures are unique
+// after uniqueTreeOptions(), so the twin is a single option.
+void Rebuffer::keepAnchorTree(const std::vector<RankedOption>& ranked_options,
+                              const RankedOption& anchor,
+                              const TreeSignature& anchor_signature,
+                              const int plan_limit,
+                              std::vector<RankedOption>& selected_options)
+{
+  const BnetPtr* anchor_twin = nullptr;
+  for (const RankedOption& ranked_option : ranked_options) {
+    if (ranked_option.signature == anchor_signature) {
+      anchor_twin = &ranked_option.option;
+      break;
+    }
+  }
+
+  if (anchor_twin == nullptr) {
+    return;
+  }
+
+  for (RankedOption& selected_option : selected_options) {
+    if (selected_option.option == *anchor_twin) {
+      selected_option = anchor;
+      return;
+    }
+  }
+
+  if (static_cast<int>(selected_options.size()) < plan_limit) {
+    selected_options.push_back(anchor);
+  } else {
+    selected_options.back() = anchor;
+  }
+}
+
+std::vector<Rebuffer::RankedOption> Rebuffer::uniqueTreeOptions(
+    std::vector<RankedOption> options)
+{
+  std::vector<RankedOption> unique_options;
+  // Deduplicate by the structural encoding of each tree.
+  std::unordered_set<TreeSignature, boost::hash<TreeSignature>> signatures;
+  for (RankedOption& option : options) {
+    option.signature = treeSignature(option.option);
+    if (signatures.insert(option.signature).second) {
+      unique_options.push_back(std::move(option));
+    }
+  }
+
+  return unique_options;
+}
+
+std::vector<Rebuffer::RankedOption> Rebuffer::limitTimingOptions(
+    std::vector<RankedOption> options,
+    const RankedOption& anchor,
+    const int plan_limit)
+{
+  // The options keep the slack their selection evaluated.
+  std::vector<RankedOption> ranked_options
+      = uniqueTreeOptions(std::move(options));
+  std::ranges::sort(ranked_options, timingOrder);
+
+  const int selected_count
+      = std::min(plan_limit, static_cast<int>(ranked_options.size()));
+  std::vector<RankedOption> selected_options(
+      ranked_options.begin(), ranked_options.begin() + selected_count);
+
+  if (anchor.option != nullptr) {
+    keepAnchorTree(ranked_options,
+                   anchor,
+                   treeSignature(anchor.option),
+                   plan_limit,
+                   selected_options);
+  }
+
+  return selected_options;
+}
+
+std::vector<Rebuffer::RankedOption> Rebuffer::limitAreaOptions(
+    std::vector<RankedOption> options,
+    const FixedDelay slack_target,
+    const RankedOption& anchor,
+    const int plan_limit)
+{
+  // The options keep the slack their selection evaluated; the target and the
+  // order position are this round's.
+  std::vector<RankedOption> ranked_options
+      = uniqueTreeOptions(std::move(options));
+  FixedDelay best_slack = -FixedDelay::INF;
+  int index = 0;
+  for (RankedOption& option : ranked_options) {
+    best_slack = std::max(best_slack, option.slack);
+    option.meets_target = option.slack >= slack_target || option.unconstrained;
+    option.index = index++;
+  }
+
+  const FixedDelay slack_floor = slackLossFloor(best_slack);
+  for (RankedOption& option : ranked_options) {
+    option.preserves_best_slack
+        = option.slack >= slack_floor || option.unconstrained;
+  }
+
+  std::ranges::sort(ranked_options, areaOrder);
+
+  const int selected_count
+      = std::min(plan_limit, static_cast<int>(ranked_options.size()));
+  std::vector<RankedOption> selected_options(
+      ranked_options.begin(), ranked_options.begin() + selected_count);
+
+  if (anchor.option != nullptr) {
+    keepAnchorTree(ranked_options,
+                   anchor,
+                   treeSignature(anchor.option),
+                   plan_limit,
+                   selected_options);
+  }
+
+  return selected_options;
+}
+
+FixedDelay Rebuffer::areaRecoveryTarget(const BnetPtr& tree)
+{
+  sta::Delay drvr_gate_delay;
+  std::tie(drvr_gate_delay, std::ignore, std::ignore) = drvrPinTiming(tree);
+  sta::Delay relaxation = (std::max(float(drvr_gate_delay), 0.0f)
+                           + criticalPathDelay(logger_, tree).toSeconds())
+                          * relaxation_factor_;
+  return slackAtDriverPin(tree) - FixedDelay(relaxation, resizer_);
+}
+
+bool Rebuffer::runTimingBeam(const BnetPtr& bnet,
+                             const sta::Pin* drvr_pin,
+                             const bool allow_topology_rewrite,
+                             const int plan_limit,
+                             std::vector<RankedOption>& beam,
+                             RankedOption& anchor)
+{
+  beam = {RankedOption{.option = bnet}};
+  anchor = {.option = bnet};
+  for (int i = 0; i < 3; i++) {
+    std::vector<RankedOption> next_options;
+    RankedOption next_anchor;
+    for (const RankedOption& beam_option : beam) {
+      std::vector<RankedOption> timing_options = bufferForTimingTopK(
+          beam_option.option, allow_topology_rewrite, plan_limit);
+      if (anchor.option != nullptr && beam_option.option == anchor.option
+          && !timing_options.empty()) {
+        next_anchor = timing_options.front();
+      }
+
+      next_options.insert(
+          next_options.end(), timing_options.begin(), timing_options.end());
+    }
+
+    beam = limitTimingOptions(std::move(next_options), next_anchor, plan_limit);
+    anchor = next_anchor;
+    if (beam.empty()) {
+      warnNoViableBuffering(drvr_pin, i + 1);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void Rebuffer::runAreaRecoveryBeam(const int plan_limit,
+                                   std::vector<RankedOption>& beam,
+                                   RankedOption& anchor)
+{
+  const FixedDelay target = areaRecoveryTarget(beam.front().option);
+  FixedDelay anchor_target = target;
+  if (anchor.option != nullptr) {
+    anchor_target = areaRecoveryTarget(anchor.option);
+  }
+
+  for (int i = 0; i < 5 && !beam.empty(); i++) {
+    std::vector<RankedOption> next_options;
+    if (plan_limit > 1) {
+      next_options = beam;
+    }
+
+    RankedOption next_anchor;
+    for (const RankedOption& beam_option : beam) {
+      if (anchor.option != nullptr && beam_option.option == anchor.option) {
+        std::vector<RankedOption> anchor_area_options = recoverAreaTopK(
+            beam_option.option, anchor_target, ((float) (1 + i)) / 5, 1, true);
+        if (!anchor_area_options.empty()) {
+          next_anchor = anchor_area_options.front();
+        }
+
+        next_options.insert(next_options.end(),
+                            anchor_area_options.begin(),
+                            anchor_area_options.end());
+      }
+
+      std::vector<RankedOption> area_options
+          = recoverAreaTopK(beam_option.option,
+                            target,
+                            ((float) (1 + i)) / 5,
+                            plan_limit,
+                            /*strict_assured=*/false);
+      next_options.insert(
+          next_options.end(), area_options.begin(), area_options.end());
+    }
+
+    beam = limitAreaOptions(
+        std::move(next_options), target, next_anchor, plan_limit);
+    anchor = next_anchor;
+  }
+}
+
+std::vector<RebufferTreePlan> Rebuffer::plansFromBeam(
+    const std::vector<RankedOption>& beam,
+    const RankedOption& anchor,
+    const PlanRequest& request,
+    const int plan_limit)
+{
+  std::vector<RebufferTreePlan> plans;
+  plans.reserve(std::min(plan_limit, static_cast<int>(beam.size())));
+  for (const RankedOption& beam_option : beam) {
+    RebufferTreePlan plan = makePlanFromTree(beam_option.option, request);
+    plan.anchor_tree
+        = anchor.option != nullptr && beam_option.option == anchor.option;
+    if (plan.targetPath() != nullptr) {
+      plans.push_back(std::move(plan));
+    }
+  }
+
+  return plans;
+}
+
+BufferedNetPtr Rebuffer::makeBufferedNet(const sta::Pin* drvr_pin)
+{
+  if (network_->isTopLevelPort(drvr_pin)) {
+    warnTopPortDriver(drvr_pin);
+    return nullptr;
+  }
+
+  sta::Net* const net = network_->net(drvr_pin);
+
+  // Verilog connects by net name, so there is no way to distinguish the net
+  // from the port.
+  if (net == nullptr || network_->libertyPort(drvr_pin) == nullptr
+      || hasTopLevelOutputPort(net)) {
+    return nullptr;
+  }
+
+  BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
+  if (!bnet) {
+    warnBufferedNetFailed(drvr_pin);
+  }
+
+  return bnet;
+}
+
+std::vector<RebufferTreePlan> Rebuffer::makeRebufferTreePlans(
+    const sta::Pin* drvr_pin,
+    BufferedNetPtr bnet,
+    const sta::Pin* target_load_pin,
+    int max_plans)
+{
+  const ProfileScope profile("buffer_tree_generation");
+  RepairSetupProfiler::event("buffer_tree_plan_requests");
+  if (bnet == nullptr) {
+    return {};
+  }
+
+  const int plan_limit = std::max(max_plans, 1);
+  odb::dbNet* const db_net = db_network_->flatNet(drvr_pin);
+  setPin(const_cast<sta::Pin*>(drvr_pin));
+
+  // set_debug_pin raises the level for main-thread planning only: a worker
+  // planner must not write the shared logger's level while others read it.
+  const bool debug = (drvr_pin == resizer_->debug_pin_);
+  if (debug && owned_delay_calc_ == nullptr) {
+    logger_->setDebugLevel(RSZ, "rebuffer", 4);
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             2,
+             "driver {}",
+             sdc_network_->pathName(drvr_pin));
+
+  sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+
+  // annotateLoadSlacks() reads the required times the caller keeps current.
+  annotateLoadSlacks(bnet, drvr);
+  const PlanRequest request{.drvr_pin = drvr_pin,
+                            .target_load_pin = target_load_pin,
+                            .flat_net = db_network_->dbToSta(db_net),
+                            .parent = db_network_->getOwningInstanceParent(
+                                const_cast<sta::Pin*>(drvr_pin)),
+                            .original_slack = slackAtDriverPin(bnet)};
+
+  const bool allow_topology_rewrite = (estimate_parasitics_->getParasiticsSrc()
+                                       == est::ParasiticsSrc::kPlacement);
+
+  // The anchor tree rides along in a reserved beam slot.  The beam keeps the
+  // slack each option was evaluated at.
+  std::vector<RankedOption> beam;
+  RankedOption anchor;
+  if (!runTimingBeam(
+          bnet, drvr_pin, allow_topology_rewrite, plan_limit, beam, anchor)) {
+    return {};
+  }
+
+  runAreaRecoveryBeam(plan_limit, beam, anchor);
+  if (beam.empty()) {
+    errorAreaRecoveryFailed();
+    return {};
+  }
+
+  return plansFromBeam(beam, anchor, request, plan_limit);
+}
+
+int Rebuffer::applyRebufferTreePlan(const RebufferTreePlan& plan,
+                                    const char* instance_base_name)
+{
+  const ProfileScope profile("apply_buffer_tree");
+  RepairSetupProfiler::event("buffer_tree_apply_requests");
+  if (plan.flat_net == nullptr) {
+    return 0;
+  }
+
+  return exportBufferTree(
+      plan.tree, plan.flat_net, 1, plan.parent, instance_base_name);
+}
+
 int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 {
   const ProfileScope profile("buffer_tree_generation");
   RepairSetupProfiler::event("buffer_tree_plan_requests");
-  if (network_->isTopLevelPort(drvr_pin)) {
-    logger_->warn(RSZ,
-                  2020,
-                  "rebuffering does not support top port as the driver pin: {}",
-                  network_->name(drvr_pin));
+  BufferedNetPtr bnet = makeBufferedNet(drvr_pin);
+  if (bnet == nullptr) {
     return 0;
   }
 
-  sta::Net* const net = network_->net(drvr_pin);
   odb::dbNet* const db_net = db_network_->flatNet(drvr_pin);
+  setPin(const_cast<sta::Pin*>(drvr_pin));
 
-  drvr_port_ = network_->libertyPort(drvr_pin);
-  if (net && drvr_port_ &&
-      // Verilog connects by net name, so there is no way to distinguish the
-      // net from the port.
-      !hasTopLevelOutputPort(net)) {
-    setPin(const_cast<sta::Pin*>(drvr_pin));
-    BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
+  const bool debug = (drvr_pin == resizer_->debug_pin_);
+  if (debug) {
+    logger_->setDebugLevel(RSZ, "rebuffer", 4);
+  }
+  debugPrint(logger_,
+             RSZ,
+             "rebuffer",
+             2,
+             "driver {}",
+             sdc_network_->pathName(drvr_pin));
 
+  sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
+
+  {
+    const ProfileScope sta_profile("incremental_sta");
+    sta_->findRequireds();
+  }
+  annotateLoadSlacks(bnet, drvr);
+
+  const bool allow_topology_rewrite = (estimate_parasitics_->getParasiticsSrc()
+                                       == est::ParasiticsSrc::kPlacement);
+
+  for (int i = 0; i < 3; i++) {
+    bnet = bufferForTiming(bnet, allow_topology_rewrite);
     if (!bnet) {
-      logger_->warn(RSZ,
-                    75,
-                    "makeBufferedNet failed for driver {}",
-                    network_->pathName(drvr_pin));
-      return 0;
+      warnNoViableBuffering(drvr_pin, i + 1);
+      break;
     }
-
-    const bool debug = (drvr_pin == resizer_->debug_pin_);
-    if (debug) {
-      logger_->setDebugLevel(RSZ, "rebuffer", 4);
-    }
-    debugPrint(logger_,
-               RSZ,
-               "rebuffer",
-               2,
-               "driver {}",
-               sdc_network_->pathName(drvr_pin));
-
-    sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
-
-    {
-      const ProfileScope sta_profile("incremental_sta");
-      sta_->findRequireds();
-    }
-    annotateLoadSlacks(bnet, drvr);
-
-    const bool allow_topology_rewrite
-        = (estimate_parasitics_->getParasiticsSrc()
-           == est::ParasiticsSrc::kPlacement);
-
-    for (int i = 0; i < 3; i++) {
-      bnet = bufferForTiming(bnet, allow_topology_rewrite);
-      if (!bnet) {
-        logger_->warn(
-            RSZ,
-            2021,
-            "cannot find a viable buffering solution on pin {} after {} "
-            "rounds of buffering (no solution meets design rules)",
-            network_->name(drvr_pin),
-            i + 1);
-        break;
-      }
-    }
-
-    if (!bnet) {
-      return 0;
-    }
-
-    sta::Delay drvr_gate_delay;
-    std::tie(drvr_gate_delay, std::ignore, std::ignore) = drvrPinTiming(bnet);
-    sta::Delay relaxation = (std::max(float(drvr_gate_delay), 0.0f)
-                             + criticalPathDelay(logger_, bnet).toSeconds())
-                            * relaxation_factor_;
-
-    FixedDelay target
-        = slackAtDriverPin(bnet) - FixedDelay(relaxation, resizer_);
-
-    for (int i = 0; i < 5 && bnet; i++) {
-      bnet = recoverArea(bnet, target, ((float) (1 + i)) / 5);
-    }
-
-    if (!bnet) {
-      logger_->error(RSZ, 2022, "failed area recovery");
-      return 0;
-    }
-
-    sta::Instance* parent
-        = db_network_->getOwningInstanceParent(const_cast<sta::Pin*>(drvr_pin));
-    odb::dbITerm* drvr_op_iterm = nullptr;
-    odb::dbBTerm* drvr_op_bterm = nullptr;
-    odb::dbModITerm* drvr_op_moditerm = nullptr;
-    db_network_->staToDb(
-        drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
-
-    int inserted_count;
-    {
-      const ProfileScope apply_profile("apply_buffer_tree");
-      RepairSetupProfiler::event("buffer_tree_apply_requests");
-      inserted_count = exportBufferTree(
-          bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
-    }
-
-    debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
-
-    return inserted_count;
   }
 
-  return 0;
+  if (!bnet) {
+    return 0;
+  }
+
+  const FixedDelay target = areaRecoveryTarget(bnet);
+  for (int i = 0; i < 5 && bnet; i++) {
+    bnet = recoverArea(bnet, target, ((float) (1 + i)) / 5);
+  }
+
+  if (!bnet) {
+    errorAreaRecoveryFailed();
+    return 0;
+  }
+
+  sta::Instance* parent
+      = db_network_->getOwningInstanceParent(const_cast<sta::Pin*>(drvr_pin));
+  odb::dbITerm* drvr_op_iterm = nullptr;
+  odb::dbBTerm* drvr_op_bterm = nullptr;
+  odb::dbModITerm* drvr_op_moditerm = nullptr;
+  db_network_->staToDb(
+      drvr_pin, drvr_op_iterm, drvr_op_bterm, drvr_op_moditerm);
+
+  int inserted_count;
+  {
+    const ProfileScope apply_profile("apply_buffer_tree");
+    RepairSetupProfiler::event("buffer_tree_apply_requests");
+    inserted_count = exportBufferTree(
+        bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
+  }
+
+  debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
+
+  return inserted_count;
 }
 
 void Rebuffer::rebufferNet(const sta::Pin* drvr_pin)

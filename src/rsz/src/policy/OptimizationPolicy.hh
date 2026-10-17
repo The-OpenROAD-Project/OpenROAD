@@ -99,7 +99,6 @@ class OptimizationPolicy
   // before MT workers call generator code that reads those services.
   virtual void prewarmTargets(const std::vector<Target>& targets) const;
   virtual bool generatorEnabled(MoveType type) const;
-
   // Main-thread prepare stage: capture per-target STA state before MT workers
   // generate or estimate candidates.
   virtual void prepareTargets(std::vector<Target>& targets) const;
@@ -110,6 +109,8 @@ class OptimizationPolicy
 
   // Build the immutable arc-delay snapshot consumed by MT-safe candidates.
   void prepareEstimatorContext(Target& target) const;
+  // Prepare the flip-flop input-side checks of a cell swap of the target.
+  void prepareSequentialEstimator(Target& target) const;
   // Capture the target instance's fanin max-cap headroom.
   void prepareInputCapBudgets(Target& target) const;
 

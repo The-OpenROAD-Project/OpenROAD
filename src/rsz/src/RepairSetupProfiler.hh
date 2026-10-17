@@ -32,13 +32,17 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   // One logical record can update a counter, emit a trace row, or both.
   struct EventOptions
   {
+    // Counter increment; nullopt makes the event trace-only.
     std::optional<uint64_t> count{1};
+    // Counter key when it differs from the trace event name.
     std::string_view metric{};
+    // Optional move-type dimension of the counter.
     std::string_view move{};
     std::string_view object{};
     std::string_view before{};
     std::string_view after{};
     std::string_view detail{};
+    // Emit a detailed row only in profile mode 2 or higher.
     bool trace{false};
   };
 
@@ -137,6 +141,7 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   {
     std::string name;
     Clock::time_point start;
+    // Nested-stage time excluded from this stage's self time.
     double children{0.0};
   };
 

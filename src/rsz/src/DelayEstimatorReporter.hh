@@ -39,13 +39,8 @@ class Resizer;
 
 // === Diagnostic estimator-accuracy reporter =================================
 //
-// Compares the candidate-cell delay improvement predicted by DelayEstimator
-// (legacy or path-window MT estimator) against ground-truth STA results that
-// are obtained by actually swapping the cell inside an ECO journal and then
-// undoing the swap.
-//
-// Used by the Tcl command `report_delay_estimator_accuracy`.
-// All compute paths are main-thread-only; no MT contract here.
+// Compares predicted ECO timing gain with STA measured inside a reverted ECO.
+// The report_delay_estimator_accuracy command runs this on the main thread.
 class DelayEstimatorReporter
 {
  public:
@@ -68,6 +63,7 @@ class DelayEstimatorReporter
 
   explicit DelayEstimatorReporter(Resizer& resizer);
 
+  // Compare a temporary cell swap's predicted and STA-measured path gain.
   void reportAccuracyForSizing(sta::Instance* inst,
                                sta::LibertyCell* replacement,
                                const std::string& estimator,
@@ -85,6 +81,7 @@ class DelayEstimatorReporter
   static Role roleFor(int stage_index, int target_index);
 
   // === Diagnostic data structures ==========================================
+  // Worst matching target path through the requested instance.
   struct TargetMatch
   {
     Target target;
@@ -92,6 +89,7 @@ class DelayEstimatorReporter
     sta::Slack slack{0.0};
   };
 
+  // Electrical inputs and delay of one reported timing stage.
   struct StageProfileRow
   {
     int path_index{-1};
@@ -108,6 +106,7 @@ class DelayEstimatorReporter
     bool arc_match_relaxed{false};
   };
 
+  // Model-predicted stage rows and legality for one candidate.
   struct EstimatorProfile
   {
     std::vector<StageProfileRow> current_stages;
@@ -124,6 +123,7 @@ class DelayEstimatorReporter
     bool candidate_stages_incomplete{false};
   };
 
+  // STA-measured path stages and arrival change around a temporary ECO.
   struct GoldenProfile
   {
     std::vector<StageProfileRow> before_stages;
@@ -134,6 +134,7 @@ class DelayEstimatorReporter
     float arrival_impr{0.0f};
   };
 
+  // Stable pin identities and prepared timing for one path stage.
   struct FixedStage
   {
     DelayStageState state;
@@ -144,6 +145,7 @@ class DelayEstimatorReporter
   };
 
   // === Run-orchestration phases ============================================
+  // Apply a temporary cell swap and measure the same path after timing update.
   void measureGoldenAfterSwap(const TargetMatch& before_match,
                               const std::vector<FixedStage>& fixed_stages,
                               GoldenProfile& golden_profile) const;
@@ -156,18 +158,23 @@ class DelayEstimatorReporter
                     const GoldenProfile& golden_profile) const;
 
   // === Target selection ====================================================
+  // Find the worst path-driver target through the requested instance.
   std::optional<TargetMatch> findWorstTargetForInstance(sta::Instance* inst,
                                                         int delay_levels) const;
   std::vector<sta::Pin*> outputPins(sta::Instance* inst) const;
 
   // === Profile construction ================================================
+  // Build the original serial estimator's stage prediction.
   EstimatorProfile buildLegacyProfile(const Target& target,
                                       sta::LibertyCell* replacement) const;
+  // Build the path-window estimator's stage prediction.
   EstimatorProfile buildDelayEstimatorProfile(const Target& target,
                                               sta::LibertyCell* replacement,
                                               int delay_levels) const;
+  // Preserve path stage identities before the ECO invalidates path handles.
   std::vector<FixedStage> captureFixedStages(const Target& target,
                                              int delay_levels) const;
+  // Measure STA delay through the fixed stages in the current design.
   std::vector<StageProfileRow> buildGoldenStageRows(
       const std::vector<FixedStage>& fixed_stages) const;
   StageProfileRow buildGoldenStageRow(const FixedStage& fixed_stage) const;
@@ -178,6 +185,7 @@ class DelayEstimatorReporter
       int target_index) const;
 
   // === Path / context utilities ============================================
+  // Prepare the same delay window used by MT candidate scoring.
   std::optional<EstimatorContext> contextForTarget(
       const Target& target,
       int delay_levels,

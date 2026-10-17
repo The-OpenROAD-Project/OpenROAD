@@ -55,7 +55,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
   const std::vector<sta::LibertyCell*>& replacements = options.cells;
 
   // Fanin max-cap headroom is instance-level, captured once per target.
-  const std::vector<Resizer::InputCapBudget> budgets = inputCapBudgets(target);
+  const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
   candidates.reserve(replacements.size());
   for (sta::LibertyCell* replacement : replacements) {
     if (!resizer_.replacementFitsInputCapBudgets(budgets, replacement)) {

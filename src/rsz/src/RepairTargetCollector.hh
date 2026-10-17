@@ -61,7 +61,7 @@ struct pinData
   int level;
 };
 
-// Class to collect instances with violating output pins.
+// Collects violating setup endpoints and path-driver repair targets.
 class RepairTargetCollector
 {
  public:

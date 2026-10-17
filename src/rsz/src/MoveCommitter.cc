@@ -614,7 +614,6 @@ void MoveCommitter::rejectPendingMoves()
   const int move_count = pendingMoveCount();
   logPendingMoves("UNDO", move_count);
   resizer_.addRejectedLegacyMoveCount(move_count);
-
   std::ranges::fill(pending_by_type_, 0);
   ++netlist_edits_;
   for (std::unordered_multiset<sta::Instance*>& pending_instances :

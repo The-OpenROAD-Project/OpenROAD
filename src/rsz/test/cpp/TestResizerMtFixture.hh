@@ -90,6 +90,7 @@
 
 namespace rsz {
 
+// Shared Nangate45 fixture for MT estimator, policy, and profiler tests.
 class TestResizerMt : public tst::IntegratedFixture
 {
  protected:
@@ -219,6 +220,7 @@ class TestResizerMt : public tst::IntegratedFixture
   }
 };
 
+// Extends the MT fixture with a sequential cell and connected timing paths.
 class TestResizerMtSequential : public TestResizerMt
 {
  protected:
@@ -372,6 +374,7 @@ inline void expectSameDelayContext(const EstimatorContext& lhs,
     EXPECT_FLOAT_EQ(left.load_cap, right.load_cap);
     EXPECT_FLOAT_EQ(left.current_model_delay, right.current_model_delay);
     EXPECT_FLOAT_EQ(left.current_delay, right.current_delay);
+    EXPECT_FLOAT_EQ(left.current_wire_delay, right.current_wire_delay);
     EXPECT_FLOAT_EQ(left.current_model_slew, right.current_model_slew);
     EXPECT_FLOAT_EQ(left.current_slew, right.current_slew);
     ASSERT_EQ(left.output_slew_merge_arcs.size(),
@@ -387,6 +390,7 @@ inline void expectSameDelayContext(const EstimatorContext& lhs,
   }
 }
 
+// Deterministic buffer move used to verify committer accounting in tests.
 class StubBufferMoveCandidate : public MoveCandidate
 {
  public:
@@ -415,6 +419,7 @@ class StubBufferMoveCandidate : public MoveCandidate
   const bool accepted_;
 };
 
+// Owns a temporary profiler output directory for one test scope.
 class ProfileTestDirectory
 {
  public:
