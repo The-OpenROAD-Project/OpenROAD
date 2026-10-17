@@ -372,12 +372,16 @@ struct Estimate
 //                        may credit more).
 //   touched_instances  : instances the ECO mutated; the committer marks them
 //                        for tracker re-visit logic and conflict detection.
+//   inserted_buffers   : buffers a BufferMove inserted; the committer uses
+//                        them to stop buffer removal and rebuffering from
+//                        undoing each other repeatedly.
 struct MoveResult
 {
   bool accepted{false};
   MoveType type{MoveType::kCount};
   int move_count{0};
   std::vector<sta::Instance*> touched_instances;
+  std::vector<sta::Instance*> inserted_buffers{};
 };
 
 // === Candidate evaluation data =============================================

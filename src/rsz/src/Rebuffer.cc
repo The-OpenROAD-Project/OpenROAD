@@ -1977,6 +1977,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
+          last_inserted_buffers_.push_back(db_network_->dbToSta(buf_inst));
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -2404,6 +2405,7 @@ bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
 
 int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 {
+  last_inserted_buffers_.clear();
   if (network_->isTopLevelPort(drvr_pin)) {
     logger_->warn(RSZ,
                   2020,
