@@ -34,6 +34,7 @@
 #include "DelayEstimatorReporter.hh"
 #include "Optimizer.hh"
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
@@ -283,6 +284,20 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
 
   return input_modnet->isConnectedToInputPort()
          && output_modnet->isConnectedToOutputPort();
+}
+
+// The eligibility check and removal must choose the same surviving flat net.
+// Preserve the input ModNet if removing the buffer creates a feedthrough.
+bool bufferRemovalKeepsOutputNet(const sta::dbNetwork* network,
+                                 const sta::Pin* input_pin,
+                                 const sta::Pin* output_pin)
+{
+  if (bufferRemovalCreatesFeedthrough(network->hierNet(input_pin),
+                                      network->hierNet(output_pin))) {
+    return false;
+  }
+  return !network->hasPort(network->dbToSta(network->flatNet(input_pin)))
+         && network->hasPort(network->dbToSta(network->flatNet(output_pin)));
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -1183,6 +1198,10 @@ void Resizer::findBuffers()
 
 void Resizer::findBuffersNoPruning()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
   if (buffer_cells_.empty()) {
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
@@ -2851,27 +2870,23 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
   sta::Net* input_net = db_network_->net(input_pin);
   sta::Net* output_net = db_network_->net(output_pin);
-  odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
-  odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
+  // Inspect the same flat nets that removeBuffer() will merge.
+  odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
+  odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
+  if (input_db_net == nullptr) {
+    return false;
+  }
   if (honor_dont_touch_fixed
       && (db_inst->isDoNotTouch() || db_inst->isFixed()
-          || (input_db_net != nullptr && input_db_net->isDoNotTouch())
+          || input_db_net->isDoNotTouch()
           || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
     return false;
   }
-  const bool out_net_ports = db_network_->hasPort(output_net);
-  sta::Net* removed = nullptr;
-  odb::dbNet* db_net_survivor = nullptr;
-  odb::dbNet* db_net_removed = nullptr;
-  if (out_net_ports) {
-    removed = input_net;
-    db_net_survivor = output_db_net;
-    db_net_removed = input_db_net;
-  } else {
-    removed = output_net;
-    db_net_survivor = input_db_net;
-    db_net_removed = output_db_net;
-  }
+  const bool keep_output_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
+  sta::Net* removed = keep_output_net ? input_net : output_net;
+  odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
+  odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
   if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
@@ -2880,11 +2895,10 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
     return false;
   }
 
+  // A disconnected output is removable: removeBuffer() destroys the
+  // dangling buffer without merging nets. Do not reject that valid case.
   if (db_net_removed == nullptr) {
     return true;
-  }
-  if (db_net_survivor == nullptr) {
-    return false;
   }
   if (honor_dont_touch_fixed) {
     return db_net_survivor->canMergeNet(db_net_removed);
@@ -3055,12 +3069,9 @@ bool Resizer::removeBuffer(sta::Instance* buffer,
   odb::dbModNet* input_modnet = db_network_->hierNet(input_pin);
   odb::dbModNet* survivor_modnet = input_modnet;
   odb::dbModNet* removed_modnet = output_modnet;
-  const bool creates_feedthrough
-      = bufferRemovalCreatesFeedthrough(input_modnet, output_modnet);
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!creates_feedthrough && !db_network_->hasPort(input_net)
-      && db_network_->hasPort(output_net)) {
+  if (bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -3286,6 +3297,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*verbose=*/false,
         /*sequence=*/parseMoveSequence(""),
         /*phases=*/"",
+        /*path_group=*/"",
         /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
         /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
                                      // density
@@ -5404,6 +5416,11 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 
 ////////////////////////////////////////////////////////////////
 
+std::string Resizer::resolvePathGroup(const char* path_group)
+{
+  return rsz::resolvePathGroupName(this, path_group);
+}
+
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
@@ -5413,6 +5430,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
                           const char* phases,
+                          const char* path_group,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down_fanout,
@@ -5444,6 +5462,10 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
@@ -5506,11 +5528,15 @@ bool Resizer::repairHold(
     int max_passes,
     int max_iterations,
     bool match_cell_footprint,
-    bool verbose)
+    bool verbose,
+    const char* path_group)
 {
   utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty

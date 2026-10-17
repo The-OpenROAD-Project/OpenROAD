@@ -51,6 +51,8 @@ or_integration_tests(
     remove_buffers5
     remove_buffers5_hier
     remove_buffers6
+    remove_buffers_survivor_hier
+    remove_buffers_survivor_port_nets
     repair_cap1
     repair_cap2
     repair_cap3
@@ -151,6 +153,12 @@ or_integration_tests(
     repair_setup_phases_order
     repair_setup_undo1
     repair_setup_undo2
+    repair_timing_path_group1
+    repair_timing_path_group2
+    repair_timing_path_group3
+    repair_timing_path_group4
+    repair_timing_path_group5
+    repair_timing_path_group6
     repair_slew1
     repair_slew2
     repair_slew3

@@ -13,4 +13,8 @@ namespace ant {
 // file for one net.
 std::string formatNetCheck(const NetCheck& net_check);
 
+// The report file check_antennas writes: the violating nets, or every
+// routed net with include_clean_nets.
+std::string formatReport(const DesignCheck& design, bool include_clean_nets);
+
 }  // namespace ant
