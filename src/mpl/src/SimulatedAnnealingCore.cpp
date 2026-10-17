@@ -685,26 +685,26 @@ void SimulatedAnnealingCore<T>::reportLocations() const
     const T& macro = macros_[macro_id];
     logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     display_id,
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight());
+                    block_->dbuToMicrons(macro.getX()),
+                    block_->dbuToMicrons(macro.getY()),
+                    block_->dbuToMicrons(macro.getWidth()),
+                    block_->dbuToMicrons(macro.getHeight()));
   }
 
   // Then, the fixed terminals.
   const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
   for (int i = 0; i < macros_.size(); ++i) {
-    if (i <= number_of_moveable_macros) {
+    if (i < number_of_moveable_macros) {
       continue;
     }
 
     const T& macro = macros_[i];
     logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     "fixed",
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight());
+                    block_->dbuToMicrons(macro.getX()),
+                    block_->dbuToMicrons(macro.getY()),
+                    block_->dbuToMicrons(macro.getWidth()),
+                    block_->dbuToMicrons(macro.getHeight()));
   }
   logger_->report("");
 }
