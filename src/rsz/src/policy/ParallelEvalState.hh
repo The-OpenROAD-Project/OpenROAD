@@ -116,6 +116,9 @@ class StallMonitor
   int moveBudget() const;
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // QoR and work at one saved checkpoint of the stall window.
   struct SavedCheckpoint
   {
@@ -202,6 +205,9 @@ class WnsTail
   std::vector<InstanceRecord> endSpeculation();
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   const ParallelEvalPolicyConfig& config_;
   bool active_{false};
   bool started_{false};

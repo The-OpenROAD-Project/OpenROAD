@@ -147,24 +147,26 @@ TEST_F(TestResizerMt, SizeUpMtGeneratorCachesLibraryOptionsPerDriverPort)
   ASSERT_TRUE(target.estimator_context.has_value());
   const SelectedArc& arc = target.estimator_context->target().arc;
 
-  const SizeUpMtGenerator::SizeUpOptions& first
-      = generator.findSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max);
-  const SizeUpMtGenerator::SizeUpOptions& second
-      = generator.findSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max);
+  const ResizerTestPeer::SizeUpOptions& first
+      = ResizerTestPeer::findSizeUpOptions(
+          generator, arc.outputPort(), arc.scene, arc.min_max);
+  const ResizerTestPeer::SizeUpOptions& second
+      = ResizerTestPeer::findSizeUpOptions(
+          generator, arc.outputPort(), arc.scene, arc.min_max);
   EXPECT_EQ(&first, &second);
-  EXPECT_EQ(generator.size_up_options_.size(), 1u);
+  EXPECT_EQ(ResizerTestPeer::sizeUpOptionCount(generator), 1u);
   EXPECT_FALSE(first.cells.empty());
-  EXPECT_EQ(
-      first.cells,
-      generator.buildSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max)
-          .cells);
+  EXPECT_EQ(first.cells,
+            ResizerTestPeer::buildSizeUpOptions(
+                generator, arc.outputPort(), arc.scene, arc.min_max)
+                .cells);
 
   // Generation consumes the cached options without changing the candidates;
   // generate() reads the prepared fanin headroom.
   generator.prepareInputs(target);
   const CandidateVector candidates = generator.generate(target);
   EXPECT_EQ(candidates.size(), first.cells.size());
-  EXPECT_EQ(generator.size_up_options_.size(), 1u);
+  EXPECT_EQ(ResizerTestPeer::sizeUpOptionCount(generator), 1u);
 }
 
 // The input cap budgets that SizeUpMt and VtSwapMt read on workers accept the

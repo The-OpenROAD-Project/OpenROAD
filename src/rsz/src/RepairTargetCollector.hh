@@ -299,6 +299,9 @@ class RepairTargetCollector
   std::vector<const sta::Pin*> getCriticalPinsNeverConsidered();
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // === Startpoint cache ====================================================
   // A startpoint is a top-level input or a register output, clock pins
   // excluded. The set is fixed for the life of a collector, so it is
