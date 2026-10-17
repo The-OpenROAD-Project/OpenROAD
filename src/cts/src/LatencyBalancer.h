@@ -98,6 +98,11 @@ class LatencyBalancer
   float getVertexClkArrival(sta::Vertex* sinkVertex,
                             odb::dbNet* topNet,
                             odb::dbITerm* iterm);
+  // Liberty clock_tree_path delay of a sink clock pin, 0 when the cell has none
+  float sinkInsertionDelay(odb::dbITerm* clkIterm);
+  // Amount of insertion delay to give up to relieve hold on paths the sink
+  // launches. Only called for sinks that have insertion delay.
+  float holdInsertionDelayRelief(odb::dbITerm* clkIterm, float insDelay);
   float computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
