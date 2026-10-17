@@ -935,7 +935,8 @@ TEST(TestBatchSelector, BatchSelectorDefersForwardDependency)
   sta::Net* net3 = reinterpret_cast<sta::Net*>(0x303);
 
   // impact1 reads net1, which impact0 writes, so it waits.  impact2 reads
-  // net3, which only the later impact3 writes, so both of them stay.
+  // net3, which impact3 writes, but the check is one way, so impact3 still
+  // joins the batch after impact2.
   MoveImpact impact0;
   impact0.complete = true;
   impact0.write_instances = {inst1};

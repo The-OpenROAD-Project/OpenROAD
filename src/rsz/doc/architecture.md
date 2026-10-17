@@ -737,7 +737,7 @@ priority = score * (1 + alpha * w^gamma)
 `BatchSelector` walks the ranked targets and admits a candidate unless it conflicts with one already in the batch:
 
 - Structural conflicts are always checked: two moves may not write the same instance or net, reconnect the same pin, or write an instance that the other reconnects. A `RebufferMt` candidate reserves both its driver instance and the net it rewrites.
-- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path.
+- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path. The check is one way, so a candidate that changes what a member's estimate read is still admitted. Every estimate reads the pre-batch timing either way, and the batch outcome below catches a batch that misses.
 
 ### Batch Outcome
 

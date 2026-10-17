@@ -101,6 +101,11 @@ bool BatchSelector::admit(const BatchCandidate& candidate,
     }
   }
 
+  // The check is one way.  A member whose estimate read timing this candidate
+  // changes does not stop it, though that estimate goes stale too: every
+  // estimate reads the pre-batch timing, and the batch verdict and the salvage
+  // catch a batch that misses.  Checking both ways defers more candidates and
+  // gave mixed QoR.
   if (!conflict.has_value()) {
     for (const MoveImpact* selected_impact : admission.impacts) {
       if (dependsOn(candidate.impact, *selected_impact)) {
