@@ -41,9 +41,13 @@ using estimator_detail::wireElmoreDelay;
 namespace {
 
 // Calibration of the buffer-tree model.  The factors were fitted against STA
-// on the rebuffer accuracy report (report_delay_estimator_accuracy with
-// -rebuffer_tree), which prints the estimate of every stage of the planned
-// tree next to the delay STA measures after the tree is built.
+// on the rebuffer accuracy report,
+// report_delay_estimator_accuracy_for_rebuffering, which prints the estimate
+// of every stage of the planned tree next to the delay STA measures after the
+// tree is built.  The data set is the Nangate45 cases of that report, the
+// report_delay_estimator_rebuffer_* tests; other platforms are not checked.
+// The estimate only ranks candidate trees and STA times each batch before it
+// is kept, so an off factor costs QoR, not correctness.
 //
 // The effective load of a buffer stage as a fraction of its lumped downstream
 // capacitance: on the target path, on a side path, and for a direct load.
