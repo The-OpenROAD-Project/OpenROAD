@@ -72,7 +72,7 @@ sudo ./etc/DependencyInstaller.sh -cmake -base
 ```{warning}
 `sudo ./etc/DependencyInstaller.sh -cmake [-all|-common]` defaults to
 installing packages on /usr/local.
-To avoid this behavior use -local flag or -prefix <PATH> argument.
+To avoid this behavior, use the `-local` flag or the `-prefix=<PATH>` argument.
 ```
 
 Bazel: `sudo ./etc/DependencyInstaller.sh -bazel`.
