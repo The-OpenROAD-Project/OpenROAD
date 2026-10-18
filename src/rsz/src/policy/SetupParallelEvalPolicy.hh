@@ -207,8 +207,8 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // same endpoints would hide every gain in the group.
   BatchQor measureQor() const;
   // The verdict: saves a batch that beats the checkpoint, else salvages it
-  // without its culprits, keeps it on speculation in the WNS tail, or undoes
-  // it.  True when the batch or its salvage was saved.
+  // without its culprits, speculates on it in the WNS tail, or undoes it.
+  // True when the batch or its salvage was saved.
   bool judgeBatch(BatchPool& pool, sta::Slack pre_batch_wns, int& batch_moves);
   bool withinMaxUtilization() const;
   sta::Slack checkpointWnsTolerance() const;
@@ -219,7 +219,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void saveBatchCheckpoint(sta::Slack wns, sta::Slack tns);
   // Charge a missed batch to the checkpoint-miss and stall counters.
   void noteMissedBatch(bool utilization_legal);
-  // Keeps a missed batch on speculation in the WNS tail, else undoes it.
+  // Speculates on a missed batch in the WNS tail, else undoes it.
   void settleMissedBatch(int batch_moves);
   // Undoes the current batch; a failed speculative run also puts all its
   // instances on the tabu.

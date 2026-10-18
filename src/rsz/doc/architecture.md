@@ -71,7 +71,7 @@ PARALLEL_EVAL / SetupParallelEvalPolicy (EXPERIMENTAL):
     select a score-ordered conflict-free batch      <- [ST]
   commit the batch into the open journal            <- [ST]
   update parasitics and timing once                 <- [ST]
-  save, salvage, keep or undo the batch             <- [ST]
+  save, salvage, speculate or undo the batch        <- [ST]
 ```
 
 **Key components**
@@ -685,7 +685,7 @@ flowchart TD
     J --> K[One parasitics and timing update]
     K --> L{Beats the checkpoint?}
     L -->|yes| M[Save the checkpoint]
-    L -->|no| N[Salvage, keep on speculation, or undo]
+    L -->|no| N[Salvage, speculate or undo]
     M --> O[Stop rules and WNS tail]
     N --> O
 ```
