@@ -172,7 +172,8 @@ struct ParallelEvalPolicyConfig
   // A timing update is each parasitics-and-timing update the policy asks
   // for, and each batch undo, checkpoint restore or salvage rollback.  The
   // pending nets are read before the update or the rollback, so a rollback
-  // after the batch STA adds none.
+  // after the batch STA adds none.  The weights are a non-negative
+  // least-squares fit of profiled batch wall times on the reference machine.
   float work_sta_per_vertex{5.0e-7f};
   float work_per_pending_net{1.93e-3f};
   float work_per_estimate{1.35e-5f};
