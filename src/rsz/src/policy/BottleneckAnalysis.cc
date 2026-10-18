@@ -23,16 +23,22 @@ namespace rsz {
 namespace {
 
 // The fanin edges that carry data arrivals: no timing checks, no clock-to-Q
-// or latch D-to-Q boundaries, no disabled loops.
+// or latch D-to-Q boundaries, no disabled loops.  The preset/clear arcs and
+// bidirect paths that levelization skips are skipped too, so every fanin
+// has a lower level.
 template <typename Fn>
-void forEachDataFanin(const sta::Graph* graph, sta::Vertex* vertex, Fn&& fn)
+void forEachDataFanin(const sta::dbSta* sta, sta::Vertex* vertex, Fn&& fn)
 {
+  const sta::Graph* graph = sta->graph();
   sta::VertexInEdgeIterator edge_iter(vertex, graph);
   while (edge_iter.hasNext()) {
     sta::Edge* edge = edge_iter.next();
     const sta::TimingRole* role = edge->role();
     if (role->isTimingCheck() || role == sta::TimingRole::regClkToQ()
-        || role->isLatchDtoQ() || edge->isDisabledLoop()) {
+        || role->isLatchDtoQ() || edge->isDisabledLoop()
+        || (role == sta::TimingRole::regSetClr()
+            && !sta->presetClrArcsEnabled())
+        || sta->isDisabledBidirectInstPath(edge)) {
       continue;
     }
     fn(edge->from(graph));
@@ -137,7 +143,7 @@ std::vector<size_t> BottleneckAnalysis::collectCone(
   while (!queue.empty()) {
     const size_t node_index = queue.back();
     queue.pop_back();
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       if (nodeOf(fanin) >= 0) {
         nodes_[node_index].has_cone_fanin = true;
         return;
@@ -164,7 +170,6 @@ std::vector<size_t> BottleneckAnalysis::collectCone(
 void BottleneckAnalysis::sumFanoutNeeds(
     const std::vector<size_t>& endpoint_nodes)
 {
-  const sta::Graph* graph = sta_->graph();
   const size_t words
       = (endpoint_nodes.size() + kBitsPerWord - 1) / kBitsPerWord;
   std::vector<uint64_t> reach(nodes_.size() * words, 0);
@@ -177,7 +182,7 @@ void BottleneckAnalysis::sumFanoutNeeds(
   // has been visited, and is then handed to its fanins.
   for (size_t position = order_.size(); position-- > 0;) {
     const size_t node_index = order_[position];
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       const int32_t fanin_index = nodeOf(fanin);
       if (fanin_index < 0) {
         return;
@@ -217,7 +222,6 @@ void BottleneckAnalysis::sumFaninNeeds(const int max_sources)
   });
   sources.resize(std::min(sources.size(), static_cast<size_t>(max_sources)));
 
-  const sta::Graph* graph = sta_->graph();
   const size_t words = (sources.size() + kBitsPerWord - 1) / kBitsPerWord;
   std::vector<uint64_t> reach(nodes_.size() * words, 0);
   for (size_t bit = 0; bit < sources.size(); ++bit) {
@@ -228,7 +232,7 @@ void BottleneckAnalysis::sumFaninNeeds(const int max_sources)
   // Ascending level: the fanins are complete before the vertex collects
   // them.
   for (const size_t node_index : order_) {
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       const int32_t fanin_index = nodeOf(fanin);
       if (fanin_index < 0) {
         return;

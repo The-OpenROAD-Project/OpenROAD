@@ -88,8 +88,8 @@
 namespace rsz {
 
 // The tests reach the internals of the rsz classes through this peer, which
-// SetupParallelEvalPolicy, StallMonitor, WnsTail, SizeUpMtGenerator and
-// RepairTargetCollector befriend.
+// SetupParallelEvalPolicy, StallMonitor, WnsTail, SizeUpMtGenerator,
+// RepairTargetCollector and BottleneckAnalysis befriend.
 class ResizerTestPeer
 {
  public:
@@ -249,6 +249,24 @@ class ResizerTestPeer
   static utl::ThreadPool* scanThreadPool(const RepairTargetCollector& collector)
   {
     return collector.scan_thread_pool_;
+  }
+
+  // === BottleneckAnalysis ===================================================
+  // The own need of a cone vertex and the need of the endpoints behind it.
+  struct ConeNeeds
+  {
+    float need;
+    float fanout_need;
+  };
+  static std::optional<ConeNeeds> coneNeeds(const BottleneckAnalysis& analysis,
+                                            const sta::Vertex* vertex)
+  {
+    const int32_t node_index = analysis.nodeOf(vertex);
+    if (node_index < 0) {
+      return std::nullopt;
+    }
+    const BottleneckAnalysis::Node& node = analysis.nodes_[node_index];
+    return ConeNeeds{.need = node.need, .fanout_need = node.fanout_need};
   }
 };
 

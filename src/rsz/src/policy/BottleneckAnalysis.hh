@@ -50,6 +50,9 @@ class BottleneckAnalysis
   size_t coneSize() const { return nodes_.size(); }
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // Need accumulated at one graph vertex from its fanin and fanout cones.
   struct Node
   {

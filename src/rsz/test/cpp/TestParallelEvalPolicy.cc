@@ -855,6 +855,45 @@ TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheNewestVertex)
   EXPECT_GT(analysis.weightedScore(1.0f, newest, priority), 1.0f);
 }
 
+// Levelization skips a disabled preset/clear arc, so RN can sit above Q.  The
+// cone skips that arc too: RN reaches only its own recovery check, not the
+// endpoints behind Q.
+TEST_F(TestResizerMtSequential, BottleneckAnalysisSkipsPresetClearArcs)
+{
+  prepareSequential("DFFR_X1", "CK");
+  ASSERT_FALSE(HasFatalFailure());
+  block_->findInst("dq_seq")->findITerm("RN")->connect(
+      block_->findNet("path_n3"));
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+  ASSERT_FALSE(sta_->presetClrArcsEnabled());
+
+  sta::Graph* graph = sta_->graph();
+  sta::Vertex* reset = graph->pinLoadVertex(db_network_->findPin("dq_seq/RN"));
+  sta::Vertex* q = graph->pinDrvrVertex(db_network_->findPin("dq_seq/Q"));
+  ASSERT_NE(reset, nullptr);
+  ASSERT_NE(q, nullptr);
+  ASSERT_GT(reset->level(), q->level());
+
+  // A margin above every slack makes every endpoint violating.
+  std::vector<BottleneckAnalysis::EndpointSlack> endpoints;
+  for (sta::Vertex* endpoint : sta_->endpoints()) {
+    endpoints.emplace_back(endpoint->pin(),
+                           sta_->slack(endpoint, sta::MinMax::max()));
+  }
+  BottleneckAnalysis analysis(sta_.get(), sta::MinMax::max());
+  analysis.analyze(endpoints, 1.0f, 1024, 1024);
+
+  const std::optional<ResizerTestPeer::ConeNeeds> reset_needs
+      = ResizerTestPeer::coneNeeds(analysis, reset);
+  const std::optional<ResizerTestPeer::ConeNeeds> q_needs
+      = ResizerTestPeer::coneNeeds(analysis, q);
+  ASSERT_TRUE(reset_needs.has_value());
+  ASSERT_TRUE(q_needs.has_value());
+  EXPECT_GT(q_needs->fanout_need, 0.0f);
+  EXPECT_FLOAT_EQ(reset_needs->fanout_need, reset_needs->need);
+}
+
 // -max_iterations ends the run in the WNS tail as well.
 TEST_F(TestResizerMt, ParallelEvalMaxIterationsEndsTheTail)
 {
