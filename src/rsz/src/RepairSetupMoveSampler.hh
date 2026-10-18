@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "RepairSetupAnalysisData.hh"
+#include "RepairSetupMoveSnapshot.hh"
 
 namespace sta {
 class ClockEdge;

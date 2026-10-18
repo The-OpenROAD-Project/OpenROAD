@@ -22,7 +22,7 @@ add_library(rsz_lib
     MoveCommitter.cc
     RepairSetupProfiler.cc
     RepairSetupMoveSampler.cc
-    RepairSetupAnalysisSnapshot.cc
+    RepairSetupMoveSnapshot.cc
     RepairSetupAnalysisReport.cc
     RepairSetupAnalysisTarget.cc
     MoveTracker.cc

@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "RepairSetupAnalysisData.hh"
+#include "RepairSetupMoveSnapshot.hh"
 
 namespace rsz {
 

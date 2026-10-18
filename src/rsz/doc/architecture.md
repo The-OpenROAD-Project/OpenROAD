@@ -835,7 +835,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 | Target collection | `RepairTargetCollector.*` |
 | Estimation | `DelayEstimator.*`, `DelayEstimatorBufferTree.cc`, `DelayEstimatorInternal.hh`, `SequentialTimingEstimator.*`, `Rebuffer.*`, `BufferedNet.*` |
 | Estimator reports | `DelayEstimatorReporter.*` |
-| Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupAnalysisSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
+| Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupMoveSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
 | Thread pool | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` |
 
 ## Future Work
