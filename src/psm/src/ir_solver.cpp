@@ -133,54 +133,10 @@ struct FixedVoltageSource
   IRSolver::Voltage voltage;
 };
 
-odb::PtrMap<odb::dbInst, IRSolver::Power> mapInstanceCurrents(
-    const odb::PtrMap<odb::dbInst, Node::NodeSet>& inst_nodes,
-    const odb::PtrMap<odb::dbInst, IRSolver::Power>& powers,
-    IRSolver::Voltage power_voltage,
-    ValueNodeMap<IRSolver::Current>& currents);
-
-void buildLinearSystem(const std::vector<Node*>& nodes,
-                       const std::vector<Connection*>& connections,
-                       const Connection::ResistanceMap& resistance,
-                       const ValueNodeMap<IRSolver::Current>& currents,
-                       bool negate_currents,
-                       std::map<Node*, std::size_t>& node_index,
-                       ConductanceMatrix& g_matrix,
-                       CurrentVector& j_vector,
-                       utl::Logger* logger);
-
-VoltageVector solveLinearSystem(const ConductanceMatrix& g_matrix,
-                                const CurrentVector& j_vector,
-                                const std::map<Node*, std::size_t>& node_index,
-                                const std::vector<FixedVoltageSource>& sources,
-                                utl::Logger* logger,
-                                IRNetwork* debug_network);
-
-VoltageVector solve(ConductanceMatrix& g_matrix,
-                    const CurrentVector& j_vector,
-                    utl::Logger* logger,
-                    const std::map<Node*, std::size_t>& node_index,
-                    IRNetwork* debug_network);
-
-void dumpVector(const Eigen::VectorXd& vector,
-                const std::string& name,
-                utl::Logger* logger);
-
-void dumpMatrix(const ConductanceMatrix& matrix,
-                const std::string& name,
-                utl::Logger* logger);
-
 }  // namespace
 
 struct IRSolver::AssemblyData
 {
-  struct CurrentLoad
-  {
-    odb::dbChipInst* chip_inst;
-    std::string terminal;
-    Current current;
-  };
-
   struct VoltageSource
   {
     odb::dbChipInst* chip_inst;
@@ -189,12 +145,11 @@ struct IRSolver::AssemblyData
     Voltage voltage;
   };
 
-  explicit AssemblyData(sta::Scene* corner) : corner(corner) {}
+  AssemblyData() = default;
 
-  sta::Scene* corner;
+  sta::Scene* corner = nullptr;
   std::map<Node*, std::size_t> node_index;
   ConductanceMatrix g_matrix;
-  std::vector<CurrentLoad> current_loads;
   std::map<Node*, Current> sta_currents;
   double total_power = 0.0;
   odb::PtrMap<odb::dbNet, Voltage> nominal_voltages;
@@ -210,14 +165,13 @@ IRSolver::IRSolver(
     utl::Logger* logger,
     const UserVoltages& user_voltages,
     const UserPowers& user_powers,
-    const PDNSim::GeneratedSourceSettings& generated_source_settings,
-    sta::Scene* corner)
+    const PDNSim::GeneratedSourceSettings& generated_source_settings)
     : net_(network->getNet()),
       logger_(logger),
       estimate_parasitics_(estimate_parasitics),
       sta_(sta),
       network_(std::move(network)),
-      assembly_(network_->isAssembly() ? std::make_unique<AssemblyData>(corner)
+      assembly_(network_->isAssembly() ? std::make_unique<AssemblyData>()
                                        : nullptr),
       gui_(nullptr),
       user_voltages_(user_voltages),
@@ -1139,16 +1093,7 @@ void IRSolver::assertResistanceMap(sta::Scene* corner) const
   }
 }
 
-Connection::ResistanceMap IRSolver::getResistanceMap(sta::Scene* corner) const
-{
-  Connection::ResistanceMap resistance;
-  for (odb::dbNet* net : network_->getNets()) {
-    const auto local
-        = getLayerResistanceMap(net, corner, estimate_parasitics_, logger_);
-    resistance.insert(local.begin(), local.end());
-  }
-  return resistance;
-}
+namespace {
 
 Connection::ResistanceMap getLayerResistanceMap(
     odb::dbNet* net,
@@ -1215,6 +1160,19 @@ Connection::ResistanceMap getLayerResistanceMap(
     }
   }
 
+  return resistance;
+}
+
+}  // namespace
+
+Connection::ResistanceMap IRSolver::getResistanceMap(sta::Scene* corner) const
+{
+  Connection::ResistanceMap resistance;
+  for (odb::dbNet* net : network_->getNets()) {
+    const auto local
+        = getLayerResistanceMap(net, corner, estimate_parasitics_, logger_);
+    resistance.insert(local.begin(), local.end());
+  }
   return resistance;
 }
 
@@ -1543,15 +1501,15 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
   return src_voltage;
 }
 
-void IRSolver::addVoltageSource(odb::dbChipInst* chip_inst,
-                                const std::string& terminal,
-                                Voltage voltage)
+void IRSolver::addAssemblyVoltageSource(odb::dbChipInst* chip_inst,
+                                        const std::string& terminal,
+                                        Voltage voltage)
 {
   assembly_->voltage_sources.push_back({chip_inst, terminal, nullptr, voltage});
   assembly_->voltage_vector.resize(0);
 }
 
-void IRSolver::addVoltageSourcesFromSourceFile(const std::string& source_file)
+void IRSolver::addAssemblyVoltageSourcesFromFile(const std::string& source_file)
 {
   const auto source_info = readSourceLocations(source_file, true, logger_);
   const auto chiplet_nets = network_->getChipletNets();
@@ -1600,63 +1558,9 @@ bool IRSolver::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
   return !sources.empty();
 }
 
-bool IRSolver::hasValidSources() const
-{
-  std::map<std::size_t, Voltage> sources;
-  return buildSourceMap(sources);
-}
-
-std::size_t IRSolver::getVoltageSourceCount() const
+std::size_t IRSolver::getAssemblyVoltageSourceCount() const
 {
   return assembly_->voltage_sources.size();
-}
-
-IRSolver::Power IRSolver::buildNodeCurrentMap(
-    sta::Scene* corner,
-    std::map<const Node*, Current>& currents) const
-{
-  const utl::DebugScopedTimer timer(
-      logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
-  // Build power map
-  odb::PtrMap<odb::dbInst, Power> instance_powers;
-  const auto inst_nodes = network_->getInstanceNodeMapping();
-  const Voltage power_voltage = getPowerNetVoltage(corner);
-  if (power_voltage == 0) {
-    logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
-  }
-  instance_powers = mapInstanceCurrents(inst_nodes,
-                                        getInstancePower(sta_, corner, logger_),
-                                        power_voltage,
-                                        currents);
-
-  for (const auto& [inst, powers] : user_powers_) {
-    auto find_inst = inst_nodes.find(inst);
-    if (find_inst == inst_nodes.end()) {
-      continue;
-    }
-
-    auto find_power = powers.find(corner);
-    if (find_power == powers.end()) {
-      find_power = powers.find(nullptr);
-    }
-
-    if (find_power == powers.end()) {
-      continue;
-    }
-
-    instance_powers[inst] = find_power->second;
-    const Current current = find_power->second / power_voltage;
-    const auto& nodes = find_inst->second;
-    for (auto* node : nodes) {
-      currents[node] += current / nodes.size();
-    }
-  }
-
-  Power total_power = 0.0;
-  for (const auto& [inst, power] : instance_powers) {
-    total_power += power;
-  }
-  return total_power;
 }
 
 namespace {
@@ -1685,20 +1589,54 @@ odb::PtrMap<odb::dbInst, IRSolver::Power> mapInstanceCurrents(
 
 }  // namespace
 
-void IRSolver::addCurrentLoad(odb::dbChipInst* chip_inst,
-                              const std::string& terminal,
-                              Current current)
+IRSolver::Power IRSolver::buildNodeCurrentMap(
+    sta::Scene* corner,
+    std::map<const Node*, Current>& currents) const
 {
-  if (!std::isfinite(current)) {
-    logger_->error(utl::PSM, 144, "Current at {} must be finite.", terminal);
+  const utl::DebugScopedTimer timer(
+      logger_, utl::PSM, "timer", 1, "Build node/current map: {}");
+  // Build power map
+  odb::PtrMap<odb::dbInst, Power> instance_powers;
+  const auto inst_nodes = network_->getInstanceNodeMapping();
+  const Voltage power_voltage = getPowerNetVoltage(corner);
+  if (power_voltage == 0) {
+    logger_->error(utl::PSM, 74, "Unable to determine voltage for power nets.");
   }
-  assembly_->current_loads.push_back({chip_inst, terminal, current});
-  assembly_->voltage_vector.resize(0);
+  instance_powers = mapInstanceCurrents(
+      inst_nodes, getInstancePower(corner), power_voltage, currents);
+
+  for (const auto& [inst, powers] : user_powers_) {
+    auto find_inst = inst_nodes.find(inst);
+    if (find_inst == inst_nodes.end()) {
+      continue;
+    }
+
+    auto power = powers.find(corner);
+    if (power == powers.end()) {
+      power = powers.find(nullptr);
+    }
+    if (power == powers.end()) {
+      continue;
+    }
+
+    instance_powers[inst] = power->second;
+    const Current current = power->second / power_voltage;
+    const auto& nodes = find_inst->second;
+    for (auto* node : nodes) {
+      currents[node] += current / nodes.size();
+    }
+  }
+
+  Power total_power = 0.0;
+  for (const auto& [inst, power] : instance_powers) {
+    total_power += power;
+  }
+  return total_power;
 }
 
-void IRSolver::addStaLoads(odb::dbNet* net,
-                           const odb::PtrMap<odb::dbInst, float>& powers,
-                           Voltage power_voltage)
+void IRSolver::addAssemblyLoads(odb::dbNet* net,
+                                const odb::PtrMap<odb::dbInst, float>& powers,
+                                Voltage power_voltage)
 {
   if (!std::isfinite(power_voltage) || power_voltage <= 0.0) {
     logger_->error(utl::PSM,
@@ -1725,63 +1663,12 @@ void IRSolver::addStaLoads(odb::dbNet* net,
     }
   }
   assembly_->nominal_voltages[net] = power_voltage;
-  if (instance_powers.empty()) {
-    logger_->error(utl::PSM,
-                   149,
-                   "No cells with OpenSTA power models are connected to {}/{}.",
-                   net->getBlock()->getName(),
-                   net->getName());
-  }
   assembly_->voltage_vector.resize(0);
 }
 
-bool IRSolver::checkCurrentVector() const
+std::size_t IRSolver::getAssemblyCurrentLoadCount() const
 {
-  constexpr double kTolerance = 1.0e-12;
-  if (static_cast<std::size_t>(assembly_->j_vector.size())
-      != assembly_->node_index.size()) {
-    return false;
-  }
-
-  CurrentVector expected = CurrentVector::Zero(assembly_->node_index.size());
-  Current expected_total = 0.0;
-  for (const auto& [node, current] : assembly_->sta_currents) {
-    if (!std::isfinite(current)) {
-      return false;
-    }
-    expected[assembly_->node_index.at(node)] += current;
-    expected_total += current;
-  }
-  for (const AssemblyData::CurrentLoad& load : assembly_->current_loads) {
-    if (!std::isfinite(load.current)) {
-      return false;
-    }
-    Node* node = network_->findTerminalNode(load.chip_inst, load.terminal);
-    if (node == nullptr) {
-      return false;
-    }
-    expected[assembly_->node_index.at(node)] += load.current;
-    expected_total += load.current;
-  }
-
-  for (Eigen::Index index = 0; index < assembly_->j_vector.size(); index++) {
-    if (!std::isfinite(assembly_->j_vector[index])
-        || std::abs(assembly_->j_vector[index] - expected[index])
-               > kTolerance) {
-      return false;
-    }
-  }
-  return std::abs(getTotalCurrent() - expected_total) <= kTolerance;
-}
-
-std::size_t IRSolver::getCurrentLoadCount() const
-{
-  return assembly_->current_loads.size() + assembly_->sta_currents.size();
-}
-
-IRSolver::Current IRSolver::getTotalCurrent() const
-{
-  return assembly_->j_vector.sum();
+  return assembly_->sta_currents.size();
 }
 
 namespace {
@@ -1875,132 +1762,111 @@ void buildLinearSystem(const std::vector<Node*>& nodes,
 
 }  // namespace
 
-void IRSolver::buildAssemblySystem()
-{
-  assembly_->voltage_vector.resize(0);
-  const Connection::ResistanceMap resistance_map
-      = getResistanceMap(assembly_->corner);
-  const std::vector<Connection*> connections = network_->getAllConnections();
-  for (Connection* connection : connections) {
-    const Connection::Resistance resistance
-        = connection->getResistance(resistance_map);
-    if (!std::isfinite(resistance) || resistance <= 0.0) {
-      logger_->error(utl::PSM,
-                     108,
-                     "A 3D power-grid connection has non-positive "
-                     "resistance {}.",
-                     resistance);
-    }
-    if (connection->getNode0() == connection->getNode1()) {
-      logger_->error(
-          utl::PSM, 109, "A 3D power-grid connection forms a node loop.");
-    }
-  }
-
-  ValueNodeMap<Current> currents(assembly_->sta_currents.begin(),
-                                 assembly_->sta_currents.end());
-  for (const AssemblyData::CurrentLoad& load : assembly_->current_loads) {
-    Node* node = network_->findTerminalNode(load.chip_inst, load.terminal);
-    if (node == nullptr) {
-      logger_->error(
-          utl::PSM,
-          114,
-          "Cannot map current load at port {} on chiplet {} into "
-          "the combined 3D network.",
-          load.terminal,
-          load.chip_inst == nullptr ? "<null>" : load.chip_inst->getName());
-    }
-    currents[node] += load.current;
-  }
-
-  const IRNetwork::Nodes network_nodes = network_->getAllNodes();
-  const std::vector<Node*> nodes(network_nodes.begin(), network_nodes.end());
-  buildLinearSystem(nodes,
-                    connections,
-                    resistance_map,
-                    currents,
-                    false,
-                    assembly_->node_index,
-                    assembly_->g_matrix,
-                    assembly_->j_vector,
-                    logger_);
-  currents_[assembly_->corner] = std::move(currents);
-}
-
-bool IRSolver::checkAssemblySystem() const
-{
-  constexpr double kTolerance = 1.0e-9;
-  if (static_cast<std::size_t>(assembly_->g_matrix.rows())
-          != assembly_->node_index.size()
-      || static_cast<std::size_t>(assembly_->g_matrix.cols())
-             != assembly_->node_index.size()) {
-    return false;
-  }
-
-  std::vector<double> row_sums(assembly_->g_matrix.rows(), 0.0);
-  for (Eigen::Index column = 0; column < assembly_->g_matrix.outerSize();
-       column++) {
-    for (ConductanceMatrix::InnerIterator value(assembly_->g_matrix, column);
-         value;
-         ++value) {
-      if (!std::isfinite(value.value())) {
-        return false;
-      }
-#ifndef NDEBUG
-      if (std::abs(value.value()
-                   - assembly_->g_matrix.coeff(value.col(), value.row()))
-          > kTolerance * std::max(1.0, std::abs(value.value()))) {
-        return false;
-      }
-#endif
-      row_sums[value.row()] += value.value();
-    }
-  }
-
-  for (std::size_t row = 0; row < row_sums.size(); row++) {
-    const double diagonal = std::abs(assembly_->g_matrix.coeff(row, row));
-    if (diagonal == 0.0
-        || std::abs(row_sums[row]) > kTolerance * std::max(1.0, diagonal)) {
-      return false;
-    }
-  }
-
-  std::map<std::pair<std::size_t, std::size_t>, Connection::Conductance>
-      interdie_conductance;
-  const Connection::ResistanceMap empty_resistance_map;
-  for (const auto& connection : network_->getInterDieConnections()) {
-    std::size_t node0 = assembly_->node_index.at(connection->getNode0());
-    std::size_t node1 = assembly_->node_index.at(connection->getNode1());
-    if (node1 < node0) {
-      std::swap(node0, node1);
-    }
-    const Connection::Resistance resistance
-        = connection->getResistance(empty_resistance_map);
-    interdie_conductance[{node0, node1}] += 1.0 / resistance;
-  }
-
-  for (const auto& [nodes, conductance] : interdie_conductance) {
-    const double matrix_value
-        = assembly_->g_matrix.coeff(nodes.first, nodes.second);
-    if (std::abs(matrix_value + conductance)
-        > kTolerance * std::max(1.0, conductance)) {
-      return false;
-    }
-  }
-
-  return !assembly_->node_index.empty() && !interdie_conductance.empty()
-         && network_->isConnected();
-}
-
-std::size_t IRSolver::getNodeCount() const
+std::size_t IRSolver::getAssemblyNodeCount() const
 {
   return assembly_->node_index.size();
 }
 
-std::size_t IRSolver::getNonZeroCount() const
+namespace {
+
+void dumpVector(const Eigen::VectorXd& vector,
+                const std::string& name,
+                utl::Logger* logger)
 {
-  return static_cast<std::size_t>(assembly_->g_matrix.nonZeros());
+  const std::string report_file = fmt::format("psm_{}.txt", name);
+  std::ofstream report(report_file);
+  if (!report) {
+    logger->report("Failed to open {} for {}", report_file, name);
+    return;
+  }
+  for (std::size_t i = 0; i < vector.size(); i++) {
+    report << fmt::format("{}[{}] = {:.15e}", name, i, vector[i]) << '\n';
+  }
 }
+
+void dumpMatrix(const ConductanceMatrix& matrix,
+                const std::string& name,
+                utl::Logger* logger)
+{
+  const std::string report_file = fmt::format("psm_{}.txt", name);
+  std::ofstream report(report_file);
+  if (!report) {
+    logger->report("Failed to open {} for {}", report_file, name);
+    return;
+  }
+  for (int k = 0; k < matrix.outerSize(); k++) {
+    for (Eigen::SparseMatrix<Connection::Conductance>::InnerIterator it(matrix,
+                                                                        k);
+         it;
+         ++it) {
+      report << fmt::format(
+          "{}[{}, {}] = {:.15e}", name, it.col(), it.row(), it.value())
+             << '\n';
+    }
+  }
+}
+
+}  // namespace
+
+namespace {
+
+VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+                    const Eigen::VectorXd& j_vector,
+                    utl::Logger* logger,
+                    const std::map<Node*, std::size_t>& node_index,
+                    IRNetwork* debug_network)
+{
+  Eigen::SparseLU<Eigen::SparseMatrix<Connection::Conductance>> eigen_solver;
+
+  debugPrint(logger, utl::PSM, "solve", 1, "Factorizing the G matrix");
+  eigen_solver.compute(g_matrix);
+  if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
+    // decomposition failed
+    if (logger->debugCheck(utl::PSM, "dump", 1)) {
+      if (debug_network != nullptr) {
+        debug_network->dumpNodes(node_index);
+      }
+      dumpMatrix(g_matrix, "G", logger);
+      dumpVector(j_vector, "J", logger);
+    }
+    logger->error(
+        utl::PSM,
+        10,
+        "LU factorization of the G Matrix failed. SparseLU solver message: {}.",
+        eigen_solver.lastErrorMessage());
+  }
+
+  debugPrint(logger, utl::PSM, "solve", 1, "Solving system of equations GV=J");
+  const Eigen::VectorXd v_vector = eigen_solver.solve(j_vector);
+  if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
+    // solving failed
+    if (logger->debugCheck(utl::PSM, "dump", 1)) {
+      if (debug_network != nullptr) {
+        debug_network->dumpNodes(node_index);
+      }
+      dumpMatrix(g_matrix, "G", logger);
+      dumpVector(j_vector, "J", logger);
+    }
+    logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
+  }
+  debugPrint(logger,
+             utl::PSM,
+             "solve",
+             1,
+             "Solving system of equations GV=J complete");
+
+  if (logger->debugCheck(utl::PSM, "dump", 2)) {
+    if (debug_network != nullptr) {
+      debug_network->dumpNodes(node_index);
+    }
+    dumpMatrix(g_matrix, "G", logger);
+    dumpVector(j_vector, "J", logger);
+    dumpVector(v_vector, "V", logger);
+  }
+  return v_vector;
+}
+
+}  // namespace
 
 namespace {
 
@@ -2069,6 +1935,11 @@ void IRSolver::solve(sta::Scene* corner,
                      const std::string& source_file)
 {
   const utl::DebugScopedTimer timer(logger_, utl::PSM, "timer", 1, "Solve: {}");
+
+  if (network_->isAssembly()) {
+    solveAssembly(corner, source_file);
+    return;
+  }
 
   if (network_->isFloorplanningOnly()) {
     network_->setFloorplanning(false);
@@ -2185,184 +2056,6 @@ void IRSolver::solve(sta::Scene* corner,
   solution_power_[corner] = total_power;
 }
 
-bool IRSolver::solveAssembly()
-{
-  assembly_->voltage_vector.resize(0);
-  voltages_.erase(assembly_->corner);
-  solution_voltages_.erase(assembly_->corner);
-  solution_power_.erase(assembly_->corner);
-  if (!checkAssemblySystem() || !checkCurrentVector()) {
-    return false;
-  }
-
-  std::map<std::size_t, Voltage> sources;
-  if (!buildSourceMap(sources)) {
-    return false;
-  }
-
-  std::vector<FixedVoltageSource> fixed_sources;
-  fixed_sources.reserve(sources.size());
-  for (const auto& [node_index, voltage] : sources) {
-    fixed_sources.push_back({node_index, voltage});
-  }
-  assembly_->voltage_vector = solveLinearSystem(assembly_->g_matrix,
-                                                assembly_->j_vector,
-                                                assembly_->node_index,
-                                                fixed_sources,
-                                                logger_,
-                                                network_.get());
-  if (!checkAssemblySolution()) {
-    assembly_->voltage_vector.resize(0);
-    return false;
-  }
-  for (const auto& [node_index, voltage] : sources) {
-    assembly_->voltage_vector[node_index] = voltage;
-  }
-
-  auto& voltages = voltages_[assembly_->corner];
-  for (const auto& [node, index] : assembly_->node_index) {
-    voltages[node] = assembly_->voltage_vector[index];
-  }
-  solution_voltages_[assembly_->corner] = sources.begin()->second;
-  solution_power_[assembly_->corner] = assembly_->total_power;
-  return true;
-}
-
-bool IRSolver::checkAssemblySolution() const
-{
-  constexpr double kTolerance = 1.0e-8;
-  if (!hasAssemblySolution()) {
-    return false;
-  }
-
-  std::map<std::size_t, Voltage> sources;
-  if (!buildSourceMap(sources)) {
-    return false;
-  }
-  for (Eigen::Index index = 0; index < assembly_->voltage_vector.size();
-       index++) {
-    if (!std::isfinite(assembly_->voltage_vector[index])) {
-      return false;
-    }
-  }
-  for (const auto& [source_index, source_voltage] : sources) {
-    if (std::abs(assembly_->voltage_vector[source_index] - source_voltage)
-        > kTolerance) {
-      return false;
-    }
-  }
-
-  const CurrentVector calculated_current
-      = assembly_->g_matrix * assembly_->voltage_vector;
-  for (Eigen::Index index = 0; index < calculated_current.size(); index++) {
-    if (sources.contains(index)) {
-      continue;
-    }
-    const double scale = std::max({1.0,
-                                   std::abs(calculated_current[index]),
-                                   std::abs(assembly_->j_vector[index])});
-    if (std::abs(calculated_current[index] - assembly_->j_vector[index])
-        > kTolerance * scale) {
-      return false;
-    }
-  }
-  return true;
-}
-
-namespace {
-
-VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-                    const Eigen::VectorXd& j_vector,
-                    utl::Logger* logger,
-                    const std::map<Node*, std::size_t>& node_index,
-                    IRNetwork* debug_network)
-{
-  Eigen::SparseLU<Eigen::SparseMatrix<Connection::Conductance>> eigen_solver;
-
-  debugPrint(logger, utl::PSM, "solve", 1, "Factorizing the G matrix");
-  eigen_solver.compute(g_matrix);
-  if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
-    // decomposition failed
-    if (logger->debugCheck(utl::PSM, "dump", 1)) {
-      if (debug_network != nullptr) {
-        debug_network->dumpNodes(node_index);
-      }
-      dumpMatrix(g_matrix, "G", logger);
-      dumpVector(j_vector, "J", logger);
-    }
-    logger->error(
-        utl::PSM,
-        10,
-        "LU factorization of the G Matrix failed. SparseLU solver message: {}.",
-        eigen_solver.lastErrorMessage());
-  }
-
-  debugPrint(logger, utl::PSM, "solve", 1, "Solving system of equations GV=J");
-  const Eigen::VectorXd v_vector = eigen_solver.solve(j_vector);
-  if (eigen_solver.info() != Eigen::ComputationInfo::Success) {
-    // solving failed
-    if (logger->debugCheck(utl::PSM, "dump", 1)) {
-      if (debug_network != nullptr) {
-        debug_network->dumpNodes(node_index);
-      }
-      dumpMatrix(g_matrix, "G", logger);
-      dumpVector(j_vector, "J", logger);
-    }
-    logger->error(utl::PSM, 12, "Solving V = inv(G)*J failed.");
-  }
-  debugPrint(logger,
-             utl::PSM,
-             "solve",
-             1,
-             "Solving system of equations GV=J complete");
-
-  if (logger->debugCheck(utl::PSM, "dump", 2)) {
-    if (debug_network != nullptr) {
-      debug_network->dumpNodes(node_index);
-    }
-    dumpMatrix(g_matrix, "G", logger);
-    dumpVector(j_vector, "J", logger);
-    dumpVector(v_vector, "V", logger);
-  }
-  return v_vector;
-}
-
-}  // namespace
-
-odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
-                                                 sta::Scene* corner,
-                                                 utl::Logger* logger)
-{
-  const utl::DebugScopedTimer timer(
-      logger, utl::PSM, "timer", 1, "Power calculation: {}");
-
-  odb::PtrMap<odb::dbInst, IRSolver::Power> inst_power;
-
-  sta::dbNetwork* network = sta->getDbNetwork();
-  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
-      network->leafInstanceIterator());
-  while (inst_iter->hasNext()) {
-    sta::Instance* inst = inst_iter->next();
-    odb::dbInst* db_inst = network->staToDb(inst);
-
-    sta::LibertyCell* cell = network->libertyCell(inst);
-    if (cell != nullptr) {
-      const sta::PowerResult power = sta->power(inst, corner);
-
-      inst_power[db_inst] = power.total();
-      debugPrint(logger,
-                 utl::PSM,
-                 "power",
-                 1,
-                 "Power of instance {} is {}",
-                 db_inst->getName(),
-                 power.total());
-    }
-  }
-
-  return inst_power;
-}
-
 namespace {
 
 std::optional<double> getSDCVoltage(sta::dbSta* sta,
@@ -2451,8 +2144,6 @@ odb::dbNet* findPowerNet(odb::dbNet* query_net,
   return nullptr;
 }
 
-}  // namespace
-
 double getNominalVoltage(odb::dbNet* query_net,
                          sta::Scene* corner,
                          sta::dbSta* sta,
@@ -2485,6 +2176,136 @@ double getNominalVoltage(odb::dbNet* query_net,
   return 0.0;
 }
 
+}  // namespace
+
+void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
+{
+  assembly_->corner = corner;
+  assembly_->node_index.clear();
+  assembly_->g_matrix.resize(0, 0);
+  assembly_->j_vector.resize(0);
+  assembly_->voltage_vector.resize(0);
+  assembly_->sta_currents.clear();
+  assembly_->nominal_voltages.clear();
+  assembly_->total_power = 0.0;
+  voltages_.erase(corner);
+  currents_.erase(corner);
+  solution_voltages_.erase(corner);
+  solution_power_.erase(corner);
+
+  if (!source_file.empty()) {
+    addAssemblyVoltageSourcesFromFile(source_file);
+  }
+
+  const auto powers = getInstancePower(corner, true);
+  for (auto* local_net : network_->getNets()) {
+    const Voltage voltage
+        = getNominalVoltage(local_net, corner, sta_, user_voltages_, logger_);
+    addAssemblyLoads(local_net, powers, voltage);
+  }
+
+  const Connection::ResistanceMap resistance_map = getResistanceMap(corner);
+  const std::vector<Connection*> connections = network_->getAllConnections();
+
+  ValueNodeMap<Current> currents(assembly_->sta_currents.begin(),
+                                 assembly_->sta_currents.end());
+  const IRNetwork::Nodes network_nodes = network_->getAllNodes();
+  const std::vector<Node*> nodes(network_nodes.begin(), network_nodes.end());
+  buildLinearSystem(nodes,
+                    connections,
+                    resistance_map,
+                    currents,
+                    false,
+                    assembly_->node_index,
+                    assembly_->g_matrix,
+                    assembly_->j_vector,
+                    logger_);
+  currents_[corner] = std::move(currents);
+
+  if (getAssemblyVoltageSourceCount() == 0) {
+    logger_->error(utl::PSM,
+                   138,
+                   "No voltage source is defined for 3D net {}.",
+                   network_->getChipNet()->getName());
+  }
+
+  std::map<std::size_t, Voltage> sources;
+  if (!buildSourceMap(sources)) {
+    logger_->error(
+        utl::PSM,
+        139,
+        "The 3D grid for {} requires valid sources with identical voltages.",
+        network_->getChipNet()->getName());
+  }
+  std::vector<FixedVoltageSource> fixed_sources;
+  fixed_sources.reserve(sources.size());
+  for (const auto& [node_index, voltage] : sources) {
+    fixed_sources.push_back({node_index, voltage});
+  }
+  assembly_->voltage_vector = solveLinearSystem(assembly_->g_matrix,
+                                                assembly_->j_vector,
+                                                assembly_->node_index,
+                                                fixed_sources,
+                                                logger_,
+                                                network_.get());
+  for (const auto& [node_index, voltage] : sources) {
+    assembly_->voltage_vector[node_index] = voltage;
+  }
+
+  auto& voltages = voltages_[corner];
+  for (const auto& [node, index] : assembly_->node_index) {
+    voltages[node] = assembly_->voltage_vector[index];
+  }
+  solution_voltages_[corner] = sources.begin()->second;
+  solution_power_[corner] = assembly_->total_power;
+}
+
+odb::PtrMap<odb::dbInst, IRSolver::Power> IRSolver::getInstancePower(
+    sta::Scene* corner,
+    bool apply_user_powers) const
+{
+  const utl::DebugScopedTimer timer(
+      logger_, utl::PSM, "timer", 1, "Power calculation: {}");
+
+  odb::PtrMap<odb::dbInst, Power> inst_power;
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
+      network->leafInstanceIterator());
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    odb::dbInst* db_inst = network->staToDb(inst);
+
+    sta::LibertyCell* cell = network->libertyCell(inst);
+    if (cell != nullptr) {
+      const sta::PowerResult power = sta_->power(inst, corner);
+
+      inst_power[db_inst] = power.total();
+      debugPrint(logger_,
+                 utl::PSM,
+                 "power",
+                 1,
+                 "Power of instance {} is {}",
+                 db_inst->getName(),
+                 power.total());
+    }
+  }
+
+  if (apply_user_powers) {
+    for (const auto& [inst, powers] : user_powers_) {
+      auto power = powers.find(corner);
+      if (power == powers.end()) {
+        power = powers.find(nullptr);
+      }
+      if (power != powers.end()) {
+        inst_power[inst] = power->second;
+      }
+    }
+  }
+
+  return inst_power;
+}
+
 std::optional<IRSolver::Voltage> IRSolver::getSolutionVoltage(
     sta::Scene* corner) const
 {
@@ -2513,20 +2334,6 @@ std::optional<IRSolver::Voltage> IRSolver::getVoltage(sta::Scene* corner,
   }
 
   return find_n->second;
-}
-
-std::optional<IRSolver::Voltage> IRSolver::getVoltage(
-    odb::dbChipInst* chip_inst,
-    const std::string& terminal) const
-{
-  if (!hasAssemblySolution()) {
-    return std::nullopt;
-  }
-  Node* node = network_->findTerminalNode(chip_inst, terminal);
-  if (node == nullptr) {
-    return std::nullopt;
-  }
-  return getVoltage(assembly_->corner, node);
 }
 
 odb::dbNet* IRSolver::getPowerNet() const
@@ -2566,15 +2373,7 @@ bool IRSolver::hasSolution(sta::Scene* corner) const
   return false;
 }
 
-bool IRSolver::hasAssemblySolution() const
-{
-  return getNodeCount() > 0
-         && assembly_->voltage_vector.size()
-                == static_cast<Eigen::Index>(getNodeCount())
-         && network_->hasSameBonds();
-}
-
-const Eigen::VectorXd& IRSolver::getVoltageVector() const
+const Eigen::VectorXd& IRSolver::getAssemblyVoltageVector() const
 {
   return assembly_->voltage_vector;
 }
@@ -2729,7 +2528,17 @@ void IRSolver::report(sta::Scene* corner) const
 {
   const auto results = getSolution(corner);
 
-  report(results, getAnalysisNetName(), corner, logger_);
+  logger_->report("########## IR report #################");
+  logger_->report("Net              : {}", getAnalysisNetName());
+  logger_->report("Corner           : {}", corner->name());
+  logger_->report("Total power      : {:3.2e} W", results.total_power);
+  logger_->report("Supply voltage   : {:3.2e} V", results.net_voltage);
+  logger_->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
+  logger_->report("Average voltage  : {:3.2e} V", results.avg_voltage);
+  logger_->report("Average IR drop  : {:3.2e} V", results.avg_ir_drop);
+  logger_->report("Worstcase IR drop: {:3.2e} V", results.worst_ir_drop);
+  logger_->report("Percentage drop  : {:3.2f} %", results.max_percent);
+  logger_->report("######################################");
 
   if (!network_->isAssembly()) {
     logger_->metric(getMetricKey("design_powergrid__voltage__worst", corner),
@@ -2743,30 +2552,17 @@ void IRSolver::report(sta::Scene* corner) const
   }
 }
 
-// Shared function used by both 2D and 3D for reporting IR results.
-void IRSolver::report(const Results& results,
-                      const std::string& net_name,
-                      sta::Scene* corner,
-                      utl::Logger* logger)
-{
-  logger->report("########## IR report #################");
-  logger->report("Net              : {}", net_name);
-  logger->report("Corner           : {}", corner->name());
-  logger->report("Total power      : {:3.2e} W", results.total_power);
-  logger->report("Supply voltage   : {:3.2e} V", results.net_voltage);
-  logger->report("Worstcase voltage: {:3.2e} V", results.worst_voltage);
-  logger->report("Average voltage  : {:3.2e} V", results.avg_voltage);
-  logger->report("Average IR drop  : {:3.2e} V", results.avg_ir_drop);
-  logger->report("Worstcase IR drop: {:3.2e} V", results.worst_ir_drop);
-  logger->report("Percentage drop  : {:3.2f} %", results.max_percent);
-  logger->report("######################################");
-}
-
 void IRSolver::reportEM(sta::Scene* corner) const
 {
   const auto results = getEMSolution(corner);
 
-  reportEM(results, getAnalysisNetName(), corner, logger_);
+  logger_->report("########## EM analysis ###############");
+  logger_->report("Net                : {}", getAnalysisNetName());
+  logger_->report("Corner             : {}", corner->name());
+  logger_->report("Maximum current    : {:3.2e} A", results.max_current);
+  logger_->report("Average current    : {:3.2e} A", results.avg_current);
+  logger_->report("Number of resistors: {}", results.resistors);
+  logger_->report("######################################");
 
   if (!network_->isAssembly()) {
     logger_->metric(getMetricKey("design_powergrid__current__max", corner),
@@ -2774,21 +2570,6 @@ void IRSolver::reportEM(sta::Scene* corner) const
     logger_->metric(getMetricKey("design_powergrid__current__average", corner),
                     results.avg_current);
   }
-}
-
-// Shared function used by both 2D and 3D for reporting EM results.
-void IRSolver::reportEM(const EMResults& results,
-                        const std::string& net_name,
-                        sta::Scene* corner,
-                        utl::Logger* logger)
-{
-  logger->report("########## EM analysis ###############");
-  logger->report("Net                : {}", net_name);
-  logger->report("Corner             : {}", corner->name());
-  logger->report("Maximum current    : {:3.2e} A", results.max_current);
-  logger->report("Average current    : {:3.2e} A", results.avg_current);
-  logger->report("Number of resistors: {}", results.resistors);
-  logger->report("######################################");
 }
 
 void IRSolver::writeErrorFile(const std::string& error_file) const
@@ -2823,6 +2604,8 @@ void IRSolver::writeErrorFile(std::ofstream& report) const
   }
 }
 
+namespace {
+
 void writeVoltageHeader(std::ostream& report)
 {
   report << "Instance,Terminal,Layer,X location,Y location,Voltage\n";
@@ -2831,7 +2614,7 @@ void writeVoltageHeader(std::ostream& report)
 void writeVoltageRow(std::ostream& report,
                      const ITermNode* node,
                      double voltage,
-                     const std::string& prefix)
+                     const std::string& prefix = "")
 {
   auto* iterm = node->getITerm();
   const double dbus = iterm->getInst()->getBlock()->getDbUnitsPerMicron();
@@ -2844,6 +2627,8 @@ void writeVoltageRow(std::ostream& report,
                         pt.getY() / dbus,
                         voltage);
 }
+
+}  // namespace
 
 void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
                                         sta::Scene* corner) const
@@ -3022,47 +2807,6 @@ IRSolver::generateCurrentMap(sta::Scene* corner) const
   }
   return currents;
 }
-
-namespace {
-
-void dumpVector(const Eigen::VectorXd& vector,
-                const std::string& name,
-                utl::Logger* logger)
-{
-  const std::string report_file = fmt::format("psm_{}.txt", name);
-  std::ofstream report(report_file);
-  if (!report) {
-    logger->report("Failed to open {} for {}", report_file, name);
-    return;
-  }
-  for (std::size_t i = 0; i < vector.size(); i++) {
-    report << fmt::format("{}[{}] = {:.15e}", name, i, vector[i]) << '\n';
-  }
-}
-
-void dumpMatrix(const ConductanceMatrix& matrix,
-                const std::string& name,
-                utl::Logger* logger)
-{
-  const std::string report_file = fmt::format("psm_{}.txt", name);
-  std::ofstream report(report_file);
-  if (!report) {
-    logger->report("Failed to open {} for {}", report_file, name);
-    return;
-  }
-  for (int k = 0; k < matrix.outerSize(); k++) {
-    for (Eigen::SparseMatrix<Connection::Conductance>::InnerIterator it(matrix,
-                                                                        k);
-         it;
-         ++it) {
-      report << fmt::format(
-          "{}[{}, {}] = {:.15e}", name, it.col(), it.row(), it.value())
-             << '\n';
-    }
-  }
-}
-
-}  // namespace
 
 void IRSolver::dumpConductance(
     const Connection::ConnectionMap<Connection::Conductance>& cond,

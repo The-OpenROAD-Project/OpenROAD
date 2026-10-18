@@ -34,14 +34,6 @@ The following 3D extensions are planned and are not included yet:
 - SPICE export of the connected chiplet network through `write_pg_spice`.
 - Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
 
-For 3D analysis, first set the assembly rules file:
-
-```tcl
-set_extraction_rules_file -assembly assembly.rules
-```
-
-PSM applies this interchip resistance to every bump pair between the chiplets.
-
 ```tcl
 analyze_power_grid
     -net net_name
@@ -135,6 +127,20 @@ set_pdnsim_net_voltage
 | `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
 | `-chiplet` | Required for 3D: placed chiplet name from the `.3dbx` whose source voltage is being set. |
 | `-port` | 3D chiplet boundary port receiving the external supply. Requires `-voltage`. |
+
+### Set PSM Inter-chip Resistance
+
+Set the resistance value used for inter-chip bump pair.
+
+```tcl
+set_psm_interchip_resistance -resistance resistance
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-resistance` | Resistance in ohms for each aligned inter-chip bump pair. It must be positive. |
 
 ### Set PDNSim Instance power
 

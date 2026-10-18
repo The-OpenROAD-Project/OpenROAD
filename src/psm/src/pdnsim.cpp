@@ -24,7 +24,6 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
-#include "rcx/interChipModel.h"
 #include "shape.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -35,60 +34,6 @@ using odb::dbBlock;
 using odb::dbSigType;
 
 namespace psm {
-
-// ODB's block observer can own only one block. Keep a separate observer for
-// each chiplet so editing Chip A cannot leave a solution cached for Chip B.
-class PDNSim::BlockObserver3D : public odb::dbBlockCallBackObj
-{
- public:
-  BlockObserver3D(PDNSim* owner, odb::dbBlock* block)
-      : owner_(owner), block_(block)
-  {
-    addOwner(block);
-  }
-
-  bool observes(odb::dbBlock* block) const
-  {
-    return hasOwner() && block_ == block;
-  }
-
-  void inDbPostMoveInst(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstDestroy(odb::dbInst*) override;
-  void inDbInstPlacementStatusBefore(odb::dbInst*,
-                                     const odb::dbPlacementStatus&) override;
-  void inDbInstSwapMasterBefore(odb::dbInst*, odb::dbMaster*) override;
-  void inDbITermPreDisconnect(odb::dbITerm*) override;
-  void inDbITermPostConnect(odb::dbITerm*) override;
-  void inDbNetDestroy(odb::dbNet*) override;
-  void inDbBTermPostConnect(odb::dbBTerm*) override;
-  void inDbBTermPostDisConnect(odb::dbBTerm*, odb::dbNet*) override;
-  void inDbBPinCreate(odb::dbBPin*) override;
-  void inDbBPinAddBox(odb::dbBox*) override;
-  void inDbBPinRemoveBox(odb::dbBox*) override;
-  void inDbBPinDestroy(odb::dbBPin*) override;
-  void inDbSWireAddSBox(odb::dbSBox*) override;
-  void inDbSWireRemoveSBox(odb::dbSBox*) override;
-  void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
-  void inDbFillCreate(odb::dbFill*) override;
-
- private:
-  PDNSim* owner_;
-  odb::dbBlock* block_;
-};
-
-void PDNSim::observe3DBlock(odb::dbBlock* block)
-{
-  std::erase_if(block_observers_3d_,
-                [](const auto& observer) { return !observer->hasOwner(); });
-  const auto found = std::ranges::find_if(
-      block_observers_3d_,
-      [block](const auto& observer) { return observer->observes(block); });
-  if (found == block_observers_3d_.end()) {
-    block_observers_3d_.push_back(
-        std::make_unique<BlockObserver3D>(this, block));
-  }
-}
 
 PDNSim::PDNSim(utl::Logger* logger,
                odb::dbDatabase* db,
@@ -109,11 +54,14 @@ PDNSim::PDNSim(utl::Logger* logger,
 
 PDNSim::~PDNSim() = default;
 
-void PDNSim::setAssemblyRulesFile(const std::string& rules_file)
+void PDNSim::setInterchipResistance(double resistance)
 {
-  assembly_bond_resistance_
-      = rcx::parseInterChipRules(rules_file, logger_).resistance;
-  solvers_3d_.clear();
+  if (!std::isfinite(resistance) || resistance <= 0.0) {
+    logger_->error(
+        utl::PSM, 171, "Inter-chip resistance must be positive and finite.");
+  }
+  interchip_resistance_ = resistance;
+  clearSolvers();
 }
 
 void PDNSim::setDebugGui(bool enable)
@@ -155,30 +103,58 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               const std::string& error_file,
                               const std::string& voltage_source_file)
 {
-  if (!checkConnectivity(net, false, error_file, false)) {
+  if (!sta::dbNetwork::is3DicTopChip(db_->getChip())) {
+    if (!checkConnectivity(net, false, error_file, false)) {
+      return;
+    }
+
+    last_net_ = net;
+    last_corner_ = corner;
+    auto* solver = getIRSolver(net, false);
+    if (!use_prev_solution || !solver->hasSolution(corner)) {
+      solver->solve(corner, source_type, voltage_source_file);
+    } else {
+      logger_->info(utl::PSM, 11, "Reusing previous solution");
+    }
+    solver->report(corner);
+
+    if (heatmap_source_) {
+      heatmap_source_->invalidateInstances();
+    }
+
+    if (enable_em) {
+      solver->reportEM(corner);
+      solver->writeEMFile(em_file, corner);
+    }
+
+    solver->writeInstanceVoltageFile(voltage_file, corner);
     return;
   }
 
-  last_net_ = net;
-  last_corner_ = corner;
-  auto* solver = getIRSolver(net, false);
-  if (!use_prev_solution || !solver->hasSolution(corner)) {
-    solver->solve(corner, source_type, voltage_source_file);
-  } else {
-    logger_->info(utl::PSM, 11, "Reusing previous solution");
-  }
+  auto* chip_net = findChipNet(net);
+
+  auto solver = makeAssemblySolver(chip_net, corner);
+  checkAssemblyConnectivity(*solver->getNetwork(), false, false, error_file);
+  solver->solve(corner, source_type, voltage_source_file);
+  const auto& voltages = solver->getAssemblyVoltageVector();
+  logger_->info(
+      utl::PSM,
+      129,
+      "Solved combined 3D power grid {}: {} nodes, {} current loads, {} "
+      "fixed-voltage sources, and voltage range {:.6g} to {:.6g} V.",
+      chip_net->getName(),
+      solver->getAssemblyNodeCount(),
+      solver->getAssemblyCurrentLoadCount(),
+      solver->getAssemblyVoltageSourceCount(),
+      voltages.minCoeff(),
+      voltages.maxCoeff());
   solver->report(corner);
-
-  if (heatmap_source_) {
-    heatmap_source_->invalidateInstances();
-  }
-
   if (enable_em) {
     solver->reportEM(corner);
-    solver->writeEMFile(em_file, corner);
   }
-
-  solver->writeInstanceVoltageFile(voltage_file, corner);
+  if (!voltage_file.empty()) {
+    solver->writeInstanceVoltageFile(voltage_file, corner);
+  }
 }
 
 bool PDNSim::checkConnectivity(odb::dbNet* net,
@@ -186,6 +162,23 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
                                const std::string& error_file,
                                bool require_bterm)
 {
+  if (sta::dbNetwork::is3DicTopChip(db_->getChip())) {
+    auto* chip_net = findChipNet(net);
+    IRNetwork network(chip_net, logger_, floorplanning, interchip_resistance_);
+    checkAssemblyConnectivity(
+        network, floorplanning, require_bterm, error_file);
+    logger_->info(utl::PSM,
+                  104,
+                  "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
+                  "connections ({} inter-die).",
+                  chip_net->getName(),
+                  network.getChipletNetworkCount(),
+                  network.getNodeCount(),
+                  network.getConnectionCount(),
+                  network.getInterDieConnectionCount());
+    return true;
+  }
+
   auto* solver = getIRSolver(net, floorplanning);
   const bool check = solver->check(require_bterm, !floorplanning);
   solver->writeErrorFile(error_file);
@@ -228,9 +221,28 @@ odb::dbChipNet* PDNSim::findChipNet(const std::string& chip_net_name) const
   return chip_net;
 }
 
-odb::dbChipInst* PDNSim::find3DChip(odb::dbChipNet* chip_net,
-                                    const std::string& chip_name,
-                                    const std::string& terminal) const
+odb::dbChipNet* PDNSim::findChipNet(odb::dbNet* local_net) const
+{
+  for (auto* candidate : db_->getChip()->getChipNets()) {
+    for (uint32_t index = 0; index < candidate->getNumBumpInsts(); ++index) {
+      std::vector<odb::dbChipInst*> path;
+      auto* bump = candidate->getBumpInst(index, path);
+      if (bump != nullptr && bump->getChipBump() != nullptr
+          && bump->getChipBump()->getNet() == local_net) {
+        return candidate;
+      }
+    }
+  }
+  logger_->error(utl::PSM,
+                 105,
+                 "Cannot find an assembly net containing local net {}.",
+                 local_net->getName());
+  return nullptr;
+}
+
+odb::dbChipInst* PDNSim::findChiplet(odb::dbChipNet* chip_net,
+                                     const std::string& chip_name,
+                                     const std::string& terminal) const
 {
   auto* chip = db_->getChip()->findChipInst(chip_name.c_str());
   if (chip == nullptr || chip->getMasterChip() == nullptr
@@ -273,83 +285,45 @@ odb::dbChipInst* PDNSim::find3DChip(odb::dbChipNet* chip_net,
                  chip_name,
                  terminal,
                  chip_net->getName());
+  return nullptr;
 }
 
-std::unique_ptr<IRSolver> PDNSim::make3DSolver(odb::dbChipNet* net,
-                                               sta::Scene* corner,
-                                               bool use_sta)
+std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
+                                                     sta::Scene* corner)
 {
-  auto network = std::make_unique<IRNetwork>(
-      net, logger_, false, assembly_bond_resistance_);
+  auto network
+      = std::make_unique<IRNetwork>(net, logger_, false, interchip_resistance_);
   auto solver = std::make_unique<IRSolver>(std::move(network),
                                            sta_,
                                            estimate_parasitics_,
                                            logger_,
                                            user_voltages_,
                                            user_powers_,
-                                           generated_source_settings_,
-                                           corner);
-  const auto loads = user_currents_3d_.find(net->getName());
-  if (use_sta && loads != user_currents_3d_.end() && !loads->second.empty()) {
-    logger_->error(utl::PSM,
-                   150,
-                   "Explicit test currents are set on {}. Clear the test setup "
-                   "before analyzing with OpenSTA.",
-                   net->getName());
-  }
-  if (use_sta
-      && (!sta_->getDbNetwork()->has3DicChip()
-          || sta_->getDbNetwork()->topChip() != db_->getChip())) {
+                                           generated_source_settings_);
+  if (!sta_->getDbNetwork()->has3DicChip()
+      || sta_->getDbNetwork()->topChip() != db_->getChip()) {
     logger_->error(utl::PSM,
                    151,
                    "OpenSTA has no timing network for the loaded 3D assembly.");
   }
-  if (loads != user_currents_3d_.end()) {
-    for (const auto& load : loads->second) {
-      auto* chip = find3DChip(net, load.chip_name, load.terminal);
-      solver->addCurrentLoad(chip, load.terminal, load.current);
-    }
-  }
-  const auto sources = user_voltage_sources_3d_.find(net->getName());
-  if (sources != user_voltage_sources_3d_.end()) {
+  const auto sources = assembly_voltage_sources_.find(net->getName());
+  if (sources != assembly_voltage_sources_.end()) {
     for (const auto& source : sources->second) {
       if (source.corner != corner) {
         continue;
       }
-      auto* chip = find3DChip(net, source.chip_name, source.terminal);
-      solver->addVoltageSource(chip, source.terminal, source.voltage);
+      auto* chip = findChiplet(net, source.chip_name, source.terminal);
+      solver->addAssemblyVoltageSource(chip, source.terminal, source.voltage);
     }
   }
-  if (use_sta) {
-    auto powers = getInstancePower(sta_, corner, logger_);
-    // Apply saved power only in the 3D path. Keep legacy 2D behavior unchanged.
-    for (const auto& [inst, overrides] : user_powers_) {
-      auto power = overrides.find(corner);
-      if (power == overrides.end()) {
-        power = overrides.find(nullptr);
-      }
-      if (power != overrides.end()) {
-        powers[inst] = power->second;
-      }
-    }
-    for (auto* local_net : solver->getNetwork()->getNets()) {
-      // Read the shared voltage settings without building another network.
-      const double voltage
-          = getNominalVoltage(local_net, corner, sta_, user_voltages_, logger_);
-      solver->addStaLoads(local_net, powers, voltage);
-    }
-  }
-  solver->buildAssemblySystem();
-  for (auto* local_net : solver->getNetwork()->getNets()) {
-    observe3DBlock(local_net->getBlock());
-  }
+
   return solver;
 }
 
-void PDNSim::check3DConnectivity(IRNetwork& network,
-                                 bool floorplanning,
-                                 bool require_bterm,
-                                 const std::string& error_file)
+void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
+                                       bool floorplanning,
+                                       bool require_bterm,
+                                       const std::string& error_file)
 {
   std::ofstream report;
   if (!error_file.empty()) {
@@ -431,89 +405,6 @@ void PDNSim::check3DConnectivity(IRNetwork& network,
   }
 }
 
-bool PDNSim::check3DPowerGrid(const std::string& chip_net_name,
-                              bool floorplanning,
-                              const std::string& error_file,
-                              bool require_bterm)
-{
-  IRNetwork network(findChipNet(chip_net_name),
-                    logger_,
-                    floorplanning,
-                    assembly_bond_resistance_);
-  check3DConnectivity(network, floorplanning, require_bterm, error_file);
-  logger_->info(utl::PSM,
-                104,
-                "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
-                "connections ({} inter-die).",
-                chip_net_name,
-                network.getChipletNetworkCount(),
-                network.getNodeCount(),
-                network.getConnectionCount(),
-                network.getInterDieConnectionCount());
-  return true;
-}
-
-bool PDNSim::check3DGMatrix(const std::string& chip_net_name)
-{
-  // Matrix-only checks do not require an OpenSTA power calculation.
-  auto solver
-      = make3DSolver(findChipNet(chip_net_name), sta_->cmdScene(), false);
-  if (!solver->checkAssemblySystem()) {
-    logger_->error(
-        utl::PSM,
-        110,
-        "The combined 3D G matrix for {} is invalid or disconnected.",
-        chip_net_name);
-  }
-  logger_->info(utl::PSM,
-                111,
-                "Built combined 3D G matrix {}: {} nodes, {} nonzero entries, "
-                "and {} inter-die connections.",
-                chip_net_name,
-                solver->getNodeCount(),
-                solver->getNonZeroCount(),
-                solver->getNetwork()->getInterDieConnectionCount());
-  return true;
-}
-
-void PDNSim::add3DPDNCurrent(const std::string& chip_net_name,
-                             const std::string& chip_name,
-                             const std::string& port_name,
-                             double current)
-{
-  auto* net = findChipNet(chip_net_name);
-  if (!std::isfinite(current)) {
-    logger_->error(utl::PSM,
-                   115,
-                   "Current at {}/{} must be finite.",
-                   chip_name,
-                   port_name);
-  }
-  find3DChip(net, chip_name, port_name);
-  user_currents_3d_[chip_net_name].push_back({chip_name, port_name, current});
-  solvers_3d_.erase(net);
-}
-
-bool PDNSim::check3DJVector(const std::string& chip_net_name, bool use_sta)
-{
-  auto solver
-      = make3DSolver(findChipNet(chip_net_name), sta_->cmdScene(), use_sta);
-  if (!solver->checkAssemblySystem() || !solver->checkCurrentVector()) {
-    logger_->error(utl::PSM,
-                   119,
-                   "The combined 3D G matrix or J vector for {} is invalid.",
-                   chip_net_name);
-  }
-  logger_->info(
-      utl::PSM,
-      120,
-      "Built combined 3D J vector {}: {} loads and {:.6g} A total current.",
-      chip_net_name,
-      solver->getCurrentLoadCount(),
-      solver->getTotalCurrent());
-  return true;
-}
-
 void PDNSim::setChipletVoltage(const std::string& chip_net_name,
                                const std::string& chip_name,
                                const std::string& port_name,
@@ -528,11 +419,11 @@ void PDNSim::setChipletVoltage(const std::string& chip_net_name,
                    chip_name,
                    port_name);
   }
-  find3DChip(net, chip_name, port_name);
+  findChiplet(net, chip_name, port_name);
 
-  auto& sources = user_voltage_sources_3d_[chip_net_name];
+  auto& sources = assembly_voltage_sources_[chip_net_name];
   const auto existing
-      = std::ranges::find_if(sources, [&](const VoltageSource3D& source) {
+      = std::ranges::find_if(sources, [&](const AssemblyVoltageSource& source) {
           return source.chip_name == chip_name && source.terminal == port_name
                  && source.corner == corner;
         });
@@ -541,101 +432,6 @@ void PDNSim::setChipletVoltage(const std::string& chip_net_name,
   } else {
     existing->voltage = voltage;
   }
-  solvers_3d_.erase(net);
-}
-
-bool PDNSim::analyze3DPowerGrid(const std::string& chip_net_name,
-                                sta::Scene* corner,
-                                bool use_sta,
-                                const std::string& error_file,
-                                const std::string& voltage_source_file,
-                                const std::string& voltage_file,
-                                bool enable_em)
-{
-  auto* net = findChipNet(chip_net_name);
-  // A failed re-solve must not leave an earlier result available.
-  solvers_3d_.erase(net);
-  auto solver = make3DSolver(net, corner, use_sta);
-  check3DConnectivity(*solver->getNetwork(), false, false, error_file);
-  if (!voltage_source_file.empty()) {
-    solver->addVoltageSourcesFromSourceFile(voltage_source_file);
-  }
-  if (solver->getVoltageSourceCount() == 0) {
-    logger_->error(utl::PSM,
-                   138,
-                   "No voltage source is defined for 3D net {}.",
-                   chip_net_name);
-  }
-  if (!solver->hasValidSources()) {
-    logger_->error(
-        utl::PSM,
-        139,
-        "The 3D grid for {} requires valid sources with identical voltages.",
-        chip_net_name);
-  }
-  if (!solver->solveAssembly()) {
-    logger_->error(utl::PSM,
-                   128,
-                   "Failed to solve the combined 3D power grid for {}.",
-                   chip_net_name);
-  }
-  const auto& voltages = solver->getVoltageVector();
-  logger_->info(
-      utl::PSM,
-      129,
-      "Solved combined 3D power grid {}: {} nodes, {} current loads, {} "
-      "fixed-voltage sources, and voltage range {:.6g} to {:.6g} V.",
-      chip_net_name,
-      solver->getNodeCount(),
-      solver->getCurrentLoadCount(),
-      solver->getVoltageSourceCount(),
-      voltages.minCoeff(),
-      voltages.maxCoeff());
-  solver->report(corner);
-  if (enable_em) {
-    solver->reportEM(corner);
-  }
-  if (!voltage_file.empty()) {
-    solver->writeInstanceVoltageFile(voltage_file, corner);
-  }
-  solvers_3d_[net] = {std::move(solver), user_powers_, user_voltages_};
-  return true;
-}
-
-double PDNSim::get3DPDNVoltage(const std::string& chip_net_name,
-                               const std::string& chip_name,
-                               const std::string& port_name)
-{
-  auto* net = findChipNet(chip_net_name);
-  const auto solver = solvers_3d_.find(net);
-  if (solver == solvers_3d_.end()
-      || !solver->second.solver->hasAssemblySolution()
-      || solver->second.powers != user_powers_
-      || solver->second.voltages != user_voltages_) {
-    solvers_3d_.erase(net);
-    logger_->error(utl::PSM,
-                   130,
-                   "No 3D voltage solution is available for {}.",
-                   chip_net_name);
-  }
-  auto* chip = find3DChip(net, chip_name, port_name);
-  const auto voltage = solver->second.solver->getVoltage(chip, port_name);
-  if (!voltage.has_value()) {
-    logger_->error(utl::PSM,
-                   133,
-                   "Cannot map terminal {}/{} into the solved 3D net {}.",
-                   chip_name,
-                   port_name,
-                   chip_net_name);
-  }
-  return *voltage;
-}
-
-void PDNSim::clear3DPowerGrid()
-{
-  solvers_3d_.clear();
-  user_currents_3d_.clear();
-  user_voltage_sources_3d_.clear();
 }
 
 void PDNSim::writeSpiceNetwork(odb::dbNet* net,
@@ -714,7 +510,6 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
 void PDNSim::clearSolvers()
 {
   solvers_.clear();
-  solvers_3d_.clear();
 }
 
 void PDNSim::inDbPostMoveInst(odb::dbInst*)
@@ -775,103 +570,6 @@ void PDNSim::inDbSWirePostDestroySBoxes(odb::dbSWire*)
 void PDNSim::inDbFillCreate(odb::dbFill*)
 {
   clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbPostMoveInst(odb::dbInst*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbInstCreate(odb::dbInst*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbInstDestroy(odb::dbInst* inst)
-{
-  // Do not keep a power setting whose instance is about to be deleted.
-  owner_->user_powers_.erase(inst);
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbInstPlacementStatusBefore(
-    odb::dbInst*,
-    const odb::dbPlacementStatus&)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbInstSwapMasterBefore(odb::dbInst*,
-                                                       odb::dbMaster*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbITermPreDisconnect(odb::dbITerm*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbITermPostConnect(odb::dbITerm*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbNetDestroy(odb::dbNet* net)
-{
-  owner_->user_voltages_.erase(net);
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBTermPostConnect(odb::dbBTerm*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBTermPostDisConnect(odb::dbBTerm*,
-                                                      odb::dbNet*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBPinCreate(odb::dbBPin*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBPinAddBox(odb::dbBox*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBPinRemoveBox(odb::dbBox*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbBPinDestroy(odb::dbBPin*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbSWireAddSBox(odb::dbSBox*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbSWireRemoveSBox(odb::dbSBox*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbSWirePostDestroySBoxes(odb::dbSWire*)
-{
-  owner_->clearSolvers();
-}
-
-void PDNSim::BlockObserver3D::inDbFillCreate(odb::dbFill*)
-{
-  owner_->clearSolvers();
 }
 
 // Functions of decap cells
