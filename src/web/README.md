@@ -249,8 +249,10 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
-CSS/JS from CDN.
+The report is self-contained: the stylesheets and the script are inlined, so it
+opens from the filesystem with no server and no network. The schematic and 3D
+panels need a live server, so their libraries are left out of the report and
+the panels say so when opened there.
 
 #### Examples
 
@@ -564,7 +566,11 @@ the result, so the browser only talks to the OpenROAD process.
 
 The bundled packages' licences, with those of their dependencies, are gathered
 into `THIRD_PARTY_LICENSES.txt`, which the server serves at
-`/THIRD_PARTY_LICENSES.txt`.
+`/THIRD_PARTY_LICENSES.txt` and every saved report carries in a comment.
+
+A saved report inlines a second bundle, `//src/web:report_bundle`, built from
+`src/entry-report.js`. It leaves out `vendor-globals.js`, which is the only way
+`netlistsvg` and `three` reach the page.
 
 `netlistsvg` is bundled from its compiled sources rather than its prebuilt
 browser bundle. `package.json` drops its command-line dependencies through

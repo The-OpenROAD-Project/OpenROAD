@@ -13,6 +13,7 @@ write_source_files(
             "THIRD_PARTY_LICENSES.txt",
             "app.min.js",
             "index.html",
+            "report.min.js",
         ]
     },
 )
