@@ -235,7 +235,7 @@ void SetupParallelEvalPolicy::resetRunState()
   batch_swaps_.clear();
   rebuffer_targets_in_batch_ = 0;
   tail_.reset();
-  tabu_.reset();
+  tabu_.reset(resizer_.dbNetwork());
 }
 
 void SetupParallelEvalPolicy::saveInitialCheckpoint()

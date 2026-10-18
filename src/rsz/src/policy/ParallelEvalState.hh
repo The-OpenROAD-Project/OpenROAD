@@ -8,7 +8,6 @@
 #include <deque>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
@@ -232,14 +231,17 @@ class WnsTail
 
 // Instances the batches skip.  An undone batch puts its instances on the
 // tabu for a few batches; an instance in too many undone batches is excluded
-// for the rest of the run.
+// for the rest of the run.  Each entry keeps the instance name: a deleted
+// instance's address can go to a new instance, which must not inherit the
+// entry.  A rollback restores a deleted instance at its old address with its
+// old name, so it keeps its entry.
 class MissTabu
 {
  public:
   explicit MissTabu(const ParallelEvalPolicyConfig& config) : config_(config) {}
 
-  // Clear the tabu and the exclusions for a new policy run.
-  void reset();
+  // Clear the tabu and the exclusions for a new policy run on network.
+  void reset(const sta::dbNetwork* network);
   // Skip `inst` for miss_tabu_batches batches after batch `now`.
   void addTabu(sta::Instance* inst, int now);
   // addTabu() plus the undo count.  True once `inst` was in
@@ -249,23 +251,31 @@ class MissTabu
   void expire(int now);
   // Drop the tabu; the exclusions stay.
   void clearTemporary() { until_.clear(); }
-  bool isExcluded(sta::Instance* inst) const
-  {
-    return !excluded_.empty() && excluded_.contains(inst);
-  }
-  bool isTabu(sta::Instance* inst) const
-  {
-    return !until_.empty() && until_.contains(inst);
-  }
+  bool isExcluded(sta::Instance* inst) const;
+  bool isTabu(sta::Instance* inst) const;
 
  private:
+  // A per-instance value and the name of the instance it was recorded for.
+  struct Entry
+  {
+    std::string name;
+    int value{0};
+  };
+
+  // The name of a live instance.
+  std::string name(sta::Instance* inst) const;
+  // Whether the entry of `inst` in entries was recorded for this instance.
+  bool hasEntry(const std::unordered_map<sta::Instance*, Entry>& entries,
+                sta::Instance* inst) const;
+
   const ParallelEvalPolicyConfig& config_;
+  const sta::dbNetwork* network_{nullptr};
   // Batch index until which each instance is temporarily skipped.
-  std::unordered_map<sta::Instance*, int> until_;
+  std::unordered_map<sta::Instance*, Entry> until_;
   // Number of missed batches containing each instance.
-  std::unordered_map<sta::Instance*, int> undo_counts_;
+  std::unordered_map<sta::Instance*, Entry> undo_counts_;
   // Instances excluded for the remainder of the policy run.
-  std::unordered_set<sta::Instance*> excluded_;
+  std::unordered_map<sta::Instance*, Entry> excluded_;
 };
 
 }  // namespace rsz

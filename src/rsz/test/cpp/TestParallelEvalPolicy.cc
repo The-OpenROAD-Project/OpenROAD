@@ -721,6 +721,39 @@ TEST_F(TestResizerMt, ParallelEvalKeptInstancesSkipDeletedOnes)
             std::vector<sta::Instance*>{records[0].inst});
 }
 
+// A new instance at the address of a deleted one does not inherit its tabu,
+// undo count or exclusion.
+TEST_F(TestResizerMt, ParallelEvalTabuSkipsReusedAddress)
+{
+  const ParallelEvalPolicyConfig config;
+  ASSERT_GE(config.max_undos_per_instance, 2);
+  MissTabu tabu(config);
+  tabu.reset(db_network_);
+  odb::dbMaster* buffer = db_->findMaster("BUF_X1");
+  odb::dbInst* deleted_db_inst
+      = odb::dbInst::create(block_, buffer, "deleted_probe");
+  ASSERT_NE(deleted_db_inst, nullptr);
+  sta::Instance* deleted = db_network_->dbToSta(deleted_db_inst);
+  for (int undo = 0; undo < config.max_undos_per_instance; ++undo) {
+    tabu.recordUndo(deleted, 0);
+  }
+  ASSERT_TRUE(tabu.isTabu(deleted));
+  ASSERT_TRUE(tabu.isExcluded(deleted));
+
+  // The table hands the freed slot to the next instance.
+  odb::dbInst::destroy(deleted_db_inst);
+  odb::dbInst* new_db_inst = odb::dbInst::create(block_, buffer, "new_probe");
+  sta::Instance* reused = db_network_->dbToSta(new_db_inst);
+  ASSERT_EQ(reused, deleted);
+  EXPECT_FALSE(tabu.isTabu(reused));
+  EXPECT_FALSE(tabu.isExcluded(reused));
+
+  // Its undo count starts from zero.
+  EXPECT_FALSE(tabu.recordUndo(reused, 1));
+  EXPECT_TRUE(tabu.isTabu(reused));
+  EXPECT_FALSE(tabu.isExcluded(reused));
+}
+
 namespace {
 
 // The loads the RebufferMt candidate trees put behind a buffer, in order.

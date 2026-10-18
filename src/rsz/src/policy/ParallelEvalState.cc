@@ -329,8 +329,9 @@ std::vector<InstanceRecord> WnsTail::endSpeculation()
 
 // === MissTabu ===============================================================
 
-void MissTabu::reset()
+void MissTabu::reset(const sta::dbNetwork* network)
 {
+  network_ = network;
   until_.clear();
   undo_counts_.clear();
   excluded_.clear();
@@ -338,14 +339,18 @@ void MissTabu::reset()
 
 void MissTabu::addTabu(sta::Instance* inst, const int now)
 {
-  until_[inst] = now + config_.miss_tabu_batches;
+  until_[inst] = {.name = name(inst), .value = now + config_.miss_tabu_batches};
 }
 
 bool MissTabu::recordUndo(sta::Instance* inst, const int now)
 {
   addTabu(inst, now);
-  if (++undo_counts_[inst] >= config_.max_undos_per_instance) {
-    excluded_.insert(inst);
+  // An entry left by a deleted instance at this address starts over.
+  if (!hasEntry(undo_counts_, inst)) {
+    undo_counts_[inst] = {.name = name(inst), .value = 0};
+  }
+  if (++undo_counts_[inst].value >= config_.max_undos_per_instance) {
+    excluded_[inst] = {.name = name(inst)};
     return true;
   }
   return false;
@@ -354,9 +359,37 @@ bool MissTabu::recordUndo(sta::Instance* inst, const int now)
 void MissTabu::expire(const int now)
 {
   std::erase_if(until_,
-                [now](const std::pair<sta::Instance* const, int>& entry) {
-                  return entry.second <= now;
+                [now](const std::pair<sta::Instance* const, Entry>& entry) {
+                  return entry.second.value <= now;
                 });
+}
+
+bool MissTabu::isExcluded(sta::Instance* inst) const
+{
+  return hasEntry(excluded_, inst);
+}
+
+bool MissTabu::isTabu(sta::Instance* inst) const
+{
+  return hasEntry(until_, inst);
+}
+
+std::string MissTabu::name(sta::Instance* inst) const
+{
+  return network_->staToDb(inst)->getName();
+}
+
+bool MissTabu::hasEntry(
+    const std::unordered_map<sta::Instance*, Entry>& entries,
+    sta::Instance* inst) const
+{
+  // Only the live `inst` is read; a stale key is compared, never read.
+  if (entries.empty()) {
+    return false;
+  }
+  const std::unordered_map<sta::Instance*, Entry>::const_iterator entry
+      = entries.find(inst);
+  return entry != entries.end() && entry->second.name == name(inst);
 }
 
 }  // namespace rsz
