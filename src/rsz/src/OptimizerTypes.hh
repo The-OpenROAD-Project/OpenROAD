@@ -45,6 +45,7 @@ class BufferedNet;
 class MoveCandidate;
 class Resizer;
 class SequentialTimingEstimator;
+struct SplitLoadMtInput;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
@@ -140,11 +141,12 @@ inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
 
 // Generation inputs: one Mt generator's live STA reads, prepared on the main
 // thread so its generate() can run on a worker.  Without them, the cell-swap
-// generators and RebufferMt read live STA.
+// generators and RebufferMt read live STA.  The other generators need them.
 inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
 inline constexpr PrepareCacheMask kRebufferInputCache = 1u << 3;
+inline constexpr PrepareCacheMask kSplitLoadInputCache = 1u << 4;
 inline constexpr PrepareCacheMask kGenerationInputCaches
-    = kInputCapBudgetCache | kRebufferInputCache;
+    = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache;
 
 // === Prepared timing data ===================================================
 
@@ -415,6 +417,9 @@ struct Target
   // side-load model, the current timing of its loads (empty without it).
   BufferedNetPtr rebuffer_net;
   RebufferLoadTimingMap rebuffer_load_timing;
+  // The move each Mt generator decided on from live STA; null (or empty)
+  // when it has none for this target.  The candidates share these.
+  std::shared_ptr<const SplitLoadMtInput> split_load_input;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;

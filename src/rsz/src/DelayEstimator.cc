@@ -1885,7 +1885,8 @@ void applyFaninSideLoss(const EstimatorContext& context,
 // ranking.
 DelayEstimate estimateWindow(const EstimatorContext& context,
                              const sta::LibertyCell* candidate_cell,
-                             std::vector<StageEvaluation>* trace = nullptr)
+                             std::vector<StageEvaluation>* trace = nullptr,
+                             const float target_load_delta = 0.0f)
 {
   const std::vector<DelayStageState>& stages = context.path_stages;
   const int target_index = context.target_stage_index;
@@ -1949,9 +1950,14 @@ DelayEstimate estimateWindow(const EstimatorContext& context,
     const bool is_fanin_neighbor = (stage_index == target_index - 1);
     const sta::LibertyCell* cell
         = is_target ? candidate_cell : stage.arc.currentCell();
-    const float load_cap = is_fanin_neighbor
-                               ? stage.load_cap + target_input_cap_delta
-                               : stage.load_cap;
+    float load_cap = stage.load_cap;
+    // A load change (split, fanout size-down) moves capacitance off the
+    // target net.
+    if (is_fanin_neighbor) {
+      load_cap += target_input_cap_delta;
+    } else if (is_target) {
+      load_cap = std::max(load_cap + target_load_delta, 0.0f);
+    }
     const float input_slew
         = has_propagated_driver_output_slew
               ? estimateReceiverInputSlew(stages[stage_index - 1],
@@ -2160,6 +2166,51 @@ DelayEstimate DelayEstimator::estimate(const EstimatorContext& context,
     trace->clear();
   }
   return estimateWindow(context, candidate_cell, trace);
+}
+
+DelayEstimate DelayEstimator::estimateLoadChange(
+    const EstimatorContext& context,
+    const float target_load_delta)
+{
+  return estimateWindow(
+      context, context.target().arc.currentCell(), nullptr, target_load_delta);
+}
+
+bool DelayEstimator::findBufferDelay(const EstimatorContext& context,
+                                     const sta::LibertyCell* buffer_cell,
+                                     const float input_slew,
+                                     const float load_cap,
+                                     float& delay)
+{
+  float output_slew = 0.0f;
+  return lookupBufferDelayAndSlew(
+      context.target(), buffer_cell, input_slew, load_cap, delay, output_slew);
+}
+
+void DelayEstimator::chargeMovedLoads(const EstimatorContext& context,
+                                      const std::vector<SideLoad>& loads,
+                                      const float delay_delta,
+                                      DelayEstimate& estimate)
+{
+  if (loads.empty()) {
+    return;
+  }
+
+  // The same negative-region clamp and floor guard as the fanin siblings.
+  float loss = 0.0f;
+  float worst_slack_after = std::numeric_limits<float>::infinity();
+  for (const SideLoad& load : loads) {
+    const float slack_after = load.slack - delay_delta;
+    loss += load.weight
+            * (std::min(load.slack, 0.0f) - std::min(slack_after, 0.0f));
+    worst_slack_after = std::min(worst_slack_after, slack_after);
+  }
+
+  chargeSideLoss(context,
+                 static_cast<int>(loads.size()),
+                 loss,
+                 worst_slack_after,
+                 estimate);
 }
 
 }  // namespace rsz

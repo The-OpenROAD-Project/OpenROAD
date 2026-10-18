@@ -73,6 +73,8 @@ add_library(rsz_lib
     move/SizeUpMtGenerator.cc
     move/SplitLoadCandidate.cc
     move/SplitLoadGenerator.cc
+    move/SplitLoadMtCandidate.cc
+    move/SplitLoadMtGenerator.cc
     move/SwapPinsCandidate.cc
     move/SwapPinsGenerator.cc
     move/UnbufferCandidate.cc
