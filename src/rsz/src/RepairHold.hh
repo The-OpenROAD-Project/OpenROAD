@@ -64,6 +64,9 @@ class RepairHold : public sta::dbStaState
   void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
                         sta::Delay delays[sta::RiseFall::index_count]);
+  // Hold slack at `end` of the paths being repaired: the selected path
+  // group's under `repair_timing -path_group`, every path's otherwise.
+  sta::Slack holdSlack(sta::Vertex* end) const;
   void findHoldViolations(sta::VertexSeq& ends,
                           double hold_margin,
                           // Return values.

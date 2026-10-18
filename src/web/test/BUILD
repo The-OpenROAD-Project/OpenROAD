@@ -446,6 +446,7 @@ cc_test(
         "//src/web",
         "//src/web:core",
         "@boost.asio",
+        "@boost.beast",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

@@ -35,10 +35,19 @@ def license_id(meta):
 
 
 def find_license(pkg_dir):
-    by_name = {name.lower(): name for name in os.listdir(pkg_dir)}
+    files = [
+        name
+        for name in os.listdir(pkg_dir)
+        if os.path.isfile(os.path.join(pkg_dir, name))
+    ]
+    by_name = {name.lower(): name for name in files}
     for candidate in _LICENSE_NAMES:
         if candidate in by_name:
             return os.path.join(pkg_dir, by_name[candidate])
+    # Otherwise a suffixed name, such as LICENSE-MIT or COPYING.txt.
+    for name in sorted(files):
+        if name.lower().startswith(("license", "licence", "copying")):
+            return os.path.join(pkg_dir, name)
     raise SystemExit(f"{pkg_dir} has no licence file")
 
 
@@ -51,7 +60,9 @@ def source_url(meta):
         raise SystemExit(f"{meta['name']} names no repository or homepage")
     url = re.sub(r"^git\+", "", url)
     url = re.sub(r"^git@([^:/]+):", r"https://\1/", url)
-    url = re.sub(r"^(?:git|ssh)://(?:git@)?", "https://", url)
+    url = re.sub(r"^(?:git|ssh|http)://(?:git@)?", "https://", url)
+    # A fragment names a commit or an anchor, not where the source is.
+    url = re.sub(r"#.*$", "", url)
     url = re.sub(r"\.git$", "", url)
     if "://" in url:
         return url

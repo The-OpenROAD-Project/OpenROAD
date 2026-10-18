@@ -57,7 +57,7 @@ js_library(
     deps = _BUNDLED_PACKAGES,
 )
 
-# The stylesheets import only these two libraries' CSS.
+# The stylesheets import Golden Layout's and Leaflet's CSS.
 js_library(
     name = "css",
     srcs = glob(["src/*.css"]),

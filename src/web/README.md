@@ -553,7 +553,7 @@ The module has two parts:
 The viewer's JavaScript libraries come from npm, pinned in `package.json` and
 `pnpm-lock.yaml`, instead of from CDNs
 ([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
-`bazel build //:openroad` bundles them with the viewer's sources using esbuild
+`bazelisk build //:openroad` bundles them with the viewer's sources using esbuild
 (`//src/web:app_bundle`), inlines the stylesheets into `index.html`, and embeds
 the result, so the browser only talks to the OpenROAD process.
 
@@ -580,9 +580,9 @@ To add or upgrade a library:
 
 ```sh
 # edit the version in src/web/package.json, then
-bazel run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
-bazel mod deps --lockfile_mode=update      # refresh MODULE.bazel.lock
-bazel run //src/web/dist:dist              # rebuild the checked-in bundle
+bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
+bazelisk run //src/web/dist:dist           # rebuild the checked-in bundle
 ```
 
 **Changing what the bundle is built from needs that last step too** (the
@@ -612,7 +612,7 @@ web_server -port 8080
 There are a set of regression tests in `./test`.
 
 ```shell
-bazel test //src/web/test/...
+bazelisk test //src/web/test/...
 ```
 
 ## License

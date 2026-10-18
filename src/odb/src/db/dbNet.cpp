@@ -99,7 +99,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.wire_type = dbWireType::ROUTED;
   flags_.special = 0;
   flags_.wild_connect = 0;
-  flags_.wire_ordered = 0;
+  flags_.unused4 = 0;
   flags_.disable_auto_taper = 0;
   flags_.unused2 = 0;
   flags_.spef = 0;
@@ -211,10 +211,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.wild_connect != rhs.flags_.wild_connect) {
-    return false;
-  }
-
-  if (flags_.wire_ordered != rhs.flags_.wire_ordered) {
     return false;
   }
 
@@ -1005,35 +1001,6 @@ void dbNet::setMark_1(bool value)
              "DB_EDIT",
              2,
              "EDIT: {}, setMark_1: {}",
-             net->getDebugName(),
-             value);
-
-  if (block->journal_) {
-    block->journal_->updateField(
-        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
-  }
-}
-
-bool dbNet::isWireOrdered()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->flags_.wire_ordered == 1;
-}
-
-void dbNet::setWireOrdered(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint32_t prev_flags = flagsToUInt(net);
-
-  net->flags_.wire_ordered = (value) ? 1 : 0;
-
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_EDIT",
-             2,
-             "EDIT: {}, setWireOrdered: {}",
              net->getDebugName(),
              value);
 

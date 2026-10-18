@@ -7,7 +7,7 @@ on:
 
 jobs:
   Stale:
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
 
     permissions:
       # Required to label and close stale issues.

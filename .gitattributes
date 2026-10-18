@@ -1,5 +1,6 @@
 # The generated web bundle (src/web/dist/README.md), collapsed in reviews and
-# kept out of language stats; dist/BUILD and dist/README.md are hand-written.
-src/web/dist/*.js -diff linguist-generated
-src/web/dist/*.html -diff linguist-generated
-src/web/dist/*.txt linguist-generated
+# kept out of language stats, byte for byte as built (no line-ending
+# conversion); dist/BUILD and dist/README.md are hand-written.
+src/web/dist/*.js binary linguist-generated
+src/web/dist/*.html binary linguist-generated
+src/web/dist/*.txt -text linguist-generated

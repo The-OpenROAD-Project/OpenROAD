@@ -28,7 +28,11 @@
 
 #include "boost/asio/ip/address.hpp"
 #include "boost/beast/core/string.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
 #include "boost/beast/http/rfc7230.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -56,6 +60,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 
 namespace web {
 
@@ -332,7 +337,13 @@ bool acceptsGzip(const std::string_view accept_encoding)
   // A trailing comma, which the grammar allows: ext_list gives a last coding
   // with no parameters those of the coding before it (fixed in Beast f8805c6).
   const std::string list = std::string(accept_encoding) + ',';
-  bool wildcard = false;
+  // Every entry is read before deciding, so the answer does not depend on
+  // their order: a q=0 on gzip or its alias x-gzip refuses it outright, even
+  // beside an entry that accepts it.  The same holds for repeated wildcards.
+  bool gzip_accepted = false;
+  bool gzip_refused = false;
+  bool wildcard_accepted = false;
+  bool wildcard_refused = false;
   for (const auto& [coding, params] : beast::http::ext_list(list)) {
     // A q-value lies in [0, 1], so it is zero exactly when no digit is
     // nonzero; a malformed one counts as a refusal too.
@@ -344,13 +355,48 @@ bool acceptsGzip(const std::string_view accept_encoding)
       }
     }
     if (beast::iequals(coding, "gzip") || beast::iequals(coding, "x-gzip")) {
-      return acceptable;
-    }
-    if (coding == "*") {
-      wildcard = acceptable;
+      (acceptable ? gzip_accepted : gzip_refused) = true;
+    } else if (coding == "*") {
+      (acceptable ? wildcard_accepted : wildcard_refused) = true;
     }
   }
-  return wildcard;
+  if (gzip_accepted || gzip_refused) {
+    return !gzip_refused;
+  }
+  return wildcard_accepted && !wildcard_refused;
+}
+
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    const std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res)
+{
+  namespace http = boost::beast::http;
+  res.set(http::field::content_type, asset.content_type);
+  // The assets are compiled into the binary, so their URLs carry no version
+  // and never change.  Without this a browser is free to heuristically cache
+  // them, and a tab reloaded against a rebuilt OpenROAD keeps running the old
+  // JavaScript -- the change appears to have done nothing until someone
+  // thinks to hard-reload.  They are served from memory, so re-fetching them
+  // costs nothing.
+  res.set(http::field::cache_control, "no-store");
+  // Stored gzipped: browsers get those bytes as they are, and curl without
+  // --compressed gets them inflated.
+  res.set(http::field::vary, "Accept-Encoding");
+  if (asset.gzipped && acceptsGzip(accept_encoding)) {
+    res.set(http::field::content_encoding, "gzip");
+    res.body() = std::string(asset.content());
+    return;
+  }
+  // assetText() throws if a blob and its recorded size disagree; an exception
+  // escaping the asio handler would stop the server.
+  try {
+    res.body() = assetText(asset);
+  } catch (const std::exception& e) {
+    res.result(http::status::internal_server_error);
+    res.set(http::field::content_type, "text/plain");
+    res.body() = e.what();
+  }
 }
 
 bool webSocketOriginAllowed(const std::string_view origin,

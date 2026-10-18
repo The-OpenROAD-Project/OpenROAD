@@ -337,31 +337,7 @@ static http::response<http::string_body> handle_request(
     } else {
       const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
-        res.set(http::field::content_type, asset->content_type);
-        // The assets are compiled into the binary, so their URLs carry no
-        // version and never change.  Without this a browser is free to
-        // heuristically cache them, and a tab reloaded against a rebuilt
-        // OpenROAD keeps running the old JavaScript -- the change appears
-        // to have done nothing until someone thinks to hard-reload.  They
-        // are served from memory, so re-fetching them costs nothing.
-        res.set(http::field::cache_control, "no-store");
-        // Stored gzipped: browsers get those bytes as they are, and curl
-        // without --compressed gets them inflated.
-        res.set(http::field::vary, "Accept-Encoding");
-        if (asset->gzipped && acceptsGzip(req[http::field::accept_encoding])) {
-          res.set(http::field::content_encoding, "gzip");
-          res.body() = std::string(asset->content());
-        } else {
-          // assetText() throws if a blob and its recorded size disagree; an
-          // exception escaping this asio handler would stop the server.
-          try {
-            res.body() = assetText(*asset);
-          } catch (const std::exception& e) {
-            res.result(http::status::internal_server_error);
-            res.set(http::field::content_type, "text/plain");
-            res.body() = e.what();
-          }
-        }
+        serveEmbeddedAsset(*asset, req[http::field::accept_encoding], res);
       } else {
         res.result(http::status::not_found);
         res.body() = "Resource not found.";
