@@ -1798,7 +1798,7 @@ void WebServer::saveReport(const std::string& filename,
   const std::string report_head = reportHead(page ? assetText(*page) : "");
   if (report_head.empty()) {
     logger_->error(
-        utl::WEB, 116, "The embedded viewer page has no saved-report block.");
+        utl::WEB, 118, "The embedded viewer page has no saved-report block.");
   }
   const std::string report_js = assetText(kReportJS);
   // The report carries the bundled libraries' code, so their licences too.
