@@ -122,7 +122,8 @@ struct ParallelEvalPolicyConfig
   // spending stall_window_min_work, moved neither WNS nor the failing
   // endpoint count by stall_rel_pct percent and TNS did not progress.
   int stall_window{6};
-  // Relative WNS/FEP change needed to reset the window stall check.
+  // Relative WNS or failing endpoint change needed to reset the window stall
+  // check.
   float stall_rel_pct{1.0f};
   // Minimum reference work before the window stall check applies.
   float stall_window_min_work{30.0f};

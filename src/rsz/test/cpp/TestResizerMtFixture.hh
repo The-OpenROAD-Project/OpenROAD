@@ -164,9 +164,9 @@ class ResizerTestPeer
     policy.startSmallBatchRetry();
   }
   static int effectiveBatchCap(SetupParallelEvalPolicy& policy,
-                               const size_t fep_count)
+                               const size_t failing_endpoint_count)
   {
-    return policy.effectiveBatchCap(fep_count);
+    return policy.effectiveBatchCap(failing_endpoint_count);
   }
   static void noteMissedBatch(SetupParallelEvalPolicy& policy,
                               const bool utilization_legal)

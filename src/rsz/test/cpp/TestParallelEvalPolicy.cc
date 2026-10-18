@@ -256,8 +256,9 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyRepairTnsLimitsTargetEndpoints)
   SetupParallelEvalPolicy all_policy(
       resizer_, committer, setup_context, config);
   ASSERT_TRUE(all_policy.start());
-  const size_t fep_count = ResizerTestPeer::collectTargetEndpoints(all_policy);
-  ASSERT_GE(fep_count, 4u);
+  const size_t failing_endpoint_count
+      = ResizerTestPeer::collectTargetEndpoints(all_policy);
+  ASSERT_GE(failing_endpoint_count, 4u);
 
   // A smaller share targets the worst endpoints only, as many as LEGACY.
   config.repair_tns_end_percent = 0.5;
@@ -265,7 +266,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyRepairTnsLimitsTargetEndpoints)
       resizer_, committer, setup_context, config);
   ASSERT_TRUE(half_policy.start());
   EXPECT_EQ(ResizerTestPeer::collectTargetEndpoints(half_policy),
-            fep_count / 2);
+            failing_endpoint_count / 2);
 
   // -repair_tns 0 still repairs the worst endpoint.
   config.repair_tns_end_percent = 0.0;
@@ -955,13 +956,15 @@ TEST(TestParallelEvalRules, ParallelEvalAdaptiveBatchSize)
 {
   // The configured cap is the floor, the failing endpoint count grows the
   // batch and the adaptive maximum bounds it.
-  const size_t max_fep = std::numeric_limits<size_t>::max();
+  const size_t max_failing_endpoints = std::numeric_limits<size_t>::max();
   EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(0, 64, 512), 64);
   EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(64, 64, 512), 64);
   EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(65, 64, 512), 65);
   EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(457, 64, 512), 457);
   EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(1826, 64, 512), 512);
-  EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(max_fep, 64, 512), 512);
+  EXPECT_EQ(SetupParallelEvalPolicy::adaptiveBatchSize(
+                max_failing_endpoints, 64, 512),
+            512);
 }
 
 TEST(TestBatchSelector, BatchSelectorDefersForwardDependency)

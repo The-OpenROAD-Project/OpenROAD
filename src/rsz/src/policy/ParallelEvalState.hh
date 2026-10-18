@@ -87,10 +87,10 @@ class StallMonitor
   // Set the initial QoR against which progress thresholds are measured.
   void reset(sta::Slack initial_wns, sta::Slack initial_tns);
   // A new batch: its cap and the failing endpoint count it started with.
-  void beginBatch(int batch_cap, size_t fep)
+  void beginBatch(int batch_cap, size_t failing_endpoints)
   {
     last_cap_ = batch_cap;
-    fep_ = fep;
+    failing_endpoints_ = failing_endpoints;
   }
   void endBatch(int committed_moves) { last_batch_moves_ = committed_moves; }
   // A missed batch spent its moves without progress.  A later salvage of the
@@ -123,7 +123,7 @@ class StallMonitor
   struct SavedCheckpoint
   {
     float wns{0.0f};
-    size_t fep{0};
+    size_t failing_endpoints{0};
     double work{0.0};
   };
 
@@ -141,7 +141,7 @@ class StallMonitor
   // Saved batches in a row that did not move WNS.
   int wns_stall_batches_{0};
   // Failing endpoints at the last collection and the last saved checkpoints.
-  size_t fep_{0};
+  size_t failing_endpoints_{0};
   std::deque<SavedCheckpoint> window_;
   bool window_stalled_{false};
 };

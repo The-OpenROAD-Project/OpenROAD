@@ -150,7 +150,9 @@ void StallMonitor::updateWindow(const sta::Slack wns,
                                 const double work)
 {
   const int window = config_.stall_window;
-  window_.push_back({.wns = sta::delayAsFloat(wns), .fep = fep_, .work = work});
+  window_.push_back({.wns = sta::delayAsFloat(wns),
+                     .failing_endpoints = failing_endpoints_,
+                     .work = work});
   if (static_cast<int>(window_.size()) <= window) {
     return;
   }
@@ -174,12 +176,14 @@ void StallMonitor::updateWindow(const sta::Slack wns,
   const float rel = config_.stall_rel_pct / 100.0f;
   const float intervals = static_cast<float>(window_.size() - 1);
   const float wns_gain = (last.wns - first.wns) / intervals;
-  const float fep_gain
-      = static_cast<float>(first.fep) - static_cast<float>(last.fep);
+  const float failing_endpoint_gain
+      = static_cast<float>(first.failing_endpoints)
+        - static_cast<float>(last.failing_endpoints);
   const bool wns_moving = wns_gain >= rel * std::abs(last.wns);
-  const bool fep_moving
-      = fep_gain / intervals >= rel * static_cast<float>(last.fep);
-  if (!wns_moving && !fep_moving) {
+  const bool failing_endpoints_moving
+      = failing_endpoint_gain / intervals
+        >= rel * static_cast<float>(last.failing_endpoints);
+  if (!wns_moving && !failing_endpoints_moving) {
     window_stalled_ = true;
     RepairSetupProfiler::event("stall_window_triggered");
   }

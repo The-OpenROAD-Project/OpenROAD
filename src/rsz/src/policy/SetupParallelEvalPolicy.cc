@@ -458,19 +458,20 @@ SetupParallelEvalPolicy::collectTargetEndpoints()
         showStartpointMetrics(),
         /*worst_by_startpoint=*/false);
   }
-  const size_t fep_count = target_collector_->getViolatingEndpoints().size();
+  const size_t failing_endpoint_count
+      = target_collector_->getViolatingEndpoints().size();
 
   // -repair_tns and the WNS tail visit only the worst endpoints, so the batch
   // and the evaluation chunks are sized on that subset.
-  size_t target_endpoints = std::min(fep_count, max_end_repairs_);
+  size_t target_endpoints = std::min(failing_endpoint_count, max_end_repairs_);
   if (tail_.active()) {
     target_endpoints
         = std::min(target_endpoints, static_cast<size_t>(tail_.endpoints()));
   }
 
   const int batch_cap = effectiveBatchCap(target_endpoints);
-  stall_.beginBatch(batch_cap, fep_count);
-  RepairSetupProfiler::event("batch_fep_at_collect", fep_count);
+  stall_.beginBatch(batch_cap, failing_endpoint_count);
+  RepairSetupProfiler::event("batch_fep_at_collect", failing_endpoint_count);
   RepairSetupProfiler::event("batch_effective_cap", batch_cap);
 
   return {.target_endpoints = target_endpoints, .batch_cap = batch_cap};
@@ -1093,14 +1094,15 @@ sta::Slack SetupParallelEvalPolicy::checkpointWnsTolerance() const
          * policy_config_.parallel_eval.checkpoint_wns_tolerance_pct / 100.0f;
 }
 
-int SetupParallelEvalPolicy::adaptiveBatchSize(const size_t fep_count,
-                                               const int min_cap,
-                                               const int max_cap)
+int SetupParallelEvalPolicy::adaptiveBatchSize(
+    const size_t failing_endpoint_count,
+    const int min_cap,
+    const int max_cap)
 {
   // Each batch pays a full timing update, so the configured cap is a floor;
   // the failing endpoint count raises it up to the bound.
   return static_cast<int>(
-      std::min(std::max(fep_count, static_cast<size_t>(min_cap)),
+      std::min(std::max(failing_endpoint_count, static_cast<size_t>(min_cap)),
                static_cast<size_t>(max_cap)));
 }
 
@@ -1125,7 +1127,8 @@ void SetupParallelEvalPolicy::startSmallBatchRetry()
   batch_selector_ = std::make_unique<BatchSelector>(std::move(selector));
 }
 
-int SetupParallelEvalPolicy::effectiveBatchCap(const size_t fep_count) const
+int SetupParallelEvalPolicy::effectiveBatchCap(
+    const size_t failing_endpoint_count) const
 {
   if (tail_.active()) {
     return tail_.batchCap();
@@ -1136,7 +1139,7 @@ int SetupParallelEvalPolicy::effectiveBatchCap(const size_t fep_count) const
     return policy_config_.parallel_eval.retry_batch_cap;
   }
 
-  return adaptiveBatchSize(fep_count,
+  return adaptiveBatchSize(failing_endpoint_count,
                            policy_config_.parallel_eval.min_batch_cap,
                            policy_config_.parallel_eval.max_batch_cap);
 }

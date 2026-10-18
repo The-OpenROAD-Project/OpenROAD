@@ -47,7 +47,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // === Batch rules ==========================================================
   // Pure functions of the batch flow.
   // The failing endpoint count clamped to [min_cap, max_cap].
-  static int adaptiveBatchSize(size_t fep_count, int min_cap, int max_cap);
+  static int adaptiveBatchSize(size_t failing_endpoint_count,
+                               int min_cap,
+                               int max_cap);
   // Endpoints per chunk: a multiple of the batch cap, leaving room for
   // conflicts and targets without candidates.
   static size_t evaluationEndpointLimit(int batch_cap,
@@ -138,7 +140,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // batch scope.
   BatchScope collectTargetEndpoints();
   // Clamp the current failing-endpoint count to the active batch limits.
-  int effectiveBatchCap(size_t fep_count) const;
+  int effectiveBatchCap(size_t failing_endpoint_count) const;
   // Restart a run whose batches kept no move with a smaller batch cap once.
   void startSmallBatchRetry();
   // The cone weights while the saved batches stall WNS; one analysis serves
