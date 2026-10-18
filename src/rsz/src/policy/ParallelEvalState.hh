@@ -174,7 +174,9 @@ class WnsTail
   double workStart() const { return work_start_; }
   double workBudget() const { return budget_work_; }
   // Buffer removal runs only in the single-move batches of a stalled greedy
-  // stage, because a removal cannot be salvaged in place.
+  // stage.  A salvage cannot undo a removal alone: a cell swap goes back with
+  // replaceCell(), but the removed buffer and net come back only through the
+  // journal restore, which undoes the whole batch.
   bool unbufferAllowed() const
   {
     return active_ && batch_cap_ == 1 && greedy_stalled_;
