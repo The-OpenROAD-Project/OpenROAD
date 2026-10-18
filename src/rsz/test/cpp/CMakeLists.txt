@@ -108,6 +108,7 @@ target_link_libraries(TestResizer
 target_include_directories(TestResizer
     PRIVATE
       ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
 )
 
 gtest_discover_tests(TestResizer
