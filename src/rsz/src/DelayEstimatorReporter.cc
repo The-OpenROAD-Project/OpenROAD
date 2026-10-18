@@ -294,8 +294,12 @@ DelayEstimatorReporter::EcoJournalScope::~EcoJournalScope()
     odb::dbDatabase::undoEco(reporter_.block_);
     reporter_.resizer_.updateParasiticsAndTiming();
   } catch (...) {
-    // Destructors must not throw during diagnostic ECO cleanup.
-    return;
+    // Destructors must not throw during diagnostic ECO cleanup, but the trial
+    // edits may still be in the design.
+    reporter_.logger_->warn(RSZ,
+                            3212,
+                            "The accuracy report could not undo its trial "
+                            "edits; the design may keep them.");
   }
 }
 
