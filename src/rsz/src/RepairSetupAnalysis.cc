@@ -214,14 +214,17 @@ std::optional<double> RepairSetupAnalysis::windowDelay() const
     return std::nullopt;
   }
 
-  const sta::Pin* endpoint = resizer_.network()->findPin(endpoint_pin_name_);
-  if (endpoint == nullptr) {
+  // The window is measured on the captured path, which ends at the selected
+  // path end: the endpoint, the target driver of a prefix, or a latch D pin.
+  const sta::Pin* path_end
+      = resizer_.network()->findPin(path_points_.back().pin_name);
+  if (path_end == nullptr) {
     return std::nullopt;
   }
 
   sta::Vertex* vertex = path_points_.back().bidirect_driver
-                            ? resizer_.graph()->pinDrvrVertex(endpoint)
-                            : resizer_.graph()->pinLoadVertex(endpoint);
+                            ? resizer_.graph()->pinDrvrVertex(path_end)
+                            : resizer_.graph()->pinLoadVertex(path_end);
   if (vertex == nullptr) {
     return std::nullopt;
   }

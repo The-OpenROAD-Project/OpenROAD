@@ -109,6 +109,29 @@ TEST_F(TestResizerMt, AnalysisSerialTargetReportsDriverPrefixFallback)
   profiler.complete(true);
 }
 
+// A driver prefix ends at the target driver, not at the original endpoint, so
+// its window delay is measured on the prefix path.
+TEST_F(TestResizerMt, AnalysisMeasuresTheWindowOfADriverPrefix)
+{
+  ProfileTestDirectory directory;
+  resizer_.runRepairSetupPreamble();
+  Target target = makeTarget("out0", "load0", "Z");
+  target.endpoint_pin = sta_->network()->findPin("path_out");
+  ASSERT_NE(target.endpoint_pin, nullptr);
+  RepairSetupProfiler profiler(resizer_,
+                               RepairSetupProfiler::Mode::kAnalysis,
+                               directory.root().string());
+  RepairSetupAnalysisTarget live(resizer_, target);
+  ASSERT_TRUE(live.refresh());
+  Target prefix = live.target();
+  prefix.estimator_context = DelayEstimator::buildContext(resizer_, prefix, 0);
+  ASSERT_TRUE(prefix.estimator_context.has_value());
+  const RepairSetupAnalysis observer(resizer_, prefix, live.originalEndpoint());
+  ASSERT_STREQ(observer.pathContext(), "driver_prefix");
+  EXPECT_TRUE(observer.sample().contains("window_delay_s"));
+  profiler.complete(true);
+}
+
 // A LEGACY target does not carry its violated endpoint, so the analysis
 // reports the endpoint the policy repairs.  An instance target reports none.
 TEST_F(TestResizerMt, AnalysisReportsPolicyEndpointOfLegacyTarget)
