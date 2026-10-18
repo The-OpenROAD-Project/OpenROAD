@@ -250,6 +250,7 @@ TESTS = [
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
     "report_buffers_no_lef",
+    "report_delay_estimator_rebuffer_driver_pin",
     "report_delay_estimator_rebuffer_fanout8",
     "report_delay_estimator_rebuffer_minimal",
     "report_delay_estimator_rebuffer_prebuffered",

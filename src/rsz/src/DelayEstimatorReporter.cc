@@ -418,6 +418,17 @@ void DelayEstimatorReporter::reportAccuracyForRebufferTree(
     sta::Pin* driver_pin,
     const int delay_levels)
 {
+  // -driver_pin names an output pin of -inst.
+  if (driver_pin != nullptr
+      && (network_->instance(driver_pin) != inst
+          || !network_->isDriver(driver_pin))) {
+    logger_->error(RSZ,
+                   3211,
+                   "-driver_pin {} is not an output pin of instance {}.",
+                   network_->pathName(driver_pin),
+                   network_->pathName(inst));
+  }
+
   resizer_.init();
   resizer_.resizePreamble();
   block_ = resizer_.block_;

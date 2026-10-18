@@ -265,6 +265,7 @@ or_integration_tests(
     report_buffers_gf180
     report_buffers_no_lef
     report_delay_estimator_sizing_accuracy
+    report_delay_estimator_rebuffer_driver_pin
     report_delay_estimator_rebuffer_fanout8
     report_delay_estimator_rebuffer_minimal
     report_delay_estimator_rebuffer_prebuffered
