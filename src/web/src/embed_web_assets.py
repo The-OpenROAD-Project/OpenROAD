@@ -13,9 +13,6 @@ import os
 MIME_TYPES = {
     ".html": "text/html",
     ".js": "application/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".svg": "image/svg+xml",
     ".txt": "text/plain; charset=utf-8",
 }
 
