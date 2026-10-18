@@ -21,6 +21,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerOffProducesNoOutput)
       const ProfileIteration iteration("test_pass");
       RepairSetupProfiler::event("off_marker");
       RepairSetupProfiler::event("off_event");
+      RepairSetupProfiler::workerTime("estimation", 1.0);
       RepairSetupProfiler::qor("off_qor", -1.0, -2.0);
       profiler.phase("LEGACY", 1);
       profiler.complete(true);
@@ -153,7 +154,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerNestedCommitThenOuterUndo)
     committer.beginJournal();
     EXPECT_TRUE(commit(inner).accepted);
     EXPECT_FALSE(commit(rejected).accepted);
-    committer.commitJournal();
+    committer.commitJournal(false);
     EXPECT_EQ(committer.pendingMoves(MoveType::kBuffer), 5);
     EXPECT_EQ(committer.committedMoves(MoveType::kBuffer), 0);
     committer.restoreJournal();

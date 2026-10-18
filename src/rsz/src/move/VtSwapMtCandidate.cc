@@ -100,4 +100,9 @@ MoveResult VtSwapMtCandidate::apply()
   };
 }
 
+MoveImpact VtSwapMtCandidate::impact() const
+{
+  return cellSwapImpact(inst_);
+}
+
 }  // namespace rsz
