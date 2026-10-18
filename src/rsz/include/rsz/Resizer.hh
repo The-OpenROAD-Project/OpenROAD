@@ -957,6 +957,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
+  // Whether removeBuffer() keeps the output net of buffer and moves the pins
+  // of its input net onto it, instead of the other way round.
+  bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
   bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);

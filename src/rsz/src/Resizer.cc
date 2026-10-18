@@ -2893,6 +2893,16 @@ bool Resizer::removeBufferIfPossible(sta::Instance* buffer,
   return false;
 }
 
+bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  network_->libertyCell(buffer)->bufferPorts(input_port, output_port);
+  return bufferRemovalKeepsOutputNet(db_network_,
+                                     db_network_->findPin(buffer, input_port),
+                                     db_network_->findPin(buffer, output_port));
+}
+
 bool Resizer::canRemoveBuffer(sta::Instance* buffer,
                               const bool honor_dont_touch_fixed)
 {
