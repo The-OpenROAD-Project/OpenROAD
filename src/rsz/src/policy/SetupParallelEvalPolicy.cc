@@ -33,6 +33,8 @@
 #include "SizeUpMtCandidate.hh"
 #include "SizeUpMtGenerator.hh"
 #include "SplitLoadMtGenerator.hh"
+#include "SwapPinsMtGenerator.hh"
+#include "UnbufferMtGenerator.hh"
 #include "VtSwapMtCandidate.hh"
 #include "VtSwapMtGenerator.hh"
 #include "db_sta/dbNetwork.hh"
@@ -104,13 +106,16 @@ std::unique_ptr<MoveGenerator> makeParallelEvalGenerator(
       return std::make_unique<RebufferMtGenerator>(context);
     case MoveType::kVtSwap:
       return std::make_unique<VtSwapMtGenerator>(context);
-    // This Mt form chooses like the serial move in prepareInputs() and scores
+    case MoveType::kSwapPins:
+      // estimate() only compares the prepared arc delays.
+      return std::make_unique<SwapPinsMtGenerator>(context);
+    // These Mt forms choose like the serial move in prepareInputs() and score
     // the choice from the prepared path window.
     case MoveType::kSplitLoad:
       return std::make_unique<SplitLoadMtGenerator>(context);
-    case MoveType::kSwapPins:
-    case MoveType::kSizeDownFanout:
     case MoveType::kUnbuffer:
+      return std::make_unique<UnbufferMtGenerator>(context);
+    case MoveType::kSizeDownFanout:
     case MoveType::kClone:
     case MoveType::kSizeUpMatch:
     case MoveType::kReroute:
@@ -194,11 +199,9 @@ void SetupParallelEvalPolicy::selectMoveSequence()
     }
 
     // BufferToInverters has no gain estimate to rank it.  Clone, SizeUpMatch
-    // and Reroute have no Mt form; SwapPins, Unbuffer and SizeDownFanout have
-    // none yet.
+    // and Reroute have no Mt form; SizeDownFanout has none yet.
     if (type == MoveType::kBufferToInverters || type == MoveType::kClone
         || type == MoveType::kSizeUpMatch || type == MoveType::kReroute
-        || type == MoveType::kSwapPins || type == MoveType::kUnbuffer
         || type == MoveType::kSizeDownFanout) {
       logger_->warn(utl::RSZ,
                     2028,
@@ -209,6 +212,9 @@ void SetupParallelEvalPolicy::selectMoveSequence()
 
     move_sequence_.push_back(type);
   }
+
+  unbuffer_in_sequence_ = std::ranges::find(move_sequence_, MoveType::kUnbuffer)
+                          != move_sequence_.end();
 }
 
 void SetupParallelEvalPolicy::resetRunState()
@@ -782,6 +788,14 @@ bool SetupParallelEvalPolicy::generatorAllowed(
       }
       return true;
     }
+    case MoveType::kUnbuffer:
+      // The tail's own removal generator runs only in single-move batches; a
+      // requested unbuffer move runs in every batch.
+      if (!unbuffer_in_sequence_ && !tail_.unbufferAllowed()) {
+        RepairSetupProfiler::event("skip_unbuffer_batch");
+        return false;
+      }
+      return true;
     default:
       return true;
   }
@@ -1317,6 +1331,15 @@ bool SetupParallelEvalPolicy::salvageMissedBatch(
     return false;
   }
 
+  // A removed buffer comes back as a new instance when the journal rolls
+  // back, so a batch with a removal is not re-committed in part.
+  if (std::ranges::any_of(batch_candidates_, [](const MoveCandidate* move) {
+        return move->type() == MoveType::kUnbuffer;
+      })) {
+    RepairSetupProfiler::event("batch_salvage_skipped_removal");
+    return false;
+  }
+
   const size_t batch_size = batch_candidates_.size();
   std::vector<MoveCandidate*> victims;
   const std::vector<MoveCandidate*> culprits
@@ -1569,6 +1592,7 @@ bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
   // The stalled main loop left the worst path's instances on the tabu list;
   // the tail exists to work on exactly those.
   tabu_.clearTemporary();
+  addTailGenerators();
 
   RepairSetupProfiler::event(
       "wns_tail_begin",
@@ -1584,6 +1608,20 @@ bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
              sta::delayAsFloat(checkpoint_wns_));
 
   return true;
+}
+
+void SetupParallelEvalPolicy::addTailGenerators()
+{
+  // Pin swaps and buffer removal join the tail when the default sequence left
+  // them out.  Buffer removal runs only in single-move batches.
+  for (const MoveType type : {MoveType::kSwapPins, MoveType::kUnbuffer}) {
+    if (tailMayAddMove(type)) {
+      move_generators_.push_back(
+          makeParallelEvalGenerator(type, makeGeneratorContext()));
+      move_generators_.back()->startPhase(thread_pool_->threadCount());
+      RepairSetupProfiler::event("wns_tail_generator", 1, moveName(type));
+    }
+  }
 }
 
 bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
@@ -1617,6 +1655,14 @@ bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
   }
 
   return false;
+}
+
+bool SetupParallelEvalPolicy::tailMayAddMove(const MoveType type) const
+{
+  // An explicit -sequence is the complete move set of the run, and the
+  // -skip_* options apply to the tail as they do to the batches.
+  return config_.sequence.empty() && moveEnabled(type)
+         && findGenerator(type) == nullptr;
 }
 
 void SetupParallelEvalPolicy::applyTailStopRules(const int batch_moves)

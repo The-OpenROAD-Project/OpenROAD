@@ -6325,26 +6325,17 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
   delete pin_iter;
 }
 
-void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
-                                   sta::LibertyPort* drvr_port,
-                                   const sta::LibertyPortSeq& equiv_ports,
-                                   const float load_cap,
-                                   const sta::Scene* scene,
-                                   const sta::MinMax* min_max,
-                                   sta::LibertyPort** swap_port,
-                                   sta::ArcDelay* base_delay_out,
-                                   sta::ArcDelay* candidate_delay_out)
+void Resizer::swapPinDelays(
+    sta::LibertyPort* input_port,
+    sta::LibertyPort* drvr_port,
+    const float load_cap,
+    const sta::Scene* scene,
+    const sta::MinMax* min_max,
+    sta::ArcDelay& base_delay,
+    std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays)
 {
   sta::LibertyCell* cell = drvr_port->libertyCell();
-  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
-  sta::ArcDelay base_delay = -sta::INF;
-  if (base_delay_out != nullptr) {
-    *base_delay_out = 0.0;
-  }
-  if (candidate_delay_out != nullptr) {
-    *candidate_delay_out = 0.0;
-  }
-
+  base_delay = -sta::INF;
   for (sta::TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() != drvr_port || arc_set->role()->isTimingCheck()) {
       continue;
@@ -6381,6 +6372,29 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
       }
     }
   }
+}
+
+void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
+                                   sta::LibertyPort* drvr_port,
+                                   const sta::LibertyPortSeq& equiv_ports,
+                                   const float load_cap,
+                                   const sta::Scene* scene,
+                                   const sta::MinMax* min_max,
+                                   sta::LibertyPort** swap_port,
+                                   sta::ArcDelay* base_delay_out,
+                                   sta::ArcDelay* candidate_delay_out)
+{
+  if (base_delay_out != nullptr) {
+    *base_delay_out = 0.0;
+  }
+  if (candidate_delay_out != nullptr) {
+    *candidate_delay_out = 0.0;
+  }
+
+  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
+  sta::ArcDelay base_delay;
+  swapPinDelays(
+      input_port, drvr_port, load_cap, scene, min_max, base_delay, port_delays);
 
   const sta::ArcDelay reference_delay = base_delay;
   for (sta::LibertyPort* port : equiv_ports) {

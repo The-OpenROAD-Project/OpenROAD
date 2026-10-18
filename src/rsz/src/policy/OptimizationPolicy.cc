@@ -29,7 +29,9 @@
 #include "SplitLoadGenerator.hh"
 #include "SplitLoadMtGenerator.hh"
 #include "SwapPinsGenerator.hh"
+#include "SwapPinsMtGenerator.hh"
 #include "UnbufferGenerator.hh"
+#include "UnbufferMtGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -99,6 +101,7 @@ bool OptimizationPolicy::start()
   max_ = resizer_.maxAnalysisMode();
   resetRun();
   estimator_cache_.clear();
+  equiv_pin_cache_.clear();
   // Start every phase with the progress table's area cache invalid. The
   // cache is keyed on MoveCommitter::netlistEdits(), which only counts
   // edits made through the committer; GlobalSizingPolicy replaces cells
@@ -123,7 +126,8 @@ GeneratorContext OptimizationPolicy::makeGeneratorContext() const
       .committer = committer_,
       .run_config = config_,
       .policy_config = policy_config_,
-      .critical_load_pins = &target_collector_->critPathLoadPins()};
+      .critical_load_pins = &target_collector_->critPathLoadPins(),
+      .equiv_pin_cache = &equiv_pin_cache_};
 }
 
 void OptimizationPolicy::buildMoveGenerators(
@@ -260,6 +264,12 @@ void OptimizationPolicy::prepareTarget(Target& target,
   }
   if ((mask & kSplitLoadInputCache) != 0) {
     SplitLoadMtGenerator::prepareInputs(context, target);
+  }
+  if ((mask & kSwapPinsInputCache) != 0) {
+    SwapPinsMtGenerator::prepareInputs(context, target);
+  }
+  if ((mask & kUnbufferInputCache) != 0) {
+    UnbufferMtGenerator::prepareInputs(context, target);
   }
 }
 

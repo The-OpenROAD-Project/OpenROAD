@@ -266,6 +266,11 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // Starts the tail if it is on and has not run.  False when the run should
   // stop instead.
   bool startWnsTail(const char* reason);
+  // The generators the tail adds for moves the batches did not run.
+  void addTailGenerators();
+  // Whether the tail may add a generator for a move the batches did not run.
+  bool tailMayAddMove(MoveType type) const;
+  // Apply the WNS-tail stall and work-budget stop rules.
   void applyTailStopRules(int batch_moves);
 
   // === State ================================================================
@@ -293,6 +298,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   sta::Slack best_checkpoint_wns_{0.0f};
   // Endpoints a batch may target under -repair_tns.
   size_t max_end_repairs_{std::numeric_limits<size_t>::max()};
+  // An unbuffer move in -sequence runs in every batch, not only in the tail's
+  // single-move batches.
+  bool unbuffer_in_sequence_{false};
 
   // Moves of the batch under evaluation.
   std::vector<sta::Instance*> batch_instances_;

@@ -91,6 +91,7 @@
 #undef protected
 #include "MoveGenerator.hh"
 #include "RebufferMtGenerator.hh"
+#include "SwapPinsMtCandidate.hh"
 
 #define private public
 #define protected public

@@ -149,6 +149,79 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   EXPECT_EQ(filtered.move_sequence_, size_up_only);
 }
 
+TEST_F(TestResizerMt, SetupParallelEvalPolicyAcceptsSwapPinsInSequence)
+{
+  resizer_.runRepairSetupPreamble();
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig config;
+  config.sequence = {MoveType::kSwapPins, MoveType::kSizeUp};
+  SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
+  ASSERT_TRUE(policy.start());
+  ASSERT_EQ(policy.move_sequence_.size(), 2u);
+  EXPECT_EQ(policy.move_sequence_.front(), MoveType::kSwapPins);
+  ASSERT_EQ(policy.move_generators_.size(), 2u);
+  EXPECT_EQ(policy.move_generators_.front()->type(), MoveType::kSwapPins);
+}
+
+namespace {
+
+// Move types of the generators a PARALLEL_EVAL run holds, in order.
+std::vector<MoveType> generatorTypes(const SetupParallelEvalPolicy& policy)
+{
+  std::vector<MoveType> types;
+  for (const std::unique_ptr<MoveGenerator>& generator :
+       policy.move_generators_) {
+    types.push_back(generator->type());
+  }
+  return types;
+}
+
+}  // namespace
+
+TEST_F(TestResizerMt, SetupParallelEvalPolicyWnsTailHonorsSequenceAndSkips)
+{
+  resizer_.runRepairSetupPreamble();
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+
+  // -skip_buffering keeps RebufferMt, which needs wire RC, out of every run
+  // below.  The default sequence then holds SizeUpMt alone.
+  OptimizerRunConfig base;
+  base.skip_buffering = true;
+  const std::vector<MoveType> size_up_only{MoveType::kSizeUp};
+
+  // Under the default sequence the tail adds its pin swaps and buffer
+  // removal.
+  SetupParallelEvalPolicy default_policy(
+      resizer_, committer, setup_context, base);
+  ASSERT_TRUE(default_policy.start());
+  ASSERT_TRUE(default_policy.startWnsTail("test"));
+  const std::vector<MoveType> default_tail{
+      MoveType::kSizeUp, MoveType::kSwapPins, MoveType::kUnbuffer};
+  EXPECT_EQ(generatorTypes(default_policy), default_tail);
+
+  // The -skip_* options keep each of them out.
+  OptimizerRunConfig skipped = base;
+  skipped.skip_pin_swap = true;
+  skipped.skip_buffer_removal = true;
+  skipped.skip_size_down_fanout = true;
+  SetupParallelEvalPolicy skipped_policy(
+      resizer_, committer, setup_context, skipped);
+  ASSERT_TRUE(skipped_policy.start());
+  ASSERT_TRUE(skipped_policy.startWnsTail("test"));
+  EXPECT_EQ(generatorTypes(skipped_policy), size_up_only);
+
+  // An explicit -sequence is the complete move set, tail included.
+  OptimizerRunConfig requested = base;
+  requested.sequence = {MoveType::kSizeUp};
+  SetupParallelEvalPolicy requested_policy(
+      resizer_, committer, setup_context, requested);
+  ASSERT_TRUE(requested_policy.start());
+  ASSERT_TRUE(requested_policy.startWnsTail("test"));
+  EXPECT_EQ(generatorTypes(requested_policy), size_up_only);
+}
+
 TEST_F(TestResizerMt, SetupParallelEvalPolicyRepairTnsLimitsTargetEndpoints)
 {
   // Every output port violates.
