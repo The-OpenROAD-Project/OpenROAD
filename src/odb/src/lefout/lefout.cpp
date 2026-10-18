@@ -357,7 +357,10 @@ void lefout::getObstructions(dbBlock* db_block,
     if (obs->isSystemReserved()) {
       continue;
     }
-    if (!obs->hasMinSpacing() && !obs->hasEffectiveWidth()) {
+    // Modified obstructions are written individually to keep their
+    // attributes, but they still mark their layer as occupied.
+    if (bloat_occupied_layers_
+        || (!obs->hasMinSpacing() && !obs->hasEffectiveWidth())) {
       insertObstruction(obs->getBBox(), obstructions);
     }
   }

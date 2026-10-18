@@ -59,3 +59,18 @@ check "LEF obstruction design rule width" {
 } 1
 suppress_message ODB 227
 read_lef $lef_file
+
+# A layer whose only shape is a modified obstruction is still occupied and
+# must be covered when bloating occupied layers.
+create_obstruction -layer met4 -region {30 30 40 40} -min_spacing 1.5
+set bloat_lef_file [make_result_file create_obstruction_bloat.lef]
+write_abstract_lef -bloat_occupied_layers $bloat_lef_file
+set lef_stream [open $bloat_lef_file r]
+set lef_text [read $lef_stream]
+close $lef_stream
+check "LEF bloat obstruction spacing" {
+  regexp {LAYER met4 SPACING 1\.5 ;\n\s+RECT  30 30 40 40 ;} $lef_text
+} 1
+check "LEF bloat covers modified-only layer" {
+  regexp {LAYER met4 ;\n\s+RECT  10 10 80 80 ;} $lef_text
+} 1
