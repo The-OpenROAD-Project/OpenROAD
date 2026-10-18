@@ -288,11 +288,14 @@ void CUGR::init(const int min_routing_layer,
   }
 }
 
-void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
+void CUGR::updateCriticalNets(const std::vector<int>& net_indices,
+                              const bool mark_res_aware)
 {
   updateNetSlacks(net_indices);
   // Mark res-aware nets on the real slack, before demotion clobbers it.
-  markResAwareNets(net_indices);
+  if (mark_res_aware) {
+    markResAwareNets(net_indices);
+  }
   // Demotion uses a global slack percentile; skip it during incremental.
   if (!incremental_routing_) {
     demoteNonCriticalNets(criticalSlackThreshold());
@@ -908,7 +911,8 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
   }
 
   if (critical_nets_percentage_ != 0) {
-    updateCriticalNets(net_indices);
+    // Maze passes keep the resistance-aware set the pattern stages chose.
+    updateCriticalNets(net_indices, /* mark_res_aware= */ false);
   }
 
   // Reroute one net at a time against all others, committing each in turn.

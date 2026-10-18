@@ -199,7 +199,9 @@ class CUGR
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets(const std::vector<int>& net_indices);
+  // `mark_res_aware` false keeps the resistance-aware set unchanged.
+  void updateCriticalNets(const std::vector<int>& net_indices,
+                          bool mark_res_aware = true);
   // Refresh every net's slack; runs the full parasitics estimate once per
   // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
