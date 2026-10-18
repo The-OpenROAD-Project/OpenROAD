@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "MoveCandidate.hh"
-#include "RepairSetupAnalysis.hh"
 #include "RepairSetupAnalysisReport.hh"
+#include "RepairSetupMoveSampler.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -443,10 +443,10 @@ void RepairSetupProfiler::moveSelected(MoveCandidate& candidate,
     } else if (analysis()) {
       const ProfileScope scope("analysis_observation");
       info.observer
-          = std::make_shared<RepairSetupAnalysis>(current_->resizer_,
-                                                  *observed_target,
-                                                  original_endpoint,
-                                                  current_->endpoint_);
+          = std::make_shared<RepairSetupMoveSampler>(current_->resizer_,
+                                                     *observed_target,
+                                                     original_endpoint,
+                                                     current_->endpoint_);
 
       event("analysis_selected_snapshots");
     }
@@ -635,7 +635,7 @@ void RepairSetupProfiler::beginApply(MoveCandidate& candidate)
   profiler.active_observer_ = info.observer;
   if (analysis() && info.observed) {
     if (profiler.active_observer_ == nullptr) {
-      profiler.active_observer_ = std::make_shared<RepairSetupAnalysis>(
+      profiler.active_observer_ = std::make_shared<RepairSetupMoveSampler>(
           profiler.resizer_, candidate.target(), nullptr, profiler.endpoint_);
     }
 

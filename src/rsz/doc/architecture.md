@@ -792,7 +792,7 @@ The tail may spend `wns_tail_work_pct` percent of the work of the batch stage, a
 | `2` | adds `events.csv` | Pass and batch events: commits, checkpoints, undo and stop reasons. |
 | `3` | adds `analysis/` | Per-move observations and reports. |
 
-Mode 3 measures every applied move with `RepairSetupAnalysis`, a main-thread timing observer, and writes:
+Mode 3 measures every applied move with `RepairSetupMoveSampler`, a main-thread timing observer, and writes:
 
 | File | Content |
 |---|---|
@@ -835,7 +835,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 | Target collection | `RepairTargetCollector.*` |
 | Estimation | `DelayEstimator.*`, `DelayEstimatorBufferTree.cc`, `DelayEstimatorInternal.hh`, `SequentialTimingEstimator.*`, `Rebuffer.*`, `BufferedNet.*` |
 | Estimator reports | `DelayEstimatorReporter.*` |
-| Profiler | `RepairSetupProfiler.*`, `RepairSetupAnalysis.*`, `RepairSetupAnalysisSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
+| Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupAnalysisSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
 | Thread pool | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` |
 
 ## Future Work

@@ -21,7 +21,7 @@ add_library(rsz_lib
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
     RepairSetupProfiler.cc
-    RepairSetupAnalysis.cc
+    RepairSetupMoveSampler.cc
     RepairSetupAnalysisSnapshot.cc
     RepairSetupAnalysisReport.cc
     RepairSetupAnalysisTarget.cc
