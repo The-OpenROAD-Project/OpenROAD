@@ -3,8 +3,9 @@ source "helpers.tcl"
 # Load the AES and GCD chiplets and their face-to-face power bonds.
 read_3dbx 3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45.3dbx
 
-# Read the resistance used for each inter-chip bond.
-set_extraction_rules_file -assembly 3dic_test_data/3dic_frontside_assembly.rules
+# Set a custom test resistance for each inter-chip bond.
+# Ideally, this value should come from the PDK.
+set_psm_interchip_resistance -resistance 0.1
 
 # Verify four VDD bonds and two VSS bonds connect both chiplet PDNs.
 check_power_grid -net VDD -dont_require_terminals

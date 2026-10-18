@@ -51,7 +51,6 @@ cc_library(
         "//src/dpl",
         "//src/est",
         "//src/odb/src/db",
-        "//src/rcx",
         "//src/sta:opensta_lib",
         "//src/utl",
         "//src/web:core",

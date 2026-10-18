@@ -39,20 +39,6 @@ namespace psm {
 class IRNetwork;
 class IRShort;
 
-// Reuse function to read layer resistances for 2D analysis
-// and for each chiplet in 3D analysis.
-Connection::ResistanceMap getLayerResistanceMap(
-    odb::dbNet* net,
-    sta::Scene* corner,
-    est::EstimateParasitics* estimate_parasitics,
-    utl::Logger* logger);
-
-void writeVoltageHeader(std::ostream& report);
-void writeVoltageRow(std::ostream& report,
-                     const ITermNode* node,
-                     double voltage,
-                     const std::string& prefix = "");
-
 class IRSolver
 {
  public:
@@ -91,8 +77,7 @@ class IRSolver
            utl::Logger* logger,
            const UserVoltages& user_voltages,
            const UserPowers& user_powers,
-           const PDNSim::GeneratedSourceSettings& generated_source_settings,
-           sta::Scene* corner = nullptr);
+           const PDNSim::GeneratedSourceSettings& generated_source_settings);
   // Defined in the source file, since the shorts are only forward declared
   ~IRSolver();
 
@@ -106,16 +91,6 @@ class IRSolver
 
   void report(sta::Scene* corner) const;
   void reportEM(sta::Scene* corner) const;
-  // Print the same IR and EM summaries for single-chip and assembly results.
-  static void report(const Results& results,
-                     const std::string& net_name,
-                     sta::Scene* corner,
-                     utl::Logger* logger);
-  static void reportEM(const EMResults& results,
-                       const std::string& net_name,
-                       sta::Scene* corner,
-                       utl::Logger* logger);
-
   Results getSolution(sta::Scene* corner) const;
   EMResults getEMSolution(sta::Scene* corner) const;
   PDNSim::IRDropByPoint getIRDrop(odb::dbTechLayer* layer,
@@ -157,30 +132,13 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
-  void buildAssemblySystem();
-  bool checkAssemblySystem() const;
-  void addCurrentLoad(odb::dbChipInst* chip_inst,
-                      const std::string& terminal,
-                      Current current);
-  void addStaLoads(odb::dbNet* net,
-                   const odb::PtrMap<odb::dbInst, float>& powers,
-                   Voltage power_voltage);
-  bool checkCurrentVector() const;
-  void addVoltageSource(odb::dbChipInst* chip_inst,
-                        const std::string& terminal,
-                        Voltage voltage);
-  void addVoltageSourcesFromSourceFile(const std::string& source_file);
-  bool solveAssembly();
-  bool hasValidSources() const;
-  std::size_t getNodeCount() const;
-  std::size_t getNonZeroCount() const;
-  std::size_t getCurrentLoadCount() const;
-  Current getTotalCurrent() const;
-  std::size_t getVoltageSourceCount() const;
-  bool hasAssemblySolution() const;
-  const Eigen::VectorXd& getVoltageVector() const;
-  std::optional<Voltage> getVoltage(odb::dbChipInst* chip_inst,
-                                    const std::string& terminal) const;
+  void addAssemblyVoltageSource(odb::dbChipInst* chip_inst,
+                                const std::string& terminal,
+                                Voltage voltage);
+  std::size_t getAssemblyNodeCount() const;
+  std::size_t getAssemblyCurrentLoadCount() const;
+  std::size_t getAssemblyVoltageSourceCount() const;
+  const Eigen::VectorXd& getAssemblyVoltageVector() const;
 
  private:
   struct AssemblyData;
@@ -252,17 +210,24 @@ class IRSolver
   void reportMissingBTerm() const;
   void reportShortedNodes() const;
 
+  odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner,
+                                                   bool apply_user_powers
+                                                   = false) const;
   IRSolver::Power buildNodeCurrentMap(
       sta::Scene* corner,
       std::map<const Node*, Current>& currents) const;
+  void addAssemblyLoads(odb::dbNet* net,
+                        const odb::PtrMap<odb::dbInst, Power>& powers,
+                        Voltage power_voltage);
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
   void dumpConductance(
       const Connection::ConnectionMap<Connection::Conductance>& cond,
       const std::string& name) const;
 
+  void addAssemblyVoltageSourcesFromFile(const std::string& source_file);
   bool buildSourceMap(std::map<std::size_t, Voltage>& sources) const;
-  bool checkAssemblySolution() const;
+  void solveAssembly(sta::Scene* corner, const std::string& source_file);
 
   odb::dbNet* net_;
 
@@ -294,15 +259,5 @@ class IRSolver
   static constexpr size_t kMaxShortEntries = 10000;
   static constexpr const char* kMarkerCategory = "PSM";
 };
-
-double getNominalVoltage(odb::dbNet* net,
-                         sta::Scene* corner,
-                         sta::dbSta* sta,
-                         const IRSolver::UserVoltages& user_voltages,
-                         utl::Logger* logger);
-
-odb::PtrMap<odb::dbInst, float> getInstancePower(sta::dbSta* sta,
-                                                 sta::Scene* corner,
-                                                 utl::Logger* logger);
 
 }  // namespace psm

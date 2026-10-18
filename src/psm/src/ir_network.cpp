@@ -81,12 +81,12 @@ IRNetwork::IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning)
 IRNetwork::IRNetwork(odb::dbChipNet* chip_net,
                      utl::Logger* logger,
                      bool floorplanning,
-                     std::optional<double> bond_resistance)
+                     std::optional<double> interchip_resistance)
     : net_(nullptr),
       chip_net_(chip_net),
       logger_(logger),
       floorplanning_(floorplanning),
-      bond_resistance_(bond_resistance)
+      interchip_resistance_(interchip_resistance)
 {
   construct();
 }
@@ -328,8 +328,10 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
       source, target, rseg->getResistance()));
 }
 
-// OpenRCX bond extraction is deferred until it supports multiple bump pairs
-// on the same assembly net. PSM creates the ODB resistors in the meantime.
+// OpenRCX integration is deferred until its extractor supports multiple bump
+// pairs on one assembly net. Until then, PSM creates one ODB resistor for each
+// pair of aligned bumps using the custom resistance API with user-supplied
+// resistance.
 void IRNetwork::createMatchedInterDieResistors(double resistance)
 {
   std::unordered_set<odb::dbChipBumpInst*> net_bumps;
@@ -362,15 +364,17 @@ void IRNetwork::createMatchedInterDieResistors(double resistance)
       }
       const odb::Point3D position = bump->getGlobalPosition();
       const auto match = bottom_bumps.find({position.x(), position.y()});
-      if (match != bottom_bumps.end()) {
-        odb::dbChipCapNode* source = odb::dbChipCapNode::create(chip_net_);
-        source->setChipBumpInst(match->second);
-        odb::dbChipCapNode* target = odb::dbChipCapNode::create(chip_net_);
-        target->setChipBumpInst(bump_inst);
-        odb::dbChipRSeg* resistor
-            = odb::dbChipRSeg::create(chip_net_, source, target);
-        resistor->setResistance(resistance);
+      if (match == bottom_bumps.end()) {
+        continue;
       }
+
+      odb::dbChipCapNode* source = odb::dbChipCapNode::create(chip_net_);
+      source->setChipBumpInst(match->second);
+      odb::dbChipCapNode* target = odb::dbChipCapNode::create(chip_net_);
+      target->setChipBumpInst(bump_inst);
+      odb::dbChipRSeg* resistor
+          = odb::dbChipRSeg::create(chip_net_, source, target);
+      resistor->setResistance(resistance);
     }
   }
 }
@@ -393,8 +397,8 @@ void IRNetwork::constructAssembly()
     addChipletNetwork(bump_inst, path.back());
   }
 
-  if (chip_net_->getChipRSegs().empty() && bond_resistance_) {
-    createMatchedInterDieResistors(*bond_resistance_);
+  if (chip_net_->getChipRSegs().empty() && interchip_resistance_) {
+    createMatchedInterDieResistors(*interchip_resistance_);
   }
   for (odb::dbChipRSeg* rseg : chip_net_->getChipRSegs()) {
     addInterDieConnection(rseg);

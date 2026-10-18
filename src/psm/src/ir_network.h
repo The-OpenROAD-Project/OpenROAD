@@ -75,7 +75,7 @@ class IRNetwork
   IRNetwork(odb::dbChipNet* chip_net,
             utl::Logger* logger,
             bool floorplanning = false,
-            std::optional<double> bond_resistance = std::nullopt);
+            std::optional<double> interchip_resistance = std::nullopt);
   ~IRNetwork();
 
   odb::dbNet* getNet() const { return net_; };
@@ -293,7 +293,7 @@ class IRNetwork
   std::vector<ChipletNetwork> chiplet_networks_;
   Connections interdie_connections_;
   std::vector<BondState> bond_state_;
-  std::optional<double> bond_resistance_;
+  std::optional<double> interchip_resistance_;
 
   static constexpr int kMinNodePitchMultiplier = 10;
   static constexpr double kMinNodePitchInUm = 10.0;

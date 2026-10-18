@@ -1,17 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Keep the assembly rules used by OpenRCX and PSM in sync. OpenRCX defines
-# set_extraction_rules_file before PSM is initialized.
-rename set_extraction_rules_file psm::set_extraction_rules_file
-proc set_extraction_rules_file { args } {
-  set result [psm::set_extraction_rules_file {*}$args]
-  if { [lsearch -exact $args "-assembly"] >= 0 } {
-    psm::set_assembly_rules_file_cmd [file nativename [lindex $args end]]
-  }
-  return $result
-}
-
 sta::define_cmd_args "check_power_grid" {
   -net power_net
   [-error_file error_file]
@@ -36,14 +25,9 @@ proc check_power_grid { args } {
   set floorplanning [info exists flags(-floorplanning)]
   set dont_require_bterm [info exists flags(-dont_require_terminals)]
 
-  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
-    sta::check_argc_eq0 "check_power_grid" $args
-    return [psm::check_3d_power_grid_cmd $keys(-net) \
-      $floorplanning $error_file [expr { !$dont_require_bterm }]]
-  }
 
   psm::check_connectivity_cmd \
-    [psm::find_net $keys(-net)] \
+    $keys(-net) \
     $floorplanning \
     $error_file \
     $dont_require_bterm
@@ -90,17 +74,13 @@ proc analyze_power_grid { args } {
     set source_type $keys(-source_type)
   }
 
-  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
-    sta::check_argc_eq0 "analyze_power_grid" $args
+  set is_3d [psm::is_3d_design [[ord::get_db] getChip]]
+  if { $is_3d } {
     foreach key {-source_type -allow_reuse -em_outfile} {
       if { [info exists keys($key)] || [info exists flags($key)] } {
         utl::error PSM 157 "$key is not supported for a 3D assembly."
       }
     }
-    return [psm::analyze_3d_power_grid_cmd \
-      $keys(-net) [sta::parse_scene_or_default keys] true \
-      $error_file $voltage_source_file $voltage_file \
-      [info exists flags(-enable_em)]]
   }
 
   set enable_em [info exists flags(-enable_em)]
@@ -112,8 +92,9 @@ proc analyze_power_grid { args } {
     }
   }
 
+  # find_net only finds 2D dbNets; 3D assembly nets are dbChipNets.
   psm::analyze_power_grid_cmd \
-    [psm::find_net $keys(-net)] \
+    $keys(-net) \
     [sta::parse_scene_or_default keys] \
     $source_type \
     $error_file \
@@ -260,6 +241,21 @@ proc set_pdnsim_net_voltage { args } {
     utl::error PSM 62 "Argument -net or -voltage not specified.\
       Please specify both -net and -voltage arguments."
   }
+}
+
+sta::define_cmd_args "set_psm_interchip_resistance" {
+  -resistance resistance
+}
+
+proc set_psm_interchip_resistance { args } {
+  sta::parse_key_args "set_psm_interchip_resistance" args \
+    keys {-resistance} flags {}
+  sta::check_argc_eq0 "set_psm_interchip_resistance" $args
+  if { ![info exists keys(-resistance)] } {
+    utl::error PSM 135 "Missing mandatory argument -resistance."
+  }
+  sta::check_positive_float "-resistance" $keys(-resistance)
+  psm::set_interchip_resistance_cmd $keys(-resistance)
 }
 
 sta::define_cmd_args "set_pdnsim_inst_power" {
