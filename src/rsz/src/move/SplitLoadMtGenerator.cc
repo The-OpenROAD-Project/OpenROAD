@@ -4,8 +4,8 @@
 #include "SplitLoadMtGenerator.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
-#include <optional>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -29,11 +29,8 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/Transition.hh"
-#include "utl/Logger.h"
 
 namespace rsz {
-
-using utl::RSZ;
 
 namespace {
 
@@ -61,47 +58,35 @@ class BoundingBox
   bool empty_{true};
 };
 
-// Prepare the target-net and new-net cap estimates for a split candidate.
-std::optional<LoadSplitModel> buildLoadSplitModel(
+// Fills the split model of input from its net, driver location and moved
+// loads: the moved loads with their slack budgets, their pin capacitance,
+// and the wire capacitance each net gains or loses.
+void buildLoadSplitModel(
     Resizer& resizer,
-    const Target& target,
-    const std::vector<const sta::Pin*>& moved_pins,
-    const odb::Point& new_driver_location,
+    const SelectedArc& arc,
     const std::unordered_set<const sta::Pin*>* critical_load_pins,
-    const float off_path_weight)
+    const float off_path_weight,
+    SplitLoadMtInput& input)
 {
-  if (!target.estimator_context.has_value() || moved_pins.empty()) {
-    return std::nullopt;
-  }
-
   sta::dbNetwork* network = resizer.dbNetwork();
-  sta::Net* net = network->dbToSta(network->flatNet(target.driver_pin));
-  if (net == nullptr) {
-    return std::nullopt;
-  }
-
-  const SelectedArc& arc = target.estimator_context->target().arc;
   double wire_res_per_meter = 0.0;
   double wire_cap_per_meter = 0.0;
   resizer.estimateParasitics()->wireSignalRC(
       arc.scene, wire_res_per_meter, wire_cap_per_meter);
 
   const int lib_ap = arc.scene->libertyIndex(arc.min_max);
-  LoadSplitModel model;
-  const std::unordered_set<const sta::Pin*> moved(moved_pins.begin(),
-                                                  moved_pins.end());
-
-  const odb::Point driver_location = network->location(target.driver_pin);
+  const std::unordered_set<const sta::Pin*> moved(input.load_pins.begin(),
+                                                  input.load_pins.end());
   BoundingBox all_box;
   BoundingBox kept_box;
   BoundingBox moved_box;
-  all_box.add(driver_location);
-  kept_box.add(driver_location);
-  moved_box.add(new_driver_location);
+  all_box.add(input.drvr_loc);
+  kept_box.add(input.drvr_loc);
+  moved_box.add(input.drvr_loc);
 
   sta::dbSta* sta = resizer.sta();
   std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
-      network->connectedPinIterator(net));
+      network->connectedPinIterator(input.drvr_net));
   while (pin_iter->hasNext()) {
     const sta::Pin* pin = pin_iter->next();
     if (!network->isLoad(pin) || network->isHierarchical(pin)) {
@@ -120,7 +105,7 @@ std::optional<LoadSplitModel> buildLoadSplitModel(
     const sta::LibertyPort* scene_port
         = port != nullptr ? port->scenePort(lib_ap) : nullptr;
     if (scene_port != nullptr) {
-      model.moved_pin_cap += scene_port->capacitance();
+      input.moved_pin_cap += scene_port->capacitance();
     }
 
     // The moved load keeps its current slack as the budget for the new
@@ -132,57 +117,18 @@ std::optional<LoadSplitModel> buildLoadSplitModel(
       continue;
     }
 
-    model.moved_loads.push_back(
+    input.moved_loads.push_back(
         {.pin = pin,
          .slack = sta::delayAsFloat(slack),
          .weight = sideLoadWeight(pin, critical_load_pins, off_path_weight)});
   }
 
   const double meters_per_dbu = resizer.dbuToMeters(1);
-  model.target_wire_cap_saved = static_cast<float>(
+  input.target_wire_cap_saved = static_cast<float>(
       wire_cap_per_meter * meters_per_dbu
       * std::max(all_box.halfPerimeter() - kept_box.halfPerimeter(), 0));
-  model.moved_wire_cap = static_cast<float>(wire_cap_per_meter * meters_per_dbu
+  input.moved_wire_cap = static_cast<float>(wire_cap_per_meter * meters_per_dbu
                                             * moved_box.halfPerimeter());
-  return model;
-}
-
-bool resolveDriverPin(Resizer& resizer,
-                      const Target& target,
-                      sta::Pin*& drvr_pin,
-                      sta::Vertex*& drvr_vertex)
-{
-  if (!target.canBePathDriver()) {
-    return false;
-  }
-
-  drvr_pin = target.resolvedPin(resizer);
-  if (drvr_pin == nullptr) {
-    return false;
-  }
-  if (target.fanout <= kSplitLoadMinFanout) {
-    debugPrint(resizer.logger(),
-               RSZ,
-               "split_load_move",
-               2,
-               "REJECT SplitLoadMove {}: Fanout {} <= {} min fanout",
-               resizer.network()->pathName(drvr_pin),
-               target.fanout,
-               kSplitLoadMinFanout);
-    return false;
-  }
-  if (!resizer.okToBufferNet(drvr_pin)) {
-    debugPrint(resizer.logger(),
-               RSZ,
-               "split_load_move",
-               2,
-               "REJECT SplitLoadMove {}: Not OK to buffer net",
-               resizer.network()->pathName(drvr_pin));
-    return false;
-  }
-
-  drvr_vertex = target.vertex(resizer);
-  return drvr_vertex != nullptr;
 }
 
 std::vector<FanoutSlack> collectRankedFanoutSlacks(Resizer& resizer,
@@ -224,15 +170,15 @@ std::vector<FanoutSlack> collectRankedFanoutSlacks(Resizer& resizer,
 }
 
 // The less critical half of the loads, without top-level ports.
-sta::PinSet chooseSplitLoads(Resizer& resizer,
+sta::PinSeq chooseSplitLoads(Resizer& resizer,
                              const std::vector<FanoutSlack>& fanout_slacks)
 {
-  sta::PinSet load_pins(resizer.network());
-  const int split_index = fanout_slacks.size() / 2;
-  for (int i = 0; i < split_index; ++i) {
-    sta::Pin* split_pin = fanout_slacks[i].first->pin();
+  sta::PinSeq load_pins;
+  const size_t split_index = fanout_slacks.size() / 2;
+  for (size_t i = 0; i < split_index; ++i) {
+    const sta::Pin* split_pin = fanout_slacks[i].first->pin();
     if (!resizer.network()->isTopLevelPort(split_pin)) {
-      load_pins.insert(split_pin);
+      load_pins.push_back(split_pin);
     }
   }
   return load_pins;
@@ -247,17 +193,20 @@ SplitLoadMtGenerator::SplitLoadMtGenerator(const GeneratorContext& context)
 
 bool SplitLoadMtGenerator::isApplicable(const Target& target) const
 {
+  // A split pays off only on a large fanout, and the net must accept a
+  // buffer.
   return MoveGenerator::isApplicable(target)
-         && target.isPrepared(kEstimatorContextCache);
+         && target.estimator_context.has_value()
+         && target.fanout > kSplitLoadMinFanout
+         && resizer_.okToBufferNet(target.driver_pin);
 }
 
-void SplitLoadMtGenerator::prepareInputs(const GeneratorContext& context,
-                                         Target& target)
+void SplitLoadMtGenerator::prepareInputs(Target& target) const
 {
-  Resizer& resizer = context.resizer;
-  sta::Pin* drvr_pin = nullptr;
-  sta::Vertex* drvr_vertex = nullptr;
-  if (!resolveDriverPin(resizer, target, drvr_pin, drvr_vertex)) {
+  Resizer& resizer = resizer_;
+  sta::Pin* drvr_pin = target.driver_pin;
+  sta::Vertex* drvr_vertex = target.vertex(resizer);
+  if (drvr_vertex == nullptr) {
     return;
   }
 
@@ -267,42 +216,39 @@ void SplitLoadMtGenerator::prepareInputs(const GeneratorContext& context,
     return;
   }
 
-  sta::PinSet load_pins = chooseSplitLoads(resizer, fanout_slacks);
-  if (load_pins.empty()) {
+  SplitLoadMtInput input;
+  input.load_pins = chooseSplitLoads(resizer, fanout_slacks);
+  if (input.load_pins.empty()) {
     return;
   }
 
-  sta::LibertyCell* buffer_cell = resizer.lowestDriveBufferCell();
+  input.buffer_cell = resizer.lowestDriveBufferCell();
   odb::dbNet* db_drvr_net = nullptr;
   odb::dbModNet* db_mod_drvr_net = nullptr;
   resizer.dbNetwork()->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
-  sta::Net* drvr_net = resizer.dbNetwork()->dbToSta(db_drvr_net);
-  if (buffer_cell == nullptr || drvr_net == nullptr) {
+  input.drvr_net = resizer.dbNetwork()->dbToSta(db_drvr_net);
+  if (input.buffer_cell == nullptr || input.drvr_net == nullptr) {
     return;
   }
 
   // The split model charges the moved loads their new arrival.
-  const odb::Point drvr_loc = resizer.dbNetwork()->location(drvr_pin);
-  const std::vector<const sta::Pin*> moved_pins(load_pins.begin(),
-                                                load_pins.end());
-  std::optional<LoadSplitModel> model
-      = buildLoadSplitModel(resizer,
-                            target,
-                            moved_pins,
-                            drvr_loc,
-                            context.critical_load_pins,
-                            context.policy_config.fanin_side_offpath_weight);
-  if (!model.has_value()) {
-    return;
-  }
+  input.drvr_loc = resizer.dbNetwork()->location(drvr_pin);
+  const SelectedArc& arc = target.estimator_context->target().arc;
+  buildLoadSplitModel(resizer,
+                      arc,
+                      critical_load_pins_,
+                      policy_config_.fanin_side_offpath_weight,
+                      input);
 
   // apply() resizes the new buffer to the target slew of its load, so the
-  // estimate scores the cell it ends with.
-  sta::LibertyCell* resized_cell = resizer.findTargetCell(
-      buffer_cell, model->moved_pin_cap + model->moved_wire_cap, false);
-  const SelectedArc& arc = target.estimator_context->target().arc;
+  // estimate scores the cell it ends with.  This keeps the decision in
+  // prepareInputs(): findTargetCell() sizes with the Resizer's delay
+  // calculator, which a worker thread cannot use, and the serial move sizes
+  // the same way.
+  input.resized_cell = resizer.findTargetCell(
+      input.buffer_cell, input.moved_pin_cap + input.moved_wire_cap, false);
   sta::LibertyCell* scene_buffer
-      = resized_cell->sceneCell(arc.scene, arc.min_max);
+      = input.resized_cell->sceneCell(arc.scene, arc.min_max);
   sta::LibertyPort* buffer_input = nullptr;
   sta::LibertyPort* buffer_output = nullptr;
   if (scene_buffer != nullptr) {
@@ -312,17 +258,10 @@ void SplitLoadMtGenerator::prepareInputs(const GeneratorContext& context,
     return;
   }
 
-  const float target_load_delta = buffer_input->capacitance()
-                                  - model->moved_pin_cap
-                                  - model->target_wire_cap_saved;
-  target.split_load_input = std::make_shared<const SplitLoadMtInput>(
-      SplitLoadMtInput{.drvr_net = drvr_net,
-                       .drvr_loc = drvr_loc,
-                       .load_pins = std::move(load_pins),
-                       .buffer_cell = buffer_cell,
-                       .resized_cell = resized_cell,
-                       .model = std::move(*model),
-                       .target_load_delta = target_load_delta});
+  input.target_load_delta = buffer_input->capacitance() - input.moved_pin_cap
+                            - input.target_wire_cap_saved;
+  target.split_load_input
+      = std::make_shared<const SplitLoadMtInput>(std::move(input));
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SplitLoadMtGenerator::generate(

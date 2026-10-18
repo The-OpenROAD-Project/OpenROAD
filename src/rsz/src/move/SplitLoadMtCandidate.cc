@@ -65,7 +65,7 @@ Estimate SplitLoadMtCandidate::estimate()
           context,
           input.resized_cell,
           stage.current_slew,
-          input.model.moved_pin_cap + input.model.moved_wire_cap,
+          input.moved_pin_cap + input.moved_wire_cap,
           buffer_delay)) {
     return {.legal = false,
             .reason = failReasonName(FailReason::kMissingBufferTimingArc)};
@@ -74,7 +74,7 @@ Estimate SplitLoadMtCandidate::estimate()
   const float moved_delta
       = driver_delay - stage.current_model_delay + buffer_delay;
   DelayEstimator::chargeMovedLoads(
-      context, input.model.moved_loads, moved_delta, delay_est);
+      context, input.moved_loads, moved_delta, delay_est);
 
   const float gain = delay_est.arrival_impr - delay_est.side_loss;
   Estimate estimate{.legal = delay_est.legal && gain > 0.0f,
@@ -100,8 +100,8 @@ sta::Pin* SplitLoadMtCandidate::bufferOutputPin(sta::Instance* buffer) const
 
 MoveResult SplitLoadMtCandidate::apply()
 {
-  // The insertion consumes the load set, so it works on a copy.
-  sta::PinSet load_pins = input_->load_pins;
+  // The insertion takes a mutable load list, so it works on a copy.
+  sta::PinSeq load_pins = input_->load_pins;
   sta::Instance* buffer
       = resizer_.insertBufferBeforeLoads(input_->drvr_net,
                                          &load_pins,
@@ -168,8 +168,8 @@ MoveImpact SplitLoadMtCandidate::impact() const
 std::vector<const sta::Pin*> SplitLoadMtCandidate::guardedSidePins() const
 {
   std::vector<const sta::Pin*> pins;
-  pins.reserve(input_->model.moved_loads.size());
-  for (const SideLoad& load : input_->model.moved_loads) {
+  pins.reserve(input_->moved_loads.size());
+  for (const SideLoad& load : input_->moved_loads) {
     pins.push_back(load.pin);
   }
 

@@ -45,9 +45,9 @@ class BufferedNet;
 class MoveCandidate;
 class Resizer;
 class SequentialTimingEstimator;
+struct SizeDownFanoutMtLoad;
 struct SplitLoadMtInput;
 struct SwapPinsMtInput;
-struct UnbufferMtInput;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
@@ -135,25 +135,15 @@ bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
 
 // === Target preparation flags ==============================================
 
+// The target-level data the generators read, prepared for every target of a
+// prepare stage.  A generator's own inputs come from its prepareInputs().
 using PrepareCacheMask = uint32_t;
 
 inline constexpr PrepareCacheMask kNoPrepareCache = 0;
 inline constexpr PrepareCacheMask kEstimatorContextCache = 1u << 0;
 // The flip-flop input-side checks a cell swap of the target may disturb
 // (SequentialTimingEstimator); needs kEstimatorContextCache.
-inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 8;
-
-// Generation inputs: one Mt generator's live STA reads, prepared on the main
-// thread so its generate() can run on a worker.  Without them, the cell-swap
-// generators and RebufferMt read live STA.  The other generators need them.
-inline constexpr PrepareCacheMask kInputCapBudgetCache = 1u << 2;
-inline constexpr PrepareCacheMask kRebufferInputCache = 1u << 3;
-inline constexpr PrepareCacheMask kSplitLoadInputCache = 1u << 4;
-inline constexpr PrepareCacheMask kSwapPinsInputCache = 1u << 5;
-inline constexpr PrepareCacheMask kUnbufferInputCache = 1u << 6;
-inline constexpr PrepareCacheMask kGenerationInputCaches
-    = kInputCapBudgetCache | kRebufferInputCache | kSplitLoadInputCache
-      | kSwapPinsInputCache | kUnbufferInputCache;
+inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 2;
 
 // The functionally equivalent input ports of a cell by input port.  The
 // library stays fixed within a run, so the policy shares one cache across
@@ -422,7 +412,7 @@ struct Target
   // Prepared flip-flop input-side checks for candidate Q-path swaps.
   std::shared_ptr<const SequentialTimingEstimator> sequential_timing_estimator;
 
-  // === Generation inputs (kGenerationInputCaches) ===========================
+  // === Generation inputs (MoveGenerator::prepareInputs()) ===================
   // Fanin max-cap headroom of the target instance (the cell-swap
   // generators); the STA capacitance check behind it is main-thread only.
   std::optional<std::vector<Resizer::InputCapBudget>> input_cap_budgets;
@@ -430,17 +420,23 @@ struct Target
   // side-load model, the current timing of its loads (empty without it).
   BufferedNetPtr rebuffer_net;
   RebufferLoadTimingMap rebuffer_load_timing;
-  // The move each Mt generator decided on from live STA; null (or empty)
-  // when it has none for this target.  The candidates share these.
+  // SplitLoadMt: the split prepareInputs() chose from live STA, null when it
+  // has none.  SwapPinsMt: the arc delays prepareInputs() measured through
+  // the equivalent inputs, from which generate() picks the fastest; null when
+  // the gate has none.
+  // UnbufferMt: the delay that removing the target's buffer is estimated to
+  // save, unset when the buffer cannot be removed.
+  // SizeDownFanoutMt: the measured loads generate() decides from, empty when no
+  // load has a smaller cell.  The candidates share these.
   std::shared_ptr<const SplitLoadMtInput> split_load_input;
   std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
-  std::shared_ptr<const UnbufferMtInput> unbuffer_input;
+  std::optional<float> unbuffer_gain;
+  std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>>
+      size_down_fanout_loads;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  // Check whether the per-target fields required by a prepare mask are set.
-  bool isPrepared(PrepareCacheMask mask) const;
 
   // === Lazy STA/OpenDB resolution ==========================================
   std::string name(const Resizer& resizer) const;

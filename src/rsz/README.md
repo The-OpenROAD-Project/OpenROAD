@@ -339,8 +339,9 @@ then works on the worst endpoints one batch at a time. The policy differs from
 - Effort: `-effort` tunes the stall and WNS tail limits.
 - Moves: `-sequence` lists the moves of the batches; the default is
   `vt_swap sizeup buffer split`, and the `-skip_*` options apply. Without
-  `-sequence` the WNS tail also tries `swap` and `unbuffer`. Buffering plans
-  up to three buffer trees per driver with fewer than 20 loads.
+  `-sequence` the WNS tail also tries `swap`, `unbuffer` and `size_down`.
+  Buffering plans up to three buffer trees per driver with fewer than 20
+  loads, for at most 128 targets per batch, worst slack first.
 - Endpoints: `-repair_tns` limits each batch to that share of the violating
   endpoints, as `LEGACY` limits the endpoints it repairs.
 - Path groups: under `-path_group` a batch is judged by the group's WNS and

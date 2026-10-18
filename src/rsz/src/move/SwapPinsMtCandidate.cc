@@ -72,21 +72,22 @@ Estimate SwapPinsMtCandidate::estimate()
 MoveImpact SwapPinsMtCandidate::impact() const
 {
   const SwapPinsMtInput& input = *input_;
+  sta::Network* network = resizer_.network();
+  sta::Instance* drvr = target().inst(resizer_);
+  sta::LibertyPort* drvr_port = network->libertyPort(target().driver_pin);
   MoveImpact impact = MoveCandidate::impact();
   impact.complete = true;
-  impact.write_instances.push_back(input.drvr);
-  impact.timing_effect_instances.push_back(input.drvr);
+  impact.write_instances.push_back(drvr);
+  impact.timing_effect_instances.push_back(drvr);
 
   // Both input nets exchange load pins and the output arcs change.
-  sta::Network* network = resizer_.network();
-  for (sta::LibertyPort* port :
-       {input.input_port, swap_.port, input.drvr_port}) {
-    sta::Pin* pin = network->findPin(input.drvr, port);
+  for (sta::LibertyPort* port : {input.input_port, swap_.port, drvr_port}) {
+    sta::Pin* pin = network->findPin(drvr, port);
     if (pin == nullptr) {
       continue;
     }
 
-    if (port != input.drvr_port) {
+    if (port != drvr_port) {
       impact.reconnect_pins.push_back(pin);
     }
 
@@ -99,25 +100,27 @@ MoveImpact SwapPinsMtCandidate::impact() const
 MoveResult SwapPinsMtCandidate::apply()
 {
   const SwapPinsMtInput& input = *input_;
-  sta::Pin* drvr_pin = resizer_.network()->findPin(input.drvr, input.drvr_port);
+  sta::Instance* drvr = target().inst(resizer_);
+  sta::LibertyPort* drvr_port
+      = resizer_.network()->libertyPort(target().driver_pin);
   debugPrint(resizer_.logger(),
              RSZ,
              "swap_pins_move",
              1,
              "ACCEPT SwapPinsMove {}: Cell {}, pins {} <-> {}",
-             resizer_.network()->name(drvr_pin),
-             input.drvr_port->libertyCell()->name(),
+             resizer_.network()->name(target().driver_pin),
+             drvr_port->libertyCell()->name(),
              input.input_port->name(),
              swap_.port->name());
 
-  if (!resizer_.swapPins(input.drvr, input.input_port, swap_.port)) {
+  if (!resizer_.swapPins(drvr, input.input_port, swap_.port)) {
     return rejectedMove();
   }
   return {
       .accepted = true,
       .type = MoveType::kSwapPins,
       .move_count = 1,
-      .touched_instances = {input.drvr},
+      .touched_instances = {drvr},
   };
 }
 

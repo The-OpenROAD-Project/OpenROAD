@@ -19,12 +19,8 @@ TEST_F(TestResizerMt, SwapPinsMtCandidateChargesDisplacedSignal)
   sta::LibertyPort* zn = cell->findLibertyPort("ZN");
   ASSERT_TRUE(a1 != nullptr && a2 != nullptr && zn != nullptr);
   const std::shared_ptr<const SwapPinsMtInput> input
-      = std::make_shared<const SwapPinsMtInput>(
-          SwapPinsMtInput{.drvr = nand,
-                          .drvr_port = zn,
-                          .input_port = a1,
-                          .input_delay = 50e-12f,
-                          .equivalents = {}});
+      = std::make_shared<const SwapPinsMtInput>(SwapPinsMtInput{
+          .input_port = a1, .input_delay = 50e-12f, .equivalents = {}});
 
   // Without a displaced signal the score is the plain arc delay difference.
   SwapPinsMtCandidate plain(
@@ -165,7 +161,7 @@ TEST_F(TestResizerMt, SizeUpMtGeneratorCachesLibraryOptionsPerDriverPort)
 
   // Generation consumes the cached options without changing the candidates;
   // generate() reads the prepared fanin headroom.
-  target.input_cap_budgets = resizer_.inputCapBudgets(target.inst(resizer_));
+  generator.prepareInputs(target);
   const CandidateVector candidates = generator.generate(target);
   EXPECT_EQ(candidates.size(), first.cells.size());
   EXPECT_EQ(generator.size_up_options_.size(), 1u);

@@ -26,15 +26,15 @@ class SwapPinsMtGenerator : public MoveGenerator
   const char* name() const override { return "SwapPinsMtMove"; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kEstimatorContextCache | kSwapPinsInputCache;
+    return kEstimatorContextCache;
   }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
-  // kSwapPinsInputCache: the arc delays through the equivalent inputs of the
-  // target gate.  Leaves target.swap_pins_input unset when the gate has none.
-  static void prepareInputs(const GeneratorContext& context, Target& target);
+  // The arc delays through the equivalent inputs of the target gate.  Leaves
+  // target.swap_pins_input unset when the gate has none.
+  void prepareInputs(Target& target) const override;
 };
 
 }  // namespace rsz

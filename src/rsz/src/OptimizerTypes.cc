@@ -306,19 +306,6 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   return target;
 }
 
-bool Target::isPrepared(const PrepareCacheMask mask) const
-{
-  if ((mask & ~kEstimatorContextCache) != 0) {
-    return false;
-  }
-
-  if ((mask & kEstimatorContextCache) != 0 && !estimator_context.has_value()) {
-    return false;
-  }
-
-  return true;
-}
-
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const
 {
   if (endpoint_pin != nullptr) {

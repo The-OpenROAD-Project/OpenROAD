@@ -113,7 +113,11 @@ check "repair_timing still swaps pins of FIRM instances" \
 # PARALLEL_EVAL keeps the footprint of a FIRM instance the same way.
 set snap [snapshot]
 run {repair_timing -setup -phases PARALLEL_EVAL -max_iterations 20 \
-  -sequence vt_swap,sizeup,swap}
+  -sequence vt_swap,sizeup,size_down,swap}
+puts "PARALLEL_EVAL FIRM changes: width [changed $snap width FIRM]\
+  location [changed $snap location FIRM] status [changed $snap status FIRM]\
+  pins [changed $snap pins FIRM]"
+puts "PARALLEL_EVAL PLACED changes: width [changed $snap width PLACED]"
 check "PARALLEL_EVAL sizes no FIRM instance" { changed $snap width FIRM } 0
 check "PARALLEL_EVAL moves no FIRM instance" { changed $snap location FIRM } 0
 check "PARALLEL_EVAL keeps every FIRM instance FIRM" { changed $snap status FIRM } 0

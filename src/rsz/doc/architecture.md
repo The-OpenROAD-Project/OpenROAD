@@ -231,7 +231,6 @@ struct Target
 
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  bool isPrepared(PrepareCacheMask mask) const;
 };
 ```
 
@@ -365,7 +364,7 @@ for (Target& target : targets) {
 }
 ```
 
-Generators declare per-target data requirements with mask constants:
+Generators declare this data with mask constants:
 
 ```cpp
 PrepareCacheMask prepareRequirements() const override

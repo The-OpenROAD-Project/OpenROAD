@@ -181,6 +181,8 @@ add_executable(TestResizerMt
     TestRepairSetupProfiler.cc
     TestRepairTargetCollector.cc
     TestResizerMt.cc
+    TestSplitLoadMt.cc
+    TestUnbufferMt.cc
 )
 target_link_libraries(TestResizerMt
         OpenSTA

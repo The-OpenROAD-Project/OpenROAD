@@ -26,15 +26,17 @@ class SplitLoadMtGenerator : public MoveGenerator
   const char* name() const override { return "SplitLoadMtMove"; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kEstimatorContextCache | kSplitLoadInputCache;
+    return kEstimatorContextCache;
   }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
-  // kSplitLoadInputCache: the live STA and placement reads behind one split.
-  // Leaves target.split_load_input unset when the target has no split.
-  static void prepareInputs(const GeneratorContext& context, Target& target);
+  // Main thread, before generate(): picks the less critical half of the
+  // loads (top-level ports stay), estimates the loading change and sizes the
+  // new buffer.  Stores the split in target.split_load_input, which stays
+  // null when the target cannot be split.
+  void prepareInputs(Target& target) const override;
 };
 
 }  // namespace rsz

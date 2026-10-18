@@ -37,13 +37,11 @@ void appendReconnectedLoad(MoveImpact& impact,
 RebufferMtCandidate::RebufferMtCandidate(
     Resizer& resizer,
     const Target& target,
-    const EstimatorContext& estimator_context,
     const RebufferTreePlan& plan,
     const float score_scale,
     const float min_score,
     std::vector<BufferTreeSidePathContext> side_contexts)
     : MoveCandidate(resizer, target),
-      estimator_context_(estimator_context),
       plan_(plan),
       side_contexts_(std::move(side_contexts)),
       score_scale_(score_scale),
@@ -55,9 +53,11 @@ Estimate RebufferMtCandidate::estimate()
 {
   // Score the same topology that apply() commits.  Side loads moved behind
   // new buffers pay their negative-region slack loss out of the target gain.
+  const EstimatorContext& estimator_context
+      = target().estimator_context.value();
   const DelayEstimate delay_est
       = DelayEstimator::estimateBufferTreeWithSidePaths(
-          estimator_context_, plan_, side_contexts_, nullptr, nullptr);
+          estimator_context, plan_, side_contexts_, nullptr, nullptr);
   raw_score_ = delay_est.arrival_impr - delay_est.side_loss;
   Estimate estimate{.reason = failReasonName(delay_est.reason)};
   estimate.score = scaledScore();

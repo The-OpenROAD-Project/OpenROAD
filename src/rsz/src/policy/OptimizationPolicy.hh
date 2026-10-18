@@ -99,8 +99,8 @@ class OptimizationPolicy
   virtual void buildMoveGenerators(const std::vector<MoveType>& move_types,
                                    const GeneratorContext& context);
 
-  // The enabled generators' target-level caches; the generation inputs are
-  // left to a policy that prepares them per generator.
+  // The target-level data the enabled generators read.  Each generator's own
+  // inputs come from its prepareInputs(), called right before generate().
   PrepareCacheMask accumulatePrepareRequirements() const;
   MoveGenerator* findGenerator(MoveType type) const;
 
@@ -120,9 +120,6 @@ class OptimizationPolicy
   void prepareEstimatorContext(Target& target) const;
   // Prepare the flip-flop input-side checks of a cell swap of the target.
   void prepareSequentialEstimator(Target& target) const;
-  // Capture the target instance's fanin max-cap headroom.
-  void prepareInputCapBudgets(Target& target) const;
-
   // Prewarm Liberty-cell caches used by MT generator candidate selection.
   void prewarmTargetLibertyCaches(const std::vector<Target>& targets,
                                   bool prewarm_swappable_cells,
