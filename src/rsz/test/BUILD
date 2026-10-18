@@ -191,6 +191,7 @@ TESTS = [
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
     "repair_setup_undo2",
+    "repair_timing_option_errors",
     "repair_timing_path_group1",
     "repair_timing_path_group2",
     "repair_timing_path_group3",

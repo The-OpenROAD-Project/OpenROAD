@@ -5508,6 +5508,11 @@ bool Resizer::repairSetup(double setup_margin,
                           int profile_mode,
                           const char* profile_dir)
 {
+  // Checked here, so every command that reaches repairSetup() is covered.
+  if (profile_mode < 0 || profile_mode > 3) {
+    logger_->error(RSZ, 3243, "-profile_mode must be 0, 1, 2 or 3.");
+  }
+
   utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
@@ -6792,7 +6797,7 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
   return result;
 }
 
-RepairEffort Resizer::repairEffortFromString(const std::string& effort)
+RepairEffort Resizer::repairEffortFromString(const std::string& effort) const
 {
   if (effort == "low") {
     return RepairEffort::kLow;
@@ -6802,6 +6807,10 @@ RepairEffort Resizer::repairEffortFromString(const std::string& effort)
     return RepairEffort::kMedium;
   }
 
+  // The Tcl and Python commands both parse -effort here.
+  if (effort != "high") {
+    logger_->error(RSZ, 3242, "-effort must be low, medium or high.");
+  }
   return RepairEffort::kHigh;
 }
 

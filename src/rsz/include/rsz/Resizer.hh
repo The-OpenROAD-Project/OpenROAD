@@ -580,8 +580,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
-  // "low" or "medium"; anything else is the default, high.
-  static RepairEffort repairEffortFromString(const std::string& effort);
+  // "low", "medium" or "high"; anything else is error RSZ-3242.
+  RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(sta::Vertex* drvr);

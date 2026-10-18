@@ -458,9 +458,10 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   EXPECT_EQ(low.stall_max_batches, high.stall_max_batches);
   EXPECT_FLOAT_EQ(low.progress_pct, high.progress_pct);
 
-  EXPECT_EQ(Resizer::repairEffortFromString("low"), RepairEffort::kLow);
-  EXPECT_EQ(Resizer::repairEffortFromString("medium"), RepairEffort::kMedium);
-  EXPECT_EQ(Resizer::repairEffortFromString("high"), RepairEffort::kHigh);
+  EXPECT_EQ(resizer_.repairEffortFromString("low"), RepairEffort::kLow);
+  EXPECT_EQ(resizer_.repairEffortFromString("medium"), RepairEffort::kMedium);
+  EXPECT_EQ(resizer_.repairEffortFromString("high"), RepairEffort::kHigh);
+  EXPECT_THROW(resizer_.repairEffortFromString("max"), std::runtime_error);
 }
 
 TEST_F(TestResizerMtSequential,
