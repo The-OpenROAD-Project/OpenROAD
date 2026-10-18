@@ -6762,8 +6762,10 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
 
 std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides)
 {
+  const std::vector<Net*> nets = groute_->updateDirtyRoutes(save_guides);
   std::vector<odb::dbNet*> rerouted;
-  for (Net* net : groute_->updateDirtyRoutes(save_guides)) {
+  rerouted.reserve(nets.size());
+  for (Net* net : nets) {
     rerouted.push_back(net->getDbNet());
   }
   return rerouted;
