@@ -34,6 +34,8 @@ namespace {
 
 using utl::RSZ;
 
+// The fanout limit of the LEGACY buffer removal (UnbufferGenerator), for an
+// upstream driver without a max-fanout limit of its own.
 constexpr int kBufferRemovalMaxFanout = 10;
 
 // The buffer, its upstream driver and the scene the removal checks read.
