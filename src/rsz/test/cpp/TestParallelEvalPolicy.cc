@@ -321,7 +321,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyHasNoUtilizationCap)
   EXPECT_TRUE(ResizerTestPeer::withinMaxUtilization(policy));
 }
 
-TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopReadsTheWalkedArea)
+TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopCountsARemoval)
 {
   // -max_utilization is a share of the core area, which the fixture lacks.
   const odb::Rect core(0, 0, 200000, 200000);
@@ -350,16 +350,16 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopReadsTheWalkedArea)
   SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
   ASSERT_TRUE(policy.start());
 
-  // A requested unbuffer move shares a batch with an upsize.  The removal
-  // leaves the tracked area unchanged, so only that area crosses the limit,
-  // and the run goes on.
+  // A requested unbuffer move shares a batch with an upsize.  The removal frees
+  // more area than the upsize takes, so the design stays below the limit and
+  // the run goes on.
   ResizerTestPeer::openBatchJournal(policy);
   UnbufferMtCandidate unbuffer(resizer_, removal);
   SizeUpMtCandidate size_up(
       resizer_, upsize, upsize.inst(resizer_), larger, 1.0f);
   ASSERT_TRUE(committer.commit(unbuffer).accepted);
   ASSERT_TRUE(committer.commit(size_up).accepted);
-  ASSERT_TRUE(resizer_.overMaxArea());
+  EXPECT_FALSE(resizer_.overMaxArea());
   EXPECT_TRUE(ResizerTestPeer::withinMaxUtilization(policy));
   EXPECT_FALSE(ResizerTestPeer::finishAtMaxArea(policy));
   EXPECT_FALSE(policy.converged());

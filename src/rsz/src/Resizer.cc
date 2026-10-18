@@ -3113,6 +3113,9 @@ bool Resizer::removeBuffer(sta::Instance* buffer,
   }
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
+  // Both paths below delete the buffer, so its area leaves the tracked area
+  // that overMaxArea() reads.
+  designAreaIncr(-area(db_inst->getMaster()));
   if (output_db_net == nullptr) {
     std::optional<BufferRemovalProtection> protection;
     if (!honor_dont_touch_fixed) {

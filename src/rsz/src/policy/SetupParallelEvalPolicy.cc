@@ -364,10 +364,9 @@ bool SetupParallelEvalPolicy::finishIfNoSetupViolations()
 
 bool SetupParallelEvalPolicy::finishAtMaxArea()
 {
-  // Like LEGACY, nothing runs at the -max_utilization area.  The walked area of
-  // the verdict decides, because removeBuffer() leaves the tracked area of
-  // overMaxArea() unchanged.  The verdict keeps batches below the limit, so
-  // normally only a design that starts there stops here.
+  // Like LEGACY, nothing runs at the -max_utilization area.  The verdict keeps
+  // batches below the limit, so normally only a design that starts there stops
+  // here.
   if (withinMaxUtilization()) {
     return false;
   }
@@ -597,12 +596,8 @@ SetupParallelEvalPolicy::BatchQor SetupParallelEvalPolicy::measureQor() const
 bool SetupParallelEvalPolicy::withinMaxUtilization() const
 {
   // Only the -max_utilization area limit of repair_timing applies, as in
-  // LEGACY; without it any area is legal.  The area is walked once per
-  // netlist edit.
-  if (resizer_.maxArea() <= 0.0) {
-    return true;
-  }
-  return !sta::fuzzyGreaterEqual(progress_.designArea(), resizer_.maxArea());
+  // LEGACY; without it any area is legal.
+  return !resizer_.overMaxArea();
 }
 
 void SetupParallelEvalPolicy::noteMissedBatch(const bool utilization_legal)
