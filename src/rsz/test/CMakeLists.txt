@@ -264,6 +264,12 @@ or_integration_tests(
     report_buffers_sky130hd
     report_buffers_gf180
     report_buffers_no_lef
+    report_delay_estimator_sizing_accuracy
+    report_delay_estimator_rebuffer_fanout8
+    report_delay_estimator_rebuffer_minimal
+    report_delay_estimator_rebuffer_prebuffered
+    report_delay_estimator_rebuffer_side_paths
+    report_delay_estimator_rebuffer_steiner
     repair_setup_vt_swap
     repair_setup_vtswap_legacy_asap7
     repair_setup_parallel_eval

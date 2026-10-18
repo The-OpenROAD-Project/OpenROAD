@@ -39,6 +39,8 @@
 
 #include "DelayEstimator.hh"
 #include "Rebuffer.hh"
+#include "RepairSetupAnalysis.hh"
+#include "RepairSetupAnalysisTarget.hh"
 #include "RepairSetupProfiler.hh"
 #include "SequentialTimingEstimator.hh"
 #include "rsz/Resizer.hh"
@@ -55,9 +57,7 @@
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
-#define private public
-#include "SizeUpMatchGenerator.hh"
-#undef private
+#include "SizeUpCandidate.hh"
 #include "SizeUpMtCandidate.hh"
 #define private public
 #include "SizeUpMtGenerator.hh"
@@ -65,6 +65,7 @@
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"

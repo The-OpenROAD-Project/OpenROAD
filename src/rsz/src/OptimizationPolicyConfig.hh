@@ -53,7 +53,7 @@ struct ParallelEvalPolicyConfig
 {
   // --- Batch size ---------------------------------------------------------
 
-  // Smallest batch cap.
+  // Smallest batch cap; also the floor of the stall move budget.
   int min_batch_cap{64};
 
   // The cap is the failing endpoint count, clamped to the two caps.
@@ -85,8 +85,16 @@ struct ParallelEvalPolicyConfig
 
   // --- Checkpoint, salvage and undo -----------------------------------------
 
-  // Consecutive batches that may miss the checkpoint before the run stops.
+  // Consecutive batches that may miss the checkpoint before the batch stage
+  // gives up.  As after every rule that ends the batches, a run that has kept
+  // no move retries once with small batches; otherwise the WNS tail starts,
+  // or the run ends when there is none.
   int max_checkpoint_misses{8};
+
+  // A stage counts as slowed by the batch only when its delay grows by more
+  // than this fraction of its total; slew changes elsewhere in the batch move
+  // untouched arcs by a hair.
+  float culprit_delay_ratio{0.01f};
   // A batch that improves TNS is also saved while its WNS stays within this
   // percent of the best checkpoint WNS.
   float checkpoint_wns_tolerance_pct{1.0f};

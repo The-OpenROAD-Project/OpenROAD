@@ -1167,6 +1167,7 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* endpoint_path,
     const sta::PathExpanded& expanded,
     const sta::Slack path_slack,
+    const sta::Pin* violated_endpoint_pin,
     std::vector<Target>& targets) const
 {
   const int start_index = static_cast<int>(expanded.startIndex());
@@ -1189,8 +1190,12 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
       continue;
     }
 
-    targets.push_back(makePathDriverTarget(
-        endpoint_path, expanded, index, path_slack, *resizer_));
+    targets.push_back(makePathDriverTarget(endpoint_path,
+                                           expanded,
+                                           index,
+                                           path_slack,
+                                           *resizer_,
+                                           violated_endpoint_pin));
   }
 }
 
@@ -1229,9 +1234,12 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     return targets;
   }
 
+  // Latch D-side segments keep the endpoint of the whole path.
+  const sta::Pin* violated_endpoint_pin = path->pin(sta_);
   sta::PathExpanded expanded(path, sta_);
   targets.reserve(expanded.size());
-  collectExpandedPathDriverTargets(path, expanded, path_slack, targets);
+  collectExpandedPathDriverTargets(
+      path, expanded, path_slack, violated_endpoint_pin, targets);
 
   // A latch-through path starts at latch Q in OpenSTA, with each latch D path
   // stored as side context.  Expand those D paths separately so repair_timing
@@ -1241,7 +1249,7 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
       sta_,
       [&](const sta::Path* d_path, sta::PathExpanded& d_expanded) {
         collectExpandedPathDriverTargets(
-            d_path, d_expanded, path_slack, targets);
+            d_path, d_expanded, path_slack, violated_endpoint_pin, targets);
         return false;
       });
 

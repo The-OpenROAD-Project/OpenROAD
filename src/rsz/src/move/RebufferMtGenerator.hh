@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -13,10 +12,6 @@
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "RebufferPlannerPool.hh"
-
-namespace sta {
-class Pin;
-}  // namespace sta
 
 namespace rsz {
 
@@ -67,30 +62,16 @@ class RebufferMtGenerator : public MoveGenerator
   void finishPhase() override;
 
  private:
-  // The candidates of one target: the tree plans of `net` from
-  // `rebuffer_planner`.
-  std::vector<std::unique_ptr<MoveCandidate>> generateWith(
-      const Target& target,
-      Rebuffer& rebuffer_planner,
-      BufferedNetPtr net,
-      const RebufferLoadTimingMap& load_timing) const;
   // Main-thread STA reads for every load of the target driver net.
-  static RebufferLoadTimingMap collectLoadTiming(
-      Resizer& resizer,
-      const Target& target,
-      const std::unordered_set<const sta::Pin*>* critical_load_pins,
-      float off_path_weight);
-  // One candidate per tree plan that passes the plan gates.
+  RebufferLoadTimingMap collectLoadTiming(const Target& target) const;
+  // The tree plans of the target's prepared net that become candidates.
+  std::vector<RebufferTreePlan> makeTreePlans(Rebuffer& rebuffer_planner,
+                                              const Target& target) const;
+  // One candidate per tree plan.
   void addTreePlanCandidates(
       const Target& target,
       const std::vector<RebufferTreePlan>& plans,
-      const RebufferLoadTimingMap& load_timing,
       std::vector<std::unique_ptr<MoveCandidate>>& candidates) const;
-  // Side contexts without a downstream window for the plan's other loads.  The
-  // main tree window scores the target load path.
-  static std::vector<BufferTreeSidePathContext> makeSideContexts(
-      const RebufferTreePlan& plan,
-      const RebufferLoadTimingMap& load_timing);
 
   // Empty outside a phase with worker threads.
   RebufferPlannerPool planners_;

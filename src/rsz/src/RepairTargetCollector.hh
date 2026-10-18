@@ -357,6 +357,7 @@ class RepairTargetCollector
   void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
                                         const sta::PathExpanded& expanded,
                                         sta::Slack path_slack,
+                                        const sta::Pin* violated_endpoint_pin,
                                         std::vector<Target>& targets) const;
   void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
                                      set<const sta::Pin*>& pins) const;

@@ -86,6 +86,8 @@ TEST_F(TestResizerMt, CollectorChunkedCritPathTargetsMatchFullCollection)
   ASSERT_EQ(chunked.size(), full.size());
   for (size_t index = 0; index < full.size(); ++index) {
     EXPECT_EQ(chunked[index].driver_pin, full[index].driver_pin);
+    EXPECT_EQ(chunked[index].violated_endpoint_pin,
+              full[index].violated_endpoint_pin);
     EXPECT_FLOAT_EQ(chunked[index].slack, full[index].slack);
   }
 

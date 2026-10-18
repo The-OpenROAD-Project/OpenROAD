@@ -15,22 +15,16 @@
 #include "DelayEstimatorInternal.hh"
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
-#include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
-#include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
-#include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/SearchClass.hh"
-#include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
 
 namespace rsz {
@@ -492,47 +486,6 @@ DelayEstimate estimateSidePathWindow(const EstimatorContext& target_context,
 }
 
 }  // namespace
-
-sta::PathEndSeq DelayEstimator::findPathEndsThrough(
-    sta::dbSta* sta,
-    const std::vector<sta::Pin*>& through_pins,
-    const sta::MinMaxAll* min_max_all,
-    const int count)
-{
-  // The search owns the exception objects.
-  sta::PinSet* pins = new sta::PinSet(sta->network());
-  for (sta::Pin* pin : through_pins) {
-    pins->insert(pin);
-  }
-
-  sta::ExceptionThru* through = sta->makeExceptionThru(
-      pins, nullptr, nullptr, sta::RiseFallBoth::riseFall(), sta->cmdSdc());
-
-  sta::ExceptionThruSeq* thrus = new sta::ExceptionThruSeq;
-  thrus->push_back(through);
-  sta::StringSeq group_names;
-
-  return sta->findPathEnds(nullptr,
-                           thrus,
-                           nullptr,
-                           false,
-                           sta->scenes(),
-                           min_max_all,
-                           count,
-                           count,
-                           false,
-                           false,
-                           -sta::INF,
-                           sta::INF,
-                           true,
-                           group_names,
-                           true,
-                           false,
-                           false,
-                           false,
-                           false,
-                           false);
-}
 
 DelayEstimate DelayEstimator::estimateBufferTreeWithSidePaths(
     const EstimatorContext& context,

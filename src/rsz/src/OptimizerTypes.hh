@@ -391,6 +391,13 @@ struct Target
   // The current path-segment endpoint survives STA refresh; Path* cannot.
   const sta::Pin* endpoint_pin{nullptr};
 
+  // Original failing endpoint that caused this target to be collected.  This
+  // differs from endpoint_pin for latch D-side fanin segments.  The endpoint
+  // collector sets it; the LEGACY policies leave it null.
+  const sta::Pin* violated_endpoint_pin{nullptr};
+  // Transition of the selected driver path.
+  const sta::RiseFall* driver_rf{nullptr};
+
   // Endpoint-side timing path handle.  Expanding this path exposes the full
   // startpoint-to-endpoint chain.
   const sta::Path* endpoint_path{nullptr};
@@ -399,6 +406,10 @@ struct Target
   // Selected driver stage on `path`.  inputPath() and prevDriverPath() walk
   // backward from this stage with Path::prevPath().
   const sta::Path* driver_path{nullptr};
+  // The load the driver feeds on the path, captured while the path is valid:
+  // a through-filtered path end does not survive the next search.  Null when
+  // the path ends at the driver.
+  const sta::Pin* load_pin{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
   // scene and min_max are captured at construction (while endpoint_path is
@@ -441,6 +452,7 @@ struct Target
   // === Lazy STA/OpenDB resolution ==========================================
   std::string name(const Resizer& resizer) const;
   const sta::Pin* endpointPin(const Resizer& resizer) const;
+  const sta::Pin* violatedEndpointPin(const Resizer& resizer) const;
   sta::Pin* resolvedPin(const Resizer& resizer) const;
   sta::Instance* inst(const Resizer& resizer) const;
   sta::Vertex* vertex(const Resizer& resizer) const;
@@ -480,7 +492,8 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             int path_index,
                             sta::Slack slack,
-                            const Resizer& resizer);
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin = nullptr);
 
 // === Estimation inputs and results =========================================
 
@@ -615,8 +628,8 @@ struct OptimizerRunConfig
   // Stop-rule preset of PARALLEL_EVAL; the other policies ignore it.
   RepairEffort effort{RepairEffort::kHigh};
   // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
-  // pass events.  Files go to profile_dir, or "repair_setup_profile" when
-  // empty, with one run_N per call.
+  // pass events, 3 adds the per-move analysis.  Files go to profile_dir, or
+  // "repair_setup_profile" when empty, with one run_N per call.
   int profile_mode{0};
   std::string profile_dir;
   std::vector<MoveType> sequence;

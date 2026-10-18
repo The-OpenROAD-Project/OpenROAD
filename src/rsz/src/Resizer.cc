@@ -2093,6 +2093,15 @@ void Resizer::reportDelayEstimatorAccuracy(sta::Instance* inst,
   reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);
 }
 
+void Resizer::reportDelayEstimatorAccuracyForRebufferTree(
+    sta::Instance* inst,
+    sta::Pin* driver_pin,
+    const int delay_levels)
+{
+  DelayEstimatorReporter reporter(*this);
+  reporter.reportAccuracyForRebufferTree(inst, driver_pin, delay_levels);
+}
+
 bool Resizer::isValidDelayEstimatorName(const std::string& name)
 {
   return DelayEstimatorReporter::parseEstimatorKind(name).has_value();

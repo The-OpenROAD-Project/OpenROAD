@@ -204,7 +204,7 @@ bool Optimizer::run()
   bool show_startpoint_metrics = false;
   for (int i = 0; i < phase_count; ++i) {
     const std::string& phase_name = phase_names[i];
-    profile.phase(phase_name, i + 1);
+    profile.beginPhase(phase_name, i + 1);
     setup_context.phase_index = i;
     std::unique_ptr<OptimizationPolicy> policy
         = makePolicyForPhase(phase_name, setup_context);

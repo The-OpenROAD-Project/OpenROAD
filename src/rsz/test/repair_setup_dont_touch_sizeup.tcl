@@ -28,7 +28,7 @@ proc check_instance_refs { before_refs stage } {
 proc run_sizeup_repair { repair_policy before_refs } {
   puts "Repair policy: $repair_policy"
   repair_timing -setup \
-    -phases $repair_policy \
+    -policy $repair_policy \
     -sequence "sizeup" \
     -skip_last_gasp \
     -skip_crit_vt_swap

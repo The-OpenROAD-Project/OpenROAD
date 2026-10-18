@@ -566,6 +566,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
+  void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
+                                                   sta::Pin* driver_pin,
+                                                   int delay_levels);
   void reportDelayEstimatorAccuracy(sta::Instance* inst,
                                     sta::LibertyCell* replacement,
                                     const std::string& estimator,
