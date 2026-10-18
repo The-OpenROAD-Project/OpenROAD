@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -153,12 +153,14 @@ cc_library(
         "src/Pin.cpp",
         "src/RepairAntennas.cpp",
         "src/RepairAntennas.h",
+        "src/RoutingCongestion.cpp",
         "src/RoutingTracks.h",
         "src/Rudy.cpp",
     ],
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
+        "include/grt/RoutingCongestion.h",
         "include/grt/Rudy.h",
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
@@ -320,4 +322,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/grt/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":grt"],
 )

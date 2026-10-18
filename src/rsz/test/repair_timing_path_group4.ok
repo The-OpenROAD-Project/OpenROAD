@@ -1,0 +1,43 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0228] Created path group 'reg2reg'.
+[INFO RSZ-0228] Created path group 'in2reg'.
+-- reg2reg before
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_893_/Q (DFF_X1)                     _869_/D (DFF_X1)                       -0.1118
+
+-- in2reg before
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+req_msg[28] (input)                  _877_/D (DFF_X1)                       -0.1611
+
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 32 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.112 |       -2.5 |     32 | _869_/D
+     516* |      28 |      55 |       33 |      0 |    17 |    +7.9% |   -0.029 |       -0.4 |     32 | _880_/D
+    final |      28 |      55 |       33 |      0 |    17 |    +7.9% |   -0.029 |       -0.4 |     16 | _880_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 28 buffers.
+[INFO RSZ-0040] Inserted 33 buffers.
+[INFO RSZ-0051] Resized 55 instances: 55 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 17 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+-- reg2reg after
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_871_/Q (DFF_X1)                     _880_/D (DFF_X1)                       -0.0286
+
+-- in2reg after
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+req_msg[28] (input)                  _877_/D (DFF_X1)                       -0.1611
+

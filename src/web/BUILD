@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm_web//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -114,49 +117,102 @@ genrule(
     tools = [":embed_report_assets"],
 )
 
+py_binary(
+    name = "inline_styles",
+    srcs = ["src/inline_styles.py"],
+    main = "src/inline_styles.py",
+)
+
+py_binary(
+    name = "collect_licenses",
+    srcs = ["src/collect_licenses.py"],
+    main = "src/collect_licenses.py",
+)
+
+# ── The browser bundle ──────────────────────────────────────────────────────
+# The viewer and its npm libraries, bundled and minified for web_assets below.
+# The CMake build still serves the sources and index.cmake.html.
+
+npm_link_all_packages(name = "node_modules")
+
+# What the bundle carries, with their dependencies, and so whose licences ship
+# with it.
+_BUNDLED_PACKAGES = [":node_modules/" + p for p in [
+    "golden-layout",
+    "leaflet",
+    "netlistsvg",
+    "three",
+]]
+
+js_library(
+    name = "app_js",
+    srcs = glob(["src/*.js"]) + [
+        "esbuild.config.mjs",
+        "src/openroad_skin.svg",
+    ],
+    deps = _BUNDLED_PACKAGES,
+)
+
+# The stylesheets import Golden Layout's and Leaflet's CSS.
+js_library(
+    name = "css",
+    srcs = glob(["src/*.css"]),
+    deps = [
+        ":node_modules/golden-layout",
+        ":node_modules/leaflet",
+    ],
+)
+
+# $(SRCS) expands to every package directory, dependencies included.
+genrule(
+    name = "third_party_licenses",
+    srcs = _BUNDLED_PACKAGES,
+    outs = ["bundle/THIRD_PARTY_LICENSES.txt"],
+    cmd = "$(execpath :collect_licenses) --output $@ $(SRCS)",
+    tools = [":collect_licenses"],
+)
+
+[esbuild(
+    name = name,
+    config = "esbuild.config.mjs",
+    entry_point = "src/%s" % entry,
+    # sax requires Node's stream inside a try, and falls back without it.
+    external = ["stream"],
+    minify = True,
+    output = output,
+    # No .map is served; esbuild.config.mjs cannot set this key.
+    sourcemap = "",
+    deps = [":app_js" if entry.endswith(".js") else ":css"],
+) for name, entry, output in [
+    ("app_bundle", "entry-app.js", "bundle/app.min.js"),
+    ("vendor_css", "vendor.css", "vendor.min.css"),
+    ("app_css", "style.css", "app.min.css"),
+    ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
+    ("gl_theme_light_bundle", "gl-theme-light.css", "gl-light.min.css"),
+]]
+
+_STYLES = [
+    "app.min.css",
+    "gl-dark.min.css",
+    "gl-light.min.css",
+    "vendor.min.css",
+]
+
+genrule(
+    name = "index_html",
+    srcs = ["src/index.html"] + _STYLES,
+    outs = ["bundle/index.html"],
+    cmd = "$(execpath :inline_styles) --html $(location src/index.html)" +
+          " --output $@ " +
+          " ".join(["--style $(location %s)" % s for s in _STYLES]),
+    tools = [":inline_styles"],
+)
+
+# Served by file name.
 _WEB_ASSET_FILES = [
-    "src/index.html",
-    "src/style.css",
-    "src/theme.js",
-    "src/tile-merge.js",
-    "src/tile-request.js",
-    "src/device-pixels.js",
-    "src/layer-extents.js",
-    "src/merged-tile-layer.js",
-    "src/display-state.js",
-    "src/3d-viewer-widget.js",
-    "src/coordinates.js",
-    "src/ui-utils.js",
-    "src/checkbox-tree-model.js",
-    "src/color-tree.js",
-    "src/vis-tree.js",
-    "src/websocket-manager.js",
-    "src/websocket-tile-layer.js",
-    "src/display-controls.js",
-    "src/inspector.js",
-    "src/ruler.js",
-    "src/label-manager.js",
-    "src/tcl-completer.js",
-    "src/hierarchy-browser.js",
-    "src/clusters-widget.js",
-    "src/hierarchy-panel.js",
-    "src/menu-bar.js",
-    "src/options-dialogs.js",
-    "src/context-menu.js",
-    "src/search-nav.js",
-    "src/capture.js",
-    "src/toolbar.js",
-    "src/image-export.js",
-    "src/edit-dialogs.js",
-    "src/title.js",
-    "src/clock-tree-widget.js",
-    "src/schematic-widget.js",
-    "src/openroad_skin.svg",
-    "src/charts-widget.js",
-    "src/timing-widget.js",
-    "src/drc-widget.js",
-    "src/selection-browser.js",
-    "src/main.js",
+    "bundle/THIRD_PARTY_LICENSES.txt",
+    "bundle/app.min.js",
+    "bundle/index.html",
 ]
 
 genrule(
@@ -237,6 +293,7 @@ cc_library(
 cc_library(
     name = "web",
     srcs = [
+        "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
@@ -253,7 +310,6 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_gif.cpp",
         "src/web_gif.h",
@@ -281,6 +337,7 @@ cc_library(
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
         "src/shape_collector.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -311,6 +368,7 @@ cc_library(
         "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
+        "@zlib",
     ],
 )
 
@@ -369,6 +427,16 @@ tcl_wrap_cc(
 )
 
 exports_files(["README.md"])
+
+exports_files(
+    [
+        "esbuild.config.mjs",
+        "package.json",
+        "pnpm-lock.yaml",
+        "src/openroad_skin.svg",
+    ],
+    visibility = ["//src/web/test:__pkg__"],
+)
 
 messages_txt(
     visibility = ["//docs:__pkg__"],

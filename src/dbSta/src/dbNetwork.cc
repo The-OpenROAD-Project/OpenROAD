@@ -1139,8 +1139,10 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
 
   // One plain Cell per unique chiplet master (names the chip-insts; the
   // binding point for a vendor ETM LibertyCell later), with a descriptive
-  // Port per bound chip-bump bterm. Bump timing pins are the pad iterms,
-  // not these ports.
+  // Port per bterm of the master's block. Every such bterm is reachable as
+  // a Pin by net traversal, and port(const Pin*) resolves it here, so a
+  // bterm without a bump (e.g. a package-facing port) needs a Port too.
+  // Bump timing pins are the pad iterms, not these ports.
   chip_master_lib_ = makeLibrary("3dic_chip_master_lib", "");
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
@@ -1150,19 +1152,14 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
     Cell* master_cell
         = makeCell(chip_master_lib_, master->getName(), /*is_leaf=*/false, "");
     chip_master_cells_[master] = master_cell;
-    for (odb::dbChipRegion* region : master->getChipRegions()) {
-      for (odb::dbChipBump* bump : region->getChipBumps()) {
-        odb::dbBTerm* bterm = bump->getBTerm();
-        if (bterm == nullptr) {
-          // Spare bump (no port/net binding): not a logical endpoint, no
-          // Port to synthesize. Connected bumps are guaranteed a bterm by
-          // STA-3005; spares are likewise filtered out of pin enumeration.
-          continue;
-        }
-        Port* port = makePort(master_cell, bterm->getConstName());
-        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
-        registerConcretePort(port);
-      }
+    odb::dbBlock* block = master->getBlock();
+    if (block == nullptr) {
+      continue;
+    }
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      Port* port = makePort(master_cell, bterm->getConstName());
+      setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
+      registerConcretePort(port);
     }
   }
 }
@@ -2197,7 +2194,15 @@ Port* dbNetwork::port(const Pin* pin) const
     ret = dbToSta(mterm);
   } else if (bterm) {
     const char* port_name = bterm->getConstName();
-    ret = findPort(top_cell_, port_name);
+    // 3DIC: a chiplet bterm's Port is on its chip-inst's master cell (see
+    // makeTopCellForChip), not on the stack's top cell. Mirrors instance().
+    Cell* port_cell = top_cell_;
+    if (has3DicChip()) {
+      if (odb::dbChipInst* chip_inst = chipInstOf(bterm->getBlock())) {
+        port_cell = cell(dbToSta(chip_inst));
+      }
+    }
+    ret = findPort(port_cell, port_name);
   } else if (moditerm) {
     std::string port_sname = moditerm->getName();
     const char* port_cname = port_sname.c_str();
@@ -2743,7 +2748,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 // - It behaves differently to cope with the issue 9724.
 // - This redefinition may cause another issue later when
 // `Network::highestConnectedNet(Net *net)` is used elsewhere.
-const Net* dbNetwork::highestConnectedNet(Net* net) const
+const Net* dbNetwork::highestConnectedNet(const Net* net) const
 {
   const Net* flat = findFlatNet(net);
   return flat ? flat : net;
@@ -4247,11 +4252,11 @@ LibertyPort* dbNetwork::libertyPort(const Port* port) const
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
-  const Instance* cur_instance = instance(pin);
-  dbInst* db_inst = nullptr;
-  odb::dbModInst* mod_inst = nullptr;
-  staToDb(cur_instance, db_inst, mod_inst);
-  if (db_inst) {
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+  if (iterm) {
     LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
     return ret;
   }
@@ -5987,7 +5992,7 @@ bool dbNetwork::isPGSupply(dbNet* net) const
   return net->isSpecial() && net->getSigType().isSupply();
 }
 
-Net* dbNetwork::highestNetAbove(Net* net) const
+const Net* dbNetwork::highestNetAbove(const Net* net) const
 {
   if (net == nullptr) {
     return nullptr;

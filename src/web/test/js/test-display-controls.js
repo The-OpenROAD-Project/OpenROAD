@@ -5,8 +5,9 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { dom } from './setup-dom.js';
 
-const { layerRangeSet, nonSolidPatterns, populateDisplayControls }
-    = await import('../../src/display-controls.js');
+const {
+    anyGroupOn, layerRangeSet, nonSolidPatterns, populateDisplayControls,
+} = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
@@ -81,6 +82,28 @@ describe('nonSolidPatterns', () => {
     });
 });
 
+// The overlays' `shown_by` / `layers_by`, as the server's anyGroupOn reads
+// them.
+describe('anyGroupOn', () => {
+    const LABELS = [['inst_names'], ['inst_pins', 'inst_pin_names']];
+
+    it('is on when every key of one group is', () => {
+        assert.ok(anyGroupOn(LABELS, { inst_names: true }));
+        assert.ok(anyGroupOn(LABELS, { inst_pins: true, inst_pin_names: true }));
+    });
+
+    it('is off when no group is complete', () => {
+        assert.ok(!anyGroupOn(LABELS, { inst_pins: false, inst_pin_names: true }));
+        assert.ok(!anyGroupOn(LABELS, {}), 'a missing key is off');
+    });
+
+    it('takes an empty group as always on and no groups as never', () => {
+        assert.ok(anyGroupOn([[]], {}));
+        assert.ok(!anyGroupOn([], { inst_names: true }));
+        assert.ok(!anyGroupOn(undefined, {}));
+    });
+});
+
 // Clicking a layer's name selects it and shows its properties in the
 // Inspector, mirroring the Qt GUI's DisplayControls row selection.  The
 // invariant that goes with it: a click anywhere in the row that is not on a
@@ -96,7 +119,7 @@ describe('layer row selection', () => {
             this.options = opts || {};
         }
         addTo() { return this; }
-        refreshTiles() {}
+        refreshTiles() { this.refreshes = (this.refreshes || 0) + 1; }
     }
     class FakeHeatMapLayer {
         constructor() {}
@@ -241,6 +264,58 @@ describe('layer row selection', () => {
         assert.equal(requests.length, 1);
         assert.equal(requests[0].layer, 'metal1');
     });
+
+    // Overlays as the tech response lists them.
+    const OVERLAYS = [
+        { name: '_access_points', z_index: 1000,
+          shown_by: [['access_points']], layers_by: [[]] },
+        { name: '_gcell_grid', z_index: 1002,
+          shown_by: [['gcell_grid']], layers_by: [] },
+        { name: '_inst_labels', z_index: 999,
+          shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+          layers_by: [['inst_pins', 'inst_pin_names']] },
+    ];
+
+    it('builds a pane per listed overlay at its pane order', () => {
+        techData.overlays = OVERLAYS;
+        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        assert.deepEqual(
+            app.overlayLayers.map(({ def, layer }) =>
+                [def.name, layer.name, layer.options.zIndex]),
+            [['_access_points', '_access_points', 1000],
+             ['_gcell_grid', '_gcell_grid', 1002],
+             ['_inst_labels', '_inst_labels', 999]]);
+    });
+
+    // A layer toggle refreshes the overlays that draw by the visible layers
+    // under the current visibility, and only those: always the access points,
+    // the names only while pin names are shown, never the gcell grid.
+    for (const [pinNames, want] of [
+        [false, { _access_points: 1, _gcell_grid: 0, _inst_labels: 0 }],
+        [true, { _access_points: 1, _gcell_grid: 0, _inst_labels: 1 }],
+    ]) {
+        it(`a layer toggle refreshes ${JSON.stringify(want)} `
+           + `with pin names ${pinNames ? 'on' : 'off'}`, () => {
+            techData.overlays = OVERLAYS;
+            populateDisplayControls(
+                app,
+                { inst_names: true, inst_pins: true, inst_pin_names: pinNames,
+                  access_points: true, gcell_grid: true },
+                {}, FakeTileLayer, techData, () => {}, FakeHeatMapLayer);
+            const overlays = app.overlayLayers.map(({ layer }) => layer);
+            app.map.hasLayer = (layer) => overlays.includes(layer);
+            const before = new Map(
+                overlays.map((layer) => [layer, layer.refreshes || 0]));
+            const cb = layerRow(app.displayControlsEl, 'metal1')
+                .querySelector('input.vis-cb');
+            cb.checked = false;
+            cb.dispatchEvent(new dom.window.Event('change'));
+            const got = Object.fromEntries(overlays.map((layer) =>
+                [layer.name, (layer.refreshes || 0) - before.get(layer)]));
+            assert.deepEqual(got, want);
+        });
+    }
 
     it('clicking the visibility checkbox still toggles', () => {
         const container = render();
@@ -470,6 +545,17 @@ describe('overlay layer toggles', () => {
             layers: ['metal1'],
             sites: [],
             chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            overlays: [
+                { name: '_access_points', z_index: 1000,
+                  shown_by: [['access_points']], layers_by: [] },
+                { name: '_mfg_grid', z_index: 2,
+                  shown_by: [['mfg_grid']], layers_by: [] },
+                { name: '_gcell_grid', z_index: 1002,
+                  shown_by: [['gcell_grid']], layers_by: [] },
+                { name: '_inst_labels', z_index: 1003,
+                  shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+                  layers_by: [] },
+            ],
             layer_hierarchy: {
                 name: 'top',
                 type: 'block',
@@ -504,15 +590,14 @@ describe('overlay layer toggles', () => {
     });
 
     // A switchable pseudo layer needs a gate: without one it would request tiles
-    // forever, and gated on a flag that does not exist it would go blank.
+    // forever, and gated on a flag that does not exist it would go blank.  The
+    // client-mounted ones carry a flag name; those the server lists carry its
+    // `shown_by` verbatim.
     it('gates every switchable pseudo layer instead of unmounting it', () => {
         const expected = {
             _pins: 'pins',
             _modules: 'module_view',
             _clusters: 'cluster_view',
-            _access_points: 'access_points',
-            _mfg_grid: 'mfg_grid',
-            _gcell_grid: 'gcell_grid',
         };
         for (const [name, gate] of Object.entries(expected)) {
             const layer = app.allLayers.find(l => l.name === name);
@@ -520,6 +605,18 @@ describe('overlay layer toggles', () => {
             assert.ok(mapOps.includes('add:' + name), name + ' is mounted');
             assert.equal(layer.options.gate, gate, name + ' gate');
             assert.ok(gate in visibility, gate + ' is a real visibility flag');
+        }
+        for (const def of techData.overlays) {
+            const layer = app.allLayers.find(l => l.name === def.name);
+            assert.ok(layer, def.name + ' is created');
+            assert.ok(mapOps.includes('add:' + def.name),
+                      def.name + ' is mounted');
+            assert.deepEqual(layer.options.gate, def.shown_by,
+                             def.name + ' gate');
+            for (const key of def.shown_by.flat()) {
+                assert.ok(key in visibility,
+                          key + ' is a real visibility flag');
+            }
         }
         // The instance layer has no toggle, so it carries no gate.
         const instances = app.allLayers.find(l => l.name === '_instances');

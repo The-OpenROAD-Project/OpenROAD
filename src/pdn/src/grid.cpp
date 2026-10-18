@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -525,6 +526,16 @@ odb::Rect Grid::getGridArea() const
 odb::Rect Grid::getGridBoundary() const
 {
   return getGridArea();
+}
+
+odb::Rect Grid::getPadRingArea() const
+{
+  const odb::Rect boundary = getGridBoundary();
+  const std::optional<odb::Rect> pads = getDomain()->getPadRingInnerArea();
+  if (!pads) {
+    return boundary;
+  }
+  return boundary.intersect(*pads);
 }
 
 Region Grid::getDomainRegion() const

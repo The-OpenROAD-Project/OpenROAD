@@ -6,12 +6,12 @@ on:
 
 jobs:
   label:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     permissions:
       pull-requests: write
     steps:
       - name: Label PR Size
-        uses: codelytv/pr-size-labeler@e1869bf36de18c36cd132495c39f53c135b689a3  # v1.11.0
+        uses: codelytv/pr-size-labeler@19c335e7695ba922de938806dd129f0a9b992644  # v1.12.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           xs_label: 'size/XS'

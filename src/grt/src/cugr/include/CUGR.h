@@ -63,6 +63,8 @@ struct Constants
   int target_detour_count = 20;
 
   double via_multiplier = 2.0;
+  // Charge vias' flanking wire edges in the congestion model.
+  bool via_demand_enabled = true;
 
   double maze_logistic_slope = 0.5;
 
@@ -105,6 +107,14 @@ class CUGR
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Rewrite the usage of just `tiles` (GCell indices).  Capacity is left
+  // alone: rerouting moves demand between edges without changing what they
+  // can hold.
+  void updateDbCongestionTiles(const std::vector<odb::Point>& tiles);
+  // GCells whose reported usage changed since the last odb refresh.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const;
+  void clearCongestionDirtyTiles();
+  void gcellCongestion(int layer, int x, int y, double& cap, double& use) const;
   // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
   // overflow split into wire vs via-stub shares (proportional attribution);
   // sub-min layers shown as all-zero rows. Gated on verbose_.
@@ -124,6 +134,12 @@ class CUGR
   {
     resistance_aware_ = resistance_aware;
   }
+  // Developer debug switch. Applied at the next init(); an existing grid
+  // keeps its demand model.
+  void setViaDemandEnabled(bool enabled)
+  {
+    constants_.via_demand_enabled = enabled;
+  }
   void setResAwareNetsPercentage(float percentage)
   {
     res_aware_percentage_ = percentage;
@@ -136,8 +152,9 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
   // Transfer removed net tree ownership to preserved net without removing
-  // its GridGraph usage. Called at inDbNetPostMerge time.
-  void mergeNet(odb::dbNet* preserved_net,
+  // its GridGraph usage. Called at inDbNetPostMerge time. Returns false if
+  // the trees cannot be joined; the caller then reroutes the preserved net.
+  bool mergeNet(odb::dbNet* preserved_net,
                 odb::dbNet* removed_net,
                 const std::vector<GSegment>& connection);
   // True if the edge on (layer_index, tile_x, tile_y) has capacity left for

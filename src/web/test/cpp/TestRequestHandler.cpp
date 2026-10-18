@@ -11,12 +11,17 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -31,6 +36,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -459,6 +465,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -640,6 +723,122 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
 {
   EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
 }
 
 // The cache stores blank tiles as an empty entry, so a hit has to come back as
@@ -1909,6 +2108,53 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
   }
+}
+
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
 }
 
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources

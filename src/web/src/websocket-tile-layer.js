@@ -73,13 +73,18 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 this, withDeviceExactTileSize(options));
         },
 
-        // A layer switched by one visibility flag stays mounted and simply
-        // skips the request while the flag is off.  `options.gate` names the
-        // flag; an unknown name would gate the layer off forever, so fail open
-        // and warn instead.
+        // A gated layer stays mounted and simply skips the request while it
+        // is off.  `options.gate` is either one flag name or a `shown_by` list
+        // of flag groups, which shows when every flag of any one group is on
+        // -- the same rule the server applies (anyGroupOn).  An unknown name
+        // would gate the layer off forever, so fail open and warn instead.
         _gatedOff: function() {
             const gate = this.options.gate;
             if (gate == null) return false;
+            if (Array.isArray(gate)) {
+                return !gate.some(
+                    (group) => group.every((key) => !!ctx.visibility[key]));
+            }
             if (!(gate in ctx.visibility)) {
                 if (!this._gateWarned) {
                     this._gateWarned = true;

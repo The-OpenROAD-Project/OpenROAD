@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "boost/icl/interval_set.hpp"
-#include "db/infra/frPoint.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/tech/frTechObject.h"
@@ -18,6 +17,7 @@
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace drt::io {
@@ -89,8 +89,8 @@ class GuideProcessor
    */
   void patchGuides_helper(frNet* net,
                           std::vector<frRect>& guides,
-                          const Point3D& best_pin_loc_idx,
-                          const Point3D& best_pin_loc_coords,
+                          const odb::Point3D& best_pin_loc_idx,
+                          const odb::Point3D& best_pin_loc_coords,
                           int closest_guide_idx);
   /**
    * @brief Connects the guides with the best pin shape location (on the 2D
@@ -105,7 +105,7 @@ class GuideProcessor
    * @param gcell_half_size_horz Half the horizontal size of the gcell
    * @param gcell_half_size_vert Half the vertical size of the gcell
    */
-  void connectGuidesWithBestPinLoc(Point3D& guide_pt,
+  void connectGuidesWithBestPinLoc(odb::Point3D& guide_pt,
                                    const odb::Point& best_pin_loc_coords,
                                    frCoord gcell_half_size_horz,
                                    frCoord gcell_half_size_vert,
@@ -175,11 +175,12 @@ class GuideProcessor
    * guides only.
    *
    */
-  void genGuides_split(std::vector<frRect>& rects,
-                       const TrackIntervalsByLayer& intvs,
-                       const std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                       frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
-                       bool via_access_only) const;
+  void genGuides_split(
+      std::vector<frRect>& rects,
+      const TrackIntervalsByLayer& intvs,
+      const std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map,
+      bool via_access_only) const;
   /**
    * Initializes a map of gcell location to set of pins
    *
@@ -192,7 +193,7 @@ class GuideProcessor
    */
   void initGCellPinMap(
       const frNet* net,
-      std::map<Point3D, frBlockObjectSet>& gcell_pin_map) const;
+      std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed term
    * based on pin shapes.
@@ -204,8 +205,9 @@ class GuideProcessor
    * @param gcell_pin_map The map to be populated with the results.
    * @param term The current pin we are processing.
    */
-  void mapPinShapesToGCells(std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
-                            frBlockObject* term) const;
+  void mapPinShapesToGCells(
+      std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
+      frBlockObject* term) const;
   /**
    * Populates gcell_pin_map with the values associated with the passed pin
    * based on access points.
@@ -218,11 +220,11 @@ class GuideProcessor
    * @param term The current pin we are processing.
    */
   void mapTermAccessPointsToGCells(
-      std::map<Point3D, frBlockObjectSet>& gcell_pin_map,
+      std::map<odb::Point3D, frBlockObjectSet>& gcell_pin_map,
       frBlockObject* pin) const;
 
   void initPinGCellMap(frNet* net,
-                       frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
+                       frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map);
   // write guide
   void saveGuidesUpdates();
 
@@ -280,14 +282,15 @@ class GuidePathFinder
    * @param rects A vector of guide rectangles (by GCell indices).
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    */
-  GuidePathFinder(frDesign* design,
-                  utl::Logger* logger,
-                  RouterConfiguration* router_cfg,
-                  frNet* net,
-                  bool force_feed_through,
-                  const std::vector<frRect>& rects,
-                  const std::vector<frBlockObject*>& pins,
-                  const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
+  GuidePathFinder(
+      frDesign* design,
+      utl::Logger* logger,
+      RouterConfiguration* router_cfg,
+      frNet* net,
+      bool force_feed_through,
+      const std::vector<frRect>& rects,
+      const std::vector<frBlockObject*>& pins,
+      const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map);
   int getNodeCount() const { return node_count_; }
   int getGuideCount() const { return guide_count_; }
   int getPinCount() const { return node_count_ - guide_count_; }
@@ -329,7 +332,7 @@ class GuidePathFinder
    */
   std::vector<std::pair<frBlockObject*, odb::Point>> commitPathToGuides(
       std::vector<frRect>& rects,
-      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
+      const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map);
 
  private:
   struct Wavefront
@@ -360,8 +363,9 @@ class GuidePathFinder
    * @param rects A vector of guide rectangles(by GCell indices).
    * @param pin_gcell_map A map of pins and their corresponding GCell indices.
    */
-  void buildNodeMap(const std::vector<frRect>& rects,
-                    const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map);
+  void buildNodeMap(
+      const std::vector<frRect>& rects,
+      const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map);
   /**
    * @brief Constructs the adjacency list for the graph of guides and pins.
    *
@@ -417,9 +421,9 @@ class GuidePathFinder
    * @return A vector of GCell locations for each pin (vector index is the pin
    * index in the adj_list_).
    */
-  std::vector<std::vector<Point3D>> getPinToGCellList(
+  std::vector<std::vector<odb::Point3D>> getPinToGCellList(
       const std::vector<frRect>& rects,
-      const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map,
+      const frBlockObjectMap<std::set<odb::Point3D>>& pin_gcell_map,
       const std::vector<frBlockObject*>& pins) const;
   /**
    * @brief Updates the node map with pins and guides.
@@ -431,8 +435,9 @@ class GuidePathFinder
    * @param rects A vector of guide rectangles.
    * @param pin_to_gcell A vector mapping pins to GCell locations.
    */
-  void updateNodeMap(const std::vector<frRect>& rects,
-                     const std::vector<std::vector<Point3D>>& pin_to_gcell);
+  void updateNodeMap(
+      const std::vector<frRect>& rects,
+      const std::vector<std::vector<odb::Point3D>>& pin_to_gcell);
   /**
    * @brief Returns vector of pins with their GCell locations.
    *
@@ -445,7 +450,7 @@ class GuidePathFinder
    */
   std::vector<std::pair<frBlockObject*, odb::Point>> getGRPins(
       const std::vector<frBlockObject*>& pins,
-      const std::vector<std::vector<Point3D>>& pin_to_gcell) const;
+      const std::vector<std::vector<odb::Point3D>>& pin_to_gcell) const;
   /**
    * @brief Does a bfs search from the given node idx.
    */
@@ -466,7 +471,7 @@ class GuidePathFinder
   RouterConfiguration* router_cfg_{nullptr};
   frNet* net_{nullptr};
   bool force_feed_through_{false};
-  std::map<Point3D, std::set<int>> node_map_;
+  std::map<odb::Point3D, std::set<int>> node_map_;
   int guide_count_{0};
   int node_count_{0};
   bool allow_warnings_{false};
@@ -475,7 +480,7 @@ class GuidePathFinder
   std::vector<bool> is_on_path_;
   std::vector<int> prev_idx_;
   std::vector<frBlockObject*> pins_;
-  frBlockObjectMap<std::set<Point3D>> pin_gcell_map_;
+  frBlockObjectMap<std::set<odb::Point3D>> pin_gcell_map_;
   std::vector<frRect> rects_;
 };
 }  // namespace drt::io

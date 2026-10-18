@@ -55,10 +55,7 @@ HierRTLMP::~HierRTLMP() = default;
 HierRTLMP::HierRTLMP(odb::dbDatabase* db,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
-    : db_(db),
-      logger_(logger),
-      tritonpart_(tritonpart),
-      tree_(std::make_unique<PhysicalHierarchy>())
+    : db_(db), logger_(logger), tritonpart_(tritonpart)
 {
 }
 
@@ -294,6 +291,10 @@ void HierRTLMP::blockMacroChannels()
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
+  tree_ = std::make_unique<PhysicalHierarchy>();
+  skip_macro_placement_ = false;
+  placement_blockages_.clear();
+  io_blockages_.clear();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, logger_, tritonpart_, graphics_.get());
 
@@ -308,11 +309,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, logger_, tritonpart_, graphics_.get());
-
-  // Set target structure
-  clustering_engine_->setTree(tree_.get());
   clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 

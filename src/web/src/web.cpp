@@ -297,9 +297,34 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
 
 }  // namespace
 
+// Holds the script gate (see ScriptGate) for its lifetime; check entered().
+// Only `wait` blocks while the gate is closed, which the io threads must not.
+class ScriptGateScope
+{
+ public:
+  explicit ScriptGateScope(ScriptGate& gate, bool wait = false)
+      : gate_(gate), entered_(wait ? gate.enter() : gate.tryEnter())
+  {
+  }
+  ~ScriptGateScope()
+  {
+    if (entered_) {
+      gate_.leave();
+    }
+  }
+  ScriptGateScope(const ScriptGateScope&) = delete;
+  ScriptGateScope& operator=(const ScriptGateScope&) = delete;
+  bool entered() const { return entered_; }
+
+ private:
+  ScriptGate& gate_;
+  const bool entered_;
+};
+
 static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    const std::shared_ptr<TileGenerator>& generator)
+    const std::shared_ptr<TileGenerator>& generator,
+    ScriptGate& script_gate)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -314,19 +339,17 @@ static http::response<http::string_body> handle_request(
     const std::string file_path = assetPathFromTarget(target);
 
     if (file_path == "/download/image") {
-      handleImageDownload(generator, target, res);
+      const ScriptGateScope gate(script_gate);
+      if (gate.entered()) {
+        handleImageDownload(generator, target, res);
+      } else {
+        res.result(http::status::service_unavailable);
+        res.body() = kScriptBusyMsg;
+      }
     } else {
       const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
-        res.set(http::field::content_type, asset->content_type);
-        // The assets are compiled into the binary, so their URLs carry no
-        // version and never change.  Without this a browser is free to
-        // heuristically cache them, and a tab reloaded against a rebuilt
-        // OpenROAD keeps running the old JavaScript -- the change appears
-        // to have done nothing until someone thinks to hard-reload.  They
-        // are served from memory, so re-fetching them costs nothing.
-        res.set(http::field::cache_control, "no-store");
-        res.body() = std::string(asset->content());
+        serveEmbeddedAsset(*asset, req[http::field::accept_encoding], res);
       } else {
         res.result(http::status::not_found);
         res.body() = "Resource not found.";
@@ -378,6 +401,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
 
   // Background search index initialization
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   std::thread init_thread_;
 
   // Debug-graphics hook (nullable).  When set, this session registers a
@@ -653,6 +677,7 @@ WebSocketSession::WebSocketSession(
       edit_handler_(generator, tcl_eval),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator)),
+      tcl_eval_(std::move(tcl_eval)),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight)
 {
@@ -1013,6 +1038,32 @@ void WebSocketSession::on_accept(beast::error_code ec)
     // Flush any log output that accumulated before this client
     // connected (splash screen, script output, etc.).
     viewer_hook_->drainLogs();
+
+    // A client joining mid-pause (typically the browser a debug pause just
+    // opened) missed the debug_paused broadcast; replay it so the client
+    // shows Continue and fetches the debug charts.
+    if (viewer_hook_->isPaused()) {
+      WebSocketResponse paused;
+      paused.id = 0;
+      paused.type = WebSocketResponse::kJson;
+      const std::string json = R"({"type":"debug_paused"})";
+      paused.payload.assign(json.begin(), json.end());
+      queue_response(paused);
+    }
+
+    // Tell a client joining while the script runs, so it waits for the
+    // script_running push that ends the run rather than retrying.  Under the
+    // gate's lock, so no change can be broadcast ahead of this message.
+    tcl_eval_->script_gate.withState([this](bool closed) {
+      if (closed) {
+        WebSocketResponse running;
+        running.id = 0;
+        running.type = WebSocketResponse::kJson;
+        const std::string json = scriptRunningJson(/*running=*/true);
+        running.payload.assign(json.begin(), json.end());
+        queue_response(running);
+      }
+    });
   }
 
   // Tell the client how many requests to keep in flight at once. This bounds
@@ -1033,7 +1084,13 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // Build search indices in the background; tiles render without shapes
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
-    self->generator_->eagerInit();
+    {
+      const ScriptGateScope gate(self->tcl_eval_->script_gate, /*wait=*/true);
+      if (!gate.entered()) {
+        return;
+      }
+      self->generator_->eagerInit();
+    }
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
@@ -1141,6 +1198,17 @@ void WebSocketSession::on_read(beast::error_code ec)
           [self = std::move(self),
            req = std::move(req),
            handle = std::move(handle)]() {
+            const ScriptGateScope gate(self->tcl_eval_->script_gate);
+            if (!gate.entered()) {
+              WebSocketResponse busy;
+              busy.id = req.id;
+              busy.type = WebSocketResponse::kError;
+              busy.request_type = req.raw_type;
+              const std::string_view msg = kScriptBusyMsg;
+              busy.payload.assign(msg.begin(), msg.end());
+              self->queue_response(busy);
+              return;
+            }
             self->queue_response(invoke_handler(handle, req, self->state_));
           });
     }
@@ -1172,10 +1240,11 @@ void WebSocketSession::queue_response(const WebSocketResponse& resp,
   // Surface every error response in the server log so contract violations
   // (malformed payloads, missing fields, wrong field types) are visible to
   // the operator/developer and not silently swallowed by the client.
-  if (resp.type == WebSocketResponse::kError) {
-    const std::string_view err(
-        reinterpret_cast<const char*>(resp.payload.data()),
-        resp.payload.size());
+  // A busy reply (see ScriptGate) is not one, and goes out per tile while a
+  // script runs, so it is not logged.
+  const std::string_view err(reinterpret_cast<const char*>(resp.payload.data()),
+                             resp.payload.size());
+  if (resp.type == WebSocketResponse::kError && err != kScriptBusyMsg) {
     const std::string type_label
         = resp.request_type.empty() ? "unknown" : resp.request_type;
     logger_->warn(utl::WEB,
@@ -1245,11 +1314,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   utl::Logger* logger_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
+              std::shared_ptr<TclEvaluator> tcl_eval,
               utl::Logger* logger);
 
   void run() { do_read(); }
@@ -1267,9 +1338,11 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 
 HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
+                         std::shared_ptr<TclEvaluator> tcl_eval,
                          utl::Logger* logger)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
+      tcl_eval_(std::move(tcl_eval)),
       logger_(logger)
 {
 }
@@ -1307,7 +1380,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), generator_));
+      handle_request(std::move(req_), generator_, tcl_eval_->script_gate));
   do_write();
 }
 
@@ -1472,7 +1545,7 @@ void DetectSession::on_read(beast::error_code ec)
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, logger_);
+        stream_.release_socket(), generator_, tcl_eval_, logger_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1606,7 +1679,12 @@ WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
                      Tcl_Interp* interp)
-    : db_(db), sta_(sta), logger_(logger), interp_(interp), num_threads_(1)
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      interp_(interp),
+      num_threads_(1),
+      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger))
 {
 }
 
@@ -1836,7 +1914,8 @@ void WebServer::saveReport(const std::string& filename,
   };
 
   // In the z order save_image composites them, derived from `vis`, so a new
-  // layer is cached here without this code learning about it.
+  // layer is cached here without this code learning about it.  Both overlays
+  // are in it already: the flags above are on.
   std::vector<std::string> all_layers
       = TileGenerator::saveImageLayerOrder(vis, tech_layers);
   // An overlay with no colors renders nothing, so caching its tiles would only
@@ -1918,7 +1997,8 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head — the libraries from CDNs, as index.cmake.html loads them.
+  // The 3D view is unavailable here, so three.js is not loaded.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
@@ -2017,7 +2097,6 @@ window.__STATIC_CACHE__ = {
 </script>
 <script type="module">
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
 )" << kReportJS
       << R"(
 </script>

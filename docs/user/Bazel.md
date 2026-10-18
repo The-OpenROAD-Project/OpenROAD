@@ -1,12 +1,12 @@
-# Testing local changes with Bazel
+# Building and testing with Bazel
 
 ```{note}
-Bazel is the supported build system for OpenROAD. The CMake build is
-deprecated and will be removed in a future release; see
-[Installing OpenROAD](Build.md).
+Bazel is the supported build system for OpenROAD.
+For installation steps, see [Installing OpenROAD](Build.md).
+The deprecated CMake build will be removed on Nov. 1, 2026.
 ```
 
-First [install Baselisk](https://bazel.build/install/bazelisk), then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
+First [install Bazelisk](https://bazel.build/install/bazelisk) or run `sudo ./etc/DependencyInstaller.sh -bazel`, then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
     bazelisk test --jobs=4 src/...
 
@@ -30,12 +30,12 @@ To list all tests use bazelisk query with [Bazel query language](https://bazel.b
 List all tests below a folder containing `asap7`:
 
     $ bazelisk query   'filter("asap7", kind(".*_test rule", //src/pdn/...))'
-    //src/pdn/test:asap7_M1_M3_followpins-tcl
+    //src/pdn/test:asap7_M1_M3_followpins-tcl_test
     ...
 
 Run specific test:
 
-    baselisk test --test_output=errors //src/upf/test:levelshifter-tcl
+    bazelisk test --test_output=errors //src/upf/test:levelshifter-tcl_test
 
 To run or list tests below a folder:
 
@@ -48,32 +48,27 @@ Bazel build configuration is a big topic as it covers cross compilation as well 
 As a start, browse `.bazelrc` and also run:
 
     $ bazelisk build
-    [wait until it starts building then hist ctrl-c, this warms up the cache with information about available configs]
+    [wait until it starts building then hit ctrl-c, this warms up the cache with information about available configs]
     $ bazelisk config
-    Available configurations:
-    5e5e8a80a777eb91e67b2d19d33945262b2897b636da1007246cf68b6b6ec51d k8-fastbuild
-    781deb76199c2d7f1a6c7d54da3ea8dad03e6956c04db58addba49068e4d3797 k8-fastbuild
-    96deab75888eab9e42bcc5778aa824b18bb8ee745dfa1950a18536d75ee05e01 k8-opt-exec-ST-d57f47055a04 (exec)
-    dd6f5325b352d3c63abe45b22d15914f75da7e2f140ace0017440dfc00f49114 k8-opt-exec-ST-d57f47055a04 (exec)
-    f37096aa0a6acd138beca4ff4d66b677012cd1d0d54befaa35983993505dad60 fastbuild-noconfig
-    f6ad5d5ec52c67510c6642c6d8df81fb134760a95c43d1f8e0369ad2c8964a81 k8-opt-exec-ST-6f5a6fb95be7 (exec)
 
-Without offering any deeper insight some comments about what is shown above:
+The output lists each configuration with a full hash and a textual shorthand, such as `k8-opt` or `k8-opt-exec-ST-<hash> (exec)`.
+The shorthand is used in the names of the `bazel-out/` folders.
 
 - Each configuration has a textual shorthand used in folder names followed by a full hash
-- `fastbuild` is the default compromise between optimization and fast builds
+- `opt` is the default compilation mode (`build -c opt` in `.bazelrc`); the other modes are `fastbuild` and `dbg`
 - `exec` means host, appears with `ST` and an extra hash at the end
 - `k8` always there, possibly referring to [K8](https://en.wikipedia.org/wiki/X86-64)
 
 ### LTO
 
-The default Bazel build (`fastbuild`) does not enable Link Time Optimization
-(LTO). `-c opt` enables optimization without LTO; `--config=opt` adds LTO
-on top, which improves runtime by ~11% at the cost of a much longer
-(single-threaded) link step. Use `--config=opt` for production binaries
-shipped to end users; keep the default for the local edit-rebuild loop.
-The CMake build has LTO on by default in Release mode -- see the
-[CMake LTO option](Build.md#lto-options).
+The default Bazel build is `-c opt`, the optimized compilation mode.
+It does not add `-O3` or Link Time Optimization (LTO).
+`--config=opt` (`build:opt` in `.bazelrc`) adds `-O3` and ThinLTO.
+ThinLTO improves runtime at the cost of a longer link step, which Bazel
+splits into parallel, cached actions. `--config=release` includes
+`--config=opt` and also stamps the git version. Use `--config=opt` or
+`--config=release` for production binaries shipped to end users; keep the
+default for the local edit-rebuild loop.
 
 ## Is it compiling, or hitting the cache?
 
@@ -219,6 +214,11 @@ build context. Pass the version with `--build-arg orVersion=<version>`.
 so installs made through it (including ORFS `build_openroad.sh` and the Docker
 build) carry the real version.
 
+The version is written into the binary after it is linked
+(`bazel/stamped_binary.bzl`). The version therefore changes no compile or link
+action, and a release build gets them from the remote cache that CI fills; only
+the copy of the binary that carries the version is built locally.
+
 ## Platforms
 
 https://bazel.build/extending/platforms
@@ -241,7 +241,7 @@ Or more forcefully:
 
 Or "nuke it from orbit":
 
-    baselisk shutdown
+    bazelisk shutdown
     sudo pkill -9 java
     sudo rm -rf ~/.cache/bazel
 
@@ -419,13 +419,12 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 tests, which run the instrumented `openroad` binary. They do **not** work for
 the `py`-tagged tests, which import OpenROAD as a Python extension module:
 
-    ImportError: _openroadpy.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
+    ImportError: _openroad.so: undefined symbol: __ubsan_handle_pointer_overflow_abort
 
 Clang links a sanitizer runtime into executables but not into shared
 libraries, assuming whoever loads the library provides the symbols. That holds
 for `openroad`, which statically links the runtime; it fails for
-`_openroadpy.so` / `_odb.so` / `_utl.so`, which the *uninstrumented* system
-`python3` dlopens.
+`_openroad.so`, which the *uninstrumented* system `python3` dlopens.
 
 `-shared-libsan` is the mechanism for this case, but three things in
 hermetic-llvm block it today:
@@ -449,130 +448,52 @@ exec-configuration build tools stay uninstrumented.
 
 ## GPU build (`--config=gpu`)
 
-`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`)
-and is the Bazel counterpart of the CMake `ENABLE_GPU` flow. It is opt-in and
-non-hermetic: the CUDA toolkit, Kokkos and KokkosFFT come from the host, wrapped
-as external repositories by `bazel/gpu/system_gpu.bzl`. Nothing in the default
-build or in CI depends on them.
+`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`).
+Kokkos 5.2.2 and
+KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
+hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
+(`bazel/gpu/kokkos/configure.bzl`). Only the CUDA toolkit remains
+host-provided. Default CPU targets neither download nor compile Kokkos and do
+not compile or link against CUDA. Because the CUDA repository definition is loaded by shared Bazel
+configuration, CPU invocations still probe the configured toolkit path.
 
-    bazelisk test --config=gpu //src/gpl/test/...
+Choose the configuration matching the device compute capability:
 
-Install prefixes are read from the shell environment:
-
-| Variable             | Default                        | Meaning                                              |
-|----------------------|--------------------------------|------------------------------------------------------|
-| `KOKKOS_ROOT`        | `/usr/local/kokkos-libcxx`     | Kokkos install (static, CUDA backend, see recipe)    |
-| `KOKKOS_FFT_ROOT`    | `/usr/local/kokkos-fft-libcxx` | KokkosFFT install built against that Kokkos          |
-| `OPENROAD_CUDA_PATH` | `/usr/local/cuda-12.8`         | Full CUDA toolkit (`bin/ptxas`, `nvvm/libdevice`)    |
-| `OPENROAD_CUDA_ARCH` | unset                          | Only needed if it cannot be read from the Kokkos install |
-
-A missing or unusable install never breaks the CPU build: the wrapped
-repository becomes a stub, and only a `--config=gpu` build fails, at analysis
-time, with a message that names the variable and the problem (prefix missing,
-incomplete install, Kokkos built without CUDA, architecture mismatch).
-
-### Why the CMake-flow Kokkos does not work here
-
-The hermetic LLVM toolchain compiles against its bundled libc++ and links
-against its own glibc-2.28 sysroot. A Kokkos built the usual way (nvcc or g++,
-libstdc++, the host's glibc headers) fails to link: either with libstdc++/libc++
-ABI mismatches (undefined `std::__1::...` symbols) or, on newer distributions,
-with `undefined symbol: __isoc23_strtol` because the host headers redirect
-`strtol` to symbols the sysroot's glibc stub does not export. Kokkos and
-KokkosFFT therefore have to be built with the toolchain's own clang and header
-set.
-
-### Kokkos recipe
-
-Run from an OpenROAD checkout after any `bazelisk build`, so the toolchain has
-been fetched. The header directories below are the ones the Bazel
-`cc_toolchain` uses.
-
-```bash
-OB=$(bazelisk info output_base)
-EX=$OB/execroot/_main
-case "$(uname -m)" in
-  x86_64)  OUT=k8-opt;      TC=llvm-toolchain-minimal-linux-amd64 ;;
-  aarch64) OUT=aarch64-opt; TC=llvm-toolchain-minimal-linux-arm64 ;;
-esac
-CLANGXX=$(ls -d $OB/external/*${TC}/bin/clang++)
-GLIBC_H=$(ls -d $OB/external/llvm++glibc+glibc_headers_*/include)
-KERNEL_H=$(ls -d $OB/external/llvm++kernel_headers+*/include)
-LIBCXX_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxx/libcxx_headers_include_search_directory
-LIBCXXABI_H=$EX/bazel-out/$OUT/bin/external/llvm++llvm+llvm-project/libcxxabi/libcxxabi_headers_include_search_directory
-
-CUDA_HOME=/usr/local/cuda-12.8          # match OPENROAD_CUDA_PATH
-KOKKOS_ARCH=BLACKWELL120                # match your device, see below
-
-HFLAGS="--sysroot=/dev/null -isystem $LIBCXX_H -isystem $LIBCXXABI_H -isystem $KERNEL_H -isystem $GLIBC_H"
-CUFLAGS="--cuda-path=$CUDA_HOME -Wno-unknown-cuda-version -D_ALLOW_UNSUPPORTED_LIBCPP"
-
-git clone https://github.com/kokkos/kokkos.git && cd kokkos   # 4.7 or newer
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-  -DCMAKE_CXX_ARCHIVE_CREATE="<CMAKE_AR> qc <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_APPEND="<CMAKE_AR> q <TARGET> <OBJECTS>" \
-  -DCMAKE_CXX_ARCHIVE_FINISH="<CMAKE_RANLIB> <TARGET>" \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
-  -DKokkos_ENABLE_SERIAL=ON \
-  -DKokkos_ENABLE_CUDA=ON \
-  -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
-  -DKokkos_ENABLE_DEPRECATED_CODE_4=ON \
-  -DKokkos_ARCH_${KOKKOS_ARCH}=ON \
-  -DKokkos_ENABLE_TESTS=OFF -DKokkos_ENABLE_EXAMPLES=OFF -DKokkos_ENABLE_BENCHMARKS=OFF
-cmake --build build -j && sudo cmake --install build
-```
-
-Each option that is easy to drop matters:
-
-- `--sysroot=/dev/null` plus the four `-isystem` directories: the toolchain's
-  header set, not the host's (the `__isoc23_*` failure above).
-- `-D_ALLOW_UNSUPPORTED_LIBCPP`: CUDA's `host_defines.h` refuses libc++ on
-  x86_64 otherwise.
-- `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`: the static archives end up inside
-  OpenROAD's Python extension (`_gpl.so`); without PIC the final link fails
-  with relocation errors.
-- `-DKokkos_ENABLE_DEPRECATED_CODE_4=ON`: `gpl` uses `View::HostMirror`, which
-  Kokkos 5 only provides behind this flag.
-- `-DCMAKE_CXX_STANDARD=20`: must match `.bazelrc` (`-std=c++20`).
-- `-DKokkos_ARCH_...`: exactly one NVIDIA architecture, and it must be the
-  compute capability of the device the tests run on. `--config=gpu` reads it
-  back from the install's `KokkosCore_config.h` and compiles `gpl`'s kernels for
-  the same target. This is not a cosmetic choice: `sm_120` kernels on an
-  `sm_121` device (`BLACKWELL120` vs `BLACKWELL121`, e.g. an RTX 5090 vs a GB10)
-  run without any error and produce NaN placements.
+    bazelisk test --config=gpu-sm120 //src/gpl/test/...
+    bazelisk test --config=gpu-sm121 //src/gpl/test/...
 
 `nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
-capability (`12.0` -> `BLACKWELL120`, `12.1` -> `BLACKWELL121`). `sm_121`
-needs CUDA 12.9 or newer; with CUDA 13 also set `OPENROAD_CUDA_PATH` to that
-toolkit (its libcu++ headers live in `include/cccl/`, which `--config=gpu`
-already adds to the search path).
+capability. Remove the decimal point to form the Bazel value (`12.0` ->
+`sm_120`, `12.1` -> `sm_121`). `sm_121` needs CUDA 12.9 or newer; with CUDA 13
+also set `OPENROAD_CUDA_PATH` to that toolkit (its libcu++ headers live in
+`include/cccl/`, which `--config=gpu` already adds to the search path).
 
-### KokkosFFT recipe
+For another supported architecture, use `--config=gpu` together with
+`--//:cuda_arch=sm_XX`. The accepted values are `sm_60`, `sm_61`, `sm_70`,
+`sm_72`, `sm_75`, `sm_80`, `sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`,
+`sm_103`, `sm_120`, and `sm_121`. Plain `--config=gpu` intentionally requires
+this extra flag so Kokkos and OpenROAD's kernels use one explicit target. If the
+compiled target differs from the selected device, Kokkos prints a runtime
+warning; compatible code may still run, usually with reduced portability or
+performance.
 
-KokkosFFT is header-only but must be configured against the Kokkos above with
-the FFTW host backend enabled (`gpl` creates host-space plans). FFTW itself is
-built from source by Bazel (the `fftw` module in `MODULE.bazel`), so no system
-FFTW is needed at build time.
+`OPENROAD_CUDA_PATH` selects the full CUDA toolkit and defaults to
+`/usr/local/cuda-12.8`. The toolkit must contain `bin/ptxas`, `nvvm/libdevice`,
+`libcudart`, and `libcufft`. A missing or incomplete toolkit never breaks the
+CPU build: its repository becomes a stub, and only a GPU build fails during
+analysis with an actionable message. The installed NVIDIA driver must support
+the CUDA toolkit used for the build.
 
-```bash
-git clone https://github.com/kokkos/kokkos-fft.git && cd kokkos-fft
-cmake -S . -B build \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/kokkos-fft-libcxx \
-  -DCMAKE_CXX_COMPILER="$CLANGXX" \
-  -DCMAKE_CXX_STANDARD=20 \
-  -DCMAKE_CXX_FLAGS="$HFLAGS $CUFLAGS -stdlib=libc++" \
-  -DKokkos_ROOT=/usr/local/kokkos-libcxx \
-  -DKokkosFFT_ENABLE_FFTW=ON \
-  -DKokkosFFT_ENABLE_TESTS=OFF -DKokkosFFT_ENABLE_EXAMPLES=OFF -DKokkosFFT_ENABLE_BENCHMARKS=OFF
-sudo cmake --install build
-```
+### Dependency model
+
+The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
+overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
+and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
+caused by linking a host-built Kokkos into a hermetic OpenROAD binary. The
+configuration headers that Kokkos's and KokkosFFT's CMake builds generate
+(`KokkosCore_config.h`, the backend include lists, `desul/atomics/Config.hpp`,
+`KokkosFFT_config.hpp`) are written at build time from one backend list in
+`bazel/gpu/kokkos/configure.bzl`; none is checked in.
 
 ### Notes
 
@@ -582,17 +503,29 @@ sudo cmake --install build
   golden logs (`test/regression.bzl`); the GPU-only tests
   (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
+- When the GPU path first initializes Kokkos, its OpenMP backend prints
+  `Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not
+  set` on stderr unless `OMP_PROC_BIND` is set (for example to `false`). It
+  never reaches the golden logs: those tests pin `ENABLE_GPU=0`, so Kokkos is
+  not initialized, and the GPU-only tests are pass/fail. A Kokkos warning about
+  a CUDA architecture mismatch, by contrast, is worth acting on.
+- Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
+  has no threads library, so FFTW's threaded planner is unavailable.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
-- After upgrading Kokkos, KokkosFFT or CUDA in place, run `bazelisk shutdown`
-  (or change the corresponding environment variable) so the wrapped repository
-  is refetched with the new file list.
+- The first GPU build downloads the two pinned source archives and compiles
+  Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
+  OpenROAD GPU sources for the new target.
+- After upgrading CUDA in place, run `bazelisk shutdown` (or change
+  `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
+  file list.
 
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
-    OPENROAD_EXE=$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+    bazelisk build :openroad
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
 
-`$(pwd)/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad` points to the `cfg=exec` optimized configuration which is Bazel builds to run tests on host with e.g. `bazelisk test ...`
+`bazel-bin/openroad` is the optimized binary that `bazelisk build :openroad` produces. Tests such as `bazelisk test ...` build OpenROAD from the same sources and flags, but in the execution configuration (see [Some OpenROAD and OpenSTA Bazel Specifics](#some-openroad-and-opensta-bazel-specifics)).
 
 ## Testing debug build of OpenROAD with ORFS
 
@@ -659,7 +592,7 @@ In the OpenROAD Bazel build:
 
 ### ⚠️ Avoiding Redundant Builds
 
-By default, `bazel test` would:
+By default, `bazelisk test` would:
 1. First build test dependencies in the **target** configuration.
 2. Then build tools like OpenROAD/OpenSTA again in the **host** configuration to actually run the tests.
 
@@ -712,8 +645,8 @@ To test, run:
 > **Note:** To test the credential helper, make sure to restart Bazel to avoid using a previous
 cached authorization:
 
-    bazel shutdown
-    bazel build BoomTile_final_scripts
+    bazelisk shutdown
+    bazelisk build BoomTile_final_scripts
 
 To gain write access to the https://storage.googleapis.com/megaboom-bazel-artifacts bucket,
 reach out to Tom Spyrou, Precision Innovations (https://www.linkedin.com/in/tomspyrou/).

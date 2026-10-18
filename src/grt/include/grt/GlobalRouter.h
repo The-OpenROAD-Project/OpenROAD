@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -156,6 +157,7 @@ class GlobalRouter
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
+  void setCUGRViaDemand(bool enabled);
   void setResAwareNetsPercentage(float percentage);
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
@@ -383,6 +385,9 @@ class GlobalRouter
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
 
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
+  RoutingCongestion* getRoutingCongestion();
+
   void writePinLocations(const char* file_name);
 
  private:
@@ -541,6 +546,9 @@ class GlobalRouter
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Refresh odb's congestion only for the GCells the routing engine recorded
+  // as changed.  Clears the engine's list.
+  void updateDbCongestionTiles();
 
   // db functions
   void initGrid(int max_layer);
@@ -649,6 +657,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 

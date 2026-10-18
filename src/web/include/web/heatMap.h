@@ -114,6 +114,11 @@ class HeatMapDataSource
   const std::string& getSettingsGroupName() const { return settings_group_; }
   virtual Renderer::Settings getSettings() const;
   virtual void setSettings(const Renderer::Settings& settings);
+  // Settings saved by an earlier session, not chosen by the user in this one.
+  virtual void restoreSettings(const Renderer::Settings& settings)
+  {
+    setSettings(settings);
+  }
 
   void setDisplayRange(double min, double max);
   double getDisplayRangeMin() const { return display_range_min_; }
@@ -211,14 +216,16 @@ class HeatMapDataSource
                               double new_data,
                               double data_area,
                               double intersection_area,
-                              double rect_area)
-      = 0;
+                              double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
   void markColorsInvalid() { colors_correct_ = false; }
 
   virtual void populateXYGrid();
+  // Like setGridSizes() but without requesting a rebuild, so it is safe to
+  // call while the map is being built. Returns whether a size changed.
+  bool updateGridSizes(double x, double y);
   void setXYMapGrid(const std::vector<int>& x_grid,
                     const std::vector<int>& y_grid);
 

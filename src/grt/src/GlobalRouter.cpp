@@ -43,6 +43,7 @@
 #include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
+#include "grt/RoutingCongestion.h"
 #include "grt/Rudy.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -634,6 +635,9 @@ void GlobalRouter::updateDbCongestion()
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
   }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
+  }
 }
 
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
@@ -829,6 +833,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
+    fastroute_->setAllowCongestion(allow_congestion_);
     routes = fastroute_->run();
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
@@ -1546,6 +1551,16 @@ Rudy* GlobalRouter::getRudy()
   }
 
   return rudy_;
+}
+
+RoutingCongestion* GlobalRouter::getRoutingCongestion()
+{
+  odb::dbBlock* block = block_ != nullptr ? block_ : db_->getChip()->getBlock();
+  if (routing_congestion_ == nullptr) {
+    routing_congestion_
+        = std::make_unique<RoutingCongestion>(this, block, logger_);
+  }
+  return routing_congestion_.get();
 }
 
 bool GlobalRouter::findPinAccessPointPositions(
@@ -2805,6 +2820,11 @@ void GlobalRouter::setResistanceAware(bool resistance_aware)
   cugr_->setResistanceAware(resistance_aware);
 }
 
+void GlobalRouter::setCUGRViaDemand(const bool enabled)
+{
+  cugr_->setViaDemandEnabled(enabled);
+}
+
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
   if (!resistance_aware_) {
@@ -3034,6 +3054,9 @@ void GlobalRouter::readGuides(const char* file_name)
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
   }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
+  }
   saveGuidesFromFile(guides);
 }
 
@@ -3085,6 +3108,9 @@ void GlobalRouter::loadGuidesFromDB()
   }
   if (heatmap_rudy_) {
     heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    routing_congestion_->invalidate();
   }
 }
 
@@ -5936,10 +5962,11 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     return false;
   }
 
+  std::vector<GSegment> connection;
   if (pin_pos1 != pin_pos2) {
     const int layer1 = findTopLayerOverPosition(pin_pos1, net1_route);
     const int layer2 = findTopLayerOverPosition(pin_pos2, net2_route);
-    std::vector<GSegment> connection
+    connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
     for (const GSegment& seg : connection) {
@@ -6006,9 +6033,6 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, connection);
-    }
   } else {
     // Both pins are in the same gcell, but the two routes may reach it on
     // disjoint layer ranges. Bridge any layer gap with vias.
@@ -6016,18 +6040,20 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     const auto [min2, max2] = findLayerRangeOverPosition(pin_pos1, net2_route);
     if (max1 != -1 && max2 != -1) {
       if (max1 < min2) {
-        insertViasForConnection(net1_route, pin_pos1, max1, min2);
+        insertViasForConnection(connection, pin_pos1, max1, min2);
       } else if (max2 < min1) {
-        insertViasForConnection(net1_route, pin_pos1, max2, min1);
+        insertViasForConnection(connection, pin_pos1, max2, min1);
       }
     }
+    net1_route.insert(net1_route.end(), connection.begin(), connection.end());
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
-    // For CUGR: transfer tree ownership and mark removed_net in merged_nets_
-    // so that the net-destroy callback does not subtract the removed net's
-    // tree usage from GridGraph (the wires were folded into net1_route above).
-    if (use_cugr_) {
-      cugr_->mergeNet(db_net1, db_net2, /*connection=*/{});
-    }
+  }
+  // For CUGR: graft the removed net's tree into net1's along the connection
+  // and mark removed_net in merged_nets_ so that the net-destroy callback does
+  // not subtract its tree usage from GridGraph (the wires were folded into
+  // net1_route above). Trees that cannot be joined are rerouted instead.
+  if (use_cugr_ && !cugr_->mergeNet(db_net1, db_net2, connection)) {
+    return false;
   }
 
   updateNetPins(net1);
@@ -6773,10 +6799,57 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     pa->updateDirtyPinAccess();
   }
 
-  if (use_cugr_) {
-    return updateDirtyRoutesCugr(save_guides);
+  std::vector<Net*> rerouted = use_cugr_
+                                   ? updateDirtyRoutesCugr(save_guides)
+                                   : updateDirtyRoutesFastRoute(save_guides);
+
+  updateDbCongestionTiles();
+  return rerouted;
+}
+
+void GlobalRouter::updateDbCongestionTiles()
+{
+  // The engines record a tile wherever they write an edge, so this covers a
+  // reroute, a rip-up, a released wire and a removed net alike -- cases a
+  // route-footprint diff cannot see, because the route it would compare
+  // against is already gone.
+  //
+  // Copied rather than referenced: the engine's list is cleared below, and
+  // the congestion service still needs it after that.
+  const std::vector<odb::Point> tiles
+      = use_cugr_ ? cugr_->getCongestionDirtyTiles()
+                  : fastroute_->getCongestionDirtyTiles();
+  if (tiles.empty()) {
+    return;
   }
-  return updateDirtyRoutesFastRoute(save_guides);
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  debugPrint(logger_,
+             GRT,
+             "congestion",
+             1,
+             "incremental congestion refresh: {} tiles",
+             tiles.size());
+  if (use_cugr_) {
+    cugr_->updateDbCongestionTiles(tiles);
+    cugr_->clearCongestionDirtyTiles();
+  } else {
+    fastroute_->updateDbCongestionTiles(min_layer, max_layer, tiles);
+    fastroute_->clearCongestionDirtyTiles();
+  }
+
+  if (heatmap_) {
+    heatmap_->invalidate();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidate();
+  }
+  if (routing_congestion_) {
+    // Patch just these GCells rather than dropping the map: rebuilding it
+    // means rescanning every tile on every layer, which dwarfs the reroute
+    // that triggered it.
+    routing_congestion_->refreshTiles(tiles);
+  }
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
