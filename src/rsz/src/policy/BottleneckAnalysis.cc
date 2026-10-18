@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <numeric>
@@ -38,7 +39,7 @@ void forEachDataFanin(const sta::Graph* graph, sta::Vertex* vertex, Fn&& fn)
   }
 }
 
-constexpr size_t kBitsPerWord = 64;
+constexpr size_t kBitsPerWord = sizeof(uint64_t) * CHAR_BIT;
 
 }  // namespace
 
