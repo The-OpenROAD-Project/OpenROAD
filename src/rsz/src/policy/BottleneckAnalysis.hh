@@ -41,9 +41,9 @@ class BottleneckAnalysis
                float slack_margin,
                int max_endpoints,
                int max_sources);
-  // The rank of a target driven from vertex: local_score * (1 + alpha *
-  // w^gamma), where w is the vertex's cone need relative to the largest one
-  // (0 outside the cone).
+  // The rank of a target driven from vertex: local_score * (1 +
+  // cone_bonus_scale * w^cone_bonus_exponent), where w is the vertex's cone
+  // need relative to the largest one (0 outside the cone).
   float weightedScore(float local_score,
                       sta::Vertex* vertex,
                       const BatchPriorityConfig& priority) const;

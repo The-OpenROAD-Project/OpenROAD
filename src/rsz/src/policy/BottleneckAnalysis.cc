@@ -95,7 +95,9 @@ float BottleneckAnalysis::weightedScore(
   // The factor also multiplies a negative score, so a cone-central target with
   // a loss ranks lower than the same loss elsewhere.
   return local_score
-         * (1.0f + priority.alpha * std::pow(weight, priority.gamma));
+         * (1.0f
+            + priority.cone_bonus_scale
+                  * std::pow(weight, priority.cone_bonus_exponent));
 }
 
 size_t BottleneckAnalysis::admit(sta::Vertex* vertex, const float need)

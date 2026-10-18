@@ -13,13 +13,14 @@ namespace rsz {
 // values.  Times are seconds and "pct" fields are percent.
 
 // Controls how stalled batches favor targets in shared violating cones.
-// The rank is score * (1 + alpha * w^gamma), where w is relative cone need.
+// The rank is score * (1 + cone_bonus_scale * w^cone_bonus_exponent), where w
+// is relative cone need.
 struct BatchPriorityConfig
 {
   // Strength of the cone-need bonus.
-  float alpha{2.0f};
+  float cone_bonus_scale{2.0f};
   // Emphasis on the most shared bottlenecks.
-  float gamma{2.0f};
+  float cone_bonus_exponent{2.0f};
   // The weight applies only after a saved batch left WNS unchanged, and for at
   // most this many such batches in a row.  Undone batches do not count.
   int weight_max_wns_stall_batches{8};

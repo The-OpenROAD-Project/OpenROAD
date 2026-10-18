@@ -809,8 +809,10 @@ TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheViolatingCone)
   EXPECT_GT(analysis.coneSize(), endpoints.size());
 
   // The driver on out0's worst path sits in the cone, so its rank grows by
-  // 1 + alpha w^gamma with a normalized weight w in (0, 1].
-  const BatchPriorityConfig priority{.alpha = 2.0f, .gamma = 2.0f};
+  // 1 + cone_bonus_scale w^cone_bonus_exponent with a normalized weight w in
+  // (0, 1].
+  const BatchPriorityConfig priority{.cone_bonus_scale = 2.0f,
+                                     .cone_bonus_exponent = 2.0f};
   const Target target = makeTarget("out0", "target", "Z");
   const float driver
       = analysis.weightedScore(1.0f, target.vertex(resizer_), priority);
@@ -852,7 +854,8 @@ TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheNewestVertex)
   }
   BottleneckAnalysis analysis(sta_.get(), sta::MinMax::max());
   analysis.analyze(endpoints, 1.0f, 1024, 1024);
-  const BatchPriorityConfig priority{.alpha = 2.0f, .gamma = 2.0f};
+  const BatchPriorityConfig priority{.cone_bonus_scale = 2.0f,
+                                     .cone_bonus_exponent = 2.0f};
   EXPECT_GT(analysis.weightedScore(1.0f, newest, priority), 1.0f);
 }
 

@@ -716,7 +716,7 @@ The cap is the failing endpoint count, clamped to `min_batch_cap` and `max_batch
 Each target keeps its best candidate by score, and the score alone ranks the targets against each other. Once a saved batch left WNS where it was, the targets are weighted by their share of the violating cone instead:
 
 ```
-priority = score * (1 + alpha * w^gamma)
+priority = score * (1 + cone_bonus_scale * w^cone_bonus_exponent)
 ```
 
 `w` is the target's cone need relative to the largest one in the cone. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and, for each cone vertex, sums the slack need of the endpoints behind it and of the sources in front of it.
@@ -725,8 +725,8 @@ priority = score * (1 + alpha * w^gamma)
 
 | Field | Default | Effect |
 |---|---|---|
-| `alpha` | `2` | Strength of the cone-need bonus. `0` ranks by score alone. |
-| `gamma` | `2` | Emphasis on the most shared bottlenecks. |
+| `cone_bonus_scale` | `2` | Strength of the cone-need bonus. `0` ranks by score alone. |
+| `cone_bonus_exponent` | `2` | Emphasis on the most shared bottlenecks. |
 | `weight_max_wns_stall_batches` | `8` | The weight applies to at most this many stalled batches in a row. `0` ranks by score alone. |
 | `bottleneck_refresh_batches` | `4` | Batches one analysis serves. The start of the WNS tail refreshes it. |
 | `bottleneck_max_endpoints` | `1024` | Violating endpoints one analysis weighs, worst slack first. |
