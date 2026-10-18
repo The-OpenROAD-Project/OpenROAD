@@ -24,23 +24,23 @@ set part_stream [open "${graph}.part.2" r]
 set parts [split [string trim [read $part_stream]] "\n"]
 close $part_stream
 
-if {[llength $parts] != [llength $fixed]} {
+if { [llength $parts] != [llength $fixed] } {
   error "Result contains [llength $parts] vertices; expected [llength $fixed]"
 }
 
 set fixed_count 0
-for {set v 0} {$v < [llength $fixed]} {incr v} {
+for { set v 0 } { $v < [llength $fixed] } { incr v } {
   set required [lindex $fixed $v]
-  if {$required >= 0} {
+  if { $required >= 0 } {
     incr fixed_count
     set actual [lindex $parts $v]
-    if {$actual != $required} {
-      error "Vertex [expr {$v + 1}]: expected part $required, got $actual"
+    if { $actual != $required } {
+      error "Vertex [expr { $v + 1 }]: expected part $required, got $actual"
     }
   }
 }
 
-if {$fixed_count != 4} {
+if { $fixed_count != 4 } {
   error "Expected 4 fixed vertices; found $fixed_count"
 }
 puts "pass"
