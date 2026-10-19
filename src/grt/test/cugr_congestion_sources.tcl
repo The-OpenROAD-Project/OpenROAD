@@ -17,5 +17,6 @@ set_routing_layers -signal met1-met5 -clock met3-met5
 set_global_routing_layer_adjustment met1-met5 0.8
 
 set_debug_level GRT congestion_sources 1
+set_debug_level GRT verify_view 1
 
 global_route -use_cugr -critical_nets_percentage 30 -verbose
