@@ -3,7 +3,7 @@
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["0001-add-bazel-build.patch"])
+exports_files(["BUILD.kokkos_host.bazel"])
 
 alias(
     name = "backend",
