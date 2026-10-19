@@ -76,15 +76,15 @@ void FastRouteCore::routeSegL(Segment* seg)
     double costL2 = 0;
 
     for (int i = ymin; i < ymax; i++) {
-      const auto usageV1 = graph2d_.getEstUsageRedV(seg->x1, i);
+      const auto usageV1 = getEstUsageRedV(net, seg->x1, i);
       costL1 += std::max(0.0, usageV1 - v_capacity_lb_);
-      const auto usageV2 = graph2d_.getEstUsageRedV(seg->x2, i);
+      const auto usageV2 = getEstUsageRedV(net, seg->x2, i);
       costL2 += std::max(0.0, usageV2 - v_capacity_lb_);
     }
     for (int i = seg->x1; i < seg->x2; i++) {
-      const auto usageH1 = graph2d_.getEstUsageRedH(i, seg->y2);
+      const auto usageH1 = getEstUsageRedH(net, i, seg->y2);
       costL1 += std::max(0.0, usageH1 - h_capacity_lb_);
-      const auto usageH2 = graph2d_.getEstUsageRedH(i, seg->y1);
+      const auto usageH2 = getEstUsageRedH(net, i, seg->y1);
       costL2 += std::max(0.0, usageH2 - h_capacity_lb_);
     }
 
@@ -107,23 +107,24 @@ void FastRouteCore::routeSegLFirstTime(Segment* seg)
 {
   const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
 
+  FrNet* net = nets_[seg->netID];
+
   double costL1 = 0;
   double costL2 = 0;
 
   for (int i = ymin; i < ymax; i++) {
-    const auto usageV1 = graph2d_.getEstUsageRedV(seg->x1, i);
+    const auto usageV1 = getEstUsageRedV(net, seg->x1, i);
     costL1 += std::max(0.0, usageV1 - v_capacity_lb_);
-    const auto usageV2 = graph2d_.getEstUsageRedV(seg->x2, i);
+    const auto usageV2 = getEstUsageRedV(net, seg->x2, i);
     costL2 += std::max(0.0, usageV2 - v_capacity_lb_);
   }
   for (int i = seg->x1; i < seg->x2; i++) {
-    const auto usageH1 = graph2d_.getEstUsageRedH(i, seg->y2);
+    const auto usageH1 = getEstUsageRedH(net, i, seg->y2);
     costL1 += std::max(0.0, usageH1 - h_capacity_lb_);
-    const auto usageH2 = graph2d_.getEstUsageRedH(i, seg->y1);
+    const auto usageH2 = getEstUsageRedH(net, i, seg->y1);
     costL2 += std::max(0.0, usageH2 - h_capacity_lb_);
   }
 
-  FrNet* net = nets_[seg->netID];
   const int8_t edgeCost = seg->cost;
 
   if (costL1 < costL2) {
@@ -264,15 +265,15 @@ void FastRouteCore::newrouteL(const int netID,
         }
 
         for (int j = ymin; j < ymax; j++) {
-          const auto usageV1 = graph2d_.getEstUsageRedV(x1, j);
+          const auto usageV1 = getEstUsageRedV(net, x1, j);
           costL1 += std::max(0.0, usageV1 - v_capacity_lb_);
-          const auto usageV2 = graph2d_.getEstUsageRedV(x2, j);
+          const auto usageV2 = getEstUsageRedV(net, x2, j);
           costL2 += std::max(0.0, usageV2 - v_capacity_lb_);
         }
         for (int j = x1; j < x2; j++) {
-          const auto usageH1 = graph2d_.getEstUsageRedH(j, y2);
+          const auto usageH1 = getEstUsageRedH(net, j, y2);
           costL1 += std::max(0.0, usageH1 - h_capacity_lb_);
-          const auto usageH2 = graph2d_.getEstUsageRedH(j, y1);
+          const auto usageH2 = getEstUsageRedH(net, j, y1);
           costL2 += std::max(0.0, usageH2 - h_capacity_lb_);
         }
 
@@ -366,25 +367,24 @@ void FastRouteCore::newrouteZ_edge(const int netID, const int edgeID)
   // cost for V-segs
   for (int i = x1; i <= x2; i++) {
     for (int j = ymin; j < ymax; j++) {
-      addCongestionCost(graph2d_.getEstUsageRedV(i, j) - v_capacity_lb_,
+      addCongestionCost(getEstUsageRedV(net, i, j) - v_capacity_lb_,
                         cost_v_[i - x1],
                         cost_v_test_[i - x1]);
     }
   }
   // cost for Top&Bot boundary segs (form Z with V-seg)
   for (int j = x1; j < x2; j++) {
-    addCongestionCost(graph2d_.getEstUsageRedH(j, y2) - h_capacity_lb_,
+    addCongestionCost(getEstUsageRedH(net, j, y2) - h_capacity_lb_,
                       cost_tb_[0],
                       cost_tb_test_[0]);
   }
   for (int i = 1; i <= segWidth; i++) {
     cost_tb_[i] = cost_tb_[i - 1];
-    addCongestionCost(graph2d_.getEstUsageRedH(x1 + i - 1, y1) - h_capacity_lb_,
+    addCongestionCost(getEstUsageRedH(net, x1 + i - 1, y1) - h_capacity_lb_,
                       cost_tb_[i],
                       cost_tb_test_[i]);
     // subtract the y2 boundary no longer shared by this Z-column
-    const double tmp2
-        = graph2d_.getEstUsageRedH(x1 + i - 1, y2) - h_capacity_lb_;
+    const double tmp2 = getEstUsageRedH(net, x1 + i - 1, y2) - h_capacity_lb_;
     if (tmp2 > 0) {
       cost_tb_[i] -= tmp2;
       cost_tb_test_[i] -= HCOST;
@@ -506,23 +506,23 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
         // cost for V-segs
         for (int i = x1; i < x2; i++) {
           for (int j = ymin; j < ymax; j++) {
-            const double tmp = graph2d_.getEstUsageRedV(i, j) - v_capacity_lb_;
+            const double tmp = getEstUsageRedV(net, i, j) - v_capacity_lb_;
             addCongestionCost(tmp, cost_v_[i - x1], cost_v_test_[i - x1]);
           }
         }
         // cost for Top&Bot boundary segs (form Z with V-seg)
         for (int j = x1; j < x2; j++) {
-          const double tmp = graph2d_.getEstUsageRedH(j, y2) - h_capacity_lb_;
+          const double tmp = getEstUsageRedH(net, j, y2) - h_capacity_lb_;
           addCongestionCost(tmp, cost_tb_[0], cost_tb_test_[0]);
         }
         for (int i = 1; i < segWidth; i++) {
           cost_tb_[i] = cost_tb_[i - 1];
           const double tmp1
-              = graph2d_.getEstUsageRedH(x1 + i - 1, y1) - h_capacity_lb_;
+              = getEstUsageRedH(net, x1 + i - 1, y1) - h_capacity_lb_;
           addCongestionCost(tmp1, cost_tb_[i], cost_tb_test_[0]);
           // subtract the y2 boundary no longer shared by this Z-column
           const double tmp2
-              = graph2d_.getEstUsageRedH(x1 + i - 1, y2) - h_capacity_lb_;
+              = getEstUsageRedH(net, x1 + i - 1, y2) - h_capacity_lb_;
           if (tmp2 > 0) {
             cost_tb_[i] -= tmp2;
             cost_tb_test_[0] -= HCOST;
@@ -533,7 +533,7 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
         // cost for H-segs
         for (int i = ymin; i < ymax; i++) {
           for (int j = x1; j < x2; j++) {
-            const auto usageH = graph2d_.getEstUsageRedH(j, i);
+            const auto usageH = getEstUsageRedH(net, j, i);
             cost_h_[i - ymin] += std::max(0.0, usageH - h_capacity_lb_);
           }
         }
@@ -542,12 +542,16 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
         // the initial far-side accumulation.
         if (y1Smaller) {
           for (int j = ymin; j < ymax; j++) {
-            const auto usageV = graph2d_.getEstUsageRedV(x2, j);
+            const auto usageV = getEstUsageRedV(net, x2, j);
             cost_lr_[0] += std::max(0.0, usageV - v_capacity_lb_);
           }
         } else {
           for (int j = ymin; j < ymax; j++) {
-            const auto usageV = graph2d_.getEstUsageV(x1, j);
+            const auto usageV = getUsageNDRAware(net,
+                                                 x1,
+                                                 j,
+                                                 EdgeDirection::Vertical,
+                                                 graph2d_.getEstUsageV(x1, j));
             cost_lr_[0] += std::max(0.0, usageV - v_capacity_lb_);
           }
         }
@@ -555,10 +559,9 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
         const int lr_far = y1Smaller ? x2 : x1;
         for (int i = 1; i < segHeight; i++) {
           cost_lr_[i] = cost_lr_[i - 1];
-          const auto usageNear
-              = graph2d_.getEstUsageRedV(lr_near, ymin + i - 1);
+          const auto usageNear = getEstUsageRedV(net, lr_near, ymin + i - 1);
           cost_lr_[i] += std::max(0.0, usageNear - v_capacity_lb_);
-          const auto usageFar = graph2d_.getEstUsageRedV(lr_far, ymin + i - 1);
+          const auto usageFar = getEstUsageRedV(net, lr_far, ymin + i - 1);
           cost_lr_[i] -= std::max(0.0, usageFar - v_capacity_lb_);
         }
 
@@ -722,15 +725,15 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
     }
 
     for (int j = ymin; j < ymax; j++) {
-      const auto usageV1 = graph2d_.getEstUsageRedV(x1, j);
+      const auto usageV1 = getEstUsageRedV(net, x1, j);
       costL1 += std::max(0.0, usageV1 - v_capacity_lb_);
-      const auto usageV2 = graph2d_.getEstUsageRedV(x2, j);
+      const auto usageV2 = getEstUsageRedV(net, x2, j);
       costL2 += std::max(0.0, usageV2 - v_capacity_lb_);
     }
     for (int j = x1; j < x2; j++) {
-      const auto usageH1 = graph2d_.getEstUsageRedH(j, y2);
+      const auto usageH1 = getEstUsageRedH(net, j, y2);
       costL1 += std::max(0.0, usageH1 - h_capacity_lb_);
-      const auto usageH2 = graph2d_.getEstUsageRedH(j, y1);
+      const auto usageH2 = getEstUsageRedH(net, j, y1);
       costL2 += std::max(0.0, usageH2 - h_capacity_lb_);
     }
 
@@ -954,9 +957,13 @@ void FastRouteCore::routeMonotonic(const int netID,
   // d1[j][i]: cumulative H-edge cost along row j from xmin to i
   for (int j = ymin; j <= ymax; j++) {
     for (int i = xmin; i < xmax; i++) {
-      const size_t idx
-          = std::min(static_cast<size_t>(graph2d_.getUsageRedH(i, j)),
-                     h_cost_table_.size() - 1);
+      const size_t idx = std::min(
+          static_cast<size_t>(getUsageNDRAware(net,
+                                               i,
+                                               j,
+                                               EdgeDirection::Horizontal,
+                                               graph2d_.getUsageRedH(i, j))),
+          h_cost_table_.size() - 1);
       d1[j][i + 1] = d1[j][i] + h_cost_table_[idx];
     }
   }
@@ -964,9 +971,10 @@ void FastRouteCore::routeMonotonic(const int netID,
   // d2[j][i]: cumulative V-edge cost along column i from ymin to j
   for (int j = ymin; j < ymax; j++) {
     for (int i = xmin; i <= xmax; i++) {
-      const size_t idx
-          = std::min(static_cast<size_t>(graph2d_.getUsageRedV(i, j)),
-                     h_cost_table_.size() - 1);
+      const size_t idx = std::min(
+          static_cast<size_t>(getUsageNDRAware(
+              net, i, j, EdgeDirection::Vertical, graph2d_.getUsageRedV(i, j))),
+          h_cost_table_.size() - 1);
       d2[j + 1][i] = d2[j][i] + h_cost_table_[idx];
     }
   }

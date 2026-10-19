@@ -136,6 +136,27 @@ class Graph2D
   void sortCongestedNDRnets();
   std::vector<int> getCongestedNDRnetsByFraction(double fraction);
 
+  // An NDR net must fit in a single layer of each edge it uses. Where no
+  // layer has enough NDR capacity left, the tracks the net misses on its
+  // best layer are its NDR deficit on the edge. The deficits are kept apart
+  // from the edge usage, which only holds the tracks the nets take: the
+  // regular nets still see the room the edge has, the NDR nets pay for the
+  // deficits in their routing cost, and the 2D overflow counts them.
+
+  // Deficit of the net on the edge, zero when the net does not use it.
+  int getNDRDeficit(FrNet* net, int x, int y, EdgeDirection direction) const;
+  // Deficit of the NDR nets on the edge once `net` uses it: theirs plus,
+  // when `net` is not one of them yet, the tracks it would miss there. They
+  // compete for the same layers, so an NDR net that fits also sees the ones
+  // it leaves without room. Zero for nets without NDR.
+  int getNDRDeficitIfRouted(FrNet* net,
+                            int x,
+                            int y,
+                            EdgeDirection direction) const;
+  // True when an NDR net using the edge fits no single layer there.
+  bool hasNDRDeficit(int x, int y, EdgeDirection direction) const;
+  int getTotalNDRDeficit() const { return ndr_deficit_total_; }
+
  private:
   friend class Graph2DTestPeer;
 
@@ -151,7 +172,10 @@ class Graph2D
                          int y,
                          double edge_cost,
                          EdgeDirection direction);
-  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
+  int computeNDRDeficit(FrNet* net,
+                        int x,
+                        int y,
+                        EdgeDirection direction) const;
   void printNDRCap(int x, int y);
   void printEdgeCapPerLayer();
   void initNDRnets();
@@ -213,9 +237,9 @@ class Graph2D
   // cap_ndr drift (see reserveNDRCapLayer/releaseNDRCapLayer).
   struct NDRUsage
   {
-    int16_t layer = -1;             // layer whose cap_ndr was debited
-    int8_t amount = 0;              // amount debited from that layer
-    bool charged_overflow = false;  // net was charged the overflow edge cost
+    int16_t layer = -1;  // layer whose cap_ndr was debited
+    int8_t amount = 0;   // amount debited from that layer
+    int8_t deficit = 0;  // tracks missing on the best layer (0 = fits)
   };
 
   NDRUsage reserveNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir);
@@ -236,6 +260,7 @@ class Graph2D
   multi_array<std::map<FrNet*, NDRUsage>, 2>
       h_ndr_nets_;  // The way it is indexed is (X, Y)
   std::vector<NDRCongestion> congested_ndrs_;
+  int ndr_deficit_total_ = 0;  // sum of Edge::ndr_deficit
 
   utl::Logger* logger_ = nullptr;
 
