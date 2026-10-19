@@ -4640,9 +4640,8 @@ void GlobalRouter::computeWirelength()
 }
 
 // Build the initial Steiner topology for a net using the same STT builder that
-// FastRoute uses, and return its total wirelength in dbu, taking each pin at
-// its gcell center.
-// Read-only: this does not feed the routing engine.
+// FastRoute and CUGR use, and return its total wirelength in dbu, taking each
+// pin at its gcell center. Read-only: this does not feed the routing engine.
 int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
 {
   std::vector<int> x;
