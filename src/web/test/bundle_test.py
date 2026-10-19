@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# The page the Bazel build embeds: everything it loads is in the bundle, and these
-# tests catch a reintroduced remote reference before any browser meets it.
+# The page the Bazel build embeds and the script a saved report inlines load
+# nothing remote; these tests catch a reintroduced reference.
 
 import re
 import unittest
@@ -11,8 +11,10 @@ _PAGE = {
     "index.html": "src/web/bundle/index.html",
     "app.min.js": "src/web/bundle/app.min.js",
 }
+# Inlined into every saved report, which opens with no server at all.
+_REPORT_JS = "src/web/bundle/report.min.js"
 _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
-_ENTRIES = ("src/web/src/entry-app.js",)
+_ENTRIES = ("src/web/src/entry-app.js", "src/web/src/entry-report.js")
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
 # whole and in lower case: XML namespaces, ELK's model URIs, links in comments
@@ -109,9 +111,23 @@ class Page(unittest.TestCase):
         self.assertIn("data:image/png;base64,", html)
 
     def test_reaches_no_remote_resource(self):
-        for name, path in _PAGE.items():
+        for name, path in [*_PAGE.items(), ("report.min.js", _REPORT_JS)]:
             text = _read(path)
             self.assertEqual(external_urls(text) + scheme_relative_urls(text), [], name)
+
+    def test_marks_what_a_saved_report_copies(self):
+        html = _read(_PAGE["index.html"])
+        block = re.search(
+            r"<!-- saved-report:begin -->(.*)<!-- saved-report:end -->", html, re.S
+        )
+        self.assertIsNotNone(block)
+        self.assertIn('id="gl-theme-dark"', block.group(1))
+        self.assertNotRegex(block.group(1), r"\b(src|href)=")
+
+    def test_report_script_cannot_end_its_block(self):
+        text = _read(_REPORT_JS).lower()
+        self.assertNotIn("</script", text)
+        self.assertNotIn("<!--", text)
 
     def test_ships_the_bundled_licences(self):
         text = _read(_LICENSES)

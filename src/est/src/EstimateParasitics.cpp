@@ -609,7 +609,10 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::kGlobalRouting:
     case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes();
+      // Also re-estimate the nets the router moved beyond the edited ones.
+      for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+        parasiticsInvalid(db_net);
+      }
       for (const sta::Net* net : parasitics_invalid_) {
         if (isSkipNet(net)) {
           continue;
@@ -708,7 +711,10 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
         parasitics_invalid_.erase(net);
         break;
       case ParasiticsSrc::kGlobalRouting: {
-        incr_groute_->updateRoutes();
+        // Other rerouted nets stay invalid until the next updateParasitics.
+        for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+          parasiticsInvalid(db_net);
+        }
         estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;

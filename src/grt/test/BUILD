@@ -27,6 +27,7 @@ TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "cugr_colocated_pins",
+    "cugr_congestion_sources",
     "cugr_detour_limit",
     "cugr_via_demand_disabled",
     "est_rc1",
@@ -332,7 +333,6 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestRoutingCongestion.cpp"],
     data = [":test_resources"],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/grt",

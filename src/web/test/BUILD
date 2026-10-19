@@ -67,6 +67,7 @@ py_test(
         "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
         "//src/web:bundle/app.min.js",
         "//src/web:bundle/index.html",
+        "//src/web:bundle/report.min.js",
     ],
 )
 
