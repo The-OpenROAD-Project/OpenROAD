@@ -82,7 +82,7 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
       10,
       fmt::format("WNS{} Phase Time: {{}}", phase_marker));
   constexpr int max_no_progress = 4;
-  committer_.capturePrePhaseSlack();
+  committer_.tracker().capturePrePhaseSlack();
   setup_context_.overall_no_progress_count = 0;
   rejected_pin_moves_current_endpoint_.clear();
   target_collector_->resetEndpointPasses();
