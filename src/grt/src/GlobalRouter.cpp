@@ -379,6 +379,16 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty() && !congested_routes;
 }
 
+bool GlobalRouter::haveCongestedRoutes()
+{
+  if (!designIsPlaced()) {
+    return false;
+  }
+  loadGuidesFromDB();
+  bool congested_routes = is_congested_ && !congestion_accepted_ && !use_cugr_;
+  return !routes_.empty() && congested_routes;
+}
+
 bool GlobalRouter::haveDetailedRoutes()
 {
   if (block_ == nullptr) {
