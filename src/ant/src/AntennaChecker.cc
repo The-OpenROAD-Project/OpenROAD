@@ -918,7 +918,7 @@ void AntennaChecker::Impl::buildLayerMaps(odb::dbNet* db_net,
   odb::PtrMap<odb::dbTechLayer, PolygonSet> set_by_layer;
 
   wiresToPolygonSetMap(wires, set_by_layer);
-  avoidPinIntersection(db_net, set_by_layer);
+  addPinShapes(db_net, set_by_layer);
 
   int node_count = 0;
   for (const auto& layer_it : set_by_layer) {
