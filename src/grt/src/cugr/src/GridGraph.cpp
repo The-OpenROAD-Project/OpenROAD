@@ -302,6 +302,7 @@ GridGraph::GridGraph(const Design* design,
       }
     }
   }
+  default_view_context_ = makeWireCostViewContext({});
 }
 
 double GridGraph::stackPadLength(const int layer,
@@ -1389,10 +1390,8 @@ GridGraph::WireCostViewContext GridGraph::makeWireCostViewContext(
     context.unit_length_short_cost[direction]
         = std::min(context.unit_length_short_cost[direction],
                    getUnitLengthShortCost(layer_index));
-    if (std::cmp_less(layer_index, net_costs.size())) {
-      context.net_factor[direction]
-          = std::max(context.net_factor[direction], net_costs[layer_index]);
-    }
+    context.net_factor[direction] = std::max(
+        context.net_factor[direction], layerFactor(net_costs, layer_index));
   }
   return context;
 }
@@ -1470,7 +1469,7 @@ void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
                                    const GRNet& net) const
 {
   // The shared view is NDR-blind, like the full extraction without costs.
-  const WireCostViewContext context = makeWireCostViewContext({});
+  const WireCostViewContext& context = default_view_context_;
   auto refresh = [&](const int layer, const PointT edge) {
     // Layers below the minimum routing layer are not part of the view.
     if (layer < constants_.min_routing_layer) {

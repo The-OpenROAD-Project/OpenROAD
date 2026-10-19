@@ -487,6 +487,8 @@ class GridGraph
   CostT unit_length_wire_cost_;
   CostT unit_via_cost_;
   std::vector<CostT> unit_length_short_costs_;
+  // The NDR-blind context of the shared 2D view; fixed once the grid exists.
+  WireCostViewContext default_view_context_;
 
   int total_length_ = 0;
   int total_num_vias_ = 0;
