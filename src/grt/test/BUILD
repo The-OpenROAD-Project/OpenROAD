@@ -134,6 +134,7 @@ TESTS = [
     "report_net_detours2",
     "report_net_detours2_cugr",
     "report_net_detours3",
+    "report_net_detours4_cugr",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",

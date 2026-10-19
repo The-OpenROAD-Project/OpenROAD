@@ -4670,7 +4670,8 @@ int GlobalRouter::computeNetInitialSteinerWirelength(Net* net)
     return std::abs(x[0] - x[1]) + std::abs(y[0] - y[1]);
   }
 
-  stt::Tree tree = stt_builder_->makeSteinerTree(x, y, driver_index);
+  stt::Tree tree
+      = stt_builder_->makeSteinerTree(net->getDbNet(), x, y, driver_index);
   return tree.length;
 }
 
