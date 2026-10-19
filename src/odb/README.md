@@ -498,19 +498,19 @@ report_3dic_summary
 
 ## Example scripts
 
-After building successfully, run OpenDB Tcl shell using
-`../../build/src/odb/src/swig/tcl/odbtcl`. An example usage:
+After building successfully with `bazelisk build //:openroad`, run the
+OpenROAD shell from the repository root using `bazel-bin/openroad`.
+An example usage:
 
 ```
-set db [dbDatabase_create]
-set lef_parser [new_lefin $db true]
-set tech [lefin_createTech $lef_parser ./src/odb/test/data/gscl45nm.lef]
+set db [odb::dbDatabase_create]
+set lib [odb::read_lef $db ./src/odb/test/data/gscl45nm.lef]
 ```
 
 You can find examples on using the API from Tcl under `test/tcl/` directory.
 
-The full set of the Tcl commands exposed can be found under
-`./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
+The full set of the Tcl commands exposed is defined by the SWIG interface files
+`src/odb/src/swig/common/odb.i` and `src/odb/src/swig/tcl/*.i`.
 
 ### All pin placed
 
@@ -549,10 +549,10 @@ add_3dblox_alignment_marker_rule
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/odb/...
 ```
 
 ## Database Internals

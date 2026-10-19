@@ -35,13 +35,12 @@ struct RatioCheck
 };
 
 // The ratios checked for one gate on one layer that has an antenna rule.
-// Side area ratios (psr, csr) apply to routing layers only.  car is unset
-// when par already violated, as the check stops there.
+// Side area ratios (psr, csr) apply to routing layers only.
 struct LayerCheck
 {
   odb::dbTechLayer* layer{nullptr};
   RatioCheck par;
-  std::optional<RatioCheck> car;
+  RatioCheck car;
   std::optional<RatioCheck> psr;
   std::optional<RatioCheck> csr;
   bool violated{false};

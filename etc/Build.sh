@@ -27,12 +27,44 @@ useBazel=yes
 bazelGpu=no
 noGui=no
 installPrefix=""
+# Flags given that only the CMake build uses; warned about after parsing,
+# once we know whether -cmake-build came later on the command line.
+bazelIgnoredFlags=()
 
 _help() {
     cat <<EOF
 usage: $0 [OPTIONS]
 
+Build and install OpenROAD. Bazel is the default build system and puts the
+binary in bazel-bin/openroad. CMake is deprecated: select it with -cmake-build.
+
 OPTIONS:
+  -no-gui                                       Disable GUI support
+  -gpu                                          Build the opt-in GPU (Kokkos/CUDA)
+                                                 placement backends: --config=gpu
+                                                 with Bazel, -DENABLE_GPU=ON with CMake.
+  -threads=NUM_THREADS                          Number of threads to use during
+                                                 compile. Default: \`nproc\` on linux
+                                                 or \`sysctl -n hw.logicalcpu\` on macOS
+  -local                                        Install OpenROAD in \${HOME}/.local.
+  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
+  -dir=PATH                                     Directory for the build log, which is
+                                                 always saved there as
+                                                 openroad_build.log. With CMake it also
+                                                 holds the build files.
+                                                 Default: ./build
+  -clean                                        Remove the -dir directory before the
+                                                 build. With Bazel this does not clear
+                                                 the Bazel cache: use 'bazelisk clean'.
+  -cpp20                                        DEPRECATED: no-op, C++20 is the default
+  -help                                         Shows this message
+
+CMAKE ONLY (deprecated; with Bazel these print a warning and have no effect):
+  -cmake-build                                  DEPRECATED: Force the CMake build instead
+                                                 of Bazel. Bazel is the supported build
+                                                 system and is used by default; CMake
+                                                 support will be removed on Nov. 1,
+                                                 2026.
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
                                                  Note: use single quote after
                                                  -cmake= and double quotes if
@@ -44,34 +76,21 @@ OPTIONS:
                                                 Compiler warnings are
                                                 considered errors, i.e.,
                                                 use -Werror flag during build.
-  -dir=PATH                                     Path to store build files.
-                                                 Default: ./build
-  -coverage                                     Enable cmake coverage options
-  -clean                                        Remove build dir before compile
-  -no-gui                                       Disable GUI support
   -no-tests                                     Disable GTest
-  -cpp20                                        DEPRECATED: no-op, C++20 is the default
-  -build-man                                    Build Man Pages (optional)
-  -threads=NUM_THREADS                          Number of threads to use during
-                                                 compile. Default: \`nproc\` on linux
-                                                 or \`sysctl -n hw.logicalcpu\` on macOS
-  -keep-log                                     Keep a compile log in build dir
-  -help                                         Shows this message
-  -gpu                                          Build the opt-in GPU (Kokkos/CUDA)
-                                                 placement backends: -DENABLE_GPU=ON
-                                                 with CMake, --config=gpu with Bazel.
-  -cmake-build                                  DEPRECATED: Force the CMake build instead
-                                                 of Bazel. Bazel is the supported build
-                                                 system and is used by default; CMake
-                                                 support will be removed in a future
-                                                 release.
+  -coverage                                     Enable cmake coverage options
+  -build-man                                    Build Man Pages (optional).
+                                                 Bazel builds them with
+                                                 //docs:man_pages.
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
                                                  or from system "/etc".
-  -local                                        Install OpenROAD in \${HOME}/.local.
-  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
+
+EXAMPLES:
+  $0                                    Build and install with Bazel (default)
+  $0 -no-gui -prefix=/opt/openroad      CLI-only build, installed in /opt/openroad
+  $0 -cmake-build                       Build with CMake (deprecated)
 
 EOF
     exit "${1:-1}"
@@ -118,12 +137,14 @@ while [ "$#" -gt 0 ]; do
             noGui=yes
             ;;
         -no-tests)
+            bazelIgnoredFlags+=("-no-tests")
             cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
         -cpp20)
             echo "[WARNING] -cpp20 is deprecated and ignored: C++20 is already the default." >&2
             ;;
         -build-man)
+            bazelIgnoredFlags+=("-build-man")
             cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
@@ -131,14 +152,17 @@ while [ "$#" -gt 0 ]; do
             compilerSet=yes
             ;;
         -no-warnings )
+            bazelIgnoredFlags+=("-no-warnings")
             cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
+            bazelIgnoredFlags+=("-coverage")
             cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
             cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
             cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
+            bazelIgnoredFlags+=("-cmake=")
             # Use xargs to safely parse the quoted string into array elements without eval
             while IFS= read -r arg; do
                 if [[ -n "$arg" ]]; then
@@ -165,6 +189,7 @@ while [ "$#" -gt 0 ]; do
                 _help
             fi
             depsPrefixesFile="$file"
+            bazelIgnoredFlags+=("-deps-prefixes-file=")
             ;;
         -compiler | -cmake | -dir | -threads | -install | -deps-prefixes-file )
             echo "${1} requires an argument" >&2
@@ -175,7 +200,7 @@ while [ "$#" -gt 0 ]; do
             bazelGpu=yes
             ;;
         -cmake-build)
-            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed in a future release." >&2
+            echo "[WARNING] -cmake-build selects the deprecated CMake build: Bazel is the supported build system and CMake support will be removed on Nov. 1, 2026." >&2
             useBazel=no
             ;;
         -bazel)
@@ -190,31 +215,42 @@ while [ "$#" -gt 0 ]; do
     shift 1
 done
 
-if [[ -z "$depsPrefixesFile" ]]; then
-    if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
-    elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
-    fi
-fi
-if [[ -f "$depsPrefixesFile" ]]; then
-            while IFS= read -r arg; do
-                if [[ -n "$arg" ]]; then
-                    cmakeOptions+=("$arg")
-                fi
-            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
-    echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
-else
-    echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
-fi
-
-# Bazel selects its own compiler toolchain, so the -compiler flag and the
-# CC/CXX resolution below only apply to CMake builds.
+# Bazel selects its own compiler toolchain and dependencies, so the -compiler
+# flag, the deps prefixes file, and the CC/CXX resolution below only apply to
+# CMake builds.
 if [[ "$useBazel" == "yes" ]]; then
     if [[ "$compilerSet" == "yes" ]]; then
         echo "[WARNING] -compiler is ignored with Bazel: Bazel manages its own toolchain." >&2
     fi
+    warnedFlags=" "
+    # ${arr[@]+...} keeps an empty array safe under set -u on bash < 4.4.
+    for flag in ${bazelIgnoredFlags[@]+"${bazelIgnoredFlags[@]}"}; do
+        # Warn once per flag, even when it is repeated on the command line.
+        case "$warnedFlags" in
+            *" ${flag} "*) continue ;;
+        esac
+        warnedFlags="${warnedFlags}${flag} "
+        echo "[WARNING] ${flag} is ignored with Bazel: it only applies to the deprecated CMake build (-cmake-build)." >&2
+    done
 else
+    if [[ -z "$depsPrefixesFile" ]]; then
+        if [[ -f "$DIR/openroad_deps_prefixes.txt" ]]; then
+            depsPrefixesFile="$DIR/openroad_deps_prefixes.txt"
+        elif [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+            depsPrefixesFile="/etc/openroad_deps_prefixes.txt"
+        fi
+    fi
+    if [[ -f "$depsPrefixesFile" ]]; then
+        while IFS= read -r arg; do
+            if [[ -n "$arg" ]]; then
+                cmakeOptions+=("$arg")
+            fi
+        done < <(xargs printf '%s\n' < "$depsPrefixesFile")
+        echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
+    else
+        echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
+    fi
+
     case "${compiler}" in
         "gcc" )
             if [[ -f "/opt/rh/devtoolset-8/enable" ]]; then
@@ -339,7 +375,7 @@ echo -e "${YELLOW}Running pre-compilation system checks...${NC}"
 check_command() {
     if ! command -v "$1" &> /dev/null; then
         echo -e "${RED}[ERROR] Required dependency '$1' is missing!${NC}"
-        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
+        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh -cmake' before building."
         exit 1
     else
         echo -e "${GREEN}[OK] Found $1${NC}"
