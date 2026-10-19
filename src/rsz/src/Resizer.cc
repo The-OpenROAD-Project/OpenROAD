@@ -6330,7 +6330,7 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
       } else if (!port_delays.contains(port)) {
         port_delays.emplace(port, gate_delay);
       } else {
-        port_delays[input_port] = std::max(port_delays[port], gate_delay);
+        port_delays[port] = std::max(port_delays[port], gate_delay);
       }
     }
   }
