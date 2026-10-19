@@ -6224,7 +6224,7 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
             // its PinSet) is deleted by Search on the next call. So
             // raw new here is paired with a callee-owned delete; do
             // not free it locally.
-            sta::PinSet* critical_pins = new sta::PinSet(network_);
+            auto critical_pins = std::make_unique<sta::PinSet>(network_);
             for (const auto& [pin, slack] : critical) {
               critical_pins->insert(pin);
             }
@@ -6232,7 +6232,7 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
             total_augment_endpoints += critical_count;
             const int group_path_count = std::min(
                 kAugmentGroupCap, critical_count * augment_paths_per_endpoint);
-            enumerate_paths_batched(critical_pins,
+            enumerate_paths_batched(critical_pins.release(),
                                     is_setup,
                                     group_path_count,
                                     augment_paths_per_endpoint,
