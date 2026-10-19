@@ -331,6 +331,24 @@ TEST_F(AntennaSyntheticTest, RatioMargin)
   EXPECT_TRUE(margin.par.violated);
 }
 
+// The margin tightens the cumulative limits too.
+TEST_F(AntennaSyntheticTest, RatioMarginOnCumulativeRatios)
+{
+  tst::applyAntennaRule(m1(), {.car = 2.1, .csr = 42});
+  odb::dbNet* net = gateNet("n1");
+
+  const LayerCheck check = layerCheck(net, m1());
+  ASSERT_TRUE(check.csr);
+  EXPECT_FALSE(check.car.violated);
+  EXPECT_FALSE(check.csr->violated);
+  const LayerCheck margin = layerCheck(net, m1(), /*ratio_margin=*/10);
+  ASSERT_TRUE(margin.csr);
+  EXPECT_NEAR(margin.car.required, 2.1 * 0.9, 1e-6);
+  EXPECT_TRUE(margin.car.violated);
+  EXPECT_NEAR(margin.csr->required, 42 * 0.9, 1e-6);
+  EXPECT_TRUE(margin.csr->violated);
+}
+
 // A gate wired up through a via accumulates the PAR/PSR of every layer
 // below into CAR/CSR, and the cut layer gets a PAR of its own.
 TEST_F(AntennaSyntheticTest, CumulativeRatiosAcrossLayers)
