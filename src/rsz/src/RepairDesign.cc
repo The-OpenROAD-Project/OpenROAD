@@ -671,9 +671,21 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       return std::make_pair(required(sta), -level);
     }
 
-    float capacitance(const sta::Network* network)
+    float capacitance(const sta::Network* network, const sta::Scene* corner)
     {
-      return network->libertyPort(pin)->capacitance();
+      if (sta::LibertyPort* port = network->libertyPort(pin)) {
+        return port->capacitance();
+      }
+      if (network->isTopLevelPort(pin) && corner != nullptr) {
+        sta::Port* port = network->port(pin);
+        float cap = 0.0f;
+        for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+          cap = std::max(
+              cap, corner->sdc()->portExtCap(port, rf, sta::MinMax::max()));
+        }
+        return cap;
+      }
+      return 0.0f;
     }
   };
 
@@ -700,6 +712,8 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   // 1. Collect all sinks
   std::vector<EnqueuedPin> sinks;
+  std::vector<EnqueuedPin> output_sinks;
+  bool driver_has_negative_slack = false;
 
   sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -707,11 +721,14 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
         && network_->direction(pin) == sta::PortDirection::input()
         && network_->libertyPort(pin)) {
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+      sta::Path* req_path
+          = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+      if (req_path != nullptr && req_path->slack(sta_) < 0.0f) {
+        driver_has_negative_slack = true;
+      }
       sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
-        sta::Vertex* vertex = graph_->pinLoadVertex(pin);
-        sta::Path* req_path
-            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<sta::Pin*>(pin), req_path, 0.0, 0});
       } else {
         logger_->warn(RSZ,
@@ -720,9 +737,32 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
                       network_->name(inst),
                       network_->name(net));
       }
+    } else if (pin != drvr_pin && network_->isTopLevelPort(pin)
+               && network_->direction(pin)->isAnyOutput()) {
+      EnqueuedPin out_sink{const_cast<sta::Pin*>(pin), nullptr, 0.0, 0};
+      if (out_sink.capacitance(network_, resizer_->tgt_slew_corner_) > 0.0f) {
+        sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+        out_sink.required_path
+            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        if (out_sink.required_path != nullptr
+            && out_sink.required_path->slack(sta_) < 0.0f) {
+          driver_has_negative_slack = true;
+        }
+        output_sinks.push_back(out_sink);
+      }
     }
   }
   delete pin_iter;
+
+  // Include top-level output ports only when the driver has negative worst
+  // slack (evaluated across its load vertices, which are already updated at
+  // drvr->level() + 1). Internal sinks are collected unconditionally because
+  // PinRequiredHigher shields non-critical (positive-slack) fanout behind
+  // buffers to isolate critical sinks, and because upstream drivers still carry
+  // optimistic annotated target slews during performEarlySizingRound.
+  if (driver_has_negative_slack) {
+    sinks.insert(sinks.end(), output_sinks.begin(), output_sinks.end());
+  }
 
   // Keep track of the vertices at the boundary of the tree so we know where
   // to ask for delays to be recomputed
@@ -738,7 +778,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   float load = 0.0;
   for (auto& sink : sinks) {
-    load += sink.capacitance(network_);
+    load += sink.capacitance(network_, resizer_->tgt_slew_corner_);
   }
   std::ranges::sort(sinks, PinRequiredHigher(network_));
 
@@ -752,7 +792,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       if (it - sinks.begin() == max_fanout) {
         break;
       }
-      float sink_load = it->capacitance(network_);
+      float sink_load = it->capacitance(network_, resizer_->tgt_slew_corner_);
       if (load_acc + sink_load > max_buf_load
           // always include at least one load
           && it != sinks.begin()) {

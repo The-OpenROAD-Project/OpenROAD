@@ -727,8 +727,8 @@ class IncrementalGRoute
  public:
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
-  // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = true);
+  // Update global routes for dirty nets. Returns every net it rerouted.
+  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 
