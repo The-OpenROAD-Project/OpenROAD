@@ -20,6 +20,26 @@ proc parse_buffer_cell { keys_var } {
   return $buffer_cell
 }
 
+# The keys a command cannot do without.
+proc check_required_keys { keys_var required_keys } {
+  upvar 1 $keys_var keys
+  foreach required_key $required_keys {
+    if { ![info exists keys($required_key)] } {
+      utl::error RSZ 3203 "$required_key is required."
+    }
+  }
+}
+
+# -delay_levels of the delay estimator accuracy reports: 0, 1 or 2.
+proc check_delay_levels { delay_levels } {
+  if { ![string is integer -strict $delay_levels] } {
+    utl::error RSZ 3206 "-delay_levels must be an integer."
+  }
+  if { $delay_levels < 0 || $delay_levels > 2 } {
+    utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
+  }
+}
+
 # namespace eval rsz
 }
 
@@ -255,6 +275,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-skip_vt_swap]\
                                         [-skip_crit_vt_swap]\
                                         [-skip_crpr]\
+                                        [-effort low|medium|high]\
                                         [-profile_mode mode]\
                                         [-profile_dir dir]\
                                         [-repair_tns tns_end_percent]\
@@ -273,7 +294,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases -policy -policies -path_group -profile_mode -profile_dir \
+            -phases -policy -policies -path_group -effort -profile_mode -profile_dir \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_buffer_to_inverters \
@@ -341,17 +362,30 @@ proc repair_timing { args } {
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
   set skip_crpr [info exists flags(-skip_crpr)]
+  set effort "high"
+  if { [info exists keys(-effort)] } {
+    set effort $keys(-effort)
+    if { [lsearch -exact {low medium high} $effort] == -1 } {
+      utl::error RSZ 3242 "-effort must be low, medium or high."
+    }
+    if { [lsearch -exact [string toupper $phases] "PARALLEL_EVAL"] == -1 } {
+      utl::warn RSZ 3244 "-effort has no effect unless -phases lists PARALLEL_EVAL."
+    }
+  }
   # Setup repair profiler level and output directory; 0 writes nothing.
   set profile_mode 0
   if { [info exists keys(-profile_mode)] } {
     set profile_mode $keys(-profile_mode)
-    if { [lsearch -exact {0 1 2} $profile_mode] == -1 } {
-      utl::error RSZ 3243 "-profile_mode must be 0, 1 or 2."
+    if { [lsearch -exact {0 1 2 3} $profile_mode] == -1 } {
+      utl::error RSZ 3243 "-profile_mode must be 0, 1, 2 or 3."
     }
   }
   set profile_dir ""
   if { [info exists keys(-profile_dir)] } {
     set profile_dir $keys(-profile_dir)
+    if { $profile_mode == 0 } {
+      utl::warn RSZ 3245 "-profile_dir has no effect without -profile_mode."
+    }
   }
   rsz::set_max_utilization [rsz::parse_max_util keys]
   set max_buffer_percent 20
@@ -399,6 +433,14 @@ proc repair_timing { args } {
   if { [info exists keys(-max_repairs_per_pass)] } {
     set max_repairs_per_pass $keys(-max_repairs_per_pass)
   }
+  # The pass options drive the per-endpoint policies only.
+  if { [info exists keys(-max_passes)] || [info exists keys(-max_repairs_per_pass)] } {
+    set pass_phases [lsearch -all -inline -not -exact [string toupper $phases] "PARALLEL_EVAL"]
+    if { $phases ne "" && [llength $pass_phases] == 0 } {
+      utl::warn RSZ 3246 \
+        "-max_passes and -max_repairs_per_pass have no effect on the PARALLEL_EVAL policy."
+    }
+  }
 
   sta::check_argc_eq0 "repair_timing" $args
   est::check_parasitics
@@ -425,7 +467,7 @@ proc repair_timing { args } {
           $sequence $phases $path_group \
           $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
           $skip_buffer_removal $skip_buffer_to_inverters $skip_last_gasp $skip_vt_swap \
-          $skip_crit_vt_swap $profile_mode $profile_dir]
+          $skip_crit_vt_swap $effort $profile_mode $profile_dir]
       }
       if { $hold } {
         if { $skip_crpr } {
@@ -1091,11 +1133,7 @@ proc report_delay_estimator_accuracy { args } {
     keys {-inst -lib_cell -estimator -delay_levels} flags {}
   sta::check_argc_eq0 "report_delay_estimator_accuracy" $args
 
-  foreach required_key {-inst -lib_cell -estimator} {
-    if { ![info exists keys($required_key)] } {
-      utl::error RSZ 3203 "$required_key is required."
-    }
-  }
+  rsz::check_required_keys keys {-inst -lib_cell -estimator}
 
   set inst [sta::get_instance_error "-inst" $keys(-inst)]
   set lib_cells [sta::get_lib_cells_arg \
@@ -1115,13 +1153,8 @@ proc report_delay_estimator_accuracy { args } {
 
   set delay_levels 0
   if { [info exists keys(-delay_levels)] } {
-    if { ![string is integer -strict $keys(-delay_levels)] } {
-      utl::error RSZ 3206 "-delay_levels must be an integer."
-    }
+    rsz::check_delay_levels $keys(-delay_levels)
     set delay_levels $keys(-delay_levels)
-    if { $delay_levels < 0 || $delay_levels > 2 } {
-      utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
-    }
     if { $estimator eq "legacy" } {
       utl::error RSZ 3208 \
         "-delay_levels is only valid for non-legacy estimators."
@@ -1131,6 +1164,35 @@ proc report_delay_estimator_accuracy { args } {
   est::check_parasitics
   rsz::report_delay_estimator_accuracy_cmd \
     $inst $lib_cell $estimator $delay_levels
+}
+
+sta::define_cmd_args "report_delay_estimator_accuracy_for_rebuffering" {\
+  -inst instance \
+  [-driver_pin pin] \
+  [-delay_levels level] }
+
+proc report_delay_estimator_accuracy_for_rebuffering { args } {
+  sta::parse_key_args "report_delay_estimator_accuracy_for_rebuffering" args \
+    keys {-inst -driver_pin -delay_levels} flags {}
+  sta::check_argc_eq0 "report_delay_estimator_accuracy_for_rebuffering" $args
+
+  rsz::check_required_keys keys {-inst}
+  set inst [sta::get_instance_error "-inst" $keys(-inst)]
+
+  set driver_pin "NULL"
+  if { [info exists keys(-driver_pin)] } {
+    set driver_pin [sta::get_port_pin_error "-driver_pin" $keys(-driver_pin)]
+  }
+
+  set delay_levels 1
+  if { [info exists keys(-delay_levels)] } {
+    rsz::check_delay_levels $keys(-delay_levels)
+    set delay_levels $keys(-delay_levels)
+  }
+
+  est::check_parasitics
+  rsz::report_delay_estimator_accuracy_for_rebuffering_cmd \
+    $inst $driver_pin $delay_levels
 }
 
 sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \

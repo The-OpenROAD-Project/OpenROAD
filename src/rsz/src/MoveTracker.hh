@@ -100,6 +100,9 @@ struct MoveStateData
   int order;
   std::string move_type;
   MoveStateType state;
+  // The endpoint the move was recorded for; finalizeMoves() charges its counts
+  // to it.
+  const sta::Pin* endpoint_pin{nullptr};
 
   MoveStateData(const sta::Pin* p,
                 int c,
@@ -169,6 +172,8 @@ class MoveTracker : public odb::dbBlockCallBackObj
   void beginJournal();
   void commitJournal();
   void restoreJournal();
+  // Reject only the latest matching entry in the current pending journal.
+  bool rejectPendingMove(const sta::Pin* pin, const std::string& move_type);
 
   // === Phase and final reports =============================================
   // Print statistics summary for current pass and cumulative totals

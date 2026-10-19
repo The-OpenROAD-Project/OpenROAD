@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# Embed web asset files in a .cpp, so the web server can serve them without a
-# -dir argument: a path -> (content, MIME type) table, gzipped where that pays.
+# Embed web assets in a .cpp: a path -> (content, MIME type) table the server
+# serves, plus each --extern asset; gzipped where that pays.
 
 import argparse
 import gzip
@@ -13,9 +13,6 @@ import os
 MIME_TYPES = {
     ".html": "text/html",
     ".js": "application/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".svg": "image/svg+xml",
     ".txt": "text/plain; charset=utf-8",
 }
 
@@ -69,6 +66,13 @@ def emit(out, ident, path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", "-o", required=True)
+    parser.add_argument(
+        "--extern",
+        action="append",
+        default=[],
+        metavar="NAME=FILE",
+        help="an asset kept out of the table, as `extern const EmbeddedAsset NAME`",
+    )
     parser.add_argument("files", nargs="+", help="Asset files to embed")
     args = parser.parse_args()
 
@@ -83,6 +87,12 @@ def main():
     for path in args.files:
         filename = os.path.basename(path)
         rows.append((filename, emit(out, c_identifier(filename), path)))
+
+    for arg in args.extern:
+        name, _, path = arg.partition("=")
+        if not name.isidentifier() or not path:
+            raise SystemExit(f"--extern needs NAME=FILE with a C identifier: {arg}")
+        out.write(f"extern const EmbeddedAsset {name} = {emit(out, name, path)};\n\n")
 
     # Sizes are byte counts: a gzip stream may contain a NUL.
     out.write("static const struct {\n")

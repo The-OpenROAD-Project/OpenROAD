@@ -10,6 +10,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <queue>
 #include <set>
@@ -45,6 +46,7 @@
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
+#include "utl/ThreadPool.h"
 
 namespace rsz {
 
@@ -63,6 +65,9 @@ namespace {
 
 using PinSlack = std::pair<const sta::Pin*, sta::Slack>;
 using VertexSlack = std::pair<sta::Vertex*, sta::Slack>;
+
+// Endpoint scan blocks per worker; more blocks smooth uneven path counts.
+constexpr size_t kScanBlocksPerWorker = 8;
 
 bool slackLess(const PinSlack& lhs, const PinSlack& rhs)
 {
@@ -833,6 +838,51 @@ void RepairTargetCollector::sortByHeuristic(float load_delay_threshold)
   }
 }
 
+RepairTargetCollector::RepairTargetCollector(Resizer* resizer)
+    : resizer_(resizer)
+{
+  logger_ = resizer_->logger_;
+  sta_ = resizer_->sta_;
+  network_ = resizer_->network_;
+  max_ = resizer_->max_;
+  dcalc_ap_ = -1;
+  lib_ap_ = -1;
+  max_passes_per_endpoint_ = 1000;  // Default value
+  cached_cone_threshold_ = 0.0;
+  needs_threshold_recompute_ = true;  // Force compute on first call
+}
+
+RepairTargetCollector::~RepairTargetCollector() = default;
+
+void RepairTargetCollector::setScanThreadPool(utl::ThreadPool* pool,
+                                              const size_t min_endpoints)
+{
+  scan_thread_pool_
+      = pool != nullptr && pool->threadCount() > 0 ? pool : nullptr;
+  min_parallel_scan_endpoints_ = min_endpoints;
+}
+
+sta::Slack RepairTargetCollector::endpointPathSlack(sta::Vertex* endpoint) const
+{
+  // Same reduction as Sta::slack(vertex, max_) over every scene, but without
+  // the per-call required-time search entry, so workers only read the graph.
+  sta::Slack slack = sta::MinMax::min()->initValue();
+  sta::VertexPathIterator path_iter(endpoint, sta_);
+  while (path_iter.hasNext()) {
+    const sta::Path* path = path_iter.next();
+    if (path->minMax(sta_) != max_) {
+      continue;
+    }
+
+    const sta::Slack path_slack = path->slack(sta_);
+    if (sta::delayLess(path_slack, slack, sta_)) {
+      slack = path_slack;
+    }
+  }
+
+  return slack;
+}
+
 void RepairTargetCollector::refreshGroupSlacks()
 {
   group_slacks_.clear();
@@ -861,6 +911,7 @@ void RepairTargetCollector::collectViolatingEndpoints()
 {
   const ProfileScope profile("endpoint_scan");
   violating_endpoints_.clear();
+  crit_path_load_pins_.clear();
 
   if (restrictedToPathGroup()) {
     // One query for the whole group, already carrying each endpoint's slack
@@ -869,16 +920,82 @@ void RepairTargetCollector::collectViolatingEndpoints()
     refreshGroupSlacks();
     violating_endpoints_.assign(group_slacks_.begin(), group_slacks_.end());
   } else {
-    for (sta::Vertex* endpoint : sta_->endpoints()) {
-      const sta::Slack slack = sta_->slack(endpoint, max_);
-      if (sta::fuzzyLess(slack, slack_margin_)) {
-        violating_endpoints_.emplace_back(endpoint->pin(), slack);
+    // Required times must be current before workers read path slacks.  This
+    // is a no-op when timing is up to date.
+    {
+      const ProfileScope sta_profile("incremental_sta");
+      sta_->findRequireds();
+    }
+
+    const sta::VertexSet& endpoint_set = sta_->endpoints();
+    std::vector<sta::Vertex*> endpoints(endpoint_set.begin(),
+                                        endpoint_set.end());
+    std::vector<sta::Slack> slacks(endpoints.size(),
+                                   sta::MinMax::min()->initValue());
+
+    utl::ThreadPool* pool = endpoints.size() < min_parallel_scan_endpoints_
+                                ? nullptr
+                                : scan_thread_pool_;
+    if (pool == nullptr) {
+      for (size_t index = 0; index < endpoints.size(); ++index) {
+        slacks[index] = endpointPathSlack(endpoints[index]);
+      }
+    } else {
+      // Contiguous blocks keep task count small while balancing path counts.
+      const size_t block_count = std::min(
+          endpoints.size(), pool->threadCount() * kScanBlocksPerWorker);
+      const size_t block_size
+          = (endpoints.size() + block_count - 1) / block_count;
+      std::vector<size_t> blocks(block_count);
+      std::iota(blocks.begin(), blocks.end(), size_t{0});
+      pool->parallelFor(blocks, [&](const size_t& block) {
+        const size_t begin = block * block_size;
+        const size_t end = std::min(begin + block_size, endpoints.size());
+        for (size_t index = begin; index < end; ++index) {
+          slacks[index] = endpointPathSlack(endpoints[index]);
+        }
+      });
+    }
+
+    for (size_t index = 0; index < endpoints.size(); ++index) {
+      if (sta::fuzzyLess(slacks[index], slack_margin_)) {
+        violating_endpoints_.emplace_back(endpoints[index]->pin(),
+                                          slacks[index]);
       }
     }
   }
 
   // Preserve equal-slack STA endpoint order for legacy QoR parity.
   std::ranges::stable_sort(violating_endpoints_, slackLess);
+
+  if (record_crit_path_load_pins_) {
+    // Side loss weights a load fully only on a violating endpoint's worst path.
+    // Record those pins for every violating endpoint, beyond the current chunk.
+    const ProfileScope crit_profile("scan_crit_paths");
+    for (const PinSlack& endpoint_data : violating_endpoints_) {
+      sta::Vertex* endpoint = graph_->pinLoadVertex(endpoint_data.first);
+      sta::Path* path
+          = endpoint != nullptr ? findWorstSlackPath(endpoint) : nullptr;
+      if (path == nullptr) {
+        continue;
+      }
+
+      sta::PathExpanded expanded(path, sta_);
+      const int path_count = static_cast<int>(expanded.size());
+      for (int index = static_cast<int>(expanded.startIndex());
+           index < path_count;
+           ++index) {
+        const sta::Path* point = expanded.path(index);
+        sta::Vertex* vertex = point->vertex(sta_);
+        if (vertex != nullptr && !vertex->isDriver(network_)) {
+          crit_path_load_pins_.insert(point->pin(sta_));
+        }
+      }
+    }
+
+    RepairSetupProfiler::event("scan_crit_path_load_pins",
+                               crit_path_load_pins_.size());
+  }
 
   debugPrint(logger_,
              RSZ,
@@ -1050,6 +1167,7 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* endpoint_path,
     const sta::PathExpanded& expanded,
     const sta::Slack path_slack,
+    const sta::Pin* violated_endpoint_pin,
     std::vector<Target>& targets) const
 {
   const int start_index = static_cast<int>(expanded.startIndex());
@@ -1058,13 +1176,26 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* driver_path = expanded.path(index);
     sta::Vertex* vertex = driver_path->vertex(sta_);
     sta::Pin* pin = driver_path->pin(sta_);
-    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
-        || network_->isTopLevelPort(pin)) {
+    if (vertex == nullptr || pin == nullptr) {
       continue;
     }
 
-    targets.push_back(makePathDriverTarget(
-        endpoint_path, expanded, index, path_slack, *resizer_));
+    if (!vertex->isDriver(network_)) {
+      // Load pins on this worst path carry the endpoint slack one-for-one.
+      crit_path_load_pins_.insert(pin);
+      continue;
+    }
+
+    if (network_->isTopLevelPort(pin)) {
+      continue;
+    }
+
+    targets.push_back(makePathDriverTarget(endpoint_path,
+                                           expanded,
+                                           index,
+                                           path_slack,
+                                           *resizer_,
+                                           violated_endpoint_pin));
   }
 }
 
@@ -1103,9 +1234,12 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     return targets;
   }
 
+  // Latch D-side segments keep the endpoint of the whole path.
+  const sta::Pin* violated_endpoint_pin = path->pin(sta_);
   sta::PathExpanded expanded(path, sta_);
   targets.reserve(expanded.size());
-  collectExpandedPathDriverTargets(path, expanded, path_slack, targets);
+  collectExpandedPathDriverTargets(
+      path, expanded, path_slack, violated_endpoint_pin, targets);
 
   // A latch-through path starts at latch Q in OpenSTA, with each latch D path
   // stored as side context.  Expand those D paths separately so repair_timing
@@ -1115,7 +1249,7 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
       sta_,
       [&](const sta::Path* d_path, sta::PathExpanded& d_expanded) {
         collectExpandedPathDriverTargets(
-            d_path, d_expanded, path_slack, targets);
+            d_path, d_expanded, path_slack, violated_endpoint_pin, targets);
         return false;
       });
 
@@ -1123,7 +1257,10 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
 }
 
 std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
-    const std::function<bool(sta::Pin*)>& is_valid_target) const
+    const std::function<bool(sta::Pin*)>& is_valid_target,
+    const size_t begin_endpoint,
+    const size_t end_endpoint,
+    std::unordered_set<sta::Pin*>& visited_pins) const
 {
   const ProfileScope profile("target_collection");
   std::vector<VertexSlack> violated_endpoints;
@@ -1141,8 +1278,9 @@ std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
   std::ranges::stable_sort(violated_endpoints, pathEndpointLess);
 
   std::vector<Target> targets;
-  std::unordered_set<sta::Pin*> visited_pins;
-  for (const VertexSlack& endpoint_data : violated_endpoints) {
+  const size_t end = std::min(end_endpoint, violated_endpoints.size());
+  for (size_t index = begin_endpoint; index < end; ++index) {
+    const VertexSlack& endpoint_data = violated_endpoints[index];
     sta::Vertex* endpoint = endpoint_data.first;
     const sta::Slack endpoint_slack = endpoint_data.second;
     sta::Path* path = findWorstSlackPath(endpoint);

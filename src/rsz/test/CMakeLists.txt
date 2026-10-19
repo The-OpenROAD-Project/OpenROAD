@@ -264,8 +264,23 @@ or_integration_tests(
     report_buffers_sky130hd
     report_buffers_gf180
     report_buffers_no_lef
+    report_delay_estimator_sizing_accuracy
+    report_delay_estimator_rebuffer_fanout8
+    report_delay_estimator_rebuffer_minimal
+    report_delay_estimator_rebuffer_prebuffered
+    report_delay_estimator_rebuffer_side_paths
+    report_delay_estimator_rebuffer_steiner
     repair_setup_vt_swap
     repair_setup_vtswap_legacy_asap7
+    repair_setup_parallel_eval
+    repair_setup_parallel_eval_vt_swap
+    repair_setup_parallel_eval_vt_swap_corners
+    repair_setup_parallel_eval_default_sequence
+    repair_setup_parallel_eval_all_moves
+    repair_setup_parallel_eval_effort
+    repair_setup_parallel_eval_threads
+    repair_setup_parallel_eval_max_util
+    repair_setup_parallel_eval_path_group
     repair_setup_vt_swap2
     repair_fanout7_skip_pin_swap
     global_sizing
