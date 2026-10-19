@@ -23,6 +23,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -47,6 +48,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "report_html.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
@@ -1757,11 +1759,6 @@ WebServer::~WebServer()
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
 }
 
-// Embedded JS/CSS for standalone timing report (generated at build time
-// by embed_report_assets.py → report_assets.cpp).
-extern const std::string_view kReportCSS;
-extern const std::string_view kReportJS;
-
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
   static const char kChars[]
@@ -1794,6 +1791,25 @@ void WebServer::saveReport(const std::string& filename,
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
+
+  // Inflated before the file is opened, so a blob that fails to inflate
+  // leaves no half-written report behind.
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  const std::string report_head = reportHead(page ? assetText(*page) : "");
+  if (report_head.empty()) {
+    logger_->error(
+        utl::WEB, 118, "The embedded viewer page has no saved-report block.");
+  }
+  const std::string report_js = assetText(kReportJS);
+  // The report carries the bundled libraries' code, so their licences too.
+  const EmbeddedAsset* licenses_asset
+      = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
+  if (!licenses_asset) {
+    logger_->error(
+        utl::WEB, 117, "The embedded third-party licences are missing.");
+    return;
+  }
+  const std::string licenses = htmlCommentSafe(assetText(*licenses_asset));
 
   std::ofstream out(filename);
   if (!out) {
@@ -1949,23 +1965,20 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — the libraries from CDNs, as index.cmake.html loads them.
-  // The 3D view is unavailable here, so three.js is not loaded.
+  // HTML head: the served page's stylesheets, icons inlined as data: URIs, so
+  // the file opens with no server and no network.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
-<style>
-)" << kReportCSS
+<!--
+)" << licenses
       << R"(
-</style>
+-->
+)" << report_head
+      << R"(
 </head>
 <body>
 <div id="menu-bar"></div>
@@ -1978,29 +1991,34 @@ void WebServer::saveReport(const std::string& filename,
   </div>
 </div>
 <script>
-window.__STATIC_CACHE__ = {
+window.__STATIC_CACHE__ = )";
+
+  // The whole cache object goes through scriptSafeJson once: none of it may
+  // end the <script> block early.
+  std::ostringstream cache;
+  cache << R"({
   zoom: )"
-      << kZ << R"(,
+        << kZ << R"(,
   json: {
     "tech": )"
-      << tech_json << R"(,
+        << tech_json << R"(,
     "bounds": )"
-      << bounds_json << R"(,
+        << bounds_json << R"(,
     "heatmaps": {"active":"","heatmaps":[]},
     "timing_report:setup": )"
-      << setup_json << R"(,
+        << setup_json << R"(,
     "timing_report:hold": )"
-      << hold_json << R"(,
+        << hold_json << R"(,
     "slack_histogram:setup": )"
-      << hist_setup << R"(,
+        << hist_setup << R"(,
     "slack_histogram:hold": )"
-      << hist_hold << R"(,
+        << hist_hold << R"(,
     "fanout_histogram": )"
-      << hist_fanout << R"(,
+        << hist_fanout << R"(,
     "chart_filters": )"
-      << filters << R"(,
+        << filters << R"(,
     "module_hierarchy": )"
-      << hierarchy_json << R"(
+        << hierarchy_json << R"(
   },
   tiles: {)";
 
@@ -2008,46 +2026,48 @@ window.__STATIC_CACHE__ = {
   // special characters consistently (the value side is already base64).
   for (size_t i = 0; i < tile_entries.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
-    out << "\n    "
-        << boost::json::serialize(boost::json::value(tile_entries[i].first))
-        << ":\"" << tile_entries[i].second << "\"";
+    cache << "\n    "
+          << boost::json::serialize(boost::json::value(tile_entries[i].first))
+          << ":\"" << tile_entries[i].second << "\"";
   }
 
-  out << R"(
+  cache << R"(
   },
   overlays: {
     setup: [)";
   for (size_t i = 0; i < setup_overlays.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
     if (setup_overlays[i].empty()) {
-      out << "null";
+      cache << "null";
     } else {
-      out << "\"" << setup_overlays[i] << "\"";
+      cache << "\"" << setup_overlays[i] << "\"";
     }
   }
-  out << R"(],
+  cache << R"(],
     hold: [)";
   for (size_t i = 0; i < hold_overlays.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
     if (hold_overlays[i].empty()) {
-      out << "null";
+      cache << "null";
     } else {
-      out << "\"" << hold_overlays[i] << "\"";
+      cache << "\"" << hold_overlays[i] << "\"";
     }
   }
-  out << R"(]
+  cache << R"(]
   }
-};
+})";
+  out << scriptSafeJson(cache.str()) << R"(;
 </script>
-<script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-)" << kReportJS
+)" <<  // Deferred like the served page's app.min.js: golden-layout will not
+       // lay out a page that is still being parsed.
+      R"(<script type="module">
+)" << report_js
       << R"(
 </script>
 </body>

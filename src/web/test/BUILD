@@ -62,6 +62,7 @@ py_test(
         "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
         "//src/web:bundle/app.min.js",
         "//src/web:bundle/index.html",
+        "//src/web:bundle/report.min.js",
     ],
 )
 
@@ -117,6 +118,13 @@ js_test(
         "//src/web:esbuild.config.mjs",
         "//src/web:src/openroad_skin.svg",
     ],
+)
+
+js_test(
+    name = "three_subset_test",
+    data = JS_FILES + ["//src/web:node_modules/three"],
+    entry_point = "js/test-three-subset.js",
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(

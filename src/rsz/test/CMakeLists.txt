@@ -130,6 +130,22 @@ or_integration_tests(
     repair_setup_buffer_to_inverters_hier
     repair_setup_unbuffer_legacy_bufx2
     repair_setup_unbuffer_legacy_bufx8
+    repair_setup_path1
+    repair_setup_path2
+    repair_setup_path3
+    repair_setup_path4
+    repair_setup_path5
+    repair_setup_path6
+    repair_setup_path7
+    repair_setup_path11
+    repair_setup_path12
+    repair_setup_path13
+    repair_setup_path14
+    repair_setup_path15
+    repair_setup_path16
+    repair_setup_path17
+    repair_setup_path18
+    repair_setup_path19
     repair_setup1
     repair_setup2
     repair_setup3
@@ -209,7 +225,6 @@ or_integration_tests(
     report_floating_nets2
     report_floating_nets3
     report_move_tracker
-    repair_setup_legacy_mt_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3
@@ -249,10 +264,24 @@ or_integration_tests(
     report_buffers_sky130hd
     report_buffers_gf180
     report_buffers_no_lef
+    report_delay_estimator_sizing_accuracy
+    report_delay_estimator_rebuffer_fanout8
+    report_delay_estimator_rebuffer_minimal
+    report_delay_estimator_rebuffer_prebuffered
+    report_delay_estimator_rebuffer_side_paths
+    report_delay_estimator_rebuffer_steiner
     repair_setup_vt_swap
     repair_setup_vtswap_legacy_asap7
+    repair_setup_parallel_eval
+    repair_setup_parallel_eval_vt_swap
+    repair_setup_parallel_eval_vt_swap_corners
+    repair_setup_parallel_eval_default_sequence
+    repair_setup_parallel_eval_all_moves
+    repair_setup_parallel_eval_effort
+    repair_setup_parallel_eval_threads
+    repair_setup_parallel_eval_max_util
+    repair_setup_parallel_eval_path_group
     repair_setup_vt_swap2
-    measured_vt_swap
     repair_fanout7_skip_pin_swap
     global_sizing
     global_sizing_threads
@@ -265,8 +294,6 @@ or_integration_tests(
     latch_borrow_chain
   PASSFAIL_TESTS
     repair_timing_fixed
-    repair_setup_legacy_mt
-    repair_setup_mt1
     repair_design_fixed_driver
     gain_buffering_top_port_hier
     cpp_tests

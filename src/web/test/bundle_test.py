@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 #
-# The page the Bazel build embeds: its libraries come from the bundle, and these
-# tests catch a reintroduced remote reference before any browser meets it.
+# The page the Bazel build embeds and the script a saved report inlines load
+# nothing remote; these tests catch a reintroduced reference.
 
 import re
 import unittest
@@ -11,13 +11,16 @@ _PAGE = {
     "index.html": "src/web/bundle/index.html",
     "app.min.js": "src/web/bundle/app.min.js",
 }
+# Inlined into every saved report, which opens with no server at all.
+_REPORT_JS = "src/web/bundle/report.min.js"
 _LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
-_ENTRIES = ("src/web/src/entry-app.js",)
+_ENTRIES = ("src/web/src/entry-app.js", "src/web/src/entry-report.js")
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
 # whole and in lower case: XML namespaces, ELK's model URIs, links in comments
 # and messages.
 _IDENTIFIER_URLS = {
+    "http://www.w3.org/1999/xhtml",
     "http://www.w3.org/1999/xlink",
     "http://www.w3.org/2000/svg",
     "http://www.w3.org/2000/xmlns/",
@@ -34,12 +37,10 @@ _IDENTIFIER_URLS = {
     "https://openjsf.org/",
     "https://npms.io/search?q=ponyfill",
     "https://leafletjs.com",
+    "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
 }
-
-# Libraries the page still loads from CDNs, until the bundle takes them over.
-_STILL_REMOTE = ("https://esm.sh/three@0.160.0",)
 
 _URL = r"[^\"'`) >,;\n]*"
 # Schemes and hosts are case-insensitive, so the scan is too.
@@ -109,15 +110,24 @@ class Page(unittest.TestCase):
         # The icons the third-party stylesheets reach through url(), inlined.
         self.assertIn("data:image/png;base64,", html)
 
-    def test_reaches_no_other_remote_resource(self):
-        for name, path in _PAGE.items():
+    def test_reaches_no_remote_resource(self):
+        for name, path in [*_PAGE.items(), ("report.min.js", _REPORT_JS)]:
             text = _read(path)
-            remote = [
-                url
-                for url in external_urls(text) + scheme_relative_urls(text)
-                if not url.startswith(_STILL_REMOTE)
-            ]
-            self.assertEqual(remote, [], name)
+            self.assertEqual(external_urls(text) + scheme_relative_urls(text), [], name)
+
+    def test_marks_what_a_saved_report_copies(self):
+        html = _read(_PAGE["index.html"])
+        block = re.search(
+            r"<!-- saved-report:begin -->(.*)<!-- saved-report:end -->", html, re.S
+        )
+        self.assertIsNotNone(block)
+        self.assertIn('id="gl-theme-dark"', block.group(1))
+        self.assertNotRegex(block.group(1), r"\b(src|href)=")
+
+    def test_report_script_cannot_end_its_block(self):
+        text = _read(_REPORT_JS).lower()
+        self.assertNotIn("</script", text)
+        self.assertNotIn("<!--", text)
 
     def test_ships_the_bundled_licences(self):
         text = _read(_LICENSES)
@@ -131,6 +141,7 @@ class Page(unittest.TestCase):
             "netlistsvg",
             "onml",
             "sax",
+            "three",
         ):
             self.assertIn(f"\n{package} ", text)
         # EPL-1.0 asks where elkjs's source can be obtained; every entry says.
