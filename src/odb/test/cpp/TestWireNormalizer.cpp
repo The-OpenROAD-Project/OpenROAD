@@ -5,7 +5,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 #include "tst/fixture.h"
 
 namespace odb {

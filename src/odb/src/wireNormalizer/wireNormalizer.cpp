@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tmg_conn.h"
+#include "wireNormalizer.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -9,13 +9,13 @@
 #include <memory>
 #include <tuple>
 
+#include "connectionGraph.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "odb/isotropy.h"
 #include "shapeSearch.h"
-#include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
 namespace odb {

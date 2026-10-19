@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 
 #include "odb/db.h"
-#include "tmg_conn.h"
+#include "wireNormalizer.h"
 
 namespace odb {
 

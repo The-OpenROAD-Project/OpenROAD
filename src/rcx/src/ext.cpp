@@ -11,7 +11,7 @@
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 #include "parse.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extModelGen.h"

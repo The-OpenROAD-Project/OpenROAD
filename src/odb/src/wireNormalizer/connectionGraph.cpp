@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tmg_conn_g.h"
+#include "connectionGraph.h"
 
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <vector>
 
-#include "tmg_conn.h"
+#include "wireNormalizer.h"
 
 namespace odb {
 

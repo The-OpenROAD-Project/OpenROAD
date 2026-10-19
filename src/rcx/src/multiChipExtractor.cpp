@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 
 namespace rcx {
 
