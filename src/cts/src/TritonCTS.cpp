@@ -2707,7 +2707,16 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
   }
   std::string cellName
       = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
-  dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
+  // Create the dummy load in the module of the buffer whose net it loads,
+  // like the clock buffers (createClockBuffers). In the top module, the load
+  // would sit outside the clock net's module with no port to reach it, and
+  // write_verilog would split the net in two.
+  odb::dbModule* parent = nullptr;
+  if (odb::dbInst* driver = inst->getDbInst()) {
+    parent = driver->getModule();
+  }
+  dummyInst
+      = odb::dbInst::create(block_, master, cellName.c_str(), false, parent);
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
   dummyInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -2734,6 +2743,11 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
   odb::dbNet* sinkNet = iTerm->getNet();
   odb::dbITerm* dummyInputPin = getFirstInput(dummyInst);
   dummyInputPin->connect(sinkNet);
+  // resolve the connection in the hierarchy, as for the clock sinks
+  if (network_->hasHierarchy()) {
+    network_->hierarchicalConnect(
+        iTerm, dummyInputPin, sinkNet->getName().c_str());
+  }
   dummyClock.setInputPinObj(dummyInputPin);
   subNet.addInst(dummyClock);
 }
