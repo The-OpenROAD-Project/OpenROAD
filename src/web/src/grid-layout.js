@@ -215,6 +215,9 @@ export class IdeSplitterElement extends BaseElement {
     disconnectedCallback() {
         this.removeEventListener('pointerdown', this._onPointerDown);
         this.removeEventListener('dblclick', this._onDblClick);
+        window.removeEventListener('pointermove', this._onPointerMove);
+        window.removeEventListener('pointerup', this._onPointerUp);
+        window.removeEventListener('pointercancel', this._onPointerUp);
     }
 
     get targetPane() {
@@ -229,7 +232,7 @@ export class IdeSplitterElement extends BaseElement {
         e.preventDefault();
         try { this.setPointerCapture(e.pointerId); } catch (_) {}
         this.classList.add('dragging');
-        if (typeof document !== 'undefined' && document.body) {
+        if (document.body) {
             document.body.classList.add('is-resizing', this.isVertical ? 'is-resizing-v' : 'is-resizing-h');
         }
 
@@ -245,9 +248,9 @@ export class IdeSplitterElement extends BaseElement {
             },
         }));
 
-        this.addEventListener('pointermove', this._onPointerMove);
-        this.addEventListener('pointerup', this._onPointerUp);
-        this.addEventListener('pointercancel', this._onPointerUp);
+        window.addEventListener('pointermove', this._onPointerMove);
+        window.addEventListener('pointerup', this._onPointerUp);
+        window.addEventListener('pointercancel', this._onPointerUp);
     }
 
     _onPointerMove(e) {
@@ -269,13 +272,13 @@ export class IdeSplitterElement extends BaseElement {
     _onPointerUp(e) {
         try { this.releasePointerCapture(e.pointerId); } catch (_) {}
         this.classList.remove('dragging');
-        if (typeof document !== 'undefined' && document.body) {
+        if (document.body) {
             document.body.classList.remove('is-resizing', 'is-resizing-v', 'is-resizing-h');
         }
 
-        this.removeEventListener('pointermove', this._onPointerMove);
-        this.removeEventListener('pointerup', this._onPointerUp);
-        this.removeEventListener('pointercancel', this._onPointerUp);
+        window.removeEventListener('pointermove', this._onPointerMove);
+        window.removeEventListener('pointerup', this._onPointerUp);
+        window.removeEventListener('pointercancel', this._onPointerUp);
 
         this.dispatchEvent(new CustomEvent('ide-splitter-end', {
             bubbles: true,
@@ -641,14 +644,12 @@ export class GridLayoutManager {
         if (!cfg) return;
 
         this.containerEl.style.setProperty(cfg.cssVar, cfg.defaultSize);
-        if (paneName === 'bottom') {
-            this.centerEl?.classList.remove('hide-bottom');
+        if (this.isPaneCollapsed(paneName)) {
+            this.restorePane(paneName);
         } else {
-            this.containerEl.classList.remove(`hide-${paneName}`);
+            this.saveLayout();
+            this.notifyResize();
         }
-
-        this.saveLayout();
-        this.notifyResize();
     }
 
     _setupFallbackSplitters() {
@@ -663,7 +664,7 @@ export class GridLayoutManager {
                 e.preventDefault();
                 try { splitterEl.setPointerCapture(e.pointerId); } catch (_) {}
                 splitterEl.classList.add('dragging');
-                if (typeof document !== 'undefined' && document.body) {
+                if (document.body) {
                     document.body.classList.add('is-resizing', isVertical ? 'is-resizing-v' : 'is-resizing-h');
                 }
 
@@ -687,19 +688,19 @@ export class GridLayoutManager {
                 const onUp = (ev) => {
                     try { splitterEl.releasePointerCapture(ev.pointerId); } catch (_) {}
                     splitterEl.classList.remove('dragging');
-                    if (typeof document !== 'undefined' && document.body) {
+                    if (document.body) {
                         document.body.classList.remove('is-resizing', 'is-resizing-v', 'is-resizing-h');
                     }
-                    splitterEl.removeEventListener('pointermove', onMove);
-                    splitterEl.removeEventListener('pointerup', onUp);
-                    splitterEl.removeEventListener('pointercancel', onUp);
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
                     this.saveLayout();
                     this.notifyResize();
                 };
 
-                splitterEl.addEventListener('pointermove', onMove);
-                splitterEl.addEventListener('pointerup', onUp);
-                splitterEl.addEventListener('pointercancel', onUp);
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+                window.addEventListener('pointercancel', onUp);
             });
 
             splitterEl.addEventListener('dblclick', () => {
@@ -761,24 +762,20 @@ export class GridLayoutManager {
     }
 
     /**
-     * Toggles the maximized state of a pane across the IDE workspace.
-     * When maximized, the pane expands to fill the entire workspace while
-     * other tracks collapse to 0px.
+     * Sets the maximized state of a pane across the IDE workspace.
+     * When shouldMaximize is true, the given pane expands to fill the entire workspace while
+     * other tracks collapse to 0px. When false, normal workspace layout is restored.
      */
-    toggleMaximize(paneName) {
+    setMaximizedPane(paneName, shouldMaximize = true) {
         const MAXIMIZABLE_PANES = ['main', 'bottom', 'right'];
-        if (!MAXIMIZABLE_PANES.includes(paneName)) return false;
+        if (paneName && !MAXIMIZABLE_PANES.includes(paneName)) return false;
 
-        const isMax = this.containerEl.classList.toggle(`maximized-${paneName}`);
+        const targetPane = shouldMaximize ? paneName : null;
 
         for (const name of MAXIMIZABLE_PANES) {
-            const active = (name === paneName) && isMax;
-            if (!active) {
-                this.containerEl.classList.remove(`maximized-${name}`);
-            }
-
-            this.panes[name]?.el?.classList.toggle('maximized', active);
-            this.panes[name]?.paneComponent?.setMaximized?.(active);
+            const active = (name === targetPane);
+            this.containerEl.classList.toggle(`maximized-${name}`, active);
+            this.panes[name]?.paneComponent?.setMaximized(active);
 
             const btn = this.containerEl.querySelector(`#btn-maximize-${name}`);
             if (btn) {
@@ -788,7 +785,28 @@ export class GridLayoutManager {
         }
 
         this.notifyResize();
-        return isMax;
+        return !!targetPane;
+    }
+
+    /**
+     * Maximizes a pane across the IDE workspace.
+     */
+    maximizePane(paneName) {
+        return this.setMaximizedPane(paneName, true);
+    }
+
+    /**
+     * Restores all maximized panes back to normal layout.
+     */
+    restoreMaximized() {
+        return this.setMaximizedPane(null, false);
+    }
+
+    /**
+     * Toggles the maximized state of a pane across the IDE workspace.
+     */
+    toggleMaximize(paneName) {
+        return this.setMaximizedPane(paneName, !this.isPaneMaximized(paneName));
     }
 
     /**
@@ -857,29 +875,11 @@ export class GridLayoutManager {
             this.containerEl.style.setProperty(cfg.cssVar, cfg.defaultSize);
         }
 
-        this.containerEl.classList.remove('hide-left', 'hide-right', 'maximized-main', 'maximized-bottom', 'maximized-right');
-        if (this.centerEl) {
-            this.centerEl.classList.remove('hide-bottom');
-        }
-        for (const pane of Object.values(this.panes)) {
-            pane.el?.classList.remove('maximized');
-            pane.paneComponent?.setMaximized?.(false);
-            pane.paneComponent?.setCollapsed?.(false);
+        for (const name of ['left', 'right', 'bottom']) {
+            this.restorePane(name);
         }
 
-        const btnCollapseLeft = this.containerEl.querySelector('#btn-collapse-left');
-        if (btnCollapseLeft) { btnCollapseLeft.textContent = '◀'; btnCollapseLeft.title = 'Collapse Left Panel'; }
-        const btnCollapseRight = this.containerEl.querySelector('#btn-collapse-right');
-        if (btnCollapseRight) { btnCollapseRight.textContent = '▶'; btnCollapseRight.title = 'Collapse Right Panel'; }
-        const btnCollapseBottom = this.containerEl.querySelector('#btn-collapse-bottom');
-        if (btnCollapseBottom) { btnCollapseBottom.textContent = '▼'; btnCollapseBottom.title = 'Collapse Console'; }
-
-        const btnMaxMain = this.containerEl.querySelector('#btn-maximize-main');
-        if (btnMaxMain) { btnMaxMain.textContent = '⤢'; btnMaxMain.title = 'Toggle Maximize'; }
-        const btnMaxBottom = this.containerEl.querySelector('#btn-maximize-bottom');
-        if (btnMaxBottom) { btnMaxBottom.textContent = '⤢'; btnMaxBottom.title = 'Toggle Maximize'; }
-        const btnMaxRight = this.containerEl.querySelector('#btn-maximize-right');
-        if (btnMaxRight) { btnMaxRight.textContent = '⤢'; btnMaxRight.title = 'Toggle Maximize'; }
+        this.restoreMaximized();
 
         this.closedComponents.clear();
         for (const comp of this.components.values()) {
@@ -937,10 +937,6 @@ export class GridLayoutManager {
             if (savedState.bottomHeight) {
                 this.containerEl.style.setProperty('--pane-bottom-height', `${savedState.bottomHeight}px`);
             }
-            if (savedState.hideLeft) this.containerEl.classList.add('hide-left');
-            if (savedState.hideRight) this.containerEl.classList.add('hide-right');
-            if (savedState.hideBottom && this.centerEl) this.centerEl.classList.add('hide-bottom');
-
             if (savedState.closed) {
                 for (const c of savedState.closed) {
                     this.closeComponent(c, false);
@@ -951,6 +947,10 @@ export class GridLayoutManager {
             this.activateTab(savedState.activeTabs?.main || 'LayoutViewer');
             this.activateTab(savedState.activeTabs?.bottom || 'TclConsole');
             this.activateTab(savedState.activeTabs?.right || 'Inspector');
+
+            if (savedState.hideLeft) this.collapsePane('left');
+            if (savedState.hideRight) this.collapsePane('right');
+            if (savedState.hideBottom) this.collapsePane('bottom');
         } else {
             this.activateTab('DisplayControls');
             this.activateTab('LayoutViewer');
@@ -1033,6 +1033,25 @@ export class GridLayoutManager {
         }
     }
 
+    /**
+     * Checks if a component's content view is currently active.
+     */
+    isComponentActive(comp) {
+        if (!comp) return false;
+        return !!comp.contentDiv?.classList.contains('active');
+    }
+
+    /**
+     * Sets a component's tab and content view active or inactive, updating
+     * accessibility attributes and class names.
+     */
+    _setComponentActive(comp, isActive) {
+        if (!comp) return;
+        const active = !!isActive;
+        comp.tabEl?.setActive(active);
+        comp.contentDiv?.classList.toggle('active', active);
+    }
+
     activateTab(componentType) {
         const comp = this.components.get(componentType);
         if (!comp) return;
@@ -1040,37 +1059,23 @@ export class GridLayoutManager {
         const pane = this.panes[comp.paneName];
         if (!pane) return;
 
-        if (comp.paneName === 'left') {
-            this.containerEl.classList.remove('hide-left');
-            const btn = this.containerEl.querySelector('#btn-collapse-left');
-            if (btn) { btn.textContent = '◀'; btn.title = 'Collapse Left Panel'; }
-        } else if (comp.paneName === 'right') {
-            this.containerEl.classList.remove('hide-right');
-            const btn = this.containerEl.querySelector('#btn-collapse-right');
-            if (btn) { btn.textContent = '▶'; btn.title = 'Collapse Right Panel'; }
-        } else if (comp.paneName === 'bottom' && this.centerEl) {
-            this.centerEl.classList.remove('hide-bottom');
-            const btn = this.containerEl.querySelector('#btn-collapse-bottom');
-            if (btn) { btn.textContent = '▼'; btn.title = 'Collapse Console'; }
+        if (['left', 'right', 'bottom'].includes(comp.paneName) && this.isPaneCollapsed(comp.paneName)) {
+            this.restorePane(comp.paneName);
         }
 
         const prevType = this.activeTabs[comp.paneName];
         if (prevType && prevType !== componentType) {
             const prevComp = this.components.get(prevType);
             if (prevComp) {
-                prevComp.tabEl.classList.remove('active', 'lm_active');
-                prevComp.tabEl.setActive?.(false);
-                prevComp.contentDiv.classList.remove('active');
+                this._setComponentActive(prevComp, false);
                 prevComp.container.fire('hide');
             }
         }
 
         this.activeTabs[comp.paneName] = componentType;
         comp.tabEl.style.display = '';
-        comp.tabEl.classList.add('active', 'lm_active');
-        comp.tabEl.setActive?.(true);
         comp.contentDiv.style.display = '';
-        comp.contentDiv.classList.add('active');
+        this._setComponentActive(comp, true);
         this.closedComponents.delete(componentType);
 
         comp.container.fire('show');
@@ -1100,10 +1105,8 @@ export class GridLayoutManager {
         if (!comp || !comp.closable) return;
 
         comp.tabEl.style.display = 'none';
-        comp.tabEl.classList.remove('active', 'lm_active');
-        comp.tabEl.setActive?.(false);
         comp.contentDiv.style.display = 'none';
-        comp.contentDiv.classList.remove('active');
+        this._setComponentActive(comp, false);
         comp.container.fire('hide');
         this.closedComponents.add(componentType);
 
@@ -1119,9 +1122,9 @@ export class GridLayoutManager {
                 this.activateTab(nextComp.componentType);
             } else {
                 this.activeTabs[comp.paneName] = null;
-                if (comp.paneName === 'left') this.containerEl.classList.add('hide-left');
-                if (comp.paneName === 'right') this.containerEl.classList.add('hide-right');
-                if (comp.paneName === 'bottom' && this.centerEl) this.centerEl.classList.add('hide-bottom');
+                if (['left', 'right', 'bottom'].includes(comp.paneName)) {
+                    this.collapsePane(comp.paneName);
+                }
             }
         }
 
@@ -1149,9 +1152,9 @@ export class GridLayoutManager {
             leftWidth: parseInt(this.containerEl.style.getPropertyValue('--pane-left-width') || '240', 10),
             rightWidth: parseInt(this.containerEl.style.getPropertyValue('--pane-right-width') || '340', 10),
             bottomHeight: parseInt(this.containerEl.style.getPropertyValue('--pane-bottom-height') || '220', 10),
-            hideLeft: this.containerEl.classList.contains('hide-left'),
-            hideRight: this.containerEl.classList.contains('hide-right'),
-            hideBottom: this.centerEl ? this.centerEl.classList.contains('hide-bottom') : false,
+            hideLeft: this.isPaneCollapsed('left'),
+            hideRight: this.isPaneCollapsed('right'),
+            hideBottom: this.isPaneCollapsed('bottom'),
             activeTabs: { ...this.activeTabs },
             closed: Array.from(this.closedComponents),
         };
@@ -1164,24 +1167,20 @@ export class GridLayoutManager {
     notifyResize() {
         if (this._resizeScheduled) return;
         this._resizeScheduled = true;
-        const schedule = (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function')
-            ? window.requestAnimationFrame.bind(window)
-            : (typeof requestAnimationFrame === 'function')
-                ? requestAnimationFrame
-                : (cb) => { cb(); };
+        const schedule = (typeof requestAnimationFrame === 'function')
+            ? requestAnimationFrame
+            : (cb) => { cb(); };
         schedule(() => {
             this._resizeScheduled = false;
             for (const comp of this.components.values()) {
-                if (comp.contentDiv && comp.contentDiv.classList.contains('active')) {
+                if (this.isComponentActive(comp)) {
                     comp.container.fire('resize');
                 }
             }
             if (typeof app !== 'undefined' && app && app.map) {
                 app.map.invalidateSize({ animate: false });
             }
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new Event('resize'));
-            }
+            window.dispatchEvent(new Event('resize'));
         });
     }
 

@@ -104,6 +104,8 @@ describe('GridLayoutManager', () => {
         assert.ok(events.SchematicWidget.includes('show'));
         assert.ok(containerEl.querySelector('#cmp-SchematicWidget').classList.contains('active'));
         assert.ok(!containerEl.querySelector('#cmp-LayoutViewer').classList.contains('active'));
+        assert.ok(layout.isComponentActive(layout.components.get('SchematicWidget')));
+        assert.ok(!layout.isComponentActive(layout.components.get('LayoutViewer')));
     });
 
     it('closes a closable tab and switches to another tab in the pane', () => {
@@ -264,6 +266,16 @@ describe('GridLayoutManager', () => {
         assert.ok(!layout.isPaneMaximized('bottom'));
         assert.ok(!bottomPane.classList.contains('maximized'));
 
+        // Maximize via API
+        layout.maximizePane('bottom');
+        assert.ok(layout.isPaneMaximized('bottom'));
+        assert.ok(bottomPane.classList.contains('maximized'));
+
+        // Restore via restoreMaximized API
+        layout.restoreMaximized();
+        assert.ok(!layout.isPaneMaximized('bottom'));
+        assert.ok(!bottomPane.classList.contains('maximized'));
+
         // Normal collapsing works
         layout.collapsePane('bottom');
         assert.ok(layout.isPaneCollapsed('bottom'));
@@ -376,6 +388,25 @@ describe('GridLayoutManager', () => {
 
         splitter.dispatchEvent(new Event('dblclick'));
         assert.ok(resetFired);
+
+        // Test dragging with window event listeners
+        let dragDetail = null;
+        splitter.addEventListener('ide-splitter-drag', (e) => {
+            dragDetail = e.detail;
+        });
+
+        const PointerEvt = window.PointerEvent || window.MouseEvent;
+        splitter.dispatchEvent(new PointerEvt('pointerdown', { bubbles: true, clientX: 100, clientY: 50 }));
+        assert.ok(splitter.classList.contains('dragging'));
+        assert.ok(document.body.classList.contains('is-resizing'));
+
+        window.dispatchEvent(new PointerEvt('pointermove', { bubbles: true, clientX: 140, clientY: 50 }));
+        assert.ok(dragDetail);
+        assert.equal(dragDetail.delta, 40);
+
+        window.dispatchEvent(new PointerEvt('pointerup', { bubbles: true, clientX: 140, clientY: 50 }));
+        assert.ok(!splitter.classList.contains('dragging'));
+        assert.ok(!document.body.classList.contains('is-resizing'));
 
         splitter.remove();
     });
