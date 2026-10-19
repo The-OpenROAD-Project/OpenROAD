@@ -989,8 +989,8 @@ void GridGraph::forEachStackFlankEdge(
 }
 
 template <typename F>
-void GridGraph::forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
-                                 F&& fn) const
+void GridGraph::forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                     F&& fn) const
 {
   // Pattern routing splits a stack wherever a child attaches, and adopted
   // routes keep one tree edge per via; both must merge back into one stack.
@@ -1017,6 +1017,13 @@ void GridGraph::forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
   }
 }
 
+void GridGraph::forEachViaColumn(
+    const std::shared_ptr<GRTreeNode>& tree,
+    const std::function<void(PointT, int, int)>& fn) const
+{
+  forEachViaColumnImpl(tree, fn);
+}
+
 template <typename F>
 void GridGraph::forEachWireEdgeImpl(const int layer_index,
                                     const PointT u,
@@ -1041,16 +1048,34 @@ void GridGraph::forEachWireEdge(const int layer_index,
   forEachWireEdgeImpl(layer_index, u, v, fn);
 }
 
+template <typename F>
+void GridGraph::forEachWrongWayFlankEdgeImpl(const int layer_index,
+                                             const PointT cell,
+                                             F&& fn) const
+{
+  forEachFlankEdge(layer_index, cell, [&](PointT edge_loc, int edge_sum) {
+    fn(edge_loc, design_->getWrongWayDemandLength(layer_index) / edge_sum);
+  });
+}
+
+void GridGraph::forEachWrongWayFlankEdge(
+    const int layer_index,
+    const PointT cell,
+    const std::function<void(PointT, CapacityT)>& fn) const
+{
+  forEachWrongWayFlankEdgeImpl(layer_index, cell, fn);
+}
+
 void GridGraph::commitWrongWayWire(const int layer_index,
                                    const PointT loc,
                                    const bool rip_up,
                                    const double layer_factor)
 {
-  forEachFlankEdge(layer_index, loc, [&](PointT edge_loc, int edge_sum) {
-    const CapacityT demand
-        = design_->getWrongWayDemandLength(layer_index) / edge_sum;
-    commit(layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
-  });
+  forEachWrongWayFlankEdgeImpl(
+      layer_index, loc, [&](PointT edge_loc, CapacityT demand) {
+        commit(
+            layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
+      });
 }
 
 void GridGraph::addTreeUsage(const GRNet& net)
@@ -1092,10 +1117,10 @@ void GridGraph::restoreDemand(
   markAllCongestionTiles();
 }
 
-void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                           const bool rip_up,
-                           const std::vector<double>& net_costs,
-                           const bool adopted)
+template <typename F>
+void GridGraph::forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                        const bool adopted,
+                                        F&& fn) const
 {
   // A net occupies a wire edge or a wrong-way cell once even where its tree
   // crosses it twice, as the union of two merged nets can (CUGR::mergeNet).
@@ -1155,29 +1180,54 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
     cells->erase(std::ranges::unique(*cells).begin(), cells->end());
   }
   for (const auto& [layer, x, y] : wires) {
-    commitWire(layer, {x, y}, rip_up, layerFactor(net_costs, layer));
+    fn(layer, PointT(x, y), false);
   }
   for (const auto& [layer, x, y] : wrong_way) {
-    commitWrongWayWire(layer, {x, y}, rip_up, layerFactor(net_costs, layer));
+    fn(layer, PointT(x, y), true);
   }
-  forEachViaColumn(tree, [&](const PointT loc, const int low, const int high) {
-    if (high >= num_layers_) {
-      logger_->error(utl::GRT,
-                     1251,
-                     "Via layer index {} exceeds number of layers {}.",
-                     high - 1,
-                     num_layers_);
-    }
-    forEachStackFlankEdgeImpl(
-        low,
-        high,
-        loc,
-        net_costs,
-        [&](int l, PointT edge_loc, CapacityT demand, double factor) {
-          commit(l, edge_loc, (rip_up ? -demand : demand), factor);
-        });
-    total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
-  });
+}
+
+void GridGraph::forEachTreeWireEdge(
+    const std::shared_ptr<GRTreeNode>& tree,
+    const bool adopted,
+    const std::function<void(int, PointT, bool)>& fn) const
+{
+  forEachTreeWireEdgeImpl(tree, adopted, fn);
+}
+
+void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
+                           const bool rip_up,
+                           const std::vector<double>& net_costs,
+                           const bool adopted)
+{
+  forEachTreeWireEdgeImpl(
+      tree, adopted, [&](const int layer, const PointT cell, bool wrong_way) {
+        const double factor = layerFactor(net_costs, layer);
+        if (wrong_way) {
+          commitWrongWayWire(layer, cell, rip_up, factor);
+        } else {
+          commitWire(layer, cell, rip_up, factor);
+        }
+      });
+  forEachViaColumnImpl(
+      tree, [&](const PointT loc, const int low, const int high) {
+        if (high >= num_layers_) {
+          logger_->error(utl::GRT,
+                         1251,
+                         "Via layer index {} exceeds number of layers {}.",
+                         high - 1,
+                         num_layers_);
+        }
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            loc,
+            net_costs,
+            [&](int l, PointT edge_loc, CapacityT demand, double factor) {
+              commit(l, edge_loc, (rip_up ? -demand : demand), factor);
+            });
+        total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
+      });
 }
 
 void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
@@ -1187,17 +1237,18 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
   if (!tree) {
     return;
   }
-  forEachViaColumn(tree, [&](const PointT loc, const int low, const int high) {
-    forEachStackFlankEdgeImpl(
-        low,
-        high,
-        loc,
-        net_costs,
-        [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
-          via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
-              += demand * layer_factor;
-        });
-  });
+  forEachViaColumnImpl(
+      tree, [&](const PointT loc, const int low, const int high) {
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            loc,
+            net_costs,
+            [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
+              via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
+                  += demand * layer_factor;
+            });
+      });
 }
 
 int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
