@@ -43,6 +43,18 @@ have_routes()
 }
 
 bool
+design_is_placed()
+{
+  return getGlobalRouter()->designIsPlaced();
+}
+
+bool
+have_congested_routes()
+{
+  return getGlobalRouter()->haveCongestedRoutes();
+}
+
+bool
 have_detailed_routes()
 {
   return getGlobalRouter()->haveDetailedRoutes();

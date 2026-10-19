@@ -22,7 +22,7 @@
 [INFO RSZ-0043] Swapped pins on 25 instances.
 [INFO RSZ-0049] Cloned 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 2.784951e-03 W
-Post-ECO: WNS=  -0.074   TNS=  -2.202   Area=     763 um^2   Power= 3.268382e-03 W
-Delta:    WNS=   0.088   TNS=   1.859   Area=     +79 um^2   Power=+4.834312e-04 W
+Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 1.402199e-03 W
+Post-ECO: WNS=  -0.074   TNS=  -2.202   Area=     763 um^2   Power= 1.595201e-03 W
+Delta:    WNS=   0.088   TNS=   1.859   Area=     +79 um^2   Power=+1.930024e-04 W
 pass

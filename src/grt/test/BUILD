@@ -230,6 +230,13 @@ regression_test(
 )
 
 regression_test(
+    name = "congested_routes_are_reported",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "congestion_markers_cugr",
     check_log = False,
     check_passfail = True,
@@ -333,7 +340,6 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestRoutingCongestion.cpp"],
     data = [":test_resources"],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/grt",
