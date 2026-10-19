@@ -8,9 +8,9 @@
 
 namespace odb {
 
-void orderWires(utl::Logger* logger, dbBlock* block)
+void normalizeWireConnectivity(utl::Logger* logger, dbBlock* block)
 {
-  tmg_conn conn(logger);
+  WireNormalizer wire_normalizer(logger);
 
   for (dbNet* net : block->getNets()) {
     if (net->getSigType().isSupply()) {
@@ -19,9 +19,9 @@ void orderWires(utl::Logger* logger, dbBlock* block)
 
     dbWire* wire = net->getWire();
 
-    if (wire && !wire->isOrdered()) {
-      conn.setNet(net);
-      conn.analyzeNet();
+    if (wire && !wire->hasNormalizedConnectivity()) {
+      wire_normalizer.setNet(net);
+      wire_normalizer.normalizeWireConnectivity();
     }
   }
 }

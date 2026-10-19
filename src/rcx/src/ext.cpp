@@ -254,7 +254,7 @@ void Ext::extract(ExtractOptions options)
   _ext->setBlockFromChip(_db->getChip());
   odb::dbBlock* block = _ext->getBlock();
 
-  odb::orderWires(logger_, block);
+  odb::normalizeWireConnectivity(logger_, block);
 
   if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
     logger_->warn(RCX,
