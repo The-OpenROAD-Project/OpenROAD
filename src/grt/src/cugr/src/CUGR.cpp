@@ -293,9 +293,7 @@ void CUGR::updateCriticalNets(const std::vector<int>& net_indices,
 {
   updateNetSlacks(net_indices);
   // Mark res-aware nets on the real slack, before demotion clobbers it.
-  if (mark_res_aware) {
-    markResAwareNets(net_indices);
-  }
+  markResAwareNets(net_indices, mark_res_aware);
   // Demotion uses a global slack percentile; skip it during incremental.
   if (!incremental_routing_) {
     demoteNonCriticalNets(criticalSlackThreshold());
@@ -445,7 +443,8 @@ void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
   }
 }
 
-void CUGR::markResAwareNets(const std::vector<int>& net_indices)
+void CUGR::markResAwareNets(const std::vector<int>& net_indices,
+                            const bool extend_set)
 {
   if (!resistance_aware_) {
     return;
@@ -490,6 +489,9 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
     worst_fanout_ = std::max(worst_fanout_, net->getNumPins());
     worst_net_length_ = std::max(worst_net_length_, net->getNetLength());
     worst_slack_ = std::min(worst_slack_, net->getSlack());
+    if (!extend_set) {
+      return;
+    }
 
     // Clock and NDR nets are always res-aware among the eligible set (short and
     // positive-slack nets are already skipped above, matching FastRoute).
@@ -514,6 +516,10 @@ void CUGR::markResAwareNets(const std::vector<int>& net_indices)
         evaluateResAwareNet(net.get());
       }
     }
+  }
+
+  if (!extend_set) {
+    return;
   }
 
   // Pass 2: rank eligible candidates by the multi-factor res-aware score
