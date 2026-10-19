@@ -6813,7 +6813,8 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
   return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
 }
 
-sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(sta::LibertyCell* curr_cell)
+sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
+    sta::LibertyCell* curr_cell)
 {
   if (!curr_cell) {
     return nullptr;
