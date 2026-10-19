@@ -1,0 +1,35 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0228] Created path group 'reg2reg'.
+[INFO RSZ-0228] Created path group 'in2reg'.
+-- reg2reg before
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_863_/QN (DFF_X1)                    _863_/D (DFF_X1)                        0.1451
+
+-- in2reg before
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+req_msg[0] (input)                   _881_/D (DFF_X1)                       -0.0535
+
+[INFO RSZ-0046] Found 35 endpoints with hold violations.
+Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
+--------------------------------------------------------------------------------------
+        0 |       0 |       0 |            0 |    +0.0% |   0.145 |   0.000 | _863_/D
+    final |       0 |      83 |            0 |    +9.9% |   0.201 |   0.000 | _883_/D
+--------------------------------------------------------------------------------------
+[INFO RSZ-0032] Inserted 83 hold buffers.
+-- reg2reg after
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+_883_/Q (DFF_X1)                     _883_/D (DFF_X1)                        0.2012
+
+-- in2reg after
+Startpoint                           Endpoint                                 Slack
+----------------------------------------------------------------------------------
+req_msg[0] (input)                   _881_/D (DFF_X1)                       -0.0535
+

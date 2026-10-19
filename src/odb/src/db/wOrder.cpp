@@ -12,13 +12,17 @@ void orderWires(utl::Logger* logger, dbBlock* block)
 {
   tmg_conn conn(logger);
 
-  for (auto net : block->getNets()) {
-    if (net->getSigType().isSupply() || net->isWireOrdered()) {
+  for (dbNet* net : block->getNets()) {
+    if (net->getSigType().isSupply()) {
       continue;
     }
 
-    conn.setNet(net);
-    conn.analyzeNet();
+    dbWire* wire = net->getWire();
+
+    if (wire && !wire->isOrdered()) {
+      conn.setNet(net);
+      conn.analyzeNet();
+    }
   }
 }
 

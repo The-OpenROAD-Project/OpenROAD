@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -384,6 +385,9 @@ class GlobalRouter
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
 
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
+  RoutingCongestion* getRoutingCongestion();
+
   void writePinLocations(const char* file_name);
 
  private:
@@ -542,6 +546,9 @@ class GlobalRouter
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Refresh odb's congestion only for the GCells the routing engine recorded
+  // as changed.  Clears the engine's list.
+  void updateDbCongestionTiles();
 
   // db functions
   void initGrid(int max_layer);
@@ -650,6 +657,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
@@ -701,8 +709,8 @@ class IncrementalGRoute
  public:
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
-  // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = true);
+  // Update global routes for dirty nets. Returns every net it rerouted.
+  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

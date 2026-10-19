@@ -275,7 +275,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                              global_router_,
                              detailed_router_);
   icewall_ = new pad::ICeWall(db_, logger_);
-  dft_ = new dft::Dft(db_, sta_, logger_);
+  dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
   watermark_

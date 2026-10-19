@@ -66,14 +66,12 @@ class Shape
   };
   // The length and width of the metal connecting two nodes in the shape
   virtual ConnectionSize getConnectionSize(const odb::Point& pt0,
-                                           const odb::Point& pt1) const
-      = 0;
+                                           const odb::Point& pt1) const = 0;
   // Where the filler node for pt goes, pt steps along the middle of the
   // bounding box in x when along_x and in y otherwise. Empty when the shape
   // holds no metal there.
   virtual std::optional<odb::Point> getFillerPoint(const odb::Point& pt,
-                                                   bool along_x) const
-      = 0;
+                                                   bool along_x) const = 0;
 
  private:
   struct NodeData

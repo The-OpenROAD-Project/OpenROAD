@@ -104,8 +104,8 @@ The existing fixture stack already supports this:
   test case by hand."
 - **`odb::SimpleDbFixture`** (`src/odb/test/cpp/helper/helper.h`) -- pre-builds a
   minimal tech/lib/chip/block and `createMaster*` helpers.
-- **`tst/physical_builder.h`** (Bazel `//src/tst:physical_builder`, CMake
-  `tst_physical`) -- odb-only builders for physical test cases: `makeTech`,
+- **`tst/physical_builder.h`** (Bazel `//src/tst:physical_builder`; CMake
+  `tst_physical`, deprecated) -- odb-only builders for physical test cases: `makeTech`,
   `makeLib`, `makeBlock`, `makeLayerStack` (M1..Mn with cuts and vias),
   `applyAntennaRule` (an `AntennaRuleSpec` over the layer's default antenna
   rule), `makeMaster` (pins with shapes and antenna gate/diffusion areas),
@@ -285,7 +285,8 @@ at once.
 4. **Write the C++ unit test(s)** with semantic assertions on observable state.
    One behavior per `TEST_F`; build inputs with `makeInst`/`makeBTerm`/`makeNets`
    or `createMaster*` rather than checked-in DEFs. Add a builder helper if the
-   same construction recurs. Register in BOTH build systems.
+   same construction recurs. Register in Bazel (`BUILD`); CMake
+   test registration is not required.
 5. **Confirm coverage is equal-or-better.** The C++ tests must cover every
    behavior the golden test pinned (use the intent list from step 2 as a
    checklist). A C++ test that asserts *more* (e.g. an error/rejection path the
@@ -293,10 +294,12 @@ at once.
    re-expressed in C++, keep that one golden test and note why -- but still
    remove the rest of the batch.
 6. **Delete the superseded Tcl/Python test(s) and their artifacts, and
-   de-register from BOTH build systems** -- in this same change. Remove the
-   `.tcl`/`.py` and its `.ok`/`.defok`/`.vok`; drop the name from
-   `src/<module>/test/CMakeLists.txt` (`or_integration_tests`) **and**
-   `src/<module>/test/BUILD` (`regression_test`). Remove checked-in DEF/LEF data
+   de-register them from Bazel** -- in this same change. Remove the
+   `.tcl`/`.py` and its `.ok`/`.defok`/`.vok`; drop the name from the test
+   list in `src/<module>/test/BUILD` (`regression_test`). If the name is also
+   in the deprecated `src/<module>/test/CMakeLists.txt`
+   (`or_integration_tests`), drop it there too so CMake does not point at a
+   missing file. Remove checked-in DEF/LEF data
    only if nothing else references it (grep first -- fixtures like Nangate45 and shared `data/` files
    are used by many tests).
 7. **Check residual binding coverage.** Removing a *golden* test does not have to
@@ -305,18 +308,18 @@ at once.
    If the deleted test was the *only* thing invoking that command from a binding,
    add a thin Tier-2 smoke test (`PASSFAIL`, trivial design) so the entry point
    stays exercised. Note in the commit where binding coverage now lives.
-8. **Verify.** Run the module's C++ tests and remaining regressions in both
-   builds (`ctest`/`make test` and the Bazel target) to confirm the new tests
-   pass and nothing references the removed names.
+8. **Verify.** Run the module's tests with `bazelisk test //src/<module>/test/...`
+   to confirm the new tests pass and nothing references the removed names.
+   A test missing from `BUILD` does not run in CI.
 
 > The discipline that keeps this safe: deletion is gated on coverage
-> equivalence (step 5), and every add/remove touches CMake + Bazel together (a
-> half-registered or half-deregistered test breaks Bazel CI while passing local
-> `make test`).
+> equivalence (step 5), and every add/remove updates the Bazel `BUILD` file in
+> the same change (a test missing from `BUILD` does not run in CI).
 
 ## Registration reminder
 
-Every new test -- C++ or Tcl -- must be registered in **both** CMake and Bazel.
-Forgetting the Bazel `BUILD` entry passes local `make test` but breaks Bazel CI.
-See `testing.md` for the exact macros (`or_integration_tests` / `regression_test`
-/ `cc_test` + `gtest_discover_tests`).
+Every new test -- C++ or Tcl -- must be registered in Bazel (`BUILD`).
+A test missing from `BUILD` does not run in CI.
+CMake test registration is not required: CMake is deprecated and will be removed on Nov. 1, 2026.
+See `testing.md` for the exact Bazel macros (`regression_test`, `cc_test`).
+The CMake equivalents (`or_integration_tests`, `gtest_discover_tests`) are deprecated.

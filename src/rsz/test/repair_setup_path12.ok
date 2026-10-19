@@ -1,0 +1,58 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 38 pins.
+[INFO ODB-0131]     Created 72 components and 388 component-terminals.
+[INFO ODB-0133]     Created 99 nets and 208 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 5 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 5 out of 5 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.138 |       -0.4 |      5 | resp_msg[15]
+      61* |       0 |      18 |        7 |      0 |     3 |    +9.7% |   -0.076 |       -0.2 |      5 | resp_msg[15]
+    final |       0 |      18 |        7 |      0 |     3 |    +9.7% |   -0.076 |       -0.2 |      4 | resp_msg[15]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 7 buffers.
+[INFO RSZ-0051] Resized 18 instances: 18 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: inst0 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[15] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ inst0/CK (DFF_X1)
+   0.0860    0.0860 v inst0/Q (DFF_X1)
+   0.0255    0.1114 v rebuffer1/Z (BUF_X4)
+   0.0145    0.1259 ^ inst0_neighbor2/ZN (NAND2_X4)
+   0.0122    0.1381 v inst3/ZN (NAND2_X4)
+   0.0190    0.1571 ^ inst4/ZN (NOR2_X4)
+   0.0299    0.1870 ^ inst5/ZN (AND2_X4)
+   0.0137    0.2007 v inst6/ZN (NAND2_X4)
+   0.0175    0.2182 ^ inst7/ZN (NAND2_X4)
+   0.0140    0.2322 v inst8/ZN (NAND2_X4)
+   0.0135    0.2458 ^ inst9/ZN (NAND2_X4)
+   0.0118    0.2575 v inst10/ZN (NAND2_X4)
+   0.0111    0.2687 ^ inst11/ZN (NAND2_X4)
+   0.0170    0.2857 ^ inst12/Z (BUF_X2)
+   0.0000    0.2857 ^ resp_msg[15] (out)
+             0.2857   data arrival time
+
+   0.2990    0.2990   clock core_clock (rise edge)
+   0.0000    0.2990   clock network delay (ideal)
+   0.0000    0.2990   clock reconvergence pessimism
+  -0.0897    0.2093   output external delay
+             0.2093   data required time
+-------------------------------------------------------------
+             0.2093   data required time
+            -0.2857   data arrival time
+-------------------------------------------------------------
+            -0.0764   slack (VIOLATED)
+
+

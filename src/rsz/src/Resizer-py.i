@@ -35,8 +35,9 @@ using namespace rsz;
 
 %ignore rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool,
                                   const std::vector<rsz::MoveType>&,
-                                  const char*,
-                                  bool, bool, bool, bool, bool, bool, bool, bool, bool);
+                                  const char*, const char*,
+                                  bool, bool, bool, bool, bool, bool, bool, bool, bool,
+                                  rsz::RepairEffort, int, const char*);
 
 %ignore rsz::Resizer::computeNewDelaysSlews;
 %ignore rsz::Resizer::estimateSlewsAfterBufferRemoval;
@@ -83,6 +84,7 @@ using namespace rsz;
                    bool verbose,
                    const char* sequence,
                    const char* phases,
+                   const char* path_group,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_size_down_fanout,
@@ -91,7 +93,10 @@ using namespace rsz;
                    bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
-                   bool skip_crit_vt_swap)
+                   bool skip_crit_vt_swap,
+                   const char* effort = "high",
+                   int profile_mode = 0,
+                   const char* profile_dir = "")
   {
     auto move_seq = rsz::Resizer::parseMoveSequence(
         std::string(sequence ? sequence : ""));
@@ -99,8 +104,12 @@ using namespace rsz;
                               max_passes, max_iterations, max_repairs_per_pass,
                               match_cell_footprint, verbose, move_seq,
                               phases ? phases : "",
+                              path_group ? path_group : "",
                               skip_pin_swap, skip_gate_cloning, skip_size_down_fanout,
                               skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
-                              skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
+                              skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                              rsz::Resizer::repairEffortFromString(
+                                  effort ? effort : "high"),
+                              profile_mode, profile_dir ? profile_dir : "");
   }
 }

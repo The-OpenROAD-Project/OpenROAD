@@ -6,15 +6,35 @@ manual pages using (using Pandoc)
 
 This on-line documentation is available at [https://openroad.readthedocs.io/en/latest/](https://openroad.readthedocs.io/en/latest/).
 
+## Build with Bazel
+
+The Bazel targets use pinned Python packages and a pinned `pandoc`, so they need no manual setup.
+
+Build the man pages:
+
+``` shell
+bazelisk build //docs:man_pages
+```
+
+Build the Sphinx docs and check them, as ReadTheDocs does:
+
+``` shell
+bazelisk test //docs:sphinx_build_test
+```
+
+## Local make flow
+
+The `make` instructions below build the docs with `docs/Makefile`.
+
 ### Requires:
 - Python 3.x
 - Pip
 - `virtualenv`
 - `doxygen`
 
-## Prerequisites
+### Prerequisites
 
-- To install pandoc, refer to this [link](https://github.com/jgm/pandoc/blob/main/INSTALL.md). `apt-get` *should* just work for Ubuntu. This is only needed for the `make` instructions below; `bazel build //docs:man_pages` uses a pinned pandoc from `bazel/requirements.in` instead. 
+- To install pandoc, refer to this [link](https://github.com/jgm/pandoc/blob/main/INSTALL.md). `apt-get` *should* just work for Ubuntu. This is only needed for the `make` instructions below; `bazelisk build //docs:man_pages` uses a pinned pandoc from `bazel/requirements.in` instead.
 - To install sphinx requirements, **create a virtual environment (e.g. conda/virtualenv)** and then run `pip install -r requirements.txt`.
 
 You may install Doxygen from this [link](https://www.doxygen.nl/download.html).

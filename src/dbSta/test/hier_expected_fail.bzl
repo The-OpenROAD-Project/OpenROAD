@@ -1349,24 +1349,6 @@ CONFORMANCE_EXPECTED_FAIL = [
 # bindings -- the fidelity aspects a LEC is blind to. Grouped by check, then by
 # symptom.
 STRUCTURAL_EXPECTED_FAIL = [
-
-    # The reader loses wor resolution and merges distinct primary inputs.
-    # The writer rejects that network with STA-2749 instead of serializing it.
-    # Keep the fixture active until the reader supports resolved nets.
-    # Upstream: https://github.com/parallaxsw/OpenSTA/issues/537
-    structural_xfail(
-        path = "flat",
-        check = "round_trip",
-        symptom = "write_verilog rejects inputs merged by the wor reader (STA-2749)",
-        netlists = ["structural/wb_sta_reader_wor_resolution.v"],
-    ),
-    structural_xfail(
-        path = "hier",
-        check = "round_trip",
-        symptom = "write_verilog rejects inputs merged by the wor reader (STA-2749)",
-        netlists = ["structural/wb_sta_reader_wor_resolution.v"],
-    ),
-
     # ----------------------------------------------------------------------
     # round_trip
     #
@@ -1408,6 +1390,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_port_rewiring_positional_gap_output.v",
             "structural/wb_sta_reader_empty_specify.v",
             "structural/wb_sta_reader_tri0_net_type.v",
+            "structural/wb_sta_reader_wor_resolution.v",
             "wb_sta_reader_attr_before_assign.v",
         ],
     ),
@@ -1500,6 +1483,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_port_rewiring_positional_gap_output.v",
             "structural/wb_sta_reader_empty_specify.v",
             "structural/wb_sta_reader_tri0_net_type.v",
+            "structural/wb_sta_reader_wor_resolution.v",
             "wb_sta_reader_attr_before_assign.v",
         ],
     ),
@@ -2269,7 +2253,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_bitselect_out_of_range.v",
             "structural/wb_sta_reader_bus_dcl_initializer.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
-            "structural/wb_sta_reader_wor_resolution.v",
             "structural/wb_writer_bitsel_index_stoi_range.v",
             "structural/wb_writer_wire_index_overflow.v",
             "sub_out_alias_and_gate.v",
@@ -2416,7 +2399,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_dbnetwork_overlay_stamped_tail_eq_port.v",
             "structural/wb_sta_reader_bitselect_out_of_range.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
-            "structural/wb_sta_reader_wor_resolution.v",
             "structural/wb_writer_bitsel_index_stoi_range.v",
             "structural/wb_writer_wire_index_overflow.v",
             "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
@@ -2729,7 +2711,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_assign_width_zero_extend.v",
             "structural/wb_sta_reader_bus_dcl_initializer.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
-            "structural/wb_sta_reader_wor_resolution.v",
         ],
     ),
     # Moved here from the LEC corpus 2026-08-12: 1'bx has no binary value, so a
@@ -2789,7 +2770,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/wb_sta_reader_assign_width_zero_extend.v",
             "structural/wb_sta_reader_bus_dcl_initializer.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
-            "structural/wb_sta_reader_wor_resolution.v",
             "wb_dbsta_link_alias_name_after_port.v",
             "wb_dbsta_link_alias_name_before_port.v",
             "wb_writer_hier_input_alias_orphan.v",
