@@ -106,7 +106,7 @@ bool VtSwapGenerator::resolvePathCurrentCell(sta::Pin* drvr_pin,
 bool VtSwapGenerator::selectBestEquivCell(sta::LibertyCell* curr_cell,
                                           sta::LibertyCell*& best_cell) const
 {
-  best_cell = resizer_.selectBestEquivCell(curr_cell);
+  best_cell = resizer_.selectBetterRfDriveVtCell(curr_cell);
   return best_cell != nullptr;
 }
 
