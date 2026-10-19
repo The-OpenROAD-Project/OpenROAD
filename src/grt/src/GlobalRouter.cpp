@@ -527,7 +527,6 @@ void GlobalRouter::globalRoute(bool save_guides)
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
       // Capture the initial Steiner-tree wirelength per net for the detour
       // metric, before any overflow-removal routing alters the topology.
-      // Read-only: does not feed the routing engine.
       computeInitialSteinerWirelengths(nets);
       if (verbose_) {
         reportResources();

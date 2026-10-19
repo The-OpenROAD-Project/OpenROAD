@@ -352,7 +352,6 @@ class GlobalRouter
   // Detour reporting. The detour metric compares a net's final routed
   // wirelength against its initial Steiner-tree wirelength captured before
   // routing. ratio = final_wl / initial_steiner_wl; delta = final - initial.
-  // Read-only reporting; does not alter routing.
   void reportNetDetour(odb::dbNet* net, const char* file_name);
   void reportNetDetours(int top_n, const char* file_name);
   bool hasInitialSteinerWirelengths();
@@ -463,8 +462,7 @@ class GlobalRouter
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
   // Detour metric: capture the initial Steiner-tree wirelength (from the STT
-  // builder) for each net before overflow-removal routing runs. Read-only,
-  // does not affect routing.
+  // builder) for each net before overflow-removal routing runs.
   void computeInitialSteinerWirelengths(const std::vector<Net*>& nets);
   void updateInitialSteinerWirelength(Net* net);
   int computeNetInitialSteinerWirelength(Net* net);
@@ -612,7 +610,7 @@ class GlobalRouter
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
   // Initial Steiner-tree wirelength per net (dbu), captured before
-  // overflow-removal routing. Used for the detour metric. Read-only data.
+  // overflow-removal routing. Used for the detour metric.
   odb::PtrMap<odb::dbNet, int64_t> initial_steiner_wl_;
 
   odb::PtrMap<odb::dbNet, Net*> db_net_map_;
