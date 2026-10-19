@@ -6549,7 +6549,14 @@ void TileGenerator::saveImage(const std::string& filename,
   if (png_data.empty()) {
     return;
   }
-  lodepng::save_file(png_data, filename);
+  const unsigned save_error = lodepng::save_file(png_data, filename);
+  if (save_error != 0) {
+    logger_->error(utl::WEB,
+                   116,
+                   "Cannot write image to {}: {}",
+                   filename,
+                   lodepng_error_text(save_error));
+  }
   logger_->info(
       utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
 }

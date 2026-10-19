@@ -23,6 +23,7 @@ or_integration_tests(
     cugr_adjustment2
     cugr_adjustment3
     cugr_colocated_pins
+    cugr_congestion_sources
     cugr_detour_limit
     cugr_via_demand_disabled
     est_rc1

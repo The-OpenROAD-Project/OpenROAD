@@ -1,0 +1,91 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+overrides:
+  netlistsvg>@types/clone: '-'
+  netlistsvg>@types/json5: '-'
+  netlistsvg>@types/lodash: '-'
+  netlistsvg>ajv: '-'
+  netlistsvg>ajv-errors: '-'
+  netlistsvg>fs-extra: '-'
+  netlistsvg>json5: '-'
+  netlistsvg>yargs: '-'
+
+importers:
+
+  .:
+    dependencies:
+      golden-layout:
+        specifier: 2.6.0
+        version: 2.6.0
+      leaflet:
+        specifier: 1.9.4
+        version: 1.9.4
+      netlistsvg:
+        specifier: 1.0.2
+        version: 1.0.2
+      three:
+        specifier: 0.160.0
+        version: 0.160.0
+
+packages:
+
+  clone@2.1.2:
+    resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
+    engines: {node: '>=0.8'}
+
+  elkjs@0.3.0:
+    resolution: {integrity: sha512-bcO8RCIssdly316ou76QLsiuu1NCLbhhZwK/iuOdKTyQzKdCeX7sdIJOUdSsjlIDB203TN4NBpTiq4ugmLjR+Q==}
+
+  golden-layout@2.6.0:
+    resolution: {integrity: sha512-sIVQCiRWOymHbVD1Aw/T9/ijbPYAVGBlgGYd1N9MRKfcyBNSpjr87Vg9nSHm+RCT8ELrvK8IJYJV0QRJuVUkCQ==}
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
+  netlistsvg@1.0.2:
+    resolution: {integrity: sha512-g6E7Q58HLevr+ls7FZTMf1xT3iXXxUVD+s7I4ijGKH+bhaobjnZbzKAi+Ex1AlNWK7fzujz3x4V3xMKOGiWfQw==}
+    hasBin: true
+
+  onml@0.3.1:
+    resolution: {integrity: sha512-+OhJ42QBJnjCUPtt7NabMtC+e9F+/NqDHsj9DT/uZj3nw91Dwbj11/VIIZl1/l8bLmM8wPAF3NN8KHnogA4iOA==}
+
+  sax@1.6.1:
+    resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
+    engines: {node: '>=11.0.0'}
+
+  three@0.160.0:
+    resolution: {integrity: sha512-DLU8lc0zNIPkM7rH5/e1Ks1Z8tWCGRq6g8mPowdDJpw1CFBJMU7UoJjC6PefXW7z//SSl0b2+GCw14LB+uDhng==}
+
+snapshots:
+
+  clone@2.1.2: {}
+
+  elkjs@0.3.0: {}
+
+  golden-layout@2.6.0: {}
+
+  leaflet@1.9.4: {}
+
+  lodash@4.18.1: {}
+
+  netlistsvg@1.0.2:
+    dependencies:
+      clone: 2.1.2
+      elkjs: 0.3.0
+      lodash: 4.18.1
+      onml: 0.3.1
+
+  onml@0.3.1:
+    dependencies:
+      sax: 1.6.1
+
+  sax@1.6.1: {}
+
+  three@0.160.0: {}

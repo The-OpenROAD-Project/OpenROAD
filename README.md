@@ -285,8 +285,13 @@ sudo ./etc/DependencyInstaller.sh -bazel
 bazelisk run --//:platform=gui //:install
 ```
 
-See [Installing OpenROAD](docs/user/Build.md) for the CLI-only build,
-prebuilt binaries and Docker.
+See [Installing OpenROAD](docs/user/Build.md) for the CLI-only build.
+To skip the build, use one of these options:
+
+- [Prebuilt binaries](docs/user/Build.md#build-with-prebuilt-binaries),
+  from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
+- [Docker](docs/user/Build.md#build-with-docker).
+
 See [Building and testing with Bazel](docs/user/Bazel.md) for tests and build configurations.
 
 > **The CMake build is deprecated and will be removed on Nov. 1, 2026.**
@@ -319,6 +324,16 @@ each submodule). Some of these submodules look like forks but are really
 just pinned upstream trees, kept so CMake has a directory to point at.
 Submodules are the CMake-side compromise, not the source of truth for
 Bazel builds.
+
+There is a third source, for browser code only: the web viewer's
+JavaScript libraries come from **npm**, pinned in `src/web/package.json`
+and `src/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
+embedded in the binary (see `src/web/README.md`). Do not add a submodule
+or a BCR module for one of these, and do not add an npm dependency for
+anything that is not browser code.
+
+That bundling runs only under Bazel; the CMake build embeds a copy checked
+in under `src/web/dist/`, whose README says how to regenerate it.
 
 ## Regression Tests
 

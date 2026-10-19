@@ -214,6 +214,11 @@ build context. Pass the version with `--build-arg orVersion=<version>`.
 so installs made through it (including ORFS `build_openroad.sh` and the Docker
 build) carry the real version.
 
+The version is written into the binary after it is linked
+(`bazel/stamped_binary.bzl`). The version therefore changes no compile or link
+action, and a release build gets them from the remote cache that CI fills; only
+the copy of the binary that carries the version is built locally.
+
 ## Platforms
 
 https://bazel.build/extending/platforms
