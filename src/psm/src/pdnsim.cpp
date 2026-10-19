@@ -133,7 +133,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
   auto* chip_net = findChipNet(net);
 
-  auto solver = makeAssemblySolver(chip_net, corner);
+  auto solver = makeAssemblySolver(chip_net);
   checkAssemblyConnectivity(*solver->getNetwork(), false, false, error_file);
   solver->solve(corner, source_type, voltage_source_file);
   const auto& voltages = solver->getAssemblyVoltageVector();
@@ -240,56 +240,7 @@ odb::dbChipNet* PDNSim::findChipNet(odb::dbNet* local_net) const
   return nullptr;
 }
 
-odb::dbChipInst* PDNSim::findChiplet(odb::dbChipNet* chip_net,
-                                     const std::string& chip_name,
-                                     const std::string& terminal) const
-{
-  auto* chip = db_->getChip()->findChipInst(chip_name.c_str());
-  if (chip == nullptr || chip->getMasterChip() == nullptr
-      || chip->getMasterChip()->getBlock() == nullptr) {
-    logger_->error(utl::PSM, 116, "Cannot find leaf chiplet {}.", chip_name);
-  }
-  auto* block = chip->getMasterChip()->getBlock();
-  odb::dbNet* net = nullptr;
-  if (auto* port = block->findBTerm(terminal.c_str())) {
-    net = port->getNet();
-  } else {
-    const auto separator = terminal.rfind('/');
-    if (separator != std::string::npos) {
-      if (auto* inst = block->findInst(terminal.substr(0, separator).c_str())) {
-        if (auto* pin
-            = inst->findITerm(terminal.substr(separator + 1).c_str())) {
-          net = pin->getNet();
-        }
-      }
-    }
-  }
-  if (net == nullptr) {
-    logger_->error(utl::PSM,
-                   117,
-                   "Cannot find connected terminal {} on chiplet {}.",
-                   terminal,
-                   chip_name);
-  }
-  for (uint32_t index = 0; index < chip_net->getNumBumpInsts(); ++index) {
-    std::vector<odb::dbChipInst*> path;
-    auto* bump = chip_net->getBumpInst(index, path);
-    if (bump != nullptr && path.size() == 1 && path.front() == chip
-        && bump->getChipBump()->getNet() == net) {
-      return chip;
-    }
-  }
-  logger_->error(utl::PSM,
-                 118,
-                 "Terminal {}/{} is not on assembly net {}.",
-                 chip_name,
-                 terminal,
-                 chip_net->getName());
-  return nullptr;
-}
-
-std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
-                                                     sta::Scene* corner)
+std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net)
 {
   auto network
       = std::make_unique<IRNetwork>(net, logger_, false, interchip_resistance_);
@@ -306,17 +257,6 @@ std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
                    151,
                    "OpenSTA has no timing network for the loaded 3D assembly.");
   }
-  const auto sources = assembly_voltage_sources_.find(net->getName());
-  if (sources != assembly_voltage_sources_.end()) {
-    for (const auto& source : sources->second) {
-      if (source.corner != corner) {
-        continue;
-      }
-      auto* chip = findChiplet(net, source.chip_name, source.terminal);
-      solver->addAssemblyVoltageSource(chip, source.terminal, source.voltage);
-    }
-  }
-
   return solver;
 }
 
@@ -402,35 +342,6 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
   if (!disconnected.empty() || network.getNodeCount() == 0) {
     logger_->error(
         utl::PSM, 140, "The 3D power grid for {} is disconnected.", name);
-  }
-}
-
-void PDNSim::setChipletVoltage(const std::string& chip_net_name,
-                               const std::string& chip_name,
-                               const std::string& port_name,
-                               double voltage,
-                               sta::Scene* corner)
-{
-  auto* net = findChipNet(chip_net_name);
-  if (!std::isfinite(voltage)) {
-    logger_->error(utl::PSM,
-                   124,
-                   "Voltage at {}/{} must be finite.",
-                   chip_name,
-                   port_name);
-  }
-  findChiplet(net, chip_name, port_name);
-
-  auto& sources = assembly_voltage_sources_[chip_net_name];
-  const auto existing
-      = std::ranges::find_if(sources, [&](const AssemblyVoltageSource& source) {
-          return source.chip_name == chip_name && source.terminal == port_name
-                 && source.corner == corner;
-        });
-  if (existing == sources.end()) {
-    sources.push_back({chip_name, port_name, voltage, corner});
-  } else {
-    existing->voltage = voltage;
   }
 }
 

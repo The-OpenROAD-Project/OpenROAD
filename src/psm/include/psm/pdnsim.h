@@ -103,11 +103,6 @@ class PDNSim : public odb::dbBlockCallBackObj
                          bool floorplanning,
                          const std::string& error_file,
                          bool require_bterm);
-  void setChipletVoltage(const std::string& chip_net_name,
-                         const std::string& chip_name,
-                         const std::string& port_name,
-                         double voltage,
-                         sta::Scene* corner);
   void setDebugGui(bool enable);
 
   void clearSolvers();
@@ -140,24 +135,12 @@ class PDNSim : public odb::dbBlockCallBackObj
   sta::Scene* getLastAnalyzedCorner() const { return last_corner_; }
 
  private:
-  struct AssemblyVoltageSource
-  {
-    std::string chip_name;
-    std::string terminal;
-    double voltage;
-    sta::Scene* corner;
-  };
-
   // Functions of decap cells
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
   odb::dbNet* findPowerNet(const char* net_name);
   odb::dbChipNet* findChipNet(const std::string& chip_net_name) const;
   odb::dbChipNet* findChipNet(odb::dbNet* local_net) const;
-  odb::dbChipInst* findChiplet(odb::dbChipNet* net,
-                               const std::string& chip_name,
-                               const std::string& terminal) const;
-  std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net,
-                                               sta::Scene* corner);
+  std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net);
 
   void checkAssemblyConnectivity(IRNetwork& network,
                                  bool floorplanning,
@@ -179,8 +162,6 @@ class PDNSim : public odb::dbBlockCallBackObj
   GeneratedSourceSettings generated_source_settings_;
   std::optional<double> interchip_resistance_;
   odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
-  std::map<std::string, std::vector<AssemblyVoltageSource>>
-      assembly_voltage_sources_;
   odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
   odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 

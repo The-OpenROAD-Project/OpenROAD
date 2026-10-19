@@ -1780,41 +1780,6 @@ std::map<Node*, odb::dbChipInst*> IRNetwork::getNodeChiplets() const
   return result;
 }
 
-Node* IRNetwork::findTerminalNode(odb::dbChipInst* chip_inst,
-                                  const std::string& terminal) const
-{
-  Node* result = nullptr;
-  for (const ChipletNetwork& chiplet : chiplet_networks_) {
-    if (chiplet.chip_inst != chip_inst) {
-      continue;
-    }
-    for (const auto& node : chiplet.network->getBPinNodes()) {
-      if (node->getBPin()->getBTerm()->getName() == terminal) {
-        if (result != nullptr) {
-          logger_->error(
-              utl::PSM,
-              142,
-              "Port {} has multiple shapes; choose a single-shape source port.",
-              terminal);
-        }
-        result = node.get();
-      }
-    }
-    for (const auto& node : chiplet.network->getITermNodes()) {
-      odb::dbITerm* iterm = node->getITerm();
-      const std::string name = std::string(iterm->getInst()->getName()) + "/"
-                               + iterm->getMTerm()->getName();
-      if (name == terminal) {
-        if (result != nullptr) {
-          logger_->error(utl::PSM, 143, "Terminal {} is ambiguous.", terminal);
-        }
-        result = node.get();
-      }
-    }
-  }
-  return result;
-}
-
 void IRNetwork::reportStats() const
 {
   if (isAssembly()) {

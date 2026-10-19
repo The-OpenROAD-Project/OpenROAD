@@ -132,9 +132,6 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
-  void addAssemblyVoltageSource(odb::dbChipInst* chip_inst,
-                                const std::string& terminal,
-                                Voltage voltage);
   std::size_t getAssemblyNodeCount() const;
   std::size_t getAssemblyCurrentLoadCount() const;
   std::size_t getAssemblyVoltageSourceCount() const;

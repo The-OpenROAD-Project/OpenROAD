@@ -147,8 +147,6 @@ class IRNetwork
   std::vector<std::pair<odb::dbChipInst*, ITermNode*>> getChipletITermNodes()
       const;
   std::map<Node*, odb::dbChipInst*> getNodeChiplets() const;
-  Node* findTerminalNode(odb::dbChipInst* chip_inst,
-                         const std::string& terminal) const;
   bool hasSameBonds() const;
   bool isConnected() const;
   Nodes getDisconnectedNodes() const;

@@ -96,18 +96,6 @@ set_interchip_resistance_cmd(double resistance)
 }
 
 void
-set_pdnsim_chiplet_voltage_cmd(const char* chip_net_name,
-                              const char* chip_name,
-                              const char* port_name,
-                              double voltage,
-                              Scene* corner)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->setChipletVoltage(
-      chip_net_name, chip_name, port_name, voltage, corner);
-}
-
-void
 set_net_voltage_cmd(odb::dbNet* net, Scene* corner, double voltage)
 {
   PDNSim* pdnsim = getPDNSim();
