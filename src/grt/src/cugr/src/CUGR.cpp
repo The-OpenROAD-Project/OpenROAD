@@ -664,18 +664,13 @@ std::vector<CUGR::PinAccessTop> CUGR::pinAccessTops(const GRNet& net) const
                     .y = ap.point.y(),
                     .top = std::max(ap.layers.high(), net_min_layer)});
   }
-  auto gcell = [](const PinAccessTop& t) { return std::make_pair(t.x, t.y); };
-  std::ranges::sort(tops, {}, gcell);
-  // Keep one entry per gcell, at its highest top.
-  size_t kept = 0;
-  for (const PinAccessTop& t : tops) {
-    if (kept > 0 && gcell(tops[kept - 1]) == gcell(t)) {
-      tops[kept - 1].top = std::max(tops[kept - 1].top, t.top);
-    } else {
-      tops[kept++] = t;
-    }
-  }
-  tops.resize(kept);
+  // One entry per gcell, at its highest top: sort it first, keep the first.
+  std::ranges::sort(tops, [](const PinAccessTop& a, const PinAccessTop& b) {
+    return std::tie(a.x, a.y, b.top) < std::tie(b.x, b.y, a.top);
+  });
+  const auto duplicates = std::ranges::unique(
+      tops, {}, [](const PinAccessTop& t) { return std::make_pair(t.x, t.y); });
+  tops.erase(duplicates.begin(), duplicates.end());
   return tops;
 }
 
@@ -2661,10 +2656,12 @@ void CUGR::reportCongestionSources(const std::string& tag)
   }
   const float slack_threshold
       = demoted_any ? kDemotedSlack : criticalSlackThreshold();
+  // Without a critical percentage no net is routed as critical.
   auto is_critical = [&](const GRNet& net) {
     return net.isResAware()
-           || (demoted_any ? net.getSlack() < kDemotedSlack
-                           : net.getSlack() <= slack_threshold);
+           || (critical_nets_percentage_ != 0
+               && (demoted_any ? net.getSlack() < kDemotedSlack
+                               : net.getSlack() <= slack_threshold));
   };
   enum Group
   {
