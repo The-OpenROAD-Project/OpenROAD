@@ -70,7 +70,8 @@ constexpr float kPositiveSlackLossBudget = 20.0e-12f;
 
 // Direct load or next-buffer stages are lumped loads; wires and branches are
 // distributed loads for buffer Liberty lookup.
-bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
+bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree,
+                                           utl::Logger* logger)
 {
   switch (tree->type()) {
     case BnetType::load:
@@ -81,7 +82,7 @@ bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
     case BnetType::junction:
       return true;
   }
-  return true;
+  logger->critical(RSZ, 1013, "unhandled BufferedNet type");
 }
 
 }  // namespace
@@ -2315,6 +2316,9 @@ BufferedNetPtr Rebuffer::cloneBufferedNetTree(const BufferedNetPtr& tree)
                                         estimate_parasitics_);
       break;
   }
+  if (cloned == nullptr) {
+    logger_->critical(RSZ, 1009, "unhandled BufferedNet type");
+  }
 
   cloned->setSlackTransition(tree->slackTransition());
   cloned->setSlack(tree->slack());
@@ -2369,7 +2373,7 @@ void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
       tree->bufferCell()->bufferPorts(input, output);
       const float output_cap = output != nullptr ? output->capacitance() : 0.0f;
       const bool drives_distributed_load
-          = drivesDistributedLoadBeforeNextBuffer(child);
+          = drivesDistributedLoadBeforeNextBuffer(child, logger_);
       prefix.push_back({.type = BufferTreeStageType::kBuffer,
                         .buffer_cell = tree->bufferCell(),
                         .wire_rc = {},
@@ -2384,6 +2388,7 @@ void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
       buildLoadPaths(tree->ref2(), prefix, load_paths);
       return;
   }
+  logger_->critical(RSZ, 1011, "unhandled BufferedNet type");
 }
 
 Rebuffer::TreeSignature Rebuffer::treeSignature(const BufferedNetPtr& tree)
@@ -2440,6 +2445,7 @@ void Rebuffer::appendTreeSignature(const BufferedNetPtr& tree,
       appendTreeSignature(tree->ref2(), signature);
       return;
   }
+  logger_->critical(RSZ, 1012, "unhandled BufferedNet type");
 }
 
 bool BufferTreeLoadPath::hasBufferAfter(const size_t index) const

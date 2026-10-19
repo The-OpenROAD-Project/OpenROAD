@@ -824,7 +824,7 @@ bool SetupParallelEvalPolicy::generatorAllowed(
     case MoveType::kCount:
       return true;
   }
-  return true;
+  logger_->critical(utl::RSZ, 2030, "unhandled MoveType in generatorAllowed");
 }
 
 TargetEvaluation SetupParallelEvalPolicy::collectGenerated(GenerationTask& task)
