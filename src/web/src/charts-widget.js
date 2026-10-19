@@ -7,8 +7,7 @@
 // canvas.
 
 import { getThemeColors } from './theme.js';
-import { isStaticMode, beginSelection, isCurrentSelection }
-    from './ui-utils.js';
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 
 // Layout margins (pixels)
 export const kLeftMargin = 60;
@@ -219,9 +218,6 @@ export class ChartsWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
-        if (isStaticMode(this._app)) {
-            this._updateBtn.style.display = 'none';
-        }
 
         // Unified chart-type selector (built-ins + engine line charts).
         this._chartSelect = document.createElement('select');
@@ -295,10 +291,6 @@ export class ChartsWidget {
         this._ctx = this._canvas.getContext('2d');
         this._rebuildSelect();
         this._bindEvents();
-
-        if (isStaticMode(this._app)) {
-            setTimeout(() => this.update(), 0);
-        }
     }
 
     _bindEvents() {
@@ -534,10 +526,7 @@ export class ChartsWidget {
             ctx.font = '14px ' + tc.fontSans;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const msg = isStaticMode(this._app)
-                ? 'No histogram data available'
-                : 'Click "Update" to load histogram';
-            ctx.fillText(msg, w / 2, h / 2);
+            ctx.fillText('Click "Update" to load histogram', w / 2, h / 2);
             return;
         }
 

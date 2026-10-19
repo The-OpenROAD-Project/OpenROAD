@@ -399,13 +399,6 @@ describe('WebSocketManager.cancel', () => {
         mgr.cancel(9999);
         assert.equal(mgr.socket.sent.length, 0);
     });
-
-    it('is a no-op in static (cache) mode', () => {
-        const mgr = WebSocketManager.fromCache({
-            zoom: 1, json: {}, tiles: {}, overlays: {},
-        });
-        assert.doesNotThrow(() => mgr.cancel(1));
-    });
 });
 
 describe('the layer body must resolve every name it references', () => {
@@ -578,8 +571,9 @@ describe('the layer body must resolve every name it references', () => {
     });
 
     it('sizes an overlay request from its own tile size', () => {
-        // A static report's layers are 256; the overlay must follow them.
-        const sent = overlayRequests(256);
-        assert.equal(sent[0].tile_px, Math.round(256 * currentDpr()));
+        // A fitted size (a multiple of 120) is not 240; the overlay must
+        // follow the layers under it.
+        const sent = overlayRequests(360);
+        assert.equal(sent[0].tile_px, Math.round(360 * currentDpr()));
     });
 });

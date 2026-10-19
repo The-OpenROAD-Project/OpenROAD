@@ -6,12 +6,6 @@
 import { dbuRectToBounds } from './coordinates.js';
 import { TILE_SIZE_CSS, TILE_SIZE_QUANTUM } from './tile-request.js';
 
-// True when the app was bootstrapped from a saved/static report
-// (i.e. there is no live WebSocket backend).
-export function isStaticMode(app) {
-    return !!app?.websocketManager?.isStaticMode;
-}
-
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
 // an `s_` prefix.  Callers add request-specific fields (visible_layers,
@@ -258,9 +252,8 @@ export function clampArrowStep(value) {
 // assigning that option on a live map does nothing -- the distance lives in
 // the handler's own key map, which _setPanDelta rebuilds from this argument
 // (Leaflet 1.9.4, Map.Keyboard.js).  Hence the push rather than an option
-// write.  _setPanDelta is private, so every hop is optional-chained: a static
-// report has no keyboard handler, and setArrowStep can run before the map
-// exists.  buildMapOptions carries the value for the next map either way.
+// write.  _setPanDelta is private, so every hop is optional-chained:
+// setArrowStep can run before the map exists.  buildMapOptions carries the value for the next map either way.
 export function applyArrowStep(map, step) {
     map?.keyboard?._setPanDelta?.(step);
 }

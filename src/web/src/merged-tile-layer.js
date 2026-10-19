@@ -30,22 +30,9 @@ import { tileMayHaveContent } from './layer-extents.js';
 // createImageBitmap is the point: an <img> gives no control over when its
 // decoded bitmap is released, and that is the whole problem this layer exists
 // to solve. An ImageBitmap can be close()d the moment it has been drawn.
-//
-// A string payload is a data URI from the static-report cache, which has no
-// Blob to hand to createImageBitmap — fall back to an <img> there. Those
-// reports are pre-rendered at one zoom and are not where the memory problem
-// lives, so the weaker path is acceptable.
 export function decodeTilePayload(payload) {
     if (payload == null) {
         return Promise.resolve(null);
-    }
-    if (typeof payload === 'string') {
-        return new Promise((resolve) => {
-            const img = document.createElement('img');
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
-            img.src = payload;
-        });
     }
     if (typeof createImageBitmap === 'function') {
         return createImageBitmap(payload).catch(() => null);

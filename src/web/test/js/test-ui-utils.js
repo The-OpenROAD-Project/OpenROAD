@@ -530,8 +530,9 @@ describe('applyArrowStep', () => {
         assert.deepEqual(panFor(kRight), [120, 0]);
     });
 
-    // A static report builds no keyboard handler, and the Options menu can be
-    // driven before the map exists; neither may throw.
+    // The Options menu can be driven before the map exists, and Leaflet only
+    // builds a keyboard handler when the map's keyboard option is on; neither
+    // may throw.
     it('is a no-op when there is no map or no keyboard handler', () => {
         assert.doesNotThrow(() => applyArrowStep(null, 100));
         assert.doesNotThrow(() => applyArrowStep(undefined, 100));

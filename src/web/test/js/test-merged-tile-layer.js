@@ -650,38 +650,6 @@ describe('decodeTilePayload', () => {
         assert.equal(await decodeTilePayload(null), null);
     });
 
-    it('loads a data URI through an <img> (static report cache)', async () => {
-        // Driven with a stub rather than a real <img>: jsdom never fires load or
-        // error for a data URI, so a test that waited on one would hang and be
-        // cancelled — which also takes out every test after it.
-        const orig = document.createElement.bind(document);
-        const fake = { onload: null, onerror: null, src: null };
-        document.createElement = (tag) => (tag === 'img' ? fake : orig(tag));
-        try {
-            const p = decodeTilePayload('data:image/png;base64,AAAA');
-            assert.equal(fake.src, 'data:image/png;base64,AAAA');
-            fake.onload();
-            assert.equal(await p, fake);
-        } finally {
-            document.createElement = orig;
-        }
-    });
-
-    it('resolves null when a data URI fails to load', async () => {
-        // A failed decode must not reject: renderMergedTile skips a null and
-        // still paints the rest of the group.
-        const orig = document.createElement.bind(document);
-        const fake = { onload: null, onerror: null, src: null };
-        document.createElement = (tag) => (tag === 'img' ? fake : orig(tag));
-        try {
-            const p = decodeTilePayload('data:image/png;base64,AAAA');
-            fake.onerror();
-            assert.equal(await p, null);
-        } finally {
-            document.createElement = orig;
-        }
-    });
-
     it('resolves null rather than throwing when createImageBitmap rejects', async () => {
         const had = 'createImageBitmap' in globalThis;
         const prev = globalThis.createImageBitmap;

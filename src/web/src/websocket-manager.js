@@ -2,8 +2,6 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // WebSocket manager with request/response tracking and auto-reconnect.
-// Supports a cache mode for static reports where pre-computed responses
-// are served from window.__STATIC_CACHE__ without a WebSocket connection.
 
 // Flow control. Rapidly changing the selection/zoom can enqueue thousands of
 // tile requests; sending them all at once floods the socket's send buffer and
@@ -71,7 +69,6 @@ export class WebSocketManager {
         this.readyResolve = null;
         this.onStatusChange = onStatusChange || (() => {});
         this.onPush = null; // callback for server-push notifications
-        this._cache = null;
         this._isConnected = false;
         this._shutdown = false; // set by server "shutdown" message
         this._livenessTimer = undefined; // set by _startLivenessMonitor
@@ -87,33 +84,6 @@ export class WebSocketManager {
     // held back by the scheduler and not yet dispatched.
     get pendingCount() {
         return this.pending.size + (this._queue ? this._queue.size : 0);
-    }
-
-    // Create a cache-backed instance (no WebSocket connection).
-    static fromCache(cache, onStatusChange) {
-        const mgr = Object.create(WebSocketManager.prototype);
-        mgr.url = null;
-        mgr.socket = null;
-        mgr.nextId = 1;
-        mgr.pending = new Map();
-        mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
-        mgr._inFlight = 0;
-        mgr._inFlightIds = new Set();
-        mgr._unknownPayloadTypes = new Set();
-        mgr._maxInFlight = DEFAULT_MAX_IN_FLIGHT;
-        mgr._lastRecvAt = 0;
-        mgr.reconnectDelay = 0;
-        mgr.onStatusChange = onStatusChange || (() => {});
-        mgr.onPush = null;
-        mgr._cache = cache;
-        mgr._isConnected = true; // cache is always "connected"
-        mgr.readyPromise = Promise.resolve();
-        mgr.readyResolve = null;
-        return mgr;
-    }
-
-    get isStaticMode() {
-        return !!this._cache;
     }
 
     connect() {
@@ -305,9 +275,6 @@ export class WebSocketManager {
     }
 
     request(msg) {
-        if (this._cache) {
-            return this._cacheRequest(msg);
-        }
         const id = this.nextId++;
         msg.id = id;
         // Reject immediately when disconnected (preserves prior behaviour and
@@ -386,7 +353,7 @@ export class WebSocketManager {
         // pan/zoom doesn't pile up stale work (and the 'pending' set drains).
         // Fire-and-forget: the cancel message gets its own id but is NOT
         // tracked in `pending`, so any stray ack is harmlessly ignored.
-        if (had && !this._cache && this.socket
+        if (had && this.socket
                 && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({
                 type: 'cancel',
@@ -424,9 +391,6 @@ export class WebSocketManager {
     }
 
     _checkLiveness() {
-        if (this._cache) {
-            return;
-        }
         const s = this.socket;
         if (!s || s.readyState !== WebSocket.OPEN) {
             this._bufStuckSince = 0;
@@ -469,69 +433,5 @@ export class WebSocketManager {
             // the close handshake indefinitely. Reconnect immediately.
             this._forceReconnect();
         }
-    }
-
-    // Serve a request from the embedded cache.
-    _cacheRequest(msg) {
-        const type = msg.type;
-
-        // Tile requests — return a data URI string.
-        if (type === 'tile') {
-            const key = msg.layer + '/' + msg.z + '/' + msg.x + '/' + msg.y;
-            const b64 = this._cache.tiles && this._cache.tiles[key];
-            if (b64) {
-                return Promise.resolve('data:image/png;base64,' + b64);
-            }
-            return Promise.reject(new Error('Tile not cached: ' + key));
-        }
-
-        // Timing highlight — drive the overlay image.
-        if (type === 'timing_highlight') {
-            const idx = msg.path_index;
-            if (idx >= 0 && this._cache.overlays) {
-                const side = msg.is_setup ? 'setup' : 'hold';
-                const b64 = this._cache.overlays[side]?.[idx];
-                if (this._cache.setPathOverlay) {
-                    this._cache.setPathOverlay(
-                        b64 ? 'data:image/png;base64,' + b64 : null);
-                }
-            } else if (this._cache.setPathOverlay) {
-                this._cache.setPathOverlay(null);
-            }
-            return Promise.resolve({});
-        }
-
-        // set_module_colors is a no-op in static mode (tiles are pre-rendered).
-        if (type === 'set_module_colors') {
-            return Promise.resolve({ok: 1, count: 0});
-        }
-
-        // Parameterized JSON lookups.
-        let key = type;
-        if (type === 'timing_report') {
-            key = 'timing_report:' + (msg.is_setup ? 'setup' : 'hold');
-        } else if (type === 'slack_histogram') {
-            key = 'slack_histogram:' + (msg.is_setup ? 'setup' : 'hold');
-        }
-        const json = this._cache.json && this._cache.json[key];
-        if (json !== undefined) {
-            // Filter timing paths by slack range when histogram column clicked.
-            // Tag each path with its original index so overlay lookup still
-            // works after the array is narrowed down.
-            if (type === 'timing_report'
-                && msg.slack_min != null && msg.slack_max != null
-                && json.paths) {
-                const filtered = [];
-                json.paths.forEach((p, i) => {
-                    if (p.slack >= msg.slack_min && p.slack < msg.slack_max) {
-                        filtered.push({ ...p, _originalIndex: i });
-                    }
-                });
-                return Promise.resolve({ ...json, paths: filtered });
-            }
-            return Promise.resolve(json);
-        }
-
-        return Promise.reject(new Error('Not available in static mode: ' + type));
     }
 }

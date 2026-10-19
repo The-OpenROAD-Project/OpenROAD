@@ -8,7 +8,7 @@
 // rows without mapToSource and mis-target under sorting).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { makeResizableHeaders } from './ui-utils.js';
 
 export class SelectionBrowser {
     constructor(container, app, refreshOverlay) {
@@ -66,7 +66,7 @@ export class SelectionBrowser {
     refresh() {
         // Skip network + render work while the panel is hidden; a pending
         // debounced refresh can also fire after a 'hide'.
-        if (!this._visible || isStaticMode(this._app)) return;
+        if (!this._visible) return;
         if (this._inFlight) {
             // The in-flight request was issued before the mutation that
             // prompted this call, so its response describes the old set.

@@ -5,8 +5,8 @@
 // property editing (server descriptor editors).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
-         showToast } from './ui-utils.js';
+import { beginSelection, isCurrentSelection, showConfirmModal, showToast }
+    from './ui-utils.js';
 
 // Delete: trash can (Material "delete")
 const DELETE_SVG =
@@ -997,8 +997,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         // Server-backed objects get the set_property edit dispatcher;
         // client-side panels (ruler) supply their own onPropertyChange
         // and are left alone.
-        if (!data.onPropertyChange && !data.onPropertyEdit
-            && !isStaticMode(app)) {
+        if (!data.onPropertyChange && !data.onPropertyEdit) {
             data.onPropertyEdit
                 = (prop, payload) => sendSetProperty(prop.name, payload);
         }
@@ -1072,7 +1071,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             // Highlight-group button (server-backed objects carry a
             // highlight_group field; client-side panels like the ruler
             // don't).  The badge shows the current group's color.
-            if (typeof data.highlight_group === 'number' && !isStaticMode(app)
+            if (typeof data.highlight_group === 'number'
                 && (app.techData?.highlight_colors || []).length) {
                 const hlBtn = document.createElement('button');
                 hlBtn.className = 'or-btn or-btn-icon inspector-highlight-btn';
@@ -1093,7 +1092,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             }
 
             // Descriptor actions (server-provided, e.g. Delete).
-            if (Array.isArray(data.actions) && !isStaticMode(app)) {
+            if (Array.isArray(data.actions)) {
                 for (const name of data.actions) {
                     const btn = document.createElement('button');
                     btn.className = 'or-btn inspector-action-btn';

@@ -4,7 +4,7 @@
 // Hierarchy browser widget — module tree with coloring.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { makeResizableHeaders } from './ui-utils.js';
 
 const COLS = [
     'Instance', 'Module', 'Instances', 'Macros', 'Modules',
@@ -44,11 +44,6 @@ export class HierarchyBrowser {
 
         // Expose on app so display-controls can interact
         app.hierarchyBrowser = this;
-
-        // Auto-load in static mode (data is already cached).
-        if (isStaticMode(app)) {
-            this.update();
-        }
     }
 
     _build(container) {
@@ -62,9 +57,6 @@ export class HierarchyBrowser {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
-        if (isStaticMode(this._app)) {
-            this._updateBtn.style.display = 'none';
-        }
 
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
@@ -397,9 +389,7 @@ export class HierarchyBrowser {
             td.colSpan = COLS.length;
             td.style.textAlign = 'center';
             td.style.color = 'var(--fg-secondary)';
-            td.textContent = isStaticMode(this._app) ?
-                'No hierarchy data available' :
-                'Click "Update" to load hierarchy';
+            td.textContent = 'Click "Update" to load hierarchy';
             tr.appendChild(td);
             tbody.appendChild(tr);
         }

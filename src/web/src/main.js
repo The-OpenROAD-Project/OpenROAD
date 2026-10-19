@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    BLANK_TILE, tileSizeCss, useFittedTileSize,
     withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -26,7 +26,7 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          buildMapOptions, buildVisibilityFlags, clampArrowStep,
          computeBoundsTransforms, computeScaleBar, decorateTabIcons,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
-         isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
+         isCurrentSelection, maxUsefulZoom, parseDbu,
          rafCoalesce, showToast, unitLabel }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
@@ -648,7 +648,7 @@ const scheduleRedrawAllLayers = rafCoalesce(redrawAllLayers);
 // Push the current display state to the server (coalesced via rAF) so the
 // Tcl save_display_controls command has an up-to-date snapshot to write.
 const scheduleSyncDisplayState = rafCoalesce(() => {
-    if (!app.websocketManager || isStaticMode(app)) return;
+    if (!app.websocketManager) return;
     app.websocketManager.request({
         type: 'set_display_state',
         state: serializeDisplayState(),
@@ -727,12 +727,8 @@ function createLayoutViewer(container) {
         wheelZoom: app.wheelZoom,
         arrowStep: app.arrowStep,
     }));
-    // Wheel pan/zoom per the Options preference (2.15).  Skipped in a static
-    // report, which deliberately locks the zoom to the one pre-rendered level
-    // and turns Leaflet's own wheel zoom off.
-    if (!isStaticMode(app)) {
-        installWheelPanning(app.map, () => app.wheelZoom);
-    }
+    // Wheel pan/zoom per the Options preference (2.15).
+    installWheelPanning(app.map, () => app.wheelZoom);
     // On a fractional dpr, Leaflet's whole-CSS-pixel placement leaves tile
     // boundaries mid-device-pixel and they show as dark hairlines; this nudges
     // each tile container back onto the grid after every move.
@@ -1002,17 +998,6 @@ function createTclConsole(container) {
     app.tclOutputEl = el.querySelector('.tcl-output');
     restoreConsole();
 
-    if (isStaticMode(app)) {
-        el.querySelector('.tcl-input-row').style.display = 'none';
-        const notice = document.createElement('span');
-        notice.className = 'tcl-static-notice';
-        notice.setAttribute('role', 'status');
-        notice.setAttribute('aria-live', 'polite');
-        notice.textContent = 'Tcl console is not available in saved reports.';
-        app.tclOutputEl.appendChild(notice);
-        return;
-    }
-
     const input = el.querySelector('.tcl-input');
     const completer = new TclCompleter(input, app.websocketManager);
 
@@ -1253,27 +1238,18 @@ const LAYOUT_VERSION = 4;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const staticCache = window.__STATIC_CACHE__ || null;
-if (staticCache) {
-    // Before any layer or the map scale is built: a report's tiles are baked at
-    // a fixed size and cannot be re-rendered to fit a different box.
-    useStaticTileSize();
-    app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
-} else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
-    // Where each tech layer has shapes, so tiles that would come back empty
-    // are never requested (see layer-extents.js).  Static reports have no
-    // server to ask and keep requesting everything.
-    app.layerExtents = new LayerExtents();
-    // On reconnect the server may have been restarted (possibly with a
-    // different design) — resync the coordinate transforms; a bounds
-    // change here reloads through the boot path.
-    app.websocketManager.onReconnected = () => {
-        refetchLayerExtents();
-        resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
-    };
-}
+const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+// Where each tech layer has shapes, so tiles that would come back empty
+// are never requested (see layer-extents.js).
+app.layerExtents = new LayerExtents();
+// On reconnect the server may have been restarted (possibly with a
+// different design) — resync the coordinate transforms; a bounds
+// change here reloads through the boot path.
+app.websocketManager.onReconnected = () => {
+    refetchLayerExtents();
+    resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
+};
 
 // Check initial connection status
 updateStatus();
@@ -1579,7 +1555,7 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
                             { reloadOnChange = false } = {}) {
     // Returns true when it already redrew the layers (bounds changed), so
     // callers can avoid a second redundant redraw.
-    if (isStaticMode(app) || !app.map) return false;
+    if (!app.map) return false;
     let designBounds = inlineBounds;
     let fitRect = inlineFitBounds;
     if (!designBounds) {
@@ -1866,14 +1842,11 @@ app.websocketManager.readyPromise.then(async () => {
         // Size the tiles so the fit below lands on an integer zoom level.
         // Must precede applyBounds, which derives the map's coordinate scale
         // from the tile size, and populateDisplayControls, which builds the
-        // layers with it.  Static reports are pre-rasterized at a fixed size
-        // (useStaticTileSize above), so they are not free to choose.
-        if (!staticCache) {
-            const viewport = app.map.getSize();
-            useFittedTileSize(fittedTileSizeCss({
-                designBounds, fitRect, viewW: viewport.x, viewH: viewport.y,
-            }));
-        }
+        // layers with it.
+        const viewport = app.map.getSize();
+        useFittedTileSize(fittedTileSizeCss({
+            designBounds, fitRect, viewW: viewport.x, viewH: viewport.y,
+        }));
 
         // No design loaded — skip map setup, let user open a DB via menu.
         const hasDesign = applyBounds(designBounds, fitRect);
@@ -1884,39 +1857,6 @@ app.websocketManager.readyPromise.then(async () => {
             if (app.labelManager) app.labelManager.reload();
 
             app.map.fitBounds(app.fitBounds);
-
-            if (staticCache) {
-                // Lock to the pre-rendered tile zoom level and fit.
-                const cacheZoom = staticCache.zoom;
-                app.map.setMinZoom(cacheZoom);
-                app.map.setMaxZoom(cacheZoom);
-                app.map.fitBounds(app.fitBounds);
-                app.map.scrollWheelZoom.disable();
-                app.map.touchZoom.disable();
-                app.map.boxZoom.disable();
-                app.map.doubleClickZoom.disable();
-
-                // Path highlight overlay image.  NOT app.fitBounds, which
-                // carries Qt's framing margin: renderOverlayPng frames these
-                // on the GEOREFERENCE rect, the one the tile grid is built
-                // on, so the image has to be stretched over that same rect or
-                // it lands offset from the tiles under it.
-                app.pathOverlay = L.imageOverlay(
-                    '',
-                    dbuRectToBounds(designBounds[0][1], designBounds[0][0],
-                                    designBounds[1][1], designBounds[1][0],
-                                    app.designScale, app.designMaxDXDY,
-                                    app.designOriginX, app.designOriginY),
-                    { opacity: 1, interactive: false, zIndex: 1000 });
-                staticCache.setPathOverlay = (src) => {
-                    if (src) {
-                        app.pathOverlay.setUrl(src);
-                        app.pathOverlay.addTo(app.map);
-                    } else {
-                        app.map.removeLayer(app.pathOverlay);
-                    }
-                };
-            }
 
             // Restore the pre-reload camera saved by applyDisplayState so
             // restore_display_controls doesn't move the view.
@@ -1934,10 +1874,6 @@ app.websocketManager.readyPromise.then(async () => {
         }
 
         // Click-to-select: convert click position to DBU and query server
-        if (staticCache) {
-            // Hide loading overlay — shapes are always ready in static mode.
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
         // Shared select-at-point logic used by left-click and right-click.
         // Returns the server response (or null).  `focusInspector` switches the
         // panel to the Inspector (left-click); right-click keeps the current
@@ -2054,7 +1990,7 @@ app.websocketManager.readyPromise.then(async () => {
         }
         app.selectAtLatLng = selectAtLatLng;
 
-        if (!staticCache) app.map.on('click', (e) => {
+        app.map.on('click', (e) => {
             if (app.rulerManager && app.rulerManager.isActive()) return;
             const ev = e.originalEvent;
             selectAtLatLng(e.latlng, {
@@ -2066,80 +2002,78 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
-        if (!staticCache) {
-            const container = app.map.getContainer();
-            let rbStart = null;   // {x, y} in client coords
-            let rbDiv = null;     // overlay element
+        const container = app.map.getContainer();
+        let rbStart = null;   // {x, y} in client coords
+        let rbDiv = null;     // overlay element
 
-            container.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-            });
+        container.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
 
-            container.addEventListener('mousedown', (e) => {
-                if (e.button !== 2) return;
-                rbStart = { x: e.clientX, y: e.clientY };
-                app.map.dragging.disable();
-            });
+        container.addEventListener('mousedown', (e) => {
+            if (e.button !== 2) return;
+            rbStart = { x: e.clientX, y: e.clientY };
+            app.map.dragging.disable();
+        });
 
-            window.addEventListener('mousemove', (e) => {
-                if (!rbStart) return;
-                const dx = e.clientX - rbStart.x;
-                const dy = e.clientY - rbStart.y;
-                if (!rbDiv && Math.abs(dx) >= 4 && Math.abs(dy) >= 4) {
-                    rbDiv = document.createElement('div');
-                    rbDiv.className = 'rubber-band';
-                    document.body.appendChild(rbDiv);
-                }
-                if (rbDiv) {
-                    const left = Math.min(rbStart.x, e.clientX);
-                    const top = Math.min(rbStart.y, e.clientY);
-                    rbDiv.style.left = left + 'px';
-                    rbDiv.style.top = top + 'px';
-                    rbDiv.style.width = Math.abs(dx) + 'px';
-                    rbDiv.style.height = Math.abs(dy) + 'px';
-                }
-            });
+        window.addEventListener('mousemove', (e) => {
+            if (!rbStart) return;
+            const dx = e.clientX - rbStart.x;
+            const dy = e.clientY - rbStart.y;
+            if (!rbDiv && Math.abs(dx) >= 4 && Math.abs(dy) >= 4) {
+                rbDiv = document.createElement('div');
+                rbDiv.className = 'rubber-band';
+                document.body.appendChild(rbDiv);
+            }
+            if (rbDiv) {
+                const left = Math.min(rbStart.x, e.clientX);
+                const top = Math.min(rbStart.y, e.clientY);
+                rbDiv.style.left = left + 'px';
+                rbDiv.style.top = top + 'px';
+                rbDiv.style.width = Math.abs(dx) + 'px';
+                rbDiv.style.height = Math.abs(dy) + 'px';
+            }
+        });
 
-            window.addEventListener('mouseup', (e) => {
-                if (!rbStart) return;
-                const wasShowing = !!rbDiv;
-                if (rbDiv) {
-                    rbDiv.remove();
-                    rbDiv = null;
-                }
-                const start = rbStart;
-                rbStart = null;
-                app.map.dragging.enable();
+        window.addEventListener('mouseup', (e) => {
+            if (!rbStart) return;
+            const wasShowing = !!rbDiv;
+            if (rbDiv) {
+                rbDiv.remove();
+                rbDiv = null;
+            }
+            const start = rbStart;
+            rbStart = null;
+            app.map.dragging.enable();
 
-                const rect = container.getBoundingClientRect();
+            const rect = container.getBoundingClientRect();
 
-                if (wasShowing) {
-                    // Drag — rubber-band zoom.
-                    const p1 = app.map.containerPointToLatLng([
-                        start.x - rect.left, start.y - rect.top]);
-                    const p2 = app.map.containerPointToLatLng([
-                        e.clientX - rect.left, e.clientY - rect.top]);
-                    app.map.fitBounds([
-                        [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
-                        [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
-                    ]);
-                    return;
-                }
-
-                // Pure click — select the object under the cursor, then show
-                // the context menu contextualized on it (Qt-like).  Only over
-                // the map and not while a ruler is being placed.
-                const overMap = e.clientX >= rect.left && e.clientX <= rect.right
-                             && e.clientY >= rect.top  && e.clientY <= rect.bottom;
-                if (!overMap) return;
-                if (app.rulerManager && app.rulerManager.isActive()) return;
-
-                const latlng = app.map.containerPointToLatLng([
+            if (wasShowing) {
+                // Drag — rubber-band zoom.
+                const p1 = app.map.containerPointToLatLng([
+                    start.x - rect.left, start.y - rect.top]);
+                const p2 = app.map.containerPointToLatLng([
                     e.clientX - rect.left, e.clientY - rect.top]);
-                app.selectAtLatLng(latlng, { context: true, focusInspector: false })
-                    .then(() => app.contextMenu.show({ originalEvent: e }));
-            });
-        }
+                app.map.fitBounds([
+                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+                ]);
+                return;
+            }
+
+            // Pure click — select the object under the cursor, then show
+            // the context menu contextualized on it (Qt-like).  Only over
+            // the map and not while a ruler is being placed.
+            const overMap = e.clientX >= rect.left && e.clientX <= rect.right
+                         && e.clientY >= rect.top  && e.clientY <= rect.bottom;
+            if (!overMap) return;
+            if (app.rulerManager && app.rulerManager.isActive()) return;
+
+            const latlng = app.map.containerPointToLatLng([
+                e.clientX - rect.left, e.clientY - rect.top]);
+            app.selectAtLatLng(latlng, { context: true, focusInspector: false })
+                .then(() => app.contextMenu.show({ originalEvent: e }));
+        });
 
         populateDisplayControls(app, visibility, selectability,
                                 WebSocketTileLayer,
@@ -2149,9 +2083,7 @@ app.websocketManager.readyPromise.then(async () => {
         // layers but below the heatmap.  Only carries selection, hover,
         // timing, DRC, and route-guide shapes on a transparent background,
         // so base tiles stay cached when highlights change.
-        // Skip in static mode: there is no WebSocket server to serve
-        // overlay_tile requests.
-        if (!app.overlayLayer && !staticCache) {
+        if (!app.overlayLayer) {
             const OverlayTileLayer = createOverlayTileLayer(visibility, app);
             app.overlayLayer = new OverlayTileLayer(app.websocketManager, {
                 zIndex: app.allLayers.length + 5,

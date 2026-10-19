@@ -51,10 +51,6 @@ export function quantizeDpr(raw) {
 // budget). The cost is the extra request per tile.
 export const TILE_SIZE_CSS = 240;
 
-// Static reports carry tiles pre-rasterized at 256 CSS px by whoever authored
-// them. Those are files, not requests, so that path keeps the old size.
-export const STATIC_TILE_SIZE_CSS = 256;
-
 // What an <img> tile holds when the server drew nothing into it: a 1x1
 // transparent GIF.
 //
@@ -87,20 +83,6 @@ export function tileSizeCss() {
     return tile_size_css;
 }
 
-// Switch to the static-report tile size.  Called once at startup, before any
-// layer is built, when the viewer is showing a baked report instead of a live
-// design: those tiles are 256 px images embedded in the file (web.cpp renders
-// them at the default dpr), so any other box resamples every one of them.
-// Reports are usually read at dpr 1, where 256 CSS px is exactly 1:1.
-export function useStaticTileSize() {
-    tile_size_css = STATIC_TILE_SIZE_CSS;
-}
-
-// The default, named so the choice reads as a pair rather than a one-way door.
-export function useDeviceExactTileSize() {
-    tile_size_css = TILE_SIZE_CSS;
-}
-
 // The browser lays out on a 1/64 device-pixel grid, so "whole device pixel"
 // means whole to within a layout unit; a float32 devicePixelRatio cannot do
 // better than that anyway.
@@ -131,8 +113,7 @@ export function isDeviceExactTileSize(size, dpr) {
 }
 
 // Adopt a tile size picked to make zoom-to-fit land on an integer zoom level
-// (see fittedTileSizeCss).  Like the two setters above this must run before any
-// layer is built: the map's coordinate scale is derived from it.
+// (see fittedTileSizeCss).  This must run before any layer is built: the map's coordinate scale is derived from it.
 //
 // Safe because the tile grid is indexed by zoom alone — tile (z,x,y) covers
 // maxDXDY/2^z DBU whatever its pixel size — so this changes the resolution the
@@ -143,7 +124,7 @@ export function useFittedTileSize(size) {
 }
 
 // Merge the device-exact tile size into a Leaflet options object without
-// overriding an explicit choice (the static path passes its own).
+// overriding an explicit choice.
 export function withDeviceExactTileSize(options) {
     const opts = { ...(options || {}) };
     if (opts.tileSize === undefined) {

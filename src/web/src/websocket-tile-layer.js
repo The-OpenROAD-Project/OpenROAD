@@ -50,7 +50,7 @@ function applyTilePayload(tile, data) {
         tile.src = BLANK_TILE;
         return;
     }
-    tile.src = (typeof data === 'string') ? data : URL.createObjectURL(data);
+    tile.src = URL.createObjectURL(data);
 }
 
 export function createWebSocketTileLayer(visibility, visibleLayers,

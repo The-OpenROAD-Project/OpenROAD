@@ -24,8 +24,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, quantizeDpr, tileDevicePx,
-    tileSizeCss, useStaticTileSize, useDeviceExactTileSize,
+    TILE_SIZE_CSS, quantizeDpr, tileDevicePx,
+    tileSizeCss, useFittedTileSize,
     withDeviceExactTileSize, buildTileRequestFor, tileSizeFields,
 } from '../../src/tile-request.js';
 import { deviceResidualCss } from '../../src/device-pixels.js';
@@ -158,7 +158,7 @@ describe('dpr contract: all three tile kinds are sized alike', () => {
         assert.equal(fields.dpr, 1.67);
     });
 
-    it('follows the tile size it is given, so a static report stays 256', () => {
+    it('follows the tile size it is given', () => {
         assert.equal(tileSizeFields(1, 256).tile_px, 256);
         assert.equal(tileSizeFields(2, 256).tile_px, 512);
         assert.equal(tileSizeFields(1.6666666269302368, 240).tile_px, 400);
@@ -228,25 +228,24 @@ describe('dpr contract: the residual phase is removable', () => {
     });
 });
 
-describe('dpr contract: static reports keep their baked size', () => {
-    // A report's tiles are 256 px images embedded in the file, so the viewer
-    // cannot pick a different box for them without resampling every one.
+describe('dpr contract: a fitted tile size reaches every consumer', () => {
+    // The map's coordinate scale, the layers and the request must agree on
+    // the size, or the server renders an image for a box it is not shown in.
     it('switches every consumer of the size at once', () => {
+        const fitted = 360;
         assert.equal(tileSizeCss(), TILE_SIZE_CSS);
-        useStaticTileSize();
+        useFittedTileSize(fitted);
         try {
-            assert.equal(tileSizeCss(), STATIC_TILE_SIZE_CSS);
+            assert.equal(tileSizeCss(), fitted);
             // The layers take it from here...
-            assert.equal(withDeviceExactTileSize({}).tileSize,
-                         STATIC_TILE_SIZE_CSS);
-            // ...and so does the request, so the baked image is asked for at
-            // its own size rather than the live one.
+            assert.equal(withDeviceExactTileSize({}).tileSize, fitted);
+            // ...and so does the request.
             const req = buildTileRequestFor({ x: 0, y: 0, z: 0 }, 'metal1',
                                             { visibility: {} }, 1);
-            assert.equal(req.tile_px, STATIC_TILE_SIZE_CSS);
+            assert.equal(req.tile_px, fitted);
         } finally {
             // Module state: restore it so test order cannot matter.
-            useDeviceExactTileSize();
+            useFittedTileSize(TILE_SIZE_CSS);
         }
     });
 });

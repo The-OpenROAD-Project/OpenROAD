@@ -3,7 +3,7 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -35,9 +35,6 @@ export class TimingWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
-        if (isStaticMode(this._app)) {
-            this._updateBtn.style.display = 'none';
-        }
 
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
@@ -93,10 +90,6 @@ export class TimingWidget {
         this.element = el;
 
         this._bindEvents();
-
-        if (isStaticMode(this._app)) {
-            setTimeout(() => this.update(), 0);
-        }
     }
 
     _makeTab(label, active) {
@@ -375,9 +368,8 @@ export class TimingWidget {
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
                 this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
             ]);
-            // Copy the arrays: in static mode the response is a shared
-            // cached object whose path order must keep matching the
-            // server-side overlay indices, so it must not be sorted.
+            // Copy the arrays: _applySort sorts them in place, and the
+            // response's own order is what timing_highlight indexes.
             this._setupPaths = [...(setupData.paths || [])];
             this._holdPaths = [...(holdData.paths || [])];
             this._applySort();
@@ -462,8 +454,8 @@ export class TimingWidget {
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._pathTableContainer.focus();
         this._renderDetailTable();
-        // Use _originalIndex when paths were filtered (e.g. by histogram
-        // column click in static mode) so the overlay lookup matches.
+        // Use _originalIndex when the paths were sorted (see _applySort) so
+        // the overlay lookup matches the server's order.
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const highlightIdx = paths[idx]?._originalIndex ?? idx;
         this._app.websocketManager.request({
@@ -546,9 +538,7 @@ export class TimingWidget {
             td.colSpan = TimingWidget.PATH_COLS.length;
             td.style.textAlign = 'center';
             td.style.color = 'var(--fg-secondary)';
-            td.textContent = isStaticMode(this._app) ?
-                'No timing data available' :
-                'Click "Update" to load timing paths';
+            td.textContent = 'Click "Update" to load timing paths';
             tr.appendChild(td);
             tbody.appendChild(tr);
         }
@@ -574,8 +564,8 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
-        // Use _originalIndex when paths were filtered (e.g. by histogram
-        // column click in static mode) so the overlay lookup matches.
+        // Use _originalIndex when the paths were sorted (see _applySort) so
+        // the overlay lookup matches the server's order.
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
         this._app.websocketManager.request({
             type: 'timing_highlight',

@@ -352,35 +352,6 @@ describe('layer row selection', () => {
         assert.deepEqual(focused, ['Inspector']);
     });
 
-    // Saved reports have no backend to answer select_layer, so their rows are
-    // not selectable: the name is inert and the checkbox does the toggling,
-    // exactly as on a live row.
-    it('static mode leaves rows unselectable', () => {
-        app.websocketManager.isStaticMode = true;
-        const container = render();
-        assert.equal(
-            container.querySelectorAll('.vis-leaf-selectable').length, 0);
-    });
-
-    it('static mode still toggles visibility from the checkbox', () => {
-        app.websocketManager.isStaticMode = true;
-        const container = render();
-        const rows = container.querySelectorAll('.vis-leaf');
-        const row = Array.from(rows).find(
-            r => r.querySelector('.vis-name')?.textContent === 'metal1');
-        assert.ok(row, 'metal1 row should render in static mode');
-
-        const cb = row.querySelector('input.vis-cb');
-        cb.checked = false;
-        cb.dispatchEvent(new dom.window.Event('change'));
-        assert.equal(app.visibleLayerNames.has('metal1'), false);
-
-        // The name is inert without a backend: no request, no toggle.
-        click(row.querySelector('.vis-name'));
-        assert.equal(requests.length, 0);
-        assert.equal(cb.checked, false);
-    });
-
     // The layer row is one of several panels that can own the selection.  When
     // another one takes over — a canvas click, Inspector navigation, the
     // fanout chart — the row would otherwise keep claiming a selection the

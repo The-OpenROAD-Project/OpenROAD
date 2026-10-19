@@ -3,9 +3,8 @@
 
 import {getThemeColors, setCookie} from './theme.js';
 import {downloadUrl, copyPngToClipboard} from './image-export.js';
-import {isStaticMode} from './ui-utils.js';
 
-// window.THREE, set before main.js loads; a saved report has none.
+// window.THREE, set by vendor-globals.js before main.js loads.
 const THREE = globalThis.THREE;
 
 // Camera navigation tuning constants
@@ -88,11 +87,7 @@ export class ThreeDViewerWidget {
     container.element.appendChild(this._element);
 
     if (!THREE) {
-      if (isStaticMode(app)) {
-        this._showInfo('The 3D view is not available in saved reports.');
-      } else {
-        this._showError('three.js is missing from the page.');
-      }
+      this._showError('three.js is missing from the page.');
       this._destroyed = true;
       return;
     }
@@ -306,7 +301,7 @@ export class ThreeDViewerWidget {
       this._app.useTrueZ = trueZCb.checked;
       setCookie('or_use_true_z', trueZCb.checked ? '1' : '0');
       // or_use_true_z is part of the saved display state and no redraw
-      // path pushes it (in static/saved-report mode the sync no-ops).
+      // path pushes it.
       this._app.syncDisplayState();
       this.refreshSceneForOptions();
     });

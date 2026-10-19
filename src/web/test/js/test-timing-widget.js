@@ -165,10 +165,10 @@ describe('TimingWidget path table sorting', () => {
         assert.deepEqual(endPins(widget), ['a', 'm', 'z']);
     });
 
-    it('does not reorder cached static report paths when sorting', async () => {
-        // In static mode the timing_report response is a shared cached
-        // object; sorting must not disturb its server-side path order,
-        // which overlay indices are keyed on.
+    it('does not reorder the timing_report response when sorting',
+       async () => {
+        // The response's path order is what timing_highlight indexes, so
+        // sorting the table must work on a copy.
         const cachedSetup = {
             paths: [makePath(0.2, 'c'), makePath(-0.1, 'a'), makePath(0.0, 'b')],
         };
@@ -181,7 +181,7 @@ describe('TimingWidget path table sorting', () => {
 
         // The widget shows sorted order...
         assert.deepEqual(endPins(widget), ['a', 'b', 'c']);
-        // ...but the cached arrays keep their original order.
+        // ...but the response arrays keep their original order.
         assert.deepEqual(cachedSetup.paths.map(p => p.end_pin), ['c', 'a', 'b']);
         assert.deepEqual(cachedHold.paths.map(p => p.end_pin), ['z', 'y']);
     });

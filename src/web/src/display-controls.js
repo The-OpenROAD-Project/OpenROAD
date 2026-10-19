@@ -9,7 +9,7 @@ import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
 import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
          getThemeDefaultBgColor }
     from './theme.js';
-import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
+import { makeGroupHeader, attachGroupCollapse, beginSelection,
          isCurrentSelection, onSelectionReset, isValidHexColor }
     from './ui-utils.js';
 
@@ -812,10 +812,6 @@ export function populateDisplayControls(app, visibility, selectability,
     // <label>s so that a click on the name, the indent spacer or the row's
     // padding does not activate the visibility checkbox, matching the Qt GUI
     // where the name column selects and the checkbox column toggles.
-    //
-    // Saved reports have no backend to answer select_layer, so their rows are
-    // not selectable: the name is inert there and only the checkboxes work.
-    const layerRowsSelectable = !isStaticMode(app);
     let selectedLayerRow = null;
 
     function clearSelectedLayerRow() {
@@ -828,9 +824,7 @@ export function populateDisplayControls(app, visibility, selectability,
     // Another panel taking the selection (a canvas click, Inspector
     // navigation, the fanout chart, ...) leaves this row's highlight claiming
     // a selection the server no longer holds, so drop it.
-    if (layerRowsSelectable) {
-        onSelectionReset(app, clearSelectedLayerRow);
-    }
+    onSelectionReset(app, clearSelectedLayerRow);
 
     function selectLayerRow(row, name, chipletPath) {
         // Take the selection before painting: beginSelection() runs the
@@ -887,9 +881,7 @@ export function populateDisplayControls(app, visibility, selectability,
             // clicking the name, the indent spacer or the row's padding
             // flipped the layer.  Only the checkboxes toggle state now.
             const label = document.createElement('div');
-            label.className
-                = layerRowsSelectable ? 'vis-leaf vis-leaf-selectable'
-                                      : 'vis-leaf';
+            label.className = 'vis-leaf vis-leaf-selectable';
 
             const spacer = document.createElement('span');
             spacer.className = 'vis-arrow';
@@ -908,11 +900,9 @@ export function populateDisplayControls(app, visibility, selectability,
             nameSpan.appendChild(colorSwatch);
             nameSpan.appendChild(document.createTextNode(name));
             label.appendChild(nameSpan);
-            if (layerRowsSelectable) {
-                nameSpan.addEventListener('click', () => {
-                    selectLayerRow(label, name, node.data.ownerChipletPath);
-                });
-            }
+            nameSpan.addEventListener('click', () => {
+                selectLayerRow(label, name, node.data.ownerChipletPath);
+            });
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -1561,8 +1551,7 @@ export function populateDisplayControls(app, visibility, selectability,
         // No server, or the overlay is off (in which case no renderer is
         // registered): clear rather than leave a stale list, and skip the
         // round trip.  Owned here so no caller has to remember the rule.
-        if (!app.websocketManager || isStaticMode(app)
-            || !visibility.debug_renderers) {
+        if (!app.websocketManager || !visibility.debug_renderers) {
             rendererControlsEl.innerHTML = '';
             return Promise.resolve();
         }

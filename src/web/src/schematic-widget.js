@@ -3,7 +3,7 @@
 
 // NetlistsVG renders a Yosys-compatible JSON netlist into an SVG.
 
-import { beginSelection, isCurrentSelection, isStaticMode } from './ui-utils.js';
+import { beginSelection, isCurrentSelection } from './ui-utils.js';
 import {
     downloadBlob,
     svgToString,
@@ -292,7 +292,7 @@ export class SchematicWidget {
     // ── NetlistSVG init ──────────────────────────────────────────────────────
 
     initNetlistSVG() {
-        // Both come from vendor-globals.js, which a saved report goes without.
+        // Both come from vendor-globals.js.
         this.netlistsvg = globalThis.netlistsvg;
         // OpenROAD's skin, as the raw XML render() hands to onml.p(); see
         // canonicalizeForSkin for how cell types are mapped onto it.
@@ -308,9 +308,7 @@ export class SchematicWidget {
         if (this._netlistsvgReady) {
             return null;
         }
-        return isStaticMode(this.appState)
-            ? 'The schematic is not available in saved reports.'
-            : 'Init error: netlistsvg or its skin is missing from the page.';
+        return 'Init error: netlistsvg or its skin is missing from the page.';
     }
 
     // Web-only: mirror the layout timing cone here when the timing widget asks
