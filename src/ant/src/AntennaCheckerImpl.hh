@@ -134,8 +134,12 @@ class AntennaChecker::Impl
   RatioCheck checkPSR(odb::dbTechLayer* tech_layer,
                       NodeInfo& info,
                       float ratio_margin);
-  RatioCheck checkCAR(odb::dbTechLayer* tech_layer, const NodeInfo& info);
-  RatioCheck checkCSR(odb::dbTechLayer* tech_layer, const NodeInfo& info);
+  RatioCheck checkCAR(odb::dbTechLayer* tech_layer,
+                      const NodeInfo& info,
+                      float ratio_margin);
+  RatioCheck checkCSR(odb::dbTechLayer* tech_layer,
+                      const NodeInfo& info,
+                      float ratio_margin);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};

@@ -671,16 +671,20 @@ RatioCheck AntennaChecker::Impl::checkPSR(odb::dbTechLayer* tech_layer,
 }
 
 RatioCheck AntennaChecker::Impl::checkCAR(odb::dbTechLayer* tech_layer,
-                                          const NodeInfo& info)
+                                          const NodeInfo& info,
+                                          const float ratio_margin)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
       = tech_layer->getDefaultAntennaRule();
-  const double car_ratio = antenna_rule->getCAR();
+  double car_ratio = antenna_rule->getCAR();
   const odb::dbTechLayerAntennaRule::pwl_pair diff_car
       = antenna_rule->getDiffCAR();
-  const double diff_car_pwl_ratio
-      = getPwlFactor(diff_car, info.iterm_diff_area, 0);
+  double diff_car_pwl_ratio = getPwlFactor(diff_car, info.iterm_diff_area, 0);
+
+  // apply ratio_margin
+  car_ratio *= (1.0 - ratio_margin / 100.0);
+  diff_car_pwl_ratio *= (1.0 - ratio_margin / 100.0);
 
   RatioCheck check;
   // If node is connected to diffusion area or ANTENNACUMAREARATIO is not
@@ -703,16 +707,20 @@ RatioCheck AntennaChecker::Impl::checkCAR(odb::dbTechLayer* tech_layer,
 }
 
 RatioCheck AntennaChecker::Impl::checkCSR(odb::dbTechLayer* tech_layer,
-                                          const NodeInfo& info)
+                                          const NodeInfo& info,
+                                          const float ratio_margin)
 {
   // get rules
   const odb::dbTechLayerAntennaRule* antenna_rule
       = tech_layer->getDefaultAntennaRule();
-  const double csr_ratio = antenna_rule->getCSR();
+  double csr_ratio = antenna_rule->getCSR();
   const odb::dbTechLayerAntennaRule::pwl_pair diff_csr
       = antenna_rule->getDiffCSR();
-  const double diff_csr_pwl_ratio
-      = getPwlFactor(diff_csr, info.iterm_diff_area, 0);
+  double diff_csr_pwl_ratio = getPwlFactor(diff_csr, info.iterm_diff_area, 0);
+
+  // apply ratio_margin
+  csr_ratio *= (1.0 - ratio_margin / 100.0);
+  diff_csr_pwl_ratio *= (1.0 - ratio_margin / 100.0);
 
   RatioCheck check;
   // If node is connected to diffusion area or ANTENNACUMSIDEAREARATIO is not
@@ -741,11 +749,11 @@ LayerCheck AntennaChecker::Impl::checkRatioViolations(odb::dbTechLayer* layer,
   LayerCheck check;
   check.layer = layer;
   check.par = checkPAR(layer, node_info, ratio_margin);
-  check.car = checkCAR(layer, node_info);
+  check.car = checkCAR(layer, node_info, ratio_margin);
   check.violated = check.par.violated || check.car.violated;
   if (layer->getRoutingLevel() != 0) {
     check.psr = checkPSR(layer, node_info, ratio_margin);
-    check.csr = checkCSR(layer, node_info);
+    check.csr = checkCSR(layer, node_info, ratio_margin);
     check.violated
         = check.violated || check.psr->violated || check.csr->violated;
   }
@@ -871,9 +879,11 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
           }
 
           bool car_violation
-              = checkCAR(violation_layer, violation_info).violated;
+              = checkCAR(violation_layer, violation_info, ratio_margin)
+                    .violated;
           bool csr_violation
-              = checkCSR(violation_layer, violation_info).violated;
+              = checkCSR(violation_layer, violation_info, ratio_margin)
+                    .violated;
 
           // naive approach for cumulative area violations. here, all the pins
           // of the net are included, and placing one diode per pin is not the
