@@ -17,12 +17,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -4.638 |      -75.7 |     38 | inst23/D
-     223* |      15 |      56 |        7 |      0 |    25 |   +10.9% |   -3.673 |      -58.4 |     38 | inst23/D
-    final |      15 |      56 |        7 |      0 |    25 |   +10.9% |   -3.673 |      -58.4 |     29 | inst23/D
+     240* |      13 |      58 |       11 |      0 |    25 |   +14.7% |   -3.673 |      -58.0 |     38 | inst23/D
+    final |      13 |      58 |       11 |      0 |    25 |   +14.7% |   -3.673 |      -58.0 |     29 | inst23/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 15 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 56 instances: 56 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0059] Removed 13 buffers.
+[INFO RSZ-0040] Inserted 11 buffers.
+[INFO RSZ-0051] Resized 58 instances: 58 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 25 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_7 (rising edge-triggered flip-flop clocked by clk)
