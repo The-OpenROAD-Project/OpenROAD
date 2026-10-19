@@ -610,9 +610,9 @@ _install_kokkos() {
         (
             cd "${BASE_DIR}"
             _execute "Cloning Kokkos..." git clone --depth=1 -b "${KOKKOS_VERSION}" https://github.com/kokkos/kokkos.git
-            local cmake_bin=cmake
-            if [[ -n "${PREFIX}" && -x "${PREFIX}/bin/cmake" ]]; then
-                cmake_bin="${PREFIX}/bin/cmake"
+            local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
+            if [[ ! -f "${cmake_bin}" ]]; then
+                cmake_bin="cmake"
             fi
             local openmp_args=()
             if [[ "$(uname -s)" == "Darwin" && "${enable_openmp}" == "ON" ]]; then
