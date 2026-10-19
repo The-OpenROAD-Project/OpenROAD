@@ -184,14 +184,13 @@ class GridGraph
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
   /**
-   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   * @brief Sets the multiplier applied to the congestion cost.
    *
-   * Scales `constants_.cost_logistic_slope` and
-   * `constants_.maze_logistic_slope` wherever they are read by
-   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
-   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
-   * between iterations. The default value 1.0 leaves the cost surface
-   * unchanged.
+   * Scales the congestion cost height and the slopes
+   * `constants_.cost_logistic_slope` and `constants_.maze_logistic_slope`
+   * in `congestionCost`, shared by `getWireCost` and the wire-cost views.
+   * Used by CUGR's iterative RRR loop to raise the congestion cost between
+   * iterations. The default value 1.0 leaves the cost surface unchanged.
    *
    * @param m New multiplier value. Must be > 0.
    */
@@ -377,6 +376,11 @@ class GridGraph
                               AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
+  // Congestion cost term: `base` scaled by the RRR multiplier and the logistic.
+  CostT congestionCost(CostT base,
+                       CapacityT capacity,
+                       CapacityT resource,
+                       double slope) const;
   CostT getWireCost(int layer_index,
                     PointT lower,
                     CapacityT demand = 1.0,

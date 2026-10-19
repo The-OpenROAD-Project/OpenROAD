@@ -47,6 +47,7 @@ class GridGraph;
 class GRNet;
 class GRTreeNode;
 class BoxT;
+class PointT;
 
 struct Constants
 {
@@ -199,10 +200,10 @@ class CUGR
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  // `mark_res_aware` false keeps the resistance-aware set but refreshes the
+  // `extend_res_aware` false keeps the resistance-aware set but refreshes the
   // inputs of its score.
   void updateCriticalNets(const std::vector<int>& net_indices,
-                          bool mark_res_aware = true);
+                          bool extend_res_aware = true);
   // Refresh every net's slack; runs the full parasitics estimate once per
   // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
@@ -264,14 +265,13 @@ class CUGR
   // A pin gcell and its top pin-access layer; vias above it are climbs.
   struct PinAccessTop
   {
-    int x;
-    int y;
+    std::pair<int, int> gcell;
     int top;
   };
   // The net's pin-access tops, one per pin gcell, sorted by gcell.
   std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
-  // The top at gcell (x, y) in pinAccessTops' result, or -1 off the pins.
-  static int pinAccessTop(const std::vector<PinAccessTop>& tops, int x, int y);
+  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
+  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
   // Overflow the net's removal alone would relieve, pin-access pads excluded.
   double computeReliefScore(const GRNet& net, double threshold) const;
 
@@ -414,9 +414,10 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  // `extend_set` false only refreshes resistance, length and the normalisers.
+  // `extend_res_aware` false only refreshes resistance, length and the
+  // normalisers.
   void markResAwareNets(const std::vector<int>& net_indices,
-                        bool extend_set = true);
+                        bool extend_res_aware);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.
