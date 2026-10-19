@@ -204,34 +204,12 @@ sta::define_cmd_args "set_pdnsim_net_voltage" {
   -net net_name
   [-voltage volt]
   [-corner corner]
-  [-chiplet chipA]
-  [-port port]
 }
 
 proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
-    keys {-net -corner -voltage -chiplet -port} flags {}
+    keys {-net -corner -voltage} flags {}
 
-  if { [psm::is_3d_design [[ord::get_db] getChip]] } {
-    sta::check_argc_eq0 "set_pdnsim_net_voltage" $args
-    set required {-net -voltage -chiplet -port}
-    foreach key $required {
-      if { ![info exists keys($key)] } {
-        utl::error PSM 134 "Missing mandatory argument $key."
-      }
-    }
-    sta::check_float "-voltage" $keys(-voltage)
-
-    return [psm::set_pdnsim_chiplet_voltage_cmd \
-      $keys(-net) $keys(-chiplet) $keys(-port) $keys(-voltage) \
-      [sta::parse_scene_or_default keys]]
-  }
-
-  foreach key {-chiplet -port} {
-    if { [info exists keys($key)] } {
-      utl::error PSM 158 "$key requires a 3D assembly."
-    }
-  }
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)

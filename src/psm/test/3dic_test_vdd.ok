@@ -14,7 +14,8 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
 [INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
-[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 1 fixed-voltage sources, and voltage range 1.09986 to 1.1 V.
+[INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_external_power_source.loc.
+[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 4 fixed-voltage sources, and voltage range 1.09989 to 1.1 V.
 ########## IR report #################
 Net              : VDD
 Corner           : default
@@ -22,15 +23,15 @@ Total power      : 2.25e-06 W
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.10e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 5.35e-05 V
-Worstcase IR drop: 1.36e-04 V
+Average IR drop  : 3.33e-05 V
+Worstcase IR drop: 1.11e-04 V
 Percentage drop  : 0.01 %
 ######################################
 ########## EM analysis ###############
 Net                : VDD
 Corner             : default
 Maximum current    : 2.05e-06 A
-Average current    : 4.48e-07 A
+Average current    : 2.45e-07 A
 Number of resistors: 101
 ######################################
 No differences found.

@@ -107,15 +107,13 @@ write_pg_spice
 
 ### Set PDNSim Net voltage
 
-This command sets PDNSim net voltage.
+This command sets PDNSim net voltage. For 3D analysis, define external sources with `analyze_power_grid -vsrc`.
 
 ```tcl
 set_pdnsim_net_voltage
     -net net_name
     -voltage volt
     [-corner corner]
-    [-chiplet chipA]
-    [-port port]
 ```
 
 #### Options
@@ -125,8 +123,6 @@ set_pdnsim_net_voltage
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
 | `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
-| `-chiplet` | Required for 3D: placed chiplet name from the `.3dbx` whose source voltage is being set. |
-| `-port` | 3D chiplet boundary port receiving the external supply. Requires `-voltage`. |
 
 ### Set PSM Inter-chip Resistance
 

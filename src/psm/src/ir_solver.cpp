@@ -139,8 +139,6 @@ struct IRSolver::AssemblyData
 {
   struct VoltageSource
   {
-    odb::dbChipInst* chip_inst;
-    std::string terminal;
     Node* node;
     Voltage voltage;
   };
@@ -1501,14 +1499,6 @@ IRSolver::Voltage IRSolver::generateSourceNodesFromSourceFile(
   return src_voltage;
 }
 
-void IRSolver::addAssemblyVoltageSource(odb::dbChipInst* chip_inst,
-                                        const std::string& terminal,
-                                        Voltage voltage)
-{
-  assembly_->voltage_sources.push_back({chip_inst, terminal, nullptr, voltage});
-  assembly_->voltage_vector.resize(0);
-}
-
 void IRSolver::addAssemblyVoltageSourcesFromFile(const std::string& source_file)
 {
   const auto source_info = readSourceLocations(source_file, true, logger_);
@@ -1531,8 +1521,7 @@ void IRSolver::addAssemblyVoltageSourcesFromFile(const std::string& source_file)
         odb::Rect(x - size / 2, y - size / 2, x + size / 2, y + size / 2)};
     auto sources = generateSourceNodesFromShapes(local_network, source_shapes);
     for (const auto& source : sources) {
-      assembly_->voltage_sources.push_back(
-          {chiplet->first, "", source->getSource(), info.voltage});
+      assembly_->voltage_sources.push_back({source->getSource(), info.voltage});
     }
   }
   assembly_->voltage_vector.resize(0);
@@ -1546,14 +1535,10 @@ bool IRSolver::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
         || source.voltage != assembly_->voltage_sources.front().voltage) {
       return false;
     }
-    Node* node = source.node;
-    if (node == nullptr) {
-      node = network_->findTerminalNode(source.chip_inst, source.terminal);
-    }
-    if (node == nullptr) {
+    if (source.node == nullptr) {
       return false;
     }
-    sources.emplace(assembly_->node_index.at(node), source.voltage);
+    sources.emplace(assembly_->node_index.at(source.node), source.voltage);
   }
   return !sources.empty();
 }

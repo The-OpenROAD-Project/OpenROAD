@@ -15,9 +15,9 @@ set voltage_file [make_result_file 3dic_test_vdd.rpt]
 
 check_power_grid -net VDD
 
-# Apply a 1.1 V supply at Chip A's VDD port.
-set_pdnsim_net_voltage -net VDD -chiplet chipA -port VDD -voltage 1.1
-
-analyze_power_grid -net VDD -voltage_file $voltage_file -enable_em
+# Apply 1.1 V sources to Chip A using their physical locations.
+analyze_power_grid -net VDD \
+  -vsrc 3dic_test_data/3dic_external_power_source.loc \
+  -voltage_file $voltage_file -enable_em
 
 diff_files $voltage_file 3dic_test_vdd.rptok
