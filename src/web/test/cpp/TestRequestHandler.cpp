@@ -5170,6 +5170,8 @@ TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
 
   req.type = WebSocketRequest::kTimingHighlight;
   req.json["path_index"] = 0;
+  req.json["start_pin"] = filtered.front().start_pin;
+  req.json["end_pin"] = filtered.front().end_pin;
   for (const bool stage : {false, true}) {
     SCOPED_TRACE(stage);
     std::vector<ColoredRect> expected_rects;
@@ -5210,12 +5212,61 @@ TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
 
 TEST_F(TimingHighlightHandlerTest, HighlightHonorsTheReportPathLimit)
 {
+  const auto paths
+      = timing_report_->getReport(true,
+                                  100,
+                                  -std::numeric_limits<float>::max(),
+                                  std::numeric_limits<float>::max());
+  ASSERT_EQ(paths.size(), 3);
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kTimingHighlight;
-  req.json = {{"is_setup", true}, {"max_paths", 1}, {"path_index", 1}};
+  req.json = {{"is_setup", true},
+              {"max_paths", 1},
+              {"path_index", 1},
+              {"start_pin", paths[1].start_pin},
+              {"end_pin", paths[1].end_pin}};
   SessionState state;
   const auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  EXPECT_TRUE(state.timing_rects.empty());
+  EXPECT_TRUE(state.timing_lines.empty());
+}
+
+TEST_F(TimingHighlightHandlerTest, PinsSelectThePathWhenTheIndexIsStale)
+{
+  const auto paths
+      = timing_report_->getReport(true,
+                                  100,
+                                  -std::numeric_limits<float>::max(),
+                                  std::numeric_limits<float>::max());
+  ASSERT_EQ(paths.size(), 3);
+  std::vector<ColoredRect> expected_rects;
+  std::vector<FlightLine> expected_lines;
+  collectTimingPathShapes(
+      gen_->chiplets(), paths[1], expected_rects, expected_lines);
+  ASSERT_FALSE(expected_lines.empty());
+
+  // Index 0 is a different path in this report; the pins must win.
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true},
+              {"path_index", 0},
+              {"start_pin", paths[1].start_pin},
+              {"end_pin", paths[1].end_pin}};
+  SessionState state;
+  auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  ASSERT_EQ(state.timing_lines.size(), expected_lines.size());
+  for (size_t i = 0; i < expected_lines.size(); ++i) {
+    EXPECT_EQ(state.timing_lines[i].p1, expected_lines[i].p1);
+    EXPECT_EQ(state.timing_lines[i].p2, expected_lines[i].p2);
+  }
+
+  // Pins that are not in the report highlight nothing rather than the index.
+  req.json["end_pin"] = "no_such_pin";
+  response = timing_handler_->handleTimingHighlight(req, state);
   ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
   EXPECT_TRUE(state.timing_rects.empty());
   EXPECT_TRUE(state.timing_lines.empty());

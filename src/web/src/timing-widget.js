@@ -545,8 +545,14 @@ export class TimingWidget {
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
             ...this._reportOptions[this._currentTab],
+            ...this._highlightKey(paths[idx]),
         }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
+    }
+
+    // The server matches paths by pins; static mode still uses path_index.
+    _highlightKey(path) {
+        return { start_pin: path?.start_pin ?? '', end_pin: path?.end_pin ?? '' };
     }
 
     _renderPathTable() {
@@ -657,6 +663,7 @@ export class TimingWidget {
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
             ...this._reportOptions[this._currentTab],
+            ...this._highlightKey(path),
             pin_name: nodes[idx].pin,
         }).then(() => this._refreshOverlay());
     }

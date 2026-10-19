@@ -4838,6 +4838,20 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   return resp;
 }
 
+// Match by pins so differing report options cannot select another path.
+static const TimingPathSummary* findHighlightPath(
+    const std::vector<TimingPathSummary>& paths,
+    const std::string& start_pin,
+    const std::string& end_pin)
+{
+  for (const TimingPathSummary& path : paths) {
+    if (path.start_pin == start_pin && path.end_pin == end_pin) {
+      return &path;
+    }
+  }
+  return nullptr;
+}
+
 WebSocketResponse TimingHandler::handleTimingHighlight(
     const WebSocketRequest& req,
     SessionState& state)
@@ -4854,9 +4868,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
     // path_index < 0 is the clear-highlight signal (no other fields used).
     if (path_index >= 0) {
       const bool is_setup = req.json.at("is_setup").as_bool();
-      // `path_index` indexes the list the client last fetched via
-      // timing_report, so this re-fetch has to use the same options or the
-      // index lands on a different path.
+      // The options only need to put the path back in the report.
       const bool unconstrained = jsonOr(req.json, "unconstrained", false);
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
       auto paths = timing_report_->getReport(
@@ -4867,23 +4879,22 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
           static_cast<float>(jsonOr<double>(
               req.json, "slack_max", std::numeric_limits<float>::max())),
           unconstrained);
-      if (path_index < static_cast<int>(paths.size())) {
+      const TimingPathSummary* path
+          = findHighlightPath(paths,
+                              jsonOr<std::string>(req.json, "start_pin", ""),
+                              jsonOr<std::string>(req.json, "end_pin", ""));
+      if (path != nullptr) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
         const std::vector<ChipletNode>& chiplets = gen_->chiplets();
-        collectTimingPathShapes(
-            chiplets, paths[path_index], new_rects, new_lines);
+        collectTimingPathShapes(chiplets, *path, new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
           static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
-          collectTimingStageShapes(chiplets,
-                                   paths[path_index],
-                                   pin_name,
-                                   kStageColor,
-                                   new_rects,
-                                   new_lines);
+          collectTimingStageShapes(
+              chiplets, *path, pin_name, kStageColor, new_rects, new_lines);
         }
       }
     }

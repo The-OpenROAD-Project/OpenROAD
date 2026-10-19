@@ -137,6 +137,7 @@ export class SchematicWidget {
         this._selectedCell = null;
         this._schematicHistory = [];
         this._maxSchematicHistory = 50;
+        this._backInFlight = false;
 
         // Timing path pushed in by the TimingWidget; re-applied after every
         // render, since renderNetlist replaces the whole SVG. _timingNodes is
@@ -257,12 +258,17 @@ export class SchematicWidget {
     }
 
     _goBackSchematic() {
+        // A second Back mid-render could reorder history; ignore it.
+        if (this._backInFlight) {
+            return Promise.resolve(false);
+        }
         const snapshot = this._schematicHistory.pop();
         this._setBackButtonEnabled();
         if (!snapshot) {
             this.setStatus('No previous schematic.');
             return Promise.resolve(false);
         }
+        this._backInFlight = true;
 
         this.showTimingPath(null);
         const requestId = this._timingRequestId;
@@ -291,7 +297,8 @@ export class SchematicWidget {
 
                 return this._fetchInspect(snapshot.selectedInstanceName)
                     .then(() => true);
-            });
+            })
+            .finally(() => { this._backInFlight = false; });
     }
 
     _toggleSelectMode() {

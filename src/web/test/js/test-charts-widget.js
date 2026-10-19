@@ -119,6 +119,7 @@ describe('ChartsWidget timing drilldown', () => {
             const expected = {
                 type: 'timing_highlight', path_index: 0, is_setup: true,
                 max_paths: 50, slack_min: 0, slack_max: 1, unconstrained: false,
+                start_pin: 'start', end_pin: 'u1/A',
             };
             assert.deepEqual(highlights[0], expected);
             assert.deepEqual(highlights[1], { ...expected, pin_name: 'u1/A' });

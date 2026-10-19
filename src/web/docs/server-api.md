@@ -611,17 +611,18 @@ single stage emphasized.
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
 | `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
 | `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
-| `unconstrained` | `bool` | optional, `>= 0` only   | Must match the `timing_report` that produced `path_index`.     |
+| `start_pin`  | `string` | `path_index >= 0`        | `start_pin` of the selected path; identifies it with `end_pin`. |
+| `end_pin`    | `string` | `path_index >= 0`        | `end_pin` of the selected path.                                |
+| `unconstrained` | `bool` | optional, `>= 0` only   | Include unconstrained paths in the re-run report.              |
 | `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
 | `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
 | `slack_max`  | `double` | optional, `>= 0` only    | Report upper slack bound. Defaults to `+FLT_MAX`.             |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
 
-The server re-runs the report to resolve `path_index`, so `unconstrained`,
-`max_paths`, `slack_min`, and `slack_max` must match the `timing_report`
-request the index came from. Histogram drill-down passes its filtered query
-along with both path and stage highlights so the index resolves against the
-displayed path list.
+The server re-runs the report with `unconstrained`, `max_paths`,
+`slack_min`, and `slack_max`, then picks the path whose `start_pin` and
+`end_pin` match. If the options differ from the `timing_report` the row came
+from, the worst case is no highlight rather than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

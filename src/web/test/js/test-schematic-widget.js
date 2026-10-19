@@ -710,6 +710,27 @@ describe('SchematicWidget schematic navigation', () => {
         assert.equal(widget._schematicHistory[0].selectedInstanceName, 'previous');
         container.element.remove();
     });
+
+    it('ignores Back while an earlier Back is still rendering', async () => {
+        const appState = { selectedInstanceName: null };
+        const { widget, container } = makeWidget(appState);
+        for (const name of ['X', 'B', 'A']) {
+            widget._pushSchematicHistory({ netlist, selectedInstanceName: name });
+        }
+        let release;
+        widget.renderNetlist = () => new Promise(resolve => { release = resolve; });
+        widget._fetchInspect = () => Promise.resolve();
+
+        const firstBack = widget._goBackSchematic();
+        assert.equal(await widget._goBackSchematic(), false);
+        release(true);
+        assert.equal(await firstBack, true);
+
+        assert.equal(appState.selectedInstanceName, 'A');
+        assert.deepEqual(
+            widget._schematicHistory.map(s => s.selectedInstanceName), ['X', 'B']);
+        container.element.remove();
+    });
 });
 
 describe('SchematicWidget render ordering', () => {

@@ -66,6 +66,8 @@ describe('TimingWidget._selectPathRow', () => {
         assert.ok(highlight, 'timing_highlight was requested');
         assert.equal(highlight.path_index, 1);
         assert.equal(highlight.is_setup, true);
+        assert.equal(highlight.start_pin, 'start');
+        assert.equal(highlight.end_pin, 'b');
     });
 
     it('sends timing_highlight with _originalIndex when paths were filtered', () => {
