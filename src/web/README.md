@@ -217,53 +217,6 @@ save_animated_gif -add -area {0 0 100 100} \
                        -display_option {routing true}
 ```
 
-### Save Report
-
-Generate a self-contained HTML timing report. The report uses the same
-JavaScript frontend as the live web viewer but serves all data from a cache
-embedded in the HTML file. No running server is required to view the report.
-
-```tcl
-web_save_report
-    [-setup_paths count]
-    [-hold_paths count]
-    path
-```
-
-#### Options
-
-| Switch Name | Description |
-| ----------- | ------------------------------------------------- |
-| `-setup_paths` | Maximum number of setup timing paths to include. Default: `100`. |
-| `-hold_paths` | Maximum number of hold timing paths to include. Default: `100`. |
-| `path` | Output HTML file path. |
-
-The report includes:
-
-- **Layout view** with pre-rendered tiles at a fixed zoom level. Layer
-  visibility can be toggled using the same display controls as the live viewer.
-  Zoom is disabled; pan is allowed.
-- **Timing table** with setup and hold paths. Clicking a path highlights it
-  on the layout via a pre-rendered overlay image.
-- **Slack histogram** with setup/hold tabs.
-- **Display controls**, hierarchy browser, clock tree, and other panels from
-  the live viewer (features that require server interaction show empty states).
-
-The report is self-contained: the stylesheets and the script are inlined, so it
-opens from the filesystem with no server and no network. The schematic and 3D
-panels need a live server, so their libraries are left out of the report and
-the panels say so when opened there.
-
-#### Examples
-
-```tcl
-# Generate a report with default settings
-web_save_report timing.html
-
-# Include more paths
-web_save_report -setup_paths 200 -hold_paths 200 timing.html
-```
-
 ### Load Chiplet Heatmap
 
 Load a heatmap from a CSV file and attach it to a chiplet of the design. The
@@ -566,11 +519,7 @@ the result, so the browser only talks to the OpenROAD process.
 
 The bundled packages' licences, with those of their dependencies, are gathered
 into `THIRD_PARTY_LICENSES.txt`, which the server serves at
-`/THIRD_PARTY_LICENSES.txt` and every saved report carries in a comment.
-
-A saved report inlines a second bundle, `//src/web:report_bundle`, built from
-`src/entry-report.js`. It leaves out `vendor-globals.js`, which is the only way
-`netlistsvg` and `three` reach the page.
+`/THIRD_PARTY_LICENSES.txt`.
 
 `netlistsvg` is bundled from its compiled sources rather than its prebuilt
 browser bundle. `package.json` drops its command-line dependencies through

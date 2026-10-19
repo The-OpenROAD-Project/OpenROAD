@@ -62,7 +62,6 @@ py_test(
         "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
         "//src/web:bundle/app.min.js",
         "//src/web:bundle/index.html",
-        "//src/web:bundle/report.min.js",
     ],
 )
 
@@ -586,8 +585,8 @@ cc_test(
 )
 
 cc_test(
-    name = "save_report_test",
-    srcs = ["cpp/TestSaveReport.cpp"],
+    name = "serialize_test",
+    srcs = ["cpp/TestSerialize.cpp"],
     data = [
         "//test:nangate45_data",
     ],

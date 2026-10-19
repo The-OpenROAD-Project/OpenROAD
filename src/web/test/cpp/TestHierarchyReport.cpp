@@ -8,13 +8,11 @@
 // modules or with no recoverable names is left exactly as it was.
 
 #include <algorithm>
-#include <map>
 #include <string>
 #include <vector>
 
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
-#include "color.h"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "hierarchy_report.h"
@@ -226,10 +224,6 @@ TEST_F(HierarchyReportTest, NameGroupsAreColoredAndSerialized)
     }
   }
   EXPECT_EQ(colored, 3) << "top, riscv, dp";
-
-  // And the pre-rendered static report colors them too.
-  const std::map<uint32_t, Color> colors = computeDefaultModuleColors(result);
-  EXPECT_EQ(colors.size(), 3u);
 }
 
 TEST_F(HierarchyReportTest, RealModulesAreNeverReplacedByNameGroups)

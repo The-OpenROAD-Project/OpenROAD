@@ -75,8 +75,8 @@ constexpr DprCase kDprCases[] = {
     {240, 1.75, "175% display"},
     {240, 2.0, "200%"},
     {240, 3.0, "300%"},
-    // The size a static report bakes its tiles at, which the viewer keeps.
-    {256, 1.0, "static report"},
+    // The server's own kTileSizeInPixel, unscaled.
+    {256, 1.0, "256 px tile"},
 };
 
 // What the client asks the server to render for a case: the exact device-pixel
@@ -1386,7 +1386,7 @@ TEST_F(TileGeneratorTest, GetLayers)
   makeTileGen();
   std::vector<std::string> layers = tile_gen_->getLayers();
   // getLayers() now returns every tech layer (all types) so the Implant/
-  // Other categories and the saveReport prerender can cover them: Nangate45
+  // Other categories can cover them: Nangate45
   // has 10 routing + 9 cut plus poly/active (MASTERSLICE) and OVERLAP = 22,
   // ordered bottom-up starting at "poly" and ending at "OVERLAP".
   EXPECT_EQ(layers.size(), 22);
@@ -2150,37 +2150,6 @@ TEST_F(TileGeneratorTest, GeomCacheRebuiltAfterChipletInstCreated)
          "vias would not draw";
 }
 
-// A 3DBlox top chip owns no dbBlock, so the frame has to come from the chiplet
-// union; framing on the (absent) top block yielded a blank overlay.
-TEST_F(TileGeneratorTest, RenderOverlayPngFramesChipletsWithNoTopBlock)
-{
-  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
-  makeTileGen();
-  ASSERT_EQ(tile_gen_->getBlock(), nullptr)
-      << "fixture no longer reproduces the block-less top chip";
-
-  const odb::Rect bounds = tile_gen_->getBounds();
-  ASSERT_GT(bounds.dx(), 0);
-  // A filled rect over the middle half of the design, so it survives the
-  // crop-and-resample down to the final image whatever the exact framing is.
-  const std::vector<ColoredRect> rects
-      = {ColoredRect{.rect = odb::Rect(bounds.xMin() + bounds.dx() / 4,
-                                       bounds.yMin() + bounds.dy() / 4,
-                                       bounds.xMin() + 3 * bounds.dx() / 4,
-                                       bounds.yMin() + 3 * bounds.dy() / 4),
-                     .color = Color{.r = 255, .g = 255, .b = 0, .a = 255},
-                     .layer = "",
-                     .filled = true}};
-
-  auto png = tile_gen_->renderOverlayPng(/*width_px=*/512, rects, {});
-  ASSERT_FALSE(png.empty()) << "overlay dropped for a block-less top chip";
-  unsigned w = 0, h = 0;
-  auto pixels = decodePng(png, w, h);
-  EXPECT_GT(w, 0u);
-  EXPECT_TRUE(hasNonTransparentPixel(pixels))
-      << "overlay rendered but drew nothing over the chiplets";
-}
-
 // Overlays leave the die frame to the layer passes: on a multi-die design a
 // _inst_labels tile with no name to draw stays blank.
 TEST_F(TileGeneratorTest, OverlaysLeaveTheDieOutlineToLayers)
@@ -2236,59 +2205,6 @@ TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
       odb::dbOrientType3D(odb::dbOrientType::MY, /*mirror_z=*/false));
   EXPECT_EQ(label(), upright)
       << "the name reads mirrored, or lost its outline, in an MY chiplet";
-}
-
-// The viewer stretches this image over exactly getBounds() (app.fitBounds in
-// main.js), so framing on anything wider lands the highlight off the tiles.
-TEST_F(TileGeneratorTest, RenderOverlayPngCropsToBoundsWithNoMargin)
-{
-  placeInst("BUF_X16", "buf1", 0, 0);
-  makeTileGen();
-
-  // A filled rect covering the whole frame: whatever the viewer stretches this
-  // image over, the color has to reach all four edges of the image.
-  const odb::Rect bounds = tile_gen_->getBounds();
-  ASSERT_GT(bounds.dx(), 0);
-  const std::vector<ColoredRect> rects
-      = {ColoredRect{.rect = bounds,
-                     .color = Color{.r = 255, .g = 255, .b = 0, .a = 255},
-                     .layer = "",
-                     .filled = true}};
-
-  constexpr int kWidthPx = 512;
-  auto png = tile_gen_->renderOverlayPng(kWidthPx, rects, {});
-  ASSERT_FALSE(png.empty());
-  unsigned w = 0, h = 0;
-  auto pixels = decodePng(png, w, h);
-  ASSERT_GT(w, 0u);
-  ASSERT_GT(h, 0u);
-
-  // Match the overlay's own color rather than mere opacity: the _instances pass
-  // always draws the gray die outline, which would otherwise count as content.
-  auto is_overlay = [&](unsigned x, unsigned y) {
-    const size_t i = 4UL * (y * w + x);
-    return pixels[i] > 200 && pixels[i + 1] > 200 && pixels[i + 2] < 100;
-  };
-  // Inset absorbs the partial coverage at the very edge.
-  const unsigned inset_x = std::max(2u, w / 50);
-  const unsigned inset_y = std::max(2u, h / 50);
-
-  EXPECT_TRUE(is_overlay(inset_x, h / 2))
-      << "overlay inset from the left edge: a margin here shifts every "
-         "highlight off the tiles it labels";
-  EXPECT_TRUE(is_overlay(w - 1 - inset_x, h / 2)) << "inset from the right";
-  EXPECT_TRUE(is_overlay(w / 2, inset_y)) << "inset from the top";
-  EXPECT_TRUE(is_overlay(w / 2, h - 1 - inset_y)) << "inset from the bottom";
-}
-
-// An overlay with nothing to draw stays empty -- the caller uses the byte size
-// to decide whether a path got an image at all.
-TEST_F(TileGeneratorTest, RenderOverlayPngIsEmptyWithNoShapes)
-{
-  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
-  makeTileGen();
-
-  EXPECT_TRUE(tile_gen_->renderOverlayPng(/*width_px=*/512, {}, {}).empty());
 }
 
 // Regression: getPinLocation falls back to the die origin for a null terminal,
@@ -6627,9 +6543,9 @@ TEST_F(TileGeneratorTest, OffGridHeatMapTileIsStillADecodablePng)
 }
 
 // isBlankTilePng() has to recognize a blank image at whatever size the caller
-// rendered it, not just at the tile size.  The static report leans on that: it
-// filters blank layer tiles and blank timing-path overlays through the same
-// call, and the overlays are rendered at twice the tile size.  The byte
+// rendered it, not just at the tile size.  The tile handlers lean on that: the
+// client asks for its tiles in device pixels, so the same call sees a 256 px
+// tile on one display and a 512 px one on a dpr 2 display.  The byte
 // threshold this replaced was derived for a 256 px tile (a transparent one is
 // exactly 102 bytes) and could not see a blank 512 px overlay, which is 125.
 TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
@@ -6638,8 +6554,7 @@ TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
   // puts content on _instances.
   makeTileGen();
 
-  // 1 and 2 give 256 px and 512 px -- the tile size the report filters at and
-  // the overlay size it filters at, whose blank encodings are 102 and 125
+  // 1 and 2 give 256 px and 512 px, whose blank encodings are 102 and 125
   // bytes.  A single threshold cannot separate content from blank across both.
   for (const double dpr : {1.0, 2.0}) {
     const std::vector<unsigned char> blank = tile_gen_->generateTile(

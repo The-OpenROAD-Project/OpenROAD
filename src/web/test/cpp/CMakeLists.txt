@@ -18,7 +18,6 @@ set(TEST_LIBS
 set(WEB_TESTS
   TestTileGenerator
   TestRequestHandler
-  TestSaveReport
   TestDebugGraphics
   TestGlyphCache
   TestClockTreeReport

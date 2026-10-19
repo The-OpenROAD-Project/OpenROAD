@@ -189,7 +189,7 @@ class TimingReport
   sta::dbSta* sta_;
 };
 
-// ── JSON serialization helpers (shared by request_handler and saveReport) ──
+// ── JSON serialization helpers (used by request_handler) ──
 
 boost::json::object serializeTimingNode(const TimingNode& n);
 boost::json::object serializeTimingPath(const TimingPathSummary& p);

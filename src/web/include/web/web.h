@@ -157,10 +157,6 @@ class WebServer
   // and exits the process cleanly from the main thread.
   bool exitRequested() const { return exit_requested_; }
 
-  void saveReport(const std::string& filename,
-                  int max_setup_paths,
-                  int max_hold_paths);
-
   void saveImage(const std::string& filename,
                  int x0,
                  int y0,

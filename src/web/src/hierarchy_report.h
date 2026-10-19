@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstdint>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -111,13 +110,7 @@ class HierarchyReport
   int name_group_depth_;
 };
 
-// JSON serialization (shared by handleModuleHierarchy and saveReport).
+// JSON serialization (used by handleModuleHierarchy).
 boost::json::object serializeHierarchyResult(const HierarchyResult& result);
-
-// Compute the module color map for the default UI state (depth-1+ modules
-// collapsed, all visible).  Returns odb module id → RGBA color, ready for
-// use in tile rendering.
-std::map<uint32_t, Color> computeDefaultModuleColors(
-    const HierarchyResult& result);
 
 }  // namespace web

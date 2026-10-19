@@ -871,12 +871,6 @@ class TileGenerator
       const TileVisibility& vis,
       const std::vector<std::string>& tech_layers);
 
-  // Render timing path overlay (colored rects + flight lines) to PNG bytes.
-  std::vector<unsigned char> renderOverlayPng(
-      int width_px,
-      const std::vector<ColoredRect>& rects,
-      const std::vector<FlightLine>& lines) const;
-
   // ─── Renderer bridge ─────────────────────────────────────────────────
   //
   // The registered web::Renderer instances are reached through one installed

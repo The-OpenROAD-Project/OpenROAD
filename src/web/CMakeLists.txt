@@ -84,12 +84,10 @@ add_custom_command(
   OUTPUT ${WEB_ASSETS_CPP}
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/src/embed_web_assets.py
     --output ${WEB_ASSETS_CPP}
-    --extern kReportJS=${CMAKE_CURRENT_SOURCE_DIR}/dist/report.min.js
     ${WEB_BUNDLE_FILES}
   DEPENDS
     src/embed_web_assets.py
     ${WEB_BUNDLE_FILES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/dist/report.min.js
   COMMENT "Generating web_assets.cpp"
 )
 
@@ -98,7 +96,6 @@ target_sources(web
     src/clock_tree_report.cpp
     src/color.cpp
     src/hierarchy_report.cpp
-    src/report_html.cpp
     src/request_handler.cpp
     src/search.cpp
     src/font_data.cpp

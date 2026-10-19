@@ -89,8 +89,6 @@ genrule(
     deps = [":app_js" if entry.endswith(".js") else ":css"],
 ) for name, entry, output in [
     ("app_bundle", "entry-app.js", "bundle/app.min.js"),
-    # Without netlistsvg and three, whose panels need a live server.
-    ("report_bundle", "entry-report.js", "bundle/report.min.js"),
     ("vendor_css", "vendor.css", "vendor.min.css"),
     ("app_css", "style.css", "app.min.css"),
     ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
@@ -114,7 +112,7 @@ genrule(
     tools = [":inline_styles"],
 )
 
-# Served by file name, and the saved report's script, kept out of the table.
+# Served by file name.
 _WEB_ASSET_FILES = [
     "bundle/THIRD_PARTY_LICENSES.txt",
     "bundle/app.min.js",
@@ -123,10 +121,9 @@ _WEB_ASSET_FILES = [
 
 genrule(
     name = "web_assets",
-    srcs = _WEB_ASSET_FILES + ["bundle/report.min.js"],
+    srcs = _WEB_ASSET_FILES,
     outs = ["src/web_assets.cpp"],
-    cmd = "$(execpath :embed_web_assets) --output $@" +
-          " --extern kReportJS=$(location bundle/report.min.js) " +
+    cmd = "$(execpath :embed_web_assets) --output $@ " +
           " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
     tools = [":embed_web_assets"],
 )
@@ -208,7 +205,6 @@ cc_library(
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
         "src/module_color_palette.h",
-        "src/report_html.cpp",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/search.cpp",
@@ -239,7 +235,6 @@ cc_library(
         "src/web_painter.h",
         "src/web_viewer_hook.h",
         "src/request_handler.h",
-        "src/report_html.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
         "src/web_assets.h",
