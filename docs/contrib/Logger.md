@@ -385,6 +385,19 @@ tool.
 Debug messages are enabled with the tcl command:
 `set_debug_level <tool> <group> <level>`
 
+#### List debug calls
+
+Run this command in a tool's source directory to list `debugPrint` calls with a literal group name.
+The output gives the file, line and group name.
+It includes calls that span multiple lines:
+
+```shell
+find . -type f \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' -o -name '*.h' -o -name '*.hh' -o -name '*.hpp' -o -name '*.hxx' \) -exec perl -0777 -ne 'while (/\bdebugPrint\s*\([^,]*,\s*[^,]*,\s*"([^"]+)"/g) { my $group = $1; my $line = 1 + (substr($_, 0, $-[0]) =~ tr/\n//); print "$ARGV:$line:$group\n"; }' {} + | sort -u
+```
+
+Use the group name with `set_debug_level` to enable those messages.
+Calls that use a variable for the group name need source inspection.
+
 ## Metrics
 
 The metrics logging uses a more restricted API since JSON only supports

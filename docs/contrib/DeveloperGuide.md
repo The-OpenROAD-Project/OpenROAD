@@ -182,6 +182,7 @@ Completing the flow allows autotuners to collect final metrics and extract actio
 Each "tool" has a `/test` directory with its tests. Tests are registered
 in `openroad/<tool>/test/BUILD` and run with Bazel (see
 [Adding a Tool, Source File or Test in Bazel](#adding-a-tool-source-file-or-test-in-bazel)).
+To create a test, update golden files or debug, see [Create a minimal test](#create-a-minimal-test), [Update golden files](#update-golden-files), [Update flow metrics and limits](#update-flow-metrics-and-limits) and [Debug with gdb](#debug-with-gdb).
 
 ``` shell
 # all tests of one tool
@@ -291,6 +292,146 @@ Check that Bazel sees the test, then run it:
 bazelisk query 'kind(test, //openroad/exa/test/...)'
 bazelisk test --test_output=errors //openroad/exa/test:basic-tcl_test
 ```
+
+### Create a minimal test
+
+Keep a new test small.
+For a bug report, put the small design in a DEF file and read it with
+`read_def` after the LEF and Liberty files, so the test does not depend on
+floorplanning or placement.
+Use those steps only when they are part of the behavior under test.
+
+1. Reduce the design until it still shows the behavior.
+   Write it as `openroad/<tool>/test/<name>.def`.
+2. Write `openroad/<tool>/test/<name>.tcl`.
+   For example, `openroad/gpl/test/incremental01.tcl` reads a LEF and a DEF, runs the
+   command, writes a DEF and compares it with a golden file:
+
+   ```tcl
+   source helpers.tcl
+   set test_name incremental01
+   read_lef ./nangate45.lef
+   read_def ./$test_name.def
+
+   global_placement -init_density_penalty 0.1 -incremental
+   set def_file [make_result_file $test_name.def]
+   write_def $def_file
+   diff_files $def_file $test_name.defok
+   ```
+
+   `make_result_file` puts the file in the results directory and adds `-tcl`
+   to its name, so `incremental01.def` becomes `incremental01-tcl.def`.
+3. Create empty `<name>.ok` and, if the test calls `diff_files` on a DEF,
+   `<name>.defok` files so Bazel can find the declared inputs.
+4. Register `<name>` in `openroad/<tool>/test/BUILD` (see [Add a test](#add-a-test)).
+5. Run the registered test and review its output, then
+   [update the golden files](#update-golden-files).
+
+### Update golden files
+
+The log golden file `<name>.ok` holds the full output of the test.
+The DEF golden file `<name>.defok` holds the DEF that the test writes.
+When a change gives a correct new result, review the difference, then replace
+the golden file.
+
+Each tool test directory has `save_ok` and `save_defok` scripts, which are
+links to `test/shared/save_ok.sh` and `test/shared/save_defok.sh`.
+Run them in `openroad/<tool>/test` and pass test names without extension.
+Each script runs `bazel test` for `//<package>:<name>-tcl_test` (then
+`-py_test`) and copies the result file from `bazel-testlogs`.
+The `bazel` command must be on `PATH`.
+The test is expected to fail while the golden file is old.
+
+When a test writes a DEF, update its DEF golden file first, then its log golden file:
+
+``` shell
+cd openroad/<tool>/test
+./save_defok <name>
+./save_ok <name>
+```
+
+`save_ok` runs the test again, so the saved log records the comparison with the new DEF golden file.
+For a test that has no DEF golden file, run only `save_ok`.
+
+Check the result with `git diff` before you commit.
+`diff_files` reports the first difference in the files it compares.
+The save scripts replace the complete golden files with the new output.
+Run the test again to confirm that it passes:
+
+``` shell
+bazelisk test --test_output=errors //openroad/<tool>/test:<name>-tcl_test
+```
+
+A few tool test directories (for example `openroad/syn/test`) have no `save_ok`.
+There, copy the log from
+`bazel-testlogs/openroad/<tool>/test/<name>-tcl_test/test.outputs/results/<name>-tcl.log`
+to `<name>.ok`.
+Some Bazel versions keep these files in `test.outputs/outputs.zip` instead.
+
+### Update flow metrics and limits
+
+The small flow tests in the top-level `test` directory, such as
+`aes_sky130hd` and `gcd_nangate45`, run a whole flow inside OpenROAD.
+They have no golden log.
+Each one compares its result metrics with `test/<name>.metrics_limits`.
+The file `test/<name>.metrics` holds the saved result metrics.
+These tests are tagged `manual`, so name the target to run one:
+
+``` shell
+bazelisk test --test_output=errors //test:aes_sky130hd-tcl_test
+```
+
+When a change moves the metrics on purpose, the check fails.
+Then update both files with the new results:
+
+1. Put the result metrics file in `test/results/`.
+   The Bazel run writes it as
+   `bazel-testlogs/test/aes_sky130hd-tcl_test/test.outputs/results/aes_sky130hd-tcl.metrics`.
+   Copy it to `test/results/aes_sky130hd-tcl.metrics`.
+2. Run the save scripts from the `test` directory:
+
+   ``` shell
+   cd test
+   ./save_flow_metrics aes_sky130hd
+   ./save_flow_metrics_limits aes_sky130hd
+   ```
+
+   `save_flow_metrics` copies the result to `<name>.metrics`.
+   `save_flow_metrics_limits` writes `<name>.metrics_limits`, which are the
+   result metrics plus a margin.
+   `save_flow_metrics_limits` needs the Tcl `json` package (from Tcllib).
+3. Review the change with `git diff` and commit both files.
+
+With no test name, both scripts use all flow tests.
+The `test/results/` directory is ignored by git.
+
+### Debug with gdb
+
+Build with debug information from the repository root:
+
+``` shell
+bazelisk build -c dbg //:openroad
+```
+
+Start `gdb` from the test directory so the test can find its helper and input files:
+
+``` shell
+cd openroad/<tool>/test
+```
+
+Use the regression runner's single-thread setting and exit behavior:
+
+``` shell
+gdb --args ../../../bazel-bin/openroad/openroad -no_init -no_splash -exit -threads 1 <name>.tcl
+```
+
+To keep the OpenROAD Tcl prompt after the script, omit `-exit`.
+If the failure depends on a different thread count, set `-threads` to that count.
+
+`bazel-bin` points to the most recent build.
+If you switch between build modes, use the path in `bazel-out/` instead.
+For a debug build with ORFS, see
+[Testing debug build of OpenROAD with ORFS](../user/Bazel.md#testing-debug-build-of-openroad-with-orfs).
 
 ### Add a source file
 

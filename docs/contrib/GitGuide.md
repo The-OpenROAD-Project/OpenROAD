@@ -78,6 +78,12 @@ message. Do note the `-s` option is needed for developer signoff.
 git commit -s -m "your commit message goes here"
 ```
 
+Start the commit title with the name of the tool that you change, a colon and a short summary.
+For example, a change in the global placer has the title `gpl: summary of the change`.
+For a part of a tool, add the part after a slash (`grt/cugr: summary`).
+Use `test:` for a change that only touches the top-level `test` directory.
+Look at `git log --oneline` for more examples.
+
 ## Pushing your changes
 
 When you want your changes to appear publicly on your GitHub page, push your
