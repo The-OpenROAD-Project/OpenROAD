@@ -27,6 +27,7 @@ add_library(gpl_lib
   src/nesterovPlace.cpp
   src/placerBase.cpp
   src/nesterovBase.cpp
+  src/ioPinBase.cpp
   src/fft.cpp
   src/fftsg.cpp
   src/fftsg2d.cpp
@@ -161,6 +162,7 @@ target_link_libraries(gpl_lib
     dbSta_lib
     rsz_lib
     grt_lib
+    ppl
     ortools::ortools
     Threads::Threads
 )

@@ -162,3 +162,20 @@ sky130_fd_sc_hd__clkinvlp_4                 7.507  1.50 1.47e-13  0.04   -
 sky130_fd_sc_hd__clkinv_4                   8.758  1.75 4.12e-12  1.05   -
 sky130_fd_sc_hd__inv_6                      8.758  1.75 4.53e-12  1.16   -
 -----------------------------------------------------------------------------
+[INFO RSZ-0102] Cell sizing restriction based on area has been removed.
+[INFO RSZ-0103] Cell sizing restriction based on leakage has been removed.
+[INFO RSZ-0105] Cell sizing restriction based on site has been removed.
+[INFO RSZ-0107] Cell sizing restriction based on VT type has been removed.
+[INFO RSZ-0146] Capacitance ratio for early cell sizing has been unset.
+[INFO RSZ-0148] Capacitance ratio for early buffer sizing has been unset.
+[INFO RSZ-0166] Buffer pruning has been enabled.
+[INFO RSZ-0101] Cells with leakage > 4.0X current cell will not be considered for sizing
+The following 3 cells are equivalent to sky130_fd_sc_hd__o211ai_1 with matching cell_footprint:
+=============================================================================
+          Cell                              Area   Area Leakage  Leakage  VT
+                                           (um^2)  Ratio  (W)     Ratio  Type
+=============================================================================
+sky130_fd_sc_hd__o211ai_1                   7.507  1.00 7.03e-13  1.00   EL
+sky130_fd_sc_hd__o211ai_2                  12.512  1.67 3.46e-12  4.93   EL
+*sky130_fd_sc_hd__o211ai_4                 21.270  2.83 4.33e-12  6.16   EL
+-----------------------------------------------------------------------------
