@@ -855,10 +855,14 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
       for (size_t d = 0; d < full_view.size(); d++) {
         for (size_t x = 0; x < full_view[d].size(); x++) {
           for (size_t y = 0; y < full_view[d][x].size(); y++) {
-            const double drift
-                = std::abs(full_view[d][x][y] - wire_cost_view[d][x][y]);
-            view_mismatches += drift != 0.0;
-            view_max_drift = std::max(view_max_drift, drift);
+            // Compared before subtracting: equal infinite costs must match.
+            const CostT full = full_view[d][x][y];
+            const CostT updated = wire_cost_view[d][x][y];
+            if (full != updated) {
+              view_mismatches++;
+              view_max_drift
+                  = std::max(view_max_drift, std::abs(full - updated));
+            }
           }
         }
       }
