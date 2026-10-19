@@ -1,0 +1,114 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: ibex_core
+[INFO ODB-0130]     Created 216 pins.
+[INFO ODB-0131]     Created 405 components and 2212 component-terminals.
+[INFO ODB-0133]     Created 562 nets and 1187 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 21 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 21 out of 21 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.667 |      -10.4 |     21 | capture_9/D
+     331* |      12 |      61 |        8 |      1 |    23 |    +4.6% |   -0.443 |       -7.0 |     21 | capture_1/D
+    final |      12 |      61 |        8 |      1 |    23 |    +4.6% |   -0.443 |       -7.0 |     21 | capture_1/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 12 buffers.
+[INFO RSZ-0040] Inserted 8 buffers.
+[INFO RSZ-0051] Resized 61 instances: 61 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 23 instances.
+[INFO RSZ-0049] Cloned 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: launch_142 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: inst42 (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_142/CK (DFF_X1)
+   0.1137    0.1137 ^ launch_142/Q (DFF_X1)
+   0.0056    0.1193 ^ inst42/RN (DFFR_X1)
+             0.1193   data arrival time
+
+   1.4300    1.4300   clock core_clock (rise edge)
+   0.0000    1.4300   clock network delay (ideal)
+   0.0000    1.4300   clock reconvergence pessimism
+             1.4300 ^ inst42/CK (DFFR_X1)
+   0.0509    1.4809   library recovery time
+             1.4809   data required time
+-------------------------------------------------------------
+             1.4809   data required time
+            -0.1193   data arrival time
+-------------------------------------------------------------
+             1.3616   slack (MET)
+
+
+Startpoint: launch_58 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_1 (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_58/CK (DFF_X1)
+   0.0983    0.0983 v launch_58/Q (DFF_X1)
+   0.0677    0.1660 v inst3/Z (MUX2_X1)
+   0.0562    0.2222 v inst4/Z (MUX2_X1)
+   0.0592    0.2814 v inst5/Z (MUX2_X1)
+   0.0664    0.3478 v inst6/Z (MUX2_X1)
+   0.0311    0.3789 v inst7/ZN (AND2_X4)
+   0.0335    0.4124 ^ inst8/ZN (AOI21_X4)
+   0.0276    0.4400 ^ inst9/Z (BUF_X4)
+   0.0175    0.4575 v inst10/ZN (NAND2_X4)
+   0.0240    0.4815 ^ inst11/ZN (OAI21_X4)
+   0.0242    0.5057 ^ inst12/Z (BUF_X8)
+   0.0133    0.5189 v inst14/ZN (NAND2_X2)
+   0.1113    0.6302 ^ inst15/S (FA_X1)
+   0.0100    0.6403 v inst16/ZN (INV_X1)
+   0.0902    0.7305 v inst17/S (FA_X1)
+   0.0626    0.7931 v inst18/S (HA_X1)
+   0.1249    0.9180 ^ inst19/S (FA_X1)
+   0.0100    0.9280 v inst20/ZN (INV_X1)
+   0.1129    1.0409 ^ inst21/S (FA_X1)
+   0.0091    1.0500 v inst22/ZN (INV_X2)
+   0.1212    1.1712 ^ inst23/S (FA_X1)
+   0.0535    1.2247 ^ inst24/S (HA_X1)
+   0.0319    1.2565 ^ inst25/ZN (OR2_X2)
+   0.0128    1.2694 v inst26/ZN (AOI21_X4)
+   0.0764    1.3458 ^ inst27/ZN (AOI211_X2)
+   0.0154    1.3612 v inst28/ZN (NOR4_X2)
+   0.0345    1.3957 ^ inst29/ZN (OAI21_X2)
+   0.0340    1.4296 v inst30/ZN (NAND4_X2)
+   0.0396    1.4693 v inst31/ZN (AND3_X4)
+   0.0246    1.4939 ^ inst32/ZN (OAI21_X4)
+   0.0243    1.5182 ^ inst33/Z (BUF_X4)
+   0.0124    1.5306 v inst34/ZN (OAI21_X4)
+   0.0304    1.5610 ^ inst35/ZN (XNOR2_X2)
+   0.0504    1.6114 ^ inst36/Z (MUX2_X1)
+   0.0188    1.6302 v inst37/ZN (AOI21_X2)
+   0.0904    1.7206 ^ inst38/ZN (OAI33_X1)
+   0.0426    1.7632 ^ inst39/Z (BUF_X4)
+   0.0382    1.8014 ^ clone4/Z (BUF_X8)
+   0.0211    1.8225 v inst40_neighbor8/ZN (OAI21_X4)
+   0.0059    1.8284 v capture_1/D (DFF_X1)
+             1.8284   data arrival time
+
+   1.4300    1.4300   clock core_clock (rise edge)
+   0.0000    1.4300   clock network delay (ideal)
+   0.0000    1.4300   clock reconvergence pessimism
+             1.4300 ^ capture_1/CK (DFF_X1)
+  -0.0447    1.3853   library setup time
+             1.3853   data required time
+-------------------------------------------------------------
+             1.3853   data required time
+            -1.8284   data arrival time
+-------------------------------------------------------------
+            -0.4431   slack (VIOLATED)
+
+

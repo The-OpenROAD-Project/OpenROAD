@@ -237,17 +237,23 @@ class TestResizer : public tst::IntegratedFixture
     return endpoint;
   }
 
-  bool hasTargetPin(const std::vector<Target>& targets,
-                    const char* pin_name) const
+  const Target* findTarget(const std::vector<Target>& targets,
+                           const char* pin_name) const
   {
     for (const Target& target : targets) {
       if (target.driver_pin != nullptr
           && std::string(db_network_->pathName(target.driver_pin))
                  == pin_name) {
-        return true;
+        return &target;
       }
     }
-    return false;
+    return nullptr;
+  }
+
+  bool hasTargetPin(const std::vector<Target>& targets,
+                    const char* pin_name) const
+  {
+    return findTarget(targets, pin_name) != nullptr;
   }
 
   sta::LibertyPort* findLibertyPort(sta::Instance* inst, const char* port_name)
@@ -582,6 +588,18 @@ TEST_F(TestResizer, LatchThroughPathCollectsLatchDataFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "enable_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "enable_buf1/Z"));
+  const Target* data_target = findTarget(targets, "enable_buf0/Z");
+  ASSERT_NE(data_target, nullptr);
+  EXPECT_EQ(db_network_->pathName(data_target->endpointPin(resizer_)),
+            "enable_latch/D");
+  EXPECT_EQ(data_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
+  EXPECT_NE(data_target->endpointPin(resizer_),
+            data_target->violatedEndpointPin(resizer_));
+
+  const Target* latch_target = findTarget(targets, "enable_latch/Q");
+  ASSERT_NE(latch_target, nullptr);
+  EXPECT_EQ(latch_target->endpointPin(resizer_), path->pin(sta_.get()));
+  EXPECT_EQ(latch_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
 }
 
 TEST_F(TestResizer, ChainedLatchFaninTargets)
@@ -602,6 +620,11 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
 
   EXPECT_TRUE(hasTargetPin(targets, "mid_buf0/Z"));
   EXPECT_TRUE(hasTargetPin(targets, "deep_buf0/Z"));
+  const Target* deep_target = findTarget(targets, "deep_buf0/Z");
+  ASSERT_NE(deep_target, nullptr);
+  EXPECT_EQ(db_network_->pathName(deep_target->endpointPin(resizer_)),
+            "deep_latch/D");
+  EXPECT_EQ(deep_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
 }
 
 TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)

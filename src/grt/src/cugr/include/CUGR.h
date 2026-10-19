@@ -227,6 +227,8 @@ class CUGR
   // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
   // from every committed tree and report drift from the tracked demand.
   void verifyDemandConsistency(const char* tag);
+  // Debug group congestion_sources: splits overflow by wire and via source.
+  void reportCongestionSources(const std::string& tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -293,6 +295,9 @@ class CUGR
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
+  // Debug prints after a maze pass: the total overflow (group rrr) and, after
+  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
+  void debugPass(const std::string& tag);
   void iterativeRRR(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.

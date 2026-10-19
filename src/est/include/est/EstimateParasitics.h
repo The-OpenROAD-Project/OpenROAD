@@ -185,6 +185,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void removeNetFromParasiticsInvalid(sta::Net* net)
   {
     parasitics_invalid_.erase(net);
+    observer_estimated_nets_.erase(net);
   }
 
   bool hasParasiticsInvalid() const { return !parasitics_invalid_.empty(); }
@@ -228,7 +229,24 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
   utl::Logger* getLogger() { return logger_; }
 
+  ////////////////////////////////////////////////////////////////
+  // Profiling-related methods and attributes
+
+  // updateParasitics() for an observer, such as the repair setup profiler,
+  // that reads timing in the middle of a repair step.  The nets it estimates
+  // stay in pendingNetCount() until the next updateParasitics().
+  void updateParasiticsForObserver();
+  // The nets the next updateParasitics() would estimate had no observer
+  // updated the parasitics early: the invalid nets plus the nets
+  // updateParasiticsForObserver() estimated since the last
+  // updateParasitics().
+  size_t pendingNetCount() const;
+
  private:
+  // The nets updateParasiticsForObserver() estimated since the last
+  // updateParasitics().
+  std::unordered_set<const sta::Net*, NetHash> observer_estimated_nets_;
+
   // Wire RC values and layers of one technology, indexed by corner->index()
   struct WireRC
   {
