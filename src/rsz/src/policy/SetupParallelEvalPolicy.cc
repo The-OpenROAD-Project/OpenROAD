@@ -12,7 +12,6 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -1462,8 +1461,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
     // The inverse swap stays in the open batch journal, so a later restore of
     // the whole batch still lands on the pre-batch state.
     if (!resizer_.replaceCell(swap->inst, swap->before_cell)) {
-      throw std::logic_error(
-          "PARALLEL_EVAL salvage could not revert a cell swap");
+      logger_->error(
+          utl::RSZ, 2037, "PARALLEL_EVAL salvage could not revert a cell swap");
     }
 
     resizer_.dbNetwork()->staToDb(swap->inst)->setLocation(swap->x, swap->y);
@@ -1472,8 +1471,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
     // accept it and a later restore does not reject it twice.
     if (!committer_.rejectPendingCellMove(
             swap->result, swap->candidate->target().driver_pin)) {
-      throw std::logic_error(
-          "PARALLEL_EVAL salvage lost its pending cell move");
+      logger_->error(
+          utl::RSZ, 2038, "PARALLEL_EVAL salvage lost its pending cell move");
     }
 
     RepairSetupProfiler::endRevert("salvage");
