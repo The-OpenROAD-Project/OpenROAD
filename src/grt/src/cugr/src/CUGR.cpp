@@ -684,7 +684,7 @@ int CUGR::pinAccessTop(const std::vector<PinAccessTop>& tops,
   return (it != tops.end() && it->x == x && it->y == y) ? it->top : -1;
 }
 
-double CUGR::reliefScore(const GRNet& net, const double threshold) const
+double CUGR::computeReliefScore(const GRNet& net, const double threshold) const
 {
   const auto& tree = net.getRoutingTree();
   if (!tree) {
@@ -739,9 +739,7 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
     if (net == nullptr || !net->getRoutingTree()) {
       return;
     }
-    const double score = reliefScore(*net, threshold);
-    net->setReliefScore(score);
-    if (score > 0.0) {
+    if (computeReliefScore(*net, threshold) > 0.0) {
       net_indices.push_back(index);
     }
   };
@@ -1752,7 +1750,7 @@ void CUGR::printStatistics() const
   }
 
   // Overflow is computed from edge.demand (which includes via-stub
-  // demand). This is the same metric used by CUGR's reliefScore,
+  // demand). This is the same metric used by CUGR's computeReliefScore,
   // updateCongestedNets, and extractCongestionView.
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
@@ -2742,7 +2740,7 @@ void CUGR::reportCongestionSources(const std::string& tag)
                 }
               });
         });
-    const bool selected = reliefScore(*net, 1.0) > 0.0;
+    const bool selected = computeReliefScore(*net, 1.0) > 0.0;
     selected_nets += selected;
     wire_selected += on_overflowed_wire;
     via_owners += avoidable_pad_on_overflow;

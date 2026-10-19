@@ -251,7 +251,7 @@ class CUGR
 
   std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
-   * @brief Builds the rip-up set: the nets with a positive reliefScore.
+   * @brief Builds the rip-up set: the nets with a positive relief score.
    *
    * @param net_indices Output: cleared and refilled with the selected
    *                    net indices.
@@ -272,7 +272,7 @@ class CUGR
   // The top at gcell (x, y) in pinAccessTops' result, or -1 off the pins.
   static int pinAccessTop(const std::vector<PinAccessTop>& tops, int x, int y);
   // Overflow the net's removal alone would relieve, pin-access pads excluded.
-  double reliefScore(const GRNet& net, double threshold) const;
+  double computeReliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the

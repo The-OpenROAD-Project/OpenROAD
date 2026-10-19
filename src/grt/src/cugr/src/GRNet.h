@@ -49,9 +49,6 @@ class GRNet
   float getSlack() const { return slack_; }
   void setCritical(bool is_critical) { is_critical_ = is_critical; }
   bool isCritical() const { return is_critical_; }
-  // Overflow the net's removal would relieve (CUGR::reliefScore).
-  void setReliefScore(const double score) { relief_score_ = score; }
-  double getReliefScore() const { return relief_score_; }
 
   // Resistance-aware state for the PatternRoute cost term and getResAwareScore.
   void setResAware(bool res_aware) { is_res_aware_ = res_aware; }
@@ -177,7 +174,6 @@ class GRNet
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
-  double relief_score_ = 0.0;
   bool is_res_aware_ = false;
   bool adopted_ = false;
   float resistance_ = 0.0f;
