@@ -609,7 +609,10 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::kGlobalRouting:
     case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes();
+      // Also re-estimate the nets the router moved beyond the edited ones.
+      for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+        parasiticsInvalid(db_net);
+      }
       for (const sta::Net* net : parasitics_invalid_) {
         if (isSkipNet(net)) {
           continue;
@@ -648,11 +651,32 @@ void EstimateParasitics::updateParasitics()
     }
   }
   parasitics_invalid_.clear();
+  observer_estimated_nets_.clear();
+}
+
+void EstimateParasitics::updateParasiticsForObserver()
+{
+  std::unordered_set<const sta::Net*, NetHash> estimated
+      = std::move(observer_estimated_nets_);
+  estimated.insert(parasitics_invalid_.begin(), parasitics_invalid_.end());
+  updateParasitics();
+  observer_estimated_nets_ = std::move(estimated);
 }
 
 bool EstimateParasitics::parasiticsValid() const
 {
   return parasitics_invalid_.empty();
+}
+
+size_t EstimateParasitics::pendingNetCount() const
+{
+  size_t count = parasitics_invalid_.size();
+  for (const sta::Net* net : observer_estimated_nets_) {
+    if (!parasitics_invalid_.contains(net)) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin)
@@ -667,6 +691,13 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin)
 void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
                                              const sta::Net* net)
 {
+  // An incremental update would have estimated a net that an observer
+  // estimated early here, as the switch below does for an invalid net.
+  if (parasitics_src_ == ParasiticsSrc::kPlacement
+      || parasitics_src_ == ParasiticsSrc::kGlobalRouting) {
+    observer_estimated_nets_.erase(net);
+  }
+
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
   const Scene* corner = sta_->scenes().front();
@@ -680,7 +711,10 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
         parasitics_invalid_.erase(net);
         break;
       case ParasiticsSrc::kGlobalRouting: {
-        incr_groute_->updateRoutes();
+        // Other rerouted nets stay invalid until the next updateParasitics.
+        for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+          parasiticsInvalid(db_net);
+        }
         estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;
@@ -836,6 +870,7 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
     }
     parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
+    observer_estimated_nets_.clear();
   }
 }
 
@@ -1510,6 +1545,7 @@ void EstimateParasitics::eraseParasitics(const sta::Net* net)
     }
   }
   parasitics_invalid_.erase(net);
+  observer_estimated_nets_.erase(net);
 }
 
 static void connectedPins(const sta::Net* net,

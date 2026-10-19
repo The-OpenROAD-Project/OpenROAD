@@ -287,6 +287,19 @@ class GridGraph
       PointT loc,
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+  // Non-template forEachViaColumnImpl for callers outside GridGraph.cpp.
+  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
+                        const std::function<void(PointT, int, int)>& fn) const;
+  // Non-template forEachTreeWireEdgeImpl for callers outside GridGraph.cpp.
+  void forEachTreeWireEdge(
+      const std::shared_ptr<GRTreeNode>& tree,
+      bool adopted,
+      const std::function<void(int, PointT, bool)>& fn) const;
+  // Flank edges a wrong-way wire through `cell` loads: fn(edge, demand).
+  void forEachWrongWayFlankEdge(
+      int layer_index,
+      PointT cell,
+      const std::function<void(PointT, CapacityT)>& fn) const;
 
   // Enumerate the lower cells of the preferred-direction edges a wire from
   // u to v occupies on `layer_index` — the cells commitWire charges.
@@ -429,7 +442,15 @@ class GridGraph
   // stack split across tree edges still puts one pad on each layer:
   // fn(loc, low, high).
   template <typename F>
-  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree, F&& fn) const;
+  void forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
+                            F&& fn) const;
+  // Visits each wire edge and wrong-way cell a tree commits, once each.
+  template <typename F>
+  void forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
+                               bool adopted,
+                               F&& fn) const;
+  template <typename F>
+  void forEachWrongWayFlankEdgeImpl(int layer_index, PointT cell, F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
