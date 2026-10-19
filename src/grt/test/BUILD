@@ -333,7 +333,6 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestRoutingCongestion.cpp"],
     data = [":test_resources"],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/grt",
