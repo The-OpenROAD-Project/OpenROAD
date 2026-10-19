@@ -8,3 +8,6 @@ read_def "gcd.def"
 global_route
 
 report_net_detours -top_n 5
+
+# A file that cannot be opened is reported and skipped.
+report_net_detours -top_n 1 -file missing_dir/detours.txt

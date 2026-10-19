@@ -13,7 +13,7 @@ Detour metric (final routed WL vs initial Steiner WL):
     initial_um    final_um    delta_um    ratio  net
           8.55       11.40        2.85     1.33  _283_
          14.25       17.10        2.85     1.20  _402_
-         17.10       19.95        2.85     1.17  _123_
+         17.10       19.95        2.85     1.17  _121_
 [INFO GRT-0332] Net _285_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
 [INFO GRT-0332] Net _286_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
 [INFO GRT-0332] Net _284_ detour: initial 8.55um, final 8.55um, delta 0.00um, ratio 1.00
@@ -29,4 +29,4 @@ Detour metric (final routed WL vs initial Steiner WL):
     initial_um    final_um    delta_um    ratio  net
           8.55       11.40        2.85     1.33  _283_
          14.25       17.10        2.85     1.20  _402_
-         17.10       19.95        2.85     1.17  _123_
+         17.10       19.95        2.85     1.17  _121_

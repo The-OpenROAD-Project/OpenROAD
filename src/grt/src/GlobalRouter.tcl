@@ -564,6 +564,7 @@ proc report_net_detours { args } {
     foreach net [get_nets $keys(-net)] {
       set db_net [sta::sta_to_db_net $net]
       if {
+        $db_net != "NULL" &&
         [$db_net getSigType] != "POWER" &&
         [$db_net getSigType] != "GROUND" &&
         ![$db_net isSpecial]

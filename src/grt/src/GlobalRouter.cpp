@@ -4739,6 +4739,20 @@ bool GlobalRouter::hasInitialSteinerWirelengths()
   return !initial_steiner_wl_.empty();
 }
 
+// Opens file_name for appending, warning if it cannot be opened.
+std::ofstream GlobalRouter::openDetourFile(const char* file_name)
+{
+  std::ofstream out;
+  if (file_name[0] != '\0') {
+    out.open(file_name, std::ios::app);
+    if (!out.is_open()) {
+      logger_->warn(
+          GRT, 337, "Failed to open detour report file {}.", file_name);
+    }
+  }
+  return out;
+}
+
 void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
@@ -4773,15 +4787,12 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
                 block_->dbuToMicrons(delta),
                 ratio);
 
-  std::string file(file_name);
-  if (!file.empty()) {
-    std::ofstream out(file, std::ios::app);
-    if (out.is_open()) {
-      out << "grt_detour: " << net->getName() << " "
-          << block_->dbuToMicrons(initial_wl) << " "
-          << block_->dbuToMicrons(final_wl) << " "
-          << block_->dbuToMicrons(delta) << " " << ratio << "\n";
-    }
+  std::ofstream out = openDetourFile(file_name);
+  if (out.is_open()) {
+    out << "grt_detour: " << net->getName() << " "
+        << block_->dbuToMicrons(initial_wl) << " "
+        << block_->dbuToMicrons(final_wl) << " " << block_->dbuToMicrons(delta)
+        << " " << ratio << "\n";
   }
 }
 
@@ -4829,7 +4840,10 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
   }
 
   std::ranges::sort(entries, [](const DetourEntry& a, const DetourEntry& b) {
-    return a.ratio > b.ratio;
+    if (a.ratio != b.ratio) {
+      return a.ratio > b.ratio;
+    }
+    return a.net->getId() < b.net->getId();
   });
 
   const double total_ratio
@@ -4865,16 +4879,13 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                     e.net->getName());
   }
 
-  std::string file(file_name);
-  if (!file.empty()) {
-    std::ofstream out(file, std::ios::app);
-    if (out.is_open()) {
-      for (const DetourEntry& e : entries) {
-        out << "grt_detour: " << e.net->getName() << " "
-            << block_->dbuToMicrons(e.initial_wl) << " "
-            << block_->dbuToMicrons(e.final_wl) << " "
-            << block_->dbuToMicrons(e.delta) << " " << e.ratio << "\n";
-      }
+  std::ofstream out = openDetourFile(file_name);
+  if (out.is_open()) {
+    for (const DetourEntry& e : entries) {
+      out << "grt_detour: " << e.net->getName() << " "
+          << block_->dbuToMicrons(e.initial_wl) << " "
+          << block_->dbuToMicrons(e.final_wl) << " "
+          << block_->dbuToMicrons(e.delta) << " " << e.ratio << "\n";
     }
   }
 }
