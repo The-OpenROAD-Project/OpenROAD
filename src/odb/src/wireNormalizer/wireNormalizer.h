@@ -180,6 +180,7 @@ class WireNormalizer
 
  private:
   void clear();
+  void setManufacturingGrid();
   void loadTerminals();
   void loadWire();
   void loadSWire(dbNet* net);
@@ -188,6 +189,9 @@ class WireNormalizer
 
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
+  void splitSectionsForTerminalConnection();
+  std::optional<Point> findSplitPoint(const CandidateSection& candidate) const;
+  int computeSnappedCenter(int min, int max) const;
   void splitWireSection(int section_index, const Point& at);
   void populateShapeSearch();
   void identifyShorts();
@@ -214,6 +218,7 @@ class WireNormalizer
   void addITerm(dbITerm* iterm);
   void addBTerm(dbBTerm* bterm);
   void connectShapes(int j, int k);
+  bool terminalContainsWirePoint(int terminal_index) const;
   void connectTerm(int terminal_index, bool soft);
   void connectTermSoft(int terminal_index, int rt, const Rect& rect, int k);
   void addShort(int i0, int i1);
@@ -237,6 +242,7 @@ class WireNormalizer
 
   dbNet* net_{nullptr};
   bool has_special_wires_{false};
+  int manufacturing_grid_{0};
 
   // The description of the wire.
   std::vector<WireSection> wire_sections_;
