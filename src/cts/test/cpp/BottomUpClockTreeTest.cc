@@ -28,12 +28,14 @@
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/Transition.hh"
 #include "tst/IntegratedFixture.h"
 #include "tst/logger_checks.h"
 
@@ -490,6 +492,179 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     EXPECT_EQ(result.reached_sinks, originals_.size());
   }
 
+  double prepareSlewClosureTree(int sink_x = 10000)
+  {
+    cts_->setBufferList("BUF_X1");
+    cts_->setRootBuffer("BUF_X1");
+    cts_->setSinkBuffer("BUF_X1");
+    for (auto* pin : originals_) {
+      pin->getInst()->setLocation(sink_x, 10000);
+    }
+    prepareTreeModel();
+    // Keep RC positive but negligible after LUT setup so these cases isolate
+    // slew closure without changing characterization's wire-length range.
+    for (auto* scene : sta_->scenes()) {
+      setRC(scene, 1e-6);
+    }
+    auto* options = cts_->getParms();
+    options->enableDummyLoad(false);
+    options->setTreeBuffer("BUF_X1");
+    options->setMaxWl(0);
+    options->setSimpleSegmentsEnabled(false);
+    auto& clock = builder_->getClock();
+    const auto point = clock.computeSinkRegion().getCenter();
+    auto& root = clock.addClockBuffer(
+        "clkbuf_0", "BUF_X1", point.getX(), point.getY());
+    auto& branch = clock.addClockBuffer(
+        "clkbuf_slew_branch", "BUF_X1", point.getX(), point.getY());
+    builder_->addTreeLevelBuffer(&root);
+    builder_->addTreeLevelBuffer(&branch);
+    auto& upper = clock.addSubNet("clknet_0");
+    upper.addInst(root);
+    upper.addInst(branch);
+    auto& lower = clock.addSubNet("clknet_slew_branch");
+    lower.addInst(branch);
+    lower.setLeafLevel(true);
+    double load = 0;
+    clock.forEachSink([&](ClockInst& sink) {
+      lower.addInst(sink);
+      auto* port = db_network_->libertyPort(
+          db_network_->dbToSta(sink.getDbInputPin()));
+      double cap = 0;
+      for (auto* scene : sta_->scenes()) {
+        cap = std::max(cap,
+                       worstCap(port->scenePort(scene, sta::MinMax::max())));
+      }
+      load += cap;
+    });
+    return load;
+  }
+
+  double bufferOutputSlew(double input_slew, double load)
+  {
+    sta::LibertyPort *input, *output;
+    db_network_->findLibertyCell("BUF_X1")->bufferPorts(input, output);
+    const sta::Slew inputs[]{static_cast<float>(input_slew),
+                             static_cast<float>(input_slew)};
+    double worst = 0;
+    for (auto* scene : sta_->scenes()) {
+      sta::ArcDelay delays[2];
+      sta::Slew slews[2];
+      resizer_.gateDelays(
+          output, load, inputs, scene, sta::MinMax::max(), delays, slews);
+      for (const auto& slew : slews) {
+        const double value = sta::delayAsFloat(slew);
+        if (!std::isfinite(value) || value <= 0) {
+          throw std::runtime_error("Invalid fixture buffer slew");
+        }
+        worst = std::max(worst, value);
+      }
+    }
+    return worst;
+  }
+
+  double closureSlewLimit(double load)
+  {
+    double high = cts_->getParms()->getMaxCharSlew();
+    sta::LibertyPort *input, *output;
+    db_network_->findLibertyCell("BUF_X1")->bufferPorts(input, output);
+    const auto tighten = [&](sta::LibertyPort* port) {
+      for (auto* scene : sta_->scenes()) {
+        float limit;
+        bool exists;
+        sta_->findSlewLimit(port, scene, sta::MinMax::max(), limit, exists);
+        if (exists) {
+          high = std::min(high, static_cast<double>(limit));
+        }
+      }
+    };
+    tighten(input);
+    tighten(output);
+    for (auto* pin : originals_) {
+      tighten(db_network_->libertyPort(db_network_->dbToSta(pin)));
+    }
+    const double ceiling = high;
+    if (!(high > 0) || bufferOutputSlew(high, load) >= high) {
+      throw std::runtime_error("Fixture has no full-limit slew closure");
+    }
+    double low = 0;
+    for (int i = 0; i < 40; ++i) {
+      const double mid = (low + high) / 2;
+      if (bufferOutputSlew(mid, load) > mid) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    const double limit = high * 1.15;
+    if (limit >= ceiling) {
+      throw std::runtime_error(
+          "Fixture lacks margin below its true slew limit");
+    }
+    return limit;
+  }
+
+  double unrestorableInputSlew(double output_limit)
+  {
+    double input = output_limit;
+    for (int i = 0; i < 12; ++i) {
+      input *= 2;
+      if (bufferOutputSlew(input, 0) > 1.2 * output_limit) {
+        return input;
+      }
+    }
+    throw std::runtime_error("Fixture slow input does not defeat slew closure");
+  }
+
+  sta::Clock* replaceTestClock(sta::Scene* scene,
+                               const char* name,
+                               odb::dbBTerm* source)
+  {
+    auto* sdc = scene->mode()->sdc();
+    sta_->removeClock(sdc->findClock("clk"), sdc);
+    sta::PinSet pins(db_network_);
+    pins.insert(db_network_->dbToSta(source));
+    sta_->makeClock(name, pins, false, 5e-9, {0, 2.5e-9}, "", scene->mode());
+    return sdc->findClock(name);
+  }
+
+  void expectSlowPhysicalRootAliasRejected(bool explicit_root)
+  {
+    auto* scene = addTestScene();
+    auto* alias = replaceTestClock(
+        scene, "physical_root_alias", source_->get1stBTerm());
+    ASSERT_NE(alias, nullptr);
+    ASSERT_TRUE(alias->isIdeal());
+    if (explicit_root) {
+      ASSERT_EQ(cts_->setClockNets("clk"), 0);
+    }
+    const double load = prepareSlewClosureTree();
+    const double limit = closureSlewLimit(load);
+    const double slow_input = unrestorableInputSlew(limit);
+    ASSERT_LT(bufferOutputSlew(limit, load), limit);
+    ASSERT_GT(bufferOutputSlew(slow_input, 0), limit);
+    EXPECT_EQ(builder_->getClock().getSdcName(), explicit_root ? "" : "clk");
+    ASSERT_NE(builder_->getClock().getSdcName(), alias->name());
+    sta_->setClockSlew(alias,
+                       sta::RiseFallBoth::fall(),
+                       sta::MinMaxAll::max(),
+                       slow_input,
+                       scene->mode()->sdc());
+    auto* vertex = sta_->ensureGraph()->pinDrvrVertex(
+        db_network_->dbToSta(source_->get1stBTerm()));
+    ASSERT_NE(vertex, nullptr);
+    ASSERT_LT(sta::delayAsFloat(sta_->slew(vertex,
+                                           sta::RiseFallBoth::riseFall(),
+                                           sta_->scenes(),
+                                           sta::MinMax::max())),
+              limit)
+        << "The ideal alias must be found by physical clock membership";
+    cts_->getParms()->setMaxCharSlew(limit);
+    const auto before = snapshot();
+    EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+    EXPECT_EQ(snapshot(), before);
+  }
+
   struct DummyPrediction
   {
     size_t count = 0;
@@ -607,6 +782,221 @@ TEST_F(BottomUpClockTreeTest, ActualSearchRetainsExplicitBranchStage)
   EXPECT_EQ(result.expected_nets, 2u);
   EXPECT_EQ(result.reached_sinks, originals_.size());
   EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, FullSlewLimitClosesWhereHalfBudgetRejects)
+{
+  const double load = prepareSlewClosureTree();
+  const double limit = closureSlewLimit(load);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit);
+  ASSERT_GT(bufferOutputSlew(limit / 2, load), limit / 2)
+      << "This must reproduce the old half-budget false rejection";
+  cts_->getParms()->setMaxCharSlew(limit);
+  sta_->setSlewLimit(db_network_->cell(db_network_->topInstance()),
+                     sta::MinMax::max(),
+                     limit,
+                     sta_->cmdMode()->sdc());
+  ASSERT_NO_THROW(selectCurrentTree());
+  size_t buffers = 0;
+  builder_->getClock().forEachClockBuffer([&](const ClockInst& inst) {
+    ++buffers;
+    EXPECT_EQ(inst.getMaster(), "BUF_X1");
+  });
+  EXPECT_EQ(buffers, 2u) << "Both fixed stages must satisfy the same bound";
+  writeCurrentTree();
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_nets, result.expected_nets);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_EQ(result.cap_violations, 0u);
+  EXPECT_EQ(result.slew_violations, 0u);
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, FullBudgetDoesNotRelaxTrueTightOutputLimit)
+{
+  prepareSlewClosureTree();
+  const double limit = bufferOutputSlew(0, 0) / 2;
+  ASSERT_GT(bufferOutputSlew(limit, 0), limit)
+      << "Even an unloaded root cannot meet this true output constraint";
+  sta_->setSlewLimit(db_network_->cell(db_network_->topInstance()),
+                     sta::MinMax::max(),
+                     limit,
+                     sta_->cmdMode()->sdc());
+  // Leave max characterization slew unchanged: the real SDC limit must bind.
+  ASSERT_GT(cts_->getParms()->getMaxCharSlew(), limit);
+  const auto before = snapshot();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  EXPECT_EQ(snapshot(), before);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+}
+
+TEST_F(BottomUpClockTreeTest, SlowIdealClockInOtherModeBoundsRootInput)
+{
+  auto* scene = addTestScene();
+  auto* clock = scene->mode()->sdc()->findClock("clk");
+  ASSERT_NE(clock, nullptr);
+  sta_->removePropagatedClock(clock, scene->mode());
+  const double load = prepareSlewClosureTree();
+  const double limit = closureSlewLimit(load);
+  const double slow_input = unrestorableInputSlew(limit);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit)
+      << "Ignoring the incoming ideal-clock transition would accept this tree";
+  ASSERT_GT(bufferOutputSlew(slow_input, 0), limit);
+  ASSERT_NE(scene->mode(), sta_->cmdMode());
+  ASSERT_TRUE(clock->isIdeal());
+  sta_->setClockSlew(clock,
+                     sta::RiseFallBoth::fall(),
+                     sta::MinMaxAll::max(),
+                     slow_input,
+                     scene->mode()->sdc());
+  EXPECT_FLOAT_EQ(clock->slew(sta::RiseFall::fall(), sta::MinMax::max()),
+                  static_cast<float>(slow_input));
+  auto* source_pin = db_network_->dbToSta(source_->get1stBTerm());
+  auto* vertex = sta_->ensureGraph()->pinDrvrVertex(source_pin);
+  ASSERT_NE(vertex, nullptr);
+  EXPECT_LT(sta::delayAsFloat(sta_->slew(vertex,
+                                         sta::RiseFallBoth::riseFall(),
+                                         sta_->scenes(),
+                                         sta::MinMax::max())),
+            limit)
+      << "Raw source slew must not substitute for ideal clock transition";
+  cts_->getParms()->setMaxCharSlew(limit);
+  const auto before = snapshot();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  EXPECT_EQ(snapshot(), before);
+}
+
+TEST_F(BottomUpClockTreeTest, PropagatedSourceSlewInOtherSceneBoundsRootInput)
+{
+  auto* scene = addTestScene();
+  const double load = prepareSlewClosureTree();
+  const double limit = closureSlewLimit(load);
+  const double slow_input = unrestorableInputSlew(limit);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit);
+  ASSERT_GT(bufferOutputSlew(slow_input, 0), limit);
+  ASSERT_NE(scene, sta_->cmdScene());
+  auto* clock = scene->mode()->sdc()->findClock("clk");
+  ASSERT_NE(clock, nullptr);
+  ASSERT_TRUE(clock->isPropagated());
+  EXPECT_FLOAT_EQ(clock->slew(sta::RiseFall::fall(), sta::MinMax::max()), 0);
+  auto* source_pin = db_network_->dbToSta(source_->get1stBTerm());
+  sta_->setInputSlew(db_network_->port(source_pin),
+                     sta::RiseFallBoth::fall(),
+                     sta::MinMaxAll::max(),
+                     slow_input,
+                     scene->mode()->sdc());
+  auto* vertex = sta_->ensureGraph()->pinDrvrVertex(source_pin);
+  ASSERT_NE(vertex, nullptr);
+  EXPECT_FLOAT_EQ(
+      sta::delayAsFloat(sta_->slew(
+          vertex, sta::RiseFallBoth::fall(), {scene}, sta::MinMax::max())),
+      static_cast<float>(slow_input));
+  EXPECT_LT(sta::delayAsFloat(sta_->slew(vertex,
+                                         sta::RiseFallBoth::riseFall(),
+                                         {sta_->cmdScene()},
+                                         sta::MinMax::max())),
+            limit);
+  cts_->getParms()->setMaxCharSlew(limit);
+  const auto before = snapshot();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  EXPECT_EQ(snapshot(), before);
+}
+
+TEST_F(BottomUpClockTreeTest, DifferentClockNameOnSamePhysicalRootBoundsInput)
+{
+  expectSlowPhysicalRootAliasRejected(false);
+}
+
+TEST_F(BottomUpClockTreeTest, ExplicitClockNetStillFindsIdealPhysicalRootAlias)
+{
+  expectSlowPhysicalRootAliasRejected(true);
+}
+
+TEST_F(BottomUpClockTreeTest, UnrelatedSameNameClockDoesNotTightenRootInput)
+{
+  auto* scene = addTestScene();
+  auto* unrelated_net = odb::dbNet::create(block_, "unrelated_clock_net");
+  unrelated_net->setSigType(odb::dbSigType::CLOCK);
+  auto* unrelated_source
+      = odb::dbBTerm::create(unrelated_net, "unrelated_clock_port");
+  unrelated_source->setIoType(odb::dbIoType::INPUT);
+  unrelated_source->setSigType(odb::dbSigType::CLOCK);
+  auto* bpin = odb::dbBPin::create(unrelated_source);
+  bpin->setPlacementStatus(odb::dbPlacementStatus::FIXED);
+  ASSERT_NE(
+      odb::dbBox::create(
+          bpin, block_->getTech()->findLayer("metal6"), 1000, 1000, 1280, 1280),
+      nullptr);
+  auto* unrelated = replaceTestClock(scene, "clk", unrelated_source);
+  ASSERT_NE(unrelated, nullptr);
+  ASSERT_TRUE(unrelated->isIdeal());
+  const double load = prepareSlewClosureTree();
+  const double limit = closureSlewLimit(load);
+  const double slow_input = unrestorableInputSlew(limit);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit);
+  ASSERT_GT(bufferOutputSlew(slow_input, 0), limit)
+      << "Including the unrelated same-name clock would falsely reject";
+  ASSERT_EQ(builder_->getClock().getSdcName(), unrelated->name());
+  ASSERT_FALSE(
+      unrelated->pins().contains(db_network_->dbToSta(source_->get1stBTerm())));
+  sta_->setClockSlew(unrelated,
+                     sta::RiseFallBoth::fall(),
+                     sta::MinMaxAll::max(),
+                     slow_input,
+                     scene->mode()->sdc());
+  cts_->getParms()->setMaxCharSlew(limit);
+  ASSERT_NO_THROW(selectCurrentTree());
+  writeCurrentTree();
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_nets, result.expected_nets);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, SourceDriverSlewAloneDoesNotBoundLongIngressWire)
+{
+  const int dbu = block_->getDbUnitsPerMicron();
+  block_->setDieArea(odb::Rect(0, 0, 6000 * dbu, 100 * dbu));
+  const double load = prepareSlewClosureTree(5000 * dbu);
+  setRC(sta_->cmdScene(), 1);
+  auto* clock = sta_->cmdMode()->sdc()->findClock("clk");
+  ASSERT_NE(clock, nullptr);
+  sta_->setPropagatedClock(clock, sta_->cmdMode());
+  const double limit = closureSlewLimit(load);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit);
+  auto* root = builder_->getClock().findClockByName("clkbuf_0_clk");
+  ASSERT_NE(root, nullptr);
+  auto* source = source_->get1stBTerm();
+  int x, y;
+  ASSERT_TRUE(source->getFirstPinLocation(x, y));
+  const double ingress_length
+      = (std::abs(root->getX() - x) + std::abs(root->getY() - y)) * 1e-6 / dbu;
+  ASSERT_GT(ingress_length, 4e-3);
+  sta::LibertyPort *input, *output;
+  db_network_->findLibertyCell("BUF_X1")->bufferPorts(input, output);
+  const auto rc = bound();
+  const double ingress_slew
+      = 2.2 * rc.resistance * ingress_length
+        * (worstCap(input) + rc.capacitance * ingress_length);
+  ASSERT_GT(bufferOutputSlew(ingress_slew, 0), limit)
+      << "Ingress alone must defeat even unloaded root slew restoration";
+  auto* vertex
+      = sta_->ensureGraph()->pinDrvrVertex(db_network_->dbToSta(source));
+  ASSERT_NE(vertex, nullptr);
+  ASSERT_LT(sta::delayAsFloat(sta_->slew(vertex,
+                                         sta::RiseFallBoth::riseFall(),
+                                         sta_->scenes(),
+                                         sta::MinMax::max())),
+            limit)
+      << "Checking the source driver but not its ingress would accept";
+  cts_->getParms()->setMaxCharSlew(limit);
+  const auto before = snapshot();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  EXPECT_EQ(snapshot(), before);
 }
 
 TEST_F(BottomUpClockTreeTest,
