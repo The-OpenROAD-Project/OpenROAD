@@ -60,29 +60,29 @@ Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
 [INFO GRT-0306] Iterative RRR soft-demoted 4 NDR net(s) total.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (237).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (251).
 Routing statistics
-Wire length:           42112
-Total via count:       4193
-Total congestion:      236.99
-Min resource:          -1.64
-Bottleneck:            (2, 12, 13)
+Wire length:           48360
+Total via count:       4246
+Total congestion:      250.94
+Min resource:          -1.24
+Bottleneck:            (1, 13, 14)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-metal2    V      1791.80       664.00       135.57       799.57      44.62      38.33       8.85          1.41
-metal3    H      2448.00      1004.00       128.41      1132.41      46.26      60.91      11.86          1.64
-metal4    V      1217.20       283.00        76.62       359.62      29.54      34.62       8.83          0.49
-metal5    H      1224.00       249.00        53.36       302.36      24.70      22.82       4.45          0.34
-metal6    V      1217.20       272.00        30.95       302.95      24.89      15.23       1.91          1.15
-metal7    H      1190.00       116.00        37.89       153.89      12.93      11.82       2.78          0.70
-metal8    V      1190.00       153.00        20.77       173.77      14.60       7.98       1.56          0.42
-metal9    H      1190.00        11.00        10.11        21.11       1.77       1.60       0.65          0.56
-metal10   V      1190.00        52.00         5.61        57.61       4.84       2.11       0.69          0.56
+metal2    V      1791.80       720.00       136.45       856.45      47.80      49.04       9.42          1.24
+metal3    H      2448.00      1090.00       132.12      1222.12      49.92      64.68      12.49          0.69
+metal4    V      1217.20       361.00        80.09       441.09      36.24      37.01       9.16          0.44
+metal5    H      1224.00       348.00        58.25       406.25      33.19      27.34       5.16          0.29
+metal6    V      1217.20       387.00        33.58       420.58      34.55      15.17       1.84          0.25
+metal7    H      1190.00       133.00        31.71       164.71      13.84       8.95       1.72          0.28
+metal8    V      1190.00       181.00        17.38       198.38      16.67       7.81       1.16          0.28
+metal9    H      1190.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+metal10   V      1190.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
 --------------------------------------------------------------------------------------------------------------
-Total           12658.20      2804.00       499.30      3303.30      26.10     195.41      41.58          1.64
-[INFO GRT-0018] Total wirelength: 11608 um
+Total           12658.20      3220.00       489.59      3709.59      29.31     210.00      40.93          1.24
+[INFO GRT-0018] Total wirelength: 12947 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.
