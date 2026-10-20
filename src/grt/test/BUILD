@@ -131,6 +131,11 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_net_detours1",
+    "report_net_detours2",
+    "report_net_detours2_cugr",
+    "report_net_detours3",
+    "report_net_detours4_cugr",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
@@ -224,6 +229,13 @@ regression_test(
 
 regression_test(
     name = "congestion_acceptance_is_recorded",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congested_routes_are_reported",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
@@ -333,7 +345,6 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestRoutingCongestion.cpp"],
     data = [":test_resources"],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/grt",
