@@ -111,21 +111,26 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
   odb::Rect macro_new_bbox(x1, y1, x2, y2);
   odb::Rect core_area = inst->getBlock()->getCoreArea();
 
-  if (!core_area.contains(macro_new_bbox)) {
-    logger_->error(MPL,
-                   34,
-                   "Cannot place {} at ({}, {}) ({}, {}), outside of the core "
-                   "({}, {}) ({}, {}).",
-                   inst->getName(),
-                   block->dbuToMicrons(macro_new_bbox.xMin()),
-                   block->dbuToMicrons(macro_new_bbox.yMin()),
-                   block->dbuToMicrons(macro_new_bbox.xMax()),
-                   block->dbuToMicrons(macro_new_bbox.yMax()),
-                   block->dbuToMicrons(core_area.xMin()),
-                   block->dbuToMicrons(core_area.yMin()),
-                   block->dbuToMicrons(core_area.xMax()),
-                   block->dbuToMicrons(core_area.yMax()));
-  }
+  auto check_core_containment = [&](const odb::Rect& macro_bbox) {
+    if (!core_area.contains(macro_bbox)) {
+      logger_->error(
+          MPL,
+          34,
+          "Cannot place {} at ({}, {}) ({}, {}), outside of the core "
+          "({}, {}) ({}, {}).",
+          inst->getName(),
+          block->dbuToMicrons(macro_bbox.xMin()),
+          block->dbuToMicrons(macro_bbox.yMin()),
+          block->dbuToMicrons(macro_bbox.xMax()),
+          block->dbuToMicrons(macro_bbox.yMax()),
+          block->dbuToMicrons(core_area.xMin()),
+          block->dbuToMicrons(core_area.yMin()),
+          block->dbuToMicrons(core_area.xMax()),
+          block->dbuToMicrons(core_area.yMax()));
+    }
+  };
+
+  check_core_containment(macro_new_bbox);
 
   inst->setLocation(x1, y1);
 
@@ -140,6 +145,8 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
     Snapper snapper(logger_, inst);
     snapper.snapMacro();
   }
+
+  check_core_containment(inst->getBBox()->getBox());
 
   if (!allow_overlap) {
     std::vector<odb::dbInst*> overlapped_macros = findOverlappedMacros(inst);
@@ -179,7 +186,7 @@ std::vector<odb::dbInst*> MacroPlacer::findOverlappedMacros(odb::dbInst* macro)
   const odb::Rect& source_macro_bbox = macro->getBBox()->getBox();
 
   for (odb::dbInst* inst : block->getInsts()) {
-    if (!inst->isBlock() || !inst->isPlaced()) {
+    if (inst == macro || !inst->isBlock() || !inst->isPlaced()) {
       continue;
     }
 

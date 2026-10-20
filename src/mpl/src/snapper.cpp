@@ -40,7 +40,40 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
                    : inst_->getOrigin().y();
 
   if (layers_data_list.empty()) {
+    const int initial_origin = origin;
     alignWithManufacturingGrid(origin);
+
+    if (!isOriginInsideCore(origin, target_direction)) {
+      const odb::Rect& macro_bbox = inst_->getBBox()->getBox();
+      const odb::Rect& core = inst_->getBlock()->getCoreArea();
+      const int manufacturing_grid
+          = inst_->getDb()->getTech()->getManufacturingGrid();
+      const int lower_bound
+          = initial_origin
+            + (target_direction == odb::dbTechLayerDir::VERTICAL
+                   ? core.xMin() - macro_bbox.xMin()
+                   : core.yMin() - macro_bbox.yMin());
+      const int upper_bound
+          = initial_origin
+            + (target_direction == odb::dbTechLayerDir::VERTICAL
+                   ? core.xMax() - macro_bbox.xMax()
+                   : core.yMax() - macro_bbox.yMax());
+      const int minimum_origin
+          = static_cast<int>(std::ceil(
+                lower_bound / static_cast<double>(manufacturing_grid)))
+            * manufacturing_grid;
+      const int maximum_origin
+          = static_cast<int>(std::floor(
+                upper_bound / static_cast<double>(manufacturing_grid)))
+            * manufacturing_grid;
+
+      if (minimum_origin > maximum_origin) {
+        setOrigin(initial_origin, target_direction);
+        return;
+      }
+      origin = std::clamp(origin, minimum_origin, maximum_origin);
+    }
+
     setOrigin(origin, target_direction);
     return;
   }
@@ -61,12 +94,31 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
     starting_position_index -= 1;
   }
 
-  snapPinToPosition(lowest_grid_pin,
-                    lowest_grid_positions[starting_position_index],
-                    target_direction);
-
   attemptSnapToExtraPatterns(
       starting_position_index, layers_data_list, target_direction);
+}
+
+bool Snapper::isOriginInsideCore(
+    const int origin,
+    const odb::dbTechLayerDir& target_direction) const
+{
+  const odb::Rect& macro_bbox = inst_->getBBox()->getBox();
+  const odb::Rect& core = inst_->getBlock()->getCoreArea();
+  if (core.dx() <= 0 || core.dy() <= 0) {
+    return true;
+  }
+
+  const int current_origin = target_direction == odb::dbTechLayerDir::VERTICAL
+                                 ? inst_->getOrigin().x()
+                                 : inst_->getOrigin().y();
+  const int displacement = origin - current_origin;
+
+  if (target_direction == odb::dbTechLayerDir::VERTICAL) {
+    return macro_bbox.xMin() + displacement >= core.xMin()
+           && macro_bbox.xMax() + displacement <= core.xMax();
+  }
+  return macro_bbox.yMin() + displacement >= core.yMin()
+         && macro_bbox.yMax() + displacement <= core.yMax();
 }
 
 void Snapper::setOrigin(const int origin,
@@ -178,13 +230,17 @@ int Snapper::getPinOffset(odb::dbITerm* pin,
   return pin_offset;
 }
 
-void Snapper::snapPinToPosition(odb::dbITerm* pin,
+bool Snapper::snapPinToPosition(odb::dbITerm* pin,
                                 int position,
                                 const odb::dbTechLayerDir& direction)
 {
   int origin = position - getPinOffset(pin, direction);
   alignWithManufacturingGrid(origin);
+  if (!isOriginInsideCore(origin, direction)) {
+    return false;
+  }
   setOrigin(origin, direction);
+  return true;
 }
 
 void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
@@ -216,9 +272,12 @@ void Snapper::attemptSnapToExtraPatterns(
 
   odb::dbITerm* snap_pin = layers_data_list[0].pins[0];
   const std::vector<int>& positions = layers_data_list[0].available_positions;
+  const int initial_origin = target_direction == odb::dbTechLayerDir::VERTICAL
+                                 ? inst_->getOrigin().x()
+                                 : inst_->getOrigin().y();
 
-  int best_index = start_index;
-  int best_snapped_pins = 0;
+  int best_index = -1;
+  int best_snapped_pins = -1;
 
   for (int i = 0; i <= total_attempts; i++) {
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
@@ -229,7 +288,10 @@ void Snapper::attemptSnapToExtraPatterns(
         || current_index >= layers_data_list[0].available_positions.size()) {
       continue;
     }
-    snapPinToPosition(snap_pin, positions[current_index], target_direction);
+    if (!snapPinToPosition(
+            snap_pin, positions[current_index], target_direction)) {
+      continue;
+    }
 
     int snapped_pins = totalAlignedPins(layers_data_list, target_direction);
 
@@ -240,6 +302,11 @@ void Snapper::attemptSnapToExtraPatterns(
         break;
       }
     }
+  }
+
+  if (best_index == -1) {
+    setOrigin(initial_origin, target_direction);
+    return;
   }
 
   snapPinToPosition(snap_pin, positions[best_index], target_direction);

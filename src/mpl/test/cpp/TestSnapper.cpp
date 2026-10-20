@@ -47,6 +47,29 @@ TEST_F(TestSnapper, ManufacturingGrid)
   EXPECT_EQ(macro->getOrigin().y(), 1020);
 }
 
+// Keeps a macro inside a core that has no legal manufacturing-grid coordinate.
+TEST_F(TestSnapper, ManufacturingGridPreservesCoreContainedOrigin)
+{
+  db_->getTech()->setManufacturingGrid(10);
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  block->setCoreArea(odb::Rect(5, 5, 105, 105));
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setWidth(100);
+  macro_master->setHeight(100);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro = odb::dbInst::create(block, macro_master, "macro");
+  macro->setOrigin(5, 5);
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(macro->getOrigin().x(), 5);
+  EXPECT_EQ(macro->getOrigin().y(), 5);
+}
+
 // Snaps a macro using one horizontal layer, aligning one pin
 TEST_F(TestSnapper, SingleLayer)
 {

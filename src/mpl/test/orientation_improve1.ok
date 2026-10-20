@@ -19,4 +19,6 @@ Die Area: (0.00, 0.00) (120.00, 120.00),  Floorplan Area: (9.00, 9.80) (110.84, 
 	Manufacturing Grid: 10
 
 [WARNING MPL-0025] Design has no standard cells!
+[INFO MPL-0078] The locations generated for the standard cells were not included in the macro placement file.
+[INFO MPL-0035] Macro MACRO_1 placed. Bounding box (10.770um, 10.525um), (110.770um, 110.525um). Orientation R180
 No differences found.
