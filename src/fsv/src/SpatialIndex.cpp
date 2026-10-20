@@ -175,7 +175,8 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
 
 SpatialIndex::Nearest SpatialIndex::nearest(const Vec3& p) const
 {
-  Nearest best{p[2], kGround};
+  // A point at or below the ground plane is touching it.
+  Nearest best{std::max(0.0, p[2]), kGround};
   if (nodes_.empty()) {
     return best;
   }

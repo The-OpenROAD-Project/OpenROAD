@@ -12,6 +12,7 @@ namespace fsv {
 class AliasTable
 {
  public:
+  // Throws std::invalid_argument if the weights are empty or sum to zero.
   explicit AliasTable(const std::vector<double>& weights);
 
   int sample(double u) const;

@@ -18,6 +18,8 @@ TEST(SpatialIndex, GroundOnly)
   const SpatialIndex::Nearest n = index.nearest({1, 2, 3});
   EXPECT_EQ(n.box, SpatialIndex::kGround);
   EXPECT_DOUBLE_EQ(n.dist, 3);
+  // Below the ground plane counts as touching it.
+  EXPECT_DOUBLE_EQ(index.nearest({1, 2, -1e-12}).dist, 0);
 }
 
 // Branch-and-bound result matches a brute-force scan, inside the layout and

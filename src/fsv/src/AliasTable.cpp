@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 namespace fsv {
@@ -14,6 +15,10 @@ AliasTable::AliasTable(const std::vector<double>& weights)
 {
   const int n = size();
   const double total = std::accumulate(weights.begin(), weights.end(), 0.0);
+  if (n == 0 || !(total > 0)) {
+    throw std::invalid_argument(
+        "fsv: alias table needs weights with a positive sum");
+  }
   std::vector<double> scaled(n);
   std::vector<int> small;
   std::vector<int> large;

@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <functional>
+#include <stdexcept>
 
+#include "AliasTable.h"
 #include "BoxFace.h"
 #include "CubeGreens.h"
 #include "Philox.h"
@@ -193,6 +195,14 @@ TEST(CubeGreens, SamplingMatchesTables)
   mean = sum / samples;
   sigma = std::sqrt((sum2 / samples - mean * mean) / samples);
   EXPECT_NEAR(mean, kSource[2] / (r * r * r), 4 * sigma);
+}
+
+TEST(AliasTable, RejectsEmptyOrZeroWeights)
+{
+  EXPECT_THROW(AliasTable({}), std::invalid_argument);
+  EXPECT_THROW(AliasTable({0.0, 0.0}), std::invalid_argument);
+  const AliasTable table({0.0, 3.0, 1.0});
+  EXPECT_EQ(table.sample(0.0), 1);
 }
 
 }  // namespace
