@@ -63,6 +63,36 @@ static mpl::MacroPlacerOptions getOptions(
   return options;
 }
 
+static mpl::MacroPlacerDebugOptions getDebugOptions(
+    odb::dbBlock* block,
+    const std::map<std::string, std::string>& keys,
+    const std::map<std::string, std::string>& flags)
+{
+  using utl::checkFlag;
+  using utl::checkKey;
+
+  // Default to both coarse and fine when neither is given.
+  bool coarse = false;
+  bool fine = false;
+  checkFlag(flags, "-coarse", coarse);
+  checkFlag(flags, "-fine", fine);
+  if (!coarse && !fine) {
+    coarse = true;
+    fine = true;
+  }
+
+  mpl::MacroPlacerDebugOptions options;
+  options.graphics
+      = std::make_unique<mpl::Graphics>(coarse, fine, block, ord::getLogger());
+  checkFlag(flags, "-show_bundled_nets", options.show_bundled_nets);
+  checkFlag(flags, "-show_clusters_ids", options.show_clusters_ids);
+  checkFlag(flags, "-skip_steps", options.skip_steps);
+  checkFlag(flags, "-only_final_result", options.only_final_result);
+  checkKey(keys, "-target_cluster_id", options.target_cluster_id);
+
+  return options;
+}
+
 using utl::MPL;
 using ord::getMacroPlacer;
 %}
@@ -85,24 +115,13 @@ bool rtl_macro_placer_cmd(const std::map<std::string, std::string>& keys,
   return macro_placer->place(threads, options);
 }
 
-void set_debug_cmd(odb::dbBlock* block,
-                   bool coarse,
-                   bool fine,
-                   bool show_bundled_nets,
-                   bool show_clusters_ids,
-                   bool skip_steps,
-                   bool only_final_result,
-                   int target_cluster_id)
+void set_debug_cmd(const std::map<std::string, std::string>& keys,
+                   const std::map<std::string, std::string>& flags)
 {
   auto macro_placer = getMacroPlacer();
-  std::unique_ptr<MplObserver> graphics
-    = std::make_unique<Graphics>(coarse, fine, block, ord::getLogger());
-  macro_placer->configureDebug(std::move(graphics),
-                               show_bundled_nets,
-                               show_clusters_ids,
-                               skip_steps,
-                               only_final_result,
-                               target_cluster_id);
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+
+  macro_placer->configureDebug(getDebugOptions(block, keys, flags));
 }
 
 void

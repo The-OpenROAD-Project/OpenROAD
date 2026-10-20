@@ -101,7 +101,7 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
 
   report_directory_ = options.report_directory;
   std::filesystem::create_directories(report_directory_);
-  
+
   macro_placement_file_ = options.macro_placement_file;
   keep_clustering_data_ = options.keep_clustering_data;
   pin_aware_channels_ = options.pin_aware_channels;
@@ -2581,21 +2581,16 @@ void HierRTLMP::computeWireLength() const
                   block_->dbuToMicrons(wirelength_evaluator.hpwl()));
 }
 
-void HierRTLMP::configureDebug(std::unique_ptr<MplObserver> graphics,
-                               bool show_bundled_nets,
-                               bool show_clusters_ids,
-                               bool skip_steps,
-                               bool only_final_result,
-                               int target_cluster_id)
+void HierRTLMP::configureDebug(MacroPlacerDebugOptions options)
 {
   // graphics_ must be populated before any of the rest are applied to it.
-  graphics_ = std::move(graphics);
-  graphics_->setShowBundledNets(show_bundled_nets);
-  graphics_->setShowClustersIds(show_clusters_ids);
-  graphics_->setSkipSteps(skip_steps);
-  graphics_->setOnlyFinalResult(only_final_result);
-  is_debug_only_final_result_ = only_final_result;
-  graphics_->setTargetClusterId(target_cluster_id);
+  graphics_ = std::move(options.graphics);
+  graphics_->setShowBundledNets(options.show_bundled_nets);
+  graphics_->setShowClustersIds(options.show_clusters_ids);
+  graphics_->setSkipSteps(options.skip_steps);
+  graphics_->setOnlyFinalResult(options.only_final_result);
+  is_debug_only_final_result_ = options.only_final_result;
+  graphics_->setTargetClusterId(options.target_cluster_id);
 }
 
 // Example for a vertical region:

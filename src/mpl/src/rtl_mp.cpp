@@ -189,19 +189,9 @@ void MacroPlacer::blockMacroChannels()
   hier_rtlmp_->blockMacroChannels();
 }
 
-void MacroPlacer::configureDebug(std::unique_ptr<MplObserver> graphics,
-                                 bool show_bundled_nets,
-                                 bool show_clusters_ids,
-                                 bool skip_steps,
-                                 bool only_final_result,
-                                 int target_cluster_id)
+void MacroPlacer::configureDebug(MacroPlacerDebugOptions options)
 {
-  hier_rtlmp_->configureDebug(std::move(graphics),
-                              show_bundled_nets,
-                              show_clusters_ids,
-                              skip_steps,
-                              only_final_result,
-                              target_cluster_id);
+  hier_rtlmp_->configureDebug(std::move(options));
 }
 
 }  // namespace mpl

@@ -89,14 +89,7 @@ class HierRTLMP
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
 
-  // graphics_ must exist before the rest of these are applied to it, so
-  // this is one call rather than six independently-ordered setters.
-  void configureDebug(std::unique_ptr<MplObserver> graphics,
-                      bool show_bundled_nets,
-                      bool show_clusters_ids,
-                      bool skip_steps,
-                      bool only_final_result,
-                      int target_cluster_id);
+  void configureDebug(MacroPlacerDebugOptions options);
 
   void writeMacroPlacement(const std::string& file_name);
 

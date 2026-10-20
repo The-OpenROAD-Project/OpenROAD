@@ -33,7 +33,7 @@ namespace mpl {
 class HierRTLMP;
 class MplObserver;
 
-// Every parameter accepted by the `rtl_macro_placer` command
+// Every parameter accepted by the `rtl_macro_placer` command.
 struct MacroPlacerOptions
 {
   int max_num_macro{0};
@@ -66,6 +66,27 @@ struct MacroPlacerOptions
   bool pin_aware_channels{false};
 };
 
+// Every parameter accepted by the `mpl_debug` command.
+struct MacroPlacerDebugOptions
+{
+  MacroPlacerDebugOptions() = default;
+  ~MacroPlacerDebugOptions() = default;
+  MacroPlacerDebugOptions(MacroPlacerDebugOptions&&) noexcept = default;
+  MacroPlacerDebugOptions& operator=(MacroPlacerDebugOptions&&) noexcept
+      = default;
+
+  // configureDebug() moves this into place before applying the rest of
+  // these fields to it, so a default-constructed instance (graphics ==
+  // nullptr) is not valid to pass to configureDebug().
+  std::unique_ptr<MplObserver> graphics;
+
+  bool show_bundled_nets{false};
+  bool show_clusters_ids{false};
+  bool skip_steps{false};
+  bool only_final_result{false};
+  int target_cluster_id{-1};
+};
+
 class MacroPlacer
 {
  public:
@@ -90,14 +111,7 @@ class MacroPlacer
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
 
-  // graphics_ must exist before the rest of these are applied to it, so
-  // this is one call rather than six independently-ordered setters.
-  void configureDebug(std::unique_ptr<MplObserver> graphics,
-                      bool show_bundled_nets,
-                      bool show_clusters_ids,
-                      bool skip_steps,
-                      bool only_final_result,
-                      int target_cluster_id);
+  void configureDebug(MacroPlacerDebugOptions options);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
