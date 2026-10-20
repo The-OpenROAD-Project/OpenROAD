@@ -199,9 +199,9 @@ struct OptimizationPolicyConfig
   // Charge the slower fanin driver of a larger input pin to the other loads
   // of the fanin net.  PARALLEL_EVAL turns it on.
   bool fanin_side_loss{false};
-  // The side loss counts this many times against the gain.  Calibrated on
-  // applied moves: once the estimated side loss reached about a quarter of
-  // the gain, the measured TNS no longer improved, and 3 fit best.
+  // The side loss counts this many times against the gain.  Empirically
+  // tuned: a smaller weight lets through moves that degrade the side paths,
+  // which costs QoR overall.
   float fanin_side_loss_weight{3.0f};
   // Weight of fanin loads off every violating worst path.
   float fanin_side_offpath_weight{0.0f};
@@ -218,9 +218,10 @@ struct OptimizationPolicyConfig
   // PARALLEL_EVAL turns the guard off.
   bool dual_rf_drive_guard{true};
 
-  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.  Set by
-  // an Fmax sweep when the two moves started to share one pool, so that a VT
-  // swap wins over a size-up of similar gain.
+  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.
+  // Empirically tuned.  A size-up costs more than a VT swap of similar gain
+  // (area, input pin cap, legalizer displacement, side paths), so it ranks
+  // lower.
   float size_up_mt_score_scale{0.75f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;

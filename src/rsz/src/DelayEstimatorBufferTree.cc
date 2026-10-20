@@ -92,8 +92,9 @@ float bufferTreeEffectiveLoadCap(const float total_load_cap, const float factor)
 
 // A stage after the tree keeps at least 50% to 80% of its current delay: 80%
 // when its input slew does not improve, falling to 50% as the slew gets
-// sharper.  The tree model's wire slew is approximate, and an optimistic slew
-// at these inputs made the table delta credit too much delay gain.
+// sharper.  A safeguard: the input slew of these stages comes from the
+// approximate tree model, so the table delta alone could credit them with
+// more delay gain than the built tree gives.
 float boundBufferTreeDownstreamStageDelay(const DelayStageState& stage,
                                           const float input_slew,
                                           const float stage_delay)
