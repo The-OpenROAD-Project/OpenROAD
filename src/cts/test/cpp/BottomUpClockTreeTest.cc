@@ -1099,6 +1099,91 @@ TEST_F(BottomUpClockTreeTest,
 }
 
 TEST_F(BottomUpClockTreeTest,
+       RetainedInputWithoutPhysicalShapeRejectsExplicitly)
+{
+  prepareSlewClosureTree();
+  auto* reference = db_->findMaster("BUF_X2");
+  ASSERT_NE(reference, nullptr);
+  auto* library = odb::dbLib::create(db_.get(),
+                                     "cts_missing_retained_input_shape",
+                                     reference->getLib()->getTech());
+  ASSERT_NE(library, nullptr);
+  // A separate LEF library can link the same Liberty cell without changing
+  // the searched BUF_X1 masters or relying on unsupported MPin deletion.
+  auto* master = odb::dbMaster::create(library, "BUF_X2");
+  ASSERT_NE(master, nullptr);
+  master->setType(reference->getType());
+  master->setWidth(reference->getWidth());
+  master->setHeight(reference->getHeight());
+  for (auto* original : reference->getMTerms()) {
+    auto* term = odb::dbMTerm::create(master,
+                                      original->getConstName(),
+                                      original->getIoType(),
+                                      original->getSigType());
+    ASSERT_NE(term, nullptr);
+    if (original->getName() == "A") {
+      continue;
+    }
+    for (auto* original_pin : original->getMPins()) {
+      auto* pin = odb::dbMPin::create(term);
+      ASSERT_NE(pin, nullptr);
+      for (auto* box : original_pin->getGeometry()) {
+        ASSERT_FALSE(box->isVia());
+        ASSERT_NE(box->getTechLayer(), nullptr);
+        ASSERT_NE(odb::dbBox::create(pin,
+                                     box->getTechLayer(),
+                                     box->xMin(),
+                                     box->yMin(),
+                                     box->xMax(),
+                                     box->yMax()),
+                  nullptr);
+      }
+    }
+  }
+  master->setFrozen();
+  db_network_->readLefAfter(library);
+  ASSERT_TRUE(master->findMTerm("A")->getBBox().isInverted());
+  ASSERT_FALSE(master->findMTerm("Z")->getBBox().isInverted());
+  auto* root = builder_->getClock().findClockByName("clkbuf_0_clk");
+  ASSERT_NE(root, nullptr);
+  auto* retained
+      = odb::dbInst::create(block_, master, "retained_without_shape");
+  ASSERT_NE(retained, nullptr);
+  retained->setLocation(root->getX(), root->getY());
+  retained->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  auto* input = retained->findITerm("A");
+  ASSERT_NE(input, nullptr);
+  input->connect(source_);
+  auto* sta_pin = db_network_->dbToSta(input);
+  ASSERT_TRUE(db_network_->isPlaced(sta_pin));
+  auto* port = db_network_->libertyPort(sta_pin);
+  ASSERT_NE(port, nullptr);
+  for (auto* scene : sta_->scenes()) {
+    const auto* scene_port = port->scenePort(scene, sta::MinMax::max());
+    ASSERT_NE(scene_port, nullptr);
+    ASSERT_TRUE(std::isfinite(worstCap(scene_port)));
+    ASSERT_GT(worstCap(scene_port), 0);
+  }
+  ASSERT_TRUE(input->getBBox().isInverted());
+  builder_->getClock().forEachSink(
+      [&](const ClockInst& sink) { EXPECT_NE(sink.getDbInputPin(), input); });
+  const auto before = snapshot();
+  logger_.redirectStringBegin();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  const auto diagnostic = logger_.redirectStringEnd();
+  EXPECT_NE(
+      diagnostic.find(
+          "Missing physical geometry for retained bottom-up CTS input load"),
+      std::string::npos)
+      << diagnostic;
+  EXPECT_EQ(diagnostic.find("output slew limit"), std::string::npos)
+      << "Reject missing geometry before sentinel coordinates become wire RC";
+  EXPECT_EQ(snapshot(), before);
+  EXPECT_TRUE(input->getBBox().isInverted());
+  EXPECT_EQ(input->getNet(), source_);
+}
+
+TEST_F(BottomUpClockTreeTest,
        InferredDistanceCannotDiscardFeasibleLegacyReference)
 {
   planLongSpan(false);
