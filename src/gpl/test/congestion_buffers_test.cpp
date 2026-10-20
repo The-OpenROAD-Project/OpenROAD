@@ -431,7 +431,7 @@ class DisjointRegionBuffersTest : public CongestionBuffersTest
     for (int i = 0; i < 2; ++i) {
       auto* region = odb::dbRegion::create(
           block_, ("region_" + std::to_string(i)).c_str());
-      region->setRegionType(odb::dbRegionType::FENCE);
+      region->setRegionType(odb::dbRegionType::EXCLUSIVE);
       odb::dbBox::create(region,
                          i == 0 ? 0 : upper_x - 28000,
                          0,
