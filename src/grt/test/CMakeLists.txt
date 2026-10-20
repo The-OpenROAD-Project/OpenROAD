@@ -122,6 +122,7 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    report_net_detours1
     resistance_aware_asap7_cong_cugr
     resistance_aware_asap7_cugr
     resistance_aware_asap7_fr
