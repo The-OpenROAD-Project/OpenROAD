@@ -66,8 +66,10 @@ std::optional<BufferingPlan> evaluateBuffering(
     const BufferingDummy& dummy = {});
 
 // Bounded heuristic, not a global optimizer. The independently evaluated
-// reference is outside the frontier limit and cannot be pruned. A result
-// must not worsen any reference scene/transition's latest arrival or spread.
+// reference is outside the frontier limit and cannot be pruned. An
+// independently feasible complete input plan is also retained, subject to the
+// same safeguard: a result must not worsen any reference scene/transition's
+// latest arrival or spread.
 BufferingPlan searchBuffering(const std::vector<BufferingNode>& sites,
                               size_t root,
                               const BufferingSearchModel& model,

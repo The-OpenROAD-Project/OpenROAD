@@ -122,6 +122,11 @@ spread in any scene/transition. Explicit root, tree, and sink cell choices remai
 fixed. Complete candidate evaluation includes the existing dummy-load selection
 policy, unless `-dont_use_dummy_load` was requested.
 
+The original-site search runs before greedy electrical expansion. A feasible
+original-site solution survives expansion failure, and an independently verified
+complete electrical seed survives frontier pruning. Wire-only states that already
+exceed the wire-length limit are discarded before combining further branches.
+
 Timing uses existing Liberty/Resizer characterization with a conservative common
 input-slew budget and placement star-wire RC, not extracted routing parasitics.
 The comparison is a model safeguard, not a post-route QoR guarantee. Every loaded

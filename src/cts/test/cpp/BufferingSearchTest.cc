@@ -309,4 +309,23 @@ TEST(BufferingSearchTest, BetterWorstSceneCannotHideAnotherSceneRegression)
   EXPECT_EQ(guarded.nodes[1].master, "balanced");
 }
 
+TEST(BufferingSearchTest, VerifiedFeasibleSeedCannotBePruned)
+{
+  std::vector nodes{branch({1}), branch({2}, 5), sink(1, 10)};
+  fixRoot(nodes);
+  auto bounded = model();
+  bounded.max_wire_length = 5;
+  bounded.candidate_limit = 1;
+  // One-slot pruning prefers the child's zero-delay wire state, but the
+  // root cannot drive the resulting ten-unit path. The complete buffered
+  // seed is independently feasible and must survive without a reference.
+  ASSERT_TRUE(evaluateBuffering(nodes, 0, bounded, cells));
+  const auto plan = searchBuffering(nodes, 0, bounded, cells);
+  EXPECT_FALSE(plan.reference);
+  EXPECT_EQ(plan.depth, 2u);
+  EXPECT_EQ(plan.buffers, 2u);
+  EXPECT_EQ(plan.nodes[1].master, "fast");
+  EXPECT_LE(plan.peak_candidates, bounded.candidate_limit);
+}
+
 }  // namespace cts

@@ -5,13 +5,16 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
 
 #include "BottomUpBuffering.h"
+#include "BufferingSearch.h"
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
@@ -24,6 +27,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -363,7 +367,7 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     cts_->runClockTreeSynthesis();
   }
 
-  void planRedundantBranch(bool explicit_branch)
+  void prepareTreeModel()
   {
     cts_->validateBottomUpWireRC();
     cts_->setupCharacterization();
@@ -374,6 +378,22 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     builder_ = cts_->builders_.front().get();
     builder_->setTechChar(*cts_->techChar_);
     builder_->initBlockages();
+  }
+
+  void selectCurrentTree() { cts_->bufferClockTreeBottomUp(builder_); }
+  void writeCurrentTree() { cts_->runClockTreeSynthesis(); }
+  void buildCurrentLegacyTree() { builder_->run(); }
+
+  double worstCap(const sta::LibertyPort* port)
+  {
+    return std::max(
+        port->capacitance(sta::RiseFall::rise(), sta::MinMax::max()),
+        port->capacitance(sta::RiseFall::fall(), sta::MinMax::max()));
+  }
+
+  void planRedundantBranch(bool explicit_branch)
+  {
+    prepareTreeModel();
     auto& clock = builder_->getClock();
     const auto point = clock.computeSinkRegion().getCenter();
     auto& root = clock.addClockBuffer(
@@ -412,6 +432,94 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     cts_->runClockTreeSynthesis();
   }
 
+  struct DummyPrediction
+  {
+    size_t count = 0;
+    double cap = 0;
+    double area = 0;
+  };
+
+  DummyPrediction predictSelectedDummies()
+  {
+    const size_t dimensions = 2 * sta_->scenes().size();
+    const auto choice = [&](sta::LibertyCell* cell) {
+      sta::LibertyPort *input, *output;
+      cell->bufferPorts(input, output);
+      return BufferingCellChoice{{cell->name(), worstCap(input)},
+                                 input->capacitance(),
+                                 cell->area(),
+                                 std::vector<double>(dimensions, 0)};
+    };
+    auto& clock = builder_->getClock();
+    std::vector<BufferingNode> nodes;
+    std::map<ClockInst*, size_t> indices;
+    const auto add = [&](ClockInst& inst) {
+      indices[&inst] = nodes.size();
+      BufferingNode node;
+      node.point = {static_cast<double>(inst.getX()),
+                    static_cast<double>(inst.getY())};
+      node.sink = !inst.isClockBuffer();
+      if (node.sink) {
+        auto* port = db_network_->libertyPort(
+            db_network_->dbToSta(inst.getDbInputPin()));
+        node.input_cap = worstCap(port);
+        node.nominal_input_cap = port->capacitance();
+      } else {
+        const auto cell
+            = choice(db_network_->findLibertyCell(inst.getMaster().c_str()));
+        node.master = node.fixed_master = cell.buffer.master;
+        node.input_cap = cell.buffer.input_cap;
+        node.nominal_input_cap = cell.nominal_input_cap;
+      }
+      nodes.push_back(std::move(node));
+    };
+    clock.forEachClockBuffer(add);
+    clock.forEachSink(add);
+    clock.forEachSubNet([&](const ClockSubNet& net) {
+      net.forEachSink([&](ClockInst* sink) {
+        nodes[indices.at(net.getDriver())].children.push_back(indices.at(sink));
+      });
+    });
+    std::vector<sta::LibertyCell*> dummy_cells;
+    cts_->findCandidateDummyCells(dummy_cells);
+    DummyPrediction prediction;
+    const BufferingDummy dummy
+        = [&](float actual,
+              float ideal,
+              size_t fanout) -> std::optional<BufferingCellChoice> {
+      if (sta::fuzzyEqual(actual, ideal)
+          || fanout == cts_->getParms()->getMaxFanout()) {
+        return std::nullopt;
+      }
+      auto* cell = cts_->findBestDummyCell(dummy_cells, ideal - actual);
+      if (cell == nullptr) {
+        return std::nullopt;
+      }
+      auto load = choice(cell);
+      ++prediction.count;
+      prediction.cap += load.buffer.input_cap;
+      return load;
+    };
+    const BufferingChoices fixed = [&](const auto&, const std::string& master) {
+      return std::vector{choice(db_network_->findLibertyCell(master.c_str()))};
+    };
+    // This independently checks nominal dummy policy, actual input cap, and
+    // cell area on the selected tree. Real timing/electricals are audited
+    // after write; zero test delays do not substitute for that STA audit.
+    const auto plan
+        = evaluateBuffering(nodes,
+                            indices.at(clock.findClockByName("clkbuf_0_clk")),
+                            {0, 0, 1e9, dimensions, 16},
+                            fixed,
+                            dummy);
+    if (!plan) {
+      throw std::runtime_error(
+          "Selected tree cannot be evaluated for dummy prediction");
+    }
+    prediction.area = plan->area;
+    return prediction;
+  }
+
   std::unique_ptr<TritonCTS> cts_;
   TreeBuilder* builder_ = nullptr;
   odb::dbNet* source_ = nullptr;
@@ -439,6 +547,209 @@ TEST_F(BottomUpClockTreeTest, ActualSearchRetainsExplicitBranchStage)
   EXPECT_EQ(reachableOriginals(), originals_.size());
   const auto result = audit();
   EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, OriginalSiteSearchSurvivesInfeasibleFastestSeed)
+{
+  cts_->setBufferList("BUF_X2 BUF_X8");
+  cts_->setRootBuffer("BUF_X1");
+  cts_->setSinkBuffer("BUF_X2");
+  for (auto* pin : originals_) {
+    pin->getInst()->setLocation(10000, 10000);
+  }
+  prepareTreeModel();
+  auto* options = cts_->getParms();
+  options->enableDummyLoad(false);
+  options->setSinkBufferInferred(true);
+  options->setMaxWl(1000000);
+  options->setBufferDistance(1000000);
+  sta::LibertyPort *small_input, *small_output, *large_input, *large_output;
+  db_network_->findLibertyCell("BUF_X2")->bufferPorts(small_input,
+                                                      small_output);
+  db_network_->findLibertyCell("BUF_X8")->bufferPorts(large_input,
+                                                      large_output);
+  const double root_limit = (worstCap(small_input) + worstCap(large_input)) / 2;
+  sta::LibertyPort *root_input, *root_output;
+  db_network_->findLibertyCell("BUF_X1")->bufferPorts(root_input, root_output);
+  root_output->setCapacitanceLimit(root_limit, sta::MinMax::max());
+  EXPECT_LT(worstCap(small_input), root_limit);
+  EXPECT_GT(worstCap(large_input), root_limit);
+  double load = 0;
+  for (auto* pin : originals_) {
+    load += worstCap(db_network_->libertyPort(db_network_->dbToSta(pin)));
+  }
+  EXPECT_GT(load, root_limit) << "The root cannot simply bypass its child";
+  const auto slew = static_cast<float>(options->getMaxCharSlew() * 0.5);
+  const sta::Slew input_slews[]{slew, slew};
+  const auto delay = [&](sta::LibertyPort* port) {
+    sta::ArcDelay delays[2];
+    sta::Slew slews[2];
+    resizer_.gateDelays(port,
+                        load,
+                        input_slews,
+                        sta_->cmdScene(),
+                        sta::MinMax::max(),
+                        delays,
+                        slews);
+    EXPECT_LE(
+        std::max(sta::delayAsFloat(slews[0]), sta::delayAsFloat(slews[1])),
+        slew);
+    return std::max(sta::delayAsFloat(delays[0]), sta::delayAsFloat(delays[1]));
+  };
+  EXPECT_LT(delay(large_output), delay(small_output))
+      << "The real Liberty characterization must make the oversized child "
+         "fastest";
+  auto& clock = builder_->getClock();
+  const auto point = clock.computeSinkRegion().getCenter();
+  auto& root
+      = clock.addClockBuffer("clkbuf_0", "BUF_X1", point.getX(), point.getY());
+  auto& child = clock.addClockBuffer(
+      "clkbuf_oversized", "BUF_X8", point.getX(), point.getY());
+  builder_->addTreeLevelBuffer(&root);
+  builder_->addTreeLevelBuffer(&child);
+  auto& upper = clock.addSubNet("clknet_0");
+  upper.addInst(root);
+  upper.addInst(child);
+  auto& lower = clock.addSubNet("clknet_oversized");
+  lower.addInst(child);
+  lower.setLeafLevel(true);
+  clock.forEachSink([&](ClockInst& sink) { lower.addInst(sink); });
+  // The legacy child overloads the fixed root. Coincident sites prevent
+  // greedy expansion from repairing its fastest-child choice by splitting.
+  ASSERT_NO_THROW(selectCurrentTree());
+  size_t buffers = 0;
+  clock.forEachClockBuffer([&](const ClockInst& inst) {
+    ++buffers;
+    EXPECT_EQ(inst.getMaster(),
+              inst.getName() == "clkbuf_0_clk" ? "BUF_X1" : "BUF_X2");
+  });
+  EXPECT_EQ(buffers, 2u);
+  writeCurrentTree();
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, ZeroHTreeLevelsKeepActualPreclusteredFrontier)
+{
+  constexpr size_t sink_count = 201;
+  for (size_t i = originals_.size(); i < sink_count; ++i) {
+    auto* inst
+        = odb::dbInst::create(block_,
+                              db_->findMaster("DFF_X1"),
+                              ("cluster_ff" + std::to_string(i)).c_str());
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    auto* pin = inst->findITerm("CK");
+    pin->connect(source_);
+    originals_.push_back(pin);
+  }
+  for (size_t i = 0; i < originals_.size(); ++i) {
+    originals_[i]->getInst()->setLocation(10000 + (i % 16) * 2000,
+                                          10000 + (i / 16) * 2000);
+  }
+  cts_->setSinkBuffer("BUF_X4");
+  auto* options = cts_->getParms();
+  options->setSinkClustering(true);
+  options->setSinkClusteringSize(16);
+  options->setMaxDiameter(1000);
+  options->setClockTreeMaxDepth(0);
+  options->setEnableFakeLutEntries(false);
+  prepareTreeModel();
+  buildCurrentLegacyTree();
+  auto& clock = builder_->getClock();
+  size_t clusters = 0;
+  clock.forEachClockBuffer([&](ClockInst& inst) {
+    if (inst.getName() != "clkbuf_0_clk") {
+      EXPECT_TRUE(inst.getName().starts_with("clkbuf_leaf_"));
+      EXPECT_TRUE(builder_->isFirstLevelSinkDriver(&inst));
+      ++clusters;
+    }
+  });
+  ASSERT_GT(clusters, 1u) << "The case must create real precluster buffers";
+  size_t root_children = 0;
+  clock.forEachSubNet([&](const ClockSubNet& net) {
+    if (net.getDriver()->getName() == "clkbuf_0_clk") {
+      net.forEachSink([&](ClockInst* sink) {
+        EXPECT_TRUE(sink->isClockBuffer())
+            << "Original pins below clusters must not bypass them";
+        ++root_children;
+      });
+    }
+  });
+  EXPECT_EQ(root_children, clusters);
+  ASSERT_NO_THROW(selectCurrentTree());
+  writeCurrentTree();
+  EXPECT_EQ(reachableOriginals(), sink_count);
+  const auto result = audit();
+  EXPECT_EQ(result.reached_sinks, sink_count);
+  EXPECT_EQ(result.reached_nets, result.expected_nets);
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, PredictedDummyLoadAndAreaMatchActualDbInsertion)
+{
+  prepareTreeModel();
+  auto* options = cts_->getParms();
+  options->enableDummyLoad(true);
+  options->setTreeBuffer("BUF_X8");
+  options->setMaxWl(1000000);
+  options->setBufferDistance(1000000);
+  auto& clock = builder_->getClock();
+  const auto point = clock.computeSinkRegion().getCenter();
+  auto& root
+      = clock.addClockBuffer("clkbuf_0", "BUF_X8", point.getX(), point.getY());
+  auto& light = clock.addClockBuffer(
+      "clkbuf_light", "BUF_X8", point.getX(), point.getY());
+  auto& heavy = clock.addClockBuffer(
+      "clkbuf_heavy", "BUF_X8", point.getX(), point.getY());
+  for (auto* inst : {&root, &light, &heavy}) {
+    builder_->addTreeLevelBuffer(inst);
+  }
+  auto& upper = clock.addSubNet("clknet_0");
+  upper.addInst(root);
+  upper.addInst(light);
+  upper.addInst(heavy);
+  auto& light_net = clock.addSubNet("clknet_light");
+  light_net.addInst(light);
+  light_net.setLeafLevel(true);
+  auto& heavy_net = clock.addSubNet("clknet_heavy");
+  heavy_net.addInst(heavy);
+  heavy_net.setLeafLevel(true);
+  size_t index = 0;
+  clock.forEachSink([&](ClockInst& sink) {
+    (index++ == 0 ? light_net : heavy_net).addInst(sink);
+  });
+  ASSERT_NO_THROW(selectCurrentTree());
+  const auto prediction = predictSelectedDummies();
+  ASSERT_EQ(prediction.count, 1u)
+      << "Unequal real leaf loads must require a dummy";
+  ASSERT_GT(prediction.cap, 0);
+  writeCurrentTree();
+  size_t count = 0;
+  double cap = 0, area = 0;
+  for (auto* inst : block_->getInsts()) {
+    const bool dummy
+        = inst->getName().starts_with(options->getDummyLoadPrefix());
+    if (dummy || inst->getName().starts_with("clkbuf_")) {
+      auto* cell
+          = db_network_->findLibertyCell(inst->getMaster()->getConstName());
+      area += cell->area();
+      if (dummy) {
+        ++count;
+        sta::LibertyPort *input, *output;
+        cell->bufferPorts(input, output);
+        cap += worstCap(input);
+      }
+    }
+  }
+  EXPECT_EQ(count, prediction.count);
+  EXPECT_DOUBLE_EQ(cap, prediction.cap);
+  EXPECT_NEAR(area, prediction.area, 1e-6);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
   EXPECT_EQ(result.reached_sinks, originals_.size());
   EXPECT_TRUE(result.error.empty()) << result.error;
 }

@@ -180,9 +180,8 @@ class ClockBuffering
           };
     auto reference = evaluateBuffering(nodes_, root_, model, choices, dummy);
     const size_t initial_size = nodes_.size();
-    prepareSites(model, reference);
-    const auto plan
-        = searchBuffering(nodes_, root_, model, choices, dummy, reference);
+    prepareSites();
+    const auto plan = choosePlan(model, choices, dummy, reference);
     nodes_ = plan.nodes;
     restoreLocations();
     if (!plan.reference) {
@@ -205,8 +204,7 @@ class ClockBuffering
   }
 
  private:
-  void prepareSites(const BufferingSearchModel& model,
-                    const std::optional<BufferingPlan>& reference)
+  void prepareSites()
   {
     // A common footprint prevents resizing from invalidating the load of an
     // already selected child. All coordinates are physical dbu, not LUT bins.
@@ -221,6 +219,22 @@ class ClockBuffering
         node.point = legalize(node.point);
       }
     }
+  }
+
+  BufferingPlan choosePlan(const BufferingSearchModel& model,
+                           const BufferingChoices& choices,
+                           const BufferingDummy& dummy,
+                           const std::optional<BufferingPlan>& reference)
+  {
+    // Expansion chooses only one electrical seed. Its fastest child can
+    // overload a fixed parent even when a smaller child or bypass is legal.
+    // Keep the complete original-site search outside that seed's frontier.
+    std::optional<BufferingPlan> best;
+    try {
+      best = searchBuffering(nodes_, root_, model, choices, dummy, reference);
+    } catch (const std::runtime_error&) {
+      // A legal plan may require sites that the bounded expansion adds.
+    }
     BottomUpBuffering strategy(
         cap_per_dbu_,
         model.max_wire_length,
@@ -230,12 +244,31 @@ class ClockBuffering
         [this](auto point) { return legalize(point); });
     try {
       nodes_ = strategy.run(nodes_, root_);
+      // The expander updates electrical input caps, but its generic choice
+      // has no nominal-cap field. Synchronize the unchanged dummy policy's
+      // nominal loads after seed resizing and insertion.
+      for (auto& node : nodes_) {
+        if (!node.sink) {
+          node.nominal_input_cap
+              = std::ranges::find(cells_, node.master, &BufferCell::name)
+                    ->nominal_input_cap;
+        }
+      }
+      auto expanded
+          = searchBuffering(nodes_, root_, model, choices, dummy, reference);
+      const auto rank = [](const BufferingPlan& plan) {
+        return std::tuple(
+            plan.delay(), plan.skew(), plan.depth, plan.buffers, plan.area);
+      };
+      if (!best || rank(expanded) < rank(*best)) {
+        best = std::move(expanded);
+      }
     } catch (const std::runtime_error&) {
-      if (!reference) {
+      if (!best) {
         throw;
       }
-      nodes_ = reference->nodes;
     }
+    return std::move(*best);
   }
 
   void addCell(const std::string& name)

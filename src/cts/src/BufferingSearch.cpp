@@ -467,8 +467,10 @@ BufferingPlan searchBuffering(const std::vector<BufferingNode>& sites,
                              alternative,
                              distance(node.point, sites[child].point),
                              model);
-          state.order = serial++;
-          next.push_back(std::move(state));
+          if (state.length <= model.max_wire_length) {
+            state.order = serial++;
+            next.push_back(std::move(state));
+          }
         }
       }
       prune(next, model.candidate_limit);
@@ -476,7 +478,10 @@ BufferingPlan searchBuffering(const std::vector<BufferingNode>& sites,
     }
     auto& alternatives = frontiers[index];
     for (auto& state : merged) {
-      if (index != root && node.fixed_master.empty()) {
+      // An ancestor can only extend an open path. An overlength wire-only
+      // state can never become feasible and must not crowd out real stages.
+      if (index != root && node.fixed_master.empty()
+          && state.length <= model.max_wire_length) {
         state.tree
             = std::make_shared<Decision>(Decision{index, {}, state.children});
         alternatives.push_back(state);
@@ -501,6 +506,13 @@ BufferingPlan searchBuffering(const std::vector<BufferingNode>& sites,
   auto best = reference;
   if (best) {
     best->reference = true;
+  }
+  // The caller's complete seed can be feasible even if bounded pruning
+  // discarded its partial states. Verify and retain it outside pruning.
+  auto seed = evaluateBuffering(sites, root, model, choices, dummy);
+  if (seed && (!reference || noWorse(*seed, *reference))
+      && (!best || rank(*seed) < rank(*best))) {
+    best = std::move(seed);
   }
   for (const auto& candidate : frontiers[root]) {
     const auto nodes = materialize(sites, candidate).nodes;
