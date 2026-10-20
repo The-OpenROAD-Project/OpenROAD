@@ -178,6 +178,7 @@ class RouteBase
 
   // Refresh RUDY after retained timing repair and inflate only its surviving
   // new standard cells. Does not restart or revert the routability search.
+  // Consumes whole filler cells to fund inflation without raising density.
   // The caller must subsequently update region areas and density sizes.
   int64_t inflateNewCells();
 
@@ -211,8 +212,6 @@ class RouteBase
   std::unique_ptr<TileGrid> tg_;
 
   std::vector<int64_t> inflatedAreaDelta_;
-  std::vector<int64_t> minRcInflatedAreaDelta_;
-  std::vector<int64_t> accumulatedInflatedAreaDelta_;
 
   int revert_count_ = 0;
   float final_average_rc_ = 0.0;

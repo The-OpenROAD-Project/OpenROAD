@@ -255,8 +255,6 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   nbVec_ = std::move(nbVec);
   minRcTargetDensity_.resize(nbVec_.size(), 0);
   inflatedAreaDelta_.resize(nbVec_.size(), 0);
-  accumulatedInflatedAreaDelta_.resize(nbVec_.size(), 0);
-  minRcInflatedAreaDelta_.resize(nbVec_.size(), 0);
   init();
 }
 
@@ -292,7 +290,6 @@ void RouteBase::revertToMinCongestion()
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
-    accumulatedInflatedAreaDelta_[j] = minRcInflatedAreaDelta_[j];
   }
   netWeights_ = minRcNetWeights_;
   applyNetWeights();
@@ -346,8 +343,8 @@ std::vector<int64_t> RouteBase::inflatedAreaDelta() const
 int64_t RouteBase::getTotalInflation() const
 {
   int64_t totalInflation = 0;
-  for (auto inflation : accumulatedInflatedAreaDelta_) {
-    totalInflation += inflation;
+  for (const auto& nb : nbVec_) {
+    totalInflation += nb->getInflationArea();
   }
   return totalInflation;
 }
@@ -709,6 +706,10 @@ int64_t RouteBase::inflateNewCells()
                              * available_area)
             - standard_cell_area - nb->getTotalFillerArea());
     available = std::min(available, remaining_budget);
+    const int64_t filler_area = nb->getFillerCellArea();
+    const int64_t removable_area = filler_area * nb->getFillerCnt();
+    // Never buy virtual area by increasing the repaired design's density.
+    available = std::min(available, removable_area);
     int64_t added = 0;
     for (const auto& handle : nb->getGCells()) {
       const GCell* cell = handle;
@@ -747,7 +748,12 @@ int64_t RouteBase::inflateNewCells()
       available -= delta;
       added += delta;
     }
-    accumulatedInflatedAreaDelta_[i] += added;
+    if (added > 0) {
+      // Rounding up pays for all added area; at most one filler cell of
+      // extra whitespace is created. No change to the resizer's cell sizes.
+      const int64_t fillers = (added + filler_area - 1) / filler_area;
+      nb->cutFillerCells(fillers * filler_area);
+    }
     remaining_budget -= added;
     total_added += added;
     debugPrint(log_,
@@ -996,7 +1002,6 @@ std::pair<bool, bool> RouteBase::routability(
 
     // save cell size info
     nbc_->updateMinRcCellSize();
-    minRcInflatedAreaDelta_ = accumulatedInflatedAreaDelta_;
     minRcNetWeights_ = netWeights_;
   } else {
     is_min_rc_ = false;
@@ -1081,7 +1086,6 @@ std::pair<bool, bool> RouteBase::routability(
     if (log_->debugCheck(GPL, "rudy", 1)) {
       printGCellInflation();
     }
-    accumulatedInflatedAreaDelta_[nb_index] += inflatedAreaDelta_[nb_index];
 
     float inflated_area_delta_microns
         = block->dbuAreaToMicrons(inflatedAreaDelta_[nb_index]);

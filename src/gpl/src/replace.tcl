@@ -7,6 +7,7 @@ sta::define_cmd_args "global_placement" {\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-timing_driven_repair_timing]\
+    [-timing_driven_congestion_inflation]\
     [-routability_driven]\
     [-virtual_cts]\
     [-incremental]\
@@ -80,6 +81,7 @@ proc global_placement { args } {
       -skip_nesterov_place \
       -timing_driven \
       -timing_driven_repair_timing \
+      -timing_driven_congestion_inflation \
       -routability_driven \
       -virtual_cts \
       -routability_use_grt \

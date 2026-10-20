@@ -212,6 +212,7 @@ TEST_F(CongestionBuffersTest, RefreshesRudyAndPreservesExistingInflation)
   auto* existing_inst = existing->insts().front()->dbInst();
   const int existing_width = existing->dx();
   const int existing_height = existing->dy();
+  const int64_t existing_inflation = existing->inflationArea();
   auto* hot = insertBuffer("hot");
   auto* cold = insertBuffer("cold", 45000);
   const int64_t hot_area = cellArea(cellFor(hot));
@@ -225,7 +226,7 @@ TEST_F(CongestionBuffersTest, RefreshesRudyAndPreservesExistingInflation)
   EXPECT_EQ(cellArea(cellFor(cold)), cold_area);
   EXPECT_EQ(cellFor(existing_inst)->dx(), existing_width);
   EXPECT_EQ(cellFor(existing_inst)->dy(), existing_height);
-  EXPECT_EQ(rb_->getTotalInflation(), added);
+  EXPECT_EQ(rb_->getTotalInflation(), existing_inflation + added);
   EXPECT_EQ(rb_->getRevertCount(), 0);
   EXPECT_LE(static_cast<double>(cellArea(cellFor(hot))) / hot_area,
             options_.routabilityMaxInflationRatio);
@@ -593,6 +594,52 @@ TEST_F(CongestionBuffersTest,
     EXPECT_EQ(nb_->getTargetDensity(), density);
     EXPECT_EQ(nb_->getMovableArea(), movable_area);
   }
+}
+
+TEST_F(CongestionBuffersTest, InflationConsumesFillersWithoutRaisingDensity)
+{
+  addDemand();
+  insertBuffer("filler_funded");
+  nb_->updateTimingDrivenDensity();
+  const float before_density = nb_->getTargetDensity();
+  const int64_t before_fillers = nb_->getTotalFillerArea();
+  const int64_t added = rb_->inflateNewCells();
+  ASSERT_GT(added, 0);
+  nb_->updateTimingDrivenDensity();
+  EXPECT_GE(before_fillers - nb_->getTotalFillerArea(), added);
+  EXPECT_LE(nb_->getTargetDensity(), before_density);
+  EXPECT_EQ(rb_->getTotalInflation(), added);
+}
+
+TEST_F(CongestionBuffersTest, NoFillerAreaDoesNotBuyInflationWithDensity)
+{
+  addDemand();
+  nb_->cutFillerCells(nb_->getTotalFillerArea());
+  ASSERT_EQ(nb_->getFillerCnt(), 0);
+  auto* buffer = insertBuffer("no_fillers");
+  const int64_t area = cellArea(cellFor(buffer));
+  EXPECT_EQ(rb_->inflateNewCells(), 0);
+  EXPECT_EQ(cellArea(cellFor(buffer)), area);
+  checkDensity();
+}
+
+TEST_F(MovableMacroBuffersTest, LiveMacroChargeUsesCurrentTargetDensity)
+{
+  GCell* macro = cellFor(macro_);
+  ASSERT_NE(macro, nullptr);
+  EXPECT_EQ(rb_->getTotalInflation(), 0);
+  const int64_t base_area = cellArea(macro);
+  macro->setSize(
+      macro->dx() + 200, macro->dy(), GCell::GCellChange::kRoutability);
+  const int64_t delta = cellArea(macro) - base_area;
+  ASSERT_GT(delta, 0);
+  for (const float density : {0.4f, 0.8f}) {
+    nb_->setTargetDensity(density);
+    EXPECT_EQ(rb_->getTotalInflation(),
+              static_cast<int64_t>(std::round(delta * density)));
+  }
+  nbc_->resizeGCell(macro_);
+  EXPECT_EQ(rb_->getTotalInflation(), 0);
 }
 
 }  // namespace

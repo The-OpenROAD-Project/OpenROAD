@@ -55,6 +55,7 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "congestion_inflation_option",
     "incremental02",
     "incremental03",
     "place_ios_rd",

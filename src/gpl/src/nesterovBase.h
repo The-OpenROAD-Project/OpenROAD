@@ -121,6 +121,7 @@ class GCell
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  int64_t inflationArea() const;
   void setAreaChangeType(GCellChange change) { change_ = change; }
   GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
@@ -164,6 +165,9 @@ class GCell
   float gradientY_ = 0;
 
   GCellChange change_ = GCellChange::kNone;
+  // Geometry before artificial inflation, including padding/pin adjustment.
+  // Reloaded with physical geometry on timing resize and move callbacks.
+  int64_t uninflated_area_ = 0;
 };
 
 inline int GCell::lx() const
@@ -850,6 +854,7 @@ struct NesterovPlaceVars
 
   bool timingDrivenMode;
   bool timingDrivenRepairTiming;
+  const bool timingDrivenCongestionInflation;
   float timingDrivenRepairTnsEndPercent;
   int timingDrivenIterCounter = 0;
   const bool routability_driven_mode;
@@ -1145,6 +1150,7 @@ class NesterovBase
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
+  int64_t getInflationArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
@@ -1338,6 +1344,8 @@ class NesterovBase
   void setIoPins(std::unique_ptr<IoPinBase> io_pins);
 
  private:
+  friend class TimingRepairIntegrationTest;
+
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;

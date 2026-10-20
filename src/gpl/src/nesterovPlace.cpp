@@ -447,7 +447,11 @@ void NesterovPlace::runTimingDriven(int iter,
     int nbc_total_gcells_before_td = nbc_->getGCells().size();
 
     for (auto& nb : nbVec_) {
-      nb_gcells_before_td += nb->getGCells().size();
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isInstance()) {
+          ++nb_gcells_before_td;
+        }
+      }
     }
 
     bool enable_repair_timing = npVars_.timingDrivenIterCounter
@@ -462,7 +466,8 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
-    if (!virtual_td_iter && npVars_.routability_driven_mode) {
+    if (!virtual_td_iter && npVars_.routability_driven_mode
+        && npVars_.timingDrivenCongestionInflation && !is_routability_need_) {
       // Include inserted buffers in congestion pressure before initializing
       // their optimizer state or rebuilding the device geometry.
       rb_->inflateNewCells();
@@ -489,7 +494,11 @@ void NesterovPlace::runTimingDriven(int iter,
         = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
-      nb_gcells_after_td += nb->getGCells().size();
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isInstance()) {
+          ++nb_gcells_after_td;
+        }
+      }
     }
     const int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
     if (nb_total_gcells_delta != nbc_total_gcells_delta) {

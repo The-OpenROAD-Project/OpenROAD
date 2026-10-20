@@ -64,7 +64,9 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     grt_.setMinRoutingLayer(2);
     grt_.setMaxRoutingLayer(6);
     grt_.getRudy()->setWireWidth(1000000);
-    options_.density = 0.7f;
+    // Reserve filler area for an ordinary pass followed by a real timing
+    // repair; the experimental policy may not raise density to fund inflation.
+    options_.density = 0.78f;
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
     options_.keepResizeBelowOverflow = 0.3f;
@@ -102,10 +104,13 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     ASSERT_EQ(fanout->getITermCount(), 65);
   }
 
-  void makePlacer(bool routability = true, bool timing = true)
+  void makePlacer(bool routability = true,
+                  bool timing = true,
+                  bool inflation = true)
   {
     options_.routabilityDrivenMode = routability;
     options_.timingDrivenMode = timing;
+    options_.timingDrivenCongestionInflation = inflation;
     pbc_ = std::make_shared<PlacerBaseCommon>(
         db_.get(), PlacerBaseVars(options_), &logger_);
     pb_vec_.push_back(
@@ -131,6 +136,51 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         nullptr,
         std::make_unique<GraphicsNone>(),
         &logger_);
+  }
+
+  void completeRoutability(bool inflate_ordinary_cells = false)
+  {
+    // Supply settled motion to the real controller, then execute its ordinary
+    // congestion checks. Completion is not set by hand in this fixture.
+    auto ordinary_pass = [&](int wire_width) {
+      grt_.getRudy()->setWireWidth(wire_width);
+      np_->average_overflow_unscaled_ = 0.2f;
+      for (const auto& nb : nb_vec_) {
+        nb->peak_coordi_distance_ = 1.0f;
+        nb->coordiDistance_ = 0.0f;
+        nb->saveSnapshot();
+      }
+      float current_a = 1.0f;
+      np_->runRoutability(0,
+                          0,
+                          "",
+                          1.0f,
+                          np_->wireLengthCoefX_,
+                          np_->wireLengthCoefY_,
+                          ordinary_iterations_,
+                          current_a);
+    };
+    if (inflate_ordinary_cells) {
+      ordinary_pass(1000000);
+      ASSERT_GT(rb_->getTotalInflation(), 0);
+      ASSERT_TRUE(np_->is_routability_need_);
+    }
+    ordinary_pass(1);
+    ASSERT_FALSE(np_->is_routability_need_);
+    ASSERT_GT(ordinary_iterations_, 0);
+    grt_.getRudy()->setWireWidth(1000000);
+  }
+
+  odb::dbInst* inflatedNewBuffer()
+  {
+    for (const auto& cell : nb_vec_[0]->getGCells()) {
+      if (cell->isStdInstance() && cell->inflationArea() > 0
+          && !initial_names_.contains(
+              cell->insts().front()->dbInst()->getName())) {
+        return cell->insts().front()->dbInst();
+      }
+    }
+    return nullptr;
   }
 
   void runTiming(float overflow, bool routability_iteration = false)
@@ -201,6 +251,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   std::shared_ptr<TimingBase> tb_;
   std::unique_ptr<NesterovPlace> np_;
   int timing_iterations_ = 0;
+  int ordinary_iterations_ = 0;
   int64_t delta_area_ = 0;
 };
 
@@ -208,6 +259,7 @@ TEST_F(TimingRepairIntegrationTest,
        RetainedRepairInflatesConnectedNewBuffersBeforeStateInitialization)
 {
   makePlacer();
+  completeRoutability();
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(true);
@@ -217,10 +269,13 @@ TEST_F(TimingRepairIntegrationTest,
        VirtualRepairDoesNotRefreshRudyOrRetainBuffers)
 {
   makePlacer();
+  completeRoutability();
+  const int tiles_before = rb_->getTotalTilesCount();
+  ASSERT_GT(tiles_before, 0);
   runTiming(0.4f);
   EXPECT_EQ(timing_iterations_, 1);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
-  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  EXPECT_EQ(rb_->getTotalTilesCount(), tiles_before);
   EXPECT_EQ(rb_->getTotalInflation(), 0);
   EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
 }
@@ -252,6 +307,106 @@ TEST_F(TimingRepairIntegrationTest,
   EXPECT_EQ(timing_iterations_, 0);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
   EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+}
+
+TEST_F(TimingRepairIntegrationTest, BeforeFirstRoutabilityPassDefersInflation)
+{
+  makePlacer();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  EXPECT_EQ(ordinary_iterations_, 0);
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  checkRetainedInsertions(false);
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       DefaultOffKeepsCompletedRoutabilityUnmodified)
+{
+  ASSERT_FALSE(PlaceOptions{}.timingDrivenCongestionInflation);
+  makePlacer(true, true, false);
+  completeRoutability();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(false);
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       OrdinaryAndTimingInflationShareLiveAllowance)
+{
+  makePlacer();
+  const int64_t original = nb_vec_[0]->getNesterovInstsArea();
+  completeRoutability(true);
+  ASSERT_GT(rb_->getTotalInflation(), 0);
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(true);
+  EXPECT_LE(rb_->getTotalInflation(),
+            static_cast<int64_t>(static_cast<double>(original)
+                                 * options_.routabilityMaxInflationTotal));
+}
+
+TEST_F(TimingRepairIntegrationTest, PhysicalResizeReclaimsLiveInflation)
+{
+  makePlacer();
+  completeRoutability();
+  runTiming(0.2f);
+  auto* buffer = inflatedNewBuffer();
+  ASSERT_NE(buffer, nullptr);
+  GCell* cell = nbc_->getGCells().front();
+  for (auto* candidate : nbc_->getGCells()) {
+    if (candidate->contains(buffer)) {
+      cell = candidate;
+      break;
+    }
+  }
+  const int64_t released = cell->inflationArea();
+  const int64_t before = rb_->getTotalInflation();
+  const char* replacement
+      = buffer->getMaster()->getName() == std::string("BUF_X32") ? "BUF_X16"
+                                                                 : "BUF_X32";
+  ASSERT_TRUE(buffer->swapMaster(lib_->findMaster(replacement)));
+  nbc_->fixPointers();
+  EXPECT_EQ(cell->inflationArea(), 0);
+  EXPECT_EQ(rb_->getTotalInflation(), before - released);
+}
+
+TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
+{
+  options_.routabilityMaxInflationTotal = 0.002f;
+  makePlacer();
+  completeRoutability();
+  runTiming(0.2f);
+  auto* buffer = inflatedNewBuffer();
+  ASSERT_NE(buffer, nullptr);
+  int64_t released = 0;
+  int center_x = 0, center_y = 0;
+  for (auto* cell : nbc_->getGCells()) {
+    if (cell->contains(buffer)) {
+      released = cell->inflationArea();
+      center_x = cell->dCx();
+      center_y = cell->dCy();
+    }
+  }
+  ASSERT_GT(released, 0);
+  const int64_t before = rb_->getTotalInflation();
+  odb::dbInst::destroy(buffer);
+  nbc_->fixPointers();
+  EXPECT_EQ(rb_->getTotalInflation(), before - released);
+  auto* master = lib_->findMaster("BUF_X1");
+  auto* replacement = odb::dbInst::create(block_, master, "reclaimed_buffer");
+  replacement->setLocation(center_x - master->getWidth() / 2,
+                           center_y - master->getHeight() / 2);
+  replacement->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  replacement->findITerm("A")->connect(block_->findBTerm("req_val")->getNet());
+  auto* output = odb::dbNet::create(block_, "reclaimed_output");
+  replacement->findITerm("Z")->connect(output);
+  block_->findInst("sink_0")->findITerm("A1")->connect(output);
+  nbc_->fixPointers();
+  ASSERT_GT(rb_->inflateNewCells(), 0);
+  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
+                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateTimingDrivenDensity();
+  EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
 }
 
 }  // namespace gpl

@@ -99,6 +99,7 @@ GCell::GCell(const int cx, const int cy, const int dx, const int dy)
   dLy_ = ly_ = cy - dy / 2;
   dUx_ = ux_ = cx + dx / 2;
   dUy_ = uy_ = cy + dy / 2;
+  uninflated_area_ = static_cast<int64_t>(this->dx()) * this->dy();
 }
 
 bool GCell::isLocked() const
@@ -133,6 +134,7 @@ void GCell::setAllLocations(int lx, int ly, int ux, int uy)
   dLy_ = ly_ = ly;
   dUx_ = ux_ = ux;
   dUy_ = uy_ = uy;
+  uninflated_area_ = static_cast<int64_t>(dx()) * dy();
 }
 
 void GCell::addGPin(GPin* gPin)
@@ -169,6 +171,7 @@ void GCell::updateLocations()
   dLy_ = ly_ = bbox.yMin();
   dUx_ = ux_ = bbox.xMax();
   dUy_ = uy_ = bbox.yMax();
+  uninflated_area_ = static_cast<int64_t>(dx()) * dy();
 }
 
 void GCell::setCenterLocation(int cx, int cy)
@@ -184,6 +187,12 @@ void GCell::setCenterLocation(int cx, int cy)
   for (auto& gPin : gPins_) {
     gPin->updateLocation(this);
   }
+}
+
+int64_t GCell::inflationArea() const
+{
+  return std::max<int64_t>(
+      0, static_cast<int64_t>(dx()) * dy() - uninflated_area_);
 }
 
 // changing size and preserve center coordinates
@@ -1198,6 +1207,7 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
       timingDrivenMode(options.timingDrivenMode),
       timingDrivenRepairTiming(options.timingDrivenRepairTiming),
+      timingDrivenCongestionInflation(options.timingDrivenCongestionInflation),
       timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
@@ -2768,6 +2778,20 @@ int64_t NesterovBase::getNesterovInstsArea() const
   return stdInstsArea_
          + static_cast<int64_t>(
              std::round(pb_->macroInstsArea() * targetDensity_));
+}
+
+int64_t NesterovBase::getInflationArea() const
+{
+  int64_t area = 0;
+  for (const auto& cell : nb_gcells_) {
+    if (cell->isStdInstance()) {
+      area += cell->inflationArea();
+    } else if (cell->isMacroInstance()) {
+      area += static_cast<int64_t>(
+          std::round(cell->inflationArea() * targetDensity_));
+    }
+  }
+  return area;
 }
 
 float NesterovBase::getSumPhi() const
