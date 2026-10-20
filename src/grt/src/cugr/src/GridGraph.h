@@ -234,10 +234,8 @@ class GridGraph
                        const std::vector<double>& net_costs = {},
                        bool adopted = false);
 
-  // Overflow on the edges a tree occupies, each edge counted once.
-  double treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
-                      bool adopted,
-                      const std::vector<double>& net_costs) const;
+  // Overflow on the edges the net's tree occupies, each edge counted once.
+  double treeOverflow(const GRNet& net) const;
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;

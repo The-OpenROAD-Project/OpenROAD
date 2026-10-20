@@ -934,11 +934,10 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     }
     const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
     const bool old_adopted = net->isAdopted();
-    const std::vector<double>& costs = net->getNdrCosts();
     // Overflow change of the transaction, measured on the touched edges.
-    double delta = -grid_graph_->treeOverflow(old_tree, old_adopted, costs);
+    double delta = -grid_graph_->treeOverflow(*net);
     grid_graph_->removeTreeUsage(*net);
-    delta += grid_graph_->treeOverflow(old_tree, old_adopted, costs);
+    delta += grid_graph_->treeOverflow(*net);
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     // Checked where the maze reads the view, after every refresh so far.
     if (verify_view) {
@@ -981,9 +980,9 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
-    delta -= grid_graph_->treeOverflow(net->getRoutingTree(), false, costs);
+    delta -= grid_graph_->treeOverflow(*net);
     grid_graph_->addTreeUsage(*net);
-    delta += grid_graph_->treeOverflow(net->getRoutingTree(), false, costs);
+    delta += grid_graph_->treeOverflow(*net);
     if (delta > kAcceptTolerance) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
@@ -1416,14 +1415,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       }
       const int streak = ++ndr_congested_streak[net_index];
       if (streak >= kSoftNdrStreakThreshold) {
-        const auto& tree = net->getRoutingTree();
-        overflow_change
-            -= grid_graph_->treeOverflow(tree, false, net->getNdrCosts());
-        grid_graph_->removeTreeUsage(tree, net->getNdrCosts());
+        // The net-aware forms keep an adopted tree's wrong-way spans legal.
+        overflow_change -= grid_graph_->treeOverflow(*net);
+        grid_graph_->removeTreeUsage(*net);
         net->setSoftNdr();
-        grid_graph_->addTreeUsage(tree, net->getNdrCosts());
-        overflow_change
-            += grid_graph_->treeOverflow(tree, false, net->getNdrCosts());
+        grid_graph_->addTreeUsage(*net);
+        overflow_change += grid_graph_->treeOverflow(*net);
         demoted_now.push_back(net->getName());
       }
     }

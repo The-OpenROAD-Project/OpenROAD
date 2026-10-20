@@ -1484,10 +1484,9 @@ void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
       });
 }
 
-double GridGraph::treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
-                               const bool adopted,
-                               const std::vector<double>& net_costs) const
+double GridGraph::treeOverflow(const GRNet& net) const
 {
+  const auto& tree = net.getRoutingTree();
   if (!tree) {
     return 0.0;
   }
@@ -1498,7 +1497,9 @@ double GridGraph::treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
     }
   };
   forEachTreeWireEdgeImpl(
-      tree, adopted, [&](const int layer, const PointT cell, bool wrong_way) {
+      tree,
+      net.isAdopted(),
+      [&](const int layer, const PointT cell, bool wrong_way) {
         if (wrong_way) {
           forEachWrongWayFlankEdgeImpl(
               layer, cell, [&](const PointT edge, CapacityT) {
@@ -1514,7 +1515,7 @@ double GridGraph::treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
             low,
             high,
             loc,
-            net_costs,
+            net.getNdrCosts(),
             [&](const int layer, const PointT edge, CapacityT, double) {
               add(layer, edge);
             });
