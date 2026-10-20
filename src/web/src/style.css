@@ -2499,13 +2499,13 @@ body.is-resizing-h * {
 
 .timing-path-table-container {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     min-height: 80px;
 }
 
 .timing-detail-table-container {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     min-height: 80px;
     border-top: 1px solid var(--border);
 }
@@ -2555,6 +2555,10 @@ body.is-resizing-h * {
 .timing-table tbody td {
     padding: 3px var(--space-md);
     white-space: nowrap;
+    /* a column narrower than its longest name elides it, as Qt does,
+       rather than writing over the next column */
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--fg-primary);
     font-family: var(--font-mono);
 }
@@ -2653,7 +2657,7 @@ body.is-resizing-h * {
 
 .hierarchy-table-container {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     min-height: 0;
 }
 

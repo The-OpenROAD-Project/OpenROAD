@@ -644,6 +644,7 @@ export class TimingWidget {
             const pinTh = this._detailTable.querySelector('thead th');
             if (pinTh) {
                 pinTh.style.width = '30ch';
+                this._detailTable.fitColumns?.();
             }
         }
     }
