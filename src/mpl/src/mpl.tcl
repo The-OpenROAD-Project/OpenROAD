@@ -382,7 +382,7 @@ proc block_macro_channels { args } {
 }
 
 namespace eval mpl {
-proc check_block_exists {} {
+proc check_block_exists { } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error MPL 1 "No block found for Macro Placement."
   }
