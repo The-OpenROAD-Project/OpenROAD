@@ -54,13 +54,6 @@ namespace {
 constexpr float kBufferTreeTargetEffectiveLoadCapFactor = 0.65f;
 constexpr float kBufferTreeSideEffectiveLoadCapFactor = 0.875f;
 constexpr float kBufferTreeDirectLoadCapFactor = 0.60f;
-// A final buffer whose downstream cap per input slew reaches the ratio takes
-// its output slew at the lower effective-load fraction.  Such a buffer drives
-// the longest RC load for its drive, where the wire resistance hides the most
-// downstream cap from it (the effective cap of STA's delay calculator), so a
-// lookup at the path fraction overstates its output slew.
-constexpr float kBufferTreeHighCapSlewRatio = 2.5e-3f;
-constexpr float kBufferTreeHighCapSlewFactor = 0.60f;
 // A stage that keeps part of its load keeps its slew at least to this power
 // of the load ratio.
 constexpr float kLoadRatioSlewFloorExponent = 0.85f;
@@ -284,26 +277,6 @@ bool treeStageTiming(const DelayStageState& target_stage,
                                     buffer_delay,
                                     buffer_output_slew)) {
         return false;
-      }
-
-      const bool high_cap_final_buffer
-          = tree_stage.drives_distributed_load
-            && !load_path.hasBufferAfter(stage_index) && input_slew > 0.0f
-            && tree_stage.downstream_cap / input_slew
-                   >= kBufferTreeHighCapSlewRatio;
-      if (high_cap_final_buffer) {
-        float unused_buffer_delay = 0.0f;
-        float high_cap_output_slew = 0.0f;
-        const float slew_load_cap = bufferTreeEffectiveLoadCap(
-            tree_stage.downstream_cap, kBufferTreeHighCapSlewFactor);
-        if (lookupBufferDelayAndSlew(target_stage,
-                                     tree_stage.buffer_cell,
-                                     input_slew,
-                                     slew_load_cap,
-                                     unused_buffer_delay,
-                                     high_cap_output_slew)) {
-          buffer_output_slew = high_cap_output_slew;
-        }
       }
 
       stage_trace = {.path_index = target_stage.path_index,
