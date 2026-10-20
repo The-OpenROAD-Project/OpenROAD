@@ -17,12 +17,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.020 |     -341.5 |     48 | capture_66/D
-     186* |      38 |      63 |        7 |      3 |     9 |    +3.4% |   -6.269 |     -228.0 |     48 | capture_53/D
-    final |      38 |      63 |        7 |      3 |     9 |    +3.4% |   -6.269 |     -228.0 |     45 | capture_53/D
+     190* |      38 |      65 |        9 |      3 |     9 |    +3.9% |   -6.269 |     -227.9 |     48 | capture_53/D
+    final |      38 |      65 |        9 |      3 |     9 |    +3.9% |   -6.269 |     -227.9 |     45 | capture_53/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 38 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 63 instances: 63 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 9 buffers.
+[INFO RSZ-0051] Resized 65 instances: 65 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 9 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

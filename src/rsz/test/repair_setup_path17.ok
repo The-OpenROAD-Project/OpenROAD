@@ -12,10 +12,10 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.445 |      -15.5 |     23 | inst13/D
-     230* |       0 |      55 |        6 |      0 |     4 |    +7.6% |   -0.367 |       -4.1 |     23 | inst13/D
-    final |       0 |      55 |        6 |      0 |     4 |    +7.6% |   -0.367 |       -4.1 |     22 | inst13/D
+     224* |       0 |      55 |        8 |      0 |     4 |    +8.3% |   -0.367 |       -4.0 |     23 | inst13/D
+    final |       0 |      55 |        8 |      0 |     4 |    +8.3% |   -0.367 |       -4.0 |     22 | inst13/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 6 buffers.
+[INFO RSZ-0040] Inserted 8 buffers.
 [INFO RSZ-0051] Resized 55 instances: 55 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 4 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
