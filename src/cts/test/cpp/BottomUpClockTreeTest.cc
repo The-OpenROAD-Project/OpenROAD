@@ -432,7 +432,9 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     cts_->runClockTreeSynthesis();
   }
 
-  void planLongSpan(bool explicit_distance, int max_wl_microns = 500)
+  void planLongSpan(bool explicit_distance,
+                    int max_wl_microns = 500,
+                    size_t expected_buffers = 0)
   {
     const int dbu = block_->getDbUnitsPerMicron();
     block_->setDieArea(odb::Rect(0, 0, 400 * dbu, 400 * dbu));
@@ -473,7 +475,10 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
       EXPECT_EQ(inst.getMaster(),
                 inst.getName() == "clkbuf_0_clk" ? "BUF_X8" : "BUF_X4");
     });
-    EXPECT_EQ(buffers, explicit_distance ? 3u : 2u);
+    if (expected_buffers == 0) {
+      expected_buffers = explicit_distance ? 3u : 2u;
+    }
+    EXPECT_EQ(buffers, expected_buffers);
     EXPECT_EQ(clock.findClockByName("clkbuf_long_span_clk") != nullptr,
               !explicit_distance)
         << "The inferred-distance case must retain the original reference, "
@@ -645,6 +650,44 @@ TEST_F(BottomUpClockTreeTest,
   const auto result = audit();
   EXPECT_EQ(result.expected_nets, 3u);
   EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest,
+       FiniteWireLimitTakesPrecedenceOverExplicitDistance)
+{
+  // 40 um binds before both the 100 um explicit spacing and 110 um branch.
+  // The distance-only case needs three cells; this case really needs more.
+  planLongSpan(true, 40, 5);
+  const int limit = 40 * block_->getDbUnitsPerMicron();
+  EXPECT_LT(limit, cts_->getParms()->getBufferDistance());
+  size_t edges = 0;
+  builder_->getClock().forEachSubNet([&](const ClockSubNet& subnet) {
+    auto* net = subnet.getNetObj();
+    ASSERT_NE(net, nullptr);
+    auto* driver = net->getFirstOutput();
+    ASSERT_NE(driver, nullptr);
+    int x, y;
+    ASSERT_TRUE(driver->getAvgXY(&x, &y));
+    for (auto* pin : net->getITerms()) {
+      if (pin == driver) {
+        continue;
+      }
+      int sink_x, sink_y;
+      ASSERT_TRUE(pin->getAvgXY(&sink_x, &sink_y));
+      EXPECT_LE(std::abs(x - sink_x) + std::abs(y - sink_y), limit)
+          << net->getName() << ": " << pin->getName();
+      ++edges;
+    }
+  });
+  EXPECT_EQ(edges, originals_.size() + 4);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 5u);
+  EXPECT_EQ(result.reached_nets, result.expected_nets);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_EQ(result.cap_violations, 0u);
+  EXPECT_EQ(result.slew_violations, 0u);
   EXPECT_TRUE(result.error.empty()) << result.error;
 }
 
