@@ -71,6 +71,7 @@ test_suite(
     tests = [
         ":gif_test",
         ":heat_map_test",
+        ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":tile_generator_test",
@@ -402,6 +403,27 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "interconnect3d_test",
+    srcs = ["cpp/Test3DInterconnects.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+js_test(
+    name = "interconnect3d_js_test",
+    data = DOM_TEST_DATA + ["//src/web:node_modules/three"],
+    entry_point = "js/test-interconnect3d.js",
+    no_copy_to_bin = JS_FILES,
 )
 
 cc_test(
