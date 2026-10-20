@@ -880,6 +880,9 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   sat::Model model;
   sat::SatParameters parameters;
+  if (num_flops <= 64) {
+    parameters.set_cp_model_presolve(false);
+  }
   model.Add(NewSatParameters(parameters));
   sat::CpSolverResponse response = sat::SolveCpModel(cp_model.Build(), &model);
 
