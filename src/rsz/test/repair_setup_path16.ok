@@ -12,13 +12,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.004 |    -1914.9 |    851 | capture_147/D
-    1200* |      39 |     250 |       48 |      3 |    48 |    +5.9% |   -5.963 |    -1843.8 |    851 | capture_147/D
-    final |      39 |     250 |       48 |      3 |    48 |    +5.9% |   -5.963 |    -1843.8 |    851 | capture_147/D
+    1200* |      37 |     252 |       56 |      3 |    49 |    +6.7% |   -5.963 |    -1843.4 |    851 | capture_147/D
+    final |      37 |     252 |       56 |      3 |    49 |    +6.7% |   -5.963 |    -1843.4 |    851 | capture_147/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 39 buffers.
-[INFO RSZ-0040] Inserted 48 buffers.
-[INFO RSZ-0051] Resized 250 instances: 250 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 48 instances.
+[INFO RSZ-0059] Removed 37 buffers.
+[INFO RSZ-0040] Inserted 56 buffers.
+[INFO RSZ-0051] Resized 252 instances: 252 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 49 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_525 (rising edge-triggered flip-flop clocked by core_clock)
