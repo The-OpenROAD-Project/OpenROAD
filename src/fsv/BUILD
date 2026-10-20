@@ -53,3 +53,17 @@ cc_library(
     visibility = ["//src/fsv:__subpackages__"],
     deps = [":geometry"],
 )
+
+# Process stack and its ITF reader.
+cc_library(
+    name = "stack",
+    srcs = [
+        "src/Itf.cpp",
+        "src/Stack.cpp",
+    ],
+    hdrs = [
+        "include/fsv/Itf.h",
+        "include/fsv/Stack.h",
+    ],
+    includes = ["include"],
+)
