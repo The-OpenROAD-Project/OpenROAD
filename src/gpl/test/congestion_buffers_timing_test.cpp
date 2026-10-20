@@ -404,6 +404,207 @@ TEST_F(MacroOnlyTimingRepairIntegrationTest,
   }
 }
 
+class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
+{
+ protected:
+  void configureDesign() override
+  {
+    const auto core = block_->getCoreArea();
+    auto* master = odb::dbMaster::create(lib_, "density_gate_macro");
+    master->setType(odb::dbMasterType::BLOCK);
+    master->setWidth(core.dx() / 4);
+    master->setHeight(core.dy() / 3);
+    master->setFrozen();
+    macro_ = odb::dbInst::create(block_, master, "density_gate_macro_inst");
+    macro_->setLocation(core.xMin() + core.dx() / 2,
+                        core.yMin() + core.dy() / 2);
+    macro_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    macro_->setDoNotTouch(true);
+  }
+
+  void expectLegacyDensityAfterRetainedRepair()
+  {
+    ASSERT_EQ(nb_vec_.size(), 1u);
+    const auto& nb = nb_vec_.front();
+    ASSERT_NE(macro_, nullptr);
+    auto* macro_cell = liveCellFor(macro_);
+    ASSERT_NE(macro_cell, nullptr);
+    ASSERT_TRUE(macro_cell->isMacroInstance());
+    ASSERT_GT(nb->getStdInstArea(), 0);
+    const int64_t macro_area = nb->getPb()->macroInstsArea();
+    const int64_t whitespace = nb->getWhiteSpaceArea();
+    ASSERT_GT(macro_area, 0);
+    ASSERT_GT(whitespace, macro_area);
+    ASSERT_EQ(nbc_->getDeltaArea(), 0);
+    const int64_t instance_area = nb->getNesterovInstsArea();
+    const int64_t fillers = nb->getTotalFillerArea();
+    const int64_t accumulated_delta = delta_area_;
+    const int macro_dx = macro_cell->dx();
+    const int macro_dy = macro_cell->dy();
+    const int64_t macro_inflation = macro_cell->inflationArea();
+    const auto* macro_master = macro_->getMaster();
+    ASSERT_TRUE(std::isfinite(nb->getTargetDensity()));
+    runTiming(0.2f);
+    ASSERT_EQ(timing_iterations_, 1);
+    const int64_t repair_delta = delta_area_ - accumulated_delta;
+    ASSERT_NE(repair_delta, 0)
+        << "The real retained repair must change area to distinguish the gates";
+    // Reproduce the legacy operation order and float rounding, using the
+    // actual callback delta captured by runTimingDriven, not a fabricated edit.
+    const float expected
+        = static_cast<float>(repair_delta + instance_area + fillers)
+          / static_cast<float>(whitespace);
+    ASSERT_TRUE(std::isfinite(expected));
+    ASSERT_TRUE(std::isfinite(nb->getTargetDensity()));
+    EXPECT_EQ(nb->getTargetDensity(), expected);
+    EXPECT_EQ(nb->getMovableArea(),
+              static_cast<int64_t>(expected * whitespace));
+    EXPECT_EQ(nb->getTotalFillerArea(), fillers);
+    EXPECT_EQ(nbc_->getDeltaArea(), 0);
+    EXPECT_EQ(nbc_->getNewGcellsCount(), 0);
+    for (const auto& bin : nb->getBins()) {
+      EXPECT_TRUE(std::isfinite(bin.getTargetDensity()));
+      EXPECT_EQ(bin.getTargetDensity(), expected);
+    }
+    const float opt_in_density
+        = static_cast<float>(nb->getStdInstArea() + fillers)
+          / static_cast<float>(whitespace - macro_area);
+    EXPECT_GT(std::abs(expected - opt_in_density), 1e-6f)
+        << "Mixed macros must distinguish legacy accounting from the new "
+           "helper";
+    ASSERT_EQ(macro_->getMaster(), macro_master);
+    macro_cell = liveCellFor(macro_);
+    ASSERT_NE(macro_cell, nullptr);
+    EXPECT_EQ(macro_cell->dx(), macro_dx);
+    EXPECT_EQ(macro_cell->dy(), macro_dy);
+    EXPECT_EQ(macro_cell->inflationArea(), macro_inflation);
+    EXPECT_EQ(nb->getMacroInstArea(),
+              static_cast<int64_t>(macro_dx) * macro_dy);
+    const double density_area = static_cast<double>(macro_cell->dDx())
+                                * macro_cell->dDy()
+                                * macro_cell->getDensityScale();
+    EXPECT_TRUE(std::isfinite(density_area));
+    EXPECT_NEAR(density_area,
+                static_cast<double>(macro_dx) * macro_dy,
+                static_cast<double>(macro_dx) * macro_dy * 0.01);
+    int new_cells = 0;
+    for (const auto& cell : nb->getGCells()) {
+      if (!cell->isStdInstance()
+          || initial_names_.contains(
+              cell->insts().front()->dbInst()->getName())) {
+        continue;
+      }
+      ++new_cells;
+      EXPECT_NE(cell->changeType(), GCell::GCellChange::kRoutability);
+      EXPECT_EQ(cell->inflationArea(), 0);
+      EXPECT_GE(cell->gPins().size(), 2);
+      for (const auto* pin : cell->gPins()) {
+        ASSERT_NE(pin->getPbPin()->getDbITerm(), nullptr);
+        EXPECT_NE(pin->getPbPin()->getDbITerm()->getNet(), nullptr);
+      }
+    }
+    EXPECT_GT(new_cells, 0) << "A no-op repair cannot qualify this regression";
+    EXPECT_TRUE(nb->getNewInstances().empty());
+  }
+
+  odb::dbInst* macro_ = nullptr;
+};
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       DefaultOffCompletedRepairKeepsLegacyMacroDensity)
+{
+  ASSERT_FALSE(PlaceOptions{}.timingDrivenCongestionInflation);
+  makePlacer(true, true, false);
+  completeRoutability();
+  ASSERT_FALSE(routabilityNeeded());
+  expectLegacyDensityAfterRetainedRepair();
+  EXPECT_EQ(liveInflationArea(), 0);
+}
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       OptInBeforeFirstRoutabilityPassKeepsLegacyMacroDensity)
+{
+  makePlacer();
+  ASSERT_TRUE(routabilityNeeded());
+  ASSERT_EQ(ordinary_iterations_, 0);
+  expectLegacyDensityAfterRetainedRepair();
+  EXPECT_TRUE(routabilityNeeded());
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  EXPECT_EQ(liveInflationArea(), 0);
+}
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       OptInActiveRoutabilityRepairKeepsLegacyMacroDensity)
+{
+  makePlacer();
+  runOrdinaryPass(1000000);
+  ASSERT_TRUE(routabilityNeeded());
+  ASSERT_GT(ordinary_iterations_, 0);
+  ASSERT_GT(rb_->getTotalInflation(), 0);
+  const int64_t ordinary_charge = rb_->getTotalInflation();
+  expectLegacyDensityAfterRetainedRepair();
+  EXPECT_TRUE(routabilityNeeded());
+  EXPECT_EQ(rb_->getTotalInflation(), ordinary_charge);
+}
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       OptInWithoutRoutabilityKeepsLegacyMacroDensity)
+{
+  makePlacer(false);
+  expectLegacyDensityAfterRetainedRepair();
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  EXPECT_EQ(liveInflationArea(), 0);
+}
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       ActiveRoutabilityIterationSkipsMacroDensityAndRepair)
+{
+  makePlacer();
+  const auto& nb = nb_vec_.front();
+  const float density = nb->getTargetDensity();
+  const int64_t movable_area = nb->getMovableArea();
+  auto* macro_cell = liveCellFor(macro_);
+  ASSERT_NE(macro_cell, nullptr);
+  const int macro_dx = macro_cell->dx();
+  const int macro_dy = macro_cell->dy();
+  runTiming(0.2f, true);
+  EXPECT_EQ(timing_iterations_, 0);
+  EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
+  EXPECT_TRUE(std::isfinite(nb->getTargetDensity()));
+  EXPECT_FLOAT_EQ(nb->getTargetDensity(), density);
+  EXPECT_EQ(nb->getMovableArea(), movable_area);
+  for (const auto& bin : nb->getBins()) {
+    EXPECT_FLOAT_EQ(bin.getTargetDensity(), density);
+  }
+  macro_cell = liveCellFor(macro_);
+  ASSERT_NE(macro_cell, nullptr);
+  EXPECT_EQ(macro_cell->dx(), macro_dx);
+  EXPECT_EQ(macro_cell->dy(), macro_dy);
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+}
+
+TEST_F(MixedMacroTimingRepairIntegrationTest,
+       CompletedOptInRepairUsesLiveMacroDensity)
+{
+  makePlacer();
+  completeRoutability();
+  ASSERT_FALSE(routabilityNeeded());
+  auto* macro_cell = liveCellFor(macro_);
+  ASSERT_NE(macro_cell, nullptr);
+  const int macro_dx = macro_cell->dx();
+  const int macro_dy = macro_cell->dy();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(true);
+  checkDensityAccounting();
+  EXPECT_TRUE(std::isfinite(nb_vec_.front()->getTargetDensity()));
+  macro_cell = liveCellFor(macro_);
+  ASSERT_NE(macro_cell, nullptr);
+  EXPECT_EQ(macro_cell->dx(), macro_dx);
+  EXPECT_EQ(macro_cell->dy(), macro_dy);
+  EXPECT_EQ(macro_cell->inflationArea(), 0);
+}
+
 TEST_F(TimingRepairIntegrationTest,
        VirtualRepairDoesNotRefreshRudyOrRetainBuffers)
 {
