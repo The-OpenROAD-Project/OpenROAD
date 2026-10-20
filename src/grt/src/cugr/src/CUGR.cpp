@@ -918,7 +918,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   sortNetIndices(net_indices,
                  resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
-  // A reroute that adds overflow is rolled back and retried next pass.
+  // A reroute that adds overflow beyond float noise is rolled back and
+  // retried next pass.
   constexpr double kAcceptTolerance = 1e-9;
   int rejected = 0;
   double overflow_change = 0.0;
@@ -927,6 +928,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   accepted.reserve(net_indices.size());
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
+  // Edges of the tree being measured, reused across nets.
+  std::vector<std::array<int, 3>> touched_edges;
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -941,9 +944,10 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     std::map<int, AccessPoint> old_access_points
         = net->getPreferredAccessPoints();
     // Overflow change of the transaction, measured on the touched edges.
-    double delta = -grid_graph_->treeOverflow(*net);
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    double delta = -grid_graph_->sumOverflow(touched_edges);
     grid_graph_->removeTreeUsage(*net);
-    delta += grid_graph_->treeOverflow(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     // Checked where the maze reads the view, after every refresh so far.
     if (verify_view) {
@@ -986,9 +990,10 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
-    delta -= grid_graph_->treeOverflow(*net);
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    delta -= grid_graph_->sumOverflow(touched_edges);
     grid_graph_->addTreeUsage(*net);
-    delta += grid_graph_->treeOverflow(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
     if (delta > kAcceptTolerance) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
@@ -1413,6 +1418,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     std::vector<std::string> demoted_now;
     // A demotion relieves overflow too, so it counts toward the pass's change.
     double overflow_change = 0.0;
+    // A congested NDR net not demoted yet is demoted if it stays congested.
+    bool demotion_pending = false;
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] == nullptr) {
         continue;
@@ -1424,12 +1431,16 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       const int streak = ++ndr_congested_streak[net_index];
       if (streak >= kSoftNdrStreakThreshold) {
         // The net-aware forms keep an adopted tree's wrong-way spans legal.
-        overflow_change -= grid_graph_->treeOverflow(*net);
+        std::vector<std::array<int, 3>> touched_edges;
+        grid_graph_->collectTreeEdges(*net, touched_edges);
+        overflow_change -= grid_graph_->sumOverflow(touched_edges);
         grid_graph_->removeTreeUsage(*net);
         net->setSoftNdr();
         grid_graph_->addTreeUsage(*net);
-        overflow_change += grid_graph_->treeOverflow(*net);
+        overflow_change += grid_graph_->sumOverflow(touched_edges);
         demoted_now.push_back(net->getName());
+      } else {
+        demotion_pending = true;
       }
     }
     // Reset streaks for nets that recovered (no longer congested).
@@ -1475,16 +1486,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
 
     stagnant_passes
         = -overflow_change < kMinPassImprovement ? stagnant_passes + 1 : 0;
-    // A congested NDR net not demoted yet is demoted if it stays congested.
-    const bool demotion_pending
-        = std::ranges::any_of(net_indices, [&](const int net_index) {
-            return gr_nets_[net_index] != nullptr
-                   && gr_nets_[net_index]->hasNdr();
-          });
-    if (stagnant_passes >= kMaxStagnantPasses && !demotion_pending
-        && i < congestion_iterations_) {
+    if (stagnant_passes >= kMaxStagnantPasses && !demotion_pending) {
       // Report only when overflow is left; incremental defers to GRT-0128.
-      if (verbose_ && !incremental_routing_ && totalOverflow() > 0) {
+      if (verbose_ && !incremental_routing_ && i < congestion_iterations_
+          && totalOverflow() > 0) {
         logger_->info(GRT,
                       124,
                       "Iterative RRR stopped after iteration {}: the last {} "

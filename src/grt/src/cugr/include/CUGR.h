@@ -281,12 +281,14 @@ class CUGR
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   // iterativeRRR re-enters this stage, so the caller labels the debug dump.
-  // Returns the total overflow change of the accepted reroutes (<= 0).
+  // Rolls back reroutes that add overflow; returns the accepted reroutes'
+  // total overflow change (<= 0 up to the float slack of the accept test).
   double mazeRoute(std::vector<int>& net_indices,
                    CugrStage stage,
                    int iteration);
 
-  // Debug groups rrr and rrr_timing: overflow and WNS/TNS after a pass.
+  // Debug prints after a maze pass: the total overflow (group rrr) and, after
+  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
   void debugPass(const std::string& tag);
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
@@ -298,10 +300,10 @@ class CUGR
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
    * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Stops after two passes that each remove less than one track,
-   * unless a congested NDR net still awaits its soft-NDR demotion.
-   * Emits `GRT-0117` per iteration and, in full route only, `GRT-0124`
-   * on that stop and `GRT-0118` if overflow remains when the loop ends
+   * cost. Stops after two passes in a row that each remove less than one
+   * track, unless a congested NDR net still awaits its soft-NDR demotion.
+   * Emits `GRT-0117` per iteration and, in full route only when overflow
+   * remains, `GRT-0124` on that stop and `GRT-0118` when the loop ends
    * (incremental defers to the session-end `GRT-0128`).
    *
    * @param net_indices Reused scratch buffer (cleared on entry by

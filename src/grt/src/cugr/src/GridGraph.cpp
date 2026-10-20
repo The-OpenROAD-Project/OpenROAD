@@ -1484,16 +1484,17 @@ void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
       });
 }
 
-double GridGraph::treeOverflow(const GRNet& net) const
+void GridGraph::collectTreeEdges(const GRNet& net,
+                                 std::vector<std::array<int, 3>>& edges) const
 {
+  edges.clear();
   const auto& tree = net.getRoutingTree();
   if (!tree) {
-    return 0.0;
+    return;
   }
-  std::vector<size_t> edges;
   auto add = [&](const int layer, const PointT edge) {
     if (layer >= constants_.min_routing_layer) {
-      edges.push_back(edgeFlatIndex(layer, edge.x(), edge.y()));
+      edges.push_back({layer, edge.x(), edge.y()});
     }
   };
   forEachTreeWireEdgeImpl(
@@ -1523,12 +1524,13 @@ double GridGraph::treeOverflow(const GRNet& net) const
   std::ranges::sort(edges);
   const auto duplicates = std::ranges::unique(edges);
   edges.erase(duplicates.begin(), duplicates.end());
+}
+
+double GridGraph::sumOverflow(
+    const std::vector<std::array<int, 3>>& edges) const
+{
   double overflow = 0.0;
-  const size_t per_layer = static_cast<size_t>(x_size_) * y_size_;
-  for (const size_t index : edges) {
-    const int layer = index / per_layer;
-    const int x = (index % per_layer) / y_size_;
-    const int y = index % y_size_;
+  for (const auto& [layer, x, y] : edges) {
     const GraphEdge& edge = graph_edges_[layer][x][y];
     overflow += std::max<CapacityT>(0.0, edge.demand - edge.capacity);
   }
