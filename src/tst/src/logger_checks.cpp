@@ -4,6 +4,7 @@
 #include "tst/logger_checks.h"
 
 #include <atomic>
+#include <cerrno>
 #include <cstdio>
 #include <fstream>
 #include <iterator>
@@ -27,7 +28,9 @@ MetricsCapture::MetricsCapture(utl::Logger& logger) : logger_(logger)
 MetricsCapture::~MetricsCapture()
 {
   logger_.removeMetricsSink(path_.c_str());
-  std::remove(path_.c_str());
+  if (std::remove(path_.c_str()) != 0 && errno != ENOENT) {
+    ADD_FAILURE() << "failed to remove metrics file " << path_;
+  }
 }
 
 std::optional<std::string> MetricsCapture::value(std::string_view name)
