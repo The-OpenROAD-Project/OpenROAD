@@ -1,5 +1,6 @@
 # This is a version of aes where some of the gates have been unplaced to
 # simulate rmp.
+# No Liberty is loaded: incremental placement must retain its timing-free path.
 
 source helpers.tcl
 set test_name incremental02

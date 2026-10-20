@@ -371,6 +371,7 @@ cc_test(
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/tst",
         "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

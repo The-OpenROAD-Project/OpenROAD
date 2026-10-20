@@ -15,9 +15,24 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "tst/IntegratedFixture.h"
+#include "tst/fixture.h"
 
 namespace gpl {
 namespace {
+
+class IncrementalTimingNoLibertyTest : public tst::Fixture
+{
+};
+
+TEST_F(IncrementalTimingNoLibertyTest, DoesNotQueryTimingOrParasitics)
+{
+  ASSERT_EQ(sta_->getDbNetwork()->defaultLibertyLibrary(), nullptr);
+  // Missing timing libraries must be rejected before consulting the block
+  // or parasitics, or entering a timing query that requires Liberty.
+  IncrementalTimingGuard guard(sta_.get(), nullptr, nullptr);
+  EXPECT_FALSE(guard.checkpoint());
+  EXPECT_FALSE(guard.restoreIfWorse());
+}
 
 class IncrementalTimingTest : public tst::IntegratedFixture
 {

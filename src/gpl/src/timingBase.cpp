@@ -334,6 +334,10 @@ bool IncrementalTimingGuard::checkpoint()
   active_ = false;
   locations_.clear();
   // Preserve wirelength-only operation for designs without timing data.
+  // worstSlack() requires Liberty, even when there are no timing constraints.
+  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+    return false;
+  }
   if (sta::fuzzyInf(sta_->worstSlack(sta::MinMax::max()))) {
     return false;
   }
