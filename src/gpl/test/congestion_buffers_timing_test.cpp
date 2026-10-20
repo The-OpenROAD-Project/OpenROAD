@@ -52,6 +52,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
       ++index;
     }
     makeFanoutNet();
+    configureDesign();
     sta_->postReadDb(db_.get());
     sta_->postReadDef(block_);
     ep_.setHWireSignalRC(nullptr, sta_->cmdScene(), 1.0e5, 2.0e-10);
@@ -73,6 +74,8 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     options_.routabilityDrivenMode = true;
     options_.keepResizeBelowOverflow = 0.3f;
   }
+
+  virtual void configureDesign() {}
 
   void makeFanoutNet()
   {
@@ -324,47 +327,61 @@ TEST_F(TimingRepairIntegrationTest,
   checkRetainedInsertions(true);
 }
 
-TEST_F(TimingRepairIntegrationTest,
+class MacroOnlyTimingRepairIntegrationTest : public TimingRepairIntegrationTest
+{
+ protected:
+  void configureDesign() override
+  {
+    // Define the master and instances before postReadDb binds LEF cells to STA.
+    const auto core = block_->getCoreArea();
+    const int macro_width = 6000;
+    const int split_x = core.xMin() + 2 * macro_width;
+    for (int i = 0; i < 2; ++i) {
+      auto* region = odb::dbRegion::create(
+          block_, ("repair_region_" + std::to_string(i)).c_str());
+      region->setRegionType(odb::dbRegionType::EXCLUSIVE);
+      odb::dbBox::create(region,
+                         i == 0 ? split_x : core.xMin(),
+                         core.yMin(),
+                         i == 0 ? core.xMax() : split_x,
+                         core.yMax());
+      auto* group = odb::dbGroup::create(
+          region, ("repair_domain_" + std::to_string(i)).c_str());
+      group->setType(odb::dbGroupType::VOLTAGE_DOMAIN);
+      groups_.push_back(group);
+    }
+    for (auto* inst : block_->getInsts()) {
+      groups_[0]->addInst(inst);
+      groups_[0]->getRegion()->addInst(inst);
+    }
+    macro_master_ = odb::dbMaster::create(lib_, "repair_macro");
+    macro_master_->setType(odb::dbMasterType::BLOCK);
+    macro_master_->setWidth(macro_width);
+    macro_master_->setHeight(core.dy() / 2);
+    macro_master_->setFrozen();
+    for (int i = 0; i < 4; ++i) {
+      auto* macro = odb::dbInst::create(
+          block_, macro_master_, ("repair_macro_" + std::to_string(i)).c_str());
+      // Unlike a single region-sized macro, these cells can move. An asymmetric
+      // placement gives the real Nesterov initialization nonzero density
+      // forces.
+      macro->setLocation(core.xMin() + i * 1300, core.yMin() + 3000 + i * 6000);
+      macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      groups_[1]->addInst(macro);
+      groups_[1]->getRegion()->addInst(macro);
+    }
+  }
+
+  std::vector<odb::dbGroup*> groups_;
+  odb::dbMaster* macro_master_ = nullptr;
+};
+
+TEST_F(MacroOnlyTimingRepairIntegrationTest,
        RetainedRepairRefreshesUnchangedMacroOnlyRegion)
 {
-  const auto core = block_->getCoreArea();
-  const int macro_width = 6000;
-  const int split_x = core.xMin() + 2 * macro_width;
-  std::vector<odb::dbGroup*> groups;
-  for (int i = 0; i < 2; ++i) {
-    auto* region = odb::dbRegion::create(
-        block_, ("repair_region_" + std::to_string(i)).c_str());
-    region->setRegionType(odb::dbRegionType::EXCLUSIVE);
-    odb::dbBox::create(region,
-                       i == 0 ? split_x : core.xMin(),
-                       core.yMin(),
-                       i == 0 ? core.xMax() : split_x,
-                       core.yMax());
-    auto* group = odb::dbGroup::create(
-        region, ("repair_domain_" + std::to_string(i)).c_str());
-    group->setType(odb::dbGroupType::VOLTAGE_DOMAIN);
-    groups.push_back(group);
-  }
-  for (auto* inst : block_->getInsts()) {
-    groups[0]->addInst(inst);
-    groups[0]->getRegion()->addInst(inst);
-  }
-  auto* master = odb::dbMaster::create(lib_, "repair_macro");
-  master->setType(odb::dbMasterType::BLOCK);
-  master->setWidth(macro_width);
-  master->setHeight(core.dy() / 2);
-  master->setFrozen();
-  for (int i = 0; i < 4; ++i) {
-    auto* macro = odb::dbInst::create(
-        block_, master, ("repair_macro_" + std::to_string(i)).c_str());
-    // Unlike a single region-sized macro, these cells can move. An asymmetric
-    // placement gives the real Nesterov initialization nonzero density forces.
-    macro->setLocation(core.xMin() + i * 1300, core.yMin() + 3000 + i * 6000);
-    macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    groups[1]->addInst(macro);
-    groups[1]->getRegion()->addInst(macro);
-  }
-  makePlacer(false, true, false, groups, true);
+  ASSERT_NE(macro_master_, nullptr);
+  ASSERT_NE(db_network_->dbToSta(macro_master_), nullptr);
+  makePlacer(false, true, false, groups_, true);
   ASSERT_FALSE(options_.timingDrivenCongestionInflation);
   const auto& macro_region = nb_vec_[1];
   ASSERT_EQ(macro_region->getWhiteSpaceArea(),
