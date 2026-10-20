@@ -62,12 +62,53 @@ proc check_malformed_fences { phase } {
   }
   check "$phase omitted fence still uses core" { check_macro_placement } true
 }
+proc check_numeric_inputs { phase } {
+  foreach invalid {1e9 -1e9 1e308 -1e308 Inf -Inf} {
+    for { set i 0 } { $i < 4 } { incr i } {
+      set fence {10.125 20.25 20.125 25.25}
+      lset fence $i $invalid
+      check_error "$phase invalid fence coordinate $i: $invalid" {
+        run_fence_check $fence
+      } MPL-0083
+    }
+    foreach channel [list [list $invalid 0] [list 0 $invalid]] {
+      check_error "$phase invalid channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } MPL-0083
+    }
+  }
+  # Tcl/SWIG rejects NaN while parsing doubles, before entering the native check.
+  foreach invalid {NaN nan} {
+    for { set i 0 } { $i < 4 } { incr i } {
+      set fence {10.125 20.25 20.125 25.25}
+      lset fence $i $invalid
+      check_error "$phase NaN fence coordinate $i" {
+        run_fence_check $fence
+      } {TypeError in method 'check_macro_placement_cmd'}
+    }
+    foreach channel [list [list $invalid 0] [list 0 $invalid]] {
+      check_error "$phase NaN channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } {TypeError in method 'check_macro_placement_cmd'}
+    }
+  }
+  check "$phase exact DBU limits remain representable" {
+    run_fence_check {-1073741.824 -1073741.824 1073741.8235 1073741.8235}
+  } true
+  check "$phase fractional DBUs round back inside the limits" {
+    run_fence_check {-1073741.824125 -1073741.824125 1073741.823625 1073741.823625}
+  } true
+  check "$phase omitted fence works after numeric errors" {
+    check_macro_placement
+  } true
+}
 set exact_fence {10.125 20.25 20.125 25.25}
 set work_dir [file join [make_result_dir] preflight_artifacts]
 file mkdir $work_dir
 cd $work_dir
 set artifacts_before [lsort [glob -nocomplain * .*]]
 check_malformed_fences initial
+check_numeric_inputs initial
 check "no artifacts from initially malformed fences" {
   lsort [glob -nocomplain * .*]
 } $artifacts_before
@@ -85,6 +126,7 @@ set artifacts_before [lsort [glob -nocomplain * .*]]
 mpl::set_macro_placement_file unexpected-placement.tcl
 mpl::set_min_channel 1.0 2.0
 check_malformed_fences configured
+check_numeric_inputs configured
 
 check "default preflight" { check_macro_placement } true
 check "exact fractional-origin fence" { run_fence_check $exact_fence } true

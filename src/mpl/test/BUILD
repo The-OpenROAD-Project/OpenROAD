@@ -336,6 +336,7 @@ cc_test(
     deps = [
         "//src/mpl",
         "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
         "//src/odb/src/db",
         "//src/tst:db_fixture",
         "//src/utl",

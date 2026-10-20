@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -9,6 +10,7 @@
 
 #include "clusterEngine.h"
 #include "gtest/gtest.h"
+#include "mpl-util.h"
 #include "mpl/rtl_mp.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -127,6 +129,40 @@ class TestMacroPreflight : public tst::DbFixture
   odb::dbBlock* block_ = nullptr;
   std::unique_ptr<MacroPlacer> placer_;
 };
+
+TEST_F(TestMacroPreflight, CheckedMicronConversionValidatesBeforeIntegerCast)
+{
+  const std::string before = snapshot();
+  const double units = block_->getDbUnitsPerMicron();
+  const int min_dbu = std::numeric_limits<int>::min();
+  const int max_dbu = std::numeric_limits<int>::max();
+  EXPECT_EQ(checkedMicronsToDbu(
+                block_, (min_dbu - 0.25) / units, "-fence_lx", &logger_),
+            min_dbu);
+  EXPECT_EQ(checkedMicronsToDbu(
+                block_, (max_dbu + 0.25) / units, "-fence_ux", &logger_),
+            max_dbu);
+  EXPECT_EQ(checkedMicronsToDbu(
+                block_, 0.5 / units, "-min_channel_size width", &logger_),
+            1);
+  EXPECT_EQ(checkedMicronsToDbu(
+                block_, -0.5 / units, "-min_channel_size height", &logger_),
+            -1);
+  const double invalid_values[] = {(min_dbu - 0.75) / units,
+                                   (max_dbu + 0.75) / units,
+                                   -1e9,
+                                   1e9,
+                                   -1e308,
+                                   1e308,
+                                   -std::numeric_limits<double>::infinity(),
+                                   std::numeric_limits<double>::infinity(),
+                                   std::numeric_limits<double>::quiet_NaN()};
+  for (const double value : invalid_values) {
+    EXPECT_LOGGER_ERROR(
+        checkedMicronsToDbu(block_, value, "-fence_lx", &logger_), "MPL-0083");
+  }
+  EXPECT_EQ(snapshot(), before);
+}
 
 TEST_F(TestMacroPreflight, FeasiblePlacedDesignIsUnchanged)
 {

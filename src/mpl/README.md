@@ -113,6 +113,9 @@ check_macro_placement
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Global fence coordinates in microns. Supply all four or omit all four to use the core, independently of earlier placement settings. Lower coordinates must be strictly less than upper coordinates after DBU conversion. An explicit empty or reversed fence is an error. A partially overlapping fence is clipped to the core. |
 | `-pin_aware_channels` | Trim channels based on macro pin locations, as for `rtl_macro_placer`. Requires `-min_channel_size`. |
 
+Fence and channel values must be finite and round to a signed integer DBU value.
+Values outside this range are rejected before conversion.
+
 This is an area-feasibility preflight, not a placement-legality or packing proof.
 It does not source placement scripts, check macro/halo overlaps or orientation
 legality, or check pin access, routing capacity, or placement density windows.
