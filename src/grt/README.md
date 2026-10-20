@@ -273,6 +273,38 @@ report_wire_length
 | `-verbose` | This flag enables the full reporting of the layer-wise wirelength information. |
 | `-summary` | This flag reports the wire length for each layer of the design. |
 
+### Report Net Detours
+
+The `report_net_detours` command reports how much each net's global route
+detours from its initial Steiner tree, as the difference and the ratio between
+the routed wirelength and the Steiner tree wirelength. Both are measured from
+the center of the gcell where each pin is accessed, and the routed wirelength
+only counts planar wire length, so a route that follows the Steiner tree has a
+ratio of 1. The Steiner wirelength is captured by `global_route` and refreshed
+for the nets rerouted by incremental global routing, with both FastRoute and
+CUGR. For a design read with global routing guides, it is computed from the
+pins when the command runs. Without `-net`, the command reports the totals over
+all routed nets and the nets with the largest detour ratio. Local nets, with
+all pins in the same gcell, are skipped. This command is read-only and does not
+change the routing.
+
+Example: `report_net_detours -top_n 20 -file detours.txt`
+
+```tcl
+report_net_detours
+    [-net net_list]
+    [-file file]
+    [-top_n count]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | List of nets to report the detour. When set, `-top_n` is ignored. |
+| `-file` | The name of the file where a `grt_detour: net initial_um final_um delta_um ratio` line is appended for each reported net. Without `-net`, all analyzed nets are written. |
+| `-top_n` | Number of nets with the largest detour ratio to report. The default value is `10`. |
+
 ### Global Route Debug Mode
 
 The `global_route_debug` command allows you to start a debug mode to view the status of the Steiner Trees.
@@ -407,6 +439,8 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_layer_range` | Parses a range from `layer_range` argument of format (%s-%s). `cmd` argument is not used. |
 | `check_region` | Checks the defined region if its within the die area. |
 | `have_detailed_route` | Checks if block has detailed route already. |
+| `design_is_placed` | Checks if every pin and every instance on a signal net is placed. |
+| `have_congested_routes` | Checks if block has global routes that are congested and were not accepted with `-allow_congestion`. |
 
 ## Regression tests
 
