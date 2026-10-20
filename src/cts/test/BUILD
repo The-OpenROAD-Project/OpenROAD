@@ -62,6 +62,8 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
+    "bottom_up_buffering",
+    "bottom_up_buffering_macro",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
@@ -127,6 +129,14 @@ filegroup(
                 "array_tile.lef",
                 "array_tile.lib",
                 "array_max_wl.defok",
+            ],
+            "bottom_up_buffering": [
+                "16sinks.def",
+            ],
+            "bottom_up_buffering_macro": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+                "insertion_delay.def",
             ],
             "buffer_no_max_cap": [
                 "16sinks.def",
@@ -272,6 +282,17 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "BottomUpBufferingTest",
+    size = "small",
+    srcs = ["cpp/BottomUpBufferingTest.cc"],
+    deps = [
+        "//src/cts:bottom_up_buffering",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 cc_test(
     name = "cts_unittest",

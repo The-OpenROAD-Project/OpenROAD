@@ -158,6 +158,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setTreeBuffer(const std::string& buffer) { treeBuffer_ = buffer; }
   void resetTreeBuffer() { treeBuffer_.clear(); }
   std::string getTreeBuffer() const { return treeBuffer_; }
+  void setBottomUpBuffering(bool enable) { bottom_up_buffering_ = enable; }
+  bool bottomUpBuffering() const { return bottom_up_buffering_; }
   unsigned getClusteringPower() const { return clusteringPower_; }
   void setClusteringPower(unsigned power) { clusteringPower_ = power; }
   void resetClusteringPower() { clusteringPower_ = 4; }
@@ -356,6 +358,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
   bool sinkClusteringEnable_ = true;
+  bool bottom_up_buffering_ = false;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;

@@ -90,9 +90,13 @@ TritonCTS::~TritonCTS()
 void TritonCTS::runTritonCts()
 {
   utl::Timer timer;
+  std::string electrical_error;
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
   options_->addOwner(block);
+  if (options_->bottomUpBuffering()) {
+    options_->enableDummyLoad(false);
+  }
 
   setupCharacterization();
   findClockRoots();
@@ -108,6 +112,9 @@ void TritonCTS::runTritonCts()
       repairClockNets();
     }
     balanceMacroRegisterLatencies();
+    if (options_->bottomUpBuffering()) {
+      electrical_error = checkClockTreeElectricals();
+    }
   }
 
   // reset
@@ -128,6 +135,9 @@ void TritonCTS::runTritonCts()
   options_->setMaxWl(0);
   options_->removeOwner();
   logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
+  if (!electrical_error.empty()) {
+    logger_->error(CTS, 557, "{}", electrical_error);
+  }
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -317,6 +327,11 @@ void TritonCTS::buildClockTrees()
     builder->setLogger(logger_);
     builder->initBlockages();
     builder->run();
+  }
+  if (options_->bottomUpBuffering()) {
+    for (auto& builder : std::ranges::reverse_view(builders_)) {
+      bufferClockTreeBottomUp(builder.get());
+    }
   }
 }
 

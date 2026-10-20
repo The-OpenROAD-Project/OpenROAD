@@ -95,6 +95,8 @@ class TritonCTS
   void checkCharacterization();
   void findClockRoots();
   void buildClockTrees();
+  void bufferClockTreeBottomUp(TreeBuilder* builder);
+  std::string checkClockTreeElectricals();
   void writeDataToDb();
 
   // NDR functions

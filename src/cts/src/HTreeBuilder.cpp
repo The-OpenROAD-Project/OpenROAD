@@ -1468,6 +1468,12 @@ void HTreeBuilder::computeLevelTopology(const unsigned level,
 
   logger_->info(CTS, 34, "    Segment length (rounded): {}.", segmentLength);
 
+  if (options_->bottomUpBuffering()) {
+    computeBranchingPoints(level, topology);
+    topologyForEachLevel_.push_back(std::move(topology));
+    return;
+  }
+
   const int vertexBufferLength
       = options_->getVertexBufferDistance() / (techChar_->getLengthUnit() * 2);
   int remainingLength
@@ -1963,6 +1969,10 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
 
 void HTreeBuilder::createClockSubNets()
 {
+  if (options_->bottomUpBuffering()) {
+    createGeometricClockSubNets();
+    return;
+  }
   Point<double> center = sinkRegion_.getCenter();
   Point<double> legalCenter
       = legalizeOneBuffer(center, options_->getRootBuffer());
@@ -2135,6 +2145,55 @@ void HTreeBuilder::createClockSubNets()
   logger_->info(CTS, 35, " Number of sinks covered: {}.", numSinks);
 }
 
+void HTreeBuilder::createGeometricClockSubNets()
+{
+  const auto center = sinkRegion_.getCenter();
+  auto& root = clock_.addClockBuffer("clkbuf_0",
+                                     options_->getRootBuffer(),
+                                     center.getX() * wireSegmentUnit_,
+                                     center.getY() * wireSegmentUnit_);
+  if (topBufferName_.empty()) {
+    topBufferName_ = root.getName();
+  }
+  addTreeLevelBuffer(&root);
+  auto& root_net = clock_.addSubNet("clknet_0");
+  root_net.addInst(root);
+  for (size_t level = 0; level < topologyForEachLevel_.size(); ++level) {
+    auto& topology = topologyForEachLevel_[level];
+    topology.forEachBranchingPoint([&](unsigned index, Point<double> point) {
+      if (topology.getBranchSinksLocations(index).empty()) {
+        return;
+      }
+      const auto legal = legalizeOneBuffer(point, options_->getRootBuffer());
+      commitMoveLoc(point, legal);
+      topology.getBranchingPoint(index) = legal;
+      const std::string suffix
+          = std::to_string(level + 1) + "_" + std::to_string(index);
+      auto& buffer = clock_.addClockBuffer("clkbuf_" + suffix,
+                                           options_->getRootBuffer(),
+                                           legal.getX() * wireSegmentUnit_,
+                                           legal.getY() * wireSegmentUnit_);
+      addTreeLevelBuffer(&buffer);
+      auto* parent = &root_net;
+      if (level != 0) {
+        parent = topologyForEachLevel_[level - 1].getBranchDrivingSubNet(
+            topology.getBranchingPointParentIdx(index));
+      }
+      parent->addInst(buffer);
+      auto& net = clock_.addSubNet("clknet_" + suffix);
+      net.addInst(buffer);
+      topology.setBranchDrivingSubNet(index, net);
+      if (level + 1 == topologyForEachLevel_.size()) {
+        net.setLeafLevel(true);
+        for (const auto& sink : topology.getBranchSinksLocations(index)) {
+          net.addInst(*mapLocationToSink_.at(sink));
+        }
+      }
+    });
+  }
+  treeBufLevels_ += topologyForEachLevel_.size() + 1;
+}
+
 void HTreeBuilder::createSingleBufferClockNet()
 {
   logger_->report(" Building single-buffer clock net.");
@@ -2163,7 +2222,13 @@ void HTreeBuilder::createSingleBufferClockNet()
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
-  clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+  if (options_->bottomUpBuffering()) {
+    for (const auto& [x, y] : topLevelSinksClustered_) {
+      clockSubNet.addInst(*mapLocationToSink_.at(Point<double>(x, y)));
+    }
+  } else {
+    clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+  }
 }
 
 void HTreeBuilder::plotSolution()

@@ -56,6 +56,8 @@ class ClockInst
 
   std::string getName() const { return name_; }
   std::string getMaster() const { return master_; }
+  void setMaster(const std::string& master) { master_ = master; }
+  void setLocation(int x, int y) { location_ = Point<int>(x, y); }
   int getX() const { return location_.getX(); }
   int getY() const { return location_.getY(); }
   Point<int> getLocation() const { return location_; }
@@ -192,6 +194,8 @@ class Clock
     subNets_.emplace_back(name + "_" + getName());
     return subNets_.back();
   }
+
+  void clearSubNets() { subNets_.clear(); }
 
   void addSink(const std::string& name, int x, int y)
   {

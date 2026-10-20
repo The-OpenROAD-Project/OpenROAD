@@ -68,6 +68,7 @@ clock_tree_synthesis
     [-delay_buffer_derate derate_value]
     [-library liberty_library_name]
     [-repair_clock_nets]
+    [-bottom_up_buffering]
     [-no_insertion_delay]
 ```
 
@@ -75,6 +76,7 @@ clock_tree_synthesis
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-bottom_up_buffering` | Use an opt-in, area-first bottom-up buffering strategy on the top-down H-tree. Selects cells using actual downstream pin capacitance plus placement wire capacitance, inserts stages for excessive load, wire length, or slew, and checks the complete clock tree for max-cap and max-slew violations after latency balancing. Automatically disables dummy loads. Buffer masters must have equal height. |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
@@ -99,6 +101,20 @@ clock_tree_synthesis
 | `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 | `-repair_clock_nets` | This option includes fixing long wires inside CTS prior to latency adjustment with delay buffers. This can lead to a more balanced clock tree.  The default is not to perform clock net repair. |
 | `-no_insertion_delay` | Ignore sink insertion delay in clock tree construction and balancing. |
+
+#### Bottom-Up Buffering
+
+`-bottom_up_buffering` is an experimental, bounded greedy strategy, not a
+globally optimal skew or area solver. The H-tree is constructed top-down without
+choosing characterization load buckets. Buffer selection then runs in postorder:
+each parent sees the selected child buffer's input capacitance, not the sum of
+capacitances hidden behind that buffer. Sink capacitances and rise/fall timing are
+taken across the loaded scenes. Wire loads use a conservative placement star
+model, not extracted routing parasitics. Root buffers and explicit buffer choices
+remain fixed. Infeasible loads, non-progressing legalization, a 64-level depth
+limit, or a stage count exceeding 64 times the initial node count cause an error.
+The final electrical audit runs after latency balancing; an audit failure leaves
+the generated tree in the database for diagnosis. Routed timing must still be checked.
 
 #### Instance Name Prefixes
 
