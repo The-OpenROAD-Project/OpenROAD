@@ -107,7 +107,6 @@ void TritonCTS::runTritonCts()
   try {
     if (options_->bottomUpBuffering()) {
       validateBottomUpWireRC();
-      options_->enableDummyLoad(false);
     }
     setupCharacterization();
     if (options_->bottomUpBuffering()) {
@@ -2515,7 +2514,7 @@ static float getInputCap(const sta::LibertyCell* cell)
   return 0.0;
 }
 
-static sta::LibertyCell* findBestDummyCell(
+sta::LibertyCell* TritonCTS::findBestDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates,
     float deltaCap)
 {

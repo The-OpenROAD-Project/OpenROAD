@@ -163,7 +163,6 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
-  void createGeometricClockSubNets();
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName) override;
   void findLegalLocations(const Point<double>& parentPoint,

@@ -27,8 +27,8 @@ tee -quiet -variable log {
 check "macro and register trees are separated" {
   expr { [llength [get_cells -quiet clkbuf_regs_*]] > 0 }
 } 1
-check "electrical stages are inserted" {
-  expr { [llength [get_cells -quiet clkbuf_bottom_up_*]] > 0 }
+check "macro/register search reports bounded alternatives" {
+  string match {*frontier <= *} $log
 } 1
 check "audit covers the completed balanced clock tree" {
   string match {*0 max-cap and 0 max-slew violations*} $log

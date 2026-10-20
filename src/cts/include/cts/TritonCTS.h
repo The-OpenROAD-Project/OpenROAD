@@ -215,6 +215,9 @@ class TritonCTS
                           std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
+  static sta::LibertyCell* findBestDummyCell(
+      const std::vector<sta::LibertyCell*>& dummyCandidates,
+      float deltaCap);
   odb::dbInst* insertDummyCell(
       Clock& clockNet,
       ClockInst* inst,

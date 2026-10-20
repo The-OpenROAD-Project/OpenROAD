@@ -302,6 +302,17 @@ cc_test(
 )
 
 cc_test(
+    name = "BufferingSearchTest",
+    size = "small",
+    srcs = ["cpp/BufferingSearchTest.cc"],
+    deps = [
+        "//src/cts:bottom_up_buffering",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "BottomUpClockTreeTest",
     srcs = ["cpp/BottomUpClockTreeTest.cc"],
     data = [

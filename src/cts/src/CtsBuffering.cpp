@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "BottomUpBuffering.h"
+#include "BufferingSearch.h"
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
@@ -28,6 +29,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -76,6 +78,7 @@ struct BufferCell
   std::string name;
   sta::LibertyPort* output;
   double input_cap;
+  double nominal_input_cap;
   double max_cap;
   double area;
   int max_fanout;
@@ -126,6 +129,7 @@ class ClockBuffering
 {
  public:
   using FanoutLimit = std::function<int(const std::string&)>;
+  using DummySelector = std::function<sta::LibertyCell*(float, float, size_t)>;
 
   ClockBuffering(CtsOptions* options,
                  odb::dbDatabase* db,
@@ -134,7 +138,8 @@ class ClockBuffering
                  rsz::Resizer* resizer,
                  est::EstimateParasitics* parasitics,
                  double length_unit,
-                 FanoutLimit fanout_limit)
+                 FanoutLimit fanout_limit,
+                 DummySelector dummy_selector)
       : options_(options),
         db_(db),
         network_(network),
@@ -142,7 +147,8 @@ class ClockBuffering
         resizer_(resizer),
         parasitics_(parasitics),
         length_unit_(length_unit),
-        fanout_limit_(std::move(fanout_limit))
+        fanout_limit_(std::move(fanout_limit)),
+        dummy_selector_(std::move(dummy_selector))
   {
   }
 
@@ -157,39 +163,81 @@ class ClockBuffering
     if (!(slew_limit_ > 0) || !std::isfinite(slew_limit_)) {
       throw std::runtime_error("Bottom-up CTS requires a positive slew limit");
     }
+    prepareWireModel();
+    const double max_length
+        = options_->getMaxWl() > 0
+              ? std::min(options_->getMaxWl(), options_->getBufferDistance())
+              : options_->getBufferDistance();
+    const BufferingSearchModel model{
+        cap_per_dbu_, res_per_dbu_, max_length, 2 * sta_->scenes().size(), 16};
+    const BufferingChoices choices
+        = [this](const auto& load, const auto& fixed) {
+            return cellChoices(load, fixed);
+          };
+    const BufferingDummy dummy
+        = [this](float actual, float ideal, size_t fanout) {
+            return dummyLoad(actual, ideal, fanout);
+          };
+    auto reference = evaluateBuffering(nodes_, root_, model, choices, dummy);
+    const size_t initial_size = nodes_.size();
+    prepareSites(model, reference);
+    const auto plan
+        = searchBuffering(nodes_, root_, model, choices, dummy, reference);
+    nodes_ = plan.nodes;
+    restoreLocations();
+    if (!plan.reference) {
+      writeTree(plan.depth);
+    }
+    options_->getLogger()->info(
+        utl::CTS,
+        555,
+        "Bottom-up buffered {}: {} plan, {} cells, depth {}, "
+        "{} wire-only junctions, frontier <= {} ({} added sites).",
+        clock_->getName(),
+        plan.reference ? "legacy reference" : "bounded search",
+        plan.buffers,
+        plan.depth,
+        std::ranges::count_if(
+            nodes_,
+            [](const auto& node) { return !node.sink && node.master.empty(); }),
+        plan.peak_candidates,
+        nodes_.size() - initial_size);
+  }
+
+ private:
+  void prepareSites(const BufferingSearchModel& model,
+                    const std::optional<BufferingPlan>& reference)
+  {
     // A common footprint prevents resizing from invalidating the load of an
     // already selected child. All coordinates are physical dbu, not LUT bins.
     for (auto& node : nodes_) {
       if (!node.sink) {
         builder_->uncommitLoc(Point<double>(node.point.x / length_unit_,
                                             node.point.y / length_unit_));
+      }
+    }
+    for (auto& node : nodes_) {
+      if (!node.sink) {
         node.point = legalize(node.point);
       }
     }
-    prepareWireModel();
-    const double max_length
-        = options_->getMaxWl() > 0
-              ? std::min(options_->getMaxWl(), options_->getBufferDistance())
-              : options_->getBufferDistance();
     BottomUpBuffering strategy(
         cap_per_dbu_,
-        max_length,
+        model.max_wire_length,
         [this](const auto& load, const auto& fixed) {
           return select(load, fixed);
         },
         [this](auto point) { return legalize(point); });
-    const size_t initial_size = nodes_.size();
-    nodes_ = strategy.run(std::move(nodes_), root_);
-    writeTree(initial_size);
-    options_->getLogger()->info(
-        utl::CTS,
-        555,
-        "Bottom-up buffered {} with {} additional electrical stages.",
-        clock_->getName(),
-        nodes_.size() - initial_size);
+    try {
+      nodes_ = strategy.run(nodes_, root_);
+    } catch (const std::runtime_error&) {
+      if (!reference) {
+        throw;
+      }
+      nodes_ = reference->nodes;
+    }
   }
 
- private:
   void addCell(const std::string& name)
   {
     const auto* max = sta::MinMax::max();
@@ -242,6 +290,7 @@ class ClockBuffering
     cells_.push_back({name,
                       output,
                       inputCap(input, sta_),
+                      input->capacitance(),
                       max_cap,
                       cell->area(),
                       fanout_limit_(name),
@@ -289,6 +338,24 @@ class ClockBuffering
                                  + inst.getName());
       }
       node.input_cap = inputCap(port, sta_);
+      node.nominal_input_cap = port->capacitance();
+      for (const auto* scene : sta_->scenes()) {
+        for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+          double early = 0, late = 0;
+          if (options_->insertionDelayEnabled()) {
+            const auto* min_port = port->scenePort(scene, sta::MinMax::min());
+            if (min_port == nullptr) {
+              throw std::runtime_error(
+                  "Missing scene data for CTS sink insertion delay");
+            }
+            early = min_port->clkTreeDelay(0.0, rf, sta::MinMax::min());
+            late = port->scenePort(scene, sta::MinMax::max())
+                       ->clkTreeDelay(0.0, rf, sta::MinMax::max());
+          }
+          node.sink_arrivals.emplace_back(std::min(early, late),
+                                          std::max(early, late));
+        }
+      }
       tightenSlew(port,
                   network_->port(network_->dbToSta(inst.getDbInputPin())),
                   sta_,
@@ -301,6 +368,17 @@ class ClockBuffering
       node.fixed_master = options_->getSinkBuffer();
     } else if (!options_->getTreeBuffer().empty()) {
       node.fixed_master = options_->getTreeBuffer();
+    }
+    if (!node.sink) {
+      node.master = inst.getMaster();
+      const auto cell
+          = std::ranges::find(cells_, node.master, &BufferCell::name);
+      if (cell == cells_.end()) {
+        throw std::runtime_error(
+            "Legacy CTS cell missing from candidate library");
+      }
+      node.input_cap = cell->input_cap;
+      node.nominal_input_cap = cell->nominal_input_cap;
     }
     nodes_.push_back(std::move(node));
   }
@@ -354,9 +432,10 @@ class ClockBuffering
     res_per_dbu_ = bound.resistance * scale;
   }
 
-  std::optional<BufferingChoice> select(const BufferingLoad& load,
-                                        const std::string& fixed)
+  std::vector<BufferingCellChoice> cellChoices(const BufferingLoad& load,
+                                               const std::string& fixed)
   {
+    std::vector<BufferingCellChoice> result;
     // Use a realizable common input-slew bound, with margin for placement RC.
     const double slew_budget = slew_limit_ * 0.5;
     // Upper-bound the farthest receiver's wire degradation with the complete
@@ -374,6 +453,8 @@ class ClockBuffering
         continue;
       }
       bool feasible = true;
+      BufferingCellChoice choice{
+          {cell.name, cell.input_cap}, cell.nominal_input_cap, cell.area, {}};
       const sta::Slew input_slews[]
           = {static_cast<float>(slew_budget), static_cast<float>(slew_budget)};
       for (const auto* scene : sta_->scenes()) {
@@ -386,16 +467,51 @@ class ClockBuffering
                              sta::MinMax::max(),
                              delays,
                              slews);
-        for (const auto& slew : slews) {
-          const double value = sta::delayAsFloat(slew) + wire_slew;
+        for (size_t rf = 0; rf < 2; ++rf) {
+          const double value = sta::delayAsFloat(slews[rf]) + wire_slew;
+          const double delay = sta::delayAsFloat(delays[rf]);
           feasible &= std::isfinite(value) && value > 0 && value <= slew_budget;
+          feasible &= std::isfinite(delay) && delay >= 0;
+          choice.delays.push_back(delay);
         }
       }
       if (feasible) {
-        return BufferingChoice{cell.name, cell.input_cap};
+        result.push_back(std::move(choice));
       }
     }
+    return result;
+  }
+
+  std::optional<BufferingChoice> select(const BufferingLoad& load,
+                                        const std::string& fixed)
+  {
+    auto choices = cellChoices(load, fixed);
+    if (!choices.empty()) {
+      const auto best
+          = std::ranges::min_element(choices, {}, [](const auto& cell) {
+              return std::tuple(*std::ranges::max_element(cell.delays),
+                                cell.area,
+                                cell.buffer.master);
+            });
+      return best->buffer;
+    }
     return std::nullopt;
+  }
+
+  std::optional<BufferingCellChoice> dummyLoad(float actual,
+                                               float ideal,
+                                               size_t fanout)
+  {
+    auto* cell = dummy_selector_(actual, ideal, fanout);
+    if (cell == nullptr) {
+      return std::nullopt;
+    }
+    sta::LibertyPort *input, *output;
+    cell->bufferPorts(input, output);
+    return BufferingCellChoice{{cell->name(), inputCap(input, sta_)},
+                               input->capacitance(),
+                               cell->area(),
+                               {}};
   }
 
   BufferingPoint legalize(BufferingPoint point)
@@ -403,23 +519,70 @@ class ClockBuffering
     const Point<double> old(point.x / length_unit_, point.y / length_unit_);
     const auto legal = builder_->legalizeOneBuffer(old, footprint_->getName());
     builder_->commitLoc(legal);
+    committed_sites_.push_back(
+        {legal.getX() * length_unit_, legal.getY() * length_unit_});
     return {std::round(legal.getX() * length_unit_),
             std::round(legal.getY() * length_unit_)};
   }
 
-  void writeTree(size_t initial_size)
+  void restoreLocations()
   {
-    for (size_t index = initial_size; index < nodes_.size(); ++index) {
-      const auto& node = nodes_[index];
-      auto& inst
-          = clock_->addClockBuffer("clkbuf_bottom_up_" + std::to_string(index),
-                                   node.master,
-                                   node.point.x,
-                                   node.point.y);
-      builder_->addTreeLevelBuffer(&inst);
-      instances_.push_back(&inst);
+    for (const auto point : committed_sites_) {
+      builder_->uncommitLoc(
+          Point<double>(point.x / length_unit_, point.y / length_unit_));
     }
-    clock_->clearSubNets();
+    for (const auto& node : nodes_) {
+      if (!node.sink && !node.master.empty()) {
+        builder_->commitLoc(Point<double>(node.point.x / length_unit_,
+                                          node.point.y / length_unit_));
+      }
+    }
+  }
+
+  std::vector<size_t> frontier(size_t index) const
+  {
+    std::vector<size_t> result;
+    std::vector<size_t> pending(nodes_[index].children.rbegin(),
+                                nodes_[index].children.rend());
+    while (!pending.empty()) {
+      const auto child = pending.back();
+      pending.pop_back();
+      if (nodes_[child].sink || !nodes_[child].master.empty()) {
+        result.push_back(child);
+      } else {
+        pending.insert(pending.end(),
+                       nodes_[child].children.rbegin(),
+                       nodes_[child].children.rend());
+      }
+    }
+    return result;
+  }
+
+  void writeTree(unsigned depth)
+  {
+    // Sink objects remain stable. Remove all old buffer pointers before
+    // rebuilding the chosen plan; virtual junctions never become DB cells.
+    builder_->clearBuffering(depth);
+    instances_.resize(nodes_.size(), nullptr);
+    for (size_t index = 0; index < nodes_.size(); ++index) {
+      const auto& node = nodes_[index];
+      if (node.sink) {
+        continue;
+      }
+      instances_[index] = nullptr;
+      if (node.master.empty()) {
+        continue;
+      }
+      auto& inst = clock_->addClockBuffer(
+          index == root_ ? "clkbuf_0"
+                         : "clkbuf_bottom_up_" + std::to_string(index),
+          node.master,
+          node.point.x,
+          node.point.y);
+      inst.setInputCap(node.input_cap);
+      builder_->addTreeLevelBuffer(&inst);
+      instances_[index] = &inst;
+    }
     // Root-first order lets the DB writer discover driving nets correctly.
     std::function<void(size_t)> connect = [&](size_t index) {
       const auto& node = nodes_[index];
@@ -427,20 +590,21 @@ class ClockBuffering
         return;
       }
       auto* inst = instances_[index];
-      inst->setMaster(node.master);
-      inst->setInputCap(node.input_cap);
-      inst->setLocation(node.point.x, node.point.y);
       auto& net = clock_->addSubNet(
           index == root_ ? "clknet_0"
                          : "clknet_bottom_up_" + std::to_string(index));
       net.addInst(*inst);
+      const auto children = frontier(index);
       bool leaf = true;
-      for (const size_t child : node.children) {
+      for (const size_t child : children) {
         net.addInst(*instances_[child]);
         leaf &= nodes_[child].sink;
       }
       net.setLeafLevel(leaf);
-      for (const size_t child : node.children) {
+      if (leaf) {
+        builder_->addFirstLevelSinkDriver(inst);
+      }
+      for (const size_t child : children) {
         connect(child);
       }
     };
@@ -455,11 +619,13 @@ class ClockBuffering
   est::EstimateParasitics* parasitics_;
   double length_unit_;
   FanoutLimit fanout_limit_;
+  DummySelector dummy_selector_;
   TreeBuilder* builder_ = nullptr;
   Clock* clock_ = nullptr;
   odb::dbMaster* footprint_ = nullptr;
   std::vector<BufferCell> cells_;
   std::vector<BufferingNode> nodes_;
+  std::vector<BufferingPoint> committed_sites_;
   std::vector<ClockInst*> instances_;
   std::map<ClockInst*, size_t> indices_;
   size_t root_ = 0;
@@ -472,6 +638,10 @@ class ClockBuffering
 void TritonCTS::bufferClockTreeBottomUp(TreeBuilder* builder)
 {
   try {
+    std::vector<sta::LibertyCell*> dummy_cells;
+    if (options_->dummyLoadEnabled()) {
+      findCandidateDummyCells(dummy_cells);
+    }
     ClockBuffering buffering(
         options_,
         db_,
@@ -480,7 +650,14 @@ void TritonCTS::bufferClockTreeBottomUp(TreeBuilder* builder)
         resizer_,
         estimate_parasitics_,
         techChar_->getLengthUnit(),
-        [this](const auto& name) { return getBufferFanoutLimit(name); });
+        [this](const auto& name) { return getBufferFanoutLimit(name); },
+        [this, &dummy_cells](float actual, float ideal, size_t fanout) {
+          if (!options_->dummyLoadEnabled() || sta::fuzzyEqual(actual, ideal)
+              || fanout == options_->getMaxFanout()) {
+            return static_cast<sta::LibertyCell*>(nullptr);
+          }
+          return findBestDummyCell(dummy_cells, ideal - actual);
+        });
     buffering.run(builder);
   } catch (const std::exception& error) {
     logger_->error(utl::CTS,

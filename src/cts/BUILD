@@ -14,8 +14,14 @@ package(
 
 cc_library(
     name = "bottom_up_buffering",
-    srcs = ["src/BottomUpBuffering.cpp"],
-    hdrs = ["src/BottomUpBuffering.h"],
+    srcs = [
+        "src/BottomUpBuffering.cpp",
+        "src/BufferingSearch.cpp",
+    ],
+    hdrs = [
+        "src/BottomUpBuffering.h",
+        "src/BufferingSearch.h",
+    ],
     includes = ["src"],
 )
 

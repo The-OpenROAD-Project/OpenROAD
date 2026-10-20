@@ -76,7 +76,7 @@ clock_tree_synthesis
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-bottom_up_buffering` | Use an opt-in, area-first bottom-up buffering strategy on the top-down H-tree. Selects cells using actual downstream pin capacitance plus placement wire capacitance, inserts stages for excessive load, wire length, or slew, and checks the complete clock tree for max-cap and max-slew violations after latency balancing. Automatically disables dummy loads. Buffer masters must have equal height. |
+| `-bottom_up_buffering` | Use opt-in, bounded bottom-up buffering on the top-down H-tree. Compare wire-only and buffered alternatives using actual downstream load, rise/fall delay, skew, depth, and area, retaining the feasible legacy plan as a reference. Check the complete clock tree for max-cap and max-slew violations after latency balancing. Dummy-load policy is unchanged. Buffer masters must have equal height. |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
@@ -104,14 +104,28 @@ clock_tree_synthesis
 
 #### Bottom-Up Buffering
 
-`-bottom_up_buffering` is an experimental, bounded greedy strategy, not a
-globally optimal skew or area solver. The H-tree is constructed top-down without
-choosing characterization load buckets. Buffer selection then runs in postorder:
-each parent sees the selected child buffer's input capacitance, not the sum of
-capacitances hidden behind that buffer. Sink capacitances and rise/fall timing are
-taken across the loaded scenes. Wire loads use a conservative placement star
-model, not extracted routing parasitics. Root buffers and explicit buffer choices
-remain fixed. Every loaded scene must provide positive finite horizontal and
+`-bottom_up_buffering` is an experimental bounded search, not a globally optimal
+skew, area, or placement solver. Normal top-down H-tree construction supplies a
+legacy reference and legal insertion sites. Buffering is then selected separately
+in postorder. Sites may be wire-only junctions: removing a buffer preserves all
+downstream wire edges and capacitance, rather than treating that junction as a
+zero-capacitance cell. A buffered child exposes its selected input capacitance,
+not capacitance hidden behind the buffer. Bounded electrical expansion adds
+repeater sites when needed for load, fanout, wire length, or slew.
+
+At most 16 alternatives per site retain input load, rise/fall arrival ranges in
+each scene, depth, buffer count, and area. Delay and skew rank ahead of depth,
+count, and area; minimum depth alone does not determine a winner. The independently
+evaluated feasible legacy plan is outside pruning and remains unchanged if chosen.
+A replacement must not worsen that reference's modeled latest arrival or arrival
+spread in any scene/transition. Explicit root, tree, and sink cell choices remain
+fixed. Complete candidate evaluation includes the existing dummy-load selection
+policy, unless `-dont_use_dummy_load` was requested.
+
+Timing uses existing Liberty/Resizer characterization with a conservative common
+input-slew budget and placement star-wire RC, not extracted routing parasitics.
+The comparison is a model safeguard, not a post-route QoR guarantee. Every loaded
+scene must provide positive finite horizontal and
 vertical resistance and capacitance for both clock and signal wires. The model
 bounds all of these values, including signal RC used by register-terminal nets.
 Infeasible loads, non-progressing legalization, a 64-level depth

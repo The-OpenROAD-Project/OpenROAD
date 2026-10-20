@@ -8,6 +8,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace cts {
@@ -54,6 +55,8 @@ struct BufferingNode
   BufferingPoint point;
   bool sink = false;
   double input_cap = 0;
+  double nominal_input_cap = 0;
+  std::vector<std::pair<double, double>> sink_arrivals;
   std::string master;
   std::string fixed_master;
   std::vector<size_t> children;

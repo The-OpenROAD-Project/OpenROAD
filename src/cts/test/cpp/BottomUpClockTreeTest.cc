@@ -363,6 +363,55 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     cts_->runClockTreeSynthesis();
   }
 
+  void planRedundantBranch(bool explicit_branch)
+  {
+    cts_->validateBottomUpWireRC();
+    cts_->setupCharacterization();
+    cts_->findClockRoots();
+    cts_->populateTritonCTS();
+    cts_->checkCharacterization();
+    ASSERT_EQ(cts_->builders_.size(), 1u);
+    builder_ = cts_->builders_.front().get();
+    builder_->setTechChar(*cts_->techChar_);
+    builder_->initBlockages();
+    auto& clock = builder_->getClock();
+    const auto point = clock.computeSinkRegion().getCenter();
+    auto& root = clock.addClockBuffer(
+        "clkbuf_0", "BUF_X8", point.getX(), point.getY());
+    auto& branch = clock.addClockBuffer("clkbuf_redundant",
+                                        explicit_branch ? "BUF_X4" : "BUF_X1",
+                                        point.getX(),
+                                        point.getY());
+    builder_->addTreeLevelBuffer(&root);
+    builder_->addTreeLevelBuffer(&branch);
+    auto& root_net = clock.addSubNet("clknet_0");
+    root_net.addInst(root);
+    root_net.addInst(branch);
+    auto& leaf = clock.addSubNet("clknet_redundant");
+    leaf.addInst(branch);
+    leaf.setLeafLevel(true);
+    clock.forEachSink([&](ClockInst& sink) { leaf.addInst(sink); });
+    auto* options = cts_->getParms();
+    options->enableDummyLoad(false);
+    options->setSinkBufferInferred(true);
+    options->setMaxWl(1000000);
+    options->setBufferDistance(1000000);
+    if (explicit_branch) {
+      options->setTreeBuffer("BUF_X4");
+    }
+    cts_->bufferClockTreeBottomUp(builder_);
+    size_t count = 0;
+    clock.forEachClockBuffer([&](const ClockInst& inst) {
+      ++count;
+      EXPECT_EQ(inst.getMaster(),
+                inst.getName() == "clkbuf_0_clk" ? "BUF_X8" : "BUF_X4");
+    });
+    EXPECT_EQ(count, explicit_branch ? 2u : 1u)
+        << "The unconstrained branch must actually disappear; explicit stages "
+           "must remain";
+    cts_->runClockTreeSynthesis();
+  }
+
   std::unique_ptr<TritonCTS> cts_;
   TreeBuilder* builder_ = nullptr;
   odb::dbNet* source_ = nullptr;
@@ -372,6 +421,27 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
   int stages_ = 0;
   std::vector<odb::dbITerm*> originals_;
 };
+
+TEST_F(BottomUpClockTreeTest, ActualSearchBypassesUnnecessaryBranchStage)
+{
+  planRedundantBranch(false);
+  EXPECT_EQ(block_->findInst("clkbuf_redundant_clk"), nullptr);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 1u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, ActualSearchRetainsExplicitBranchStage)
+{
+  planRedundantBranch(true);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
 
 TEST_F(BottomUpClockTreeTest, EveryOriginalSinkAndUnmodeledDelayNetIsVisited)
 {

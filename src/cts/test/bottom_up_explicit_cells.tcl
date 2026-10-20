@@ -22,9 +22,7 @@ foreach inst [$block getInsts] {
     check "explicit root master" { [$inst getMaster] getName } BUF_X8
   } elseif { [string match "clkbuf_*" $name] } {
     check "explicit tree master on $name" { [$inst getMaster] getName } BUF_X2
-    if { [string match "clkbuf_bottom_up_*" $name] } {
-      incr extra
-    }
+    incr extra
   }
 }
 check "explicit cells used in added stages" { expr { $extra > 0 } } 1

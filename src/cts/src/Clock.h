@@ -196,6 +196,12 @@ class Clock
   }
 
   void clearSubNets() { subNets_.clear(); }
+  void clearBuffering()
+  {
+    subNets_.clear();
+    clockBuffers_.clear();
+    mapNameToInst_.clear();
+  }
 
   void addSink(const std::string& name, int x, int y)
   {
