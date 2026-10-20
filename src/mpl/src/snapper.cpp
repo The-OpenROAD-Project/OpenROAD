@@ -46,8 +46,9 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
     if (!isOriginInsideCore(origin, target_direction)) {
       const odb::Rect& macro_bbox = inst_->getBBox()->getBox();
       const odb::Rect& core = inst_->getBlock()->getCoreArea();
+      // An absent/nonpositive grid adds no restriction beyond integer DBUs.
       const int manufacturing_grid
-          = inst_->getDb()->getTech()->getManufacturingGrid();
+          = std::max(1, inst_->getDb()->getTech()->getManufacturingGrid());
       const int lower_bound
           = initial_origin
             + (target_direction == odb::dbTechLayerDir::VERTICAL
@@ -368,7 +369,7 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
 void Snapper::alignWithManufacturingGrid(int& origin)
 {
   const int manufacturing_grid
-      = inst_->getDb()->getTech()->getManufacturingGrid();
+      = std::max(1, inst_->getDb()->getTech()->getManufacturingGrid());
 
   origin = std::round(origin / static_cast<double>(manufacturing_grid))
            * manufacturing_grid;
