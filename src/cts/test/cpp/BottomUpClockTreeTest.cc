@@ -1000,6 +1000,105 @@ TEST_F(BottomUpClockTreeTest, SourceDriverSlewAloneDoesNotBoundLongIngressWire)
 }
 
 TEST_F(BottomUpClockTreeTest,
+       RetainedSourceBranchCapacitanceBoundsSharedIngress)
+{
+  const double load = prepareSlewClosureTree(40000);
+  setRC(sta_->cmdScene(), 1);
+  const double limit = closureSlewLimit(load);
+  ASSERT_LT(bufferOutputSlew(limit, load), limit);
+  auto& clock = builder_->getClock();
+  auto* root = clock.findClockByName("clkbuf_0_clk");
+  ASSERT_NE(root, nullptr);
+  auto* retained = odb::dbInst::create(
+      block_, db_->findMaster("BUF_X2"), "retained_source_branch");
+  ASSERT_NE(retained, nullptr);
+  retained->setLocation(root->getX(), root->getY());
+  retained->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  auto* retained_pin = retained->findITerm("A");
+  ASSERT_NE(retained_pin, nullptr);
+  retained_pin->connect(source_);
+  ASSERT_TRUE(retained->isPlaced());
+  ASSERT_EQ(clock.getNumSinks(), originals_.size());
+  clock.forEachSink([&](const ClockInst& sink) {
+    EXPECT_NE(sink.getDbInputPin(), retained_pin);
+  });
+  ASSERT_EQ(source_->getITermCount(), originals_.size() + 1);
+  auto* source_pin = db_network_->dbToSta(source_->get1stBTerm());
+  const auto source_point = db_network_->location(source_pin);
+  auto* root_master = db_->findMaster("BUF_X1");
+  odb::Rect boundary;
+  root_master->getPlacementBoundary(boundary);
+  const auto input_box = root_master->findMTerm("A")->getBBox();
+  const double x = root->getX() - boundary.xMin() - source_point.getX();
+  const double y = root->getY() - boundary.yMin() - source_point.getY();
+  const double length_dbu
+      = std::max(std::abs(x + input_box.xMin()), std::abs(x + input_box.xMax()))
+        + std::max(std::abs(y + input_box.yMin()),
+                   std::abs(y + input_box.yMax()));
+  int retained_x, retained_y;
+  ASSERT_TRUE(retained_pin->getAvgXY(&retained_x, &retained_y));
+  const double shared_prefix_dbu
+      = std::min(x + input_box.xMin(),
+                 static_cast<double>(retained_x - source_point.getX()));
+  ASSERT_GT(shared_prefix_dbu, 0)
+      << "Root and retained load must share a nonzero source-side wire prefix";
+  const double meters_per_dbu = 1e-6 / block_->getDbUnitsPerMicron();
+  const auto rc = bound();
+  const double shared_resistance
+      = rc.resistance * shared_prefix_dbu * meters_per_dbu;
+  ASSERT_TRUE(std::isfinite(shared_resistance));
+  ASSERT_GT(shared_resistance, 0);
+  const float retained_cap = static_cast<float>(4 * unrestorableInputSlew(limit)
+                                                / (2.2 * shared_resistance));
+  ASSERT_TRUE(std::isfinite(retained_cap));
+  ASSERT_GT(retained_cap, 0);
+  auto* retained_port
+      = db_network_->libertyPort(db_network_->dbToSta(retained_pin));
+  ASSERT_NE(retained_port, nullptr);
+  // This distinct master is not a candidate or original sink. Its input
+  // remains on the physical source net after this clock's sinks reconnect.
+  for (auto* scene : sta_->scenes()) {
+    auto* port = retained_port->scenePort(scene, sta::MinMax::max());
+    ASSERT_NE(port, nullptr);
+    port->setCapacitance(retained_cap);
+    for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+      ASSERT_FLOAT_EQ(port->capacitance(rf, sta::MinMax::max()), retained_cap);
+    }
+  }
+  auto* vertex = sta_->ensureGraph()->pinDrvrVertex(source_pin);
+  ASSERT_NE(vertex, nullptr);
+  const double source_slew
+      = sta::delayAsFloat(sta_->slew(vertex,
+                                     sta::RiseFallBoth::riseFall(),
+                                     sta_->scenes(),
+                                     sta::MinMax::max()));
+  ASSERT_TRUE(std::isfinite(source_slew));
+  ASSERT_GE(source_slew, 0);
+  ASSERT_LT(source_slew, limit);
+  sta::LibertyPort *input, *output;
+  db_network_->findLibertyCell("BUF_X1")->bufferPorts(input, output);
+  const double length = length_dbu * meters_per_dbu;
+  const double root_only_slew
+      = source_slew
+        + 2.2 * rc.resistance * length
+              * (worstCap(input) + rc.capacitance * length);
+  ASSERT_TRUE(std::isfinite(root_only_slew));
+  ASSERT_LT(root_only_slew, limit);
+  ASSERT_LT(bufferOutputSlew(std::max(limit, root_only_slew), load), limit)
+      << "Both source-only and root-only ingress models would accept";
+  const double shared_slew
+      = source_slew + 2.2 * shared_resistance * worstCap(retained_port);
+  ASSERT_TRUE(std::isfinite(shared_slew));
+  ASSERT_GT(bufferOutputSlew(shared_slew, 0), limit)
+      << "The retained cap on a shared prefix defeats even an unloaded root";
+  cts_->getParms()->setMaxCharSlew(limit);
+  const auto before = snapshot();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  EXPECT_EQ(snapshot(), before);
+  EXPECT_EQ(retained_pin->getNet(), source_);
+}
+
+TEST_F(BottomUpClockTreeTest,
        InferredDistanceCannotDiscardFeasibleLegacyReference)
 {
   planLongSpan(false);
