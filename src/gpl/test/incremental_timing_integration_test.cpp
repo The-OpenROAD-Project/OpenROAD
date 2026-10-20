@@ -166,5 +166,46 @@ TEST_F(IncrementalPlacementTest,
   }
 }
 
+TEST_F(IncrementalPlacementTest, ReuseAfterAcceptAndRejectMatchesFreshPlacement)
+{
+  tst::MetricsCapture metrics(logger_);
+  for (int threads : {1, 2}) {
+    SCOPED_TRACE(threads);
+    sta_->setThreadCount(threads);
+    PlaceOptions regular_options;
+    regular_options.nesterovPlaceMaxIter = 20;
+    resetPlacement();
+    {
+      Replace fresh(db_.get(), sta_.get(), &resizer_, &grt_, nullptr, &logger_);
+      fresh.doPlace(threads, regular_options);
+    }
+    const auto fresh_placement = placement();
+
+    for (int incremental_iterations : {600, 5000}) {
+      SCOPED_TRACE(incremental_iterations);
+      resetPlacement();
+      PlaceOptions incremental_options;
+      incremental_options.nesterovPlaceMaxIter = incremental_iterations;
+      Replace reused(
+          db_.get(), sta_.get(), &resizer_, &grt_, nullptr, &logger_);
+      reused.doIncrementalPlace(threads, incremental_options);
+      ASSERT_EQ(metrics.value("gpl__incremental__timing_protected"), "1");
+      ASSERT_EQ(metrics.value("gpl__incremental__timing_reverted"),
+                incremental_iterations == 600 ? "0" : "1");
+      ASSERT_TRUE(metrics.value("gpl__incremental__timing_weighted_nets"));
+      ASSERT_GT(
+          std::stoi(*metrics.value("gpl__incremental__timing_weighted_nets")),
+          0);
+
+      // No explicit reset: C++ callers can reuse Replace just as Tcl callers
+      // can issue another command. Both acceptance and rollback must leave
+      // the next ordinary placement independent of incremental timing state.
+      resetPlacement();
+      reused.doPlace(threads, regular_options);
+      EXPECT_EQ(placement(), fresh_placement);
+    }
+  }
+}
+
 }  // namespace
 }  // namespace gpl

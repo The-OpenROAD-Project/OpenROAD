@@ -34,6 +34,18 @@ TEST(SlackRampAnchorIndex, DoesNotMoveWithNetsPercentage)
   }
 }
 
+TEST(SlackRampAnchorIndex, ContractUsesTheSelectedWorstNetPopulation)
+{
+  constexpr size_t kConstrainedNets = 150000;
+  constexpr float kSelectedPercent = 10.0f;
+  const size_t selected
+      = worstSlackNetCount(kConstrainedNets, kSelectedPercent);
+  ASSERT_EQ(selected, 15000u);
+  EXPECT_EQ(slackRampAnchorIndex(selected, kSelectedPercent), 300u);
+  // Supplying the full population here would inflate the anchor tenfold.
+  EXPECT_EQ(slackRampAnchorIndex(kConstrainedNets, kSelectedPercent), 3000u);
+}
+
 // At 100% the list is the whole design, so the anchor is the plain percentage.
 TEST(SlackRampAnchorIndex, AnchorsOnPercentageOfTheDesign)
 {

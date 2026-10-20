@@ -4,6 +4,7 @@
 #include "gpl/Replace.h"
 
 #include <algorithm>
+#include <boost/scope_exit.hpp>
 #include <chrono>
 #include <cstddef>
 #include <memory>
@@ -155,6 +156,13 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
 void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
+  // A completed incremental command must not leave its temporary timing
+  // mode, net weights, locks, or optimizer state in a reused C++ Replace.
+  // Cleanup also runs on exceptions; reset() is safe after rollback's reset.
+  BOOST_SCOPE_EXIT_ALL(&)
+  {
+    reset();
+  };
   log_->info(GPL, 83, "Execute incremental mode global placement.");
   log_->metric("gpl__incremental__timing_protected", 0);
   log_->metric("gpl__incremental__timing_reverted", 0);

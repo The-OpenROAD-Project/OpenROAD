@@ -161,6 +161,8 @@ class Replace
 
   void reset();
 
+  // Completes an incremental command and clears its solver state; a later
+  // placement call initializes from the accepted database coordinates.
   void doIncrementalPlace(int threads, const PlaceOptions& options = {});
   void doPlace(int threads, const PlaceOptions& options = {});
   void doInitialPlace(int threads, const PlaceOptions& options = {});

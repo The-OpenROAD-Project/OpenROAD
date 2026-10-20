@@ -284,6 +284,8 @@ bool TimingBase::executeIncrementalTimingDriven()
   if (nets.empty()) {
     return false;
   }
+  // Like executeTimingDriven(), pass the selected worst-net population to
+  // slackRampAnchorIndex(), not the unfiltered count of constrained nets.
   const float slack_min
       = nets[slackRampAnchorIndex(nets.size(), nets_percentage_)].second;
   const float slack_max = nets.back().second;

@@ -106,6 +106,9 @@ struct IncrementalTimingMetrics
 class IncrementalTimingGuard
 {
  public:
+  // sta is initialized and non-null. Once timing is usable, parasitics and
+  // block must be non-null and belong to that live design. Missing Liberty
+  // disables the guard before consulting those dependencies.
   IncrementalTimingGuard(sta::dbSta* sta,
                          est::EstimateParasitics* parasitics,
                          odb::dbBlock* block);
