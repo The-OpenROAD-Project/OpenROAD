@@ -74,7 +74,7 @@ OptimizationPolicy::OptimizationPolicy(Resizer& resizer,
                                        MoveCommitter& committer,
                                        RepairSetupContext& setup_context,
                                        const OptimizerRunConfig& config,
-                                       OptimizationPolicyConfig policy_config)
+                                       OptimizationPolicyConfig&& policy_config)
     : resizer_(resizer),
       committer_(committer),
       setup_context_(setup_context),
