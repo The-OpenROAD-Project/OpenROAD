@@ -392,6 +392,4 @@ worst slack max -23.63
 [INFO RSZ-0049] Cloned 7 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -1.21
-Differences found at line 330.
- wire net23;
- wire net241;
+No differences found.
