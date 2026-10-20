@@ -165,9 +165,6 @@ class GCell
   float gradientY_ = 0;
 
   GCellChange change_ = GCellChange::kNone;
-  // Geometry before artificial inflation, including padding/pin adjustment.
-  // Reloaded with physical geometry on timing resize and move callbacks.
-  int64_t uninflated_area_ = 0;
 };
 
 inline int GCell::lx() const
@@ -996,10 +993,7 @@ class NesterovBaseCommon
   void resetMinRcCellSize();
   void resizeMinRcCellSize();
   void updateMinRcCellSize();
-  // A live budget also reconciles snapshots with the current physical master.
-  // Without one, retain the ordinary routability restoration policy.
-  void revertGCellSizeToMinRc(std::optional<int64_t> inflation_budget
-                              = std::nullopt);
+  void revertGCellSizeToMinRc();
 
   GCell& getGCell(size_t index);
   size_t getGCellIndex(const GCell* gCell) const;
@@ -1032,12 +1026,7 @@ class NesterovBaseCommon
 
   std::vector<GCell*> nbc_gcells_;
   // For usage in routability mode, parallel to nbc_gcells_
-  struct CellSizeSnapshot
-  {
-    odb::Rect size{0, 0, 0, 0};
-    int64_t uninflated_area = 0;
-  };
-  std::vector<CellSizeSnapshot> minRcCellSize_;
+  std::vector<odb::Rect> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 

@@ -195,6 +195,15 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     nb_->checkConsistency();
   }
 
+  int64_t liveInflationArea() const
+  {
+    int64_t area = 0;
+    for (const auto& nb : nb_vec_) {
+      area += nb->getInflationArea();
+    }
+    return area;
+  }
+
   PlaceOptions options_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
@@ -227,7 +236,8 @@ TEST_F(CongestionBuffersTest, RefreshesRudyAndPreservesExistingInflation)
   EXPECT_EQ(cellArea(cellFor(cold)), cold_area);
   EXPECT_EQ(cellFor(existing_inst)->dx(), existing_width);
   EXPECT_EQ(cellFor(existing_inst)->dy(), existing_height);
-  EXPECT_EQ(rb_->getTotalInflation(), existing_inflation + added);
+  EXPECT_EQ(liveInflationArea(), existing_inflation + added);
+  EXPECT_EQ(rb_->getTotalInflation(), 0);
   EXPECT_EQ(rb_->getRevertCount(), 0);
   EXPECT_LE(static_cast<double>(cellArea(cellFor(hot))) / hot_area,
             options_.routabilityMaxInflationRatio);
@@ -568,7 +578,7 @@ TEST_F(DisjointRegionBuffersTest,
     measured_added += cellArea(cellFor(buffer)) - area;
   }
   EXPECT_EQ(measured_added, added);
-  EXPECT_EQ(rb_->getTotalInflation(), added);
+  EXPECT_EQ(liveInflationArea(), added);
   checkRegionDensity(nb_vec_[0]);
   checkRegionDensity(nb_vec_[1]);
 }
@@ -609,7 +619,7 @@ TEST_F(CongestionBuffersTest, InflationConsumesFillersWithoutRaisingDensity)
   nb_->updateTimingDrivenDensity();
   EXPECT_GE(before_fillers - nb_->getTotalFillerArea(), added);
   EXPECT_LE(nb_->getTargetDensity(), before_density);
-  EXPECT_EQ(rb_->getTotalInflation(), added);
+  EXPECT_EQ(liveInflationArea(), added);
 }
 
 TEST_F(CongestionBuffersTest, NoFillerAreaDoesNotBuyInflationWithDensity)
@@ -628,7 +638,7 @@ TEST_F(MovableMacroBuffersTest, LiveMacroChargeUsesCurrentTargetDensity)
 {
   GCell* macro = cellFor(macro_);
   ASSERT_NE(macro, nullptr);
-  EXPECT_EQ(rb_->getTotalInflation(), 0);
+  EXPECT_EQ(liveInflationArea(), 0);
   const int64_t base_area = cellArea(macro);
   macro->setSize(
       macro->dx() + 200, macro->dy(), GCell::GCellChange::kRoutability);
@@ -636,11 +646,11 @@ TEST_F(MovableMacroBuffersTest, LiveMacroChargeUsesCurrentTargetDensity)
   ASSERT_GT(delta, 0);
   for (const float density : {0.4f, 0.8f}) {
     nb_->setTargetDensity(density);
-    EXPECT_EQ(rb_->getTotalInflation(),
+    EXPECT_EQ(liveInflationArea(),
               static_cast<int64_t>(std::round(delta * density)));
   }
   nbc_->resizeGCell(macro_);
-  EXPECT_EQ(rb_->getTotalInflation(), 0);
+  EXPECT_EQ(liveInflationArea(), 0);
 }
 
 }  // namespace

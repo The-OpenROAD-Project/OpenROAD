@@ -468,6 +468,10 @@ void NesterovPlace::runTimingDriven(int iter,
     getTopLevelNB()->refreshIoPins();
     if (!virtual_td_iter && npVars_.routability_driven_mode
         && npVars_.timingDrivenCongestionInflation && !is_routability_need_) {
+      // Completion is terminal for this placement object's routability search.
+      // Its min-RC restore has already finished inside routability(), and
+      // runRoutability cannot re-enter it. Keep live accounting local to this
+      // post-completion extension, not the ordinary search or its snapshots.
       // Include inserted buffers in congestion pressure before initializing
       // their optimizer state or rebuilding the device geometry.
       rb_->inflateNewCells();

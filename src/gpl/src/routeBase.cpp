@@ -221,9 +221,6 @@ const std::vector<Tile*>& TileGrid::tiles() const
 
 RouteBaseVars::RouteBaseVars(const PlaceOptions& options)
     : useRudy(options.routabilityUseRudy),
-      timingDrivenCongestionInflation(options.timingDrivenCongestionInflation
-                                      && options.timingDrivenMode
-                                      && options.routabilityDrivenMode),
       targetRC(options.routabilityTargetRcMetric),
       inflationRatioCoef(options.routabilityInflationRatioCoef),
       maxInflationRatio(options.routabilityMaxInflationRatio),
@@ -282,24 +279,7 @@ void RouteBase::revertToMinCongestion()
   log_->info(GPL, 56, "Minimum observed routing congestion: {:.4f}", minRc_);
 
   // revert
-  if (rbVars_.timingDrivenCongestionInflation) {
-    int64_t remaining
-        = static_cast<int64_t>(static_cast<double>(original_movable_area_)
-                               * rbVars_.maxInflationTotal);
-    // Macro geometry is not restored below. Reserve its density-scaled live
-    // charge at the target density that this revert will restore.
-    for (int j = 0; j < nbVec_.size(); ++j) {
-      for (const auto& cell : nbVec_[j]->getGCells()) {
-        if (cell->isMacroInstance()) {
-          remaining -= static_cast<int64_t>(
-              std::round(cell->inflationArea() * minRcTargetDensity_[j]));
-        }
-      }
-    }
-    nbc_->revertGCellSizeToMinRc(std::max<int64_t>(0, remaining));
-  } else {
-    nbc_->revertGCellSizeToMinRc();
-  }
+  nbc_->revertGCellSizeToMinRc();
   for (int j = 0; j < nbVec_.size(); j++) {
     log_->info(GPL,
                57,
@@ -312,11 +292,6 @@ void RouteBase::revertToMinCongestion()
     nbVec_[j]->setTargetDensity(minRcTargetDensity_[j]);
     nbVec_[j]->restoreRemovedFillers();
     nbVec_[j]->updateDensitySize();
-    if (rbVars_.timingDrivenCongestionInflation) {
-      nbVec_[j]->updateAreas();
-      nbVec_[j]->setMovableArea(nbVec_[j]->getNesterovInstsArea()
-                                + nbVec_[j]->getTotalFillerArea());
-    }
     accumulatedInflatedAreaDelta_[j] = minRcInflatedAreaDelta_[j];
   }
   netWeights_ = minRcNetWeights_;
@@ -371,15 +346,8 @@ std::vector<int64_t> RouteBase::inflatedAreaDelta() const
 int64_t RouteBase::getTotalInflation() const
 {
   int64_t totalInflation = 0;
-  if (rbVars_.timingDrivenCongestionInflation) {
-    for (const auto& nb : nbVec_) {
-      totalInflation += nb->getInflationArea();
-    }
-  } else {
-    // Ordinary routability historically retains charges after timing edits.
-    for (const auto inflation : accumulatedInflatedAreaDelta_) {
-      totalInflation += inflation;
-    }
+  for (auto inflation : accumulatedInflatedAreaDelta_) {
+    totalInflation += inflation;
   }
   return totalInflation;
 }
@@ -719,11 +687,17 @@ int64_t RouteBase::inflateNewCells()
 
   calculateRudyTiles();
   int64_t total_added = 0;
+  // Ordinary routability is already finished. Its historical charges stay
+  // untouched; only this extension uses the current surviving geometry.
+  int64_t live_inflation = 0;
+  for (const auto& nb : nbVec_) {
+    live_inflation += nb->getInflationArea();
+  }
   int64_t remaining_budget = std::max<int64_t>(
       0,
       static_cast<int64_t>(static_cast<double>(original_movable_area_)
                            * rbVars_.maxInflationTotal)
-          - getTotalInflation());
+          - live_inflation);
   for (size_t i = 0; i < nbVec_.size(); ++i) {
     const auto& nb = nbVec_[i];
     // The cached areas still describe the design before timing repair.

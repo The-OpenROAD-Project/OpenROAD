@@ -138,6 +138,40 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         &logger_);
   }
 
+  bool routabilityNeeded() const { return np_->is_routability_need_; }
+
+  int64_t liveInflationArea() const
+  {
+    int64_t area = 0;
+    for (const auto& nb : nb_vec_) {
+      area += nb->getInflationArea();
+    }
+    return area;
+  }
+
+  void checkDensityAccounting()
+  {
+    for (const auto& nb : nb_vec_) {
+      int64_t standard_area = 0;
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isStdInstance()) {
+          standard_area += static_cast<int64_t>(cell->dx()) * cell->dy();
+        }
+      }
+      const int64_t available
+          = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
+      const float expected
+          = static_cast<float>(standard_area + nb->getTotalFillerArea())
+            / static_cast<float>(available);
+      EXPECT_FLOAT_EQ(nb->getTargetDensity(), expected);
+      for (const auto& bin : nb->getBins()) {
+        EXPECT_FLOAT_EQ(bin.getTargetDensity(), expected);
+      }
+      EXPECT_EQ(nb->getMovableArea(),
+                nb->getNesterovInstsArea() + nb->getTotalFillerArea());
+    }
+  }
+
   void runOrdinaryPass(int wire_width)
   {
     // Supply settled motion to the real controller, then execute its ordinary
@@ -233,10 +267,10 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     if (expect_inflation) {
       EXPECT_GT(inflated_cells, 0)
           << "inflation must run before updateGCellState clears its candidates";
-      EXPECT_GT(rb_->getTotalInflation(), 0);
+      EXPECT_GT(liveInflationArea(), 0);
     } else {
       EXPECT_EQ(inflated_cells, 0);
-      EXPECT_EQ(rb_->getTotalInflation(), 0);
+      EXPECT_EQ(liveInflationArea(), 0);
     }
     EXPECT_EQ(
         nb_vec_[0]->getMovableArea(),
@@ -286,7 +320,6 @@ TEST_F(TimingRepairIntegrationTest,
        RoutabilityDisabledStillRepairsWithoutInflation)
 {
   makePlacer(false);
-  EXPECT_FALSE(RouteBaseVars(options_).timingDrivenCongestionInflation);
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(false);
@@ -296,7 +329,6 @@ TEST_F(TimingRepairIntegrationTest,
 TEST_F(TimingRepairIntegrationTest, TimingDisabledSkipsRepairAndInflation)
 {
   makePlacer(true, false);
-  EXPECT_FALSE(RouteBaseVars(options_).timingDrivenCongestionInflation);
   runTiming(0.2f);
   EXPECT_EQ(timing_iterations_, 0);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
@@ -344,7 +376,7 @@ TEST_F(TimingRepairIntegrationTest,
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(true);
-  EXPECT_LE(rb_->getTotalInflation(),
+  EXPECT_LE(liveInflationArea(),
             static_cast<int64_t>(static_cast<double>(original)
                                  * options_.routabilityMaxInflationTotal));
 }
@@ -394,7 +426,7 @@ TEST_F(TimingRepairIntegrationTest,
 }
 
 TEST_F(TimingRepairIntegrationTest,
-       MinRcRevertDiscardsInflationFromRetainedDownsizedMaster)
+       CompletedMinRcSearchCannotRestoreAfterRetainedDownsize)
 {
   auto* driver = block_->findInst("fanout_driver");
   ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
@@ -402,14 +434,27 @@ TEST_F(TimingRepairIntegrationTest,
   const int64_t original = nb_vec_[0]->getNesterovInstsArea();
   runOrdinaryPass(1000000);
   ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
-  ASSERT_TRUE(np_->is_routability_need_);
+  ASSERT_TRUE(routabilityNeeded());
   const int saved_dx = nbc_->dbToNb(driver)->dx();
   const int saved_dy = nbc_->dbToNb(driver)->dy();
   // A genuine RC improvement saves the already-inflated dimensions in the
   // production min-RC snapshot before the next ordinary inflation pass.
   runOrdinaryPass(500000);
   ASSERT_TRUE(rb_->isMinRc());
-  ASSERT_TRUE(np_->is_routability_need_);
+  ASSERT_TRUE(routabilityNeeded());
+  ASSERT_GT(static_cast<int64_t>(nbc_->dbToNb(driver)->dx())
+                * nbc_->dbToNb(driver)->dy(),
+            static_cast<int64_t>(saved_dx) * saved_dy);
+  // Finish through a genuine min-RC revert, before this extension is eligible.
+  ordinary_iterations_ = 50;
+  runOrdinaryPass(1000000);
+  ASSERT_FALSE(rb_->isMinRc());
+  ASSERT_FALSE(routabilityNeeded());
+  ASSERT_EQ(nbc_->dbToNb(driver)->dx(), saved_dx);
+  ASSERT_EQ(nbc_->dbToNb(driver)->dy(), saved_dy);
+  const int completed_iterations = ordinary_iterations_;
+  const int completed_reverts = rb_->getRevertCount();
+  const int64_t historical_charge = rb_->getTotalInflation();
   ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X1")));
   nbc_->fixPointers();
   auto* cell = nbc_->dbToNb(driver);
@@ -422,38 +467,81 @@ TEST_F(TimingRepairIntegrationTest,
   nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
                                np_->getWireLengthCoefY());
   nb_vec_[0]->updateTimingDrivenDensity();
-  // Higher demand cannot replace the minimum; the real controller's revert
-  // limit exercises RouteBase::revertToMinCongestion and its live ceiling.
-  ordinary_iterations_ = 50;
+  checkDensityAccounting();
+  // An attempted ordinary pass after completion cannot restore the old
+  // master's inflated snapshot or its obsolete target density.
   runOrdinaryPass(1000000);
-  ASSERT_FALSE(rb_->isMinRc());
-  ASSERT_FALSE(np_->is_routability_need_);
+  EXPECT_EQ(ordinary_iterations_, completed_iterations);
+  EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
   cell = nbc_->dbToNb(driver);
   EXPECT_EQ(cell->dx(), physical_dx);
   EXPECT_EQ(cell->dy(), physical_dy);
   EXPECT_EQ(cell->inflationArea(), 0);
-  EXPECT_LE(rb_->getTotalInflation(),
+  checkDensityAccounting();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(true);
+  checkDensityAccounting();
+  auto* buffer = inflatedNewBuffer();
+  ASSERT_NE(buffer, nullptr);
+  const int buffer_dx = nbc_->dbToNb(buffer)->dx();
+  const int buffer_dy = nbc_->dbToNb(buffer)->dy();
+  const int64_t fillers = nb_vec_[0]->getTotalFillerArea();
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    runOrdinaryPass(1000000);
+    EXPECT_EQ(ordinary_iterations_, completed_iterations);
+    EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
+    EXPECT_EQ(nbc_->dbToNb(buffer)->dx(), buffer_dx);
+    EXPECT_EQ(nbc_->dbToNb(buffer)->dy(), buffer_dy);
+    EXPECT_EQ(nb_vec_[0]->getTotalFillerArea(), fillers);
+    checkDensityAccounting();
+  }
+  EXPECT_EQ(rb_->getTotalInflation(), historical_charge);
+  EXPECT_LE(liveInflationArea(),
             static_cast<int64_t>(static_cast<double>(original)
                                  * options_.routabilityMaxInflationTotal));
-  EXPECT_EQ(
-      nb_vec_[0]->getMovableArea(),
-      nb_vec_[0]->getNesterovInstsArea() + nb_vec_[0]->getTotalFillerArea());
 }
 
-TEST_F(TimingRepairIntegrationTest, MinRcRestoreHonorsZeroLiveAllowance)
+TEST_F(TimingRepairIntegrationTest,
+       PaddedMoveWithZeroLiveAllowanceDoesNotRecreatePadding)
 {
+  options_.padLeft = 2;
+  options_.padRight = 3;
+  options_.routabilityMaxInflationTotal = 0;
   makePlacer();
-  runOrdinaryPass(1000000);
-  ASSERT_GT(rb_->getTotalInflation(), 0);
-  runOrdinaryPass(500000);
-  ASSERT_TRUE(rb_->isMinRc());
-  ASSERT_GT(rb_->getTotalInflation(), 0);
-  nbc_->revertGCellSizeToMinRc(0);
-  nb_vec_[0]->updateTimingDrivenDensity();
-  EXPECT_EQ(rb_->getTotalInflation(), 0);
-  for (const auto* cell : nbc_->getGCells()) {
+  completeRoutability();
+  auto* master = lib_->findMaster("BUF_X1");
+  auto* buffer = odb::dbInst::create(block_, master, "padded_moved_buffer");
+  ASSERT_GT(nbc_->dbToNb(buffer)->dx(), master->getWidth());
+  // Exercise inDbPostMoveInst, not a fabricated geometry or baseline reset.
+  buffer->setLocation(16000, 16000);
+  buffer->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  buffer->findITerm("A")->connect(block_->findBTerm("req_val")->getNet());
+  auto* output = odb::dbNet::create(block_, "padded_moved_output");
+  buffer->findITerm("Z")->connect(output);
+  block_->findInst("sink_0")->findITerm("A1")->connect(output);
+  nbc_->fixPointers();
+  auto* cell = nbc_->dbToNb(buffer);
+  ASSERT_EQ(cell->dx(), buffer->getBBox()->getDX());
+  ASSERT_EQ(cell->dy(), buffer->getBBox()->getDY());
+  ASSERT_GT(cell->insts().front()->getArea(),
+            static_cast<int64_t>(cell->dx()) * cell->dy());
+  ASSERT_FALSE(nb_vec_[0]->getNewInstances().empty());
+  const int width = cell->dx();
+  const int height = cell->dy();
+  for (int refresh = 0; refresh < 3; ++refresh) {
+    EXPECT_EQ(rb_->inflateNewCells(), 0);
+    EXPECT_EQ(cell->dx(), width);
+    EXPECT_EQ(cell->dy(), height);
     EXPECT_EQ(cell->inflationArea(), 0);
+    EXPECT_EQ(liveInflationArea(), 0);
   }
+  rb_->updateRudyAverage(false);
+  EXPECT_GT(rb_->getOverflowedTilesCount(), 0);
+  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
+                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateTimingDrivenDensity();
+  checkDensityAccounting();
 }
 
 TEST_F(TimingRepairIntegrationTest, PhysicalResizeReclaimsLiveInflation)
@@ -471,14 +559,14 @@ TEST_F(TimingRepairIntegrationTest, PhysicalResizeReclaimsLiveInflation)
     }
   }
   const int64_t released = cell->inflationArea();
-  const int64_t before = rb_->getTotalInflation();
+  const int64_t before = liveInflationArea();
   const char* replacement
       = buffer->getMaster()->getName() == std::string("BUF_X32") ? "BUF_X16"
                                                                  : "BUF_X32";
   ASSERT_TRUE(buffer->swapMaster(lib_->findMaster(replacement)));
   nbc_->fixPointers();
   EXPECT_EQ(cell->inflationArea(), 0);
-  EXPECT_EQ(rb_->getTotalInflation(), before - released);
+  EXPECT_EQ(liveInflationArea(), before - released);
 }
 
 TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
@@ -499,10 +587,10 @@ TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
     }
   }
   ASSERT_GT(released, 0);
-  const int64_t before = rb_->getTotalInflation();
+  const int64_t before = liveInflationArea();
   odb::dbInst::destroy(buffer);
   nbc_->fixPointers();
-  EXPECT_EQ(rb_->getTotalInflation(), before - released);
+  EXPECT_EQ(liveInflationArea(), before - released);
   auto* master = lib_->findMaster("BUF_X1");
   auto* replacement = odb::dbInst::create(block_, master, "reclaimed_buffer");
   replacement->setLocation(center_x - master->getWidth() / 2,

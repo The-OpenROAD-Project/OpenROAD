@@ -99,7 +99,6 @@ GCell::GCell(const int cx, const int cy, const int dx, const int dy)
   dLy_ = ly_ = cy - dy / 2;
   dUx_ = ux_ = cx + dx / 2;
   dUy_ = uy_ = cy + dy / 2;
-  uninflated_area_ = static_cast<int64_t>(this->dx()) * this->dy();
 }
 
 bool GCell::isLocked() const
@@ -134,7 +133,6 @@ void GCell::setAllLocations(int lx, int ly, int ux, int uy)
   dLy_ = ly_ = ly;
   dUx_ = ux_ = ux;
   dUy_ = uy_ = uy;
-  uninflated_area_ = static_cast<int64_t>(dx()) * dy();
 }
 
 void GCell::addGPin(GPin* gPin)
@@ -171,7 +169,6 @@ void GCell::updateLocations()
   dLy_ = ly_ = bbox.yMin();
   dUx_ = ux_ = bbox.xMax();
   dUy_ = uy_ = bbox.yMax();
-  uninflated_area_ = static_cast<int64_t>(dx()) * dy();
 }
 
 void GCell::setCenterLocation(int cx, int cy)
@@ -191,8 +188,19 @@ void GCell::setCenterLocation(int cx, int cy)
 
 int64_t GCell::inflationArea() const
 {
-  return std::max<int64_t>(
-      0, static_cast<int64_t>(dx()) * dy() - uninflated_area_);
+  if (isFiller()) {
+    return 0;
+  }
+  // Instance geometry carries current master dimensions, placement padding
+  // and pin-density extension. A move callback can make the GCell unpadded;
+  // it must not change this reference or turn padding into congestion area.
+  int64_t physical_area = insts_.front()->getArea();
+  if (insts_.size() > 1) {
+    const GCell physical(insts_);
+    physical_area = static_cast<int64_t>(physical.dx()) * physical.dy();
+  }
+  return std::max<int64_t>(0,
+                           static_cast<int64_t>(dx()) * dy() - physical_area);
 }
 
 // changing size and preserve center coordinates
@@ -1714,7 +1722,7 @@ void NesterovBaseCommon::resetMinRcCellSize()
 
 void NesterovBaseCommon::resizeMinRcCellSize()
 {
-  minRcCellSize_.resize(nbc_gcells_.size());
+  minRcCellSize_.resize(nbc_gcells_.size(), odb::Rect(0, 0, 0, 0));
 }
 
 void NesterovBaseCommon::updateMinRcCellSize()
@@ -1725,14 +1733,11 @@ void NesterovBaseCommon::updateMinRcCellSize()
     }
 
     int idx = &gCell - nbc_gcells_.data();
-    const int64_t area = static_cast<int64_t>(gCell->dx()) * gCell->dy();
-    minRcCellSize_[idx] = {odb::Rect(0, 0, gCell->dx(), gCell->dy()),
-                           area - gCell->inflationArea()};
+    minRcCellSize_[idx] = odb::Rect(0, 0, gCell->dx(), gCell->dy());
   }
 }
 
-void NesterovBaseCommon::revertGCellSizeToMinRc(
-    std::optional<int64_t> inflation_budget)
+void NesterovBaseCommon::revertGCellSizeToMinRc()
 {
   for (auto& gCell : nbc_gcells_) {
     if (!gCell->isStdInstance()) {
@@ -1740,32 +1745,11 @@ void NesterovBaseCommon::revertGCellSizeToMinRc(
     }
 
     int idx = &gCell - nbc_gcells_.data();
-    const auto& snapshot = minRcCellSize_[idx];
-    const odb::Rect& rect = snapshot.size;
+    const odb::Rect& rect = minRcCellSize_[idx];
     int dx = rect.dx();
     int dy = rect.dy();
 
-    if (inflation_budget) {
-      const GCell physical(gCell->insts());
-      const int64_t physical_area
-          = static_cast<int64_t>(physical.dx()) * physical.dy();
-      const int64_t saved_area = static_cast<int64_t>(dx) * dy;
-      // A retained resize invalidates the old master's virtual dimensions.
-      // Do not invalidate at callback time: a virtual timing repair can undo
-      // a resize before the routability snapshot is needed.
-      if (snapshot.uninflated_area != physical_area || dx < physical.dx()
-          || dy < physical.dy()
-          || saved_area - physical_area > *inflation_budget) {
-        dx = physical.dx();
-        dy = physical.dy();
-      }
-      gCell->setSize(dx, dy, GCell::GCellChange::kNone);
-      const int64_t restored = gCell->inflationArea();
-      *inflation_budget -= restored;
-      if (restored > 0) {
-        gCell->setAreaChangeType(GCell::GCellChange::kRoutability);
-      }
-    } else if (rect.area() > gCell->insts()[0]->getArea()) {
+    if (rect.area() > gCell->insts()[0]->getArea()) {
       gCell->setSize(dx, dy, GCell::GCellChange::kRoutability);
     } else {
       gCell->setSize(dx, dy, GCell::GCellChange::kNone);
@@ -4375,9 +4359,7 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(pb_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
-  minRcCellSize_.push_back(
-      {odb::Rect(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy()),
-       static_cast<int64_t>(gcell.dx()) * gcell.dy()});
+  minRcCellSize_.emplace_back(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy());
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;
