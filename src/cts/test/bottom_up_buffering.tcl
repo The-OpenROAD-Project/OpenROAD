@@ -1,5 +1,6 @@
 # Bottom-up CTS must insert real repeater stages on short-distance branches.
 source "helpers.tcl"
+source "bottom_up_audit_helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_def 16sinks.def
@@ -8,6 +9,8 @@ set_input_transition 0.02 [get_ports clk]
 set_wire_rc -clock -layer metal3
 set_wire_rc -signal -layer metal3
 configure_cts_characterization -slew_steps 3 -cap_steps 5
+set block [ord::get_db_block]
+set originals [[$block findNet clk] getITerms]
 
 tee -quiet -variable log {
   clock_tree_synthesis -bottom_up_buffering -no_obstruction_aware \
@@ -35,4 +38,5 @@ check "all original sinks remain connected" { set connected } 16
 check "different loads permit small buffers" {
   expr { [llength [get_cells -quiet -filter {ref_name == BUF_X1} clkbuf_*]] > 0 }
 } 1
+check_bottom_up_paths $block $originals $log
 exit_summary

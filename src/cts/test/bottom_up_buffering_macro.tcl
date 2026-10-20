@@ -1,5 +1,6 @@
 # Exercise bottom-up buffering with macro insertion delays and register trees.
 source "helpers.tcl"
+source "bottom_up_audit_helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef array_tile_ins_delay.lef
 read_liberty Nangate45/Nangate45_typ.lib
@@ -41,4 +42,5 @@ foreach pin $original_sinks {
 check "macro and register sinks remain connected" {
   set connected
 } [llength $original_sinks]
+check_bottom_up_paths $block $original_sinks $log
 exit_summary

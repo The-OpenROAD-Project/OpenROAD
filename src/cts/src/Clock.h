@@ -103,7 +103,7 @@ class ClockSubNet
   explicit ClockSubNet(const std::string& name) : name_(name) {}
 
   void setNetObj(odb::dbNet* net) { netObj_ = net; }
-  odb::dbNet* getNetObj() { return netObj_; }
+  odb::dbNet* getNetObj() const { return netObj_; }
   void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
   bool isLeafLevel() const { return leafLevel_; }
 

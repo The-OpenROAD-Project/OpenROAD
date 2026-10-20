@@ -320,6 +320,12 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void recordBuffer(odb::dbMaster* master, MasterType type);
   const MasterCount& getBufferCount() const { return buffer_count_; }
   const MasterCount& getDummyCount() const { return dummy_count_; }
+  void restoreBufferCounts(const MasterCount& buffers,
+                           const MasterCount& dummies)
+  {
+    buffer_count_ = buffers;
+    dummy_count_ = dummies;
+  }
 
   MasterType getType(odb::dbInst* inst) const;
 

@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -30,6 +31,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Transition.hh"
@@ -37,6 +39,38 @@
 
 namespace cts {
 namespace {
+BufferingWireRC wireRCBound(est::EstimateParasitics* parasitics,
+                            sta::dbSta* sta)
+{
+  BufferingWireRC bound;
+  if (sta->scenes().empty()) {
+    throw std::invalid_argument("No scenes available for bottom-up CTS");
+  }
+  for (const auto* scene : sta->scenes()) {
+    // Register-terminal clock nets use SIGNAL RC in placement estimation.
+    // Enclose both net classes and both directions, never their averages.
+    const std::array<BufferingWireRC, 4> values{
+        {{parasitics->wireClkHResistance(scene),
+          parasitics->wireClkHCapacitance(scene)},
+         {parasitics->wireClkVResistance(scene),
+          parasitics->wireClkVCapacitance(scene)},
+         {parasitics->wireSignalHResistance(scene),
+          parasitics->wireSignalHCapacitance(scene)},
+         {parasitics->wireSignalVResistance(scene),
+          parasitics->wireSignalVCapacitance(scene)}}};
+    BufferingWireRC scene_bound;
+    try {
+      scene_bound = conservativeBufferingRC(values);
+    } catch (const std::exception& error) {
+      throw std::invalid_argument("Scene " + scene->name() + ": "
+                                  + error.what());
+    }
+    bound.resistance = std::max(bound.resistance, scene_bound.resistance);
+    bound.capacitance = std::max(bound.capacitance, scene_bound.capacitance);
+  }
+  return bound;
+}
+
 struct BufferCell
 {
   std::string name;
@@ -315,12 +349,9 @@ class ClockBuffering
   void prepareWireModel()
   {
     const double scale = 1e-6 / options_->getDbUnits();
-    for (const auto* scene : sta_->scenes()) {
-      cap_per_dbu_ = std::max(cap_per_dbu_,
-                              parasitics_->wireClkCapacitance(scene) * scale);
-      res_per_dbu_ = std::max(res_per_dbu_,
-                              parasitics_->wireClkResistance(scene) * scale);
-    }
+    const auto bound = wireRCBound(parasitics_, sta_);
+    cap_per_dbu_ = bound.capacitance * scale;
+    res_per_dbu_ = bound.resistance * scale;
   }
 
   std::optional<BufferingChoice> select(const BufferingLoad& load,
@@ -460,53 +491,72 @@ void TritonCTS::bufferClockTreeBottomUp(TreeBuilder* builder)
   }
 }
 
-std::string TritonCTS::checkClockTreeElectricals()
+BufferingWireRC TritonCTS::validateBottomUpWireRC()
 {
+  BufferingWireRC bound;
+  try {
+    bound = wireRCBound(estimate_parasitics_, openSta_);
+  } catch (const std::exception& error) {
+    logger_->error(
+        utl::CTS, 558, "Invalid bottom-up CTS wire RC: {}.", error.what());
+  }
+  // Do not bypass placement / congestion / source validation by directly
+  // requesting kPlacement from the estimator.
+  estimate_parasitics_->designParasiticsSrc();
+  return bound;
+}
+
+void TritonCTS::checkClockPinElectricals(const sta::Pin* pin,
+                                         bool driver,
+                                         BufferingAudit& audit)
+{
+  float value, limit, slack;
+  const sta::RiseFall* rf;
+  const sta::Scene* scene;
+  sta::Slew slew;
+  openSta_->checkSlew(pin,
+                      openSta_->scenes(),
+                      sta::MinMax::max(),
+                      true,
+                      slew,
+                      limit,
+                      slack,
+                      rf,
+                      scene);
+  audit.slew_violations += slack < 0;
+  if (slack < 0 && audit.first_slew_violation.empty()) {
+    audit.first_slew_violation = network_->pathName(pin);
+  }
+  if (driver) {
+    openSta_->checkCapacitance(pin,
+                               openSta_->scenes(),
+                               sta::MinMax::max(),
+                               value,
+                               limit,
+                               slack,
+                               rf,
+                               scene);
+    audit.cap_violations += slack < 0;
+    if (slack < 0 && audit.first_cap_violation.empty()) {
+      audit.first_cap_violation = network_->pathName(pin);
+    }
+  }
+}
+
+BufferingAudit TritonCTS::checkClockTreeElectricals()
+{
+  validateBottomUpWireRC();
   estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
   openSta_->checkSlewsPreamble();
   openSta_->checkCapacitancesPreamble(openSta_->scenes());
+  BufferingAudit audit;
   odb::PtrSet<odb::dbNet> visited;
-  size_t cap_violations = 0;
-  size_t slew_violations = 0;
-  size_t checked_nets = 0;
-  std::string first_cap_violation;
-  std::string first_slew_violation;
-  auto check_pin = [&](const sta::Pin* pin, bool driver) {
-    float value, limit, slack;
-    const sta::RiseFall* rf;
-    const sta::Scene* scene;
-    sta::Slew slew;
-    openSta_->checkSlew(pin,
-                        openSta_->scenes(),
-                        sta::MinMax::max(),
-                        true,
-                        slew,
-                        limit,
-                        slack,
-                        rf,
-                        scene);
-    slew_violations += slack < 0;
-    if (slack < 0 && first_slew_violation.empty()) {
-      first_slew_violation = network_->pathName(pin);
-    }
-    if (driver) {
-      openSta_->checkCapacitance(pin,
-                                 openSta_->scenes(),
-                                 sta::MinMax::max(),
-                                 value,
-                                 limit,
-                                 slack,
-                                 rf,
-                                 scene);
-      cap_violations += slack < 0;
-      if (slack < 0 && first_cap_violation.empty()) {
-        first_cap_violation = network_->pathName(pin);
-      }
-    }
-  };
+  odb::PtrSet<odb::dbITerm> reached_sinks;
   std::vector<odb::dbNet*> pending;
   for (const auto& builder : builders_) {
-    pending.push_back(builder->getClock().getNetObj());
+    if (builder->getParent() == nullptr) {
+      pending.push_back(builder->getClock().getNetObj());
+    }
   }
   while (!pending.empty()) {
     auto* net = pending.back();
@@ -514,39 +564,94 @@ std::string TritonCTS::checkClockTreeElectricals()
     if (!visited.insert(net).second) {
       continue;
     }
-    ++checked_nets;
+    ++audit.checked_nets;
     for (auto* iterm : net->getITerms()) {
-      check_pin(network_->dbToSta(iterm), iterm->isOutputSignal());
-      if (iterm->isInputSignal() && !isSink(iterm)) {
-        auto* output = getSingleOutput(iterm->getInst(), iterm);
-        if (output != nullptr && output->getNet() != nullptr) {
-          pending.push_back(output->getNet());
+      checkClockPinElectricals(
+          network_->dbToSta(iterm), iterm->isOutputSignal(), audit);
+      if (!iterm->isInputSignal()) {
+        continue;
+      }
+      reached_sinks.insert(iterm);
+      if (!isSink(iterm)) {
+        auto* cell = network_->libertyCell(network_->dbToSta(iterm->getInst()));
+        const bool clock_cell = cell != nullptr
+                                && (cell->isBuffer() || cell->isInverter()
+                                    || cell->isClockGate());
+        // getSingleOutput() is discovery-only: it filters staClockNets_,
+        // which predates CTS and does not contain clknet_* or delay nets.
+        for (auto* output : iterm->getInst()->getITerms()) {
+          auto* next = output->getNet();
+          if (output->isOutputSignal() && next != nullptr
+              && (clock_cell || next->getSigType() == odb::dbSigType::CLOCK)) {
+            pending.push_back(next);
+          }
         }
       }
     }
     for (auto* bterm : net->getBTerms()) {
-      check_pin(network_->dbToSta(bterm),
-                bterm->getIoType() == odb::dbIoType::INPUT);
+      checkClockPinElectricals(network_->dbToSta(bterm),
+                               bterm->getIoType() == odb::dbIoType::INPUT,
+                               audit);
     }
   }
-  logger_->metric("cts__bottom_up__checked_nets", checked_nets);
-  logger_->metric("cts__bottom_up__cap_violations", cap_violations);
-  logger_->metric("cts__bottom_up__slew_violations", slew_violations);
+  odb::PtrSet<odb::dbITerm> expected_sinks;
+  for (const auto& builder : builders_) {
+    builder->getClock().forEachSink([&](const ClockInst& sink) {
+      expected_sinks.insert(sink.getDbInputPin());
+    });
+    builder->getClock().forEachSubNet([&](const ClockSubNet& net) {
+      ++audit.expected_nets;
+      audit.reached_nets
+          += net.getNetObj() != nullptr && visited.contains(net.getNetObj());
+    });
+  }
+  audit.expected_sinks = expected_sinks.size();
+  for (auto* sink : expected_sinks) {
+    audit.reached_sinks += reached_sinks.contains(sink);
+  }
+  finishClockTreeElectricals(audit);
+  return audit;
+}
+
+void TritonCTS::finishClockTreeElectricals(BufferingAudit& audit)
+{
+  logger_->metric("cts__bottom_up__checked_nets", audit.checked_nets);
+  logger_->metric("cts__bottom_up__expected_nets", audit.expected_nets);
+  logger_->metric("cts__bottom_up__reached_nets", audit.reached_nets);
+  logger_->metric("cts__bottom_up__expected_sinks", audit.expected_sinks);
+  logger_->metric("cts__bottom_up__reached_sinks", audit.reached_sinks);
+  logger_->metric("cts__bottom_up__cap_violations", audit.cap_violations);
+  logger_->metric("cts__bottom_up__slew_violations", audit.slew_violations);
   logger_->info(utl::CTS,
                 556,
                 "Bottom-up CTS electrical audit: {} nets, {} max-cap and {} "
                 "max-slew violations.",
-                checked_nets,
-                cap_violations,
-                slew_violations);
-  if (cap_violations != 0 || slew_violations != 0) {
-    return "Bottom-up CTS failed its electrical audit. First max-cap "
-           "violation: "
-           + (first_cap_violation.empty() ? "none" : first_cap_violation)
-           + "; first max-slew violation: "
-           + (first_slew_violation.empty() ? "none" : first_slew_violation)
-           + ".";
+                audit.checked_nets,
+                audit.cap_violations,
+                audit.slew_violations);
+  logger_->info(utl::CTS,
+                559,
+                "Bottom-up CTS audit coverage: {}/{} original sinks, {}/{} "
+                "generated subnets.",
+                audit.reached_sinks,
+                audit.expected_sinks,
+                audit.reached_nets,
+                audit.expected_nets);
+  if (audit.reached_nets != audit.expected_nets
+      || audit.reached_sinks != audit.expected_sinks) {
+    audit.error
+        = "Bottom-up CTS electrical audit did not reach every original sink "
+          "and generated subnet.";
+  } else if (audit.cap_violations != 0 || audit.slew_violations != 0) {
+    audit.error
+        = "Bottom-up CTS failed its electrical audit. First max-cap "
+          "violation: "
+          + (audit.first_cap_violation.empty() ? "none"
+                                               : audit.first_cap_violation)
+          + "; first max-slew violation: "
+          + (audit.first_slew_violation.empty() ? "none"
+                                                : audit.first_slew_violation)
+          + ".";
   }
-  return {};
 }
 }  // namespace cts

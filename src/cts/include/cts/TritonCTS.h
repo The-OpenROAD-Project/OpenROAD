@@ -42,6 +42,8 @@ struct Tree;
 }  // namespace stt
 
 namespace cts {
+struct BufferingAudit;
+struct BufferingWireRC;
 
 class ClockInst;
 class CtsOptions;
@@ -77,6 +79,9 @@ class TritonCTS
   void setSinkBuffer(const char* buffers);
 
  private:
+  friend class BottomUpClockTreeTest;
+  void resetRunState();
+  void runClockTreeSynthesis();
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
@@ -96,7 +101,12 @@ class TritonCTS
   void findClockRoots();
   void buildClockTrees();
   void bufferClockTreeBottomUp(TreeBuilder* builder);
-  std::string checkClockTreeElectricals();
+  BufferingAudit checkClockTreeElectricals();
+  void checkClockPinElectricals(const sta::Pin* pin,
+                                bool driver,
+                                BufferingAudit& audit);
+  void finishClockTreeElectricals(BufferingAudit& audit);
+  BufferingWireRC validateBottomUpWireRC();
   void writeDataToDb();
 
   // NDR functions

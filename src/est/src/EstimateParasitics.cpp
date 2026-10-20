@@ -321,7 +321,7 @@ const std::vector<T>& EstimateParasitics::resolveWireRC(
 double EstimateParasitics::wireSignalResistance(const sta::Scene* scene) const
 {
   const auto& signal_res = resolveWireRC(&WireRC::signal_res);
-  if (signal_res.empty()) {
+  if (scene->index() >= signal_res.size()) {
     return 0.0;
   }
   return (signal_res[scene->index()].h_res + signal_res[scene->index()].v_res)
@@ -331,7 +331,7 @@ double EstimateParasitics::wireSignalResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireSignalHResistance(const sta::Scene* scene) const
 {
   const auto& signal_res = resolveWireRC(&WireRC::signal_res);
-  if (signal_res.empty()) {
+  if (scene->index() >= signal_res.size()) {
     return 0.0;
   }
   return signal_res[scene->index()].h_res;
@@ -340,7 +340,7 @@ double EstimateParasitics::wireSignalHResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireSignalVResistance(const sta::Scene* scene) const
 {
   const auto& signal_res = resolveWireRC(&WireRC::signal_res);
-  if (signal_res.empty()) {
+  if (scene->index() >= signal_res.size()) {
     return 0.0;
   }
   return signal_res[scene->index()].v_res;
@@ -349,7 +349,7 @@ double EstimateParasitics::wireSignalVResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireSignalCapacitance(const sta::Scene* scene) const
 {
   const auto& signal_cap = resolveWireRC(&WireRC::signal_cap);
-  if (signal_cap.empty()) {
+  if (scene->index() >= signal_cap.size()) {
     return 0.0;
   }
   return (signal_cap[scene->index()].h_cap + signal_cap[scene->index()].v_cap)
@@ -359,7 +359,7 @@ double EstimateParasitics::wireSignalCapacitance(const sta::Scene* scene) const
 double EstimateParasitics::wireSignalHCapacitance(const sta::Scene* scene) const
 {
   const auto& signal_cap = resolveWireRC(&WireRC::signal_cap);
-  if (signal_cap.empty()) {
+  if (scene->index() >= signal_cap.size()) {
     return 0.0;
   }
   return signal_cap[scene->index()].h_cap;
@@ -368,7 +368,7 @@ double EstimateParasitics::wireSignalHCapacitance(const sta::Scene* scene) const
 double EstimateParasitics::wireSignalVCapacitance(const sta::Scene* scene) const
 {
   const auto& signal_cap = resolveWireRC(&WireRC::signal_cap);
-  if (signal_cap.empty()) {
+  if (scene->index() >= signal_cap.size()) {
     return 0.0;
   }
   return signal_cap[scene->index()].v_cap;
@@ -381,14 +381,16 @@ void EstimateParasitics::wireSignalRC(const sta::Scene* scene,
 {
   const auto& resistance = resolveWireRC(&WireRC::signal_res);
   const auto& capacitance = resolveWireRC(&WireRC::signal_cap);
-  res = resistance.empty() ? 0.0
-                           : (resistance[scene->index()].h_res
-                              + resistance[scene->index()].v_res)
-                                 / 2;
-  cap = capacitance.empty() ? 0.0
-                            : (capacitance[scene->index()].h_cap
-                               + capacitance[scene->index()].v_cap)
-                                  / 2;
+  res = scene->index() >= resistance.size()
+            ? 0.0
+            : (resistance[scene->index()].h_res
+               + resistance[scene->index()].v_res)
+                  / 2;
+  cap = scene->index() >= capacitance.size()
+            ? 0.0
+            : (capacitance[scene->index()].h_cap
+               + capacitance[scene->index()].v_cap)
+                  / 2;
 }
 
 void EstimateParasitics::setHWireClkRC(odb::dbTech* tech,
@@ -418,7 +420,7 @@ void EstimateParasitics::setVWireClkRC(odb::dbTech* tech,
 double EstimateParasitics::wireClkResistance(const sta::Scene* scene) const
 {
   const auto& clk_res = resolveWireRC(&WireRC::clk_res);
-  if (clk_res.empty()) {
+  if (scene->index() >= clk_res.size()) {
     return 0.0;
   }
   return (clk_res[scene->index()].h_res + clk_res[scene->index()].v_res) / 2;
@@ -427,7 +429,7 @@ double EstimateParasitics::wireClkResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireClkHResistance(const sta::Scene* scene) const
 {
   const auto& clk_res = resolveWireRC(&WireRC::clk_res);
-  if (clk_res.empty()) {
+  if (scene->index() >= clk_res.size()) {
     return 0.0;
   }
   return clk_res[scene->index()].h_res;
@@ -436,7 +438,7 @@ double EstimateParasitics::wireClkHResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireClkVResistance(const sta::Scene* scene) const
 {
   const auto& clk_res = resolveWireRC(&WireRC::clk_res);
-  if (clk_res.empty()) {
+  if (scene->index() >= clk_res.size()) {
     return 0.0;
   }
   return clk_res[scene->index()].v_res;
@@ -445,7 +447,7 @@ double EstimateParasitics::wireClkVResistance(const sta::Scene* scene) const
 double EstimateParasitics::wireClkCapacitance(const sta::Scene* scene) const
 {
   const auto& clk_cap = resolveWireRC(&WireRC::clk_cap);
-  if (clk_cap.empty()) {
+  if (scene->index() >= clk_cap.size()) {
     return 0.0;
   }
   return (clk_cap[scene->index()].h_cap + clk_cap[scene->index()].v_cap) / 2;
@@ -454,7 +456,7 @@ double EstimateParasitics::wireClkCapacitance(const sta::Scene* scene) const
 double EstimateParasitics::wireClkHCapacitance(const sta::Scene* scene) const
 {
   const auto& clk_cap = resolveWireRC(&WireRC::clk_cap);
-  if (clk_cap.empty()) {
+  if (scene->index() >= clk_cap.size()) {
     return 0.0;
   }
   return clk_cap[scene->index()].h_cap;
@@ -463,7 +465,7 @@ double EstimateParasitics::wireClkHCapacitance(const sta::Scene* scene) const
 double EstimateParasitics::wireClkVCapacitance(const sta::Scene* scene) const
 {
   const auto& clk_cap = resolveWireRC(&WireRC::clk_cap);
-  if (clk_cap.empty()) {
+  if (scene->index() >= clk_cap.size()) {
     return 0.0;
   }
   return clk_cap[scene->index()].v_cap;

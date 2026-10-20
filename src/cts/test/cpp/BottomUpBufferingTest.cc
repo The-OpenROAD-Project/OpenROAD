@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <array>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -179,5 +180,29 @@ TEST(BottomUpBufferingTest, RejectsInvalidElectricalModel)
   EXPECT_THROW(strategy.run({branch({1}), sink(1)}, 0), std::runtime_error);
   EXPECT_THROW((BottomUpBuffering(-1, 1000, select)), std::invalid_argument);
   EXPECT_THROW((BottomUpBuffering(0, 0, select)), std::invalid_argument);
+}
+TEST(BottomUpBufferingTest, RCEnclosesDifferentDirectionsClassesAndScenes)
+{
+  // Two scenes, each ordered clock-H, clock-V, signal-H, signal-V.
+  const std::array<BufferingWireRC, 8> rc{
+      {{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10}, {11, 12}, {13, 14}, {15, 16}}};
+  const auto bound = conservativeBufferingRC(rc);
+  EXPECT_DOUBLE_EQ(bound.resistance, 15);
+  EXPECT_DOUBLE_EQ(bound.capacitance, 16);
+}
+
+TEST(BottomUpBufferingTest, MissingOrInvalidDirectionalRCIsNotAValidProof)
+{
+  EXPECT_THROW(conservativeBufferingRC({}), std::invalid_argument);
+  for (const double invalid : {0.0,
+                               -1.0,
+                               std::numeric_limits<double>::infinity(),
+                               std::numeric_limits<double>::quiet_NaN()}) {
+    std::array<BufferingWireRC, 4> rc{{{1, 2}, {3, 4}, {5, 6}, {7, 8}}};
+    rc[3].capacitance = invalid;
+    EXPECT_THROW(conservativeBufferingRC(rc), std::invalid_argument);
+    rc[3] = {invalid, 8};
+    EXPECT_THROW(conservativeBufferingRC(rc), std::invalid_argument);
+  }
 }
 }  // namespace cts

@@ -6,10 +6,35 @@
 #include <cstddef>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
 namespace cts {
+
+struct BufferingWireRC
+{
+  double resistance = 0;
+  double capacitance = 0;
+};
+
+// Enclose every direction, net class and scene; reject missing RC rather
+// than letting a zero default become a fictitious electrical proof.
+BufferingWireRC conservativeBufferingRC(std::span<const BufferingWireRC> rc);
+
+struct BufferingAudit
+{
+  size_t checked_nets = 0;
+  size_t expected_nets = 0;
+  size_t reached_nets = 0;
+  size_t expected_sinks = 0;
+  size_t reached_sinks = 0;
+  size_t cap_violations = 0;
+  size_t slew_violations = 0;
+  std::string first_cap_violation;
+  std::string first_slew_violation;
+  std::string error;
+};
 
 struct BufferingPoint
 {

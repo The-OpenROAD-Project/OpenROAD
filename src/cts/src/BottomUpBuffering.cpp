@@ -28,6 +28,24 @@ BufferingPoint midpoint(BufferingPoint a, BufferingPoint b)
 }
 }  // namespace
 
+BufferingWireRC conservativeBufferingRC(std::span<const BufferingWireRC> rc)
+{
+  if (rc.empty()) {
+    throw std::invalid_argument("No RC scenes available for bottom-up CTS");
+  }
+  BufferingWireRC bound;
+  for (const auto& value : rc) {
+    if (!std::isfinite(value.resistance) || value.resistance <= 0
+        || !std::isfinite(value.capacitance) || value.capacitance <= 0) {
+      throw std::invalid_argument(
+          "Bottom-up CTS requires positive finite wire RC");
+    }
+    bound.resistance = std::max(bound.resistance, value.resistance);
+    bound.capacitance = std::max(bound.capacitance, value.capacitance);
+  }
+  return bound;
+}
+
 BottomUpBuffering::BottomUpBuffering(double cap_per_dbu,
                                      double max_wire_length,
                                      Selector selector,
