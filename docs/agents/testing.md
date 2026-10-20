@@ -35,12 +35,18 @@ bazelisk test --test_output=errors //src/rsz/test/...                      # all
 bazelisk query 'filter("repair.*hier", //src/rsz/test:all)'                # find tests by regex
 ```
 
-Bazel has no regex filter for test targets.
-Run `bazelisk query 'filter(...)'` to list the matching targets, then pass them to `bazelisk test`.
-`--test_filter` selects gtest cases in a C++ test only.
+To run the tests whose label matches a regex in one step, use `./regression -R` in `src/<module>/test`:
 
-Legacy (CMake only, deprecated): `./regression` runs `cd build && ctest -L <module>`.
-It needs a CMake build directory and does not see Bazel targets.
+```bash
+cd src/rsz/test
+./regression -R 'repair.*hier' --test_output=errors
+```
+
+The script queries the test targets below `//src/<module>/` whose label matches the regex, then runs them in one `bazelisk test` call.
+It passes all other arguments to `bazelisk test`.
+Without `-R`, it runs all tests of the module.
+It fails when no test matches.
+`--test_filter` selects gtest cases in a C++ test only.
 
 ### Creating a New Integration Test
 

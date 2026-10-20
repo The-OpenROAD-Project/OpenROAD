@@ -18,13 +18,59 @@ _get_tool_name()
     tool=$(basename "${script_path%%/src/*}/src/$(echo "$script_path" | awk -F'/src/' '{print $2}' | cut -d'/' -f1)")
 }
 
+#
+# Usage: ./regression [-R <regex>] [bazel test args...]
+# Selects the test targets below //src/<tool>/ whose label matches <regex>
+# and runs them in one bazel test call. Other arguments go to bazel test.
+#
+_bazel_regression()
+{
+    local regex="."
+    local bazel_args=()
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -R)
+                if [ $# -lt 2 ]; then
+                    echo "regression: -R needs a regex" >&2
+                    exit 2
+                fi
+                regex=$2
+                shift 2
+                ;;
+            *)
+                bazel_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    local bazel=bazelisk
+    if ! command -v "$bazel" >/dev/null 2>&1; then
+        bazel=bazel
+    fi
+    if ! command -v "$bazel" >/dev/null 2>&1; then
+        echo "regression: neither bazelisk nor bazel is on PATH" >&2
+        exit 1
+    fi
+
+    # The query regex is matched against the full label, for example
+    # //src/rsz/test:repair_tie12_hier-tcl_test.
+    local query="filter(\"${regex}\", kind(\".*_test rule\", //src/${tool}/...))"
+    local targets
+    targets=$("$bazel" query --output=label "$query")
+    if [ -z "$targets" ]; then
+        echo "regression: no test in //src/${tool}/... matches '${regex}'" >&2
+        exit 1
+    fi
+
+    local target_list=()
+    while IFS= read -r target; do
+        target_list+=("$target")
+    done <<< "$targets"
+    echo "regression: running ${#target_list[@]} test(s) that match '${regex}'"
+    "$bazel" test "${bazel_args[@]}" -- "${target_list[@]}"
+}
+
 _get_tool_name
 
-# build directory is two directories up from test/shared where this file exists
-build_dir_path=$(dirname $(dirname $(dirname $(realpath "$0"))))/build
-
-cd $build_dir_path
-
-ctest -L " $tool " ${@:1}
-    
-
+_bazel_regression "$@"

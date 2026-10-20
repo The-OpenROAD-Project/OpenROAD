@@ -37,6 +37,14 @@ Run specific test:
 
     bazelisk test --test_output=errors //src/upf/test:levelshifter-tcl_test
 
+Run the tests of one tool whose label matches a regex, in one step:
+
+    cd src/pdn/test
+    ./regression -R 'asap7' --test_output=errors
+
+`./regression` runs `bazelisk query` on `//src/<tool>/...` and then `bazelisk test` on the matching targets.
+It passes all other arguments to `bazelisk test` and fails when no test matches.
+
 To run or list tests below a folder:
 
     bazelisk test src/gpl/...
