@@ -455,6 +455,17 @@ double GridGraph::logistic(const CapacityT& input, const double slope) const
   return 1.0 / (1.0 + exp(input * slope));
 }
 
+CostT GridGraph::congestionCost(const CostT base,
+                                const CapacityT capacity,
+                                const CapacityT resource,
+                                const double slope) const
+{
+  // The RRR multiplier scales the congestion cost height, not only its slope.
+  return base * cost_multiplier_
+         * (capacity < 1.0 ? 1.0
+                           : logistic(resource, slope * cost_multiplier_));
+}
+
 CostT GridGraph::getWireCost(const int layer_index,
                              const PointT lower,
                              const CapacityT demand,
@@ -465,11 +476,10 @@ CostT GridGraph::getWireCost(const int layer_index,
   const CapacityT demand_length = demand * net_factor * edge_length;
   const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demand_length * unit_length_wire_cost_;
-  cost += demand_length * unit_length_short_costs_[layer_index]
-          * (edge.capacity < 1.0
-                 ? 1.0
-                 : logistic(edge.capacity - edge.demand,
-                            constants_.cost_logistic_slope * cost_multiplier_));
+  cost += congestionCost(demand_length * unit_length_short_costs_[layer_index],
+                         edge.capacity,
+                         edge.capacity - edge.demand,
+                         constants_.cost_logistic_slope);
   // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
   // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
   // so a full layer range still falls back to min-via.
@@ -1252,37 +1262,6 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
       });
 }
 
-int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                               const double threshold) const
-{
-  if (!tree) {
-    return 0;
-  }
-  int num = 0;
-  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->getChildren()) {
-      if (node->getLayerIdx() != child->getLayerIdx()) {
-        continue;
-      }
-      const int layer = node->getLayerIdx();
-      const int direction = layer_directions_[layer];
-      const auto [lo, hi]
-          = std::minmax({(*node)[direction], (*child)[direction]});
-      const int r = (*node)[1 - direction];
-      for (int c = lo; c < hi; c++) {
-        const int x = (direction == MetalLayer::H) ? c : r;
-        const int y = (direction == MetalLayer::H) ? r : c;
-        const auto& edge = graph_edges_[layer][x][y];
-
-        if (edge.demand > edge.capacity * threshold) {
-          ++num;
-        }
-      }
-    }
-  });
-  return num;
-}
-
 std::string GridGraph::getPythonString(
     const std::shared_ptr<GRTreeNode>& routing_tree) const
 {
@@ -1429,11 +1408,10 @@ CostT GridGraph::wireCostViewCell(const WireCostViewContext& context,
   const int length = getEdgeLength(direction, edge_index);
   return length
          * (unit_length_wire_cost_
-            + context.unit_length_short_cost[direction]
-                  * (capacity < 1.0 ? 1.0
-                                    : logistic(effective_resource,
-                                               constants_.maze_logistic_slope
-                                                   * cost_multiplier_)));
+            + congestionCost(context.unit_length_short_cost[direction],
+                             capacity,
+                             effective_resource,
+                             constants_.maze_logistic_slope));
 }
 
 void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
