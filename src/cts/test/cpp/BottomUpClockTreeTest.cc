@@ -962,7 +962,7 @@ TEST_F(BottomUpClockTreeTest, SourceDriverSlewAloneDoesNotBoundLongIngressWire)
   const int dbu = block_->getDbUnitsPerMicron();
   block_->setDieArea(odb::Rect(0, 0, 6000 * dbu, 100 * dbu));
   const double load = prepareSlewClosureTree(5000 * dbu);
-  setRC(sta_->cmdScene(), 1);
+  setRC(sta_->cmdScene(), 3);
   auto* clock = sta_->cmdMode()->sdc()->findClock("clk");
   ASSERT_NE(clock, nullptr);
   sta_->setPropagatedClock(clock, sta_->cmdMode());
