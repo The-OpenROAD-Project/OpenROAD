@@ -8,7 +8,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
-PARALLEL_EVAL FIRM changes: width 0 location 0 status 0 pins 10
-PARALLEL_EVAL PLACED changes: width 5
+PARALLEL_EVAL FIRM changes: width 0 location 0 status 0 pins 8
+PARALLEL_EVAL PLACED changes: width 4
 Summary 24 / 24 (100% pass)
 pass
