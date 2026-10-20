@@ -651,12 +651,23 @@ void WebServer::stop()
 {
   // Restore the original Tcl `exit` command before tearing down — pairs
   // with the rename in serve().  Skip if not installed (stop() is safe
-  // to call multiple times).
-  if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
-    Tcl_DeleteCommand(interp_, "exit");
-    const std::string restore
-        = std::string("rename ") + kRenamedExitCmd + " exit";
-    Tcl_Eval(interp_, restore.c_str());
+  // to call multiple times).  An `exit` evaluated through the viewer
+  // (tclExitHandler) wakes waitForStop() while its io thread is still
+  // inside Tcl_Eval; touching the interpreter before that evaluation ends
+  // corrupts Tcl's stack ("TclStackFree: incorrect freePtr").
+  // TclEvaluator::eval holds the mutex for the whole evaluation.
+  //
+  // No unit test: ordering the io thread's evaluation against this
+  // teardown takes a sleep, which makes a test timing-sensitive, or a
+  // test-only hook in WebServer, which owns its TclEvaluator.
+  {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
+      Tcl_DeleteCommand(interp_, "exit");
+      const std::string restore
+          = std::string("rename ") + kRenamedExitCmd + " exit";
+      Tcl_Eval(interp_, restore.c_str());
+    }
   }
 
   tcl_eval_->script_gate.setOnChange({});

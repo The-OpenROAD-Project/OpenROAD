@@ -79,6 +79,8 @@ let
 
     src = flake;
 
+    # CMake is deprecated and will be removed on Nov. 1, 2026. This Nix build
+    # still uses it.
     cmakeFlags = [
       "-DTCL_LIBRARY=${tcl}/lib/libtcl${clangStdenv.hostPlatform.extensions.sharedLibrary}"
       "-DTCL_HEADER=${tcl}/include/tcl.h"

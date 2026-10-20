@@ -18,6 +18,10 @@
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -31,6 +35,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -589,6 +594,122 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
 {
   EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
 }
 
 // The cache stores blank tiles as an empty entry, so a hit has to come back as

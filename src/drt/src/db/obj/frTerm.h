@@ -31,8 +31,7 @@ class frTerm : public frBlockObject
   virtual frAccessPoint* getAccessPoint(frCoord x,
                                         frCoord y,
                                         frLayerNum lNum,
-                                        int pinAccessIdx)
-      = 0;
+                                        int pinAccessIdx) = 0;
   bool hasAccessPoint(frCoord x, frCoord y, frLayerNum lNum, int pinAccessIdx)
   {
     return getAccessPoint(x, y, lNum, pinAccessIdx) != nullptr;

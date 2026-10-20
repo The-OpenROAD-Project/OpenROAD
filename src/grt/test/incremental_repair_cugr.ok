@@ -54,17 +54,17 @@ Bottleneck:            (8, 0, 4)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00      1170.00       177.03      1347.03       7.52
-metal3    H     24480.00      1230.00       108.59      1338.59       5.47
-metal4    V     12172.00         2.00        10.20        12.20       0.10
-metal5    H     12240.00        39.00         7.98        46.98       0.38
-metal6    V     12172.00        11.00         2.55        13.55       0.11
+metal2    V     17918.00      1145.00       142.33      1287.33       7.18
+metal3    H     24480.00      1230.00       105.64      1335.64       5.46
+metal4    V     12172.00         2.00         5.34         7.34       0.06
+metal5    H     12240.00        39.00         5.82        44.82       0.37
+metal6    V     12172.00        36.00         2.60        38.60       0.32
 metal7    H      4284.00         0.00         0.00         0.00       0.00
 metal8    V      4284.00         0.00         0.00         0.00       0.00
 metal9    H      2142.00         0.00         0.00         0.00       0.00
 metal10   V      2142.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           91834.00      2452.00       306.35      2758.35       3.00
+Total           91834.00      2452.00       261.72      2713.72       2.96
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -127,18 +127,18 @@ delta HPWL                    0 %
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.311 |       -8.4 |     32 | _884_/D
      361* |      55 |     131 |       47 |      0 |    20 |   +17.2% |   -0.142 |       -3.8 |     32 | _863_/D
-    final |      55 |     135 |       47 |      0 |    20 |   +17.5% |   -0.142 |       -3.8 |     32 | _863_/D
+    final |      55 |     134 |       47 |      0 |    20 |   +17.4% |   -0.142 |       -3.8 |     32 | _863_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 55 buffers.
 [INFO RSZ-0040] Inserted 47 buffers.
-[INFO RSZ-0051] Resized 135 instances: 135 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 134 instances: 134 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 20 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 845.35 um^2
+[INFO DPL-0007] Movable instances area: 844.55 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
-[INFO DPL-0009] Utilization: 14.2%
+[INFO DPL-0009] Utilization: 14.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
@@ -157,11 +157,11 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                 374
-total displacement         79.2 u
+total displacement         78.7 u
 average displacement        0.1 u
 max displacement            2.8 u
-original HPWL            7035.0 u
-legalized HPWL           7045.2 u
+original HPWL            7034.7 u
+legalized HPWL           7043.2 u
 delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.
