@@ -96,6 +96,7 @@ TESTS = [
     "remove_buffers5_cugr",
     "remove_buffers6_cugr",
     "remove_buffers3",
+    "remove_buffers7",
     "repair_antennas1",
     "repair_antennas2",
     "repair_antennas2_cugr",
