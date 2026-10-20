@@ -58,6 +58,10 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
+    # Use only Ubuntu LTS releases. Skip the 25.x interim releases.
+    ignore:
+      - dependency-name: "ubuntu"
+        versions: [">= 25, < 26"]
     groups:
       images:
         patterns:
