@@ -922,6 +922,9 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   constexpr double kAcceptTolerance = 1e-9;
   int rejected = 0;
   double overflow_change = 0.0;
+  // Only accepted reroutes change a route, so only they need new parasitics.
+  std::vector<int> accepted;
+  accepted.reserve(net_indices.size());
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
   for (const int net_index : net_indices) {
@@ -934,6 +937,9 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     }
     const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
     const bool old_adopted = net->isAdopted();
+    // The maze re-selects the access points; a rollback needs the old ones.
+    std::map<int, AccessPoint> old_access_points
+        = net->getPreferredAccessPoints();
     // Overflow change of the transaction, measured on the touched edges.
     double delta = -grid_graph_->treeOverflow(*net);
     grid_graph_->removeTreeUsage(*net);
@@ -988,10 +994,12 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
       grid_graph_->updateWireCostView(wire_cost_view, *net);
       net->setRoutingTree(old_tree);
       net->setAdopted(old_adopted);
+      net->setPreferredAccessPoints(std::move(old_access_points));
       grid_graph_->addTreeUsage(*net);
       rejected++;
     } else {
       overflow_change += delta;
+      accepted.push_back(net_index);
     }
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     grid.step();
@@ -1003,20 +1011,20 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
              "iteration {}: {} nets rerouted, {} view cells differ from a "
              "full extraction (max drift {:.3g}).",
              iteration,
-             net_indices.size(),
+             accepted.size() + rejected,
              view_mismatches,
              view_max_drift);
   debugPrint(logger_,
              GRT,
              "rrr",
              1,
-             "iteration {}: {} nets rerouted, {} kept their route (the new "
-             "one added overflow); overflow change {:.2f}.",
+             "iteration {}: {} nets rerouted, {} of them rolled back (the new "
+             "route added overflow); overflow change {:.2f}.",
              iteration,
-             net_indices.size(),
+             accepted.size() + rejected,
              rejected,
              overflow_change);
-  collectReroutedNets(net_indices);
+  collectReroutedNets(accepted);
   debugNetTopology(stage, iteration);
   return overflow_change;
 }
