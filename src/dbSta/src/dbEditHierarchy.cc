@@ -418,15 +418,6 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
                                 (Net*) source_pin_flat_net,
                                 (Net*) source_db_mod_net);
         top_source_mod_net = source_db_mod_net;
-        // Loads in this module that were connected to the flat net while
-        // the source had no hierarchical net join the new one, or the
-        // hierarchical view leaves them undriven.
-        for (odb::dbITerm* iterm : source_pin_flat_net->getITerms()) {
-          if (iterm != source_pin && iterm->getModNet() == nullptr
-              && iterm->getInst()->getModule() == lowest_common_module) {
-            iterm->connect(source_db_mod_net);
-          }
-        }
       } else {
         top_dest_mod_iterm->connect(top_source_mod_net);
       }
