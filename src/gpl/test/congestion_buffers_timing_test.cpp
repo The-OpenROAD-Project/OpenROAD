@@ -141,6 +141,21 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   bool routabilityNeeded() const { return np_->is_routability_need_; }
 
+  GCell* liveCellFor(odb::dbInst* inst) const
+  {
+    // dbToNb() resolves through the construction-time PlacerBase map, which
+    // does not contain resizer-created instances. Handles resolve live storage
+    // after callback creation, deletion, reindexing and vector growth.
+    for (const auto& nb : nb_vec_) {
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isInstance() && cell->contains(inst)) {
+          return nbc_->getGCellByIndex(cell.getStorageIndex());
+        }
+      }
+    }
+    return nullptr;
+  }
+
   int64_t liveInflationArea() const
   {
     int64_t area = 0;
@@ -392,7 +407,8 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_GT(historical_charge, 0);
   ASSERT_EQ(live_before, historical_charge);
   auto* driver = block_->findInst("fanout_driver");
-  ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
+  ASSERT_NE(liveCellFor(driver), nullptr);
+  ASSERT_GT(liveCellFor(driver)->inflationArea(), 0);
   ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
   ASSERT_FALSE(ep_.hasParasiticsInvalid());
   ASSERT_FALSE(grt_.haveRoutes());
@@ -404,7 +420,7 @@ TEST_F(TimingRepairIntegrationTest,
     ep_.estimateParasitics(est::ParasiticsSrc::kPlacement);
     ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
     nbc_->fixPointers();
-    EXPECT_EQ(nbc_->dbToNb(driver)->inflationArea(), 0);
+    EXPECT_EQ(liveCellFor(driver)->inflationArea(), 0);
     EXPECT_TRUE(ep_.hasParasiticsInvalid());
     odb::dbInst* deleted = nullptr;
     for (const auto* cell : nbc_->getGCells()) {
@@ -448,25 +464,26 @@ TEST_F(TimingRepairIntegrationTest,
   makePlacer();
   const int64_t original = nb_vec_[0]->getNesterovInstsArea();
   runOrdinaryPass(1000000);
-  ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
+  ASSERT_NE(liveCellFor(driver), nullptr);
+  ASSERT_GT(liveCellFor(driver)->inflationArea(), 0);
   ASSERT_TRUE(routabilityNeeded());
-  const int saved_dx = nbc_->dbToNb(driver)->dx();
-  const int saved_dy = nbc_->dbToNb(driver)->dy();
+  const int saved_dx = liveCellFor(driver)->dx();
+  const int saved_dy = liveCellFor(driver)->dy();
   // A genuine RC improvement saves the already-inflated dimensions in the
   // production min-RC snapshot before the next ordinary inflation pass.
   runOrdinaryPass(500000);
   ASSERT_TRUE(rb_->isMinRc());
   ASSERT_TRUE(routabilityNeeded());
-  ASSERT_GT(static_cast<int64_t>(nbc_->dbToNb(driver)->dx())
-                * nbc_->dbToNb(driver)->dy(),
+  ASSERT_GT(static_cast<int64_t>(liveCellFor(driver)->dx())
+                * liveCellFor(driver)->dy(),
             static_cast<int64_t>(saved_dx) * saved_dy);
   // Finish through a genuine min-RC revert, before this extension is eligible.
   ordinary_iterations_ = 50;
   runOrdinaryPass(1000000);
   ASSERT_FALSE(rb_->isMinRc());
   ASSERT_FALSE(routabilityNeeded());
-  ASSERT_EQ(nbc_->dbToNb(driver)->dx(), saved_dx);
-  ASSERT_EQ(nbc_->dbToNb(driver)->dy(), saved_dy);
+  ASSERT_EQ(liveCellFor(driver)->dx(), saved_dx);
+  ASSERT_EQ(liveCellFor(driver)->dy(), saved_dy);
   const int completed_iterations = ordinary_iterations_;
   const int completed_reverts = rb_->getRevertCount();
   const int64_t historical_charge = rb_->getTotalInflation();
@@ -492,7 +509,8 @@ TEST_F(TimingRepairIntegrationTest,
   }
   ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
   ASSERT_FALSE(ep_.hasParasiticsInvalid());
-  auto* cell = nbc_->dbToNb(driver);
+  auto* cell = liveCellFor(driver);
+  ASSERT_NE(cell, nullptr);
   ASSERT_EQ(cell->changeType(), GCell::GCellChange::kDownsize);
   ASSERT_EQ(cell->inflationArea(), 0);
   const int physical_dx = cell->dx();
@@ -508,26 +526,47 @@ TEST_F(TimingRepairIntegrationTest,
   runOrdinaryPass(1000000);
   EXPECT_EQ(ordinary_iterations_, completed_iterations);
   EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
-  cell = nbc_->dbToNb(driver);
+  cell = liveCellFor(driver);
+  ASSERT_NE(cell, nullptr);
   EXPECT_EQ(cell->dx(), physical_dx);
   EXPECT_EQ(cell->dy(), physical_dy);
   EXPECT_EQ(cell->inflationArea(), 0);
   checkDensityAccounting();
+  // Keep this downsized target material through the real repair. Do not make
+  // the invariant conditional on whether resizer happened to delete it.
+  driver->setDoNotTouch(true);
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
+  ASSERT_EQ(block_->findInst("fanout_driver"), driver);
+  EXPECT_EQ(driver->getMaster(), lib_->findMaster("BUF_X1"));
+  cell = liveCellFor(driver);
+  ASSERT_NE(cell, nullptr);
+  EXPECT_EQ(cell->dx(), physical_dx);
+  EXPECT_EQ(cell->dy(), physical_dy);
+  EXPECT_EQ(cell->inflationArea(), 0);
   checkRetainedInsertions(true);
   checkDensityAccounting();
   auto* buffer = inflatedNewBuffer();
   ASSERT_NE(buffer, nullptr);
-  const int buffer_dx = nbc_->dbToNb(buffer)->dx();
-  const int buffer_dy = nbc_->dbToNb(buffer)->dy();
+  auto* buffer_cell = liveCellFor(buffer);
+  ASSERT_NE(buffer_cell, nullptr);
+  const int buffer_dx = buffer_cell->dx();
+  const int buffer_dy = buffer_cell->dy();
   const int64_t fillers = nb_vec_[0]->getTotalFillerArea();
   for (int attempt = 0; attempt < 3; ++attempt) {
     runOrdinaryPass(1000000);
     EXPECT_EQ(ordinary_iterations_, completed_iterations);
     EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
-    EXPECT_EQ(nbc_->dbToNb(buffer)->dx(), buffer_dx);
-    EXPECT_EQ(nbc_->dbToNb(buffer)->dy(), buffer_dy);
+    buffer_cell = liveCellFor(buffer);
+    ASSERT_NE(buffer_cell, nullptr);
+    EXPECT_EQ(buffer_cell->dx(), buffer_dx);
+    EXPECT_EQ(buffer_cell->dy(), buffer_dy);
+    ASSERT_EQ(block_->findInst("fanout_driver"), driver);
+    cell = liveCellFor(driver);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_EQ(cell->dx(), physical_dx);
+    EXPECT_EQ(cell->dy(), physical_dy);
+    EXPECT_EQ(cell->inflationArea(), 0);
     EXPECT_EQ(nb_vec_[0]->getTotalFillerArea(), fillers);
     checkDensityAccounting();
   }
@@ -547,7 +586,8 @@ TEST_F(TimingRepairIntegrationTest,
   completeRoutability();
   auto* master = lib_->findMaster("BUF_X1");
   auto* buffer = odb::dbInst::create(block_, master, "padded_moved_buffer");
-  ASSERT_GT(nbc_->dbToNb(buffer)->dx(), master->getWidth());
+  ASSERT_NE(liveCellFor(buffer), nullptr);
+  ASSERT_GT(liveCellFor(buffer)->dx(), master->getWidth());
   // Exercise inDbPostMoveInst, not a fabricated geometry or baseline reset.
   buffer->setLocation(16000, 16000);
   buffer->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -556,7 +596,8 @@ TEST_F(TimingRepairIntegrationTest,
   buffer->findITerm("Z")->connect(output);
   block_->findInst("sink_0")->findITerm("A1")->connect(output);
   nbc_->fixPointers();
-  auto* cell = nbc_->dbToNb(buffer);
+  auto* cell = liveCellFor(buffer);
+  ASSERT_NE(cell, nullptr);
   ASSERT_EQ(cell->dx(), buffer->getBBox()->getDX());
   ASSERT_EQ(cell->dy(), buffer->getBBox()->getDY());
   ASSERT_GT(cell->insts().front()->getArea(),
