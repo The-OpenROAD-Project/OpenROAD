@@ -3,11 +3,13 @@
 
 #include "dbJournal.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <string>
 
+#include "dbAccessPoint.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
@@ -18,6 +20,7 @@
 #include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
+#include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -881,6 +884,7 @@ void dbJournal::redo_swapObject()
           lib_id,
           master_id);
       inst->swapMaster(master);
+      popSwapAccessPoints(inst, /*restore=*/false);
       break;
     }
 
@@ -2390,6 +2394,50 @@ void dbJournal::undo_disconnectObject()
   }
 }
 
+void dbJournal::popSwapAccessPoints(dbInst* inst, const bool restore)
+{
+  _dbBlock* block = (_dbBlock*) block_;
+  _dbInst* inst_impl = (_dbInst*) inst;
+
+  uint32_t pin_access_idx;
+  log_.pop(pin_access_idx);
+  uint32_t iterm_count;
+  log_.pop(iterm_count);
+  if (restore) {
+    inst_impl->pin_access_idx_ = pin_access_idx;
+  }
+  for (uint32_t i = 0; i < iterm_count; ++i) {
+    uint32_t iterm_id;
+    log_.pop(iterm_id);
+    uint32_t ap_count;
+    log_.pop(ap_count);
+    _dbITerm* iterm = restore && block->iterm_tbl_->validId(iterm_id)
+                          ? block->iterm_tbl_->getPtr(iterm_id)
+                          : nullptr;
+    for (uint32_t j = 0; j < ap_count; ++j) {
+      uint32_t pin_id;
+      log_.pop(pin_id);
+      uint32_t ap_id;
+      log_.pop(ap_id);
+      if (iterm == nullptr || !block->ap_tbl_->validId(ap_id)) {
+        continue;
+      }
+      iterm->aps_[dbId<_dbMPin>(pin_id)] = dbId<_dbAccessPoint>(ap_id);
+      auto& ap_iterms = block->ap_tbl_->getPtr(ap_id)->iterms_;
+      auto pos = std::lower_bound(
+          ap_iterms.begin(), ap_iterms.end(), iterm->getOID());
+      if (pos == ap_iterms.end() || *pos != iterm->getOID()) {
+        ap_iterms.insert(pos, iterm->getOID());
+      }
+    }
+    if (iterm != nullptr && ap_count > 0) {
+      for (dbBlockCallBackObj* callback : block->callbacks_) {
+        callback->inDbITermPostSetAccessPoints((dbITerm*) iterm);
+      }
+    }
+  }
+}
+
 void dbJournal::undo_swapObject()
 {
   auto obj_type = popObjectType();
@@ -2458,6 +2506,7 @@ void dbJournal::undo_swapObject()
                  "UNDO ECO: swap {}",
                  inst->getDebugName());
       inst->swapMaster(master);
+      popSwapAccessPoints(inst, /*restore=*/true);
       break;
     }
 
