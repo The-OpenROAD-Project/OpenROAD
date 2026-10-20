@@ -176,6 +176,11 @@ class RouteBase
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);
 
+  // Refresh RUDY after retained timing repair and inflate only its surviving
+  // new standard cells. Does not restart or revert the routability search.
+  // The caller must subsequently update region areas and density sizes.
+  int64_t inflateNewCells();
+
   float getRudyAverage() const { return final_average_rc_; }
   int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
   int getTotalTilesCount() const { return tg_->tiles().size(); }

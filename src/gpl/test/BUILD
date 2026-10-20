@@ -322,6 +322,22 @@ cc_test(
 )
 
 cc_test(
+    name = "congestion_buffers_test",
+    srcs = ["congestion_buffers_test.cpp"],
+    data = ["simple01.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "timing_base_test",
     srcs = ["timing_base_test.cpp"],
     env = GPU_ENV_OFF,

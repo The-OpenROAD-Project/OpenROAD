@@ -12,6 +12,7 @@
 #include <memory>
 #include <ranges>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -669,6 +670,92 @@ void RouteBase::calculateRudyTiles()
 
   debugInflationRatioStats();
   debugInflatedTiles();
+}
+
+int64_t RouteBase::inflateNewCells()
+{
+  std::unordered_set<odb::dbInst*> new_instances;
+  for (const auto& nb : nbVec_) {
+    new_instances.insert(nb->getNewInstances().begin(),
+                         nb->getNewInstances().end());
+  }
+  if (new_instances.empty()) {
+    return 0;
+  }
+
+  calculateRudyTiles();
+  int64_t total_added = 0;
+  int64_t remaining_budget = std::max<int64_t>(
+      0,
+      static_cast<int64_t>(static_cast<double>(original_movable_area_)
+                           * rbVars_.maxInflationTotal)
+          - getTotalInflation());
+  for (size_t i = 0; i < nbVec_.size(); ++i) {
+    const auto& nb = nbVec_[i];
+    // The cached areas still describe the design before timing repair.
+    int64_t instance_area = 0;
+    for (const auto& cell : nb->getGCells()) {
+      if (cell->isInstance()) {
+        instance_area += static_cast<int64_t>(cell->dx()) * cell->dy();
+      }
+    }
+    int64_t available = std::max<int64_t>(
+        0,
+        static_cast<int64_t>(static_cast<double>(rbVars_.maxDensity)
+                             * nb->getWhiteSpaceArea())
+            - instance_area - nb->getTotalFillerArea());
+    available = std::min(available, remaining_budget);
+    int64_t added = 0;
+    for (const auto& handle : nb->getGCells()) {
+      GCell* cell = handle;
+      if (!cell->isStdInstance() || cell->insts().size() != 1
+          || !new_instances.contains(cell->insts().front()->dbInst())
+          || cell->changeType() == GCell::GCellChange::kRoutability) {
+        continue;
+      }
+      const Tile* tile = getTile(cell->dCx(), cell->dCy());
+      if (tile == nullptr || !tile->isActionable()
+          || !std::isfinite(tile->inflationRatio())
+          || tile->inflationRatio() <= 1.0f || available == 0) {
+        continue;
+      }
+      const int old_width = cell->dx();
+      const int old_height = cell->dy();
+      const int64_t old_area = static_cast<int64_t>(old_width) * old_height;
+      if (old_area <= 0) {
+        continue;
+      }
+      const double ratio
+          = std::min<double>(tile->inflationRatio(),
+                             1.0 + static_cast<double>(available) / old_area);
+      const double scale = std::sqrt(ratio);
+      // setSize stores even dimensions. Round down so integer geometry cannot
+      // overdraw either the regional density allowance or the total budget.
+      const int width = 2 * static_cast<int>(old_width * scale / 2);
+      const int height = 2 * static_cast<int>(old_height * scale / 2);
+      const int64_t delta = static_cast<int64_t>(width) * height - old_area;
+      if (width < old_width || height < old_height || delta <= 0
+          || delta > available) {
+        continue;
+      }
+      cell->setSize(width, height, GCell::GCellChange::kRoutability);
+      available -= delta;
+      added += delta;
+    }
+    accumulatedInflatedAreaDelta_[i] += added;
+    remaining_budget -= added;
+    total_added += added;
+    debugPrint(log_,
+               GPL,
+               "timing",
+               1,
+               "Timing-driven: new-cell congestion inflation: {:.3f} um^2{}.",
+               db_->getChip()->getBlock()->dbuAreaToMicrons(added),
+               nb->getGroup()
+                   ? " in group " + std::string(nb->getGroup()->getName())
+                   : "");
+  }
+  return total_added;
 }
 
 // Report mean/median/stddev and a 10-bucket histogram of the tiles'

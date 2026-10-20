@@ -2919,6 +2919,15 @@ void NesterovBase::updateDensitySize()
 #endif
 }
 
+void NesterovBase::updateTimingDrivenDensity()
+{
+  updateAreas();
+  const int64_t area = getNesterovInstsArea() + getTotalFillerArea();
+  setTargetDensity(static_cast<float>(area) / getWhiteSpaceArea());
+  setMovableArea(area);
+  updateDensitySize();
+}
+
 void NesterovBase::updateAreas()
 {
   // bloating can change the following :

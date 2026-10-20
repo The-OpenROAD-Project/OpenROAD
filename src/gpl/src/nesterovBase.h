@@ -1086,6 +1086,13 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
+  // Pending callback creations, consumed by updateGCellState(). Resolve these
+  // through the live cell handles: repair may also delete or resize them.
+  const std::vector<odb::dbInst*>& getNewInstances() const
+  {
+    return new_instances_;
+  }
+
   float getSumOverflow() const { return sum_overflow_; }
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
@@ -1131,6 +1138,9 @@ class NesterovBase
 
   // update density sizes with changed dx and dy
   void updateDensitySize();
+
+  // Account for retained timing repair and congestion inflation in this region.
+  void updateTimingDrivenDensity();
 
   // should be separately defined.
   // This is mainly used for NesterovLoop

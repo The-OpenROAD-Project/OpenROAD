@@ -462,6 +462,11 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
+    if (!virtual_td_iter && npVars_.routability_driven_mode) {
+      // Include inserted buffers in congestion pressure before initializing
+      // their optimizer state or rebuilding the device geometry.
+      rb_->inflateNewCells();
+    }
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
@@ -515,19 +520,14 @@ void NesterovPlace::runTimingDriven(int iter,
         // 3. updateareas
         // 4. updateDensitySize
 
-        nesterov->setTargetDensity(
-            static_cast<float>(nbc_->getDeltaArea()
-                               + nesterov->getNesterovInstsArea()
-                               + nesterov->getTotalFillerArea())
-            / static_cast<float>(nesterov->getWhiteSpaceArea()));
-
-        nesterov->setMovableArea(nesterov->getTargetDensity()
-                                 * nesterov->getWhiteSpaceArea());
+        // Use this region's repaired, inflated area, not the global resizer
+        // delta, which can include changes belonging to other power domains.
+        const int64_t previous_area = nesterov->getNesterovInstsArea();
+        nesterov->updateTimingDrivenDensity();
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
-            = (nbc_->getDeltaArea()
-               / static_cast<float>(nesterov->getNesterovInstsArea()))
+            = (nbc_->getDeltaArea() / static_cast<float>(previous_area))
               * 100.0f;
         log_->info(
             GPL,
@@ -560,12 +560,10 @@ void NesterovPlace::runTimingDriven(int iter,
                    110,
                    "Timing-driven: new target density: {}",
                    nesterov->getTargetDensity());
-        nbc_->resetDeltaArea();
-        nbc_->resetNewGcellsCount();
-        nesterov->updateAreas();
-        nesterov->updateDensitySize();
         nesterov->checkConsistency();
       }
+      nbc_->resetDeltaArea();
+      nbc_->resetNewGcellsCount();
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
