@@ -45,11 +45,14 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     for (auto* net : nets) {
       odb::dbNet::destroy(net);
     }
+    makeRoutingSeedNet();
     for (auto* inst : block_->getInsts()) {
       inst->setLocation(40000, 40000);
       inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     }
     configureDesign();
+    sta_->postReadDb(db_.get());
+    sta_->postReadDef(block_);
     options_.density = 0.7f;
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
@@ -78,6 +81,28 @@ class CongestionBuffersTest : public tst::IntegratedFixture
 
   virtual void configureDesign() {}
   virtual std::vector<odb::dbGroup*> placementGroups() { return {nullptr}; }
+
+  void makeRoutingSeedNet()
+  {
+    // GRT needs a real routing net to initialize capacities. Keep this small
+    // port-to-port net away from the cells and the synthetic congestion tiles.
+    auto* net = odb::dbNet::create(block_, "routing_seed");
+    auto* layer = db_->getTech()->findRoutingLayer(3);
+    for (int i = 0; i < 2; ++i) {
+      const int coordinate = 57000 + i * 500;
+      auto* term
+          = odb::dbBTerm::create(net, ("seed_" + std::to_string(i)).c_str());
+      term->setIoType(i == 0 ? odb::dbIoType::INPUT : odb::dbIoType::OUTPUT);
+      auto* pin = odb::dbBPin::create(term);
+      pin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      odb::dbBox::create(pin,
+                         layer,
+                         coordinate,
+                         coordinate,
+                         coordinate + 100,
+                         coordinate + 100);
+    }
+  }
 
   void makeRouteBase()
   {
@@ -478,10 +503,10 @@ TEST_F(DisjointRegionBuffersTest, DensityLimitsAndAccountingAreRegionLocal)
 {
   addDemand();
   addDemand("right_demand", 34000, 58000);
-  options_.routabilityMaxDensity = 0.71f;
+  options_.routabilityMaxDensity = 0.77f;
   makeRouteBase();
   std::vector<odb::dbInst*> dense_buffers;
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 60; ++i) {
     dense_buffers.push_back(insertBuffer(
         ("dense_" + std::to_string(i)).c_str(), 15000, groups_[0]));
   }
@@ -544,6 +569,30 @@ TEST_F(DisjointRegionBuffersTest,
   EXPECT_EQ(rb_->getTotalInflation(), added);
   checkRegionDensity(nb_vec_[0]);
   checkRegionDensity(nb_vec_[1]);
+}
+
+TEST_F(CongestionBuffersTest, NoRoutingNetsSkipsNewCellCongestionRefresh)
+{
+  auto* buffer = insertBuffer("isolated");
+  const int64_t area = cellArea(cellFor(buffer));
+  odb::dbNet::destroy(block_->findNet("routing_seed"));
+  ASSERT_TRUE(block_->getNets().empty());
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  EXPECT_EQ(rb_->inflateNewCells(), 0);
+  EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+  EXPECT_EQ(cellArea(cellFor(buffer)), area);
+}
+
+TEST_F(CongestionBuffersTest,
+       UnchangedTimingRepairPreservesTargetDensityExactly)
+{
+  const float density = nb_->getTargetDensity();
+  const int64_t movable_area = nb_->getMovableArea();
+  for (int update = 0; update < 3; ++update) {
+    nb_->updateTimingDrivenDensity();
+    EXPECT_EQ(nb_->getTargetDensity(), density);
+    EXPECT_EQ(nb_->getMovableArea(), movable_area);
+  }
 }
 
 }  // namespace

@@ -681,7 +681,7 @@ int64_t RouteBase::inflateNewCells()
     new_instances.insert(nb->getNewInstances().begin(),
                          nb->getNewInstances().end());
   }
-  if (new_instances.empty()) {
+  if (new_instances.empty() || db_->getChip()->getBlock()->getNets().empty()) {
     return 0;
   }
 

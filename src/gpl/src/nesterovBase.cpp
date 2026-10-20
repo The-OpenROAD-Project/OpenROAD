@@ -2925,8 +2925,10 @@ void NesterovBase::updateTimingDrivenDensity()
   // Macros contribute targetDensity * macro area to the density field.
   // Solve D * whitespace = std + fillers + D * macros for D.
   const int64_t available_area = getWhiteSpaceArea() - pb_->macroInstsArea();
-  setTargetDensity(static_cast<double>(stdInstsArea_ + getTotalFillerArea())
-                   / available_area);
+  // Preserve the placer's existing float rounding when no macros are present.
+  // A one-ULP target change perturbs the subsequent optimization trajectory.
+  setTargetDensity(static_cast<float>(stdInstsArea_ + getTotalFillerArea())
+                   / static_cast<float>(available_area));
   setMovableArea(getNesterovInstsArea() + getTotalFillerArea());
   updateDensitySize();
 }
