@@ -89,10 +89,6 @@ filegroup(
                     "testcases/centralization1.def",
                     "testcases/orientation_improve1.lef",
                 ],
-                "check_macro_placement": [
-                    "testcases/fixed_macros1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
                 "clocked_macro": [
                     "testcases/clocked_macro.def",
                     "testcases/clocked_macro.lef",

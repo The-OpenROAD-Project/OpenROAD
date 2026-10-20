@@ -22,10 +22,14 @@ class TestMacroPreflight : public tst::DbFixture
  protected:
   void SetUp() override
   {
+    db_->setDbuPerMicron(1000);
     odb::dbTech* tech = odb::dbTech::create(db_.get(), "tech");
+    tech->setLefUnits(1000);
     lib_ = odb::dbLib::create(db_.get(), "lib", tech, ',');
+    lib_->setLefUnits(1000);
     odb::dbChip::create(db_.get(), tech);
     block_ = odb::dbBlock::create(db_->getChip(), "block");
+    block_->setDefUnits(1000);
     block_->setDieArea(odb::Rect(0, 0, 30000, 30000));
     block_->setCoreArea(odb::Rect(0, 0, 10000, 10000));
     placer_
@@ -47,6 +51,24 @@ class TestMacroPreflight : public tst::DbFixture
     return makeInst(block_, master, name.c_str(), {.parent_module = parent});
   }
 
+  odb::dbInst* createPinnedMacro()
+  {
+    odb::dbTechLayer* layer = odb::dbTechLayer::create(
+        db_->getTech(), "routing", odb::dbTechLayerType::ROUTING);
+    layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+    layer->setSpacing(100);
+    odb::dbMaster* master = odb::dbMaster::create(lib_, "pinned_master");
+    master->setType(odb::dbMasterType::BLOCK);
+    master->setWidth(5000);
+    master->setHeight(5000);
+    odb::dbMTerm* term = odb::dbMTerm::create(
+        master, "left_pin", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+    odb::dbMPin* pin = odb::dbMPin::create(term);
+    odb::dbBox::create(pin, layer, 0, 2500, 100, 2600);
+    master->setFrozen();
+    return makeInst(block_, master, "pinned_macro");
+  }
+
   std::string snapshot()
   {
     std::ostringstream stream;
@@ -54,21 +76,49 @@ class TestMacroPreflight : public tst::DbFixture
     return stream.str();
   }
 
-  void expectPassUnchanged(odb::Rect fence = {}, int width = 0, int height = 0)
+  void expectPassUnchanged(odb::Rect fence = {},
+                           int width = 0,
+                           int height = 0,
+                           bool pin_aware = false)
   {
     const std::string before = snapshot();
-    EXPECT_NO_THROW(placer_->checkMacroPlacement(fence, width, height));
+    EXPECT_NO_THROW(
+        placer_->checkMacroPlacement(fence, width, height, pin_aware));
     EXPECT_EQ(snapshot(), before);
   }
 
   void expectErrorUnchanged(const char* id,
                             odb::Rect fence = {},
                             int width = 0,
-                            int height = 0)
+                            int height = 0,
+                            bool pin_aware = false)
   {
     const std::string before = snapshot();
-    EXPECT_LOGGER_ERROR(placer_->checkMacroPlacement(fence, width, height), id);
+    EXPECT_LOGGER_ERROR(
+        placer_->checkMacroPlacement(fence, width, height, pin_aware), id);
     EXPECT_EQ(snapshot(), before);
+  }
+
+  void expectInvalidFencesUnchanged()
+  {
+    const odb::Rect fences[] = {odb::Rect(11000, 1000, 20000, 9000),
+                                odb::Rect(-10000, 1000, -1000, 9000),
+                                odb::Rect(1000, 11000, 9000, 20000),
+                                odb::Rect(1000, -10000, 9000, -1000),
+                                odb::Rect(11000, 11000, 20000, 20000),
+                                odb::Rect(-10000, -10000, -1000, -1000),
+                                odb::Rect(10000, 1000, 20000, 9000),
+                                odb::Rect(-10000, 1000, 0, 9000),
+                                odb::Rect(1000, 10000, 9000, 20000),
+                                odb::Rect(1000, -10000, 9000, 0),
+                                odb::Rect(10000, 10000, 20000, 20000),
+                                odb::Rect(-10000, -10000, 0, 0)};
+    for (const odb::Rect& fence : fences) {
+      SCOPED_TRACE(::testing::Message()
+                   << "fence " << fence.xMin() << "," << fence.yMin() << " to "
+                   << fence.xMax() << "," << fence.yMax());
+      expectErrorUnchanged("MPL-0068", fence);
+    }
   }
 
   odb::dbLib* lib_ = nullptr;
@@ -128,9 +178,22 @@ TEST_F(TestMacroPreflight, OversizedMacroIncludingHalo)
   expectErrorUnchanged("MPL-0006");
 }
 
-TEST_F(TestMacroPreflight, DisjointFenceFailsEvenWithoutMovableMacros)
+TEST_F(TestMacroPreflight, DisjointAndEdgeFencesFailForEmptyDesign)
 {
-  expectErrorUnchanged("MPL-0068", odb::Rect(20000, 20000, 30000, 30000));
+  expectInvalidFencesUnchanged();
+}
+
+TEST_F(TestMacroPreflight, DisjointAndEdgeFencesFailForMovableMacros)
+{
+  createInst("macro", 5000, 5000);
+  expectInvalidFencesUnchanged();
+}
+
+TEST_F(TestMacroPreflight, DisjointAndEdgeFencesFailForAllFixedMacros)
+{
+  odb::dbInst* macro = createInst("macro", 5000, 5000);
+  macro->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  expectInvalidFencesUnchanged();
 }
 
 TEST_F(TestMacroPreflight, PartiallyOverlappingFenceIsClipped)
@@ -220,8 +283,52 @@ TEST_F(TestMacroPreflight, FixedMacroOccupationIsClippedToPlacementArea)
   fixed->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   createInst("cell", 4000, 4000, odb::dbMasterType::CORE);
   expectPassUnchanged();
+  fixed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   fixed->setLocation(1000, 1000);
+  fixed->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   expectErrorUnchanged("MPL-0065");
+}
+
+TEST_F(TestMacroPreflight, PinAwareChannelsTrimOnlyUnpinnedEdges)
+{
+  odb::dbInst* macro = createPinnedMacro();
+  expectErrorUnchanged("MPL-0006", {}, 6000, 6000);
+  expectPassUnchanged({}, 6000, 6000, true);
+  expectErrorUnchanged("MPL-0006", {}, 6000, 6000);
+  // A DEF halo takes precedence over pin-aware channel trimming.
+  macro->setHalo(3000, 3000, 3000, 3000, false);
+  expectErrorUnchanged("MPL-0006", {}, 6000, 6000, true);
+}
+
+TEST_F(TestMacroPreflight, TechnologySpacingFloorsUnpinnedEdges)
+{
+  createPinnedMacro();
+  odb::dbTechLayer* layer = db_->getTech()->findLayer("routing");
+  layer->setSpacing(2500);
+  expectPassUnchanged({}, 0, 0, true);
+  layer->setSpacing(2501);
+  expectErrorUnchanged("MPL-0006", {}, 0, 0, true);
+}
+
+TEST_F(TestMacroPreflight, ConfiguredChannelSurvivesSuccessAndFailure)
+{
+  createInst("movable", 5000, 5000);
+  odb::dbInst* fixed = createInst("fixed", 2000, 2000);
+  fixed->setLocation(4000, 4000);
+  fixed->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  placer_->setMinChannelSize(400, 800);
+  expectPassUnchanged({}, 2000, 4000);
+  expectErrorUnchanged("MPL-0006", {}, 10000, 10000);
+  expectPassUnchanged();
+
+  // This later operation observes the original configured channel, not either
+  // preflight invocation's channel. The preflight snapshots above allow no
+  // edits.
+  placer_->blockMacroChannels();
+  ASSERT_EQ(block_->getBlockages().size(), 1);
+  odb::dbBlockage* blockage = *block_->getBlockages().begin();
+  EXPECT_TRUE(blockage->isSoft());
+  EXPECT_EQ(blockage->getBBox()->getBox(), odb::Rect(3800, 3600, 6200, 6400));
 }
 
 TEST_F(TestMacroPreflight, ChannelGeometryStressDoesNotLeakState)

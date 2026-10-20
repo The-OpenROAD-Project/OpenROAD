@@ -226,7 +226,8 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
 
 void ClusteringEngine::setFloorplanShape()
 {
-  tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
+  block_->getCoreArea().intersection(tree_->global_fence,
+                                     tree_->floorplan_shape);
 
   if (tree_->floorplan_shape.area() == 0) {
     logger_->error(
