@@ -894,12 +894,12 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   debugNetTopology(CugrStage::patternRouteWithDetours, 0);
 }
 
-void CUGR::mazeRoute(std::vector<int>& net_indices,
-                     const CugrStage stage,
-                     const int iteration)
+double CUGR::mazeRoute(std::vector<int>& net_indices,
+                       const CugrStage stage,
+                       const int iteration)
 {
   if (net_indices.empty()) {
-    return;
+    return 0.0;
   }
 
   if (critical_nets_percentage_ != 0) {
@@ -918,8 +918,18 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
   sortNetIndices(net_indices,
                  resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
+  // A reroute that adds overflow beyond float noise is rolled back and
+  // retried next pass.
+  constexpr double kAcceptTolerance = 1e-9;
+  int rejected = 0;
+  double overflow_change = 0.0;
+  // Only accepted reroutes change a route, so only they need new parasitics.
+  std::vector<int> accepted;
+  accepted.reserve(net_indices.size());
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
+  // Edges of the tree being measured, reused across nets.
+  std::vector<std::array<int, 3>> touched_edges;
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -928,7 +938,16 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
+    const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
+    const bool old_adopted = net->isAdopted();
+    // The maze re-selects the access points; a rollback needs the old ones.
+    std::map<int, AccessPoint> old_access_points
+        = net->getPreferredAccessPoints();
+    // Overflow change of the transaction, measured on the touched edges.
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    double delta = -grid_graph_->sumOverflow(touched_edges);
     grid_graph_->removeTreeUsage(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     // Checked where the maze reads the view, after every refresh so far.
     if (verify_view) {
@@ -971,7 +990,22 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    delta -= grid_graph_->sumOverflow(touched_edges);
     grid_graph_->addTreeUsage(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
+    if (delta > kAcceptTolerance) {
+      grid_graph_->removeTreeUsage(*net);
+      grid_graph_->updateWireCostView(wire_cost_view, *net);
+      net->setRoutingTree(old_tree);
+      net->setAdopted(old_adopted);
+      net->setPreferredAccessPoints(std::move(old_access_points));
+      grid_graph_->addTreeUsage(*net);
+      rejected++;
+    } else {
+      overflow_change += delta;
+      accepted.push_back(net_index);
+    }
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     grid.step();
   }
@@ -982,11 +1016,22 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
              "iteration {}: {} nets rerouted, {} view cells differ from a "
              "full extraction (max drift {:.3g}).",
              iteration,
-             net_indices.size(),
+             accepted.size() + rejected,
              view_mismatches,
              view_max_drift);
-  collectReroutedNets(net_indices);
+  debugPrint(logger_,
+             GRT,
+             "rrr",
+             1,
+             "iteration {}: {} nets rerouted, {} of them rolled back (the new "
+             "route added overflow); overflow change {:.2f}.",
+             iteration,
+             accepted.size() + rejected,
+             rejected,
+             overflow_change);
+  collectReroutedNets(accepted);
   debugNetTopology(stage, iteration);
+  return overflow_change;
 }
 
 void CUGR::route(bool incremental)
@@ -1352,6 +1397,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   constexpr double kCongestionThreshold = 1.0;
   // Iterations in the congested set before an NDR net is demoted.
   constexpr int kSoftNdrStreakThreshold = 2;
+  // Stop after this many passes in a row that each remove < 1 track.
+  constexpr double kMinPassImprovement = 1.0;
+  constexpr int kMaxStagnantPasses = 2;
+  int stagnant_passes = 0;
 
   std::unordered_map<int, int> ndr_congested_streak;
   int soft_ndr_demotions = 0;
@@ -1367,6 +1416,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     std::unordered_set<int> currently_congested(net_indices.begin(),
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
+    // A demotion relieves overflow too, so it counts toward the pass's change.
+    double overflow_change = 0.0;
+    // A congested NDR net not demoted yet is demoted if it stays congested.
+    bool demotion_pending = false;
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] == nullptr) {
         continue;
@@ -1377,10 +1430,17 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       }
       const int streak = ++ndr_congested_streak[net_index];
       if (streak >= kSoftNdrStreakThreshold) {
-        grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        // The net-aware forms keep an adopted tree's wrong-way spans legal.
+        std::vector<std::array<int, 3>> touched_edges;
+        grid_graph_->collectTreeEdges(*net, touched_edges);
+        overflow_change -= grid_graph_->sumOverflow(touched_edges);
+        grid_graph_->removeTreeUsage(*net);
         net->setSoftNdr();
-        grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        grid_graph_->addTreeUsage(*net);
+        overflow_change += grid_graph_->sumOverflow(touched_edges);
         demoted_now.push_back(net->getName());
+      } else {
+        demotion_pending = true;
       }
     }
     // Reset streaks for nets that recovered (no longer congested).
@@ -1417,12 +1477,30 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     if (incremental_routing_) {
       // Incremental reroutes all dirty nets each iteration, not just congested.
       std::vector<int> reroute_set = incremental_candidates_;
-      mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
+      overflow_change += mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
     } else {
-      mazeRoute(net_indices, CugrStage::iterativeRRR, i);
+      overflow_change += mazeRoute(net_indices, CugrStage::iterativeRRR, i);
     }
     reportCongestionSources(fmt::format("rrr iteration {}", i));
     debugPass(fmt::format("rrr iteration {}", i));
+
+    stagnant_passes
+        = -overflow_change < kMinPassImprovement ? stagnant_passes + 1 : 0;
+    if (stagnant_passes >= kMaxStagnantPasses && !demotion_pending) {
+      // Report only when overflow is left; incremental defers to GRT-0128.
+      if (verbose_ && !incremental_routing_ && i < congestion_iterations_
+          && totalOverflow() > 0) {
+        logger_->info(GRT,
+                      124,
+                      "Iterative RRR stopped after iteration {}: the last {} "
+                      "iterations each removed less than {:.0f} track of "
+                      "overflow.",
+                      i,
+                      kMaxStagnantPasses,
+                      kMinPassImprovement);
+      }
+      break;
+    }
   }
   grid_graph_->setCostMultiplier(1.0);
   if (verbose_ && soft_ndr_demotions > 0) {

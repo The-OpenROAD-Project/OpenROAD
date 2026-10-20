@@ -234,6 +234,12 @@ class GridGraph
                        const std::vector<double>& net_costs = {},
                        bool adopted = false);
 
+  // The (layer, x, y) edges the net's tree occupies, each once and sorted.
+  void collectTreeEdges(const GRNet& net,
+                        std::vector<std::array<int, 3>>& edges) const;
+  // Overflow on the given edges under the current demand.
+  double sumOverflow(const std::vector<std::array<int, 3>>& edges) const;
+
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
   // GCells whose reported usage changed since the last odb refresh, recorded
