@@ -6422,10 +6422,11 @@ void Resizer::swapPinDelays(
       const sta::ArcDelay gate_delay = dcalc_result.gateDelay();
       if (port == input_port) {
         base_delay = std::max(base_delay, gate_delay);
-      } else if (!port_delays.contains(port)) {
-        port_delays.emplace(port, gate_delay);
       } else {
-        port_delays[port] = std::max(port_delays[port], gate_delay);
+        auto [it, inserted] = port_delays.try_emplace(port, gate_delay);
+        if (!inserted) {
+          it->second = std::max(it->second, gate_delay);
+        }
       }
     }
   }
