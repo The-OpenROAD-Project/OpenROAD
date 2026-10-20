@@ -648,6 +648,10 @@ class ClockBuffering
     sta::LibertyPort *input, *output;
     cell->output->libertyCell()->bufferPorts(input, output);
     const auto pin = master->findMTerm(input->name().c_str())->getBBox();
+    if (pin.isInverted()) {
+      throw std::runtime_error(
+          "Missing physical input geometry for bottom-up CTS root");
+    }
     odb::Rect boundary;
     master->getPlacementBoundary(boundary);
     // DB writing uses R0 and setLocation, so include the input pin's offset
@@ -679,6 +683,10 @@ class ClockBuffering
       }
       retained_cap += inputCap(port, sta_);
       const auto box = term->getBBox();
+      if (box.isInverted()) {
+        throw std::runtime_error(
+            "Missing physical geometry for retained bottom-up CTS input load");
+      }
       retained_wire_length
           += std::max(std::abs(box.xMin() - source_point_.x),
                       std::abs(box.xMax() - source_point_.x))
