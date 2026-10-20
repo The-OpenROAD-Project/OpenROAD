@@ -496,6 +496,28 @@ alias(
     path = "bazel/slang-compat",
 )
 
+# --- pandoc for macOS arm64 (used by //docs:man_pages) ---
+#
+# The macosx_11_0_arm64 wheel of pypandoc-binary (1.16 through 1.17) ships
+# the x86_64 pandoc, which fails with "Bad CPU type in executable" on Apple
+# Silicon without Rosetta 2. On that platform //bazel:pandoc takes the
+# upstream release instead. Keep the version equal to the pandoc that the
+# pinned wheel bundles (pypandoc-binary 1.17 -> pandoc 3.9), so every
+# platform renders the man pages with the same pandoc.
+http_archive(
+    name = "pandoc_macos_arm64",
+    build_file_content = """\
+filegroup(
+    name = "pandoc",
+    srcs = ["bin/pandoc"],
+    visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "7d56ac6fe6fad0a7407bcd776aa142f61ca41838f286165f79d0584fa57b24d1",
+    strip_prefix = "pandoc-3.9-arm64",
+    urls = ["https://github.com/jgm/pandoc/releases/download/3.9/pandoc-3.9-arm64-macOS.zip"],
+)
+
 # --- GPU build (opt-in) ---
 #
 # Kokkos and KokkosFFT are not available from BCR at these versions and do not
