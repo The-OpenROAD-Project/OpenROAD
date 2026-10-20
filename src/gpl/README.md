@@ -74,10 +74,9 @@ Macro contributions to the budget are density-scaled. Inflation is limited by
 regional density headroom and available filler area, and removes whole filler
 cells to pay for the added virtual area instead of raising target density.
 Virtual timing repairs, early timing repairs and timing-only placement are
-unaffected. This is not a demonstrated QoR improvement: initial paired routing
-experiments showed mixed timing results on AES and no activation on GCD.
-Those experiments used an earlier policy; this post-routability, filler-funded
-policy requires fresh paired routing validation.
+unaffected. Routability and timing effects are design-dependent, and paired
+routing experiments have shown mixed timing results. No general QoR benefit
+is established; evaluate the opt-in policy on representative designs.
 
 Initial-placement arguments
 - They begin with `-initial_place`.

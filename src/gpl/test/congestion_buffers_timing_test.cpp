@@ -459,8 +459,33 @@ TEST_F(TimingRepairIntegrationTest,
 TEST_F(TimingRepairIntegrationTest,
        CompletedMinRcSearchCannotRestoreAfterRetainedDownsize)
 {
-  auto* driver = block_->findInst("fanout_driver");
-  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
+  // The protected geometry probe must not be a load on req_val: protecting
+  // that load would prevent the real repair from buffering its high fanout.
+  auto* driver = odb::dbInst::create(
+      block_, lib_->findMaster("BUF_X32"), "downsize_probe");
+  driver->setLocation(16000, 16000);
+  driver->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  auto* layer = db_->getTech()->findRoutingLayer(3);
+  for (const char* pin_name : {"A", "Z"}) {
+    const std::string name = std::string("downsize_probe_") + pin_name;
+    auto* net = odb::dbNet::create(block_, name.c_str());
+    auto* iterm = driver->findITerm(pin_name);
+    iterm->connect(net);
+    auto* term = odb::dbBTerm::create(net, name.c_str());
+    term->setIoType(pin_name[0] == 'A' ? odb::dbIoType::INPUT
+                                       : odb::dbIoType::OUTPUT);
+    auto* pin = odb::dbBPin::create(term);
+    pin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    int x = 0;
+    int y = 0;
+    ASSERT_TRUE(iterm->getAvgXY(&x, &y));
+    odb::dbBox::create(pin, layer, x, y, x + 1, y + 1);
+    ASSERT_EQ(net->getITermCount(), 1);
+  }
+  initial_names_.insert(driver->getName());
+  ASSERT_NE(driver->findITerm("A")->getNet(),
+            block_->findBTerm("req_val")->getNet());
+  ASSERT_FALSE(block_->findInst("fanout_driver")->isDoNotTouch());
   makePlacer();
   const int64_t original = nb_vec_[0]->getNesterovInstsArea();
   runOrdinaryPass(1000000);
@@ -537,7 +562,7 @@ TEST_F(TimingRepairIntegrationTest,
   driver->setDoNotTouch(true);
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
-  ASSERT_EQ(block_->findInst("fanout_driver"), driver);
+  ASSERT_EQ(block_->findInst("downsize_probe"), driver);
   EXPECT_EQ(driver->getMaster(), lib_->findMaster("BUF_X1"));
   cell = liveCellFor(driver);
   ASSERT_NE(cell, nullptr);
@@ -561,7 +586,7 @@ TEST_F(TimingRepairIntegrationTest,
     ASSERT_NE(buffer_cell, nullptr);
     EXPECT_EQ(buffer_cell->dx(), buffer_dx);
     EXPECT_EQ(buffer_cell->dy(), buffer_dy);
-    ASSERT_EQ(block_->findInst("fanout_driver"), driver);
+    ASSERT_EQ(block_->findInst("downsize_probe"), driver);
     cell = liveCellFor(driver);
     ASSERT_NE(cell, nullptr);
     EXPECT_EQ(cell->dx(), physical_dx);
