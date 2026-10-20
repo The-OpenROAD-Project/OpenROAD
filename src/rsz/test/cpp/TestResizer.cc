@@ -862,6 +862,15 @@ TEST_F(TestResizer, TerminateProgressIgnoresFixRateWhenTnsIsZero)
   EXPECT_FALSE(policy.terminateProgress(
       kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
 
+  // Without a margin, TNS 0 leaves no work, so the fix rate still ends it.
+  run_config.setup_slack_margin = 0.0;
+  TestSetupLegacyPolicy no_margin_policy(
+      resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(no_margin_policy.start());
+  prev_tns = 0.0f;
+  EXPECT_TRUE(no_margin_policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
+
   // A true violation that stopped improving still ends the repair.
   set_out1_slack(-0.20f);
   prev_tns = sta_->totalNegativeSlack(max);
