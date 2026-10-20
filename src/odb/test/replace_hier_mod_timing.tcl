@@ -22,9 +22,9 @@ proc global_placement { args } {
   set before [make_result_file "hierarchy_timing_${incremental_calls}_before.v"]
   set after [make_result_file "hierarchy_timing_${incremental_calls}_after.v"]
   write_verilog $before
-  with_output_to_variable log_text {
-    hierarchy_timing_global_placement {*}$args
-  }
+  # The capture helper evaluates its body in its own frame, not this one.
+  with_output_to_variable log_text \
+    [list hierarchy_timing_global_placement {*}$args]
   puts $log_text
   write_verilog $after
   if { [hierarchy_timing_read $before] != [hierarchy_timing_read $after] } {
