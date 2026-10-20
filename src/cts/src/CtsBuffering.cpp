@@ -657,11 +657,45 @@ class ClockBuffering
     const double length
         = std::max(std::abs(x + pin.xMin()), std::abs(x + pin.xMax()))
           + std::max(std::abs(y + pin.yMin()), std::abs(y + pin.yMax()));
-    // The fixed root's input capacitance bounds all scenes and transitions.
-    // Charge the full source wire capacitance with the worst-scene RC before
-    // characterizing any stage at this common input-slew bound.
+    // Original tree sinks move behind this root. Other source-net receivers,
+    // such as the macro/register split buffer, remain on the shared input.
+    // Their load also charges any wire prefix shared with this root.
+    odb::PtrSet<odb::dbITerm> replaced_sinks;
+    clock_->forEachSink([&](const ClockInst& sink) {
+      replaced_sinks.insert(sink.getDbInputPin());
+    });
+    double retained_cap = 0;
+    double retained_wire_length = 0;
+    auto* source_net = clock_->getNetObj();
+    for (auto* term : source_net->getITerms()) {
+      if (!term->isInputSignal() || replaced_sinks.contains(term)) {
+        continue;
+      }
+      auto* sta_pin = network_->dbToSta(term);
+      auto* port = network_->libertyPort(sta_pin);
+      if (port == nullptr || !network_->isPlaced(sta_pin)) {
+        throw std::runtime_error(
+            "Unmodeled or unplaced retained load on bottom-up CTS input");
+      }
+      retained_cap += inputCap(port, sta_);
+      const auto box = term->getBBox();
+      retained_wire_length
+          += std::max(std::abs(box.xMin() - source_point_.x),
+                      std::abs(box.xMax() - source_point_.x))
+             + std::max(std::abs(box.yMin() - source_point_.y),
+                        std::abs(box.yMax() - source_point_.y));
+    }
+    for (auto* term : source_net->getBTerms()) {
+      if (network_->dbToSta(term) != driver_pin_) {
+        throw std::runtime_error(
+            "External load on bottom-up CTS input is not modeled");
+      }
+    }
+    // Enclose all scenes/transitions and the complete input star's wire cap.
+    // This remains a placement RC model; the post-write STA audit is required.
     const double ingress = 2.2 * res_per_dbu_ * length
-                           * (cell->input_cap + cap_per_dbu_ * length);
+                           * (cell->input_cap + retained_cap
+                              + cap_per_dbu_ * (length + retained_wire_length));
     const double slew = source_slew_ + ingress;
     if (!std::isfinite(slew) || slew < 0) {
       throw std::runtime_error("Invalid ingress slew for bottom-up CTS");
