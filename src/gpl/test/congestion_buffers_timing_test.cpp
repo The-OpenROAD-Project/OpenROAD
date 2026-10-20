@@ -471,8 +471,15 @@ TEST_F(TimingRepairIntegrationTest,
   const int completed_reverts = rb_->getRevertCount();
   const int64_t historical_charge = rb_->getTotalInflation();
   ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
-  ASSERT_FALSE(ep_.hasParasiticsInvalid());
   ASSERT_FALSE(grt_.haveRoutes());
+  // Publish the restored coordinates as runTimingDriven() does. This fixture
+  // steered the ordinary controller outside a timing transaction, so refresh
+  // the dirty placement through the estimate_parasitics -placement API before
+  // entering another incremental guard, which requires clean parasitics.
+  np_->updateDb();
+  ASSERT_TRUE(ep_.hasParasiticsInvalid());
+  ep_.estimateParasitics(est::ParasiticsSrc::kPlacement);
+  ASSERT_FALSE(ep_.hasParasiticsInvalid());
   // Keep the real GPL resize callback, but also mirror the estimator guard
   // used by production resizer edits. Its destructor processes invalid nets.
   ep_.setParasiticsSrc(est::ParasiticsSrc::kPlacement);
