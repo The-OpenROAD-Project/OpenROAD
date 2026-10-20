@@ -107,21 +107,5 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1018] Final HPWL (um): 663170.22
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0196] Overflow after unlocking all instances: 0.1328
-[INFO GPL-0084] ---- Execute Nesterov Global Placement.
-[INFO GPL-0191] Incremental density-penalty guard enabled: penalty factor 1, starting overflow 0.133.
-[INFO GPL-0193] Incremental density-penalty guard: overflow regressed past 0.133; escalating the penalty factor to 2 in place (retry 1).
-[INFO GPL-0193] Incremental density-penalty guard: overflow regressed past 0.133; escalating the penalty factor to 4 in place (retry 2).
-      400 |   0.0920 |  6.765560e+05 |   +2.11% |  1.07e-06 |      
-      400 |   0.0920 |  6.765560e+05 |          |  1.10e-06 |      
----------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 400
-[INFO GPL-1002] Placed Cell Area            47581.9595
-[INFO GPL-1003] Available Free Area         896177.4080
-[INFO GPL-1004] Minimum Feasible Density        0.0600 (cell_area / free_area)
-[INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.0590
-[INFO GPL-1008]     - For 80% usage of free space: 0.0664
-[INFO GPL-1009]     - For 50% usage of free space: 0.1062
-[INFO GPL-1014] Final placement area: 47581.96 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 676697.51
+[WARNING GPL-0197] Incremental placement left overflow 0.1328 above target 0.1000; detailed placement will resolve it.
 pass

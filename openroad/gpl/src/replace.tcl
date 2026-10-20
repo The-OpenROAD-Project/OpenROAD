@@ -11,6 +11,7 @@ sta::define_cmd_args "global_placement" {\
     [-routability_driven]\
     [-virtual_cts]\
     [-incremental]\
+    [-incremental_phase2]\
     [-skip_io]\
     [-place_ios]\
     [-bin_grid_count grid_count]\
@@ -90,6 +91,7 @@ proc global_placement { args } {
       -skip_io \
       -place_ios \
       -incremental \
+      -incremental_phase2 \
       -disable_revert_if_diverge \
       -disable_pin_density_adjust \
       -enable_routing_congestion}
@@ -106,6 +108,11 @@ proc global_placement { args } {
     if { [info exists flags(-skip_nesterov_place)] } {
       utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
     }
+  }
+
+  if { [info exists flags(-incremental_phase2)] \
+         && ![info exists flags(-incremental)] } {
+    utl::error GPL 198 "-incremental_phase2 requires -incremental."
   }
 
   if { [info exists flags(-incremental)] } {

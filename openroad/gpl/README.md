@@ -93,6 +93,7 @@ global_placement
     [-power_driven]\
     [-routability_driven]\
     [-incremental]\
+    [-incremental_phase2]\
     [-skip_io]\
     [-place_ios]\
     [-bin_grid_count grid_count]\
@@ -142,6 +143,7 @@ global_placement
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
+| `-incremental_phase2` | With `-incremental`, if the overflow is still above `-overflow` after placing the unplaced instances around the locked existing ones, unlock all instances and keep placing until it is met. By default the existing instances are not moved and the remaining overflow is left to detailed placement. |
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |

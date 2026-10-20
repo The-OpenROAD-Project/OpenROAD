@@ -231,8 +231,8 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     }
   }
 
-  // Phase 1 is allowed to diverge and hand off to phase 2 instead of
-  // aborting the whole incremental run, so doNesterovPlace() must not throw
+  // Phase 1 is allowed to diverge and keep the placement it reached instead
+  // of aborting the whole incremental run, so doNesterovPlace() must not throw
   // (and log an ERROR) on a divergence it is expected to recover from; it
   // reports one as PlaceStop::kDiverged instead. Any other error (a resizer or
   // timing-driven failure, say) still throws and propagates normally -
@@ -244,30 +244,31 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     log_->warn(GPL,
                195,
                "Phase 1 of incremental placement diverged before reaching "
-               "overflow {:.3f}; continuing to phase 2 anyway.",
-               locked_options.overflow);
+               "overflow {:.3f}; {}.",
+               locked_options.overflow,
+               options.incrementalPhase2 ? "continuing to phase 2 anyway"
+                                         : "keeping the placement it reached");
     np_->clearDivergence();
   }
   // Phase 2 has no further fallback, so a divergence there must fail loudly.
   np_->setAllowDivergenceRecovery(false);
 
-  // Finish the overflow resolution from the locked placement
   log_->info(GPL, 133, "Unlocking all instances");
   for (auto& pb : pbVec_) {
     pb->unlockAll();
   }
 
   // Phase 1 measured only what the unplaced instances added to the
-  // overflow. Re-measure it over every instance now that none are locked,
-  // and run phase 2 only if that is still above the target.
+  // overflow. Re-measure it over every instance now that none are locked.
   np_->refreshOverflow();
   log_->info(GPL,
              196,
              "Overflow after unlocking all instances: {:.4f}",
              np_->getAverageOverflow());
+
   const bool missed_target = np_->getAverageOverflow() > options.overflow;
 
-  if (phase1_diverged || missed_target) {
+  if (options.incrementalPhase2 && (phase1_diverged || missed_target)) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
@@ -276,6 +277,24 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     phase2.trace.insert(
         phase2.trace.begin(), result.trace.begin(), result.trace.end());
     result = std::move(phase2);
+  } else {
+    // Without phase 2 the result describes the placement phase 1 left, with
+    // the overflow measured again over every instance now that none are
+    // locked.
+    result.overflow = np_->getAverageOverflow();
+    if (!missed_target) {
+      result.stop = PlaceStop::kConverged;
+    } else {
+      // The existing instances keep their placement; most of the remaining
+      // overflow was there before the new instances were added, and
+      // detailed placement resolves it.
+      log_->warn(GPL,
+                 197,
+                 "Incremental placement left overflow {:.4f} above target "
+                 "{:.4f}; detailed placement will resolve it.",
+                 np_->getAverageOverflow(),
+                 options.overflow);
+    }
   }
   return result;
 }

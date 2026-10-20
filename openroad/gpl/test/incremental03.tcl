@@ -1,7 +1,7 @@
 # Phase 1 of incremental placement is expected to recover from a divergence
 # instead of aborting the whole run (see Replace::doIncrementalPlace()): it
-# logs a warning and hands off to phase 2 rather than letting the ERROR
-# Logger::error() would normally raise propagate. A tight -overflow keeps
+# logs a warning and keeps the placement it reached rather than letting the
+# ERROR Logger::error() would normally raise propagate. A tight -overflow keeps
 # phase 1 from converging on the unplaced cells, and -max_phi_coef pushes the
 # density penalty escalation hard enough to diverge for real (GPL-0305)
 # within phase 1's 600-iteration cap, instead of needing thousands of
@@ -40,7 +40,8 @@ if { ![string match {*\[WARNING GPL-0305\]*} $log_text] } {
       did not, so this test is not exercising the recovery path"
 }
 if { ![string match {*\[WARNING GPL-0195\]*} $log_text] } {
-  error "Expected GPL-0195 (phase 1 diverged, continuing to phase 2 anyway)"
+  error "Expected GPL-0195 (phase 1 diverged, keeping the placement it\
+      reached)"
 }
 
 puts pass

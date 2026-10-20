@@ -43,6 +43,7 @@ PASSFAIL_TESTS = [
     "congestion_inflation_default",
     "incremental02",
     "incremental03",
+    "incremental04",
     "options01",
     "place_ios_rd",
     "place_ios_td",
