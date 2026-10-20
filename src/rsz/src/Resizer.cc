@@ -40,6 +40,7 @@
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
 #include "boost/functional/hash.hpp"
@@ -320,6 +321,20 @@ float inputPinCapacitance(sta::Network* network,
     cap = std::max(cap, cell_port->capacitance(rf, min_max));
   }
   return cap;
+}
+
+// The incremental RC update of the invalid nets, then the required times.
+// The repair setup profiler times the two steps.
+void updateIncrementalTiming(est::EstimateParasitics* parasitics,
+                             sta::dbSta* sta)
+{
+  {
+    const ProfileScope scope("incremental_rc");
+    parasitics->updateParasitics();
+  }
+
+  const ProfileScope scope("incremental_sta");
+  sta->findRequireds();
 }
 
 }  // namespace
@@ -2078,6 +2093,15 @@ void Resizer::reportDelayEstimatorAccuracy(sta::Instance* inst,
   reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);
 }
 
+void Resizer::reportDelayEstimatorAccuracyForRebufferTree(
+    sta::Instance* inst,
+    sta::Pin* driver_pin,
+    const int delay_levels)
+{
+  DelayEstimatorReporter reporter(*this);
+  reporter.reportAccuracyForRebufferTree(inst, driver_pin, delay_levels);
+}
+
 bool Resizer::isValidDelayEstimatorName(const std::string& name)
 {
   return DelayEstimatorReporter::parseEstimatorKind(name).has_value();
@@ -2229,6 +2253,13 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     if (sizing_leakage_limit_) {
       source_cell_leakage = cellLeakage(source_cell);
     }
+    // Smallest larger cell that passes every restriction except the leakage
+    // limit, and its position in swappable_cells to preserve the equivalent
+    // cell order.
+    sta::LibertyCell* next_larger = nullptr;
+    int64_t next_larger_area = 0;
+    size_t next_larger_pos = 0;
+    bool has_larger_cell = false;
     for (sta::LibertyCell* equiv_cell : *equiv_cells) {
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
@@ -2246,13 +2277,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         continue;
       }
 
+      bool exceeds_leakage_limit = false;
       if (sizing_leakage_limit_ && source_cell_leakage) {
         std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
-        if (equiv_cell_leakage
-            && (*equiv_cell_leakage / *source_cell_leakage
-                > sizing_leakage_limit_.value())) {
-          continue;
-        }
+        exceeds_leakage_limit = equiv_cell_leakage
+                                && (*equiv_cell_leakage / *source_cell_leakage
+                                    > sizing_leakage_limit_.value());
       }
 
       if (sizing_keep_site_) {
@@ -2285,7 +2315,28 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      const int64_t equiv_cell_area = equiv_cell_master->getArea();
+      if (exceeds_leakage_limit) {
+        if (equiv_cell_area > source_cell_area
+            && (next_larger == nullptr || equiv_cell_area < next_larger_area)) {
+          next_larger = equiv_cell;
+          next_larger_area = equiv_cell_area;
+          next_larger_pos = swappable_cells.size();
+        }
+        continue;
+      }
+
+      has_larger_cell |= equiv_cell_area > source_cell_area;
       swappable_cells.push_back(equiv_cell);
+    }
+
+    // The leakage limit is relative to the source cell, so a cell with
+    // unusually low leakage can lose every larger size and become impossible
+    // to upsize.  Keep the smallest larger cell in that case so there is
+    // always at least one upsizing step.
+    if (!has_larger_cell && next_larger != nullptr) {
+      swappable_cells.insert(swappable_cells.begin() + next_larger_pos,
+                             next_larger);
     }
   } else {
     swappable_cells.push_back(source_cell);
@@ -2384,9 +2435,22 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     vt_equiv_cells.emplace_back(equiv_cell);
   }
 
-  // Sort the list in ascending order of leakage
+  // Group by VT category (and ascending leakage within each category) so that
+  // same-VT cells are contiguous during adjacent deduplication.
   std::ranges::stable_sort(
       vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        dbMaster* master1 = db_network_->staToDb(cell1);
+        dbMaster* master2 = db_network_->staToDb(cell2);
+        if ((master1 == nullptr) != (master2 == nullptr)) {
+          return master1 == nullptr;
+        }
+        if (master1 && master2) {
+          const VTCategory vt1 = cellVTType(master1);
+          const VTCategory vt2 = cellVTType(master2);
+          if (vt1 != vt2) {
+            return vt1 < vt2;
+          }
+        }
         std::optional<float> leak1 = this->cellLeakage(cell1);
         std::optional<float> leak2 = this->cellLeakage(cell2);
         // Treat missing leakage as 0
@@ -2419,6 +2483,14 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       ++it;
     }
   }
+
+  // Sort the deduplicated list in ascending order of leakage
+  std::ranges::stable_sort(
+      vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        std::optional<float> leak1 = this->cellLeakage(cell1);
+        std::optional<float> leak2 = this->cellLeakage(cell2);
+        return leak1.value_or(0.0) < leak2.value_or(0.0);
+      });
 
   // Map all equivalent cells to the same list
   // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
@@ -5439,7 +5511,10 @@ bool Resizer::repairSetup(double setup_margin,
                           bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
-                          bool skip_crit_vt_swap)
+                          bool skip_crit_vt_swap,
+                          RepairEffort effort,
+                          int profile_mode,
+                          const char* profile_dir)
 {
   utl::Timer timer;
   OptimizerRunConfig config;
@@ -5462,6 +5537,9 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.effort = effort;
+  config.profile_mode = profile_mode;
+  config.profile_dir = profile_dir != nullptr ? profile_dir : "";
 
   // Scoped so a -path_group restriction never leaks past this command.
   utl::SetAndRestore<std::string> path_group_override(
@@ -5644,14 +5722,31 @@ void Resizer::initForJournalRestore()
   init();
 }
 
+void Resizer::recountDesignAreaAfterUndo()
+{
+  // init() counts the area before the undo, so overMaxArea() would still see
+  // the undone edits.  Only overMaxArea() reads the tracked area, so the
+  // walk runs only under a -max_utilization limit.
+  if (max_area_) {
+    initDesignArea();
+  }
+}
+
 void Resizer::updateParasiticsAndTiming()
 {
   if (estimate_parasitics_->isIncrementalParasiticsEnabled()) {
-    estimate_parasitics_->updateParasitics();
-  } else {
+    updateIncrementalTiming(estimate_parasitics_, sta_);
+    return;
+  }
+
+  {
+    const ProfileScope scope("full_rc");
+    RepairSetupProfiler::event("full_rc_requests");
     estimate_parasitics_->estimateParasitics(
         estimate_parasitics_->getParasiticsSrc());
   }
+
+  const ProfileScope scope("incremental_sta");
   sta_->findRequireds();
 }
 
@@ -5682,18 +5777,21 @@ int Resizer::rejectedLegacyMoveCount() const
 
 void Resizer::journalBegin()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
+  RepairSetupProfiler::journalBegin();
 }
 
 void Resizer::journalEnd()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   if (!odb::dbDatabase::ecoEmpty(block_)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    updateIncrementalTiming(estimate_parasitics_, sta_);
   }
   odb::dbDatabase::commitEco(block_);
+  RepairSetupProfiler::journalEnd(false);
 }
 
 void Resizer::journalMakeBuffer(sta::Instance* buffer)
@@ -5712,11 +5810,15 @@ void Resizer::journalMakeBuffer(sta::Instance* buffer)
 // STA findRequireds() is performed also.
 void Resizer::journalRestore()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
+    RepairSetupProfiler::event("journal_undo_begin",
+                               {.count = std::nullopt, .trace = true});
     odb::dbDatabase::undoEco(block_);
+    RepairSetupProfiler::journalEnd(true);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -5726,9 +5828,11 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics on the touched nets during undo.
+  RepairSetupProfiler::event("journal_undo_begin",
+                             {.count = std::nullopt, .trace = true});
   odb::dbDatabase::undoEco(block_);
-  estimate_parasitics_->updateParasitics();
-  sta_->findRequireds();
+  RepairSetupProfiler::journalEnd(true);
+  updateIncrementalTiming(estimate_parasitics_, sta_);
 
   // ECO undo can change the graph topology seen by later passes.
   invalidateVertexOrdering();
@@ -6278,26 +6382,17 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
   delete pin_iter;
 }
 
-void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
-                                   sta::LibertyPort* drvr_port,
-                                   const sta::LibertyPortSeq& equiv_ports,
-                                   const float load_cap,
-                                   const sta::Scene* scene,
-                                   const sta::MinMax* min_max,
-                                   sta::LibertyPort** swap_port,
-                                   sta::ArcDelay* base_delay_out,
-                                   sta::ArcDelay* candidate_delay_out)
+void Resizer::swapPinDelays(
+    sta::LibertyPort* input_port,
+    sta::LibertyPort* drvr_port,
+    const float load_cap,
+    const sta::Scene* scene,
+    const sta::MinMax* min_max,
+    sta::ArcDelay& base_delay,
+    std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays)
 {
   sta::LibertyCell* cell = drvr_port->libertyCell();
-  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
-  sta::ArcDelay base_delay = -sta::INF;
-  if (base_delay_out != nullptr) {
-    *base_delay_out = 0.0;
-  }
-  if (candidate_delay_out != nullptr) {
-    *candidate_delay_out = 0.0;
-  }
-
+  base_delay = -sta::INF;
   for (sta::TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() != drvr_port || arc_set->role()->isTimingCheck()) {
       continue;
@@ -6334,6 +6429,29 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
       }
     }
   }
+}
+
+void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
+                                   sta::LibertyPort* drvr_port,
+                                   const sta::LibertyPortSeq& equiv_ports,
+                                   const float load_cap,
+                                   const sta::Scene* scene,
+                                   const sta::MinMax* min_max,
+                                   sta::LibertyPort** swap_port,
+                                   sta::ArcDelay* base_delay_out,
+                                   sta::ArcDelay* candidate_delay_out)
+{
+  if (base_delay_out != nullptr) {
+    *base_delay_out = 0.0;
+  }
+  if (candidate_delay_out != nullptr) {
+    *candidate_delay_out = 0.0;
+  }
+
+  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
+  sta::ArcDelay base_delay;
+  swapPinDelays(
+      input_port, drvr_port, load_cap, scene, min_max, base_delay, port_delays);
 
   const sta::ArcDelay reference_delay = base_delay;
   for (sta::LibertyPort* port : equiv_ports) {
@@ -6637,7 +6755,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "size_down_fanout" || lower == "size_down") {
+  if (lower == "size_down_fanout" || lower == "size_down"
+      || lower == "sizedown") {
     return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
@@ -6682,6 +6801,19 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
   return result;
 }
 
+RepairEffort Resizer::repairEffortFromString(const std::string& effort)
+{
+  if (effort == "low") {
+    return RepairEffort::kLow;
+  }
+
+  if (effort == "medium") {
+    return RepairEffort::kMedium;
+  }
+
+  return RepairEffort::kHigh;
+}
+
 bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 {
   if (isTristateDriver(driver_pin)) {
@@ -6701,6 +6833,60 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
   odb::dbNet* db_net = db_network_->staToDb(net);
 
   return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+}
+
+sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
+    sta::LibertyCell* curr_cell)
+{
+  if (!curr_cell) {
+    return nullptr;
+  }
+  const sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_cell);
+  auto it = std::ranges::find(equiv_cells, curr_cell);
+  if (it == equiv_cells.end()) {
+    return nullptr;
+  }
+  sta::LibertyCell* running_best = curr_cell;
+  for (++it; it != equiv_cells.end(); ++it) {
+    sta::LibertyCell* cand_cell = *it;
+    bool weakens_drive = false;
+    for (sta::Scene* scene : sta_->scenes()) {
+      const int lib_ap = scene->libertyIndex(max_);
+      sta::LibertyCell* best_corner = running_best->sceneCell(lib_ap);
+      if (best_corner == nullptr) {
+        continue;
+      }
+      sta::LibertyCell* cand_corner = cand_cell->sceneCell(lib_ap);
+      if (cand_corner == nullptr) {
+        weakens_drive = true;
+        break;
+      }
+      sta::LibertyCellPortIterator port_iter(best_corner);
+      while (port_iter.hasNext()) {
+        sta::LibertyPort* best_port = port_iter.next();
+        if (!best_port->direction()->isAnyOutput()) {
+          continue;
+        }
+        sta::LibertyPort* cand_port
+            = cand_corner->findLibertyPort(best_port->name());
+        if (cand_port == nullptr
+            || cand_port->driveResistance(sta::RiseFall::rise(), max_)
+                   > best_port->driveResistance(sta::RiseFall::rise(), max_)
+            || cand_port->driveResistance(sta::RiseFall::fall(), max_)
+                   > best_port->driveResistance(sta::RiseFall::fall(), max_)) {
+          weakens_drive = true;
+          break;
+        }
+      }
+      if (weakens_drive) {
+        break;
+      }
+    }
+    if (!weakens_drive) {
+      running_best = cand_cell;
+    }
+  }
+  return running_best != curr_cell ? running_best : nullptr;
 }
 
 // Check if current instance can be swapped to the
@@ -6724,18 +6910,8 @@ bool Resizer::checkAndMarkVTSwappable(
     return false;
   }
   sta::LibertyCell* curr_lib_cell = network_->libertyCell(cell);
-  if (!curr_lib_cell) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
-  if (equiv_cells.empty()) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  best_lib_cell = equiv_cells.back();
-  if (best_lib_cell == curr_lib_cell) {
-    best_lib_cell = nullptr;
+  best_lib_cell = selectBetterRfDriveVtCell(curr_lib_cell);
+  if (best_lib_cell == nullptr) {
     notSwappable.insert(inst);
     return false;
   }
@@ -7477,6 +7653,97 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       }
     }
   }
+  return true;
+}
+
+std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
+    sta::Instance* inst)
+{
+  std::vector<InputCapBudget> budgets;
+  sta::LibertyCell* current_cell = network_->libertyCell(inst);
+  if (current_cell == nullptr) {
+    return budgets;
+  }
+
+  // One STA capacitance check per fanin driver, shared by every replacement.
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    sta::Pin* pin = pin_iter->next();
+    if (!network_->direction(pin)->isAnyInput()) {
+      continue;
+    }
+
+    sta::PinSet* drivers = network_->drivers(pin);
+    sta::LibertyPort* port = network_->libertyPort(pin);
+    if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+
+    InputCapBudget budget;
+    budget.port = port;
+    budget.current_cap = inputPinCapacitance(network_, pin, current_cell, max_);
+    budget.driver_limits.reserve(drivers->size());
+    for (const sta::Pin* driver_pin : *drivers) {
+      float cap;
+      float max_cap;
+      float cap_slack;
+      const sta::Scene* corner;
+      const sta::RiseFall* tr;
+      sta_->checkCapacitance(driver_pin,
+                             sta_->scenes(),
+                             max_,
+                             cap,
+                             max_cap,
+                             cap_slack,
+                             tr,
+                             corner);
+      if (max_cap > 0.0 && corner != nullptr) {
+        budget.driver_limits.push_back({.cap = cap,
+                                        .max_cap = max_cap,
+                                        .negative_slack = cap_slack < 0.0});
+      }
+    }
+
+    budgets.push_back(std::move(budget));
+  }
+
+  return budgets;
+}
+
+bool Resizer::replacementFitsInputCapBudgets(
+    const std::vector<InputCapBudget>& budgets,
+    const sta::LibertyCell* replacement) const
+{
+  if (replacement == nullptr) {
+    return false;
+  }
+
+  for (const InputCapBudget& budget : budgets) {
+    const sta::LibertyPort* cell_port
+        = replacement->findLibertyPort(budget.port->name());
+
+    float new_cap = 0.0f;
+    if (cell_port != nullptr) {
+      for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+        new_cap = std::max(new_cap, cell_port->capacitance(rf, max_));
+      }
+    }
+
+    const float cap_delta = new_cap - budget.current_cap;
+    if (cap_delta <= 0.0f) {
+      continue;
+    }
+
+    for (const DriverCapLimit& limit : budget.driver_limits) {
+      // Same acceptance rule as checkMaxCapOK().
+      const float driver_cap = limit.cap + cap_delta;
+      if (driver_cap > (limit.negative_slack ? limit.cap : limit.max_cap)) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 

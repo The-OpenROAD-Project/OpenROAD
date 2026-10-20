@@ -341,27 +341,44 @@ html, body {
     color: var(--fg-primary);
 }
 
-/* The chrome above the panels is not a fixed height: the toolbar collapses
-   when no button is registered and appears when one is (see #toolbar:empty).
-   Stack it as a flex column and let #gl-container take whatever is left, so
-   the panels can never be pushed past the bottom of the window -- body is
-   overflow:hidden, so anything past it is simply unreachable. */
+/* Full viewport IDE container:
+   Organized as a CSS Grid where the menu bar and toolbar occupy automatic
+   height tracks and #gl-container occupies the remaining 1fr track. */
 body {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    grid-template-columns: 100%;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
 }
 
-#menu-bar,
-#toolbar {
+#menu-bar {
+    grid-row: 1;
+    grid-column: 1;
     flex: none;
 }
 
+#toolbar {
+    grid-row: 2;
+    grid-column: 1;
+    flex: none;
+}
+
+#toolbar:empty {
+    display: none;
+}
+
 #gl-container {
-    flex: 1;
-    /* Without this a flex item refuses to shrink below its content's height,
-       which for GoldenLayout is whatever size it was last given. */
+    grid-row: 3;
+    grid-column: 1;
     min-height: 0;
+    min-width: 0;
     width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 /* Menu bar */
@@ -903,7 +920,552 @@ body {
     margin-top: 0;
 }
 
-/* GL theme overrides */
+/* ─── IDE Window Panes Layout (CSS Grid) ─────────────────────────────────── */
+
+:root {
+    --pane-left-width: 240px;
+    --pane-right-width: 340px;
+    --pane-bottom-height: 220px;
+    --splitter-size: 4px;
+}
+
+#gl-container,
+.ide-layout {
+    display: grid;
+    grid-template-columns: var(--pane-left-width) var(--splitter-size) minmax(200px, 1fr) var(--splitter-size) var(--pane-right-width);
+    grid-template-rows: 100%;
+    grid-template-areas: "left split-left center split-right right";
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg-main);
+    box-sizing: border-box;
+}
+
+#pane-left {
+    grid-area: left;
+}
+
+#splitter-left {
+    grid-area: split-left;
+}
+
+#pane-center {
+    grid-area: center;
+}
+
+#splitter-right {
+    grid-area: split-right;
+}
+
+#pane-right {
+    grid-area: right;
+}
+
+#gl-container.hide-left {
+    grid-template-columns: 0px 0px minmax(200px, 1fr) var(--splitter-size) var(--pane-right-width);
+}
+#gl-container.hide-left #pane-left,
+#gl-container.hide-left #splitter-left {
+    display: none !important;
+}
+
+#gl-container.hide-right {
+    grid-template-columns: var(--pane-left-width) var(--splitter-size) minmax(200px, 1fr) 0px 0px;
+}
+#gl-container.hide-right #pane-right,
+#gl-container.hide-right #splitter-right {
+    display: none !important;
+}
+
+#gl-container.hide-left.hide-right {
+    grid-template-columns: 0px 0px minmax(200px, 1fr) 0px 0px;
+}
+
+.ide-center {
+    display: grid;
+    grid-template-rows: minmax(120px, 1fr) var(--splitter-size) var(--pane-bottom-height);
+    grid-template-columns: 100%;
+    grid-template-areas:
+        "main"
+        "split-bottom"
+        "bottom";
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+}
+
+#pane-main {
+    grid-area: main;
+}
+
+#splitter-bottom {
+    grid-area: split-bottom;
+}
+
+#pane-bottom {
+    grid-area: bottom;
+}
+
+.ide-center.hide-bottom {
+    grid-template-rows: minmax(120px, 1fr) 0px 0px;
+}
+.ide-center.hide-bottom #pane-bottom,
+.ide-center.hide-bottom #splitter-bottom {
+    display: none !important;
+}
+
+/* ─── Gutter Expand Affordances ───────────────────────────────────────────── */
+
+.ide-gutter-expand {
+    display: none;
+    position: absolute;
+    z-index: 950;
+    background: var(--bg-context);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-size: var(--fs-11);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.ide-gutter-expand:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.ide-gutter-left {
+    top: 6px;
+    left: 6px;
+}
+
+.ide-gutter-right {
+    top: 6px;
+    right: 6px;
+}
+
+.ide-gutter-bottom {
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#gl-container.hide-left > #gutter-expand-left {
+    display: inline-flex;
+    align-items: center;
+}
+
+#gl-container.hide-right > #gutter-expand-right {
+    display: inline-flex;
+    align-items: center;
+}
+
+.ide-center.hide-bottom > #gutter-expand-bottom {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ─── Empty State ─────────────────────────────────────────────────────────── */
+
+.ide-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    color: var(--fg-muted);
+    text-align: center;
+    padding: 32px;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+.ide-empty-icon {
+    font-size: 36px;
+    line-height: 1;
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.ide-empty-title {
+    font-size: var(--fs-15);
+    font-weight: 600;
+    color: var(--fg-primary);
+    margin-bottom: 6px;
+}
+
+.ide-empty-desc {
+    font-size: var(--fs-12);
+    color: var(--fg-muted);
+    max-width: 320px;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+ide-pane,
+.ide-pane {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--bg-panel);
+    position: relative;
+    box-sizing: border-box;
+}
+
+/* ─── Maximized Panes (Expanded Across IDE Workspace) ─────────────────────── */
+
+ide-pane.maximized .ide-btn-collapse,
+.ide-pane.maximized .ide-btn-collapse {
+    display: none !important;
+}
+
+#gl-container.maximized-main {
+    grid-template-columns: 0px 0px 1fr 0px 0px !important;
+}
+
+#gl-container.maximized-main #pane-left,
+#gl-container.maximized-main #splitter-left,
+#gl-container.maximized-main #pane-right,
+#gl-container.maximized-main #splitter-right,
+#gl-container.maximized-main #gutter-expand-left,
+#gl-container.maximized-main #gutter-expand-right {
+    display: none !important;
+}
+
+#gl-container.maximized-main .ide-center {
+    grid-template-rows: 1fr 0px 0px !important;
+}
+
+#gl-container.maximized-main #splitter-bottom,
+#gl-container.maximized-main #pane-bottom,
+#gl-container.maximized-main #gutter-expand-bottom {
+    display: none !important;
+}
+
+#gl-container.maximized-bottom {
+    grid-template-columns: 0px 0px 1fr 0px 0px !important;
+}
+
+#gl-container.maximized-bottom #pane-left,
+#gl-container.maximized-bottom #splitter-left,
+#gl-container.maximized-bottom #pane-right,
+#gl-container.maximized-bottom #splitter-right,
+#gl-container.maximized-bottom #gutter-expand-left,
+#gl-container.maximized-bottom #gutter-expand-right {
+    display: none !important;
+}
+
+#gl-container.maximized-bottom .ide-center {
+    grid-template-rows: 0px 0px 1fr !important;
+}
+
+#gl-container.maximized-bottom #pane-main,
+#gl-container.maximized-bottom #splitter-bottom,
+#gl-container.maximized-bottom #gutter-expand-bottom {
+    display: none !important;
+}
+
+#gl-container.maximized-right {
+    grid-template-columns: 0px 0px 0px 0px 1fr !important;
+}
+
+#gl-container.maximized-right #pane-left,
+#gl-container.maximized-right #splitter-left,
+#gl-container.maximized-right #pane-center,
+#gl-container.maximized-right #splitter-right,
+#gl-container.maximized-right #gutter-expand-left,
+#gl-container.maximized-right #gutter-expand-bottom {
+    display: none !important;
+}
+
+.ide-pane-left {
+    border-right: 1px solid var(--line-1);
+}
+
+.ide-pane-right {
+    border-left: 1px solid var(--line-1);
+}
+
+.ide-pane-main {
+    border-bottom: 1px solid var(--line-1);
+}
+
+.ide-pane-bottom {
+    border-top: 1px solid var(--line-1);
+}
+
+.ide-content {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.ide-component-container {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.ide-component-container.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ─── Splitters ───────────────────────────────────────────────────────────── */
+
+ide-splitter,
+.ide-splitter {
+    background: var(--line-2);
+    position: relative;
+    z-index: 10;
+    transition: background-color 120ms ease;
+    user-select: none;
+    touch-action: none;
+    flex-shrink: 0;
+    display: block;
+}
+
+.ide-splitter:hover,
+.ide-splitter.dragging {
+    background: var(--accent-bright);
+}
+
+.ide-splitter-v {
+    cursor: col-resize;
+    width: var(--splitter-size);
+    height: 100%;
+}
+
+.ide-splitter-v::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -4px;
+    right: -4px;
+    z-index: 2;
+}
+
+.ide-splitter-h {
+    cursor: row-resize;
+    height: var(--splitter-size);
+    width: 100%;
+}
+
+.ide-splitter-h::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -4px;
+    bottom: -4px;
+    z-index: 2;
+}
+
+body.is-resizing {
+    user-select: none !important;
+}
+body.is-resizing * {
+    user-select: none !important;
+}
+body.is-resizing-v,
+body.is-resizing-v * {
+    cursor: col-resize !important;
+}
+body.is-resizing-h,
+body.is-resizing-h * {
+    cursor: row-resize !important;
+}
+
+/* ─── Pane Headers & Tabs ─────────────────────────────────────────────────── */
+
+.ide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+    min-height: 28px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--line-1);
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.ide-tabs {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+.ide-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+ide-tab,
+.ide-tab,
+.lm_header .lm_tab,
+.lm_tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    height: 26px;
+    margin-top: 1px;
+    padding: 0 10px;
+    background: transparent;
+    color: var(--fg-muted);
+    font-family: var(--font-sans);
+    font-size: var(--fs-12);
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 120ms ease, color 120ms ease;
+    box-sizing: border-box;
+}
+
+ide-tab:hover,
+.ide-tab:hover,
+.lm_header .lm_tab:hover,
+.lm_tab:hover {
+    background: var(--bg-hover);
+    color: var(--fg-secondary);
+}
+
+ide-tab.active,
+ide-tab.lm_active,
+.ide-tab.active,
+.ide-tab.lm_active,
+.lm_header .lm_tab.active,
+.lm_header .lm_tab.lm_active,
+.lm_tab.active,
+.lm_tab.lm_active {
+    background: var(--bg-panel);
+    color: var(--fg-bright);
+    border-bottom: 2px solid var(--accent-tab);
+}
+
+.ide-tab .or-tab-icon,
+.lm_header .lm_tab .or-tab-icon,
+.lm_tab .or-tab-icon {
+    display: flex;
+    flex: none;
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
+}
+
+.ide-tab.active .or-tab-icon,
+.ide-tab.lm_active .or-tab-icon,
+.lm_header .lm_tab.active .or-tab-icon,
+.lm_header .lm_tab.lm_active .or-tab-icon,
+.lm_tab.active .or-tab-icon,
+.lm_tab.lm_active .or-tab-icon {
+    color: var(--accent-tab);
+    opacity: 1;
+}
+
+.ide-tab .or-tab-icon svg,
+.lm_header .lm_tab .or-tab-icon svg,
+.lm_tab .or-tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ide-tab-title,
+.lm_header .lm_tab .lm_title,
+.lm_tab .lm_title {
+    user-select: none;
+    padding-top: 0;
+}
+
+.ide-tab-close,
+.lm_header .lm_tab .lm_close_tab,
+.lm_tab .lm_close_tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-xs);
+    margin-left: 4px;
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.ide-tab-close:hover,
+.lm_header .lm_tab .lm_close_tab:hover,
+.lm_tab .lm_close_tab:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+    color: var(--sem-error);
+}
+
+.ide-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.ide-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    border: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.ide-btn:hover {
+    background: var(--bg-hover);
+    color: var(--fg-primary);
+}
+
+/* Fallback compatibility styling for GL classes if present */
 .lm_goldenlayout {
     background: var(--bg-main);
 }
@@ -911,133 +1473,8 @@ body {
     background: var(--bg-panel);
     overflow: hidden;
 }
-/* Golden Layout's own tabs are distinguished only by a slightly different
-   background, which at these surface steps is nearly invisible.  The active
-   tab gets the accent underline the timing widget already uses on its own tab
-   bar, so the two tab bars in a stacked panel read the same way.  The height
-   comes from the layout config (dimensions.headerHeight in main.js), not from
-   here -- Golden Layout measures it in JS. */
-.lm_header .lm_tab {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    /* Golden Layout gives the tab a 14px content height plus its own drop
-       shadows, which in a 28px header leaves it floating in the strip.  The
-       height has to be stated rather than stretched: .lm_tabs is absolutely
-       positioned and shrink-wraps its content, so `align-self: stretch` has
-       nothing to stretch against.  And it is a content-box height -- the
-       header forces `box-sizing: content-box !important` on every lm_ element
-       inside it -- so 26 + the 2px underline is the 28px header. */
-    height: 26px;
-    margin-top: 0;
-    padding: 0 25px 0 var(--space-md);
-    background: transparent;
-    box-shadow: none;
-    color: var(--fg-muted);
-    font-family: var(--font-sans);
-    font-size: var(--fs-12);
-    border-bottom: 2px solid transparent;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    transition: background-color 120ms ease, color 120ms ease;
-}
-.lm_header .lm_tab:hover {
-    background: var(--bg-hover);
-    color: var(--fg-secondary);
-}
-/* The full border-bottom, not just its colour: Golden Layout's theme sets
-   `border-bottom: none` on the active tab at this same specificity, so a
-   colour alone would apply to a zero-width border. */
-.lm_header .lm_tab.lm_active {
-    background: var(--bg-panel);
-    box-shadow: none;
-    color: var(--fg-bright);
-    border-bottom: 2px solid var(--accent-tab);
-    padding-bottom: 0;
-}
-/* The close button and the stack controls are positioned against the old
-   header height, so they sit high in a taller one. */
-/* The light theme pads .lm_title by 1px, which content-box adds to the tab's
-   height and pushes it past the header. */
-.lm_header .lm_tab .lm_title {
-    padding-top: 0;
-}
-.lm_header .lm_tab .lm_close_tab {
-    top: 50%;
-    transform: translateY(-50%);
-}
-.lm_header .lm_controls {
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* The per-panel icon, prepended by decorateTabIcons (ui-utils.js).  It is the
-   fastest way to find a panel in a stack of six similarly-worded titles. */
-.lm_header .lm_tab .or-tab-icon {
-    display: flex;
-    flex: none;
-    width: 13px;
-    height: 13px;
-    opacity: 0.7;
-}
-.lm_header .lm_tab.lm_active .or-tab-icon {
-    color: var(--accent-tab);
-    opacity: 1;
-}
-.lm_header .lm_tab .or-tab-icon svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-/* Same icon, in the overflow dropdown. */
-.lm_header .lm_tabdropdown_list .lm_tab .or-tab-icon {
-    margin-right: var(--space-sm);
-}
 .lm_splitter {
-    background: var(--border-subtle);
-}
-
-/* Tab overflow dropdown — neither GL theme styles the dropdown list, so
- * it's transparent and effectively unusable.  Style it so overflowed tabs
- * are visible and clickable. */
-.lm_header .lm_tabdropdown_list {
-    background: var(--bg-context);
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 4px 12px var(--shadow);
-    min-width: 160px;
-    max-width: 320px;
-    max-height: 60vh;
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    padding: 2px 0;
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-}
-.lm_header .lm_tabdropdown_list .lm_tab {
-    display: flex;
-    align-items: center;
-    width: auto;
-    height: auto;
-    padding: 4px 12px;
-    margin: 0;
-    background: transparent;
-    color: var(--fg-primary);
-    float: none;
-}
-.lm_header .lm_tabdropdown_list .lm_tab:hover {
-    background: var(--bg-hover);
-    color: var(--fg-bright);
-}
-.lm_header .lm_tabdropdown_list .lm_tab.lm_active {
-    background: var(--bg-selected);
-    color: var(--fg-white);
-}
-.lm_header .lm_tabdropdown_list .lm_tab .lm_title {
-    width: auto;
-    flex: 1;
-    color: inherit;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    background: var(--line-2);
 }
 
 /* Leaflet map cursor */

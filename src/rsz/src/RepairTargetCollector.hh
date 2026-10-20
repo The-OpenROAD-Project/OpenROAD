@@ -7,9 +7,11 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -26,6 +28,10 @@
 
 namespace sta {
 class PathExpanded;
+}
+
+namespace utl {
+class ThreadPool;
 }
 
 namespace rsz {
@@ -60,26 +66,24 @@ struct pinData
   int level;
 };
 
-// Class to collect instances with violating output pins.
+// Collects violating setup endpoints and path-driver repair targets.
 class RepairTargetCollector
 {
  public:
   // === Construction and setup ==============================================
   // Constructor
-  RepairTargetCollector(Resizer* resizer) : resizer_(resizer)
-  {
-    logger_ = resizer_->logger_;
-    sta_ = resizer_->sta_;
-    network_ = resizer_->network_;
-    max_ = resizer_->max_;
-    dcalc_ap_ = -1;
-    lib_ap_ = -1;
-    max_passes_per_endpoint_ = 1000;  // Default value
-    cached_cone_threshold_ = 0.0;
-    needs_threshold_recompute_ = true;  // Force compute on first call
-  }
+  explicit RepairTargetCollector(Resizer* resizer);
+  ~RepairTargetCollector();
 
   void init(float slack_margin, bool collect_startpoints = false);
+  // Endpoint scans of at least `min_endpoints` endpoints run on `pool`, which
+  // the caller keeps alive while set; null, or a pool without worker threads,
+  // keeps every scan on the caller thread.
+  void setScanThreadPool(utl::ThreadPool* pool,
+                         size_t min_endpoints = kMinParallelScanEndpoints);
+  // Endpoint count below which a scan stays on the caller thread, so small
+  // designs avoid the thread hand-off.
+  static constexpr size_t kMinParallelScanEndpoints = 4096;
   void printHistogram(int numBins = 20) const;
   void printViolators(int numPrint) const;
 
@@ -180,6 +184,15 @@ class RepairTargetCollector
     return violating_endpoints_;
   }
 
+  const std::unordered_set<const sta::Pin*>& critPathLoadPins() const
+  {
+    return crit_path_load_pins_;
+  }
+  void setRecordCritPathLoadPins(const bool record)
+  {
+    record_crit_path_load_pins_ = record;
+  }
+
   // Public startpoint collection for STARTPOINT_FANOUT Phase
   void collectViolatingStartpoints();
   const vector<std::pair<const sta::Pin*, sta::Slack>>&
@@ -202,8 +215,14 @@ class RepairTargetCollector
 
   std::vector<Target> collectPathDriverTargets(sta::Path* path,
                                                sta::Slack path_slack) const;
+  // The path-driver targets of the violating endpoints [begin, end) in
+  // worst-slack-first order.  visited_pins dedups drivers across successive
+  // chunks of one scan; the caller owns it.
   std::vector<Target> collectCritPathDriverPinTargets(
-      const std::function<bool(sta::Pin*)>& is_valid_target) const;
+      const std::function<bool(sta::Pin*)>& is_valid_target,
+      size_t begin_endpoint,
+      size_t end_endpoint,
+      std::unordered_set<sta::Pin*>& visited_pins) const;
 
   // Startpoint iteration methods
   void setToStartpoint(int index);
@@ -338,6 +357,7 @@ class RepairTargetCollector
   void collectExpandedPathDriverTargets(const sta::Path* endpoint_path,
                                         const sta::PathExpanded& expanded,
                                         sta::Slack path_slack,
+                                        const sta::Pin* violated_endpoint_pin,
                                         std::vector<Target>& targets) const;
   void collectExpandedPathDriverPins(const sta::PathExpanded& expanded,
                                      set<const sta::Pin*>& pins) const;
@@ -358,11 +378,18 @@ class RepairTargetCollector
           pins_with_slack,
       sta::Slack threshold);
 
+  // Read-only setup slack over the paths stored at one endpoint vertex.  Safe
+  // to call from worker threads once required times are current.
+  sta::Slack endpointPathSlack(sta::Vertex* endpoint) const;
+
   // === Shared services ======================================================
   Resizer* resizer_;
   utl::Logger* logger_;
   sta::Sta* sta_;
   sta::Graph* graph_;
+  // Workers for large read-only endpoint scans, owned by the policy.
+  utl::ThreadPool* scan_thread_pool_{nullptr};
+  size_t min_parallel_scan_endpoints_{kMinParallelScanEndpoints};
 
   // Startpoint set for this collector; see walkStartpoints().
   std::vector<CachedStartpoint> startpoints_;
@@ -382,6 +409,15 @@ class RepairTargetCollector
   std::map<const sta::Pin*, pinData> pin_data_;
   vector<std::pair<const sta::Pin*, sta::Slack>> violating_endpoints_;
   vector<std::pair<const sta::Pin*, sta::Slack>> violating_startpoints_;
+  // Load pins that take the full side-loss weight; cleared at each scan.  With
+  // record_crit_path_load_pins_, the scan adds the main worst path of every
+  // violating endpoint.  Target collection adds each path it expands, latch
+  // D-side segments included, so the set also grows with the endpoints
+  // evaluated since the scan.
+  mutable std::unordered_set<const sta::Pin*> crit_path_load_pins_;
+  // True makes the scan walk the worst path of every violating endpoint so
+  // crit_path_load_pins_ covers endpoints beyond the current target chunk.
+  bool record_crit_path_load_pins_{false};
 
   // === Endpoint iteration state ============================================
   // Endpoint pass tracking
