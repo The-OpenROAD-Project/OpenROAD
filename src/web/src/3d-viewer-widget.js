@@ -16,7 +16,7 @@ const kZoomInFactor = 0.9;
 const kZoomOutFactor = 1.1;
 const kMinDistanceFraction = 0.1;
 const kMaxDistanceFraction = 20.0;
-const kInitialDistanceFactor = 3.0;
+const kFitPadding = 1.1;
 const kZScale = 2.0;
 const kNearFarFactor = 2.0;
 const kMinZNear = 10.0;
@@ -128,7 +128,9 @@ export class ThreeDViewerWidget {
     this._themeObserver.observe(document.documentElement,
                                 {attributes : true, attributeFilter : [ 'data-theme' ]});
 
-    this._camera = new THREE.PerspectiveCamera(45, 1, 10, 100000);
+    const aspect = container.width > 0 && container.height > 0
+        ? container.width / container.height : 1;
+    this._camera = new THREE.PerspectiveCamera(45, aspect, 10, 100000);
     this._camera.position.set(0, 0, 1000);
 
     try {
@@ -576,11 +578,34 @@ export class ThreeDViewerWidget {
     }
   }
 
+  _fitCameraDistance() {
+    const b = this._sceneBounds;
+    const tanVertical = Math.tan(this._camera.fov * DEG2RAD / 2) /
+                        this._camera.zoom;
+    const tanHorizontal = tanVertical * this._camera.aspect;
+    const corner = new THREE.Vector3();
+    let distance = 0;
+    // In camera-aligned coordinates a corner is at depth distance - z.
+    // Solve both perspective inequalities for every corner, including the
+    // near-plane clearance, instead of approximating the stack as a sphere.
+    for (const x of [b.minX, b.maxX]) {
+      for (const y of [b.minY, b.maxY]) {
+        for (const z of [b.minZ, b.maxZ]) {
+          corner.set(x, y, z).sub(this._sceneCenter)
+                .applyQuaternion(this._rotation);
+          distance = Math.max(distance, corner.z + Math.max(
+              Math.abs(corner.x) * kFitPadding / tanHorizontal,
+              Math.abs(corner.y) * kFitPadding / tanVertical,
+              kMinZNear * kFitPadding));
+        }
+      }
+    }
+    return distance;
+  }
+
   // Set distance, rotation (pitch -45°, yaw +45°) and pan to defaults.
   // Caller is responsible for calling _updateCamera() afterward.
   _setInitialCameraState() {
-    this._distance = this._boundingRadius * kInitialDistanceFactor;
-
     const pitch = new THREE.Quaternion().setFromAxisAngle(
         new THREE.Vector3(1, 0, 0), -45 * DEG2RAD);
     const yaw = new THREE.Quaternion().setFromAxisAngle(
@@ -589,6 +614,7 @@ export class ThreeDViewerWidget {
 
     this._panX = 0;
     this._panY = 0;
+    this._distance = this._fitCameraDistance();
   }
 
   resetCamera() {
@@ -609,10 +635,18 @@ export class ThreeDViewerWidget {
     if (width === 0 || height === 0)
       return;
 
+    const previousFit = this._sceneBounds ? this._fitCameraDistance() : null;
     this._camera.aspect = width / height;
     this._camera.updateProjectionMatrix();
     this._renderer.setSize(width, height);
-    this.render();
+    if (previousFit !== null) {
+      // Preserve the user's zoom relative to a fitted view, plus their
+      // rotation and pan. A fitted landscape view stays fitted in portrait.
+      this._distance *= this._fitCameraDistance() / previousFit;
+      this._updateCamera();
+    } else {
+      this.render();
+    }
   }
 
   render() {
