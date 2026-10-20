@@ -3,7 +3,8 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders, withBusyCursor }
+    from './ui-utils.js';
 
 export class TimingWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -371,10 +372,11 @@ export class TimingWidget {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
         try {
-            const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
-            ]);
+            const [setupData, holdData] = await withBusyCursor(
+                () => Promise.all([
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
+                ]));
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
             // server-side overlay indices, so it must not be sorted.
