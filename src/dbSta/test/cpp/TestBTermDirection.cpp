@@ -35,6 +35,7 @@ TEST_F(BTermDirectionTest, SignalTypeChanges)
     bterm->setIoType(io_type);
     auto* port = network->findPort(network->cell(network->topInstance()),
                                    bterm->getConstName());
+    ASSERT_NE(port, nullptr);
     const auto* signal_direction = network->direction(port);
     for (const auto sig_type :
          {odb::dbSigType::POWER, odb::dbSigType::GROUND}) {
