@@ -494,7 +494,7 @@ TEST_P(MultiportOutputBufferTest, ReadMuxOutputIsolation)
   const auto config = GetParam();
   generate(config);
   auto block = db_->getChip()->getBlock();
-  std::set<odb::dbNet*> read_nets;
+  std::set<uint32_t> read_nets;
   const int ports = config.rw + config.reads;
   int count = 0;
   for (auto inst : block->getInsts()) {
@@ -511,7 +511,7 @@ TEST_P(MultiportOutputBufferTest, ReadMuxOutputIsolation)
       EXPECT_EQ(buffer->getMaster()->getName(), "BUF_X4");
       auto read_net = block->findNet(("read." + suffix).c_str());
       ASSERT_NE(read_net, nullptr);
-      EXPECT_TRUE(read_nets.insert(read_net).second);
+      EXPECT_TRUE(read_nets.insert(read_net->getId()).second);
       EXPECT_EQ(read_net->getITermCount(), 2);
       EXPECT_EQ(read_net->getBTermCount(), 0);
       EXPECT_EQ(buffer->findITerm("A")->getNet(), read_net);
