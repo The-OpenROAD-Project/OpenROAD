@@ -344,6 +344,7 @@ cc_test(
         "//src/est",
         "//src/gpl:gpl_impl",
         "//src/grt",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/odb/src/defin",
         "//src/sta:opensta_lib",
