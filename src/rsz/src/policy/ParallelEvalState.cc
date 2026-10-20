@@ -390,7 +390,8 @@ bool MissTabu::hasEntry(
   }
   const std::unordered_map<sta::Instance*, Entry>::const_iterator entry
       = entries.find(inst);
-  return entry != entries.end() && entry->second.name == name(inst);
+  return entry != entries.end()
+         && entry->second.name == network_->staToDb(inst)->getConstName();
 }
 
 }  // namespace rsz
