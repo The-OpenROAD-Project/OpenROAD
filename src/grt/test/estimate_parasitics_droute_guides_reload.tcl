@@ -28,4 +28,27 @@ check "the flagless estimate falls back to placement" {
   est::parasitics_source
 } placement
 
+# The automatic pick in find_resize_slacks falls back too, not errors.
+check "find_resize_slacks does not use the detailed routing guides" {
+  catch { rsz::find_resize_slacks }
+} 0
+check "find_resize_slacks keeps the placement source" {
+  est::parasitics_source
+} placement
+
+# A rejected source leaves the parasitics it found untouched.
+set spef_file [make_result_file estimate_parasitics_droute_guides.spef]
+estimate_parasitics -placement -spef_file $spef_file
+set spef_size [file size $spef_file]
+read_spef $spef_file
+check_error "a rejected source does not disturb the SPEF" {
+  estimate_parasitics -global_routing
+} EST-0021
+check "the parasitics still come from the SPEF" {
+  est::parasitics_source
+} spef
+check "a rejected source does not truncate the SPEF file" {
+  expr { [file size $spef_file] == $spef_size }
+} 1
+
 exit_summary

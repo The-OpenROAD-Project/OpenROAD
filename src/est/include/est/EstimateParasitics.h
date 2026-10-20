@@ -155,6 +155,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // placement; kNone once a SPEF has been read. An unplaced design, a
   // congested route and a placement without wire RC are errors.
   ParasiticsSrc designParasiticsSrc();
+  // Whether global routes can estimate parasitics, provenance included.
+  bool canEstimateFromGlobalRoutes();
+  // Reject a source the design cannot estimate from, before any state
+  // changes, so a caught error leaves the parasitics as they were.
+  void checkParasiticsSrc(ParasiticsSrc src);
   // read_spef annotated the parasitics; designParasiticsSrc leaves them.
   void spefRead() { spef_read_ = true; }
   // Where the parasitics came from: spef, placement, global_routing or none.
@@ -271,7 +276,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // Resolve one WireRC category for the current technology; a category left
   // unset for a tech falls back to the defaults (nullptr entry) independently.
   template <typename T>
-  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::* category) const;
+  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
   bool isSkipPin(const sta::Pin* pin) const;
   bool hasIdealClocks(const sta::Mode* mode) const;
   bool hasIdealClocks() const;
