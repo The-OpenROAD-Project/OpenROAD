@@ -39,7 +39,7 @@ class RamCircuit
   {
     for (auto term : block_->getBTerms()) {
       if (term->getIoType() == odb::dbIoType::INPUT) {
-        inputs_[term->getNet()] = false;
+        inputs_[terminalNet(term->getName(), odb::dbIoType::INPUT)] = false;
       }
     }
     for (auto inst : block_->getInsts()) {
@@ -54,11 +54,7 @@ class RamCircuit
 
   void drive(const std::string& name, bool value)
   {
-    auto term = block_->findBTerm(name.c_str());
-    if (!term || term->getIoType() != odb::dbIoType::INPUT) {
-      throw std::runtime_error("Missing input " + name);
-    }
-    inputs_[term->getNet()] = value;
+    inputs_[terminalNet(name, odb::dbIoType::INPUT)] = value;
     cache_.clear();
     settleLatches();
   }
@@ -82,12 +78,12 @@ class RamCircuit
       if (inst->getMaster()->getName() == "DLH_X1") {
         continue;
       }
-      auto clock = inst->findITerm("CK");
-      if (!clock) {
-        clock = inst->findITerm("CLK");
-      }
-      if (read(clock->getNet())) {
-        next[inst] = read(inst->findITerm("D")->getNet());
+      const char* clock_pin
+          = inst->getMaster()->getName() == "DFF_X1" ? "CK" : "CLK";
+      auto clock = pinNet(inst, clock_pin);
+      auto data = pinNet(inst, "D");
+      if (read(clock)) {
+        next[inst] = read(data);
       }
     }
     state_ = std::move(next);
@@ -97,10 +93,43 @@ class RamCircuit
 
   bool output(const std::string& name)
   {
-    return read(block_->findBTerm(name.c_str())->getNet());
+    return read(terminalNet(name, odb::dbIoType::OUTPUT));
   }
 
  private:
+  odb::dbNet* terminalNet(const std::string& name, odb::dbIoType direction)
+  {
+    const std::string role
+        = direction == odb::dbIoType::INPUT ? "input" : "output";
+    auto term = block_->findBTerm(name.c_str());
+    if (!term) {
+      throw std::runtime_error("Missing " + role + " terminal " + name);
+    }
+    if (term->getIoType() != direction) {
+      throw std::runtime_error("Wrong direction for " + role + " terminal "
+                               + name);
+    }
+    auto net = term->getNet();
+    if (!net) {
+      throw std::runtime_error("Unconnected " + role + " terminal " + name);
+    }
+    return net;
+  }
+
+  odb::dbNet* pinNet(odb::dbInst* inst, const std::string& name)
+  {
+    const auto label = inst->getName() + "." + name;
+    auto pin = inst->findITerm(name.c_str());
+    if (!pin) {
+      throw std::runtime_error("Missing pin " + label);
+    }
+    auto net = pin->getNet();
+    if (!net) {
+      throw std::runtime_error("Unconnected pin " + label);
+    }
+    return net;
+  }
+
   void settleLatches()
   {
     if (!has_latches_) {
@@ -115,8 +144,10 @@ class RamCircuit
         if (inst->getMaster()->getName() != "DLH_X1") {
           continue;
         }
-        if (read(inst->findITerm("G")->getNet())) {
-          const bool data = read(inst->findITerm("D")->getNet());
+        auto gate = pinNet(inst, "G");
+        auto input = pinNet(inst, "D");
+        if (read(gate)) {
+          const bool data = read(input);
           next[inst] = data;
           changed |= data != value;
         }
@@ -132,22 +163,21 @@ class RamCircuit
 
   bool clockGate(odb::dbInst* inst)
   {
-    auto clock = inst->findITerm("CK");
-    if (clock) {
-      return read(clock->getNet()) && read(inst->findITerm("E")->getNet());
-    }
-    return read(inst->findITerm("CLK")->getNet())
-           && read(inst->findITerm("GATE")->getNet());
+    const bool nangate = inst->findITerm("CK") != nullptr;
+    auto clock = pinNet(inst, nangate ? "CK" : "CLK");
+    auto enable = pinNet(inst, nangate ? "E" : "GATE");
+    return read(clock) && read(enable);
   }
 
   bool eval(const sta::FuncExpr* expr, odb::dbInst* inst)
   {
     if (!expr) {
-      throw std::runtime_error("Missing Liberty function");
+      throw std::runtime_error("Missing Liberty function for "
+                               + inst->getName());
     }
     switch (expr->op()) {
       case sta::FuncExpr::Op::port:
-        return read(inst->findITerm(expr->port()->name().c_str())->getNet());
+        return read(pinNet(inst, expr->port()->name()));
       case sta::FuncExpr::Op::not_:
         return !eval(expr->left(), inst);
       case sta::FuncExpr::Op::and_:
@@ -180,9 +210,17 @@ class RamCircuit
         continue;
       }
       auto inst = term->getInst();
-      auto liberty
-          = network_->libertyCell(network_->dbToSta(inst->getMaster()));
+      auto sta_cell = network_->dbToSta(inst->getMaster());
+      auto liberty = sta_cell ? network_->libertyCell(sta_cell) : nullptr;
+      if (!liberty) {
+        throw std::runtime_error("Missing Liberty cell for " + inst->getName()
+                                 + " (" + inst->getMaster()->getName() + ")");
+      }
       auto port = liberty->findLibertyPort(term->getMTerm()->getConstName());
+      if (!port) {
+        throw std::runtime_error("Missing Liberty port " + inst->getName() + "."
+                                 + term->getMTerm()->getName());
+      }
       // OpenSTA has already inverted Liberty's three_state disable function.
       if (port->tristateEnable() && !eval(port->tristateEnable(), inst)) {
         continue;
@@ -213,6 +251,17 @@ class RamCircuit
   std::unordered_map<odb::dbInst*, bool> state_;
   bool has_latches_ = false;
 };
+
+template <typename Action>
+void expectModelError(const Action& action, const std::string& message)
+{
+  try {
+    action();
+    ADD_FAILURE() << "Expected model error: " << message;
+  } catch (const std::runtime_error& error) {
+    EXPECT_EQ(std::string(error.what()), message);
+  }
+}
 
 struct Configuration
 {
@@ -312,6 +361,22 @@ class OutputBufferTest : public tst::Fixture,
     for (auto pin : original->getMTerms()) {
       odb::dbMTerm::create(
           master, pin->getConstName(), pin->getIoType(), pin->getSigType());
+    }
+    master->setFrozen();
+    return master;
+  }
+
+  odb::dbMaster* makeModelFlop(const std::vector<PhysicalPin>& pins)
+  {
+    auto original = db_->findMaster("DFF_X1");
+    auto lib = odb::dbLib::create(db_.get(), "model", db_->getTech());
+    auto master = odb::dbMaster::create(lib, "DFF_X1");
+    master->setWidth(original->getWidth());
+    master->setHeight(original->getHeight());
+    master->setSite(original->getSite());
+    master->staSetCell(original->staCell());
+    for (const auto& pin : pins) {
+      odb::dbMTerm::create(master, pin.name, pin.direction, pin.type);
     }
     master->setFrozen();
     return master;
@@ -556,6 +621,109 @@ INSTANTIATE_TEST_SUITE_P(
     MultiportOutputBufferTest,
     testing::Values(Configuration{16, 4, 4, 2, 1, 1, "BUF_X4"},
                     Configuration{16, 4, 4, 4, 0, 2, "BUF_X4"}));
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingOutputTerminal)
+{
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_output");
+  tst::Fixture::makeBTerm(block, "D");
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.output("Q"); }, "Missing output terminal Q");
+  expectModelError([&] { circuit.output("D"); },
+                   "Wrong direction for output terminal D");
+  expectModelError([&] { circuit.drive("absent", false); },
+                   "Missing input terminal absent");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsDisconnectedTerminals)
+{
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "disconnected_terminals");
+  auto input = tst::Fixture::makeBTerm(block, "D");
+  auto output
+      = tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  output->disconnect();
+  input->disconnect();
+  expectModelError([&] { circuit.output("Q"); },
+                   "Unconnected output terminal Q");
+  expectModelError([&] { circuit.drive("D", false); },
+                   "Unconnected input terminal D");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingClockPin)
+{
+  auto master = makeModelFlop(
+      {{"D", odb::dbIoType::INPUT}, {"Q", odb::dbIoType::OUTPUT}});
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_clock");
+  tst::Fixture::makeBTerm(block, "clk");
+  tst::Fixture::makeBTerm(block, "D");
+  tst::Fixture::makeInst(block, master, "ff", {.iterms = {{"D", "D"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.clock(); }, "Missing pin ff.CK");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingDataPin)
+{
+  auto master = makeModelFlop(
+      {{"CK", odb::dbIoType::INPUT}, {"Q", odb::dbIoType::OUTPUT}});
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_data");
+  tst::Fixture::makeBTerm(block, "clk");
+  tst::Fixture::makeInst(block, master, "ff", {.iterms = {{"clk", "CK"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.clock(); }, "Missing pin ff.D");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsDisconnectedPin)
+{
+  auto master = makePhysicalBuffer();
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "disconnected_pin");
+  tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  tst::Fixture::makeInst(block, master, "buffer", {.iterms = {{"Q", "Z"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.output("Q"); }, "Unconnected pin buffer.A");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingFunctionPin)
+{
+  auto master = makePhysicalBuffer({{"Z", odb::dbIoType::OUTPUT}});
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_function_pin");
+  tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  tst::Fixture::makeInst(block, master, "buffer", {.iterms = {{"Q", "Z"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.output("Q"); }, "Missing pin buffer.A");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingLibertyCell)
+{
+  auto master = makePhysicalBuffer();
+  master->staSetCell(nullptr);
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_liberty_cell");
+  tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  tst::Fixture::makeInst(block, master, "buffer", {.iterms = {{"Q", "Z"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError(
+      [&] { circuit.output("Q"); },
+      "Missing Liberty cell for buffer (" + master->getName() + ")");
+}
+
+TEST_F(OutputBufferTest, SimulatorReportsMissingLibertyPort)
+{
+  auto master = makePhysicalBuffer({{"UNKNOWN", odb::dbIoType::OUTPUT}});
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "missing_liberty_port");
+  tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  tst::Fixture::makeInst(
+      block, master, "buffer", {.iterms = {{"Q", "UNKNOWN"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  expectModelError([&] { circuit.output("Q"); },
+                   "Missing Liberty port buffer.UNKNOWN");
+}
 
 TEST_F(OutputBufferTest, SimulatorResolvesActiveLowTristateBus)
 {

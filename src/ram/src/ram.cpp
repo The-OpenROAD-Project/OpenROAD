@@ -1065,9 +1065,9 @@ void RamGen::makeOutputBuffers(
              "output_buffer",
              fmt::format("p{}_b{}", port, bit),
              output_buffer_cell_,
-             {{output_buffer_ports_[{PortRoleType::DataIn, 0}],
+             {{output_buffer_ports_.at({PortRoleType::DataIn, 0}),
                read_nets[port][bit]},
-              {output_buffer_ports_[{PortRoleType::DataOut, 0}],
+              {output_buffer_ports_.at({PortRoleType::DataOut, 0}),
                q_outputs_[port][bit]->getNet()}});
   }
 }
