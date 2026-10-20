@@ -1488,6 +1488,9 @@ double GridGraph::treeOverflow(const std::shared_ptr<GRTreeNode>& tree,
                                const bool adopted,
                                const std::vector<double>& net_costs) const
 {
+  if (!tree) {
+    return 0.0;
+  }
   std::vector<size_t> edges;
   auto add = [&](const int layer, const PointT edge) {
     if (layer >= constants_.min_routing_layer) {
