@@ -11,11 +11,11 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.138 |       -0.4 |      5 | resp_msg[15]
-      61* |       0 |      18 |        7 |      0 |     3 |    +9.7% |   -0.076 |       -0.2 |      5 | resp_msg[15]
-    final |       0 |      18 |        7 |      0 |     3 |    +9.7% |   -0.076 |       -0.2 |      4 | resp_msg[15]
+      88* |       0 |      13 |        7 |      0 |     3 |    +7.7% |   -0.076 |       -0.2 |      5 | resp_msg[15]
+    final |       0 |      13 |        7 |      0 |     3 |    +7.7% |   -0.076 |       -0.2 |      4 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 18 instances: 18 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 13 instances: 13 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: inst0 (rising edge-triggered flip-flop clocked by core_clock)
@@ -36,13 +36,13 @@ Path Type: max
    0.0299    0.1870 ^ inst5/ZN (AND2_X4)
    0.0137    0.2007 v inst6/ZN (NAND2_X4)
    0.0175    0.2182 ^ inst7/ZN (NAND2_X4)
-   0.0140    0.2322 v inst8/ZN (NAND2_X4)
-   0.0135    0.2458 ^ inst9/ZN (NAND2_X4)
-   0.0118    0.2575 v inst10/ZN (NAND2_X4)
-   0.0111    0.2687 ^ inst11/ZN (NAND2_X4)
-   0.0170    0.2857 ^ inst12/Z (BUF_X2)
-   0.0000    0.2857 ^ resp_msg[15] (out)
-             0.2857   data arrival time
+   0.0115    0.2297 v inst8/ZN (NAND2_X4)
+   0.0133    0.2430 ^ inst9/ZN (NAND2_X2)
+   0.0122    0.2551 v inst10/ZN (NAND2_X2)
+   0.0123    0.2674 ^ inst11/ZN (NAND2_X2)
+   0.0184    0.2858 ^ inst12/Z (BUF_X1)
+   0.0000    0.2858 ^ resp_msg[15] (out)
+             0.2858   data arrival time
 
    0.2990    0.2990   clock core_clock (rise edge)
    0.0000    0.2990   clock network delay (ideal)
@@ -51,8 +51,8 @@ Path Type: max
              0.2093   data required time
 -------------------------------------------------------------
              0.2093   data required time
-            -0.2857   data arrival time
+            -0.2858   data arrival time
 -------------------------------------------------------------
-            -0.0764   slack (VIOLATED)
+            -0.0765   slack (VIOLATED)
 
 
