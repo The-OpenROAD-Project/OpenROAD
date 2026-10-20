@@ -2162,6 +2162,33 @@ body {
     font-size: var(--fs-12);
 }
 
+/* Timing-path key for the schematic. Hidden unless a path
+   is drawn, so it costs no toolbar space the rest of the time. */
+.schematic-timing-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+/* Preserve the hidden attribute. */
+.schematic-timing-legend[hidden] { display: none; }
+
+.schematic-timing-legend-item,
+.timing-unconstrained {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.schematic-timing-legend-item { color: var(--fg-muted); font-size: 11px; }
+.timing-unconstrained {
+    color: var(--fg-primary);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+.timing-unconstrained input { cursor: pointer; margin: 0; }
+
 .timing-cone-panel {
     display: flex;
     align-items: center;
@@ -2601,9 +2628,45 @@ body {
 
 /* ─── Schematic Widget ────────────────────────────────────────────────────── */
 
-/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
-html[data-theme="dark"] .schematic-widget svg {
-    filter: invert(1) hue-rotate(180deg);
+.schematic-svg-container.schematic-empty > svg { visibility: hidden; }
+.schematic-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 24px;
+    color: var(--fg-muted);
+    font-size: 13px;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* The skin paints the whole schematic through a few inherited declarations
+   (svg{stroke}, text{fill}, .splitjoinBody{fill}) rather than per-element
+   attributes, so dark mode re-points those instead of inverting anything.
+   A filter would have to run per shape to spare the timing overlay, and its
+   paint cost would scale with element count on every pan; this costs nothing
+   at paint time and leaves overlay colors byte-exact, since those are set as
+   inline styles and so outrank these rules. */
+html[data-theme="dark"] .schematic-svg-container svg {
+    stroke: var(--fg-primary);
+}
+
+html[data-theme="dark"] .schematic-svg-container svg text,
+html[data-theme="dark"] .schematic-svg-container svg .splitjoinBody {
+    fill: var(--fg-primary);
+}
+
+/* Junction dots carry netlistsvg's inline fill until renderNetlist moves it
+   onto this class; the skin's hollow inversion bubbles keep svg{fill:none}. */
+.schematic-svg-container svg .schematic-net-dot {
+    fill: #000;
+}
+
+html[data-theme="dark"] .schematic-svg-container svg .schematic-net-dot {
+    fill: var(--fg-primary);
 }
 
 /* ─── DRC Widget ─────────────────────────────────────────────────────────── */

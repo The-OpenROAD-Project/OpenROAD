@@ -427,6 +427,11 @@ On `"found": false`, `edge` and `is_point` are absent.
 Build a cone of influence around an instance (fanin/fanout) and return
 it as a Yosys-format netlist for the netlistsvg renderer.
 
+For 3DBlox designs, instance names use the chip-instance prefix, for example
+`die0/buf1`. Returned cell, port, and net names use the same prefix to keep
+objects on different dies distinct. `schematic_path` and `schematic_inspect`
+accept these qualified instance names as well.
+
 | Field           | Type     | Required | Description                                |
 | --------------- | -------- | :------: | ------------------------------------------ |
 | `inst_name`     | `string` |    ✓     | Anchor instance name.                      |
@@ -453,10 +458,39 @@ limited to one module named `top`:
 Cones are capped at 150 instances; nets with fanout > 30 are skipped to
 keep the schematic readable.
 
+#### Gate symbol hints
+
+Cells recognised from their Liberty function carry three extra fields
+beyond the Yosys schema. They are rendering *hints* only — `type` stays
+the real master name, and a client that ignores them still gets a
+correct netlist, just drawn as generic boxes.
+
+| Field         | Type     | Description                                          |
+| ------------- | -------- | ---------------------------------------------------- |
+| `gate_kind`   | `string` | `and`/`nand`/`or`/`nor`/`xor`/`xnor`/`not`/`buf` for simple gates, `aoi`/`oai` for compound and/or-invert gates, `dff`/`dffr`/`dffs` for D-flip flops. Absent when the cell is not recognized. |
+| `gate_ports`  | `object` | Register symbol port id → real Liberty pin name (e.g. `{"CK": "CK", "Q": "Q"}`), letting the viewer route the skin symbol while still labeling the design's own pin names. |
+| `gate_terms`  | `array`  | `aoi`/`oai` only: the input pin names of each first-level term (AOI21 → `[["A"], ["B1", "B2"]]`). A one-pin term feeds the second-level gate directly. The viewer derives the symbol port ids from this grouping, so no `gate_ports` is sent. |
+
 ### `schematic_full`
 
 Same shape as `schematic_cone` but emits the entire block (no caps). No
 request fields.
+
+### `schematic_path`
+
+Build a schematic from an explicit list of instances — used to draw the
+cells of one timing path, as listed in the timing panel's detail table.
+
+| Field        | Type       | Required | Description                              |
+| ------------ | ---------- | :------: | ---------------------------------------- |
+| `inst_names` | `string[]` |    ✓     | Instance names to include. |
+
+Names that match no instance are skipped rather than erroring, so callers
+may pass pin-derived names that include block ports. Capped at 400
+instances. Only nets touching a listed instance are wired; every other
+pin renders as a short dangling stub.
+
+**Response (JSON):** same Yosys netlist shape as `schematic_cone`.
 
 ### `schematic_inspect`
 
@@ -541,6 +575,11 @@ Return the worst N timing paths.
 | `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
 | `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
 | `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
+| `unconstrained` | `bool` |          | `false`                          | Include paths with no timing constraint.             |
+
+A design with no SDC constraints has no constrained path ends, so
+`unconstrained: false` returns an empty `paths` array. This mirrors the
+Qt GUI's "Unconstrained" checkbox in `TimingControlsDialog`.
 
 **Response (JSON):**
 ```json
@@ -552,13 +591,18 @@ Return the worst N timing paths.
       "slack":    -0.5,    "skew":    0.0,
       "path_delay": 0.9,   "logic_depth": 4, "fanout": 12,
       "start_pin":  "ff1/CK", "end_pin": "ff2/D",
-      "data_nodes":    [{"pin": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
+      "data_nodes":    [{"pin": "...", "inst": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
       "capture_nodes": [{...}]
     },
     ...
   ]
 }
 ```
+
+`inst` is the instance owning `pin`, empty for block ports. It lets
+clients join a path onto instance-keyed views without splitting `pin` on
+the hierarchy delimiter, which is ambiguous when instance names contain
+it.
 
 ### `timing_highlight`
 
@@ -569,7 +613,18 @@ single stage emphasized.
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
 | `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
 | `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
+| `start_pin`  | `string` | `path_index >= 0`        | `start_pin` of the selected path; identifies it with `end_pin`. |
+| `end_pin`    | `string` | `path_index >= 0`        | `end_pin` of the selected path.                                |
+| `unconstrained` | `bool` | optional, `>= 0` only   | Include unconstrained paths in the re-run report.              |
+| `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
+| `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
+| `slack_max`  | `double` | optional, `>= 0` only    | Report upper slack bound. Defaults to `+FLT_MAX`.             |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
+
+The server re-runs the report with `unconstrained`, `max_paths`,
+`slack_min`, and `slack_max`, then picks the path whose `start_pin` and
+`end_pin` match. If the options differ from the `timing_report` the row came
+from, the worst case is no highlight rather than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

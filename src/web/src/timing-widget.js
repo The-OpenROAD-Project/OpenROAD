@@ -20,6 +20,13 @@ export class TimingWidget {
         // Default to sorting by slack, matching the Qt GUI.
         this._sortCol = 'slack';
         this._sortAscending = true;
+        // Options that produced the path indices currently shown in the table.
+        // These deliberately change only when a complete report is committed.
+        this._reportOptions = {
+            setup: { max_paths: 100, unconstrained: false },
+            hold: { max_paths: 100, unconstrained: false },
+        };
+        this._updateGeneration = 0;
 
         this._build();
     }
@@ -42,7 +49,24 @@ export class TimingWidget {
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
 
+        // Mirrors the Qt timing dialog for designs without SDC constraints.
+        this._unconstrainedBox = document.createElement('input');
+        this._unconstrainedBox.type = 'checkbox';
+        const unconstrainedLabel = document.createElement('label');
+        unconstrainedLabel.className = 'timing-unconstrained';
+        unconstrainedLabel.title =
+            'Include paths that have no timing constraint.\n' +
+            'Designs without an SDC report no paths otherwise.';
+        unconstrainedLabel.appendChild(this._unconstrainedBox);
+        unconstrainedLabel.appendChild(
+            document.createTextNode('Unconstrained'));
+        if (isStaticMode(this._app)) {
+            // Static reports cannot re-query timing data.
+            unconstrainedLabel.style.display = 'none';
+        }
+
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(unconstrainedLabel);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
@@ -131,16 +155,19 @@ export class TimingWidget {
             this._dataTab.classList.add('active');
             this._captureTab.classList.remove('active');
             this._renderDetailTable();
+            this._refreshSchematicForDetailTab();
         });
         this._captureTab.addEventListener('click', () => {
             this._detailTab = 'capture';
             this._captureTab.classList.add('active');
             this._dataTab.classList.remove('active');
             this._renderDetailTable();
+            this._refreshSchematicForDetailTab();
         });
 
         // Fetch paths
         this._updateBtn.addEventListener('click', () => this.update());
+        this._unconstrainedBox.addEventListener('change', () => this.update());
 
         // Keyboard navigation — path table
         this._pathTableContainer.setAttribute('tabindex', '0');
@@ -347,7 +374,15 @@ export class TimingWidget {
         this._coneStatus.textContent = '';
     }
 
-    showPaths(tab, paths) {
+    showPaths(tab, paths, reportOptions = {}) {
+        // Histogram drill-down supplies constrained paths and replaces only
+        // one side. Keep the other side's report options with its path list.
+        ++this._updateGeneration;
+        this._updateBtn.disabled = false;
+        this._updateBtn.textContent = 'Update';
+        this._reportOptions[tab] = {
+            max_paths: 100, unconstrained: false, ...reportOptions,
+        };
         this._currentTab = tab;
         // Copy so sorting never reorders the caller's array.
         if (tab === 'setup') {
@@ -368,28 +403,45 @@ export class TimingWidget {
     }
 
     async update() {
+        const generation = ++this._updateGeneration;
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
+        const unconstrained = this._unconstrainedBox.checked;
+        const reportOptions = { max_paths: 100, unconstrained };
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, ...reportOptions }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, ...reportOptions }),
             ]);
+            if (generation !== this._updateGeneration) {
+                return false;
+            }
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
             // server-side overlay indices, so it must not be sorted.
             this._setupPaths = [...(setupData.paths || [])];
             this._holdPaths = [...(holdData.paths || [])];
+            this._reportOptions = {
+                setup: { ...reportOptions },
+                hold: { ...reportOptions },
+            };
             this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
             this._renderDetailTable();
             this._clearTimingHighlight();
+            return true;
         } catch (e) {
-            console.error('Timing fetch failed:', e);
+            if (generation === this._updateGeneration) {
+                console.error('Timing fetch failed:', e);
+            }
+            return false;
+        } finally {
+            if (generation === this._updateGeneration) {
+                this._updateBtn.disabled = false;
+                this._updateBtn.textContent = 'Update';
+            }
         }
-        this._updateBtn.disabled = false;
-        this._updateBtn.textContent = 'Update';
     }
 
     // Sort both path lists by the current sort column/order. Paths are
@@ -449,8 +501,29 @@ export class TimingWidget {
     }
 
     _clearTimingHighlight() {
+        this._showPathOnSchematic(null);
         this._app.websocketManager.request({ type: 'timing_highlight', path_index: -1 })
             .then(() => this._refreshOverlay());
+    }
+
+    // Keep the schematic aligned with the detail table's visible path leg.
+    _showPathOnSchematic(path) {
+        const schematic = this._app.schematicWidget;
+        if (schematic) {
+            const nodes = path
+                ? (this._detailTab === 'data' ? path.data_nodes : path.capture_nodes)
+                : [];
+            schematic.showTimingPath(path || null, nodes);
+        }
+    }
+
+    // Follow detail-tab switches between data and capture paths.
+    _refreshSchematicForDetailTab() {
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const path = paths[this._selectedPathIndex];
+        if (path) {
+            this._showPathOnSchematic(path);
+        }
     }
 
     _selectPathRow(idx) {
@@ -466,12 +539,20 @@ export class TimingWidget {
         // column click in static mode) so the overlay lookup matches.
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const highlightIdx = paths[idx]?._originalIndex ?? idx;
+        this._showPathOnSchematic(paths[idx]);
         this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
+            ...this._reportOptions[this._currentTab],
+            ...this._highlightKey(paths[idx]),
         }).then(() => this._refreshOverlay())
           .catch(err => console.error('timing_highlight error:', err));
+    }
+
+    // The server matches paths by pins; static mode still uses path_index.
+    _highlightKey(path) {
+        return { start_pin: path?.start_pin ?? '', end_pin: path?.end_pin ?? '' };
     }
 
     _renderPathTable() {
@@ -581,6 +662,8 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
+            ...this._reportOptions[this._currentTab],
+            ...this._highlightKey(path),
             pin_name: nodes[idx].pin,
         }).then(() => this._refreshOverlay());
     }

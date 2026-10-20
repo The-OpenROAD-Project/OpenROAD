@@ -4,6 +4,7 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { TimingWidget } from '../../src/timing-widget.js';
 import {
     ChartsWidget,
     computeHistogramLayout, hitTestColumn, buildChartCsv,
@@ -75,6 +76,89 @@ function createWidget(responses) {
     });
     return { app, widget };
 }
+
+describe('ChartsWidget timing drilldown', () => {
+    it('uses constrained highlights after an unconstrained Update without changing the other side',
+        async () => {
+            if (!window.HTMLElement.prototype.scrollIntoView) {
+                window.HTMLElement.prototype.scrollIntoView = function () {};
+            }
+            const path = {
+                start_clk: 'clk', end_clk: 'clk',
+                slack: 0, arrival: 0, required: 0, skew: 0,
+                path_delay: 0, logic_depth: 0, fanout: 1,
+                start_pin: 'start', end_pin: 'u1/A',
+                data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+                capture_nodes: [],
+            };
+            const { app, widget } = createWidget({
+                timing_report: { paths: [path] },
+            });
+            const timing = new TimingWidget(app, () => {});
+            app.timingWidget = timing;
+            timing._unconstrainedBox.checked = true;
+            await timing.update();
+            widget._bars = [{
+                x: 0, y: 0, width: 160, height: 120,
+                count: 1, lower: 0, upper: 1,
+            }];
+            widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+
+            await widget._handleClick({ clientX: 10, clientY: 10 });
+            const report = app.requests.filter(r => r.type === 'timing_report').at(-1);
+            assert.deepEqual(report, {
+                type: 'timing_report', is_setup: true,
+                max_paths: 50, slack_min: 0, slack_max: 1, unconstrained: false,
+            });
+            app.requests.length = 0;
+            timing._selectPathRow(0);
+            timing._selectDetailRow(0);
+
+            const highlights = app.requests.filter(r => r.type === 'timing_highlight');
+            assert.equal(highlights.length, 2);
+            const expected = {
+                type: 'timing_highlight', path_index: 0, is_setup: true,
+                max_paths: 50, slack_min: 0, slack_max: 1, unconstrained: false,
+                start_pin: 'start', end_pin: 'u1/A',
+            };
+            assert.deepEqual(highlights[0], expected);
+            assert.deepEqual(highlights[1], { ...expected, pin_name: 'u1/A' });
+            assert.equal(timing._unconstrainedBox.checked, true);
+
+            // The hold list still comes from the unconstrained Update.
+            timing._holdTab.dispatchEvent(new window.Event('click'));
+            app.requests.length = 0;
+            timing._selectPathRow(0);
+            timing._selectDetailRow(0);
+            for (const request of app.requests.filter(r => r.type === 'timing_highlight')) {
+                assert.equal(request.unconstrained, true);
+                assert.equal(request.is_setup, false);
+                assert.equal(request.max_paths, 100);
+                assert.equal(request.slack_min, undefined);
+                assert.equal(request.slack_max, undefined);
+            }
+        });
+
+    it('keeps the requested report side when the chart tab changes during drilldown',
+        async () => {
+            let resolve;
+            const response = new Promise(resolvePromise => { resolve = resolvePromise; });
+            const { app, widget } = createWidget({ timing_report: response });
+            const shown = [];
+            app.timingWidget.showPaths = (...args) => shown.push(args);
+            widget._hitTestBar = () => ({ count: 1, lower: -1, upper: 0 });
+            const click = widget._handleClick({ clientX: 10, clientY: 10 });
+            widget._currentTab = 'hold';
+            const paths = [{ slack: -0.5 }];
+            resolve({ paths });
+            await click;
+
+            assert.deepEqual(shown, [[
+                'setup', paths,
+                { max_paths: 50, slack_min: -1, slack_max: 0, unconstrained: false },
+            ]]);
+        });
+});
 
 describe('computeHistogramLayout', () => {
     it('returns empty bars for null data', () => {
