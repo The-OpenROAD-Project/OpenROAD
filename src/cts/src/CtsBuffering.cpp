@@ -412,10 +412,18 @@ class ClockBuffering
     if (footprint_ == nullptr || master->getWidth() > footprint_->getWidth()) {
       footprint_ = master;
     }
-    auto* input_port
-        = network_->dbToSta(master->findMTerm(input->name().c_str()));
-    auto* output_port
-        = network_->dbToSta(master->findMTerm(output->name().c_str()));
+    auto* input_mterm = master->findMTerm(input->name().c_str());
+    auto* output_mterm = master->findMTerm(output->name().c_str());
+    if (input_mterm == nullptr || output_mterm == nullptr) {
+      throw std::runtime_error(
+          "Missing LEF/Liberty pin mapping for bottom-up CTS buffer " + name);
+    }
+    auto* input_port = network_->dbToSta(input_mterm);
+    auto* output_port = network_->dbToSta(output_mterm);
+    if (input_port == nullptr || output_port == nullptr) {
+      throw std::runtime_error(
+          "Missing LEF/Liberty pin mapping for bottom-up CTS buffer " + name);
+    }
     tightenSlew(input, input_port, sta_, slew_limit_);
     tightenSlew(output, output_port, sta_, slew_limit_);
     double max_cap = std::numeric_limits<double>::infinity();
