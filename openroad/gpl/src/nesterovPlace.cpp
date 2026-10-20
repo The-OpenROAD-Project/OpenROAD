@@ -1605,6 +1605,20 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
   debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
+void NesterovPlace::refreshOverflow()
+{
+  total_sum_overflow_ = 0;
+  total_sum_overflow_unscaled_ = 0;
+  for (auto& nb : nbVec_) {
+    nb->refreshOverflow();
+    total_sum_overflow_ += nb->getSumOverflow();
+    total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
+  }
+  average_overflow_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
+  updateWireLengthCoef(average_overflow_);
+}
+
 void NesterovPlace::updateNextIter(int iter)
 {
   total_sum_overflow_ = 0;

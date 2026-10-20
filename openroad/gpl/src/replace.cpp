@@ -257,13 +257,17 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     pb->unlockAll();
   }
 
-  // Phase 1 may have run out of its iteration budget short of the real
-  // target even without diverging, so check the actual overflow reached
-  // rather than trusting the target alone.
-  const bool phase1_missed_target
-      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
+  // Phase 1 measured only what the unplaced instances added to the
+  // overflow. Re-measure it over every instance now that none are locked,
+  // and run phase 2 only if that is still above the target.
+  np_->refreshOverflow();
+  log_->info(GPL,
+             196,
+             "Overflow after unlocking all instances: {:.4f}",
+             np_->getAverageOverflow());
+  const bool missed_target = np_->getAverageOverflow() > options.overflow;
 
-  if (phase1_diverged || phase1_missed_target) {
+  if (phase1_diverged || missed_target) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();

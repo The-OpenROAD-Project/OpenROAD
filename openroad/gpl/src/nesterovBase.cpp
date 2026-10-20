@@ -1000,6 +1000,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
       if (!macro && !cell->isStdInstance()) {
         continue;
       }
+      const bool locked = track_locked_ && cell->isLocked();
       for (int y = pairY.first; y < pairY.second; y++) {
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = bins_[y * binCntX_ + x];
@@ -1009,6 +1010,9 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
             scaledArea *= bin.getTargetDensity();
           }
           bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
+          if (locked) {
+            bin.atomicAddLockedAreaUnscaled(static_cast<int64_t>(scaledArea));
+          }
         }
       }
     } else if (cell->isFiller()) {
@@ -1031,6 +1035,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   for (Bin& bin : bins_) {
     bin.setInstPlacedAreaUnscaled(0);
     bin.setFillerArea(0);
+    bin.setLockedAreaUnscaled(0);
   }
 
   // A single scatter implementation for every CPU case, threaded or not, so
@@ -1043,6 +1048,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
+    std::vector<float> locked_area(nbins, 0.0f);
 #pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
     for (const GCellHandle& cell : cells) {
       const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
@@ -1052,6 +1058,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
         if (!macro && !cell->isStdInstance()) {
           continue;
         }
+        const bool locked = track_locked_ && cell->isLocked();
         for (int y = pairY.first; y < pairY.second; y++) {
           for (int x = pairX.first; x < pairX.second; x++) {
             const int bi = y * binCntX_ + x;
@@ -1063,6 +1070,10 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
             }
 #pragma omp atomic
             inst_area[bi] += v;
+            if (locked) {
+#pragma omp atomic
+              locked_area[bi] += v;
+            }
           }
         }
       } else if (cell->isFiller()) {
@@ -1081,6 +1092,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     for (int b = 0; b < nbins; b++) {
       bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
       bins_[b].setFillerArea(filler_area[b]);
+      bins_[b].setLockedAreaUnscaled(locked_area[b]);
     }
   } else {
     scatterDensityAreaInPlace(cells, 1);
@@ -1108,17 +1120,30 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                     + static_cast<float>(bin.getNonPlaceArea()))
                    / scaledBinArea);
 
-    const float overflowArea = std::max(
-        0.0f,
-        static_cast<float>(bin.instPlacedArea())
-            + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
+    // Locked instances cannot move, so the overflow they add on top of the
+    // bin's non-placeable area is a fixed baseline; count only what unlocked
+    // instances add on top of that. Zero without locked area, so such bins
+    // keep the plain overflow.
+    const float lockedArea = static_cast<float>(bin.getLockedAreaUnscaled());
+    const auto lockedBaseline = [&](float nonPlaceArea) {
+      return std::max(0.0f, lockedArea + nonPlaceArea - scaledBinArea)
+             - std::max(0.0f, nonPlaceArea - scaledBinArea);
+    };
+
+    const float overflowArea
+        = std::max(0.0f,
+                   static_cast<float>(bin.instPlacedArea())
+                       + static_cast<float>(bin.getNonPlaceArea())
+                       - scaledBinArea)
+          - lockedBaseline(static_cast<float>(bin.getNonPlaceArea()));
     sumOverflowArea_ += overflowArea;  // NOLINT
 
     const float overflowAreaUnscaled
         = std::max(0.0f,
                    static_cast<float>(bin.getInstPlacedAreaUnscaled())
                        + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                       - scaledBinArea);
+                       - scaledBinArea)
+          - lockedBaseline(static_cast<float>(bin.getNonPlaceAreaUnscaled()));
     sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
     if (overflowAreaUnscaled > 0) {
       debugPrint(log_,
@@ -2810,6 +2835,71 @@ int64_t NesterovBase::getInflationArea() const
   return area;
 }
 
+void NesterovBase::refreshOverflow()
+{
+  // The scatter below reads the host density centers.
+  pullCoordsFromDevice();
+#ifdef ENABLE_GPU
+  const int scatter_threads
+      = nb_device_ctx_ != nullptr ? static_cast<int>(nbc_->getNumThreads()) : 1;
+#else
+  const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
+#endif
+  updateLockedInstsArea();
+  bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
+  // Divided by the unlocked area alone, unlike updateNextIter, whose
+  // denominator also has a floor that grows with the iteration count; right
+  // after (un)locking that floor does not apply yet, so the two can differ.
+  const float denominator = static_cast<float>(getUnlockedInstsArea());
+  sum_overflow_ = overflowRatio(getOverflowArea(), denominator);
+  sum_overflow_unscaled_
+      = overflowRatio(getOverflowAreaUnscaled(), denominator);
+
+#ifdef ENABLE_GPU
+  // The device coordinate update skips the instances flagged locked when
+  // the context was built; refresh the flags so unlocked instances can move.
+  if (nb_device_ctx_) {
+    nb_device_ctx_->refreshLocked(nb_gcells_);
+  }
+#endif
+}
+
+int64_t NesterovBase::getUnlockedInstsArea() const
+{
+  return getNesterovInstsArea() - lockedInstsArea_;
+}
+
+void NesterovBase::updateLockedInstsArea()
+{
+  // Sized per instance as getNesterovInstsArea() is, but macros are rounded
+  // one by one here while getNesterovInstsArea() rounds pb_'s macro total,
+  // so the difference can be off by a few units; it never goes negative
+  // since locked instances are a subset.
+  int64_t locked_area = 0;
+  for (const GCellHandle& gcell : nb_gcells_) {
+    if (!gcell->isLocked()) {
+      continue;
+    }
+    const int64_t area
+        = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
+    if (gcell->isMacroInstance()) {
+      locked_area += static_cast<int64_t>(std::round(area * targetDensity_));
+    } else if (gcell->isStdInstance()) {
+      locked_area += area;
+    }
+  }
+  lockedInstsArea_ = locked_area;
+  bg_.setTrackLocked(lockedInstsArea_ > 0);
+}
+
+float NesterovBase::overflowRatio(int64_t overflow_area, float denominator)
+{
+  // A region whose instances are all locked has nothing to place: report no
+  // overflow rather than 0/0.
+  return denominator > 0 ? static_cast<float>(overflow_area) / denominator
+                         : 0.0f;
+}
+
 float NesterovBase::getSumPhi() const
 {
   return sumPhi_;
@@ -3007,6 +3097,7 @@ void NesterovBase::updateAreas()
                        * static_cast<int64_t>(gCell->dy());
     }
   }
+  updateLockedInstsArea();
 }
 
 void NesterovBase::updateDensityCoordiLayoutInside(GCell* gCell)
@@ -3144,6 +3235,7 @@ void NesterovBase::updateDensityFieldBin()
 void NesterovBase::initDensity1()
 {
   assert(omp_get_thread_num() == 0);
+  updateLockedInstsArea();
   const int gCellSize = nb_gcells_.size();
   curSLPCoordi_.resize(gCellSize, FloatPoint());
   curSLPWireLengthGrads_.resize(gCellSize, FloatPoint());
@@ -3191,11 +3283,11 @@ void NesterovBase::initDensity1()
       = npVars_->initWireLengthCoef
         / (static_cast<float>(getBinSizeX() + getBinSizeY()) * 0.5);
 
-  sum_overflow_ = static_cast<float>(getOverflowArea())
-                  / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_ = overflowRatio(getOverflowArea(),
+                                static_cast<float>(getUnlockedInstsArea()));
 
-  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                           / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_unscaled_ = overflowRatio(
+      getOverflowAreaUnscaled(), static_cast<float>(getUnlockedInstsArea()));
 
   rebuildNbDeviceCtx();
 }
@@ -3323,11 +3415,11 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
     updateDensityPenaltyFromRatio(npVars_->initDensityPenalty);
   }
 
-  sum_overflow_ = static_cast<float>(getOverflowArea())
-                  / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_ = overflowRatio(getOverflowArea(),
+                                static_cast<float>(getUnlockedInstsArea()));
 
-  sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
-                           / static_cast<float>(getNesterovInstsArea());
+  sum_overflow_unscaled_ = overflowRatio(
+      getOverflowAreaUnscaled(), static_cast<float>(getUnlockedInstsArea()));
 
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
@@ -3420,7 +3512,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
       coord_slot = SlpSlot::Next;
     }
 
-    if (use_device_density_) {
+    if (deviceDensityActive()) {
       // Fully device-resident: K5 WL gather (no host copy), NB-level
       // density gather over all cells (fillers included) straight into
       // d_density_grad_*. The host wireLengthGrads/densityGrads vectors
@@ -3623,13 +3715,13 @@ float NesterovBase::getOverflowDenominator(const int iter) const
   // improves this should no longer be needed.
   const float fractionOfMaxIters
       = static_cast<float>(iter) / npVars_->maxNesterovIter;
-  return std::max(static_cast<float>(getNesterovInstsArea()),
+  return std::max(static_cast<float>(getUnlockedInstsArea()),
                   fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 }
 
 float NesterovBase::getCurrentSumOverflowUnscaled(const int iter) const
 {
-  return getOverflowAreaUnscaled() / getOverflowDenominator(iter);
+  return overflowRatio(getOverflowAreaUnscaled(), getOverflowDenominator(iter));
 }
 
 void NesterovBase::updateNextIter(const int iter)
@@ -3675,8 +3767,9 @@ void NesterovBase::updateNextIter(const int iter)
 
   const float overflowDenominator = getOverflowDenominator(iter);
 
-  sum_overflow_ = getOverflowArea() / overflowDenominator;
-  sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
+  sum_overflow_ = overflowRatio(getOverflowArea(), overflowDenominator);
+  sum_overflow_unscaled_
+      = overflowRatio(getOverflowAreaUnscaled(), overflowDenominator);
 
   int64_t hpwl = nbc_->getHpwl();
 
@@ -3803,7 +3896,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
 #ifdef ENABLE_GPU
   if (nb_device_ctx_) {
     nb_device_ctx_->nesterovCoordUpdate(stepLength_, coeff);
-    if (use_device_density_) {
+    if (deviceDensityActive()) {
       // Device-resident density pipeline: scatter + Poisson stay on device;
       // only the overflow scalars (and optionally sumPhi) come back. Host
       // coords/bins go stale — cold paths refresh via pullCoordsFromDevice.

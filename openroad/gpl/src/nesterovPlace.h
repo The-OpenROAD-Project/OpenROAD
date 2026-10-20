@@ -90,6 +90,9 @@ class NesterovPlace
   {
     allow_divergence_recovery_ = allow;
   }
+  // Recomputes the overflow from the current placement, e.g. after cells
+  // are unlocked, so the next doNesterovPlace() starts from it.
+  void refreshOverflow();
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
