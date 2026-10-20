@@ -15,11 +15,13 @@
 	Automatic search window extension enabled.
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
-[INFO DPL-0392] Negotiation cell height distribution (4 unique row-count(s)):
+[INFO DPL-0392] Negotiation cell height distribution (6 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 11766 cells
-[INFO DPL-0393]   height 15 row(s): 18 cells
+[INFO DPL-0393]   height 15 row(s): 9 cells
+[INFO DPL-0393]   height 16 row(s): 9 cells
 [INFO DPL-0393]   height 83 row(s): 108 cells
-[INFO DPL-0393]   height 174 row(s): 12 cells
+[INFO DPL-0393]   height 174 row(s): 9 cells
+[INFO DPL-0393]   height 175 row(s): 3 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
