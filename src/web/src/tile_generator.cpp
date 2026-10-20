@@ -4434,6 +4434,12 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const int requested_tile_px) const
 {
   static_assert(sizeof(Color) == 4);
+
+  // Here rather than where the default palette is built: a session that sends
+  // its own colors never builds one, and would miss the push.
+  if (layer == "_modules" || layer == "_clusters") {
+    search_->noteOwnerColorsUsed();
+  }
   // Clamped BEFORE tile_px is derived from it: a dpr below the supported range
   // rounds 256*dpr down to zero, and a zero-sided buffer then trips the clamps
   // in the drawing primitives.  The other three tile entry points already

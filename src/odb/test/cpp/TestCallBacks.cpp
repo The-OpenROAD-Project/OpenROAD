@@ -205,6 +205,51 @@ TEST_F(CallbackFixture, test_region)
   EXPECT_EQ(cb_.events[0], "Destroy region parent");
 }
 
+TEST_F(CallbackFixture, test_group)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = block->findInst("i1");
+  ASSERT_NE(inst, nullptr);
+  cb_.addOwner(block);
+
+  dbGroup* parent = dbGroup::create(block, "parent");
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Create group parent");
+  cb_.clearEvents();
+
+  parent->addInst(inst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Add inst i1 to group parent");
+  cb_.clearEvents();
+
+  // Creating under a parent is a create plus the parenting it performs.
+  dbGroup* child = dbGroup::create(parent, "child");
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Create group child");
+  EXPECT_EQ(cb_.events[1], "Add group child to group parent");
+  cb_.clearEvents();
+
+  parent->removeGroup(child);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Remove group child from group parent");
+  cb_.clearEvents();
+
+  parent->removeInst(inst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Remove inst i1 from group parent");
+  cb_.clearEvents();
+
+  // destroy announces itself before unwinding, so a receiver can still read
+  // the group; the members it detaches on the way out report themselves.
+  parent->addInst(inst);
+  cb_.clearEvents();
+  dbGroup::destroy(parent);
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Destroy group parent");
+  EXPECT_EQ(cb_.events[1], "Remove inst i1 from group parent");
+}
+
 TEST_F(CallbackFixture, test_row)
 {
   create2LevetDbWithBTerms();

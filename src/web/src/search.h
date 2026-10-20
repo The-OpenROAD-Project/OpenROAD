@@ -321,6 +321,10 @@ class Search : public odb::dbBlockCallBackObj
   void clearObstructions();
   void clearRows();
 
+  // An overlay keyed by the module or group tree has just been drawn, so the
+  // next edit to either is worth announcing.  See overlay_owners_init.
+  void noteOwnerColorsUsed();
+
   // From dbBlockCallBackObj
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbInstDestroy(odb::dbInst* inst) override;
@@ -349,6 +353,23 @@ class Search : public odb::dbBlockCallBackObj
   void inDbRowCreate(odb::dbRow* row) override;
   void inDbRowDestroy(odb::dbRow* row) override;
   void inDbWirePostModify(odb::dbWire* wire) override;
+  // The owner-colour overlays (_modules, _clusters) are keyed by an instance's
+  // dbModule or dbGroup, so their inputs are these -- not the geometry the
+  // callbacks above watch.
+  void inDbInstCreate(odb::dbInst* inst) override;
+  void inDbPostInstParentChange(odb::dbInst* inst) override;
+  void inDbModuleCreate(odb::dbModule* module) override;
+  void inDbModuleDestroy(odb::dbModule* module) override;
+  void inDbGroupCreate(odb::dbGroup* group) override;
+  void inDbGroupDestroy(odb::dbGroup* group) override;
+  void inDbGroupAddInst(odb::dbGroup* group, odb::dbInst* inst) override;
+  void inDbGroupRemoveInst(odb::dbGroup* group, odb::dbInst* inst) override;
+  void inDbGroupAddModInst(odb::dbGroup* group,
+                           odb::dbModInst* modinst) override;
+  void inDbGroupRemoveModInst(odb::dbGroup* group,
+                              odb::dbModInst* modinst) override;
+  void inDbGroupAddGroup(odb::dbGroup* group, odb::dbGroup* child) override;
+  void inDbGroupRemoveGroup(odb::dbGroup* group, odb::dbGroup* child) override;
 
   // signals:
   //  void modified();
@@ -379,6 +400,9 @@ class Search : public odb::dbBlockCallBackObj
   void clear();
 
   void announceModified(std::atomic_bool& flag);
+  // Shared by every owner-colour callback; see its definition for why it
+  // announces rather than notifies.
+  void ownerColorsModified();
   // Fire on_modified_ unconditionally (no per-index debounce).  Used for design
   // edits that change rendering but not a spatial index (die/core area, region
   // boxes), which announceModified's flag-based path would otherwise miss.
@@ -427,6 +451,9 @@ class Search : public odb::dbBlockCallBackObj
     std::atomic_bool blockages_init{false};
     std::atomic_bool obstructions_init{false};
     std::atomic_bool rows_init{false};
+    // Not an index: the latch that debounces the owner-colour overlays, armed
+    // by noteOwnerColorsUsed() and disarmed by the first edit after it.
+    std::atomic_bool overlay_owners_init{false};
 
     // See setInstGroups().  Guarded by inst_groups_mutex; the revision is the
     // one the mapping was built against, compared against revision() on read.

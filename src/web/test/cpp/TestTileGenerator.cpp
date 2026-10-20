@@ -6538,6 +6538,101 @@ TEST_F(TileGeneratorTest, DefaultOwnerColorsAreCachedUntilTheDesignChanges)
       << "a design reload must drop it";
 }
 
+// A group created after the map was first built has to reach it.  ODB fires no
+// callback for a group edit unless dbGroup does (see dbBlockCallBackObj), and
+// without one the cache would hand back a palette that does not mention the new
+// cluster -- the overlay would leave it unpainted until a reload.
+//
+// Every instance is placed BEFORE the first read: placing one bumps
+// Search::revision() through inDbInstPlacementStatusBefore, which would drop
+// the cache for the wrong reason and hide the bug.
+TEST_F(TileGeneratorTest, DefaultGroupColorsFollowAGroupCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  placeInst("BUF_X16", "buf2", 30000, 30000);
+  odb::dbGroup* first_group = odb::dbGroup::create(block_, "cluster_1");
+  first_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  first_group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultGroupColors();
+  ASSERT_NE(before, nullptr);
+  ASSERT_EQ(before->count(first_group->getId()), 1u);
+
+  odb::dbGroup* late = odb::dbGroup::create(block_, "cluster_2");
+  late->setType(odb::dbGroupType::VISUAL_DEBUG);
+  late->addInst(block_->findInst("buf2"));
+
+  const auto after = tile_gen_->defaultGroupColors();
+  ASSERT_NE(after, nullptr);
+  EXPECT_NE(after, before) << "the group edit did not drop the cached map";
+  EXPECT_EQ(after->count(late->getId()), 1u)
+      << "the group created after the first build is missing from the map";
+}
+
+// The same for the module overlay: a module created after the first read has to
+// reach the map.  Search overrides inDbInstDestroy and inDbPostMoveInst but not
+// the module callbacks, so nothing told it the hierarchy grew.
+TEST_F(TileGeneratorTest, DefaultModuleColorsFollowAModuleCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultModuleColors();
+  ASSERT_NE(before, nullptr);
+
+  odb::dbModule* late = odb::dbModule::create(block_, "late_module");
+  ASSERT_NE(late, nullptr);
+
+  EXPECT_NE(tile_gen_->defaultModuleColors(), before)
+      << "the module edit did not drop the cached map";
+}
+
+// A group edit has to reach the clients, but `rtl_macro_placer
+// -keep_clustering_data` adds every instance to a cluster one call at a time --
+// 158k of them on ariane133.  Announcing each would clear the tile cache and
+// broadcast that many times, so the latch (Search::overlay_owners_init) lets
+// only the first edit after a palette was built through.
+TEST_F(TileGeneratorTest, ABatchOfGroupEditsNotifiesOnce)
+{
+  for (int i = 0; i < 8; ++i) {
+    placeInst("BUF_X16", ("buf" + std::to_string(i)).c_str(), 10000 * i, 10000);
+  }
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  // The overlay has to have been drawn for the edit to be worth announcing,
+  // the same valid→invalid transition the instance index relies on.
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const auto colors = tile_gen_->defaultGroupColors();
+  ASSERT_NE(colors, nullptr);
+  tile_gen_->generateTile("_clusters",
+                          0,
+                          0,
+                          0,
+                          vis,
+                          /*highlight_rects=*/{},
+                          /*highlight_polys=*/{},
+                          /*colored_rects=*/{},
+                          /*flight_lines=*/{},
+                          /*module_colors=*/nullptr,
+                          colors.get());
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  for (int i = 0; i < 8; ++i) {
+    group->addInst(block_->findInst(("buf" + std::to_string(i)).c_str()));
+  }
+
+  EXPECT_EQ(refresh_calls, 1) << "a batch of group edits announced itself "
+                              << refresh_calls << " times instead of once";
+  // Every one of them still moved the revision, so the next read rebuilds.
+  EXPECT_NE(tile_gen_->defaultGroupColors(), nullptr);
+}
+
 // Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
 // map must leave the tile empty.  Falling through to the generic instance
 // drawing would stack a second copy of the instances layer over the design.

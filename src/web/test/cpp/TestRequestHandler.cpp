@@ -2524,6 +2524,39 @@ TEST_F(GroupHandlerTest, ClearedColorsDoNotHitTheDefaultPaletteTile)
       << "the cached default-palette tile must not answer a cleared view";
 }
 
+// A tile painted from the default palette is cacheable, so a group edit has to
+// reach the cache: otherwise `rtl_macro_placer -keep_clustering_data` writes a
+// new cluster tree and the viewer keeps serving the picture of the old one.
+// The instance is placed BEFORE the first tile, because placing one invalidates
+// the cache through inDbInstPlacementStatusBefore and would hide the bug.
+TEST_F(GroupHandlerTest, AGroupEditDropsTheCachedDefaultPaletteTile)
+{
+  makeClusterTree();
+  odb::dbInst* loose
+      = placeInstIn(block_, lib_, "BUF_X16", "loose_buf", 60000, 60000);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  const auto first = handler_->handleTile(req, state_);
+  ASSERT_EQ(first.type, WebSocketResponse::kPng);
+  ASSERT_GT(gen_->tileCacheSize(), 0u) << "the tile should have been cached";
+
+  // Only the group tree moves from here on.
+  odb::dbGroup* late = odb::dbGroup::create(block_, "cluster_late");
+  late->setType(odb::dbGroupType::VISUAL_DEBUG);
+  late->addInst(loose);
+
+  req.id = 2;
+  const auto second = handler_->handleTile(req, state_);
+  ASSERT_EQ(second.type, WebSocketResponse::kPng);
+  EXPECT_NE(second.payload, first.payload)
+      << "the cached tile outlived the group edit that changed it";
+}
+
 // The other side of that rule, and the one a careless fallback would break:
 // an empty map is not "nothing synced", it is the user unchecking every row.
 TEST_F(GroupHandlerTest, ColorOverlayStaysEmptyWhenTheUserClearsEveryRow)
