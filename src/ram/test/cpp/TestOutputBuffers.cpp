@@ -183,7 +183,8 @@ class RamCircuit
       auto liberty
           = network_->libertyCell(network_->dbToSta(inst->getMaster()));
       auto port = liberty->findLibertyPort(term->getMTerm()->getConstName());
-      if (port->tristateEnable() && eval(port->tristateEnable(), inst)) {
+      // OpenSTA has already inverted Liberty's three_state disable function.
+      if (port->tristateEnable() && !eval(port->tristateEnable(), inst)) {
         continue;
       }
       ++drivers;
@@ -197,7 +198,8 @@ class RamCircuit
       }
     }
     if (drivers != 1) {
-      throw std::runtime_error("Expected one active driver on "
+      throw std::runtime_error("Expected one active driver, found "
+                               + std::to_string(drivers) + " on "
                                + net->getName());
     }
     cache_[net] = value;
@@ -418,6 +420,24 @@ TEST_P(OutputBufferTest, TopologyPlacementAndMaskedMemory)
       }
     }
   }
+  if (config.mux > 1) {
+    for (int row = 0; row < config.words / config.mux; ++row) {
+      for (int port = 0; port < ports; ++port) {
+        const auto name = "row" + std::to_string(row) + ".select"
+                          + std::to_string(port) + "_b";
+        auto select = block->findNet(name.c_str());
+        ASSERT_NE(select, nullptr);
+        int drivers = 0;
+        for (auto term : select->getITerms()) {
+          drivers += term->getIoType() == odb::dbIoType::OUTPUT;
+        }
+        EXPECT_EQ(drivers, 1) << name;
+        EXPECT_EQ(select->getITermCount(), config.bits * config.mux + 1)
+            << name;
+      }
+    }
+  }
+
   checkPlacement(block);
 
   RamCircuit circuit(block, sta_->getDbNetwork());
@@ -536,6 +556,35 @@ INSTANTIATE_TEST_SUITE_P(
     MultiportOutputBufferTest,
     testing::Values(Configuration{16, 4, 4, 2, 1, 1, "BUF_X4"},
                     Configuration{16, 4, 4, 4, 0, 2, "BUF_X4"}));
+
+TEST_F(OutputBufferTest, SimulatorResolvesActiveLowTristateBus)
+{
+  auto chip = odb::dbChip::create(db_.get(), db_->getTech());
+  auto block = odb::dbBlock::create(chip, "tristate_bus");
+  for (const auto name : {"D0", "D1", "E0", "E1"}) {
+    tst::Fixture::makeBTerm(block, name);
+  }
+  tst::Fixture::makeBTerm(block, "Q", {.io_type = odb::dbIoType::OUTPUT});
+  auto buffer = db_->findMaster("TBUF_X1");
+  tst::Fixture::makeInst(
+      block, buffer, "t0", {.iterms = {{"D0", "A"}, {"E0", "EN"}, {"Q", "Z"}}});
+  tst::Fixture::makeInst(
+      block, buffer, "t1", {.iterms = {{"D1", "A"}, {"E1", "EN"}, {"Q", "Z"}}});
+  RamCircuit circuit(block, sta_->getDbNetwork());
+  circuit.drive("D0", false);
+  circuit.drive("D1", true);
+  circuit.drive("E0", true);
+  circuit.drive("E1", false);
+  EXPECT_TRUE(circuit.output("Q"));
+  circuit.drive("E0", false);
+  circuit.drive("E1", true);
+  EXPECT_FALSE(circuit.output("Q"));
+  circuit.drive("E0", true);
+  EXPECT_THROW(circuit.output("Q"), std::runtime_error);
+  circuit.drive("E0", false);
+  circuit.drive("E1", false);
+  EXPECT_THROW(circuit.output("Q"), std::runtime_error);
+}
 
 TEST_F(OutputBufferTest, RejectMissingStorageSiteBeforeCreatingDesign)
 {
@@ -684,8 +733,9 @@ class Sky130OutputBufferTest : public tst::Fixture
   Sky130OutputBufferTest()
   {
     const std::string prefix = "_main/src/ram/test/sky130hd/";
-    auto tech = loadTechLef("sky130", prefix + "sky130hd.tlef");
-    loadLibaryLef(tech, "sky130", prefix + "sky130_fd_sc_hd_merged.lef");
+    auto sites = loadTechAndLib("sky130", "sites", prefix + "sky130hd.tlef");
+    loadLibaryLef(
+        sites->getTech(), "sky130", prefix + "sky130_fd_sc_hd_merged.lef");
     readLiberty(prefix + "sky130_fd_sc_hd__tt_025C_1v80.lib");
   }
 };
@@ -701,6 +751,8 @@ TEST_F(Sky130OutputBufferTest, DefaultBuffersAndMemoryBehavior)
                    nullptr,
                    nullptr);
   auto storage = db_->findMaster("sky130_fd_sc_hd__dfxtp_1");
+  ASSERT_NE(storage, nullptr);
+  ASSERT_NE(storage->getSite(), nullptr);
   generator.generate(
       2, 8, 8, 1, 0, 0, 1, false, storage, nullptr, nullptr, nullptr, 0);
   auto block = db_->getChip()->getBlock();

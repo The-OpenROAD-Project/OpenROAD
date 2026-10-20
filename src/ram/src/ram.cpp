@@ -303,6 +303,7 @@ void RamGen::makeWord(const int slices_per_word,
       slice_outputs.emplace_back(port_outputs.begin() + start_idx,
                                  port_outputs.begin() + start_idx + mask_size);
     }
+    // A column-muxed row shares read enables across words and mask slices.
     makeSlice(slice,
               mask_size,
               row_idx,
@@ -316,7 +317,7 @@ void RamGen::makeWord(const int slices_per_word,
               word_select,
               selects,
               shared_select_b_nets,
-              create_select_inv,
+              create_select_inv && (column_mux_ratio == 1 || slice == 0),
               slice_inputs,
               slice_outputs);
   }
