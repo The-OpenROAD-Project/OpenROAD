@@ -112,7 +112,7 @@ bool rtl_macro_placer_cmd(const std::map<std::string, std::string>& keys,
 
   mpl::MacroPlacerOptions options = getOptions(block, keys, flags);
 
-  return macro_placer->place(threads, options);
+  return macro_placer->run(threads, options);
 }
 
 void set_debug_cmd(const std::map<std::string, std::string>& keys,

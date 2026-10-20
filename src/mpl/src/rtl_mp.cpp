@@ -34,7 +34,7 @@ MacroPlacer::MacroPlacer(odb::dbDatabase* db,
 
 MacroPlacer::~MacroPlacer() = default;
 
-bool MacroPlacer::place(int threads, const MacroPlacerOptions& options)
+bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
 {
   utl::Timer timer;
   hier_rtlmp_->init();

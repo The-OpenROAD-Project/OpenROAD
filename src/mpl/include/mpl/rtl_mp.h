@@ -96,7 +96,7 @@ class MacroPlacer
               par::PartitionMgr* tritonpart);
   ~MacroPlacer();
 
-  bool place(int threads, const MacroPlacerOptions& options = {});
+  bool run(int threads, const MacroPlacerOptions& options = {});
 
   void blockMacroChannels();
 
