@@ -33,6 +33,39 @@ namespace mpl {
 class HierRTLMP;
 class MplObserver;
 
+// Every parameter accepted by the `rtl_macro_placer` command
+struct MacroPlacerOptions
+{
+  int max_num_macro{0};
+  int min_num_macro{0};
+  int max_num_inst{0};
+  int min_num_inst{0};
+  float tolerance{0.1f};
+  int max_num_level{2};
+  float coarsening_ratio{10.0f};
+  int large_net_threshold{50};
+
+  odb::Rect global_fence;
+
+  float area_weight{0.1f};
+  float outline_weight{100.0f};
+  float wirelength_weight{100.0f};
+  float guidance_weight{10.0f};
+  float fence_weight{10.0f};
+  float boundary_weight{50.0f};
+  float notch_weight{50.0f};
+  float soft_blockage_weight{10.0f};
+
+  float target_util{0.25f};
+  float min_ar{0.33f};
+
+  std::string report_directory{"hier_rtlmp"};
+  std::string macro_placement_file;
+
+  bool keep_clustering_data{false};
+  bool pin_aware_channels{false};
+};
+
 class MacroPlacer
 {
  public:
@@ -42,29 +75,7 @@ class MacroPlacer
               par::PartitionMgr* tritonpart);
   ~MacroPlacer();
 
-  bool place(int num_threads,
-             int max_num_macro,
-             int min_num_macro,
-             int max_num_inst,
-             int min_num_inst,
-             float tolerance,
-             int max_num_level,
-             float coarsening_ratio,
-             int large_net_threshold,
-             odb::Rect global_fence,
-             float area_weight,
-             float outline_weight,
-             float wirelength_weight,
-             float guidance_weight,
-             float fence_weight,
-             float boundary_weight,
-             float notch_weight,
-             float soft_blockage_weight,
-             float target_util,
-             float min_ar,
-             const char* report_directory,
-             bool keep_clustering_data,
-             bool pin_aware_channels);
+  bool place(int threads, const MacroPlacerOptions& options = {});
 
   void blockMacroChannels();
 
@@ -76,16 +87,17 @@ class MacroPlacer
                   bool allow_overlap);
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
-  void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
 
-  void setDebug(std::unique_ptr<MplObserver>& graphics);
-  void setDebugShowBundledNets(bool show_bundled_nets);
-  void setDebugShowClustersIds(bool show_clusters_ids);
-  void setDebugSkipSteps(bool skip_steps);
-  void setDebugOnlyFinalResult(bool only_final_result);
-  void setDebugTargetClusterId(int target_cluster_id);
+  // graphics_ must exist before the rest of these are applied to it, so
+  // this is one call rather than six independently-ordered setters.
+  void configureDebug(std::unique_ptr<MplObserver> graphics,
+                      bool show_bundled_nets,
+                      bool show_clusters_ids,
+                      bool skip_steps,
+                      bool only_final_result,
+                      int target_cluster_id);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;

@@ -13,6 +13,7 @@
 #include "MplObserver.h"
 #include "clusterEngine.h"
 #include "mpl-util.h"
+#include "mpl/rtl_mp.h"
 #include "object.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -77,45 +78,26 @@ class HierRTLMP
   void run();
   void blockMacroChannels();
 
-  // Interfaces functions for setting options
-  // Hierarchical Macro Placement Related Options
-  void setGlobalFence(odb::Rect global_fence);
+  // Applies every option accepted by the rtl_macro_placer command in one
+  // call. Must be called after init() (it reads/writes tree_ and block_)
+  // and before run().
+  void configure(int threads, const MacroPlacerOptions& options = {});
+
+  // Options set by commands other than rtl_macro_placer, so they live
+  // outside MacroPlacerOptions.
   void setMinChannelSize(int width, int height);
   void setGuidanceRegions(
       const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions);
 
-  // Clustering Related Options
-  void setClusterSize(int max_num_macro,
-                      int min_num_macro,
-                      int max_num_inst,
-                      int min_num_inst);
-  void setClusterSizeTolerance(float tolerance);
-  void setMaxNumLevel(int max_num_level);
-  void setClusterSizeRatioPerLevel(float coarsening_ratio);
-  void setLargeNetThreshold(int large_net_threshold);
-  void setAreaWeight(float area_weight);
-  void setOutlineWeight(float outline_weight);
-  void setWirelengthWeight(float wirelength_weight);
-  void setGuidanceWeight(float guidance_weight);
-  void setFenceWeight(float fence_weight);
-  void setBoundaryWeight(float boundary_weight);
-  void setNotchWeight(float notch_weight);
-  void setSoftBlockageWeight(float soft_blockage_weight);
-  void setTargetUtil(float target_util);
-  void setMinAR(float min_ar);
-  void setReportDirectory(const char* report_directory);
-  void setKeepClusteringData(bool keep_clustering_data);
-  void setPinAwareChannels(bool pin_aware_channels);
+  // graphics_ must exist before the rest of these are applied to it, so
+  // this is one call rather than six independently-ordered setters.
+  void configureDebug(std::unique_ptr<MplObserver> graphics,
+                      bool show_bundled_nets,
+                      bool show_clusters_ids,
+                      bool skip_steps,
+                      bool only_final_result,
+                      int target_cluster_id);
 
-  void setDebug(std::unique_ptr<MplObserver>& graphics);
-  void setDebugShowBundledNets(bool show_bundled_nets);
-  void setDebugShowClustersIds(bool show_clusters_ids);
-  void setDebugSkipSteps(bool skip_steps);
-  void setDebugOnlyFinalResult(bool only_final_result);
-  void setDebugTargetClusterId(int target_cluster_id);
-
-  void setNumThreads(int threads) { num_threads_ = threads; }
-  void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
 
  private:

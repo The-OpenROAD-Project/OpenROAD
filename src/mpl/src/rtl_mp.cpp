@@ -34,53 +34,11 @@ MacroPlacer::MacroPlacer(odb::dbDatabase* db,
 
 MacroPlacer::~MacroPlacer() = default;
 
-bool MacroPlacer::place(const int num_threads,
-                        const int max_num_macro,
-                        const int min_num_macro,
-                        const int max_num_inst,
-                        const int min_num_inst,
-                        const float tolerance,
-                        const int max_num_level,
-                        const float coarsening_ratio,
-                        const int large_net_threshold,
-                        const odb::Rect global_fence,
-                        const float area_weight,
-                        const float outline_weight,
-                        const float wirelength_weight,
-                        const float guidance_weight,
-                        const float fence_weight,
-                        const float boundary_weight,
-                        const float notch_weight,
-                        const float soft_blockage_weight,
-                        const float target_util,
-                        const float min_ar,
-                        const char* report_directory,
-                        const bool keep_clustering_data,
-                        const bool pin_aware_channels)
+bool MacroPlacer::place(int threads, const MacroPlacerOptions& options)
 {
   utl::Timer timer;
   hier_rtlmp_->init();
-  hier_rtlmp_->setClusterSize(
-      max_num_macro, min_num_macro, max_num_inst, min_num_inst);
-  hier_rtlmp_->setClusterSizeTolerance(tolerance);
-  hier_rtlmp_->setMaxNumLevel(max_num_level);
-  hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
-  hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
-  hier_rtlmp_->setGlobalFence(global_fence);
-  hier_rtlmp_->setAreaWeight(area_weight);
-  hier_rtlmp_->setOutlineWeight(outline_weight);
-  hier_rtlmp_->setWirelengthWeight(wirelength_weight);
-  hier_rtlmp_->setGuidanceWeight(guidance_weight);
-  hier_rtlmp_->setFenceWeight(fence_weight);
-  hier_rtlmp_->setBoundaryWeight(boundary_weight);
-  hier_rtlmp_->setNotchWeight(notch_weight);
-  hier_rtlmp_->setSoftBlockageWeight(soft_blockage_weight);
-  hier_rtlmp_->setTargetUtil(target_util);
-  hier_rtlmp_->setMinAR(min_ar);
-  hier_rtlmp_->setReportDirectory(report_directory);
-  hier_rtlmp_->setNumThreads(num_threads);
-  hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-  hier_rtlmp_->setPinAwareChannels(pin_aware_channels);
+  hier_rtlmp_->configure(threads, options);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();
@@ -231,38 +189,19 @@ void MacroPlacer::blockMacroChannels()
   hier_rtlmp_->blockMacroChannels();
 }
 
-void MacroPlacer::setMacroPlacementFile(const std::string& file_name)
+void MacroPlacer::configureDebug(std::unique_ptr<MplObserver> graphics,
+                                 bool show_bundled_nets,
+                                 bool show_clusters_ids,
+                                 bool skip_steps,
+                                 bool only_final_result,
+                                 int target_cluster_id)
 {
-  hier_rtlmp_->setMacroPlacementFile(file_name);
-}
-
-void MacroPlacer::setDebug(std::unique_ptr<MplObserver>& graphics)
-{
-  hier_rtlmp_->setDebug(graphics);
-}
-
-void MacroPlacer::setDebugShowBundledNets(bool show_bundled_nets)
-{
-  hier_rtlmp_->setDebugShowBundledNets(show_bundled_nets);
-}
-void MacroPlacer::setDebugShowClustersIds(bool show_clusters_ids)
-{
-  hier_rtlmp_->setDebugShowClustersIds(show_clusters_ids);
-}
-
-void MacroPlacer::setDebugSkipSteps(bool skip_steps)
-{
-  hier_rtlmp_->setDebugSkipSteps(skip_steps);
-}
-
-void MacroPlacer::setDebugOnlyFinalResult(bool only_final_result)
-{
-  hier_rtlmp_->setDebugOnlyFinalResult(only_final_result);
-}
-
-void MacroPlacer::setDebugTargetClusterId(const int target_cluster_id)
-{
-  hier_rtlmp_->setDebugTargetClusterId(target_cluster_id);
+  hier_rtlmp_->configureDebug(std::move(graphics),
+                              show_bundled_nets,
+                              show_clusters_ids,
+                              skip_steps,
+                              only_final_result,
+                              target_cluster_id);
 }
 
 }  // namespace mpl
