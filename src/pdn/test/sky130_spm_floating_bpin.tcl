@@ -53,7 +53,7 @@ define_pdn_grid \
   -default \
   -name macro \
   -starts_with POWER \
-  -halo "10 10"
+  -halo "5 5"
 
 add_pdn_connect \
   -grid macro \

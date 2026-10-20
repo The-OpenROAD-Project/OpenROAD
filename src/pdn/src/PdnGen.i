@@ -39,8 +39,25 @@ using utl::PDN;
     $1 = pdn::ExtensionMode::kRings;
   } else if (strcasecmp(str, "Boundary") == 0) {
     $1 = pdn::ExtensionMode::kBoundary;
+  } else if (strcasecmp(str, "PadRing") == 0) {
+    $1 = pdn::ExtensionMode::kPadRing;
   } else {
     $1 = pdn::ExtensionMode::kCore;
+  }
+}
+
+%typemap(in) pdn::StrapOffsetType {
+  char *str = Tcl_GetStringFromObj($input, 0);
+  if (strcasecmp(str, "START") == 0) {
+    $1 = pdn::StrapOffsetType::kStart;
+  } else if (strcasecmp(str, "CENTER") == 0) {
+    $1 = pdn::StrapOffsetType::kCenter;
+  } else if (strcasecmp(str, "LAST") == 0) {
+    $1 = pdn::StrapOffsetType::kLast;
+  } else if (strcasecmp(str, "END") == 0) {
+    $1 = pdn::StrapOffsetType::kEnd;
+  } else {
+    $1 = pdn::StrapOffsetType::kFirst;
   }
 }
 
@@ -55,7 +72,10 @@ void run_pdngen(bool trim, bool add_pins, const char* report_file)
   pdngen->checkSetup();
   pdngen->buildGrids(trim);
   pdngen->writeToDb(add_pins, report_file);
-  pdngen->resetShapes();
+  if (pdngen->getDebugRenderer() == nullptr) {
+    // keep the shapes while debugging so the renderer still shows them
+    pdngen->resetShapes();
+  }
   ord::getLogger()->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
@@ -138,6 +158,13 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions, is_bump);
 }
 
+void make_dummy_inst_grid(pdn::VoltageDomain* domain,
+                        const char* name)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->makeDummyInstanceGrid(domain, name);
+}
+
 void make_existing_grid(const char* name, 
                         const std::vector<odb::dbTechLayer*>& generate_obstructions)
 {
@@ -176,7 +203,7 @@ void make_ring(const char* grid_name,
       starts_with = kGround;
     }
   }
-  for (auto* grid : pdngen->findGrid(grid_name)) {
+  for (auto* grid : pdngen->findGrid(grid_name, true)) {
     pdngen->makeRing(grid,
                      l0, width0, spacing0,
                      l1, width1, spacing1,
@@ -227,11 +254,12 @@ void createSrouteWires(
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
                     int width, 
-                    pdn::ExtensionMode extend)
+                    pdn::ExtensionMode extend,
+                    int extend_distance)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  for (auto* grid : pdngen->findGrid(grid_name)) {
-    pdngen->makeFollowpin(grid, layer, width, extend);
+  for (auto* grid : pdngen->findGrid(grid_name, true)) {
+    pdngen->makeFollowpin(grid, layer, width, extend, extend_distance);
   }
 }
 
@@ -247,7 +275,9 @@ void make_strap(const char* grid_name,
                 bool starts_with_power,
                 pdn::ExtensionMode extend,
                 const std::vector<odb::dbNet*>& nets,
-                bool allow_out_of_core)
+                bool allow_out_of_core,
+                pdn::StrapOffsetType offset_type,
+                int extend_distance)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = kGrid;
@@ -258,7 +288,7 @@ void make_strap(const char* grid_name,
       starts_with = kGround;
     }
   }
-  for (auto* grid : pdngen->findGrid(grid_name)) {
+  for (auto* grid : pdngen->findGrid(grid_name, true)) {
     pdngen->makeStrap(grid,
                       layer,
                       width,
@@ -270,7 +300,9 @@ void make_strap(const char* grid_name,
                       starts_with,
                       extend,
                       nets,
-                      allow_out_of_core);
+                      allow_out_of_core,
+                      offset_type,
+                      extend_distance);
   }
 }
 
@@ -295,7 +327,7 @@ void make_connect(const char* grid_name,
   for (size_t i = 0; i < split_cuts_layers.size(); i++) {
     split_cuts[split_cuts_layers[i]] = {split_cut_pitches[i], split_cut_stagger};
   }
-  for (auto* grid : pdngen->findGrid(grid_name)) {
+  for (auto* grid : pdngen->findGrid(grid_name, true)) {
     pdngen->makeConnect(grid, layer0, layer1, cut_pitch_x, cut_pitch_y, vias, techvias, max_rows, max_columns, ongrid, min_width_layers, split_cuts, dont_use_vias);
   }
 }
@@ -339,7 +371,13 @@ pdn::VoltageDomain* find_domain(const char* name)
 bool has_grid(const char* name)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  return !pdngen->findGrid(name).empty();
+  return !pdngen->findGrid(name, false).empty();
+}
+
+void remove_dummy_grid(const char* name)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->removeDummyInstanceGrid(name);
 }
 
 void allow_repair_channels(bool allow)

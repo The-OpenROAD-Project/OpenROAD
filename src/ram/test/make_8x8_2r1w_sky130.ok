@@ -10,8 +10,8 @@
 [INFO RAM-0024] Behavioral Verilog written for RAM8x8
 [INFO PDN-0001] Inserting grid: ram_grid
 [INFO PPL-0067] Restrict pins [ clk we[0] D[0] Q0[0] Q1[0] ... ] to region 0.00u-155.02u at the TOP edge.
-[INFO PPL-0067] Restrict pins [ addr_w[0][0] addr_w[0][1] addr_w[0][2] addr_r[0][0] addr_r[0][1] ... ] to region 0.00u-24.48u at the RIGHT edge.
-[INFO PPL-0001] Number of available slots 364
+[INFO PPL-0067] Restrict pins [ addr_w[0] addr_w[1] addr_w[2] addr_r0[0] addr_r0[1] ... ] to region 0.00u-24.48u at the RIGHT edge.
+[INFO PPL-0001] Number of available slots 356
 [INFO PPL-0002] Number of I/O             35
 [INFO PPL-0003] Number of I/O w/sink      35
 [INFO PPL-0004] Number of I/O w/o sink    0
@@ -57,11 +57,11 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 582.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 393.
+[INFO DRT-0036] met1 guide region query size = 389.
 [INFO DRT-0036] via guide region query size = 0.
-[INFO DRT-0036] met2 guide region query size = 145.
+[INFO DRT-0036] met2 guide region query size = 96.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] met3 guide region query size = 39.
+[INFO DRT-0036] met3 guide region query size = 9.
 [INFO DRT-0036] via3 guide region query size = 0.
 [INFO DRT-0036] met4 guide region query size = 0.
 [INFO DRT-0036] via4 guide region query size = 0.

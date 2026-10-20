@@ -22,7 +22,19 @@ enum ExtensionMode
   kCore,
   kRings,
   kBoundary,
+  kPadRing,
   kFixed
+};
+
+// The point of a strap group that the strap offset places, in the order they
+// fall along the group
+enum class StrapOffsetType
+{
+  kStart,   // leading edge of the first strap
+  kFirst,   // center of the first strap
+  kCenter,  // center of the whole group
+  kLast,    // center of the last strap
+  kEnd      // trailing edge of the last strap
 };
 
 enum StartsWith
@@ -83,7 +95,8 @@ class PdnGen
 
   // Grids
   void buildGrids(bool trim);
-  std::vector<Grid*> findGrid(const std::string& name) const;
+  std::vector<Grid*> findGrid(const std::string& name,
+                              bool error = false) const;
   void makeCoreGrid(VoltageDomain* domain,
                     const std::string& name,
                     StartsWith starts_with,
@@ -103,6 +116,8 @@ class PdnGen
       bool default_grid,
       const std::vector<odb::dbTechLayer*>& generate_obstructions,
       bool is_bump);
+  void makeDummyInstanceGrid(VoltageDomain* domain, const std::string& name);
+  void removeDummyInstanceGrid(const std::string& name);
   void makeExistingGrid(
       const std::string& name,
       const std::vector<odb::dbTechLayer*>& generate_obstructions);
@@ -125,7 +140,8 @@ class PdnGen
   void makeFollowpin(Grid* grid,
                      odb::dbTechLayer* layer,
                      int width,
-                     ExtensionMode extend);
+                     ExtensionMode extend,
+                     int extend_distance = 0);
   void makeStrap(Grid* grid,
                  odb::dbTechLayer* layer,
                  int width,
@@ -137,7 +153,9 @@ class PdnGen
                  StartsWith starts_with,
                  ExtensionMode extend,
                  const std::vector<odb::dbNet*>& nets,
-                 bool allow_out_of_core);
+                 bool allow_out_of_core,
+                 StrapOffsetType offset_type = StrapOffsetType::kFirst,
+                 int extend_distance = 0);
   void makeConnect(
       Grid* grid,
       odb::dbTechLayer* layer0,
@@ -180,6 +198,7 @@ class PdnGen
                          const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 
+  std::vector<Grid*> getGrids(bool exclude_dummy = false) const;
   PDNRenderer* getDebugRenderer() const { return debug_renderer_.get(); }
 
  private:
@@ -189,7 +208,6 @@ class PdnGen
 
   void checkDesign(odb::dbBlock* block) const;
 
-  std::vector<Grid*> getGrids() const;
   Grid* instanceGrid(odb::dbInst* inst) const;
 
   VoltageDomain* getCoreDomain() const;

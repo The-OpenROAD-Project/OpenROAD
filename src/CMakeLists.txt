@@ -151,7 +151,7 @@ add_compile_options(
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
-  -Wp,-D_GLIBCXX_ASSERTIONS
+  -D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Needed for floating point stability in FFT (fft_test will check this).
   # See also https://kristerw.github.io/2021/11/09/fp-contract/
@@ -255,7 +255,11 @@ if (NOT USE_SYSTEM_OPENSTA)
 endif()
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
-add_subdirectory(tst)
+if(ENABLE_TESTS)
+  # tst provides gtest-based fixture libraries used only by test targets, and
+  # links GTest::gtest, which only exists when ENABLE_TESTS is on.
+  add_subdirectory(tst)
+endif()
 add_subdirectory(stt)
 add_subdirectory(gpl)
 add_subdirectory(dpl)
@@ -284,6 +288,7 @@ add_subdirectory(par)
 add_subdirectory(est)
 add_subdirectory(syn)
 add_subdirectory(web)
+add_subdirectory(wmk)
 
 ################################################################
 
@@ -355,6 +360,7 @@ target_link_libraries(openroad
   est
   syn
   web
+  wmk
   gui
   cli_completer
   linenoise
@@ -432,6 +438,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dft_py
       par_py
       web_py
+      wmk_py
   )
   target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 

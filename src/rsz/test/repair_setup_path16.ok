@@ -1,0 +1,104 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO ODB-0128] Design: ibex_core
+[INFO ODB-0130]     Created 691 pins.
+[INFO ODB-0131]     Created 1054 components and 6130 component-terminals.
+[INFO ODB-0133]     Created 1583 nets and 4021 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 851 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 851 out of 851 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.004 |    -1914.9 |    851 | capture_147/D
+    1300* |      37 |     375 |       21 |      3 |    50 |    +3.2% |   -5.967 |    -1785.4 |    851 | capture_147/D
+    final |      37 |     375 |       21 |      3 |    50 |    +3.2% |   -5.967 |    -1785.4 |    851 | capture_147/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 37 buffers.
+[INFO RSZ-0040] Inserted 21 buffers.
+[INFO RSZ-0051] Resized 375 instances: 375 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 50 instances.
+[INFO RSZ-0049] Cloned 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: launch_525 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: inst30 (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_525/CLK (sky130_fd_sc_hd__dfrtp_2)
+   0.3603    0.3603 ^ launch_525/Q (sky130_fd_sc_hd__dfrtp_2)
+   0.0007    0.3610 ^ inst30/RESET_B (sky130_fd_sc_hd__dfrtp_1)
+             0.3610   data arrival time
+
+   0.1283    0.1283   clock core_clock (rise edge)
+   0.0000    0.1283   clock network delay (ideal)
+   0.0000    0.1283   clock reconvergence pessimism
+             0.1283 ^ inst30/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.2071    0.3354   library recovery time
+             0.3354   data required time
+-------------------------------------------------------------
+             0.3354   data required time
+            -0.3610   data arrival time
+-------------------------------------------------------------
+            -0.0256   slack (VIOLATED)
+
+
+Startpoint: launch_364 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_147 (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_364/CLK (sky130_fd_sc_hd__dfrtp_2)
+   0.3471    0.3471 ^ launch_364/Q (sky130_fd_sc_hd__dfrtp_2)
+   0.4907    0.8377 v inst2_neighbor36/X (sky130_fd_sc_hd__mux4_2)
+   0.2051    1.0428 v inst4/X (sky130_fd_sc_hd__a22o_1)
+   0.1775    1.2203 ^ inst5/Y (sky130_fd_sc_hd__a31oi_2)
+   0.1742    1.3945 ^ inst6/X (sky130_fd_sc_hd__buf_4)
+   0.2420    1.6366 ^ inst7/X (sky130_fd_sc_hd__o211a_4)
+   0.0908    1.7273 v inst8/Y (sky130_fd_sc_hd__o22ai_2)
+   0.1531    1.8805 v inst9/X (sky130_fd_sc_hd__buf_6)
+   0.0700    1.9504 ^ inst10/Y (sky130_fd_sc_hd__nand2_2)
+   0.2352    2.1856 v inst11/X (sky130_fd_sc_hd__xor3_1)
+   0.3440    2.5296 v inst12/X (sky130_fd_sc_hd__maj3_2)
+   0.1467    2.6764 v inst13/Y (sky130_fd_sc_hd__xnor2_2)
+   0.1371    2.8135 v inst14/Y (sky130_fd_sc_hd__xnor2_1)
+   0.3185    3.1320 v inst15/X (sky130_fd_sc_hd__maj3_2)
+   0.3407    3.4727 v inst16/X (sky130_fd_sc_hd__maj3_2)
+   0.1663    3.6390 v inst17/X (sky130_fd_sc_hd__xor2_2)
+   0.2532    3.8922 ^ inst18/Y (sky130_fd_sc_hd__xnor2_2)
+   0.1783    4.0705 ^ inst19/Y (sky130_fd_sc_hd__xnor2_2)
+   0.1216    4.1921 v inst20/Y (sky130_fd_sc_hd__o21ai_2)
+   0.1562    4.3483 ^ inst21/Y (sky130_fd_sc_hd__a21oi_2)
+   0.0888    4.4371 v inst22/Y (sky130_fd_sc_hd__o21ai_1)
+   0.1727    4.6098 ^ inst23/Y (sky130_fd_sc_hd__a21oi_2)
+   0.1625    4.7724 v inst24/Y (sky130_fd_sc_hd__xnor2_2)
+   0.4566    5.2289 ^ inst25/Y (sky130_fd_sc_hd__a2111oi_4)
+   0.1910    5.4199 ^ inst26/X (sky130_fd_sc_hd__buf_2)
+   0.1791    5.5991 ^ inst27/X (sky130_fd_sc_hd__a21o_4)
+   0.1927    5.7918 ^ clone4/X (sky130_fd_sc_hd__buf_12)
+   0.1287    5.9205 v inst28_neighbor7/Y (sky130_fd_sc_hd__o21ai_4)
+   0.0078    5.9283 v capture_147/D (sky130_fd_sc_hd__dfrtp_1)
+             5.9283   data arrival time
+
+   0.1283    0.1283   clock core_clock (rise edge)
+   0.0000    0.1283   clock network delay (ideal)
+   0.0000    0.1283   clock reconvergence pessimism
+             0.1283 ^ capture_147/CLK (sky130_fd_sc_hd__dfrtp_1)
+  -0.1667   -0.0385   library setup time
+            -0.0385   data required time
+-------------------------------------------------------------
+            -0.0385   data required time
+            -5.9283   data arrival time
+-------------------------------------------------------------
+            -5.9668   slack (VIOLATED)
+
+

@@ -12,18 +12,14 @@ package(
 )
 
 cc_library(
-    name = "dst",
+    name = "dst_impl",
     srcs = [
         "src/BalancerConnection.cc",
-        "src/BalancerConnection.h",
         "src/Distributed.cc",
         "src/JobMessage.cc",
         "src/LoadBalancer.cc",
-        "src/LoadBalancer.h",
         "src/Worker.cc",
-        "src/Worker.h",
         "src/WorkerConnection.cc",
-        "src/WorkerConnection.h",
     ],
     hdrs = [
         "include/dst/BalancerJobDescription.h",
@@ -31,9 +27,17 @@ cc_library(
         "include/dst/Distributed.h",
         "include/dst/JobCallBack.h",
         "include/dst/JobMessage.h",
+        "src/BalancerConnection.h",
+        "src/LoadBalancer.h",
+        "src/Worker.h",
+        "src/WorkerConnection.h",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/dst:__subpackages__",
     ],
     deps = [
         "//src/utl",
@@ -51,6 +55,25 @@ cc_library(
 )
 
 cc_library(
+    name = "dst",
+    hdrs = [
+        "include/dst/BalancerJobDescription.h",
+        "include/dst/BroadcastJobDescription.h",
+        "include/dst/Distributed.h",
+        "include/dst/JobCallBack.h",
+        "include/dst/JobMessage.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dst_impl",
+        "@boost.asio",
+        "@boost.serialization",
+    ],
+)
+
+cc_library(
     name = "ui",
     srcs = [
         "src/MakeDistributed.cc",
@@ -64,10 +87,9 @@ cc_library(
         "include",
     ],
     deps = [
-        ":dst",
+        ":dst_impl",
         "//:ord",
         "//src/utl",
-        "@boost.asio",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

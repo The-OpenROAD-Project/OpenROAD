@@ -40,9 +40,6 @@ module submodule (r1q,
  wire net1;
  wire net2;
  wire net3;
- wire net15;
- wire net16;
- wire net17;
 
  DFF_X1 r1 (.D(u6z),
     .CK(clk));
@@ -62,27 +59,27 @@ module submodule (r1q,
     .CK(clk));
  DFF_X1 r21 (.D(u5z),
     .CK(clk));
- DFF_X1 r22 (.D(net17),
+ DFF_X1 r22 (.D(net),
     .CK(clk));
- DFF_X1 r23 (.D(net16),
+ DFF_X1 r23 (.D(net),
     .CK(clk));
- DFF_X1 r24 (.D(net17),
+ DFF_X1 r24 (.D(net),
     .CK(clk));
- DFF_X1 r25 (.D(net17),
+ DFF_X1 r25 (.D(net),
     .CK(clk));
- DFF_X1 r26 (.D(net17),
+ DFF_X1 r26 (.D(net),
     .CK(clk));
- DFF_X1 r27 (.D(net16),
+ DFF_X1 r27 (.D(net),
     .CK(clk));
  DFF_X1 r28 (.D(net),
     .CK(clk));
- DFF_X1 r29 (.D(net16),
+ DFF_X1 r29 (.D(net),
     .CK(clk));
  DFF_X1 r3 (.D(u8z),
     .CK(clk));
- DFF_X1 r30 (.D(net17),
+ DFF_X1 r30 (.D(net),
     .CK(clk));
- DFF_X1 r31 (.D(net16),
+ DFF_X1 r31 (.D(net),
     .CK(clk));
  DFF_X1 r4 (.D(u9z),
     .CK(clk));
@@ -98,29 +95,23 @@ module submodule (r1q,
     .CK(clk));
  BUF_X2 rebuffer1 (.A(net3),
     .Z(net1));
- BUF_X2 rebuffer15 (.A(r1q),
-    .Z(net15));
- BUF_X8 rebuffer16 (.A(net),
-    .Z(net16));
  BUF_X2 rebuffer2 (.A(net3),
     .Z(net2));
- BUF_X4 rebuffer3 (.A(net15),
+ BUF_X1 rebuffer3 (.A(r1q),
     .Z(net3));
- BUF_X8 split (.A(net3),
+ BUF_X4 split (.A(net3),
     .Z(net));
- BUF_X8 split17 (.A(net),
-    .Z(net17));
  BUF_X1 u1 (.A(net1),
     .Z(u6z));
  BUF_X1 u10 (.A(net2),
     .Z(u15z));
  BUF_X1 u11 (.A(net1),
     .Z(u16z));
- BUF_X4 u12 (.A(net),
+ BUF_X1 u12 (.A(net),
     .Z(u17z));
- BUF_X4 u13 (.A(net),
+ BUF_X1 u13 (.A(net),
     .Z(u18z));
- BUF_X4 u14 (.A(net),
+ BUF_X1 u14 (.A(net),
     .Z(u19z));
  BUF_X1 u15 (.A(net1),
     .Z(u20z));

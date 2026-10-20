@@ -2,8 +2,43 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
+
+regression_test(
+    name = "acd_resynth",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "acd_resynth.ok",
+        "gcd.v",
+    ],
+)
+
+regression_test(
+    name = "comb_loop",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
+        "comb_loop.ok",
+        "comb_loop.v",
+        "comb_loop_cells.lef",
+        "comb_loop_cells.lib",
+    ],
+)
+
+regression_test(
+    name = "def_units",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "comb_loop.v",
+        "def_units.ok",
+    ],
+)
 
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
@@ -42,9 +77,20 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn",
+        "//src/syn",  # buildcleaner: keep: needs fixing syn layering first.
         "//src/syn/src/ir",
         "//src/utl",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "npn_test",
+    srcs = ["npn_test.cc"],
+    # No gtest_main: ABC ships its own main() that wins over gtest_main;
+    # the TU defines its own.
+    deps = [
+        "//src/syn",
         "@googletest//:gtest",
     ],
 )
@@ -99,11 +145,41 @@ cc_test(
 )
 
 cc_test(
+    name = "acd_test",
+    srcs = ["acd_test.cc"],
+    data = ["cm_test_cells.lib"],
+    deps = [
+        "//src/dbSta",
+        "//src/sta:opensta_lib",
+        "//src/syn",
+        "//src/tst",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "bitblast_test",
     srcs = ["bitblast_test.cc"],
     deps = [
         "//src/syn",
         "//src/syn/src/ir",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "elab_diag_test",
+    srcs = ["elab_diag_test.cc"],
+    data = [
+        "elab_diag_expr.sv",
+        "elab_diag_hier.sv",
+        "elab_diag_stmt.sv",
+        "elab_diag_tops.sv",
+    ],
+    deps = [
+        "//src/syn/src/elab",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
     ],
 )
@@ -115,9 +191,12 @@ cc_test(
         "elab_testcases.h",
         "equivalence_check.h",
     ],
+    data = ["macro_test_cells.lib"],
     deps = [
+        "//src/syn",
         "//src/syn/src/elab",
         "//src/syn/src/ir",
+        "//src/tst",
         "@googletest//:gtest",
     ],
 )

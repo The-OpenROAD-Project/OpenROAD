@@ -21,6 +21,7 @@ add_library(grt_lib
   src/Net.cpp
   src/Pin.cpp
   src/RepairAntennas.cpp
+  src/RoutingCongestion.cpp
   src/Rudy.cpp
   src/GlobalRouter.cpp
 )
@@ -56,6 +57,7 @@ target_sources(grt
     src/heatMapRudy.cpp
     src/GrouteRenderer.cpp
     src/fastroute/src/FastRouteRenderer.cpp
+    src/cugr/src/CugrRenderer.cpp
 )
 
 target_include_directories(grt
@@ -63,13 +65,13 @@ target_include_directories(grt
     include
   PRIVATE
     src
+    src/cugr/include
 )
 
 target_link_libraries(grt
     grt_lib
     dbSta
-    gui
-    gui_heatmap_core
+    gui_core
     stt
     rsz
 )
@@ -97,8 +99,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       ant_lib
       dpl_lib
       dbSta
-      gui
-      gui_heatmap_core
+      gui_core
       stt
       OpenSTA
       Boost::boost

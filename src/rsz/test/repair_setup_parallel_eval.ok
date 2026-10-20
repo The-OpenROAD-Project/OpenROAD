@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 167 pins.
+[INFO ODB-0131]     Created 281 components and 1577 component-terminals.
+[INFO ODB-0133]     Created 400 nets and 850 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
+       1* |       0 |       4 |        0 |      0 |     0 |    +0.3% |   -0.221 |       -1.7 |     22 | inst13/D
+    final |       0 |       8 |        0 |      0 |     0 |    +0.6% |   -0.207 |       -1.3 |     15 | inst13/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 8 instances: 8 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.

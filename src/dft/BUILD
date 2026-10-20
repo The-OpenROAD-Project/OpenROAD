@@ -32,6 +32,7 @@ cc_library(
         "//src/dft/src/stitch",
         "//src/dft/src/utils",
         "//src/odb/src/db",
+        "//src/rsz",
         "//src/utl",
         "@boost.property_tree",
     ],
@@ -54,11 +55,9 @@ cc_library(
     deps = [
         ":dft",
         "//:ord",
-        "//src/dbSta",
         "//src/dft/src/architect",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
-        "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
@@ -101,6 +100,15 @@ filegroup(
 )
 
 messages_txt(
+    extra_srcs = [
+        "//src/dft/src/architect:message_srcs",
+        "//src/dft/src/cells:message_srcs",
+        "//src/dft/src/clock_domain:message_srcs",
+        "//src/dft/src/config:message_srcs",
+        "//src/dft/src/replace:message_srcs",
+        "//src/dft/src/stitch:message_srcs",
+        "//src/dft/src/utils:message_srcs",
+    ],
     visibility = [
         "//docs:__pkg__",
         "//src/dft/test:__pkg__",

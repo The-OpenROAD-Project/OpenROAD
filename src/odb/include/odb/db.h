@@ -115,12 +115,14 @@ class dbCellEdgeSpacing;
 class dbChip;
 class dbChipBump;
 class dbChipBumpInst;
+class dbChipCapNode;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
 class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
+class dbChipRSeg;
 class dbDatabase;
 class dbDft;
 class dbGCellGrid;
@@ -269,6 +271,10 @@ class dbBox : public dbObject
   int getDesignRuleWidth() const;
 
   void setDesignRuleWidth(int);
+
+  int getMinSpacing() const;
+
+  void setMinSpacing(int);
 
   ///
   /// Get the height (yMax-yMin) of the box.
@@ -1027,11 +1033,6 @@ class dbBlock : public dbObject
   int getCornerCount();
 
   ///
-  /// having independent extraction corners ?
-  ///
-  bool extCornersAreIndependent();
-
-  ///
   /// Get the number of corners kept n this block
   ///
   int getCornersPerBlock();
@@ -1070,27 +1071,9 @@ class dbBlock : public dbObject
   void setCornerCount(int cnt);
 
   ///
-  /// Set the number of corners kept in this block
-  ///
-  void setCornersPerBlock(int cornersPerBlock);
-
-  ///
   /// Initialize the parasitics value tables
   ///
   void initParasiticsValueTables();
-
-  ///
-  /// create child block for one extraction corner
-  ///
-  dbBlock* createExtCornerBlock(uint32_t corner);
-  ///
-  /// find child block for one extraction corner
-  ///
-  dbBlock* findExtCornerBlock(uint32_t corner);
-  ///
-  /// get extraction data block for one extraction corner
-  ///
-  dbBlock* getExtCornerBlock(uint32_t corner);
 
   ///
   /// Get the track-grids of this block.
@@ -1308,11 +1291,6 @@ class dbBlock : public dbObject
   void clear();
 
   ///
-  /// get wire_updated nets
-  ///
-  void getWireUpdatedNets(std::vector<dbNet*>& nets);
-
-  ///
   /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
@@ -1322,18 +1300,39 @@ class dbBlock : public dbObject
   /// If corresponding_flat_net is nullptr, any findNet() hit is a collision.
   /// If corresponding_flat_net is non-null, only internal flat nets excluding
   /// the corresponding one are collisions (lenient mode for ModNet creation).
+  /// If associated_bterm is non-null, that exact top-level port may reuse the
+  /// candidate name while its net association is being updated.
   ///
   std::string makeNewNetName(const dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS,
-                             dbNet* corresponding_flat_net = nullptr);
+                             dbNet* corresponding_flat_net = nullptr,
+                             const dbBTerm* associated_bterm = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
                               = dbNameUniquifyType::ALWAYS);
 
   const char* getBaseName(const char* full_name) const;
+
+  ///
+  /// Split a hierarchical name into its path segments, using this block's
+  /// hierarchy delimiter and the same escaping rule as getBaseName(): a
+  /// delimiter preceded by an odd number of backslashes is escaped and
+  /// belongs to the local identifier rather than separating two levels.
+  ///
+  /// Segments are appended to `segments` after clearing it, and are views
+  /// into `full_name` -- the caller keeps that buffer alive.  Escapes are
+  /// left in place, so a segment reads exactly as it does in the full name.
+  ///
+  /// Splitting is purely textual: every unescaped delimiter separates two
+  /// segments, so "a//b" yields {"a", "", "b"} and "a/" yields {"a", ""}.
+  /// Callers that treat an empty segment as meaningless drop it themselves.
+  /// The last segment always equals getBaseName(full_name).
+  ///
+  void getPathSegments(const char* full_name,
+                       std::vector<std::string_view>& segments) const;
 
   ///
   /// return the regions of this design
@@ -1936,39 +1935,6 @@ class dbNet : public dbObject
   void setSelect(bool value);
 
   ///
-  /// Returns the wire-ordered flag value. This flag specified that the
-  /// wires of this net have been ordered into a single dbWire.
-  ///
-  bool isWireOrdered();
-
-  ///
-  /// Set the wire-ordered flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setWireOrdered(bool value);
-
-  ///
-  /// Returns the disconnected flag value. This flag specified that the
-  /// wire are connected to all the iterms of this net.
-  ///
-  bool isDisconnected();
-
-  ///
-  /// Set the disconnected flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setDisconnected(bool value);
-
-  ///
-  /// wire_update flag to be used at when the wire is replaced with a new wire
-  /// NOTE: rcgraph, extracted, ordered, reduced all have to be reset
-  ///
-  void setWireAltered(bool value);
-  bool isWireAltered();
-
-  ///
   /// rc_graph flag set when Rseg and CapNodes were created
   ///
   void setRCgraph(bool value);
@@ -2534,6 +2500,16 @@ class dbNet : public dbObject
   bool hasJumpers();
 
   void setJumpers(bool has_jumpers);
+
+  ///
+  /// When enabled (the default), the detailed router may auto-taper this
+  /// net down to minimum width near pin connections.  Disable it for
+  /// wide/NDR (e.g. analog) nets that must keep their full width all the
+  /// way to the pin.
+  ///
+  bool isAutoTaperEnabled();
+
+  void setAutoTaper(bool enable = true);
 
   ///
   /// Return true if the input net is in higher hierarchy than this net
@@ -3734,6 +3710,16 @@ class dbWire : public dbObject
   /// Returns true if this wire is a global-wire
   ///
   bool isGlobalWire();
+
+  ///
+  /// Returns true if this wire has been ordered.
+  ///
+  bool isOrdered();
+
+  ///
+  /// Set the ordered flag.
+  ///
+  void setOrdered(bool ordered);
 
   ///
   /// Get the bounding box of this wire
@@ -5132,6 +5118,11 @@ class dbRegion : public dbObject
   dbSet<dbBox> getBoundaries();
 
   ///
+  /// Get the overlap area between the region and a rectangle
+  ///
+  int64_t getOverlapArea(const Rect& r);
+
+  ///
   /// Add this instance to the region
   ///
   void addInst(dbInst* inst);
@@ -5774,6 +5765,17 @@ class dbMTerm : public dbObject
   /// get mark of this master-terminal.
   ///
   bool isSetMark();
+
+  ///
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
 
   ///
   /// Get the master this master-terminal belongs too.
@@ -7337,6 +7339,10 @@ class dbChip : public dbObject
 
   dbSet<dbChipRegion> getChipRegions() const;
 
+  dbSet<dbChipCapNode> getChipCapNodes() const;
+
+  dbSet<dbChipRSeg> getChipRSegs() const;
+
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
   dbSet<dbChipPath> getChipPaths() const;
@@ -7426,6 +7432,34 @@ class dbChipBumpInst : public dbObject
   // User Code End dbChipBumpInst
 };
 
+// A capacitance node in the inter-chip parasitic network of a dbChipNet,
+// the inter-chip analog of dbCapNode. It is an electrical node of the
+// network carrying a lumped capacitance to ground. A terminal node
+// corresponds to a bump landing and references the dbChipBumpInst where
+// the vertical connection meets a die or RDL pin; this is how the per-die
+// parasitic networks are stitched together across the stack at the bumps.
+class dbChipCapNode : public dbObject
+{
+ public:
+  void setCapacitance(float capacitance);
+
+  float getCapacitance() const;
+
+  // User Code Begin dbChipCapNode
+  dbChipNet* getChipNet() const;
+
+  dbChipBumpInst* getChipBumpInst() const;
+
+  void setChipBumpInst(dbChipBumpInst* chip_bump_inst);
+
+  dbBTerm* getBTerm() const;
+
+  static dbChipCapNode* create(dbChipNet* chip_net);
+
+  static void destroy(dbChipCapNode* chip_cap_node);
+  // User Code End dbChipCapNode
+};
+
 class dbChipConn : public dbObject
 {
  public:
@@ -7504,6 +7538,12 @@ class dbChipNet : public dbObject
 
   // User Code Begin dbChipNet
   dbChip* getChip() const;
+
+  dbSet<dbChipCapNode> getChipCapNodes() const;
+
+  float getTotalCapacitance() const;
+
+  dbSet<dbChipRSeg> getChipRSegs() const;
 
   uint32_t getNumBumpInsts() const;
 
@@ -7596,6 +7636,33 @@ class dbChipRegionInst : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   // User Code End dbChipRegionInst
+};
+
+// A resistor segment connecting two dbChipCapNodes (source and target) in
+// the inter-chip parasitic network of a dbChipNet, the inter-chip analog
+// of dbRSeg. Together with dbChipCapNodes it models the RC of the vertical
+// connections between stacked chips; a single bump is typically a pi
+// network -- a series dbChipRSeg with a shunt dbChipCapNode at each end.
+class dbChipRSeg : public dbObject
+{
+ public:
+  void setResistance(float resistance);
+
+  float getResistance() const;
+
+  // User Code Begin dbChipRSeg
+  dbChipNet* getChipNet() const;
+
+  dbChipCapNode* getSourceCapNode() const;
+
+  dbChipCapNode* getTargetCapNode() const;
+
+  static dbChipRSeg* create(dbChipNet* chip_net,
+                            dbChipCapNode* source_cap_node,
+                            dbChipCapNode* target_cap_node);
+
+  static void destroy(dbChipRSeg* r_seg);
+  // User Code End dbChipRSeg
 };
 
 class dbDatabase : public dbObject
@@ -8774,6 +8841,18 @@ class dbModNet : public dbObject
   bool isConnected(const dbModNet* other) const;
 
   ///
+  /// Returns true if this dbModNet is connected to an INPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToInputPort() const;
+
+  ///
+  /// Returns true if this dbModNet is connected to an OUTPUT, INOUT, or
+  /// FEEDTHRU dbBTerm or dbModBTerm.
+  ///
+  bool isConnectedToOutputPort() const;
+
+  ///
   /// Returns the next dbModNets in the fanin of this dbModNet.
   /// Traverses up to parent inputs or down to child outputs.
   ///
@@ -8902,10 +8981,13 @@ class dbPolygon : public dbObject
 
   int getDesignRuleWidth() const;
 
+  int getMinSpacing() const;
+
   // User Code Begin dbPolygon
   dbTechLayer* getTechLayer();
   dbSet<dbBox> getGeometry();
   void setDesignRuleWidth(int design_rule_width);
+  void setMinSpacing(int min_spacing);
 
   ///
   /// Add an obstruction to a master.

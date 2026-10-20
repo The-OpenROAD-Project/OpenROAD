@@ -20,7 +20,7 @@ class dbDatabase;
 class dbNet;
 }  // namespace odb
 
-namespace gui {
+namespace web {
 class Gui;
 }
 
@@ -49,8 +49,12 @@ struct Tree
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger);
+  explicit SteinerTreeBuilder(utl::Logger* logger);
   ~SteinerTreeBuilder();
+
+  // Completes the state that makeSteinerTree otherwise builds on first use,
+  // so that it may then be called from several threads.
+  void prepareForThreads();
 
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
@@ -96,7 +100,6 @@ class SteinerTreeBuilder
   std::pair<int, float> min_hpwl_alpha_;
 
   utl::Logger* logger_;
-  odb::dbDatabase* db_;
   std::unique_ptr<flt::Flute> flute_;
 };
 

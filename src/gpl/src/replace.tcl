@@ -11,6 +11,7 @@ sta::define_cmd_args "global_placement" {\
     [-virtual_cts]\
     [-incremental]\
     [-skip_io]\
+    [-place_ios]\
     [-bin_grid_count grid_count]\
     [-density target_density]\
     [-init_density_penalty init_density_penalty]\
@@ -28,6 +29,10 @@ sta::define_cmd_args "global_placement" {\
     [-routability_max_density routability_max_density]\
     [-routability_inflation_ratio_coef routability_inflation_ratio_coef]\
     [-routability_max_inflation_ratio routability_max_inflation_ratio]\
+    [-routability_min_congestion_for_inflation routability_min_congestion_for_inflation]\
+    [-routability_max_inflation_total routability_max_inflation_total]\
+    [-routability_net_weight_max routability_net_weight_max]\
+    [-routability_congested_nets_percentage routability_congested_nets_percentage]\
     [-routability_rc_coefficients routability_rc_coefficients]\
     [-keep_resize_below_overflow keep_resize_below_overflow]\
     [-timing_driven_net_reweight_overflow timing_driven_net_reweight_overflow]\
@@ -39,6 +44,8 @@ sta::define_cmd_args "global_placement" {\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
     [-disable_pin_density_adjust]\
+    [-random_seed random_seed]\
+    [-perturb_dist perturb_dist]\
     [-enable_routing_congestion]
 }
 
@@ -54,6 +61,10 @@ proc global_placement { args } {
       -routability_target_rc_metric \
       -routability_inflation_ratio_coef \
       -routability_max_inflation_ratio \
+      -routability_min_congestion_for_inflation \
+      -routability_max_inflation_total \
+      -routability_net_weight_max \
+      -routability_congested_nets_percentage \
       -routability_rc_coefficients \
       -timing_driven_net_reweight_overflow \
       -timing_driven_net_weight_max \
@@ -61,6 +72,8 @@ proc global_placement { args } {
       -timing_driven_repair_tns_end_percent \
       -keep_resize_below_overflow \
       -virtual_cts_max_skew_fraction \
+      -random_seed \
+      -perturb_dist \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
       -force_center_initial_place \
@@ -71,12 +84,25 @@ proc global_placement { args } {
       -virtual_cts \
       -routability_use_grt \
       -skip_io \
+      -place_ios \
       -incremental \
       -disable_revert_if_diverge \
       -disable_pin_density_adjust \
       -enable_routing_congestion}
 
   sta::check_argc_eq0 "global_placement" $args
+
+  if { [info exists flags(-place_ios)] } {
+    if { [info exists flags(-skip_io)] } {
+      utl::error GPL 169 "-place_ios cannot be used with -skip_io placement."
+    }
+    if { [info exists flags(-incremental)] } {
+      utl::error GPL 170 "-place_ios cannot be used with -incremental placement."
+    }
+    if { [info exists flags(-skip_nesterov_place)] } {
+      utl::error GPL 182 "-place_ios cannot be used with -skip_nesterov_place placement."
+    }
+  }
 
   if { [info exists flags(-incremental)] } {
     gpl::replace_incremental_place_cmd [array get keys] [array get flags]
@@ -90,16 +116,123 @@ proc global_placement { args } {
   gpl::replace_reset_cmd
 }
 
+# The settings live in block properties, so they persist with the design.
+# place_pins and global_placement -place_ios read the IO pin settings.
+sta::define_cmd_args "set_place_config" {[-io_pin_hor_layers h_layers]\
+                                         [-io_pin_ver_layers v_layers]\
+                                         [-io_pin_corner_avoidance distance]\
+                                         [-io_pin_min_distance min_dist]\
+                                         [-io_pin_min_distance_in_tracks]}
+
+proc set_place_config { args } {
+  sta::parse_key_args "set_place_config" args \
+    keys {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance -io_pin_min_distance} \
+    flags {-io_pin_min_distance_in_tracks}
+  sta::check_argc_eq0 "set_place_config" $args
+
+  set block [gpl::place_config_block]
+  set in_tracks [info exists flags(-io_pin_min_distance_in_tracks)]
+  if { $in_tracks && ![info exists keys(-io_pin_min_distance)] } {
+    utl::error GPL 192 \
+      "-io_pin_min_distance_in_tracks requires -io_pin_min_distance."
+  }
+
+  set hor_layers {}
+  set ver_layers {}
+  if { [info exists keys(-io_pin_hor_layers)] } {
+    set hor_layers $keys(-io_pin_hor_layers)
+  }
+  if { [info exists keys(-io_pin_ver_layers)] } {
+    set ver_layers $keys(-io_pin_ver_layers)
+  }
+  ppl::check_io_pin_layers $hor_layers $ver_layers
+  if { [info exists keys(-io_pin_hor_layers)] } {
+    gpl::set_place_prop $block String io_pin_hor_layers $hor_layers
+  }
+  if { [info exists keys(-io_pin_ver_layers)] } {
+    gpl::set_place_prop $block String io_pin_ver_layers $ver_layers
+  }
+  if { [info exists keys(-io_pin_corner_avoidance)] } {
+    gpl::set_place_prop $block Int io_pin_corner_avoidance \
+      [ord::microns_to_dbu $keys(-io_pin_corner_avoidance)]
+  }
+  if { [info exists keys(-io_pin_min_distance)] } {
+    set min_dist $keys(-io_pin_min_distance)
+    if { !$in_tracks } {
+      set min_dist [ord::microns_to_dbu $min_dist]
+    }
+    gpl::set_place_prop $block Int io_pin_min_distance $min_dist
+    gpl::set_place_prop $block Bool io_pin_min_distance_in_tracks $in_tracks
+  }
+}
+
+sta::define_cmd_args "reset_place_config" {[-io_pin_hor_layers]\
+                                           [-io_pin_ver_layers]\
+                                           [-io_pin_corner_avoidance]\
+                                           [-io_pin_min_distance]}
+
+proc reset_place_config { args } {
+  sta::parse_key_args "reset_place_config" args \
+    keys {} \
+    flags {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance \
+      -io_pin_min_distance}
+  sta::check_argc_eq0 "reset_place_config" $args
+
+  set block [gpl::place_config_block]
+  set reset_all [expr { [array size flags] == 0 }]
+  foreach { flag props } {
+    -io_pin_hor_layers {String io_pin_hor_layers}
+    -io_pin_ver_layers {String io_pin_ver_layers}
+    -io_pin_corner_avoidance {Int io_pin_corner_avoidance}
+    -io_pin_min_distance {Int io_pin_min_distance Bool io_pin_min_distance_in_tracks}
+  } {
+    if { $reset_all || [info exists flags($flag)] } {
+      foreach { type name } $props {
+        gpl::clear_place_prop $block $type $name
+      }
+    }
+  }
+}
+
+sta::define_cmd_args "report_place_config" {}
+
+proc report_place_config { args } {
+  sta::parse_key_args "report_place_config" args keys {} flags {}
+  sta::check_argc_eq0 "report_place_config" $args
+
+  set block [gpl::place_config_block]
+  foreach name {io_pin_hor_layers io_pin_ver_layers} {
+    set value [gpl::get_place_prop $block String $name]
+    utl::report "$name: [expr { $value eq {} ? {unset} : $value }]"
+  }
+  set corner [gpl::get_place_prop $block Int io_pin_corner_avoidance]
+  if { $corner eq {} } {
+    utl::report "io_pin_corner_avoidance: unset"
+  } else {
+    utl::report "io_pin_corner_avoidance: [ord::dbu_to_microns $corner] um"
+  }
+  set min_dist [gpl::get_place_prop $block Int io_pin_min_distance]
+  if { $min_dist eq {} } {
+    utl::report "io_pin_min_distance: unset"
+  } elseif { [gpl::get_place_prop $block Bool io_pin_min_distance_in_tracks] } {
+    utl::report "io_pin_min_distance: $min_dist tracks"
+  } else {
+    utl::report "io_pin_min_distance: [ord::dbu_to_microns $min_dist] um"
+  }
+}
+
 sta::define_cmd_args "cluster_flops" {\
     [-tray_weight tray_weight]\
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
+    [-clock_power_weight clock_power_weight]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
-    keys { -tray_weight -timing_weight -max_split_size -num_paths } \
+    keys { -tray_weight -timing_weight -max_split_size -num_paths \
+      -clock_power_weight } \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -110,6 +243,7 @@ proc cluster_flops { args } {
   set timing_weight 0.1
   set max_split_size 500
   set num_paths 0
+  set clock_power_weight 0.0
 
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
@@ -127,13 +261,21 @@ proc cluster_flops { args } {
     set num_paths $keys(-num_paths)
   }
 
-  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
+  if { [info exists keys(-clock_power_weight)] } {
+    # Non-negativity is enforced in MBFF::Run so that non-Tcl callers
+    # (Python, direct C++) are validated too; see src/gpl/src/mbff.cpp.
+    set clock_power_weight $keys(-clock_power_weight)
+  }
+
+  gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \
+    $num_paths $clock_power_weight
 }
 
 sta::define_cmd_args "global_placement_debug" {
   [-pause pause]
   [-update update]
   [-inst inst]
+  [-pin pin]
   [-start_iter start_iter]
   [-start_rudy start_rudy]
   [-rudy_stride rudy_stride]
@@ -145,7 +287,7 @@ sta::define_cmd_args "global_placement_debug" {
 
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
-    keys {-pause -update -inst -start_iter -images_path \
+    keys {-pause -update -inst -pin -start_iter -images_path \
       -start_rudy -rudy_stride} \
     flags {-draw_bins -initial -generate_images}
 
@@ -168,6 +310,11 @@ proc global_placement_debug { args } {
   set inst ""
   if { [info exists keys(-inst)] } {
     set inst $keys(-inst)
+  }
+
+  set pin ""
+  if { [info exists keys(-pin)] } {
+    set pin $keys(-pin)
   }
 
   set start_iter 0
@@ -198,7 +345,7 @@ proc global_placement_debug { args } {
   }
 
   gpl::set_debug_cmd $pause $update $draw_bins $initial \
-    $inst $start_iter $start_rudy $rudy_stride $generate_images $images_path
+    $inst $pin $start_iter $start_rudy $rudy_stride $generate_images $images_path
 }
 
 sta::define_cmd_args "placement_cluster" {}
@@ -225,7 +372,65 @@ proc placement_cluster { args } {
   gpl::placement_cluster_cmd $insts
 }
 
+sta::define_cmd_args "estimate_target_density" {\
+    [-bin_grid_count grid_count]\
+    [-overflow overflow]\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+}
+
+proc estimate_target_density { args } {
+  sta::parse_key_args "estimate_target_density" args \
+    keys {-bin_grid_count -overflow \
+      -pad_left -pad_right} \
+    flags {}
+  sta::check_argc_eq0 "estimate_target_density" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error GPL 187 "No design block found."
+  }
+
+  set density_estimation [gpl::estimate_target_density_cmd \
+    [array get keys] [array get flags]]
+  gpl::replace_reset_cmd
+
+  return $density_estimation
+}
+
 namespace eval gpl {
+proc place_config_block { } {
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GPL 194 "No design block found."
+  }
+  return $block
+}
+
+# type is String, Int or Bool. The property names are read by ppl.
+proc set_place_prop { block type name value } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop eq "NULL" } {
+    odb::db${type}Property_create $block "place_config_$name" $value
+  } else {
+    $prop setValue $value
+  }
+}
+
+proc get_place_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop eq "NULL" } {
+    return {}
+  }
+  return [$prop getValue]
+}
+
+proc clear_place_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "place_config_$name"]
+  if { $prop ne "NULL" } {
+    odb::dbProperty_destroy $prop
+  }
+}
+
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 114 "No design block found."

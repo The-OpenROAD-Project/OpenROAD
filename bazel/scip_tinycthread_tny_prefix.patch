@@ -1,0 +1,47 @@
+Backport scipopt/scip@cc917e07: prefix tinycthread once_flag/call_once
+with TNY_ to avoid clash with C11 <threads.h>. Drop when included in a
+BCR scip release > 9.2.3.
+
+diff --git a/src/tinycthread/tinycthread.c b/src/tinycthread/tinycthread.c
+--- a/src/tinycthread/tinycthread.c
++++ b/src/tinycthread/tinycthread.c
+@@ -895,7 +895,7 @@ int _tthread_timespec_get(struct timespec *ts, int base)
+ #endif /* _TTHREAD_EMULATE_TIMESPEC_GET_ */
+
+ #if defined(_TTHREAD_WIN32_)
+-void call_once(once_flag *flag, void (*func)(void))
++void TNY_call_once(TNY_once_flag *flag, void (*func)(void))
+ {
+   /* The idea here is that we use a spin lock (via the
+      InterlockedCompareExchange function) to restrict access to the
+diff --git a/src/tinycthread/tinycthread.h b/src/tinycthread/tinycthread.h
+--- a/src/tinycthread/tinycthread.h
++++ b/src/tinycthread/tinycthread.h
+@@ -447,11 +447,11 @@ int tss_set(tss_t key, void *val);
+   typedef struct {
+     LONG volatile status;
+     CRITICAL_SECTION lock;
+-  } once_flag;
+-  #define ONCE_FLAG_INIT {0,}
++  } TNY_once_flag;
++  #define TNY_ONCE_FLAG_INIT {0,}
+ #else
+-  #define once_flag pthread_once_t
+-  #define ONCE_FLAG_INIT PTHREAD_ONCE_INIT
++  #define TNY_once_flag pthread_once_t
++  #define TNY_ONCE_FLAG_INIT PTHREAD_ONCE_INIT
+ #endif
+
+ /** Invoke a callback exactly once
+@@ -460,9 +460,9 @@ int tss_set(tss_t key, void *val);
+  * @param func Callback to invoke.
+  */
+ #if defined(_TTHREAD_WIN32_)
+-  void call_once(once_flag *flag, void (*func)(void));
++  void TNY_call_once(TNY_once_flag *flag, void (*func)(void));
+ #else
+-  #define call_once(flag,func) pthread_once(flag,func)
++  #define TNY_call_once(flag,func) pthread_once(flag,func)
+ #endif
+
+ #ifdef __cplusplus

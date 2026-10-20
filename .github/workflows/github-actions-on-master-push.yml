@@ -11,25 +11,32 @@ permissions:
 jobs:
   auto-format:
     name: Auto-format on push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: github.repository_owner == 'The-OpenROAD-Project'
     env:
       BUILDIFIER_VERSION: v8.2.1
+      CLANG_FORMAT_VERSION: "23.1.2"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Install Python tools
         run: |
-          python3 -m venv venv
-          venv/bin/pip install tclint==0.7.0 black
+          # Separate venvs: tclint pins pathspec==0.11.2 and black >= 26
+          # requires pathspec >= 1.0.0, so they cannot resolve together.
+          python3 -m venv venv-tclint
+          venv-tclint/bin/pip install tclint==0.7.0
+          python3 -m venv venv-black
+          venv-black/bin/pip install black==26.10.1
+          python3 -m venv "$RUNNER_TEMP/clang-format"
+          "$RUNNER_TEMP/clang-format/bin/pip" install --quiet "clang-format==${CLANG_FORMAT_VERSION}"
 
       - name: Cache buildifier
         id: cache-buildifier
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: ./buildifier
           key: ${{ runner.os }}-buildifier-${{ env.BUILDIFIER_VERSION }}
@@ -55,27 +62,27 @@ jobs:
             | grep -E '\.(h|hh|hpp|hxx|c|cc|cpp|cxx)$' \
             | grep -v '^src/sta/' \
             | grep -v '^src/odb/src/codeGenerator/' \
-            | xargs --no-run-if-empty clang-format -i
+            | xargs --no-run-if-empty "$RUNNER_TEMP/clang-format/bin/clang-format" -i
 
           # Run black on changed Python files
-          source venv/bin/activate
+          source venv-black/bin/activate
           echo "$changed" \
             | grep -E '\.py$' \
             | xargs --no-run-if-empty black
+          deactivate
 
           # Run buildifier on changed Bazel files
           echo "$changed" \
             | grep -E '(BUILD|WORKSPACE|\.bzl|\.bazel)$' \
             | xargs --no-run-if-empty ./buildifier -lint=fix
 
-          # Update the Bazel lock file (best-effort)
-          bazelisk mod deps --lockfile_mode=update || true
-
           # Run tclfmt on changed Tcl files
+          source venv-tclint/bin/activate
           echo "$changed" \
             | grep -E '\.tcl$' \
             | grep -v '^src/sta/' \
             | xargs --no-run-if-empty tclfmt --in-place
+          deactivate
 
           # Commit if any diffs were created
           if [ -n "$(git diff --name-only)" ]; then

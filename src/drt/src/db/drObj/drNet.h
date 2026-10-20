@@ -17,12 +17,12 @@
 #include "db/drObj/drPin.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
-#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "drt-global.h"
 #include "frBaseTypes.h"
+#include "odb/geom.h"
 
 namespace drt {
 class frNet;
@@ -60,6 +60,10 @@ class drNet : public drBlockObject
   void clearRouteConnFigs() { routeConnFigs_.clear(); }
   frNet* getFrNet() const { return fNet_; }
   void setFrNet(frNet* net) { fNet_ = net; }
+  // True when this net should still be auto-tapered to min width near pins.
+  // Honors both the global AUTO_TAPER_NDR_NETS config and the per-net
+  // setting carried on the frNet.
+  bool autoTaperEnabled(bool global_enabled) const;
   const frOrderedIdSet<frBlockObject*>& getFrNetTerms() const
   {
     return fNetTerms_;
@@ -168,12 +172,12 @@ class drNet : public drBlockObject
                                   frCoord y,
                                   frLayerNum lNum,
                                   frBlockObject** owner = nullptr);
-  void updateExtFigStyle(const Point3D& pt, const frSegStyle& style)
+  void updateExtFigStyle(const odb::Point3D& pt, const frSegStyle& style)
   {
     ext_figs_updates_[pt].is_via = false;
     ext_figs_updates_[pt].updated_style = style;
   }
-  void updateExtFigConnected(const Point3D& pt,
+  void updateExtFigConnected(const odb::Point3D& pt,
                              const bool is_bottom_connected,
                              const bool is_top_connected)
   {
@@ -182,24 +186,24 @@ class drNet : public drBlockObject
     ext_figs_updates_[pt].is_top_connected = is_top_connected;
   }
   bool hasExtFigUpdates() const { return !ext_figs_updates_.empty(); }
-  std::vector<Point3D> getExtFigsUpdatesLocs() const
+  std::vector<odb::Point3D> getExtFigsUpdatesLocs() const
   {
-    std::vector<Point3D> locs;
+    std::vector<odb::Point3D> locs;
     locs.reserve(ext_figs_updates_.size());
     std::ranges::transform(ext_figs_updates_,
                            std::back_inserter(locs),
                            [](const auto& pair) { return pair.first; });
     return locs;
   }
-  bool isExtFigUpdateVia(const Point3D& loc) const
+  bool isExtFigUpdateVia(const odb::Point3D& loc) const
   {
     return ext_figs_updates_.at(loc).is_via;
   }
-  void getExtFigUpdate(const Point3D& loc, frSegStyle& style) const
+  void getExtFigUpdate(const odb::Point3D& loc, frSegStyle& style) const
   {
     style = ext_figs_updates_.at(loc).updated_style;
   }
-  void getExtFigUpdate(const Point3D& loc,
+  void getExtFigUpdate(const odb::Point3D& loc,
                        bool& is_bottom_connected,
                        bool& is_top_connected) const
   {
@@ -247,7 +251,7 @@ class drNet : public drBlockObject
 
     friend class boost::serialization::access;
   };
-  std::map<Point3D, ExtFigUpdate> ext_figs_updates_;
+  std::map<odb::Point3D, ExtFigUpdate> ext_figs_updates_;
 
   template <class Archive>
   void serialize(Archive& ar, unsigned int version);

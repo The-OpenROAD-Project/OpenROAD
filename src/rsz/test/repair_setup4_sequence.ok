@@ -9,15 +9,15 @@ tns max -6.294
 [INFO RSZ-0100] Repair move sequence: UnbufferMove BufferMove SizeUpMove SizeDownFanoutMove 
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -2.0 |       -6.3 |      6 | r2/D
-      23* |       6 |       8 |        7 |      0 |     0 |   +16.9% |   -0.304 |       -0.3 |       -1.8 |      6 | r7/D
-    final |       6 |       9 |        7 |      0 |     0 |   +19.6% |   -0.304 |       -0.3 |       -1.8 |      6 | r7/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
+      22* |       5 |       8 |        5 |      0 |     0 |   +15.5% |   -0.304 |       -1.8 |      6 | r7/D
+    final |       5 |       9 |        5 |      0 |     0 |   +18.3% |   -0.304 |       -1.8 |      6 | r7/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 6 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
+[INFO RSZ-0059] Removed 5 buffers.
+[INFO RSZ-0040] Inserted 5 buffers.
 [INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test

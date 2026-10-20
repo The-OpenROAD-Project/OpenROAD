@@ -8,21 +8,21 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 366 components and 1951 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
-worst slack max -3597.44
-tns max -133188.516
+worst slack max -3599.66
+tns max -134060.438
 [INFO RSZ-0100] Repair move sequence: RerouteMove 
 [INFO RSZ-0094] Found 53 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 5 out of 53 (10.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3597.437 |  -104190.9 |  -133188.5 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-      53* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2268.006 |   -75454.9 |   -94047.3 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-    final |       0 |     231 |        0 |      0 |    27 |    +6.4% | -1941.062 |   -61877.4 |   -78011.1 |     53 | dpath.b_reg.out\[12\]$_DFFE_PP_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3599.661 |  -134060.4 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+      64* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2194.986 |   -91348.3 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |     117 |        0 |      0 |     0 |    +0.0% | -2151.308 |   -86863.9 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 231 instances: 41 up, 0 up match, 0 down, 190 VT
-[INFO RSZ-0043] Swapped pins on 27 instances.
-[INFO RSZ-0053] Rerouted 48 nets resistance-aware.
+[INFO RSZ-0051] Resized 117 instances: 0 up, 0 up match, 0 down, 117 VT
+[INFO RSZ-0053] Rerouted 59 nets resistance-aware.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -1941.06
-tns max -78011.094
+worst slack max -2151.31
+tns max -86863.945

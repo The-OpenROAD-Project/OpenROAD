@@ -745,6 +745,9 @@ Rect dbITerm::getBBox()
 {
   dbMTerm* term = getMTerm();
   Rect bbox = term->getBBox();
+  if (bbox.isInverted()) {
+    return bbox;
+  }
   const odb::dbTransform inst_xfm = getInst()->getTransform();
   inst_xfm.apply(bbox);
   return bbox;

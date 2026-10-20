@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -5,6 +6,7 @@ package(features = ["layering_check"])
 
 TESTS = [
     "bus_route",
+    "check_antennas_cugr",
     "clock_route",
     "clock_route_cugr",
     "clock_route_cugr2",
@@ -24,17 +26,25 @@ TESTS = [
     "cugr_adjustment1",
     "cugr_adjustment2",
     "cugr_adjustment3",
+    "cugr_colocated_pins",
+    "cugr_congestion_sources",
+    "cugr_detour_limit",
+    "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
     "est_rc3",
     "est_rc4",
     "est_rc_cugr1",
+    "est_rc_spef_pin_cap",
     "estimate_path_resistance",
     "gcd",
     "gcd_cugr",
     "gcd_flute",
+    "global_route_above_max_layer_cugr",
+    "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_repair_cugr",
     "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
@@ -62,6 +72,7 @@ TESTS = [
     "pin_access1_cugr",
     "pin_access2",
     "pin_access2_cugr",
+    "pin_access_fallback_cugr",
     "pin_edge",
     "pin_track_not_aligned",
     "pre_routed1",
@@ -74,19 +85,39 @@ TESTS = [
     "read_segments_error3",
     "read_segments_error4",
     "read_segments_error5",
+    "read_segments_error6",
     "region_adjustment",
     "remove_buffers1",
     "remove_buffers2",
+    "remove_buffers1_cugr",
+    "remove_buffers2_cugr",
+    "remove_buffers3_cugr",
+    "remove_buffers4_cugr",
+    "remove_buffers5_cugr",
+    "remove_buffers6_cugr",
+    "remove_buffers3",
     "repair_antennas1",
     "repair_antennas2",
+    "repair_antennas2_cugr",
     "repair_antennas3",
     "repair_antennas4",
+    "repair_antennas4_cugr",
+    "repair_antennas_adjacent_jumpers",
     "repair_antennas_error1",
     "repair_antennas_error2",
+    "repair_antennas_jumper_capacity_cugr",
     "repair_antennas_only_diodes",
+    "repair_antennas_only_diodes_cugr",
     "repair_antennas_only_jumpers",
+    "repair_antennas_only_jumpers_cugr",
+    "repair_antennas_post_drt_above_max_layer_cugr",
+    "repair_antennas_post_drt_below_min_cugr",
+    "repair_antennas_post_drt_cugr",
     "repair_antennas_allow_congestion",
+    "repair_antennas_cugr",
     "repair_antennas_from_odb",
+    "repair_antennas_from_odb_cugr",
+    "repair_antennas_odb_roundtrip",
     "report_wire_length1",
     "report_wire_length2",
     "report_wire_length3",
@@ -95,12 +126,24 @@ TESTS = [
     "report_wire_length6",
     "report_wire_length7",
     "report_wire_length8",
+    "resistance_aware_asap7_cong_cugr",
+    "resistance_aware_asap7_cugr",
+    "resistance_aware_asap7_fr",
+    "resistance_aware_cugr",
+    "resistance_aware_highres_cugr",
+    "report_net_detours1",
+    "report_net_detours2",
+    "report_net_detours2_cugr",
+    "report_net_detours3",
+    "report_net_detours4_cugr",
+    "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
     "single_row",
     "skip_large_fanout1",
     "soft_ndr_4w_6s",
     "soft_ndr_4w_6s_cugr",
+    "soft_ndr_escalation",
     "top_level_term1",
     "top_level_term2",
     "top_level_term3",
@@ -109,6 +152,9 @@ TESTS = [
     "tracks3",
     "unplaced_inst",
     "upper_layer_net",
+    "via_geometry_cugr",
+    "via_multirect_cugr",
+    "via_priority_cugr",
     "write_segments1",
     "write_segments2",
 ]
@@ -131,14 +177,9 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
-
 [regression_test(
     name = test_name,
     data = [":test_resources"],
-    tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
 regression_test(
@@ -173,7 +214,28 @@ regression_test(
 )
 
 regression_test(
+    name = "resistance_aware_asap7_fr_threads",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congestion_acceptance_is_recorded",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "congested_routes_are_reported",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
@@ -193,11 +255,117 @@ regression_test(
     data = [":test_resources"],
 )
 
+cc_test(
+    name = "TestOverflow",
+    size = "small",
+    srcs = ["cpp/TestOverflow.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGraph2D",
+    size = "small",
+    srcs = ["cpp/TestGraph2D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestCongestionNets",
+    size = "small",
+    srcs = ["cpp/TestCongestionNets.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGuideRestore",
+    size = "small",
+    srcs = ["cpp/TestGuideRestore.cpp"],
+    data = [
+        "remove_buffers1.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt",
+        "//src/grt:groute",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestMaze3D",
+    size = "small",
+    srcs = ["cpp/TestMaze3D.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRoutingCongestion",
+    size = "small",
+    srcs = ["cpp/TestRoutingCongestion.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
     data = ["//src/grt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

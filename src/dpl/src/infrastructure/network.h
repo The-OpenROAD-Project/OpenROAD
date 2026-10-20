@@ -22,6 +22,10 @@ class dbBTerm;
 class dbNet;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace dpl {
 class Master;
 class Pin;
@@ -32,6 +36,7 @@ class PlacementDRC;
 class Network
 {
  public:
+  void init(utl::Logger* logger) { logger_ = logger; }
   std::vector<std::unique_ptr<Node>>& getNodes() { return nodes_; }
   int getNumNodes() const { return (int) nodes_.size(); }
   uint32_t getNumCells() const { return cells_cnt_; }
@@ -80,6 +85,7 @@ class Network
   void connect(Pin* pin, Node* node);
   void connect(Pin* pin, Edge* edge);
 
+  utl::Logger* logger_ = nullptr;
   odb::Rect core_;  // Core area of the design.
   std::vector<std::unique_ptr<Master>> masters_;
   std::vector<std::unique_ptr<Node>> nodes_;  // The nodes in the netlist...

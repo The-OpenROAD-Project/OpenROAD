@@ -3,6 +3,8 @@
 
 #include "OptimizerTypes.hh"
 
+#include <functional>
+#include <set>
 #include <string>
 
 #include "rsz/Resizer.hh"
@@ -15,6 +17,7 @@
 #include "sta/PathExpanded.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -54,6 +57,16 @@ const char* failReasonName(const FailReason reason)
       return "missing_candidate_port";
     case FailReason::kMissingCandidateTimingArc:
       return "missing_candidate_timing_arc";
+
+    // Buffer insertion timing context.
+    case FailReason::kInvalidBufferInsertion:
+      return "invalid_buffer_insertion";
+    case FailReason::kMissingBufferTimingArc:
+      return "missing_buffer_timing_arc";
+    case FailReason::kSideSlackFloorViolation:
+      return "side_slack_floor_violation";
+    case FailReason::kDualRfNonImproving:
+      return "dual_rf_non_improving";
   }
   return "unknown_fail_reason";
 }
@@ -195,6 +208,62 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
       reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
+bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
+                              const sta::LibertyPort* candidate)
+{
+  const sta::MinMax* min_max = sta::MinMax::max();
+  return candidate->driveResistance(sta::RiseFall::rise(), min_max)
+             <= current->driveResistance(sta::RiseFall::rise(), min_max)
+         && candidate->driveResistance(sta::RiseFall::fall(), min_max)
+                <= current->driveResistance(sta::RiseFall::fall(), min_max);
+}
+
+const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
+{
+  const sta::Path* d_path = nullptr;
+  const sta::Path* q_path = nullptr;
+  sta::Edge* d_q_edge = nullptr;
+  expanded.latchPaths(d_path, q_path, d_q_edge);
+  return d_path;
+}
+
+bool visitLatchFaninSegments(
+    const sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor)
+{
+  // Guard against accidental latch loops while following D-side fanin chains.
+  std::set<const sta::Pin*> visited_latch_d;
+  const sta::Path* d_path = latchDataPath(expanded);
+  while (d_path != nullptr) {
+    const sta::Pin* d_pin = d_path->pin(sta);
+    if (visited_latch_d.contains(d_pin)) {
+      break;
+    }
+    visited_latch_d.insert(d_pin);
+
+    sta::PathExpanded d_expanded(d_path, sta);
+    if (visitor(d_path, d_expanded)) {
+      return true;
+    }
+    d_path = latchDataPath(d_expanded);
+  }
+  return false;
+}
+
+bool visitPathSegments(
+    const sta::Path* path,
+    sta::PathExpanded& expanded,
+    const sta::StaState* sta,
+    const std::function<bool(const sta::Path*, sta::PathExpanded&)>& visitor)
+{
+  if (visitor(path, expanded)) {
+    return true;
+  }
+
+  return visitLatchFaninSegments(expanded, sta, visitor);
+}
+
 bool Target::canBePathDriver() const
 {
   return (views & kPathDriverView) != 0 && driver_pin != nullptr
@@ -211,18 +280,35 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             const int path_index,
                             const sta::Slack slack,
-                            const Resizer& resizer)
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin)
 {
   Target target;
   target.views = kPathDriverView;
   target.endpoint_path = endpoint_path;
+  target.endpoint_pin = endpoint_path != nullptr
+                            ? endpoint_path->pin(resizer.staState())
+                            : nullptr;
+  target.violated_endpoint_pin = violated_endpoint_pin;
   target.driver_path = expanded.path(path_index);
+  target.driver_rf = target.driver_path != nullptr
+                         ? target.driver_path->transition(resizer.staState())
+                         : nullptr;
   target.scene = endpoint_path != nullptr
                      ? endpoint_path->scene(resizer.staState())
                      : nullptr;
+  target.min_max = endpoint_path != nullptr
+                       ? endpoint_path->minMax(resizer.staState())
+                       : resizer.maxAnalysisMode();
   target.driver_pin = target.driver_path != nullptr
                           ? target.driver_path->pin(resizer.staState())
                           : nullptr;
+  const int load_index = path_index + 1;
+  const sta::Path* load_path = load_index < static_cast<int>(expanded.size())
+                                   ? expanded.path(load_index)
+                                   : nullptr;
+  target.load_pin
+      = load_path != nullptr ? load_path->pin(resizer.staState()) : nullptr;
   target.path_index = path_index;
   target.slack = slack;
   if (resizer.network()->instance(target.driver_pin) != nullptr) {
@@ -231,21 +317,19 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   return target;
 }
 
-bool Target::isPrepared(const PrepareCacheMask mask) const
-{
-  if ((mask & ~kArcDelayStateCache) != 0) {
-    return false;
-  }
-  if ((mask & kArcDelayStateCache) == 0) {
-    return true;
-  }
-  return arc_delay.has_value();
-}
-
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const
 {
+  if (endpoint_pin != nullptr) {
+    return endpoint_pin;
+  }
   return endpoint_path != nullptr ? endpoint_path->pin(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Pin* Target::violatedEndpointPin(const Resizer& resizer) const
+{
+  return violated_endpoint_pin != nullptr ? violated_endpoint_pin
+                                          : endpointPin(resizer);
 }
 
 sta::Pin* Target::resolvedPin(const Resizer& resizer) const
@@ -282,12 +366,17 @@ const sta::Scene* Target::activeScene(const Resizer& resizer) const
 
 const sta::MinMax* Target::minMax(const Resizer& resizer) const
 {
+  // Prefer the value cached at construction: endpoint_path may be stale here
+  // (an earlier move in the sequence can invalidate it), and dereferencing it
+  // for the tag/min-max would then crash.
+  if (min_max != nullptr) {
+    return min_max;
+  }
   if (endpoint_path == nullptr) {
     return resizer.maxAnalysisMode();
   }
-
-  const sta::MinMax* min_max = endpoint_path->minMax(resizer.staState());
-  return min_max != nullptr ? min_max : resizer.maxAnalysisMode();
+  const sta::MinMax* path_min_max = endpoint_path->minMax(resizer.staState());
+  return path_min_max != nullptr ? path_min_max : resizer.maxAnalysisMode();
 }
 
 const sta::Path* Target::driverPath(const Resizer&) const

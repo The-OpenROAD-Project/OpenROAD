@@ -149,21 +149,21 @@ class Bundle
 class BundleView
 {
  public:
-  BundleView(Net net) : net_(net), Bundle_(nullptr), offset_(0), width_(1) {}
+  BundleView(Net net) : net_(net), bundle_(nullptr), offset_(0), width_(1) {}
 
   BundleView(const Bundle& Bundle)
-      : net_(Net::zero()), Bundle_(&Bundle), offset_(0), width_(Bundle.width())
+      : net_(Net::zero()), bundle_(&Bundle), offset_(0), width_(Bundle.width())
   {
   }
 
   BundleView(const Bundle& Bundle, uint32_t offset, uint32_t len)
-      : net_(Net::zero()), Bundle_(&Bundle), offset_(offset), width_(len)
+      : net_(Net::zero()), bundle_(&Bundle), offset_(offset), width_(len)
   {
   }
 
   // Consecutive nets starting at base.
   BundleView(Net base, uint32_t len)
-      : net_(base), Bundle_(nullptr), offset_(0), width_(len)
+      : net_(base), bundle_(nullptr), offset_(0), width_(len)
   {
   }
 
@@ -182,8 +182,8 @@ class BundleView
 
   Net operator[](uint32_t i) const
   {
-    if (Bundle_) {
-      return (*Bundle_)[offset_ + i];
+    if (bundle_) {
+      return (*bundle_)[offset_ + i];
     }
     return Net(net_.id_ + i);
   }
@@ -211,8 +211,8 @@ class BundleView
 
   BundleView slice(uint32_t offset, uint32_t len) const
   {
-    if (Bundle_) {
-      return BundleView(*Bundle_, offset_ + offset, len);
+    if (bundle_) {
+      return BundleView(*bundle_, offset_ + offset, len);
     }
     if (len == 0) {
       return BundleView(Net::zero(), nullptr, 0, 0);
@@ -222,14 +222,19 @@ class BundleView
 
   bool isConst() const;
 
+ protected:
+  // For optimized construction of Bundle from BundleView
+  bool isGuaranteedConsecutive() const { return bundle_ == nullptr; }
+  friend class Bundle;
+
  private:
   BundleView(Net net, const Bundle* Bundle, uint32_t offset, uint32_t len)
-      : net_(net), Bundle_(Bundle), offset_(offset), width_(len)
+      : net_(net), bundle_(Bundle), offset_(offset), width_(len)
   {
   }
 
   Net net_;
-  const Bundle* Bundle_;
+  const Bundle* bundle_;
   uint32_t offset_;
   uint32_t width_;
 };

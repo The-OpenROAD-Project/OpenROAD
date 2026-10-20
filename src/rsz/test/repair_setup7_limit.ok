@@ -20,15 +20,15 @@ worst slack max -1.95
 [INFO RSZ-0100] Repair move sequence: SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -2.0 |       -6.3 |      6 | r2/D
-      26* |       0 |      17 |        4 |      0 |     0 |   +16.0% |   -0.755 |       -0.8 |       -2.9 |      6 | r2/D
-    final |       0 |      18 |        4 |      0 |     0 |   +16.9% |   -0.698 |       -0.7 |       -2.8 |      6 | r2/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
+      82* |       0 |      24 |        2 |      0 |     0 |   +31.5% |   -0.615 |       -3.1 |      6 | r2/D
+    final |       0 |      28 |        2 |      0 |     0 |   +50.7% |   -0.610 |       -2.9 |      6 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 4 buffers.
-[INFO RSZ-0051] Resized 18 instances: 17 up, 1 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0051] Resized 28 instances: 28 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack max -0.70
+worst slack max -0.61

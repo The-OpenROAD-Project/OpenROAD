@@ -9,20 +9,20 @@
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 32 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.162 |       -4.3 |       -4.1 |     32 | _869_/D
-     493* |      28 |      64 |       30 |      3 |    11 |    +9.2% |   -0.073 |       -2.0 |       -2.2 |     32 | _880_/D
-    final |      28 |      66 |       30 |      3 |    11 |    +9.4% |   -0.072 |       -2.0 |       -2.2 |     32 | _877_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.162 |       -4.1 |     32 | _869_/D
+     518* |      28 |      63 |       31 |      3 |    11 |    +9.3% |   -0.073 |       -2.1 |     32 | _880_/D
+    final |      28 |      64 |       31 |      3 |    11 |    +9.4% |   -0.073 |       -2.1 |     32 | _877_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 28 buffers.
-[INFO RSZ-0040] Inserted 30 buffers.
-[INFO RSZ-0051] Resized 66 instances: 66 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 31 buffers.
+[INFO RSZ-0051] Resized 64 instances: 64 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 11 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 2.784951e-03 W
-Post-ECO: WNS=  -0.072   TNS=  -2.174   Area=     748 um^2   Power= 3.180400e-03 W
-Delta:    WNS=   0.090   TNS=   1.887   Area=     +64 um^2   Power=+3.954486e-04 W
+Pre-ECO:  WNS=  -0.162   TNS=  -4.061   Area=     684 um^2   Power= 1.402199e-03 W
+Post-ECO: WNS=  -0.073   TNS=  -2.143   Area=     749 um^2   Power= 1.559835e-03 W
+Delta:    WNS=   0.089   TNS=   1.918   Area=     +64 um^2   Power=+1.576357e-04 W
 pass

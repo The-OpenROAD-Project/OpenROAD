@@ -72,7 +72,8 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       "repair_setup",
       10,
       fmt::format("TNS{} Phase Time: {{}}", phase_marker));
-  committer_.capturePrePhaseSlack();
+
+  committer_.tracker().capturePrePhaseSlack();
   setup_context_.overall_no_progress_count = 0;
   target_collector_->resetEndpointPasses();
   debugPrint(logger_,
@@ -129,7 +130,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
     }
 
     const sta::Pin* endpoint_pin = endpoint->pin();
-    sta::Slack endpoint_slack = sta_->slack(endpoint, max_);
+    sta::Slack endpoint_slack = target_collector_->getCurrentEndpointSlack();
     if (sta::fuzzyGreaterEqual(endpoint_slack, setup_slack_margin)) {
       continue;
     }
@@ -163,7 +164,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
     while (pass <= max_passes_per_endpoint) {
       std::vector<const sta::Pin*> viol_pins
           = target_collector_->collectViolators(1, -1, sort_type);
-      sta::Path* focus_path = sta_->vertexWorstSlackPath(endpoint, max_);
+      sta::Path* focus_path = target_collector_->findWorstSlackPath(endpoint);
       std::vector<std::pair<const sta::Pin*, MoveType>> chosen_moves;
       bool changed;
       {

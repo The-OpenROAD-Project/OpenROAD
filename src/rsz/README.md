@@ -140,6 +140,10 @@ during repair. Placement-based parasitics cannot accurately predict
 routed parasitics, so a margin can be used to "over-repair" the design
 to compensate.
 
+When neither the liberty libraries nor the SDC constrain fanout,
+`repair_design` uses a default limit of 50 load pins to build a buffer tree
+for high-fanout nets. Use `set_max_fanout` to constrain fanout explicitly.
+
 ```tcl
 repair_design 
     [-max_wire_length max_length]
@@ -149,6 +153,7 @@ repair_design
     [-pre_placement]
     [-buffer_gain float_value] (deprecated)
     [-match_cell_footprint]
+    [-reroute]
     [-verbose]
 ```
 
@@ -163,6 +168,7 @@ repair_design
 | `-pre_placement` | Enables performing an initial pre-placement sizing and buffering round. |
 | `-buffer_gain` | Deprecated alias for `-pre_placement`. The passed value is ignored. |
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
+| `-reroute` | Enable resistance-aware wire rerouting to fix slew violations post-GRT (experimental). |
 | `-verbose` | Enable verbose logging on progress of the repair. |
 
 #### Instance Name Prefixes
@@ -221,14 +227,20 @@ repair_timing
     [-allow_setup_violations]
     [-sequence]
     [-phases]
+    [-path_group path_group]
     [-skip_pin_swap]
     [-skip_gate_cloning]
     [-skip_size_down_fanout]
     [-skip_buffering]
     [-skip_buffer_removal]
+    [-skip_buffer_to_inverters]
     [-skip_last_gasp]
     [-skip_vt_swap]
     [-skip_crit_vt_swap]
+    [-skip_crpr]
+    [-effort low|medium|high]
+    [-profile_mode mode]
+    [-profile_dir dir]
     [-repair_tns tns_end_percent]
     [-max_passes passes]
     [-max_iterations iterations]
@@ -250,16 +262,22 @@ repair_timing
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
-| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". The experimental `PARALLEL_EVAL` policy is described in [PARALLEL_EVAL Policy](#parallel_eval-policy). |
+| `-path_group` | Restrict setup and hold repair to one path group: `reg2reg`, `in2reg`, `reg2out`, `in2out` or `gated_clock`. Any other name warns and repairs every path group, which is the default. A supported group that the SDC has no `group_path` for is created, so timing reports group paths the same way `repair_timing` optimizes them. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
+| `-skip_buffer_to_inverters` | Flag to skip buffer-inverters swap.  The default is to perform buffer-to-double inverter replacement transform during setup fixing. |
 | `-skip_last_gasp` | Flag to skip final ("last gasp") optimizations.  The default is to perform greedy sizing at the end of optimization. |
 | `-skip_vt_swap` | Flag to skip threshold voltage (VT) swap optimizations.  The default is to perform VT swap optimization to improve timing QoR. |
 | `-skip_crit_vt_swap` | Flag to skip critical threshold voltage (VT) swap optimizations at the end of optimization.  The default is to perform critical VT swap optimization to improve timing QoR beyond repairing just the worst path per each violating endpoint. |
+| `-skip_crpr` | Disable Clock Reconvergence Pessimism Removal (CRPR) in clock paths during repair to reduce runtime at the expense of increased area and power. Timing reported during repair excludes CRPR. |
+| `-effort` | Optimization effort of the `PARALLEL_EVAL` policy: `low`, `medium` or `high` (default). `low` stops when the batches stall and skips the WNS tail on the worst endpoints. `medium` declares the batch stall after half as many batches, asks twice the progress to reset it, and gives the WNS tail a quarter of the maximum tail endpoints and a quarter of the work budget of `high`. `high` runs the full tail. Other policies ignore the option, and `repair_timing` warns when `-phases` does not list `PARALLEL_EVAL`. |
 | `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero, only the worst endpoint is repaired. When `tns_end_percent` is 100 (default), all violating endpoints are repaired. |
+| `-profile_mode` | Setup repair profiler level: `0` (default) writes nothing. `1` records a lightweight runtime breakdown, counters, and WNS/TNS trajectory. `2` includes mode 1 data and adds pass/batch/move events and OpenDB edits for diagnosing repair decisions; the trace adds I/O overhead. `3` adds per-move analysis. Each `repair_timing -setup` call writes one `run_N` directory under `-profile_dir`. Mode 3 updates parasitics and timing before and after every move to observe it, so its result can differ slightly from mode 0. |
+| `-profile_dir` | Directory of the profiler output; the default is `repair_setup_profile` under the current directory. |
 | `-max_repairs_per_pass` | Maximum repairs per pass, default is 1. On the worst paths, the maximum number of repairs is attempted. It gradually decreases until the final violations which only get 1 repair per pass. |
 | `-max_utilization` | Defines the percentage of core area used. |
 | `-max_iterations` | Defines the maximum number of iterations executed when repairing setup and hold violations. The default is `-1`, which disables the limit of iterations. |
@@ -267,9 +285,73 @@ repair_timing
 | `-match_cell_footprint` | Obey the Liberty cell footprint when swapping gates. |
 | `-verbose` | Enable verbose logging of the repair progress. |
 
+Use `-path_group` to focus optimization on one class of paths, where a path
+starts at a primary input (`in`) or a register clock pin (`reg`) and ends at a
+register data pin (`reg`) or a primary output (`out`). `gated_clock` is the
+group of clock gating checks, whose endpoints are the enable inputs of gates
+driving the clock network; those paths are never part of `reg2reg` or `in2reg`,
+matching how OpenSTA reports them.
+
+An endpoint is repaired when the group's own worst path at that endpoint
+violates, and the slack that drives WNS, TNS and the repair order is that
+group's slack rather than the endpoint's. This matters because an endpoint
+hosts paths from several groups at once: a register data pin fed by both a
+primary input and another register is in `in2reg` and `reg2reg` at the same
+time, and its overall worst path decides neither group on its own. The groups
+therefore overlap rather than partition - the same endpoint can be repaired
+under two of them - and `repair_timing -path_group G` agrees with
+`report_checks -path_group G` on which paths are violating.
+
+Group membership comes from OpenSTA, so a `-path_group` run costs one path
+query per violating endpoint per pass. On a design with a few hundred
+violating endpoints this is roughly 15% on top of an unrestricted run.
+
+The startpoint TNS column only reflects the start side of the group, since a
+startpoint's worst path can leave the group.
+
 Use`-recover_power` to specify the percent of paths with positive slack which
 will be considered for gate resizing to save power. It is recommended that
 this option be used with global routing based parasitics.
+
+#### PARALLEL_EVAL Policy
+
+`-phases PARALLEL_EVAL` repairs setup timing in batches: worker threads
+estimate the moves of many targets at once, the non-conflicting moves with the
+best estimates are committed as one batch, and one timing update judges the
+batch against its checkpoint. Batches stop when they stall, and a WNS tail
+then works on the worst endpoints one batch at a time. The policy differs from
+`LEGACY` in these ways:
+
+- Threads: `set_thread_count` gives the policy its workers (the thread count
+  minus one). The result does not depend on the thread count. Endpoint scans
+  of 4096 endpoints or more also run on the workers. Buffer tree planning on
+  the workers counts its warnings instead of logging them, and the phase ends
+  with one warning that lists the counts; a single-thread run logs each one.
+- Area: a batch that leaves the design above `-max_utilization` is undone,
+  and the first such batch prints a warning. The design area counts the
+  standard cells, not macros or fillers. Without `-max_utilization` there is
+  no area limit, as in `LEGACY`.
+- Iterations: `-max_iterations` counts batches, the WNS tail included.
+- Retries: an instance in three undone batches is not tried again in the
+  run, the WNS tail included.
+- Progress: without `-verbose` the progress table prints the first and the
+  final row only; `-verbose` prints a row per batch.
+- Effort: `-effort` tunes the stall and WNS tail limits.
+- Moves: `-sequence` lists the moves of the batches; the default is
+  `vt_swap sizeup buffer split`, and the `-skip_*` options apply. Without
+  `-sequence` the WNS tail also tries `swap`, `unbuffer` and `size_down`.
+  Buffering plans up to three buffer trees per driver with fewer than 20
+  loads, for at most 128 targets per batch, worst slack first.
+- Endpoints: `-repair_tns` limits each batch to that share of the violating
+  endpoints, as `LEGACY` limits the endpoints it repairs.
+- Path groups: under `-path_group` a batch is judged by the group's WNS and
+  TNS, as in `LEGACY`. The paths beside a move are still kept above the
+  design's worst slack, whatever group they belong to.
+- No effect: `-max_passes` and `-max_repairs_per_pass` drive the
+  per-endpoint policies only; `repair_timing` warns when they are given and
+  `-phases` lists only `PARALLEL_EVAL`.
+- Profiling: `-profile_mode` records the batch decisions under
+  `-profile_dir`.
 
 #### Instance Name Prefixes
 
@@ -400,7 +482,7 @@ set_opt_config
 | Switch Name | Description |
 | ----- | ----- |
 | `-limit_sizing_area` | Exclude cells from sizing if their area exceeds <float_value> times the current cell's area. For example, with 2.0, only cells with an area <= 2X the current cell's area are considered. The area is determined from LEF, not Liberty. |
-| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. |
+| `-limit_sizing_leakage` | Exclude cells from sizing if their leakage power exceeds <float_value> times the current cell's leakage. For example, with 2.0, only cells with leakage <= 2X the current cell's leakage are considered. Leakage power is based on the current timing corner. If no larger cell is within the limit, the smallest larger cell is still allowed so the current cell can always be upsized. |
 | `-keep_sizing_site` | Ensure cells retain their original site type during sizing. This prevents short cells from being replaced by tall cells (or vice versa) in mixed-row designs. |
 | `-keep_sizing_vt` | Preserve the cell's VT type during sizing, preventing swaps between HVT and LVT cells. This works only if VT layers are defined in the LEF obstruction section. |
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
@@ -449,6 +531,74 @@ reset_opt_config
 | `-sizing_area_limit` | Deprecated.  Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
+### Setting Global Sizing Configuration
+
+The `set_global_sizing_config` command configures the Lagrangian-Relaxation
+global sizing driver. These options only affect
+`repair_timing -phases GLOBAL_SIZING`; they have no effect on other phases.
+Values persist on the block as dbProperties.
+
+Typical use sets only `-presize_mode` and `-include_clock_network`; the
+remaining options are LR-algorithm tuning hyperparameters that most users
+should leave at their defaults.
+
+```tcl
+set_global_sizing_config
+    [-presize_mode mode]
+    [-include_clock_network boolean_value]
+    [-setup_slack_margin float_value]
+    [-max_iterations int_value]
+    [-beta float_value]
+    [-mu_exponent float_value]
+    [-lambda_floor float_value]
+    [-timing_bias float_value]
+    [-budget_safety_factor float_value]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-presize_mode` | Pre-LR initialization. One of `disabled` (default), `min_size_max_vt` (replace every editable instance with its smallest-leakage equivalent), or `max_size_min_vt` (replace every editable instance with its largest-leakage equivalent). |
+| `-include_clock_network` | If true, allow global sizing to size clock network instances. Default false (clock instances are excluded). |
+| `-setup_slack_margin` | WNS target for the LR convergence check. Default 0.0. |
+| `-max_iterations` | Maximum LR outer-loop iterations. Default 20. |
+| `-beta` | Step size α for the dual-subgradient update on λ. Default 0.6. |
+| `-mu_exponent` | Endpoint seed exponent for μ. Default 2.0. |
+| `-lambda_floor` | Floor on per-edge multipliers so unused arcs can re-enter. Default 1e-12. |
+| `-timing_bias` | Dimensionless balance between timing pressure and leakage cost. Default 64.0. |
+| `-budget_safety_factor` | Safety derate (≤ 1) on the per-gate distributed downsize budget. Default 1.0. |
+
+### Reporting Global Sizing Configuration
+
+The `report_global_sizing_config` command reports the current global sizing
+configuration. Each value shows the configured override or `undefined` when
+the option has not been set (the policy falls back to its built-in default).
+
+```tcl
+report_global_sizing_config
+```
+
+### Resetting Global Sizing Configuration
+
+The `reset_global_sizing_config` command clears global sizing configuration
+that was applied with `set_global_sizing_config`. With no options, all
+global sizing configuration is reset. Cleared options revert to the
+policy's built-in defaults.
+
+```tcl
+reset_global_sizing_config
+    [-presize_mode]
+    [-include_clock_network]
+    [-setup_slack_margin]
+    [-max_iterations]
+    [-beta]
+    [-mu_exponent]
+    [-lambda_floor]
+    [-timing_bias]
+    [-budget_safety_factor]
+```
+
 ### Finding Equivalent Cells
 
 The `report_equiv_cells` command finds all functionally equivalent library cells for a given library cell with relative area and leakage power details.
@@ -492,7 +642,9 @@ report_buffers
 The `report_delay_estimator_accuracy` command compares a delay
 estimator's predictions against the reference STA delay for a candidate
 library cell at the given instance.  It is intended as a developer aid
-for evaluating estimator accuracy when sizing.
+for evaluating estimator accuracy when sizing.  The estimator runs with the
+STA slew bias of the setup repair policies, which corrects the table slew of
+the fanin driver stage with STA slews sampled at three loads.
 
 ```tcl
 report_delay_estimator_accuracy
@@ -508,8 +660,30 @@ report_delay_estimator_accuracy
 | ----- | ----- |
 | `-inst` | Instance whose driver pin is used as the candidate sizing site. Required. |
 | `-lib_cell` | Liberty cell to evaluate as a replacement for `-inst`. Must resolve to exactly one cell. Required. |
-| `-estimator` | Delay estimator to evaluate. One of `legacy`, `delay_estimator`, `legacy_mt`, `mt`. Required. |
+| `-estimator` | Delay estimator to evaluate. Required. `legacy`: the estimate of the LEGACY moves, the gate delay at the current load plus the fanin drive resistance times the input pin cap. `stage_window`: Liberty tables propagated over a window of stages around the target (see `-delay_levels`), as the Mt moves estimate. |
 | `-delay_levels` | Number of downstream stages to include in the accuracy comparison: `0`, `1`, or `2`. Default `0`. Not valid for the `legacy` estimator. |
+
+### Reporting Rebuffering Delay Estimator Accuracy
+
+The `report_delay_estimator_accuracy_for_rebuffering` command plans and scores
+the Rebuffer trees of a driver as RebufferMt does in `PARALLEL_EVAL`, and
+compares the estimate of the tree it scores best, including its target and
+side-load paths, with post-ECO STA.
+
+```tcl
+report_delay_estimator_accuracy_for_rebuffering
+    -inst instance
+    [-driver_pin pin]
+    [-delay_levels level]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-inst` | Instance whose output net is rebuffered. Required. |
+| `-driver_pin` | Output pin of `-inst` to rebuffer. Without it, the report takes the worst setup path through any output pin of `-inst` and rebuffers the output pin on that path. |
+| `-delay_levels` | Stages before and after the driver stage in the estimator window: `0`, `1`, or `2`. Default `1`. |
 
 ### Optimizing Arithmetic Modules
 
@@ -657,10 +831,10 @@ report_wns
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/rsz/...
 ```
 
 ## Limitations
@@ -711,11 +885,6 @@ There are also some useful `Python` functions located in the
 wrappers with unit conversions (microns → metres, nanoseconds → seconds,
 percentages → fractions), but these are not considered part of the *final*
 API and may be subject to change.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
 
 ## License
 
