@@ -50,9 +50,9 @@ Path Type: max
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
        1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
        1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |       -0.2 |      1 | r2/D
-    final |       0 |      10 |        0 |      0 |     0 |   +26.7% |   -0.032 |       -0.0 |       -0.0 |      1 | r2/D
+    final |       0 |       8 |        0 |      0 |     0 |   +15.0% |   -0.042 |       -0.0 |       -0.0 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 10 instances: 8 up, 2 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 8 instances: 7 up, 1 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -69,15 +69,15 @@ Path Type: max
    0.017    0.169 ^ u1/A (BUF_X8)
    0.029    0.198 ^ u1/Z (BUF_X8)
    0.004    0.202 ^ u2/A (BUF_X8)
-   0.021    0.222 ^ u2/Z (BUF_X8)
-   0.004    0.226 ^ u3/A (BUF_X8)
-   0.019    0.245 ^ u3/Z (BUF_X8)
-   0.003    0.248 ^ u4/A (BUF_X4)
-   0.025    0.273 ^ u4/Z (BUF_X4)
-   0.006    0.279 ^ u5/A (BUF_X16)
-   0.023    0.302 ^ u5/Z (BUF_X16)
-   0.038    0.340 ^ r2/D (DFF_X1)
-            0.340   data arrival time
+   0.020    0.221 ^ u2/Z (BUF_X8)
+   0.002    0.223 ^ u3/A (BUF_X2)
+   0.029    0.252 ^ u3/Z (BUF_X2)
+   0.003    0.255 ^ u4/A (BUF_X4)
+   0.026    0.281 ^ u4/Z (BUF_X4)
+   0.004    0.284 ^ u5/A (BUF_X8)
+   0.026    0.311 ^ u5/Z (BUF_X8)
+   0.040    0.350 ^ r2/D (DFF_X1)
+            0.350   data arrival time
 
    0.350    0.350   clock clk (rise edge)
    0.000    0.350   clock network delay (ideal)
@@ -87,9 +87,9 @@ Path Type: max
             0.308   data required time
 -----------------------------------------------------------
             0.308   data required time
-           -0.340   data arrival time
+           -0.350   data arrival time
 -----------------------------------------------------------
-           -0.032   slack (VIOLATED)
+           -0.042   slack (VIOLATED)
 
 
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
@@ -98,9 +98,9 @@ Path Type: max
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       2 |        0 |      0 |     0 |    +0.0% |   -0.032 |       -0.0 |       -0.0 |      1 | r2/D
-       2* |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |        0.0 |      1 | r2/D
-    final |       0 |       2 |        2 |      0 |     0 |    +3.1% |    0.016 |        0.0 |        0.0 |      0 | r2/D
+       0* |       0 |       1 |        0 |      0 |     0 |    +0.0% |   -0.042 |       -0.0 |       -0.0 |      1 | r2/D
+       2* |       0 |       1 |        2 |      0 |     0 |    +3.4% |    0.005 |        0.0 |        0.0 |      1 | r2/D
+    final |       0 |       1 |        2 |      0 |     0 |    +3.4% |    0.005 |        0.0 |        0.0 |      0 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 2 instances: 0 up, 2 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 1 instances: 0 up, 1 up match, 0 down, 0 VT

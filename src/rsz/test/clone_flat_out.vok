@@ -340,26 +340,23 @@ module hi_fanout (clk1,
  wire net32;
  wire net33;
  wire net34;
- wire net376;
- wire net349;
+ wire net308;
  wire net37;
- wire net375;
- wire net374;
  wire net40;
  wire net41;
  wire net42;
  wire net43;
  wire net46;
- wire net402;
- wire net401;
  wire net49;
  wire net50;
  wire net51;
  wire net52;
  wire net53;
- wire net54;
- wire net56;
+ wire net445;
+ wire net55;
+ wire net446;
  wire net57;
+ wire net437;
  wire net59;
  wire net60;
  wire net61;
@@ -392,7 +389,6 @@ module hi_fanout (clk1,
  wire net88;
  wire net89;
  wire net90;
- wire net218;
  wire net92;
  wire net196;
  wire net94;
@@ -482,6 +478,7 @@ module hi_fanout (clk1,
  wire net178;
  wire net179;
  wire net180;
+ wire net435;
  wire net182;
  wire net183;
  wire net184;
@@ -489,8 +486,9 @@ module hi_fanout (clk1,
  wire net186;
  wire net187;
  wire net188;
- wire net189;
+ wire net436;
  wire net190;
+ wire net440;
  wire net192;
  wire net193;
  wire net194;
@@ -511,7 +509,7 @@ module hi_fanout (clk1,
  wire net217;
 
  NAND2_X4 clone1 (.A1(net213),
-    .A2(net218),
+    .A2(net2),
     .ZN(net1));
  NAND2_X1 clone126 (.A1(net212),
     .A2(net217),
@@ -534,7 +532,7 @@ module hi_fanout (clk1,
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand0));
- DFF_X2 drvr_2 (.D(data),
+ DFF_X1 drvr_2 (.D(data),
     .CK(clk1),
     .Q(clk_to_nand1));
  DFF_X1 load0 (.D(net90),
@@ -558,7 +556,7 @@ module hi_fanout (clk1,
  DFF_X1 load103 (.D(net199),
     .CK(clk1),
     .Q(output103));
- DFF_X1 load104 (.D(net56),
+ DFF_X1 load104 (.D(net57),
     .CK(clk1),
     .Q(output104));
  DFF_X1 load105 (.D(net65),
@@ -597,7 +595,7 @@ module hi_fanout (clk1,
  DFF_X1 load115 (.D(net199),
     .CK(clk1),
     .Q(output115));
- DFF_X1 load116 (.D(net56),
+ DFF_X1 load116 (.D(net445),
     .CK(clk1),
     .Q(output116));
  DFF_X1 load117 (.D(net64),
@@ -636,7 +634,7 @@ module hi_fanout (clk1,
  DFF_X1 load127 (.D(net199),
     .CK(clk1),
     .Q(output127));
- DFF_X1 load128 (.D(net56),
+ DFF_X1 load128 (.D(net445),
     .CK(clk1),
     .Q(output128));
  DFF_X1 load129 (.D(net59),
@@ -678,7 +676,7 @@ module hi_fanout (clk1,
  DFF_X1 load14 (.D(net109),
     .CK(clk1),
     .Q(output14));
- DFF_X1 load140 (.D(net54),
+ DFF_X1 load140 (.D(net446),
     .CK(clk1),
     .Q(output140));
  DFF_X1 load141 (.D(net59),
@@ -849,10 +847,10 @@ module hi_fanout (clk1,
  DFF_X1 load57 (.D(net195),
     .CK(clk1),
     .Q(output57));
- DFF_X1 load58 (.D(net349),
+ DFF_X1 load58 (.D(net308),
     .CK(clk1),
     .Q(output58));
- DFF_X1 load59 (.D(net189),
+ DFF_X1 load59 (.D(net190),
     .CK(clk1),
     .Q(output59));
  DFF_X1 load6 (.D(net100),
@@ -987,7 +985,7 @@ module hi_fanout (clk1,
  DFF_X1 load99 (.D(net150),
     .CK(clk1),
     .Q(output99));
- NAND2_X4 nand_inst_0 (.A1(net402),
+ NAND2_X4 nand_inst_0 (.A1(net437),
     .A2(clk_to_nand0),
     .ZN(net0));
  BUF_X8 rebuffer100 (.A(net101),
@@ -1024,13 +1022,13 @@ module hi_fanout (clk1,
     .Z(net114));
  BUF_X4 rebuffer115 (.A(net125),
     .Z(net115));
- BUF_X4 rebuffer116 (.A(net117),
+ BUF_X2 rebuffer116 (.A(net117),
     .Z(net116));
  BUF_X4 rebuffer117 (.A(net118),
     .Z(net117));
  BUF_X4 rebuffer118 (.A(net119),
     .Z(net118));
- BUF_X2 rebuffer119 (.A(net125),
+ BUF_X1 rebuffer119 (.A(net125),
     .Z(net119));
  BUF_X1 rebuffer120 (.A(net121),
     .Z(net120));
@@ -1038,15 +1036,15 @@ module hi_fanout (clk1,
     .Z(net121));
  BUF_X2 rebuffer122 (.A(net124),
     .Z(net122));
- BUF_X4 rebuffer124 (.A(net125),
+ BUF_X1 rebuffer124 (.A(net125),
     .Z(net124));
  BUF_X4 rebuffer125 (.A(net82),
     .Z(net125));
- BUF_X2 rebuffer127 (.A(net132),
+ BUF_X1 rebuffer127 (.A(net132),
     .Z(net127));
- BUF_X2 rebuffer128 (.A(net131),
+ BUF_X1 rebuffer128 (.A(net131),
     .Z(net128));
- BUF_X1 rebuffer129 (.A(net131),
+ BUF_X2 rebuffer129 (.A(net131),
     .Z(net129));
  BUF_X8 rebuffer13 (.A(net32),
     .Z(net13));
@@ -1076,9 +1074,9 @@ module hi_fanout (clk1,
     .Z(net141));
  BUF_X4 rebuffer142 (.A(net143),
     .Z(net142));
- BUF_X4 rebuffer143 (.A(net144),
+ BUF_X2 rebuffer143 (.A(net144),
     .Z(net143));
- BUF_X4 rebuffer144 (.A(net145),
+ BUF_X2 rebuffer144 (.A(net145),
     .Z(net144));
  BUF_X4 rebuffer145 (.A(net81),
     .Z(net145));
@@ -1138,9 +1136,9 @@ module hi_fanout (clk1,
     .Z(net170));
  BUF_X2 rebuffer171 (.A(net14),
     .Z(net171));
- BUF_X2 rebuffer172 (.A(net176),
+ BUF_X1 rebuffer172 (.A(net176),
     .Z(net172));
- BUF_X2 rebuffer173 (.A(net175),
+ BUF_X1 rebuffer173 (.A(net175),
     .Z(net173));
  BUF_X8 rebuffer174 (.A(net175),
     .Z(net174));
@@ -1158,31 +1156,29 @@ module hi_fanout (clk1,
     .Z(net18));
  BUF_X8 rebuffer180 (.A(net14),
     .Z(net180));
- BUF_X16 rebuffer182 (.A(net183),
+ BUF_X8 rebuffer182 (.A(net183),
     .Z(net182));
- BUF_X8 rebuffer183 (.A(net33),
+ BUF_X8 rebuffer183 (.A(net435),
     .Z(net183));
  BUF_X16 rebuffer184 (.A(net185),
     .Z(net184));
  BUF_X8 rebuffer185 (.A(net186),
     .Z(net185));
- BUF_X8 rebuffer186 (.A(net349),
+ BUF_X8 rebuffer186 (.A(net308),
     .Z(net186));
- BUF_X16 rebuffer187 (.A(net189),
+ BUF_X16 rebuffer187 (.A(net190),
     .Z(net187));
- BUF_X2 rebuffer188 (.A(net189),
+ BUF_X4 rebuffer188 (.A(net190),
     .Z(net188));
- BUF_X32 rebuffer189 (.A(net190),
-    .Z(net189));
  BUF_X4 rebuffer19 (.A(net20),
     .Z(net19));
- BUF_X16 rebuffer190 (.A(net349),
+ BUF_X16 rebuffer190 (.A(net308),
     .Z(net190));
  BUF_X8 rebuffer192 (.A(net195),
     .Z(net192));
  BUF_X8 rebuffer193 (.A(net194),
     .Z(net193));
- BUF_X8 rebuffer194 (.A(net195),
+ BUF_X16 rebuffer194 (.A(net436),
     .Z(net194));
  BUF_X8 rebuffer195 (.A(net33),
     .Z(net195));
@@ -1190,11 +1186,11 @@ module hi_fanout (clk1,
     .Z(net196));
  BUF_X2 rebuffer197 (.A(net198),
     .Z(net197));
- BUF_X4 rebuffer198 (.A(net162),
+ BUF_X2 rebuffer198 (.A(net162),
     .Z(net198));
  BUF_X16 rebuffer199 (.A(net200),
     .Z(net199));
- BUF_X32 rebuffer2 (.A(net5),
+ BUF_X16 rebuffer2 (.A(net5),
     .Z(net2));
  BUF_X4 rebuffer20 (.A(net21),
     .Z(net20));
@@ -1204,7 +1200,7 @@ module hi_fanout (clk1,
     .Z(net201));
  BUF_X2 rebuffer202 (.A(net208),
     .Z(net202));
- BUF_X2 rebuffer203 (.A(net205),
+ BUF_X1 rebuffer203 (.A(net205),
     .Z(net203));
  BUF_X16 rebuffer204 (.A(net205),
     .Z(net204));
@@ -1212,7 +1208,7 @@ module hi_fanout (clk1,
     .Z(net205));
  BUF_X2 rebuffer206 (.A(net207),
     .Z(net206));
- BUF_X4 rebuffer207 (.A(net208),
+ BUF_X1 rebuffer207 (.A(net208),
     .Z(net207));
  BUF_X4 rebuffer208 (.A(net162),
     .Z(net208));
@@ -1236,9 +1232,7 @@ module hi_fanout (clk1,
     .Z(net216));
  BUF_X4 rebuffer217 (.A(net8),
     .Z(net217));
- BUF_X4 rebuffer218 (.A(net2),
-    .Z(net218));
- BUF_X8 rebuffer22 (.A(net23),
+ BUF_X2 rebuffer22 (.A(net23),
     .Z(net22));
  BUF_X4 rebuffer23 (.A(net43),
     .Z(net23));
@@ -1256,34 +1250,36 @@ module hi_fanout (clk1,
     .Z(net29));
  BUF_X4 rebuffer30 (.A(net31),
     .Z(net30));
+ BUF_X8 rebuffer308 (.A(net33),
+    .Z(net308));
  BUF_X4 rebuffer31 (.A(net32),
     .Z(net31));
  BUF_X8 rebuffer32 (.A(net53),
     .Z(net32));
  BUF_X32 rebuffer34 (.A(net37),
     .Z(net34));
- BUF_X8 rebuffer349 (.A(net374),
-    .Z(net349));
  BUF_X32 rebuffer37 (.A(net40),
     .Z(net37));
- BUF_X4 rebuffer374 (.A(net375),
-    .Z(net374));
- BUF_X4 rebuffer375 (.A(net376),
-    .Z(net375));
- BUF_X4 rebuffer376 (.A(net401),
-    .Z(net376));
  BUF_X32 rebuffer40 (.A(net41),
     .Z(net40));
- BUF_X4 rebuffer401 (.A(net33),
-    .Z(net401));
- BUF_X2 rebuffer402 (.A(clk_to_nand1),
-    .Z(net402));
  BUF_X32 rebuffer41 (.A(net42),
     .Z(net41));
  BUF_X16 rebuffer42 (.A(net43),
     .Z(net42));
  BUF_X8 rebuffer43 (.A(clk_to_nand1),
     .Z(net43));
+ BUF_X2 rebuffer435 (.A(net440),
+    .Z(net435));
+ BUF_X16 rebuffer436 (.A(net195),
+    .Z(net436));
+ BUF_X2 rebuffer437 (.A(clk_to_nand1),
+    .Z(net437));
+ BUF_X2 rebuffer440 (.A(net33),
+    .Z(net440));
+ BUF_X4 rebuffer445 (.A(net55),
+    .Z(net445));
+ BUF_X8 rebuffer446 (.A(net55),
+    .Z(net446));
  BUF_X16 rebuffer46 (.A(net49),
     .Z(net46));
  BUF_X4 rebuffer49 (.A(net50),
@@ -1294,14 +1290,12 @@ module hi_fanout (clk1,
     .Z(net50));
  BUF_X4 rebuffer51 (.A(net52),
     .Z(net51));
- BUF_X2 rebuffer52 (.A(net53),
+ BUF_X4 rebuffer52 (.A(net53),
     .Z(net52));
  BUF_X8 rebuffer53 (.A(clk_to_nand0),
     .Z(net53));
- BUF_X16 rebuffer54 (.A(net56),
-    .Z(net54));
- BUF_X8 rebuffer56 (.A(net57),
-    .Z(net56));
+ BUF_X8 rebuffer55 (.A(net57),
+    .Z(net55));
  BUF_X4 rebuffer57 (.A(net69),
     .Z(net57));
  BUF_X4 rebuffer59 (.A(net64),
@@ -1318,9 +1312,9 @@ module hi_fanout (clk1,
     .Z(net64));
  BUF_X4 rebuffer65 (.A(net68),
     .Z(net65));
- BUF_X8 rebuffer66 (.A(net67),
+ BUF_X16 rebuffer66 (.A(net67),
     .Z(net66));
- BUF_X2 rebuffer67 (.A(net68),
+ BUF_X4 rebuffer67 (.A(net68),
     .Z(net67));
  BUF_X8 rebuffer68 (.A(net69),
     .Z(net68));
@@ -1348,21 +1342,21 @@ module hi_fanout (clk1,
     .Z(net78));
  BUF_X8 rebuffer79 (.A(net80),
     .Z(net79));
- BUF_X32 rebuffer8 (.A(net11),
+ BUF_X16 rebuffer8 (.A(net11),
     .Z(net8));
  BUF_X8 rebuffer80 (.A(net0),
     .Z(net80));
  BUF_X2 rebuffer83 (.A(net84),
     .Z(net83));
- BUF_X4 rebuffer84 (.A(net85),
+ BUF_X2 rebuffer84 (.A(net85),
     .Z(net84));
- BUF_X4 rebuffer85 (.A(net86),
+ BUF_X2 rebuffer85 (.A(net86),
     .Z(net85));
- BUF_X4 rebuffer86 (.A(net87),
+ BUF_X2 rebuffer86 (.A(net87),
     .Z(net86));
  BUF_X2 rebuffer87 (.A(net88),
     .Z(net87));
- BUF_X4 rebuffer88 (.A(net89),
+ BUF_X2 rebuffer88 (.A(net89),
     .Z(net88));
  BUF_X2 rebuffer89 (.A(net1),
     .Z(net89));
@@ -1370,7 +1364,7 @@ module hi_fanout (clk1,
     .Z(net90));
  BUF_X4 rebuffer92 (.A(net94),
     .Z(net92));
- BUF_X4 rebuffer94 (.A(net95),
+ BUF_X2 rebuffer94 (.A(net95),
     .Z(net94));
  BUF_X2 rebuffer95 (.A(net96),
     .Z(net95));
