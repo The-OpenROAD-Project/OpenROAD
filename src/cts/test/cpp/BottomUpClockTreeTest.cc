@@ -763,6 +763,74 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
   std::vector<odb::dbITerm*> originals_;
 };
 
+class BottomUpBufferPinMappingTest : public BottomUpClockTreeTest,
+                                     public testing::WithParamInterface<int>
+{
+};
+
+TEST_P(BottomUpBufferPinMappingTest, RejectsMissingMappingBeforeMutation)
+{
+  prepareSlewClosureTree();
+  ASSERT_NE(readLiberty("_main/src/cts/test/bottom_up_pin_mismatch.lib"),
+            nullptr);
+  auto* cell = db_network_->findLibertyCell("CTS_PIN_MISMATCH");
+  ASSERT_NE(cell, nullptr);
+  ASSERT_TRUE(cell->isBuffer());
+  auto* reference = db_->findMaster("BUF_X1");
+  ASSERT_NE(reference, nullptr);
+  auto* library = odb::dbLib::create(
+      db_.get(), "cts_pin_mismatch", reference->getLib()->getTech());
+  ASSERT_NE(library, nullptr);
+  auto* master = odb::dbMaster::create(library, "CTS_PIN_MISMATCH");
+  ASSERT_NE(master, nullptr);
+  master->setType(reference->getType());
+  master->setWidth(reference->getWidth());
+  master->setHeight(reference->getHeight());
+  ASSERT_NE(odb::dbMTerm::create(master,
+                                 GetParam() == 0 ? "A_physical" : "A",
+                                 odb::dbIoType::INPUT,
+                                 odb::dbSigType::SIGNAL),
+            nullptr);
+  ASSERT_NE(odb::dbMTerm::create(master,
+                                 GetParam() == 1 ? "Z_physical" : "Z",
+                                 odb::dbIoType::OUTPUT,
+                                 odb::dbSigType::SIGNAL),
+            nullptr);
+  master->setFrozen();
+  db_network_->readLefAfter(library);
+  ASSERT_EQ(db_->findMaster("CTS_PIN_MISMATCH"), master);
+  odb::dbMTerm* unlinked = nullptr;
+  void* saved_port = nullptr;
+  if (GetParam() < 2) {
+    ASSERT_EQ(master->findMTerm(GetParam() == 0 ? "A" : "Z"), nullptr);
+  } else {
+    unlinked = master->findMTerm(GetParam() == 2 ? "A" : "Z");
+    ASSERT_NE(unlinked, nullptr);
+    saved_port = unlinked->staPort();
+    ASSERT_NE(saved_port, nullptr);
+    unlinked->staSetPort(nullptr);
+    ASSERT_EQ(db_network_->dbToSta(unlinked), nullptr);
+  }
+  cts_->setBufferList("BUF_X1 CTS_PIN_MISMATCH");
+  const auto before = snapshot();
+  logger_.redirectStringBegin();
+  EXPECT_LOGGER_ERROR(selectCurrentTree(), "CTS-0554");
+  const auto diagnostic = logger_.redirectStringEnd();
+  if (unlinked != nullptr) {
+    unlinked->staSetPort(saved_port);
+  }
+  EXPECT_NE(diagnostic.find("Missing LEF/Liberty pin mapping for bottom-up CTS "
+                            "buffer CTS_PIN_MISMATCH"),
+            std::string::npos)
+      << diagnostic;
+  EXPECT_EQ(snapshot(), before);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+}
+
+INSTANTIATE_TEST_SUITE_P(InputAndOutput,
+                         BottomUpBufferPinMappingTest,
+                         testing::Values(0, 1, 2, 3));
+
 TEST_F(BottomUpClockTreeTest, ActualSearchBypassesUnnecessaryBranchStage)
 {
   planRedundantBranch(false);

@@ -320,6 +320,7 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "array_tile_ins_delay.lef",
         "array_tile_ins_delay.lib",
+        "bottom_up_pin_mismatch.lib",
         "insertion_delay.def",
     ],
     deps = [
