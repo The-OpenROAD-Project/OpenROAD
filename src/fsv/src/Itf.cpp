@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <cmath>
-#include <cstdlib>
 #include <fstream>
 #include <functional>
 #include <istream>
@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -47,12 +48,15 @@ constexpr std::string_view kSubstrate = "SUBSTRATE";
   throw std::runtime_error("ITF: " + std::string(message));
 }
 
-// Parses a token as a finite number.
+// Parses a token as a finite number. std::from_chars ignores the C locale,
+// so a decimal point parses the same everywhere (std::strtod does not).
 double parseNumber(const Token& token, const std::string_view key)
 {
-  char* end = nullptr;
-  const double v = std::strtod(token.text.c_str(), &end);
-  if (end == token.text.c_str() || *end != '\0' || !std::isfinite(v)) {
+  const char* first = token.text.data();
+  const char* last = first + token.text.size();
+  double v = 0;
+  const auto [end, error] = std::from_chars(first, last, v);
+  if (error != std::errc{} || end != last || !std::isfinite(v)) {
     fail(token.line,
          std::string(key) + " expects a finite number, got '" + token.text
              + "'");
@@ -289,14 +293,16 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
       if (!(conformal.side_thickness >= 0 && conformal.top_thickness >= 0)) {
         fail(b.line, "negative SW_T or TW_T in " + b.name);
       }
+      const bool has_associated = b.has("ASSOCIATED_CONDUCTOR");
+      const std::string& associated = b.text("ASSOCIATED_CONDUCTOR");
       bool wrapped = false;
       for (Stack::Conductor& c : stack.conductors) {
         double outer_top = c.top;
         for (const Stack::ConformalDielectric& inner : c.conformals) {
           outer_top += inner.top_thickness;
         }
-        const bool target = b.has("ASSOCIATED_CONDUCTOR")
-                                ? c.name == b.text("ASSOCIATED_CONDUCTOR")
+        const bool target = has_associated
+                                ? c.name == associated
                                 : outer_top > planar_top + kHeightTolerance;
         if (target) {
           c.conformals.push_back(conformal);
@@ -305,11 +311,10 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
       }
       if (!wrapped) {
         fail(b.line,
-             b.has("ASSOCIATED_CONDUCTOR")
-                 ? "ASSOCIATED_CONDUCTOR " + b.text("ASSOCIATED_CONDUCTOR")
-                       + " of " + b.name + " is not a conductor below it"
-                 : "IS_CONFORMAL dielectric " + b.name
-                       + " has no conductor to wrap");
+             has_associated ? "ASSOCIATED_CONDUCTOR " + associated + " of "
+                                  + b.name + " is not a conductor below it"
+                            : "IS_CONFORMAL dielectric " + b.name
+                                  + " has no conductor to wrap");
       }
       continue;
     }
@@ -320,7 +325,7 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
     }
     double base = planar_top;
     if (b.has("MEASURED_FROM")) {
-      const std::string from = b.text("MEASURED_FROM");
+      const std::string& from = b.text("MEASURED_FROM");
       if (from == "TOP_OF_CHIP") {
         fail(b.values.at("MEASURED_FROM").line,
              "MEASURED_FROM = TOP_OF_CHIP without IS_CONFORMAL is not "
@@ -456,11 +461,11 @@ void Parser::addVias(const std::vector<Block>& vias, Stack& stack) const
   for (const Block& b : vias) {
     const std::string& from = b.text("FROM");
     const std::string& to = b.text("TO");
-    for (const char* key : {"FROM", "TO"}) {
-      const std::string& layer = b.text(key);
-      if (layer != kSubstrate && !stack.findConductor(layer)) {
-        fail(b.lineOf(key), "VIA " + b.name + " names unknown layer " + layer);
-      }
+    if (from != kSubstrate && !stack.findConductor(from)) {
+      fail(b.lineOf("FROM"), "VIA " + b.name + " names unknown layer " + from);
+    }
+    if (to != kSubstrate && !stack.findConductor(to)) {
+      fail(b.lineOf("TO"), "VIA " + b.name + " names unknown layer " + to);
     }
     if (from == to) {
       fail(b.line, "VIA " + b.name + " connects " + from + " to itself");

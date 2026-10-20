@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <clocale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -219,6 +220,24 @@ TEST(Itf, TrailingComment)
   EXPECT_EQ(stack.technology, "t");
   EXPECT_NEAR(stack.findConductor("M1")->top, 0.2, kTol);
   EXPECT_EQ(stack.findConductor("M1")->min_width, 0.1);
+}
+
+// Numbers parse the same under a comma-decimal C locale.
+TEST(Itf, IndependentOfLocale)
+{
+  const std::string saved = std::setlocale(LC_NUMERIC, nullptr);
+  if (!std::setlocale(LC_NUMERIC, "de_DE.UTF-8")
+      && !std::setlocale(LC_NUMERIC, "fr_FR.UTF-8")) {
+    GTEST_SKIP() << "no comma-decimal locale installed";
+  }
+  const Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "DIELECTRIC D1 { THICKNESS=0.5 ER=3.9 }\n"
+      "CONDUCTOR M1 { THICKNESS=0.25 }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
+  std::setlocale(LC_NUMERIC, saved.c_str());
+  EXPECT_NEAR(stack.findConductor("M1")->top, 0.25, kTol);
+  EXPECT_EQ(stack.dielectrics[0].eps, 3.9);
 }
 
 TEST(Itf, Errors)
