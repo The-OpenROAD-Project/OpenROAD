@@ -98,6 +98,17 @@ void ClusteringEngine::setChannel(const Channel min_channel,
 // initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
+  const size_t num_macros_to_place = checkFeasibility();
+  if (!tree_->has_unfixed_macros) {
+    return;
+  }
+
+  tree_->io_pads = getIOPads();
+  reportDesignData(num_macros_to_place);
+}
+
+size_t ClusteringEngine::checkFeasibility()
+{
   setDieArea();
   setFloorplanShape();
   createHardMacros();
@@ -109,7 +120,7 @@ void ClusteringEngine::init()
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
-    return;
+    return 0;
   }
 
   if (!movableCellsFitInMacroPlacementArea()) {
@@ -133,9 +144,7 @@ void ClusteringEngine::init()
         block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
   }
 
-  tree_->io_pads = getIOPads();
-
-  reportDesignData(unfixed_macros.size());
+  return unfixed_macros.size();
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const

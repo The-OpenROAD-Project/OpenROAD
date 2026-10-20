@@ -84,6 +84,26 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              pin_aware_channels);
 }
 
+void check_macro_placement_cmd(float fence_lx,
+                               float fence_ly,
+                               float fence_ux,
+                               float fence_uy,
+                               float min_channel_width,
+                               float min_channel_height,
+                               bool pin_aware_channels)
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  odb::Rect global_fence(block->micronsToDbu(fence_lx),
+                         block->micronsToDbu(fence_ly),
+                         block->micronsToDbu(fence_ux),
+                         block->micronsToDbu(fence_uy));
+  getMacroPlacer()->checkMacroPlacement(
+      global_fence,
+      block->micronsToDbu(min_channel_width),
+      block->micronsToDbu(min_channel_height),
+      pin_aware_channels);
+}
+
 void set_debug_cmd(odb::dbBlock* block,
                    bool coarse,
                    bool fine,

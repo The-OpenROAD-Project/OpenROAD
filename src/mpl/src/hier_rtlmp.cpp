@@ -302,6 +302,22 @@ void HierRTLMP::init()
   clustering_engine_->setTree(tree_.get());
 }
 
+void HierRTLMP::checkMacroPlacement(odb::Rect global_fence,
+                                    int min_channel_width,
+                                    int min_channel_height,
+                                    bool pin_aware_channels) const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  PhysicalHierarchy tree;
+  tree.global_fence
+      = global_fence.area() > 0 ? global_fence : block->getCoreArea();
+  ClusteringEngine engine(block, logger_, tritonpart_, nullptr);
+  engine.setTree(&tree);
+  engine.setChannel({min_channel_width, min_channel_height},
+                    pin_aware_channels);
+  engine.checkFeasibility();
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Private functions
 ////////////////////////////////////////////////////////////////////////

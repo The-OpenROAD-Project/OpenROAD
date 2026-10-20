@@ -104,6 +104,10 @@ class ClusteringEngine
 
   void run();
 
+  // Populate only in-memory feasibility data, without clustering or DB edits.
+  // Returns the number of macros to place.
+  size_t checkFeasibility();
+
   void setTree(PhysicalHierarchy* tree);
   void setChannel(Channel min_channel, bool pin_aware_channels);
 

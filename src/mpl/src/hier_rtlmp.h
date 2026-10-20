@@ -76,6 +76,10 @@ class HierRTLMP
   void init();
   void run();
   void blockMacroChannels();
+  void checkMacroPlacement(odb::Rect global_fence,
+                           int min_channel_width,
+                           int min_channel_height,
+                           bool pin_aware_channels) const;
 
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options

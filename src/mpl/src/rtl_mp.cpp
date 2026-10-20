@@ -89,6 +89,15 @@ bool MacroPlacer::place(const int num_threads,
   return true;
 }
 
+void MacroPlacer::checkMacroPlacement(odb::Rect global_fence,
+                                      int min_channel_width,
+                                      int min_channel_height,
+                                      bool pin_aware_channels) const
+{
+  hier_rtlmp_->checkMacroPlacement(
+      global_fence, min_channel_width, min_channel_height, pin_aware_channels);
+}
+
 void MacroPlacer::placeMacro(odb::dbInst* inst,
                              const float& x_origin,
                              const float& y_origin,

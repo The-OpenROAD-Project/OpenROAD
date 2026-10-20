@@ -66,6 +66,12 @@ class MacroPlacer
              bool keep_clustering_data,
              bool pin_aware_channels);
 
+  // Check the placer's pre-clustering rules without changing the database.
+  void checkMacroPlacement(odb::Rect global_fence = {},
+                           int min_channel_width = 0,
+                           int min_channel_height = 0,
+                           bool pin_aware_channels = false) const;
+
   void blockMacroChannels();
 
   void placeMacro(odb::dbInst* inst,
