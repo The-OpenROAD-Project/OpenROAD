@@ -1475,9 +1475,16 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
 
     stagnant_passes
         = -overflow_change < kMinPassImprovement ? stagnant_passes + 1 : 0;
-    if (stagnant_passes >= kMaxStagnantPasses && i < congestion_iterations_) {
-      // Report only when overflow is left.
-      if (verbose_ && totalOverflow() > 0) {
+    // A congested NDR net not demoted yet is demoted if it stays congested.
+    const bool demotion_pending
+        = std::ranges::any_of(net_indices, [&](const int net_index) {
+            return gr_nets_[net_index] != nullptr
+                   && gr_nets_[net_index]->hasNdr();
+          });
+    if (stagnant_passes >= kMaxStagnantPasses && !demotion_pending
+        && i < congestion_iterations_) {
+      // Report only when overflow is left; incremental defers to GRT-0128.
+      if (verbose_ && !incremental_routing_ && totalOverflow() > 0) {
         logger_->info(GRT,
                       124,
                       "Iterative RRR stopped after iteration {}: the last {} "

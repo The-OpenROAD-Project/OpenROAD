@@ -298,10 +298,11 @@ class CUGR
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
    * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Stops after two passes that each remove less than one track
-   * (`GRT-0124`). Emits `GRT-0117` per iteration and, in full route only,
-   * `GRT-0118` if overflow remains when the loop ends (incremental
-   * defers to the session-end `GRT-0128`).
+   * cost. Stops after two passes that each remove less than one track,
+   * unless a congested NDR net still awaits its soft-NDR demotion.
+   * Emits `GRT-0117` per iteration and, in full route only, `GRT-0124`
+   * on that stop and `GRT-0118` if overflow remains when the loop ends
+   * (incremental defers to the session-end `GRT-0128`).
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
