@@ -464,15 +464,13 @@ void RamGen::makeDecoderColumn(const std::string& prefix,
     }
     // Predecode gates, spread evenly
     const int num_predecode = predecode.size();
-    if (num_predecode > 0) {
-      for (int i = 0; i < num_predecode; ++i) {
-        const int row = i * num_rows / num_predecode;
-        makeAnd(row_cells[row].get(),
-                prefix,
-                predecode[i]->name,
-                predecode[i]->inputs,
-                predecode[i]->output);
-      }
+    for (int i = 0; i < num_predecode; ++i) {
+      const int row = i * num_rows / num_predecode;
+      makeAnd(row_cells[row].get(),
+              prefix,
+              predecode[i]->name,
+              predecode[i]->inputs,
+              predecode[i]->output);
     }
   }
 
