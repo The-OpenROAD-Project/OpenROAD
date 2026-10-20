@@ -924,7 +924,7 @@ TEST_F(BottomUpClockTreeTest, UnrelatedSameNameClockDoesNotTightenRootInput)
   unrelated_source->setIoType(odb::dbIoType::INPUT);
   unrelated_source->setSigType(odb::dbSigType::CLOCK);
   auto* bpin = odb::dbBPin::create(unrelated_source);
-  bpin->setPlacementStatus(odb::dbPlacementStatus::FIXED);
+  bpin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
   ASSERT_NE(
       odb::dbBox::create(
           bpin, block_->getTech()->findLayer("metal6"), 1000, 1000, 1280, 1280),
