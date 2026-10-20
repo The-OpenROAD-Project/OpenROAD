@@ -135,6 +135,7 @@ class RamGen
 
  private:
   void findMasters();
+  odb::dbSite* checkStorageSite();
   void findOutputBuffer(const std::string& name);
   void checkOutputBufferPins(odb::dbMaster* master,
                              const std::map<PortRole, std::string>& ports);

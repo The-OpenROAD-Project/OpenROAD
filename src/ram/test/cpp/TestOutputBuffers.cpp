@@ -296,6 +296,46 @@ class OutputBufferTest : public tst::Fixture,
     return master;
   }
 
+  odb::dbMaster* makeStorageMaster(bool with_site = true)
+  {
+    auto original = db_->findMaster("DFF_X1");
+    auto master = odb::dbMaster::create(original->getLib(), "physical_storage");
+    master->setType(odb::dbMasterType::CORE);
+    master->setWidth(original->getWidth());
+    master->setHeight(original->getHeight());
+    master->staSetCell(original->staCell());
+    if (with_site) {
+      master->setSite(original->getSite());
+    }
+    for (auto pin : original->getMTerms()) {
+      odb::dbMTerm::create(
+          master, pin->getConstName(), pin->getIoType(), pin->getSigType());
+    }
+    master->setFrozen();
+    return master;
+  }
+
+  void expectRejectedStorage(odb::dbMaster* master, const char* buffer)
+  {
+    ASSERT_EQ(db_->getChip(), nullptr);
+    EXPECT_LOGGER_ERROR((generator_->generate(1,
+                                              1,
+                                              2,
+                                              1,
+                                              0,
+                                              0,
+                                              1,
+                                              false,
+                                              master,
+                                              nullptr,
+                                              nullptr,
+                                              nullptr,
+                                              0,
+                                              buffer)),
+                        "RAM-0065");
+    EXPECT_EQ(db_->getChip(), nullptr);
+  }
+
   void expectRejectedBuffer(odb::dbMaster* master, const char* message)
   {
     const auto name = master->getName();
@@ -496,6 +536,50 @@ INSTANTIATE_TEST_SUITE_P(
     MultiportOutputBufferTest,
     testing::Values(Configuration{16, 4, 4, 2, 1, 1, "BUF_X4"},
                     Configuration{16, 4, 4, 4, 0, 2, "BUF_X4"}));
+
+TEST_F(OutputBufferTest, RejectMissingStorageSiteBeforeCreatingDesign)
+{
+  auto storage = makeStorageMaster(false);
+  for (const auto buffer : {"none", ""}) {
+    expectRejectedStorage(storage, buffer);
+  }
+}
+
+TEST_F(OutputBufferTest, RejectInvalidStorageWidthBeforeCreatingDesign)
+{
+  auto storage = makeStorageMaster();
+  for (const auto width : {0U, storage->getWidth() + 1}) {
+    storage->setWidth(width);
+    for (const auto buffer : {"none", ""}) {
+      expectRejectedStorage(storage, buffer);
+    }
+  }
+}
+
+TEST_F(OutputBufferTest, RejectStorageHeightMismatchBeforeCreatingDesign)
+{
+  auto storage = makeStorageMaster();
+  storage->setHeight(storage->getHeight() * 2);
+  for (const auto buffer : {"none", ""}) {
+    expectRejectedStorage(storage, buffer);
+  }
+}
+
+TEST_F(OutputBufferTest, RejectZeroStorageSiteDimensionsBeforeCreatingDesign)
+{
+  auto storage = makeStorageMaster();
+  auto site = storage->getSite();
+  const auto width = site->getWidth();
+  site->setWidth(0);
+  for (const auto buffer : {"none", ""}) {
+    expectRejectedStorage(storage, buffer);
+  }
+  site->setWidth(width);
+  site->setHeight(0);
+  for (const auto buffer : {"none", ""}) {
+    expectRejectedStorage(storage, buffer);
+  }
+}
 
 TEST_F(OutputBufferTest, RejectMissingMasterBeforeCreatingDesign)
 {

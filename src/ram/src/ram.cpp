@@ -918,6 +918,22 @@ void RamGen::findMasters()
   }
 }
 
+odb::dbSite* RamGen::checkStorageSite()
+{
+  auto storage = use_latch_ ? latch_cell_ : storage_cell_;
+  auto site = storage->getSite();
+  if (!site || site->getWidth() <= 0 || site->getHeight() <= 0
+      || storage->getWidth() == 0 || storage->getHeight() != site->getHeight()
+      || storage->getWidth() % site->getWidth() != 0) {
+    logger_->error(RAM,
+                   65,
+                   "Storage cell {} must have a placement site with positive "
+                   "dimensions and fit its single-height rows and site grid.",
+                   storage->getName());
+  }
+  return site;
+}
+
 void RamGen::findOutputBuffer(const std::string& name)
 {
   output_buffer_cell_ = nullptr;
@@ -1375,6 +1391,7 @@ void RamGen::generate(const int mask_size,
   }
 
   findMasters();
+  auto row_site = checkStorageSite();
   findOutputBuffer(output_buffer_cell);
 
   auto chip = db_->getChip();
@@ -2022,7 +2039,7 @@ void RamGen::generate(const int mask_size,
 
   ram_grid_.gridInit();
 
-  auto db_sites = (use_latch_ ? latch_cell_ : storage_cell_)->getSite();
+  auto db_sites = row_site;
   auto sites_width = db_sites->getWidth();
 
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
