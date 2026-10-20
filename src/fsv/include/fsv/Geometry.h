@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace fsv {
@@ -40,7 +41,7 @@ struct Box
 class Geometry
 {
  public:
-  int addNet(const std::string& name);
+  int addNet(std::string_view name);
   // Adds a conductor box to a net. The box must lie above the ground plane.
   void addBox(int net, const Box& box);
 
