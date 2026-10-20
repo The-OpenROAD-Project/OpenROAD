@@ -261,6 +261,7 @@ cc_library(
         "src/placerBase.h",
         "src/point.h",
         "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = select({
         "@kokkos_host//:openmp": ["-fopenmp"],

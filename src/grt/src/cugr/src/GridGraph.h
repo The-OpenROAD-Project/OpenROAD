@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -287,6 +288,19 @@ class GridGraph
       PointT loc,
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+  // Non-template forEachViaColumnImpl for callers outside GridGraph.cpp.
+  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
+                        const std::function<void(PointT, int, int)>& fn) const;
+  // Non-template forEachTreeWireEdgeImpl for callers outside GridGraph.cpp.
+  void forEachTreeWireEdge(
+      const std::shared_ptr<GRTreeNode>& tree,
+      bool adopted,
+      const std::function<void(int, PointT, bool)>& fn) const;
+  // Flank edges a wrong-way wire through `cell` loads: fn(edge, demand).
+  void forEachWrongWayFlankEdge(
+      int layer_index,
+      PointT cell,
+      const std::function<void(PointT, CapacityT)>& fn) const;
 
   // Enumerate the lower cells of the preferred-direction edges a wire from
   // u to v occupies on `layer_index` — the cells commitWire charges.
@@ -326,9 +340,8 @@ class GridGraph
    */
   void extractWireCostView(GridGraphView<CostT>& view,
                            const std::vector<double>& net_costs) const;
-  void updateWireCostView(
-      GridGraphView<CostT>& view,
-      const std::shared_ptr<GRTreeNode>& routing_tree) const;
+  // Refreshes `view` on the 2D edges the net's tree charges (commitTree).
+  void updateWireCostView(GridGraphView<CostT>& view, const GRNet& net) const;
 
   // For visualization
   void write(const std::string& heatmap_file = "heatmap.txt") const;
@@ -340,6 +353,20 @@ class GridGraph
   std::vector<odb::Point> congestion_dirty_tiles_;
   std::vector<bool> congestion_tile_marked_;
 
+  // Per-direction inputs of the 2D wire-cost view (extractWireCostView).
+  struct WireCostViewContext
+  {
+    std::array<std::vector<int>, 2> layers;
+    std::array<CostT, 2> unit_length_short_cost;
+    std::array<double, 2> net_factor;
+  };
+  WireCostViewContext makeWireCostViewContext(
+      const std::vector<double>& net_costs) const;
+  // Cost of one 2D edge, shared by the full and incremental extraction.
+  CostT wireCostViewCell(const WireCostViewContext& context,
+                         int direction,
+                         int x,
+                         int y) const;
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
@@ -429,7 +456,15 @@ class GridGraph
   // stack split across tree edges still puts one pad on each layer:
   // fn(loc, low, high).
   template <typename F>
-  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree, F&& fn) const;
+  void forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
+                            F&& fn) const;
+  // Visits each wire edge and wrong-way cell a tree commits, once each.
+  template <typename F>
+  void forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
+                               bool adopted,
+                               F&& fn) const;
+  template <typename F>
+  void forEachWrongWayFlankEdgeImpl(int layer_index, PointT cell, F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
@@ -452,6 +487,8 @@ class GridGraph
   CostT unit_length_wire_cost_;
   CostT unit_via_cost_;
   std::vector<CostT> unit_length_short_costs_;
+  // The NDR-blind context of the shared 2D view; fixed once the grid exists.
+  WireCostViewContext default_view_context_;
 
   int total_length_ = 0;
   int total_num_vias_ = 0;

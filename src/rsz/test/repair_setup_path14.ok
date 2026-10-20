@@ -12,11 +12,11 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.939 |       -9.4 |     13 | inst14/D
-     102* |       3 |      30 |        7 |      0 |     8 |    +8.7% |   -0.888 |       -3.0 |     13 | inst14/D
-    final |       3 |      30 |        7 |      0 |     8 |    +8.7% |   -0.888 |       -3.0 |     10 | inst14/D
+      95* |       2 |      30 |        9 |      0 |     8 |   +10.9% |   -0.744 |       -2.8 |     13 | inst14/D
+    final |       2 |      30 |        9 |      0 |     8 |   +10.9% |   -0.744 |       -2.8 |     10 | inst14/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 3 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
+[INFO RSZ-0059] Removed 2 buffers.
+[INFO RSZ-0040] Inserted 9 buffers.
 [INFO RSZ-0051] Resized 30 instances: 30 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 8 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
@@ -43,20 +43,21 @@ Path Type: max
    0.0644    2.1233 v inst10/Y (sky130_fd_sc_hd__nor3_1)
    0.2874    2.4107 ^ inst11/Y (sky130_fd_sc_hd__a211oi_1)
    0.2105    2.6212 v inst12/Y (sky130_fd_sc_hd__o2111ai_1)
-   0.4373    3.0586 ^ inst13/Y (sky130_fd_sc_hd__a32oi_4)
-   0.0094    3.0680 ^ inst14/D (sky130_fd_sc_hd__dfxtp_1)
-             3.0680   data arrival time
+   0.2231    2.8443 ^ inst13/Y (sky130_fd_sc_hd__a32oi_4)
+   0.1635    3.0078 ^ rebuffer1/X (sky130_fd_sc_hd__buf_12)
+   0.0094    3.0172 ^ inst14/D (sky130_fd_sc_hd__dfxtp_1)
+             3.0172   data arrival time
 
    2.3400    2.3400   clock clk (rise edge)
    0.0000    2.3400   clock network delay (ideal)
    0.0000    2.3400   clock reconvergence pessimism
              2.3400 ^ inst14/CLK (sky130_fd_sc_hd__dfxtp_1)
-  -0.1598    2.1802   library setup time
-             2.1802   data required time
+  -0.0670    2.2730   library setup time
+             2.2730   data required time
 -------------------------------------------------------------
-             2.1802   data required time
-            -3.0680   data arrival time
+             2.2730   data required time
+            -3.0172   data arrival time
 -------------------------------------------------------------
-            -0.8878   slack (VIOLATED)
+            -0.7442   slack (VIOLATED)
 
 

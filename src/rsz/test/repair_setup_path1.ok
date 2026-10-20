@@ -17,12 +17,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -8.087 |      -52.3 |     20 | aluout[31]
-     106* |       6 |      40 |        7 |      0 |    16 |    +7.5% |   -4.378 |      -17.9 |     20 | aluout[31]
-    final |       6 |      40 |        7 |      0 |    16 |    +7.5% |   -4.378 |      -17.9 |     11 | aluout[31]
+     159* |       6 |      41 |        9 |      0 |    16 |    +9.0% |   -4.378 |      -17.9 |     20 | aluout[31]
+    final |       6 |      41 |        9 |      0 |    16 |    +9.0% |   -4.378 |      -17.9 |     11 | aluout[31]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 6 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 40 instances: 40 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0040] Inserted 9 buffers.
+[INFO RSZ-0051] Resized 41 instances: 41 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 16 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: instr[24] (input port clocked by clk)
