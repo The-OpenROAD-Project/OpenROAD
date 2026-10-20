@@ -531,7 +531,9 @@ ParasiticsSrc EstimateParasitics::designParasiticsSrc()
     logger_->error(
         EST, 9, "The design is not placed: no parasitics to estimate.");
   }
-  if (global_router_->haveRoutes()) {
+  // Guides from detailed routing do not rebuild usable global routes.
+  if (global_router_->haveRoutes()
+      && !global_router_->routesFromDetailedRouteGuides()) {
     return ParasiticsSrc::kGlobalRouting;
   }
   if (global_router_->haveCongestedRoutes()) {
@@ -595,6 +597,14 @@ void EstimateParasitics::estimateParasitics(
       parasitics_src_ = ParasiticsSrc::kPlacement;
       break;
     case ParasiticsSrc::kGlobalRouting:
+      // Guides from detailed routing do not rebuild usable global routes.
+      if (global_router_->routesFromDetailedRouteGuides()) {
+        logger_->error(EST,
+                       21,
+                       "The database guides come from detailed routing and "
+                       "cannot rebuild global routes. Use estimate_parasitics "
+                       "-placement or read_spef.");
+      }
       estimateGlobalRouteRC(spef_writer.get());
       parasitics_src_ = ParasiticsSrc::kGlobalRouting;
       break;

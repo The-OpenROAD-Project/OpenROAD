@@ -8314,6 +8314,10 @@ class dbGuide : public dbObject
 
   void setIsConnectedToTerm(bool is_connected);
 
+  bool isFromDetailedRoute() const;
+
+  void setIsFromDetailedRoute(bool from_detailed_route);
+
   // User Code End dbGuide
 };
 
