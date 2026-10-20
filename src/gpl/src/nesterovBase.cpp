@@ -1714,7 +1714,7 @@ void NesterovBaseCommon::resetMinRcCellSize()
 
 void NesterovBaseCommon::resizeMinRcCellSize()
 {
-  minRcCellSize_.resize(nbc_gcells_.size(), odb::Rect(0, 0, 0, 0));
+  minRcCellSize_.resize(nbc_gcells_.size());
 }
 
 void NesterovBaseCommon::updateMinRcCellSize()
@@ -1725,11 +1725,14 @@ void NesterovBaseCommon::updateMinRcCellSize()
     }
 
     int idx = &gCell - nbc_gcells_.data();
-    minRcCellSize_[idx] = odb::Rect(0, 0, gCell->dx(), gCell->dy());
+    const int64_t area = static_cast<int64_t>(gCell->dx()) * gCell->dy();
+    minRcCellSize_[idx] = {odb::Rect(0, 0, gCell->dx(), gCell->dy()),
+                           area - gCell->inflationArea()};
   }
 }
 
-void NesterovBaseCommon::revertGCellSizeToMinRc()
+void NesterovBaseCommon::revertGCellSizeToMinRc(
+    std::optional<int64_t> inflation_budget)
 {
   for (auto& gCell : nbc_gcells_) {
     if (!gCell->isStdInstance()) {
@@ -1737,11 +1740,32 @@ void NesterovBaseCommon::revertGCellSizeToMinRc()
     }
 
     int idx = &gCell - nbc_gcells_.data();
-    const odb::Rect& rect = minRcCellSize_[idx];
+    const auto& snapshot = minRcCellSize_[idx];
+    const odb::Rect& rect = snapshot.size;
     int dx = rect.dx();
     int dy = rect.dy();
 
-    if (rect.area() > gCell->insts()[0]->getArea()) {
+    if (inflation_budget) {
+      const GCell physical(gCell->insts());
+      const int64_t physical_area
+          = static_cast<int64_t>(physical.dx()) * physical.dy();
+      const int64_t saved_area = static_cast<int64_t>(dx) * dy;
+      // A retained resize invalidates the old master's virtual dimensions.
+      // Do not invalidate at callback time: a virtual timing repair can undo
+      // a resize before the routability snapshot is needed.
+      if (snapshot.uninflated_area != physical_area || dx < physical.dx()
+          || dy < physical.dy()
+          || saved_area - physical_area > *inflation_budget) {
+        dx = physical.dx();
+        dy = physical.dy();
+      }
+      gCell->setSize(dx, dy, GCell::GCellChange::kNone);
+      const int64_t restored = gCell->inflationArea();
+      *inflation_budget -= restored;
+      if (restored > 0) {
+        gCell->setAreaChangeType(GCell::GCellChange::kRoutability);
+      }
+    } else if (rect.area() > gCell->insts()[0]->getArea()) {
       gCell->setSize(dx, dy, GCell::GCellChange::kRoutability);
     } else {
       gCell->setSize(dx, dy, GCell::GCellChange::kNone);
@@ -4351,7 +4375,9 @@ size_t NesterovBaseCommon::createCbkGCell(odb::dbInst* db_inst)
   pb_insts_stor_.push_back(pb_inst);
   GCell gcell(&pb_insts_stor_.back());
   gCellStor_.push_back(gcell);
-  minRcCellSize_.emplace_back(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy());
+  minRcCellSize_.push_back(
+      {odb::Rect(gcell.lx(), gcell.ly(), gcell.ux(), gcell.uy()),
+       static_cast<int64_t>(gcell.dx()) * gcell.dy()});
   GCell* gcell_ptr = &gCellStor_.back();
   gCellMap_[gcell_ptr->insts()[0]] = gcell_ptr;
   db_inst_to_nbc_index_map_[db_inst] = gCellStor_.size() - 1;

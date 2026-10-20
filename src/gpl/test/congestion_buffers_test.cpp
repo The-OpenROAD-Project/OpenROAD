@@ -56,6 +56,7 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     options_.density = 0.7f;
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
+    options_.timingDrivenCongestionInflation = true;
     const PlacerBaseVars pb_vars(options_);
     pbc_ = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
     const NesterovBaseVars nb_vars(options_);

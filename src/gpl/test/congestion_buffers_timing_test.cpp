@@ -138,34 +138,36 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         &logger_);
   }
 
-  void completeRoutability(bool inflate_ordinary_cells = false)
+  void runOrdinaryPass(int wire_width)
   {
     // Supply settled motion to the real controller, then execute its ordinary
     // congestion checks. Completion is not set by hand in this fixture.
-    auto ordinary_pass = [&](int wire_width) {
-      grt_.getRudy()->setWireWidth(wire_width);
-      np_->average_overflow_unscaled_ = 0.2f;
-      for (const auto& nb : nb_vec_) {
-        nb->peak_coordi_distance_ = 1.0f;
-        nb->coordiDistance_ = 0.0f;
-        nb->saveSnapshot();
-      }
-      float current_a = 1.0f;
-      np_->runRoutability(0,
-                          0,
-                          "",
-                          1.0f,
-                          np_->wireLengthCoefX_,
-                          np_->wireLengthCoefY_,
-                          ordinary_iterations_,
-                          current_a);
-    };
+    grt_.getRudy()->setWireWidth(wire_width);
+    np_->average_overflow_unscaled_ = 0.2f;
+    for (const auto& nb : nb_vec_) {
+      nb->peak_coordi_distance_ = 1.0f;
+      nb->coordiDistance_ = 0.0f;
+      nb->saveSnapshot();
+    }
+    float current_a = 1.0f;
+    np_->runRoutability(0,
+                        0,
+                        "",
+                        1.0f,
+                        np_->wireLengthCoefX_,
+                        np_->wireLengthCoefY_,
+                        ordinary_iterations_,
+                        current_a);
+  }
+
+  void completeRoutability(bool inflate_ordinary_cells = false)
+  {
     if (inflate_ordinary_cells) {
-      ordinary_pass(1000000);
+      runOrdinaryPass(1000000);
       ASSERT_GT(rb_->getTotalInflation(), 0);
       ASSERT_TRUE(np_->is_routability_need_);
     }
-    ordinary_pass(1);
+    runOrdinaryPass(1);
     ASSERT_FALSE(np_->is_routability_need_);
     ASSERT_GT(ordinary_iterations_, 0);
     grt_.getRudy()->setWireWidth(1000000);
@@ -284,6 +286,7 @@ TEST_F(TimingRepairIntegrationTest,
        RoutabilityDisabledStillRepairsWithoutInflation)
 {
   makePlacer(false);
+  EXPECT_FALSE(RouteBaseVars(options_).timingDrivenCongestionInflation);
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(false);
@@ -293,6 +296,7 @@ TEST_F(TimingRepairIntegrationTest,
 TEST_F(TimingRepairIntegrationTest, TimingDisabledSkipsRepairAndInflation)
 {
   makePlacer(true, false);
+  EXPECT_FALSE(RouteBaseVars(options_).timingDrivenCongestionInflation);
   runTiming(0.2f);
   EXPECT_EQ(timing_iterations_, 0);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
@@ -343,6 +347,113 @@ TEST_F(TimingRepairIntegrationTest,
   EXPECT_LE(rb_->getTotalInflation(),
             static_cast<int64_t>(static_cast<double>(original)
                                  * options_.routabilityMaxInflationTotal));
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       DefaultOffRetainsOrdinaryBudgetAfterPhysicalResizeAndDeletion)
+{
+  makePlacer(true, true, false);
+  completeRoutability(true);
+  const int64_t historical_charge = rb_->getTotalInflation();
+  const int64_t live_before = nb_vec_[0]->getInflationArea();
+  ASSERT_GT(historical_charge, 0);
+  ASSERT_EQ(live_before, historical_charge);
+  auto* driver = block_->findInst("fanout_driver");
+  ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
+  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
+  nbc_->fixPointers();
+  EXPECT_EQ(nbc_->dbToNb(driver)->inflationArea(), 0);
+  odb::dbInst* deleted = nullptr;
+  for (const auto* cell : nbc_->getGCells()) {
+    if (cell->isStdInstance() && cell->inflationArea() > 0
+        && cell->getName().starts_with("sink_")) {
+      deleted = cell->insts().front()->dbInst();
+      break;
+    }
+  }
+  ASSERT_NE(deleted, nullptr);
+  odb::dbInst::destroy(deleted);
+  nbc_->fixPointers();
+  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
+                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateTimingDrivenDensity();
+  ASSERT_LT(nb_vec_[0]->getInflationArea(), live_before);
+  EXPECT_EQ(rb_->getTotalInflation(), historical_charge);
+  // Also cross the actual retained timing boundary with ordinary inflation
+  // still present. The default path must not turn its charge into live area.
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  EXPECT_EQ(rb_->getTotalInflation(), historical_charge);
+  EXPECT_EQ(inflatedNewBuffer(), nullptr);
+  int new_cells = 0;
+  for (auto* inst : block_->getInsts()) {
+    new_cells += !initial_names_.contains(inst->getName());
+  }
+  EXPECT_GT(new_cells, 0);
+  EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       MinRcRevertDiscardsInflationFromRetainedDownsizedMaster)
+{
+  auto* driver = block_->findInst("fanout_driver");
+  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
+  makePlacer();
+  const int64_t original = nb_vec_[0]->getNesterovInstsArea();
+  runOrdinaryPass(1000000);
+  ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
+  ASSERT_TRUE(np_->is_routability_need_);
+  const int saved_dx = nbc_->dbToNb(driver)->dx();
+  const int saved_dy = nbc_->dbToNb(driver)->dy();
+  // A genuine RC improvement saves the already-inflated dimensions in the
+  // production min-RC snapshot before the next ordinary inflation pass.
+  runOrdinaryPass(500000);
+  ASSERT_TRUE(rb_->isMinRc());
+  ASSERT_TRUE(np_->is_routability_need_);
+  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X1")));
+  nbc_->fixPointers();
+  auto* cell = nbc_->dbToNb(driver);
+  ASSERT_EQ(cell->changeType(), GCell::GCellChange::kDownsize);
+  ASSERT_EQ(cell->inflationArea(), 0);
+  const int physical_dx = cell->dx();
+  const int physical_dy = cell->dy();
+  ASSERT_LT(static_cast<int64_t>(physical_dx) * physical_dy,
+            static_cast<int64_t>(saved_dx) * saved_dy);
+  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
+                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateTimingDrivenDensity();
+  // Higher demand cannot replace the minimum; the real controller's revert
+  // limit exercises RouteBase::revertToMinCongestion and its live ceiling.
+  ordinary_iterations_ = 50;
+  runOrdinaryPass(1000000);
+  ASSERT_FALSE(rb_->isMinRc());
+  ASSERT_FALSE(np_->is_routability_need_);
+  cell = nbc_->dbToNb(driver);
+  EXPECT_EQ(cell->dx(), physical_dx);
+  EXPECT_EQ(cell->dy(), physical_dy);
+  EXPECT_EQ(cell->inflationArea(), 0);
+  EXPECT_LE(rb_->getTotalInflation(),
+            static_cast<int64_t>(static_cast<double>(original)
+                                 * options_.routabilityMaxInflationTotal));
+  EXPECT_EQ(
+      nb_vec_[0]->getMovableArea(),
+      nb_vec_[0]->getNesterovInstsArea() + nb_vec_[0]->getTotalFillerArea());
+}
+
+TEST_F(TimingRepairIntegrationTest, MinRcRestoreHonorsZeroLiveAllowance)
+{
+  makePlacer();
+  runOrdinaryPass(1000000);
+  ASSERT_GT(rb_->getTotalInflation(), 0);
+  runOrdinaryPass(500000);
+  ASSERT_TRUE(rb_->isMinRc());
+  ASSERT_GT(rb_->getTotalInflation(), 0);
+  nbc_->revertGCellSizeToMinRc(0);
+  nb_vec_[0]->updateTimingDrivenDensity();
+  EXPECT_EQ(rb_->getTotalInflation(), 0);
+  for (const auto* cell : nbc_->getGCells()) {
+    EXPECT_EQ(cell->inflationArea(), 0);
+  }
 }
 
 TEST_F(TimingRepairIntegrationTest, PhysicalResizeReclaimsLiveInflation)

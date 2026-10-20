@@ -140,6 +140,7 @@ struct RouteBaseVars
   RouteBaseVars(const PlaceOptions& options);
 
   const bool useRudy;
+  const bool timingDrivenCongestionInflation;
   const float targetRC;
   const float inflationRatioCoef;
   const float maxInflationRatio;
@@ -212,6 +213,8 @@ class RouteBase
   std::unique_ptr<TileGrid> tg_;
 
   std::vector<int64_t> inflatedAreaDelta_;
+  std::vector<int64_t> minRcInflatedAreaDelta_;
+  std::vector<int64_t> accumulatedInflatedAreaDelta_;
 
   int revert_count_ = 0;
   float final_average_rc_ = 0.0;

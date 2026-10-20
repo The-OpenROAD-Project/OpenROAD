@@ -996,7 +996,10 @@ class NesterovBaseCommon
   void resetMinRcCellSize();
   void resizeMinRcCellSize();
   void updateMinRcCellSize();
-  void revertGCellSizeToMinRc();
+  // A live budget also reconciles snapshots with the current physical master.
+  // Without one, retain the ordinary routability restoration policy.
+  void revertGCellSizeToMinRc(std::optional<int64_t> inflation_budget
+                              = std::nullopt);
 
   GCell& getGCell(size_t index);
   size_t getGCellIndex(const GCell* gCell) const;
@@ -1029,7 +1032,12 @@ class NesterovBaseCommon
 
   std::vector<GCell*> nbc_gcells_;
   // For usage in routability mode, parallel to nbc_gcells_
-  std::vector<odb::Rect> minRcCellSize_;
+  struct CellSizeSnapshot
+  {
+    odb::Rect size{0, 0, 0, 0};
+    int64_t uninflated_area = 0;
+  };
+  std::vector<CellSizeSnapshot> minRcCellSize_;
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
