@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <array>
 #include <exception>
 #include <memory>
 #include <string>
@@ -69,6 +70,48 @@ TEST_F(TestSnapper, ManufacturingGridPreservesCoreContainedOrigin)
   EXPECT_EQ(macro->getOrigin().x(), 5);
   EXPECT_EQ(macro->getOrigin().y(), 5);
 }
+
+class TestSnapperWithoutManufacturingGrid
+    : public TestSnapper,
+      public testing::WithParamInterface<int>
+{
+};
+
+TEST_P(TestSnapperWithoutManufacturingGrid, ContainedAndOutsideOrigins)
+{
+  db_->getTech()->setManufacturingGrid(GetParam());
+  ASSERT_EQ(db_->getTech()->getManufacturingGrid(), GetParam());
+  auto* block = db_->getChip()->getBlock();
+  const odb::Rect core(5, 5, 205, 205);
+  block->setCoreArea(core);
+  auto* master = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  master->setWidth(100);
+  master->setHeight(100);
+  master->setType(odb::dbMasterType::BLOCK);
+  master->setFrozen();
+  auto* macro = odb::dbInst::create(block, master, "macro");
+  macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  snapper_->setMacro(macro);
+  const std::array<odb::Point, 4> origins{odb::Point(15, 16),
+                                          odb::Point(-5, 120),
+                                          odb::Point(120, -5),
+                                          odb::Point(105, 105)};
+  const std::array<odb::Point, 4> expected{odb::Point(15, 16),
+                                           odb::Point(5, 105),
+                                           odb::Point(105, 5),
+                                           odb::Point(105, 105)};
+  for (size_t i = 0; i < origins.size(); ++i) {
+    SCOPED_TRACE(testing::Message() << "grid=" << GetParam() << " case=" << i);
+    macro->setOrigin(origins[i].x(), origins[i].y());
+    snapper_->snapMacro();
+    EXPECT_EQ(macro->getOrigin(), expected[i]);
+    EXPECT_TRUE(core.contains(macro->getBBox()->getBox()));
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(NonpositiveGrid,
+                         TestSnapperWithoutManufacturingGrid,
+                         testing::Values(0, -10));
 
 // Snaps a macro using one horizontal layer, aligning one pin
 TEST_F(TestSnapper, SingleLayer)
