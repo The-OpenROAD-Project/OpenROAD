@@ -926,7 +926,15 @@ WebSocketSession::~WebSocketSession()
     viewer_hook_->sessions().remove(viewer_token_);
   }
   if (init_thread_.joinable()) {
-    init_thread_.join();
+    // The init thread holds a reference to the session. When it holds the
+    // last one, the session is destroyed on that thread, which cannot join
+    // itself (std::system_error, resource deadlock avoided): it is ending,
+    // so let it go.
+    if (init_thread_.get_id() == std::this_thread::get_id()) {
+      init_thread_.detach();
+    } else {
+      init_thread_.join();
+    }
   }
   std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
   if (!state_.active_heatmap.empty()) {
