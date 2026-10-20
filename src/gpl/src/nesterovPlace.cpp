@@ -552,7 +552,10 @@ void NesterovPlace::runTimingDriven(int iter,
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
-            = (nbc_->getDeltaArea() / static_cast<float>(previous_area))
+            = (nbc_->getDeltaArea()
+               / static_cast<float>(retained_inflation
+                                        ? previous_area
+                                        : nesterov->getNesterovInstsArea()))
               * 100.0f;
         log_->info(
             GPL,
