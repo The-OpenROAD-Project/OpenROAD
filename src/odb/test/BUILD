@@ -235,6 +235,7 @@ PASSFAIL_TESTS = [
     "read_3dbx_fail",
     "read_def_virtual_invalid",
     "replace_hier_mod_timing",
+    "replace_hier_mod_timing_fuzzy",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -416,7 +417,11 @@ filegroup(
                 "gcd_abstract_lef.lefok",
             ],
             "replace_hier_mod_timing": [
+                "hierarchy_timing_helpers.tcl",
                 "replace_hier_mod1.tcl",
+            ],
+            "replace_hier_mod_timing_fuzzy": [
+                "hierarchy_timing_helpers.tcl",
             ],
             "write_cdl": [
                 "write_cdl_escaped.cdl",

@@ -1,5 +1,6 @@
 # Hierarchical module swaps must preserve topology and honor each timing decision.
 set test_name replace_hier_mod_timing
+source hierarchy_timing_helpers.tcl
 set incremental_calls 0
 set decisions {}
 rename global_placement hierarchy_timing_global_placement
@@ -9,12 +10,6 @@ proc hierarchy_timing_read { path } {
   set text [read $stream]
   close $stream
   return $text
-}
-
-proc hierarchy_timing_equal { actual expected label } {
-  if { abs($actual - $expected) > 1e-15 } {
-    error "$label is stale or does not match the selected placement: $actual vs $expected"
-  }
 }
 
 proc global_placement { args } {
@@ -41,7 +36,8 @@ proc global_placement { args } {
   }
   lappend decisions $accepted
   set degraded [expr {
-    $trial_ws < $locked_ws - 1e-15 || $trial_tns < $locked_tns - 1e-15
+    [hierarchy_timing_less $trial_ws $locked_ws]
+    || [hierarchy_timing_less $trial_tns $locked_tns]
   }]
   if { ($accepted == "true") == $degraded } {
     error "Hierarchical placement decision disagrees with locked/trial setup timing"
