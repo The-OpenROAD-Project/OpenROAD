@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -13,6 +14,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "output_buffers_nangate45",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -63,6 +65,11 @@ filegroup(
                 "Nangate45/Nangate45_tech.lef",
                 "Nangate45/Nangate45_typ.lib",
             ],
+            "output_buffers_nangate45": [
+                "Nangate45/Nangate45.lef",
+                "Nangate45/Nangate45_tech.lef",
+                "Nangate45/Nangate45_typ.lib",
+            ],
             "make_8x8_2r1w_sky130": ["make_8x8_2r1w_sky130_behavioral.vok"],
             "make_8x8_sky130": ["make_8x8_sky130_behavioral.vok"],
         }.get(test_name, []),
@@ -81,3 +88,24 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "output_buffers_test",
+    size = "medium",
+    srcs = ["cpp/TestOutputBuffers.cpp"],
+    data = [
+        ":regression_resources",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/ram",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

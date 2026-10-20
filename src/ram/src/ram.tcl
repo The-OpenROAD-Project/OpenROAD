@@ -8,6 +8,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
+                                             [-output_buffer_cell name|none]
                                              [-rw_ports count]
                                              [-r_ports count]
                                              [-w_ports count]
@@ -19,7 +20,7 @@ proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -write_behavioral_verilog } flags {}
+      -write_behavioral_verilog -output_buffer_cell } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -119,8 +120,14 @@ proc generate_ram_netlist { args } {
     ram::set_behavioral_verilog_filename $keys(-write_behavioral_verilog)
   }
 
+  set output_buffer_cell ""
+  if { [info exists keys(-output_buffer_cell)] } {
+    set output_buffer_cell $keys(-output_buffer_cell)
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
-    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist
+    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
+    $output_buffer_cell
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -133,6 +140,7 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-storage_cell name]
                                      [-tristate_cell name]
                                      [-inv_cell name]
+                                     [-output_buffer_cell name|none]
                                      [-power_net_name name]
                                      [-ground_net_name name]
                                      -routing_layer config
@@ -153,7 +161,7 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -write_behavioral_verilog } flags {}
+           -write_behavioral_verilog -output_buffer_cell } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -192,6 +200,10 @@ proc generate_ram { args } {
 
   if { [info exists keys(-inv_cell)] } {
     lappend ram_netlist_args -inv_cell $keys(-inv_cell)
+  }
+
+  if { [info exists keys(-output_buffer_cell)] } {
+    lappend ram_netlist_args -output_buffer_cell $keys(-output_buffer_cell)
   }
 
   if { [info exists keys(-tapcell)] } {
