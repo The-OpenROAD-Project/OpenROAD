@@ -12,6 +12,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -161,6 +162,13 @@ CapRow Solver::solve(const Scene& scene,
 {
   const std::lock_guard lock(solve_mutex_);
   const Geometry& geometry = scene.geometry();
+  if (master < 0 || master >= geometry.netCount()) {
+    throw std::invalid_argument("fsv: master net " + std::to_string(master)
+                                + " is out of range");
+  }
+  if (solve_options.hop_guard <= 0) {
+    throw std::invalid_argument("fsv: hop_guard must be positive");
+  }
   const SpatialIndex& spatial_index = scene.index();
   const double capture = solve_options.capture_rel * scene.minDimension();
   const GaussianSurface gauss
@@ -282,7 +290,15 @@ CapRow Solver::solve(const Scene& scene,
     }
     std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
     row.hops = total.hops;
-    row.guard_hits = total.guard_hits;
+
+    // A dropped walk would bias every column without showing up in sigma.
+    if (total.guard_hits > 0) {
+      throw std::runtime_error(
+          "fsv: " + std::to_string(total.guard_hits) + " walk(s) exceeded "
+          + std::to_string(solve_options.hop_guard) + " hops while solving net "
+          + geometry.netName(master)
+          + "; raise SolveOptions::hop_guard or check the geometry");
+    }
 
     if (row.walks >= solve_options.max_walks) {
       break;

@@ -83,10 +83,9 @@ int main(int argc, char** argv)
         row.sigma[net],
         100 * (row.total() / expected - 1),
         (row.total() - expected) / row.sigma[net]);
-    std::printf("walks %lld  hops/walk %.1f  guard hits %lld\n",
+    std::printf("walks %lld  hops/walk %.1f\n",
                 static_cast<long long>(row.walks),
-                static_cast<double>(row.hops) / row.walks,
-                static_cast<long long>(row.guard_hits));
+                static_cast<double>(row.hops) / row.walks);
   }
 
   // Thread scaling at a fixed_size walk count.

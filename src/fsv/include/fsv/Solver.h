@@ -47,7 +47,8 @@ struct SolveOptions
   double gauss_offset = 0.5;
   // Capture distance as a fraction of the scene's smallest box dimension.
   double capture_rel = 1e-4;
-  // A walk exceeding this many hops is dropped and counted.
+  // A walk exceeding this many hops makes solve() throw: dropping it would
+  // bias the result. Must be positive.
   int64_t hop_guard = 1000000;
 };
 
@@ -62,7 +63,6 @@ struct CapRow
   double ground_sigma = 0;
   int64_t walks = 0;
   int64_t hops = 0;
-  int64_t guard_hits = 0;
 
   double total() const { return cap[master]; }
   double coupling(int net) const { return -cap[net]; }
@@ -78,6 +78,8 @@ class Solver
   explicit Solver(const SolverOptions& options = {});
   ~Solver();
 
+  // Throws std::invalid_argument for a bad master or options, and
+  // std::runtime_error if any walk exceeds SolveOptions::hop_guard.
   CapRow solve(const Scene& scene,
                int master,
                const SolveOptions& options = {});

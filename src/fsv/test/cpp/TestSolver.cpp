@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <numbers>
+#include <stdexcept>
 
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
@@ -45,7 +46,6 @@ TEST(Solver, CubeAboveGround)
   // All of the cube's charge couples to the ground plane.
   EXPECT_NEAR(
       row.ground, -row.total(), 4 * (row.sigma[net] + row.ground_sigma));
-  EXPECT_EQ(row.guard_hits, 0);
 }
 
 // Capacitance scales with the dielectric constant and with size.
@@ -144,6 +144,26 @@ TEST(Solver, ReuseAcrossScenes)
   EXPECT_EQ(r1.ground, f1.ground);
   EXPECT_EQ(r2.cap, f2.cap);
   EXPECT_EQ(r2.ground, f2.ground);
+}
+
+// A walk that exceeds the hop guard fails the solve rather than being
+// dropped, which would bias the result; bad arguments are rejected upfront.
+TEST(Solver, HopGuardFailsSolve)
+{
+  Geometry geometry;
+  const int net = geometry.addNet("a");
+  geometry.addBox(net, cube(0, 0, 2, 1));
+  const Scene scene(geometry);
+  Solver solver({.threads = 2});
+
+  SolveOptions options;
+  options.hop_guard = 1;
+  EXPECT_THROW(solver.solve(scene, net, options), std::runtime_error);
+  options.hop_guard = 0;
+  EXPECT_THROW(solver.solve(scene, net, options), std::invalid_argument);
+  EXPECT_THROW(solver.solve(scene, 1, SolveOptions{}), std::invalid_argument);
+  // The solver stays usable after a failed solve.
+  EXPECT_GT(solver.solve(scene, net, SolveOptions{}).total(), 0);
 }
 
 }  // namespace
