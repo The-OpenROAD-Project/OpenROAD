@@ -114,6 +114,9 @@ class IncrementalTimingGuard
                          odb::dbBlock* block);
   bool checkpoint();
   bool restoreIfWorse();
+  // Valid after a successful checkpoint and restoreIfWorse(), respectively.
+  const IncrementalTimingMetrics& lockedTiming() const { return baseline_; }
+  const IncrementalTimingMetrics& trialTiming() const { return trial_; }
 
  private:
   struct Location
@@ -128,6 +131,7 @@ class IncrementalTimingGuard
   odb::dbBlock* block_;
   std::vector<Location> locations_;
   IncrementalTimingMetrics baseline_{};
+  IncrementalTimingMetrics trial_{};
   bool active_ = false;
 };
 

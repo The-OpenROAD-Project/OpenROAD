@@ -310,7 +310,21 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     unlocked_options.timingDrivenMode = false;
     unlocked_options.enable_routing_congestion = false;
     doNesterovPlace(threads, unlocked_options, iter + 1);
-    if (timing_guard.restoreIfWorse()) {
+    const bool reverted = timing_guard.restoreIfWorse();
+    if (timing_aware) {
+      const auto& locked = timing_guard.lockedTiming();
+      const auto& trial = timing_guard.trialTiming();
+      log_->info(GPL,
+                 198,
+                 "Incremental setup timing (s): locked WS {:.9e}, TNS {:.9e}; "
+                 "trial WS {:.9e}, TNS {:.9e}; accepted {}.",
+                 locked.worst_slack,
+                 locked.total_negative_slack,
+                 trial.worst_slack,
+                 trial.total_negative_slack,
+                 !reverted);
+    }
+    if (reverted) {
       log_->metric("gpl__incremental__timing_reverted", 1);
       log_->warn(GPL,
                  197,

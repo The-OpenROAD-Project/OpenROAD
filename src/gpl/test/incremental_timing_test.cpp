@@ -87,7 +87,13 @@ TEST_F(IncrementalTimingTest, RejectsHarmfulMoveAndRefreshesTiming)
   estimate();
   ASSERT_LT(worstSlack(), baseline - 1e-10);
   ASSERT_LT(tns(), baseline_tns);
+  const float trial_ws = worstSlack();
+  const float trial_tns = tns();
   EXPECT_TRUE(guard.restoreIfWorse());
+  EXPECT_FLOAT_EQ(guard.lockedTiming().worst_slack, baseline);
+  EXPECT_FLOAT_EQ(guard.lockedTiming().total_negative_slack, baseline_tns);
+  EXPECT_FLOAT_EQ(guard.trialTiming().worst_slack, trial_ws);
+  EXPECT_FLOAT_EQ(guard.trialTiming().total_negative_slack, trial_tns);
   EXPECT_EQ(buffer_->getLocation().x(), 20000);
   EXPECT_EQ(buffer_->getLocation().y(), 20000);
   EXPECT_NEAR(worstSlack(), baseline, 1e-13);

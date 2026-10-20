@@ -370,9 +370,9 @@ bool IncrementalTimingGuard::restoreIfWorse()
   if (!active_) {
     return false;
   }
-  const auto candidate = measure();
+  trial_ = measure();
   active_ = false;
-  if (!candidate.degrades(baseline_)) {
+  if (!trial_.degrades(baseline_)) {
     return false;
   }
   for (const auto& [inst, x, y] : locations_) {

@@ -38,8 +38,10 @@ puts $log_text
 if { ![string match {*\[INFO GPL-0196\]*} $log_text] } {
   error "The timing-aware unlocked pass did not execute"
 }
-if { ![regexp {timing protection enabled: ([0-9]+) weighted nets, maximum weight ([0-9.]+)} \
-  $log_text unused weighted_nets max_weight] } {
+if {
+  ![regexp {timing protection enabled: ([0-9]+) weighted nets, maximum weight ([0-9.]+)} \
+    $log_text unused weighted_nets max_weight]
+} {
   error "Missing actual timing weights from the unlocked pass"
 }
 if { $weighted_nets == 0 || $max_weight <= 1.0 } {

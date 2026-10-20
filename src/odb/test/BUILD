@@ -234,6 +234,7 @@ PASSFAIL_TESTS = [
     "read_3dbv_fail",
     "read_3dbx_fail",
     "read_def_virtual_invalid",
+    "replace_hier_mod_timing",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -413,6 +414,9 @@ filegroup(
             ],
             "replace_hier_mod4": [
                 "gcd_abstract_lef.lefok",
+            ],
+            "replace_hier_mod_timing": [
+                "replace_hier_mod1.tcl",
             ],
             "write_cdl": [
                 "write_cdl_escaped.cdl",
