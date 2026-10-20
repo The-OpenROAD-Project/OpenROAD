@@ -295,6 +295,7 @@ TEST_F(TestMacroPreflight, PinAwareChannelsTrimOnlyUnpinnedEdges)
   expectErrorUnchanged("MPL-0006", {}, 6000, 6000);
   expectPassUnchanged({}, 6000, 6000, true);
   expectErrorUnchanged("MPL-0006", {}, 6000, 6000);
+  expectErrorUnchanged("MPL-0006", {}, 10000, 6000, true);
   // A DEF halo takes precedence over pin-aware channel trimming.
   macro->setHalo(3000, 3000, 3000, 3000, false);
   expectErrorUnchanged("MPL-0006", {}, 6000, 6000, true);
