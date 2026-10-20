@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "est/EstimateParasitics.h"
 #include "gpl/Replace.h"
 #include "grt/Rudy.h"
 #include "gtest/gtest.h"
@@ -392,20 +393,34 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_EQ(live_before, historical_charge);
   auto* driver = block_->findInst("fanout_driver");
   ASSERT_GT(nbc_->dbToNb(driver)->inflationArea(), 0);
-  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
-  nbc_->fixPointers();
-  EXPECT_EQ(nbc_->dbToNb(driver)->inflationArea(), 0);
-  odb::dbInst* deleted = nullptr;
-  for (const auto* cell : nbc_->getGCells()) {
-    if (cell->isStdInstance() && cell->inflationArea() > 0
-        && cell->getName().starts_with("sink_")) {
-      deleted = cell->insts().front()->dbInst();
-      break;
+  ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
+  ASSERT_FALSE(ep_.hasParasiticsInvalid());
+  ASSERT_FALSE(grt_.haveRoutes());
+  // Model retained resizer edits in the same placement-parasitics transaction
+  // as findResizeSlacks(), before entering another timing-driven iteration.
+  ep_.setParasiticsSrc(est::ParasiticsSrc::kPlacement);
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    ep_.estimateParasitics(est::ParasiticsSrc::kPlacement);
+    ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
+    nbc_->fixPointers();
+    EXPECT_EQ(nbc_->dbToNb(driver)->inflationArea(), 0);
+    EXPECT_TRUE(ep_.hasParasiticsInvalid());
+    odb::dbInst* deleted = nullptr;
+    for (const auto* cell : nbc_->getGCells()) {
+      if (cell->isStdInstance() && cell->inflationArea() > 0
+          && cell->getName().starts_with("sink_")) {
+        deleted = cell->insts().front()->dbInst();
+        break;
+      }
     }
+    ASSERT_NE(deleted, nullptr);
+    odb::dbInst::destroy(deleted);
+    nbc_->fixPointers();
+    EXPECT_TRUE(ep_.hasParasiticsInvalid());
   }
-  ASSERT_NE(deleted, nullptr);
-  odb::dbInst::destroy(deleted);
-  nbc_->fixPointers();
+  ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
+  ASSERT_FALSE(ep_.hasParasiticsInvalid());
   nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
                                np_->getWireLengthCoefY());
   nb_vec_[0]->updateTimingDrivenDensity();
@@ -455,8 +470,21 @@ TEST_F(TimingRepairIntegrationTest,
   const int completed_iterations = ordinary_iterations_;
   const int completed_reverts = rb_->getRevertCount();
   const int64_t historical_charge = rb_->getTotalInflation();
-  ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X1")));
-  nbc_->fixPointers();
+  ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
+  ASSERT_FALSE(ep_.hasParasiticsInvalid());
+  ASSERT_FALSE(grt_.haveRoutes());
+  // Keep the real GPL resize callback, but also mirror the estimator guard
+  // used by production resizer edits. Its destructor processes invalid nets.
+  ep_.setParasiticsSrc(est::ParasiticsSrc::kPlacement);
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    ep_.estimateParasitics(est::ParasiticsSrc::kPlacement);
+    ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X1")));
+    nbc_->fixPointers();
+    EXPECT_TRUE(ep_.hasParasiticsInvalid());
+  }
+  ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
+  ASSERT_FALSE(ep_.hasParasiticsInvalid());
   auto* cell = nbc_->dbToNb(driver);
   ASSERT_EQ(cell->changeType(), GCell::GCellChange::kDownsize);
   ASSERT_EQ(cell->inflationArea(), 0);
