@@ -8,11 +8,11 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       502
-    final |     +3.3% |       0 |      33 |             1 |         0
+    final |     +2.3% |       0 |      33 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 33 buffers in 1 nets.
-worst slack max -2.36
+worst slack max -0.90
 max fanout
 
 Pin                                   Limit Fanout  Slack
@@ -25,11 +25,10 @@ fanout1/X                                20     20      0 (MET)
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -2.358 |    -1081.9 |    500 | sink263/D
-     177* |       0 |     164 |        2 |      0 |     0 |    +0.2% |   -0.783 |     -377.5 |    500 | sink461/D
-    final |       0 |     168 |        2 |      0 |     0 |    +0.2% |   -0.783 |     -375.9 |    500 | sink461/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.896 |     -431.3 |    500 | sink467/D
+      58* |       0 |      12 |        0 |      0 |     0 |    +0.3% |   -0.770 |     -374.6 |    500 | sink109/D
+    final |       0 |      14 |        0 |      0 |     0 |    +0.3% |   -0.742 |     -358.8 |    500 | sink225/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 168 instances: 168 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 14 instances: 14 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -0.78
+worst slack max -0.74

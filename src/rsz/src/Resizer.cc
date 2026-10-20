@@ -4708,7 +4708,7 @@ float Resizer::portFanoutLoad(sta::LibertyPort* port) const
   if (exists) {
     return fanout_load;
   }
-  return 0.0;
+  return 1.0;
 }
 
 bool Resizer::checkFanout(const sta::Pin* drvr_pin,

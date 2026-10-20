@@ -402,7 +402,8 @@ bool Rebuffer::bufferSizeCanDriveLoad(const BufferSize& size,
 
   bool load_slew_satisfied = load_slew <= maxSlewMargined(bnet->maxLoadSlew());
   bool max_cap_satisfied = (bnet->cap() + segment_cap) <= size.margined_max_cap;
-  return load_slew_satisfied && max_cap_satisfied;
+  bool max_fanout_satisfied = bnet->fanout() <= fanout_limit_;
+  return load_slew_satisfied && max_cap_satisfied && max_fanout_satisfied;
 }
 
 int Rebuffer::wireLengthLimitImpliedByLoadSlew(sta::LibertyCell* cell)
@@ -570,6 +571,9 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                       left->cap() + right->cap())
             || junc1->slack() - size.intrinsic_delay < junc_slack) {
           break;
+        }
+        if (resizer_->portFanoutLoad(in) + in3->fanout() > fanout_limit_) {
+          continue;
         }
 
         const FixedDelay buffer_delay

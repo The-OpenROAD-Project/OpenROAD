@@ -10,7 +10,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [DEBUG RSZ-buffer_clamp] fanout1 clamped to core (101780, 1230) -> (101780, 22400)
 [DEBUG RSZ-buffer_clamp] wire2 clamped to core (101780, 1230) -> (101780, 22400)
 [DEBUG RSZ-buffer_clamp] wire3 clamped to core (192030, 1230) -> (178220, 22400)
-    final |     +9.2% |       0 |       3 |             1 |         0
+    final |    +10.9% |       0 |       3 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 3 buffers in 1 nets.
