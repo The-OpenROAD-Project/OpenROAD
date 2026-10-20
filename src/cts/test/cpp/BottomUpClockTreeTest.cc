@@ -771,7 +771,8 @@ class BottomUpBufferPinMappingTest : public BottomUpClockTreeTest,
 TEST_P(BottomUpBufferPinMappingTest, RejectsMissingMappingBeforeMutation)
 {
   prepareSlewClosureTree();
-  ASSERT_NE(readLiberty("_main/src/cts/test/bottom_up_pin_mismatch.lib"),
+  ASSERT_NE(readLiberty("_main/src/cts/test/bottom_up_pin_mismatch.lib",
+                        sta_->cmdScene()),
             nullptr);
   auto* cell = db_network_->findLibertyCell("CTS_PIN_MISMATCH");
   ASSERT_NE(cell, nullptr);
