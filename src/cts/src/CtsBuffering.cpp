@@ -276,7 +276,7 @@ class ClockBuffering
           load.fanout,
           load.max_wire_length / options_->getDbUnits(),
           model.max_wire_length / options_->getDbUnits(),
-          options_->getMaxWl() / options_->getDbUnits(),
+          static_cast<double>(options_->getMaxWl()) / options_->getDbUnits(),
           static_cast<double>(options_->getBufferDistance())
               / options_->getDbUnits(),
           options_->isSimpleSegmentEnabled());
