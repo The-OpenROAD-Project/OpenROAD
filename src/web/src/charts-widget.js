@@ -7,7 +7,7 @@
 // canvas.
 
 import { getThemeColors } from './theme.js';
-import { isStaticMode, beginSelection, isCurrentSelection }
+import { isStaticMode, beginSelection, isCurrentSelection, withBusyCursor }
     from './ui-utils.js';
 
 // Layout margins (pixels)
@@ -788,13 +788,14 @@ export class ChartsWidget {
         if (!bar || bar.count === 0) return;
 
         try {
-            const resp = await this._app.websocketManager.request({
-                type: 'timing_report',
-                is_setup: this._currentTab === 'setup',
-                max_paths: 50,
-                slack_min: bar.lower,
-                slack_max: bar.upper,
-            });
+            const resp = await withBusyCursor(
+                () => this._app.websocketManager.request({
+                    type: 'timing_report',
+                    is_setup: this._currentTab === 'setup',
+                    max_paths: 50,
+                    slack_min: bar.lower,
+                    slack_max: bar.upper,
+                }));
             if (this._app.timingWidget) {
                 this._app.timingWidget.showPaths(
                     this._currentTab, resp.paths || []);
@@ -821,12 +822,13 @@ export class ChartsWidget {
         // other panel's in-flight selection (see ui-utils.js).
         const token = beginSelection(this._app);
         try {
-            const resp = await this._app.websocketManager.request({
-                type,
-                lower: bar.lower,
-                upper: bar.upper,
-                use_dbu: this._app.showDbu,
-            });
+            const resp = await withBusyCursor(
+                () => this._app.websocketManager.request({
+                    type,
+                    lower: bar.lower,
+                    upper: bar.upper,
+                    use_dbu: this._app.showDbu,
+                }));
             if (!isCurrentSelection(this._app, token)) return;
             if (resp && resp.truncated) {
                 console.warn(

@@ -295,6 +295,15 @@ html[data-theme="light"] {
 .leaflet-container.label-mode-cursor {
     cursor: crosshair !important;
 }
+
+/* While a request the user waits on runs (withBusyCursor in ui-utils.js):
+   the progress cursor everywhere, the map included, whose own cursors are
+   !important and as specific as two classes. */
+body.op-busy,
+body.op-busy *,
+body.op-busy .leaflet-container.leaflet-container {
+    cursor: progress !important;
+}
 .ruler-label {
     background: var(--bg-hud);
     color: var(--fg-hud);
