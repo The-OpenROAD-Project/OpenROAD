@@ -30,6 +30,7 @@
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -172,6 +173,7 @@ class ClockBuffering
     if (!(slew_limit_ > 0) || !std::isfinite(slew_limit_)) {
       throw std::runtime_error("Bottom-up CTS requires a positive slew limit");
     }
+    prepareInputSlew();
     prepareWireModel();
     // Like the H-tree's threshold, zero means no wire-length limit. The
     // default simple-segment distance is not a constraint in LUT mode.
@@ -290,14 +292,16 @@ class ClockBuffering
                                     563,
                                     "Bottom-up reference cell rejection: {}, "
                                     "value {:.6g}, limit {:.6g}, "
-                                    "scene {}, transition {}; common "
-                                    "input/output slew budget {:.3f} ps.",
+                                    "scene {}, transition {}; input slew "
+                                    "bound {:.3f} ps, output slew limit "
+                                    "{:.3f} ps.",
                                     cell_rejection.constraint,
                                     cell_rejection.value,
                                     cell_rejection.limit,
                                     cell_rejection.scene,
                                     cell_rejection.transition,
-                                    slew_limit_ * 0.5e12);
+                                    input_slew_ * 1e12,
+                                    slew_limit_ * 1e12);
       }
     }
     return reference;
@@ -576,6 +580,47 @@ class ClockBuffering
     }
   }
 
+  void prepareInputSlew()
+  {
+    input_slew_ = slew_limit_;
+    const auto include = [this](double value) {
+      if (!std::isfinite(value) || value < 0) {
+        throw std::runtime_error("Invalid input slew for bottom-up CTS");
+      }
+      input_slew_ = std::max(input_slew_, value);
+    };
+    for (auto* mode : sta_->modes()) {
+      const auto* clock = mode->sdc()->findClock(clock_->getSdcName());
+      if (clock != nullptr) {
+        for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+          include(clock->slew(rf, sta::MinMax::max()));
+        }
+      }
+    }
+    auto* driver = clock_->getDriverPin();
+    if (driver == nullptr) {
+      driver = clock_->getNetObj()->getFirstOutput();
+      if (driver == nullptr) {
+        driver = clock_->getNetObj()->get1stBTerm();
+      }
+    }
+    if (driver == nullptr) {
+      throw std::runtime_error("Missing input driver for bottom-up CTS");
+    }
+    auto* vertex
+        = sta_->ensureGraph()->pinDrvrVertex(network_->dbToSta(driver));
+    if (vertex == nullptr) {
+      throw std::runtime_error("Missing input timing vertex for bottom-up CTS");
+    }
+    // Include a propagated gate/port input as well as ideal clock transition.
+    // Internal stages are checked against the output limit, but the first
+    // stage must not assume its upstream source already meets that limit.
+    include(sta::delayAsFloat(sta_->slew(vertex,
+                                         sta::RiseFallBoth::riseFall(),
+                                         sta_->scenes(),
+                                         sta::MinMax::max())));
+  }
+
   void prepareWireModel()
   {
     const double scale = 1e-6 / options_->getDbUnits();
@@ -590,8 +635,9 @@ class ClockBuffering
                                                = nullptr)
   {
     std::vector<BufferingCellChoice> result;
-    // Use a realizable common input-slew bound, with margin for placement RC.
-    const double slew_budget = slew_limit_ * 0.5;
+    // A stage must restore the actual receiver limit, including wire RC.
+    // Characterize at a common bound covering preceding stages and the
+    // incoming clock, without an extra half-limit on top of explicit wire RC.
     // Upper-bound the farthest receiver's wire degradation with the complete
     // star-net capacitance rather than a fictitious LUT load bucket.
     const double wire_slew
@@ -627,7 +673,7 @@ class ClockBuffering
       BufferingCellChoice choice{
           {cell.name, cell.input_cap}, cell.nominal_input_cap, cell.area, {}};
       const sta::Slew input_slews[]
-          = {static_cast<float>(slew_budget), static_cast<float>(slew_budget)};
+          = {static_cast<float>(input_slew_), static_cast<float>(input_slew_)};
       for (const auto* scene : sta_->scenes()) {
         sta::ArcDelay delays[2];
         sta::Slew slews[2];
@@ -641,17 +687,17 @@ class ClockBuffering
         for (size_t rf = 0; rf < 2; ++rf) {
           const double value = sta::delayAsFloat(slews[rf]) + wire_slew;
           const double delay = sta::delayAsFloat(delays[rf]);
-          if (!std::isfinite(value) || value <= 0 || value > slew_budget) {
-            reject("output slew budget (ps)",
+          if (!std::isfinite(value) || value <= 0 || value > slew_limit_) {
+            reject("output slew limit (ps)",
                    value * 1e12,
-                   slew_budget * 1e12,
+                   slew_limit_ * 1e12,
                    scene->name(),
                    rf);
           } else if (!std::isfinite(delay) || delay < 0) {
             reject(
                 "invalid gate delay (ps)", delay * 1e12, 0, scene->name(), rf);
           }
-          feasible &= std::isfinite(value) && value > 0 && value <= slew_budget;
+          feasible &= std::isfinite(value) && value > 0 && value <= slew_limit_;
           feasible &= std::isfinite(delay) && delay >= 0;
           choice.delays.push_back(delay);
         }
@@ -811,6 +857,7 @@ class ClockBuffering
   std::map<ClockInst*, size_t> indices_;
   size_t root_ = 0;
   double slew_limit_ = 0;
+  double input_slew_ = 0;
   double cap_per_dbu_ = 0;
   double res_per_dbu_ = 0;
 };
