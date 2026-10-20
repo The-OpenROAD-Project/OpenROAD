@@ -151,6 +151,14 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
                           std::map<sta::Scene*, std::ostream*>& spef_streams);
+  // The parasitics the design has: global routes when it has them, else
+  // placement; kNone once a SPEF has been read. An unplaced design, a
+  // congested route and a placement without wire RC are errors.
+  ParasiticsSrc designParasiticsSrc();
+  // read_spef annotated the parasitics; designParasiticsSrc leaves them.
+  void spefRead() { spef_read_ = true; }
+  // Where the parasitics came from: spef, placement, global_routing or none.
+  const char* parasiticsSource() const;
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
@@ -264,7 +272,6 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // unset for a tech falls back to the defaults (nullptr entry) independently.
   template <typename T>
   const std::vector<T>& resolveWireRC(std::vector<T> WireRC::* category) const;
-  void ensureParasitics();
   bool isSkipPin(const sta::Pin* pin) const;
   bool hasIdealClocks(const sta::Mode* mode) const;
   bool hasIdealClocks() const;
@@ -325,6 +332,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
+  bool spef_read_ = false;
 
   std::unordered_set<const sta::Net*, NetHash> parasitics_invalid_;
 

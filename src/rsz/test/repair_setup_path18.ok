@@ -12,17 +12,18 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.785 |      -13.1 |     20 | inst11/DE
-     214* |      10 |       5 |       26 |      1 |     2 |    +5.8% |   -0.621 |      -12.1 |     20 | inst11/DE
-    final |      10 |       5 |       26 |      1 |     2 |    +5.8% |   -0.621 |      -12.1 |     23 | inst11/DE
+     194* |       1 |       9 |       30 |      1 |     5 |    +8.4% |   -0.621 |      -12.7 |     20 | inst10_neighbor4/DE
+    final |       1 |       9 |       30 |      1 |     5 |    +8.4% |   -0.621 |      -12.7 |     23 | inst10_neighbor4/DE
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 10 buffers.
-[INFO RSZ-0040] Inserted 26 buffers.
-[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 2 instances.
+[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0040] Inserted 30 buffers.
+[INFO RSZ-0051] Resized 9 instances: 9 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 5 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: inst0 (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: inst11 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: inst10_neighbor4
+          (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -32,29 +33,29 @@ Path Type: max
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ inst0/CLK (sky130_fd_sc_hs__edfxtp_1)
    0.1957    0.1957 ^ inst0/Q (sky130_fd_sc_hs__edfxtp_1)
-   0.0961    0.2918 ^ inst1/Y (sky130_fd_sc_hs__nand2b_2)
-   0.1003    0.3921 ^ inst2/X (sky130_fd_sc_hs__and2_2)
-   0.0438    0.4359 v inst3/Y (sky130_fd_sc_hs__nand2_2)
-   0.0616    0.4975 ^ inst4/Y (sky130_fd_sc_hs__nor2_2)
-   0.0567    0.5542 v inst5/Y (sky130_fd_sc_hs__nand2_1)
-   0.0616    0.6158 ^ inst6/Y (sky130_fd_sc_hs__nand2_2)
-   0.0377    0.6535 v inst7/Y (sky130_fd_sc_hs__nand2_4)
-   0.0995    0.7531 v inst8/X (sky130_fd_sc_hs__and2_4)
-   0.0604    0.8135 ^ inst9/Y (sky130_fd_sc_hs__nand2_2)
-   0.1128    0.9263 v inst10/Y (sky130_fd_sc_hs__nand2_2)
-   0.0029    0.9292 v inst11/DE (sky130_fd_sc_hs__edfxtp_1)
-             0.9292   data arrival time
+   0.0948    0.2905 ^ inst1/Y (sky130_fd_sc_hs__nand2b_2)
+   0.0975    0.3880 ^ inst2/X (sky130_fd_sc_hs__and2_2)
+   0.0523    0.4403 v inst3/Y (sky130_fd_sc_hs__nand2_2)
+   0.0920    0.5323 ^ inst4/Y (sky130_fd_sc_hs__nor2_4)
+   0.0386    0.5709 v inst5/Y (sky130_fd_sc_hs__nand2_4)
+   0.0619    0.6328 ^ inst6/Y (sky130_fd_sc_hs__nand2_2)
+   0.0377    0.6705 v inst7/Y (sky130_fd_sc_hs__nand2_4)
+   0.1114    0.7819 v inst8/X (sky130_fd_sc_hs__and2_4)
+   0.0954    0.8773 ^ inst9/Y (sky130_fd_sc_hs__nand2_8)
+   0.0634    0.9407 v inst10/Y (sky130_fd_sc_hs__nand2_8)
+   0.0017    0.9424 v inst10_neighbor4/DE (sky130_fd_sc_hs__edfxtp_1)
+             0.9424   data arrival time
 
    0.9100    0.9100   clock core_clock (rise edge)
    0.0000    0.9100   clock network delay (ideal)
    0.0000    0.9100   clock reconvergence pessimism
-             0.9100 ^ inst11/CLK (sky130_fd_sc_hs__edfxtp_1)
-  -0.6017    0.3083   library setup time
-             0.3083   data required time
+             0.9100 ^ inst10_neighbor4/CLK (sky130_fd_sc_hs__edfxtp_1)
+  -0.5887    0.3213   library setup time
+             0.3213   data required time
 -------------------------------------------------------------
-             0.3083   data required time
-            -0.9292   data arrival time
+             0.3213   data required time
+            -0.9424   data arrival time
 -------------------------------------------------------------
-            -0.6208   slack (VIOLATED)
+            -0.6211   slack (VIOLATED)
 
 
