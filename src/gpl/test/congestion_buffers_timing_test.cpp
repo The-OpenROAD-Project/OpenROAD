@@ -298,9 +298,18 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
       EXPECT_EQ(inflated_cells, 0);
       EXPECT_EQ(liveInflationArea(), 0);
     }
-    EXPECT_EQ(
-        nb_vec_[0]->getMovableArea(),
-        nb_vec_[0]->getNesterovInstsArea() + nb_vec_[0]->getTotalFillerArea());
+    const auto& nb = nb_vec_[0];
+    if (options_.timingDrivenCongestionInflation
+        && options_.routabilityDrivenMode && !routabilityNeeded()) {
+      EXPECT_EQ(nb->getMovableArea(),
+                nb->getNesterovInstsArea() + nb->getTotalFillerArea());
+    } else {
+      // The ordinary path retains the legacy float multiply and rounding,
+      // rather than publishing the new live-area sum as its movable area.
+      EXPECT_EQ(nb->getMovableArea(),
+                static_cast<int64_t>(nb->getTargetDensity()
+                                     * nb->getWhiteSpaceArea()));
+    }
   }
 
   PlaceOptions options_;
@@ -392,9 +401,30 @@ TEST_F(MacroOnlyTimingRepairIntegrationTest,
   ASSERT_GT(macro_region->getDensityGradSum(), 0);
   const float density = macro_region->getTargetDensity();
   ASSERT_TRUE(std::isfinite(density));
+  std::vector<int64_t> before_area;
+  std::vector<int64_t> before_fillers;
+  for (const auto& nb : nb_vec_) {
+    before_area.push_back(nb->getNesterovInstsArea());
+    before_fillers.push_back(nb->getTotalFillerArea());
+  }
+  const int64_t before_delta = delta_area_;
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(false);
+  const int64_t repair_delta = delta_area_ - before_delta;
+  ASSERT_NE(repair_delta, 0);
+  for (size_t i = 0; i < nb_vec_.size(); ++i) {
+    const auto& nb = nb_vec_[i];
+    // Only the standard-cell region changes. Legacy accounting consumes the
+    // callback delta there and leaves the macro-only domain unchanged.
+    const float expected
+        = static_cast<float>((i == 0 ? repair_delta : 0) + before_area[i]
+                             + before_fillers[i])
+          / static_cast<float>(nb->getWhiteSpaceArea());
+    EXPECT_EQ(nb->getTargetDensity(), expected);
+    EXPECT_EQ(nb->getMovableArea(),
+              static_cast<int64_t>(expected * nb->getWhiteSpaceArea()));
+  }
   ASSERT_TRUE(std::isfinite(macro_region->getTargetDensity()));
   EXPECT_EQ(macro_region->getTargetDensity(), density);
   EXPECT_EQ(macro_region->getMovableArea(),
