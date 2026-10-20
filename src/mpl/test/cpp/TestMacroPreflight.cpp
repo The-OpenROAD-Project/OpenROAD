@@ -216,6 +216,31 @@ TEST_F(TestMacroPreflight, OversizedMacroIncludingHalo)
   expectErrorUnchanged("MPL-0006");
 }
 
+TEST_F(TestMacroPreflight, ExtremeOneAxisChannelsFailBeforeMacroConstruction)
+{
+  createInst("macro", 10000, 10000);
+  const int max_dbu = std::numeric_limits<int>::max();
+  expectPassUnchanged();
+  for (const int channel : {max_dbu, max_dbu - 1, max_dbu - 10000}) {
+    expectErrorUnchanged("MPL-0006", {}, channel, 0);
+    expectPassUnchanged();
+    expectErrorUnchanged("MPL-0006", {}, 0, channel);
+    expectPassUnchanged();
+  }
+}
+
+TEST_F(TestMacroPreflight, ExtremeExplicitHalosFailBeforeMacroConstruction)
+{
+  odb::dbInst* macro = createInst("macro", 5000, 5000);
+  const int max_dbu = std::numeric_limits<int>::max();
+  macro->setHalo(max_dbu, 0, max_dbu, 0, false);
+  expectErrorUnchanged("MPL-0006");
+  macro->setHalo(0, max_dbu, 0, max_dbu, false);
+  expectErrorUnchanged("MPL-0006");
+  macro->setHalo(0, 0, 0, 0, false);
+  expectPassUnchanged();
+}
+
 TEST_F(TestMacroPreflight, ExplicitMalformedFencesDoNotDefaultToCore)
 {
   createInst("macro", 5000, 5000);
@@ -388,6 +413,8 @@ TEST_F(TestMacroPreflight, TechnologySpacingFloorsUnpinnedEdges)
   layer->setSpacing(2500);
   expectPassUnchanged({}, 0, 0, true);
   layer->setSpacing(2501);
+  expectErrorUnchanged("MPL-0006", {}, 0, 0, true);
+  layer->setSpacing(std::numeric_limits<int>::max());
   expectErrorUnchanged("MPL-0006", {}, 0, 0, true);
 }
 

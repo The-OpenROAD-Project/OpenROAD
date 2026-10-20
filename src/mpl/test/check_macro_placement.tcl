@@ -62,6 +62,12 @@ proc check_malformed_fences { phase } {
   }
   check "$phase omitted fence still uses core" { check_macro_placement } true
 }
+proc preflight_db_bytes { path } {
+  set file [open $path rb]
+  set bytes [read $file]
+  close $file
+  return $bytes
+}
 proc check_numeric_inputs { phase } {
   foreach invalid {1e9 -1e9 1e308 -1e308 Inf -Inf} {
     for { set i 0 } { $i < 4 } { incr i } {
@@ -92,6 +98,22 @@ proc check_numeric_inputs { phase } {
       } {TypeError in method 'check_macro_placement_cmd'}
     }
   }
+  set before [make_result_file "${phase}_extreme_channel_before.odb"]
+  set after [make_result_file "${phase}_extreme_channel_after.odb"]
+  write_db $before
+  # All values convert legally. Odd/even DBUs and fractional-DBU rounding must
+  # still reject the overflowing macro-plus-halo width or height, not pass.
+  foreach extreme {1073741.8235 1073741.823 1073741.823625} {
+    foreach channel [list [list $extreme 0] [list 0 $extreme]] {
+      check_error "$phase macro dimensions overflow with channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } MPL-0006
+      write_db $after
+      check "$phase DB unchanged after extreme channel $channel" {
+        expr { [preflight_db_bytes $before] eq [preflight_db_bytes $after] }
+      } 1
+    }
+  }
   check "$phase exact DBU limits remain representable" {
     run_fence_check {-1073741.824 -1073741.824 1073741.8235 1073741.8235}
   } true
@@ -103,7 +125,8 @@ proc check_numeric_inputs { phase } {
   } true
 }
 set exact_fence {10.125 20.25 20.125 25.25}
-set work_dir [file join [make_result_dir] preflight_artifacts]
+set result_dir [file normalize [make_result_dir]]
+set work_dir [file join $result_dir preflight_artifacts]
 file mkdir $work_dir
 cd $work_dir
 set artifacts_before [lsort [glob -nocomplain * .*]]

@@ -119,7 +119,8 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+  std::string generateMacroAndCoreDimensionsTable(int64_t macro_width,
+                                                  int64_t macro_height,
                                                   const odb::Rect& core) const;
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
