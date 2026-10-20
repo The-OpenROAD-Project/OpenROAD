@@ -161,6 +161,30 @@ TEST(BottomUpBufferingTest, ImpossibleSinkIsReportedInsteadOfClamped)
   EXPECT_THROW(strategy.run({branch({1}), sink(21)}, 0), std::runtime_error);
 }
 
+TEST(BottomUpBufferingTest, UnboundedSpanStillEnforcesElectricalLoad)
+{
+  BottomUpBuffering strategy(
+      0.001, std::numeric_limits<double>::infinity(), select);
+  const auto direct = strategy.run({branch({1}), sink(2, 1000)}, 0);
+  ASSERT_EQ(direct.size(), 2u);
+  EXPECT_DOUBLE_EQ(strategy.load(direct, 0).wire_cap, 1);
+  EXPECT_EQ(strategy.expansion().length_splits, 0u);
+  std::vector<BufferingNode> input{branch({})};
+  for (size_t i = 1; i <= 256; ++i) {
+    input[0].children.push_back(i);
+    input.push_back(sink(2));
+  }
+  const auto expanded = strategy.run(input, 0);
+  EXPECT_GT(expanded.size(), input.size());
+  EXPECT_EQ(strategy.expansion().length_splits, 0u);
+  EXPECT_GT(strategy.expansion().electrical_splits, 0u);
+  for (size_t i = 0; i < expanded.size(); ++i) {
+    if (!expanded[i].sink) {
+      EXPECT_LE(strategy.load(expanded, i).capacitance(), 20);
+    }
+  }
+}
+
 TEST(BottomUpBufferingTest, LegalizerCannotCauseUnboundedInsertion)
 {
   BottomUpBuffering strategy(
@@ -191,6 +215,12 @@ TEST(BottomUpBufferingTest, RejectsInvalidElectricalModel)
   EXPECT_THROW(strategy.run({branch({1}), sink(1)}, 0), std::runtime_error);
   EXPECT_THROW((BottomUpBuffering(-1, 1000, select)), std::invalid_argument);
   EXPECT_THROW((BottomUpBuffering(0, 0, select)), std::invalid_argument);
+  for (double invalid : {-1.0,
+                         -std::numeric_limits<double>::infinity(),
+                         std::numeric_limits<double>::quiet_NaN()}) {
+    EXPECT_THROW((BottomUpBuffering(0, invalid, select)),
+                 std::invalid_argument);
+  }
 }
 TEST(BottomUpBufferingTest, RCEnclosesDifferentDirectionsClassesAndScenes)
 {

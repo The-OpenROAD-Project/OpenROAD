@@ -173,10 +173,15 @@ class ClockBuffering
       throw std::runtime_error("Bottom-up CTS requires a positive slew limit");
     }
     prepareWireModel();
-    const double max_length
-        = options_->getMaxWl() > 0
-              ? std::min(options_->getMaxWl(), options_->getBufferDistance())
-              : options_->getBufferDistance();
+    // Like the H-tree's threshold, zero means no wire-length limit. The
+    // default simple-segment distance is not a constraint in LUT mode.
+    double max_length = options_->getMaxWl() == 0
+                            ? std::numeric_limits<double>::infinity()
+                            : static_cast<double>(options_->getMaxWl());
+    if (options_->isSimpleSegmentEnabled()) {
+      max_length = std::min(max_length,
+                            static_cast<double>(options_->getBufferDistance()));
+    }
     const BufferingSearchModel model{
         cap_per_dbu_, res_per_dbu_, max_length, 2 * sta_->scenes().size(), 16};
     const BufferingChoices choices

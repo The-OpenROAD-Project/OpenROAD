@@ -56,8 +56,7 @@ BottomUpBuffering::BottomUpBuffering(double cap_per_dbu,
       legalizer_(std::move(legalizer))
 {
   if (!std::isfinite(cap_per_dbu) || cap_per_dbu < 0
-      || !std::isfinite(max_wire_length) || max_wire_length <= 0
-      || !selector_) {
+      || std::isnan(max_wire_length) || max_wire_length <= 0 || !selector_) {
     throw std::invalid_argument("Invalid bottom-up buffering parameters");
   }
 }

@@ -263,6 +263,15 @@ TEST(BufferingSearchTest, InvalidBoundsAndMissingTimingCannotPass)
   invalid.wire_res = std::numeric_limits<double>::quiet_NaN();
   EXPECT_THROW(searchBuffering(nodes, 0, invalid, cells),
                std::invalid_argument);
+  for (double length : {0.0,
+                        -1.0,
+                        -std::numeric_limits<double>::infinity(),
+                        std::numeric_limits<double>::quiet_NaN()}) {
+    invalid = model();
+    invalid.max_wire_length = length;
+    EXPECT_THROW(searchBuffering(nodes, 0, invalid, cells),
+                 std::invalid_argument);
+  }
   EXPECT_THROW(evaluateBuffering(nodes, 0, model(), {}), std::invalid_argument);
   const BufferingChoices missing = [](const auto&, const auto& fixed) {
     return std::vector<BufferingCellChoice>{{{fixed, 1}, 1, 1, {1}}};
@@ -326,6 +335,26 @@ TEST(BufferingSearchTest, VerifiedFeasibleSeedCannotBePruned)
   EXPECT_EQ(plan.buffers, 2u);
   EXPECT_EQ(plan.nodes[1].master, "fast");
   EXPECT_LE(plan.peak_candidates, bounded.candidate_limit);
+}
+
+TEST(BufferingSearchTest, UnboundedSpanRetainsWireLoadAndElectricalConstraints)
+{
+  std::vector nodes{branch({1}), sink(1, 2000)};
+  fixRoot(nodes);
+  auto unbounded = model();
+  unbounded.max_wire_length = std::numeric_limits<double>::infinity();
+  unbounded.wire_cap = 0.01;
+  const auto reference = evaluateBuffering(nodes, 0, unbounded, cells);
+  ASSERT_TRUE(reference);
+  const auto plan = searchBuffering(nodes, 0, unbounded, cells, {}, reference);
+  EXPECT_EQ(plan.depth, 1u);
+  EXPECT_EQ(plan.buffers, 1u);
+  EXPECT_GT(plan.delay(), 1 + 0.3 * nodes[1].input_cap);
+  unbounded.wire_cap = 0.1;
+  BufferingRejection rejection;
+  EXPECT_FALSE(evaluateBuffering(nodes, 0, unbounded, cells, {}, &rejection));
+  EXPECT_EQ(rejection.reason, "cell electrical constraints");
+  EXPECT_DOUBLE_EQ(rejection.load.capacitance(), 201);
 }
 
 TEST(BufferingSearchTest, ReferenceRejectionReportsTheActualConstraintAndLoad)

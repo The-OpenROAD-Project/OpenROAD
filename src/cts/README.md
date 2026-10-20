@@ -127,6 +127,14 @@ original-site solution survives expansion failure, and an independently verified
 complete electrical seed survives frontier pruning. Wire-only states that already
 exceed the wire-length limit are discarded before combining further branches.
 
+A positive characterized maximum wire length bounds the search; zero means no
+wire-length threshold, as in the H-tree builder. An explicit
+`-distance_between_buffers` adds its simple-segment spacing constraint regardless
+of that threshold. The default 100-micron heuristic is not a hard span limit
+on an ordinary LUT-built H-tree. Reference rejection diagnostics identify the
+site, constraint, load, fanout, and span; accepted-reference timing logs are
+surrogate values, not STA measurements.
+
 Timing uses existing Liberty/Resizer characterization with a conservative common
 input-slew budget and placement star-wire RC, not extracted routing parasitics.
 The comparison is a model safeguard, not a post-route QoR guarantee. Every loaded

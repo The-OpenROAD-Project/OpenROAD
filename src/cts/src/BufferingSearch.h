@@ -27,6 +27,7 @@ struct BufferingSearchModel
 {
   double wire_cap = 0;
   double wire_res = 0;
+  // Positive infinity disables only the wire-length threshold.
   double max_wire_length = 0;
   size_t dimensions = 2;
   size_t candidate_limit = 16;

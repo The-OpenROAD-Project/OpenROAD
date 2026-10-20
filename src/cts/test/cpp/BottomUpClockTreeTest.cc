@@ -432,6 +432,59 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     cts_->runClockTreeSynthesis();
   }
 
+  void planLongSpan(bool explicit_distance, int max_wl_microns = 500)
+  {
+    const int dbu = block_->getDbUnitsPerMicron();
+    block_->setDieArea(odb::Rect(0, 0, 400 * dbu, 400 * dbu));
+    for (auto* pin : originals_) {
+      pin->getInst()->setLocation(150 * dbu, 100 * dbu);
+    }
+    cts_->setSinkBuffer("BUF_X4");
+    prepareTreeModel();
+    auto* options = cts_->getParms();
+    options->enableDummyLoad(false);
+    options->setTreeBuffer("BUF_X4");
+    options->setMaxWl(max_wl_microns * dbu);
+    options->resetBufferDistance();
+    options->setSimpleSegmentsEnabled(explicit_distance);
+    if (explicit_distance) {
+      options->setBufferDistance(100 * dbu);
+    }
+    EXPECT_EQ(options->getBufferDistance(), 100 * dbu);
+    auto& clock = builder_->getClock();
+    const auto point = clock.computeSinkRegion().getCenter();
+    auto& root = clock.addClockBuffer(
+        "clkbuf_0", "BUF_X8", point.getX() - 110 * dbu, point.getY());
+    auto& branch = clock.addClockBuffer(
+        "clkbuf_long_span", "BUF_X4", point.getX(), point.getY());
+    builder_->addTreeLevelBuffer(&root);
+    builder_->addTreeLevelBuffer(&branch);
+    auto& upper = clock.addSubNet("clknet_0");
+    upper.addInst(root);
+    upper.addInst(branch);
+    auto& lower = clock.addSubNet("clknet_long_span");
+    lower.addInst(branch);
+    lower.setLeafLevel(true);
+    clock.forEachSink([&](ClockInst& sink) { lower.addInst(sink); });
+    ASSERT_NO_THROW(selectCurrentTree());
+    size_t buffers = 0;
+    clock.forEachClockBuffer([&](const ClockInst& inst) {
+      ++buffers;
+      EXPECT_EQ(inst.getMaster(),
+                inst.getName() == "clkbuf_0_clk" ? "BUF_X8" : "BUF_X4");
+    });
+    EXPECT_EQ(buffers, explicit_distance ? 3u : 2u);
+    EXPECT_EQ(clock.findClockByName("clkbuf_long_span_clk") != nullptr,
+              !explicit_distance)
+        << "The inferred-distance case must retain the original reference, "
+           "while the explicit-distance case must really insert a stage";
+    writeCurrentTree();
+    const auto result = audit();
+    EXPECT_EQ(result.cap_violations, 0u);
+    EXPECT_EQ(result.slew_violations, 0u);
+    EXPECT_EQ(result.reached_sinks, originals_.size());
+  }
+
   struct DummyPrediction
   {
     size_t count = 0;
@@ -547,6 +600,50 @@ TEST_F(BottomUpClockTreeTest, ActualSearchRetainsExplicitBranchStage)
   EXPECT_EQ(reachableOriginals(), originals_.size());
   const auto result = audit();
   EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest,
+       InferredDistanceCannotDiscardFeasibleLegacyReference)
+{
+  planLongSpan(false);
+  EXPECT_NE(block_->findInst("clkbuf_long_span_clk"), nullptr);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, UnsetWireLengthDoesNotInventDefaultDistanceLimit)
+{
+  planLongSpan(false, 0);
+  EXPECT_NE(block_->findInst("clkbuf_long_span_clk"), nullptr);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 2u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest, ExplicitDistanceBoundsOtherwiseUnsetWireLength)
+{
+  planLongSpan(true, 0);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 3u);
+  EXPECT_EQ(result.reached_sinks, originals_.size());
+  EXPECT_TRUE(result.error.empty()) << result.error;
+}
+
+TEST_F(BottomUpClockTreeTest,
+       ExplicitDistanceStillRequiresActualElectricalStage)
+{
+  planLongSpan(true);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  const auto result = audit();
+  EXPECT_EQ(result.expected_nets, 3u);
   EXPECT_EQ(result.reached_sinks, originals_.size());
   EXPECT_TRUE(result.error.empty()) << result.error;
 }

@@ -91,6 +91,7 @@ class BottomUpBuffering
       const std::string& fixed_master)>;
   using Legalizer = std::function<BufferingPoint(BufferingPoint)>;
 
+  // Positive infinity disables only the wire-length threshold.
   BottomUpBuffering(double cap_per_dbu,
                     double max_wire_length,
                     Selector selector,

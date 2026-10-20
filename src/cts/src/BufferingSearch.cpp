@@ -104,7 +104,7 @@ std::vector<size_t> postorder(const std::vector<BufferingNode>& nodes,
       || model.candidate_limit == 0 || model.candidate_limit > 64
       || !std::isfinite(model.wire_cap) || model.wire_cap < 0
       || !std::isfinite(model.wire_res) || model.wire_res < 0
-      || !std::isfinite(model.max_wire_length) || model.max_wire_length <= 0) {
+      || std::isnan(model.max_wire_length) || model.max_wire_length <= 0) {
     throw std::invalid_argument("Invalid buffering search model or root");
   }
   std::vector<size_t> order;
