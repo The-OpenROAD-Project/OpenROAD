@@ -78,6 +78,11 @@ TEST(BottomUpBufferingTest, LongBranchInsertsStagesWithoutMovingEndpoints)
   BottomUpBuffering strategy(0.001, 100, select);
   const auto nodes = strategy.run({branch({1}), sink(2, 500, 500)}, 0);
   ASSERT_GT(nodes.size(), 2u);
+  EXPECT_GT(strategy.expansion().length_splits, 0u);
+  EXPECT_EQ(strategy.expansion().electrical_splits, 0u);
+  EXPECT_EQ(strategy.expansion().first_node, 0u);
+  EXPECT_TRUE(strategy.expansion().first_length);
+  EXPECT_DOUBLE_EQ(strategy.expansion().first_load.max_wire_length, 1000);
   EXPECT_DOUBLE_EQ(nodes[0].point.x, 0);
   EXPECT_DOUBLE_EQ(nodes[0].point.y, 0);
   EXPECT_DOUBLE_EQ(nodes[1].point.x, 500);
@@ -104,6 +109,12 @@ TEST(BottomUpBufferingTest, OverloadedBranchActuallyAddsBuffers)
   }
   const auto nodes = strategy.run(input, 0);
   ASSERT_GT(nodes.size(), input.size());
+  EXPECT_EQ(strategy.expansion().length_splits, 0u);
+  EXPECT_GT(strategy.expansion().electrical_splits, 0u);
+  EXPECT_EQ(strategy.expansion().first_node, 0u);
+  EXPECT_FALSE(strategy.expansion().first_length);
+  EXPECT_DOUBLE_EQ(strategy.expansion().first_load.pin_cap, 512);
+  EXPECT_EQ(strategy.expansion().first_load.fanout, 256u);
   size_t sink_count = 0;
   for (size_t i = 0; i < nodes.size(); ++i) {
     if (nodes[i].sink) {

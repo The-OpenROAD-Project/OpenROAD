@@ -72,6 +72,15 @@ struct BufferingLoad
   double capacitance() const { return pin_cap + wire_cap; }
 };
 
+struct BufferingExpansion
+{
+  size_t length_splits = 0;
+  size_t electrical_splits = 0;
+  size_t first_node = 0;
+  bool first_length = false;
+  BufferingLoad first_load;
+};
+
 // Geometry is supplied top-down. Cell selection and additional stages are
 // decided strictly in postorder, after every child's input cap is known.
 class BottomUpBuffering
@@ -92,6 +101,7 @@ class BottomUpBuffering
   std::vector<BufferingNode> run(std::vector<BufferingNode> nodes, size_t root);
   BufferingLoad load(const std::vector<BufferingNode>& nodes,
                      size_t driver) const;
+  const BufferingExpansion& expansion() const { return expansion_; }
 
  private:
   void buffer(size_t index, unsigned depth);
@@ -103,6 +113,7 @@ class BottomUpBuffering
   Selector selector_;
   Legalizer legalizer_;
   size_t node_limit_ = 0;
+  BufferingExpansion expansion_;
   std::vector<BufferingNode> nodes_;
 };
 

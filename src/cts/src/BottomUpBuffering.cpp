@@ -82,6 +82,7 @@ std::vector<BufferingNode> BottomUpBuffering::run(
     std::vector<BufferingNode> nodes,
     size_t root)
 {
+  expansion_ = {};
   if (nodes.empty() || root >= nodes.size()) {
     throw std::invalid_argument("Bottom-up buffering requires a root");
   }
@@ -138,6 +139,17 @@ void BottomUpBuffering::buffer(size_t index, unsigned depth)
       nodes_[index].input_cap = choice->input_cap;
       return;
     }
+  }
+  const bool length = driven_load.max_wire_length > max_wire_length_;
+  if (expansion_.length_splits + expansion_.electrical_splits == 0) {
+    expansion_.first_node = index;
+    expansion_.first_length = length;
+    expansion_.first_load = driven_load;
+  }
+  if (length) {
+    ++expansion_.length_splits;
+  } else {
+    ++expansion_.electrical_splits;
   }
   split(index, depth);
 }

@@ -381,9 +381,22 @@ std::optional<BufferingPlan> evaluateBuffering(
     size_t root,
     const BufferingSearchModel& model,
     const BufferingChoices& choices,
-    const BufferingDummy& dummy)
+    const BufferingDummy& dummy,
+    BufferingRejection* rejection)
 {
   const auto order = postorder(nodes, root, model);
+  if (rejection) {
+    *rejection = {};
+  }
+  const auto reject = [&](size_t node, std::string reason, const State& state) {
+    if (rejection) {
+      *rejection
+          = {node,
+             std::move(reason),
+             {state.pin_cap, state.wire_cap, state.length, state.fanout}};
+    }
+    return std::nullopt;
+  };
   if (!choices) {
     throw std::invalid_argument("Missing buffering cell characterization");
   }
@@ -404,13 +417,13 @@ std::optional<BufferingPlan> evaluateBuffering(
     }
     if (node.master.empty()) {
       if (index == root || !node.fixed_master.empty()) {
-        return std::nullopt;
+        return reject(index, "missing required buffer", state);
       }
       state.tree
           = std::make_shared<Decision>(Decision{index, {}, state.children});
     } else {
       if (!node.fixed_master.empty() && node.master != node.fixed_master) {
-        return std::nullopt;
+        return reject(index, "fixed master mismatch", state);
       }
       const auto& load = loads[index];
       state.pin_cap += load.buffer.input_cap;
@@ -418,7 +431,7 @@ std::optional<BufferingPlan> evaluateBuffering(
       state.area += load.area;
       state.buffers += !load.buffer.master.empty();
       if (state.length > model.max_wire_length) {
-        return std::nullopt;
+        return reject(index, "wire-length limit", state);
       }
       const BufferingLoad driven{
           state.pin_cap, state.wire_cap, state.length, state.fanout};
@@ -426,7 +439,7 @@ std::optional<BufferingPlan> evaluateBuffering(
       const auto cell = std::ranges::find(
           cells, node.master, [](const auto& c) { return c.buffer.master; });
       if (cell == cells.end()) {
-        return std::nullopt;
+        return reject(index, "cell electrical constraints", state);
       }
       state = buffered(std::move(state), index, *cell);
     }

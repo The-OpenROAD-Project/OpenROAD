@@ -328,4 +328,34 @@ TEST(BufferingSearchTest, VerifiedFeasibleSeedCannotBePruned)
   EXPECT_LE(plan.peak_candidates, bounded.candidate_limit);
 }
 
+TEST(BufferingSearchTest, ReferenceRejectionReportsTheActualConstraintAndLoad)
+{
+  std::vector nodes{branch({1}), sink(1, 20)};
+  fixRoot(nodes);
+  auto bounded = model();
+  bounded.max_wire_length = 10;
+  bounded.wire_cap = 0.1;
+  BufferingRejection rejection;
+  EXPECT_FALSE(evaluateBuffering(nodes, 0, bounded, cells, {}, &rejection));
+  EXPECT_EQ(rejection.reason, "wire-length limit");
+  EXPECT_EQ(rejection.node, 0u);
+  EXPECT_DOUBLE_EQ(rejection.load.pin_cap, 1);
+  EXPECT_DOUBLE_EQ(rejection.load.wire_cap, 2);
+  EXPECT_DOUBLE_EQ(rejection.load.max_wire_length, 20);
+  bounded.max_wire_length = 20;
+  const BufferingChoices no_cell = [](const auto&, const auto&) {
+    return std::vector<BufferingCellChoice>{};
+  };
+  EXPECT_FALSE(evaluateBuffering(nodes, 0, bounded, no_cell, {}, &rejection));
+  EXPECT_EQ(rejection.reason, "cell electrical constraints");
+  ASSERT_TRUE(evaluateBuffering(nodes, 0, bounded, cells, {}, &rejection));
+  EXPECT_TRUE(rejection.reason.empty());
+  nodes[0].fixed_master = "other";
+  EXPECT_FALSE(evaluateBuffering(nodes, 0, bounded, cells, {}, &rejection));
+  EXPECT_EQ(rejection.reason, "fixed master mismatch");
+  nodes[0].master.clear();
+  EXPECT_FALSE(evaluateBuffering(nodes, 0, bounded, cells, {}, &rejection));
+  EXPECT_EQ(rejection.reason, "missing required buffer");
+}
+
 }  // namespace cts

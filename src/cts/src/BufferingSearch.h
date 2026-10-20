@@ -48,6 +48,13 @@ struct BufferingPlan
   double skew() const;
 };
 
+struct BufferingRejection
+{
+  size_t node = 0;
+  std::string reason;
+  BufferingLoad load;
+};
+
 using BufferingChoices = std::function<std::vector<BufferingCellChoice>(
     const BufferingLoad&,
     const std::string& fixed_master)>;
@@ -63,7 +70,8 @@ std::optional<BufferingPlan> evaluateBuffering(
     size_t root,
     const BufferingSearchModel& model,
     const BufferingChoices& choices,
-    const BufferingDummy& dummy = {});
+    const BufferingDummy& dummy = {},
+    BufferingRejection* rejection = nullptr);
 
 // Bounded heuristic, not a global optimizer. The independently evaluated
 // reference is outside the frontier limit and cannot be pruned. An

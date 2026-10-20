@@ -85,6 +85,15 @@ struct BufferCell
   bool in_buffer_list;
 };
 
+struct CellRejection
+{
+  std::string constraint;
+  double value = 0;
+  double limit = 0;
+  std::string scene;
+  size_t transition = 0;
+};
+
 double inputCap(sta::LibertyPort* port, sta::dbSta* sta)
 {
   double cap = 0;
@@ -178,7 +187,7 @@ class ClockBuffering
         = [this](float actual, float ideal, size_t fanout) {
             return dummyLoad(actual, ideal, fanout);
           };
-    auto reference = evaluateBuffering(nodes_, root_, model, choices, dummy);
+    auto reference = evaluateReference(model, dummy);
     const size_t initial_size = nodes_.size();
     prepareSites();
     const auto plan = choosePlan(model, choices, dummy, reference);
@@ -187,6 +196,14 @@ class ClockBuffering
     if (!plan.reference) {
       writeTree(plan.depth);
     }
+    reportPlan(plan, reference, initial_size);
+  }
+
+ private:
+  void reportPlan(const BufferingPlan& plan,
+                  const std::optional<BufferingPlan>& reference,
+                  size_t initial_size)
+  {
     options_->getLogger()->info(
         utl::CTS,
         555,
@@ -201,9 +218,86 @@ class ClockBuffering
             [](const auto& node) { return !node.sink && node.master.empty(); }),
         plan.peak_candidates,
         nodes_.size() - initial_size);
+    if (reference) {
+      options_->getLogger()->info(
+          utl::CTS,
+          561,
+          "Bottom-up surrogate timing for {}: reference latest {:.3f} ps, "
+          "spread {:.3f} ps, depth {}; selected latest {:.3f} ps, spread "
+          "{:.3f} ps, depth {}. These are model values, not STA measurements.",
+          clock_->getName(),
+          reference->delay() * 1e12,
+          reference->skew() * 1e12,
+          reference->depth,
+          plan.delay() * 1e12,
+          plan.skew() * 1e12,
+          plan.depth);
+    } else {
+      options_->getLogger()->info(
+          utl::CTS,
+          564,
+          "Bottom-up surrogate timing for {}: reference guard inactive; "
+          "selected latest {:.3f} ps, spread {:.3f} ps, depth {}. "
+          "These are model values, not STA measurements.",
+          clock_->getName(),
+          plan.delay() * 1e12,
+          plan.skew() * 1e12,
+          plan.depth);
+    }
   }
 
- private:
+  std::optional<BufferingPlan> evaluateReference(
+      const BufferingSearchModel& model,
+      const BufferingDummy& dummy)
+  {
+    BufferingRejection rejection;
+    CellRejection cell_rejection;
+    const BufferingChoices choices
+        = [this, &cell_rejection](const auto& load, const auto& fixed) {
+            cell_rejection = {};
+            return cellChoices(load, fixed, &cell_rejection);
+          };
+    auto reference
+        = evaluateBuffering(nodes_, root_, model, choices, dummy, &rejection);
+    if (!reference) {
+      const auto& load = rejection.load;
+      options_->getLogger()->info(
+          utl::CTS,
+          560,
+          "Bottom-up legacy reference unavailable for {}: {} at site {} "
+          "({}), load {:.3f} fF, fanout {}, wire span {:.3f} um (limit {:.3f} "
+          "um); "
+          "maxWl {:.3f} um, buffer distance {:.3f} um, simple segments {}.",
+          clock_->getName(),
+          rejection.reason,
+          rejection.node,
+          nodes_.at(rejection.node).master,
+          load.capacitance() * 1e15,
+          load.fanout,
+          load.max_wire_length / options_->getDbUnits(),
+          model.max_wire_length / options_->getDbUnits(),
+          options_->getMaxWl() / options_->getDbUnits(),
+          static_cast<double>(options_->getBufferDistance())
+              / options_->getDbUnits(),
+          options_->isSimpleSegmentEnabled());
+      if (!cell_rejection.constraint.empty()) {
+        options_->getLogger()->info(utl::CTS,
+                                    563,
+                                    "Bottom-up reference cell rejection: {}, "
+                                    "value {:.6g}, limit {:.6g}, "
+                                    "scene {}, transition {}; common "
+                                    "input/output slew budget {:.3f} ps.",
+                                    cell_rejection.constraint,
+                                    cell_rejection.value,
+                                    cell_rejection.limit,
+                                    cell_rejection.scene,
+                                    cell_rejection.transition,
+                                    slew_limit_ * 0.5e12);
+      }
+    }
+    return reference;
+  }
+
   void prepareSites()
   {
     // A common footprint prevents resizing from invalidating the load of an
@@ -267,6 +361,26 @@ class ClockBuffering
       if (!best) {
         throw;
       }
+    }
+    const auto& expansion = strategy.expansion();
+    if (expansion.length_splits + expansion.electrical_splits > 0) {
+      options_->getLogger()->info(
+          utl::CTS,
+          562,
+          "Bottom-up expansion for {}: {} length and {} electrical split "
+          "attempts; "
+          "first at site {}, reason {}, load {:.3f} fF, fanout {}, "
+          "span {:.3f} um (limit {:.3f} um).",
+          clock_->getName(),
+          expansion.length_splits,
+          expansion.electrical_splits,
+          expansion.first_node,
+          expansion.first_length ? "wire length"
+                                 : "cell electrical constraints",
+          expansion.first_load.capacitance() * 1e15,
+          expansion.first_load.fanout,
+          expansion.first_load.max_wire_length / options_->getDbUnits(),
+          model.max_wire_length / options_->getDbUnits());
     }
     return std::move(*best);
   }
@@ -466,7 +580,9 @@ class ClockBuffering
   }
 
   std::vector<BufferingCellChoice> cellChoices(const BufferingLoad& load,
-                                               const std::string& fixed)
+                                               const std::string& fixed,
+                                               CellRejection* rejection
+                                               = nullptr)
   {
     std::vector<BufferingCellChoice> result;
     // Use a realizable common input-slew bound, with margin for placement RC.
@@ -477,12 +593,29 @@ class ClockBuffering
         = 2.2 * res_per_dbu_ * load.max_wire_length * load.capacitance();
     const std::string target
         = fixed.empty() ? options_->getTreeBuffer() : fixed;
+    const auto reject = [rejection](const std::string& constraint,
+                                    double value,
+                                    double limit,
+                                    const std::string& scene = "",
+                                    size_t transition = 0) {
+      if (rejection && rejection->constraint.empty()) {
+        *rejection = {constraint, value, limit, scene, transition};
+      }
+    };
     for (const auto& cell : cells_) {
       if ((!target.empty() && cell.name != target)
-          || (target.empty() && !cell.in_buffer_list)
-          || load.capacitance() > cell.max_cap
-          || (cell.max_fanout > 0
-              && load.fanout > static_cast<size_t>(cell.max_fanout))) {
+          || (target.empty() && !cell.in_buffer_list)) {
+        continue;
+      }
+      if (load.capacitance() > cell.max_cap) {
+        reject("max capacitance (fF)",
+               load.capacitance() * 1e15,
+               cell.max_cap * 1e15);
+        continue;
+      }
+      if (cell.max_fanout > 0
+          && load.fanout > static_cast<size_t>(cell.max_fanout)) {
+        reject("max fanout", load.fanout, cell.max_fanout);
         continue;
       }
       bool feasible = true;
@@ -503,6 +636,16 @@ class ClockBuffering
         for (size_t rf = 0; rf < 2; ++rf) {
           const double value = sta::delayAsFloat(slews[rf]) + wire_slew;
           const double delay = sta::delayAsFloat(delays[rf]);
+          if (!std::isfinite(value) || value <= 0 || value > slew_budget) {
+            reject("output slew budget (ps)",
+                   value * 1e12,
+                   slew_budget * 1e12,
+                   scene->name(),
+                   rf);
+          } else if (!std::isfinite(delay) || delay < 0) {
+            reject(
+                "invalid gate delay (ps)", delay * 1e12, 0, scene->name(), rf);
+          }
           feasible &= std::isfinite(value) && value > 0 && value <= slew_budget;
           feasible &= std::isfinite(delay) && delay >= 0;
           choice.delays.push_back(delay);
