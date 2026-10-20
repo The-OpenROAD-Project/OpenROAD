@@ -13,22 +13,22 @@ namespace rsz {
 // values.  Times are seconds and "pct" fields are percent.
 
 // Controls how stalled batches favor targets in shared violating cones.
-// The rank is score * (1 + cone_bonus_scale * w^cone_bonus_exponent), where w
-// is relative cone need.
+// The rank is score * (1 + bottleneck_scale *
+// severity_ratio^bottleneck_exponent).
 struct BatchPriorityConfig
 {
-  // Strength of the cone-need bonus.
-  float cone_bonus_scale{2.0f};
+  // Strength of the shared-bottleneck priority bonus.
+  float bottleneck_scale{2.0f};
   // Emphasis on the most shared bottlenecks.
-  float cone_bonus_exponent{2.0f};
-  // The weight applies only after a saved batch left WNS unchanged, and for at
+  float bottleneck_exponent{2.0f};
+  // The bonus applies only after a saved batch left WNS unchanged, and for at
   // most this many such batches in a row.  Undone batches do not count.
-  int weight_max_wns_stall_batches{8};
+  int bottleneck_max_wns_stall_batches{8};
   // Maximum endpoints weighed, worst slack first; each costs one bit per
   // cone vertex.
   int bottleneck_max_endpoints{1024};
-  // Maximum distinct cone sources weighed, with the same per-vertex cost.
-  int bottleneck_max_sources{1024};
+  // Maximum distinct cone startpoints analyzed, with the same per-vertex cost.
+  int bottleneck_max_startpoints{1024};
   // Batches one analysis serves; the start of the WNS tail refreshes it.
   int bottleneck_refresh_batches{4};
 };

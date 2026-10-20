@@ -126,7 +126,8 @@ void StallMonitor::onSaved(const sta::Slack prev_tns,
 bool StallMonitor::weightsPriority() const
 {
   return wns_stall_batches_ > 0
-         && wns_stall_batches_ <= config_.priority.weight_max_wns_stall_batches;
+         && wns_stall_batches_
+                <= config_.priority.bottleneck_max_wns_stall_batches;
 }
 
 StallMonitor::Stall StallMonitor::stall() const

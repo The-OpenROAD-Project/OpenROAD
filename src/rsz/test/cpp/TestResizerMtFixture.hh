@@ -252,21 +252,23 @@ class ResizerTestPeer
   }
 
   // === BottleneckAnalysis ===================================================
-  // The own need of a cone vertex and the need of the endpoints behind it.
-  struct ConeNeeds
+  // The vertex deficit and accumulated downstream endpoint deficits.
+  struct ConeDeficits
   {
-    float need;
-    float fanout_need;
+    float slack_deficit;
+    float endpoint_deficit_sum;
   };
-  static std::optional<ConeNeeds> coneNeeds(const BottleneckAnalysis& analysis,
-                                            const sta::Vertex* vertex)
+  static std::optional<ConeDeficits> coneDeficits(
+      const BottleneckAnalysis& analysis,
+      const sta::Vertex* vertex)
   {
     const int32_t node_index = analysis.nodeOf(vertex);
     if (node_index < 0) {
       return std::nullopt;
     }
     const BottleneckAnalysis::Node& node = analysis.nodes_[node_index];
-    return ConeNeeds{.need = node.need, .fanout_need = node.fanout_need};
+    return ConeDeficits{.slack_deficit = node.slack_deficit,
+                        .endpoint_deficit_sum = node.endpoint_deficit_sum};
   }
 };
 

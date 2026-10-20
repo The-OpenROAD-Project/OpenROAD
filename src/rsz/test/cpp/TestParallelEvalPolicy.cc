@@ -843,18 +843,19 @@ TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheViolatingCone)
   EXPECT_GT(analysis.coneSize(), endpoints.size());
 
   // The driver on out0's worst path sits in the cone, so its rank grows by
-  // 1 + cone_bonus_scale w^cone_bonus_exponent with a normalized weight w in
-  // (0, 1].
-  const BatchPriorityConfig priority{.cone_bonus_scale = 2.0f,
-                                     .cone_bonus_exponent = 2.0f};
+  // 1 + bottleneck_scale * severity_ratio^bottleneck_exponent,
+  // with severity_ratio in (0, 1].
+  const BatchPriorityConfig priority{.bottleneck_scale = 2.0f,
+                                     .bottleneck_exponent = 2.0f};
   const Target target = makeTarget("out0", "target", "Z");
-  const float driver
-      = analysis.weightedScore(1.0f, target.vertex(resizer_), priority);
+  const float driver = analysis.bottleneckPriorityScore(
+      1.0f, target.vertex(resizer_), priority);
   EXPECT_GT(driver, 1.0f);
   EXPECT_LE(driver, 3.0f);
 
   // A vertex outside the cone keeps its local score.
-  EXPECT_FLOAT_EQ(analysis.weightedScore(5.0f, nullptr, priority), 5.0f);
+  EXPECT_FLOAT_EQ(analysis.bottleneckPriorityScore(5.0f, nullptr, priority),
+                  5.0f);
 }
 
 // Vertex ids start at 1, so the newest vertex has an id equal to the vertex
@@ -888,9 +889,9 @@ TEST_F(TestResizerMt, BottleneckAnalysisWeighsTheNewestVertex)
   }
   BottleneckAnalysis analysis(sta_.get(), sta::MinMax::max());
   analysis.analyze(endpoints, 1.0f, 1024, 1024);
-  const BatchPriorityConfig priority{.cone_bonus_scale = 2.0f,
-                                     .cone_bonus_exponent = 2.0f};
-  EXPECT_GT(analysis.weightedScore(1.0f, newest, priority), 1.0f);
+  const BatchPriorityConfig priority{.bottleneck_scale = 2.0f,
+                                     .bottleneck_exponent = 2.0f};
+  EXPECT_GT(analysis.bottleneckPriorityScore(1.0f, newest, priority), 1.0f);
 }
 
 // Levelization skips a disabled preset/clear arc, so RN can sit above Q.  The
@@ -922,14 +923,15 @@ TEST_F(TestResizerMtSequential, BottleneckAnalysisSkipsPresetClearArcs)
   BottleneckAnalysis analysis(sta_.get(), sta::MinMax::max());
   analysis.analyze(endpoints, 1.0f, 1024, 1024);
 
-  const std::optional<ResizerTestPeer::ConeNeeds> reset_needs
-      = ResizerTestPeer::coneNeeds(analysis, reset);
-  const std::optional<ResizerTestPeer::ConeNeeds> q_needs
-      = ResizerTestPeer::coneNeeds(analysis, q);
-  ASSERT_TRUE(reset_needs.has_value());
-  ASSERT_TRUE(q_needs.has_value());
-  EXPECT_GT(q_needs->fanout_need, 0.0f);
-  EXPECT_FLOAT_EQ(reset_needs->fanout_need, reset_needs->need);
+  const std::optional<ResizerTestPeer::ConeDeficits> reset_deficits
+      = ResizerTestPeer::coneDeficits(analysis, reset);
+  const std::optional<ResizerTestPeer::ConeDeficits> q_deficits
+      = ResizerTestPeer::coneDeficits(analysis, q);
+  ASSERT_TRUE(reset_deficits.has_value());
+  ASSERT_TRUE(q_deficits.has_value());
+  EXPECT_GT(q_deficits->endpoint_deficit_sum, 0.0f);
+  EXPECT_FLOAT_EQ(reset_deficits->endpoint_deficit_sum,
+                  reset_deficits->slack_deficit);
 }
 
 // -max_iterations ends the run in the WNS tail as well.

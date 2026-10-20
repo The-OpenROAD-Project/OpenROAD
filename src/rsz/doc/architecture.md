@@ -716,21 +716,21 @@ The cap is the failing endpoint count, clamped to `min_batch_cap` and `max_batch
 Each target keeps its best candidate by score, and the score alone ranks the targets against each other. Once a saved batch left WNS where it was, the targets are weighted by their share of the violating cone instead:
 
 ```
-priority = score * (1 + cone_bonus_scale * w^cone_bonus_exponent)
+priority = score * (1 + bottleneck_scale * severity_ratio^bottleneck_exponent)
 ```
 
-`w` is the target's cone need relative to the largest one in the cone. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and, for each cone vertex, sums the slack need of the endpoints behind it and of the sources in front of it.
+The slack deficit of a vertex is `slack_margin - slack`. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and sums the deficits of distinct downstream endpoints and upstream startpoints at each vertex. Their geometric mean is the bottleneck severity; `severity_ratio` divides it by the largest severity in the cone (or is zero outside the cone). This prioritizes shared violating paths while WNS is stalled, not only the single worst path.
 
 `parallel_eval.priority` (`BatchPriorityConfig`) holds the ranking options:
 
 | Field | Default | Effect |
 |---|---|---|
-| `cone_bonus_scale` | `2` | Strength of the cone-need bonus. `0` ranks by score alone. |
-| `cone_bonus_exponent` | `2` | Emphasis on the most shared bottlenecks. |
-| `weight_max_wns_stall_batches` | `8` | The weight applies to at most this many stalled batches in a row. `0` ranks by score alone. |
+| `bottleneck_scale` | `2` | Strength of the bottleneck priority factor. `0` ranks by score alone. |
+| `bottleneck_exponent` | `2` | Emphasis on the most shared bottlenecks. |
+| `bottleneck_max_wns_stall_batches` | `8` | The bonus applies to at most this many WNS-stalled saved batches in a row. `0` ranks by score alone. |
 | `bottleneck_refresh_batches` | `4` | Batches one analysis serves. The start of the WNS tail refreshes it. |
 | `bottleneck_max_endpoints` | `1024` | Violating endpoints one analysis weighs, worst slack first. |
-| `bottleneck_max_sources` | `1024` | Distinct cone sources one analysis weighs. |
+| `bottleneck_max_startpoints` | `1024` | Distinct cone startpoints one analysis weighs. |
 
 ### Batch Selection
 

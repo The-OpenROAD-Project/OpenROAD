@@ -422,7 +422,7 @@ void SetupParallelEvalPolicy::analyzeBottlenecks(const BatchScope& scope)
   bottleneck_->analyze(target_collector_->getViolatingEndpoints(),
                        static_cast<float>(config_.setup_slack_margin),
                        static_cast<int>(endpoint_limit),
-                       priority.bottleneck_max_sources);
+                       priority.bottleneck_max_startpoints);
   RepairSetupProfiler::event("bottleneck_analyses");
   RepairSetupProfiler::event("bottleneck_cone_vertices",
                              bottleneck_->coneSize());
@@ -943,7 +943,7 @@ std::vector<BatchCandidate> SetupParallelEvalPolicy::makeBatchCandidates(
     candidates.push_back(
         {.evaluation_index = index,
          .local_score = local_score,
-         .priority_score = weighted ? bottleneck_->weightedScore(
+         .priority_score = weighted ? bottleneck_->bottleneckPriorityScore(
                                           local_score,
                                           best.target().vertex(resizer_),
                                           policy_config_.parallel_eval.priority)
