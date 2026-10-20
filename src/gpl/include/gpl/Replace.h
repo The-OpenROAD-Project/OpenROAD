@@ -200,6 +200,7 @@ class Replace
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
   void reportHpwlMetric();
+  void runRoutingCongestion();
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
   void initIoPinPlace();

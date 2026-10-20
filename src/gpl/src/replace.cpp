@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -155,6 +156,10 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 {
   checkHasCoreRows();
   log_->info(GPL, 83, "Execute incremental mode global placement.");
+  log_->metric("gpl__incremental__timing_protected", 0);
+  log_->metric("gpl__incremental__timing_reverted", 0);
+  log_->metric("gpl__incremental__timing_weighted_nets", 0);
+  log_->metric("gpl__incremental__timing_max_net_weight", 1.0f);
   int placed_cnt = 0;
   int unplaced_cnt = 0;
   bool is_pbc_new = (pbc_ == nullptr);
@@ -219,6 +224,8 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   // Incremental placement preserves the already optimized netlist. Timing
   // reweighting in phase 2 does not run repair_design or fully_rebuffer.
   locked_options.timingDrivenMode = false;
+  // Route only the accepted placement, never a trial that may be reverted.
+  locked_options.enable_routing_congestion = false;
 
   doInitialPlace(threads, locked_options);
 
@@ -271,16 +278,32 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
       tb_->executeTimingDriven(true);
       nbc_->refreshDeviceNetWeights();
       np_->getNpVars().timingDrivenMode = true;
-      np_->getNpVars().keepResizeBelowOverflow = -1.0f;
-      log_->info(GPL, 196, "Incremental placement timing protection enabled.");
+      size_t weighted_nets = 0;
+      float maximum_weight = 1.0f;
+      for (auto net : nbc_->getGNets()) {
+        weighted_nets += net->getTimingWeight() > 1.0f;
+        maximum_weight = std::max(maximum_weight, net->getTimingWeight());
+      }
+      log_->metric("gpl__incremental__timing_weighted_nets", weighted_nets);
+      log_->metric("gpl__incremental__timing_max_net_weight", maximum_weight);
+      log_->info(GPL,
+                 196,
+                 "Incremental placement timing protection enabled: {} weighted "
+                 "nets, maximum weight {:.3f}.",
+                 weighted_nets,
+                 maximum_weight);
     }
+    log_->metric("gpl__incremental__timing_protected",
+                 static_cast<int>(timing_aware));
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
     PlaceOptions unlocked_options = options;
     unlocked_options.timingDrivenMode = false;
+    unlocked_options.enable_routing_congestion = false;
     doNesterovPlace(threads, unlocked_options, iter + 1);
     if (timing_guard.restoreIfWorse()) {
+      log_->metric("gpl__incremental__timing_reverted", 1);
       log_->warn(GPL,
                  197,
                  "Unlocked incremental placement degraded setup worst slack or "
@@ -289,6 +312,9 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
       reset();
       reportHpwlMetric();
     }
+  }
+  if (options.enable_routing_congestion) {
+    runRoutingCongestion();
   }
 }
 
@@ -519,12 +545,17 @@ int Replace::doNesterovPlace(const int threads,
              elapsed.count());
 
   if (options.enable_routing_congestion) {
-    fr_->setAllowCongestion(true);
-    fr_->setCongestionIterations(0);
-    fr_->setCriticalNetsPercentage(0);
-    fr_->globalRoute();
+    runRoutingCongestion();
   }
   return return_do_nesterov;
+}
+
+void Replace::runRoutingCongestion()
+{
+  fr_->setAllowCongestion(true);
+  fr_->setCongestionIterations(0);
+  fr_->setCriticalNetsPercentage(0);
+  fr_->globalRoute();
 }
 
 // Same evaluator dpl reports route__wirelength__estimated with, so the

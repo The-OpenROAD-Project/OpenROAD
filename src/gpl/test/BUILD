@@ -334,12 +334,38 @@ cc_test(
 )
 
 cc_test(
-    name = "incremental_timing_test",
-    srcs = ["incremental_timing_test.cpp"],
-    data = ["cpp/incremental_timing.v"],
+    name = "incremental_timing_integration_test",
+    srcs = ["incremental_timing_integration_test.cpp"],
+    data = ["simple01-td.def"],
     env = GPU_ENV_OFF,
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "incremental_timing_test",
+    srcs = ["incremental_timing_test.cpp"],
+    data = [
+        "cpp/incremental_timing.v",
+        "cpp/incremental_timing_multiclock.v",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/est",
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",

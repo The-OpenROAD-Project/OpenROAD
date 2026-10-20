@@ -299,6 +299,21 @@ bool TimingBase::executeIncrementalTimingDriven()
   return true;
 }
 
+bool IncrementalTimingMetrics::isValid() const
+{
+  return std::isfinite(worst_slack) && !sta::fuzzyInf(worst_slack)
+         && std::isfinite(total_negative_slack)
+         && !sta::fuzzyInf(total_negative_slack);
+}
+
+bool IncrementalTimingMetrics::degrades(
+    const IncrementalTimingMetrics& baseline) const
+{
+  return !isValid() || !baseline.isValid()
+         || sta::fuzzyLess(worst_slack, baseline.worst_slack)
+         || sta::fuzzyLess(total_negative_slack, baseline.total_negative_slack);
+}
+
 IncrementalTimingGuard::IncrementalTimingGuard(
     sta::dbSta* sta,
     est::EstimateParasitics* parasitics,
@@ -307,7 +322,7 @@ IncrementalTimingGuard::IncrementalTimingGuard(
 {
 }
 
-IncrementalTimingGuard::Timing IncrementalTimingGuard::measure()
+IncrementalTimingMetrics IncrementalTimingGuard::measure()
 {
   parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
   return {sta_->worstSlack(sta::MinMax::max()),
@@ -323,15 +338,15 @@ bool IncrementalTimingGuard::checkpoint()
     return false;
   }
   for (const auto scene : sta_->scenes()) {
-    if (parasitics_->wireSignalCapacitance(scene) <= 0.0
-        || parasitics_->wireSignalResistance(scene) <= 0.0) {
+    const auto capacitance = parasitics_->wireSignalCapacitance(scene);
+    const auto resistance = parasitics_->wireSignalResistance(scene);
+    if (!std::isfinite(capacitance) || capacitance <= 0.0
+        || !std::isfinite(resistance) || resistance <= 0.0) {
       return false;
     }
   }
   baseline_ = measure();
-  if (!std::isfinite(baseline_.worst_slack)
-      || sta::fuzzyInf(baseline_.worst_slack)
-      || !std::isfinite(baseline_.total_negative_slack)) {
+  if (!baseline_.isValid()) {
     return false;
   }
   for (auto inst : block_->getInsts()) {
@@ -349,14 +364,9 @@ bool IncrementalTimingGuard::restoreIfWorse()
   if (!active_) {
     return false;
   }
-  const Timing candidate = measure();
+  const auto candidate = measure();
   active_ = false;
-  if (std::isfinite(candidate.worst_slack)
-      && !sta::fuzzyInf(candidate.worst_slack)
-      && std::isfinite(candidate.total_negative_slack)
-      && !sta::fuzzyLess(candidate.worst_slack, baseline_.worst_slack)
-      && !sta::fuzzyLess(candidate.total_negative_slack,
-                         baseline_.total_negative_slack)) {
+  if (!candidate.degrades(baseline_)) {
     return false;
   }
   for (const auto& [inst, x, y] : locations_) {

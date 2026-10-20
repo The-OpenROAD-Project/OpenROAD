@@ -92,8 +92,17 @@ class TimingBase
   sta::dbSta* incremental_sta_ = nullptr;
 };
 
+struct IncrementalTimingMetrics
+{
+  float worst_slack;
+  float total_negative_slack;
+  bool isValid() const;
+  bool degrades(const IncrementalTimingMetrics& baseline) const;
+};
+
 // Check the optional unlocked pass against the mandatory locked placement.
 // Both measurements use placement parasitics, not potentially stale routes.
+// These are design-wide setup metrics, not per-clock or per-endpoint bounds.
 class IncrementalTimingGuard
 {
  public:
@@ -110,17 +119,12 @@ class IncrementalTimingGuard
     int x;
     int y;
   };
-  struct Timing
-  {
-    float worst_slack;
-    float total_negative_slack;
-  };
-  Timing measure();
+  IncrementalTimingMetrics measure();
   sta::dbSta* sta_;
   est::EstimateParasitics* parasitics_;
   odb::dbBlock* block_;
   std::vector<Location> locations_;
-  Timing baseline_{};
+  IncrementalTimingMetrics baseline_{};
   bool active_ = false;
 };
 

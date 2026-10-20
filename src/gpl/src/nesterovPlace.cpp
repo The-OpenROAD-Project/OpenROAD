@@ -417,7 +417,8 @@ void NesterovPlace::runTimingDriven(int iter,
     //
     // See timingBase.cpp in detail
     bool virtual_td_iter
-        = (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
+        = tb_->isIncrementalMode()
+          || (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
 
     log_->info(GPL,
                100,

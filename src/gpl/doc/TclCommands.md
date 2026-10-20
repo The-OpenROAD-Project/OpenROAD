@@ -20,7 +20,7 @@ global_placement
 
 ## Flow Control
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
-* __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
+* __incremental__ : Place new instances with existing cells locked, then unlock if needed. With constrained timing and finite positive signal wire RC, the unlocked pass uses critical-net weights without changing sizes or buffer topology, and restores the locked checkpoint if aggregate placement-estimated setup worst slack or TNS degrades. This is not a per-clock, per-endpoint, hold, legalization, or routed-timing guarantee. Unconstrained cones are not protected. Optional final congestion routing uses the accepted or restored coordinates. Users may need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
 
 ## Tuning Parameters
 * __bin_grid_count__ : Set bin grid's count manually. Default: Defined by internal algorithm. [64,128,256,512,..., int]
