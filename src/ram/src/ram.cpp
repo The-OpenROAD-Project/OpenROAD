@@ -813,12 +813,8 @@ void RamGen::findMasters()
   }
   and2_ports_ = buildPortMap(and2_cell_);
 
-  if (max_and_inputs_ < 2 || max_and_inputs_ > 4) {
-    logger_->error(RAM,
-                   44,
-                   "-max_and_inputs must be 2, 3, or 4, got {}.",
-                   max_and_inputs_);
-  }
+  static_assert(max_and_inputs_ >= 2 && max_and_inputs_ <= 4,
+                "The decoder supports AND gates with 2 to 4 inputs");
   // wider ANDs are only needed when the decoder is allowed to use them
   if (max_and_inputs_ >= 3) {
     if (!and3_cell_) {
@@ -1293,8 +1289,7 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tristate_cell,
                       dbMaster* inv_cell,
                       dbMaster* tapcell,
-                      int max_tap_dist,
-                      const int max_and_inputs)
+                      int max_tap_dist)
 {
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
@@ -1340,7 +1335,6 @@ void RamGen::generate(const int mask_size,
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
   use_latch_ = use_latch;
-  max_and_inputs_ = max_and_inputs;
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;

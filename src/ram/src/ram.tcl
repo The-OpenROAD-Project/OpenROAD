@@ -13,14 +13,13 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-w_ports count]
                                              [-use_latch value]
                                              [-tapcell name]
-                                             [-max_tap_dist value]
-                                             [-max_and_inputs count]}
+                                             [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
       -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
-      -max_and_inputs -write_behavioral_verilog } flags {}
+      -write_behavioral_verilog } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -116,19 +115,12 @@ proc generate_ram_netlist { args } {
         The generated layout may not pass Design Rule Checks."
   }
 
-  # widest AND gate the row decoder's predecode stages may use
-  set max_and_inputs 2
-  if { [info exists keys(-max_and_inputs)] } {
-    set max_and_inputs $keys(-max_and_inputs)
-  }
-
   if { [info exists keys(-write_behavioral_verilog)] } {
     ram::set_behavioral_verilog_filename $keys(-write_behavioral_verilog)
   }
 
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
-    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
-    $max_and_inputs
+    $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -149,7 +141,6 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      -filler_cells fillers
                                      [-tapcell name]
                                      [-max_tap_dist value]
-                                     [-max_and_inputs count]
                                      [-use_latch value]
                                      [-write_behavioral_verilog filename]
                                      }
@@ -162,7 +153,7 @@ proc generate_ram { args } {
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
-           -max_and_inputs -write_behavioral_verilog } flags {}
+           -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -213,10 +204,6 @@ proc generate_ram { args } {
 
   if { [info exists keys(-column_mux_ratio)] } {
     lappend ram_netlist_args -column_mux_ratio $keys(-column_mux_ratio)
-  }
-
-  if { [info exists keys(-max_and_inputs)] } {
-    lappend ram_netlist_args -max_and_inputs $keys(-max_and_inputs)
   }
 
   if { [info exists keys(-write_behavioral_verilog)] } {
