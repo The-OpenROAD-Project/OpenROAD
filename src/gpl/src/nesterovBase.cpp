@@ -2922,9 +2922,12 @@ void NesterovBase::updateDensitySize()
 void NesterovBase::updateTimingDrivenDensity()
 {
   updateAreas();
-  const int64_t area = getNesterovInstsArea() + getTotalFillerArea();
-  setTargetDensity(static_cast<float>(area) / getWhiteSpaceArea());
-  setMovableArea(area);
+  // Macros contribute targetDensity * macro area to the density field.
+  // Solve D * whitespace = std + fillers + D * macros for D.
+  const int64_t available_area = getWhiteSpaceArea() - pb_->macroInstsArea();
+  setTargetDensity(static_cast<double>(stdInstsArea_ + getTotalFillerArea())
+                   / available_area);
+  setMovableArea(getNesterovInstsArea() + getTotalFillerArea());
   updateDensitySize();
 }
 

@@ -145,6 +145,8 @@ void TileGrid::initTiles(bool use_rudy)
   int idxX = 0, idxY = 0;
   tileStor_.resize(static_cast<uint64_t>(tileCntX_)
                    * static_cast<uint64_t>(tileCntY_));
+  tiles_.clear();
+  tiles_.reserve(tileStor_.size());
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
@@ -693,21 +695,23 @@ int64_t RouteBase::inflateNewCells()
   for (size_t i = 0; i < nbVec_.size(); ++i) {
     const auto& nb = nbVec_[i];
     // The cached areas still describe the design before timing repair.
-    int64_t instance_area = 0;
+    int64_t standard_cell_area = 0;
     for (const auto& cell : nb->getGCells()) {
-      if (cell->isInstance()) {
-        instance_area += static_cast<int64_t>(cell->dx()) * cell->dy();
+      if (cell->isStdInstance()) {
+        standard_cell_area += static_cast<int64_t>(cell->dx()) * cell->dy();
       }
     }
+    const int64_t available_area
+        = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
     int64_t available = std::max<int64_t>(
         0,
         static_cast<int64_t>(static_cast<double>(rbVars_.maxDensity)
-                             * nb->getWhiteSpaceArea())
-            - instance_area - nb->getTotalFillerArea());
+                             * available_area)
+            - standard_cell_area - nb->getTotalFillerArea());
     available = std::min(available, remaining_budget);
     int64_t added = 0;
     for (const auto& handle : nb->getGCells()) {
-      GCell* cell = handle;
+      const GCell* cell = handle;
       if (!cell->isStdInstance() || cell->insts().size() != 1
           || !new_instances.contains(cell->insts().front()->dbInst())
           || cell->changeType() == GCell::GCellChange::kRoutability) {
@@ -738,7 +742,8 @@ int64_t RouteBase::inflateNewCells()
           || delta > available) {
         continue;
       }
-      cell->setSize(width, height, GCell::GCellChange::kRoutability);
+      nbc_->getGCellByIndex(handle.getStorageIndex())
+          ->setSize(width, height, GCell::GCellChange::kRoutability);
       available -= delta;
       added += delta;
     }
