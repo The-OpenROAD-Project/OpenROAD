@@ -47,6 +47,7 @@ class GridGraph;
 class GRNet;
 class GRTreeNode;
 class BoxT;
+class PointT;
 
 struct Constants
 {
@@ -199,7 +200,10 @@ class CUGR
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets(const std::vector<int>& net_indices);
+  // `extend_res_aware` false keeps the resistance-aware set but refreshes the
+  // inputs of its score.
+  void updateCriticalNets(const std::vector<int>& net_indices,
+                          bool extend_res_aware = true);
   // Refresh every net's slack; runs the full parasitics estimate once per
   // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
@@ -249,15 +253,7 @@ class CUGR
 
   std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
-   * @brief Builds the rip-up set of nets touching a congested edge.
-   *
-   * Populates `net_indices` with the indices of every net whose
-   * routing tree contains at least one edge whose
-   * `demand > capacity * threshold`. At threshold == 1.0 the result is
-   * the strict-overflow set (the default used by the pattern/maze
-   * stages); at threshold < 1.0 it widens to include near-overflow
-   * edges, which is how the iterative RRR loop catches the "many nets
-   * piled onto one layer, only a few overflow" failure mode.
+   * @brief Builds the rip-up set: the nets with a positive relief score.
    *
    * @param net_indices Output: cleared and refilled with the selected
    *                    net indices.
@@ -266,6 +262,18 @@ class CUGR
    */
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
+  // A pin gcell and its top pin-access layer; vias above it are climbs.
+  struct PinAccessTop
+  {
+    std::pair<int, int> gcell;
+    int top;
+  };
+  // The net's pin-access tops, one per pin gcell, sorted by gcell.
+  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
+  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
+  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
+  // Overflow the net's removal alone would relieve, pin-access pads excluded.
+  double computeReliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the
@@ -406,7 +414,10 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  void markResAwareNets(const std::vector<int>& net_indices);
+  // `extend_res_aware` false only refreshes resistance, length and the
+  // normalisers.
+  void markResAwareNets(const std::vector<int>& net_indices,
+                        bool extend_res_aware);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.
