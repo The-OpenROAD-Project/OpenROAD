@@ -86,8 +86,12 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
 
   void SetUp() override
   {
+    sta::StringSeq libraries{db_network_->defaultLibertyLibrary()->name()};
     if (macros()) {
-      readLiberty("_main/src/cts/test/array_tile_ins_delay.lib");
+      auto* library
+          = readLiberty("_main/src/cts/test/array_tile_ins_delay.lib");
+      ASSERT_NE(library, nullptr);
+      libraries.push_back(library->name());
       ASSERT_NE(loadLibaryLef(lib_->getTech(),
                               "cts_macro",
                               "_main/src/cts/test/array_tile_ins_delay.lef"),
@@ -96,6 +100,12 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     block_ = readDef(macros() ? "_main/src/cts/test/insertion_delay.def"
                               : "_main/src/cts/test/16sinks.def");
     sta_->postReadDef(block_);
+    // The first named mode/scene replaces default. Do that before clocks
+    // and RC are initialized, so later additions preserve scene index zero.
+    sta_->setCmdMode("func");
+    sta_->makeScene("func", "func", libraries, libraries, "", "");
+    ASSERT_EQ(sta_->scenes().size(), 1u);
+    ASSERT_EQ(sta_->cmdScene()->mode()->name(), "func");
     setRC(sta_->cmdScene(), 1);
     initStaDefaultSdc();
     source_ = block_->findNet("clk");
@@ -143,10 +153,18 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
 
   sta::Scene* addTestScene(bool configure_rc = true)
   {
-    const auto lib
-        = getFilePath("_main/src/cts/test/Nangate45/Nangate45_typ.lib");
-    sta_->makeScene("slow", "test", {lib}, {lib}, "", "");
+    auto* functional_scene = sta_->cmdScene();
+    sta_->setCmdMode("test");
+    sta_->makeScene("slow", "test", {}, {}, "", "");
     auto* scene = sta_->findScene("slow");
+    // A separate Liberty read provides distinct per-scene port limits.
+    if (readLiberty("_main/src/cts/test/Nangate45/Nangate45_typ.lib", scene)
+        == nullptr) {
+      throw std::runtime_error("Failed to load the test scene's Liberty");
+    }
+    EXPECT_EQ(sta_->scenes().size(), 2u);
+    EXPECT_EQ(scene->index(), 1u);
+    EXPECT_NE(scene->mode(), functional_scene->mode());
     if (configure_rc) {
       setRC(scene, 3);
     }
@@ -155,6 +173,7 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     sta_->makeClock("clk", pins, false, 5e-9, {0, 2.5e-9}, "", scene->mode());
     sta_->setPropagatedClock(scene->mode()->sdc()->findClock("clk"),
                              scene->mode());
+    sta_->setCmdScene(functional_scene);
     return scene;
   }
 
