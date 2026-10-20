@@ -59,71 +59,64 @@ Stage 3: Pattern routing with detours.
 [DEBUG GRT-congestion_sources] [stage 3 detours] nets: selected=261 (with a wire on an overflowed edge=224) owning avoidable pads on overflowed edges=206
 Stage 4: Maze routing on sparsified graph.
 [DEBUG GRT-verify_view] iteration 0: 261 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [stage 4 maze] overflow total=51.14 max=1.60 on 123 edges (wire-only=1, wire+via=122, via-only=0); vias=1933; routed nets=348; demand mismatch=2.4e-15
-[DEBUG GRT-congestion_sources] [stage 4 maze] overflow by source: pin-access vias=0.00 +wires=29.26 +bend vias=36.00 +stack vias=51.14
-[DEBUG GRT-congestion_sources] [stage 4 maze] demand on overflowed edges: wires=381.00 (89%) pin-access vias=24.40 (6%) bend vias=6.94 (2%) stack vias=15.14 (4%)
-[DEBUG GRT-congestion_sources] [stage 4 maze] overflow without: pin-access vias=32.16 wires=0.00 bend vias=44.40 stack vias=36.00
-[DEBUG GRT-congestion_sources] [stage 4 maze] critical nets=107: vias=740 climbs=377 avoidable pads on overflowed edges=8.04 overflow without them=43.21 (0 res-aware); non-critical nets=241: vias=1193 climbs=603 avoidable pads on overflowed edges=14.04 overflow without them=37.19
-[DEBUG GRT-congestion_sources] [stage 4 maze] nets: selected=234 (with a wire on an overflowed edge=194) owning avoidable pads on overflowed edges=175
+[DEBUG GRT-congestion_sources] [stage 4 maze] overflow total=46.39 max=1.60 on 124 edges (wire-only=1, wire+via=123, via-only=0); vias=1966; routed nets=348; demand mismatch=2.4e-15
+[DEBUG GRT-congestion_sources] [stage 4 maze] overflow by source: pin-access vias=0.00 +wires=25.29 +bend vias=31.40 +stack vias=46.39
+[DEBUG GRT-congestion_sources] [stage 4 maze] demand on overflowed edges: wires=383.00 (89%) pin-access vias=24.26 (6%) bend vias=6.31 (1%) stack vias=15.02 (4%)
+[DEBUG GRT-congestion_sources] [stage 4 maze] overflow without: pin-access vias=28.59 wires=0.00 bend vias=40.26 stack vias=31.40
+[DEBUG GRT-congestion_sources] [stage 4 maze] critical nets=107: vias=748 climbs=385 avoidable pads on overflowed edges=7.72 overflow without them=38.73 (0 res-aware); non-critical nets=241: vias=1218 climbs=626 avoidable pads on overflowed edges=13.61 overflow without them=32.90
+[DEBUG GRT-congestion_sources] [stage 4 maze] nets: selected=227 (with a wire on an overflowed edge=191) owning avoidable pads on overflowed edges=163
 Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 1/5
-[DEBUG GRT-verify_view] iteration 1: 234 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow total=11.66 max=0.53 on 41 edges (wire-only=1, wire+via=40, via-only=0); vias=2210; routed nets=348; demand mismatch=2.7e-15
-[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow by source: pin-access vias=0.00 +wires=9.19 +bend vias=10.58 +stack vias=11.66
-[DEBUG GRT-congestion_sources] [rrr iteration 1] demand on overflowed edges: wires=124.00 (90%) pin-access vias=11.85 (9%) bend vias=1.52 (1%) stack vias=1.13 (1%)
-[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow without: pin-access vias=2.79 wires=0.00 bend vias=10.24 stack vias=10.58
-[DEBUG GRT-congestion_sources] [rrr iteration 1] critical nets=106: vias=866 climbs=514 avoidable pads on overflowed edges=0.95 overflow without them=10.71 (0 res-aware); non-critical nets=242: vias=1344 climbs=740 avoidable pads on overflowed edges=1.70 overflow without them=10.10
-[DEBUG GRT-congestion_sources] [rrr iteration 1] nets: selected=91 (with a wire on an overflowed edge=85) owning avoidable pads on overflowed edges=41
+[DEBUG GRT-verify_view] iteration 1: 227 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow total=13.36 max=0.67 on 42 edges (wire-only=1, wire+via=41, via-only=0); vias=2164; routed nets=348; demand mismatch=2.7e-15
+[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow by source: pin-access vias=0.00 +wires=9.58 +bend vias=10.75 +stack vias=13.36
+[DEBUG GRT-congestion_sources] [rrr iteration 1] demand on overflowed edges: wires=125.00 (89%) pin-access vias=11.27 (8%) bend vias=1.17 (1%) stack vias=2.61 (2%)
+[DEBUG GRT-congestion_sources] [rrr iteration 1] overflow without: pin-access vias=4.26 wires=0.00 bend vias=12.18 stack vias=10.75
+[DEBUG GRT-congestion_sources] [rrr iteration 1] critical nets=106: vias=836 climbs=484 avoidable pads on overflowed edges=1.52 overflow without them=11.83 (0 res-aware); non-critical nets=242: vias=1328 climbs=724 avoidable pads on overflowed edges=2.25 overflow without them=11.10
+[DEBUG GRT-congestion_sources] [rrr iteration 1] nets: selected=106 (with a wire on an overflowed edge=90) owning avoidable pads on overflowed edges=54
 [INFO GRT-0117] Start extra iteration 2/5
-[DEBUG GRT-verify_view] iteration 2: 91 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow total=7.92 max=0.53 on 32 edges (wire-only=0, wire+via=32, via-only=0); vias=2239; routed nets=348; demand mismatch=3.1e-15
-[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow by source: pin-access vias=0.00 +wires=6.05 +bend vias=7.14 +stack vias=7.92
-[DEBUG GRT-congestion_sources] [rrr iteration 2] demand on overflowed edges: wires=92.00 (89%) pin-access vias=9.08 (9%) bend vias=1.31 (1%) stack vias=0.79 (1%)
-[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow without: pin-access vias=1.54 wires=0.00 bend vias=6.80 stack vias=7.14
-[DEBUG GRT-congestion_sources] [rrr iteration 2] critical nets=106: vias=873 climbs=509 avoidable pads on overflowed edges=1.07 overflow without them=6.87 (0 res-aware); non-critical nets=242: vias=1366 climbs=775 avoidable pads on overflowed edges=1.03 overflow without them=7.03
-[DEBUG GRT-congestion_sources] [rrr iteration 2] nets: selected=66 (with a wire on an overflowed edge=63) owning avoidable pads on overflowed edges=37
+[DEBUG GRT-verify_view] iteration 2: 106 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow total=6.28 max=0.60 on 25 edges (wire-only=1, wire+via=24, via-only=0); vias=2191; routed nets=348; demand mismatch=3.1e-15
+[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow by source: pin-access vias=0.00 +wires=5.12 +bend vias=5.58 +stack vias=6.28
+[DEBUG GRT-congestion_sources] [rrr iteration 2] demand on overflowed edges: wires=72.00 (90%) pin-access vias=6.95 (9%) bend vias=0.63 (1%) stack vias=0.71 (1%)
+[DEBUG GRT-congestion_sources] [rrr iteration 2] overflow without: pin-access vias=1.37 wires=0.00 bend vias=5.82 stack vias=5.58
+[DEBUG GRT-congestion_sources] [rrr iteration 2] critical nets=106: vias=904 climbs=527 avoidable pads on overflowed edges=0.60 overflow without them=5.81 (0 res-aware); non-critical nets=242: vias=1287 climbs=709 avoidable pads on overflowed edges=0.73 overflow without them=5.58
+[DEBUG GRT-congestion_sources] [rrr iteration 2] nets: selected=57 (with a wire on an overflowed edge=54) owning avoidable pads on overflowed edges=20
 [INFO GRT-0117] Start extra iteration 3/5
-[DEBUG GRT-verify_view] iteration 3: 66 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow total=8.53 max=0.48 on 37 edges (wire-only=2, wire+via=35, via-only=0); vias=2238; routed nets=348; demand mismatch=3.6e-15
-[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow by source: pin-access vias=0.00 +wires=6.15 +bend vias=7.36 +stack vias=8.53
-[DEBUG GRT-congestion_sources] [rrr iteration 3] demand on overflowed edges: wires=98.00 (91%) pin-access vias=7.45 (7%) bend vias=1.28 (1%) stack vias=1.17 (1%)
-[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow without: pin-access vias=2.86 wires=0.00 bend vias=7.32 stack vias=7.36
-[DEBUG GRT-congestion_sources] [rrr iteration 3] critical nets=106: vias=890 climbs=524 avoidable pads on overflowed edges=0.67 overflow without them=7.89 (0 res-aware); non-critical nets=242: vias=1348 climbs=758 avoidable pads on overflowed edges=1.79 overflow without them=6.77
-[DEBUG GRT-congestion_sources] [rrr iteration 3] nets: selected=68 (with a wire on an overflowed edge=64) owning avoidable pads on overflowed edges=36
+[DEBUG GRT-verify_view] iteration 3: 57 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow total=5.37 max=0.60 on 22 edges (wire-only=1, wire+via=21, via-only=0); vias=2196; routed nets=348; demand mismatch=4e-15
+[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow by source: pin-access vias=0.00 +wires=4.39 +bend vias=4.67 +stack vias=5.37
+[DEBUG GRT-congestion_sources] [rrr iteration 3] demand on overflowed edges: wires=61.00 (89%) pin-access vias=6.40 (9%) bend vias=0.45 (1%) stack vias=0.70 (1%)
+[DEBUG GRT-congestion_sources] [rrr iteration 3] overflow without: pin-access vias=0.96 wires=0.00 bend vias=5.09 stack vias=4.67
+[DEBUG GRT-congestion_sources] [rrr iteration 3] critical nets=106: vias=896 climbs=520 avoidable pads on overflowed edges=0.55 overflow without them=4.94 (0 res-aware); non-critical nets=242: vias=1300 climbs=722 avoidable pads on overflowed edges=0.60 overflow without them=4.80
+[DEBUG GRT-congestion_sources] [rrr iteration 3] nets: selected=49 (with a wire on an overflowed edge=48) owning avoidable pads on overflowed edges=15
 [INFO GRT-0117] Start extra iteration 4/5
-[DEBUG GRT-verify_view] iteration 4: 68 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow total=9.76 max=0.52 on 47 edges (wire-only=1, wire+via=46, via-only=0); vias=2216; routed nets=348; demand mismatch=4.4e-15
-[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow by source: pin-access vias=0.00 +wires=5.92 +bend vias=7.69 +stack vias=9.76
-[DEBUG GRT-congestion_sources] [rrr iteration 4] demand on overflowed edges: wires=127.00 (90%) pin-access vias=9.64 (7%) bend vias=1.77 (1%) stack vias=2.07 (1%)
-[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow without: pin-access vias=3.36 wires=0.00 bend vias=7.99 stack vias=7.69
-[DEBUG GRT-congestion_sources] [rrr iteration 4] critical nets=107: vias=969 climbs=577 avoidable pads on overflowed edges=1.41 overflow without them=8.35 (0 res-aware); non-critical nets=241: vias=1247 climbs=688 avoidable pads on overflowed edges=2.42 overflow without them=7.34
-[DEBUG GRT-congestion_sources] [rrr iteration 4] nets: selected=73 (with a wire on an overflowed edge=68) owning avoidable pads on overflowed edges=41
-[INFO GRT-0117] Start extra iteration 5/5
-[DEBUG GRT-verify_view] iteration 5: 73 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-congestion_sources] [rrr iteration 5] overflow total=14.41 max=0.62 on 58 edges (wire-only=1, wire+via=57, via-only=0); vias=2195; routed nets=348; demand mismatch=4.4e-15
-[DEBUG GRT-congestion_sources] [rrr iteration 5] overflow by source: pin-access vias=0.00 +wires=8.08 +bend vias=10.32 +stack vias=14.41
-[DEBUG GRT-congestion_sources] [rrr iteration 5] demand on overflowed edges: wires=149.00 (89%) pin-access vias=11.31 (7%) bend vias=2.24 (1%) stack vias=4.08 (2%)
-[DEBUG GRT-congestion_sources] [rrr iteration 5] overflow without: pin-access vias=5.83 wires=0.00 bend vias=12.16 stack vias=10.32
-[DEBUG GRT-congestion_sources] [rrr iteration 5] critical nets=106: vias=903 climbs=534 avoidable pads on overflowed edges=2.86 overflow without them=11.55 (0 res-aware); non-critical nets=242: vias=1292 climbs=709 avoidable pads on overflowed edges=3.47 overflow without them=10.94
-[DEBUG GRT-congestion_sources] [rrr iteration 5] nets: selected=104 (with a wire on an overflowed edge=87) owning avoidable pads on overflowed edges=69
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (14).
+[DEBUG GRT-verify_view] iteration 4: 49 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow total=4.82 max=0.60 on 21 edges (wire-only=1, wire+via=20, via-only=0); vias=2209; routed nets=348; demand mismatch=5.3e-15
+[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow by source: pin-access vias=0.00 +wires=3.47 +bend vias=3.75 +stack vias=4.82
+[DEBUG GRT-congestion_sources] [rrr iteration 4] demand on overflowed edges: wires=56.00 (89%) pin-access vias=5.34 (9%) bend vias=0.45 (1%) stack vias=1.07 (2%)
+[DEBUG GRT-congestion_sources] [rrr iteration 4] overflow without: pin-access vias=1.38 wires=0.00 bend vias=4.54 stack vias=3.75
+[DEBUG GRT-congestion_sources] [rrr iteration 4] critical nets=106: vias=893 climbs=522 avoidable pads on overflowed edges=0.64 overflow without them=4.30 (0 res-aware); non-critical nets=242: vias=1316 climbs=735 avoidable pads on overflowed edges=0.88 overflow without them=3.98
+[DEBUG GRT-congestion_sources] [rrr iteration 4] nets: selected=46 (with a wire on an overflowed edge=43) owning avoidable pads on overflowed edges=20
+[INFO GRT-0124] Iterative RRR stopped after iteration 4: the last 2 iterations each removed less than 1 track of overflow.
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (5).
 Routing statistics
-Wire length:           47366
-Total via count:       2195
-Total congestion:      14.41
-Min resource:          -0.62
-Bottleneck:            (1, 30, 10)
+Wire length:           54701
+Total via count:       2209
+Total congestion:      4.82
+Min resource:          -0.60
+Bottleneck:            (1, 19, 24)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-met1      H      6126.71      1107.00       102.35      1209.35      19.74       7.77       1.19          0.62
-met2      V      5000.00       939.00        87.80      1026.80      20.54       0.93       0.13          0.56
-met3      H      3248.00       267.00        34.89       301.89       9.29       3.99       0.40          0.30
-met4      V      2496.00       113.00         5.09       118.09       4.73       0.00       0.00          0.00
+met1      H      6126.71      1374.00       105.10      1479.10      24.14       3.13       0.48          0.60
+met2      V      5000.00      1036.00        90.73      1126.73      22.53       0.00       0.00          0.00
+met3      H      3248.00       309.00        33.80       342.80      10.55       1.11       0.10          0.24
+met4      V      2496.00        82.00         4.35        86.35       3.46       0.00       0.00          0.00
 met5      H      1640.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
 --------------------------------------------------------------------------------------------------------------
-Total           18510.71      2426.00       230.13      2656.13      14.35      12.69       1.71          0.62
-[INFO GRT-0018] Total wirelength: 24588 um
+Total           18510.71      2801.00       234.00      3035.00      16.40       4.24       0.58          0.60
+[INFO GRT-0018] Total wirelength: 27475 um
 [INFO GRT-0014] Routed nets: 348
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
