@@ -17,12 +17,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -4.638 |      -75.7 |     38 | inst23/D
-     195* |      15 |      53 |        7 |      0 |    25 |    +9.2% |   -3.676 |      -58.7 |     38 | inst23/D
-    final |      15 |      53 |        7 |      0 |    25 |    +9.2% |   -3.676 |      -58.7 |     29 | inst23/D
+     213* |      15 |      50 |        7 |      0 |    25 |   +11.2% |   -3.673 |      -58.4 |     38 | inst23/D
+    final |      15 |      50 |        7 |      0 |    25 |   +11.2% |   -3.673 |      -58.4 |     29 | inst23/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 15 buffers.
 [INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 53 instances: 53 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 50 instances: 50 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 25 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_7 (rising edge-triggered flip-flop clocked by clk)
@@ -43,22 +43,22 @@ Path Type: max
    0.1937    1.6858 ^ inst6/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
    0.1043    1.7901 v inst7/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
    0.2798    2.0699 ^ inst8/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.1411    2.2110 v inst9/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.2759    2.4869 ^ inst10/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
-   0.2575    2.7444 ^ inst11/Z (gf180mcu_fd_sc_mcu9t5v0__buf_4)
-   0.3465    3.0909 ^ inst12/CO (gf180mcu_fd_sc_mcu9t5v0__addh_4)
-   0.1488    3.2396 v inst13/ZN (gf180mcu_fd_sc_mcu9t5v0__clkinv_4)
-   0.2252    3.4648 ^ inst14/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.2472    3.7120 ^ inst15/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_8)
-   0.1145    3.8265 v inst16/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.3338    4.1603 v inst17/Z (gf180mcu_fd_sc_mcu9t5v0__or2_4)
-   0.1882    4.3485 ^ inst18/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.1556    4.5041 v inst19/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.2005    4.7046 ^ inst20/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
-   0.1833    4.8879 v inst21/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi21_2)
-   0.4737    5.3616 ^ inst22/ZN (gf180mcu_fd_sc_mcu9t5v0__nor2_4)
-   0.0000    5.3616 ^ inst23/D (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
-             5.3616   data arrival time
+   0.1917    2.2616 v inst9/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
+   0.2618    2.5234 ^ inst10/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2368    2.7602 ^ inst11/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_12)
+   0.3276    3.0878 ^ inst12/CO (gf180mcu_fd_sc_mcu9t5v0__addh_4)
+   0.1488    3.2366 v inst13/ZN (gf180mcu_fd_sc_mcu9t5v0__clkinv_4)
+   0.2252    3.4618 ^ inst14/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2472    3.7090 ^ inst15/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_8)
+   0.1145    3.8235 v inst16/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.3338    4.1573 v inst17/Z (gf180mcu_fd_sc_mcu9t5v0__or2_4)
+   0.1882    4.3455 ^ inst18/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
+   0.1556    4.5011 v inst19/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
+   0.2571    4.7582 ^ inst20/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
+   0.1359    4.8941 v inst21/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi21_4)
+   0.4643    5.3584 ^ inst22/ZN (gf180mcu_fd_sc_mcu9t5v0__nor2_4)
+   0.0000    5.3584 ^ inst23/D (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
+             5.3584   data arrival time
 
    1.9500    1.9500   clock clk (rise edge)
    0.0000    1.9500   clock network delay (ideal)
@@ -68,8 +68,8 @@ Path Type: max
              1.6857   data required time
 -------------------------------------------------------------
              1.6857   data required time
-            -5.3616   data arrival time
+            -5.3584   data arrival time
 -------------------------------------------------------------
-            -3.6760   slack (VIOLATED)
+            -3.6728   slack (VIOLATED)
 
 

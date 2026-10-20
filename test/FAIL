@@ -1,0 +1,74 @@
+//src/rsz/test:clone_flat-tcl_test                                       FAILED in 4.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/clone_flat-tcl_test/test.log
+//src/rsz/test:clone_hier-tcl_test                                       FAILED in 3.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/clone_hier-tcl_test/test.log
+//src/rsz/test:pinswap_flat-tcl_test                                     FAILED in 0.6s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/pinswap_flat-tcl_test/test.log
+//src/rsz/test:pinswap_hier-tcl_test                                     FAILED in 0.8s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/pinswap_hier-tcl_test/test.log
+//src/rsz/test:repair_fanout6-tcl_test                                   FAILED in 10.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout6-tcl_test/test.log
+//src/rsz/test:repair_fanout6_multi-tcl_test                             FAILED in 7.0s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout6_multi-tcl_test/test.log
+//src/rsz/test:repair_fanout7-tcl_test                                   FAILED in 5.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout7-tcl_test/test.log
+//src/rsz/test:repair_fanout7_multi-tcl_test                             FAILED in 4.6s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout7_multi-tcl_test/test.log
+//src/rsz/test:repair_fanout7_skip_pin_swap-tcl_test                     FAILED in 5.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout7_skip_pin_swap-tcl_test/test.log
+//src/rsz/test:repair_fanout8-tcl_test                                   FAILED in 4.9s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout8-tcl_test/test.log
+//src/rsz/test:repair_fanout8_multi-tcl_test                             FAILED in 3.5s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_fanout8_multi-tcl_test/test.log
+//src/rsz/test:repair_setup3-tcl_test                                    FAILED in 1.1s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup3-tcl_test/test.log
+//src/rsz/test:repair_setup3_multi-tcl_test                              FAILED in 2.0s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup3_multi-tcl_test/test.log
+//src/rsz/test:repair_setup4-tcl_test                                    FAILED in 1.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup4-tcl_test/test.log
+//src/rsz/test:repair_setup4_hier-tcl_test                               FAILED in 1.0s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup4_hier-tcl_test/test.log
+//src/rsz/test:repair_setup4_sequence-tcl_test                           FAILED in 1.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup4_sequence-tcl_test/test.log
+//src/rsz/test:repair_setup4_verbose-tcl_test                            FAILED in 1.5s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup4_verbose-tcl_test/test.log
+//src/rsz/test:repair_setup6-tcl_test                                    FAILED in 1.5s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup6-tcl_test/test.log
+//src/rsz/test:repair_setup6_multi-tcl_test                              FAILED in 1.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup6_multi-tcl_test/test.log
+//src/rsz/test:repair_setup7-tcl_test                                    FAILED in 1.1s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup7-tcl_test/test.log
+//src/rsz/test:repair_setup7_limit-tcl_test                              FAILED in 1.5s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup7_limit-tcl_test/test.log
+//src/rsz/test:repair_setup7_multi-tcl_test                              FAILED in 1.2s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup7_multi-tcl_test/test.log
+//src/rsz/test:repair_setup8-tcl_test                                    FAILED in 0.9s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup8-tcl_test/test.log
+//src/rsz/test:repair_setup9-tcl_test                                    FAILED in 1.1s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup9-tcl_test/test.log
+//src/rsz/test:repair_setup9_hier-tcl_test                               FAILED in 1.0s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup9_hier-tcl_test/test.log
+//src/rsz/test:repair_setup_gcd-tcl_test                                 FAILED in 3.8s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_gcd-tcl_test/test.log
+//src/rsz/test:repair_setup_max_iter-tcl_test                            FAILED in 0.7s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_max_iter-tcl_test/test.log
+//src/rsz/test:repair_setup_reroute1-tcl_test                            FAILED in 27.6s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_reroute1-tcl_test/test.log
+//src/rsz/test:repair_setup_sizeup_legacy_basic-tcl_test                 FAILED in 0.6s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_sizeup_legacy_basic-tcl_test/test.log
+//src/rsz/test:repair_setup_sizeup_match-tcl_test                        FAILED in 0.7s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_sizeup_match-tcl_test/test.log
+//src/rsz/test:repair_setup_unbuffer_legacy_bufx2-tcl_test               FAILED in 0.7s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_unbuffer_legacy_bufx2-tcl_test/test.log
+//src/rsz/test:repair_setup_unbuffer_legacy_bufx8-tcl_test               FAILED in 0.9s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_unbuffer_legacy_bufx8-tcl_test/test.log
+//src/rsz/test:repair_setup_undo1-tcl_test                               FAILED in 1.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_undo1-tcl_test/test.log
+//src/rsz/test:repair_setup_undo2-tcl_test                               FAILED in 1.1s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_undo2-tcl_test/test.log
+//src/rsz/test:repair_setup_vt_swap-tcl_test                             FAILED in 2.8s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_vt_swap-tcl_test/test.log
+//src/rsz/test:repair_setup_vt_swap2-tcl_test                            FAILED in 6.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/repair_setup_vt_swap2-tcl_test/test.log
+//src/rsz/test:split_load_hier-tcl_test                                  FAILED in 1.3s
+  /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.log

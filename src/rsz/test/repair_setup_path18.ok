@@ -12,13 +12,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.785 |      -13.1 |     20 | inst11/DE
-     279* |      10 |       7 |       28 |      1 |     6 |    +6.0% |   -0.633 |      -12.5 |     20 | inst11/DE
-    final |      10 |       7 |       28 |      1 |     6 |    +6.0% |   -0.633 |      -12.5 |     23 | inst11/DE
+     214* |      10 |       5 |       26 |      1 |     2 |    +5.8% |   -0.621 |      -12.1 |     20 | inst11/DE
+    final |      10 |       5 |       26 |      1 |     2 |    +5.8% |   -0.621 |      -12.1 |     23 | inst11/DE
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 10 buffers.
-[INFO RSZ-0040] Inserted 28 buffers.
-[INFO RSZ-0051] Resized 7 instances: 7 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 6 instances.
+[INFO RSZ-0040] Inserted 26 buffers.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 2 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: inst0 (rising edge-triggered flip-flop clocked by core_clock)
@@ -32,18 +32,18 @@ Path Type: max
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ inst0/CLK (sky130_fd_sc_hs__edfxtp_1)
    0.1957    0.1957 ^ inst0/Q (sky130_fd_sc_hs__edfxtp_1)
-   0.0948    0.2905 ^ inst1/Y (sky130_fd_sc_hs__nand2b_2)
-   0.0975    0.3880 ^ inst2/X (sky130_fd_sc_hs__and2_2)
-   0.0452    0.4331 v inst3/Y (sky130_fd_sc_hs__nand2_2)
-   0.0814    0.5146 ^ inst4/Y (sky130_fd_sc_hs__nor2_2)
-   0.0560    0.5706 v inst5/Y (sky130_fd_sc_hs__nand2_1)
-   0.0696    0.6402 ^ inst6/Y (sky130_fd_sc_hs__nand2_2)
-   0.0351    0.6753 v inst7/Y (sky130_fd_sc_hs__nand2_4)
-   0.0873    0.7626 v inst8/X (sky130_fd_sc_hs__and2_2)
-   0.0626    0.8252 ^ inst9/Y (sky130_fd_sc_hs__nand2_2)
-   0.1128    0.9380 v inst10/Y (sky130_fd_sc_hs__nand2_2)
-   0.0029    0.9409 v inst11/DE (sky130_fd_sc_hs__edfxtp_1)
-             0.9409   data arrival time
+   0.0961    0.2918 ^ inst1/Y (sky130_fd_sc_hs__nand2b_2)
+   0.1003    0.3921 ^ inst2/X (sky130_fd_sc_hs__and2_2)
+   0.0438    0.4359 v inst3/Y (sky130_fd_sc_hs__nand2_2)
+   0.0616    0.4975 ^ inst4/Y (sky130_fd_sc_hs__nor2_2)
+   0.0567    0.5542 v inst5/Y (sky130_fd_sc_hs__nand2_1)
+   0.0616    0.6158 ^ inst6/Y (sky130_fd_sc_hs__nand2_2)
+   0.0377    0.6535 v inst7/Y (sky130_fd_sc_hs__nand2_4)
+   0.0995    0.7531 v inst8/X (sky130_fd_sc_hs__and2_4)
+   0.0604    0.8135 ^ inst9/Y (sky130_fd_sc_hs__nand2_2)
+   0.1128    0.9263 v inst10/Y (sky130_fd_sc_hs__nand2_2)
+   0.0029    0.9292 v inst11/DE (sky130_fd_sc_hs__edfxtp_1)
+             0.9292   data arrival time
 
    0.9100    0.9100   clock core_clock (rise edge)
    0.0000    0.9100   clock network delay (ideal)
@@ -53,8 +53,8 @@ Path Type: max
              0.3083   data required time
 -------------------------------------------------------------
              0.3083   data required time
-            -0.9409   data arrival time
+            -0.9292   data arrival time
 -------------------------------------------------------------
-            -0.6326   slack (VIOLATED)
+            -0.6208   slack (VIOLATED)
 
 

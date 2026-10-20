@@ -1,0 +1,113 @@
+--- golden: /home/cmoon/OpenROAD/src/rsz/test/split_load_hier.ok
++++ log: /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.log
+@@ -1,3 +1,89 @@
++++ export TEST_NAME_BAZEL=split_load_hier
++++ TEST_NAME_BAZEL=split_load_hier
++++ export TEST_FILE=src/rsz/test/split_load_hier.tcl
++++ TEST_FILE=src/rsz/test/split_load_hier.tcl
++++ export TEST_TYPE=tcl
++++ TEST_TYPE=tcl
++++ export OPENROAD_EXE=openroad
++++ OPENROAD_EXE=openroad
++++ export REGRESSION_TEST=test/regression_test.sh
++++ REGRESSION_TEST=test/regression_test.sh
++++ export TEST_GOLDEN_FILE=
++++ TEST_GOLDEN_FILE=
++++ export TEST_CHECK_LOG=True
++++ TEST_CHECK_LOG=True
++++ export TEST_CHECK_PASSFAIL=False
++++ TEST_CHECK_PASSFAIL=False
++++ export TEST_EXPECTED_EXIT_CODE=0
++++ TEST_EXPECTED_EXIT_CODE=0
++++ exec test/bazel_test.sh
+++ export TEST_EXT=tcl
+++ TEST_EXT=tcl
++++ basename src/rsz/test/split_load_hier.tcl .tcl
+++ export TEST_NAME=split_load_hier
+++ TEST_NAME=split_load_hier
+++ '[' -n openroad ']'
++++ realpath openroad
+++ export OPENROAD_EXE=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad
+++ OPENROAD_EXE=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad
+++ export RESULTS_DIR=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results
+++ RESULTS_DIR=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results
++++ realpath test/regression_test.sh
+++ export REGRESSION_TEST=/workspace/OpenROAD/test/regression_test.sh
+++ REGRESSION_TEST=/workspace/OpenROAD/test/regression_test.sh
+++ '[' -n /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles ']'
+++ export BAZEL_TEST=1
+++ BAZEL_TEST=1
+++ workspace_root=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main
+++ python_paths=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main
+++ '[' -d /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/python ']'
+++ for src_dir in "${workspace_root}"/src/*
+++ '[' -d /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/rsz ']'
+++ python_paths=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main:/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/rsz
+++ shim_dir=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/_tmp/86544f8bc85b73d9eba7c192e80f2546/python_shims
+++ mkdir -p /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/_tmp/86544f8bc85b73d9eba7c192e80f2546/python_shims
+++ '[' -f /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/utl/utl.py ']'
+++ cat
+++ cat
+++ cat
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim ant
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim cts
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim drt
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim grt
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim rcx
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim stt
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim tap
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim ifp
+++ cat
+++ for module in ant cts drt grt rcx stt tap ifp pdn
+++ write_openroad_shim pdn
+++ cat
+++ export PYTHONPATH=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/_tmp/86544f8bc85b73d9eba7c192e80f2546/python_shims:/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main:/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/rsz
+++ PYTHONPATH=/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/_tmp/86544f8bc85b73d9eba7c192e80f2546/python_shims:/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main:/workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/rsz
+++ '[' -n '' ']'
++++ dirname src/rsz/test/split_load_hier.tcl
+++ cd src/rsz/test
+++ mkdir -p /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results
+++ /workspace/OpenROAD/test/regression_test.sh
++Directory: /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/bin/src/rsz/test/split_load_hier-tcl_test_test.sh.runfiles/_main/src/rsz/test
++Results Directory: /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results
++Command: /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/execroot/_main/bazel-out/k8-opt-exec-ST-d57f47055a04/bin/openroad -no_splash -no_init -exit split_load_hier.tcl
+ [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+ [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+ [INFO ODB-0128] Design: reg1
+@@ -13,10 +99,15 @@
+           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+ ------------------------------------------------------------------------------------------------------------------------------
+        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.676 |       -0.7 |      -10.6 |     26 | u1/r21/D
+-     187* |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |       -0.5 |      -10.5 |     26 | u1/r21/D
+-    final |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |       -0.5 |      -10.5 |     26 | u1/r21/D
++     133* |       0 |      26 |        7 |      0 |     0 |   +15.0% |   -0.487 |       -0.5 |      -11.2 |     26 | u1/r21/D
++    final |       0 |      26 |        7 |      0 |     0 |   +15.0% |   -0.487 |       -0.5 |      -11.2 |     26 | u1/r21/D
+ ------------------------------------------------------------------------------------------------------------------------------
+-[INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
+-[INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
++[INFO RSZ-0045] Inserted 7 buffers, 2 to split loads.
++[INFO RSZ-0051] Resized 26 instances: 26 up, 0 up match, 0 down, 0 VT
+ [WARNING RSZ-0062] Unable to repair all setup violations.
+-No differences found.
++Differences found at line 8.
++ DFF_X1 r1 (.D(in),
++ DFF_X2 r1 (.D(in),
++Exitcode:  0
++Diff:      /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results/split_load_hier-tcl.diff
++Log does not match golden file: /workspace/.cache/bazel-output/f005df515d71a9d57f4801ff0dfd4f68/sandbox/processwrapper-sandbox/15031/execroot/_main/bazel-out/k8-opt/testlogs/src/rsz/test/split_load_hier-tcl_test/test.outputs/results/split_load_hier-tcl.diff

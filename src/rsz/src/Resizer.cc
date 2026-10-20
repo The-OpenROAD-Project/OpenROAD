@@ -7569,7 +7569,8 @@ bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
 }
 
 bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
-                                         const sta::LibertyCell* replacement)
+                                         const sta::LibertyCell* replacement,
+                                         const sta::Mode* mode)
 {
   if (replacement == nullptr) {
     return false;
@@ -7594,11 +7595,16 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
-    if (network_->isRegClkPin(pin)) {
+    // Skip the max-cap check on a register clock pin only when its clock is
+    // ideal: the clock net's capacitance is irrelevant to timing then.
+    if (network_->isRegClkPin(pin) && mode != nullptr
+        && mode->clkNetwork()->isIdealClock(pin)) {
       continue;
     }
 
-    if (db_network_ != nullptr) {
+    // Skip the max-cap check on scan-enable/scan-in pins only when the pin's
+    // net is high fanout (fanout exceeds the max-fanout limit).
+    if (db_network_ != nullptr && mode != nullptr) {
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;
@@ -7606,7 +7612,18 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       if (iterm != nullptr
           && (db_network_->isScanEnable(iterm)
               || db_network_->isScanIn(iterm))) {
-        continue;
+        bool high_fanout = false;
+        for (const sta::Pin* driver_pin : *drivers) {
+          float fanout = 0.0f, max_fanout = 0.0f, fanout_slack = 0.0f;
+          checkFanout(driver_pin, mode, max_, fanout, max_fanout, fanout_slack);
+          if (max_fanout > 0.0f && fanout > max_fanout) {
+            high_fanout = true;
+            break;
+          }
+        }
+        if (high_fanout) {
+          continue;
+        }
       }
     }
 

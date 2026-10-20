@@ -23,70 +23,71 @@
       60* |       0 |      34 |       16 |      0 |    10 |    +3.2% |  -17.245 |     -226.8 |     46 | resp_msg[14]
       70* |       0 |      42 |       17 |      0 |    11 |    +3.5% |  -14.673 |     -169.6 |     46 | resp_msg[13]
       80* |       0 |      45 |       19 |      0 |    16 |    +3.9% |  -13.420 |     -149.8 |     46 | resp_msg[13]
-      90* |       0 |      50 |       23 |      0 |    17 |    +4.7% |  -11.742 |     -117.4 |     46 | resp_msg[15]
-      99* |       0 |      56 |       25 |      0 |    18 |    +5.1% |   -8.418 |      -88.9 |     46 | resp_msg[7]
-     100* |       0 |      56 |       25 |      0 |    18 |    +5.1% |   -8.418 |      -88.9 |     46 | resp_msg[7]
-     104* |       0 |      58 |       26 |      0 |    19 |    +5.3% |   -8.418 |      -82.4 |     46 | resp_msg[7]
-     108* |       0 |      61 |       26 |      0 |    19 |    +5.3% |   -8.418 |      -75.2 |     46 | resp_msg[7]
-     109* |       0 |      61 |       26 |      0 |    19 |    +5.3% |   -8.418 |      -75.2 |     46 | resp_msg[7]
-     110* |       0 |      61 |       26 |      0 |    19 |    +5.3% |   -8.418 |      -75.2 |     46 | resp_msg[7]
-     112* |       0 |      63 |       26 |      0 |    19 |    +5.3% |   -8.418 |      -70.4 |     46 | resp_msg[7]
-     120* |       0 |      68 |       27 |      0 |    20 |    +5.5% |   -8.418 |      -62.8 |     46 | resp_msg[7]
-     121* |       0 |      69 |       27 |      0 |    20 |    +5.5% |   -8.418 |      -58.9 |     46 | resp_msg[7]
-     124* |       0 |      69 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -41.1 |     46 | resp_msg[7]
-     125* |       0 |      69 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -41.1 |     46 | resp_msg[7]
-     126* |       0 |      69 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -41.1 |     46 | resp_msg[7]
-     127* |       0 |      69 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -41.1 |     46 | resp_msg[7]
-     130* |       0 |      71 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -29.7 |     46 | resp_msg[7]
-     130* |       0 |      71 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -29.7 |     46 | resp_msg[7]
-     131* |       0 |      71 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -29.7 |     46 | resp_msg[7]
-     132* |       0 |      71 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -29.7 |     46 | resp_msg[7]
-     134* |       0 |      72 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -25.7 |     46 | resp_msg[7]
-     135* |       0 |      72 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -25.7 |     46 | resp_msg[7]
-     136* |       0 |      72 |       29 |      1 |    20 |    +6.4% |   -8.418 |      -25.7 |     46 | resp_msg[7]
-     139* |       0 |      74 |       29 |      1 |    20 |    +6.4% |   -7.377 |      -17.3 |     46 | resp_msg[13]
-     140* |       0 |      74 |       29 |      1 |    20 |    +6.4% |   -7.377 |      -17.3 |     46 | resp_msg[13]
-     140* |       0 |      74 |       29 |      1 |    20 |    +6.4% |   -7.377 |      -17.3 |     46 | resp_msg[13]
-     142* |       0 |      75 |       29 |      1 |    20 |    +6.4% |   -7.377 |      -14.6 |     46 | resp_msg[13]
-     143* |       0 |      75 |       29 |      1 |    20 |    +6.4% |   -7.377 |      -14.6 |     46 | resp_msg[13]
-     149* |       0 |      78 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -8.2 |     46 | resp_msg[13]
-     150* |       0 |      78 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -8.2 |     46 | resp_msg[13]
-     150* |       0 |      78 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -8.2 |     46 | resp_msg[13]
-     151* |       0 |      78 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -8.2 |     46 | resp_msg[13]
-     153* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     154* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     155* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     156* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     157* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     158* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     159* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     160* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     160* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     161* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     162* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     163* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     164* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     165* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     166* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     167* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     168* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     169* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     170* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     170* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     171* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     172* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     173* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     174* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     175* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-     175* |       0 |      79 |       31 |      1 |    20 |    +6.7% |   -7.377 |       -7.4 |     46 | resp_msg[13]
-    final |       0 |      86 |       31 |      1 |    20 |    +6.7% |   -5.056 |       -5.2 |      2 | resp_msg[13]
+      90* |       0 |      49 |       24 |      0 |    17 |    +4.9% |  -11.286 |     -109.7 |     46 | resp_msg[15]
+     100* |       0 |      55 |       26 |      0 |    19 |    +5.4% |   -9.250 |      -96.0 |     46 | resp_msg[13]
+     110* |       0 |      61 |       29 |      0 |    20 |    +6.1% |   -7.204 |      -81.2 |     46 | resp_msg[12]
+     111* |       0 |      62 |       29 |      0 |    20 |    +6.1% |   -6.968 |      -74.0 |     46 | resp_msg[15]
+     118* |       0 |      62 |       30 |      0 |    22 |    +6.3% |   -6.616 |      -73.0 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     120* |       0 |      63 |       30 |      0 |    22 |    +6.3% |   -6.616 |      -71.2 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     121* |       0 |      63 |       30 |      0 |    22 |    +6.3% |   -6.616 |      -71.2 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     122* |       0 |      63 |       30 |      0 |    22 |    +6.3% |   -6.616 |      -71.2 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     124* |       0 |      63 |       30 |      0 |    22 |    +6.3% |   -6.616 |      -71.2 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     130* |       0 |      67 |       31 |      0 |    22 |    +6.5% |   -6.616 |      -56.4 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     133* |       0 |      68 |       31 |      0 |    23 |    +6.5% |   -6.616 |      -55.5 |     46 | dpath.a_reg.out\[15\]$_DFFE_PP_/D
+     136* |       0 |      68 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -34.5 |     46 | resp_msg[13]
+     137* |       0 |      68 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -34.5 |     46 | resp_msg[13]
+     138* |       0 |      68 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -34.5 |     46 | resp_msg[13]
+     139* |       0 |      68 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -34.5 |     46 | resp_msg[13]
+     140* |       0 |      68 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -34.5 |     46 | resp_msg[13]
+     141* |       0 |      69 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -27.3 |     46 | resp_msg[13]
+     142* |       0 |      69 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -27.3 |     46 | resp_msg[13]
+     143* |       0 |      69 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -27.3 |     46 | resp_msg[13]
+     145* |       0 |      70 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -25.7 |     46 | resp_msg[13]
+     146* |       0 |      70 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -25.7 |     46 | resp_msg[13]
+     147* |       0 |      70 |       33 |      1 |    23 |    +7.3% |   -6.505 |      -25.7 |     46 | resp_msg[13]
+     150* |       0 |      71 |       34 |      1 |    23 |    +7.5% |   -6.175 |      -22.8 |     46 | resp_msg[13]
+     151* |       0 |      72 |       34 |      1 |    23 |    +7.5% |   -6.175 |      -19.5 |     46 | resp_msg[13]
+     152* |       0 |      72 |       34 |      1 |    23 |    +7.5% |   -6.175 |      -19.5 |     46 | resp_msg[13]
+     154* |       0 |      73 |       34 |      1 |    23 |    +7.5% |   -6.175 |      -19.1 |     46 | resp_msg[13]
+     155* |       0 |      73 |       34 |      1 |    23 |    +7.5% |   -6.175 |      -19.1 |     46 | resp_msg[13]
+     160* |       0 |      76 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -15.7 |     46 | resp_msg[13]
+     160* |       0 |      76 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -15.7 |     46 | resp_msg[13]
+     161* |       0 |      76 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -15.7 |     46 | resp_msg[13]
+     162* |       0 |      76 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -15.7 |     46 | resp_msg[13]
+     164* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     165* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     166* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     167* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     168* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     169* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     170* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     170* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     171* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     172* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     173* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     174* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     175* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     176* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     177* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     178* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     179* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     180* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     180* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     181* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     182* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     183* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     184* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     185* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     186* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+     186* |       0 |      77 |       35 |      1 |    23 |    +7.7% |   -6.175 |      -14.4 |     46 | resp_msg[13]
+    final |       0 |      94 |       35 |      1 |    23 |    +7.7% |   -6.676 |       -6.7 |      1 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 31 buffers.
-[INFO RSZ-0051] Resized 86 instances: 15 up, 0 up match, 0 down, 71 VT
-[INFO RSZ-0043] Swapped pins on 20 instances.
+[INFO RSZ-0040] Inserted 35 buffers.
+[INFO RSZ-0051] Resized 94 instances: 15 up, 0 up match, 0 down, 79 VT
+[INFO RSZ-0043] Swapped pins on 23 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -96,20 +97,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  22.17  104.08 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.69 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.83 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  153.36 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.72 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.64 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  181.06 v resp_msg[13] (out)
-         181.06   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  22.17  101.70 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  118.31 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  134.49 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  152.33 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.83 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  182.26 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.68 ^ resp_msg[13] (out)
+         182.68   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -118,12 +120,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -181.06   data arrival time
+        -182.68   data arrival time
 ---------------------------------------------------------
-          -5.06   slack (VIOLATED)
+          -6.68   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -133,20 +135,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  22.17  104.08 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.69 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.83 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  153.36 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.72 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.64 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  181.06 v resp_msg[13] (out)
-         181.06   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  22.17  101.70 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  118.31 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  134.49 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  152.33 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.83 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  182.26 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.68 ^ resp_msg[13] (out)
+         182.68   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -155,12 +158,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -181.06   data arrival time
+        -182.68   data arrival time
 ---------------------------------------------------------
-          -5.06   slack (VIOLATED)
+          -6.68   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -170,20 +173,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  22.17  104.08 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.69 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.83 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  153.36 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.72 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.64 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  181.06 v resp_msg[13] (out)
-         181.06   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  22.17  101.70 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  118.31 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  134.49 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  152.33 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.83 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  182.26 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.68 ^ resp_msg[13] (out)
+         182.68   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -192,12 +196,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -181.06   data arrival time
+        -182.68   data arrival time
 ---------------------------------------------------------
-          -5.06   slack (VIOLATED)
+          -6.68   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -207,20 +211,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  22.17  104.08 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.69 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.83 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  153.36 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.72 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.64 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  181.06 v resp_msg[13] (out)
-         181.06   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  22.17  101.70 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  118.31 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  134.49 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  152.33 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.83 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  182.26 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.68 ^ resp_msg[13] (out)
+         182.68   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -229,12 +234,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -181.06   data arrival time
+        -182.68   data arrival time
 ---------------------------------------------------------
-          -5.06   slack (VIOLATED)
+          -6.68   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -244,20 +249,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  21.64  103.54 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.16 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.29 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.82 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.19 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.10 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.52 v resp_msg[13] (out)
-         180.52   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  21.64  101.16 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.78 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.95 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.80 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.30 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.72 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.14 ^ resp_msg[13] (out)
+         182.14   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -266,12 +272,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.52   data arrival time
+        -182.14   data arrival time
 ---------------------------------------------------------
-          -4.52   slack (VIOLATED)
+          -6.14   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -281,20 +287,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  12.76   81.90 v _312_/Y (OA21x2_ASAP7_75t_SL)
-  21.64  103.54 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  120.16 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.29 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.82 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  166.19 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  180.10 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.52 v resp_msg[13] (out)
-         180.52   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.45   26.45 ^ dpath.a_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   6.12   32.57 v _355_/Y (INVx2_ASAP7_75t_SL)
+   9.08   41.65 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
+  11.90   53.55 v _572_/SN (HAxp5_ASAP7_75t_SL)
+  13.29   66.83 v place85/Y (BUFx3_ASAP7_75t_SL)
+  12.69   79.52 v _312_/Y (OA21x2_ASAP7_75t_SL)
+  21.64  101.16 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.78 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.95 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.80 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.30 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.72 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  182.14 ^ resp_msg[13] (out)
+         182.14   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -303,12 +310,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.52   data arrival time
+        -182.14   data arrival time
 ---------------------------------------------------------
-          -4.52   slack (VIOLATED)
+          -6.14   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -318,20 +325,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  13.20   82.35 v _394_/Y (OR3x1_ASAP7_75t_SL)
-  20.90  103.25 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  119.87 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.00 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  165.90 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  179.81 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.23 v resp_msg[13] (out)
-         180.23   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[3]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.39   26.39 ^ dpath.a_reg.out[3]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   4.70   31.09 v _356_/Y (INVx2_ASAP7_75t_SL)
+  11.24   42.33 ^ _573_/CON (HAxp5_ASAP7_75t_SL)
+  11.56   53.89 v _573_/SN (HAxp5_ASAP7_75t_SL)
+  12.79   66.68 v place84/Y (BUFx3_ASAP7_75t_SL)
+  13.31   79.99 v _394_/Y (OR3x1_ASAP7_75t_SL)
+  20.90  100.89 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.51 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.69 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.03 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.45 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  181.87 ^ resp_msg[13] (out)
+         181.87   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -340,12 +348,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.23   data arrival time
+        -181.87   data arrival time
 ---------------------------------------------------------
-          -4.23   slack (VIOLATED)
+          -5.87   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -355,20 +363,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  13.20   82.35 v _394_/Y (OR3x1_ASAP7_75t_SL)
-  20.90  103.25 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  119.87 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.00 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  165.90 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  179.81 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.23 v resp_msg[13] (out)
-         180.23   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[3]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.39   26.39 ^ dpath.a_reg.out[3]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   4.70   31.09 v _356_/Y (INVx2_ASAP7_75t_SL)
+  11.24   42.33 ^ _573_/CON (HAxp5_ASAP7_75t_SL)
+  11.56   53.89 v _573_/SN (HAxp5_ASAP7_75t_SL)
+  12.79   66.68 v place84/Y (BUFx3_ASAP7_75t_SL)
+  13.31   79.99 v _394_/Y (OR3x1_ASAP7_75t_SL)
+  20.90  100.89 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.51 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.69 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.03 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.45 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  181.87 ^ resp_msg[13] (out)
+         181.87   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -377,12 +386,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.23   data arrival time
+        -181.87   data arrival time
 ---------------------------------------------------------
-          -4.23   slack (VIOLATED)
+          -5.87   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -392,20 +401,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  13.20   82.35 v _394_/Y (OR3x1_ASAP7_75t_SL)
-  20.90  103.25 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  119.87 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.00 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  165.90 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  179.81 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.23 v resp_msg[13] (out)
-         180.23   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[3]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.39   26.39 ^ dpath.a_reg.out[3]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   4.70   31.09 v _356_/Y (INVx2_ASAP7_75t_SL)
+  11.24   42.33 ^ _573_/CON (HAxp5_ASAP7_75t_SL)
+  11.56   53.89 v _573_/SN (HAxp5_ASAP7_75t_SL)
+  12.79   66.68 v place84/Y (BUFx3_ASAP7_75t_SL)
+  13.31   79.99 v _394_/Y (OR3x1_ASAP7_75t_SL)
+  20.90  100.89 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.51 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.69 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.03 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.45 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  181.87 ^ resp_msg[13] (out)
+         181.87   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -414,12 +424,12 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.23   data arrival time
+        -181.87   data arrival time
 ---------------------------------------------------------
-          -4.23   slack (VIOLATED)
+          -5.87   slack (VIOLATED)
 
 
-Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
+Startpoint: dpath.a_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: resp_msg[13] (output port clocked by core_clock)
 Path Group: core_clock
@@ -429,20 +439,21 @@ Path Type: max
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath.b_reg.out[4]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
-  30.52   30.52 v dpath.b_reg.out[4]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
-  12.58   43.11 ^ _572_/CON (HAxp5_ASAP7_75t_SL)
-  12.44   55.54 v _572_/SN (HAxp5_ASAP7_75t_SL)
-  13.60   69.14 v place85/Y (BUFx3_ASAP7_75t_SL)
-  13.20   82.35 v _394_/Y (OR3x1_ASAP7_75t_SL)
-  20.90  103.25 v _395_/Y (OA211x2_ASAP7_75t_SL)
-  16.62  119.87 v _400_/Y (OA21x2_ASAP7_75t_SL)
-  16.13  136.00 v _402_/Y (AO21x2_ASAP7_75t_SL)
-  16.53  152.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
-  13.36  165.90 v _418_/Y (XOR2xp5_ASAP7_75t_SL)
-  13.91  179.81 v output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  180.23 v resp_msg[13] (out)
-         180.23   data arrival time
+   0.00    0.00 ^ dpath.a_reg.out[3]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_SL)
+  26.39   26.39 ^ dpath.a_reg.out[3]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL)
+   4.70   31.09 v _356_/Y (INVx2_ASAP7_75t_SL)
+  11.24   42.33 ^ _573_/CON (HAxp5_ASAP7_75t_SL)
+  11.56   53.89 v _573_/SN (HAxp5_ASAP7_75t_SL)
+  12.79   66.68 v place84/Y (BUFx3_ASAP7_75t_SL)
+  13.31   79.99 v _394_/Y (OR3x1_ASAP7_75t_SL)
+  20.90  100.89 v _395_/Y (OA211x2_ASAP7_75t_SL)
+  16.62  117.51 v _400_/Y (OA21x2_ASAP7_75t_SL)
+  16.18  133.69 v _402_/Y (AO21x2_ASAP7_75t_SL)
+  17.84  151.53 v _417_/Y (AO32x1_ASAP7_75t_SL)
+  19.50  171.03 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
+  10.42  181.45 ^ output41/Y (BUFx3_ASAP7_75t_SL)
+   0.42  181.87 ^ resp_msg[13] (out)
+         181.87   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -451,8 +462,8 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -180.23   data arrival time
+        -181.87   data arrival time
 ---------------------------------------------------------
-          -4.23   slack (VIOLATED)
+          -5.87   slack (VIOLATED)
 
 

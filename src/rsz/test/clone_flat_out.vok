@@ -341,6 +341,7 @@ module hi_fanout (clk1,
  wire net35;
  wire net37;
  wire net38;
+ wire net39;
  wire net40;
  wire net41;
  wire net42;
@@ -358,7 +359,6 @@ module hi_fanout (clk1,
  wire net54;
  wire net55;
  wire net56;
- wire net165;
  wire net58;
  wire net59;
  wire net60;
@@ -544,7 +544,7 @@ module hi_fanout (clk1,
  DFF_X1 load116 (.D(net35),
     .CK(clk1),
     .Q(output116));
- DFF_X1 load117 (.D(net165),
+ DFF_X1 load117 (.D(net43),
     .CK(clk1),
     .Q(output117));
  DFF_X1 load118 (.D(net42),
@@ -583,7 +583,7 @@ module hi_fanout (clk1,
  DFF_X1 load128 (.D(net34),
     .CK(clk1),
     .Q(output128));
- DFF_X1 load129 (.D(net165),
+ DFF_X1 load129 (.D(net39),
     .CK(clk1),
     .Q(output129));
  DFF_X1 load13 (.D(net61),
@@ -625,7 +625,7 @@ module hi_fanout (clk1,
  DFF_X1 load140 (.D(net34),
     .CK(clk1),
     .Q(output140));
- DFF_X1 load141 (.D(net165),
+ DFF_X1 load141 (.D(net39),
     .CK(clk1),
     .Q(output141));
  DFF_X1 load142 (.D(net40),
@@ -1026,7 +1026,7 @@ module hi_fanout (clk1,
     .Z(net141));
  BUF_X8 rebuffer142 (.A(net21),
     .Z(net142));
- BUF_X2 rebuffer143 (.A(net62),
+ BUF_X1 rebuffer143 (.A(net62),
     .Z(net143));
  BUF_X4 rebuffer144 (.A(net114),
     .Z(net144));
@@ -1050,8 +1050,6 @@ module hi_fanout (clk1,
     .Z(net152));
  BUF_X2 rebuffer16 (.A(net17),
     .Z(net16));
- BUF_X4 rebuffer165 (.A(net43),
-    .Z(net165));
  BUF_X4 rebuffer17 (.A(net18),
     .Z(net17));
  BUF_X4 rebuffer18 (.A(net19),
@@ -1092,15 +1090,17 @@ module hi_fanout (clk1,
     .Z(net37));
  BUF_X8 rebuffer38 (.A(net44),
     .Z(net38));
+ BUF_X2 rebuffer39 (.A(net43),
+    .Z(net39));
  BUF_X8 rebuffer4 (.A(net5),
     .Z(net4));
- BUF_X8 rebuffer40 (.A(net42),
+ BUF_X4 rebuffer40 (.A(net42),
     .Z(net40));
- BUF_X8 rebuffer41 (.A(net42),
+ BUF_X4 rebuffer41 (.A(net42),
     .Z(net41));
  BUF_X8 rebuffer42 (.A(net43),
     .Z(net42));
- BUF_X8 rebuffer43 (.A(net44),
+ BUF_X4 rebuffer43 (.A(net44),
     .Z(net43));
  BUF_X8 rebuffer44 (.A(net45),
     .Z(net44));
@@ -1136,11 +1136,11 @@ module hi_fanout (clk1,
     .Z(net60));
  BUF_X2 rebuffer61 (.A(net62),
     .Z(net61));
- BUF_X8 rebuffer62 (.A(net64),
+ BUF_X16 rebuffer62 (.A(net64),
     .Z(net62));
  BUF_X4 rebuffer64 (.A(net72),
     .Z(net64));
- BUF_X1 rebuffer65 (.A(net71),
+ BUF_X2 rebuffer65 (.A(net71),
     .Z(net65));
  BUF_X8 rebuffer66 (.A(net67),
     .Z(net66));

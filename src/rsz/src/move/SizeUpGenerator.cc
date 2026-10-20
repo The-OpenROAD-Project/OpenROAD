@@ -55,7 +55,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
   sta::LibertyCell* replacement = selectReplacement(
       in_port, drvr_port, load_cap, prev_drive, scene, min_max);
   if (replacement == nullptr
-      || !resizer_.replacementPreservesMaxCap(inst, replacement)) {
+      || !resizer_.replacementPreservesMaxCap(
+          inst, replacement, scene != nullptr ? scene->mode() : nullptr)) {
     return candidates;
   }
 
@@ -221,10 +222,27 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
            + prev_drive * scene_in->capacitance();
   };
 
+  // Drive resistance of the driver output in the active corner; used to keep
+  // selection to genuinely stronger cells (corner-robust, protects downstream
+  // max-slew/max-cap) rather than cells that only improve single-corner stage
+  // delay.
+  auto drive_res = [&](const sta::LibertyCell* c) -> std::optional<float> {
+    const sta::LibertyPort* drvr = c->findLibertyPort(drvr_port->name());
+    if (drvr == nullptr) {
+      return std::nullopt;
+    }
+    const sta::LibertyPort* scene_drvr = drvr->scenePort(lib_ap);
+    if (scene_drvr == nullptr) {
+      return std::nullopt;
+    }
+    return scene_drvr->driveResistance();
+  };
+
   const std::optional<float> delay = stage_delay(cell);
   if (!delay) {
     return nullptr;
   }
+  const std::optional<float> drive = drive_res(cell);
 
   sta::LibertyCell* best_cell = nullptr;
   float best_score = 0.0f;
@@ -234,6 +252,13 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     }
     const std::optional<float> cand_delay = stage_delay(swappable);
     if (!cand_delay || *cand_delay >= *delay) {
+      continue;
+    }
+    // Require a genuinely stronger driver (lower drive resistance).  A cell
+    // that improves single-corner stage delay without strengthening drive tends
+    // to leave worse max-slew/max-cap slack on the net and at other corners.
+    const std::optional<float> cand_drive = drive_res(swappable);
+    if (drive && cand_drive && *cand_drive >= *drive) {
       continue;
     }
     const std::optional<float> ratio = cost_ratio(cell, swappable);
