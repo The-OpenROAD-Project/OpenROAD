@@ -33,6 +33,7 @@ struct BufferingAudit
   size_t slew_violations = 0;
   std::string first_cap_violation;
   std::string first_slew_violation;
+  std::string first_slew_scene;
   std::string error;
 };
 

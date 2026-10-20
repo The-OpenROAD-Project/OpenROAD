@@ -2,8 +2,11 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -13,11 +16,15 @@
 #include "CtsOptions.h"
 #include "TreeBuilder.h"
 #include "cts/TritonCTS.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Clock.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
@@ -35,9 +42,35 @@ class SplitCounter : public odb::dbBlockCallBackObj
   {
     ++creates;
     splits += inst->getName().starts_with("clkbuf_regs_");
+    clones += inst->getName().starts_with("clone_");
   }
   int creates = 0;
   int splits = 0;
+  int clones = 0;
+};
+
+class PostWriteCapLimit : public odb::dbBlockCallBackObj
+{
+ public:
+  explicit PostWriteCapLimit(sta::dbNetwork* network) : network_(network) {}
+
+  void inDbITermPostConnect(odb::dbITerm* pin) override
+  {
+    if (target == nullptr && pin->isOutputSignal()
+        && pin->getInst()->getName().starts_with("clkbuf_")
+        && pin->getNet()->getName().starts_with("clknet_")) {
+      // This event occurs only during writeDataToDb, after all abstract
+      // buffering decisions. The real STA checker consumes this limit.
+      auto* port = network_->libertyPort(network_->dbToSta(pin));
+      port->setCapacitanceLimit(1e-20, sta::MinMax::max());
+      target = pin;
+    }
+  }
+
+  odb::dbITerm* target = nullptr;
+
+ private:
+  sta::dbNetwork* network_;
 };
 }  // namespace
 
@@ -132,14 +165,20 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
                      bool modeled = true)
   {
     auto* inst = odb::dbInst::create(block_, db_->findMaster(master), name);
+    auto* input_pin = inst->findITerm(input);
+    auto* output_pin = inst->findITerm(output);
+    if (input_pin == nullptr || output_pin == nullptr) {
+      throw std::runtime_error(std::string("Invalid fixture pins for ") + master
+                               + ": " + input + " -> " + output);
+    }
     inst->setLocation(1000 + stages_ * 2000, 1000);
     inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     inst->setSourceType(odb::dbSourceType::TIMING);
-    inst->findITerm(input)->connect(last_net_);
+    input_pin->connect(last_net_);
     auto* net
         = odb::dbNet::create(block_, (std::string(name) + "_net").c_str());
     net->setSigType(odb::dbSigType::CLOCK);
-    inst->findITerm(output)->connect(net);
+    output_pin->connect(net);
     last_net_ = net;
     ++stages_;
     if (modeled) {
@@ -164,7 +203,7 @@ class BottomUpClockTreeTest : public tst::IntegratedFixture
     last_net_ = source_;
     stage("BUF_X8", "clkbuf_0_clk");
     stage("BUF_X2", "clkbuf_branch");
-    stage("INV_X1", "clock_inverter");
+    stage("INV_X1", "clock_inverter", "A", "ZN");
     gate_ = stage("CLKGATE_X1", "clock_gate", "CK", "GCK");
     sta_->setCaseAnalysis(db_network_->dbToSta(gate_->findITerm("E")),
                           sta::LogicValue::one,
@@ -330,14 +369,11 @@ TEST_F(BottomUpClockTreeTest, EveryOriginalSinkAndUnmodeledDelayNetIsVisited)
 TEST_F(BottomUpClockTreeTest, DownstreamCapacitanceViolationCannotPass)
 {
   physicalTree();
-  sta_->setCapacitanceLimit(db_network_->dbToSta(delay_->getFirstOutput()),
-                            sta::MinMax::max(),
-                            1e-20,
-                            sta_->cmdMode()->sdc());
+  auto* pin = db_network_->dbToSta(delay_->getFirstOutput());
+  db_network_->libertyPort(pin)->setCapacitanceLimit(1e-20, sta::MinMax::max());
   const auto result = audit();
   EXPECT_GT(result.cap_violations, 0u);
-  EXPECT_NE(result.first_cap_violation.find(delay_->getName()),
-            std::string::npos);
+  EXPECT_EQ(result.first_cap_violation, db_network_->pathName(pin));
   EXPECT_FALSE(result.error.empty());
   EXPECT_EQ(result.reached_sinks, originals_.size());
 }
@@ -349,16 +385,45 @@ TEST_F(BottomUpClockTreeTest, GatedMultimodeDownstreamSlewViolationCannotPass)
   auto* enable = db_network_->dbToSta(gate_->findITerm("E"));
   sta_->setCaseAnalysis(enable, sta::LogicValue::zero, sta_->cmdMode());
   sta_->setCaseAnalysis(enable, sta::LogicValue::one, scene->mode());
-  sta_->setSlewLimit(
-      db_network_->port(db_network_->dbToSta(originals_.front())),
-      sta::MinMax::max(),
-      1e-15,
-      scene->mode()->sdc());
+  auto* pin = db_network_->dbToSta(delay_->getFirstOutput());
+  auto* port = db_network_->libertyPort(pin);
+  auto* scene_port = port->scenePort(scene, sta::MinMax::max());
+  ASSERT_NE(scene_port, port->scenePort(sta_->cmdScene(), sta::MinMax::max()));
+  // Internal SDC master-port limits are not consulted by CheckSlews.
+  // A unique downstream cell's scene-specific Liberty limit is effective.
+  scene_port->setSlewLimit(1e-15, sta::MinMax::max());
   const auto result = audit();
   EXPECT_GT(result.slew_violations, 0u);
-  EXPECT_FALSE(result.first_slew_violation.empty());
+  EXPECT_EQ(result.first_slew_violation, db_network_->pathName(pin));
+  EXPECT_EQ(result.first_slew_scene, scene->name());
   EXPECT_FALSE(result.error.empty());
   EXPECT_EQ(result.reached_sinks, originals_.size());
+  sta::Slew slew;
+  float limit, slack;
+  const sta::RiseFall* rf;
+  const sta::Scene* checked_scene;
+  sta_->checkSlew(pin,
+                  {scene},
+                  sta::MinMax::max(),
+                  true,
+                  slew,
+                  limit,
+                  slack,
+                  rf,
+                  checked_scene);
+  EXPECT_LT(slack, 0);
+  EXPECT_FLOAT_EQ(limit, 1e-15);
+  EXPECT_EQ(checked_scene, scene);
+  sta_->checkSlew(pin,
+                  {sta_->cmdScene()},
+                  sta::MinMax::max(),
+                  true,
+                  slew,
+                  limit,
+                  slack,
+                  rf,
+                  checked_scene);
+  EXPECT_GE(slack, 0);
   const auto rc = bound();
   EXPECT_DOUBLE_EQ(rc.resistance, 12e5);
   EXPECT_DOUBLE_EQ(rc.capacitance, 12e-11);
@@ -416,6 +481,88 @@ TEST_F(BottomUpClockTreeTest, NewlyAddedSceneWithoutRCFailsBeforeMutation)
   EXPECT_EQ(reachableOriginals(), originals_.size());
 }
 
+TEST_F(BottomUpClockTreeTest, FailedFeasibilityUndoesRealGaterCloning)
+{
+  const double max_wire_dbu
+      = resizer_.findMaxWireLength(false) * 1e6 * block_->getDbUnitsPerMicron();
+  ASSERT_GT(max_wire_dbu, 0);
+  ASSERT_LT(max_wire_dbu, std::numeric_limits<int>::max() / 32);
+  const int pitch = static_cast<int>(std::ceil(4 * max_wire_dbu));
+  block_->setDieArea(odb::Rect(0, 0, 6 * pitch, 2 * pitch));
+  auto* gate = odb::dbInst::create(
+      block_, db_->findMaster("CLKGATE_X1"), "rollback_gate");
+  gate->setLocation(pitch / 2, pitch / 2);
+  gate->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  gate->findITerm("CK")->connect(source_);
+  auto* gated = odb::dbNet::create(block_, "rollback_gated_clock");
+  gated->setSigType(odb::dbSigType::CLOCK);
+  gate->findITerm("GCK")->connect(gated);
+  sta_->setCaseAnalysis(db_network_->dbToSta(gate->findITerm("E")),
+                        sta::LogicValue::one,
+                        sta_->cmdMode());
+  for (size_t i = 0; i < originals_.size(); ++i) {
+    originals_[i]->connect(gated);
+    originals_[i]->getInst()->setLocation(
+        (1 + i / 4) * pitch, pitch / 2 + (i % 4) * std::max(1, pitch / 100));
+  }
+  SplitCounter counter;
+  counter.addOwner(block_);
+  const auto before = snapshot();
+  const auto config = cts_->getParms()->saveRunConfiguration();
+  auto* top = db_network_->cell(db_network_->topInstance());
+  sta_->setCapacitanceLimit(
+      top, sta::MinMax::max(), 1e-20, sta_->cmdMode()->sdc());
+  EXPECT_LOGGER_ERROR(cts_->runTritonCts(), "CTS-0554");
+  EXPECT_GT(counter.clones, 0) << "The case must actually clone clock gaters";
+  EXPECT_EQ(snapshot(), before);
+  EXPECT_EQ(cts_->getParms()->saveRunConfiguration(), config);
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  EXPECT_TRUE(cleanRunState());
+  expectCallbacksRestored(counter);
+  EXPECT_EQ(snapshot(), before);
+}
+
+TEST_F(BottomUpClockTreeTest, PublicCommandAuditFailureRetainsDiagnosticTree)
+{
+  const auto before = snapshot();
+  SplitCounter observer;
+  observer.addOwner(block_);
+  PostWriteCapLimit inject(db_network_);
+  inject.addOwner(block_);
+  std::string failure;
+  try {
+    cts_->runTritonCts();
+  } catch (const std::exception& error) {
+    failure = error.what();
+  }
+  EXPECT_EQ(failure, "CTS-0557");
+  ASSERT_NE(inject.target, nullptr)
+      << "The case must inject its violation after real DB write begins";
+  EXPECT_NE(snapshot(), before);
+  EXPECT_EQ(block_->findInst(inject.target->getInst()->getName().c_str()),
+            inject.target->getInst());
+  EXPECT_TRUE(inject.target->getNet()->getName().starts_with("clknet_"));
+  EXPECT_EQ(reachableOriginals(), originals_.size());
+  EXPECT_TRUE(cleanRunState());
+  float cap, limit, slack;
+  const sta::RiseFall* rf;
+  const sta::Scene* scene;
+  sta_->checkCapacitance(db_network_->dbToSta(inject.target),
+                         sta_->scenes(),
+                         sta::MinMax::max(),
+                         cap,
+                         limit,
+                         slack,
+                         rf,
+                         scene);
+  EXPECT_LT(slack, 0);
+  EXPECT_FLOAT_EQ(limit, 1e-20);
+  EXPECT_GT(cap, limit);
+  EXPECT_EQ(scene, sta_->cmdScene());
+  EXPECT_TRUE(inject.hasOwner());
+  expectCallbacksRestored(observer);
+}
+
 class BottomUpMacroClockTreeTest : public BottomUpClockTreeTest
 {
  protected:
@@ -431,6 +578,8 @@ TEST_F(BottomUpMacroClockTreeTest,
   const auto inst_count = block_->getInsts().size();
   const auto net_count = block_->getNets().size();
   const auto buffers = cts_->getParms()->getBufferCount();
+  cts_->getParms()->setMaxWl(12345);
+  const auto config = cts_->getParms()->saveRunConfiguration();
   auto* top = db_network_->cell(db_network_->topInstance());
   sta_->setCapacitanceLimit(
       top, sta::MinMax::max(), 1e-20, sta_->cmdMode()->sdc());
@@ -443,6 +592,7 @@ TEST_F(BottomUpMacroClockTreeTest,
     EXPECT_EQ(pin->getNet(), source_);
   }
   EXPECT_EQ(cts_->getParms()->getBufferCount(), buffers);
+  EXPECT_EQ(cts_->getParms()->saveRunConfiguration(), config);
   EXPECT_TRUE(cleanRunState());
   EXPECT_TRUE(odb::dbDatabase::ecoStackEmpty(block_));
   expectCallbacksRestored(counter);
@@ -471,14 +621,14 @@ TEST_F(BottomUpMacroClockTreeTest, ActualLatencyBalancerAdditionsAreAudited)
   }
   ASSERT_NE(delay, nullptr)
       << "The case must exercise actual latency balancing";
-  sta_->setCapacitanceLimit(db_network_->dbToSta(delay->getFirstOutput()),
-                            sta::MinMax::max(),
-                            1e-20,
-                            sta_->cmdMode()->sdc());
+  // Isolate the effective Liberty limit to this real balancer-added stage,
+  // instead of constraining every CLKBUF_X3 in the tree.
+  ASSERT_TRUE(delay->swapMaster(db_->findMaster("BUF_X1")));
+  auto* pin = db_network_->dbToSta(delay->getFirstOutput());
+  db_network_->libertyPort(pin)->setCapacitanceLimit(1e-20, sta::MinMax::max());
   const auto result = audit();
   EXPECT_GT(result.cap_violations, 0u);
-  EXPECT_NE(result.first_cap_violation.find(delay->getName()),
-            std::string::npos);
+  EXPECT_EQ(result.first_cap_violation, db_network_->pathName(pin));
   EXPECT_EQ(reachableOriginals(), originals_.size());
   EXPECT_EQ(result.reached_sinks, result.expected_sinks);
   EXPECT_FALSE(result.error.empty());

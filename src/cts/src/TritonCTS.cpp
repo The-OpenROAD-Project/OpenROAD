@@ -100,7 +100,7 @@ void TritonCTS::runTritonCts()
   const auto nets_count = options_->getNumClockSubnets();
   const auto buffer_counts = options_->getBufferCount();
   const auto dummy_counts = options_->getDummyCount();
-  const bool dummy_load = options_->dummyLoadEnabled();
+  const auto config = options_->saveRunConfiguration();
   bool reversible_build = false;
   BufferingAudit audit;
   options_->addOwner(block);
@@ -146,7 +146,7 @@ void TritonCTS::runTritonCts()
     options_->setNumBuffersInserted(buffers_count);
     options_->setNumClockSubnets(nets_count);
     options_->restoreBufferCounts(buffer_counts, dummy_counts);
-    options_->enableDummyLoad(dummy_load);
+    options_->restoreRunConfiguration(config);
     throw;
   }
   resetRunState();

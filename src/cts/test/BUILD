@@ -315,6 +315,7 @@ cc_test(
         "//src/cts:bottom_up_buffering",
         "//src/cts:cts_impl",
         "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbSta",
         "//src/est",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",

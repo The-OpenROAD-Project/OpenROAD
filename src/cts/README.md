@@ -118,7 +118,9 @@ Infeasible loads, non-progressing legalization, a 64-level depth
 limit, or a stage count exceeding 64 times the initial node count cause an error.
 Pre-write planning errors undo gate cloning and macro/register splitting using
 an OpenDB ECO journal, remove callback ownership, and clear transient run state
-so that the command can be retried. The final audit starts only at actual tree
+so that the command can be retried. Configuration changed during setup, including
+wire units and inferred characterization/clustering values, is restored on errors.
+Successful-run reset behavior is unchanged. The final audit starts only at actual tree
 roots and requires coverage of every original sink and every generated subnet.
 The final electrical audit runs after latency balancing; an audit failure leaves
 the generated tree in the database for diagnosis. Routed timing must still be checked.

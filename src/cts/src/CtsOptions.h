@@ -43,6 +43,32 @@ class CtsOptions : public odb::dbBlockCallBackObj
   };
   using MasterCount = odb::PtrMap<odb::dbMaster, int>;
 
+  // Only configuration fields that setup/characterization mutate in place.
+  struct RunConfiguration
+  {
+    int db_units;
+    unsigned wire_segment_unit;
+    int max_wire_length;
+    double max_char_slew;
+    double max_char_cap;
+    double sink_buffer_input_cap;
+    std::string root_buffer;
+    std::string sink_buffer;
+    std::vector<std::string> delay_buffers;
+    unsigned max_fanout;
+    unsigned sink_cluster_size;
+    bool sink_cluster_size_set;
+    double macro_max_diameter;
+    bool macro_max_diameter_set;
+    bool root_buffer_inferred;
+    bool sink_buffer_inferred;
+    bool dummy_load;
+    bool operator==(const RunConfiguration&) const = default;
+  };
+
+  RunConfiguration saveRunConfiguration() const;
+  void restoreRunConfiguration(const RunConfiguration& config);
+
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)
   {

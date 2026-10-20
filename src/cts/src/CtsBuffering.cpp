@@ -526,6 +526,7 @@ void TritonCTS::checkClockPinElectricals(const sta::Pin* pin,
   audit.slew_violations += slack < 0;
   if (slack < 0 && audit.first_slew_violation.empty()) {
     audit.first_slew_violation = network_->pathName(pin);
+    audit.first_slew_scene = scene->name();
   }
   if (driver) {
     openSta_->checkCapacitance(pin,
@@ -651,6 +652,9 @@ void TritonCTS::finishClockTreeElectricals(BufferingAudit& audit)
           + "; first max-slew violation: "
           + (audit.first_slew_violation.empty() ? "none"
                                                 : audit.first_slew_violation)
+          + (audit.first_slew_scene.empty()
+                 ? ""
+                 : " in scene " + audit.first_slew_scene)
           + ".";
   }
 }
