@@ -466,8 +466,10 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
-    if (!virtual_td_iter && npVars_.routability_driven_mode
-        && npVars_.timingDrivenCongestionInflation && !is_routability_need_) {
+    const bool retained_inflation
+        = !virtual_td_iter && npVars_.routability_driven_mode
+          && npVars_.timingDrivenCongestionInflation && !is_routability_need_;
+    if (retained_inflation) {
       // Completion is terminal for this placement object's routability search.
       // Its min-RC restore has already finished inside routability(), and
       // runRoutability cannot re-enter it. Keep live accounting local to this
@@ -533,10 +535,20 @@ void NesterovPlace::runTimingDriven(int iter,
         // 3. updateareas
         // 4. updateDensitySize
 
-        // Use this region's repaired, inflated area, not the global resizer
-        // delta, which can include changes belonging to other power domains.
         const int64_t previous_area = nesterov->getNesterovInstsArea();
-        nesterov->updateTimingDrivenDensity();
+        if (retained_inflation) {
+          // New inflation needs region-local live area, not a global repair
+          // delta. Keep this accounting out of the ordinary placement path.
+          nesterov->updateTimingDrivenDensity();
+        } else {
+          nesterov->setTargetDensity(
+              static_cast<float>(nbc_->getDeltaArea()
+                                 + nesterov->getNesterovInstsArea()
+                                 + nesterov->getTotalFillerArea())
+              / static_cast<float>(nesterov->getWhiteSpaceArea()));
+          nesterov->setMovableArea(nesterov->getTargetDensity()
+                                   * nesterov->getWhiteSpaceArea());
+        }
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
@@ -573,6 +585,12 @@ void NesterovPlace::runTimingDriven(int iter,
                    110,
                    "Timing-driven: new target density: {}",
                    nesterov->getTargetDensity());
+        if (!retained_inflation) {
+          nbc_->resetDeltaArea();
+          nbc_->resetNewGcellsCount();
+          nesterov->updateAreas();
+          nesterov->updateDensitySize();
+        }
         nesterov->checkConsistency();
       }
       nbc_->resetDeltaArea();
