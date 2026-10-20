@@ -1404,6 +1404,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     std::unordered_set<int> currently_congested(net_indices.begin(),
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
+    // A demotion relieves overflow too, so it counts toward the pass's change.
+    double overflow_change = 0.0;
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] == nullptr) {
         continue;
@@ -1414,9 +1416,14 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       }
       const int streak = ++ndr_congested_streak[net_index];
       if (streak >= kSoftNdrStreakThreshold) {
-        grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        const auto& tree = net->getRoutingTree();
+        overflow_change
+            -= grid_graph_->treeOverflow(tree, false, net->getNdrCosts());
+        grid_graph_->removeTreeUsage(tree, net->getNdrCosts());
         net->setSoftNdr();
-        grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        grid_graph_->addTreeUsage(tree, net->getNdrCosts());
+        overflow_change
+            += grid_graph_->treeOverflow(tree, false, net->getNdrCosts());
         demoted_now.push_back(net->getName());
       }
     }
@@ -1451,13 +1458,12 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       logger_->info(
           GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     }
-    double overflow_change = 0.0;
     if (incremental_routing_) {
       // Incremental reroutes all dirty nets each iteration, not just congested.
       std::vector<int> reroute_set = incremental_candidates_;
-      overflow_change = mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
+      overflow_change += mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
     } else {
-      overflow_change = mazeRoute(net_indices, CugrStage::iterativeRRR, i);
+      overflow_change += mazeRoute(net_indices, CugrStage::iterativeRRR, i);
     }
     reportCongestionSources(fmt::format("rrr iteration {}", i));
     debugPass(fmt::format("rrr iteration {}", i));
