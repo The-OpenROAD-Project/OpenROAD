@@ -65,13 +65,13 @@ filegroup(
                 "Nangate45/Nangate45_tech.lef",
                 "Nangate45/Nangate45_typ.lib",
             ],
+            "make_8x8_2r1w_sky130": ["make_8x8_2r1w_sky130_behavioral.vok"],
+            "make_8x8_sky130": ["make_8x8_sky130_behavioral.vok"],
             "output_buffers_nangate45": [
                 "Nangate45/Nangate45.lef",
                 "Nangate45/Nangate45_tech.lef",
                 "Nangate45/Nangate45_typ.lib",
             ],
-            "make_8x8_2r1w_sky130": ["make_8x8_2r1w_sky130_behavioral.vok"],
-            "make_8x8_sky130": ["make_8x8_sky130_behavioral.vok"],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
