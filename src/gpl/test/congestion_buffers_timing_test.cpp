@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -107,20 +108,26 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   void makePlacer(bool routability = true,
                   bool timing = true,
-                  bool inflation = true)
+                  bool inflation = true,
+                  const std::vector<odb::dbGroup*>& groups = {nullptr},
+                  bool check_density = false)
   {
     options_.routabilityDrivenMode = routability;
     options_.timingDrivenMode = timing;
     options_.timingDrivenCongestionInflation = inflation;
     pbc_ = std::make_shared<PlacerBaseCommon>(
         db_.get(), PlacerBaseVars(options_), &logger_);
-    pb_vec_.push_back(
-        std::make_shared<PlacerBase>(db_.get(), pbc_, &logger_, false));
+    for (auto* group : groups) {
+      pb_vec_.push_back(std::make_shared<PlacerBase>(
+          db_.get(), pbc_, &logger_, check_density, group));
+    }
     const NesterovBaseVars nb_vars(options_);
     nbc_ = std::make_shared<NesterovBaseCommon>(
         nb_vars, pbc_, &logger_, 1, Clusters{});
-    nb_vec_.push_back(
-        std::make_shared<NesterovBase>(nb_vars, pb_vec_[0], nbc_, &logger_));
+    for (const auto& pb : pb_vec_) {
+      nb_vec_.push_back(
+          std::make_shared<NesterovBase>(nb_vars, pb, nbc_, &logger_));
+    }
     rb_ = std::make_shared<RouteBase>(
         RouteBaseVars(options_), db_.get(), &grt_, nbc_, nb_vec_, &logger_);
     tb_ = std::make_shared<TimingBase>(nbc_, &grt_, &resizer_, &logger_);
@@ -315,6 +322,69 @@ TEST_F(TimingRepairIntegrationTest,
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(true);
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       RetainedRepairRefreshesUnchangedMacroOnlyRegion)
+{
+  const auto core = block_->getCoreArea();
+  const int macro_width = 6000;
+  const int split_x = core.xMin() + 2 * macro_width;
+  std::vector<odb::dbGroup*> groups;
+  for (int i = 0; i < 2; ++i) {
+    auto* region = odb::dbRegion::create(
+        block_, ("repair_region_" + std::to_string(i)).c_str());
+    region->setRegionType(odb::dbRegionType::EXCLUSIVE);
+    odb::dbBox::create(region,
+                       i == 0 ? split_x : core.xMin(),
+                       core.yMin(),
+                       i == 0 ? core.xMax() : split_x,
+                       core.yMax());
+    auto* group = odb::dbGroup::create(
+        region, ("repair_domain_" + std::to_string(i)).c_str());
+    group->setType(odb::dbGroupType::VOLTAGE_DOMAIN);
+    groups.push_back(group);
+  }
+  for (auto* inst : block_->getInsts()) {
+    groups[0]->addInst(inst);
+    groups[0]->getRegion()->addInst(inst);
+  }
+  auto* master = odb::dbMaster::create(lib_, "repair_macro");
+  master->setType(odb::dbMasterType::BLOCK);
+  master->setWidth(macro_width);
+  master->setHeight(core.dy() / 2);
+  master->setFrozen();
+  for (int i = 0; i < 4; ++i) {
+    auto* macro = odb::dbInst::create(
+        block_, master, ("repair_macro_" + std::to_string(i)).c_str());
+    // Unlike a single region-sized macro, these cells can move. An asymmetric
+    // placement gives the real Nesterov initialization nonzero density forces.
+    macro->setLocation(core.xMin() + i * 1300, core.yMin() + 3000 + i * 6000);
+    macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    groups[1]->addInst(macro);
+    groups[1]->getRegion()->addInst(macro);
+  }
+  makePlacer(false, true, false, groups, true);
+  ASSERT_FALSE(options_.timingDrivenCongestionInflation);
+  const auto& macro_region = nb_vec_[1];
+  ASSERT_EQ(macro_region->getWhiteSpaceArea(),
+            macro_region->getPb()->macroInstsArea());
+  ASSERT_EQ(macro_region->getStdInstArea(), 0);
+  ASSERT_EQ(macro_region->getTotalFillerArea(), 0);
+  ASSERT_EQ(macro_region->getFillerCnt(), 0);
+  ASSERT_GT(macro_region->getDensityGradSum(), 0);
+  const float density = macro_region->getTargetDensity();
+  ASSERT_TRUE(std::isfinite(density));
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(false);
+  ASSERT_TRUE(std::isfinite(macro_region->getTargetDensity()));
+  EXPECT_EQ(macro_region->getTargetDensity(), density);
+  EXPECT_EQ(macro_region->getMovableArea(),
+            macro_region->getNesterovInstsArea());
+  for (const auto& bin : macro_region->getBins()) {
+    EXPECT_EQ(bin.getTargetDensity(), density);
+  }
 }
 
 TEST_F(TimingRepairIntegrationTest,

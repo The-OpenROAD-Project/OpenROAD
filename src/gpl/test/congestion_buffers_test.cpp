@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cfenv>
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -57,6 +59,7 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
     options_.timingDrivenCongestionInflation = true;
+    configureOptions();
     const PlacerBaseVars pb_vars(options_);
     pbc_ = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
     const NesterovBaseVars nb_vars(options_);
@@ -64,7 +67,7 @@ class CongestionBuffersTest : public tst::IntegratedFixture
         nb_vars, pbc_, &logger_, 1, Clusters{});
     for (auto* group : placementGroups()) {
       auto pb = std::make_shared<PlacerBase>(
-          db_.get(), pbc_, &logger_, false, group);
+          db_.get(), pbc_, &logger_, checkInitialDensity(), group);
       nb_vec_.push_back(
           std::make_shared<NesterovBase>(nb_vars, pb, nbc_, &logger_));
     }
@@ -81,6 +84,8 @@ class CongestionBuffersTest : public tst::IntegratedFixture
   }
 
   virtual void configureDesign() {}
+  virtual void configureOptions() {}
+  virtual bool checkInitialDensity() const { return false; }
   virtual std::vector<odb::dbGroup*> placementGroups() { return {nullptr}; }
 
   void makeRoutingSeedNet()
@@ -651,6 +656,153 @@ TEST_F(MovableMacroBuffersTest, LiveMacroChargeUsesCurrentTargetDensity)
   }
   nbc_->resizeGCell(macro_);
   EXPECT_EQ(liveInflationArea(), 0);
+}
+
+class MacroOnlyDensityTest : public CongestionBuffersTest
+{
+ protected:
+  void configureDesign() override
+  {
+    const auto core = block_->getCoreArea();
+    const int split_x = core.xMin() + 2000;
+    for (int i = 0; i < 2; ++i) {
+      auto* region = odb::dbRegion::create(
+          block_, ("density_region_" + std::to_string(i)).c_str());
+      region->setRegionType(odb::dbRegionType::EXCLUSIVE);
+      odb::dbBox::create(region,
+                         i == 0 ? core.xMin() : split_x,
+                         core.yMin(),
+                         i == 0 ? split_x : core.xMax(),
+                         core.yMax());
+      auto* group = odb::dbGroup::create(
+          region, ("density_domain_" + std::to_string(i)).c_str());
+      group->setType(odb::dbGroupType::VOLTAGE_DOMAIN);
+      groups_.push_back(group);
+    }
+    for (auto* inst : block_->getInsts()) {
+      groups_[1]->addInst(inst);
+      groups_[1]->getRegion()->addInst(inst);
+    }
+    auto* master = odb::dbMaster::create(lib_, "density_macro");
+    master->setType(odb::dbMasterType::BLOCK);
+    master->setWidth(2000 + macroWidthExcess());
+    master->setHeight(core.dy());
+    master->setFrozen();
+    auto* macro = odb::dbInst::create(block_, master, "density_macro");
+    macro->setLocation(core.xMin(), core.yMin());
+    macro->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    groups_[0]->addInst(macro);
+    groups_[0]->getRegion()->addInst(macro);
+  }
+
+  void configureOptions() override
+  {
+    options_.timingDrivenCongestionInflation = false;
+  }
+
+  bool checkInitialDensity() const override { return true; }
+  virtual int macroWidthExcess() const { return 0; }
+  std::vector<odb::dbGroup*> placementGroups() override { return groups_; }
+
+  void expectDensityUpdateRejected()
+  {
+    const float density = nb_->getTargetDensity();
+    const int64_t movable_area = nb_->getMovableArea();
+    ASSERT_TRUE(std::isfinite(density));
+    std::feclearexcept(FE_ALL_EXCEPT);
+    EXPECT_THROW(nb_->updateTimingDrivenDensity(), std::runtime_error);
+    EXPECT_EQ(std::fetestexcept(FE_INVALID | FE_DIVBYZERO), 0);
+    ASSERT_TRUE(std::isfinite(nb_->getTargetDensity()));
+    EXPECT_EQ(nb_->getTargetDensity(), density);
+    EXPECT_EQ(nb_->getMovableArea(), movable_area);
+    for (const auto& bin : nb_->getBins()) {
+      EXPECT_EQ(bin.getTargetDensity(), density);
+    }
+    // This conversion must remain valid after the rejected update as well.
+    EXPECT_GE(nb_->getNesterovInstsArea(), 0);
+    EXPECT_EQ(std::fetestexcept(FE_INVALID | FE_DIVBYZERO), 0);
+  }
+
+  std::vector<odb::dbGroup*> groups_;
+};
+
+TEST_F(MacroOnlyDensityTest,
+       RetainedCreationInOtherRegionPreservesMacroOnlyDensity)
+{
+  ASSERT_FALSE(options_.timingDrivenCongestionInflation);
+  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->macroInstsArea());
+  ASSERT_EQ(nb_->getStdInstArea(), 0);
+  ASSERT_EQ(nb_->getTotalFillerArea(), 0);
+  ASSERT_EQ(nb_->getFillerCnt(), 0);
+  const float macro_density = nb_->getTargetDensity();
+  ASSERT_TRUE(std::isfinite(macro_density));
+  const auto& standard_region = nb_vec_[1];
+  const int64_t previous_standard_area = standard_region->getStdInstArea();
+  const float previous_standard_density = standard_region->getTargetDensity();
+  auto* buffer = insertBuffer("retained_in_other_region", 40000, groups_[1]);
+  ASSERT_NE(cellFor(buffer), nullptr);
+  const int64_t buffer_area = cellArea(cellFor(buffer));
+  ASSERT_GT(buffer_area, 0);
+  ASSERT_EQ(standard_region->getNewInstances().size(), 1);
+
+  // The retained-repair caller refreshes every domain, including domains
+  // without creations. Run its callback-state and density-refresh sequence.
+  for (const auto& nb : nb_vec_) {
+    nb->updateGCellState(1.0f, 1.0f);
+    std::feclearexcept(FE_ALL_EXCEPT);
+    nb->updateTimingDrivenDensity();
+    ASSERT_TRUE(std::isfinite(nb->getTargetDensity()));
+    EXPECT_EQ(nb->getMovableArea(),
+              nb->getNesterovInstsArea() + nb->getTotalFillerArea());
+    EXPECT_EQ(std::fetestexcept(FE_INVALID | FE_DIVBYZERO), 0);
+    for (const auto& bin : nb->getBins()) {
+      EXPECT_EQ(bin.getTargetDensity(), nb->getTargetDensity());
+    }
+    EXPECT_TRUE(nb->getNewInstances().empty());
+  }
+  EXPECT_EQ(nb_->getTargetDensity(), macro_density);
+  EXPECT_EQ(standard_region->getStdInstArea(),
+            previous_standard_area + buffer_area);
+  EXPECT_GT(standard_region->getTargetDensity(), previous_standard_density);
+  for (int refresh = 0; refresh < 3; ++refresh) {
+    nb_->updateTimingDrivenDensity();
+    EXPECT_EQ(nb_->getTargetDensity(), macro_density);
+  }
+}
+
+TEST_F(MacroOnlyDensityTest, ZeroAvailableAreaWithRetainedCellRejectsDensity)
+{
+  ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->macroInstsArea());
+  auto* buffer = insertBuffer("no_space_for_retained_cell", 1000, groups_[0]);
+  ASSERT_NE(cellFor(buffer), nullptr);
+  ASSERT_GT(cellArea(cellFor(buffer)), 0);
+  nb_->updateGCellState(1.0f, 1.0f);
+  ASSERT_TRUE(nb_->getNewInstances().empty());
+  expectDensityUpdateRejected();
+  EXPECT_GT(nb_->getStdInstArea(), 0);
+}
+
+class OverfullMacroDensityTest : public MacroOnlyDensityTest
+{
+ protected:
+  int macroWidthExcess() const override { return 1; }
+};
+
+TEST_F(OverfullMacroDensityTest, NegativeAvailableAreaRejectsDensity)
+{
+  // This real geometry exceeds 100% by less than the initializer's 0.1%
+  // tolerance, so construction with check_density enabled must accept it.
+  ASSERT_GT(nb_->getPb()->macroInstsArea(), nb_->getWhiteSpaceArea());
+  ASSERT_LT(static_cast<double>(nb_->getPb()->macroInstsArea())
+                / nb_->getWhiteSpaceArea(),
+            1.001);
+  ASSERT_EQ(nb_->getStdInstArea(), 0);
+  // Discard the sub-cell filler remainder from initial density adjustment.
+  // Even a zero numerator cannot make negative available area valid.
+  nb_->cutFillerCells(nb_->getTotalFillerArea());
+  ASSERT_EQ(nb_->getTotalFillerArea(), 0);
+  ASSERT_EQ(nb_->getFillerCnt(), 0);
+  expectDensityUpdateRejected();
 }
 
 }  // namespace

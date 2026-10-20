@@ -2957,10 +2957,27 @@ void NesterovBase::updateTimingDrivenDensity()
   // Macros contribute targetDensity * macro area to the density field.
   // Solve D * whitespace = std + fillers + D * macros for D.
   const int64_t available_area = getWhiteSpaceArea() - pb_->macroInstsArea();
-  // Preserve the placer's existing float rounding when no macros are present.
-  // A one-ULP target change perturbs the subsequent optimization trajectory.
-  setTargetDensity(static_cast<float>(stdInstsArea_ + getTotalFillerArea())
-                   / static_cast<float>(available_area));
+  if (available_area <= 0) {
+    // With only macros filling the region, the density equation holds for
+    // the current density. Any other nonpositive-space case is unsatisfiable.
+    if (available_area < 0 || stdInstsArea_ != 0 || getTotalFillerArea() != 0) {
+      auto* block = pb_->db()->getChip()->getBlock();
+      log_->error(GPL,
+                  334,
+                  "Cannot update timing-driven density in region '{}': "
+                  "non-macro available area is {:.3f} um^2, standard-cell area "
+                  "is {:.3f} um^2, and filler area is {:.3f} um^2.",
+                  pb_->getGroup() ? pb_->getGroup()->getName() : "top-level",
+                  block->dbuAreaToMicrons(available_area),
+                  block->dbuAreaToMicrons(stdInstsArea_),
+                  block->dbuAreaToMicrons(getTotalFillerArea()));
+    }
+  } else {
+    // Preserve the placer's existing float rounding when no macros are present.
+    // A one-ULP target change perturbs the subsequent optimization trajectory.
+    setTargetDensity(static_cast<float>(stdInstsArea_ + getTotalFillerArea())
+                     / static_cast<float>(available_area));
+  }
   setMovableArea(getNesterovInstsArea() + getTotalFillerArea());
   updateDensitySize();
 }
