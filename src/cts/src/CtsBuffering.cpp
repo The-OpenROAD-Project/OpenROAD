@@ -27,6 +27,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
@@ -169,12 +170,13 @@ class ClockBuffering
     slew_limit_ = options_->getMaxCharSlew();
     prepareCells();
     readTree();
+    prepareInputDriver();
     tightenModeSlew();
     if (!(slew_limit_ > 0) || !std::isfinite(slew_limit_)) {
       throw std::runtime_error("Bottom-up CTS requires a positive slew limit");
     }
-    prepareInputSlew();
     prepareWireModel();
+    prepareInputSlew();
     // Like the H-tree's threshold, zero means no wire-length limit. The
     // default simple-segment distance is not a constraint in LUT mode.
     double max_length = options_->getMaxWl() == 0
@@ -197,6 +199,9 @@ class ClockBuffering
     auto reference = evaluateReference(model, dummy);
     const size_t initial_size = nodes_.size();
     prepareSites();
+    // The reference keeps its original locations when selected. Candidates
+    // instead need the ingress bound at their legalized root location.
+    prepareInputSlew();
     const auto plan = choosePlan(model, choices, dummy, reference);
     nodes_ = plan.nodes;
     restoreLocations();
@@ -565,10 +570,11 @@ class ClockBuffering
       if (exists) {
         slew_limit_ = std::min(slew_limit_, static_cast<double>(limit));
       }
-      for (const auto* clock : sdc->clocks()) {
-        if (clock_->getSdcName() != clock->name()) {
-          continue;
-        }
+      const auto* clocks = mode->clkNetwork()->clocks(driver_pin_);
+      if (clocks == nullptr) {
+        continue;
+      }
+      for (const auto* clock : *clocks) {
         for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
           sdc->slewLimit(
               clock, rf, sta::PathClkOrData::clk, max, limit, exists);
@@ -580,23 +586,8 @@ class ClockBuffering
     }
   }
 
-  void prepareInputSlew()
+  void prepareInputDriver()
   {
-    input_slew_ = slew_limit_;
-    const auto include = [this](double value) {
-      if (!std::isfinite(value) || value < 0) {
-        throw std::runtime_error("Invalid input slew for bottom-up CTS");
-      }
-      input_slew_ = std::max(input_slew_, value);
-    };
-    for (auto* mode : sta_->modes()) {
-      const auto* clock = mode->sdc()->findClock(clock_->getSdcName());
-      if (clock != nullptr) {
-        for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
-          include(clock->slew(rf, sta::MinMax::max()));
-        }
-      }
-    }
     auto* driver = clock_->getDriverPin();
     if (driver == nullptr) {
       driver = clock_->getNetObj()->getFirstOutput();
@@ -607,18 +598,75 @@ class ClockBuffering
     if (driver == nullptr) {
       throw std::runtime_error("Missing input driver for bottom-up CTS");
     }
-    auto* vertex
-        = sta_->ensureGraph()->pinDrvrVertex(network_->dbToSta(driver));
+    driver_pin_ = network_->dbToSta(driver);
+    auto* vertex = sta_->ensureGraph()->pinDrvrVertex(driver_pin_);
     if (vertex == nullptr) {
       throw std::runtime_error("Missing input timing vertex for bottom-up CTS");
     }
-    // Include a propagated gate/port input as well as ideal clock transition.
-    // Internal stages are checked against the output limit, but the first
-    // stage must not assume its upstream source already meets that limit.
+    if (!network_->isPlaced(driver_pin_)) {
+      throw std::runtime_error("Unplaced input driver for bottom-up CTS");
+    }
+    const auto point = network_->location(driver_pin_);
+    source_point_ = {static_cast<double>(point.getX()),
+                     static_cast<double>(point.getY())};
+    const auto include = [this](double value) {
+      if (!std::isfinite(value) || value < 0) {
+        throw std::runtime_error("Invalid input slew for bottom-up CTS");
+      }
+      source_slew_ = std::max(source_slew_, value);
+    };
+    // This refreshes delays and each mode's physical clock network, including
+    // clock propagation through the macro/register split's source buffer.
     include(sta::delayAsFloat(sta_->slew(vertex,
                                          sta::RiseFallBoth::riseFall(),
                                          sta_->scenes(),
                                          sta::MinMax::max())));
+    for (auto* mode : sta_->modes()) {
+      const auto* clocks = mode->clkNetwork()->clocks(driver_pin_);
+      if (clocks == nullptr) {
+        continue;
+      }
+      // Use physical connectivity, not the first mode's SDC name. This also
+      // covers aliases and explicit -clk_nets roots with no stored name.
+      for (const auto* clock : *clocks) {
+        for (const auto* rf : {sta::RiseFall::rise(), sta::RiseFall::fall()}) {
+          include(clock->slew(rf, sta::MinMax::max()));
+        }
+      }
+    }
+  }
+
+  void prepareInputSlew()
+  {
+    const auto& root = nodes_.at(root_);
+    const auto cell
+        = std::ranges::find(cells_, root.fixed_master, &BufferCell::name);
+    if (cell == cells_.end()) {
+      throw std::runtime_error("Missing fixed root cell for bottom-up CTS");
+    }
+    auto* master = db_->findMaster(cell->name.c_str());
+    sta::LibertyPort *input, *output;
+    cell->output->libertyCell()->bufferPorts(input, output);
+    const auto pin = master->findMTerm(input->name().c_str())->getBBox();
+    odb::Rect boundary;
+    master->getPlacementBoundary(boundary);
+    // DB writing uses R0 and setLocation, so include the input pin's offset
+    // from the placement boundary, not just the abstract root origin.
+    const double x = root.point.x - boundary.xMin() - source_point_.x;
+    const double y = root.point.y - boundary.yMin() - source_point_.y;
+    const double length
+        = std::max(std::abs(x + pin.xMin()), std::abs(x + pin.xMax()))
+          + std::max(std::abs(y + pin.yMin()), std::abs(y + pin.yMax()));
+    // The fixed root's input capacitance bounds all scenes and transitions.
+    // Charge the full source wire capacitance with the worst-scene RC before
+    // characterizing any stage at this common input-slew bound.
+    const double ingress = 2.2 * res_per_dbu_ * length
+                           * (cell->input_cap + cap_per_dbu_ * length);
+    const double slew = source_slew_ + ingress;
+    if (!std::isfinite(slew) || slew < 0) {
+      throw std::runtime_error("Invalid ingress slew for bottom-up CTS");
+    }
+    input_slew_ = std::max(slew_limit_, slew);
   }
 
   void prepareWireModel()
@@ -856,6 +904,9 @@ class ClockBuffering
   std::vector<ClockInst*> instances_;
   std::map<ClockInst*, size_t> indices_;
   size_t root_ = 0;
+  sta::Pin* driver_pin_ = nullptr;
+  BufferingPoint source_point_;
+  double source_slew_ = 0;
   double slew_limit_ = 0;
   double input_slew_ = 0;
   double cap_per_dbu_ = 0;
