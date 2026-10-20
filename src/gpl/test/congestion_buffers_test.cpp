@@ -797,9 +797,10 @@ TEST_F(OverfullMacroDensityTest, NegativeAvailableAreaRejectsDensity)
                 / nb_->getWhiteSpaceArea(),
             1.001);
   ASSERT_EQ(nb_->getStdInstArea(), 0);
-  // Discard the sub-cell filler remainder from initial density adjustment.
+  ASSERT_EQ(nb_->getFillerCnt(), 0);
+  // Reconcile the cached filler area with the empty physical filler storage.
   // Even a zero numerator cannot make negative available area valid.
-  nb_->cutFillerCells(nb_->getTotalFillerArea());
+  nb_->cutFillerCells(0);
   ASSERT_EQ(nb_->getTotalFillerArea(), 0);
   ASSERT_EQ(nb_->getFillerCnt(), 0);
   expectDensityUpdateRejected();
