@@ -202,6 +202,7 @@ COMPULSORY_TESTS = [
     "sky130_spm_halo_too_big",
     "sroute_test",
     "stacked_via_merged_enclosure",
+    "supply_port_direction",
     "widthtable",
 ]
 
@@ -425,6 +426,7 @@ filegroup(
                 "ihp_tensorcore/sg13g2_io.lef",
                 "ihp_tensorcore/floorplan.def",
             ],
+            "supply_port_direction": ["supply_port_direction_reload.tcl"],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
