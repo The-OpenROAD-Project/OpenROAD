@@ -123,7 +123,7 @@ global_placement
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
-| `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
+| `-incremental` | Place new instances with existing instances locked, then unlock if needed to reduce overflow. With constrained timing and nonzero signal wire RC, the unlocked pass weights critical nets without resizing or rebuffering, and restores the locked placement if placement-estimated setup worst slack or TNS degrades. The checkpoint includes the newly placed instances, so rollback does not unplace them. This does not guard later legalization, hold timing, or routed timing. Users may need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. |
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |

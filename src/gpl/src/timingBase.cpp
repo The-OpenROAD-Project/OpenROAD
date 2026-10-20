@@ -12,11 +12,16 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
+#include "odb/db.h"
 #include "placerBase.h"
 #include "rsz/Resizer.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
@@ -151,6 +156,10 @@ void TimingBase::setTimingNetsPercentage(float percentage)
 bool TimingBase::executeTimingDriven(bool run_journal_restore,
                                      bool enable_repair_timing)
 {
+  if (incremental_sta_ != nullptr) {
+    return executeIncrementalTimingDriven();
+  }
+
   {
     BOOST_SCOPE_EXIT_ALL(&)
     {
@@ -236,6 +245,126 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
              1,
              "Timing-driven: weighted {} nets.",
              weighted_net_count);
+  return true;
+}
+
+bool TimingBase::executeIncrementalTimingDriven()
+{
+  rs_->getEstimateParasitics()->estimateParasitics(
+      est::ParasiticsSrc::kPlacement);
+  std::vector<std::pair<GNet*, float>> nets;
+  auto network = incremental_sta_->getDbNetwork();
+  for (auto& net : nbc_->getGNets()) {
+    net->setTimingWeight(1.0f);
+    auto db_net = net->getPbNet()->getDbNet();
+    if (db_net == nullptr || db_net->isSpecial()
+        || db_net->getSigType() == odb::dbSigType::CLOCK
+        || net->getGPins().size() < 2) {
+      continue;
+    }
+    const auto sta_net = network->dbToSta(db_net);
+    if (incremental_sta_->isClock(sta_net, incremental_sta_->cmdMode())) {
+      continue;
+    }
+    const float slack = incremental_sta_->slack(sta_net, sta::MinMax::max());
+    if (std::isfinite(slack) && !sta::fuzzyInf(slack)) {
+      nets.emplace_back(net, slack);
+    }
+  }
+  std::ranges::sort(nets, [](const auto& lhs, const auto& rhs) {
+    if (lhs.second != rhs.second) {
+      return lhs.second < rhs.second;
+    }
+    return lhs.first->getPbNet()->getDbNet()->getId()
+           < rhs.first->getPbNet()->getDbNet()->getId();
+  });
+  const auto count
+      = static_cast<size_t>(std::ceil(nets.size() * nets_percentage_ / 100.0));
+  nets.resize(std::min(count, nets.size()));
+  if (nets.empty()) {
+    return false;
+  }
+  const float slack_min
+      = nets[slackRampAnchorIndex(nets.size(), nets_percentage_)].second;
+  const float slack_max = nets.back().second;
+  for (const auto& [net, slack] : nets) {
+    // Unlike the full-placement ramp, a single critical net still needs a
+    // force: incremental edits often affect only a tiny constrained cone.
+    net->setTimingWeight(
+        slack_max <= slack_min
+            ? net_weight_max_
+            : computeTimingNetWeight(
+                  slack, slack_min, slack_max, net_weight_max_));
+  }
+  return true;
+}
+
+IncrementalTimingGuard::IncrementalTimingGuard(
+    sta::dbSta* sta,
+    est::EstimateParasitics* parasitics,
+    odb::dbBlock* block)
+    : sta_(sta), parasitics_(parasitics), block_(block)
+{
+}
+
+IncrementalTimingGuard::Timing IncrementalTimingGuard::measure()
+{
+  parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
+  return {sta_->worstSlack(sta::MinMax::max()),
+          sta_->totalNegativeSlack(sta::MinMax::max())};
+}
+
+bool IncrementalTimingGuard::checkpoint()
+{
+  active_ = false;
+  locations_.clear();
+  // Preserve wirelength-only operation for designs without timing data.
+  if (sta::fuzzyInf(sta_->worstSlack(sta::MinMax::max()))) {
+    return false;
+  }
+  for (const auto scene : sta_->scenes()) {
+    if (parasitics_->wireSignalCapacitance(scene) <= 0.0
+        || parasitics_->wireSignalResistance(scene) <= 0.0) {
+      return false;
+    }
+  }
+  baseline_ = measure();
+  if (!std::isfinite(baseline_.worst_slack)
+      || sta::fuzzyInf(baseline_.worst_slack)
+      || !std::isfinite(baseline_.total_negative_slack)) {
+    return false;
+  }
+  for (auto inst : block_->getInsts()) {
+    int x;
+    int y;
+    inst->getLocation(x, y);
+    locations_.push_back({inst, x, y});
+  }
+  active_ = true;
+  return true;
+}
+
+bool IncrementalTimingGuard::restoreIfWorse()
+{
+  if (!active_) {
+    return false;
+  }
+  const Timing candidate = measure();
+  active_ = false;
+  if (std::isfinite(candidate.worst_slack)
+      && !sta::fuzzyInf(candidate.worst_slack)
+      && std::isfinite(candidate.total_negative_slack)
+      && !sta::fuzzyLess(candidate.worst_slack, baseline_.worst_slack)
+      && !sta::fuzzyLess(candidate.total_negative_slack,
+                         baseline_.total_negative_slack)) {
+    return false;
+  }
+  for (const auto& [inst, x, y] : locations_) {
+    inst->setLocation(x, y);
+  }
+  // Rebuild RC after restoring coordinates so the caller never sees timing
+  // cached for the rejected placement.
+  measure();
   return true;
 }
 

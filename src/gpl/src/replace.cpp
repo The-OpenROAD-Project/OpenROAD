@@ -216,6 +216,9 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   // capped at 600 iterations so it can't run away if it fails to converge.
   PlaceOptions locked_options = options;
   locked_options.nesterovPlaceMaxIter = 600;
+  // Incremental placement preserves the already optimized netlist. Timing
+  // reweighting in phase 2 does not run repair_design or fully_rebuffer.
+  locked_options.timingDrivenMode = false;
 
   doInitialPlace(threads, locked_options);
 
@@ -260,10 +263,32 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
       = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
 
   if (phase1_diverged || phase1_missed_target) {
+    IncrementalTimingGuard timing_guard(
+        sta_, rs_->getEstimateParasitics(), block);
+    const bool timing_aware = timing_guard.checkpoint();
+    if (timing_aware) {
+      tb_->setIncrementalMode(sta_);
+      tb_->executeTimingDriven(true);
+      nbc_->refreshDeviceNetWeights();
+      np_->getNpVars().timingDrivenMode = true;
+      np_->getNpVars().keepResizeBelowOverflow = -1.0f;
+      log_->info(GPL, 196, "Incremental placement timing protection enabled.");
+    }
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
-    doNesterovPlace(threads, options, iter + 1);
+    PlaceOptions unlocked_options = options;
+    unlocked_options.timingDrivenMode = false;
+    doNesterovPlace(threads, unlocked_options, iter + 1);
+    if (timing_guard.restoreIfWorse()) {
+      log_->warn(GPL,
+                 197,
+                 "Unlocked incremental placement degraded setup worst slack or "
+                 "TNS. Restoring the locked placement.");
+      // The solver still holds rejected coordinates, so discard its state.
+      reset();
+      reportHpwlMetric();
+    }
   }
 }
 

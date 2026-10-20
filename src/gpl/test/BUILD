@@ -57,6 +57,7 @@ TESTS = [
 PASSFAIL_TESTS = [
     "incremental02",
     "incremental03",
+    "incremental_timing",
     "place_ios_rd",
     "place_ios_td",
 ]
@@ -327,6 +328,23 @@ cc_test(
     env = GPU_ENV_OFF,
     deps = [
         "//src/gpl:gpl_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "incremental_timing_test",
+    srcs = ["incremental_timing_test.cpp"],
+    data = ["cpp/incremental_timing.v"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

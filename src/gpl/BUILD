@@ -183,6 +183,7 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
+        "//src/est",
         "//src/grt",
         "//src/odb/src/db",
         "//src/ppl",

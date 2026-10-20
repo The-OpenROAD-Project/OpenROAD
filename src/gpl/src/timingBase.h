@@ -7,6 +7,19 @@
 #include <memory>
 #include <vector>
 
+namespace est {
+class EstimateParasitics;
+}
+
+namespace odb {
+class dbBlock;
+class dbInst;
+}  // namespace odb
+
+namespace sta {
+class dbSta;
+}
+
 namespace grt {
 class GlobalRouter;
 }
@@ -58,6 +71,10 @@ class TimingBase
   bool executeTimingDriven(bool run_journal_restore,
                            bool enable_repair_timing = false);
 
+  // Incremental placement must not change the existing buffer tree or sizes.
+  void setIncrementalMode(sta::dbSta* sta) { incremental_sta_ = sta; }
+  bool isIncrementalMode() const { return incremental_sta_ != nullptr; }
+
  private:
   grt::GlobalRouter* grt_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
@@ -71,6 +88,40 @@ class TimingBase
   bool repair_timing_ = false;
   float repair_tns_end_percent_ = 0.01;
   void initTimingOverflowChk();
+  bool executeIncrementalTimingDriven();
+  sta::dbSta* incremental_sta_ = nullptr;
+};
+
+// Check the optional unlocked pass against the mandatory locked placement.
+// Both measurements use placement parasitics, not potentially stale routes.
+class IncrementalTimingGuard
+{
+ public:
+  IncrementalTimingGuard(sta::dbSta* sta,
+                         est::EstimateParasitics* parasitics,
+                         odb::dbBlock* block);
+  bool checkpoint();
+  bool restoreIfWorse();
+
+ private:
+  struct Location
+  {
+    odb::dbInst* inst;
+    int x;
+    int y;
+  };
+  struct Timing
+  {
+    float worst_slack;
+    float total_negative_slack;
+  };
+  Timing measure();
+  sta::dbSta* sta_;
+  est::EstimateParasitics* parasitics_;
+  odb::dbBlock* block_;
+  std::vector<Location> locations_;
+  Timing baseline_{};
+  bool active_ = false;
 };
 
 // Bottom of the timing weight ramp, as a percentage of all timing-constrained
