@@ -3,9 +3,11 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 
+#include "clusterEngine.h"
 #include "gtest/gtest.h"
 #include "mpl/rtl_mp.h"
 #include "odb/db.h"
@@ -76,7 +78,7 @@ class TestMacroPreflight : public tst::DbFixture
     return stream.str();
   }
 
-  void expectPassUnchanged(odb::Rect fence = {},
+  void expectPassUnchanged(std::optional<odb::Rect> fence = std::nullopt,
                            int width = 0,
                            int height = 0,
                            bool pin_aware = false)
@@ -88,7 +90,7 @@ class TestMacroPreflight : public tst::DbFixture
   }
 
   void expectErrorUnchanged(const char* id,
-                            odb::Rect fence = {},
+                            std::optional<odb::Rect> fence = std::nullopt,
                             int width = 0,
                             int height = 0,
                             bool pin_aware = false)
@@ -176,6 +178,48 @@ TEST_F(TestMacroPreflight, OversizedMacroIncludingHalo)
   expectPassUnchanged();
   macro->setHalo(600, 0, 600, 0, false);
   expectErrorUnchanged("MPL-0006");
+}
+
+TEST_F(TestMacroPreflight, ExplicitMalformedFencesDoNotDefaultToCore)
+{
+  createInst("macro", 5000, 5000);
+  odb::Rect fences[6];
+  fences[1].reset(2000, 0, 2000, 10000);
+  fences[2].reset(0, 2000, 10000, 2000);
+  fences[3].reset(8000, 0, 2000, 10000);
+  fences[4].reset(0, 8000, 10000, 2000);
+  fences[5].reset(8000, 8000, 2000, 2000);
+  for (int phase = 0; phase < 2; ++phase) {
+    if (phase == 1) {
+      placer_->setMinChannelSize(400, 800);
+    }
+    for (const odb::Rect& fence : fences) {
+      expectErrorUnchanged("MPL-0082", fence);
+      expectPassUnchanged();
+    }
+  }
+}
+
+TEST_F(TestMacroPreflight, ReusedTreeClearsDisjointIntersectionOutput)
+{
+  PhysicalHierarchy tree;
+  ClusteringEngine engine(block_, &logger_, nullptr, nullptr);
+  engine.setTree(&tree);
+  engine.setChannel({}, false);
+  const std::string before = snapshot();
+  const odb::Rect core = block_->getCoreArea();
+  const odb::Rect fences[] = {odb::Rect(11000, 1000, 20000, 9000),
+                              odb::Rect(1000, 11000, 9000, 20000),
+                              odb::Rect(11000, 11000, 20000, 20000)};
+  for (const odb::Rect& fence : fences) {
+    tree.global_fence = core;
+    EXPECT_NO_THROW(engine.checkFeasibility());
+    ASSERT_EQ(tree.floorplan_shape, core);
+    tree.global_fence = fence;
+    EXPECT_LOGGER_ERROR(engine.checkFeasibility(), "MPL-0068");
+    EXPECT_EQ(tree.floorplan_shape, odb::Rect());
+    EXPECT_EQ(snapshot(), before);
+  }
 }
 
 TEST_F(TestMacroPreflight, DisjointAndEdgeFencesFailForEmptyDesign)

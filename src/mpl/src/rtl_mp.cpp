@@ -4,6 +4,7 @@
 #include "mpl/rtl_mp.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -89,7 +90,7 @@ bool MacroPlacer::place(const int num_threads,
   return true;
 }
 
-void MacroPlacer::checkMacroPlacement(odb::Rect global_fence,
+void MacroPlacer::checkMacroPlacement(std::optional<odb::Rect> global_fence,
                                       int min_channel_width,
                                       int min_channel_height,
                                       bool pin_aware_channels) const

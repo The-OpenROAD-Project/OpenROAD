@@ -110,7 +110,7 @@ check_macro_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-min_channel_size` | Minimum channel width and height in microns, as for `rtl_macro_placer`. Defaults to zero for this invocation and does not change the placer's settings. Existing instance halos and technology minimum spacing are honored. |
-| `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Global fence coordinates in microns, as for `rtl_macro_placer`. Defaults to the core. A partially overlapping fence is clipped to the core. |
+| `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Global fence coordinates in microns. Supply all four or omit all four to use the core, independently of earlier placement settings. Lower coordinates must be strictly less than upper coordinates after DBU conversion. An explicit empty or reversed fence is an error. A partially overlapping fence is clipped to the core. |
 | `-pin_aware_channels` | Trim channels based on macro pin locations, as for `rtl_macro_placer`. Requires `-min_channel_size`. |
 
 This is an area-feasibility preflight, not a placement-legality or packing proof.

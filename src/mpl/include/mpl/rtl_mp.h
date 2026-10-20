@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -67,7 +68,7 @@ class MacroPlacer
              bool pin_aware_channels);
 
   // Check the placer's pre-clustering rules without changing the database.
-  void checkMacroPlacement(odb::Rect global_fence = {},
+  void checkMacroPlacement(std::optional<odb::Rect> global_fence = std::nullopt,
                            int min_channel_width = 0,
                            int min_channel_height = 0,
                            bool pin_aware_channels = false) const;

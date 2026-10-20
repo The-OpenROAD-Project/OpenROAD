@@ -2,6 +2,8 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 %{
+#include <optional>
+
 #include "ord/OpenRoad.hh"
 #include "mpl/rtl_mp.h"
 #include "MplObserver.h"
@@ -90,13 +92,19 @@ void check_macro_placement_cmd(float fence_lx,
                                float fence_uy,
                                float min_channel_width,
                                float min_channel_height,
-                               bool pin_aware_channels)
+                               bool pin_aware_channels,
+                               bool fence_provided)
 {
   auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  odb::Rect global_fence(block->micronsToDbu(fence_lx),
+  std::optional<odb::Rect> global_fence;
+  if (fence_provided) {
+    global_fence.emplace();
+    // Preserve corner ordering so malformed bounds are not silently normalized.
+    global_fence->reset(block->micronsToDbu(fence_lx),
                          block->micronsToDbu(fence_ly),
                          block->micronsToDbu(fence_ux),
                          block->micronsToDbu(fence_uy));
+  }
   getMacroPlacer()->checkMacroPlacement(
       global_fence,
       block->micronsToDbu(min_channel_width),

@@ -23,7 +23,7 @@ $master setWidth 10000
 $master setHeight 10000
 $master setFrozen
 set macro_a [odb::dbInst_create $block $master macro_a]
-odb::dbInst_create $block $master macro_b
+set macro_b [odb::dbInst_create $block $master macro_b]
 
 # The 5 x 5 um macros exactly fill a 10 x 5 um fence. Moving any fence
 # coordinate inward by one DBU (0.0005 um) must fail the area check.
@@ -32,13 +32,59 @@ proc run_fence_check { fence args } {
   return [check_macro_placement -fence_lx $lx -fence_ly $ly \
     -fence_ux $ux -fence_uy $uy {*}$args]
 }
+proc check_malformed_fences { phase } {
+  set names {-fence_lx -fence_ly -fence_ux -fence_uy}
+  set coordinates {10.125 20.25 20.125 25.25}
+  for { set mask 1 } { $mask < 15 } { incr mask } {
+    set args {}
+    for { set i 0 } { $i < 4 } { incr i } {
+      if { $mask & (1 << $i) } {
+        lappend args [lindex $names $i] [lindex $coordinates $i]
+      }
+    }
+    check_error "$phase partial fence $mask" {
+      check_macro_placement {*}$args
+    } MPL-0081
+  }
+  foreach {name fence} {
+    all_zero {0 0 0 0}
+    zero_width {10.125 20.25 10.125 25.25}
+    zero_height {10.125 20.25 20.125 20.25}
+    reversed_x {20.125 20.25 10.125 25.25}
+    reversed_y {10.125 25.25 20.125 20.25}
+    reversed_both {20.125 25.25 10.125 20.25}
+    sub_dbu_width {10.125 20.25 10.1251 25.25}
+    sub_dbu_height {10.125 20.25 20.125 20.2501}
+  } {
+    check_error "$phase malformed fence $name" {
+      run_fence_check $fence
+    } MPL-0082
+  }
+  check "$phase omitted fence still uses core" { check_macro_placement } true
+}
 set exact_fence {10.125 20.25 20.125 25.25}
 set work_dir [file join [make_result_dir] preflight_artifacts]
 file mkdir $work_dir
 cd $work_dir
 set artifacts_before [lsort [glob -nocomplain * .*]]
+check_malformed_fences initial
+check "no artifacts from initially malformed fences" {
+  lsort [glob -nocomplain * .*]
+} $artifacts_before
+
+# Seed the actual placer with a smaller fence without clustering or annealing.
+$macro_a setLocation 24250 44500
+$macro_b setLocation 34250 44500
+$macro_a setPlacementStatus FIRM
+$macro_b setPlacementStatus FIRM
+rtl_macro_placer -fence_lx 10.125 -fence_ly 20.25 \
+  -fence_ux 11.125 -fence_uy 21.25 -report_directory previous_placer
+$macro_a setPlacementStatus PLACED
+$macro_b setPlacementStatus PLACED
+set artifacts_before [lsort [glob -nocomplain * .*]]
 mpl::set_macro_placement_file unexpected-placement.tcl
 mpl::set_min_channel 1.0 2.0
+check_malformed_fences configured
 
 check "default preflight" { check_macro_placement } true
 check "exact fractional-origin fence" { run_fence_check $exact_fence } true

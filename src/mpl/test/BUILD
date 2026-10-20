@@ -335,6 +335,7 @@ cc_test(
     srcs = ["cpp/TestMacroPreflight.cpp"],
     deps = [
         "//src/mpl",
+        "//src/mpl:mpl_impl",
         "//src/odb/src/db",
         "//src/tst:db_fixture",
         "//src/utl",

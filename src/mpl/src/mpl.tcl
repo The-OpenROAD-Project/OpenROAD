@@ -247,16 +247,25 @@ proc check_macro_placement { args } {
   mpl::check_pin_aware_channels [info exists flags(-pin_aware_channels)] \
     [info exists keys(-min_channel_size)]
 
+  set fence_coordinates {}
   foreach coordinate {lx ly ux uy} {
-    set fence_$coordinate 0.0
     if { [info exists keys(-fence_$coordinate)] } {
-      set fence_$coordinate $keys(-fence_$coordinate)
+      lappend fence_coordinates $keys(-fence_$coordinate)
     }
   }
+  set has_fence [expr { [llength $fence_coordinates] != 0 }]
+  if { $has_fence && [llength $fence_coordinates] != 4 } {
+    utl::error MPL 81 "Specify all four -fence_lx, -fence_ly, -fence_ux and\
+                      -fence_uy coordinates, or omit them all."
+  }
+  if { !$has_fence } {
+    set fence_coordinates {0.0 0.0 0.0 0.0}
+  }
+  lassign $fence_coordinates fence_lx fence_ly fence_ux fence_uy
 
   mpl::check_macro_placement_cmd $fence_lx $fence_ly $fence_ux $fence_uy \
     $min_channel_width $min_channel_height \
-    [info exists flags(-pin_aware_channels)]
+    [info exists flags(-pin_aware_channels)] $has_fence
   return true
 }
 
