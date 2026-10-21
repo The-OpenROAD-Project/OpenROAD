@@ -2,8 +2,11 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstddef>
+#include <map>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "PreChecks.hh"
 #include "db_sta/dbNetwork.hh"
@@ -13,6 +16,8 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Scene.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace rsz {
@@ -105,6 +110,47 @@ TEST_F(TestPreChecks, ImpossibleLimitNamesPinAndCorner)
   EXPECT_NE(message.find("RSZ-0090"), std::string::npos);
   EXPECT_NE(message.find("pin load/A at corner slow"), std::string::npos);
   EXPECT_EQ(message.find("from SDC"), std::string::npos);
+}
+
+TEST_F(TestPreChecks, MissingTargetSlewTiming)
+{
+  for (const auto* rf : sta::RiseFall::range()) {
+    SCOPED_TRACE(rf->name());
+    std::map<sta::TimingArcSet*, sta::TimingArcSeq> saved_arcs;
+    std::size_t removed = 0;
+    auto* library = resizer_.lowestDriveBufferCell()
+                        ->sceneCell(slow_->libertyIndex(sta::MinMax::max()))
+                        ->libertyLibrary();
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      auto* buffer = cell_iter.next();
+      if (buffer->isBuffer()) {
+        for (auto* arc_set : buffer->timingArcSets()) {
+          auto& arcs = arc_set->arcs();
+          saved_arcs.emplace(arc_set, arcs);
+          removed += std::erase_if(arcs, [rf](const auto* arc) {
+            return arc->toEdge()->asRiseFall() == rf;
+          });
+        }
+      }
+    }
+    EXPECT_GT(removed, 0);
+
+    PreChecks checks(&resizer_);
+    testing::internal::CaptureStdout();
+    EXPECT_THROW(checks.checkSlewLimit(pin_, kCap, 1.0f, slow_),
+                 std::runtime_error);
+    const std::string message = testing::internal::GetCapturedStdout();
+    for (auto& [arc_set, arcs] : saved_arcs) {
+      arc_set->arcs() = std::move(arcs);
+    }
+    SCOPED_TRACE(message);
+    EXPECT_NE(message.find("RSZ-3247"), std::string::npos);
+    EXPECT_NE(message.find("pin load/A"), std::string::npos);
+    EXPECT_NE(message.find("corner slow"), std::string::npos);
+    EXPECT_NE(message.find(rf->name()), std::string::npos);
+    EXPECT_NO_THROW(checks.checkSlewLimit(pin_, kCap, 1.0f, slow_));
+  }
 }
 
 }  // namespace

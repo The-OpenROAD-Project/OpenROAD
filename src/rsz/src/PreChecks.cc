@@ -60,6 +60,15 @@ void PreChecks::checkSlewLimit(const sta::Pin* load_pin,
     }
     sta::Slew input_slews[sta::RiseFall::index_count];
     for (int rf_index : sta::RiseFall::rangeIndex()) {
+      if (counts[rf_index] == 0) {
+        logger_->error(RSZ,
+                       3247,
+                       "Cannot check the slew limit for pin {} at corner {}: "
+                       "no buffer timing models for {} transitions.",
+                       resizer_->dbNetwork()->pathName(load_pin),
+                       corner->name(),
+                       sta::RiseFall::find(rf_index)->name());
+      }
       input_slews[rf_index] = target_slews[rf_index] / counts[rf_index];
     }
     auto buffer_slew = [&](LibertyCell* buffer) -> float {
