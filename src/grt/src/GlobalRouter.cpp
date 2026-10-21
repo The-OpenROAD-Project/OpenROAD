@@ -781,6 +781,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "routing source is detailed routing.");
   }
 
+  // CUGR's overflow relief also moves clean nets; check them again later.
+  auto add_moved_nets = [&](const std::vector<odb::dbNet*>& moved) {
+    std::unordered_set<odb::dbNet*> listed(nets_to_repair.begin(),
+                                           nets_to_repair.end());
+    for (odb::dbNet* db_net : moved) {
+      if (listed.insert(db_net).second) {
+        nets_to_repair.push_back(db_net);
+      }
+    }
+  };
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -807,7 +817,11 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       // Flush reroutes queued by failed re-adoptions; no IncrementalGRoute
       // scope exists here, so report congestion directly.
       if (use_cugr_ && !dirty_nets_.empty()) {
-        updateDirtyRoutes(/*save_guides=*/true);
+        std::vector<odb::dbNet*> moved;
+        for (Net* net : updateDirtyRoutes(/*save_guides=*/true)) {
+          moved.push_back(net->getDbNet());
+        }
+        add_moved_nets(moved);
         reportIncrementalCongestion();
       }
       // run again antenna checker
@@ -833,16 +847,11 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      // Nets the router also moved, such as an overflow relief's, are checked
-      // again too.
-      const std::unordered_set<odb::dbNet*> listed(nets_to_repair.begin(),
-                                                   nets_to_repair.end());
-      for (odb::dbNet* db_net : incr_groute.updateRoutes()) {
-        if (!listed.contains(db_net)) {
-          nets_to_repair.push_back(db_net);
-        }
-      }
+      const std::vector<odb::dbNet*> rerouted = incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
+      if (use_cugr_) {
+        add_moved_nets(rerouted);
+      }
     }
     repair_antennas_->clearViolations();
     itr++;
