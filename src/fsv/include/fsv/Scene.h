@@ -4,8 +4,10 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "fsv/Geometry.h"
+#include "fsv/Stack.h"
 
 namespace fsv {
 
@@ -17,22 +19,35 @@ class SpatialIndex;
 class Scene
 {
  public:
+  // A uniform dielectric of relative permittivity eps_r.
   explicit Scene(const Geometry& geometry, double eps_r = 1.0);
+  // The planar dielectrics of a process stack. Throws std::invalid_argument
+  // if a permittivity is not positive, if the dielectrics are not in
+  // strictly increasing order of their tops, or if the stack has conformal
+  // dielectrics, which are not supported yet.
+  Scene(const Geometry& geometry, const Stack& stack);
   ~Scene();
 
   Scene(const Scene&) = delete;
   Scene& operator=(const Scene&) = delete;
 
   const Geometry& geometry() const { return geometry_; }
-  // Relative permittivity of the (uniform) dielectric.
-  double epsR() const { return eps_r_; }
+  // Relative permittivity at height z; on an interface, the one above.
+  double epsAt(double z) const;
+  // Planar interfaces in increasing z; empty for a uniform dielectric.
+  const std::vector<Stack::PlanarInterface>& interfaces() const
+  {
+    return interfaces_;
+  }
   // Smallest box dimension, which scales the capture distance.
   double minDimension() const { return min_dimension_; }
   const SpatialIndex& index() const { return *index_; }
 
  private:
   const Geometry& geometry_;
-  double eps_r_;
+  // Permittivity below the first interface (everywhere, when uniform).
+  double base_eps_;
+  std::vector<Stack::PlanarInterface> interfaces_;
   double min_dimension_;
   std::unique_ptr<SpatialIndex> index_;
 };

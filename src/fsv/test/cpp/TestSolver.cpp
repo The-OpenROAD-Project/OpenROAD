@@ -4,10 +4,13 @@
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
+#include "fsv/Stack.h"
 #include "gtest/gtest.h"
 
 namespace fsv {
@@ -164,6 +167,171 @@ TEST(Solver, HopGuardFailsSolve)
   EXPECT_THROW(solver.solve(scene, 1, SolveOptions{}), std::invalid_argument);
   // The solver stays usable after a failed solve.
   EXPECT_GT(solver.solve(scene, net, SolveOptions{}).total(), 0);
+}
+
+// A planar stack from layer tops and permittivities, bottom-up from the
+// ground plane, with the given background above.
+Stack planarStack(const std::vector<std::pair<double, double>>& layers,
+                  const double background)
+{
+  Stack stack;
+  stack.technology = "test";
+  stack.background_eps = background;
+  double bottom = 0;
+  for (const auto& [top, eps] : layers) {
+    stack.dielectrics.push_back(
+        {.name = "D", .bottom = bottom, .top = top, .eps = eps});
+    bottom = top;
+  }
+  return stack;
+}
+
+// ILD (2.7) up to 0.8, an etch stop (7.0) to 1.0, then 3.9 above: one wire
+// below the etch stop and one above it.
+Stack etchStopStack(const double scale = 1.0)
+{
+  return planarStack({{0.8, 2.7 * scale}, {1.0, 7.0 * scale}}, 3.9 * scale);
+}
+
+Geometry wiresAcrossEtchStop()
+{
+  Geometry geometry;
+  geometry.addNet("lower");
+  geometry.addNet("upper");
+  geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  geometry.addBox(1, {{0, 0.3, 1.1}, {2, 0.5, 1.3}});
+  return geometry;
+}
+
+// A stack whose layers share one permittivity has no interfaces and matches
+// the uniform scene.
+TEST(Solver, EqualPermittivityStackMatchesUniform)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Stack stack = planarStack({{0.8, 3.9}, {1.0, 3.9}}, 3.9);
+  const Scene layered(geometry, stack);
+  EXPECT_TRUE(layered.interfaces().empty());
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(layered, 0, options);
+  const CapRow b = solver.solve(Scene(geometry, 3.9), 0, options);
+  EXPECT_EQ(a.cap, b.cap);
+  EXPECT_EQ(a.ground, b.ground);
+}
+
+// The Maxwell matrix stays symmetric across interfaces, and each row sums to
+// zero.
+TEST(Solver, ReciprocityAcrossInterfaces)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(geometry, etchStopStack());
+  ASSERT_EQ(scene.interfaces().size(), 2u);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  const CapRow r0 = solver.solve(scene, 0, options);
+  const CapRow r1 = solver.solve(scene, 1, options);
+  EXPECT_LT(r0.cap[1], 0);
+  EXPECT_NEAR(r0.cap[1], r1.cap[0], 4 * std::hypot(r0.sigma[1], r1.sigma[0]));
+  for (const CapRow& r : {r0, r1}) {
+    EXPECT_NEAR(r.cap[0] + r.cap[1] + r.ground,
+                0,
+                4 * (r.sigma[0] + r.sigma[1] + r.ground_sigma));
+  }
+}
+
+// Scaling every permittivity scales the capacitances exactly: the tables
+// depend only on ratios, so the walks are identical.
+TEST(Solver, PermittivityScaling)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(geometry, etchStopStack()), 0, options);
+  const CapRow b
+      = solver.solve(Scene(geometry, etchStopStack(2.0)), 0, options);
+  for (int net = 0; net < 2; net++) {
+    EXPECT_NEAR(b.cap[net], 2 * a.cap[net], 1e-12 * std::abs(a.cap[net]));
+  }
+  EXPECT_EQ(a.hops, b.hops);
+}
+
+TEST(Solver, LayeredDeterministicAcrossThreads)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(geometry, etchStopStack());
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  const CapRow one = Solver({.threads = 1}).solve(scene, 0, options);
+  const CapRow many = Solver({.threads = 6}).solve(scene, 0, options);
+  EXPECT_EQ(one.cap, many.cap);
+  EXPECT_EQ(one.hops, many.hops);
+}
+
+// Panel discretization bias of the two-dielectric tables, end to end: 32 and
+// 64 panels agree within the statistical error plus 0.3%.
+TEST(Solver, LayeredPanelConvergence)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(geometry, etchStopStack());
+  SolveOptions options;
+  options.tol_total = 0.001;
+  const CapRow coarse = Solver({.threads = 8}).solve(scene, 0, options);
+  const CapRow fine
+      = Solver({.threads = 8, .panels = 64}).solve(scene, 0, options);
+  const double sigma = std::hypot(coarse.sigma[0], fine.sigma[0]);
+  EXPECT_NEAR(coarse.total(), fine.total(), 4 * sigma + 0.003 * fine.total());
+}
+
+TEST(Solver, RejectsPanelsNotMultipleOf16)
+{
+  EXPECT_THROW(Solver({.panels = 24}), std::invalid_argument);
+  EXPECT_THROW(Solver({.panels = 0}), std::invalid_argument);
+  EXPECT_NO_THROW(Solver({.panels = 48}));
+}
+
+TEST(Solver, RejectsBadStacks)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  for (const double eps : {0.0, -1.0, std::nan("")}) {
+    Stack layer = etchStopStack();
+    layer.dielectrics.back().eps = eps;
+    EXPECT_THROW(Scene(geometry, layer), std::invalid_argument) << eps;
+    Stack background = etchStopStack();
+    background.background_eps = eps;
+    EXPECT_THROW(Scene(geometry, background), std::invalid_argument) << eps;
+  }
+  Stack unordered = etchStopStack();
+  unordered.dielectrics.back().top = unordered.dielectrics.front().top;
+  EXPECT_THROW(Scene(geometry, unordered), std::invalid_argument);
+}
+
+// The scene's interface lookup agrees with the stack's, on the interfaces
+// (where both take the permittivity above) and between them.
+TEST(Solver, SceneEpsMatchesStack)
+{
+  const Stack stack = etchStopStack();
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(geometry, stack);
+  for (const Stack::Dielectric& d : stack.dielectrics) {
+    for (const double z : {d.bottom, 0.5 * (d.bottom + d.top), d.top}) {
+      EXPECT_EQ(scene.epsAt(z), stack.epsAt(z)) << z;
+    }
+  }
+  EXPECT_EQ(scene.epsAt(10.0), stack.epsAt(10.0));
+}
+
+TEST(Solver, RejectsConformalDielectrics)
+{
+  Stack stack = etchStopStack();
+  stack.conductors.push_back({.name = "M1",
+                              .bottom = 0.5,
+                              .top = 0.7,
+                              .conformals = {{"C", 0.01, 0.01, 4.5}}});
+  EXPECT_THROW(Scene(wiresAcrossEtchStop(), stack), std::invalid_argument);
 }
 
 }  // namespace
