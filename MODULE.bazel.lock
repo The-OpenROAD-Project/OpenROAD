@@ -125,6 +125,7 @@
     "https://bcr.bazel.build/modules/bazel_skylib/1.9.0/source.json": "7ad77c1e8c1b84222d9b3f3cae016a76639435744c19330b0b37c0a3c9da7dc0",
     "https://bcr.bazel.build/modules/bison/3.8.2.bcr.10/MODULE.bazel": "04ad2d99f5d0a5e715effd3094613686aa371cda0afd4921d8190491276d3462",
     "https://bcr.bazel.build/modules/bison/3.8.2.bcr.10/source.json": "15a7035b49d0ce43418db4b55ae581773627738de78df1c3cc0cf93c6fd20ef4",
+    "https://bcr.bazel.build/modules/bison/3.8.2.bcr.5/MODULE.bazel": "96e976881e5670bdb2461157027ed6f3e25084b727aab6b7047210da9af7f678",
     "https://bcr.bazel.build/modules/bliss/0.74/MODULE.bazel": "5ef2e19952cd8560ba4f4af8b4c7e9bd6d3741a6451f436bf98adcc939bc407d",
     "https://bcr.bazel.build/modules/bliss/0.74/source.json": "b18631c0ca9b88c21e25feefa275839f4c8f58a7cd096d7fa5026d559503a545",
     "https://bcr.bazel.build/modules/boost.algorithm/1.89.0.bcr.2/MODULE.bazel": "9226438a199b01a2dfa82325b03b6576df0b46e634f9d01770b84cdfe4fc3dcb",
