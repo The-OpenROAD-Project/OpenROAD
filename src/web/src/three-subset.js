@@ -7,7 +7,9 @@
 export {
     AmbientLight,
     BoxGeometry,
+    BufferGeometry,
     Color,
+    Float32BufferAttribute,
     DirectionalLight,
     DoubleSide,
     EdgesGeometry,
@@ -21,6 +23,7 @@ export {
     MeshBasicMaterial,
     MeshPhongMaterial,
     PerspectiveCamera,
+    PlaneGeometry,
     Quaternion,
     Raycaster,
     Scene,
