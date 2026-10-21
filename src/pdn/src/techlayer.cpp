@@ -192,26 +192,31 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
 {
   std::vector<MinCutRule> rules;
 
+  // LEF names the side a via connects to this layer from, while MinCutRule
+  // names the side of the via this layer is on.  A via from below has this
+  // layer above it, so FROMBELOW (isBelowOnly in LEF 5.4) sets above and
+  // FROMABOVE (isAboveOnly) sets below.
+
   // get all the LEF55 rules
   for (auto* min_cut_rule : layer_->getMinCutRules()) {
     uint32_t numcuts;
     uint32_t rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
-    rules.push_back(MinCutRule{nullptr,
-                               min_cut_rule->isBelowOnly(),  // same as ABOVE
-                               min_cut_rule->isAboveOnly(),  // same as BELOW
-                               static_cast<int>(rule_width),
-                               static_cast<int>(numcuts)});
+    rules.push_back(MinCutRule{.cut_class = nullptr,
+                               .above = min_cut_rule->isBelowOnly(),
+                               .below = min_cut_rule->isAboveOnly(),
+                               .width = static_cast<int>(rule_width),
+                               .cuts = static_cast<int>(numcuts)});
   }
 
   for (auto* rule : layer_->getTechLayerMinCutRules()) {
     if (rule->getCutClassCutsMap().empty()) {
-      rules.push_back(MinCutRule{nullptr,
-                                 rule->isFromBelow(),  // same as ABOVE
-                                 rule->isFromAbove(),  // same as BELOW
-                                 rule->getWidth(),
-                                 rule->getNumCuts()});
+      rules.push_back(MinCutRule{.cut_class = nullptr,
+                                 .above = rule->isFromBelow(),
+                                 .below = rule->isFromAbove(),
+                                 .width = rule->getWidth(),
+                                 .cuts = rule->getNumCuts()});
     }
     for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
       // a class name can be defined on the cut layers both below and above,
@@ -230,11 +235,11 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
           continue;
         }
 
-        rules.push_back(MinCutRule{cut_class,
-                                   rule->isFromBelow(),  // same as ABOVE
-                                   rule->isFromAbove(),  // same as BELOW
-                                   rule->getWidth(),
-                                   cuts});
+        rules.push_back(MinCutRule{.cut_class = cut_class,
+                                   .above = rule->isFromBelow(),
+                                   .below = rule->isFromAbove(),
+                                   .width = rule->getWidth(),
+                                   .cuts = cuts});
       }
     }
   }
