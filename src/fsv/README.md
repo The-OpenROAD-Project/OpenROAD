@@ -87,7 +87,8 @@ The `add_field_solver_box` command adds a conductor box to a net, creating
 the net on first use. Give the box either by its corners, or by a layer of
 the ITF stack and a rectangle, in which case the layer gives the z extent. A
 via layer spans from the top of its lower conductor to the bottom of its
-upper conductor.
+upper conductor. A via from `SUBSTRATE` lands on the ground plane, which
+would ground its net, so it is rejected.
 
 ```tcl
 add_field_solver_box

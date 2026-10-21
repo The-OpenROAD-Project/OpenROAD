@@ -17,5 +17,7 @@
 [INFO FSV-0011] Net a: total 0.16297 fF +- 0.0048 after 16384 walks (110.2 hops per walk).
   ground                    0.16297 +- 0.0048 fF
 [ERROR FSV-0001] ITF: cannot open missing.itf
-Summary 16 / 16 (100% pass)
+[INFO FSV-0002] Read ITF substrate_via: 1 dielectrics, 1 conductors, 1 vias.
+[ERROR FSV-0014] Via tie lands on the ground plane, which would ground its net.
+Summary 17 / 17 (100% pass)
 pass

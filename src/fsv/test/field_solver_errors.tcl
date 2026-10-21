@@ -43,4 +43,9 @@ set result [solve_capacitance -seed 3000000000 -tol_total 0.05]
 check "a seed beyond 32 bits is accepted" { dict exists $result a total } 1
 check_error "an unreadable ITF" { read_itf missing.itf } FSV-0001
 
+read_itf substrate_via.itf
+check_error "a via on the ground plane" {
+  add_field_solver_box -net t -layer tie -rect {0 0 0.1 0.1}
+} FSV-0014
+
 exit_summary

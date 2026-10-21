@@ -121,8 +121,8 @@ void FieldSolver::addLayerRect(const std::string_view net,
     bottom = c->bottom;
     top = c->top;
   } else {
-    // A via spans from the top of its lower layer (the ground plane for
-    // SUBSTRATE) to the bottom of its upper layer.
+    // A via spans from the top of its lower conductor to the bottom of its
+    // upper one.
     const Stack::Via* via = nullptr;
     for (const Stack::Via& v : stack_.vias) {
       if (v.name == layer) {
@@ -137,6 +137,15 @@ void FieldSolver::addLayerRect(const std::string_view net,
     }
     const Stack::Conductor* lower = stack_.findConductor(via->lower);
     const Stack::Conductor* upper = stack_.findConductor(via->upper);
+    if (lower == nullptr) {
+      // A SUBSTRATE via lands on the ground plane: its net is grounded and
+      // has no capacitance to solve.
+      logger_->error(utl::FSV,
+                     14,
+                     "Via {} lands on the ground plane, which would ground "
+                     "its net.",
+                     layer);
+    }
     if (upper == nullptr) {
       logger_->error(utl::FSV,
                      13,
@@ -144,7 +153,7 @@ void FieldSolver::addLayerRect(const std::string_view net,
                      layer,
                      via->upper);
     }
-    bottom = lower != nullptr ? lower->top : 0.0;
+    bottom = lower->top;
     top = upper->bottom;
   }
   addBox(net, {{rect[0], rect[1], bottom}, {rect[2], rect[3], top}});
