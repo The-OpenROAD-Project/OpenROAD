@@ -18,11 +18,35 @@ cc_test(
 )
 
 cc_test(
+    name = "TestLayeredCubeGreens",
+    srcs = ["cpp/TestLayeredCubeGreens.cpp"],
+    deps = [
+        "//src/fsv:core",
+        "//src/fsv:geometry",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSpatialIndex",
     srcs = ["cpp/TestSpatialIndex.cpp"],
     deps = [
         "//src/fsv:core",
         "//src/fsv:geometry",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGolden",
+    srcs = ["cpp/TestGolden.cpp"],
+    data = glob(["golden/*.txt"]),
+    deps = [
+        "//src/fsv",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -46,6 +70,7 @@ cc_test(
     deps = [
         "//src/fsv",
         "//src/fsv:geometry",
+        "//src/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

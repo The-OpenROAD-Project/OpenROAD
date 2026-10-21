@@ -24,6 +24,7 @@ cc_library(
     deps = [
         ":core",
         ":geometry",
+        ":stack",
     ],
 )
 
@@ -40,12 +41,16 @@ cc_library(
     srcs = [
         "src/AliasTable.cpp",
         "src/CubeGreens.cpp",
+        "src/CubePanels.cpp",
+        "src/LayeredCubeGreens.cpp",
         "src/SpatialIndex.cpp",
     ],
     hdrs = [
         "src/AliasTable.h",
         "src/BoxFace.h",
         "src/CubeGreens.h",
+        "src/CubePanels.h",
+        "src/LayeredCubeGreens.h",
         "src/Philox.h",
         "src/SpatialIndex.h",
     ],
