@@ -1687,7 +1687,7 @@ DelayEstimatorReporter::captureSidePathFixedStages(
     if (!found_path || slack < best_slack) {
       found_path = true;
       best_slack = slack;
-      best_fixed_stages = fixed_stages;
+      best_fixed_stages = std::move(fixed_stages);
     }
   }
 
@@ -1773,7 +1773,7 @@ DelayEstimatorReporter::collectSidePathStages(const sta::PathExpanded& expanded,
       fixed_stage.input_pin_name = network_->pathName(input_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
 
   return fixed_stages;
@@ -1942,7 +1942,7 @@ DelayEstimatorReporter::captureSidePathConnectivityFixedStages(
     buffer_stage.driver_pin_name = network_->pathName(buffer_output_pin);
     buffer_stage.next_pin_name
         = network_->pathName(reverse_input_chain[chain_index]);
-    fixed_stages.push_back(buffer_stage);
+    fixed_stages.push_back(std::move(buffer_stage));
   }
 
   for (const FixedStage& path_stage : path_fixed_stages) {
