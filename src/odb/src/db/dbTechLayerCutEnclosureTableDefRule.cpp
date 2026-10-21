@@ -4,7 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutEnclosureTableDefRule.h"
 
-#include <cassert>
 #include <cstdint>
 #include <cstring>
 
@@ -216,7 +215,14 @@ void dbTechLayerCutEnclosureTableDefRule::destroy(
 // User Code Begin dbTechLayerCutEnclosureTableDefRulePublicMethods
 void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 {
-  assert(row.above_below >= 0 && row.above_below <= 2);
+  if (row.above_below < 0 || row.above_below > 2) {
+    getImpl()->getLogger()->error(
+        utl::ODB,
+        3800,
+        "DefaultRow.above_below must be 0 (both), 1 (above), or 2 (below), "
+        "got {}",
+        row.above_below);
+  }
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->default_rows_.push_back(row);
@@ -224,7 +230,14 @@ void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 
 void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
 {
-  assert(row.above_below >= 0 && row.above_below <= 2);
+  if (row.above_below < 0 || row.above_below > 2) {
+    getImpl()->getLogger()->error(
+        utl::ODB,
+        3801,
+        "WidthRow.above_below must be 0 (both), 1 (above), or 2 (below), "
+        "got {}",
+        row.above_below);
+  }
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->width_rows_.push_back(row);

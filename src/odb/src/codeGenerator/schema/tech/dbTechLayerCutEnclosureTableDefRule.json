@@ -59,8 +59,5 @@
   "cpp_includes": [
     "dbTechLayer.h",
     "dbTechLayerCutClassRule.h"
-  ],
-  "cpp_sys_includes": [
-    "cassert"
   ]
 }

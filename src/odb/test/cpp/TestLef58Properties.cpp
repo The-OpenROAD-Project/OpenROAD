@@ -750,8 +750,9 @@ TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
 }
 
 // Exercises dbTechLayerCutEnclosureTableDefRule directly through its C++ API
-// (no LEF parsing involved) — the LEF58_ENCLOSURETABLE parser that populates
-// this class via read_lef is covered separately.
+// (no LEF parsing involved). This class is not populated from LEF yet --
+// storing parsed LEF58_ENCLOSURETABLE data into it is a separate follow-up
+// change.
 TEST_F(Fixture, TestEnclosureTableDefRuleApi)
 {
   dbTech* tech = dbTech::create(db_.get(), "tech");
@@ -800,6 +801,64 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   auto rules = layer->getTechLayerCutEnclosureTableDefRules();
   EXPECT_EQ(rules.size(), 1);
   EXPECT_EQ(*rules.begin(), rule);
+
+  // Round-trip through serialization: the custom stream operators for
+  // DefaultRow/WidthRow are hand-written, not generated, so exercise them
+  // directly rather than relying on in-memory checks alone.
+  std::filesystem::create_directory("results");
+  std::string rw_path = "results/TestEnclosureTableDefRuleApiRW";
+
+  std::ofstream write;
+  write.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+  write.open(rw_path, std::ios::binary);
+  db_->write(write);
+
+  std::ifstream read;
+  read.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  read.open(rw_path, std::ios::binary);
+
+  dbDatabase* db2 = dbDatabase::create();
+  db2->setLogger(&logger_);
+  db2->read(read);
+
+  dbTechLayer* layer2 = db2->getTech()->findLayer("V1");
+  auto rules2 = layer2->getTechLayerCutEnclosureTableDefRules();
+  ASSERT_EQ(rules2.size(), 1);
+  dbTechLayerCutEnclosureTableDefRule* rule2 = *rules2.begin();
+  EXPECT_TRUE(rule2->isCutClassValid());
+  EXPECT_STREQ(rule2->getCutClass()->getName(), "cls1");
+
+  std::vector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> defaultRows2;
+  rule2->getDefaultRows(defaultRows2);
+  ASSERT_EQ(defaultRows2.size(), 1);
+  EXPECT_EQ(defaultRows2[0].above_below, 0);
+  EXPECT_EQ(defaultRows2[0].overhang1, 40);
+  EXPECT_EQ(defaultRows2[0].overhang2, 40);
+  EXPECT_EQ(defaultRows2[0].overhang3, 60);
+  EXPECT_EQ(defaultRows2[0].overhang4, 60);
+
+  std::vector<dbTechLayerCutEnclosureTableDefRule::WidthRow> widthRows2;
+  rule2->getWidthRows(widthRows2);
+  ASSERT_EQ(widthRows2.size(), 2);
+  EXPECT_EQ(widthRows2[0].width, 300);
+  EXPECT_EQ(widthRows2[0].above_below, 1);
+  EXPECT_EQ(widthRows2[0].overhang1, 20);
+  EXPECT_EQ(widthRows2[0].overhang2, 20);
+  EXPECT_EQ(widthRows2[0].overhang3, 40);
+  EXPECT_EQ(widthRows2[0].overhang4, 40);
+  EXPECT_EQ(widthRows2[1].width, 300);
+  EXPECT_EQ(widthRows2[1].above_below, 2);
+  EXPECT_EQ(widthRows2[1].overhang1, 50);
+  EXPECT_EQ(widthRows2[1].overhang2, 60);
+  EXPECT_EQ(widthRows2[1].overhang3, 0);
+  EXPECT_EQ(widthRows2[1].overhang4, 0);
+
+  // above_below is only ever 0/1/2 (both/above/below); out-of-range values
+  // are rejected rather than silently stored.
+  EXPECT_THROW(rule->addDefaultRow({3, 0, 0, 0, 0}), std::runtime_error);
+  EXPECT_THROW(rule->addWidthRow({300, 3, 0, 0, 0, 0}), std::runtime_error);
 
   dbTechLayerCutEnclosureTableDefRule::destroy(rule);
   EXPECT_EQ(layer->getTechLayerCutEnclosureTableDefRules().size(), 0);
