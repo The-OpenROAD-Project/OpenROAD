@@ -4,6 +4,11 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["upper_layer_net.def"],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 TESTS = [
     "bus_route",
     "check_antennas_cugr",
@@ -376,11 +381,4 @@ doc_check_test(
         "//src/grt:messages_txt",
     ],
     visibility = ["//visibility:public"],
-)
-
-regression_test(
-    name = "write_verilog_def_alias",
-    check_log = False,
-    check_passfail = True,
-    data = [":test_resources"],
 )

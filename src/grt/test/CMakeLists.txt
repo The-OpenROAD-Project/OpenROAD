@@ -151,7 +151,6 @@ or_integration_tests(
     write_segments2
   PASSFAIL_TESTS
     congested_routes_are_reported
-    write_verilog_def_alias
     congestion_markers_cugr
     congestion_acceptance_is_recorded
     congestion_report_file_cugr

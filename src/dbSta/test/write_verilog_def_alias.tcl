@@ -1,7 +1,7 @@
 # Preserve differently named input nets when writing a DEF-based design.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
-read_def upper_layer_net.def
+read_def ../../grt/test/upper_layer_net.def
 
 set verilog_file [make_result_file write_verilog_def_alias.v]
 write_verilog $verilog_file

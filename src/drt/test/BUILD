@@ -10,6 +10,15 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
@@ -247,15 +256,5 @@ cc_test(
         "//src/drt:base_types",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-    ],
-)
-
-regression_test(
-    name = "write_verilog_def_shared_inputs",
-    check_log = False,
-    check_passfail = True,
-    data = [
-        "top_level_term2.def",
-        ":regression_resources",
     ],
 )

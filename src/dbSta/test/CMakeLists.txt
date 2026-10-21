@@ -79,6 +79,8 @@ or_integration_tests(
     write_verilog9_hier
   PASSFAIL_TESTS
     check_ip_liberty_pins
+    write_verilog_def_alias
+    write_verilog_def_shared_inputs
 )
 
 if(ENABLE_TESTS)

@@ -1,8 +1,8 @@
 # Reject shared DEF input nets without replacing an existing output file.
 source "helpers.tcl"
-read_lef sky130hs/sky130hs.tlef
-read_lef sky130hs/sky130hs_std_cell.lef
-read_def top_level_term2.def
+read_lef ../../drt/test/sky130hs/sky130hs.tlef
+read_lef ../../drt/test/sky130hs/sky130hs_std_cell.lef
+read_def ../../drt/test/top_level_term2.def
 
 set verilog_file [make_result_file write_verilog_def_shared_inputs.v]
 set previous "module preserved; endmodule\n"
