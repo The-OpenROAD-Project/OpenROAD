@@ -301,7 +301,7 @@ void EstimateParasitics::setVWireSignalRC(odb::dbTech* tech,
 // Defined outside the header; all instantiations live in this file.
 template <typename T>
 const std::vector<T>& EstimateParasitics::resolveWireRC(
-    std::vector<T> WireRC::*category) const
+    std::vector<T> WireRC::* category) const
 {
   static const std::vector<T> empty;
   odb::dbTech* tech = currentTech();
