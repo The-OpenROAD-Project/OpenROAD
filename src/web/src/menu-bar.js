@@ -77,8 +77,6 @@ export function createMenuBar(app) {
             { label: 'Zoom Out', shortcut: 'Shift+Z', action: () => app.map.zoomOut() },
             { type: 'separator' },
             { label: 'Toggle Theme', shortcut: 'T', action: () => app.toggleTheme() },
-            { label: 'Show DBU', action: () => app.toggleShowDbu(),
-              checked: () => app.showDbu },
             { type: 'separator' },
             { label: 'Find...', shortcut: 'Ctrl+F',
               action: () => showFindDialog(app),
@@ -92,8 +90,6 @@ export function createMenuBar(app) {
               action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
             { label: 'Clear Rulers', shortcut: 'Shift+K',
               action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
-            { label: 'Euclidian rulers', action: () => app.toggleRulerStyle(),
-              checked: () => app.rulerStyle !== 'manhattan' },
             { type: 'separator' },
             { label: 'Add Label', shortcut: 'L',
               action: () => { if (app.labelManager) app.labelManager.toggleLabelMode(); } },
@@ -113,6 +109,29 @@ export function createMenuBar(app) {
             { type: 'separator' },
             { label: 'Global Connect...',
               action: () => { if (app.showGlobalConnectDialog) app.showGlobalConnectDialog(); },
+              enabledWhen: () => !!app.designScale },
+        ]},
+        // Qt's Options menu (issue #10619 table 2.15).  Show DBU and the
+        // euclidian-ruler default live here rather than under View/Tools,
+        // which is where Qt keeps them.  "Hide GUI"/"Check on exit" have no
+        // browser counterpart and are deliberately absent.
+        { label: 'Options', items: [
+            { label: 'Show DBU', action: () => app.toggleShowDbu(),
+              checked: () => app.showDbu },
+            { label: 'Make euclidian rulers', action: () => app.toggleRulerStyle(),
+              checked: () => app.rulerStyle !== 'manhattan' },
+            { type: 'separator' },
+            { label: 'Mouse wheel mapped to zoom by default',
+              action: () => app.toggleWheelZoom(),
+              checked: () => app.wheelZoom },
+            { label: 'Arrow keys scroll step...',
+              action: () => app.showArrowStepDialog() },
+            { label: 'Application font...',
+              action: () => app.showAppFontDialog() },
+            { type: 'separator' },
+            { label: 'Show polygon decomposition',
+              action: () => app.togglePolyDecomp(),
+              checked: () => app.polyDecomp,
               enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Windows', items: [
@@ -276,7 +295,12 @@ export function createMenuBar(app) {
     }
 
     function render() {
-        bar.innerHTML = '';
+        // Replace only the menus: other children (the debug Continue button,
+        // the script-running badge) stay, after the menus.
+        for (const el of bar.querySelectorAll(':scope > .menu-label')) {
+            el.remove();
+        }
+        const firstOther = bar.firstChild;
         openMenu = null;
         // Rebuilt from scratch: a button removed from the registry must lose
         // its key too.
@@ -328,7 +352,7 @@ export function createMenuBar(app) {
                 }
             });
 
-            bar.appendChild(label);
+            bar.insertBefore(label, firstOther);
         }
     }
 
@@ -381,8 +405,8 @@ function showPathDialog(app, title, tclCmd) {
                    placeholder="Server-side file path (e.g. /path/to/design.odb)">
             <div class="modal-error" style="display:none"></div>
             <div class="modal-buttons">
-                <button class="cancel">Cancel</button>
-                <button class="primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
+                <button class="or-btn cancel">Cancel</button>
+                <button class="or-btn or-btn-primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
             </div>
         </div>`;
 

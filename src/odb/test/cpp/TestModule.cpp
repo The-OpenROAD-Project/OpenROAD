@@ -1,7 +1,10 @@
 #include <cstdio>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
@@ -10,6 +13,8 @@
 
 namespace odb {
 namespace {
+
+using testing::ElementsAre;
 
 /*
   Extract the hierarchical information in human readable format.
@@ -246,6 +251,76 @@ TEST_F(ModuleFixture, getBaseNamePreservesEscapedDelimiters)
 {
   EXPECT_STREQ(block_->getBaseName(R"(parent/path\/leaf)"), R"(path\/leaf)");
   EXPECT_STREQ(block_->getBaseName(R"(parent/path\\/leaf)"), "leaf");
+}
+
+// Splitting a flattened instance name into its path segments is how the web
+// viewer recovers a browsable hierarchy from a DEF-only design, where defin
+// creates no dbModules.  Splitting on the raw delimiter would silently
+// mis-cluster any name holding an escaped one, so getPathSegments() shares
+// getBaseName()'s escape rule -- see the last-segment invariant below.
+class PathSegmentsFixture : public ModuleFixture
+{
+ protected:
+  std::vector<std::string_view> split(const char* full_name)
+  {
+    std::vector<std::string_view> segments;
+    block_->getPathSegments(full_name, segments);
+    // The whole point of sharing the rule: the leaf getBaseName() reports is
+    // the leaf this splitter reports.  Asserted on every case below.
+    EXPECT_EQ(segments.back(), block_->getBaseName(full_name));
+    return segments;
+  }
+};
+
+TEST_F(PathSegmentsFixture, getPathSegmentsSplitsPlainPaths)
+{
+  EXPECT_THAT(split("leaf"), ElementsAre("leaf"));
+  EXPECT_THAT(split("parent/leaf"), ElementsAre("parent", "leaf"));
+  EXPECT_THAT(split("riscv/dp/_1234_"), ElementsAre("riscv", "dp", "_1234_"));
+}
+
+TEST_F(PathSegmentsFixture, getPathSegmentsPreservesEscapedDelimiters)
+{
+  // An escaped delimiter belongs to the local identifier: one segment, not
+  // two, and the escape stays in place so the segment reads as it does in
+  // the full name.
+  EXPECT_THAT(split(R"(parent/path\/leaf)"),
+              ElementsAre("parent", R"(path\/leaf)"));
+  // An escaped backslash does not escape the delimiter that follows it.
+  EXPECT_THAT(split(R"(parent/path\\/leaf)"),
+              ElementsAre("parent", R"(path\\)", "leaf"));
+  // Runs longer than two: parity decides, as in getBaseName().
+  EXPECT_THAT(split(R"(a/b\\\/c)"), ElementsAre("a", R"(b\\\/c)"));
+  EXPECT_THAT(split(R"(a/b\\\\/c)"), ElementsAre("a", R"(b\\\\)", "c"));
+  // A backslash that escapes something else leaves the delimiter alone --
+  // the run resets, which is what makes macro-style names like
+  // mem_bank\[0\]/leaf split where they should.
+  EXPECT_THAT(split(R"(mem_bank\[0\]/leaf)"),
+              ElementsAre(R"(mem_bank\[0\])", "leaf"));
+}
+
+TEST_F(PathSegmentsFixture, getPathSegmentsSplitsTextually)
+{
+  // Every unescaped delimiter separates two segments, empty or not.  Callers
+  // that treat an empty segment as meaningless drop it themselves.
+  EXPECT_THAT(split(""), ElementsAre(""));
+  EXPECT_THAT(split("a/"), ElementsAre("a", ""));
+  EXPECT_THAT(split("/a"), ElementsAre("", "a"));
+  EXPECT_THAT(split("a//b"), ElementsAre("a", "", "b"));
+}
+
+TEST_F(ModuleFixture, getPathSegmentsClearsAndToleratesNull)
+{
+  std::vector<std::string_view> segments{"stale"};
+  block_->getPathSegments(nullptr, segments);
+  EXPECT_TRUE(segments.empty());
+
+  block_->getPathSegments("a/b", segments);
+  EXPECT_THAT(segments, ElementsAre("a", "b"));
+  // Reused across calls without reallocating -- the synthesis pass runs this
+  // once per instance.
+  block_->getPathSegments("c", segments);
+  EXPECT_THAT(segments, ElementsAre("c"));
 }
 
 TEST_F(ModuleFixture, test_default)

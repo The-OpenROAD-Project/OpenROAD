@@ -169,9 +169,12 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                2,
                "Processing driver {}",
                network_->pathName(drvr_pin));
-    // Always get the flat net for the top level port.
+    // Always get the flat net for the top level port: in a hierarchical
+    // netlist the port's term net is the top module's dbModNet, which
+    // gain buffering cannot insert buffers on.
     sta::Net* net = network_->isTopLevelPort(drvr_pin)
-                        ? network_->net(network_->term(drvr_pin))
+                        ? db_network_->dbToSta(
+                              db_network_->flatNet(network_->term(drvr_pin)))
                         : db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (!net) {
       continue;
@@ -193,6 +196,10 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
                  "  Net {} is eligible for repair.",
                  network_->pathName(net));
       float fanout, max_fanout, fanout_slack;
+      // Gain buffering takes max_fanout as the branching bound of the tree it
+      // builds, not as a violation limit, and relies on an unconstrained net
+      // reporting no limit so the gain criterion alone picks the branching.
+      // Feeding it the backstop would cap every net at that value instead.
       sta_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
@@ -664,9 +671,21 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       return std::make_pair(required(sta), -level);
     }
 
-    float capacitance(const sta::Network* network)
+    float capacitance(const sta::Network* network, const sta::Scene* corner)
     {
-      return network->libertyPort(pin)->capacitance();
+      if (sta::LibertyPort* port = network->libertyPort(pin)) {
+        return port->capacitance();
+      }
+      if (network->isTopLevelPort(pin) && corner != nullptr) {
+        sta::Port* port = network->port(pin);
+        float cap = 0.0f;
+        for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+          cap = std::max(
+              cap, corner->sdc()->portExtCap(port, rf, sta::MinMax::max()));
+        }
+        return cap;
+      }
+      return 0.0f;
     }
   };
 
@@ -693,6 +712,8 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   // 1. Collect all sinks
   std::vector<EnqueuedPin> sinks;
+  std::vector<EnqueuedPin> output_sinks;
+  bool driver_has_negative_slack = false;
 
   sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -700,11 +721,14 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     if (pin != drvr_pin && !network_->isTopLevelPort(pin)
         && network_->direction(pin) == sta::PortDirection::input()
         && network_->libertyPort(pin)) {
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+      sta::Path* req_path
+          = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+      if (req_path != nullptr && req_path->slack(sta_) < 0.0f) {
+        driver_has_negative_slack = true;
+      }
       sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
-        sta::Vertex* vertex = graph_->pinLoadVertex(pin);
-        sta::Path* req_path
-            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
         sinks.push_back({const_cast<sta::Pin*>(pin), req_path, 0.0, 0});
       } else {
         logger_->warn(RSZ,
@@ -713,9 +737,32 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
                       network_->name(inst),
                       network_->name(net));
       }
+    } else if (pin != drvr_pin && network_->isTopLevelPort(pin)
+               && network_->direction(pin)->isAnyOutput()) {
+      EnqueuedPin out_sink{const_cast<sta::Pin*>(pin), nullptr, 0.0, 0};
+      if (out_sink.capacitance(network_, resizer_->tgt_slew_corner_) > 0.0f) {
+        sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+        out_sink.required_path
+            = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
+        if (out_sink.required_path != nullptr
+            && out_sink.required_path->slack(sta_) < 0.0f) {
+          driver_has_negative_slack = true;
+        }
+        output_sinks.push_back(out_sink);
+      }
     }
   }
   delete pin_iter;
+
+  // Include top-level output ports only when the driver has negative worst
+  // slack (evaluated across its load vertices, which are already updated at
+  // drvr->level() + 1). Internal sinks are collected unconditionally because
+  // PinRequiredHigher shields non-critical (positive-slack) fanout behind
+  // buffers to isolate critical sinks, and because upstream drivers still carry
+  // optimistic annotated target slews during performEarlySizingRound.
+  if (driver_has_negative_slack) {
+    sinks.insert(sinks.end(), output_sinks.begin(), output_sinks.end());
+  }
 
   // Keep track of the vertices at the boundary of the tree so we know where
   // to ask for delays to be recomputed
@@ -726,12 +773,12 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
 
   float cin;
   float has_driver_cin = getLargestSizeCin(drvr_pin, cin);
-  static float gate_gain = 4.0f;  // use a fanout-of-4 rule for gates
+  const float gate_gain = resizer_->sizing_cap_ratio_;
   bool repaired_net = false;
 
   float load = 0.0;
   for (auto& sink : sinks) {
-    load += sink.capacitance(network_);
+    load += sink.capacitance(network_, resizer_->tgt_slew_corner_);
   }
   std::ranges::sort(sinks, PinRequiredHigher(network_));
 
@@ -745,7 +792,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       if (it - sinks.begin() == max_fanout) {
         break;
       }
-      float sink_load = it->capacitance(network_);
+      float sink_load = it->capacitance(network_, resizer_->tgt_slew_corner_);
       if (load_acc + sink_load > max_buf_load
           // always include at least one load
           && it != sinks.begin()) {
@@ -876,8 +923,10 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
   estimate_parasitics_->ensureWireParasitic(drvr_pin);
   load_cap = graph_delay_calc_->loadCap(drvr_pin, corner, max_);
 
-  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst) && cell
-      && resizer_->isLogicStdCell(inst)) {
+  // A fixed driver keeps its master: a wider one would overlap the fixed
+  // cells around it, and nothing may move it. Buffering repairs the net.
+  if (!network_->isTopLevelPort(drvr_pin) && !resizer_->dontTouch(inst)
+      && !resizer_->isFixed(inst) && cell && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
       // Pair of slew violation magnitude and cell pointer
@@ -1013,7 +1062,7 @@ void RepairDesign::repairNet(sta::Net* net,
     // Fanout is addressed by creating region repeaters
     if (check_fanout) {
       float fanout, max_fanout, fanout_slack;
-      sta_->checkFanout(
+      resizer_->checkFanout(
           drvr_pin, sta_->cmdMode(), max_, fanout, max_fanout, fanout_slack);
 
       if (max_fanout > 0.0 && fanout_slack < 0.0) {
