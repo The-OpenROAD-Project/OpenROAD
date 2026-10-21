@@ -55,16 +55,68 @@ export function showToast(message, durationMs = 4000) {
     return toast;
 }
 
-// The notice for a browser that draws the layout view without the GPU
-// (luma.gl's gpuType 'cpu'), or null.
-export function softwareRenderingWarning(info) {
-    if (!info || info.gpuType !== 'cpu') {
+// A warning in the bottom-right corner of the page that stays until closed.
+// With `dontShowAgain`, a second button calls it and closes the warning.
+export function showCornerWarning(message, { dontShowAgain } = {}) {
+    const box = document.createElement('div');
+    box.className = 'or-corner-warning';
+    box.setAttribute('role', 'alert');
+    const body = document.createElement('div');
+    const text = document.createElement('span');
+    text.textContent = message;
+    body.append(text);
+    if (dontShowAgain) {
+        const never = document.createElement('button');
+        never.type = 'button';
+        never.className = 'or-corner-warning-never';
+        never.textContent = "Don't show again";
+        never.addEventListener('click', () => {
+            dontShowAgain();
+            box.remove();
+        });
+        body.append(never);
+    }
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'or-corner-warning-close';
+    close.title = 'Close';
+    close.setAttribute('aria-label', 'Close');
+    close.textContent = '×';
+    close.addEventListener('click', () => box.remove());
+    box.append(body, close);
+    document.body.appendChild(box);
+    return box;
+}
+
+// Software rasterizers luma.gl does not flag: it reports only SwiftShader as
+// gpuType 'cpu', so Mesa's (Firefox, remote desktops) and Windows' come back
+// 'unknown'.
+const kSoftwareRenderer =
+    /SwiftShader|llvmpipe|lavapipe|softpipe|Basic Render Driver/i;
+
+// A page cannot read the browser's setting, only that there is no GPU, so the
+// advice is conditional: without a GPU in the machine, the setting is moot.
+const kAccelerationHint = 'If hardware acceleration is turned off in your '
+    + "browser settings ('Use graphics acceleration when available' or 'Use "
+    + "hardware acceleration when available'), turn it on and restart the "
+    + 'browser.';
+
+// What to tell a user whose browser draws the layout view without the GPU:
+// { kind: 'nowebgl' | 'software', message }, or null.
+export function renderingWarning(info) {
+    if (!info) {
         return null;
     }
-    return 'Software rendering detected (reduced performance). Make sure '
-        + "'Use graphics acceleration when available' (or 'Use hardware "
-        + "acceleration when available') is turned on in your browser "
-        + 'settings, then restart the browser.';
+    if (info.gpuType === 'none') {
+        return { kind: 'nowebgl', message: 'WebGL is not available, so the '
+            + 'layout view cannot be drawn. ' + kAccelerationHint };
+    }
+    const name = `${info.vendor || ''} ${info.renderer || ''}`;
+    if (info.gpuType !== 'cpu' && !kSoftwareRenderer.test(name)) {
+        return null;
+    }
+    return { kind: 'software', message: 'The layout view is being drawn in '
+        + 'software, without the GPU, which is slower. ' + kAccelerationHint };
 }
 
 // Themed confirmation dialog.  Resolves true when confirmed, false when

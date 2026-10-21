@@ -244,6 +244,15 @@ export function createLayoutView(container, opts = {}) {
                 events.emit('renderer', rendererInfo);
                 scheduleRender();
             },
+            // An error before onLoad means the device was never created: the
+            // browser gave no WebGL, and nothing will be drawn.
+            onError: (error) => {
+                console.error('Layout view:', error);
+                if (!rendererInfo) {
+                    rendererInfo = { gpuType: 'none', renderer: '', vendor: '' };
+                    events.emit('renderer', rendererInfo);
+                }
+            },
             onAfterRender: () => {
                 const waiting = afterFrame;
                 afterFrame = [];

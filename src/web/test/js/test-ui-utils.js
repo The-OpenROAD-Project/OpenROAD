@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
 import { boundsEqual, computeBoundsTransforms, computeScaleBar, cssColorToHex,
          fittedTileSizeCss, isValidHexColor, kZoomMargin, maxUsefulZoom,
          MAX_TILE_ZOOM, niceRoundParts, prefersReducedMotion, rafCoalesce,
-         softwareRenderingWarning }
+         renderingWarning, showCornerWarning }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -402,19 +403,110 @@ describe('prefersReducedMotion', () => {
     });
 });
 
-describe('softwareRenderingWarning', () => {
-    it('tells how to turn graphics acceleration on for a software renderer', () => {
-        const msg = softwareRenderingWarning({ gpuType: 'cpu' });
-        assert.match(msg, /Software rendering detected/);
+describe('renderingWarning', () => {
+    // The page cannot see the browser setting, so the advice is conditional.
+    const hint = (msg) => {
+        assert.match(msg, /If hardware acceleration is turned off/);
         assert.match(msg, /Use graphics acceleration when available/);
         assert.match(msg, /Use hardware acceleration when available/);
         assert.match(msg, /restart the browser/);
+    };
+
+    it('says a software renderer is slower, without claiming why', () => {
+        const w = renderingWarning({ gpuType: 'cpu' });
+        assert.equal(w.kind, 'software');
+        assert.match(w.message, /drawn in software, without the GPU/);
+        assert.doesNotMatch(w.message, /detected/);
+        hint(w.message);
+    });
+
+    it('says the view cannot draw without WebGL', () => {
+        const w = renderingWarning({ gpuType: 'none' });
+        assert.equal(w.kind, 'nowebgl');
+        assert.match(w.message, /WebGL is not available/);
+        hint(w.message);
     });
 
     it('says nothing when a GPU draws, or before the renderer is known', () => {
         for (const gpuType of ['discrete', 'integrated', 'unknown']) {
-            assert.equal(softwareRenderingWarning({ gpuType }), null, gpuType);
+            assert.equal(renderingWarning({ gpuType }), null, gpuType);
         }
-        assert.equal(softwareRenderingWarning(null), null);
+        assert.equal(renderingWarning(null), null);
+    });
+
+    // As the browsers report them; luma.gl calls all of these 'unknown'.
+    it('recognizes the software rasterizers luma.gl does not', () => {
+        for (const [vendor, renderer] of [
+            ['Mesa', 'llvmpipe, or similar'],                         // Firefox
+            ['Google Inc. (Mesa)',
+             'ANGLE (Mesa, llvmpipe (LLVM 20.1.2 256 bits), OpenGL 4.5)'],
+            ['Google Inc. (Mesa)', 'ANGLE (Mesa, Vulkan 1.4.318 (llvmpipe '
+             + '(LLVM 20.1.2 256 bits) (0x00000000)), llvmpipe)'],
+            ['Mesa', 'lavapipe'],
+            ['Mesa', 'softpipe'],
+            ['Google Inc. (Microsoft)',
+             'ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11)'],
+        ]) {
+            const w = renderingWarning({ gpuType: 'unknown', vendor, renderer });
+            assert.equal(w && w.kind, 'software', renderer);
+        }
+    });
+
+    it('leaves GPUs, Mesa hardware drivers included, alone', () => {
+        for (const [vendor, renderer] of [
+            ['Google Inc. (NVIDIA)',
+             'ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 Direct3D11 vs_5_0 ps_5_0)'],
+            ['Intel', 'Mesa Intel(R) UHD Graphics 630 (CFL GT2)'],
+            ['AMD', 'AMD Radeon RX 6800 (radeonsi, navi21, LLVM 15.0.7)'],
+            ['Google Inc. (Apple)', 'ANGLE (Apple, Apple M2, OpenGL 4.1)'],
+        ]) {
+            assert.equal(renderingWarning(
+                { gpuType: 'unknown', vendor, renderer }), null, renderer);
+        }
+    });
+});
+
+describe('showCornerWarning', () => {
+    let saved;
+    beforeEach(() => {
+        saved = globalThis.document;
+        globalThis.document = new JSDOM('<!DOCTYPE html><body></body>')
+            .window.document;
+    });
+    afterEach(() => {
+        globalThis.document = saved;
+    });
+
+    it('stays in the page until closed', () => {
+        const box = showCornerWarning('Drawn in software.');
+        assert.equal(box.parentNode, document.body);
+        assert.equal(box.className, 'or-corner-warning');
+        assert.equal(box.getAttribute('role'), 'alert');
+        assert.equal(box.querySelector('span').textContent, 'Drawn in software.');
+        assert.equal(box.querySelector('.or-corner-warning-never'), null,
+                     'nothing to silence unless asked');
+        const close = box.querySelector('.or-corner-warning-close');
+        assert.equal(close.getAttribute('aria-label'), 'Close');
+        close.click();
+        assert.equal(document.querySelector('.or-corner-warning'), null);
+    });
+
+    it('offers to stop showing it, and closes', () => {
+        let silenced = 0;
+        const box = showCornerWarning('Drawn in software.',
+                                      { dontShowAgain: () => silenced++ });
+        const never = box.querySelector('.or-corner-warning-never');
+        assert.equal(never.textContent, "Don't show again");
+        never.click();
+        assert.equal(silenced, 1);
+        assert.equal(document.querySelector('.or-corner-warning'), null);
+    });
+
+    it('closing is not silencing', () => {
+        let silenced = 0;
+        const box = showCornerWarning('Drawn in software.',
+                                      { dontShowAgain: () => silenced++ });
+        box.querySelector('.or-corner-warning-close').click();
+        assert.equal(silenced, 0);
     });
 });

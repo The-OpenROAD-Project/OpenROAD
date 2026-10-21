@@ -17,6 +17,8 @@ export function makeFakeDeck() {
         // What luma.gl's device.info would report.
         deviceInfo: { gpuType: 'discrete', renderer: 'Fake GPU',
                       vendor: 'Fake' },
+        // Set to fail device creation, as a browser without WebGL does.
+        noWebGL: false,
         Deck: class {
             constructor(props) {
                 this.props = { ...props };
@@ -26,6 +28,10 @@ export function makeFakeDeck() {
                 this.loaded = false;
                 api.decks.push(this);
                 queueMicrotask(() => {
+                    if (api.noWebGL) {
+                        this.props.onError?.(new Error('WebGL2 not available'));
+                        return;
+                    }
                     this.loaded = true;
                     this.device = { info: { ...api.deviceInfo } };
                     this.props.onLoad?.();

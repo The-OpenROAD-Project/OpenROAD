@@ -23,8 +23,8 @@ import { applySelectionFlags, beginSelection, boundsEqual,
          buildVisibilityFlags, clampArrowStep, computeBoundsTransforms,
          computeScaleBar, decorateTabIcons, fittedTileSizeCss, formatDbu,
          formatDistance, isCurrentSelection, isStaticMode, maxUsefulZoom,
-         parseDbu, rafCoalesce, showToast, softwareRenderingWarning,
-         unitLabel }
+         parseDbu, rafCoalesce, renderingWarning, showCornerWarning,
+         showToast, unitLabel }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -574,21 +574,21 @@ app.redrawAllLayers = redrawAllLayers;
 // Expose the WYSIWYG capture so the context menu "Save" can grab the scene.
 app.captureLayout = (opts = {}) => captureLayout(app, opts);
 
-// Once per browser session: the layout view is slow without the GPU.
+// Once per page load: the view reports its renderer again after a lost
+// context or when reopened.  Only the slow-but-working case can be silenced;
+// without WebGL nothing is drawn.
+let renderWarningShown = false;
 function warnIfSoftwareRendering(info) {
-    const message = softwareRenderingWarning(info);
-    if (!message) {
+    const warning = renderingWarning(info);
+    if (!warning || renderWarningShown
+        || (warning.kind === 'software'
+            && getCookie('or_hide_software_warning') === '1')) {
         return;
     }
-    try {
-        if (sessionStorage.getItem('or_sw_render_warned')) {
-            return;
-        }
-        sessionStorage.setItem('or_sw_render_warned', '1');
-    } catch (_) {
-        // Storage blocked: warn on every load instead.
-    }
-    showToast(message, 15000);
+    renderWarningShown = true;
+    showCornerWarning(warning.message, warning.kind !== 'software' ? {} : {
+        dontShowAgain: () => setCookie('or_hide_software_warning', '1'),
+    });
 }
 
 function createLayoutViewer(container) {

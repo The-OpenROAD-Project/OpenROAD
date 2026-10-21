@@ -2396,6 +2396,49 @@ ide-tab.lm_active,
 #or-toast.visible {
     opacity: 1;
 }
+/* A warning that stays in the page's bottom-right corner until closed. */
+.or-corner-warning {
+    position: fixed;
+    right: var(--space-md);
+    bottom: var(--space-md);
+    max-width: 360px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--bg-context);
+    color: var(--fg-primary);
+    border: 1px solid var(--border-strong);
+    border-left: 4px solid var(--sem-warn);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px var(--shadow-strong);
+    font-size: var(--fs-12);
+    z-index: 3000;
+}
+.or-corner-warning-close {
+    flex: none;
+    padding: 0 var(--space-sm);
+    background: none;
+    border: none;
+    color: var(--fg-secondary);
+    font-size: var(--fs-16);
+    line-height: 1;
+    cursor: pointer;
+}
+.or-corner-warning-close:hover {
+    color: var(--fg-primary);
+}
+.or-corner-warning-never {
+    display: block;
+    margin-top: var(--space-sm);
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--accent-link);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
 /* Holds the property rows so the column divider can be absolutely positioned
  * over their full height. */
 .inspector-rows {

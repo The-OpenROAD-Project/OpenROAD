@@ -929,4 +929,28 @@ describe('LayoutView renderer', () => {
         assert.deepEqual(seen, ['cpu', 'integrated']);
         assert.equal(view.getRendererInfo().gpuType, 'integrated');
     });
+
+    it('reports a browser without WebGL as no renderer at all', async (t) => {
+        t.mock.method(console, 'error', () => {});
+        const deck = makeFakeDeck();
+        deck.noWebGL = true;
+        const { view } = setup({ deck });
+        const seen = [];
+        view.on('renderer', (info) => seen.push(info));
+        await tick();
+        const none = { gpuType: 'none', renderer: '', vendor: '' };
+        assert.deepEqual(seen, [none]);
+        assert.deepEqual(view.getRendererInfo(), none);
+    });
+
+    it('takes a later error for just an error', async (t) => {
+        t.mock.method(console, 'error', () => {});
+        const { view, deck } = setup();
+        const seen = [];
+        view.on('renderer', (info) => seen.push(info.gpuType));
+        await tick();
+        deck.decks[0].props.onError(new Error('picking failed'));
+        assert.deepEqual(seen, ['discrete']);
+        assert.equal(view.getRendererInfo().gpuType, 'discrete');
+    });
 });
