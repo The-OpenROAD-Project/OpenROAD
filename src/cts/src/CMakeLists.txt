@@ -7,6 +7,8 @@ include("openroad")
 find_package(LEMON NAMES LEMON lemon REQUIRED)
 
 add_library(cts_lib
+    BottomUpBuffering.cpp
+    BufferingSearch.cpp
     Clock.cpp
     TreeBuilder.cpp
     HTreeBuilder.cpp
@@ -16,6 +18,7 @@ add_library(cts_lib
     Clustering.cpp
     LatencyBalancer.cpp
     CtsOptions.cpp
+    CtsBuffering.cpp
 )
 
 swig_lib(NAME      cts

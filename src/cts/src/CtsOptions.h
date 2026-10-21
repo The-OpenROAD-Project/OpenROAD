@@ -43,6 +43,32 @@ class CtsOptions : public odb::dbBlockCallBackObj
   };
   using MasterCount = odb::PtrMap<odb::dbMaster, int>;
 
+  // Only configuration fields that setup/characterization mutate in place.
+  struct RunConfiguration
+  {
+    int db_units;
+    unsigned wire_segment_unit;
+    int max_wire_length;
+    double max_char_slew;
+    double max_char_cap;
+    double sink_buffer_input_cap;
+    std::string root_buffer;
+    std::string sink_buffer;
+    std::vector<std::string> delay_buffers;
+    unsigned max_fanout;
+    unsigned sink_cluster_size;
+    bool sink_cluster_size_set;
+    double macro_max_diameter;
+    bool macro_max_diameter_set;
+    bool root_buffer_inferred;
+    bool sink_buffer_inferred;
+    bool dummy_load;
+    bool operator==(const RunConfiguration&) const = default;
+  };
+
+  RunConfiguration saveRunConfiguration() const;
+  void restoreRunConfiguration(const RunConfiguration& config);
+
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
       : logger_(logger), sttBuilder_(sttBuildder)
   {
@@ -158,6 +184,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setTreeBuffer(const std::string& buffer) { treeBuffer_ = buffer; }
   void resetTreeBuffer() { treeBuffer_.clear(); }
   std::string getTreeBuffer() const { return treeBuffer_; }
+  void setBottomUpBuffering(bool enable) { bottom_up_buffering_ = enable; }
+  bool bottomUpBuffering() const { return bottom_up_buffering_; }
   unsigned getClusteringPower() const { return clusteringPower_; }
   void setClusteringPower(unsigned power) { clusteringPower_ = power; }
   void resetClusteringPower() { clusteringPower_ = 4; }
@@ -318,6 +346,12 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void recordBuffer(odb::dbMaster* master, MasterType type);
   const MasterCount& getBufferCount() const { return buffer_count_; }
   const MasterCount& getDummyCount() const { return dummy_count_; }
+  void restoreBufferCounts(const MasterCount& buffers,
+                           const MasterCount& dummies)
+  {
+    buffer_count_ = buffers;
+    dummy_count_ = dummies;
+  }
 
   MasterType getType(odb::dbInst* inst) const;
 
@@ -356,6 +390,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
   bool sinkClusteringEnable_ = true;
+  bool bottom_up_buffering_ = false;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;

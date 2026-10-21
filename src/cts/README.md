@@ -68,6 +68,7 @@ clock_tree_synthesis
     [-delay_buffer_derate derate_value]
     [-library liberty_library_name]
     [-repair_clock_nets]
+    [-bottom_up_buffering]
     [-no_insertion_delay]
 ```
 
@@ -75,6 +76,7 @@ clock_tree_synthesis
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-bottom_up_buffering` | Use opt-in, bounded bottom-up buffering on the top-down H-tree. Compare wire-only and buffered alternatives using actual downstream load, rise/fall delay, skew, depth, and area, retaining the feasible legacy plan as a reference. Check the complete clock tree for max-cap and max-slew violations after latency balancing. Dummy-load policy is unchanged. Buffer masters must have equal height. |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
 | `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
@@ -99,6 +101,56 @@ clock_tree_synthesis
 | `-library` | This option specifies the name of Liberty library from which clock buffers will be selected, such as the LVT or uLVT library.  It is assumed that the library has already been loaded using the read_liberty command.  If this option is not specified, clock buffers will be chosen from the currently loaded libraries, which may not include LVT or uLVT cells. |
 | `-repair_clock_nets` | This option includes fixing long wires inside CTS prior to latency adjustment with delay buffers. This can lead to a more balanced clock tree.  The default is not to perform clock net repair. |
 | `-no_insertion_delay` | Ignore sink insertion delay in clock tree construction and balancing. |
+
+#### Bottom-Up Buffering
+
+`-bottom_up_buffering` is an experimental bounded search, not a globally optimal
+skew, area, or placement solver. Normal top-down H-tree construction supplies a
+legacy reference and legal insertion sites. Buffering is then selected separately
+in postorder. Sites may be wire-only junctions: removing a buffer preserves all
+downstream wire edges and capacitance, rather than treating that junction as a
+zero-capacitance cell. A buffered child exposes its selected input capacitance,
+not capacitance hidden behind the buffer. Bounded electrical expansion adds
+repeater sites when needed for load, fanout, wire length, or slew.
+
+At most 16 alternatives per site retain input load, rise/fall arrival ranges in
+each scene, depth, buffer count, and area. Delay and skew rank ahead of depth,
+count, and area; minimum depth alone does not determine a winner. The independently
+evaluated feasible legacy plan is outside pruning and remains unchanged if chosen.
+A replacement must not worsen that reference's modeled latest arrival or arrival
+spread in any scene/transition. Explicit root, tree, and sink cell choices remain
+fixed. Complete candidate evaluation includes the existing dummy-load selection
+policy, unless `-dont_use_dummy_load` was requested.
+
+The original-site search runs before greedy electrical expansion. A feasible
+original-site solution survives expansion failure, and an independently verified
+complete electrical seed survives frontier pruning. Wire-only states that already
+exceed the wire-length limit are discarded before combining further branches.
+
+A positive characterized maximum wire length bounds the search; zero means no
+wire-length threshold, as in the H-tree builder. An explicit
+`-distance_between_buffers` adds its simple-segment spacing constraint regardless
+of that threshold. The default 100-micron heuristic is not a hard span limit
+on an ordinary LUT-built H-tree. Reference rejection diagnostics identify the
+site, constraint, load, fanout, and span; accepted-reference timing logs are
+surrogate values, not STA measurements.
+
+Timing uses existing Liberty/Resizer characterization with a conservative common
+input-slew budget and placement star-wire RC, not extracted routing parasitics.
+The comparison is a model safeguard, not a post-route QoR guarantee. Every loaded
+scene must provide positive finite horizontal and
+vertical resistance and capacitance for both clock and signal wires. The model
+bounds all of these values, including signal RC used by register-terminal nets.
+Infeasible loads, non-progressing legalization, a 64-level depth
+limit, or a stage count exceeding 64 times the initial node count cause an error.
+Pre-write planning errors undo gate cloning and macro/register splitting using
+an OpenDB ECO journal, remove callback ownership, and clear transient run state
+so that the command can be retried. Configuration changed during setup, including
+wire units and inferred characterization/clustering values, is restored on errors.
+Successful-run reset behavior is unchanged. The final audit starts only at actual tree
+roots and requires coverage of every original sink and every generated subnet.
+The final electrical audit runs after latency balancing; an audit failure leaves
+the generated tree in the database for diagnosis. Routed timing must still be checked.
 
 #### Instance Name Prefixes
 

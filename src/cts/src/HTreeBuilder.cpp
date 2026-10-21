@@ -2163,7 +2163,15 @@ void HTreeBuilder::createSingleBufferClockNet()
   ClockSubNet& clockSubNet = clock_.addSubNet("clknet_0");
   clockSubNet.addInst(rootBuffer);
 
-  clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+  if (options_->bottomUpBuffering() && !first_level_sink_drivers_.empty()) {
+    // A zero-level H-tree can still have one or two preclustered buffer
+    // levels. Connect their frontier, not the original pins below them.
+    for (const auto& [x, y] : topLevelSinksClustered_) {
+      clockSubNet.addInst(*mapLocationToSink_.at(Point<double>(x, y)));
+    }
+  } else {
+    clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
+  }
 }
 
 void HTreeBuilder::plotSolution()
