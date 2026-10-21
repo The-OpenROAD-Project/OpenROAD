@@ -6375,6 +6375,15 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
+  // FastRoute records the resources an NDR net takes per net, so they cannot
+  // move to another net: reroute the merged net instead. As in CUGR, the
+  // merged net keeps the NDR of the preserved net.
+  if (!use_cugr_
+      && (db_net1->getNonDefaultRule() != nullptr
+          || db_net2->getNonDefaultRule() != nullptr)) {
+    addDirtyNet(db_net1);
+    return;
+  }
   // Try to connect the routing of the two nets.
   // For CUGR, connectRouting also performs the CUGR-specific capacity check
   // and populates connection_segs so that the CUGR tree can be updated.
