@@ -1381,8 +1381,7 @@ void CUGR::debugPass(const char* stage, const int iteration)
              "rrr",
              1,
              "{}: total overflow {}.",
-             iteration < 0 ? std::string(stage)
-                           : fmt::format("{} {}", stage, iteration),
+             iteration < 0 ? stage : fmt::format("{} {}", stage, iteration),
              totalOverflow());
 }
 
