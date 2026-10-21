@@ -243,6 +243,8 @@ void dbModule::addInst(dbInst* inst)
   const bool is_reparent = (_inst->module_ != 0);
   if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
+    // This is the detach half of a reparent, not a standalone removal.
+    // Notify once below, after the new module's index and list are consistent.
     ((_dbModule*) mod)->removeInst(inst, false);
   }
 
