@@ -37,6 +37,24 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
             stack.dielectrics.empty() ? stack.background_eps
                                       : stack.dielectrics.front().eps)
 {
+  auto check_eps = [](const double eps, const std::string& what) {
+    if (!(eps > 0) || !std::isfinite(eps)) {
+      throw std::invalid_argument("fsv: permittivity of " + what
+                                  + " must be positive");
+    }
+  };
+  // The interface lookups (epsAt, the solver's cube sizing) need strictly
+  // increasing interfaces.
+  double bottom = 0;
+  for (const Stack::Dielectric& d : stack.dielectrics) {
+    check_eps(d.eps, "dielectric " + d.name);
+    if (!(d.top > bottom)) {
+      throw std::invalid_argument("fsv: dielectric " + d.name
+                                  + " must lie above the one below it");
+    }
+    bottom = d.top;
+  }
+  check_eps(stack.background_eps, "the background");
   for (const Stack::Conductor& c : stack.conductors) {
     if (!c.conformals.empty()) {
       throw std::invalid_argument(
@@ -49,12 +67,10 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
 
 double Scene::epsAt(const double z) const
 {
-  // The first interface above z gives the permittivity below it.
-  const auto above = std::upper_bound(
-      interfaces_.begin(),
-      interfaces_.end(),
-      z,
-      [](const double v, const Stack::PlanarInterface& i) { return v < i.z; });
+  // The first interface above z gives the permittivity below it. A height on
+  // an interface takes the permittivity above, as Stack::epsAt does.
+  const auto above = std::ranges::upper_bound(
+      interfaces_, z, {}, &Stack::PlanarInterface::z);
   if (above != interfaces_.end()) {
     return above->eps_below;
   }

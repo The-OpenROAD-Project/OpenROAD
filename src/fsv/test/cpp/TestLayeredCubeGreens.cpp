@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
@@ -21,9 +22,11 @@ using Field = std::function<double(const Vec3&)>;
 
 constexpr int kK = LayeredCubeGreens::kPositions;
 // Permittivity ratios eps_above / eps_below to test, including SkyWater
-// 130's largest contrasts (TOPNIT 7.5 / PI1 2.94, PI1 2.94 / air 1.0).
+// 130's largest contrasts (TOPNIT 7.5 / PI1 2.94, PI1 2.94 / air 1.0) and
+// extreme ones (35, 1 / 35), whose side-face roots crowd the poles of the
+// eigenvalue condition.
 const std::vector<double> kRatios
-    = {1.0, 7.5 / 2.94, 2.94 / 7.5, 1 / 2.94, 10.0};
+    = {1.0, 7.5 / 2.94, 2.94 / 7.5, 1 / 2.94, 10.0, 35.0, 1 / 35.0};
 
 double probability(const LayeredCubeGreens& g,
                    const BoxFace face,
@@ -141,9 +144,12 @@ TEST(LayeredCubeGreens, MirrorSymmetry)
 // value. The only error is panel discretization, second order in the panel
 // size. It is larger than in a uniform cube (about 1e-3 against fields of
 // order 1-5 at 32 panels) because the fields change slope at the interface.
+// The fields grow as 1 / ratio above the interface, and the tolerances with
+// them.
 TEST(LayeredCubeGreens, ExactFieldsAverageToCenter)
 {
-  for (const double ratio : {7.5 / 2.94, 1 / 2.94}) {
+  for (const double ratio : {7.5 / 2.94, 1 / 2.94, 35.0, 1 / 35.0}) {
+    const double scale = std::max(1.0, 1 / ratio);
     for (const int k : {-5, 0, 3, 7}) {
       const double t = static_cast<double>(k) / kK;
       for (const auto& make : {linearField, hyperbolicField}) {
@@ -153,7 +159,7 @@ TEST(LayeredCubeGreens, ExactFieldsAverageToCenter)
         for (const int n : {32, 64}) {
           const double err
               = std::abs(average(LayeredCubeGreens(n, k, ratio), f) - center);
-          EXPECT_LT(err, n == 32 ? 2e-3 : 5e-4)
+          EXPECT_LT(err, (n == 32 ? 2e-3 : 5e-4) * scale)
               << "ratio " << ratio << " k " << k << " n " << n;
           if (n == 64 && prev > 1e-9) {
             EXPECT_LT(err, prev / 3) << "ratio " << ratio << " k " << k;
@@ -262,10 +268,12 @@ TEST(LayeredCubeGreens, EqualPermittivityFluxMatchesHomogeneous)
 
 // Exact fields reproduce the kernels' center values: eps * df/dz = 1 for
 // the piecewise-linear field, and df/dx = alpha * g(0) for the sine field. A
-// constant has no flux.
+// constant has no flux. The sine field grows as 1 / ratio above the
+// interface, and its tolerance with it.
 TEST(LayeredCubeGreens, FluxOfExactFields)
 {
-  for (const double ratio : {7.5 / 2.94, 1 / 2.94}) {
+  for (const double ratio : {7.5 / 2.94, 1 / 2.94, 35.0, 1 / 35.0}) {
+    const double scale = std::max(1.0, 1 / ratio);
     for (const int k : {-5, 0, 3, 7}) {
       const LayeredCubeGreens g(32, k, ratio);
       const double t = g.interfaceZ();
@@ -281,8 +289,9 @@ TEST(LayeredCubeGreens, FluxOfExactFields)
         const double eps = t > 0 ? 1.0 : ratio;
         const double s = -1.3 * t;
         const double g0 = std::cosh(s) + std::sinh(s) / eps;
-        EXPECT_NEAR(
-            fluxAverage(g, Axis::kX, sineField(t, ratio)), 1.3 * g0, 5e-3)
+        EXPECT_NEAR(fluxAverage(g, Axis::kX, sineField(t, ratio)),
+                    1.3 * g0,
+                    5e-3 * scale)
             << "ratio " << ratio << " k " << k;
       }
     }

@@ -30,8 +30,6 @@ constexpr double kPi = std::numbers::pi;
 // Largest side-face eigenvalue root q kept. A mode's weight decays like
 // exp(-q), so roots past ~130 are below double precision.
 constexpr double kMaxRoot = 130.0;
-// Root scan step; neighbouring roots are much farther apart than this.
-constexpr double kRootScanStep = 2e-3;
 
 // Unit data on the bottom face z = -1 in one x-y Fourier mode with
 // wavenumber k. Below the interface z = t the permittivity is e_lo, above it
@@ -74,56 +72,78 @@ struct ZMode
   double upper;  // B
 };
 
-// The eigenvalue condition: continuity of Z and of e Z' at t.
-double eigenCondition(const double q,
-                      const double a,
-                      const double b,
-                      const double e_lo,
-                      const double e_hi)
+// The modes for an interface at t = position / kPositions, in increasing q.
+// Z and e Z' are continuous at t when
+//   e_lo cos(q a) sin(q b) + e_hi cos(q b) sin(q a) = 0.
+// Dividing this by sin(q a) sin(q b) gives
+//   g(q) = e_lo cot(q a) + e_hi cot(q b),
+// which falls from +inf to -inf between consecutive zeros of
+// sin(q a) sin(q b) (its poles), so each such interval holds exactly one
+// root. The remaining roots are the double poles, where both sines vanish
+// and both conditions hold. With a = (K + k) / K and b = (K - k) / K for
+// K = kPositions, the poles are q = pi K m / (K + k) and pi K n / (K - k);
+// they are ordered, and the double poles found, in exact integer arithmetic.
+std::vector<ZMode> zModes(const int position,
+                          const double e_lo,
+                          const double e_hi)
 {
-  return e_lo * std::cos(q * a) * std::sin(q * b)
-         + e_hi * std::cos(q * b) * std::sin(q * a);
-}
-
-std::vector<ZMode> zModes(const double t, const double e_lo, const double e_hi)
-{
-  const double a = 1 + t;
-  const double b = 1 - t;
-  auto f = [&](const double q) { return eigenCondition(q, a, b, e_lo, e_hi); };
-  std::vector<ZMode> modes;
-  double q0 = kRootScanStep;
-  double f0 = f(q0);
-  for (double q1 = q0 + kRootScanStep; q1 <= kMaxRoot; q1 += kRootScanStep) {
-    const double f1 = f(q1);
-    if ((f0 < 0) != (f1 < 0) || f1 == 0) {
-      // Bisect the bracket [q0, q1].
-      double lo = q0;
-      double hi = q1;
-      for (int iter = 0; iter < 60; iter++) {
-        const double mid = 0.5 * (lo + hi);
-        if ((f(mid) < 0) == (f0 < 0)) {
-          lo = mid;
-        } else {
-          hi = mid;
-        }
-      }
-      const double q = 0.5 * (lo + hi);
-      // Two amplitude choices satisfy both conditions at a root; take the
-      // one that is not degenerate (both sines, or both cosines, vanish).
-      double lower = std::sin(q * b);
-      double upper = std::sin(q * a);
-      const double lower2 = e_hi * std::cos(q * b);
-      const double upper2 = -e_lo * std::cos(q * a);
-      if (std::hypot(lower2, upper2) > std::hypot(lower, upper)) {
-        lower = lower2;
-        upper = upper2;
-      }
-      modes.push_back({q, lower, upper});
-      // Restart the scan just past this root.
-      q1 = hi;
+  constexpr int kK = LayeredCubeGreens::kPositions;
+  const int ka = kK + position;
+  const int kb = kK - position;
+  const double a = static_cast<double>(ka) / kK;
+  const double b = static_cast<double>(kb) / kK;
+  auto g = [&](const double q) {
+    return e_lo / std::tan(q * a) + e_hi / std::tan(q * b);
+  };
+  auto addMode = [&](std::vector<ZMode>& modes, const double q) {
+    // Two amplitude choices satisfy both conditions at a root; take the one
+    // that is not degenerate (both sines, or both cosines, vanish).
+    double lower = std::sin(q * b);
+    double upper = std::sin(q * a);
+    const double lower2 = e_hi * std::cos(q * b);
+    const double upper2 = -e_lo * std::cos(q * a);
+    if (std::hypot(lower2, upper2) > std::hypot(lower, upper)) {
+      lower = lower2;
+      upper = upper2;
     }
-    q0 = q1;
-    f0 = f(q0);
+    modes.push_back({q, lower, upper});
+  };
+  std::vector<ZMode> modes;
+  // The poles in order: the next m / ka against the next n / kb.
+  int m = 1;
+  int n = 1;
+  double left = 0;
+  while (left < kMaxRoot) {
+    const long lhs = static_cast<long>(m) * kb;
+    const long rhs = static_cast<long>(n) * ka;
+    const bool double_pole = lhs == rhs;
+    const double right = lhs <= rhs ? kPi * m / a : kPi * n / b;
+    if (lhs <= rhs) {
+      m++;
+    }
+    if (lhs >= rhs) {
+      n++;
+    }
+    // The single root of g in (left, right).
+    double lo = left;
+    double hi = right;
+    for (int iter = 0; iter < 60; iter++) {
+      const double mid = 0.5 * (lo + hi);
+      if (g(mid) > 0) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    const double q = 0.5 * (lo + hi);
+    if (q > kMaxRoot) {
+      break;
+    }
+    addMode(modes, q);
+    if (double_pole && right <= kMaxRoot) {
+      addMode(modes, right);
+    }
+    left = right;
   }
   return modes;
 }
@@ -211,7 +231,8 @@ void LayeredCubeGreens::tabulateSides(const double ratio)
   for (auto* table : {&side_, &fz_side_, &fx_normal_, &fx_tangential_}) {
     table->assign(n_ * n_, 0.0);
   }
-  for (const ZMode& mode : zModes(t_, e_lo, e_hi)) {
+  const int position = static_cast<int>(std::lround(t_ * kPositions));
+  for (const ZMode& mode : zModes(position, e_lo, e_hi)) {
     const double q = mode.q;
     const double norm = e_lo * mode.lower * mode.lower
                             * (a / 2 - std::sin(2 * q * a) / (4 * q))

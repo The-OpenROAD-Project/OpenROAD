@@ -286,6 +286,44 @@ TEST(Solver, LayeredPanelConvergence)
   EXPECT_NEAR(coarse.total(), fine.total(), 4 * sigma + 0.003 * fine.total());
 }
 
+TEST(Solver, RejectsPanelsNotMultipleOf16)
+{
+  EXPECT_THROW(Solver({.panels = 24}), std::invalid_argument);
+  EXPECT_THROW(Solver({.panels = 0}), std::invalid_argument);
+  EXPECT_NO_THROW(Solver({.panels = 48}));
+}
+
+TEST(Solver, RejectsBadStacks)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  for (const double eps : {0.0, -1.0, std::nan("")}) {
+    Stack layer = etchStopStack();
+    layer.dielectrics.back().eps = eps;
+    EXPECT_THROW(Scene(geometry, layer), std::invalid_argument) << eps;
+    Stack background = etchStopStack();
+    background.background_eps = eps;
+    EXPECT_THROW(Scene(geometry, background), std::invalid_argument) << eps;
+  }
+  Stack unordered = etchStopStack();
+  unordered.dielectrics.back().top = unordered.dielectrics.front().top;
+  EXPECT_THROW(Scene(geometry, unordered), std::invalid_argument);
+}
+
+// The scene's interface lookup agrees with the stack's, on the interfaces
+// (where both take the permittivity above) and between them.
+TEST(Solver, SceneEpsMatchesStack)
+{
+  const Stack stack = etchStopStack();
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(geometry, stack);
+  for (const Stack::Dielectric& d : stack.dielectrics) {
+    for (const double z : {d.bottom, 0.5 * (d.bottom + d.top), d.top}) {
+      EXPECT_EQ(scene.epsAt(z), stack.epsAt(z)) << z;
+    }
+  }
+  EXPECT_EQ(scene.epsAt(10.0), stack.epsAt(10.0));
+}
+
 TEST(Solver, RejectsConformalDielectrics)
 {
   Stack stack = etchStopStack();

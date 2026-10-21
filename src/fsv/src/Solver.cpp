@@ -179,29 +179,27 @@ class InterfaceSizer
           const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables)
       : interfaces_(scene.interfaces()), tables_(tables)
   {
-    for (const Stack::PlanarInterface& i : interfaces_) {
-      z_.push_back(i.z);
-    }
   }
 
   CubeLimit limit(const double z, const double max_half_size) const
   {
-    const int count = static_cast<int>(z_.size());
+    const int count = static_cast<int>(interfaces_.size());
     if (count == 0) {
       return {max_half_size};
     }
     // Nearest and second-nearest interfaces, walking out from z.
-    int above = static_cast<int>(std::upper_bound(z_.begin(), z_.end(), z)
-                                 - z_.begin());
-    int below = above - 1;
+    int up = static_cast<int>(
+        std::ranges::upper_bound(interfaces_, z, {}, &Stack::PlanarInterface::z)
+        - interfaces_.begin());
+    int down = up - 1;
     double d[2];
     int nearest = -1;
     for (int pass = 0; pass < 2; pass++) {
-      const double da = above < count ? z_[above] - z
-                                      : std::numeric_limits<double>::infinity();
-      const double db = below >= 0 ? z - z_[below]
+      const double da = up < count ? interfaces_[up].z - z
                                    : std::numeric_limits<double>::infinity();
-      const int i = da <= db ? above++ : below--;
+      const double db = down >= 0 ? z - interfaces_[down].z
+                                  : std::numeric_limits<double>::infinity();
+      const int i = da <= db ? up++ : down--;
       d[pass] = std::min(da, db);
       if (pass == 0) {
         nearest = i;
@@ -232,7 +230,7 @@ class InterfaceSizer
         return {lim.distance};
       }
       h = lim.distance * kK / k;
-      position = z_[lim.interface] > z ? k : -k;
+      position = above(lim.interface, z) ? k : -k;
     }
     return {h, table(lim.interface, position)};
   }
@@ -242,7 +240,7 @@ class InterfaceSizer
     return interfaces_[i];
   }
   // The z of interface i is above height z.
-  bool above(const int i, const double z) const { return z_[i] > z; }
+  bool above(const int i, const double z) const { return interfaces_[i].z > z; }
   const LayeredCubeGreens* table(const int i, const int position) const
   {
     return (*tables_[i])[position + LayeredCubeGreens::kPositions - 1].get();
@@ -250,16 +248,27 @@ class InterfaceSizer
 
  private:
   const std::vector<Stack::PlanarInterface>& interfaces_;
-  std::vector<double> z_;
   const std::vector<
       const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables_;
 };
+
+// The panel count, checked before any table is built: every tabulated
+// interface position must lie on a panel boundary.
+int checkedPanels(const int panels)
+{
+  constexpr int kMultiple = 2 * LayeredCubeGreens::kPositions;
+  if (panels <= 0 || panels % kMultiple != 0) {
+    throw std::invalid_argument("fsv: panels must be a positive multiple of "
+                                + std::to_string(kMultiple));
+  }
+  return panels;
+}
 
 }  // namespace
 
 Solver::Solver(const SolverOptions& options)
     : options_(options),
-      greens_(CubeGreens::shared(options.panels)),
+      greens_(CubeGreens::shared(checkedPanels(options.panels))),
       pool_(std::make_unique<WorkerPool>(options.threads))
 {
 }
@@ -269,15 +278,19 @@ Solver::~Solver() = default;
 const std::vector<std::shared_ptr<const LayeredCubeGreens>>&
 Solver::layeredTables(const double ratio)
 {
-  auto& tables = layered_[ratio];
-  if (tables.empty()) {
-    constexpr int kK = LayeredCubeGreens::kPositions;
-    for (int position = 1 - kK; position < kK; position++) {
-      tables.push_back(
-          LayeredCubeGreens::shared(options_.panels, position, ratio));
-    }
+  const auto cached = layered_.find(ratio);
+  if (cached != layered_.end()) {
+    return cached->second;
   }
-  return tables;
+  // Cached only once every position is built, so a failure leaves no
+  // partial entry.
+  constexpr int kK = LayeredCubeGreens::kPositions;
+  std::vector<std::shared_ptr<const LayeredCubeGreens>> tables;
+  for (int position = 1 - kK; position < kK; position++) {
+    tables.push_back(
+        LayeredCubeGreens::shared(options_.panels, position, ratio));
+  }
+  return layered_.emplace(ratio, std::move(tables)).first->second;
 }
 
 CapRow Solver::solve(const Scene& scene,

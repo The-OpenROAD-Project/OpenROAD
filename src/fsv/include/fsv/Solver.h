@@ -23,7 +23,9 @@ struct SolverOptions
 {
   int threads = 1;
   uint64_t seed = 1;
-  // Panels per cube-face edge in the Green's-function tables.
+  // Panels per cube-face edge in the Green's-function tables: a positive
+  // multiple of 16, so that every tabulated interface position lies on a
+  // panel boundary.
   int panels = 32;
   // Walks per batch, and batches in the first and in later rounds; rounds
   // double from the first size up to round_batches. The stopping test runs
