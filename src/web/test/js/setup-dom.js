@@ -27,4 +27,9 @@ globalThis.ResizeObserver = globalThis.ResizeObserver || class {
     observe() {}
     disconnect() {}
 };
+globalThis.requestAnimationFrame = globalThis.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || ((id) => clearTimeout(id));
+if (dom.window.customElements) {
+    globalThis.customElements = dom.window.customElements;
+}
 export { dom };

@@ -3,16 +3,21 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
+#include "OptimizationPolicyConfig.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 
@@ -22,6 +27,7 @@ class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
+class Net;
 class Path;
 class PathExpanded;
 class Pin;
@@ -35,8 +41,14 @@ class Vertex;
 }  // namespace sta
 
 namespace rsz {
+class BufferedNet;
 class MoveCandidate;
 class Resizer;
+class SequentialTimingEstimator;
+struct SizeDownFanoutMtLoad;
+struct SplitLoadMtInput;
+struct SwapPinsMtInput;
+using BufferedNetPtr = std::shared_ptr<BufferedNet>;
 }  // namespace rsz
 
 namespace rsz {
@@ -46,7 +58,8 @@ namespace rsz {
 // Message IDs shared across multiple call sites
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
-inline constexpr int kMsgPolicyCommittedMoves = 2023;
+// The serial and Mt pin-swap generators simulate cell functions the same way.
+inline constexpr int kMsgUnknownFuncExprOp = 91;
 
 enum class FailReason : uint8_t
 {
@@ -69,7 +82,17 @@ enum class FailReason : uint8_t
 
   // Candidate timing context.
   kMissingCandidatePort,
-  kMissingCandidateTimingArc
+  kMissingCandidateTimingArc,
+
+  // Buffer insertion timing context.
+  kInvalidBufferInsertion,
+  kMissingBufferTimingArc,
+
+  // A modeled side path pushed below the prepared global worst slack.
+  kSideSlackFloorViolation,
+
+  // The opposite output transition of the target would fall below the floor.
+  kDualRfNonImproving
 };
 
 // === Fail-reason labels =====================================================
@@ -105,12 +128,28 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
                                             ArcMatchMode match_mode,
                                             ArcMatchType* match_type);
 
+// True when candidate drive resistance is at most the current value on both
+// rise and fall.
+bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
+                              const sta::LibertyPort* candidate);
+
 // === Target preparation flags ==============================================
 
+// The target-level data the generators read, prepared for every target of a
+// prepare stage.  A generator's own inputs come from its prepareInputs().
 using PrepareCacheMask = uint32_t;
 
 inline constexpr PrepareCacheMask kNoPrepareCache = 0;
-inline constexpr PrepareCacheMask kArcDelayStateCache = 1u << 0;
+inline constexpr PrepareCacheMask kEstimatorContextCache = 1u << 0;
+// The flip-flop input-side checks a cell swap of the target may disturb
+// (SequentialTimingEstimator); needs kEstimatorContextCache.
+inline constexpr PrepareCacheMask kSequentialEstimatorCache = 1u << 2;
+
+// The functionally equivalent input ports of a cell by input port.  The
+// library stays fixed within a run, so the policy shares one cache across
+// the targets of SwapPinsMt.
+using EquivPinCache = std::unordered_map<const sta::LibertyPort*,
+                                         std::vector<sta::LibertyPort*>>;
 
 // === Prepared timing data ===================================================
 
@@ -173,12 +212,25 @@ struct SlewBiasSample
   float sta_slew{0.0f};
 };
 
+// Three sampled corrections from Liberty output slew to current STA slew.
 struct SlewBiasModel
 {
+  // False when no stable correction could be sampled.
   bool valid{false};
+  // Arc that controls the merged output slew at the sampled operating point.
   const sta::TimingArc* table_worst_arc{nullptr};
   float input_slew{0.0f};
   std::array<SlewBiasSample, 3> samples;
+};
+
+// A target cell arc that drives the opposite output transition through the
+// selected input.  Workers use it to charge a candidate that speeds up one
+// transition but slows the other.
+struct OppositeRfArc
+{
+  const sta::TimingArc* ref_arc{nullptr};
+  float input_slew{0.0f};
+  float current_model_delay{0.0f};
 };
 
 // Snapshot of one timing stage's electrical state needed for table-model delay
@@ -192,11 +244,38 @@ struct DelayStageState
   float load_cap{0.0f};
   float current_model_delay{0.0f};  // Table-model cell delay baseline
   float current_delay{0.0f};        // STA graph cell delay baseline
+  float current_wire_delay{0.0f};   // Selected path wire delay after driver
   float current_model_slew{0.0f};   // Table-model merged slew baseline
   float current_slew{0.0f};         // STA graph merged slew baseline
   std::vector<OutputSlewMergeArc> output_slew_merge_arcs;
   SlewBiasModel sta_slew_bias;
+  // Target stage only: the opposite-transition arcs, empty when dual_rf_eval
+  // is off.
+  std::vector<OppositeRfArc> opposite_rf_arcs;
   int path_index{-1};
+};
+
+// One load pin whose slack pays for the delay a candidate adds to it: a load
+// on a target fanin net, or a load a split moves to a new driver.  weight
+// scales the charged loss: a pin on a violating worst path moves its endpoint
+// one for one, other pins only lose slack locally.
+struct SideLoad
+{
+  const sta::Pin* pin{nullptr};
+  float slack{0.0f};
+  float weight{1.0f};
+};
+
+// One input net of the target instance.  A new cell changes every input pin
+// capacitance, so each fanin driver slows its other loads.  The selected-arc
+// net takes the window's exact delta, the others the drive resistance.
+struct FaninSideNet
+{
+  const sta::LibertyPort* input_port{nullptr};
+  float input_cap{0.0f};
+  float delay_per_cap{0.0f};
+  bool selected_arc{false};
+  std::vector<SideLoad> loads;
 };
 
 // Prepared delay-estimator context for a target stage and its optional
@@ -204,11 +283,24 @@ struct DelayStageState
 // one entry (the target stage) after a successful buildContext; consumers
 // access electrical state via target() rather than duplicated top-level
 // fields.
-struct ArcDelayState
+struct EstimatorContext
 {
   std::vector<DelayStageState> path_stages;
   int target_stage_index{0};
   int delay_estimation_levels{0};
+
+  // The target's fanin nets and their other loads, empty when fanin_side_loss
+  // is off.
+  std::vector<FaninSideNet> fanin_side_nets;
+  // The worst slack at prepare time.  A side path may fall below it by at most
+  // side_floor_margin times the candidate's gain, or the checkpoint would fail.
+  float side_slack_floor{-std::numeric_limits<float>::infinity()};
+  float side_floor_margin{1.0f};
+  // Weight of the summed side loss before it is subtracted from the gain.
+  float fanin_side_loss_weight{1.0f};
+  // Worst slack of the opposite output transition at the target driver; the
+  // dual rise/fall check treats that transition as one more side path.
+  float opposite_rf_slack{std::numeric_limits<float>::infinity()};
   // Cached sum of stage.current_delay across path_stages; populated once at
   // build time so per-candidate scoring does not re-walk the window.
   float current_total_delay{0.0f};
@@ -216,6 +308,11 @@ struct ArcDelayState
   const DelayStageState& target() const
   {
     return path_stages[target_stage_index];
+  }
+  // The lowest slack a side path may fall to for a candidate that gains gain.
+  float sideSlackFloor(const float gain) const
+  {
+    return side_slack_floor - side_floor_margin * std::max(gain, 0.0f);
   }
 };
 
@@ -226,7 +323,19 @@ struct DelayEstimate
   bool legal{false};
   float candidate_delay{0.0f};
   float arrival_impr{0.0f};
+  int side_paths_evaluated{0};
+  // The weighted slack loss of the side paths in the negative-slack region,
+  // zero when none.
+  float side_loss{0.0f};
   FailReason reason{FailReason::kNone};
+};
+
+// Lumped resistance and capacitance of one estimated wire segment.
+struct WireRC
+{
+  float length{0.0f};
+  float res{0.0f};
+  float cap{0.0f};
 };
 
 // === Optimization target model =============================================
@@ -253,9 +362,22 @@ struct DelayEstimate
 // can also expose the instance reached through driver_pin.
 using TargetViewMask = uint8_t;
 
+// Current slack and driver-to-load wire delay of one load on a RebufferMt
+// target net, with the weight the side-load model gives it.
+struct RebufferLoadTiming
+{
+  float slack{0.0f};
+  float wire_delay{0.0f};
+  float weight{1.0f};
+};
+
+using RebufferLoadTimingMap
+    = std::unordered_map<const sta::Pin*, RebufferLoadTiming>;
+
 inline constexpr TargetViewMask kPathDriverView = 1u << 0;
 inline constexpr TargetViewMask kInstanceView = 1u << 1;
 
+// Repairable instance or path driver with timing context prepared for moves.
 struct Target
 {
   // === Target identity ======================================================
@@ -266,6 +388,16 @@ struct Target
   // - kInstanceView: target instance output pin
   sta::Pin* driver_pin{nullptr};
 
+  // The current path-segment endpoint survives STA refresh; Path* cannot.
+  const sta::Pin* endpoint_pin{nullptr};
+
+  // Original failing endpoint that caused this target to be collected.  This
+  // differs from endpoint_pin for latch D-side fanin segments.  The endpoint
+  // collector sets it; the LEGACY policies leave it null.
+  const sta::Pin* violated_endpoint_pin{nullptr};
+  // Transition of the selected driver path.
+  const sta::RiseFall* driver_rf{nullptr};
+
   // Endpoint-side timing path handle.  Expanding this path exposes the full
   // startpoint-to-endpoint chain.
   const sta::Path* endpoint_path{nullptr};
@@ -274,6 +406,10 @@ struct Target
   // Selected driver stage on `path`.  inputPath() and prevDriverPath() walk
   // backward from this stage with Path::prevPath().
   const sta::Path* driver_path{nullptr};
+  // The load the driver feeds on the path, captured while the path is valid:
+  // a through-filtered path end does not survive the next search.  Null when
+  // the path ends at the driver.
+  const sta::Pin* load_pin{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
   // scene and min_max are captured at construction (while endpoint_path is
@@ -283,17 +419,40 @@ struct Target
   const sta::MinMax* min_max{nullptr};
 
   // === Prepared data for MT generation/estimation ==========================
-  std::optional<ArcDelayState> arc_delay;
+  std::optional<EstimatorContext> estimator_context;
+  // Prepared flip-flop input-side checks for candidate Q-path swaps.
+  std::shared_ptr<const SequentialTimingEstimator> sequential_timing_estimator;
+
+  // === Generation inputs (MoveGenerator::prepareInputs()) ===================
+  // Fanin max-cap headroom of the target instance (the cell-swap
+  // generators); the STA capacitance check behind it is main-thread only.
+  std::optional<std::vector<Resizer::InputCapBudget>> input_cap_budgets;
+  // RebufferMt: the driver net as a buffered-net tree and, with the
+  // side-load model, the current timing of its loads (empty without it).
+  BufferedNetPtr rebuffer_net;
+  RebufferLoadTimingMap rebuffer_load_timing;
+  // SplitLoadMt: the split prepareInputs() chose from live STA, null when it
+  // has none.  SwapPinsMt: the arc delays prepareInputs() measured through
+  // the equivalent inputs, from which generate() picks the fastest; null when
+  // the gate has none.
+  // UnbufferMt: the delay that removing the target's buffer is estimated to
+  // save, unset when the buffer cannot be removed.
+  // SizeDownFanoutMt: the measured loads generate() decides from, empty when no
+  // load has a smaller cell.  The candidates share these.
+  std::shared_ptr<const SplitLoadMtInput> split_load_input;
+  std::shared_ptr<const SwapPinsMtInput> swap_pins_input;
+  std::optional<float> unbuffer_gain;
+  std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>>
+      size_down_fanout_loads;
 
   // === Field validation ====================================================
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  // Check whether the per-target fields required by a prepare mask are set.
-  bool isPrepared(PrepareCacheMask mask) const;
 
   // === Lazy STA/OpenDB resolution ==========================================
   std::string name(const Resizer& resizer) const;
   const sta::Pin* endpointPin(const Resizer& resizer) const;
+  const sta::Pin* violatedEndpointPin(const Resizer& resizer) const;
   sta::Pin* resolvedPin(const Resizer& resizer) const;
   sta::Instance* inst(const Resizer& resizer) const;
   sta::Vertex* vertex(const Resizer& resizer) const;
@@ -308,11 +467,33 @@ struct Target
   const sta::Path* prevDriverPath(const Resizer& resizer) const;
 };
 
+// What a candidate's ECO writes and what its timing reads, from prepared data.
+// The batch selector rejects write conflicts and candidates whose timing
+// depends on a batch member.
+struct MoveImpact
+{
+  // False when an estimator could not enumerate all reads and writes.
+  bool complete{false};
+  // Database objects mutated by applying the candidate.
+  std::vector<sta::Instance*> write_instances;
+  std::vector<sta::Net*> write_nets;
+  // Connectivity changed by a structural move.
+  std::vector<const sta::Pin*> reconnect_pins;
+  std::vector<sta::Instance*> reconnect_instances;
+  // Objects whose timing the candidate can alter after application.
+  std::vector<sta::Instance*> timing_effect_instances;
+  std::vector<sta::Net*> timing_effect_nets;
+  // Objects whose timing the candidate estimate read before application.
+  std::vector<sta::Instance*> timing_dependency_instances;
+  std::vector<sta::Net*> timing_dependency_nets;
+};
+
 Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             int path_index,
                             sta::Slack slack,
-                            const Resizer& resizer);
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin = nullptr);
 
 // === Estimation inputs and results =========================================
 
@@ -357,6 +538,21 @@ struct Estimate
 {
   bool legal{false};
   float score{0.0f};
+  // Unscaled arrival_impr in seconds; absent if estimation did not complete.
+  std::optional<float> raw_gain{};
+  // Non-owning static label: failReasonName() or a candidate's own literal
+  // such as "side_loss_non_improving" or "min_score".
+  std::string_view reason{};
+  // A reject by a modelled side cost alone while the own path gains.  The WNS
+  // tail may admit it and let the batch STA judge the side cost.  The moves
+  // set it for their side-loss, sequential-check and score-floor rejects;
+  // only SizeUpMt sets it for an opposite-transition reject.
+  bool tail_admissible{false};
+  // Opposite-side constraint loss stays separate from primary timing gain.
+  std::optional<float> sequential_penalty{};
+  std::optional<float> sequential_side_loss{};
+  // Estimated side-path slack loss charged against the local gain.
+  std::optional<float> side_loss{};
 };
 
 // Result of applying one candidate ECO (MoveCandidate::apply()).  The
@@ -394,6 +590,8 @@ struct TargetEvaluation
   std::vector<Estimate> estimates;
   MoveCandidate* best_candidate{nullptr};
   Estimate best_estimate;
+  // Worker-local profiling time, merged only after all estimates complete.
+  double worker_elapsed{0.0};
 
   bool hasBestCandidate() const { return best_candidate != nullptr; }
   MoveCandidate& bestCandidate() const { return *best_candidate; }
@@ -423,32 +621,19 @@ struct OptimizerRunConfig
   bool skip_size_down_fanout{false};
   bool skip_buffering{false};
   bool skip_buffer_removal{false};
+  bool skip_buffer_to_inverters{false};
   bool skip_last_gasp{false};
   bool skip_vt_swap{false};
   bool skip_crit_vt_swap{false};
+  // Stop-rule preset of PARALLEL_EVAL; the other policies ignore it.
+  RepairEffort effort{RepairEffort::kHigh};
+  // Setup repair profiler: 0 off, 1 timing samples, 2 adds the batch and
+  // pass events, 3 adds the per-move analysis.  Files go to profile_dir, or
+  // "repair_setup_profile" when empty, with one run_N per call.
+  int profile_mode{0};
+  std::string profile_dir;
   std::vector<MoveType> sequence;
   std::string phases;
-};
-
-// Policy-to-generator configuration channel for tunable knobs that do not
-// belong in the OptimizerRunConfig.
-struct OptimizationPolicyConfig
-{
-  // Cap on how many per-target candidates a generator expands. A value of 0
-  // means unlimited.
-  int max_candidate_generation{0};
-
-  // Experimental. Hard cap on accepted moves for policies that support bounded
-  // commits. A value of 0 means unlimited.
-  int max_committed_moves{0};
-
-  // Number of timing stages to include before and after the target stage in MT
-  // delay estimation. 0 preserves target-stage-only scoring.
-  int delay_estimation_levels{0};
-
-  // Experimental. Enable load-dependent STA output-slew bias sampling for
-  // the fanin neighbor stage in MT delay estimation.
-  bool delay_estimator_sta_slew_bias{false};
 };
 
 // === Move type labels ======================================================
@@ -476,6 +661,8 @@ inline const char* moveName(const MoveType move_type)
       return "SplitLoadMove";
     case MoveType::kReroute:
       return "RerouteMove";
+    case MoveType::kBufferToInverters:
+      return "BufferToInvertersMove";
     case MoveType::kCount:
       break;
   }

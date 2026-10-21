@@ -10,6 +10,15 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
@@ -21,6 +30,7 @@ COMPULSORY_TESTS = [
     "ndr_no_auto_taper",
     "obstruction",
     "pa_single_pin",
+    "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
@@ -147,6 +157,7 @@ py_library(
         name = test_name,
         srcs = [test_name + ".py"],
         data = [":" + test_name + "_resources"],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",
@@ -171,10 +182,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -198,11 +207,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        # drt only exports header TritonRoute.h, but we need other symbols
-        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -214,7 +220,10 @@ py_test(
     name = "drt_man_tcl_check",
     srcs = ["drt_man_tcl_check.py"],
     data = ["//src/drt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -238,4 +247,14 @@ regression_test(
     ],
     tags = ["manual"],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "WatermarkCostTest",
+    srcs = ["WatermarkCostTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

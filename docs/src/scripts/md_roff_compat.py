@@ -110,9 +110,9 @@ docs2 = [f"{SRC_DIR}/{tool}.md" for tool in tools if tool not in exclude2]
 
 # Process man3. The pages come from the generated messages.txt files, laid out
 # as <root>/src/<module>/messages.txt plus <root>/messages.txt for the ORD
-# messages. The CMake build writes them into the source tree, so the default
-# root is the repository root. Bazel writes them under bazel-out, so
-# //docs:man_pages sets MESSAGES_ROOT_DIR to its generated tree instead.
+# messages. Bazel writes them under bazel-out, so //docs:man_pages sets
+# MESSAGES_ROOT_DIR to its generated tree. The deprecated CMake build writes
+# them into the source tree, so the default root is the repository root.
 MESSAGES_ROOT_DIR = os.environ.get("MESSAGES_ROOT_DIR", "..")
 DEST_DIR3 = "./md/man3"
 exclude = [
@@ -139,7 +139,7 @@ def man2(path=DEST_DIR2):
 # The whole-tree build above silences it: repeated across every module it
 # drowns out the diagnostics worth reading.
 def man2_translate(doc, path, quiet=False):
-    with open(doc) as f:
+    with open(doc, encoding="utf-8") as f:
         text = f.read()
         # new function names (reading tcl synopsis + convert gui:: to gui_)
         func_names = extract_tcl_command(text)
@@ -258,7 +258,7 @@ def man3(path=DEST_DIR3):
 
 
 def man3_translate(doc, path, quiet=False):
-    with open(doc) as f:
+    with open(doc, encoding="utf-8") as f:
         for line in f:
             parts = line.split()
             module, num, message, level = (
