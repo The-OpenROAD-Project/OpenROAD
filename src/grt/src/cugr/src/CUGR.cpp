@@ -905,7 +905,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     return 0.0;
   }
 
-  // The relief skips the slack refresh, which would re-time every pass.
+  // The relief's passes skip the slack refresh, which would re-time each one.
   if (critical_nets_percentage_ != 0 && options.refresh_critical) {
     // Maze passes keep the resistance-aware set the pattern stages chose.
     updateCriticalNets(net_indices, /* extend_res_aware= */ false);
@@ -1118,6 +1118,7 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   }
 
   iterativeRRR(net_indices, {});
+  // The relief's moves need new routes and guides in GlobalRouter too.
   std::vector<odb::dbNet*> moved;
   if (incremental) {
     for (const int index : relieveIncrementalOverflow()) {
@@ -1593,6 +1594,7 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
   if (hot_edges.empty() || totalOverflow() == 0) {
     return {};
   }
+  // Nets already in the RRR loop: the rerouted ones, then the added ones.
   std::vector<char> is_candidate(gr_nets_.size(), 0);
   for (const int index : incremental_candidates_) {
     is_candidate[index] = 1;
@@ -1606,6 +1608,7 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
   std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
   std::vector<int> net_indices;
   for (int round = 1; round <= kMaxRounds && !hot_edges.empty(); round++) {
+    // The hot cells and their box, to skip nets far from all of them.
     std::vector<std::pair<int, int>> hot_cells;
     BoxT window;
     for (const auto& [layer, x, y] : hot_edges) {
@@ -1643,12 +1646,14 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     if (added.empty()) {
       break;
     }
+    // Added nets join the candidates under strict acceptance.
     for (const int index : added) {
       is_candidate[index] = 1;
       strict_accept[index] = 1;
       incremental_candidates_.push_back(index);
       added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
     }
+    // Reroute and measure the added overflow; stop once a round stops gaining.
     const double before = overflow_on(hot_edges);
     iterativeRRR(net_indices, options);
     const double after = overflow_on(hot_edges);

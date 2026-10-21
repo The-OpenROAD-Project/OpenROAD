@@ -1,5 +1,4 @@
-# Shared by the repair_antennas_post_drt_relief*_cugr tests: record each
-# routed net's wire and guides, then report the nets whose guides changed.
+# Wire and guide checks shared by the repair_antennas_post_drt_relief tests.
 
 proc guide_geometry { net } {
   set rows {}

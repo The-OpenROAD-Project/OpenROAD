@@ -1,5 +1,4 @@
-# Post-DRT repair_antennas on a congested CUGR route: nets the overflow
-# relief moves must drop their detailed wires, like the dirty nets.
+# Post-DRT repair_antennas: nets the overflow relief moves drop their wires.
 source "helpers.tcl"
 source "repair_antennas_relief_helpers.tcl"
 # Suppress DRT init logging: region/guide query sizes are a function of the

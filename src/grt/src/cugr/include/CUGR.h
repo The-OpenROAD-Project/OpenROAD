@@ -286,8 +286,7 @@ class CUGR
   // neutral first PatternRoute.
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
-  // How a rip-up and reroute pass treats its nets; the overflow relief
-  // changes the regular stages' defaults.
+  // How a rip-up and reroute pass treats its nets; the relief alters it.
   struct RerouteOptions
   {
     // Incremental only: reroute every candidate, not only the congested ones.
@@ -330,8 +329,7 @@ class CUGR
    */
   void iterativeRRR(std::vector<int>& net_indices,
                     const RerouteOptions& options);
-  // Incremental only: reroutes the nets sharing the overflow a call added and
-  // returns the indices of those it moved.
+  // Incremental: reroutes the nets sharing added overflow; returns those moved.
   std::vector<int> relieveIncrementalOverflow();
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
@@ -426,8 +424,7 @@ class CUGR
   std::vector<int> parasitics_dirty_nets_;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
-  // Overflow per (layer, x, y) edge at the last captureOverflowBaseline (a
-  // full route or adopted routing); the relief ignores it.
+  // Per-edge overflow at the last captureOverflowBaseline; relief ignores it.
   std::vector<std::pair<std::array<int, 3>, double>> overflow_baseline_;
 
   bool resistance_aware_ = false;

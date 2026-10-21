@@ -165,8 +165,7 @@ class GRNet
   // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
   bool isAdopted() const { return adopted_; }
   void setAdopted(bool adopted) { adopted_ = adopted; }
-  // Set when GlobalRouter kept the old route after a pin edit, so the pins
-  // here are out of date and the overflow relief must not move the net.
+  // Pins out of date (GlobalRouter kept the old route): the relief skips it.
   bool isStale() const { return stale_; }
   void setStale(bool stale) { stale_ = stale; }
 

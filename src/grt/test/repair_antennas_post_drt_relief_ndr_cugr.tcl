@@ -1,5 +1,4 @@
-# Post-DRT repair_antennas with NDR nets: the overflow relief may demote the
-# NDR of an adopted route, which must keep its wrong-way spans legal.
+# Post-DRT repair_antennas: relief NDR demotion keeps adopted routes legal.
 source "helpers.tcl"
 source "repair_antennas_relief_helpers.tcl"
 # Suppress DRT init logging: region/guide query sizes are a function of the
