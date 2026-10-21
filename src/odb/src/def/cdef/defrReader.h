@@ -612,11 +612,11 @@ using DEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 EXTERN void defrSetWarningLogFunction(DEFI_WARNING_LOG_FUNCTION p0);
 
 /* Routine to set the user defined malloc routine                             */
-using DEFI_MALLOC_FUNCTION = void* (*) (size_t);
+using DEFI_MALLOC_FUNCTION = void* (*)(size_t);
 EXTERN void defrSetMallocFunction(DEFI_MALLOC_FUNCTION p0);
 
 /* Routine to set the user defined realloc routine                            */
-using DEFI_REALLOC_FUNCTION = void* (*) (void*, size_t);
+using DEFI_REALLOC_FUNCTION = void* (*)(void*, size_t);
 EXTERN void defrSetReallocFunction(DEFI_REALLOC_FUNCTION p0);
 
 /* Routine to set the user defined free routine                               */

@@ -1,8 +1,10 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,31 +36,18 @@ struct AccessPoint
   }
 };
 
-// Only hash and compare on the point, not the layers
-class AccessPointHash
+struct PointTHash
 {
- public:
-  AccessPointHash(int y_size) : y_size_(y_size) {}
-
-  std::size_t operator()(const AccessPoint& ap) const
+  std::size_t operator()(const PointT& point) const
   {
-    return robin_hood::hash_int(ap.point.x() * y_size_ + ap.point.y());
-  }
-
- private:
-  const uint64_t y_size_;
-};
-
-struct AccessPointEqual
-{
-  bool operator()(const AccessPoint& lhs, const AccessPoint& rhs) const
-  {
-    return lhs.point == rhs.point;
+    return robin_hood::hash_int((static_cast<uint64_t>(point.x()) << 32)
+                                | static_cast<uint32_t>(point.y()));
   }
 };
 
-using AccessPointSet
-    = robin_hood::unordered_set<AccessPoint, AccessPointHash, AccessPointEqual>;
+// Selected access cell -> union of the fixed layer intervals of the pins
+// that share it, so the routing tree honors every pin's connection layers.
+using AccessPointMap = robin_hood::unordered_map<PointT, IntervalT, PointTHash>;
 
 struct GraphEdge
 {
@@ -161,27 +150,19 @@ class GridGraph
                     PointT v,
                     double net_factor = 1.0) const;
 
-  /**
-   * @brief Returns the cost of a via between `layer_index` and
-   *        `layer_index + 1` at `loc`.
-   *
-   * The unit via cost is constant; only the wire-patch demand each
-   * via implies is scaled by the per-layer NDR factor. A via that
-   * lands on M3-M5 may therefore use a different factor on its M3
-   * patches than on its M4 patches.
-   *
-   * @param layer_index Lower-layer index of the via (0-based).
-   * @param loc         Via location in gcell coordinates.
-   * @param net_costs   Per-layer NDR cost vector. Empty (default) =
-   *                    no NDR; out-of-range layers fall back to 1.0.
-   *
-   * @returns Total via cost (unit + wire patches).
-   */
-  CostT getViaCost(int layer_index,
-                   PointT loc,
-                   const std::vector<double>& net_costs = {}) const;
-
   CostT getUnitViaCost() const { return unit_via_cost_; }
+  // Unit cost of the via between `layer_index` and `layer_index + 1`,
+  // scaled by the larger NDR factor of the two layers in `net_costs`.
+  CostT getUnitViaCost(int layer_index,
+                       const std::vector<double>& net_costs) const;
+
+  // Congestion cost of the pad a via stack spanning [low, high] at `loc`
+  // puts on `layer`'s flanking edges (see forEachStackFlankEdgeImpl).
+  CostT getStackPadCost(int layer,
+                        int low,
+                        int high,
+                        PointT loc,
+                        const std::vector<double>& net_costs) const;
 
   // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
   // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
@@ -203,42 +184,21 @@ class GridGraph
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
   /**
-   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   * @brief Sets the multiplier applied to the congestion cost.
    *
-   * Scales `constants_.cost_logistic_slope` and
-   * `constants_.maze_logistic_slope` wherever they are read by
-   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
-   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
-   * between iterations. The default value 1.0 leaves the cost surface
-   * unchanged.
+   * Scales the congestion cost height and the slopes
+   * `constants_.cost_logistic_slope` and `constants_.maze_logistic_slope`
+   * in `congestionCost`, shared by `getWireCost` and the wire-cost views.
+   * Used by CUGR's iterative RRR loop to raise the congestion cost between
+   * iterations. The default value 1.0 leaves the cost surface unchanged.
    *
    * @param m New multiplier value. Must be > 0.
    */
   void setCostMultiplier(double m) { cost_multiplier_ = m; }
   double getCostMultiplier() const { return cost_multiplier_; }
 
-  /**
-   * @brief Counts congested edges traversed by a routing tree.
-   *
-   * Walks the tree's wire segments and returns how many edges satisfy
-   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
-   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
-   * widens to include near-overflow ("congested but not yet
-   * overflowing") edges. Edges sitting exactly at capacity are
-   * intentionally *not* flagged — being full is not the same as being
-   * congested. Used by the RRR loop to extend the rip-up set beyond
-   * strictly-overflowed nets.
-   *
-   * @param tree      Routing tree to walk.
-   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
-   *
-   * @returns Number of tree edges meeting the predicate (>= 0).
-   */
-  int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                      double threshold) const;
-
   // Misc
-  AccessPointSet selectAccessPoints(GRNet* net) const;
+  AccessPointMap selectAccessPoints(GRNet* net) const;
 
   // Methods for updating demands - Public API.
 
@@ -254,7 +214,12 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                    const std::vector<double>& net_costs = {});
+                    const std::vector<double>& net_costs = {},
+                    bool adopted = false);
+  // Net-aware forms: the tree, NDR costs and adopted mark all
+  // travel with the net, so adopt/release sites cannot disagree.
+  void addTreeUsage(const GRNet& net);
+  void removeTreeUsage(const GRNet& net);
 
   /**
    * @brief Removes the demand previously added for a routing tree.
@@ -266,7 +231,68 @@ class GridGraph
    * @param net_costs Per-layer NDR cost vector. Empty = no NDR.
    */
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
-                       const std::vector<double>& net_costs = {});
+                       const std::vector<double>& net_costs = {},
+                       bool adopted = false);
+
+  // The (layer, x, y) edges the net's tree occupies, each once and sorted.
+  void collectTreeEdges(const GRNet& net,
+                        std::vector<std::array<int, 3>>& edges) const;
+  // Overflow on the given edges under the current demand.
+  double sumOverflow(const std::vector<std::array<int, 3>>& edges) const;
+
+  // Debug: snapshot/restore per-edge demand for consistency checks.
+  std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
+  // GCells whose reported usage changed since the last odb refresh, recorded
+  // where the demand was written rather than inferred from routes.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const
+  {
+    return congestion_dirty_tiles_;
+  }
+  void clearCongestionDirtyTiles();
+  void markAllCongestionTiles();
+
+  void restoreDemand(
+      const std::vector<std::vector<std::vector<CapacityT>>>& snap);
+
+  // Accumulates a tree's via-stub demand into a flat [layer][x][y] map
+  // (see edgeFlatIndex), mirroring commitTree's deposits; used to attribute
+  // demand for reporting.
+  void accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
+                           const std::vector<double>& net_costs,
+                           std::vector<CapacityT>& via_demand) const;
+
+  size_t edgeFlatIndex(const int layer, const int x, const int y) const
+  {
+    return (static_cast<size_t>(layer) * x_size_ + x) * y_size_ + y;
+  }
+
+  // Non-template forEachStackFlankEdgeImpl for callers outside GridGraph.cpp.
+  void forEachStackFlankEdge(
+      int low,
+      int high,
+      PointT loc,
+      const std::vector<double>& net_costs,
+      const std::function<void(int, PointT, CapacityT, double)>& fn) const;
+  // Non-template forEachViaColumnImpl for callers outside GridGraph.cpp.
+  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
+                        const std::function<void(PointT, int, int)>& fn) const;
+  // Non-template forEachTreeWireEdgeImpl for callers outside GridGraph.cpp.
+  void forEachTreeWireEdge(
+      const std::shared_ptr<GRTreeNode>& tree,
+      bool adopted,
+      const std::function<void(int, PointT, bool)>& fn) const;
+  // Flank edges a wrong-way wire through `cell` loads: fn(edge, demand).
+  void forEachWrongWayFlankEdge(
+      int layer_index,
+      PointT cell,
+      const std::function<void(PointT, CapacityT)>& fn) const;
+
+  // Enumerate the lower cells of the preferred-direction edges a wire from
+  // u to v occupies on `layer_index` — the cells commitWire charges.
+  void forEachWireEdge(int layer_index,
+                       PointT u,
+                       PointT v,
+                       const std::function<void(PointT)>& fn) const;
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -299,14 +325,33 @@ class GridGraph
    */
   void extractWireCostView(GridGraphView<CostT>& view,
                            const std::vector<double>& net_costs) const;
-  void updateWireCostView(
-      GridGraphView<CostT>& view,
-      const std::shared_ptr<GRTreeNode>& routing_tree) const;
+  // Refreshes `view` on the 2D edges the net's tree charges (commitTree).
+  void updateWireCostView(GridGraphView<CostT>& view, const GRNet& net) const;
 
   // For visualization
   void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
+  void markCongestionTile(int layer_index, int x, int y);
+  // GCells whose reported usage changed since the last odb refresh, with a
+  // per-tile flag alongside so the list dedupes without a hash lookup.
+  std::vector<odb::Point> congestion_dirty_tiles_;
+  std::vector<bool> congestion_tile_marked_;
+
+  // Per-direction inputs of the 2D wire-cost view (extractWireCostView).
+  struct WireCostViewContext
+  {
+    std::array<std::vector<int>, 2> layers;
+    std::array<CostT, 2> unit_length_short_cost;
+    std::array<double, 2> net_factor;
+  };
+  WireCostViewContext makeWireCostViewContext(
+      const std::vector<double>& net_costs) const;
+  // Cost of one 2D edge, shared by the full and incremental extraction.
+  CostT wireCostViewCell(const WireCostViewContext& context,
+                         int direction,
+                         int x,
+                         int y) const;
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
@@ -325,10 +370,23 @@ class GridGraph
       const odb::Point& inst_location) const;
   AccessPoint selectAccessPoint(
       const std::vector<AccessPoint>& access_points) const;
-  bool findODBAccessPoints(GRNet* net,
-                           AccessPointSet& selected_access_points) const;
+  // Select APs from DRT-created ODB access points; returns the pin indices
+  // that have none, for the shape-derived fallback.
+  std::vector<int> findODBAccessPoints(
+      GRNet* net,
+      AccessPointMap& selected_access_points) const;
+  // Shape-derived AP selection for one pin: pick the most accessible cell
+  // closest to the net center among the cells the pin shapes touch.
+  void selectShapeAccessPoint(GRNet* net,
+                              int pin_idx,
+                              AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
+  // Congestion cost term: `base` scaled by the RRR multiplier and the logistic.
+  CostT congestionCost(CostT base,
+                       CapacityT capacity,
+                       CapacityT resource,
+                       double slope) const;
   CostT getWireCost(int layer_index,
                     PointT lower,
                     CapacityT demand = 1.0,
@@ -347,15 +405,58 @@ class GridGraph
                   PointT lower,
                   bool rip_up = false,
                   double net_factor = 1.0);
-  void commitVia(int layer_index,
-                 PointT loc,
-                 bool rip_up = false,
-                 const std::vector<double>& net_costs = {});
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
-                  const std::vector<double>& net_costs = {});
-  // Per-via demand on layer `l` of via `layer_index`, spread over `edge_sum`.
-  CapacityT viaDemand(int layer_index, int l, int edge_sum) const;
+                  const std::vector<double>& net_costs = {},
+                  bool adopted = false);
+  // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
+  // deposited on the layer's flanking edges like a via stub.
+  void commitWrongWayWire(int layer_index,
+                          PointT loc,
+                          bool rip_up,
+                          double layer_factor);
+  // Track length of the pad a via stack spanning [low, high] puts on
+  // `layer`: the end pads on `low` and `high`, and on intermediate layers
+  // the larger of the overlapping pads of the vias below and above.
+  double stackPadLength(int layer, int low, int high) const;
+  // Defined in GridGraph.cpp; all instantiations live there.
+  template <typename F>
+  void forEachFlankEdge(int layer, PointT loc, F&& fn) const;
+  // Enumerates the flanking edges the stack pad on `layer` deposits demand
+  // on: fn(edge_lower_point, demand, layer_factor). No callbacks when via
+  // demand is disabled; via counts/costs stay separate.
+  template <typename F>
+  void forEachPadFlankEdge(int layer,
+                           int low,
+                           int high,
+                           PointT loc,
+                           const std::vector<double>& net_costs,
+                           F&& fn) const;
+  // Enumerates the flanking edges a via stack spanning layers [low, high] at
+  // `loc` deposits demand on, one pad per layer (a single via is a stack of
+  // one): fn(l, edge_lower_point, demand, layer_factor).
+  template <typename F>
+  void forEachStackFlankEdgeImpl(int low,
+                                 int high,
+                                 PointT loc,
+                                 const std::vector<double>& net_costs,
+                                 F&& fn) const;
+  // Enumerates a tree's via columns: its via edges at each (x, y) merged
+  // into maximal stacks wherever their layer spans overlap or touch, so a
+  // stack split across tree edges still puts one pad on each layer:
+  // fn(loc, low, high).
+  template <typename F>
+  void forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
+                            F&& fn) const;
+  // Visits each wire edge and wrong-way cell a tree commits, once each.
+  template <typename F>
+  void forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
+                               bool adopted,
+                               F&& fn) const;
+  template <typename F>
+  void forEachWrongWayFlankEdgeImpl(int layer_index, PointT cell, F&& fn) const;
+  template <typename F>
+  void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
@@ -376,6 +477,8 @@ class GridGraph
   CostT unit_length_wire_cost_;
   CostT unit_via_cost_;
   std::vector<CostT> unit_length_short_costs_;
+  // The NDR-blind context of the shared 2D view; fixed once the grid exists.
+  WireCostViewContext default_view_context_;
 
   int total_length_ = 0;
   int total_num_vias_ = 0;

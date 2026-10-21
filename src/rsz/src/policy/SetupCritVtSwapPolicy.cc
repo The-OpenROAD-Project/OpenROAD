@@ -8,25 +8,29 @@
 #include <cstddef>
 #include <limits>
 #include <map>
+#include <optional>
 #include <queue>
 #include <set>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "VtSwapCandidate.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -46,14 +50,27 @@ void SetupCritVtSwapPolicy::iterate()
   int& num_viols = setup_context_.violation_count;
   // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
   if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
+    RepairSetupProfiler::event("skip_crit_vt_swap");
     markRunComplete(true);
     return;
   }
-  committer_.capturePrePhaseSlack();
-  if (swapVTCritCells(num_viols)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+
+  // The timing the sweep starts from, which no earlier phase may have sampled.
+  if (RepairSetupProfiler::enabled()) {
+    const ProfileScope collection("qor_collection");
+    sta::Slack wns;
+    sta::Vertex* worst_vertex;
+    target_collector_->worstSlack(wns, worst_vertex);
+    RepairSetupProfiler::qor(
+        "phase_before", wns, target_collector_->totalNegativeSlack());
   }
+
+  const ProfileIteration iteration("crit_instance_sweep");
+  committer_.tracker().capturePrePhaseSlack();
+  if (swapVTCritCells(num_viols)) {
+    resizer_.updateParasiticsAndTiming();
+  }
+
   committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
   markRunComplete(true);
 }
@@ -64,15 +81,37 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   ViolatingEnds violating_ends
       = collectViolatingEndpoints(config_.setup_slack_margin);
   if (violating_ends.size() > kMaxCritEndpoints) {
+    RepairSetupProfiler::event("skip_endpoint_limit",
+                               violating_ends.size() - kMaxCritEndpoints);
     violating_ends.resize(kMaxCritEndpoints);
   }
   // Collect a bounded fanin cone across the worst endpoints, then VT-swap that
   // deduplicated instance set in one committer batch.
-  std::unordered_map<sta::Instance*, float> crit_insts;
+  // The instances are kept in the order they are found: a swap can be
+  // rejected for max capacitance depending on the swaps before it.
+  const size_t max_crit_insts
+      = violating_ends.size() * kMaxCritInstancesPerEndpoint;
+  std::vector<std::pair<sta::Instance*, float>> crit_insts;
+  crit_insts.reserve(max_crit_insts);
+  std::unordered_set<sta::Instance*> crit_inst_set;
+  crit_inst_set.reserve(max_crit_insts);
   std::unordered_set<sta::Vertex*> visited;
   std::unordered_set<sta::Instance*> notSwappable;
-  for (const auto& [endpoint, slack] : violating_ends) {
-    traverseFaninCone(endpoint, crit_insts, visited, notSwappable);
+
+  {
+    const ProfileScope profile("target_collection");
+    const std::optional<std::unordered_set<sta::Vertex*>> group_fanout
+        = findGroupFanout();
+    for (const auto& [endpoint, slack] : violating_ends) {
+      traverseFaninCone(endpoint,
+                        group_fanout.has_value() ? &*group_fanout : nullptr,
+                        crit_insts,
+                        crit_inst_set,
+                        visited,
+                        notSwappable);
+    }
+
+    RepairSetupProfiler::event("targets_collected", crit_insts.size());
   }
   debugPrint(logger_,
              RSZ,
@@ -81,24 +120,24 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
              "identified {} critical instances",
              crit_insts.size());
 
-  for (const std::pair<sta::Instance* const, float>& crit_inst_slack :
-       crit_insts) {
-    sta::Instance* inst = crit_inst_slack.first;
+  for (const auto& [inst, inst_slack] : crit_insts) {
     sta::LibertyCell* best_cell = nullptr;
     if (!resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_cell)) {
+      RepairSetupProfiler::event(
+          "skip_not_swappable", 1, moveName(MoveType::kVtSwap));
       continue;
     }
     sta::LibertyCell* current_cell = network_->libertyCell(inst);
 
     sta::Pin* output_pin = nullptr;
-    if (committer_.moveTrackerEnabled(2)) {
+    if (committer_.moveTrackerEnabled(2) || RepairSetupProfiler::enabled()) {
       output_pin = outputPin(inst);
     }
 
     Target target;
     target.views = kInstanceView;
     target.driver_pin = output_pin;
-    target.slack = crit_inst_slack.second;
+    target.slack = inst_slack;
 
     if (committer_.moveTrackerEnabled(2)) {
       committer_.setCurrentEndpoint(output_pin);
@@ -110,6 +149,13 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
 
     VtSwapCandidate candidate(
         resizer_, target, output_pin, inst, current_cell, best_cell);
+
+    // CRIT applies constructed candidates without invoking estimate().
+    RepairSetupProfiler::moveGenerated(candidate);
+    RepairSetupProfiler::event(
+        "estimate_skipped", 1, moveName(candidate.type()));
+    RepairSetupProfiler::event("winners", 1, moveName(candidate.type()));
+    RepairSetupProfiler::moveSelected(candidate);
     committer_.trackMoveAttempt(output_pin, MoveType::kVtSwap);
     const MoveResult result = committer_.commit(candidate);
     if (result.accepted) {
@@ -124,19 +170,65 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   }
   if (changed) {
     committer_.acceptPendingMoves();
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    resizer_.updateParasiticsAndTiming();
     num_viols = collectViolatingEndpoints(config_.setup_slack_margin).size();
   } else {
+    RepairSetupProfiler::stop("no_change");
     committer_.rejectPendingMoves();
   }
 
   return changed;
 }
 
+std::optional<std::unordered_set<sta::Vertex*>>
+SetupCritVtSwapPolicy::findGroupFanout()
+{
+  const PathGroupFilter path_group_filter(&resizer_);
+  if (!path_group_filter.enabled()) {
+    return std::nullopt;
+  }
+  std::unordered_set<sta::Vertex*> reached;
+  std::queue<sta::Vertex*> queue;
+  sta::VertexIterator vertex_iter(graph_);
+  while (vertex_iter.hasNext()) {
+    sta::Vertex* vertex = vertex_iter.next();
+    const sta::Pin* pin = vertex->pin();
+    if (sta_->isClock(pin, sta_->cmdMode())) {
+      continue;
+    }
+    const sta::PortDirection* direction = network_->direction(pin);
+    if (((network_->isTopLevelPort(pin) && direction->isAnyInput())
+         || (resizer_.isRegister(vertex) && direction->isAnyOutput()))
+        && path_group_filter.startpointInGroup(vertex)
+        && reached.insert(vertex).second) {
+      queue.push(vertex);
+    }
+  }
+  while (!queue.empty()) {
+    sta::Vertex* vertex = queue.front();
+    queue.pop();
+    sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
+    while (edge_iter.hasNext()) {
+      sta::Edge* edge = edge_iter.next();
+      sta::Vertex* fanout = edge->to(graph_);
+      // A register clock pin launches paths of its own rather than
+      // continuing this one.
+      if (edge->role()->isTimingCheck() || fanout->isRegClk()) {
+        continue;
+      }
+      if (reached.insert(fanout).second) {
+        queue.push(fanout);
+      }
+    }
+  }
+  return reached;
+}
+
 void SetupCritVtSwapPolicy::traverseFaninCone(
     sta::Vertex* endpoint,
-    std::unordered_map<sta::Instance*, float>& crit_insts,
+    const std::unordered_set<sta::Vertex*>* group_fanout,
+    std::vector<std::pair<sta::Instance*, float>>& crit_insts,
+    std::unordered_set<sta::Instance*>& crit_inst_set,
     std::unordered_set<sta::Vertex*>& visited,
     std::unordered_set<sta::Instance*>& notSwappable)
 {
@@ -159,13 +251,15 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     sta::Pin* pin = current->pin();
     sta::Instance* inst = network_->instance(pin);
 
-    if (inst) {
+    // Under -path_group a cell counts only through an output on the group's
+    // paths into the endpoint, where its own delay lies on them; the
+    // endpoint's register is reached through its data pin, not its delay.
+    if (inst && (group_fanout == nullptr || current->isDriver(network_))) {
       if (resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_lib_cell)) {
         const sta::Slack inst_slack = getInstanceSlack(inst);
         if (sta::fuzzyLess(inst_slack, config_.setup_slack_margin)) {
-          auto it = crit_insts.find(inst);
-          if (it == crit_insts.end()) {
-            crit_insts[inst] = inst_slack;
+          if (crit_inst_set.insert(inst).second) {
+            crit_insts.emplace_back(inst, inst_slack);
             endpoint_insts++;
             debugPrint(logger_,
                        RSZ,
@@ -187,6 +281,11 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
         continue;
       }
 
+      // Logic no group startpoint reaches carries none of the group's paths.
+      if (group_fanout != nullptr && !group_fanout->contains(fanin_vertex)) {
+        continue;
+      }
+
       if (!visited.contains(fanin_vertex)) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (sta::fuzzyLess(fanin_slack, config_.setup_slack_margin)) {
@@ -205,8 +304,9 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
              endpoint->name(network_),
              endpoint_insts);
   if (logger_->debugCheck(RSZ, "swap_crit_vt", 1)) {
-    for (auto crit_inst_slack : crit_insts) {
-      logger_->report(" {}", network_->pathName(crit_inst_slack.first));
+    for (size_t i = crit_insts.size() - endpoint_insts; i < crit_insts.size();
+         ++i) {
+      logger_->report(" {}", network_->pathName(crit_insts[i].first));
     }
   }
 }

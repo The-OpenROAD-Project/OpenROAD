@@ -24,7 +24,7 @@
 [INFO GRT-0002] Maximum degree: 36
 [WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
-Nets:                579
+Nets:                563
 Special nets:        0
 Routing layers:      10
 
@@ -53,31 +53,29 @@ Stage 5: Iterative rip-up and re-route.
 [INFO GRT-0117] Start extra iteration 3/5
 [INFO GRT-0117] Start extra iteration 4/5
 [INFO GRT-0117] Start extra iteration 5/5
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (391).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (211).
 Routing statistics
-Wire length:           44482
-Total via count:       4125
-Total congestion:      392
-Min resource:          -2.163157537108974
-Bottleneck:            (1, 17, 18)
-
-[INFO GRT-0096] Final congestion report:
-Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
----------------------------------------------------------------------------------------
-metal1               0             0            0.00%             0 /  0 /  0
-metal2            1792           852           47.54%             0 /  2 / 109
-metal3            2448          1089           44.49%             2 /  0 / 99
-metal4            1217           440           36.15%             0 /  1 / 62
-metal5            1224           384           31.37%             1 /  0 / 39
-metal6            1217           368           30.24%             0 /  0 / 26
-metal7            1190           254           21.34%             1 /  0 / 30
-metal8            1190           204           17.14%             0 /  1 / 18
-metal9            1190            77            6.47%             1 /  0 /  6
-metal10           1190            14            1.18%             0 /  1 /  2
----------------------------------------------------------------------------------------
-Total            12658          3682           29.09%             5 /  5 / 391
-
-[INFO GRT-0018] Total wirelength: 12141 um
+Wire length:           49935
+Total via count:       4199
+Total congestion:      210.40
+Min resource:          -1.74
+Bottleneck:            (2, 13, 14)
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
+--------------------------------------------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+metal2    V      1791.80       762.00       136.38       898.38      50.14      22.17       6.23          1.41
+metal3    H      2448.00      1193.00       135.27      1328.27      54.26      60.71      11.45          1.74
+metal4    V      1217.20       384.00        78.06       462.06      37.96      37.33       9.05          0.44
+metal5    H      1224.00       340.00        52.66       392.66      32.08      22.38       4.15          0.39
+metal6    V      1217.20       346.00        33.06       379.06      31.14      14.87       2.01          0.25
+metal7    H      1190.00        83.00        32.26       115.26       9.69       8.47       2.03          0.56
+metal8    V      1190.00       211.00        16.56       227.56      19.12       7.56       1.42          0.42
+metal9    H      1190.00         5.00         1.12         6.12       0.51       0.44       0.12          0.28
+metal10   V      1190.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+--------------------------------------------------------------------------------------------------------------
+Total           12658.20      3324.00       485.37      3809.37      30.09     173.93      36.47          1.74
+[INFO GRT-0018] Total wirelength: 13232 um
 [INFO GRT-0014] Routed nets: 563
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 No differences found.

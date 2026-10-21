@@ -1,9 +1,11 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@openroad-pip//:requirements.bzl", "requirement")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -43,11 +45,36 @@ DOM_TEST_DATA = [
     ":node_modules/jsdom",
 ] + JS_FILES
 
+py_test(
+    name = "npm_lock_test",
+    srcs = ["npm_lock_test.py"],
+    data = [
+        "//src/web:package.json",
+        "//src/web:pnpm-lock.yaml",
+    ],
+    deps = [requirement("pyyaml")],
+)
+
+py_test(
+    name = "bundle_test",
+    srcs = ["bundle_test.py"],
+    data = JS_FILES + [
+        "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
+        "//src/web:bundle/app.min.js",
+        "//src/web:bundle/index.html",
+        "//src/web:bundle/report.min.js",
+    ],
+)
+
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":gif_test",
+        ":heat_map_test",
         ":request_handler_test",
+        ":save_display_controls_test",
         ":tile_generator_test",
+        ":web_assets_test",
     ],
 )
 
@@ -59,9 +86,44 @@ js_test(
 )
 
 js_test(
-    name = "schematic_widget_test",
+    name = "ui_utils_test",
     data = JS_FILES,
+    entry_point = "js/test-ui-utils.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "display_state_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-display-state.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_widget_test",
+    data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_pins_test",
+    data = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:node_modules/netlistsvg",
+        "//src/web:src/openroad_skin.svg",
+    ],
+    entry_point = "js/test-schematic-pins.js",
+    no_copy_to_bin = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:src/openroad_skin.svg",
+    ],
+)
+
+js_test(
+    name = "three_subset_test",
+    data = JS_FILES + ["//src/web:node_modules/three"],
+    entry_point = "js/test-three-subset.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -73,9 +135,51 @@ js_test(
 )
 
 js_test(
+    name = "hierarchy_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-hierarchy-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "context_menu_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-context-menu.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "search_nav_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-search-nav.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "capture_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-capture.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ide_layout_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-ide-layout.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "websocket_manager_test",
     data = JS_FILES,
     entry_point = "js/test-websocket-manager.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "websocket_tile_layer_test",
+    data = JS_FILES,
+    entry_point = "js/test-websocket-tile-layer.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -88,7 +192,7 @@ js_test(
 
 js_test(
     name = "display_controls_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -115,6 +219,13 @@ js_test(
 )
 
 js_test(
+    name = "timing_cone_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-timing-cone.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
@@ -125,6 +236,13 @@ js_test(
     name = "ruler_test",
     data = JS_FILES,
     entry_point = "js/test-ruler.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "label_manager_test",
+    data = JS_FILES,
+    entry_point = "js/test-label-manager.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -143,6 +261,13 @@ js_test(
 )
 
 js_test(
+    name = "selection_browser_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-selection-browser.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "menu_bar_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-menu-bar.js",
@@ -150,9 +275,72 @@ js_test(
 )
 
 js_test(
+    name = "toolbar_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-toolbar.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "options_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-options-dialogs.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "image_export_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-image-export.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "edit_dialogs_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-edit-dialogs.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "status_indicator_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "merged_tile_layer_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-merged-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "tile_merge_test",
+    data = JS_FILES,
+    entry_point = "js/test-tile-merge.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "layer_extents_test",
+    data = JS_FILES,
+    entry_point = "js/test-layer-extents.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "dpr_test",
+    data = JS_FILES,
+    entry_point = "js/test-dpr.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "device_pixels_test",
+    data = JS_FILES,
+    entry_point = "js/test-device-pixels.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -177,11 +365,76 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "hierarchy_report_test",
+    srcs = ["cpp/TestHierarchyReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "gif_test",
+    srcs = ["cpp/TestGif.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "heat_map_test",
+    srcs = ["cpp/TestHeatMap.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "web_assets_test",
+    srcs = ["cpp/TestWebAssets.cpp"],
+    deps = [
+        "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -194,11 +447,13 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
+        "//src/utl",
         "//src/web",
+        "//src/web:core",
+        "@boost.asio",
+        "@boost.beast",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -212,11 +467,11 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:color",
+        "//src/web:core",
         "//third-party/lodepng",
         "@boost.json",
         "@googletest//:gtest",
@@ -231,11 +486,13 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:color",
+        "//src/web:core",
         "//third-party/lodepng",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -248,10 +505,64 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_cone_test",
+    srcs = ["cpp/TestTimingCone.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "charts_test",
+    srcs = ["cpp/TestCharts.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "labels_test",
+    srcs = ["cpp/TestLabels.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -262,8 +573,8 @@ cc_test(
     name = "glyph_cache_test",
     srcs = ["cpp/TestGlyphCache.cpp"],
     deps = [
-        "//src/gui:gui_stub",
         "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -273,10 +584,9 @@ cc_test(
     name = "debug_graphics_test",
     srcs = ["cpp/TestDebugGraphics.cpp"],
     deps = [
-        "//src/gui",
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -289,10 +599,27 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/gui:gui_stub",
         "//src/odb/src/db",
         "//src/tst:nangate45_fixture",
         "//src/web",
+        "//src/web:core",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_display_controls_test",
+    srcs = ["cpp/TestSaveDisplayControls.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
         "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

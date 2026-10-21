@@ -32,34 +32,31 @@ Antenna violations can be repaired after global routing with the `repair_design`
 The `check_antennas` command will check for antenna violations.
 
 ```tcl
-check_antennas 
-    [-net net] 
+check_antennas
+    [-net net]
     [-verbose]
+    [-report_file report_file]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-verbose` | Report all antenna calculations for violating nets. |
+| `-verbose` | Report all antenna calculations for violating nets, or for the net given with `-net`. |
 | `-net` | Check antennas on the specified net. |
+| `-report_file` | Write the antenna calculations for violating nets to `report_file`; with `-verbose`, for every routed net. |
 
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/ant/...
 ```
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+antenna+in%3Atitle)
-about this tool.
 
 ## Algorithm
 

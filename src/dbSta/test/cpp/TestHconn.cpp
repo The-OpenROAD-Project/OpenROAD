@@ -897,6 +897,9 @@ TEST_F(TestHconn, ConnectionMade)
   db_network_->hierarchicalConnect(
       inv1_2_inst_op0, inv4_4_ip_, hier_net_name.c_str());
 
+  // A full flat-net path must produce local hierarchy port names.
+  EXPECT_NE(inv1_mod_master_->findModBTerm("A_o"), nullptr);
+
   if (kDebugMsgs) {
     std::stringstream str_str_final;
     DbStrDebugHierarchy(block_, str_str_final);
@@ -978,6 +981,68 @@ TEST_F(TestHconn, ConnectionMade)
   // and the number of moditerms reduced should be the same (2)
   EXPECT_EQ((num_mod_iterms_before_delete - num_mod_iterms_after_delete),
             (num_mod_bterms_before_delete - num_mod_bterms_after_delete));
+}
+
+TEST_F(TestHconn, BracketedConnectionName)
+{
+  dbInst* source_inst = dbInst::create(block_,
+                                       lib_->findMaster("INV_X1"),
+                                       "inv1_mod_inst/bracket_source",
+                                       false,
+                                       inv1_mod_master_);
+  dbITerm* source_pin = source_inst->findITerm("ZN");
+  ASSERT_NE(source_pin, nullptr);
+  source_inst->findITerm("A")->connect(ip0_net_);
+  source_inst->findITerm("A")->connect(inv1_mod_i0_modnet_);
+  inv4_4_ip_->disconnect();
+
+  dbNet* flat_net = dbNet::create(block_, "path\\/data\\[5\\]", false);
+  ASSERT_NE(flat_net, nullptr);
+  source_pin->connect(flat_net);
+  inv4_4_ip_->connect(flat_net);
+
+  db_network_->hierarchicalConnect(
+      source_pin, inv4_4_ip_, "path\\/data\\[5\\]");
+
+  EXPECT_EQ(inv1_mod_master_->findModBTerm("path\\/data\\[5\\]_o"), nullptr);
+  EXPECT_NE(inv1_mod_master_->findModBTerm("path\\/data_5__o"), nullptr);
+  EXPECT_EQ(inv4_mod_level2_master_->findModBTerm("path\\/data\\[5\\]_i"),
+            nullptr);
+  EXPECT_NE(inv4_mod_level2_master_->findModBTerm("path\\/data_5__i"), nullptr);
+}
+
+TEST_F(TestHconn, SameModuleLoadsJoinSourceModNet)
+{
+  // The source and two of its loads are in the top module, the third
+  // load in a submodule. The submodule load gives the source a
+  // hierarchical net; the top-module loads, connected before and after
+  // it, must be on that net too, or the hierarchical view leaves them
+  // undriven.
+  dbMaster* inv = lib_->findMaster("INV_X1");
+  dbInst* source = dbInst::create(block_, inv, "same_mod_source");
+  dbInst* before = dbInst::create(block_, inv, "same_mod_before");
+  dbInst* below = dbInst::create(
+      block_, inv, "inv1_mod_inst/same_mod_below", false, inv1_mod_master_);
+  dbInst* after = dbInst::create(block_, inv, "same_mod_after");
+  dbITerm* source_pin = source->findITerm("ZN");
+  dbITerm* before_pin = before->findITerm("A");
+  dbITerm* below_pin = below->findITerm("A");
+  dbITerm* after_pin = after->findITerm("A");
+
+  db_network_->hierarchicalConnect(source_pin, before_pin, "same_mod_net");
+  db_network_->hierarchicalConnect(source_pin, below_pin, "same_mod_net");
+  db_network_->hierarchicalConnect(source_pin, after_pin, "same_mod_net");
+
+  dbModNet* source_mod_net = source_pin->getModNet();
+  ASSERT_NE(source_mod_net, nullptr);
+  EXPECT_EQ(source_mod_net->getParent(), root_mod_);
+  EXPECT_EQ(before_pin->getModNet(), source_mod_net);
+  EXPECT_EQ(after_pin->getModNet(), source_mod_net);
+  ASSERT_NE(below_pin->getModNet(), nullptr);
+  EXPECT_EQ(below_pin->getModNet()->getParent(), inv1_mod_master_);
+  for (dbITerm* pin : {before_pin, below_pin, after_pin}) {
+    EXPECT_EQ(pin->getNet(), source_pin->getNet());
+  }
 }
 
 }  // namespace odb

@@ -56,7 +56,9 @@ class CpuHpwlBackend : public HpwlBackend
 std::unique_ptr<HpwlBackend> makeHpwlBackend(const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
-  if (gpuEnabled()) {
+  // Concurrent IO placement: the device pipelines hold the IO pin positions
+  // fixed, so use the CPU backends.
+  if (gpuEnabled() && !ctx.place_ios_mode) {
     ensureKokkosInitialized();
     return std::make_unique<GpuHpwlBackend>(ctx.device_state, ctx.num_threads);
   }

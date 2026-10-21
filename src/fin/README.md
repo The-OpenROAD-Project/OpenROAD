@@ -76,18 +76,13 @@ parser accepts but ignores (e.g., `space_to_outline`).
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/fin/...
 ```
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+metal%20fill+in%3Atitle)
-about this tool.
 
 ## License
 

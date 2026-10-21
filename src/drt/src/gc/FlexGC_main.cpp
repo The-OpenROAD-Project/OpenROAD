@@ -37,10 +37,45 @@ namespace drt {
 using polygon_t = bg::model::polygon<point_t>;
 using mpolygon_t = bg::model::multi_polygon<polygon_t>;
 
+namespace {
+bool isConcaveCornerOverlap(gcCorner* corner,
+                            frCoord cornerX,
+                            frCoord cornerY,
+                            frCoord xMin,
+                            frCoord yMin,
+                            frCoord xMax,
+                            frCoord yMax)
+{
+  const bool withinX = xMin <= cornerX && cornerX <= xMax;
+  const bool withinY = yMin <= cornerY && cornerY <= yMax;
+  switch (corner->getDir()) {
+    case frCornerDirEnum::NE:
+      return (cornerX == xMax && withinY) || (cornerY == yMax && withinX);
+    case frCornerDirEnum::SE:
+      return (cornerX == xMax && withinY) || (cornerY == yMin && withinX);
+    case frCornerDirEnum::SW:
+      return (cornerX == xMin && withinY) || (cornerY == yMin && withinX);
+    case frCornerDirEnum::NW:
+      return (cornerX == xMin && withinY) || (cornerY == yMax && withinX);
+    default:
+      return false;
+  }
+}
+}  // namespace
+
 bool FlexGCWorker::Impl::isCornerOverlap(gcCorner* corner, const odb::Rect& box)
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
+  if (corner->getType() == frCornerTypeEnum::CONCAVE) {
+    return isConcaveCornerOverlap(corner,
+                                  cornerX,
+                                  cornerY,
+                                  box.xMin(),
+                                  box.yMin(),
+                                  box.xMax(),
+                                  box.yMax());
+  }
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
       if (cornerX == box.xMax() && cornerY == box.yMax()) {
@@ -73,6 +108,15 @@ bool FlexGCWorker::Impl::isCornerOverlap(
 {
   frCoord cornerX = corner->getNextEdge()->low().x();
   frCoord cornerY = corner->getNextEdge()->low().y();
+  if (corner->getType() == frCornerTypeEnum::CONCAVE) {
+    return isConcaveCornerOverlap(corner,
+                                  cornerX,
+                                  cornerY,
+                                  gtl::xl(rect),
+                                  gtl::yl(rect),
+                                  gtl::xh(rect),
+                                  gtl::yh(rect));
+  }
   switch (corner->getDir()) {
     case frCornerDirEnum::NE:
       if (cornerX == gtl::xh(rect) && cornerY == gtl::yh(rect)) {
@@ -268,6 +312,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
     if (rect1->getNet()->getDesignRuleWidth() != -1) {
       width1 = rect1->getNet()->getDesignRuleWidth();
     }
+    if (rect1->getNet()->getMinSpacing() != -1) {
+      return rect1->getNet()->getMinSpacing();
+    }
   }
   if (rect2->getNet()->isBlockage()) {
     isObs = true;
@@ -276,6 +323,9 @@ frCoord FlexGCWorker::Impl::checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
     }
     if (rect2->getNet()->getDesignRuleWidth() != -1) {
       width2 = rect2->getNet()->getDesignRuleWidth();
+    }
+    if (rect2->getNet()->getMinSpacing() != -1) {
+      return rect2->getNet()->getMinSpacing();
     }
   }
   // check if width is a result of route shape
@@ -587,7 +637,8 @@ inline gtl::polygon_90_set_data<frCoord> bg2gtl(const polygon_t& p)
 void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     gcRect* rect1,
     gcRect* rect2,
-    const gtl::rectangle_data<frCoord>& markerRect)
+    const gtl::rectangle_data<frCoord>& markerRect,
+    const bool rects_abut)
 {
   if (rect1->isFixed() && rect2->isFixed()) {
     return;
@@ -596,6 +647,14 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
   bool isRect2Obs = rect2->getNet()->isBlockage();
   if (isRect1Obs && isRect2Obs) {
     return;
+  }
+  if (rects_abut) {
+    bool isSpcRange = false;
+    auto reqSpcVal
+        = checkMetalSpacing_prl_getReqSpcVal(rect1, rect2, 0, isSpcRange);
+    if (reqSpcVal == 0) {
+      return;
+    }
   }
   // always make obs to be rect2
   if (isRect1Obs) {
@@ -811,6 +870,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect1,
     // Zero width markers are not well handled by boost polygon as they
     // tend to disappear in boolean operations.  Give them a bit of extent
     // to avoid this.
+    const bool rects_abut = (prlX == 0 || prlY == 0);
     if (prlX == 0) {
       gtl::bloat(markerRect, gtl::HORIZONTAL, 1);
     }
@@ -818,7 +878,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* rect1,
       gtl::bloat(markerRect, gtl::VERTICAL, 1);
     }
     if (rect1->getNet()->isBlockage() || rect2->getNet()->isBlockage()) {
-      checkMetalSpacing_short_obs(rect1, rect2, markerRect);
+      checkMetalSpacing_short_obs(rect1, rect2, markerRect, rects_abut);
     } else {
       checkMetalSpacing_short(rect1, rect2, markerRect);
     }

@@ -81,8 +81,8 @@ bool SwapPinsGenerator::resolveDriverContext(const Target& target,
   }
 
   drvr = resizer_.network()->instance(drvr_pin);
-  scene = target.endpoint_path->scene(resizer_.sta());
-  min_max = target.endpoint_path->minMax(resizer_.sta());
+  scene = target.activeScene(resizer_);
+  min_max = target.minMax(resizer_);
   return drvr != nullptr;
 }
 
@@ -344,7 +344,8 @@ bool SwapPinsGenerator::simulateExpr(
       return port_stimulus[expr->port()][table_index];
   }
 
-  resizer_.logger()->error(utl::RSZ, 91, "unrecognized expr op from OpenSTA");
+  resizer_.logger()->error(
+      utl::RSZ, kMsgUnknownFuncExprOp, "unrecognized expr op from OpenSTA");
   return false;
 }
 

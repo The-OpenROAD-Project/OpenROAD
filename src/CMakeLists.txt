@@ -151,7 +151,7 @@ add_compile_options(
   -Wredundant-decls
   -Wformat-security
   -Wno-sign-compare
-  -Wp,-D_GLIBCXX_ASSERTIONS
+  -D_GLIBCXX_ASSERTIONS
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Needed for floating point stability in FFT (fft_test will check this).
   # See also https://kristerw.github.io/2021/11/09/fp-contract/
@@ -288,6 +288,7 @@ add_subdirectory(par)
 add_subdirectory(est)
 add_subdirectory(syn)
 add_subdirectory(web)
+add_subdirectory(wmk)
 
 ################################################################
 
@@ -359,6 +360,7 @@ target_link_libraries(openroad
   est
   syn
   web
+  wmk
   gui
   cli_completer
   linenoise
@@ -436,6 +438,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dft_py
       par_py
       web_py
+      wmk_py
   )
   target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 

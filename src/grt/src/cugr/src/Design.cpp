@@ -1,9 +1,11 @@
 #include "Design.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -94,6 +96,9 @@ void Design::readNetlist()
     }
 
     auto pins = makeNetPins(db_net);
+    if (pins.size() < 2) {
+      continue;
+    }
 
     LayerRange layer_range = {.min_layer = min_routing_layer_ - 1,
                               .max_layer = max_routing_layer_ - 1};
@@ -111,6 +116,13 @@ void Design::readNetlist()
   }
 }
 
+// Pin shapes may sit above the max routing layer (bumps, top-metal ports);
+// connectTopLevelPins re-stacks the vias above the ceiling on guide export.
+int Design::clampPinLayerIdx(int layer_idx) const
+{
+  return std::min(layer_idx, getNumLayers() - 1);
+}
+
 std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
 {
   std::vector<CUGRPin> pins;
@@ -122,8 +134,13 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
       odb::Point position(x, y);
       for (odb::dbBPin* bpin : db_bterm->getBPins()) {
         for (odb::dbBox* bpin_box : bpin->getBoxes()) {
+          odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
+          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+            continue;
+          }
           // adjust layer idx to start with zero
-          int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
+          const int layer_idx
+              = clampPinLayerIdx(tech_layer->getRoutingLevel() - 1);
           pin_shapes.emplace_back(layer_idx,
                                   getBoxFromRect(bpin_box->getBox()));
         }
@@ -147,7 +164,8 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
         odb::Rect rect = box->getBox();
         xform.apply(rect);
 
-        int layer_index = tech_layer->getRoutingLevel() - 1;
+        const int layer_index
+            = clampPinLayerIdx(tech_layer->getRoutingLevel() - 1);
         pin_shapes.emplace_back(
             layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
       }
@@ -160,11 +178,11 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
   return pins;
 }
 
-void Design::updateNet(odb::dbNet* db_net)
+int Design::updateNet(odb::dbNet* db_net)
 {
   if (db_net->isSpecial() || db_net->getSigType().isSupply()
       || !db_net->getSWires().empty() || db_net->isConnectedByAbutment()) {
-    return;
+    return -1;
   }
 
   auto pins = makeNetPins(db_net);
@@ -182,12 +200,17 @@ void Design::updateNet(odb::dbNet* db_net)
   if (it != db_net_to_id_.end()) {
     nets_[it->second].setPins(std::move(pins));
     nets_[it->second].setLayerRange(layer_range);
-  } else {
-    // Net is new — add it
-    const int net_index = static_cast<int>(nets_.size());
-    db_net_to_id_[db_net] = net_index;
-    nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
+    return it->second;
   }
+
+  if (pins.size() < 2) {
+    return -1;
+  }
+
+  const int net_index = static_cast<int>(nets_.size());
+  db_net_to_id_[db_net] = net_index;
+  nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
+  return net_index;
 }
 
 void Design::removeNet(odb::dbNet* db_net)
@@ -198,6 +221,7 @@ void Design::removeNet(odb::dbNet* db_net)
     db_net_to_id_.erase(it);
   }
 }
+
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {
@@ -392,6 +416,21 @@ void Design::computeViaDemandLengths()
   // Fallback proxy (min-area stub x via_multiplier) for pairs with no via.
   via_demand_length_lower_.assign(num_layers, 0.0);
   via_demand_length_upper_.assign(num_layers, 0.0);
+
+  // A wrong-way wire crosses a layer's tracks like a via pad: its width
+  // runs along the tracks and it spans one gcell across them. Demand per
+  // gcell boundary crossed (commitWire's edge convention), consumed by
+  // GridGraph::commitWrongWayWire.
+  wrong_way_demand_length_.assign(num_layers, 0.0);
+  for (int i = 0; i < num_layers; i++) {
+    const MetalLayer& layer = layers_[i];
+    wrong_way_demand_length_[i]
+        = layer.getDirection() == MetalLayer::H
+              ? viaDemandLength(
+                    layer, layer.getWidth(), default_gridline_spacing_)
+              : viaDemandLength(
+                    layer, default_gridline_spacing_, layer.getWidth());
+  }
 
   const bool debug = logger_->debugCheck(utl::GRT, "via_geom", 1);
   int fallback_pairs = 0;

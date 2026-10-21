@@ -84,18 +84,18 @@ void PatternRoute::constructSteinerTree()
 
   const int degree = selected_access_points.size();
   if (degree == 1) {
-    const auto& access_point = *selected_access_points.begin();
-    steiner_tree_ = std::make_shared<SteinerTreeNode>(access_point.point,
-                                                      access_point.layers);
+    const auto& [point, layers] = *selected_access_points.begin();
+    steiner_tree_ = std::make_shared<SteinerTreeNode>(point, layers);
     return;
   }
 
-  // Sort access points by (x, y) before passing to FLUTE for deterministic
-  // output when equal-coordinate points exist across different STL builds.
+  // Sort access points by (x, y) before passing to the tree builder for
+  // deterministic output when equal-coordinate points exist across different
+  // STL builds.
   std::vector<std::pair<int, int>> sorted_points;
   sorted_points.reserve(selected_access_points.size());
-  for (auto& access_point : selected_access_points) {
-    sorted_points.emplace_back(access_point.point.x(), access_point.point.y());
+  for (const auto& [point, layers] : selected_access_points) {
+    sorted_points.emplace_back(point.x(), point.y());
   }
   std::ranges::stable_sort(sorted_points);
 
@@ -108,14 +108,25 @@ void PatternRoute::constructSteinerTree()
     ys.push_back(y);
   }
 
-  stt::Tree flute_tree = stt_builder_->flute(xs, ys, flute_accuracy_);
-  const int num_branches = degree + degree - 2;
+  int driver_index = 0;
+  if (const auto driver_point = net_->getDriverAccessPoint()) {
+    const auto match = std::ranges::find(
+        sorted_points,
+        std::pair<int, int>{driver_point->x(), driver_point->y()});
+    if (match != sorted_points.end()) {
+      driver_index = std::distance(sorted_points.begin(), match);
+    }
+  }
+
+  const stt::Tree stt_tree
+      = stt_builder_->makeSteinerTree(net_->getDbNet(), xs, ys, driver_index);
+  const int num_branches = stt_tree.branchCount();
   std::vector<PointT> steiner_points;
   steiner_points.reserve(num_branches);
   std::vector<std::vector<int>> adjacent_list(num_branches);
 
   for (int branch_index = 0; branch_index < num_branches; branch_index++) {
-    const stt::Branch& branch = flute_tree.branch[branch_index];
+    const stt::Branch& branch = stt_tree.branch[branch_index];
     steiner_points.emplace_back(branch.x, branch.y);
     if (branch_index == branch.n) {
       continue;
@@ -148,11 +159,10 @@ void PatternRoute::constructSteinerTree()
           construct_tree(current, cur_index, next_index);
         }
         // Set fixed layer interval
-        const AccessPoint current_pt{.point = {current->x(), current->y()},
-                                     .layers = {}};
-        if (auto it = selected_access_points.find(current_pt);
+        if (auto it
+            = selected_access_points.find(PointT(current->x(), current->y()));
             it != selected_access_points.end()) {
-          current->setFixedLayers(it->layers);
+          current->setFixedLayers(it->second);
         }
         // Connect current to parent
         if (parent == nullptr) {
@@ -450,7 +460,7 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
         shift_interval.addToLow(-1);
       }
       while (shift_interval.high() + 1 < grid_graph_->getSize(1 - direction)
-             && get_total_stem_length(stems, shift_interval.high() - 1)
+             && get_total_stem_length(stems, shift_interval.high() + 1)
                         - original_length
                     <= max_length_increase) {
         shift_interval.addToHigh(1);
@@ -591,21 +601,53 @@ void PatternRoute::calculateRoutingCosts(
                                                {-1, -1});
     }
   }
-  // Calculate the partial sum of the via costs
-  std::vector<CostT> via_costs(grid_graph_->getNumLayers());
-  via_costs[0] = 0;
-  for (int layer_index = 1; layer_index < grid_graph_->getNumLayers();
-       layer_index++) {
-    via_costs[layer_index] = via_costs[layer_index - 1]
-                             + grid_graph_->getViaCost(
-                                 layer_index - 1, *node, net_->getNdrCosts());
-    // Res-aware: charge via resistance so climbing only pays off when
-    // the upper-layer wire-R savings beat it.
-    if (net_->isResAware()) {
-      via_costs[layer_index]
-          += grid_graph_->getViaResistanceCost(layer_index - 1);
+  // Price a via stack from `low` to `high` as its per-via unit costs plus one
+  // pad per layer, matching GridGraph's stack demand. Per layer k, `unit`
+  // and `mid_pad` are prefix sums over the vias below k and the intermediate
+  // pads up to k; `bottom_pad`/`top_pad` are the end pads of a stack that
+  // starts/ends on k.
+  struct LayerViaCosts
+  {
+    CostT unit = 0.0;
+    CostT mid_pad = 0.0;
+    CostT bottom_pad = 0.0;
+    CostT top_pad = 0.0;
+  };
+  const int num_layers = grid_graph_->getNumLayers();
+  const std::vector<double>& ndr_costs = net_->getNdrCosts();
+  std::vector<LayerViaCosts> via_costs(num_layers);
+  for (int l = 0; l < num_layers; l++) {
+    LayerViaCosts& costs = via_costs[l];
+    if (l > 0) {
+      CostT unit = grid_graph_->getUnitViaCost(l - 1, ndr_costs);
+      // Res-aware: charge via resistance so climbing only pays off when
+      // the upper-layer wire-R savings beat it.
+      if (net_->isResAware()) {
+        unit += grid_graph_->getViaResistanceCost(l - 1);
+      }
+      costs.unit = via_costs[l - 1].unit + unit;
+      costs.mid_pad = via_costs[l - 1].mid_pad;
+      costs.top_pad
+          = grid_graph_->getStackPadCost(l, l - 1, l, *node, ndr_costs);
+    }
+    if (l + 1 < num_layers) {
+      costs.bottom_pad
+          = grid_graph_->getStackPadCost(l, l, l + 1, *node, ndr_costs);
+      if (l > 0) {
+        // Pad cost never decreases with pad length, so the larger of the
+        // two overlapping pads costs the larger of the two end-pad costs.
+        costs.mid_pad += std::max(costs.top_pad, costs.bottom_pad);
+      }
     }
   }
+  auto stack_cost = [&](const int low, const int high) -> CostT {
+    if (high == low) {
+      return 0.0;
+    }
+    return via_costs[high].unit - via_costs[low].unit
+           + (via_costs[high - 1].mid_pad - via_costs[low].mid_pad)
+           + via_costs[low].bottom_pad + via_costs[high].top_pad;
+  };
 
   const LayerRange& net_range = net_->getLayerRange();
   IntervalT fixed_layers(node->getFixedLayers());
@@ -642,7 +684,7 @@ void PatternRoute::calculateRoutingCosts(
         }
       }
       if (layer_index >= fixed_layers.high()) {
-        CostT cost = via_costs[layer_index] - via_costs[low_layer_index];
+        CostT cost = stack_cost(low_layer_index, layer_index);
         for (CostT child_cost : min_child_costs) {
           cost += child_cost;
         }

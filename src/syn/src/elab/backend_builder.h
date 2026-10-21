@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 // BackendGraphBuilder implementation targeting syn::Graph.
 //
@@ -11,29 +11,19 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "driver.h"
 #include "ir.h"
 #include "slang/ast/expressions/Operator.h"
 #include "slang_frontend.h"
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Graph.h"
 
-namespace utl {
-class Logger;
-}
-
 namespace slang_frontend {
-
-// Wraps `logger->error(utl::SYN, code, "{}", message)`. Defined in error.cc
-// so its TU is the only one that pulls utl/Logger.h (which transitively
-// brings spdlog's bundled fmt). slang headers pull a different fmt version,
-// and mixing the two in one TU causes inline-namespace collisions.
-[[noreturn]] void reportError(utl::Logger* logger,
-                              int code,
-                              std::string_view message);
 
 class BackendGraphBuilder : public BackendGraphBuilderBase
 {
@@ -88,39 +78,67 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
   void add_output(std::string_view name, ir::Value signal) override;
   void add_instance(std::string_view cell_type,
                     std::vector<PortConnection> ports) override;
+  void instantiate_blackbox(std::string_view cell_type,
+                            std::string_view name,
+                            std::span<PortConnection> port_connections,
+                            std::span<ParameterValue> param_values) override;
   void connect(ir::Value target, ir::Value source) override;
   void set_initialization(ir::Value signal, ir::Const init_value) override;
-  void add_memory_init(std::string_view name,
+  ir::Memory* add_memory(std::string_view name,
+                         uint64_t width,
+                         slang::ConstantRange range) override;
+  void add_read_port(ir::Memory* memory,
+                     ir::Value address,
+                     ir::Value data) override;
+  ir::WritePort* add_write_port(ir::Memory* memory,
+                                std::span<ir::WritePort*> preceding,
+                                bool clocked,
+                                bool clock_polarity,
+                                ir::Net clk,
+                                const ir::Value& enable,
+                                const ir::Value& address,
+                                const ir::Value& data) override;
+  void add_memory_init(ir::Memory* memory,
                        uint64_t bit_offset,
                        bool big_endian,
                        ir::Const data) override;
   void add_dual_edge_aldff(const std::string& base_name,
-                           ir::Value clk,
-                           ir::Value aload,
-                           ir::Value d,
-                           ir::Value q,
-                           ir::Value ad,
+                           ir::Net clk,
+                           ir::Net aload,
+                           const ir::Value& d,
+                           const ir::Value& q,
+                           const ir::Value& ad,
                            bool aload_polarity) override;
   void add_dff(std::string_view name,
-               const ir::Value& clk,
+               const ir::Net clk,
                const ir::Value& d,
                const ir::Value& q,
                bool clk_polarity) override;
   void add_dffe(std::string_view name,
-                const ir::Value& clk,
-                const ir::Value& en,
+                const ir::Net clk,
+                const ir::Net en,
                 const ir::Value& d,
                 const ir::Value& q,
                 bool clk_polarity,
                 bool en_polarity) override;
   void add_aldff(std::string_view name,
-                 const ir::Value& clk,
-                 const ir::Value& aload,
+                 const ir::Net clk,
+                 const ir::Net aload,
                  const ir::Value& d,
                  const ir::Value& q,
                  const ir::Value& ad,
                  bool clk_polarity,
                  bool aload_polarity) override;
+  void add_aldffe(std::string_view name,
+                  const ir::Net clk,
+                  const ir::Net en,
+                  const ir::Net aload,
+                  const ir::Value& d,
+                  const ir::Value& q,
+                  const ir::Value& ad,
+                  bool clk_polarity,
+                  bool en_polarity,
+                  bool aload_polarity) override;
 
   std::unique_ptr<syn::Graph> graph_;
   unsigned next_id = 0;

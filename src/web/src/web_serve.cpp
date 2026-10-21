@@ -2,19 +2,24 @@
 // Copyright (c) 2026, The OpenROAD Authors
 //
 // WebServer::serve() and stop() in their own translation unit so that
-// test executables linking libweb.a don't pull in gui::Gui::get()
+// test executables linking libweb.a don't pull in web::Gui::get()
 // references (which would require the full gui library including Qt
 // SWIG wrappers and ord::OpenRoad symbols).
+
+#include <sys/stat.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -33,7 +38,6 @@
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
 #include "clock_tree_report.h"
-#include "gui/gui.h"
 #include "odb/geom.h"
 #include "request_handler.h"
 #include "spdlog/sinks/base_sink.h"
@@ -41,6 +45,7 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 #include "web/web.h"
 // NOLINTNEXTLINE(misc-include-cleaner)
 #include "web_chart.h"
@@ -53,8 +58,12 @@ namespace net = boost::asio;
 using Tcp = net::ip::tcp;
 
 // Tcl command name used to stash the original `exit` while our override
-// is installed.  Mirrors gui::TclCmdInputWidget's kCommandRenamePrefix.
+// is installed.  Mirrors web::TclCmdInputWidget's kCommandRenamePrefix.
 static constexpr const char* kRenamedExitCmd = "::tcl::openroad::web_orig_exit";
+
+// Sends the clients to re-read the renderer control list, and to redraw.
+static constexpr const char* kRendererControlsChangedJson
+    = R"({"type":"renderer_controls_changed"})";
 
 // Logger sink that accumulates lines and sends them as a batch to
 // connected browser clients.  Flushing is explicit (via drainToClients)
@@ -131,11 +140,10 @@ void WebServer::initLogger()
 
   // Create the hook object now because WebLogSink holds a raw pointer to it
   // (for sessions()).  Do NOT install it as the Gui headless viewer here:
-  // that would make gui::Gui::enabled() true during startup scripts, and
-  // gui::pause() would then block kClientConnectTimeoutSeconds (~30s)
-  // waiting for a web client that cannot connect until serve() opens the
-  // network.  The headless viewer and chart factory are installed in
-  // serve() instead.
+  // that would make web::Gui::enabled() true before the network opens, and
+  // web::pause() would then block kClientConnectTimeoutSeconds (~30s)
+  // waiting for a web client that cannot connect.  The headless viewer and
+  // chart factory are installed in serve() instead.
   if (!viewer_hook_) {
     viewer_hook_ = std::make_unique<WebViewerHook>();
   }
@@ -149,7 +157,70 @@ void WebServer::initLogger()
   logger_initialized_ = true;
 }
 
-void WebServer::serve(int port)
+bool WebServer::onScriptThread() const
+{
+  return std::this_thread::get_id() == script_thread_;
+}
+
+void WebServer::serveDuringStartupScripts(int port,
+                                          const std::string& bind_address)
+{
+  // Close the gate before the network opens, so no client can index or draw
+  // the db while the scripts change it.
+  script_thread_ = std::this_thread::get_id();
+  tcl_eval_->script_gate.close();
+  script_holds_gate_ = true;
+  serve(port, bind_address);
+}
+
+void WebServer::installPauseHooks()
+{
+  WebViewerHook::PauseHooks hooks;
+  // A paused command stops counting as running, so the renderers draw.  A
+  // paused script is blocked until Continue, so let browser requests in:
+  // tiles show the paused state, and commands typed in the browser run while
+  // the script waits, as in the Qt GUI.
+  hooks.enter = [this]() {
+    tcl_eval_->pauseBegin();
+    if (onScriptThread() && script_holds_gate_) {
+      tcl_eval_->script_gate.open();
+    }
+  };
+  hooks.leave = [this]() {
+    if (onScriptThread() && script_holds_gate_) {
+      tcl_eval_->script_gate.close();
+    }
+    tcl_eval_->pauseEnd();
+  };
+  // `exit` typed in the browser while the script is paused: nothing is in
+  // waitForStop() to act on it, so exit from the paused script thread.
+  hooks.exit = [this]() {
+    if (!onScriptThread() || !script_holds_gate_) {
+      return;  // proceeds like Continue
+    }
+    // Wait out the browser's `exit` eval and any other request in flight,
+    // then turn the rest away so the io threads can be joined.
+    tcl_eval_->script_gate.close();
+    tcl_eval_->script_gate.setShutdown(true);
+    Tcl_Exit(EXIT_SUCCESS);
+  };
+  viewer_hook_->setPauseHooks(std::move(hooks));
+}
+
+void WebServer::endStartupScripts(const bool exiting)
+{
+  if (!script_holds_gate_ || !onScriptThread()) {
+    return;
+  }
+  script_holds_gate_ = false;
+  if (exiting) {
+    tcl_eval_->script_gate.setShutdown(true);
+  } else {
+    tcl_eval_->script_gate.open();
+  }
+}
+
+void WebServer::serve(int port, const std::string& bind_address)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -170,16 +241,14 @@ void WebServer::serve(int port)
   }
 
   try {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    ensureGenerator();
     auto timing_report = std::make_shared<TimingReport>(sta_);
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
-
-    auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     // Override Tcl's `exit` so a user typing `exit` in the browser tcl
     // widget doesn't run Tcl_Exit on the worker thread (which triggers
     // ~WebServer's self-join → std::terminate).  Same pattern as
-    // gui::TclCmdInputWidget.  The handler signals waitForStop() and
+    // web::TclCmdInputWidget.  The handler signals waitForStop() and
     // sets exit_requested_; the main thread does the real exit.
     // TclHandler::handleTclEval detects kExitResultMsg in the Tcl
     // result and sends `action: "shutdown"` to the browser.
@@ -197,14 +266,25 @@ void WebServer::serve(int port)
     // viewer_hook_ and the WebLogSink were created by initLogger() above.
     // Install the hook as the Gui headless viewer and chart factory now
     // that the network is about to open — deferred from initLogger() so
-    // startup scripts run with gui::Gui::enabled() == false (see
+    // web::pause() cannot wait on a client that has no way to connect (see
     // initLogger()).
-    gui::Gui::get()->setHeadlessViewer(viewer_hook_.get());
-    gui::Gui::get()->setChartFactory(
+    web::Gui::get()->setHeadlessViewer(viewer_hook_.get());
+    web::Gui::get()->setChartFactory(
         [hook = viewer_hook_.get()](const std::string& name,
                                     const std::string& x_label,
                                     const std::vector<std::string>& y_labels) {
           return hook->createChart(name, x_label, y_labels);
+        });
+    installPauseHooks();
+    // Tell clients when a startup script starts or stops running, so they
+    // hold their redraws while every request would be turned away.  Once it
+    // stops, the renderers it turned on or off are settled.
+    tcl_eval_->script_gate.setOnChange(
+        [hook = viewer_hook_.get()](bool closed) {
+          hook->sessions().broadcast(scriptRunningJson(/*running=*/closed));
+          if (!closed && hook->takeRenderersChanged()) {
+            hook->sessions().broadcast(kRendererControlsChangedJson);
+          }
         });
 
     // Flush WebLogSink at the end of every Tcl eval so log output
@@ -212,33 +292,149 @@ void WebServer::serve(int port)
     // carrying the Tcl result.  viewer_hook_ outlives every io thread
     // that can run a request handler (stop() joins io threads before
     // resetting viewer_hook_), so the raw pointer capture is safe.
-    tcl_eval->drain_output
+    tcl_eval_->drain_output
         = [hook = viewer_hook_.get()]() { hook->drainLogs(); };
+    // Once a command is done its renderers are settled: send the clients to
+    // re-read the control list if one came or went (that push also redraws),
+    // or just to redraw if tiles drawn while it ran left the renderers out.
+    tcl_eval_->command_done = [hook = viewer_hook_.get()](bool draw_skipped) {
+      if (hook->takeRenderersChanged()) {
+        hook->sessions().broadcast(kRendererControlsChangedJson);
+      } else if (draw_skipped) {
+        hook->sessions().broadcast(R"({"type":"debug_refresh"})");
+      }
+    };
 
-    TileGenerator::setDebugOverlayCallback(
-        [weak_gen = std::weak_ptr<TileGenerator>(generator_),
-         hook = viewer_hook_.get()](std::vector<unsigned char>& image,
-                                    const odb::Rect& dbu_tile,
-                                    double scale,
-                                    bool debug_live) {
-          if (hook == nullptr) {
-            return;
-          }
-          auto gen = weak_gen.lock();
-          if (!gen) {
-            return;
-          }
-          if (!debug_live && !hook->isPaused()) {
-            return;
-          }
-          for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
-            WebPainter painter(dbu_tile, scale);
-            renderer->drawObjects(painter);
-            gen->rasterizeWebPainterOps(image, painter.ops(), dbu_tile, scale);
-          }
-        });
+    // The renderer bridge: one struct so both halves are installed and, in
+    // stop(), cleared together.
+    TileGenerator::RendererHooks hooks;
 
-    auto const address = net::ip::make_address("0.0.0.0");
+    hooks.draw = [weak_gen = std::weak_ptr<TileGenerator>(generator_),
+                  hook = viewer_hook_.get(),
+                  tcl = tcl_eval_.get()](std::vector<unsigned char>& image,
+                                         const TileFrame& frame,
+                                         bool debug_live,
+                                         odb::dbTechLayer* layer) {
+      if (hook == nullptr) {
+        return;
+      }
+      auto gen = weak_gen.lock();
+      if (!gen) {
+        return;
+      }
+      // Between commands, as the Qt GUI draws them, and while one is paused,
+      // the tools' state is stable.  While a command runs -- including one
+      // typed in the browser during a script's pause -- only "Live" draws, at
+      // the user's risk.  Holding renderer_mutex keeps a command from
+      // starting, or resuming from its pause, mid-draw.
+      std::shared_lock<std::shared_mutex> idle;
+      if (!debug_live) {
+        idle = std::shared_lock<std::shared_mutex>(tcl->renderer_mutex);
+        if (tcl->running) {
+          tcl->draw_skipped = true;
+          return;
+        }
+      }
+      seedRendererControls(hook);
+      for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+        // A Renderer sees the tile as a whole-DBU window (Painter's API is
+        // integer DBU); only the rasterization below needs the exact
+        // origin, which it takes from the frame.
+        WebPainter painter(frame.cull, frame.scale);
+        // The Qt GUI's two passes: drawLayer once per tech layer
+        // (RenderThread::drawLayer) and drawObjects once, after the
+        // layers.  A renderer may implement either or both -- four of the
+        // six that draw per layer implement no drawObjects at all, so
+        // skipping the layer pass made them invisible here.  saveState /
+        // restoreState around it mirrors Qt, so a renderer that leaves a
+        // pen set cannot bleed into the next one.
+        painter.saveState();
+        if (layer != nullptr) {
+          renderer->drawLayer(layer, painter);
+        } else {
+          renderer->drawObjects(painter);
+        }
+        painter.restoreState();
+        gen->rasterizeWebPainterOps(image, painter.ops(), frame);
+      }
+    };
+
+    // Answered only while the run is paused — a stricter gate than the
+    // drawing above, which also honours "Live".  These implementations read
+    // live algorithm state AND write their own (GraphicsImpl::select walks
+    // nbc_->getGCells(), indexes it, and sets selected_; DebugGui::select
+    // queries the solver's rtrees and fills selected_shapes_), and the Qt GUI
+    // only ever reaches them from inside web::pause(), which spins the event
+    // loop while the algorithm is blocked.  Reading a torn frame is a garbled
+    // overlay; indexing a vector mid-reallocation is a crash, and clicking a
+    // gcell that is still moving buys nothing — so Live does not extend here.
+    hooks.select = [hook = viewer_hook_.get(), tcl = tcl_eval_.get()](
+                       odb::dbTechLayer* layer,
+                       const odb::Rect& region,
+                       std::vector<SelectionResult>& out) {
+      if (hook == nullptr || !hook->isPaused()) {
+        return;
+      }
+      // Not while a command typed in the browser during the pause runs: it
+      // can change the renderers too.
+      const std::shared_lock<std::shared_mutex> idle(tcl->renderer_mutex);
+      if (tcl->running) {
+        return;
+      }
+      for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+        for (const web::Selected& selected : renderer->select(layer, region)) {
+          odb::Rect bbox;
+          if (!selected.getBBox(bbox)) {
+            // Nothing to zoom to or highlight; the client keys its
+            // selection off the bbox, so skip rather than send a degenerate
+            // rectangle.
+            continue;
+          }
+          out.push_back({selected.getObject(),
+                         selected.getName(),
+                         selected.getTypeName(),
+                         bbox,
+                         odb::dbTransform(),
+                         /*is_inst=*/false});
+        }
+      }
+    };
+
+    TileGenerator::setRendererHooks(std::move(hooks));
+
+    // After a design edit invalidates the tile cache, push a refresh so every
+    // connected client re-requests its tiles (mirrors the Qt GUI's repaint on
+    // Search::modified).  Fired on the design-mutation thread; broadcast() is
+    // safe from any thread (it posts writes onto each session's strand).
+    generator_->setDesignChangedCallback([hook = viewer_hook_.get()]() {
+      if (hook == nullptr) {
+        return;
+      }
+      hook->sessions().broadcast(R"({"type":"refresh"})");
+    });
+
+    // Who may reach the port decides who may run Tcl here; see
+    // BindAddressKind (issue #11167).
+    const std::string bind_to
+        = bind_address.empty() ? kDefaultBindAddress : bind_address;
+    const BindAddressKind bind_kind = classifyBindAddress(bind_to);
+    if (bind_kind == BindAddressKind::kInvalid) {
+      // noreturn: the catch below tears the half-built server down.
+      logger_->error(utl::WEB,
+                     79,
+                     "Invalid bind address \"{}\"; {}.",
+                     bind_to,
+                     kBindAddressHint);
+    }
+    if (bind_kind == BindAddressKind::kExposed) {
+      logger_->warn(utl::WEB,
+                    80,
+                    "Web server bound to {}, reachable beyond this machine. "
+                    "The viewer runs Tcl commands, so anyone who can reach "
+                    "this port can run commands as this user.",
+                    bind_to);
+    }
+    auto const address = net::ip::make_address(bind_to);  // validated above
     uint16_t const u_port = port;
     int const num_threads = num_threads_;
 
@@ -254,7 +450,7 @@ void WebServer::serve(int port)
     auto handle = createAndRunListener(*ioc_,
                                        Tcp::endpoint{address, u_port},
                                        generator_,
-                                       tcl_eval,
+                                       tcl_eval_,
                                        timing_report,
                                        clock_report,
                                        logger_,
@@ -262,7 +458,9 @@ void WebServer::serve(int port)
                                        max_in_flight);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    const std::string url = "http://localhost:" + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.
+    const std::string url = "http://" + browserHostForBind(address) + ":"
+                            + std::to_string(handle.port);
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without
@@ -275,15 +473,31 @@ void WebServer::serve(int port)
         net::make_strand(ioc_->get_executor()));
     scheduleLogDrain();
 
+    // Error file for the browser launcher below.  Created here, before the
+    // io threads start, because umask() is process-wide; mkstemp already
+    // creates the file 0600 and the clamp only pins it for static analysis.
+    char tmp_filename[] = "/tmp/openroad-XXXXXX";
+    const mode_t old_umask = umask(S_IRWXG | S_IRWXO);
+    const int fd = mkstemp(tmp_filename);
+    umask(old_umask);
+    std::string errfile = "/dev/null";
+    if (fd != -1) {
+      errfile = tmp_filename;
+      close(fd);
+    }
+
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
       threads_.emplace_back([this] { ioc_->run(); });
     }
 
+    logger_->info(utl::WEB, 1, "Server started on {}.", url);
+
+    // Open the url with the default browser
 #if defined(__APPLE__)
-    std::string open_cmd = "open " + url + " > /dev/null 2>&1";
+    std::string open_cmd = "open " + url + " > /dev/null 2> " + errfile;
 #elif defined(_WIN32)
-    std::string open_cmd = "start " + url + " > nul 2>&1";
+    std::string open_cmd = "start " + url + " > nul 2> " + errfile;
 #else
     // `setsid -f` forks the launcher into a new session, severing the
     // SIGHUP cascade from openroad's controlling pty.  Without this,
@@ -292,14 +506,30 @@ void WebServer::serve(int port)
     // the pty master and SIGHUPs every process in the session.  Also
     // redirect stdin from /dev/null so xdg-open never blocks on input
     // inherited from the pty.
-    std::string open_cmd
-        = "setsid -f xdg-open " + url + " < /dev/null > /dev/null 2>&1";
+    // `setsid -w` waits for xdg-open to finish end so the return code
+    // can be forwarded to setsid
+    std::string open_cmd = "setsid -f -w xdg-open " + url
+                           + " < /dev/null > /dev/null 2> " + errfile;
 #endif
     int ret = std::system(open_cmd.c_str());
-    (void) ret;
-
-    logger_->info(utl::WEB, 1, "Server started on {}.", url);
-
+    if (ret != 0) {
+      std::ifstream err(errfile);
+      std::string errout = "";
+      if (err) {
+        std::ostringstream ss;
+        ss << err.rdbuf();
+        errout = "\n" + ss.str();
+      }
+      logger_->warn(utl::WEB,
+                    3,
+                    "Could not launch default browser (shell error {}){}",
+                    ret,
+                    errout);
+    }
+    if (fd != -1) {
+      std::error_code err_ignored;
+      std::filesystem::remove(errfile, err_ignored);
+    }
   } catch (std::exception const& e) {
     stop();
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());
@@ -308,6 +538,13 @@ void WebServer::serve(int port)
 
 void WebServer::waitForStop()
 {
+  // `web_server` run from a startup script: let browser requests in while
+  // this thread waits.
+  const bool lend_gate = script_holds_gate_ && onScriptThread();
+  if (lend_gate) {
+    tcl_eval_->script_gate.open();
+  }
+
   std::unique_lock<std::mutex> lock(stop_mutex_);
   stop_cv_.wait(lock, [this] { return stop_requested_; });
   stop_requested_ = false;
@@ -323,15 +560,46 @@ void WebServer::waitForStop()
   }
 
   stop();
+
+  if (lend_gate) {
+    tcl_eval_->script_gate.close();
+  }
 }
 
 int WebServer::tclExitHandler(ClientData clientData,
                               Tcl_Interp* interp,
-                              int /*argc*/,
-                              const char* /*argv*/[])
+                              int argc,
+                              const char* argv[])
 {
   auto* self = static_cast<WebServer*>(clientData);
+  // A startup script running under serveDuringStartupScripts() is the only
+  // Tcl caller off the io workers; the original `exit` is safe there, since
+  // ~WebServer joins the workers from this thread.
+  if (self->onScriptThread()) {
+    // Turn away the requests waiting on the script gate, so the exit can
+    // join the io threads.
+    const bool held_gate = self->script_holds_gate_;
+    self->endStartupScripts(/*exiting=*/true);
+    Tcl_Obj* cmd = Tcl_NewStringObj(kRenamedExitCmd, -1);
+    cmd = Tcl_NewListObj(1, &cmd);
+    for (int i = 1; i < argc; ++i) {
+      Tcl_ListObjAppendElement(interp, cmd, Tcl_NewStringObj(argv[i], -1));
+    }
+    Tcl_IncrRefCount(cmd);
+    const int result = Tcl_EvalObjEx(interp, cmd, TCL_EVAL_DIRECT);
+    Tcl_DecrRefCount(cmd);
+    if (held_gate) {
+      // The exit failed (e.g. a bad status argument); the script goes on.
+      self->tcl_eval_->script_gate.setShutdown(false);
+      self->script_holds_gate_ = true;
+    }
+    return result;
+  }
   self->exit_requested_ = true;
+  // A startup script paused in the debugger exits from its own thread.
+  if (self->viewer_hook_) {
+    self->viewer_hook_->requestExit();
+  }
   // Wake waitForStop() on the main thread so it can join the worker
   // threads (including the one currently executing this handler) and
   // exit cleanly via std::exit() from the main thread.
@@ -383,20 +651,35 @@ void WebServer::stop()
 {
   // Restore the original Tcl `exit` command before tearing down — pairs
   // with the rename in serve().  Skip if not installed (stop() is safe
-  // to call multiple times).
-  if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
-    Tcl_DeleteCommand(interp_, "exit");
-    const std::string restore
-        = std::string("rename ") + kRenamedExitCmd + " exit";
-    Tcl_Eval(interp_, restore.c_str());
+  // to call multiple times).  An `exit` evaluated through the viewer
+  // (tclExitHandler) wakes waitForStop() while its io thread is still
+  // inside Tcl_Eval; touching the interpreter before that evaluation ends
+  // corrupts Tcl's stack ("TclStackFree: incorrect freePtr").
+  // TclEvaluator::eval holds the mutex for the whole evaluation.
+  //
+  // No unit test: ordering the io thread's evaluation against this
+  // teardown takes a sleep, which makes a test timing-sensitive, or a
+  // test-only hook in WebServer, which owns its TclEvaluator.
+  {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    if (Tcl_FindCommand(interp_, kRenamedExitCmd, nullptr, 0) != nullptr) {
+      Tcl_DeleteCommand(interp_, "exit");
+      const std::string restore
+          = std::string("rename ") + kRenamedExitCmd + " exit";
+      Tcl_Eval(interp_, restore.c_str());
+    }
   }
 
+  tcl_eval_->script_gate.setOnChange({});
   if (viewer_hook_) {
-    TileGenerator::setDebugOverlayCallback({});
-    if (gui::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
-      gui::Gui::get()->setHeadlessViewer(nullptr);
+    TileGenerator::setRendererHooks({});
+    if (generator_) {
+      generator_->setDesignChangedCallback({});
     }
-    gui::Gui::get()->setChartFactory({});
+    if (web::Gui::get()->getHeadlessViewer() == viewer_hook_.get()) {
+      web::Gui::get()->setHeadlessViewer(nullptr);
+    }
+    web::Gui::get()->setChartFactory({});
   }
   if (log_sink_) {
     logger_->removeSink(log_sink_);

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <sstream>
+#include <string>
 
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"

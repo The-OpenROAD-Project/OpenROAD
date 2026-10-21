@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,11 +14,13 @@
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 
-#ifdef BAZEL_BUILD
-#include "tools/cpp/runfiles/runfiles.h"
-#endif
-
 namespace tst {
+
+// Resolves a test data path. Under bazel this goes through the runfiles
+// machinery; under cmake it strips leading directories until the path exists.
+// Free function rather than a fixture method so non-fixture helpers
+// (LoadedDesign, and anything that has to locate a tool binary) can use it.
+std::string getRunfilePath(const std::string& file_path);
 
 struct InstOptions
 {
@@ -32,23 +33,23 @@ struct InstOptions
   bool physical_only{false};
   odb::dbModule* parent_module{nullptr};
   odb::dbSourceType type{odb::dbSourceType::NONE};
-  odb::Point location;
+  odb::Point location{};
   odb::dbPlacementStatus status{odb::dbPlacementStatus::NONE};
-  std::vector<ITermInfo> iterms;
+  std::vector<ITermInfo> iterms{};
 };
 
 struct BTermOptions
 {
   struct BPinInfo
   {
-    const char* layer_name;
-    odb::Rect rect;
+    const char* layer_name{nullptr};
+    odb::Rect rect{};
     odb::dbPlacementStatus status{odb::dbPlacementStatus::PLACED};
   };
 
   odb::dbIoType io_type{odb::dbIoType::INPUT};
   odb::dbSigType sig_type{odb::dbSigType::SIGNAL};
-  std::vector<BPinInfo> bpins;
+  std::vector<BPinInfo> bpins{};
 };
 
 // Base fixture for tests that only manipulate an odb database. It has no
@@ -68,6 +69,21 @@ class DbFixture : public ::testing::Test
 
   // Load a tech LEF file
   odb::dbTech* loadTechLef(const char* name, const std::string& lef_file);
+
+  // Load a library LEF file without notifying STA.  tst::Fixture's
+  // loadLibaryLef/loadTechAndLib also update its dbSta.
+  odb::dbLib* loadLibLef(odb::dbTech* tech,
+                         const char* name,
+                         const std::string& lef_file);
+  // Load a tech + library LEF file without notifying STA.
+  odb::dbLib* loadTechAndLibLef(const char* tech_name,
+                                const char* lib_name,
+                                const std::string& lef_file);
+
+  // Read a DEF file onto a new chip using the technology of the first
+  // library in libs (all libraries if empty).  Returns the top block.
+  odb::dbBlock* readDef(const std::string& def_file,
+                        std::vector<odb::dbLib*> libs = {});
 
   // Netlist editing helpers.
   //
@@ -101,9 +117,6 @@ class DbFixture : public ::testing::Test
 
   utl::Logger logger_;
   utl::UniquePtrWithDeleter<odb::dbDatabase> db_;
-#ifdef BAZEL_BUILD
-  std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> runfiles_;
-#endif
 };
 
 }  // namespace tst
