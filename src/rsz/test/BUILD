@@ -395,6 +395,7 @@ test_suite(
     tests = [
         ":TestBufRem1",
         ":TestResizer",
+        ":TestSkewBudget",
     ],
 )
 
@@ -564,6 +565,22 @@ cc_test(
         "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Standalone unit tests for the LP-based useful-skew solver
+# (SkewLPSolver). No STA / dbSta deps; pure synthetic LP cases.
+cc_test(
+    name = "TestSkewBudget",
+    size = "small",
+    srcs = ["cpp/TestSkewBudget.cc"],
+    copts = ["-Isrc/rsz/src"],
+    features = ["-layering_check"],  # includes private SkewBudget.hh
+    deps = [
+        "//src/rsz",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
