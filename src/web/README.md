@@ -249,8 +249,10 @@ The report includes:
 - **Display controls**, hierarchy browser, clock tree, and other panels from
   the live viewer (features that require server interaction show empty states).
 
-The report requires an internet connection to load Leaflet and GoldenLayout
-CSS/JS from CDN.
+The report is self-contained: the stylesheets and the script are inlined, so it
+opens from the filesystem with no server and no network. The schematic and 3D
+panels need a live server, so their libraries are left out of the report and
+the panels say so when opened there.
 
 #### Examples
 
@@ -555,23 +557,24 @@ The viewer's JavaScript libraries come from npm, pinned in `package.json` and
 (`//src/web:app_bundle`), inlines the stylesheets into `index.html`, and embeds
 the result, so the browser only talks to the OpenROAD process.
 
-| Package | Used for | Source today |
-| --- | --- | --- |
-| `leaflet` | the tiled layout view | bundle |
-| `golden-layout` | the dockable panel layout | bundle |
-| `netlistsvg` | the schematic, laid out by its own `elkjs` | bundle |
-| `three` | the 3D viewer, through `three-subset.js` | bundle |
+| Package | Used for |
+| --- | --- |
+| `leaflet` | the tiled layout view |
+| `golden-layout` | the dockable panel layout |
+| `netlistsvg` | the schematic, laid out by its own `elkjs` |
+| `three` | the 3D viewer, through `three-subset.js` |
 
 The bundled packages' licences, with those of their dependencies, are gathered
 into `THIRD_PARTY_LICENSES.txt`, which the server serves at
-`/THIRD_PARTY_LICENSES.txt`.
+`/THIRD_PARTY_LICENSES.txt` and every saved report carries in a comment.
+
+A saved report inlines a second bundle, `//src/web:report_bundle`, built from
+`src/entry-report.js`. It leaves out `vendor-globals.js`, which is the only way
+`netlistsvg` and `three` reach the page.
 
 `netlistsvg` is bundled from its compiled sources rather than its prebuilt
 browser bundle. `package.json` drops its command-line dependencies through
 `pnpm.overrides`, and `esbuild.config.mjs` hands it `elkjs`'s browser build.
-
-The CMake build cannot run the bundler: it serves the sources as they are,
-with `src/index.cmake.html` loading the libraries from CDNs.
 
 To add or upgrade a library:
 
@@ -579,7 +582,14 @@ To add or upgrade a library:
 # edit the version in src/web/package.json, then
 bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
 bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
+bazelisk run //src/web/dist:dist           # rebuild the checked-in bundle
 ```
+
+**Changing what the bundle is built from needs that last step too** (the
+JavaScript, CSS, HTML or skin under `src/web/src/`, or `esbuild.config.mjs`),
+then commit what it changed: the CMake build cannot run the bundler, and embeds
+the copy in [`dist/`](dist/README.md) as it stands. CI fails a PR whose copy is
+stale.
 
 ## Server API
 

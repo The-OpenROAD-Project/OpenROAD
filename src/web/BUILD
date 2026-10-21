@@ -16,99 +16,9 @@ package(
 )
 
 py_binary(
-    name = "embed_report_assets",
-    srcs = ["src/embed_report_assets.py"],
-    main = "src/embed_report_assets.py",
-)
-
-py_binary(
     name = "embed_web_assets",
     srcs = ["src/embed_web_assets.py"],
     main = "src/embed_web_assets.py",
-)
-
-genrule(
-    name = "report_assets",
-    srcs = [
-        "src/style.css",
-        "src/theme.js",
-        "src/display-state.js",
-        "src/3d-viewer-widget.js",
-        "src/coordinates.js",
-        "src/ui-utils.js",
-        "src/checkbox-tree-model.js",
-        "src/vis-tree.js",
-        "src/websocket-manager.js",
-        "src/tile-merge.js",
-        "src/tile-request.js",
-        "src/device-pixels.js",
-        "src/layer-extents.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
-        "src/display-controls.js",
-        "src/inspector.js",
-        "src/ruler.js",
-        "src/label-manager.js",
-        "src/tcl-completer.js",
-        "src/hierarchy-browser.js",
-        "src/menu-bar.js",
-        "src/options-dialogs.js",
-        "src/context-menu.js",
-        "src/search-nav.js",
-        "src/capture.js",
-        "src/toolbar.js",
-        "src/image-export.js",
-        "src/edit-dialogs.js",
-        "src/title.js",
-        "src/clock-tree-widget.js",
-        "src/schematic-widget.js",
-        "src/charts-widget.js",
-        "src/timing-widget.js",
-        "src/drc-widget.js",
-        "src/selection-browser.js",
-        "src/main.js",
-    ],
-    outs = ["src/report_assets.cpp"],
-    cmd = "$(execpath :embed_report_assets)" +
-          " --output $@" +
-          " --css $(location src/style.css)" +
-          " --js $(location src/theme.js)" +
-          " $(location src/display-state.js)" +
-          " $(location src/3d-viewer-widget.js)" +
-          " $(location src/coordinates.js)" +
-          " $(location src/ui-utils.js)" +
-          " $(location src/checkbox-tree-model.js)" +
-          " $(location src/vis-tree.js)" +
-          " $(location src/websocket-manager.js)" +
-          " $(location src/tile-merge.js)" +
-          " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
-          " $(location src/layer-extents.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
-          " $(location src/display-controls.js)" +
-          " $(location src/inspector.js)" +
-          " $(location src/ruler.js)" +
-          " $(location src/label-manager.js)" +
-          " $(location src/tcl-completer.js)" +
-          " $(location src/hierarchy-browser.js)" +
-          " $(location src/menu-bar.js)" +
-          " $(location src/options-dialogs.js)" +
-          " $(location src/context-menu.js)" +
-          " $(location src/search-nav.js)" +
-          " $(location src/capture.js)" +
-          " $(location src/toolbar.js)" +
-          " $(location src/image-export.js)" +
-          " $(location src/edit-dialogs.js)" +
-          " $(location src/title.js)" +
-          " $(location src/clock-tree-widget.js)" +
-          " $(location src/schematic-widget.js)" +
-          " $(location src/charts-widget.js)" +
-          " $(location src/timing-widget.js)" +
-          " $(location src/drc-widget.js)" +
-          " $(location src/selection-browser.js)" +
-          " $(location src/main.js)",
-    tools = [":embed_report_assets"],
 )
 
 py_binary(
@@ -125,7 +35,7 @@ py_binary(
 
 # ── The browser bundle ──────────────────────────────────────────────────────
 # The viewer and its npm libraries, bundled and minified for web_assets below.
-# The CMake build still serves the sources and index.cmake.html.
+# The CMake build embeds the copy in dist/ (see dist/README.md).
 
 npm_link_all_packages(name = "node_modules")
 
@@ -179,6 +89,8 @@ genrule(
     deps = [":app_js" if entry.endswith(".js") else ":css"],
 ) for name, entry, output in [
     ("app_bundle", "entry-app.js", "bundle/app.min.js"),
+    # Without netlistsvg and three, whose panels need a live server.
+    ("report_bundle", "entry-report.js", "bundle/report.min.js"),
     ("vendor_css", "vendor.css", "vendor.min.css"),
     ("app_css", "style.css", "app.min.css"),
     ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
@@ -202,7 +114,7 @@ genrule(
     tools = [":inline_styles"],
 )
 
-# Served by file name.
+# Served by file name, and the saved report's script, kept out of the table.
 _WEB_ASSET_FILES = [
     "bundle/THIRD_PARTY_LICENSES.txt",
     "bundle/app.min.js",
@@ -211,9 +123,10 @@ _WEB_ASSET_FILES = [
 
 genrule(
     name = "web_assets",
-    srcs = _WEB_ASSET_FILES,
+    srcs = _WEB_ASSET_FILES + ["bundle/report.min.js"],
     outs = ["src/web_assets.cpp"],
-    cmd = "$(execpath :embed_web_assets) --output $@ " +
+    cmd = "$(execpath :embed_web_assets) --output $@" +
+          " --extern kReportJS=$(location bundle/report.min.js) " +
           " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
     tools = [":embed_web_assets"],
 )
@@ -295,6 +208,7 @@ cc_library(
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
         "src/module_color_palette.h",
+        "src/report_html.cpp",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/search.cpp",
@@ -308,7 +222,6 @@ cc_library(
         "src/web_painter.cpp",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
-        ":report_assets",
         ":web_assets",
     ],
     hdrs = [
@@ -326,6 +239,7 @@ cc_library(
         "src/web_painter.h",
         "src/web_viewer_hook.h",
         "src/request_handler.h",
+        "src/report_html.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
         "src/web_assets.h",
@@ -351,6 +265,7 @@ cc_library(
         "//third-party/gif-h:gif_h",
         "//third-party/lodepng",
         "//third-party/stb_truetype",
+        "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",

@@ -517,11 +517,58 @@ void EstimateParasitics::initChip(odb::dbChip* chip)
   initBlock();
 }
 
-void EstimateParasitics::ensureParasitics()
+ParasiticsSrc EstimateParasitics::designParasiticsSrc()
 {
-  estimateParasitics(global_router_->haveRoutes()
-                         ? ParasiticsSrc::kGlobalRouting
-                         : ParasiticsSrc::kPlacement);
+  if (spef_read_) {
+    debugPrint(logger_,
+               EST,
+               "estimate_parasitics",
+               1,
+               "parasitics were read from SPEF, not estimated");
+    return ParasiticsSrc::kNone;
+  }
+  if (!global_router_->designIsPlaced()) {
+    logger_->error(
+        EST, 9, "The design is not placed: no parasitics to estimate.");
+  }
+  if (global_router_->haveRoutes()) {
+    return ParasiticsSrc::kGlobalRouting;
+  }
+  if (global_router_->haveCongestedRoutes()) {
+    logger_->error(EST,
+                   20,
+                   "The global routes are congested. Use global_route "
+                   "-allow_congestion to estimate parasitics from them.");
+  }
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (wireSignalCapacitance(scene) == 0.0) {
+      logger_->error(EST,
+                     14,
+                     "wire capacitance for corner {} is zero. Use the "
+                     "set_wire_rc command to set wire resistance and "
+                     "capacitance.",
+                     scene->name());
+    }
+  }
+  return ParasiticsSrc::kPlacement;
+}
+
+const char* EstimateParasitics::parasiticsSource() const
+{
+  if (spef_read_) {
+    return "spef";
+  }
+  switch (parasitics_src_) {
+    case ParasiticsSrc::kPlacement:
+      return "placement";
+    case ParasiticsSrc::kGlobalRouting:
+      return "global_routing";
+    case ParasiticsSrc::kDetailedRouting:
+      return "detailed_routing";
+    case ParasiticsSrc::kNone:
+      break;
+  }
+  return "none";
 }
 
 void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
@@ -535,6 +582,7 @@ void EstimateParasitics::estimateParasitics(
     std::map<sta::Scene*, std::ostream*>& spef_streams)
 {
   initBlock();
+  spef_read_ = false;
   std::unique_ptr<sta::SpefWriter> spef_writer;
   if (!spef_streams.empty()) {
     spef_writer
@@ -609,7 +657,10 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::kGlobalRouting:
     case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes();
+      // Also re-estimate the nets the router moved beyond the edited ones.
+      for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+        parasiticsInvalid(db_net);
+      }
       for (const sta::Net* net : parasitics_invalid_) {
         if (isSkipNet(net)) {
           continue;
@@ -708,7 +759,10 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
         parasitics_invalid_.erase(net);
         break;
       case ParasiticsSrc::kGlobalRouting: {
-        incr_groute_->updateRoutes();
+        // Other rerouted nets stay invalid until the next updateParasitics.
+        for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+          parasiticsInvalid(db_net);
+        }
         estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;

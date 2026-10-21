@@ -62,6 +62,7 @@ py_test(
         "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
         "//src/web:bundle/app.min.js",
         "//src/web:bundle/index.html",
+        "//src/web:bundle/report.min.js",
     ],
 )
 
@@ -158,6 +159,13 @@ js_test(
     name = "capture_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-capture.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ide_layout_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-ide-layout.js",
     no_copy_to_bin = JS_FILES,
 )
 

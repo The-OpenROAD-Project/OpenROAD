@@ -2253,6 +2253,13 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     if (sizing_leakage_limit_) {
       source_cell_leakage = cellLeakage(source_cell);
     }
+    // Smallest larger cell that passes every restriction except the leakage
+    // limit, and its position in swappable_cells to preserve the equivalent
+    // cell order.
+    sta::LibertyCell* next_larger = nullptr;
+    int64_t next_larger_area = 0;
+    size_t next_larger_pos = 0;
+    bool has_larger_cell = false;
     for (sta::LibertyCell* equiv_cell : *equiv_cells) {
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
@@ -2270,13 +2277,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         continue;
       }
 
+      bool exceeds_leakage_limit = false;
       if (sizing_leakage_limit_ && source_cell_leakage) {
         std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
-        if (equiv_cell_leakage
-            && (*equiv_cell_leakage / *source_cell_leakage
-                > sizing_leakage_limit_.value())) {
-          continue;
-        }
+        exceeds_leakage_limit = equiv_cell_leakage
+                                && (*equiv_cell_leakage / *source_cell_leakage
+                                    > sizing_leakage_limit_.value());
       }
 
       if (sizing_keep_site_) {
@@ -2309,7 +2315,28 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      const int64_t equiv_cell_area = equiv_cell_master->getArea();
+      if (exceeds_leakage_limit) {
+        if (equiv_cell_area > source_cell_area
+            && (next_larger == nullptr || equiv_cell_area < next_larger_area)) {
+          next_larger = equiv_cell;
+          next_larger_area = equiv_cell_area;
+          next_larger_pos = swappable_cells.size();
+        }
+        continue;
+      }
+
+      has_larger_cell |= equiv_cell_area > source_cell_area;
       swappable_cells.push_back(equiv_cell);
+    }
+
+    // The leakage limit is relative to the source cell, so a cell with
+    // unusually low leakage can lose every larger size and become impossible
+    // to upsize.  Keep the smallest larger cell in that case so there is
+    // always at least one upsizing step.
+    if (!has_larger_cell && next_larger != nullptr) {
+      swappable_cells.insert(swappable_cells.begin() + next_larger_pos,
+                             next_larger);
     }
   } else {
     swappable_cells.push_back(source_cell);
@@ -2408,9 +2435,22 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     vt_equiv_cells.emplace_back(equiv_cell);
   }
 
-  // Sort the list in ascending order of leakage
+  // Group by VT category (and ascending leakage within each category) so that
+  // same-VT cells are contiguous during adjacent deduplication.
   std::ranges::stable_sort(
       vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        dbMaster* master1 = db_network_->staToDb(cell1);
+        dbMaster* master2 = db_network_->staToDb(cell2);
+        if ((master1 == nullptr) != (master2 == nullptr)) {
+          return master1 == nullptr;
+        }
+        if (master1 && master2) {
+          const VTCategory vt1 = cellVTType(master1);
+          const VTCategory vt2 = cellVTType(master2);
+          if (vt1 != vt2) {
+            return vt1 < vt2;
+          }
+        }
         std::optional<float> leak1 = this->cellLeakage(cell1);
         std::optional<float> leak2 = this->cellLeakage(cell2);
         // Treat missing leakage as 0
@@ -2443,6 +2483,14 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       ++it;
     }
   }
+
+  // Sort the deduplicated list in ascending order of leakage
+  std::ranges::stable_sort(
+      vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        std::optional<float> leak1 = this->cellLeakage(cell1);
+        std::optional<float> leak2 = this->cellLeakage(cell2);
+        return leak1.value_or(0.0) < leak2.value_or(0.0);
+      });
 
   // Map all equivalent cells to the same list
   // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
@@ -6707,7 +6755,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "size_down_fanout" || lower == "size_down") {
+  if (lower == "size_down_fanout" || lower == "size_down"
+      || lower == "sizedown") {
     return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
@@ -6786,6 +6835,60 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
   return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
 }
 
+sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
+    sta::LibertyCell* curr_cell)
+{
+  if (!curr_cell) {
+    return nullptr;
+  }
+  const sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_cell);
+  auto it = std::ranges::find(equiv_cells, curr_cell);
+  if (it == equiv_cells.end()) {
+    return nullptr;
+  }
+  sta::LibertyCell* running_best = curr_cell;
+  for (++it; it != equiv_cells.end(); ++it) {
+    sta::LibertyCell* cand_cell = *it;
+    bool weakens_drive = false;
+    for (sta::Scene* scene : sta_->scenes()) {
+      const int lib_ap = scene->libertyIndex(max_);
+      sta::LibertyCell* best_corner = running_best->sceneCell(lib_ap);
+      if (best_corner == nullptr) {
+        continue;
+      }
+      sta::LibertyCell* cand_corner = cand_cell->sceneCell(lib_ap);
+      if (cand_corner == nullptr) {
+        weakens_drive = true;
+        break;
+      }
+      sta::LibertyCellPortIterator port_iter(best_corner);
+      while (port_iter.hasNext()) {
+        sta::LibertyPort* best_port = port_iter.next();
+        if (!best_port->direction()->isAnyOutput()) {
+          continue;
+        }
+        sta::LibertyPort* cand_port
+            = cand_corner->findLibertyPort(best_port->name());
+        if (cand_port == nullptr
+            || cand_port->driveResistance(sta::RiseFall::rise(), max_)
+                   > best_port->driveResistance(sta::RiseFall::rise(), max_)
+            || cand_port->driveResistance(sta::RiseFall::fall(), max_)
+                   > best_port->driveResistance(sta::RiseFall::fall(), max_)) {
+          weakens_drive = true;
+          break;
+        }
+      }
+      if (weakens_drive) {
+        break;
+      }
+    }
+    if (!weakens_drive) {
+      running_best = cand_cell;
+    }
+  }
+  return running_best != curr_cell ? running_best : nullptr;
+}
+
 // Check if current instance can be swapped to the
 // fastest VT variant.  If not, mark it as such.
 bool Resizer::checkAndMarkVTSwappable(
@@ -6807,18 +6910,8 @@ bool Resizer::checkAndMarkVTSwappable(
     return false;
   }
   sta::LibertyCell* curr_lib_cell = network_->libertyCell(cell);
-  if (!curr_lib_cell) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
-  if (equiv_cells.empty()) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  best_lib_cell = equiv_cells.back();
-  if (best_lib_cell == curr_lib_cell) {
-    best_lib_cell = nullptr;
+  best_lib_cell = selectBetterRfDriveVtCell(curr_lib_cell);
+  if (best_lib_cell == nullptr) {
     notSwappable.insert(inst);
     return false;
   }

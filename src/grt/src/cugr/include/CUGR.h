@@ -47,6 +47,7 @@ class GridGraph;
 class GRNet;
 class GRTreeNode;
 class BoxT;
+class PointT;
 
 struct Constants
 {
@@ -199,7 +200,10 @@ class CUGR
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
   // Refresh net slacks, re-mark the res-aware/critical set, and demote
   // non-critical nets so the next stage routes critical nets first.
-  void updateCriticalNets(const std::vector<int>& net_indices);
+  // `extend_res_aware` false keeps the resistance-aware set but refreshes the
+  // inputs of its score.
+  void updateCriticalNets(const std::vector<int>& net_indices,
+                          bool extend_res_aware = true);
   // Refresh every net's slack; runs the full parasitics estimate once per
   // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
@@ -227,6 +231,8 @@ class CUGR
   // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
   // from every committed tree and report drift from the tracked demand.
   void verifyDemandConsistency(const char* tag);
+  // Debug group congestion_sources: splits overflow by wire and via source.
+  void reportCongestionSources(const std::string& tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -247,15 +253,7 @@ class CUGR
 
   std::vector<int> computeNdrWidths(odb::dbNet* db_net) const;
   /**
-   * @brief Builds the rip-up set of nets touching a congested edge.
-   *
-   * Populates `net_indices` with the indices of every net whose
-   * routing tree contains at least one edge whose
-   * `demand > capacity * threshold`. At threshold == 1.0 the result is
-   * the strict-overflow set (the default used by the pattern/maze
-   * stages); at threshold < 1.0 it widens to include near-overflow
-   * edges, which is how the iterative RRR loop catches the "many nets
-   * piled onto one layer, only a few overflow" failure mode.
+   * @brief Builds the rip-up set: the nets with a positive relief score.
    *
    * @param net_indices Output: cleared and refilled with the selected
    *                    net indices.
@@ -264,6 +262,18 @@ class CUGR
    */
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
+  // A pin gcell and its top pin-access layer; vias above it are climbs.
+  struct PinAccessTop
+  {
+    std::pair<int, int> gcell;
+    int top;
+  };
+  // The net's pin-access tops, one per pin gcell, sorted by gcell.
+  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
+  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
+  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
+  // Overflow the net's removal alone would relieve, pin-access pads excluded.
+  double computeReliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the
@@ -271,24 +281,30 @@ class CUGR
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   // iterativeRRR re-enters this stage, so the caller labels the debug dump.
-  void mazeRoute(std::vector<int>& net_indices, CugrStage stage, int iteration);
+  // Rolls back reroutes that add overflow; returns the accepted reroutes'
+  // total overflow change (<= 0 up to the float slack of the accept test).
+  double mazeRoute(std::vector<int>& net_indices,
+                   CugrStage stage,
+                   int iteration);
 
+  // Debug prints after a maze pass: the total overflow (group rrr) and, after
+  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
+  void debugPass(const std::string& tag);
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
    *
    * Wraps the maze stage in a loop that sharpens the logistic cost
    * slope each pass (so `PatternRoute` and the maze cost surface
-   * penalise full edges more aggressively) and widens the rip-up set
-   * to nets sitting on near-full edges (not just strictly-overflowed
-   * ones). Designed for the per-layer over-concentration failure mode
-   * where many nets pile onto a single low layer while upper layers
-   * stay idle.
+   * penalise full edges more aggressively) and reroutes the nets whose
+   * removal relieves overflow (`updateCongestedNets`).
    *
    * Early-exits when the integer overflow metric (`totalOverflow()`)
    * is already zero, so designs that finished stage 4 clean pay no
-   * cost. Emits `GRT-0117` per iteration and, in full route only,
-   * `GRT-0118` if overflow remains when the loop ends (incremental
-   * defers to the session-end `GRT-0128`).
+   * cost. Stops after two passes in a row that each remove less than one
+   * track, unless a congested NDR net still awaits its soft-NDR demotion.
+   * Emits `GRT-0117` per iteration and, in full route only when overflow
+   * remains, `GRT-0124` on that stop and `GRT-0118` when the loop ends
+   * (incremental defers to the session-end `GRT-0128`).
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
@@ -401,7 +417,10 @@ class CUGR
 
   // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
   // worst_* normalisers; no-op unless resistance_aware_.
-  void markResAwareNets(const std::vector<int>& net_indices);
+  // `extend_res_aware` false only refreshes resistance, length and the
+  // normalisers.
+  void markResAwareNets(const std::vector<int>& net_indices,
+                        bool extend_res_aware);
 
   // FR-style ordering score (lower routes first): slack/resistance/fanout/
   // length blend, each normalised by the per-run worst.
