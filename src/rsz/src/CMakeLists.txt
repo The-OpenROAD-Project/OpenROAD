@@ -123,6 +123,7 @@ target_include_directories(rsz_lib
 
 target_link_libraries(rsz_lib
   PUBLIC
+    absl::flat_hash_map
     est_lib
     stt_lib
     odb

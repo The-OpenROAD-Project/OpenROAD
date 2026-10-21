@@ -46,15 +46,14 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -375.692 |   -11554.6 |     58 | capture_76/D
-     247* |      10 |     121 |       17 |      4 |    23 |    +0.9% |   -5.675 |      -39.5 |     58 | capture_98/D
-    final |      10 |     135 |       17 |      4 |    23 |    +0.9% |   -5.758 |      -10.5 |      3 | capture_98/D
+     220* |       8 |     114 |       19 |      4 |    21 |    +1.1% |    0.107 |        0.0 |     58 | capture_98/D
+    final |       8 |     114 |       19 |      4 |    21 |    +1.1% |    0.107 |        0.0 |      0 | capture_98/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 10 buffers.
-[INFO RSZ-0040] Inserted 17 buffers.
-[INFO RSZ-0051] Resized 135 instances: 42 up, 0 up match, 0 down, 93 VT
-[INFO RSZ-0043] Swapped pins on 23 instances.
+[INFO RSZ-0059] Removed 8 buffers.
+[INFO RSZ-0040] Inserted 19 buffers.
+[INFO RSZ-0051] Resized 114 instances: 41 up, 0 up match, 0 down, 73 VT
+[INFO RSZ-0043] Swapped pins on 21 instances.
 [INFO RSZ-0049] Cloned 4 instances.
-[WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_125 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: capture_98 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -87,17 +86,18 @@ Path Type: max
   19.6084  354.7638 v inst20/Y (AO21x2_ASAP7_75t_SL)
   17.2449  372.0087 v inst21/Y (BUFx12f_ASAP7_75t_SL)
   31.8462  403.8549 v inst22/Y (BUFx12f_ASAP7_75t_SL)
-  41.2284  445.0833 ^ inst23/Y (NAND2x2_ASAP7_75t_SL)
-  31.3574  476.4407 v inst24/Y (OAI21x1_ASAP7_75t_SL)
-  25.7713  502.2119 v inst25/Y (AO21x2_ASAP7_75t_SL)
-  33.1026  535.3146 v inst26/Y (AO21x1_ASAP7_75t_SL)
-   7.5407  542.8553 ^ inst27/Y (AOI21x1_ASAP7_75t_SL)
-   4.3885  547.2438 v inst28/Y (OAI21x1_ASAP7_75t_SL)
-  17.8491  565.0928 v inst29/Y (OA21x2_ASAP7_75t_SL)
-  33.9984  599.0913 v inst30/Y (BUFx12f_ASAP7_75t_SL)
-  31.5664  630.6577 v inst30_neighbor1/Y (AO21x2_ASAP7_75t_SL)
-  15.0786  645.7363 v capture_98/D (DFFHQx4_ASAP7_75t_R)
-           645.7363   data arrival time
+  31.1813  435.0362 ^ inst23/Y (NAND2x2_ASAP7_75t_SL)
+  13.5379  448.5741 ^ rebuffer1/Y (BUFx12f_ASAP7_75t_SL)
+  23.6896  472.2637 v inst24/Y (OAI21x1_ASAP7_75t_SL)
+  24.1663  496.4300 v inst25/Y (AO21x2_ASAP7_75t_SL)
+  33.1026  529.5326 v inst26/Y (AO21x1_ASAP7_75t_SL)
+   7.5407  537.0733 ^ inst27/Y (AOI21x1_ASAP7_75t_SL)
+   4.3885  541.4618 v inst28/Y (OAI21x1_ASAP7_75t_SL)
+  17.8491  559.3109 v inst29/Y (OA21x2_ASAP7_75t_SL)
+  33.9931  593.3040 v inst30/Y (BUFx12f_ASAP7_75t_SL)
+  31.4891  624.7932 v inst30_neighbor1/Y (AO21x2_ASAP7_75t_SL)
+  15.0786  639.8718 v capture_98/D (DFFHQx4_ASAP7_75t_R)
+           639.8718   data arrival time
 
  650.0000  650.0000   clock clk (rise edge)
    0.0000  650.0000   clock network delay (ideal)
@@ -107,8 +107,8 @@ Path Type: max
            639.9786   data required time
 -------------------------------------------------------------
            639.9786   data required time
-          -645.7363   data arrival time
+          -639.8718   data arrival time
 -------------------------------------------------------------
-            -5.7576   slack (VIOLATED)
+             0.1069   slack (MET)
 
 

@@ -17,7 +17,7 @@ jobs:
         check:
           # Drive buildifier from `git ls-files` instead of `-r .` so the
           # scan stays inside this repo. With `-r .` buildifier was
-          # recursing into submodule contents (third-party/slang-elab/...)
+          # recursing into submodule contents (third-party/sv-elab/...)
           # left on disk by self-hosted runners — files we can't fix from
           # here since they're upstream-managed.
           - name: Buildifier format

@@ -4,6 +4,11 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["upper_layer_net.def"],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 TESTS = [
     "bus_route",
     "check_antennas_cugr",
@@ -29,6 +34,7 @@ TESTS = [
     "cugr_colocated_pins",
     "cugr_congestion_sources",
     "cugr_detour_limit",
+    "cugr_rrr_accept_stop",
     "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
