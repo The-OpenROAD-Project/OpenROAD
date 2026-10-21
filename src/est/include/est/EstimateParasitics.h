@@ -151,6 +151,14 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void estimateParasitics(ParasiticsSrc src);
   void estimateParasitics(ParasiticsSrc src,
                           std::map<sta::Scene*, std::ostream*>& spef_streams);
+  // The parasitics the design has: global routes when it has them, else
+  // placement; kNone once a SPEF has been read. An unplaced design, a
+  // congested route and a placement without wire RC are errors.
+  ParasiticsSrc designParasiticsSrc();
+  // read_spef annotated the parasitics; designParasiticsSrc leaves them.
+  void spefRead() { spef_read_ = true; }
+  // Where the parasitics came from: spef, placement, global_routing or none.
+  const char* parasiticsSource() const;
   void estimateWireParasitics(sta::SpefWriter* spef_writer = nullptr);
   void estimateWireParasitic(const sta::Net* net,
                              sta::SpefWriter* spef_writer = nullptr);
@@ -185,6 +193,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   void removeNetFromParasiticsInvalid(sta::Net* net)
   {
     parasitics_invalid_.erase(net);
+    observer_estimated_nets_.erase(net);
   }
 
   bool hasParasiticsInvalid() const { return !parasitics_invalid_.empty(); }
@@ -197,6 +206,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
       const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
       int threads,
       bool partial);
+  // Make the parasitic placeholders for every driver and net so threads
+  // only look up sta::Parasitics entries, which are not locked.
+  void ensureParasiticsForThreads();
   void clearParasitics();
 
   ////////////////////////////////////////////////////////////////
@@ -225,7 +237,24 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 
   utl::Logger* getLogger() { return logger_; }
 
+  ////////////////////////////////////////////////////////////////
+  // Profiling-related methods and attributes
+
+  // updateParasitics() for an observer, such as the repair setup profiler,
+  // that reads timing in the middle of a repair step.  The nets it estimates
+  // stay in pendingNetCount() until the next updateParasitics().
+  void updateParasiticsForObserver();
+  // The nets the next updateParasitics() would estimate had no observer
+  // updated the parasitics early: the invalid nets plus the nets
+  // updateParasiticsForObserver() estimated since the last
+  // updateParasitics().
+  size_t pendingNetCount() const;
+
  private:
+  // The nets updateParasiticsForObserver() estimated since the last
+  // updateParasitics().
+  std::unordered_set<const sta::Net*, NetHash> observer_estimated_nets_;
+
   // Wire RC values and layers of one technology, indexed by corner->index()
   struct WireRC
   {
@@ -242,8 +271,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // Resolve one WireRC category for the current technology; a category left
   // unset for a tech falls back to the defaults (nullptr entry) independently.
   template <typename T>
-  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::*category) const;
-  void ensureParasitics();
+  const std::vector<T>& resolveWireRC(std::vector<T> WireRC::* category) const;
   bool isSkipPin(const sta::Pin* pin) const;
   bool hasIdealClocks(const sta::Mode* mode) const;
   bool hasIdealClocks() const;
@@ -304,6 +332,7 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   std::unordered_map<odb::dbTech*, WireRC> wire_rc_;
 
   ParasiticsSrc parasitics_src_ = ParasiticsSrc::kNone;
+  bool spef_read_ = false;
 
   std::unordered_set<const sta::Net*, NetHash> parasitics_invalid_;
 

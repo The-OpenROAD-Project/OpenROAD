@@ -91,8 +91,8 @@ LayerStack makeLayerStack(odb::dbTech* tech,
 // constant, which odb stores the same way as LEF's single-value form.
 struct Pwl
 {
-  std::vector<double> indices;
-  std::vector<double> ratios;
+  std::vector<double> indices{};
+  std::vector<double> ratios{};
 };
 
 inline Pwl constantPwl(double ratio)

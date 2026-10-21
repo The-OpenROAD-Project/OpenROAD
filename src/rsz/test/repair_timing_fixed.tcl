@@ -110,6 +110,22 @@ check "repair_timing still sizes PLACED instances" \
 check "repair_timing still swaps pins of FIRM instances" \
   { expr { [changed $snap pins FIRM] > 0 } } 1
 
+# PARALLEL_EVAL keeps the footprint of a FIRM instance the same way.
+set snap [snapshot]
+run {repair_timing -setup -phases PARALLEL_EVAL -max_iterations 20 \
+  -sequence vt_swap,sizeup,size_down,swap}
+puts "PARALLEL_EVAL FIRM changes: width [changed $snap width FIRM]\
+  location [changed $snap location FIRM] status [changed $snap status FIRM]\
+  pins [changed $snap pins FIRM]"
+puts "PARALLEL_EVAL PLACED changes: width [changed $snap width PLACED]"
+check "PARALLEL_EVAL sizes no FIRM instance" { changed $snap width FIRM } 0
+check "PARALLEL_EVAL moves no FIRM instance" { changed $snap location FIRM } 0
+check "PARALLEL_EVAL keeps every FIRM instance FIRM" { changed $snap status FIRM } 0
+check "PARALLEL_EVAL still sizes PLACED instances" \
+  { expr { [changed $snap width PLACED] > 0 } } 1
+check "PARALLEL_EVAL still swaps pins of FIRM instances" \
+  { expr { [changed $snap pins FIRM] > 0 } } 1
+
 create_clock -name core_clock -period 400 [get_ports clk]
 set snap [snapshot]
 run {repair_timing -recover_power 100}
