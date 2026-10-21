@@ -12,6 +12,7 @@
 #include <memory>
 #include <ranges>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -144,6 +145,8 @@ void TileGrid::initTiles(bool use_rudy)
   int idxX = 0, idxY = 0;
   tileStor_.resize(static_cast<uint64_t>(tileCntX_)
                    * static_cast<uint64_t>(tileCntY_));
+  tiles_.clear();
+  tiles_.reserve(tileStor_.size());
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
@@ -669,6 +672,110 @@ void RouteBase::calculateRudyTiles()
 
   debugInflationRatioStats();
   debugInflatedTiles();
+}
+
+int64_t RouteBase::inflateNewCells()
+{
+  std::unordered_set<odb::dbInst*> new_instances;
+  for (const auto& nb : nbVec_) {
+    new_instances.insert(nb->getNewInstances().begin(),
+                         nb->getNewInstances().end());
+  }
+  if (new_instances.empty() || db_->getChip()->getBlock()->getNets().empty()) {
+    return 0;
+  }
+
+  calculateRudyTiles();
+  int64_t total_added = 0;
+  // Ordinary routability is already finished. Its historical charges stay
+  // untouched; only this extension uses the current surviving geometry.
+  int64_t live_inflation = 0;
+  for (const auto& nb : nbVec_) {
+    live_inflation += nb->getInflationArea();
+  }
+  int64_t remaining_budget = std::max<int64_t>(
+      0,
+      static_cast<int64_t>(static_cast<double>(original_movable_area_)
+                           * rbVars_.maxInflationTotal)
+          - live_inflation);
+  for (size_t i = 0; i < nbVec_.size(); ++i) {
+    const auto& nb = nbVec_[i];
+    // The cached areas still describe the design before timing repair.
+    int64_t standard_cell_area = 0;
+    for (const auto& cell : nb->getGCells()) {
+      if (cell->isStdInstance()) {
+        standard_cell_area += static_cast<int64_t>(cell->dx()) * cell->dy();
+      }
+    }
+    const int64_t available_area
+        = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
+    int64_t available = std::max<int64_t>(
+        0,
+        static_cast<int64_t>(static_cast<double>(rbVars_.maxDensity)
+                             * available_area)
+            - standard_cell_area - nb->getTotalFillerArea());
+    available = std::min(available, remaining_budget);
+    const int64_t filler_area = nb->getFillerCellArea();
+    const int64_t removable_area = filler_area * nb->getFillerCnt();
+    // Never buy virtual area by increasing the repaired design's density.
+    available = std::min(available, removable_area);
+    int64_t added = 0;
+    for (const auto& handle : nb->getGCells()) {
+      const GCell* cell = handle;
+      if (!cell->isStdInstance() || cell->insts().size() != 1
+          || !new_instances.contains(cell->insts().front()->dbInst())
+          || cell->changeType() == GCell::GCellChange::kRoutability) {
+        continue;
+      }
+      const Tile* tile = getTile(cell->dCx(), cell->dCy());
+      if (tile == nullptr || !tile->isActionable()
+          || !std::isfinite(tile->inflationRatio())
+          || tile->inflationRatio() <= 1.0f || available == 0) {
+        continue;
+      }
+      const int old_width = cell->dx();
+      const int old_height = cell->dy();
+      const int64_t old_area = static_cast<int64_t>(old_width) * old_height;
+      if (old_area <= 0) {
+        continue;
+      }
+      const double ratio
+          = std::min<double>(tile->inflationRatio(),
+                             1.0 + static_cast<double>(available) / old_area);
+      const double scale = std::sqrt(ratio);
+      // setSize stores even dimensions. Round down so integer geometry cannot
+      // overdraw either the regional density allowance or the total budget.
+      const int width = 2 * static_cast<int>(old_width * scale / 2);
+      const int height = 2 * static_cast<int>(old_height * scale / 2);
+      const int64_t delta = static_cast<int64_t>(width) * height - old_area;
+      if (width < old_width || height < old_height || delta <= 0
+          || delta > available) {
+        continue;
+      }
+      nbc_->getGCellByIndex(handle.getStorageIndex())
+          ->setSize(width, height, GCell::GCellChange::kRoutability);
+      available -= delta;
+      added += delta;
+    }
+    if (added > 0) {
+      // Rounding up pays for all added area; at most one filler cell of
+      // extra whitespace is created. No change to the resizer's cell sizes.
+      const int64_t fillers = (added + filler_area - 1) / filler_area;
+      nb->cutFillerCells(fillers * filler_area);
+    }
+    remaining_budget -= added;
+    total_added += added;
+    debugPrint(log_,
+               GPL,
+               "timing",
+               1,
+               "Timing-driven: new-cell congestion inflation: {:.3f} um^2{}.",
+               db_->getChip()->getBlock()->dbuAreaToMicrons(added),
+               nb->getGroup()
+                   ? " in group " + std::string(nb->getGroup()->getName())
+                   : "");
+  }
+  return total_added;
 }
 
 // Report mean/median/stddev and a 10-bucket histogram of the tiles'

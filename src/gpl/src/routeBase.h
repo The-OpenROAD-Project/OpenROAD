@@ -176,6 +176,14 @@ class RouteBase
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);
 
+  // Refresh RUDY after retained timing repair and inflate only its surviving
+  // new standard cells. Does not restart or revert the routability search.
+  // Consumes whole filler cells to fund inflation without raising density.
+  // Only call after ordinary routability has completed: live accounting here
+  // must not alter its historical budget or min-RC restoration policy.
+  // The caller must subsequently update region areas and density sizes.
+  int64_t inflateNewCells();
+
   float getRudyAverage() const { return final_average_rc_; }
   int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
   int getTotalTilesCount() const { return tg_->tiles().size(); }
@@ -189,6 +197,7 @@ class RouteBase
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
   std::vector<int64_t> inflatedAreaDelta() const;
+  // Historical ordinary-routability charge, not post-completion live area.
   int64_t getTotalInflation() const;
   int getRevertCount() const;
 

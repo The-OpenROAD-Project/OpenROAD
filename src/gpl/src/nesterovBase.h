@@ -121,6 +121,7 @@ class GCell
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  int64_t inflationArea() const;
   void setAreaChangeType(GCellChange change) { change_ = change; }
   GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
@@ -850,6 +851,7 @@ struct NesterovPlaceVars
 
   bool timingDrivenMode;
   bool timingDrivenRepairTiming;
+  const bool timingDrivenCongestionInflation;
   float timingDrivenRepairTnsEndPercent;
   int timingDrivenIterCounter = 0;
   const bool routability_driven_mode;
@@ -1086,6 +1088,13 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
+  // Pending callback creations, consumed by updateGCellState(). Resolve these
+  // through the live cell handles: repair may also delete or resize them.
+  const std::vector<odb::dbInst*>& getNewInstances() const
+  {
+    return new_instances_;
+  }
+
   float getSumOverflow() const { return sum_overflow_; }
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
@@ -1132,9 +1141,13 @@ class NesterovBase
   // update density sizes with changed dx and dy
   void updateDensitySize();
 
+  // Account for retained timing repair and congestion inflation in this region.
+  void updateTimingDrivenDensity();
+
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
+  int64_t getInflationArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
@@ -1328,6 +1341,8 @@ class NesterovBase
   void setIoPins(std::unique_ptr<IoPinBase> io_pins);
 
  private:
+  friend class TimingRepairIntegrationTest;
+
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
