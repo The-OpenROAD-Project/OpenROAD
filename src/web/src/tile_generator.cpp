@@ -1070,7 +1070,7 @@ namespace {
 struct BoolField
 {
   const char* key;
-  bool TileVisibility::*field;
+  bool TileVisibility::* field;
   bool default_val;
 };
 
@@ -3178,11 +3178,7 @@ void collectChipletsRec(odb::dbChip* chip,
     node.global_z = cuboid.lll().z();
   } else {
     node.world_xfm = parent_world_xfm;
-    if (node.block) {
-      node.name = node.block->getName();
-    } else {
-      node.name = "top";
-    }
+    node.name = node.chip->getName();
     node.path = node.name;
     node.global_z = 0;
   }
@@ -3258,7 +3254,7 @@ std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
     ChipletNode root_node;
     root_node.chip = root;
     root_node.block = root->getBlock();
-    root_node.name = root_node.block ? root_node.block->getName() : "top";
+    root_node.name = root_node.chip->getName();
     root_node.path = root_node.name;
     out.push_back(root_node);
 
@@ -6553,7 +6549,14 @@ void TileGenerator::saveImage(const std::string& filename,
   if (png_data.empty()) {
     return;
   }
-  lodepng::save_file(png_data, filename);
+  const unsigned save_error = lodepng::save_file(png_data, filename);
+  if (save_error != 0) {
+    logger_->error(utl::WEB,
+                   116,
+                   "Cannot write image to {}: {}",
+                   filename,
+                   lodepng_error_text(save_error));
+  }
   logger_->info(
       utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
 }

@@ -93,8 +93,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
       sta::dbSta* sta,
       utl::UniqueName& name_generator,
       rsz::Resizer* resizer,
-      utl::Logger* logger)
-      = 0;
+      utl::Logger* logger) = 0;
 
  protected:
   sta::Scene* corner_;

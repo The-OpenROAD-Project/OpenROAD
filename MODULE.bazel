@@ -23,20 +23,19 @@ single_version_override(
 
 bazel_dep(name = "abseil-cpp", version = "20260107.1")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "bison", version = "3.8.2.bcr.10")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1.bcr.1")
 
-# Host-space FFTW plans for the opt-in GPU build's KokkosFFT (see
-# bazel/gpu/system_gpu.bzl). Only reachable through @kokkos_fft, so it is
-# built from source solely under --config=gpu (the hermetic toolchain
-# cannot link a host-distribution libfftw3); CPU builds pay nothing beyond
-# the lockfile entry.
+# Host-space FFTW plans for the opt-in GPU build's KokkosFFT. Only reachable
+# through @kokkos_fft, so it is built from source solely under --config=gpu
+# (the hermetic toolchain cannot link a host-distribution libfftw3); CPU builds
+# pay nothing beyond the lockfile entry.
 bazel_dep(name = "fftw", version = "3.3.10")
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_bison", version = "0.4")
 bazel_dep(name = "rules_cc", version = "0.2.18")
 bazel_dep(name = "rules_flex", version = "0.4")
 
-# rules_bison/rules_flex only require rules_m4 0.2.x, whose default m4
+# rules_flex only requires rules_m4 0.2.x, whose default m4
 # toolchain does not build here; 0.3 does.
 bazel_dep(name = "rules_m4", version = "0.3")
 
@@ -48,21 +47,16 @@ bazel_dep(name = "rules_go", version = "0.61.1")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 bazel_dep(name = "rules_pycross", version = "0.8.1")
 bazel_dep(name = "rules_python", version = "2.3.2")
+bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
-# bison is transitive (rules_bison -> bison). Same gnulib libc-header
-# shadowing class as sed/gawk/m4 under hermetic-llvm (BCR #7642).
-# 3.8.2.bcr.7 fixes lib/ but src/ still picks up raw libc headers; the
-# patch restores gnulib wrapper-header precedence via -I (to be proposed
-# upstream as 3.8.2.bcr.8, then drop).
+# rules_cc_autoconf is transitive (bison, flex, m4, gawk, readline). Its
+# checker uses std::back_inserter without <iterator>, which libc++ 23 no
+# longer pulls in transitively; 0.23.0 adds the include.
 single_version_override(
-    module_name = "bison",
-    patch_strip = 1,
-    patches = [
-        "//bazel/bison-patches:0001-gnulib-wrapper-headers-use-I-not-isystem.patch",
-    ],
-    version = "3.8.2.bcr.7",
+    module_name = "rules_cc_autoconf",
+    version = "0.23.0",
 )
 
 BOOST_VERSION = "1.89.0.bcr.2"
@@ -181,7 +175,7 @@ single_version_override(
 
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 
-# m4 is transitive (rules_bison/rules_flex -> m4). Same gnulib libc-header
+# m4 is transitive (bison/rules_flex -> m4). Same gnulib libc-header
 # shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
 single_version_override(
     module_name = "m4",
@@ -205,7 +199,6 @@ single_version_override(
 # Bazel 9 removed; loading the package fails. 1.16.0.bcr.2+ loads cc_test
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
-bazel_dep(name = "sv-lang", version = "10.0.1-20260316-f04e8156")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -225,9 +218,11 @@ bazel_dep(name = "qt-bazel")
 # "Parse error at QT7_ONLY"). 541ebf6d teaches the moc rule to also collect
 # external_includes. 5587ebca adds the qwebp imageformat plugin so save_image
 # can write .webp (without it the path is rewritten to *.webp.png).
+# c3319f9e includes <stdlib.h> for free() in qxcbatom.cpp, which libc++ 23
+# (hermetic-llvm >= 0.8.20) no longer pulls in transitively.
 git_override(
     module_name = "qt-bazel",
-    commit = "5587ebcaf61bab7abe8e69c4db6d068b35562245",
+    commit = "c3319f9e7735c67d47c7dfcc4a135bb91080f1a3",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -240,21 +235,7 @@ git_override(
 ## without FHS paths (e.g. NixOS).
 ## Keep >= 0.8.14: earlier releases silently produce empty `bazel coverage`
 ## reports (hermeticbuild/hermetic-llvm#675), which --config=coverage needs.
-bazel_dep(name = "llvm", version = "0.8.18", dev_dependency = True)
-
-# Declare Bazel's built-in ThinLTO scoping features
-# (thin_lto_linkstatic_tests_use_shared_nonlto_backends and the all-linkstatic
-# variant) in the hermetic-llvm toolchain so --features=... can enable them;
-# Bazel silently ignores requested features the toolchain does not know.
-# --config=opt uses the tests variant to keep cc_test binaries off per-binary LTO.
-# Drop this override once hermetic-llvm declares them upstream.
-single_version_override(
-    module_name = "llvm",
-    patch_strip = 1,
-    patches = [
-        "//bazel/llvm-patches:0001-declare-thin-lto-shared-nonlto-backend-features.patch",
-    ],
-)
+bazel_dep(name = "llvm", version = "0.8.24", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
@@ -319,9 +300,14 @@ archive_override(
     urls = ["https://github.com/keplertech/kepler-formal/archive/5eced47bf5d4330b60dcaadc7babdfdc092b0c3b.tar.gz"],
 )
 
-# JavaScript / web UI — only used for JS unit tests in src/web/test
-bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
-bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
+# JavaScript / web UI: //:openroad embeds the npm libraries esbuild bundles.
+bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
+bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
+
+# write_source_files keeps src/web/dist, the CMake build's copy of the bundle,
+# in step with the bundler's output.
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 # --- Extensions ---
 
@@ -414,19 +400,47 @@ pip.parse(
 )
 use_repo(pip, "openroad-black-pip")
 
-# sv-lang pulls in rules_pycross, whose toolchain extension fails on Python
+# rules_pycross's toolchain extension fails on Python
 # 3.8 (transitively registered via or-tools -> pybind11_abseil, dropped
 # from rules_python 2.0.0's MINOR_MAPPING). pycross.configure_environments
 # is root-honored only, so the workaround lives here.
 pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
 pycross.configure_environments(python_versions = ["3.13"])
 
+# Not a dev dependency: //:openroad's web assets are built on it.
 node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
-    dev_dependency = True,
 )
 node.toolchain(node_version = "22.14.0")
+
+# The viewer's browser libraries, bundled into the assets embedded in the
+# binary.  Not a dev dependency: //:openroad does not build without it.
+npm_web = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm_web.npm_translate_lock(
+    name = "npm_web",
+    npmrc = "//src/web:.npmrc",
+    # Only the lock is read; //src/web/test:npm_lock_test keeps it in step
+    # with src/web/package.json.
+    pnpm_lock = "//src/web:pnpm-lock.yaml",
+)
+
+# sax ships its licence as LICENSE.md, which the default "basic" preset strips
+# with every other *.md; //src/web:third_party_licenses needs it.
+npm_web.npm_exclude_package_contents(
+    package = "sax",
+    presets = [],
+)
+use_repo(npm_web, "npm_web")
+
+# Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:
+#   bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+pnpm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "pnpm",
+    dev_dependency = True,
+)
+use_repo(pnpm, "pnpm")
 
 npm = use_extension(
     "@aspect_rules_js//npm:extensions.bzl",
@@ -441,55 +455,44 @@ use_repo(npm, "npm")
 
 # --- External archives ---
 
-# Alias @slang -> @sv-lang//:libsvlang so submodule BUILD files that
-# reference @slang resolve without modification. OpenROAD source uses
-# @sv-lang directly; this alias only exists for the slang-elab submodule.
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-new_local_repository(
-    name = "slang",
-    build_file_content = """\
-alias(
-    name = "slang",
-    actual = "@sv-lang//:libsvlang",
-    visibility = ["//visibility:public"],
-)
-""",
-    path = "bazel/slang-compat",
+bazel_dep(name = "sv-elab", version = "2026-10-13")
+local_path_override(
+    module_name = "sv-elab",
+    path = "third-party/sv-elab",
 )
 
-# --- GPU build (opt-in, non-hermetic) ---
+# --- GPU build (opt-in) ---
 #
-# System-installed Kokkos / KokkosFFT / CUDA toolkit for the opt-in GPU
-# build (--config=gpu), mirroring the CMake ENABLE_GPU flow. Install
-# prefixes come from the shell environment (KOKKOS_ROOT, KOKKOS_FFT_ROOT,
-# OPENROAD_CUDA_PATH); the CUDA arch is read from the Kokkos install
-# (OPENROAD_CUDA_ARCH is only consulted when it cannot be). A missing or
-# unusable install yields a stub repo whose targets fail at analysis with
-# the reason, so the default CPU build, CI and `bazel query` never notice.
-# Registered non-dev because //src/gpl/BUILD loads @cuda_local//:defs.bzl
-# and @kokkos//:defs.bzl unconditionally (via bazel/gpu/copts.bzl).
-system_prefix_repo = use_repo_rule("//bazel/gpu:system_gpu.bzl", "system_prefix_repo")
-
-system_prefix_repo(
+# Kokkos and KokkosFFT are not available from BCR at these versions and do not
+# publish Bazel targets, so checksum-pinned archives use small BUILD overlays.
+# Remove these rules if supported upstream/BCR Bazel targets become available.
+# Bazel fetches the archives lazily: CPU targets neither download nor compile
+# them. The CUDA toolkit remains system-provided and is wrapped separately.
+http_archive(
     name = "kokkos",
-    default_path = "/usr/local/kokkos-libcxx",
-    env_var = "KOKKOS_ROOT",
-    flavor = "kokkos",
+    build_file = "//bazel/gpu/kokkos:BUILD.kokkos.bazel",
+    sha256 = "d6557aaef39302282a15f9c770433d1fcdf4e961dfd6d9ed726b9d0d0f546b9f",
+    strip_prefix = "kokkos-5.2.2",
+    urls = ["https://github.com/kokkos/kokkos/releases/download/5.2.2/kokkos-5.2.2.tar.gz"],
 )
 
-system_prefix_repo(
+http_archive(
     name = "kokkos_fft",
-    default_path = "/usr/local/kokkos-fft-libcxx",
-    env_var = "KOKKOS_FFT_ROOT",
-    flavor = "kokkos_fft",
+    build_file = "//bazel/gpu/kokkos:BUILD.kokkos_fft.bazel",
+    sha256 = "f2c1f7b848e68aa214f2dea7820c22e729564167a4d4010170b01c81ad3a0714",
+    strip_prefix = "kokkos-fft-2.0.0",
+    # KokkosFFT 2.0.0 has no release tarball asset, so use GitHub's generated
+    # tag archive; sha256 makes any server-side byte change fail loudly.
+    urls = ["https://github.com/kokkos/kokkos-fft/archive/refs/tags/v2.0.0.tar.gz"],
 )
 
-system_prefix_repo(
+cuda_local_repository = use_repo_rule("//bazel/gpu:system_gpu.bzl", "cuda_local_repository")
+
+cuda_local_repository(
     name = "cuda_local",
     default_path = "/usr/local/cuda-12.8",
-    env_var = "OPENROAD_CUDA_PATH",
-    flavor = "cuda_local",
 )
 
 # --- Overrides ---

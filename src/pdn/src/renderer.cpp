@@ -47,6 +47,7 @@ PDNRenderer::PDNRenderer(PdnGen* pdn, utl::Logger* logger)
   addDisplayControl(kRingsText, true);
   addDisplayControl(kStrapsText, true);
   addDisplayControl(kRepairText, true);
+  addDisplayControl(kLegendText, true);
 
   update();
 
@@ -282,6 +283,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 
 void PDNRenderer::drawObjects(web::Painter& painter)
 {
+  if (!checkDisplayControl(kLegendText)) {
+    return;
+  }
+
   web::DiscreteLegend legend;
   legend.addLegendKey(kRingColor, "Ring");
   legend.addLegendKey(kStrapColor, "Strap");

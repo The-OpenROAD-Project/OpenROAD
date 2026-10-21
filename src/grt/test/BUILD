@@ -27,7 +27,9 @@ TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "cugr_colocated_pins",
+    "cugr_congestion_sources",
     "cugr_detour_limit",
+    "cugr_rrr_accept_stop",
     "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
@@ -130,6 +132,11 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_net_detours1",
+    "report_net_detours2",
+    "report_net_detours2_cugr",
+    "report_net_detours3",
+    "report_net_detours4_cugr",
     "res_aware_nets_percentage",
     "set_nets_to_route1",
     "silence",
@@ -229,6 +236,13 @@ regression_test(
 )
 
 regression_test(
+    name = "congested_routes_are_reported",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "congestion_markers_cugr",
     check_log = False,
     check_passfail = True,
@@ -321,6 +335,24 @@ cc_test(
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRoutingCongestion",
+    size = "small",
+    srcs = ["cpp/TestRoutingCongestion.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

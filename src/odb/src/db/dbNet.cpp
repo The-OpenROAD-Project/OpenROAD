@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "boost/container/small_vector.hpp"
@@ -99,7 +100,7 @@ _dbNet::_dbNet(_dbDatabase* db)
   flags_.wire_type = dbWireType::ROUTED;
   flags_.special = 0;
   flags_.wild_connect = 0;
-  flags_.wire_ordered = 0;
+  flags_.unused4 = 0;
   flags_.disable_auto_taper = 0;
   flags_.unused2 = 0;
   flags_.spef = 0;
@@ -211,10 +212,6 @@ bool _dbNet::operator==(const _dbNet& rhs) const
   }
 
   if (flags_.wild_connect != rhs.flags_.wild_connect) {
-    return false;
-  }
-
-  if (flags_.wire_ordered != rhs.flags_.wire_ordered) {
     return false;
   }
 
@@ -1014,35 +1011,6 @@ void dbNet::setMark_1(bool value)
   }
 }
 
-bool dbNet::isWireOrdered()
-{
-  _dbNet* net = (_dbNet*) this;
-  return net->flags_.wire_ordered == 1;
-}
-
-void dbNet::setWireOrdered(bool value)
-{
-  _dbNet* net = (_dbNet*) this;
-
-  _dbBlock* block = (_dbBlock*) net->getOwner();
-  uint32_t prev_flags = flagsToUInt(net);
-
-  net->flags_.wire_ordered = (value) ? 1 : 0;
-
-  debugPrint(getImpl()->getLogger(),
-             utl::ODB,
-             "DB_EDIT",
-             2,
-             "EDIT: {}, setWireOrdered: {}",
-             net->getDebugName(),
-             value);
-
-  if (block->journal_) {
-    block->journal_->updateField(
-        this, _dbNet::kFlags, prev_flags, flagsToUInt(net));
-  }
-}
-
 void dbNet::setExtracted(bool value)
 {
   _dbNet* net = (_dbNet*) this;
@@ -1394,7 +1362,8 @@ bool dbNet::isConnectedByAbutment()
   }
 
   bool first_mterm = true;
-  std::vector<Rect> first_pin_boxes;
+  boost::container::small_vector<std::pair<dbTechLayer*, Rect>, 8>
+      first_pin_boxes;
   for (dbITerm* iterm : getITerms()) {
     dbMTerm* mterm = iterm->getMTerm();
     dbMaster* master = mterm->getMaster();
@@ -1415,10 +1384,10 @@ bool dbNet::isConnectedByAbutment()
           odb::Rect rect = box->getBox();
           transform.apply(rect);
           if (first_mterm) {
-            first_pin_boxes.push_back(rect);
+            first_pin_boxes.emplace_back(tech_layer, rect);
           } else {
-            for (const Rect& first_pin_box : first_pin_boxes) {
-              if (rect.intersects(first_pin_box)) {
+            for (const auto& [first_layer, first_pin_box] : first_pin_boxes) {
+              if (tech_layer == first_layer && rect.intersects(first_pin_box)) {
                 return true;
               }
             }
