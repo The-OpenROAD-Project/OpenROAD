@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -13,6 +14,7 @@
 namespace fsv {
 
 class CubeGreens;
+class LayeredCubeGreens;
 class WorkerPool;
 
 // Settings fixed for the life of a Solver. Results depend only on these, the
@@ -21,7 +23,9 @@ struct SolverOptions
 {
   int threads = 1;
   uint64_t seed = 1;
-  // Panels per cube-face edge in the Green's-function tables.
+  // Panels per cube-face edge in the Green's-function tables: a positive
+  // multiple of 16, so that every tabulated interface position lies on a
+  // panel boundary.
   int panels = 32;
   // Walks per batch, and batches in the first and in later rounds; rounds
   // double from the first size up to round_batches. The stopping test runs
@@ -85,8 +89,15 @@ class Solver
                const SolveOptions& options = {});
 
  private:
+  // Two-dielectric tables for one permittivity ratio, by interface position.
+  const std::vector<std::shared_ptr<const LayeredCubeGreens>>& layeredTables(
+      double ratio);
+
   SolverOptions options_;
   std::shared_ptr<const CubeGreens> greens_;
+  // Held so that the tables are reused across solves.
+  std::map<double, std::vector<std::shared_ptr<const LayeredCubeGreens>>>
+      layered_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
 };

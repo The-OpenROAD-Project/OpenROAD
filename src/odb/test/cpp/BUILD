@@ -228,6 +228,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestNetAbutment",
+    srcs = ["TestNetAbutment.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestNetTrack",
     srcs = ["TestNetTrack.cpp"],
     deps = [

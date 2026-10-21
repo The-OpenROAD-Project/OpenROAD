@@ -4,6 +4,11 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["upper_layer_net.def"],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 TESTS = [
     "bus_route",
     "check_antennas_cugr",
