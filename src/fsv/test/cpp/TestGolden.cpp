@@ -4,8 +4,9 @@
 // Compares fsv with reference capacitances on structures with planar
 // dielectric stacks. The structures and the references live in
 // src/fsv/test/golden:
-// - cross sections against a 2D finite-volume solution
-//   (cross_section.txt, from fv2d_golden.py), accurate to about 1e-3;
+// - cross sections, with planar and conformal dielectrics, against a 2D
+//   finite-volume solution (cross_section.txt, from fv2d_golden.py),
+//   accurate to about 1e-3;
 // - a 3D structure against FasterCap (fastercap.txt, from
 //   fastercap_golden.py), whose own error is a few percent.
 
@@ -35,8 +36,11 @@ struct Structure
 };
 
 // Reads the golden structure format: "background <eps>", "layer <top>
-// <eps>" bottom-up from the ground plane, and "box <net> x0 y0 z0 x1 y1 z1".
-// A positive `length` replaces every box's x extent with [0, length].
+// <eps>" bottom-up from the ground plane, "box <net> x0 y0 z0 x1 y1 z1", and
+// "conformal <name> <bottom> <top> <SW_T> <TW_T> <eps>", a conformal
+// dielectric of the conductor layer [bottom, top] (nesting outward in
+// order). A positive `length` replaces every box's x extent with
+// [0, length].
 Structure readStructure(const std::string& name, const double length = 0)
 {
   Structure s;
@@ -74,6 +78,26 @@ Structure readStructure(const std::string& name, const double length = 0)
         nets[net] = s.geometry.addNet(net);
       }
       s.geometry.addBox(nets[net], b);
+    } else if (kind == "conformal") {
+      Stack::ConformalDielectric c;
+      double layer_bottom = 0;
+      double layer_top = 0;
+      words >> c.name >> layer_bottom >> layer_top >> c.side_thickness
+          >> c.top_thickness >> c.eps;
+      Stack::Conductor* layer = nullptr;
+      for (Stack::Conductor& existing : s.stack.conductors) {
+        if (existing.bottom == layer_bottom && existing.top == layer_top) {
+          layer = &existing;
+        }
+      }
+      if (layer == nullptr) {
+        layer = &s.stack.conductors.emplace_back(Stack::Conductor{
+            .name = "layer" + std::to_string(s.stack.conductors.size()),
+            .bottom = layer_bottom,
+            .top = layer_top,
+            .conformals = {}});
+      }
+      layer->conformals.push_back(c);
     }
   }
   return s;
@@ -201,7 +225,11 @@ INSTANTIATE_TEST_SUITE_P(
     Planar,
     CrossSection,
     testing::Values(CrossSectionCase{"etch_stop_pair", {"lower", "upper"}},
-                    CrossSectionCase{"three_wires", {"left", "middle"}}),
+                    CrossSectionCase{"three_wires", {"left", "middle"}},
+                    CrossSectionCase{"conformal_pair", {"a"}},
+                    CrossSectionCase{"nested_conformal", {"a"}},
+                    CrossSectionCase{"merged_conformal", {"a", "b"}},
+                    CrossSectionCase{"sky130_met1_pair", {"a"}}),
     [](const testing::TestParamInfo<CrossSectionCase>& info) {
       return info.param.structure;
     });

@@ -9,12 +9,22 @@ extents are ignored). Needs numpy and scipy:
 
   python3 fv2d_golden.py etch_stop_pair.txt three_wires.txt > cross_section.txt
 
-The grid is uniform with spacing h around the wires and grows geometrically
-out to grounded far boundaries FAR µm away; wire faces and layer interfaces
-lie on cell faces. Each value is extrapolated from h = 0.01, 0.005 and
+The grid is uniform with spacing h around the wires and their shells, from
+the ground plane up, and grows geometrically out to grounded far boundaries
+FAR µm away; wire faces, shell faces and layer interfaces lie on cell
+faces. Each value is extrapolated from h = 0.01, 0.005 and
 0.0025 µm, assuming the error falls by a constant ratio per halving (the
 corners make the order fractional, about 1.3). The header reports the largest
 change from the finest grid to the extrapolated value.
+
+Conformal dielectrics follow the rules in the fsv plan, applied here
+independently of fsv: a line "conformal <name> <bottom> <top> <SW_T> <TW_T>
+<eps>" wraps every box whose z extent is [bottom, top]; lines for the same
+extent nest outward in order. Conformal k of a box is the box grown by the
+sum of the first k SW_T on its sides and the first k TW_T on top, with its
+bottom kept. Conductors cut into conformal dielectrics, conformal dielectrics
+replace the planar layers they cross, shells of the same conformal
+dielectric merge, and shells of different ones must not overlap.
 """
 
 import sys
@@ -33,7 +43,8 @@ GROWTH = 1.08
 
 
 def read_structure(path):
-    layers, boxes, background = [], [], None
+    """(background, layers, boxes, conformals) of a structure file."""
+    layers, boxes, conformals, background = [], [], [], None
     with open(path, encoding="utf-8") as f:
         for line in f:
             words = line.split("#")[0].split()
@@ -45,9 +56,30 @@ def read_structure(path):
                 layers.append((float(words[1]), float(words[2])))
             elif words[0] == "box":
                 boxes.append((words[1], [float(v) for v in words[2:8]]))
+            elif words[0] == "conformal":
+                conformals.append((words[1], *[float(v) for v in words[2:7]]))
             else:
                 raise ValueError(f"{path}: unknown line {line.strip()}")
-    return background, layers, boxes
+    return background, layers, boxes, conformals
+
+
+def shells(boxes, conformals):
+    """(name, eps, outer, inner) of every conformal shell, innermost first
+    per box. outer and inner are (y0, z0, y1, z1): the shell is the outer
+    rectangle minus the inner one (the box or the next shell in)."""
+    result = []
+    for _, b in boxes:
+        inner = (b[1], b[2], b[4], b[5])
+        side = top = 0.0
+        for name, bottom, ztop, sw, tw, eps in conformals:
+            if abs(b[2] - bottom) > 1e-9 or abs(b[5] - ztop) > 1e-9:
+                continue
+            side += sw
+            top += tw
+            outer = (b[1] - side, b[2], b[4] + side, b[5] + top)
+            result.append((name, eps, outer, inner))
+            inner = outer
+    return result
 
 
 def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
@@ -68,15 +100,20 @@ def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
     return np.array(sorted(lines))
 
 
-def solve(background, layers, boxes, h):
+def solve(background, layers, boxes, h, conformals=()):
     """The Maxwell matrix per unit length (fF/µm), nets in first-seen
     order, with the ground column last."""
     names = list(dict.fromkeys(name for name, _ in boxes))
+    shell_list = shells(boxes, conformals)
     y_breaks = [v for _, b in boxes for v in (b[1], b[4])]
+    y_breaks += [v for s in shell_list for v in (s[2][0], s[2][2])]
     z_breaks = [v for _, b in boxes for v in (b[2], b[5])]
+    z_breaks += [v for s in shell_list for v in (s[2][1], s[2][3])]
+    # The uniform grid covers the wires and shells; layer tops above it are
+    # grid lines in the growing cells.
+    z_hi = max(z_breaks) + MARGIN
     z_breaks += [top for top, _ in layers]
     y_lo, y_hi = min(y_breaks) - MARGIN, max(y_breaks) + MARGIN
-    z_hi = max(z_breaks) + MARGIN
     Y = grid_lines(y_breaks, y_lo, y_hi, h, y_lo - FAR, y_hi + FAR)
     Z = grid_lines(z_breaks + [0.0], 0.0, z_hi, h, 0.0, z_hi + FAR)
     yc, zc = 0.5 * (Y[1:] + Y[:-1]), 0.5 * (Z[1:] + Z[:-1])
@@ -101,6 +138,26 @@ def solve(background, layers, boxes, h):
         )
         owner[inside] = names.index(name)
     free = owner < 0
+    # Conformal dielectrics replace the planar layers; conductors cut into
+    # them.
+    shell_of = np.full((ny, nz), "", dtype=object)
+
+    def within(r):
+        return (
+            (yc[:, None] > r[0])
+            & (yc[:, None] < r[2])
+            & (zc[None, :] > r[1])
+            & (zc[None, :] < r[3])
+        )
+
+    for name, shell_eps, outer, inner in shell_list:
+        inside = within(outer) & ~within(inner) & free
+        clash = inside & (shell_of != "") & (shell_of != name)
+        if clash.any():
+            other = shell_of[clash][0]
+            raise ValueError(f"conformal dielectrics {other} and {name} overlap")
+        shell_of[inside] = name
+        eps[inside] = shell_eps
     index = -np.ones((ny, nz), dtype=int)
     index[free] = np.arange(free.sum())
     n = int(free.sum())
@@ -185,8 +242,8 @@ def main():
     results = []
     worst = 0.0
     for path in sys.argv[1:]:
-        background, layers, boxes = read_structure(path)
-        solutions = [solve(background, layers, boxes, h) for h in SPACINGS]
+        background, layers, boxes, conformals = read_structure(path)
+        solutions = [solve(background, layers, boxes, h, conformals) for h in SPACINGS]
         names = solutions[0][0]
         matrices = np.array([m for _, m in solutions])
         structure = path.rsplit("/", 1)[-1].removesuffix(".txt")
