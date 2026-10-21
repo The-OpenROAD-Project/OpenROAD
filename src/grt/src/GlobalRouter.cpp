@@ -22,6 +22,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -830,7 +831,15 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      incr_groute.updateRoutes();
+      // Nets the router also moved, such as an overflow relief's, are checked
+      // again too.
+      const std::unordered_set<odb::dbNet*> listed(nets_to_repair.begin(),
+                                                   nets_to_repair.end());
+      for (odb::dbNet* db_net : incr_groute.updateRoutes()) {
+        if (!listed.contains(db_net)) {
+          nets_to_repair.push_back(db_net);
+        }
+      }
       saveGuides(nets_to_repair);
     }
     repair_antennas_->clearViolations();
