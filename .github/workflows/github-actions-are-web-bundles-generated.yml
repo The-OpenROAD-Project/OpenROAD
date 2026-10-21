@@ -52,6 +52,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # MODULE.bazel overrides sv-elab to the third-party/sv-elab
+          # submodule, so module resolution needs it checked out.
+          submodules: recursive
       - name: Set up bazel
         # Self-hosted runners lack the bazelisk ubuntu-latest preinstalls; the
         # clang-tidy workflow sets it up the same way.

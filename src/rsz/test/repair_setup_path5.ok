@@ -46,12 +46,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -71.183 |     -431.2 |     21 | capture_2/D
-      66* |       8 |      24 |        2 |      0 |     4 |    -1.1% |  -10.655 |      -25.1 |     21 | capture_2/D
-    final |       8 |      36 |        2 |      0 |     4 |    -1.1% |  -10.771 |      -19.6 |      3 | capture_2/D
+      65* |       8 |      23 |        2 |      0 |     4 |    -1.1% |  -10.663 |      -25.1 |     21 | capture_2/D
+    final |       8 |      35 |        2 |      0 |     4 |    -1.1% |  -10.779 |      -19.6 |      3 | capture_2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 8 buffers.
 [INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 36 instances: 3 up, 0 up match, 0 down, 33 VT
+[INFO RSZ-0051] Resized 35 instances: 2 up, 0 up match, 0 down, 33 VT
 [INFO RSZ-0043] Swapped pins on 4 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_32 (rising edge-triggered flip-flop clocked by clk)
@@ -65,12 +65,12 @@ Path Type: max
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ launch_32/CLK (DFFHQx4_ASAP7_75t_SL)
   32.9247   32.9247 ^ launch_32/Q (DFFHQx4_ASAP7_75t_SL)
-  12.2063   45.1310 v inst1/CON (HAxp5_ASAP7_75t_SL)
-   7.1726   52.3036 ^ inst2/Y (INVx1_ASAP7_75t_SL)
-  22.5503   74.8538 ^ inst3/Y (AND5x1_ASAP7_75t_SL)
-  13.5050   88.3589 ^ inst3_neighbor1/Y (AND2x2_ASAP7_75t_SL)
-   0.9374   89.2963 ^ capture_2/D (DFFHQx4_ASAP7_75t_SL)
-            89.2963   data arrival time
+  12.2123   45.1370 v inst1/CON (HAxp5_ASAP7_75t_SL)
+   7.1740   52.3109 ^ inst2/Y (INVx1_ASAP7_75t_SL)
+  22.5507   74.8617 ^ inst3/Y (AND5x1_ASAP7_75t_SL)
+  13.5051   88.3667 ^ inst3_neighbor1/Y (AND2x2_ASAP7_75t_SL)
+   0.9374   89.3042 ^ capture_2/D (DFFHQx4_ASAP7_75t_SL)
+            89.3042   data arrival time
 
   85.0000   85.0000   clock clk (rise edge)
    0.0000   85.0000   clock network delay (ideal)
@@ -80,8 +80,8 @@ Path Type: max
             78.5254   data required time
 -------------------------------------------------------------
             78.5254   data required time
-           -89.2963   data arrival time
+           -89.3042   data arrival time
 -------------------------------------------------------------
-           -10.7709   slack (VIOLATED)
+           -10.7787   slack (VIOLATED)
 
 
