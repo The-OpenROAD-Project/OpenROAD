@@ -119,6 +119,8 @@ TESTS = [
     "repair_antennas_post_drt_above_max_layer_cugr",
     "repair_antennas_post_drt_below_min_cugr",
     "repair_antennas_post_drt_cugr",
+    "repair_antennas_post_drt_relief_cugr",
+    "repair_antennas_post_drt_relief_ndr_cugr",
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
