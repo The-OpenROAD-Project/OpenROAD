@@ -76,6 +76,8 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
                                       const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
+  int cur_min_spacing = -1;
+  int cur_design_rule_width = -1;
   odb::PtrSet<dbVia> vias;
 
   for (GenericBox* generic_box : boxes) {
@@ -113,9 +115,14 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
         layer_name = layer->getName();
       }
 
-      if (cur_layer != layer) {
-        fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+      const int min_spacing = box->getMinSpacing();
+      const int design_rule_width = box->getDesignRuleWidth();
+      if (cur_layer != layer || cur_min_spacing != min_spacing
+          || cur_design_rule_width != design_rule_width) {
+        writeGeomLayer(out, indent, layer_name, min_spacing, design_rule_width);
         cur_layer = layer;
+        cur_min_spacing = min_spacing;
+        cur_design_rule_width = design_rule_width;
       }
 
       writeBox(out, indent, box);
@@ -132,6 +139,8 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
                                       const char* indent)
 {
   dbTechLayer* cur_layer = nullptr;
+  int cur_min_spacing = -1;
+  int cur_design_rule_width = -1;
 
   for (dbPolygon* box : boxes) {
     if (box == nullptr) {
@@ -147,15 +156,36 @@ odb::PtrSet<dbVia> lefout::writeBoxes(std::ostream& out,
       layer_name = layer->getName();
     }
 
-    if (cur_layer != layer) {
-      fmt::print(out, "{}LAYER {} ;\n", indent, layer_name.c_str());
+    const int min_spacing = box->getMinSpacing();
+    const int design_rule_width = box->getDesignRuleWidth();
+    if (cur_layer != layer || cur_min_spacing != min_spacing
+        || cur_design_rule_width != design_rule_width) {
+      writeGeomLayer(out, indent, layer_name, min_spacing, design_rule_width);
       cur_layer = layer;
+      cur_min_spacing = min_spacing;
+      cur_design_rule_width = design_rule_width;
     }
 
     writeBox(out, indent, box);
   }
 
   return {};
+}
+
+void lefout::writeGeomLayer(std::ostream& out,
+                            const char* indent,
+                            const std::string& layer_name,
+                            const int min_spacing,
+                            const int design_rule_width)
+{
+  fmt::print(out, "{}LAYER {}", indent, layer_name);
+  // LEF allows at most one of these per LAYER statement; -1 means unset
+  if (min_spacing >= 0) {
+    fmt::print(out, " SPACING {:.11g}", lefdist(min_spacing));
+  } else if (design_rule_width >= 0) {
+    fmt::print(out, " DESIGNRULEWIDTH {:.11g}", lefdist(design_rule_width));
+  }
+  fmt::print(out, " ;\n");
 }
 
 void lefout::writeBox(std::ostream& out, const std::string& indent, dbBox* box)
@@ -263,6 +293,31 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
     fmt::print(out, "    LAYER {} ;\n", overlap->getName());
     writePolygon(out, "   ", die_area);
   }
+
+  for (dbObstruction* obs : db_block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
+    dbBox* box = obs->getBBox();
+    const std::string layer_name = box->getTechLayer()->getName();
+
+    if (obs->hasMinSpacing()) {
+      fmt::print(out,
+                 "    LAYER {} SPACING {:.11g} ;\n",
+                 layer_name,
+                 lefdist(obs->getMinSpacing()));
+      writeBox(out, "   ", box);
+    }
+
+    if (obs->hasEffectiveWidth()) {
+      fmt::print(out,
+                 "    LAYER {} DESIGNRULEWIDTH {:.11g} ;\n",
+                 layer_name,
+                 lefdist(obs->getEffectiveWidth()));
+      writeBox(out, "   ", box);
+    }
+  }
+
   for (const auto& [tech_layer, polySet] : obstructions) {
     fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
@@ -302,7 +357,12 @@ void lefout::getObstructions(dbBlock* db_block,
     if (obs->isSystemReserved()) {
       continue;
     }
-    insertObstruction(obs->getBBox(), obstructions);
+    // Modified obstructions are written individually to keep their
+    // attributes, but they still mark their layer as occupied.
+    if (bloat_occupied_layers_
+        || (!obs->hasMinSpacing() && !obs->hasEffectiveWidth())) {
+      insertObstruction(obs->getBBox(), obstructions);
+    }
   }
 
   findInstsObstructions(obstructions, db_block);

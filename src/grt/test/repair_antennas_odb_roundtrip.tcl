@@ -24,4 +24,5 @@ write_def [make_result_file "${test_name}_warm.def"]
 
 # Reload in a separate process to avoid reusing in-memory routes.
 puts [exec [info nameofexecutable] -no_splash -no_init -exit \
+  -threads [thread_count] \
   [file join [file dirname [info script]] "${test_name}_reload.tcl"] 2>@1]

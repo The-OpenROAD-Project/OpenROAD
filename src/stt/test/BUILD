@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -35,6 +36,28 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+cc_test(
+    name = "TestNeighbors",
+    srcs = ["cpp/TestNeighbors.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/stt:pdr_neighbors",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSteinerTreeBuilder",
+    srcs = ["cpp/TestSteinerTreeBuilder.cpp"],
+    deps = [
+        "//src/stt",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 py_test(
     name = "stt_man_tcl_check",

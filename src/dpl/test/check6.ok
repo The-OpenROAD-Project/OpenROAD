@@ -19,8 +19,10 @@
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 1 cells
 [INFO DPL-0393]   height 2 row(s): 1 cells
-Placement Analysis
+Detailed Placement Analysis
 ---------------------------------
+legalizer            negotiation
+total moves                   0
 total displacement          1.4 u
 average displacement        0.7 u
 max displacement            1.4 u

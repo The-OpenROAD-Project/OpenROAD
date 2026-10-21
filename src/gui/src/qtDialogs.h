@@ -16,10 +16,10 @@ class dbSta;
 
 namespace gui {
 
-// Qt implementation of the dialogs the Descriptor actions need.  Installed
-// on the Gui singleton by Gui::init(), which only runs in a binary that
-// links the Qt gui.
-class QtDialogs : public Dialogs
+// Qt implementation of the dialogs the web::Descriptor actions need.  Installed
+// on the web::Gui singleton by web::Gui::init(), which only runs in a binary
+// that links the Qt gui.
+class QtDialogs : public web::Dialogs
 {
  public:
   std::optional<int> chooseItem(const std::string& title,
@@ -28,6 +28,8 @@ class QtDialogs : public Dialogs
                                 int current) override;
 
   odb::dbInst* insertBuffer(odb::dbNet* net, sta::dbSta* sta) override;
+
+  void showHeatMapSetup(web::HeatMapDataSource* source) override;
 };
 
 }  // namespace gui

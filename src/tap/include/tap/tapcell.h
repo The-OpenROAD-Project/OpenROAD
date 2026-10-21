@@ -215,11 +215,8 @@ class Tapcell
   void placeEndcapCorner(const Corner& corner,
                          const EndcapCellOptions& options,
                          odb::PtrSet<odb::dbInst>& area_corners);
-  int placeEndcapEdge(const Edge& edge,
-                      const CornerMap& corners,
-                      const EndcapCellOptions& options);
+  int placeEndcapEdge(const Edge& edge, const EndcapCellOptions& options);
   int placeEndcapEdgeHorizontal(const Edge& edge,
-                                const CornerMap& corners,
                                 const EndcapCellOptions& options);
   int fillEndcapEdge(odb::dbRow* row,
                      int x_start,

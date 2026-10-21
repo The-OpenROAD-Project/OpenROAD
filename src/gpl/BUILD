@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
@@ -14,34 +12,6 @@ load("//test:regression.bzl", "messages_txt")
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
-)
-
-# Headers owned by :gpl but also consumed by :ui and GPL tests. Keep them
-# visible only to //src/gpl and its tests.
-cc_library(
-    name = "gpl_private_hdrs",
-    hdrs = [
-        "src/fft.h",
-        "src/fftBackend.h",
-        "src/nesterovBase.h",
-        "src/nesterovPlace.h",
-        "src/placerBase.h",
-        "src/point.h",
-        "src/routeBase.h",
-    ],
-    includes = ["src"],
-    visibility = [
-        "//src/gpl/test:__pkg__",
-        "//visibility:private",
-    ],
-    deps = [
-        # TODO: we use headers provided by :gpl, but that reveals cyclic dep
-        #":gpl",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.random",
-        "@boost.unordered",
-    ],
 )
 
 # The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
@@ -90,6 +60,10 @@ cc_library(
         "src/gpu/wirelengthOp.cpp",
         "src/gpu/wirelengthOp.h",
         "src/hpwlBackend.h",
+        "src/nesterovBase.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
         "src/wirelengthGradientBackend.h",
     ],
     additional_compiler_inputs = [
@@ -103,7 +77,13 @@ cc_library(
         "-layering_check",
         "-parse_headers",
     ],
-    includes = ["include"],
+    # "src" lets the GPU sources include the gpl src/ headers listed above
+    # by bare name (nesterovBase.h, fftBackend.h, ...). :gpl_impl also
+    # exports this path but cannot be a dep here (cycle).
+    includes = [
+        "include",
+        "src",
+    ],
     local_defines = ["ENABLE_GPU"],
     # Keep wildcard builds (bazel build //...) CPU-clean; this target is
     # only reachable through :gpl under --//:gpu=cuda.
@@ -113,9 +93,10 @@ cc_library(
     # kernel launchers directly.
     visibility = ["//src/gpl/test:__pkg__"],
     deps = [
-        ":gpl_private_hdrs",
+        #":gpl_impl",  # Needed, but causes cyclic dependencies.
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.random",
         "@boost.unordered",
         "@kokkos",
         "@kokkos_fft",
@@ -124,7 +105,7 @@ cc_library(
 )
 
 cc_library(
-    name = "gpl",
+    name = "gpl_impl",
     srcs = [
         "src/AbstractGraphics.cpp",
         "src/backendContext.h",
@@ -142,6 +123,7 @@ cc_library(
         "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
+        "src/ioPinBase.cpp",
         "src/mbff.cpp",
         "src/nesterovBase.cpp",
         "src/nesterovPlace.cpp",
@@ -151,7 +133,6 @@ cc_library(
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
-        "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
@@ -173,25 +154,38 @@ cc_library(
     hdrs = [
         "include/gpl/Replace.h",
         "src/AbstractGraphics.h",
+        "src/fft.h",
+        "src/fftBackend.h",
         "src/graphicsNone.h",
+        "src/ioPinBase.h",
         "src/mbff.h",
+        "src/nesterovBase.h",
+        "src/nesterovPlace.h",
+        "src/placerBase.h",
+        "src/point.h",
+        "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = [
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     local_defines = select({
         "//:gpu_cuda": ["ENABLE_GPU"],
         "//conditions:default": [],
     }),
+    visibility = [
+        "//src/gpl:__subpackages__",
+    ],
     deps = [
-        ":gpl_private_hdrs",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/odb/src/db",
+        "//src/ppl",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -199,6 +193,7 @@ cc_library(
         "@boost.polygon",
         "@boost.random",
         "@boost.scope_exit",
+        "@boost.unordered",
         "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
@@ -210,6 +205,19 @@ cc_library(
         "//:gpu_cuda": [":gpl_kokkos"],
         "//conditions:default": [],
     }),
+)
+
+cc_library(
+    name = "gpl",
+    hdrs = [
+        "include/gpl/Replace.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":gpl_impl",
+    ],
 )
 
 cc_library(
@@ -232,49 +240,15 @@ cc_library(
         "src",
     ],
     deps = [
-        ":gpl",
-        ":gpl_private_hdrs",
+        ":gpl_impl",
         "//:ord",
-        "//src/gui",
-        "//src/gui:core",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "//src/web:core",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
-)
-
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
-cc_binary(
-    name = "_gpl.so",
-    srcs = [
-        ":swig-py",
-    ],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    includes = ["src"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        "//src/gpl",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-# This packages the SWIG-generated Python wrapper (gpl.py) and the
-# compiled C++ extension (_gpl.so) together.
-py_library(
-    name = "gpl_py",
-    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
-    data = [":_gpl.so"],
-    # This allows imports relative to the workspace root.
-    imports = ["."],
-    visibility = ["//visibility:public"],
 )
 
 tcl_encode(
@@ -313,7 +287,7 @@ python_wrap_cc(
         "src/replace-py.i",
         "//:error_swig-py",
     ],
-    module = "gpl",
+    module = "gpl_py",
     root_swig_src = "src/replace-py.i",
     swig_includes = [
         "include",
@@ -336,4 +310,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/gpl/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":gpl"],
 )

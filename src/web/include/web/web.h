@@ -99,7 +99,7 @@ ListenerHandle createAndRunListener(
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
-// is called, mirroring gui::show / gui::hide.
+// is called, mirroring web::show / web::hide.
 
 class WebServer
 {
@@ -127,6 +127,19 @@ class WebServer
   // Launches background I/O threads and returns immediately.  A second call is
   // a no-op if the server is already running.
   void serve(int port, const std::string& bind_address);
+
+  // For -web startup scripts, called on the main thread before they run.
+  // Calls serve(port, bind_address), so the browser follows the scripts'
+  // log and the scripts see web::Gui::enabled() (e.g. global_placement_debug
+  // engages, as under -gui).  Until endStartupScripts(), browser requests
+  // (Tcl, tiles, selection, search indexing) run only while a script is
+  // paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port, const std::string& bind_address);
+
+  // Call on the main thread once the startup scripts are done: lets browser
+  // requests in, or, when `exiting`, turns them away so the exit can join
+  // the io threads.  Idempotent.
+  void endStartupScripts(bool exiting = false);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
@@ -169,6 +182,15 @@ class WebServer
   void deleteLabel(const std::string& name);
   void clearLabels();
 
+  // Load a heat map from a CSV file and attach it to one chiplet of the
+  // design; returns the short name clients use to reference it.
+  // CSV row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value
+  // with the coordinates in the chiplet's local frame, in microns.  The
+  // chiplet is resolved against TileGenerator::chiplets(), so its world
+  // transform is applied and the data lands in the right place in a
+  // multi-die view.
+  std::string loadChipletHeatMap(const std::string& file_path);
+
   // Persist the connected client's current display-controls state (as
   // synced via the "set_display_state" request) to a JSON file.  The cache
   // holds a single snapshot: with several clients connected, the state of
@@ -187,7 +209,7 @@ class WebServer
 
   // Custom UI registered from Tcl (create_menu_item / create_toolbar_button).
   // These are thin facades over WebViewerHook (which owns the registry and
-  // broadcasts to clients), mirroring how gui::Gui delegates to MainWindow.
+  // broadcasts to clients), mirroring how web::Gui delegates to MainWindow.
   // initLogger() is called first so the hook exists even when the command
   // runs from a startup script before web_server.  Returns the item key.
   std::string addToolbarButton(const std::string& name,
@@ -237,11 +259,33 @@ class WebServer
   // Tcl-driven add/delete/clear changed what they should draw.
   void broadcastLabels();
 
+  // Tell every connected client the registered heat-map set changed, so it
+  // re-requests "heatmaps" and redraws its control panel.  Sessions build
+  // their heat-map instances from the registry, so a source registered after
+  // a client connected is invisible to it until this push arrives.
+  void broadcastHeatMapsChanged();
+
+  // Serial for the short names handed out by loadChipletHeatMap.  The
+  // registry keys on short name and keeps the first registration, so these
+  // must not collide across calls.
+  int chiplet_heat_map_count_ = 0;
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   int num_threads_ = 0;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+
+  // Set by serveDuringStartupScripts(): the thread running the startup
+  // scripts, and whether they still hold the script gate (read on that thread
+  // only).
+  std::thread::id script_thread_;
+  bool script_holds_gate_ = false;
+  bool onScriptThread() const;
+  // Stops a paused command counting as running, so the renderers draw, and
+  // lets browser requests in while a startup script is paused.
+  void installPauseHooks();
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.
   TileGenerator& ensureGenerator();

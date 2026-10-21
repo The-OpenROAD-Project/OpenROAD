@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import { GridLayoutManager } from './grid-layout.js';
 import { latLngToDbu, dbuToLatLng, dbuRectToBounds } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import {
@@ -31,7 +31,8 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { populateDisplayControls } from './display-controls.js';
+import { anyGroupOn, populateDisplayControls }
+    from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
@@ -47,6 +48,7 @@ import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
+import { LayerExtents } from './layer-extents.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -153,10 +155,8 @@ const app = {
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     pinsLayer: null,
-    accessPointsLayer: null,
-    regionsLayer: null,
-    mfgGridLayer: null,
-    gcellGridLayer: null,
+    // [{ def, layer }] per overlay the tech response lists.
+    overlayLayers: [],
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -269,7 +269,8 @@ const visibility = {
     // Instance sub-shapes
     inst_names: true,
     inst_pins: true,
-    inst_pin_names: true,
+    // Instance pin names — off by default, matching the Qt GUI
+    inst_pin_names: false,
     // Shapes
     routing: true,
     routing_segments: true,
@@ -592,10 +593,8 @@ function redrawAllLayers() {
     const toggleableLayers = [
         [app.modulesLayer, visibility.module_view],   // Module view
         [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
+        ...app.overlayLayers.map(
+            ({ def, layer }) => [layer, anyGroupOn(def.shown_by, visibility)]),
     ];
     for (const [layer, visible] of toggleableLayers) {
         if (!layer) continue;
@@ -904,6 +903,46 @@ function createDisplayControls(container) {
     app.displayControlsEl = el;
 }
 
+// The Tcl console's output, carried across a reload the page makes itself
+// (reloadKeepingConsole) so the log of a running script is not lost.
+const CONSOLE_RESTORE_KEY = 'or_restore_console';
+// sessionStorage allows a few MB per origin; keep the newest output within
+// this many characters.
+const CONSOLE_RESTORE_MAX_CHARS = 1 << 20;
+
+function reloadKeepingConsole() {
+    try {
+        if (app.tclOutputEl) {
+            const entries = [...app.tclOutputEl.children].map(
+                (el) => [el.textContent, el.className]);
+            let start = entries.length;
+            let chars = 0;
+            while (start > 0
+                   && chars + entries[start - 1][0].length
+                      <= CONSOLE_RESTORE_MAX_CHARS) {
+                chars += entries[--start][0].length;
+            }
+            const kept = entries.slice(start);
+            if (start > 0) {
+                kept.unshift(['[earlier output not kept across reload]\n', '']);
+            }
+            sessionStorage.setItem(CONSOLE_RESTORE_KEY, JSON.stringify(kept));
+        }
+    } catch (_) { /* ignore: the reload just starts an empty console */ }
+    window.location.reload();
+}
+
+function restoreConsole() {
+    try {
+        const raw = sessionStorage.getItem(CONSOLE_RESTORE_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(CONSOLE_RESTORE_KEY);
+        for (const [text, className] of JSON.parse(raw)) {
+            tclAppend(text, className);
+        }
+    } catch (_) { /* ignore */ }
+}
+
 function tclAppend(text, className) {
     if (!app.tclOutputEl) return;
     const span = document.createElement('span');
@@ -961,6 +1000,7 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+    restoreConsole();
 
     if (isStaticMode(app)) {
         el.querySelector('.tcl-input-row').style.display = 'none';
@@ -1187,9 +1227,9 @@ const defaultLayoutConfig = {
     },
 };
 
-// ─── Golden Layout Init ─────────────────────────────────────────────────────
+// ─── Layout Manager Init ───────────────────────────────────────────────────
 
-app.goldenLayout = new GoldenLayout(document.getElementById('gl-container'));
+app.goldenLayout = new GridLayoutManager(document.getElementById('gl-container'));
 
 app.goldenLayout.registerComponentFactoryFunction('LayoutViewer', createLayoutViewer);
 app.goldenLayout.registerComponentFactoryFunction('DisplayControls', createDisplayControls);
@@ -1205,10 +1245,6 @@ app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidg
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
-// Layout version — bump this to force a layout reset when components change.
-// v4: SelectHighlight (selection browser) added to the default layout.
-const LAYOUT_VERSION = 4;
-
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
@@ -1222,10 +1258,15 @@ if (staticCache) {
 } else {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    // Where each tech layer has shapes, so tiles that would come back empty
+    // are never requested (see layer-extents.js).  Static reports have no
+    // server to ask and keep requesting everything.
+    app.layerExtents = new LayerExtents();
     // On reconnect the server may have been restarted (possibly with a
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
+        refetchLayerExtents();
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
     };
 }
@@ -1233,96 +1274,42 @@ if (staticCache) {
 // Check initial connection status
 updateStatus();
 
-// Restore saved layout or use default
-const savedLayout = localStorage.getItem('gl-layout');
-const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
-if (savedLayout && savedVersion === LAYOUT_VERSION) {
-    try {
-        const resolved = JSON.parse(savedLayout);
-        const restored = LayoutConfig.fromResolved(resolved);
-        restored.dimensions = {
-            ...restored.dimensions, headerHeight: kHeaderHeight,
-        };
-        app.goldenLayout.loadLayout(restored);
-    } catch (e) {
-        app.goldenLayout.loadLayout(defaultLayoutConfig);
-    }
-} else {
-    app.goldenLayout.loadLayout(defaultLayoutConfig);
-}
-localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
+// Mount layout components
+app.goldenLayout.loadLayout(defaultLayoutConfig);
 addTabIcons();
 
-// Add the per-panel tab icons and, if any were added, make Golden Layout
-// measure the headers again -- it chose which tabs fit before the icons
-// widened them, so without this the tabs that no longer fit overlap the
-// stack's controls instead of moving into the overflow dropdown.
+// Add the per-panel tab icons and make sure headers update
 function addTabIcons() {
-    if (decorateTabIcons() > 0) {
+    if (decorateTabIcons(document.getElementById('gl-container')) > 0) {
         app.goldenLayout.updateSize();
     }
 }
 
-// Persist layout on changes (drag, resize, close, etc.)
+// Persist layout on changes
 app.goldenLayout.on('stateChanged', () => {
-    localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
     addTabIcons();
 });
 
-// Resize GoldenLayout to the space #gl-container actually has.  The container
-// is flex-sized (see style.css), so its height also moves when the toolbar
-// appears or collapses -- and GoldenLayout does not track its container on its
-// own, so every cause has to come through here.  Measuring the element beats
-// subtracting the chrome's height from window.innerHeight: that arithmetic has
-// to be kept in step with the chrome, and missing the toolbar pushed the
-// bottom of the panels (the Tcl console's prompt) off screen.
+// Sync layout size on window resize
 function syncLayoutSize() {
-    const el = document.getElementById('gl-container');
-    app.goldenLayout.setSize(el.clientWidth, el.clientHeight);
+    app.goldenLayout.updateSize();
 }
 app.syncLayoutSize = syncLayoutSize;
 
 window.addEventListener('resize', syncLayoutSize);
 
-// componentType → display title (must match defaultLayoutConfig).
-const componentTitles = {
-    LayoutViewer: 'Layout',
-    DisplayControls: 'Display Controls',
-    TclConsole: 'Tcl Console',
-    Inspector: 'Inspector',
-    Browser: 'Hierarchy',
-    TimingWidget: 'Timing',
-    DRCWidget: 'DRC',
-    ClockWidget: 'Clock Tree',
-    ChartsWidget: 'Charts',
-    SchematicWidget: 'Schematic',
-    '3DViewer': '3D Viewer',
-    HelpWidget: 'Help',
-    SelectHighlight: 'Select Highlight',
-};
-
-// Focus a Golden Layout component tab, or re-create it if it was closed.
+// Focus a component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
-    function find(item) {
-        if (item.isComponent && item.componentType === componentType) return item;
-        if (item.contentItems) {
-            for (const child of item.contentItems) {
-                const found = find(child);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-    const item = find(app.goldenLayout.rootItem);
-    if (item) {
-        item.focus();
-    } else {
-        const title = componentTitles[componentType] || componentType;
-        app.goldenLayout.addComponent(componentType, undefined, title);
-    }
+    app.goldenLayout.focusComponent(componentType);
 }
 
 app.focusComponent = focusComponent;
+
+app.resetLayout = function() {
+    if (app.goldenLayout && typeof app.goldenLayout.resetLayout === 'function') {
+        app.goldenLayout.resetLayout();
+    }
+};
 
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -1479,8 +1466,8 @@ createToolbar(app);
 // Canvas right-click context menu ("Select →" connected objects).
 app.contextMenu = new ContextMenu(app);
 
-// Debug-graphics pause affordance: appended lazily when the first
-// debug_paused push arrives.  Clicking "Continue" tells the server to
+// Debug-graphics pause affordance: appended to the menu bar lazily when the
+// first debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
 function ensureDebugContinueButton() {
     let btn = document.getElementById('debug-continue-btn');
@@ -1496,7 +1483,9 @@ function ensureDebugContinueButton() {
         app.websocketManager.request({ type: 'debug_continue' })
             .catch(() => {});
     });
-    document.body.appendChild(btn);
+    // In the menu bar rather than floating over the page, so no panel or
+    // menu can cover it.  Falls back to body if the menu bar is absent.
+    (document.getElementById('menu-bar') || document.body).appendChild(btn);
     return btn;
 }
 
@@ -1580,24 +1569,113 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
     return true;
 }
 
+// Show the "Loading shapes…" overlay until the server reports the search
+// indices are built.  The "refresh" push normally hides it, but that push can
+// arrive before the initial tech/bounds/heatmaps requests all resolve, i.e.
+// before the overlay is shown, so also poll bounds until shapes are ready.
+function showLoadingOverlayUntilReady() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+    const poll = () => {
+        if (overlay.style.display === 'none') {
+            return;
+        }
+        app.websocketManager.request({ type: 'bounds' })
+            .then((resp) => {
+                if (resp.shapes_ready) {
+                    overlay.style.display = 'none';
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (overlay.style.display !== 'none') {
+                    setTimeout(poll, 1000);
+                }
+            });
+    };
+    setTimeout(poll, 1000);
+}
+
+// Discard the layer extents and fetch them again.  Until the reply lands every
+// tile is requested, so a caller that redraws right after this cannot skip a
+// layer on the strength of extents that predate an edit.
+function refetchLayerExtents() {
+    if (!app.layerExtents) return;
+    app.layerExtents.refetch((req) => app.websocketManager.request(req));
+}
+
+// The design changed (the "refresh" push).
+function applyDesignRefresh(msg) {
+    document.getElementById('loading-overlay').style.display = 'none';
+    // The design changed: drop the extents BEFORE the redraw below, so it
+    // cannot skip a layer on extents from before the edit.  It requests
+    // every layer until the fresh extents arrive.
+    refetchLayerExtents();
+    // An edit may have changed the design bounds (and with them the
+    // tile georeference); resync transforms before/along the redraw.
+    // resyncBounds already redraws when the bounds changed, so only
+    // redraw here when it didn't (same bounds, edited geometry).
+    resyncBounds(msg.bounds, msg.fit_bounds)
+        .then((redrew) => { if (!redrew) redrawAllLayers(); })
+        .catch(() => redrawAllLayers());
+    // The design may have been edited by another session's
+    // set_property; refresh the inspected object's properties.
+    if (app.refreshInspector) app.refreshInspector();
+}
+
+// "Script running" badge at the right end of the menu bar, shown while a
+// startup script runs and the server turns requests away as busy.
+function ensureScriptRunningBadge() {
+    let badge = document.getElementById('script-running-badge');
+    if (badge) return badge;
+    badge = document.createElement('span');
+    badge.id = 'script-running-badge';
+    badge.className = 'script-running-badge';
+    badge.textContent = 'Script running';
+    badge.title = 'The view updates when the script pauses or finishes';
+    (document.getElementById('menu-bar') || document.body).appendChild(badge);
+    return badge;
+}
+
+// A startup script started or stopped running (a debug pause, or the end of
+// the scripts).  While it runs every request is answered busy, so redraws
+// are held until it stops.
+function applyScriptRunning(running) {
+    app.scriptRunning = running;
+    ensureScriptRunningBadge().style.display = running ? 'block' : 'none';
+    if (running) return;
+    if (!app.booted || !app.designScale) {
+        // Boot was turned away, or found no design yet; run it now through
+        // the normal path, against whatever the script has loaded.
+        reloadKeepingConsole();
+        return;
+    }
+    if (app.refreshPending) {
+        app.refreshPending = false;
+        refetchLayerExtents();
+        if (app.refreshInspector) app.refreshInspector();
+    }
+    // Placement may have moved the bounds since the last redraw.
+    resyncBounds()
+        .then((redrew) => { if (!redrew) scheduleRedrawAllLayers(); })
+        .catch(() => scheduleRedrawAllLayers());
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
-        document.getElementById('loading-overlay').style.display = 'none';
-        // An edit may have changed the design bounds (and with them the
-        // tile georeference); resync transforms before/along the redraw.
-        // resyncBounds already redraws when the bounds changed, so only
-        // redraw here when it didn't (same bounds, edited geometry).
-        resyncBounds(msg.bounds, msg.fit_bounds)
-            .then((redrew) => { if (!redrew) redrawAllLayers(); })
-            .catch(() => redrawAllLayers());
-        // The design may have been edited by another session's
-        // set_property; refresh the inspected object's properties.
-        if (app.refreshInspector) app.refreshInspector();
+        if (app.scriptRunning) {
+            app.refreshPending = true;
+            return;
+        }
+        applyDesignRefresh(msg);
+    } else if (msg.type === 'script_running') {
+        applyScriptRunning(!!msg.running);
     } else if (msg.type === 'renderer_controls_changed') {
-        // A control was toggled — by this client or another one.  This is the
-        // single trigger for both halves, so the sender does not also
-        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // A control was toggled — by this client or another one — or a
+        // renderer came or went.  This is the single trigger for both
+        // halves, so the sender does not also re-read.
+        // scheduleRedrawAllLayers, not redrawAllLayers: a group
         // toggle sends one message per row and the echoes must coalesce.
         if (app.refreshRendererControls) app.refreshRendererControls();
         scheduleRedrawAllLayers();
@@ -1612,6 +1690,14 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'heatmaps_changed') {
+        // A heat map was registered server-side after this client connected
+        // (web_load_chiplet_heatmap from Tcl).  The instance is per-session,
+        // so the push carries no data: re-request the set to have the server
+        // build ours and to redraw the control panel with the new entry.
+        app.websocketManager.request({ type: 'heatmaps' })
+            .then(updateHeatMaps)
+            .catch(err => console.error('Heat map refresh failed', err));
     } else if (msg.type === 'labels_changed') {
         // Labels live server-side and are shared, so another client's edit
         // (or a Tcl add_label) changes what this one should be drawing.
@@ -1650,6 +1736,8 @@ app.websocketManager.onPush = (msg) => {
         const btn = document.getElementById('debug-continue-btn');
         if (btn) btn.style.display = 'none';
     } else if (msg.type === 'debug_refresh') {
+        // Tiles would be turned away until the next pause, which redraws.
+        if (app.scriptRunning) return;
         // Instance positions changed — clear the stale Leaflet highlight
         // outline (the tile-based highlight updates automatically).
         if (app.highlightRect) {
@@ -1694,6 +1782,9 @@ app.websocketManager.readyPromise.then(async () => {
             app.websocketManager.request({ type: 'bounds' }),
             app.websocketManager.request({ type: 'heatmaps' }),
         ]);
+        // Not awaited: tiles requested before the extents arrive are simply
+        // not skipped.
+        refetchLayerExtents();
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
@@ -2017,15 +2108,21 @@ app.websocketManager.readyPromise.then(async () => {
         // aren't ready yet.  On browser reload (without server restart),
         // shapes are already built so we skip the overlay.
         if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoadingOverlayUntilReady();
         }
 
         // Seed the server's display-state cache with the cookie-restored
         // state, so save_display_controls works before any interaction
         // (otherwise it would warn or write a previous session's state).
         scheduleSyncDisplayState();
+        app.booted = true;
     } catch (err) {
-        console.error('Failed to load initial data from server:', err);
+        // While a script runs this is expected: the server turned the
+        // requests away, and the script_running push that ends the run
+        // reloads the page.
+        if (!app.scriptRunning) {
+            console.error('Failed to load initial data from server:', err);
+        }
     }
 });
 

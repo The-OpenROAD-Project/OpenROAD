@@ -695,7 +695,10 @@ bool DbInstancePinIterator::hasNext()
   if (top_) {
     while (bitr_ != bitr_end_) {
       dbBTerm* bterm = *bitr_;
-      if (!network_->isPGSupply(bterm)) {
+      // Keep real supply ports (they never become graph vertices); hide only
+      // signal-typed ports that sit on a supply net.  DbNetTermIterator uses
+      // the same predicate so the pin walk and the term walk agree.
+      if (!network_->isSupplyOnlyByNet(bterm)) {
         next_ = network_->dbToSta(bterm);
         bitr_++;
         return true;
@@ -877,7 +880,9 @@ Term* DbNetTermIterator::next()
   while (iter_ != end_) {
     dbBTerm* bterm = *iter_;
     iter_++;
-    if (!network_->isPGSupply(bterm)) {
+    // Same predicate as DbInstancePinIterator's top branch, so a supply port
+    // visible in the pin walk is also visible here.
+    if (!network_->isSupplyOnlyByNet(bterm)) {
       return network_->dbToStaTerm(bterm);
     }
   }
@@ -1139,8 +1144,10 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
 
   // One plain Cell per unique chiplet master (names the chip-insts; the
   // binding point for a vendor ETM LibertyCell later), with a descriptive
-  // Port per bound chip-bump bterm. Bump timing pins are the pad iterms,
-  // not these ports.
+  // Port per bterm of the master's block. Every such bterm is reachable as
+  // a Pin by net traversal, and port(const Pin*) resolves it here, so a
+  // bterm without a bump (e.g. a package-facing port) needs a Port too.
+  // Bump timing pins are the pad iterms, not these ports.
   chip_master_lib_ = makeLibrary("3dic_chip_master_lib", "");
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
@@ -1150,19 +1157,14 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
     Cell* master_cell
         = makeCell(chip_master_lib_, master->getName(), /*is_leaf=*/false, "");
     chip_master_cells_[master] = master_cell;
-    for (odb::dbChipRegion* region : master->getChipRegions()) {
-      for (odb::dbChipBump* bump : region->getChipBumps()) {
-        odb::dbBTerm* bterm = bump->getBTerm();
-        if (bterm == nullptr) {
-          // Spare bump (no port/net binding): not a logical endpoint, no
-          // Port to synthesize. Connected bumps are guaranteed a bterm by
-          // STA-3005; spares are likewise filtered out of pin enumeration.
-          continue;
-        }
-        Port* port = makePort(master_cell, bterm->getConstName());
-        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
-        registerConcretePort(port);
-      }
+    odb::dbBlock* block = master->getBlock();
+    if (block == nullptr) {
+      continue;
+    }
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      Port* port = makePort(master_cell, bterm->getConstName());
+      setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
+      registerConcretePort(port);
     }
   }
 }
@@ -1509,53 +1511,9 @@ std::string dbNetwork::name(const Cell* cell) const
   return "";
 }
 
-std::string dbNetwork::getAttribute(const Cell* cell,
-                                    std::string_view key) const
-{
-  dbMaster* db_master;
-  dbModule* db_module;
-  staToDb(cell, db_master, db_module);
-  odb::dbObject* obj;
-  if (db_master) {
-    obj = db_master;
-  } else {
-    obj = db_module;
-  }
-  if (obj) {
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, std::string(key).c_str());
-    if (property) {
-      return property->getValue();
-    }
-  }
-  return "";
-}
-
-void dbNetwork::setAttribute(Cell* cell,
-                             std::string_view key,
-                             std::string_view value)
-{
-  dbMaster* db_master;
-  dbModule* db_module;
-  staToDb(cell, db_master, db_module);
-  odb::dbObject* obj;
-  if (db_master) {
-    obj = db_master;
-  } else {
-    obj = db_module;
-  }
-  if (obj) {
-    const std::string key_str(key);
-    const std::string value_str(value);
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key_str.c_str());
-    if (property) {
-      property->setValue(value_str.c_str());
-    } else {
-      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
-    }
-  }
-}
+// Verilog cell attributes are stored by VerilogReader in Properties as user
+// properties of object type "cell"; read them with
+// Properties::stringProperty.
 
 ////////////////////////////////////////////////////////////////
 // Module port iterator, allows traversal across dbModulePorts
@@ -2045,53 +2003,9 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
   return new DbInstanceNetIterator(instance, this);
 }
 
-std::string dbNetwork::getAttribute(const Instance* inst,
-                                    std::string_view key) const
-{
-  dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  staToDb(inst, db_inst, mod_inst);
-  odb::dbObject* obj;
-  if (db_inst) {
-    obj = db_inst;
-  } else {
-    obj = mod_inst;
-  }
-  if (obj) {
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, std::string(key).c_str());
-    if (property) {
-      return property->getValue();
-    }
-  }
-  return "";
-}
-
-void dbNetwork::setAttribute(Instance* instance,
-                             std::string_view key,
-                             std::string_view value)
-{
-  dbInst* db_inst;
-  odb::dbModInst* mod_inst;
-  staToDb(instance, db_inst, mod_inst);
-  odb::dbObject* obj;
-  if (db_inst) {
-    obj = db_inst;
-  } else {
-    obj = mod_inst;
-  }
-  if (obj) {
-    const std::string key_str(key);
-    const std::string value_str(value);
-    odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key_str.c_str());
-    if (property) {
-      property->setValue(value_str.c_str());
-    } else {
-      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
-    }
-  }
-}
+// Verilog instance attributes are stored by VerilogReader in Properties as
+// user properties of object type "instance"; read them with
+// Properties::stringProperty.
 
 ////////////////////////////////////////////////////////////////
 
@@ -2285,7 +2199,15 @@ Port* dbNetwork::port(const Pin* pin) const
     ret = dbToSta(mterm);
   } else if (bterm) {
     const char* port_name = bterm->getConstName();
-    ret = findPort(top_cell_, port_name);
+    // 3DIC: a chiplet bterm's Port is on its chip-inst's master cell (see
+    // makeTopCellForChip), not on the stack's top cell. Mirrors instance().
+    Cell* port_cell = top_cell_;
+    if (has3DicChip()) {
+      if (odb::dbChipInst* chip_inst = chipInstOf(bterm->getBlock())) {
+        port_cell = cell(dbToSta(chip_inst));
+      }
+    }
+    ret = findPort(port_cell, port_name);
   } else if (moditerm) {
     std::string port_sname = moditerm->getName();
     const char* port_cname = port_sname.c_str();
@@ -2831,7 +2753,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 // - It behaves differently to cope with the issue 9724.
 // - This redefinition may cause another issue later when
 // `Network::highestConnectedNet(Net *net)` is used elsewhere.
-const Net* dbNetwork::highestConnectedNet(Net* net) const
+const Net* dbNetwork::highestConnectedNet(const Net* net) const
 {
   const Net* flat = findFlatNet(net);
   return flat ? flat : net;
@@ -4335,11 +4257,11 @@ LibertyPort* dbNetwork::libertyPort(const Port* port) const
 
 LibertyPort* dbNetwork::libertyPort(const Pin* pin) const
 {
-  const Instance* cur_instance = instance(pin);
-  dbInst* db_inst = nullptr;
-  odb::dbModInst* mod_inst = nullptr;
-  staToDb(cur_instance, db_inst, mod_inst);
-  if (db_inst) {
+  dbITerm* iterm = nullptr;
+  dbBTerm* bterm = nullptr;
+  dbModITerm* moditerm = nullptr;
+  staToDb(pin, iterm, bterm, moditerm);
+  if (iterm) {
     LibertyPort* ret = ConcreteNetwork::libertyPort(pin);
     return ret;
   }
@@ -6066,6 +5988,23 @@ bool dbNetwork::isPGSupply(dbBTerm* bterm) const
   return isPGSupply(bterm->getNet());
 }
 
+// A BTerm whose own sig type is POWER/GROUND is a real supply port.  dbNetwork
+// reports power/ground direction for it, so Graph::makePinVertex() never makes
+// a vertex, and write_verilog needs it visible to emit the "assign <port> =
+// <net>;" alias when the port and its supply net have different names
+// (#10414).  A signal-typed BTerm that merely sits on a special supply net is
+// the bump-style port from #8957: its direction is bidirect, so exposing it
+// would add two graph vertices (load plus bidirect driver).  Keep the former,
+// hide the latter.
+bool dbNetwork::isSupplyOnlyByNet(dbBTerm* bterm) const
+{
+  if (bterm->getSigType().isSupply()) {
+    return false;
+  }
+
+  return isPGSupply(bterm->getNet());
+}
+
 bool dbNetwork::isPGSupply(dbNet* net) const
 {
   if (net == nullptr) {
@@ -6075,7 +6014,7 @@ bool dbNetwork::isPGSupply(dbNet* net) const
   return net->isSpecial() && net->getSigType().isSupply();
 }
 
-Net* dbNetwork::highestNetAbove(Net* net) const
+const Net* dbNetwork::highestNetAbove(const Net* net) const
 {
   if (net == nullptr) {
     return nullptr;

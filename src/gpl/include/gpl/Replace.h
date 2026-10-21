@@ -8,12 +8,17 @@
 #include <vector>
 
 namespace odb {
+class dbBTerm;
 class dbDatabase;
 class dbInst;
 
 }  // namespace odb
 namespace sta {
 class dbSta;
+}
+
+namespace ppl {
+class IOPlacer;
 }
 
 namespace grt {
@@ -143,6 +148,7 @@ class Replace
           sta::dbSta* sta,
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
+          ppl::IOPlacer* pin_placer,
           utl::Logger* logger);
 
   ~Replace();
@@ -173,12 +179,14 @@ class Replace
 
   // Query for uniform density value
   float getUniformTargetDensity(const PlaceOptions& options, int threads);
+  float estimateTargetDensity(const PlaceOptions& options, int threads);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
+                odb::dbBTerm* pin,
                 int start_iter,
                 int start_rudy,
                 int rudy_stride,
@@ -192,11 +200,15 @@ class Replace
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
   void reportHpwlMetric();
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
+  void initIoPinPlace();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
+  ppl::IOPlacer* pin_placer_ = nullptr;
   utl::Logger* log_ = nullptr;
 
   std::unique_ptr<AbstractGraphics> graphics_;
@@ -222,6 +234,7 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  odb::dbBTerm* gui_debug_pin_ = nullptr;
   int gui_debug_start_iter_ = 0;
   int gui_debug_rudy_start_ = 0;
   int gui_debug_rudy_stride_ = 0;
