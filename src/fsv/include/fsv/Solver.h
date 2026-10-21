@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -13,6 +14,7 @@
 namespace fsv {
 
 class CubeGreens;
+class LayeredCubeGreens;
 class WorkerPool;
 
 // Settings fixed for the life of a Solver. Results depend only on these, the
@@ -85,8 +87,15 @@ class Solver
                const SolveOptions& options = {});
 
  private:
+  // Two-dielectric tables for one permittivity ratio, by interface position.
+  const std::vector<std::shared_ptr<const LayeredCubeGreens>>& layeredTables(
+      double ratio);
+
   SolverOptions options_;
   std::shared_ptr<const CubeGreens> greens_;
+  // Held so that the tables are reused across solves.
+  std::map<double, std::vector<std::shared_ptr<const LayeredCubeGreens>>>
+      layered_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
 };

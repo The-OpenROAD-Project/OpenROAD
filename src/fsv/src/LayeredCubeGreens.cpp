@@ -146,16 +146,12 @@ LayeredCubeGreens::LayeredCubeGreens(const int panels,
   if (!(ratio > 0) || !std::isfinite(ratio)) {
     throw std::invalid_argument("fsv: permittivity ratio must be positive");
   }
-  // eps at the center, for fluxes along a horizontal axis.
-  const double eps_center_horizontal
-      = t_ > 0 ? 1.0 : (t_ < 0 ? ratio : 0.5 * (1.0 + ratio));
-  tabulateTopBottom(ratio, eps_center_horizontal);
-  tabulateSides(ratio, eps_center_horizontal);
+  tabulateTopBottom(ratio);
+  tabulateSides(ratio);
   buildSamplers();
 }
 
-void LayeredCubeGreens::tabulateTopBottom(const double ratio,
-                                          const double eps_center_horizontal)
+void LayeredCubeGreens::tabulateTopBottom(const double ratio)
 {
   const auto ints = panelSineIntegrals(n_);
   for (auto* table :
@@ -179,8 +175,8 @@ void LayeredCubeGreens::tabulateTopBottom(const double ratio,
       const double pt = sm * sq * mirrored.value;
       const double zb = sm * sq * b.flux;
       const double zt = -sm * sq * mirrored.flux;
-      const double xb = eps_center_horizontal * cm * sq * b.value;
-      const double xt = eps_center_horizontal * cm * sq * mirrored.value;
+      const double xb = cm * sq * b.value;
+      const double xt = cm * sq * mirrored.value;
       for (int i = 0; i < n_; i++) {
         for (int j = 0; j < n_; j++) {
           const double basis = ints[m][i] * ints[q][j];
@@ -200,8 +196,7 @@ void LayeredCubeGreens::tabulateTopBottom(const double ratio,
   }
 }
 
-void LayeredCubeGreens::tabulateSides(const double ratio,
-                                      const double eps_center_horizontal)
+void LayeredCubeGreens::tabulateSides(const double ratio)
 {
   // Side face x = -1 with data g(y, z): the potential is a sum over modes
   //   b_mk sin(m pi (y + 1) / 2) Z_k(z) sinh(kappa (1 - x)) / sinh(2 kappa)
@@ -253,11 +248,10 @@ void LayeredCubeGreens::tabulateSides(const double ratio,
         const double sm = std::sin(mu);
         p_coef = sm * value * center_x / norm;
         fz_coef = sm * z_flux * center_x / norm;
-        fn_coef = eps_center_horizontal * sm * value
-                  * (-kappa / (2 * std::sinh(kappa))) / norm;
+        fn_coef = sm * value * (-kappa / (2 * std::sinh(kappa))) / norm;
       } else {
         const double cm = mu * std::cos(mu);
-        ft_coef = eps_center_horizontal * cm * value * center_x / norm;
+        ft_coef = cm * value * center_x / norm;
       }
       for (int i = 0; i < n_; i++) {
         for (int j = 0; j < n_; j++) {

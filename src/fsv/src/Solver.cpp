@@ -19,11 +19,13 @@
 
 #include "BoxFace.h"
 #include "CubeGreens.h"
+#include "LayeredCubeGreens.h"
 #include "Philox.h"
 #include "SpatialIndex.h"
 #include "WorkerPool.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
+#include "fsv/Stack.h"
 
 namespace fsv {
 
@@ -145,6 +147,114 @@ GaussianSurface makeGaussianSurface(const Geometry& geometry,
   return g;
 }
 
+// The cube one transition uses: its half-size and, when a planar interface
+// lies inside it, the two-dielectric tables (whose permittivities are in
+// units of eps_below).
+struct Cube
+{
+  double half_size;
+  const LayeredCubeGreens* layered = nullptr;
+};
+
+// The largest cube allowed at a point, and the interface it may contain.
+struct CubeLimit
+{
+  double half_size;     // at most the distance to the second-nearest interface
+  int interface = -1;   // nearest interface, if strictly inside the cube
+  double distance = 0;  // to that interface
+};
+
+// Heights within this fraction of a cube's size count as on the interface.
+constexpr double kOnInterface = 1e-9;
+
+// Sizes cubes against a scene's planar interfaces. A cube may contain at
+// most one interface, so its half-size is at most the distance to the
+// second-nearest one.
+class InterfaceSizer
+{
+ public:
+  InterfaceSizer(
+      const Scene& scene,
+      const std::vector<
+          const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables)
+      : interfaces_(scene.interfaces()), tables_(tables)
+  {
+    for (const Stack::PlanarInterface& i : interfaces_) {
+      z_.push_back(i.z);
+    }
+  }
+
+  CubeLimit limit(const double z, const double max_half_size) const
+  {
+    const int count = static_cast<int>(z_.size());
+    if (count == 0) {
+      return {max_half_size};
+    }
+    // Nearest and second-nearest interfaces, walking out from z.
+    int above = static_cast<int>(std::upper_bound(z_.begin(), z_.end(), z)
+                                 - z_.begin());
+    int below = above - 1;
+    double d[2];
+    int nearest = -1;
+    for (int pass = 0; pass < 2; pass++) {
+      const double da = above < count ? z_[above] - z
+                                      : std::numeric_limits<double>::infinity();
+      const double db = below >= 0 ? z - z_[below]
+                                   : std::numeric_limits<double>::infinity();
+      const int i = da <= db ? above++ : below--;
+      d[pass] = std::min(da, db);
+      if (pass == 0) {
+        nearest = i;
+      }
+    }
+    const double h = std::min(max_half_size, d[1]);
+    if (d[0] >= h) {
+      return {h};
+    }
+    return {h, nearest, d[0]};
+  }
+
+  // A transition cube. When the nearest interface falls inside, the cube is
+  // shrunk so that the interface lands exactly on a tabulated position k /
+  // kPositions (snapping), or, if that is impossible, stops at it.
+  Cube transition(const double z, const double max_half_size) const
+  {
+    const CubeLimit lim = limit(z, max_half_size);
+    if (lim.interface < 0) {
+      return {lim.half_size};
+    }
+    constexpr int kK = LayeredCubeGreens::kPositions;
+    int position = 0;
+    double h = lim.half_size;
+    if (lim.distance > kOnInterface * lim.half_size) {
+      const int k = static_cast<int>(std::ceil(lim.distance * kK / h));
+      if (k >= kK) {
+        return {lim.distance};
+      }
+      h = lim.distance * kK / k;
+      position = z_[lim.interface] > z ? k : -k;
+    }
+    return {h, table(lim.interface, position)};
+  }
+
+  const Stack::PlanarInterface& interface(const int i) const
+  {
+    return interfaces_[i];
+  }
+  // The z of interface i is above height z.
+  bool above(const int i, const double z) const { return z_[i] > z; }
+  const LayeredCubeGreens* table(const int i, const int position) const
+  {
+    return (*tables_[i])[position + LayeredCubeGreens::kPositions - 1].get();
+  }
+
+ private:
+  const std::vector<Stack::PlanarInterface>& interfaces_;
+  std::vector<double> z_;
+  const std::vector<
+      const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables_;
+};
+
 }  // namespace
 
 Solver::Solver(const SolverOptions& options)
@@ -155,6 +265,20 @@ Solver::Solver(const SolverOptions& options)
 }
 
 Solver::~Solver() = default;
+
+const std::vector<std::shared_ptr<const LayeredCubeGreens>>&
+Solver::layeredTables(const double ratio)
+{
+  auto& tables = layered_[ratio];
+  if (tables.empty()) {
+    constexpr int kK = LayeredCubeGreens::kPositions;
+    for (int position = 1 - kK; position < kK; position++) {
+      tables.push_back(
+          LayeredCubeGreens::shared(options_.panels, position, ratio));
+    }
+  }
+  return tables;
+}
 
 CapRow Solver::solve(const Scene& scene,
                      const int master,
@@ -175,8 +299,14 @@ CapRow Solver::solve(const Scene& scene,
       = makeGaussianSurface(geometry, master, solve_options.gauss_offset);
   const int nets = geometry.netCount();
   const int columns = nets + 1;  // last column is the ground plane
-  const double eps = kEps0 * scene.epsR();
-  const double weight_scale = eps * gauss.area * greens_->gradientNorm();
+  const double charge_scale = kEps0 * gauss.area;
+  // Two-dielectric tables for each planar interface, by position.
+  std::vector<const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>
+      interface_tables;
+  for (const Stack::PlanarInterface& i : scene.interfaces()) {
+    interface_tables.push_back(&layeredTables(i.eps_above / i.eps_below));
+  }
+  const InterfaceSizer sizer(scene, interface_tables);
   const uint64_t key
       = options_.seed
         ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
@@ -201,12 +331,44 @@ CapRow Solver::solve(const Scene& scene,
              + rng.uniform() * (gauss.box.hi[t] - gauss.box.lo[t]);
     }
 
-    // First hop: sample by |dP/dn|; Q = -eps * flux of grad(phi) through G.
-    const double a = spatial_index.nearest(p).dist;
-    const FirstHop hop = greens_->sampleFirstHop(face.axis, rng);
-    weight = -weight_scale * face.normalSign() * hop.sign / a;
+    // First hop: sample by |eps dP/dn|; Q = -flux of eps grad(phi) through
+    // G. The cube is never shrunk for an interface: the weight scales as
+    // 1 / size, and shrinking near interfaces gives it infinite variance.
+    // Instead, an interface at an untabulated position t is handled by
+    // sampling the two nearest tabulated positions with linear weights,
+    // which reproduces the kernel interpolated in t.
+    const CubeLimit first = sizer.limit(p[2], spatial_index.nearest(p).dist);
+    const double eps_here = scene.epsAt(p[2]);
+    FirstHop hop;
+    double norm;
+    const LayeredCubeGreens* layered = nullptr;
+    if (first.interface >= 0) {
+      constexpr int kK = LayeredCubeGreens::kPositions;
+      const double x = first.distance / first.half_size * kK;
+      int k = static_cast<int>(x);
+      if (rng.uniform() < x - k) {
+        k++;
+      }
+      // Position kK puts the interface on the face: a uniform cube.
+      if (k < kK) {
+        const bool up = sizer.above(first.interface, p[2]);
+        layered = sizer.table(first.interface, up ? k : -k);
+      }
+    }
+    if (layered) {
+      hop = layered->sampleFirstHop(face.axis, rng);
+      norm = layered->fluxNorm(face.axis)
+             * (face.axis == Axis::kZ
+                    ? sizer.interface(first.interface).eps_below
+                    : eps_here);
+    } else {
+      hop = greens_->sampleFirstHop(face.axis, rng);
+      norm = eps_here * greens_->gradientNorm();
+    }
+    weight
+        = -charge_scale * norm * face.normalSign() * hop.sign / first.half_size;
     for (int k = 0; k < 3; k++) {
-      p[k] += a * hop.offset[k];
+      p[k] += first.half_size * hop.offset[k];
     }
 
     // Transition hops until the walk is captured by a conductor.
@@ -215,9 +377,11 @@ CapRow Solver::solve(const Scene& scene,
       if (n.dist <= capture) {
         return n.box == SpatialIndex::kGround ? nets : geometry.boxNet(n.box);
       }
-      const Vec3 offset = greens_->sampleTransition(rng);
+      const Cube cube = sizer.transition(p[2], n.dist);
+      const Vec3 offset = cube.layered ? cube.layered->sampleTransition(rng)
+                                       : greens_->sampleTransition(rng);
       for (int k = 0; k < 3; k++) {
-        p[k] += n.dist * offset[k];
+        p[k] += cube.half_size * offset[k];
       }
     }
     return -1;

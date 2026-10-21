@@ -260,9 +260,9 @@ TEST(LayeredCubeGreens, EqualPermittivityFluxMatchesHomogeneous)
   }
 }
 
-// Exact fields reproduce eps(center) * df/d(axis): 1 along z for the
-// piecewise-linear field, and alpha * g(0) * eps(center) along x for the
-// sine field. A constant has no flux.
+// Exact fields reproduce the kernels' center values: eps * df/dz = 1 for
+// the piecewise-linear field, and df/dx = alpha * g(0) for the sine field. A
+// constant has no flux.
 TEST(LayeredCubeGreens, FluxOfExactFields)
 {
   for (const double ratio : {7.5 / 2.94, 1 / 2.94}) {
@@ -275,13 +275,14 @@ TEST(LayeredCubeGreens, FluxOfExactFields)
       }
       EXPECT_NEAR(fluxAverage(g, Axis::kZ, linearField(t, ratio)), 1.0, 2e-3)
           << "ratio " << ratio << " k " << k;
+      // The sine field's center value depends on the side for t = 0, where
+      // it is not defined, so only t != 0 is checked.
       if (k != 0) {
         const double eps = t > 0 ? 1.0 : ratio;
         const double s = -1.3 * t;
         const double g0 = std::cosh(s) + std::sinh(s) / eps;
-        EXPECT_NEAR(fluxAverage(g, Axis::kX, sineField(t, ratio)),
-                    eps * 1.3 * g0,
-                    5e-3 * eps)
+        EXPECT_NEAR(
+            fluxAverage(g, Axis::kX, sineField(t, ratio)), 1.3 * g0, 5e-3)
             << "ratio " << ratio << " k " << k;
       }
     }

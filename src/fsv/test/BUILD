@@ -57,6 +57,7 @@ cc_test(
     deps = [
         "//src/fsv",
         "//src/fsv:geometry",
+        "//src/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

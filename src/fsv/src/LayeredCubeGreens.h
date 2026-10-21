@@ -30,12 +30,14 @@ namespace fsv {
 //   interface conditions (a Sturm-Liouville problem whose eigenvalues are the
 //   roots of a transcendental equation).
 //
-// Besides the transition probabilities P, the cube carries flux kernels for
-// the first hop: eps(center) * dP/d(axis) at the center, per unit half-size,
-// with eps in units of eps_below. The flux along z is continuous across the
-// interface; for a horizontal axis with the center on the interface (t = 0),
-// eps(center) is the mean of the two permittivities, which matters only on a
-// set of measure zero.
+// Besides the transition probabilities P, the cube carries first-hop kernels
+// at the center, per unit half-size:
+// - along z, the flux eps * dP/dz, with eps in units of eps_below. It is
+//   continuous across the interface.
+// - along x and y, the plain derivative dP/dx (or dP/dy). The flux eps *
+//   dP/dx jumps across the interface, so the caller multiplies by the
+//   permittivity on the walker's side; this keeps the kernels continuous in
+//   t down to t = 0, where they are interpolated.
 class LayeredCubeGreens
 {
  public:
@@ -63,8 +65,9 @@ class LayeredCubeGreens
   double topProbability(int i, int j) const { return top_[i * n_ + j]; }
   double sideProbability(int i, int j) const { return side_[i * n_ + j]; }
 
-  // Flux kernel eps(center) * dP/d(axis) for panel (i, j) of a face, with i
-  // and j along the face's tangent axes in increasing order.
+  // First-hop kernel for panel (i, j) of a face, with i and j along the
+  // face's tangent axes in increasing order: eps * dP/dz along z, dP/d(axis)
+  // along x or y (see above).
   double flux(Axis axis, BoxFace face, int i, int j) const;
   // Sum of |flux(axis, ...)| over all panels of all faces.
   double fluxNorm(Axis axis) const { return flux_norm_[index(axis)]; }
@@ -75,8 +78,8 @@ class LayeredCubeGreens
   FirstHop sampleFirstHop(Axis axis, Philox& rng) const;
 
  private:
-  void tabulateTopBottom(double ratio, double eps_center_horizontal);
-  void tabulateSides(double ratio, double eps_center_horizontal);
+  void tabulateTopBottom(double ratio);
+  void tabulateSides(double ratio);
   void buildSamplers();
 
   int n_;
