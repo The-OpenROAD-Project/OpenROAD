@@ -23,6 +23,7 @@ generate_ram \
   -num_words 7 \
   -rw_ports 1 \
   -storage_cell DFF_X1 \
+  -output_buffer_cell none \
   -routing_layer {metal1 0.08} \
   -ver_layer {metal4 0.14 9} \
   -hor_layer {metal3 0.08 8} \

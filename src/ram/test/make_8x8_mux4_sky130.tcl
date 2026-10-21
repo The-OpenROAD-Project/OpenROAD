@@ -16,6 +16,7 @@ generate_ram \
   -column_mux_ratio 4 \
   -rw_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
+  -output_buffer_cell none \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 10} \
   -hor_layer {met3 0.48 7} \
