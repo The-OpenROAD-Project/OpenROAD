@@ -1211,6 +1211,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
         logger_->error(
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
+      pruneMergedNetRoute(net);
     }
     updateInitialSteinerWirelength(net);
     net->setIsMergedNet(false);
@@ -1218,6 +1219,186 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     net->clearLastPinPositions();
   }
   dirty_nets_.clear();
+}
+
+// Removes the parts of a merged net's route that no longer lead to any of its
+// pins, such as the branches to a removed buffer, and the edges duplicated by
+// merging the routes of the buffer's nets. Branches are trimmed back to the
+// gcells of the net's pins, so the pin access guides are kept.
+void GlobalRouter::pruneMergedNetRoute(Net* net)
+{
+  odb::dbNet* db_net = net->getDbNet();
+  GRoute& route = routes_[db_net];
+  if (route.empty()) {
+    return;
+  }
+
+  const int tile = grid_->getTileSize();
+  const int x_origin = grid_->getXMin() + tile / 2;
+  const int y_origin = grid_->getYMin() + tile / 2;
+  // Gcell index of a gcell center, or -1 for any other position.
+  auto toGcell = [tile](const int coord, const int origin) {
+    const int offset = coord - origin;
+    return (offset >= 0 && offset % tile == 0) ? offset / tile : -1;
+  };
+
+  // Unit edges between adjacent gcells or layers; duplicates collapse.
+  using Node = std::tuple<int, int, int>;  // gcell x, gcell y, layer
+  using Edge = std::pair<Node, Node>;
+  std::map<Edge, bool> edges;  // edge -> is jumper
+  int total_edges = 0;
+  auto addEdge = [&](Node a, Node b, const bool is_jumper) {
+    if (b < a) {
+      std::swap(a, b);
+    }
+    edges.emplace(Edge{a, b}, is_jumper);
+    total_edges++;
+  };
+  for (const GSegment& seg : route) {
+    const int x0 = toGcell(std::min(seg.init_x, seg.final_x), x_origin);
+    const int y0 = toGcell(std::min(seg.init_y, seg.final_y), y_origin);
+    const int x1 = toGcell(std::max(seg.init_x, seg.final_x), x_origin);
+    const int y1 = toGcell(std::max(seg.init_y, seg.final_y), y_origin);
+    if (x0 < 0 || y0 < 0 || x1 < 0 || y1 < 0) {
+      return;
+    }
+    if (seg.isVia()) {
+      const auto [bottom, top] = std::minmax(seg.init_layer, seg.final_layer);
+      for (int layer = bottom; layer < top; layer++) {
+        addEdge({x0, y0, layer}, {x0, y0, layer + 1}, seg.isJumper());
+      }
+    } else {
+      const int layer = seg.init_layer;
+      for (int x = x0; x < x1; x++) {
+        addEdge({x, y0, layer}, {x + 1, y0, layer}, seg.isJumper());
+      }
+      for (int y = y0; y < y1; y++) {
+        addEdge({x0, y, layer}, {x0, y + 1, layer}, seg.isJumper());
+      }
+    }
+  }
+
+  std::set<std::pair<int, int>> pin_gcells;
+  std::set<Node> pin_nodes;
+  for (const Pin& pin : net->getPins()) {
+    const int x = toGcell(pin.getOnGridPosition().getX(), x_origin);
+    const int y = toGcell(pin.getOnGridPosition().getY(), y_origin);
+    if (x < 0 || y < 0) {
+      return;
+    }
+    pin_gcells.emplace(x, y);
+    pin_nodes.emplace(x, y, pin.getConnectionLayer());
+  }
+  auto isPrunable = [&](const Node& node, const std::set<Node>& neighbors) {
+    return neighbors.size() == 1
+           && !pin_gcells.contains({std::get<0>(node), std::get<1>(node)});
+  };
+
+  // Trim dangling branches from their open ends.
+  std::map<Node, std::set<Node>> adjacency;
+  for (const auto& [edge, is_jumper] : edges) {
+    adjacency[edge.first].insert(edge.second);
+    adjacency[edge.second].insert(edge.first);
+  }
+  std::vector<Node> open_ends;
+  for (const auto& [node, neighbors] : adjacency) {
+    if (isPrunable(node, neighbors)) {
+      open_ends.push_back(node);
+    }
+  }
+  while (!open_ends.empty()) {
+    const Node node = open_ends.back();
+    open_ends.pop_back();
+    std::set<Node>& neighbors = adjacency[node];
+    if (!isPrunable(node, neighbors)) {
+      continue;
+    }
+    const Node next = *neighbors.begin();
+    neighbors.clear();
+    edges.erase(node < next ? Edge{node, next} : Edge{next, node});
+    std::set<Node>& next_neighbors = adjacency[next];
+    next_neighbors.erase(node);
+    if (isPrunable(next, next_neighbors)) {
+      open_ends.push_back(next);
+    }
+  }
+
+  if (static_cast<int>(edges.size()) == total_edges) {
+    return;
+  }
+
+  // Rebuild the route, joining the unit edges into straight segments that end
+  // at every branch, via and pin, as the route consumers expect.
+  auto toDbu = [tile](const int gcell, const int origin) {
+    return origin + gcell * tile;
+  };
+  const bool is_3d_route = route.front().is3DRoute();
+  GRoute pruned_route;
+  auto addSegment = [&](const int x0,
+                        const int y0,
+                        const int l0,
+                        const int x1,
+                        const int y1,
+                        const int l1,
+                        const bool is_jumper) {
+    pruned_route.emplace_back(toDbu(x0, x_origin),
+                              toDbu(y0, y_origin),
+                              l0,
+                              toDbu(x1, x_origin),
+                              toDbu(y1, y_origin),
+                              l1,
+                              is_jumper);
+    pruned_route.back().setIs3DRoute(is_3d_route);
+  };
+  // (layer, row or column, is jumper) -> start of each unit edge
+  std::map<std::tuple<int, int, bool>, std::vector<int>> horizontal;
+  std::map<std::tuple<int, int, bool>, std::vector<int>> vertical;
+  for (const auto& [edge, is_jumper] : edges) {
+    const auto& [x0, y0, l0] = edge.first;
+    const auto& [x1, y1, l1] = edge.second;
+    if (l0 != l1) {
+      addSegment(x0, y0, l0, x1, y1, l1, is_jumper);
+    } else if (y0 == y1) {
+      horizontal[{l0, y0, is_jumper}].push_back(x0);
+    } else {
+      vertical[{l0, x0, is_jumper}].push_back(y0);
+    }
+  }
+  auto addRuns = [&](const auto& runs, const bool is_horizontal) {
+    for (const auto& [key, starts] : runs) {
+      const auto& [layer, line, is_jumper] = key;
+      size_t first = 0;
+      for (size_t i = 1; i <= starts.size(); i++) {
+        if (i < starts.size() && starts[i] == starts[i - 1] + 1) {
+          const Node joint = is_horizontal ? Node{starts[i], line, layer}
+                                           : Node{line, starts[i], layer};
+          if (adjacency[joint].size() == 2 && !pin_nodes.contains(joint)) {
+            continue;
+          }
+        }
+        const int begin = starts[first];
+        const int end = starts[i - 1] + 1;
+        if (is_horizontal) {
+          addSegment(begin, line, layer, end, line, layer, is_jumper);
+        } else {
+          addSegment(line, begin, layer, line, end, layer, is_jumper);
+        }
+        first = i;
+      }
+    }
+  };
+  addRuns(horizontal, true);
+  addRuns(vertical, false);
+
+  // Install the pruned route the same way a route restored from guides is.
+  if (net->areSegmentsRestored()) {
+    updateNetResources(net, true);
+  }
+  route = std::move(pruned_route);
+  net->setAreSegmentsRestored(true);
+  makeFastrouteNet(net);
+  updateNetResources(net, false);
+  saveGuides({db_net});
 }
 
 bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
@@ -6231,6 +6412,15 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
+  // FastRoute records the resources an NDR net takes per net, so they cannot
+  // move to another net: reroute the merged net instead. As in CUGR, the
+  // merged net keeps the NDR of the preserved net.
+  if (!use_cugr_
+      && (db_net1->getNonDefaultRule() != nullptr
+          || db_net2->getNonDefaultRule() != nullptr)) {
+    addDirtyNet(db_net1);
+    return;
+  }
   // Try to connect the routing of the two nets.
   // For CUGR, connectRouting also performs the CUGR-specific capacity check
   // and populates connection_segs so that the CUGR tree can be updated.
