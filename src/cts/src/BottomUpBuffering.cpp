@@ -183,6 +183,7 @@ void BottomUpBuffering::split(size_t index, unsigned depth)
   const size_t farthest = *longest;
   const double length = distance(point, nodes_[farthest].point);
   if (children.size() == 1 || length > max_wire_length_) {
+    // Physical placements use integer DBU; smaller spans cannot be split.
     if (length < 1) {
       throw std::runtime_error("No CTS buffer can drive a sink's capacitance");
     }
