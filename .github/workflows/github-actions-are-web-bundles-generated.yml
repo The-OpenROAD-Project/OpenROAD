@@ -55,7 +55,7 @@ jobs:
         with:
           # MODULE.bazel overrides sv-elab to the third-party/sv-elab
           # submodule, so module resolution needs it checked out.
-          submodules: 'recursive'
+          submodules: recursive
       - name: Set up bazel
         # Self-hosted runners lack the bazelisk ubuntu-latest preinstalls; the
         # clang-tidy workflow sets it up the same way.
