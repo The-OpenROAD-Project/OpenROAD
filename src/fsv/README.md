@@ -25,9 +25,15 @@ C++ API only. It provides:
 - Deterministic results for any thread count, using a counter-based Philox
   RNG and fixed batches reduced in order.
 
+- A process-stack reader for ITF files (`fsv/Itf.h`): planar dielectrics,
+  conductors, nested conformal dielectrics and vias, with the ground plane at the
+  top of the lowest dielectric and the background dielectric above. It
+  covers the keywords the SkyWater 130 ITF uses, and reports any other
+  keyword by name. The solver does not use the stack yet.
+
 Later phases add the following:
 
-- ITF stacks with planar and conformal dielectrics.
+- Solving with planar and conformal dielectrics from the stack.
 - A 2D mode.
 - odb input.
 - Tcl and Python commands.

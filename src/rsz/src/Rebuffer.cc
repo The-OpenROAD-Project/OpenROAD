@@ -68,7 +68,6 @@ namespace {
 // the best tree still violates, 20 ps once it has margin (slackLossFloor()).
 constexpr float kNegativeSlackLossBudget = 1.0e-12f;
 constexpr float kPositiveSlackLossBudget = 20.0e-12f;
-constexpr size_t kMaxRetainedCacheBuckets = 256;
 
 // Direct load or next-buffer stages are lumped loads; wires and branches are
 // distributed loads for buffer Liberty lookup.
@@ -2722,12 +2721,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
   drvr_port_ = network_->libertyPort(drvr_pin);
   drvr_load_high_water_mark_ = 0;
   // The gate-delay memo serves the planning of one driver.
-  // Release large bucket arrays so clear() stays O(1) across nets.
-  if (buffer_delay_cache_.bucket_count() > kMaxRetainedCacheBuckets) {
-    buffer_delay_cache_ = BufferDelayCache{};
-  } else {
-    buffer_delay_cache_.clear();
-  }
+  buffer_delay_cache_.clear();
 
   {
     float fanout, max_fanout, fanout_slack;

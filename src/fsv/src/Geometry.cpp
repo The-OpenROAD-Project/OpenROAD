@@ -5,12 +5,13 @@
 
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace fsv {
 
-int Geometry::addNet(const std::string& name)
+int Geometry::addNet(const std::string_view name)
 {
-  net_names_.push_back(name);
+  net_names_.emplace_back(name);
   return netCount() - 1;
 }
 

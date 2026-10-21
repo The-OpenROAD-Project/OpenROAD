@@ -205,6 +205,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/stt",
         "//src/utl",
+        "@abseil-cpp//absl/container:flat_hash_map",
         "@boost.container_hash",
         "@boost.multi_array",
         "@spdlog",
