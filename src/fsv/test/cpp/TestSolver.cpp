@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <cmath>
+#include <cstdint>
 #include <numbers>
 #include <stdexcept>
 #include <utility>
@@ -165,6 +166,10 @@ TEST(Solver, HopGuardFailsSolve)
   options.hop_guard = 0;
   EXPECT_THROW(solver.solve(scene, net, options), std::invalid_argument);
   EXPECT_THROW(solver.solve(scene, 1, SolveOptions{}), std::invalid_argument);
+  for (const int64_t max_walks : {0, -1}) {
+    EXPECT_THROW(solver.solve(scene, net, {.max_walks = max_walks}),
+                 std::invalid_argument);
+  }
   // The solver stays usable after a failed solve.
   EXPECT_GT(solver.solve(scene, net, SolveOptions{}).total(), 0);
 }

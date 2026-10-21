@@ -33,6 +33,8 @@ struct SolverOptions
   int batch_size = 1024;
   int first_round_batches = 16;
   int round_batches = 256;
+
+  bool operator==(const SolverOptions&) const = default;
 };
 
 // Accuracy settings for one solve.

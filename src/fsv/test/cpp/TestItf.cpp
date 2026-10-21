@@ -165,6 +165,22 @@ TEST(Itf, CommentsAndBackground)
   EXPECT_EQ(interfaces[0].eps_above, 3.0);
 }
 
+// Numbers may use a leading point, a sign and an exponent.
+TEST(Itf, NumberForms)
+{
+  const Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "DIELECTRIC D3 { THICKNESS=.5 ER=4 }\n"
+      "DIELECTRIC D2 { THICKNESS=5e-1 ER=+4.0 }\n"
+      "DIELECTRIC D1 { THICKNESS=0.5E0 ER=4 }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
+  ASSERT_EQ(stack.dielectrics.size(), 3u);
+  for (const Stack::Dielectric& d : stack.dielectrics) {
+    EXPECT_DOUBLE_EQ(d.top - d.bottom, 0.5) << d.name;
+    EXPECT_DOUBLE_EQ(d.eps, 4.0) << d.name;
+  }
+}
+
 // FROM and TO may come in either order; the upper layer is decided by
 // height. SUBSTRATE is the ground plane.
 TEST(Itf, ViaLayersOrderedByHeight)
@@ -263,6 +279,10 @@ TEST(Itf, Errors)
               "ASSOCIATED_CONDUCTOR M9 of C is not a conductor below it");
   expectError(head + "DIELECTRIC D { THICKNESS=x ER=4 }\n" + sub,
               "line 2: THICKNESS expects a finite number");
+  expectError(head + "DIELECTRIC D { THICKNESS=0.5x ER=4 }\n" + sub,
+              "THICKNESS expects a finite number, got '0.5x'");
+  expectError(head + "DIELECTRIC D { THICKNESS=1e999 ER=4 }\n" + sub,
+              "THICKNESS expects a finite number, got '1e999'");
   expectError(head + "DIELECTRIC D { ER=4 }\n" + sub,
               "DIELECTRIC D is missing THICKNESS");
   expectError("DIELECTRIC D { THICKNESS=1 ER=4 }\n", "missing TECHNOLOGY");
