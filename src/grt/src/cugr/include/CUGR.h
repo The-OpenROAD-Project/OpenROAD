@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractCugrRenderer.h"
 #include "grt/GRoute.h"
 #include "odb/PtrSetMap.h"
 #include "odb/geom.h"
@@ -62,6 +63,8 @@ struct Constants
   int target_detour_count = 20;
 
   double via_multiplier = 2.0;
+  // Charge vias' flanking wire edges in the congestion model.
+  bool via_demand_enabled = true;
 
   double maze_logistic_slope = 0.5;
 
@@ -104,6 +107,14 @@ class CUGR
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Rewrite the usage of just `tiles` (GCell indices).  Capacity is left
+  // alone: rerouting moves demand between edges without changing what they
+  // can hold.
+  void updateDbCongestionTiles(const std::vector<odb::Point>& tiles);
+  // GCells whose reported usage changed since the last odb refresh.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const;
+  void clearCongestionDirtyTiles();
+  void gcellCongestion(int layer, int x, int y, double& cap, double& use) const;
   // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
   // overflow split into wire vs via-stub shares (proportional attribution);
   // sub-min layers shown as all-zero rows. Gated on verbose_.
@@ -123,6 +134,12 @@ class CUGR
   {
     resistance_aware_ = resistance_aware;
   }
+  // Developer debug switch. Applied at the next init(); an existing grid
+  // keeps its demand model.
+  void setViaDemandEnabled(bool enabled)
+  {
+    constants_.via_demand_enabled = enabled;
+  }
   void setResAwareNetsPercentage(float percentage)
   {
     res_aware_percentage_ = percentage;
@@ -135,8 +152,9 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void removeNet(odb::dbNet* net);
   // Transfer removed net tree ownership to preserved net without removing
-  // its GridGraph usage. Called at inDbNetPostMerge time.
-  void mergeNet(odb::dbNet* preserved_net,
+  // its GridGraph usage. Called at inDbNetPostMerge time. Returns false if
+  // the trees cannot be joined; the caller then reroutes the preserved net.
+  bool mergeNet(odb::dbNet* preserved_net,
                 odb::dbNet* removed_net,
                 const std::vector<GSegment>& connection);
   // True if the edge on (layer_index, tile_x, tile_y) has capacity left for
@@ -171,6 +189,11 @@ class CUGR
   int totalOverflow();
   void saveCongestion();
 
+  // GUI stage-by-stage topology debug for one net (global_route_debug).
+  void initDebugRenderer(std::unique_ptr<AbstractCugrRenderer> renderer);
+  AbstractCugrRenderer* getDebugRenderer() const;
+  void setDebugNet(odb::dbNet* net, const CugrDebugStages& stages);
+
  private:
   // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
@@ -186,6 +209,8 @@ class CUGR
   // Re-estimate parasitics for the collected rerouted nets, then clear the
   // set.
   void updateReroutedParasitics(est::ParasiticsService& estimator);
+  // Re-estimate every dirty net's parasitics, leaving the dirty list intact.
+  void refreshDirtyParasitics(est::ParasiticsService& estimator);
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
   void refreshNetSlacks(const std::vector<int>& net_indices);
@@ -202,6 +227,8 @@ class CUGR
   // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
   // from every committed tree and report drift from the tracked demand.
   void verifyDemandConsistency(const char* tag);
+  // Debug group congestion_sources: splits overflow by wire and via source.
+  void reportCongestionSources(const std::string& tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -245,7 +272,8 @@ class CUGR
   // neutral first PatternRoute.
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
-  void mazeRoute(std::vector<int>& net_indices);
+  // iterativeRRR re-enters this stage, so the caller labels the debug dump.
+  void mazeRoute(std::vector<int>& net_indices, CugrStage stage, int iteration);
 
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
@@ -267,6 +295,9 @@ class CUGR
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
    */
+  // Debug prints after a maze pass: the total overflow (group rrr) and, after
+  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
+  void debugPass(const std::string& tag);
   void iterativeRRR(std::vector<int>& net_indices);
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
@@ -276,6 +307,7 @@ class CUGR
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   // Append net's routing tree to route as GRoute segments.
   void buildNetRoute(const GRNet* net, GRoute& route) const;
+  int gridlineCenter(int dimension, int index) const;
   void printStatistics() const;
 
   // Tile classification for debugCongestion2D.
@@ -308,6 +340,25 @@ class CUGR
    * `set_debug_level GRT rrr_2d 1`.
    */
   void debugCongestion2D() const;
+
+  // Per-stage GUI debug state; renderer stays null unless the GUI is up.
+  struct Debug
+  {
+    std::unique_ptr<AbstractCugrRenderer> renderer;
+    odb::dbNet* net = nullptr;
+    CugrDebugStages stages;
+  };
+  Debug debug_;
+
+  bool debugStageEnabled(CugrStage stage) const;
+  // Stage-boundary hook: logs the net's slack, and draws/pauses under a GUI.
+  void debugNetTopology(CugrStage stage, int iteration);
+  // The logging half of the hook; needs no GUI.
+  void reportDebugNetSlack(const GRNet* net, CugrStage stage, int iteration);
+  // Refresh parasitics as the next stage would, so the slack is current.
+  void refreshParasiticsForDebug();
+  // True if a liberty library is loaded, i.e. slacks are meaningful.
+  bool hasTiming() const;
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;

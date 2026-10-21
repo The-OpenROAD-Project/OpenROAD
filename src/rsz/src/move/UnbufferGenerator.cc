@@ -17,6 +17,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
@@ -149,7 +150,7 @@ bool passesFanoutGuard(const UnbufferSelectionContext& ctx)
                                  slack);
 
   const float new_fanout = fanout + ctx.target.fanout - 1;
-  if (limit > 0.0) {
+  if (limit > 0.0 && limit < sta::INF) {
     if (new_fanout <= limit) {
       return true;
     }

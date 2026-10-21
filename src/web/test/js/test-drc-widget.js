@@ -26,6 +26,7 @@ function createMockApp(responses = {}) {
         getDbuPerMicron() { return 1000; },
         map: {
             fitBounds() {},
+            getContainer() { return document.createElement('div'); },
         },
         focusComponent() {},
     };
@@ -49,7 +50,7 @@ describe('DrcWidget', () => {
             const select = toolbar.querySelector('.drc-category-select');
             assert.ok(select, 'category select exists');
 
-            const buttons = toolbar.querySelectorAll('.drc-btn');
+            const buttons = toolbar.querySelectorAll('.or-btn');
             assert.ok(buttons.length >= 1, 'load button exists');
 
             // Should have info bar
@@ -206,6 +207,90 @@ describe('DrcWidget', () => {
             assert.ok(markerRows.length >= 1, 'at least one marker row');
             assert.ok(markerRows[0].classList.contains('drc-unvisited'),
                 'unvisited marker has bold class');
+        });
+    });
+
+    describe('category visibility', () => {
+        // check_power_grid builds PSM/<net>/<check>, so "Unconnected shape"
+        // appears under every net and only the full path identifies one.
+        it('sends the full category path when toggling a subcategory', async () => {
+            let visibilityRequest = null;
+            const app = createMockApp({
+                drc_categories: () => ({ categories: [{ name: 'PSM', count: 1 }] }),
+                drc_markers: () => ({
+                    name: 'PSM',
+                    total_count: 1,
+                    subcategories: [{
+                        name: 'VDD',
+                        count: 1,
+                        subcategories: [{
+                            name: 'Unconnected shape',
+                            count: 1,
+                            markers: [
+                                { id: 1, index: 1, name: 'Unconnected shape',
+                                  visited: false, visible: false, waived: false,
+                                  bbox: [0, 0, 100, 100], layer: 'met4' },
+                            ],
+                        }],
+                    }],
+                }),
+                drc_update_category_visibility: (msg) => {
+                    visibilityRequest = msg;
+                    return { ok: 1 };
+                },
+            });
+            const widget = new DrcWidget(app, () => {});
+            await new Promise(r => setTimeout(r, 50));
+            widget.selectCategory('PSM');
+            await new Promise(r => setTimeout(r, 50));
+
+            const labels = [...widget.element.querySelectorAll('.drc-category-label')];
+            const leaf = labels.find(l => l.textContent === 'Unconnected shape');
+            assert.ok(leaf, 'leaf category rendered');
+
+            const checkbox = leaf.closest('.drc-tree-header')
+                .querySelector('.drc-visibility-check');
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new window.Event('change'));
+            await new Promise(r => setTimeout(r, 50));
+
+            assert.ok(visibilityRequest, 'visibility request was made');
+            assert.deepEqual(visibilityRequest.path,
+                             ['PSM', 'VDD', 'Unconnected shape']);
+            assert.equal(visibilityRequest.visible, true);
+        });
+
+        it('sends the root path for markers directly on the category', async () => {
+            let visibilityRequest = null;
+            const app = createMockApp({
+                drc_categories: () => ({ categories: [{ name: 'DRC', count: 1 }] }),
+                drc_markers: () => ({
+                    name: 'DRC',
+                    total_count: 1,
+                    markers: [
+                        { id: 1, index: 1, name: 'Top-level violation',
+                          visited: false, visible: false, waived: false,
+                          bbox: [0, 0, 100, 100] },
+                    ],
+                }),
+                drc_update_category_visibility: (msg) => {
+                    visibilityRequest = msg;
+                    return { ok: 1 };
+                },
+            });
+            const widget = new DrcWidget(app, () => {});
+            await new Promise(r => setTimeout(r, 50));
+            widget.selectCategory('DRC');
+            await new Promise(r => setTimeout(r, 50));
+
+            const checkbox = widget.element
+                .querySelector('.drc-tree-header .drc-visibility-check');
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new window.Event('change'));
+            await new Promise(r => setTimeout(r, 50));
+
+            assert.ok(visibilityRequest, 'visibility request was made');
+            assert.deepEqual(visibilityRequest.path, ['DRC']);
         });
     });
 

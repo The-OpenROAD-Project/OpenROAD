@@ -462,6 +462,28 @@ create_obstruction
 | `effective_width` | (optional): Add an effective width to the obstruction.  |
 
 
+### Set Halo
+
+This command provides a unified interface for setting halos for instances. Supports hard and soft halos.
+
+```tcl
+set_halo
+    -halo size|{width height}|{left bottom right top}
+    [-instance instance]
+    [-apply_to_all_macros]
+    [-soft]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `halo` | (required) Halo values for each side. Left and bottom are used for right and top if the latter are omitted. |
+| `instance` | (optional): Instance associated with the halo. This or `apply_to_all_macros` is required.  |
+| `apply_to_all_macros` | (optional): Apply to all macros in the design. This or `instance` is required. |
+| `soft` | (optional): Mark the halo as soft, hard otherwise.
+
+
 ### Report 3DIC Summary
 
 Prints a structural summary of a 3DIC (3DBlox) design loaded via `read_3dbx`:
@@ -476,19 +498,19 @@ report_3dic_summary
 
 ## Example scripts
 
-After building successfully, run OpenDB Tcl shell using
-`../../build/src/odb/src/swig/tcl/odbtcl`. An example usage:
+After building successfully with `bazelisk build //:openroad`, run the
+OpenROAD shell from the repository root using `bazel-bin/openroad`.
+An example usage:
 
 ```
-set db [dbDatabase_create]
-set lef_parser [new_lefin $db true]
-set tech [lefin_createTech $lef_parser ./src/odb/test/data/gscl45nm.lef]
+set db [odb::dbDatabase_create]
+set lib [odb::read_lef $db ./src/odb/test/data/gscl45nm.lef]
 ```
 
 You can find examples on using the API from Tcl under `test/tcl/` directory.
 
-The full set of the Tcl commands exposed can be found under
-`./build/src/swig/tcl/opendb_wrapper.cpp`. Search for `SWIG_prefix`.
+The full set of the Tcl commands exposed is defined by the SWIG interface files
+`src/odb/src/swig/common/odb.i` and `src/odb/src/swig/tcl/*.i`.
 
 ### All pin placed
 
@@ -527,10 +549,10 @@ add_3dblox_alignment_marker_rule
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/odb/...
 ```
 
 ## Database Internals

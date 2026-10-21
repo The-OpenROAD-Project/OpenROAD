@@ -15,7 +15,7 @@ set_wire_rc -clock -layer $wire_rc_layer_clk
 
 create_clock -name core -period 5 clk
 
-set_debug CTS "insertion delay" 1
+set_debug_level CTS "insertion delay" 1
 
 clock_tree_synthesis -buf_list BUF_X1 \
   -wire_unit 20 \

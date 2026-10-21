@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import * as THREE from 'https://esm.sh/three@0.160.0';
-
 import {getThemeColors, setCookie} from './theme.js';
 import {downloadUrl, copyPngToClipboard} from './image-export.js';
+import {isStaticMode} from './ui-utils.js';
+
+// window.THREE, set before main.js loads; a saved report has none.
+const THREE = globalThis.THREE;
 
 // Camera navigation tuning constants
 const kRotationSensitivity = 2.0;
@@ -85,6 +87,16 @@ export class ThreeDViewerWidget {
     this._element.className = 'three-d-viewer-widget';
     container.element.appendChild(this._element);
 
+    if (!THREE) {
+      if (isStaticMode(app)) {
+        this._showInfo('The 3D view is not available in saved reports.');
+      } else {
+        this._showError('three.js is missing from the page.');
+      }
+      this._destroyed = true;
+      return;
+    }
+
     // Canvas container fills the widget; gives the absolute-positioned
     // tooltip a relative origin to anchor against.
     this._canvasContainer = document.createElement('div');
@@ -93,7 +105,7 @@ export class ThreeDViewerWidget {
 
     // Tooltip shown on chiplet hover (raycasting).
     this._tooltip = document.createElement('div');
-    this._tooltip.className = 'three-d-tooltip';
+    this._tooltip.className = 'or-tooltip';
     this._canvasContainer.appendChild(this._tooltip);
 
     this._optionsOverlay = this._createOptionsOverlay();
@@ -306,10 +318,12 @@ export class ThreeDViewerWidget {
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'margin-top:4px; display:flex; gap:4px;';
     const savePng = document.createElement('button');
+    savePng.className = 'or-btn or-btn-sm';
     savePng.textContent = 'Save PNG';
     savePng.title = 'Save the 3D view as a PNG image (2x resolution)';
     savePng.addEventListener('click', () => this._exportPng(2));
     const copyBtn = document.createElement('button');
+    copyBtn.className = 'or-btn or-btn-sm';
     copyBtn.textContent = 'Copy';
     copyBtn.title = 'Copy the 3D view image to the clipboard';
     copyBtn.addEventListener('click', () => this._copyImage(2));

@@ -1,0 +1,35 @@
+# Two supply nets, each feeding one inverter through a via stack and a
+# 100um long, 0.17um wide metal3 wire with a source at its far end. The
+# wire of VDD_STRAIGHT runs horizontally, the wire of VDD_45 at 45 degrees:
+# (21000 122800) to (162420 264220) is 141420 * sqrt(2) = 200000 long.
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN ir_45 ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 400000 300000 ) ;
+VIAS 2 ;
+    - via1_pg + RECT metal1 ( -170 -170 ) ( 170 170 )
+      + RECT via1 ( -70 -70 ) ( 70 70 )
+      + RECT metal2 ( -170 -170 ) ( 170 170 ) ;
+    - via2_pg + RECT metal2 ( -170 -170 ) ( 170 170 )
+      + RECT via2 ( -70 -70 ) ( 70 70 )
+      + RECT metal3 ( -170 -170 ) ( 170 170 ) ;
+END VIAS
+COMPONENTS 2 ;
+    - u1 INV_X1 + PLACED ( 20000 20000 ) N ;
+    - u2 INV_X1 + PLACED ( 20000 120000 ) N ;
+END COMPONENTS
+SPECIALNETS 2 ;
+    - VDD_STRAIGHT ( u1 VDD ) + USE POWER
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 19000 22800 ) ( 22000 22800 )
+      NEW metal1 0 + SHAPE STRIPE ( 21000 22800 ) via1_pg
+      NEW metal2 0 + SHAPE STRIPE ( 21000 22800 ) via2_pg
+      NEW metal3 340 + SHAPE STRIPE ( 21000 22800 ) ( 221000 22800 ) ;
+    - VDD_45 ( u2 VDD ) + USE POWER
+      + ROUTED metal1 340 + SHAPE FOLLOWPIN ( 19000 122800 ) ( 22000 122800 )
+      NEW metal1 0 + SHAPE STRIPE ( 21000 122800 ) via1_pg
+      NEW metal2 0 + SHAPE STRIPE ( 21000 122800 ) via2_pg
+      NEW metal3 340 + SHAPE STRIPE ( 21000 122800 ) ( 162420 264220 ) ;
+END SPECIALNETS
+END DESIGN

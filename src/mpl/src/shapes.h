@@ -6,6 +6,15 @@
 #include <cstdint>
 namespace mpl {
 
+struct Channel
+{
+  Channel() = default;
+  Channel(int width, int height) : width(width), height(height) {}
+
+  int width{0};
+  int height{0};
+};
+
 struct Interval
 {
   Interval() = default;

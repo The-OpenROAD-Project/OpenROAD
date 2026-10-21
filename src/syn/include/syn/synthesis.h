@@ -110,6 +110,10 @@ class Synthesis : public sta::dbStaState
   // combinational driver) whose value is provably never A with a constant.
   void livenessOpt(bool replace_combinational = false);
 
+  // Fail if the graph contains a combinational loop (e.g. an inferred
+  // latch), which the flow cannot implement faithfully.
+  void checkCombinationalLoops();
+
   // Export the mapped netlist to ODB.
   void exportToOdb();
 
@@ -149,5 +153,6 @@ void abcRoundtrip(Graph& g,
 void livenessOpt(Graph& g,
                  utl::Logger* logger,
                  bool replace_combinational = false);
+void checkCombinationalLoops(Graph& g, utl::Logger* logger);
 
 }  // namespace syn

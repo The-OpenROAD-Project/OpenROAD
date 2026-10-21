@@ -602,6 +602,11 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
 
 void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 {
+  // Mirror the watermark property for both imported and reused nets so the
+  // maze router sees tag changes made after pin access, including removals.
+  auto* wm_prop = odb::dbBoolProperty::find(net, "watermark");
+  netIn->setIsWatermark(wm_prop != nullptr && wm_prop->getValue());
+
   for (auto term : net->getBTerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
       logger_->error(DRT,
@@ -2619,6 +2624,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (!rule->getMinimumCuts(numCuts, width)) {
       continue;
     }
+    // Every via has at least one cut, so a single-cut rule can't be violated.
+    if (numCuts <= 1) {
+      continue;
+    }
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
@@ -3322,17 +3331,19 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   }
 
   const int max_routing_layer = block->getMaxRoutingLayer();
+  frLayer* top_layer = nullptr;
   if (max_routing_layer > 0) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(max_routing_layer);
-    frLayer* layer = fr_tech->getLayer(tech_layer->getName());
-    if (layer) {
-      router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
+    top_layer = fr_tech->getLayer(tech_layer->getName());
+    if (!top_layer) {
       logger_->warn(utl::DRT,
                     273,
                     "topRoutingLayer {} not found.",
                     tech_layer->getName());
     }
+  }
+  if (top_layer) {
+    router_cfg_->TOP_ROUTING_LAYER = top_layer->getLayerNum();
   } else {
     for (frLayerNum layer_num = fr_tech->getTopLayerNum();
          layer_num >= fr_tech->getBottomLayerNum();
@@ -3909,7 +3920,6 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
         }
       }
       _wire_encoder.end();
-      net->setWireOrdered(false);
     }
   }
 }

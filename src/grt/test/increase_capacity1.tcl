@@ -22,4 +22,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file increase_capacity1.guideok $guide_file
+diff_files increase_capacity1.guideok $guide_file

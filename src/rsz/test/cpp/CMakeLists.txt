@@ -174,7 +174,17 @@ gtest_discover_tests(TestNestedJournal
 add_dependencies(build_and_test TestNestedJournal
 )
 
-add_executable(TestResizerMt TestResizerMt.cc)
+add_executable(TestResizerMt
+    TestCellSwapMt.cc
+    TestDelayEstimatorMt.cc
+    TestParallelEvalPolicy.cc
+    TestRepairSetupAnalysis.cc
+    TestRepairSetupProfiler.cc
+    TestRepairTargetCollector.cc
+    TestResizerMt.cc
+    TestSplitLoadMt.cc
+    TestUnbufferMt.cc
+)
 target_link_libraries(TestResizerMt
         OpenSTA
         GTest::gtest
@@ -229,4 +239,33 @@ gtest_discover_tests(TestRepairHoldRollback
 )
 
 add_dependencies(build_and_test TestRepairHoldRollback
+)
+
+add_executable(TestRepairHold TestRepairHold.cc)
+target_link_libraries(TestRepairHold
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst_integrated_fixture
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestRepairHold
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestRepairHold
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestRepairHold
 )
