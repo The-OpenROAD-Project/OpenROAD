@@ -110,9 +110,9 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
                                   double tol_total,
                                   double tol_coupling,
                                   double coupling_threshold,
-                                  int min_walks,
-                                  int max_walks,
-                                  int seed,
+                                  long long min_walks,
+                                  long long max_walks,
+                                  long long seed,
                                   int panels)
 {
   // A negative value keeps the default.

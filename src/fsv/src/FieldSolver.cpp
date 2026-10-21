@@ -136,8 +136,16 @@ void FieldSolver::addLayerRect(const std::string_view net,
                      layer);
     }
     const Stack::Conductor* lower = stack_.findConductor(via->lower);
+    const Stack::Conductor* upper = stack_.findConductor(via->upper);
+    if (upper == nullptr) {
+      logger_->error(utl::FSV,
+                     13,
+                     "Via {} has no upper conductor {} in the ITF stack.",
+                     layer,
+                     via->upper);
+    }
     bottom = lower != nullptr ? lower->top : 0.0;
-    top = stack_.findConductor(via->upper)->bottom;
+    top = upper->bottom;
   }
   addBox(net, {{rect[0], rect[1], bottom}, {rect[2], rect[3], top}});
 }
@@ -189,18 +197,23 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
       .seed = settings.seed,
       .panels = settings.panels,
   };
+  if (!solver_ || solver_options_.threads != options.threads
+      || solver_options_.seed != options.seed
+      || solver_options_.panels != options.panels) {
+    solver_.reset();
+    try {
+      solver_ = std::make_unique<Solver>(options);
+    } catch (const std::exception& e) {
+      logger_->error(utl::FSV, 12, "{}", coreMessage(e));
+    }
+    solver_options_ = options;
+  }
+  // Outside the try below, so that its own error is not reported again.
+  const Scene& s = scene();
   NetCapacitance result;
   result.net = std::string(net);
   result.nets = netNames();
   try {
-    if (!solver_ || solver_options_.threads != options.threads
-        || solver_options_.seed != options.seed
-        || solver_options_.panels != options.panels) {
-      solver_.reset();
-      solver_ = std::make_unique<Solver>(options);
-      solver_options_ = options;
-    }
-    const Scene& s = scene();
     const auto start = std::chrono::steady_clock::now();
     result.row = solver_->solve(s, master, settings.options);
     result.seconds = std::chrono::duration<double>(

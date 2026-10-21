@@ -75,15 +75,15 @@ proc solve_capacitance { args } {
 
   # -1 keeps the solver's default.
   set values {}
-  foreach {key check} {-tol_total check_positive_float \
-                       -tol_coupling check_positive_float \
-                       -coupling_threshold check_positive_float \
-                       -min_walks check_positive_integer \
-                       -max_walks check_positive_integer \
-                       -seed check_positive_integer \
-                       -panels check_positive_integer} {
+  foreach {key check} {-tol_total fsv::check_tolerance \
+                       -tol_coupling fsv::check_tolerance \
+                       -coupling_threshold fsv::check_fraction \
+                       -min_walks {fsv::check_count 0} \
+                       -max_walks {fsv::check_count 1} \
+                       -seed {fsv::check_count 0} \
+                       -panels fsv::check_panels} {
     if { [info exists keys($key)] } {
-      sta::$check $key $keys($key)
+      {*}$check $key $keys($key)
       lappend values $keys($key)
     } else {
       lappend values -1
@@ -107,6 +107,32 @@ proc solve_capacitance { args } {
 }
 
 namespace eval fsv {
+proc check_tolerance { key value } {
+  if { !([string is double -strict $value] && $value > 0) } {
+    utl::error FSV 25 "$key must be a number greater than 0."
+  }
+}
+
+proc check_fraction { key value } {
+  if { !([string is double -strict $value] && $value >= 0 && $value <= 1) } {
+    utl::error FSV 26 "$key must be a number from 0 to 1."
+  }
+}
+
+# An integer from min to the largest 64-bit signed integer.
+proc check_count { min key value } {
+  if { !([string is wide -strict $value] && $value >= $min) } {
+    utl::error FSV 27 "$key must be an integer of at least $min."
+  }
+}
+
+proc check_panels { key value } {
+  if { !([string is integer -strict $value] && $value > 0
+         && $value % 16 == 0) } {
+    utl::error FSV 28 "$key must be a positive multiple of 16."
+  }
+}
+
 # The numbers in a list, which must have the given length.
 proc check_numbers { key values count } {
   if { [llength $values] != $count } {

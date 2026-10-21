@@ -9,6 +9,13 @@
 [WARNING FSV-0003] Ignoring 7 conformal dielectrics, which are not supported yet.
 [ERROR FSV-0007] Layer met9 is not a conductor or via of the ITF stack.
 [ERROR FSV-0009] Net b has no boxes.
+[ERROR FSV-0025] -tol_total must be a number greater than 0.
+[ERROR FSV-0026] -coupling_threshold must be a number from 0 to 1.
+[ERROR FSV-0027] -max_walks must be an integer of at least 1.
+[ERROR FSV-0028] -panels must be a positive multiple of 16.
+[ERROR FSV-0012] panels must be a positive multiple of 16
+[INFO FSV-0011] Net a: total 0.16297 fF +- 0.0048 after 16384 walks (110.2 hops per walk).
+  ground                    0.16297 +- 0.0048 fF
 [ERROR FSV-0001] ITF: cannot open missing.itf
-Summary 10 / 10 (100% pass)
+Summary 16 / 16 (100% pass)
 pass

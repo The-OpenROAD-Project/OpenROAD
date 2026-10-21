@@ -149,14 +149,14 @@ solve_capacitance
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float`. The default is `0.01`. |
-| `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`. The default is `100000000`. |
+| `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float` in the range `[0, 1]`. The default is `0.01`. |
+| `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`, at least 1. The default is `100000000`. |
 | `-min_walks` | Walks before the tolerances are first checked. The type is `int`. The default is `16384`. |
 | `-nets` | Master nets to solve. The type is a list of net names. The default is every net. |
 | `-panels` | Panels per cube-face edge in the Green's-function tables. The type is `int`, a positive multiple of 16. The default is `32`. |
-| `-seed` | Random seed. The type is `int`. The default is `1`. |
-| `-tol_coupling` | Target standard error of each coupling, relative to the coupling. The type is `float`. The default is `0.05`. |
-| `-tol_total` | Target standard error of the total, relative to the total. The type is `float`. The default is `0.01`. |
+| `-seed` | Random seed. The type is `int`, from 0 to 2^63 - 1. The default is `1`. |
+| `-tol_coupling` | Target standard error of each coupling, relative to the coupling. The type is `float`, greater than 0. The default is `0.05`. |
+| `-tol_total` | Target standard error of the total, relative to the total. The type is `float`, greater than 0. The default is `0.01`. |
 
 ## Example scripts
 
