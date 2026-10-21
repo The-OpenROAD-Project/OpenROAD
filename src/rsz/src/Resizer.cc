@@ -7647,8 +7647,8 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
-    // Skip the max-cap check on scan-enable/scan-in pins only when the pin's
-    // net is high fanout (fanout exceeds the max-fanout limit).
+    // Skip the max-cap check on scan-enable/scan-in pins because they
+    // tend to be high fanout pins
     if (db_network_ != nullptr && mode != nullptr) {
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
@@ -7657,18 +7657,7 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       if (iterm != nullptr
           && (db_network_->isScanEnable(iterm)
               || db_network_->isScanIn(iterm))) {
-        bool high_fanout = false;
-        for (const sta::Pin* driver_pin : *drivers) {
-          float fanout = 0.0f, max_fanout = 0.0f, fanout_slack = 0.0f;
-          checkFanout(driver_pin, mode, max_, fanout, max_fanout, fanout_slack);
-          if (max_fanout > 0.0f && fanout > max_fanout) {
-            high_fanout = true;
-            break;
-          }
-        }
-        if (high_fanout) {
-          continue;
-        }
+        continue;
       }
     }
 
