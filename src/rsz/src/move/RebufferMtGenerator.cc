@@ -123,7 +123,7 @@ RebufferLoadTimingMap RebufferMtGenerator::collectLoadTiming(
 
 bool RebufferMtGenerator::isApplicable(const Target& target) const
 {
-  return MoveGenerator::isApplicable(target) && target.fanout > 1
+  return MoveGenerator::isApplicable(target) && target.fanout >= 1
          && target.fanout < kRebufferMaxFanout
          && resizer_.okToBufferNet(target.driver_pin)
          && target.estimator_context.has_value();
