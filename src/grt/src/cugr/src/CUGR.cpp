@@ -999,8 +999,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     grid_graph_->addTreeUsage(*net);
     delta += grid_graph_->sumOverflow(touched_edges);
     // Relief neighbors move only if overflow drops; others may move sideways.
-    const bool strict = options.strict_accept != nullptr
-                        && (*options.strict_accept)[net_index];
+    const bool strict
+        = !options.strict_accept.empty() && options.strict_accept[net_index];
     const bool keep
         = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
     if (!keep) {
@@ -1600,10 +1600,9 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     is_candidate[index] = 1;
   }
   // Neighbors move only if overflow drops; the passes keep the slacks.
-  std::vector<char> strict_accept(gr_nets_.size(), 0);
-  const RerouteOptions options{.reroute_all_candidates = false,
-                               .strict_accept = &strict_accept,
-                               .refresh_critical = false};
+  RerouteOptions options{.reroute_all_candidates = false,
+                         .strict_accept = std::vector<char>(gr_nets_.size(), 0),
+                         .refresh_critical = false};
   // Each added net's tree before the relief; a rolled-back reroute keeps it.
   std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
   std::vector<int> net_indices;
@@ -1649,7 +1648,7 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     // Added nets join the candidates under strict acceptance.
     for (const int index : added) {
       is_candidate[index] = 1;
-      strict_accept[index] = 1;
+      options.strict_accept[index] = 1;
       incremental_candidates_.push_back(index);
       added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
     }

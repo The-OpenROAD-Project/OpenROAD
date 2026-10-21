@@ -292,7 +292,7 @@ class CUGR
     // Incremental only: reroute every candidate, not only the congested ones.
     bool reroute_all_candidates = true;
     // Per net index, nonzero: keep a reroute only if it lowers overflow.
-    const std::vector<char>* strict_accept = nullptr;
+    std::vector<char> strict_accept;
     // Refresh slacks and the critical set before a maze pass.
     bool refresh_critical = true;
   };
