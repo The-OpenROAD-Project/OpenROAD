@@ -244,9 +244,9 @@ void CUGR::clear()
   nets_to_route_.clear();
   incremental_candidates_.clear();
   strict_accept_.clear();
+  relieving_overflow_ = false;
   incremental_extra_reroutes_.clear();
   overflow_baseline_.clear();
-  stale_nets_.clear();
   incremental_routing_ = false;
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
@@ -1598,6 +1598,16 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
   }
   strict_accept_.assign(gr_nets_.size(), 0);
   relieving_overflow_ = true;
+  // Resets the relief state on every exit, an error included.
+  struct ReliefScope
+  {
+    CUGR& cugr;
+    ~ReliefScope()
+    {
+      cugr.relieving_overflow_ = false;
+      cugr.strict_accept_.clear();
+    }
+  } relief_scope{*this};
   for (int round = 1; round <= kMaxRounds && !hot_edges.empty(); round++) {
     std::vector<std::pair<int, int>> hot_cells;
     BoxT window;
@@ -1624,8 +1634,7 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
     std::vector<int> added;
     for (const auto& net : gr_nets_) {
       if (net == nullptr || is_candidate[net->getIndex()]
-          || net->getNumPins() < 2 || !net->getRoutingTree()
-          || stale_nets_.contains(net->getIndex())
+          || net->getNumPins() < 2 || !net->getRoutingTree() || net->isStale()
           || !near_hot(net->getBoundingBox())) {
         continue;
       }
@@ -1672,8 +1681,6 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
     }
     hot_edges = overflowed_edges();
   }
-  relieving_overflow_ = false;
-  strict_accept_.clear();
 }
 
 void CUGR::captureOverflowBaseline()
@@ -1685,7 +1692,7 @@ void CUGR::markNetStale(odb::dbNet* db_net)
 {
   const auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end() && it->second != nullptr) {
-    stale_nets_.insert(it->second->getIndex());
+    it->second->setStale(true);
   }
 }
 
@@ -2418,7 +2425,6 @@ void CUGR::updateNet(odb::dbNet* db_net)
       gr_nets_[idx]->setSoftNdr();
     }
     db_net_map_[db_net] = gr_nets_[idx].get();
-    stale_nets_.erase(idx);
     nets_to_route_.push_back(idx);
   } else {
     const int idx = design_->updateNet(db_net);
@@ -2594,8 +2600,6 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     new_net->setSoftNdr();
   }
   db_net_map_[db_net] = new_net;
-  // Rebuilt from the current pins, like updateNet, so no longer stale.
-  stale_nets_.erase(new_net->getIndex());
 
   // Each pin must land on the restored tree; record the access point it uses so
   // getITermsAccessPoints/updatePinAccessPoints stay in sync (as after a

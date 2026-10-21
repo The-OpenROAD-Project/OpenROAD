@@ -420,8 +420,6 @@ class CUGR
   std::vector<int> incremental_extra_reroutes_;
   // True while relieveIncrementalOverflow runs its maze passes.
   bool relieving_overflow_ = false;
-  // Indices of the nets markNetStale flagged.
-  std::unordered_set<int> stale_nets_;
   // Overflow per (layer, x, y) edge at the last captureOverflowBaseline (a
   // full route or adopted routing); the relief ignores it.
   std::vector<std::pair<std::array<int, 3>, double>> overflow_baseline_;
