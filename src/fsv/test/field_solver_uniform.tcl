@@ -14,8 +14,10 @@ check "couplings name the other nets" { dict keys [dict get $result a couplings]
 # The matrix is symmetric within the statistical error.
 set c_ab [dict get $result a couplings b]
 set c_ba [dict get $result b couplings a]
-set sigma [expr { hypot([dict get $result a coupling_sigmas b], \
-  [dict get $result b coupling_sigmas a]) }]
+set sigma [expr {
+  hypot([dict get $result a coupling_sigmas b],
+    [dict get $result b coupling_sigmas a])
+}]
 check "couplings are reciprocal" { expr { abs($c_ab - $c_ba) < 4 * $sigma } } 1
 
 # The permittivity scales every entry.

@@ -16,7 +16,7 @@ check_error "a box below the ground plane" {
   add_field_solver_box -net a -box {0 0 -1 1 1 1}
 } FSV-0005
 check_error "a permittivity must be positive" {
-  fsv::set_permittivity_cmd 0
+  set_field_solver_permittivity 0
 } FSV-0004
 
 read_itf sky130.itf

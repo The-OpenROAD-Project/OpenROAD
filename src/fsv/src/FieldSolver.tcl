@@ -127,8 +127,10 @@ proc check_count { min key value } {
 }
 
 proc check_panels { key value } {
-  if { !([string is integer -strict $value] && $value > 0
-         && $value % 16 == 0) } {
+  if {
+    !([string is integer -strict $value] && $value > 0
+      && $value % 16 == 0)
+  } {
     utl::error FSV 28 "$key must be a positive multiple of 16."
   }
 }
