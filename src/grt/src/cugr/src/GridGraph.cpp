@@ -1526,15 +1526,37 @@ void GridGraph::collectTreeEdges(const GRNet& net,
   edges.erase(duplicates.begin(), duplicates.end());
 }
 
+CapacityT GridGraph::edgeOverflow(const std::array<int, 3>& edge) const
+{
+  const GraphEdge& graph_edge = graph_edges_[edge[0]][edge[1]][edge[2]];
+  return std::max<CapacityT>(0.0, graph_edge.demand - graph_edge.capacity);
+}
+
 double GridGraph::sumOverflow(
     const std::vector<std::array<int, 3>>& edges) const
 {
   double overflow = 0.0;
-  for (const auto& [layer, x, y] : edges) {
-    const GraphEdge& edge = graph_edges_[layer][x][y];
-    overflow += std::max<CapacityT>(0.0, edge.demand - edge.capacity);
+  for (const auto& edge : edges) {
+    overflow += edgeOverflow(edge);
   }
   return overflow;
+}
+
+std::vector<std::pair<std::array<int, 3>, CapacityT>>
+GridGraph::overflowedEdges() const
+{
+  std::vector<std::pair<std::array<int, 3>, CapacityT>> edges;
+  for (int layer = constants_.min_routing_layer; layer < num_layers_; layer++) {
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        const std::array<int, 3> edge{layer, x, y};
+        if (const CapacityT overflow = edgeOverflow(edge); overflow > 0.0) {
+          edges.emplace_back(edge, overflow);
+        }
+      }
+    }
+  }
+  return edges;
 }
 
 void GridGraph::write(const std::string& heatmap_file) const

@@ -1276,7 +1276,7 @@ BnetSeq Rebuffer::areaRecoveryOptions(const BufferedNetPtr& root,
               errorAreaRecoveryUnreproducible();
             }
             if (!assured_found) {
-              insertAssuredOption(opts, assured_fallback, level);
+              insertAssuredOption(opts, std::move(assured_fallback), level);
             }
             return opts;
           }

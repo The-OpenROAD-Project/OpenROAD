@@ -165,6 +165,9 @@ class GRNet
   // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
   bool isAdopted() const { return adopted_; }
   void setAdopted(bool adopted) { adopted_ = adopted; }
+  // Pins out of date (GlobalRouter kept the old route): the relief skips it.
+  bool isStale() const { return stale_; }
+  void setStale(bool stale) { stale_ = stale; }
 
  private:
   int index_;
@@ -181,6 +184,7 @@ class GRNet
   bool is_critical_;
   bool is_res_aware_ = false;
   bool adopted_ = false;
+  bool stale_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

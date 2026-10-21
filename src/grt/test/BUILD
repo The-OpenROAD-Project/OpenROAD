@@ -4,6 +4,11 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["upper_layer_net.def"],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 TESTS = [
     "bus_route",
     "check_antennas_cugr",
@@ -97,6 +102,9 @@ TESTS = [
     "remove_buffers5_cugr",
     "remove_buffers6_cugr",
     "remove_buffers3",
+    "remove_buffers7",
+    "remove_buffers8",
+    "remove_buffers9",
     "repair_antennas1",
     "repair_antennas2",
     "repair_antennas2_cugr",
@@ -114,6 +122,8 @@ TESTS = [
     "repair_antennas_post_drt_above_max_layer_cugr",
     "repair_antennas_post_drt_below_min_cugr",
     "repair_antennas_post_drt_cugr",
+    "repair_antennas_post_drt_relief_cugr",
+    "repair_antennas_post_drt_relief_ndr_cugr",
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",

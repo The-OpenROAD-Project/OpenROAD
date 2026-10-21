@@ -1,413 +1,456 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { LitElement, html } from 'lit';
+import { ref, createRef } from 'lit/directives/ref.js';
+import { when } from 'lit/directives/when.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+
 // ─── Native CSS Grid IDE Layout Manager & Custom Elements ────────────────────
 
-const BaseElement = typeof HTMLElement !== 'undefined' ? HTMLElement : class {};
-
 /**
- * <ide-pane> - Encapsulated IDE window pane custom element.
+ * <ide-pane> - Encapsulated IDE window pane custom element using Lit.
  * Manages its header (tab bar and action controls) and content viewport.
  */
-export class IdePaneElement extends BaseElement {
+export class IdePaneElement extends LitElement {
+    static properties = {
+        name: { type: String, reflect: true },
+        maximizable: { type: Boolean, reflect: true },
+        collapsible: { type: Boolean, reflect: true },
+        maximized: { type: Boolean, reflect: true },
+        collapsed: { type: Boolean, reflect: true },
+    };
+
     constructor() {
         super();
-        this._initialized = false;
-        this._headerEl = null;
-        this._tabsEl = null;
-        this._contentEl = null;
-        this._controlsEl = null;
-        this._maxBtn = null;
-        this._colBtn = null;
+        this.tabsRef = createRef();
+        this.contentRef = createRef();
+        this.headerRef = createRef();
+        this.controlsRef = createRef();
+        this.maximizeBtnRef = createRef();
+        this.collapseBtnRef = createRef();
+        this._onMaximizeClick = this._onMaximizeClick.bind(this);
+        this._onCollapseClick = this._onCollapseClick.bind(this);
+        this._onResetLayoutClick = this._onResetLayoutClick.bind(this);
+    }
+
+    createRenderRoot() {
+        return this;
     }
 
     connectedCallback() {
-        this.build();
+        super.connectedCallback();
+        this.classList.add('ide-pane', `ide-pane-${this.paneName}`);
+        this.performUpdate();
     }
 
-    /**
-     * Builds the pane's header and content hierarchy.
-     * Idempotent: safe to invoke multiple times or prior to DOM connection.
-     */
-    build() {
-        if (this._initialized) return;
-        this._initialized = true;
-
-        const name = this.paneName;
-        this.classList.add('ide-pane', `ide-pane-${name}`);
-
-        // If existing markup is already present (e.g. pre-rendered)
-        const existingHeader = this.querySelector(':scope > .ide-header') || this.querySelector(`#pane-${name}-header`);
-        if (existingHeader) {
-            this._bindHeaderControls(existingHeader);
-            this._contentEl = this.querySelector(':scope > .ide-content') || this.querySelector(`#pane-${name}-content`);
-            return;
-        }
-
-        const prefix = this.id || `pane-${name}`;
-        const hasMax = this.hasAttribute('maximizable');
-        const hasCol = this.hasAttribute('collapsible');
-
-        const colIcon = name === 'bottom' ? '▼' : (name === 'left' ? '◀' : '▶');
-        const colTitle = `Collapse ${name.charAt(0).toUpperCase() + name.slice(1)}`;
-
-        // Build header, tabs, controls, and content containers directly
-        this.innerHTML = `
-            <div class="ide-header" id="${prefix}-header">
-                <div class="ide-tabs" id="${prefix}-tabs"></div>
-                <div class="ide-controls" id="${prefix}-controls">
-                    ${hasMax ? `<button class="ide-btn ide-btn-maximize" id="btn-maximize-${name}" title="Toggle Maximize">⤢</button>` : ''}
-                    ${hasCol ? `<button class="ide-btn ide-btn-collapse" id="btn-collapse-${name}" title="${colTitle}">${colIcon}</button>` : ''}
-                </div>
-            </div>
-            <div class="ide-content" id="${prefix}-content">
-                ${name === 'main' ? `
-                    <div id="ide-empty-state" class="ide-empty-state" style="display: none;">
-                        <div class="ide-empty-icon">⧉</div>
-                        <div class="ide-empty-title">All views are closed</div>
-                        <div class="ide-empty-desc">Reopen a view from the Windows menu or restore the default layout.</div>
-                        <button id="btn-empty-reset-layout" class="or-btn or-btn-primary">Reset to Default Layout</button>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-
-        this._bindHeaderControls(this.querySelector('.ide-header'));
-        this._contentEl = this.querySelector('.ide-content');
-        this._wireEvents(name);
-    }
-
-    /**
-     * Normalized pane name identifier (e.g. 'left', 'main', 'bottom', 'right').
-     */
     get paneName() {
-        return this.getAttribute('name') || this.id.replace(/^pane-/, '') || 'pane';
-    }
-
-    /**
-     * Discovers and binds internal references to header controls.
-     */
-    _bindHeaderControls(header) {
-        this._headerEl = header;
-        this._tabsEl = header?.querySelector('.ide-tabs') || null;
-        this._controlsEl = header?.querySelector('.ide-controls') || null;
-        this._maxBtn = header?.querySelector('.ide-btn-maximize') || null;
-        this._colBtn = header?.querySelector('.ide-btn-collapse') || null;
-    }
-
-    /**
-     * Wires action button events (maximize, collapse, empty-state reset).
-     */
-    _wireEvents(name) {
-        this._maxBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.dispatchEvent(new CustomEvent('ide-pane-maximize', {
-                bubbles: true,
-                detail: { pane: name },
-            }));
-        });
-
-        this._colBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.dispatchEvent(new CustomEvent('ide-pane-collapse', {
-                bubbles: true,
-                detail: { pane: name },
-            }));
-        });
-
-        const resetBtn = this.querySelector('#btn-empty-reset-layout');
-        resetBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.dispatchEvent(new CustomEvent('ide-layout-reset', { bubbles: true }));
-        });
+        return this.name || this.getAttribute('name') || this.id.replace(/^pane-/, '') || 'pane';
     }
 
     get tabsEl() {
-        this.build();
-        return this._tabsEl || this.querySelector('.ide-tabs');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.tabsRef.value;
     }
 
     get contentEl() {
-        this.build();
-        return this._contentEl || this.querySelector('.ide-content');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.contentRef.value;
     }
 
     get headerEl() {
-        this.build();
-        return this._headerEl || this.querySelector('.ide-header');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.headerRef.value;
     }
 
     get controlsEl() {
-        this.build();
-        return this._controlsEl || this.querySelector('.ide-controls');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.controlsRef.value;
     }
 
     get maximizeBtn() {
-        this.build();
-        return this._maxBtn || this.querySelector('.ide-btn-maximize');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.maximizeBtnRef.value;
     }
 
     get collapseBtn() {
-        this.build();
-        return this._colBtn || this.querySelector('.ide-btn-collapse');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.collapseBtnRef.value;
+    }
+
+    get _collapseIcon() {
+        const name = this.paneName;
+        if (name === 'bottom') return this.collapsed ? '▲' : '▼';
+        if (name === 'left') return this.collapsed ? '▶' : '◀';
+        if (name === 'right') return this.collapsed ? '◀' : '▶';
+        return '▼';
+    }
+
+    get _collapseTitle() {
+        const name = this.paneName;
+        const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+        if (name === 'bottom') return this.collapsed ? 'Expand Console' : 'Collapse Console';
+        if (name === 'left') return this.collapsed ? 'Expand Left Panel' : 'Collapse Left Panel';
+        if (name === 'right') return this.collapsed ? 'Expand Right Panel' : 'Collapse Right Panel';
+        return `Collapse ${capitalized}`;
+    }
+
+    _emit(type, detail = {}) {
+        this.dispatchEvent(new CustomEvent(type, {
+            bubbles: true,
+            composed: true,
+            detail,
+        }));
+    }
+
+    _onMaximizeClick(e) {
+        e.stopPropagation();
+        this._emit('ide-pane-maximize', { pane: this.paneName });
+    }
+
+    _onCollapseClick(e) {
+        e.stopPropagation();
+        this._emit('ide-pane-collapse', { pane: this.paneName });
+    }
+
+    _onResetLayoutClick(e) {
+        e.stopPropagation();
+        this._emit('ide-layout-reset');
     }
 
     setMaximized(isMax) {
-        this.classList.toggle('maximized', !!isMax);
-        const btn = this.maximizeBtn;
-        if (btn) {
-            btn.textContent = isMax ? '⧉' : '⤢';
-            btn.title = isMax ? 'Restore' : 'Maximize';
+        this.maximized = !!isMax;
+        this.classList.toggle('maximized', this.maximized);
+        if (this.maximizeBtn) {
+            this.maximizeBtn.textContent = this.maximized ? '⧉' : '⤢';
+            this.maximizeBtn.title = this.maximized ? 'Restore' : 'Maximize';
         }
     }
 
     setCollapsed(isCollapsed) {
-        const name = this.getAttribute('name') || this.id.replace(/^pane-/, '');
-        const btn = this.collapseBtn;
-        if (btn) {
-            if (name === 'bottom') {
-                btn.textContent = isCollapsed ? '▲' : '▼';
-                btn.title = isCollapsed ? 'Expand Console' : 'Collapse Console';
-            } else if (name === 'left') {
-                btn.textContent = isCollapsed ? '▶' : '◀';
-                btn.title = isCollapsed ? 'Expand Left Panel' : 'Collapse Left Panel';
-            } else if (name === 'right') {
-                btn.textContent = isCollapsed ? '◀' : '▶';
-                btn.title = isCollapsed ? 'Expand Right Panel' : 'Collapse Right Panel';
-            }
+        this.collapsed = !!isCollapsed;
+        this.classList.toggle('collapsed', this.collapsed);
+        if (this.collapseBtn) {
+            this.collapseBtn.textContent = this._collapseIcon;
+            this.collapseBtn.title = this._collapseTitle;
         }
+    }
+
+    build() {
+        if (!this.hasUpdated) this.performUpdate();
+    }
+
+    updated(changedProperties) {
+        super.updated(changedProperties);
+        if (changedProperties.has('maximized')) {
+            this.classList.toggle('maximized', !!this.maximized);
+        }
+        if (changedProperties.has('collapsed')) {
+            this.classList.toggle('collapsed', !!this.collapsed);
+        }
+    }
+
+    render() {
+        const name = this.paneName;
+        const prefix = this.id || `pane-${name}`;
+        const hasMax = this.maximizable || this.hasAttribute('maximizable');
+        const hasCol = this.collapsible || this.hasAttribute('collapsible');
+
+        return html`
+            <div class="ide-header" id="${prefix}-header" ${ref(this.headerRef)}>
+                <div class="ide-tabs" id="${prefix}-tabs" ${ref(this.tabsRef)}></div>
+                <div class="ide-controls" id="${prefix}-controls" ${ref(this.controlsRef)}>
+                    ${when(hasMax, () => html`
+                        <button
+                            class="ide-btn ide-btn-maximize"
+                            id="btn-maximize-${name}"
+                            title=${ifDefined(this.maximized ? 'Restore' : 'Maximize')}
+                            ${ref(this.maximizeBtnRef)}
+                            @click=${this._onMaximizeClick}
+                        >${this.maximized ? '⧉' : '⤢'}</button>
+                    `)}
+                    ${when(hasCol, () => html`
+                        <button
+                            class="ide-btn ide-btn-collapse"
+                            id="btn-collapse-${name}"
+                            title=${ifDefined(this._collapseTitle)}
+                            ${ref(this.collapseBtnRef)}
+                            @click=${this._onCollapseClick}
+                        >${this._collapseIcon}</button>
+                    `)}
+                </div>
+            </div>
+            <div class="ide-content" id="${prefix}-content" ${ref(this.contentRef)}>
+                ${when(name === 'main', () => html`
+                    <div id="ide-empty-state" class="ide-empty-state" style="display: none;">
+                        <div class="ide-empty-icon">⧉</div>
+                        <div class="ide-empty-title">All views are closed</div>
+                        <div class="ide-empty-desc">Reopen a view from the Windows menu or restore the default layout.</div>
+                        <button
+                            id="btn-empty-reset-layout"
+                            class="or-btn or-btn-primary"
+                            @click=${this._onResetLayoutClick}
+                        >Reset to Default Layout</button>
+                    </div>
+                `)}
+            </div>
+        `;
     }
 }
 
 /**
- * <ide-splitter> - Drag-to-resize gutter splitter custom element.
- * Encapsulates pointer capture, resizing styles, and drag events.
+ * Reusable Lit Reactive Controller for pointer dragging and resizing.
+ * Encapsulates pointer capture, coordinate delta tracking, and leak-proof window listeners.
  */
-export class IdeSplitterElement extends BaseElement {
-    constructor() {
-        super();
-        this._initialized = false;
-        this._onPointerDown = this._onPointerDown.bind(this);
-        this._onPointerMove = this._onPointerMove.bind(this);
-        this._onPointerUp = this._onPointerUp.bind(this);
-        this._onDblClick = this._onDblClick.bind(this);
+export class DragController {
+    constructor(host, options = {}) {
+        (this.host = host).addController(this);
+        this.options = options;
+        this._abort = null;
+        this.isDragging = false;
+        this.startPos = 0;
     }
 
-    connectedCallback() {
-        this.build();
+    hostDisconnected() {
+        this.stop();
     }
 
-    build() {
-        if (this._initialized) return;
-        this._initialized = true;
-
-        const orientation = this.getAttribute('orientation') || 'vertical';
-        const isVertical = orientation === 'vertical';
-
-        this.setAttribute('role', 'separator');
-        this.setAttribute('aria-orientation', orientation);
-        this.classList.add('ide-splitter', isVertical ? 'ide-splitter-v' : 'ide-splitter-h');
-
-        this.addEventListener('pointerdown', this._onPointerDown);
-        this.addEventListener('dblclick', this._onDblClick);
-    }
-
-    disconnectedCallback() {
-        this.removeEventListener('pointerdown', this._onPointerDown);
-        this.removeEventListener('dblclick', this._onDblClick);
-        window.removeEventListener('pointermove', this._onPointerMove);
-        window.removeEventListener('pointerup', this._onPointerUp);
-        window.removeEventListener('pointercancel', this._onPointerUp);
-    }
-
-    get targetPane() {
-        return this.getAttribute('for') || '';
-    }
-
-    get isVertical() {
-        return (this.getAttribute('orientation') || 'vertical') === 'vertical';
-    }
-
-    _onPointerDown(e) {
+    start(e, isVertical = true) {
         e.preventDefault();
-        try { this.setPointerCapture(e.pointerId); } catch (_) {}
-        this.classList.add('dragging');
+        try { this.host.setPointerCapture(e.pointerId); } catch (_) {}
+        this.isDragging = true;
+        this.host.classList.add('dragging');
         if (document.body) {
-            document.body.classList.add('is-resizing', this.isVertical ? 'is-resizing-v' : 'is-resizing-h');
+            document.body.classList.add('is-resizing', isVertical ? 'is-resizing-v' : 'is-resizing-h');
         }
 
-        this._startPos = this.isVertical ? e.clientX : e.clientY;
-        this._activePointerId = e.pointerId;
+        this.startPos = isVertical ? e.clientX : e.clientY;
+        this.options.onStart?.({ startPos: this.startPos, event: e });
 
-        this.dispatchEvent(new CustomEvent('ide-splitter-start', {
-            bubbles: true,
-            detail: {
-                for: this.targetPane,
-                orientation: this.isVertical ? 'vertical' : 'horizontal',
-                startPos: this._startPos,
-            },
-        }));
+        this._abort = new AbortController();
+        const { signal } = this._abort;
 
-        window.addEventListener('pointermove', this._onPointerMove);
-        window.addEventListener('pointerup', this._onPointerUp);
-        window.addEventListener('pointercancel', this._onPointerUp);
+        window.addEventListener('pointermove', (ev) => {
+            const currentPos = isVertical ? ev.clientX : ev.clientY;
+            const delta = currentPos - this.startPos;
+            this.options.onDrag?.({ delta, currentPos, startPos: this.startPos, event: ev });
+        }, { signal });
+
+        const endHandler = (ev) => {
+            try { this.host.releasePointerCapture(e.pointerId); } catch (_) {}
+            this.stop(isVertical);
+            this.options.onEnd?.({ event: ev });
+        };
+
+        window.addEventListener('pointerup', endHandler, { signal });
+        window.addEventListener('pointercancel', endHandler, { signal });
     }
 
-    _onPointerMove(e) {
-        const currentPos = this.isVertical ? e.clientX : e.clientY;
-        const delta = currentPos - this._startPos;
-
-        this.dispatchEvent(new CustomEvent('ide-splitter-drag', {
-            bubbles: true,
-            detail: {
-                for: this.targetPane,
-                orientation: this.isVertical ? 'vertical' : 'horizontal',
-                startPos: this._startPos,
-                currentPos,
-                delta,
-            },
-        }));
-    }
-
-    _onPointerUp(e) {
-        try { this.releasePointerCapture(e.pointerId); } catch (_) {}
-        this.classList.remove('dragging');
+    stop(isVertical = true) {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+        this.host.classList.remove('dragging');
         if (document.body) {
             document.body.classList.remove('is-resizing', 'is-resizing-v', 'is-resizing-h');
         }
+        this._abort?.abort();
+        this._abort = null;
+    }
+}
 
-        window.removeEventListener('pointermove', this._onPointerMove);
-        window.removeEventListener('pointerup', this._onPointerUp);
-        window.removeEventListener('pointercancel', this._onPointerUp);
+/**
+ * <ide-splitter> - Drag-to-resize gutter splitter custom element using Lit.
+ * Encapsulates pointer capture, resizing styles, and drag events via DragController.
+ */
+export class IdeSplitterElement extends LitElement {
+    static properties = {
+        for: { type: String },
+        orientation: { type: String, reflect: true },
+    };
 
-        this.dispatchEvent(new CustomEvent('ide-splitter-end', {
+    constructor() {
+        super();
+        this.orientation = 'vertical';
+        this._connectedAbort = null;
+        this.drag = new DragController(this, {
+            onStart: ({ startPos }) => this._emit('start', { startPos }),
+            onDrag: ({ delta, currentPos, startPos }) => this._emit('drag', { delta, currentPos, startPos }),
+            onEnd: () => this._emit('end'),
+        });
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        this._connectedAbort = new AbortController();
+        const { signal } = this._connectedAbort;
+
+        this.setAttribute('role', 'separator');
+        this.classList.add('ide-splitter');
+        this.performUpdate();
+
+        this.addEventListener('pointerdown', (e) => this.drag.start(e, this.isVertical), { signal });
+        this.addEventListener('dblclick', () => this._emit('reset'), { signal });
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this._connectedAbort?.abort();
+    }
+
+    build() {
+        // Idempotent backward-compatibility stub
+    }
+
+    updated(changedProperties) {
+        super.updated(changedProperties);
+        const isVertical = this.isVertical;
+        this.setAttribute('aria-orientation', isVertical ? 'vertical' : 'horizontal');
+        this.classList.toggle('ide-splitter-v', isVertical);
+        this.classList.toggle('ide-splitter-h', !isVertical);
+    }
+
+    get targetPane() {
+        return this.for || this.getAttribute('for') || '';
+    }
+
+    get isVertical() {
+        return (this.orientation || this.getAttribute('orientation') || 'vertical') === 'vertical';
+    }
+
+    _emit(type, detail = {}) {
+        this.dispatchEvent(new CustomEvent(`ide-splitter-${type}`, {
             bubbles: true,
+            composed: true,
             detail: {
                 for: this.targetPane,
                 orientation: this.isVertical ? 'vertical' : 'horizontal',
-            },
-        }));
-    }
-
-    _onDblClick() {
-        this.dispatchEvent(new CustomEvent('ide-splitter-reset', {
-            bubbles: true,
-            detail: {
-                for: this.targetPane,
+                ...detail,
             },
         }));
     }
 }
 
 /**
- * <ide-tab> - Encapsulated IDE tab custom element.
+ * <ide-tab> - Encapsulated IDE tab custom element using Lit (Light DOM).
  * Manages its title label, active state, accessibility attributes, and optional close action.
  */
-export class IdeTabElement extends BaseElement {
+export class IdeTabElement extends LitElement {
+    static properties = {
+        title: { type: String, reflect: true },
+        closable: { type: Boolean, reflect: true },
+        for: { type: String },
+        active: { type: Boolean, reflect: true },
+    };
+
     constructor() {
         super();
-        this._initialized = false;
-        this._titleEl = null;
-        this._closeBtn = null;
+        this._connectedAbort = null;
+        this.titleRef = createRef();
+        this.closeBtnRef = createRef();
+        this._onClick = this._onClick.bind(this);
+        this._onCloseClick = this._onCloseClick.bind(this);
+    }
+
+    // Light DOM: Do not use Shadow DOM
+    createRenderRoot() {
+        return this;
     }
 
     connectedCallback() {
-        this.build();
-    }
-
-    build() {
-        if (this._initialized) return;
-        this._initialized = true;
+        super.connectedCallback();
+        this._connectedAbort = new AbortController();
+        const { signal } = this._connectedAbort;
 
         this.classList.add('ide-tab', 'lm_tab');
         this.setAttribute('role', 'tab');
         if (!this.hasAttribute('aria-selected')) {
             this.setAttribute('aria-selected', 'false');
         }
+        this.addEventListener('click', this._onClick, { signal });
+        this.performUpdate();
+    }
 
-        // Set up tab title label
-        let titleEl = this.querySelector('.ide-tab-title');
-        if (!titleEl) {
-            titleEl = document.createElement('span');
-            titleEl.className = 'ide-tab-title lm_title';
-            titleEl.textContent = this.getAttribute('title') || this.textContent.trim() || '';
-            this.textContent = '';
-            this.appendChild(titleEl);
-        }
-        this._titleEl = titleEl;
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this._connectedAbort?.abort();
+    }
 
-        // Set up close button if closable
-        if (this.hasAttribute('closable')) {
-            let closeBtn = this.querySelector('.ide-tab-close');
-            if (!closeBtn) {
-                closeBtn = document.createElement('span');
-                closeBtn.className = 'ide-tab-close lm_close_tab';
-                closeBtn.textContent = '✕';
-                closeBtn.title = 'Close';
-                this.appendChild(closeBtn);
-            }
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.dispatchEvent(new CustomEvent('tab-close', {
-                    bubbles: true,
-                    detail: { componentType: this.targetComponent },
-                }));
-            });
-            this._closeBtn = closeBtn;
-        }
+    _emit(type, detail = {}) {
+        this.dispatchEvent(new CustomEvent(type, {
+            bubbles: true,
+            composed: true,
+            detail,
+        }));
+    }
 
-        this.addEventListener('click', () => {
-            this.dispatchEvent(new CustomEvent('tab-select', {
-                bubbles: true,
-                detail: { componentType: this.targetComponent },
-            }));
-        });
+    _onClick(e) {
+        if (e && e.target && e.target.closest('.ide-tab-close')) return;
+        this._emit('tab-select', { componentType: this.targetComponent });
+    }
+
+    _onCloseClick(e) {
+        e.stopPropagation();
+        this._emit('tab-close', { componentType: this.targetComponent });
     }
 
     get targetComponent() {
-        return this.getAttribute('for') || this.getAttribute('data-component') || this.id.replace(/^tab-/, '') || '';
+        return this.for || this.getAttribute('for') || this.getAttribute('data-component') || this.id.replace(/^tab-/, '') || '';
     }
 
     get titleText() {
-        return this._titleEl?.textContent || this.getAttribute('title') || '';
+        return this.title || '';
     }
 
     set titleText(value) {
-        this.setAttribute('title', value);
-        if (this._titleEl) {
-            this._titleEl.textContent = value;
-        }
+        this.title = value;
     }
 
     get titleEl() {
-        this.build();
-        return this._titleEl || this.querySelector('.ide-tab-title');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.titleRef.value;
     }
 
     get closeBtn() {
-        this.build();
-        return this._closeBtn || this.querySelector('.ide-tab-close');
+        if (!this.hasUpdated) this.performUpdate();
+        return this.closeBtnRef.value;
     }
 
     setActive(isActive) {
-        this.classList.toggle('active', !!isActive);
-        this.classList.toggle('lm_active', !!isActive);
-        this.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        this.active = !!isActive;
+        this.performUpdate();
+    }
+
+    updated(changedProperties) {
+        super.updated(changedProperties);
+        if (changedProperties.has('active')) {
+            this.classList.toggle('active', this.active);
+            this.classList.toggle('lm_active', this.active);
+            this.setAttribute('aria-selected', this.active ? 'true' : 'false');
+        }
+    }
+
+    render() {
+        const title = this.title || '';
+        const isClosable = Boolean(this.closable);
+
+        return html`
+            <span class="ide-tab-title lm_title" ${ref(this.titleRef)}>${title}</span>
+            ${when(isClosable, () => html`
+                <span
+                    class="ide-tab-close lm_close_tab"
+                    title="Close"
+                    ${ref(this.closeBtnRef)}
+                    @click=${this._onCloseClick}
+                >✕</span>
+            `)}
+        `;
     }
 }
 
-// Safely register custom elements
-if (typeof customElements !== 'undefined' && customElements.get) {
-    if (!customElements.get('ide-pane')) {
-        customElements.define('ide-pane', IdePaneElement);
-    }
-    if (!customElements.get('ide-splitter')) {
-        customElements.define('ide-splitter', IdeSplitterElement);
-    }
-    if (!customElements.get('ide-tab')) {
-        customElements.define('ide-tab', IdeTabElement);
-    }
-}
+// Register custom elements
+if (!customElements.get('ide-pane')) customElements.define('ide-pane', IdePaneElement);
+if (!customElements.get('ide-splitter')) customElements.define('ide-splitter', IdeSplitterElement);
+if (!customElements.get('ide-tab')) customElements.define('ide-tab', IdeTabElement);
 
 export const COMPONENT_CONFIG = {
     DisplayControls: { pane: 'left',   title: 'Display Controls', closable: false },
@@ -676,6 +719,9 @@ export class GridLayoutManager {
                 const containerSpan = cfg.dimension === 'width' ? cRect.width : cRect.height;
                 const maxLimit = Math.round(containerSpan * cfg.maxFraction) || 500;
 
+                const dragAbort = new AbortController();
+                const { signal } = dragAbort;
+
                 const onMove = (ev) => {
                     const currentPos = isVertical ? ev.clientX : ev.clientY;
                     const delta = isLeftOrTop ? (currentPos - startPos) : (startPos - currentPos);
@@ -691,16 +737,14 @@ export class GridLayoutManager {
                     if (document.body) {
                         document.body.classList.remove('is-resizing', 'is-resizing-v', 'is-resizing-h');
                     }
-                    window.removeEventListener('pointermove', onMove);
-                    window.removeEventListener('pointerup', onUp);
-                    window.removeEventListener('pointercancel', onUp);
+                    dragAbort.abort();
                     this.saveLayout();
                     this.notifyResize();
                 };
 
-                window.addEventListener('pointermove', onMove);
-                window.addEventListener('pointerup', onUp);
-                window.addEventListener('pointercancel', onUp);
+                window.addEventListener('pointermove', onMove, { signal });
+                window.addEventListener('pointerup', onUp, { signal });
+                window.addEventListener('pointercancel', onUp, { signal });
             });
 
             splitterEl.addEventListener('dblclick', () => {
