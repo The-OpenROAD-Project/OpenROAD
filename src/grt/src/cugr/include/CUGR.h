@@ -331,6 +331,19 @@ class CUGR
                     const RerouteOptions& options);
   // Incremental: reroutes the nets sharing added overflow; returns those moved.
   std::vector<int> relieveIncrementalOverflow();
+  // A routing edge as (layer, x, y), as GridGraph::collectTreeEdges lists it.
+  using EdgeId = std::array<int, 3>;
+  // An edge's overflow above the baseline: what incremental calls added.
+  double addedOverflow(const EdgeId& edge) const;
+  // The edges of the nets' trees that carry added overflow, sorted.
+  std::vector<EdgeId> findCongestedEdges(
+      const std::vector<int>& net_indices) const;
+  // Added overflow summed over the edges.
+  double sumAddedOverflow(const std::vector<EdgeId>& edges) const;
+  // Routed nets outside the candidates that use an edge, near its gcell.
+  std::vector<int> findNetsOnCongestedEdges(
+      const std::vector<EdgeId>& edges,
+      const std::vector<char>& is_candidate) const;
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
   void sortNetIndices(std::vector<int>& net_indices,
@@ -425,7 +438,7 @@ class CUGR
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
   // Per-edge overflow at the last captureOverflowBaseline; relief ignores it.
-  std::vector<std::pair<std::array<int, 3>, double>> overflow_baseline_;
+  std::vector<std::pair<EdgeId, double>> overflow_baseline_;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).
