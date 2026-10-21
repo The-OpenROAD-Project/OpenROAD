@@ -2589,6 +2589,8 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     new_net->setSoftNdr();
   }
   db_net_map_[db_net] = new_net;
+  // Rebuilt from the current pins, like updateNet, so no longer stale.
+  stale_nets_.erase(new_net->getIndex());
 
   // Each pin must land on the restored tree; record the access point it uses so
   // getITermsAccessPoints/updatePinAccessPoints stay in sync (as after a
