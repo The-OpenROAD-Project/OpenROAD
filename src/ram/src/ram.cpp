@@ -1060,7 +1060,7 @@ void RamGen::makeOutputBuffers(
   if (!output_buffer_cell_) {
     return;
   }
-  for (int port = 0; port < q_outputs_.size(); ++port) {
+  for (size_t port = 0; port < q_outputs_.size(); ++port) {
     makeInst(cell,
              "output_buffer",
              fmt::format("p{}_b{}", port, bit),
