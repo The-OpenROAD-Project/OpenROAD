@@ -95,6 +95,13 @@ function makeEmitter() {
     };
 }
 
+// What draws the view: luma.gl reports a software renderer as gpuType 'cpu'.
+function deviceInfo(d) {
+    const info = (d && d.device && d.device.info) || {};
+    return { gpuType: info.gpuType || 'unknown',
+             renderer: info.renderer || '', vendor: info.vendor || '' };
+}
+
 // `opts`:
 //   deckApi    the deck.gl namespace (window.deck); a missing one leaves a view
 //              that keeps its state but draws nothing
@@ -121,6 +128,7 @@ export function createLayoutView(container, opts = {}) {
     let anim = null;          // { from, to, anchor, start, ms }
     let interacting = false;  // a drag or pinch from the controller
     let afterFrame = [];      // called once deck has drawn its next frame
+    let rendererInfo = null;  // what draws, once deck's device is up
     let dragSamples = [];     // { t, target, zoom } while interacting
     let prefetchZ = null;     // level loaded in the background for a zoom out
     let flightTrail = null;   // a landed flight's pulled-out level, kept under
@@ -232,6 +240,8 @@ export function createLayoutView(container, opts = {}) {
             // The canvas only exists once the device is up.
             onLoad: () => {
                 watchContext();
+                rendererInfo = deviceInfo(deckgl);
+                events.emit('renderer', rendererInfo);
                 scheduleRender();
             },
             onAfterRender: () => {
@@ -990,6 +1000,7 @@ export function createLayoutView(container, opts = {}) {
     const view = {
         DRAW_ORDER,
         getContainer: () => container,
+        getRendererInfo: () => rendererInfo,
         getSize,
         getZoom: () => vs.zoom,
         // The zoom an animation in flight will end on.

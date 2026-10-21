@@ -55,6 +55,18 @@ export function showToast(message, durationMs = 4000) {
     return toast;
 }
 
+// The notice for a browser that draws the layout view without the GPU
+// (luma.gl's gpuType 'cpu'), or null.
+export function softwareRenderingWarning(info) {
+    if (!info || info.gpuType !== 'cpu') {
+        return null;
+    }
+    return 'Software rendering detected (reduced performance). Make sure '
+        + "'Use graphics acceleration when available' (or 'Use hardware "
+        + "acceleration when available') is turned on in your browser "
+        + 'settings, then restart the browser.';
+}
+
 // Themed confirmation dialog.  Resolves true when confirmed, false when
 // cancelled (button, Escape, or clicking outside the box).  Focus starts
 // on Cancel — the safe choice for destructive confirmations.

@@ -14,6 +14,9 @@ export function makeFakeDeck() {
     }
     const api = {
         decks: [],
+        // What luma.gl's device.info would report.
+        deviceInfo: { gpuType: 'discrete', renderer: 'Fake GPU',
+                      vendor: 'Fake' },
         Deck: class {
             constructor(props) {
                 this.props = { ...props };
@@ -24,6 +27,7 @@ export function makeFakeDeck() {
                 api.decks.push(this);
                 queueMicrotask(() => {
                     this.loaded = true;
+                    this.device = { info: { ...api.deviceInfo } };
                     this.props.onLoad?.();
                 });
             }

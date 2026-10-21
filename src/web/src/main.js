@@ -23,7 +23,8 @@ import { applySelectionFlags, beginSelection, boundsEqual,
          buildVisibilityFlags, clampArrowStep, computeBoundsTransforms,
          computeScaleBar, decorateTabIcons, fittedTileSizeCss, formatDbu,
          formatDistance, isCurrentSelection, isStaticMode, maxUsefulZoom,
-         parseDbu, rafCoalesce, showToast, unitLabel }
+         parseDbu, rafCoalesce, showToast, softwareRenderingWarning,
+         unitLabel }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -38,7 +39,8 @@ import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import { getCookie, setCookie, applyGLTheme, persistTheme } from './theme.js';
-import { serializeDisplayState, applyDisplayStateEntries } from './display-state.js';
+import { serializeDisplayState, applyDisplayStateEntries, renderPrefs }
+    from './display-state.js';
 import { updateDocumentTitle } from './title.js';
 import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
@@ -192,17 +194,8 @@ const app = {
     wheelZoom: getCookie('or_wheel_zoom') !== '0',
     // Qt's "Arrow keys scroll step", in CSS px.
     arrowStep: clampArrowStep(getCookie('or_arrow_step')),
-    // ── Rendering preferences (#11340) ──
-    // Animated zoom and pan, and drag inertia.  On by default; off makes
-    // navigation jump the way Qt's does.
-    controlSmoothing: getCookie('or_control_smoothing') !== '0',
-    // Show new content only once it is complete — a tile's whole composite,
-    // and on a zoom the whole view (zoom-swap.js) — Qt's draw_pixmap_ model.
-    doubleBuffer: getCookie('or_double_buffer') !== '0',
-    // Hold tile requests until a drag ends rather than issuing a fresh batch
-    // every updateInterval while the pointer is down.  Opt-in: it leaves the
-    // area a drag exposes empty until the button is released.
-    deferTileUpdates: getCookie('or_defer_tile_updates') === '1',
+    // Rendering preferences (#11340): smoothing, double buffering, defer.
+    ...renderPrefs(getCookie),
     // Qt's "Application font", split into the CSS family and a percentage
     // scale over the stylesheet's authored sizes.  Empty family = the
     // stylesheet default.
@@ -581,6 +574,23 @@ app.redrawAllLayers = redrawAllLayers;
 // Expose the WYSIWYG capture so the context menu "Save" can grab the scene.
 app.captureLayout = (opts = {}) => captureLayout(app, opts);
 
+// Once per browser session: the layout view is slow without the GPU.
+function warnIfSoftwareRendering(info) {
+    const message = softwareRenderingWarning(info);
+    if (!message) {
+        return;
+    }
+    try {
+        if (sessionStorage.getItem('or_sw_render_warned')) {
+            return;
+        }
+        sessionStorage.setItem('or_sw_render_warned', '1');
+    } catch (_) {
+        // Storage blocked: warn on every load instead.
+    }
+    showToast(message, 15000);
+}
+
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
     mapDiv.className = 'layout-viewer';
@@ -634,6 +644,7 @@ function createLayoutViewer(container) {
         showToast('The layout view lost its graphics context and could not '
                   + 'get it back; reload the page.', 15000);
     });
+    app.view.on('renderer', warnIfSoftwareRendering);
     // For the browser probes and debugging from the console.
     window.__orView = app.view;
     // Tiles are rasterized for the ratio in force when they were requested and

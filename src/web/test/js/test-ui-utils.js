@@ -5,7 +5,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { boundsEqual, computeBoundsTransforms, computeScaleBar, cssColorToHex,
          fittedTileSizeCss, isValidHexColor, kZoomMargin, maxUsefulZoom,
-         MAX_TILE_ZOOM, niceRoundParts, prefersReducedMotion, rafCoalesce }
+         MAX_TILE_ZOOM, niceRoundParts, prefersReducedMotion, rafCoalesce,
+         softwareRenderingWarning }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -398,5 +399,22 @@ describe('prefersReducedMotion', () => {
         } finally {
             delete globalThis.matchMedia;
         }
+    });
+});
+
+describe('softwareRenderingWarning', () => {
+    it('tells how to turn graphics acceleration on for a software renderer', () => {
+        const msg = softwareRenderingWarning({ gpuType: 'cpu' });
+        assert.match(msg, /Software rendering detected/);
+        assert.match(msg, /Use graphics acceleration when available/);
+        assert.match(msg, /Use hardware acceleration when available/);
+        assert.match(msg, /restart the browser/);
+    });
+
+    it('says nothing when a GPU draws, or before the renderer is known', () => {
+        for (const gpuType of ['discrete', 'integrated', 'unknown']) {
+            assert.equal(softwareRenderingWarning({ gpuType }), null, gpuType);
+        }
+        assert.equal(softwareRenderingWarning(null), null);
     });
 });

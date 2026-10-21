@@ -51,6 +51,23 @@ const DISPLAY_STATE_KEYS = [
     { key: 'or_defer_tile_updates', store: 'cookie' },
 ];
 
+// The rendering preferences (#11340) from their cookies.
+export function renderPrefs(getCookie) {
+    return {
+        // Animated zoom and pan, and drag inertia.  Off by default, so
+        // navigation jumps the way Qt's does.
+        controlSmoothing: getCookie('or_control_smoothing') === '1',
+        // Show new content only once it is complete — a tile's whole
+        // composite, and on a zoom the whole view (zoom-swap.js) — Qt's
+        // draw_pixmap_ model.
+        doubleBuffer: getCookie('or_double_buffer') !== '0',
+        // Hold tile requests until a drag ends rather than issuing a fresh
+        // batch every updateInterval while the pointer is down.  Opt-in: it
+        // leaves the area a drag exposes empty until the button is released.
+        deferTileUpdates: getCookie('or_defer_tile_updates') === '1',
+    };
+}
+
 // Storage accessors, tolerant of a browser with Web Storage disabled (the
 // cookie helpers in theme.js already are).  The store is resolved by NAME
 // inside the try: with storage blocked, reading `window.sessionStorage` throws

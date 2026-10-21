@@ -900,3 +900,33 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(await view.captureCanvas(), null);
     });
 });
+
+describe('LayoutView renderer', () => {
+    it('reports what draws once the deck is up', async () => {
+        const { view } = setup();
+        const seen = [];
+        view.on('renderer', (info) => seen.push(info));
+        assert.equal(view.getRendererInfo(), null);
+        await tick();
+        const fake = { gpuType: 'discrete', renderer: 'Fake GPU', vendor: 'Fake' };
+        assert.deepEqual(seen, [fake]);
+        assert.deepEqual(view.getRendererInfo(), fake);
+    });
+
+    it('reports a software renderer, and again after a lost context', async () => {
+        const deck = makeFakeDeck();
+        deck.deviceInfo = { gpuType: 'cpu', renderer: 'SwiftShader' };
+        const { view } = setup({ deck });
+        const seen = [];
+        view.on('renderer', (info) => seen.push(info.gpuType));
+        await tick();
+        assert.deepEqual(view.getRendererInfo(),
+                         { gpuType: 'cpu', renderer: 'SwiftShader', vendor: '' });
+        deck.deviceInfo = { gpuType: 'integrated' };
+        deck.decks[0].getCanvas().dispatchEvent(
+            new window.Event('webglcontextlost', { cancelable: true }));
+        await tick();
+        assert.deepEqual(seen, ['cpu', 'integrated']);
+        assert.equal(view.getRendererInfo().gpuType, 'integrated');
+    });
+});
