@@ -186,7 +186,7 @@ void GCell::setCenterLocation(int cx, int cy)
   }
 }
 
-int64_t GCell::inflationArea() const
+int64_t GCell::getInflationArea() const
 {
   if (isFiller()) {
     return 0;
@@ -2793,10 +2793,10 @@ int64_t NesterovBase::getInflationArea() const
   int64_t area = 0;
   for (const auto& cell : nb_gcells_) {
     if (cell->isStdInstance()) {
-      area += cell->inflationArea();
+      area += cell->getInflationArea();
     } else if (cell->isMacroInstance()) {
       area += static_cast<int64_t>(
-          std::round(cell->inflationArea() * targetDensity_));
+          std::round(cell->getInflationArea() * targetDensity_));
     }
   }
   return area;

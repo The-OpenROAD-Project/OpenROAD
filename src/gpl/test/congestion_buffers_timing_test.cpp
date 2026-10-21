@@ -4,8 +4,10 @@
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "est/EstimateParasitics.h"
@@ -151,6 +153,30 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   bool routabilityNeeded() const { return np_->is_routability_need_; }
 
+  int64_t inflateCellForTest(GCell* cell,
+                             float ratio,
+                             std::optional<int64_t> area_limit = std::nullopt)
+  {
+    return RouteBase::inflateCell(cell, ratio, area_limit);
+  }
+
+  std::pair<int, int> retainedInsertionCounts() const
+  {
+    int inserted = 0;
+    int inflated = 0;
+    for (const auto& nb : nb_vec_) {
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isStdInstance()
+            && !initial_names_.contains(
+                cell->insts().front()->dbInst()->getName())) {
+          ++inserted;
+          inflated += cell->changeType() == GCell::GCellChange::kRoutability;
+        }
+      }
+    }
+    return {inserted, inflated};
+  }
+
   GCell* liveCellFor(odb::dbInst* inst) const
   {
     // dbToNb() resolves through the construction-time PlacerBase map, which
@@ -198,18 +224,19 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     }
   }
 
-  void runOrdinaryPass(int wire_width)
+  void runOrdinaryPass(int wire_width, float overflow = 0.2f)
   {
     // Supply settled motion to the real controller, then execute its ordinary
     // congestion checks. Completion is not set by hand in this fixture.
     grt_.getRudy()->setWireWidth(wire_width);
-    np_->average_overflow_unscaled_ = 0.2f;
+    np_->average_overflow_unscaled_ = overflow;
     for (const auto& nb : nb_vec_) {
       nb->peak_coordi_distance_ = 1.0f;
       nb->coordiDistance_ = 0.0f;
       nb->saveSnapshot();
     }
     float current_a = 1.0f;
+    ASSERT_TRUE(np_->isPlacementSettled());
     np_->runRoutability(0,
                         0,
                         "",
@@ -236,7 +263,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   odb::dbInst* inflatedNewBuffer()
   {
     for (const auto& cell : nb_vec_[0]->getGCells()) {
-      if (cell->isStdInstance() && cell->inflationArea() > 0
+      if (cell->isStdInstance() && cell->getInflationArea() > 0
           && !initial_names_.contains(
               cell->insts().front()->dbInst()->getName())) {
         return cell->insts().front()->dbInst();
@@ -334,6 +361,167 @@ TEST_F(TimingRepairIntegrationTest,
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(true);
+}
+
+class TimingRepairRoutabilityPhaseTest
+    : public TimingRepairIntegrationTest,
+      public ::testing::WithParamInterface<int>
+{
+};
+
+TEST_P(TimingRepairRoutabilityPhaseTest,
+       CountsRealRetainedInsertionsBeforeDuringAndAfterRoutability)
+{
+  const int phase = GetParam();
+  if (phase == 0) {
+    options_.keepResizeBelowOverflow = 0.95f;
+    options_.routabilityCheckOverflow = 0.3f;
+  }
+  makePlacer();
+  if (phase == 0) {
+    runOrdinaryPass(1, 0.8f);
+    ASSERT_EQ(ordinary_iterations_, 0);
+    ASSERT_EQ(rb_->getTotalTilesCount(), 0);
+  }
+  if (phase == 1) {
+    runOrdinaryPass(1000000);
+    ASSERT_TRUE(routabilityNeeded());
+    ASSERT_GT(rb_->getTotalInflation(), 0);
+  } else if (phase == 2) {
+    completeRoutability();
+    ASSERT_FALSE(routabilityNeeded());
+  }
+  const int64_t ordinary_charge = rb_->getTotalInflation();
+  runTiming(phase == 0 ? 0.8f : 0.2f);
+  const auto [inserted, inflated] = retainedInsertionCounts();
+  RecordProperty("routability_phase", phase);
+  RecordProperty("ordinary_passes", ordinary_iterations_);
+  RecordProperty("retained_new_cells", inserted);
+  RecordProperty("inflated_new_cells", inflated);
+  ASSERT_EQ(timing_iterations_, 1);
+  ASSERT_GT(inserted, 0);
+  EXPECT_EQ(rb_->getTotalInflation(), ordinary_charge);
+  EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
+  if (phase == 2) {
+    EXPECT_GT(inflated, 0);
+    checkRetainedInsertions(true);
+  } else {
+    EXPECT_EQ(inflated, 0);
+    EXPECT_TRUE(routabilityNeeded());
+    EXPECT_EQ(ordinary_iterations_, phase);
+    if (phase == 0) {
+      checkRetainedInsertions(false);
+      EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(RoutabilityPhases,
+                         TimingRepairRoutabilityPhaseTest,
+                         ::testing::Values(0, 1, 2));
+
+TEST_F(TimingRepairIntegrationTest,
+       SynchronousCallbacksPrecedeInflationAndOptimizerInitialization)
+{
+  makePlacer();
+  completeRoutability();
+  np_->updateDb();
+  tb_->executeTimingDriven(false, true);
+  nb_vec_[0]->refreshIoPins();
+  // The production executor has delivered callbacks and repaired pointers,
+  // but has not yet initialized the new cells' optimizer state.
+  const auto& pending = nb_vec_[0]->getNewInstances();
+  ASSERT_FALSE(pending.empty());
+  const std::unordered_set<odb::dbInst*> created(pending.begin(),
+                                                 pending.end());
+  int live_creations = 0;
+  for (const auto& cell : nb_vec_[0]->getGCells()) {
+    if (!cell->isStdInstance()
+        || !created.contains(cell->insts().front()->dbInst())) {
+      continue;
+    }
+    ++live_creations;
+    EXPECT_GE(cell->gPins().size(), 2);
+    for (const auto* pin : cell->gPins()) {
+      EXPECT_NE(pin->getGNet(), nullptr);
+      ASSERT_NE(pin->getPbPin()->getDbITerm(), nullptr);
+      EXPECT_NE(pin->getPbPin()->getDbITerm()->getNet(), nullptr);
+    }
+  }
+  ASSERT_GT(live_creations, 0);
+  RecordProperty("queued_creations", static_cast<int>(pending.size()));
+  RecordProperty("live_creations_before_state_update", live_creations);
+
+  auto* transient = odb::dbInst::create(
+      block_, lib_->findMaster("BUF_X1"), "callback_transient");
+  ASSERT_NE(liveCellFor(transient), nullptr);
+  EXPECT_EQ(pending.back(), transient);
+  odb::dbInst::destroy(transient);
+  EXPECT_EQ(liveCellFor(transient), nullptr);
+  EXPECT_EQ(pending.back(), transient)
+      << "deletion removes the live cell, not its queued identity";
+  nbc_->fixPointers();
+  nb_vec_[0]->refreshIoPins();
+
+  ASSERT_GT(rb_->inflateNewCells(), 0);
+  nbc_->rebuildDeviceState();
+  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
+                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateTimingDrivenDensity();
+  checkRetainedInsertions(true);
+  checkDensityAccounting();
+  const int64_t inflated_area = liveInflationArea();
+  EXPECT_TRUE(pending.empty());
+  EXPECT_EQ(rb_->inflateNewCells(), 0);
+  EXPECT_EQ(liveInflationArea(), inflated_area);
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       SharedInflationPreservesLegacyFloatRoundingAndBoundedArea)
+{
+  makePlacer();
+  auto* cell = liveCellFor(block_->findInst("fanout_driver"));
+  ASSERT_NE(cell, nullptr);
+  // Float sqrt/multiply rounds the width to 1003.5; double arithmetic stays
+  // just below it. The stored even widths therefore differ by two DBUs.
+  constexpr float threshold = 1.0070122480392456f;
+  const int legacy_width
+      = 2 * (static_cast<int>(std::round(1000 * std::sqrt(threshold))) / 2);
+  const int double_width
+      = 2
+        * (static_cast<int>(
+               std::round(1000 * std::sqrt(static_cast<double>(threshold))))
+           / 2);
+  ASSERT_NE(legacy_width, double_width);
+  for (const float ratio : {std::nextafter(threshold, 1.0f),
+                            threshold,
+                            std::nextafter(threshold, 2.0f),
+                            1.33f}) {
+    for (const auto& [width, height] :
+         {std::pair{1000, 800}, std::pair{10, 10}, std::pair{101, 79}}) {
+      cell->setAllLocations(0, 0, width, height);
+      const int expected_width
+          = 2 * (static_cast<int>(std::round(width * std::sqrt(ratio))) / 2);
+      const int expected_height
+          = 2 * (static_cast<int>(std::round(height * std::sqrt(ratio))) / 2);
+      const int64_t old_area = static_cast<int64_t>(width) * height;
+      EXPECT_EQ(
+          inflateCellForTest(cell, ratio),
+          static_cast<int64_t>(expected_width) * expected_height - old_area);
+      EXPECT_EQ(cell->dx(), expected_width);
+      EXPECT_EQ(cell->dy(), expected_height);
+      for (const int64_t limit : {int64_t{0}, int64_t{1}, int64_t{3600}}) {
+        cell->setAllLocations(0, 0, width, height);
+        const int64_t added = inflateCellForTest(cell, ratio, limit);
+        EXPECT_GE(added, 0);
+        EXPECT_LE(added, limit);
+        EXPECT_EQ(static_cast<int64_t>(cell->dx()) * cell->dy(),
+                  old_area + added);
+        EXPECT_GE(cell->dx(), width);
+        EXPECT_GE(cell->dy(), height);
+      }
+    }
+  }
 }
 
 class MacroOnlyTimingRepairIntegrationTest : public TimingRepairIntegrationTest
@@ -471,7 +659,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
     const int64_t accumulated_delta = delta_area_;
     const int macro_dx = macro_cell->dx();
     const int macro_dy = macro_cell->dy();
-    const int64_t macro_inflation = macro_cell->inflationArea();
+    const int64_t macro_inflation = macro_cell->getInflationArea();
     const auto* macro_master = macro_->getMaster();
     ASSERT_TRUE(std::isfinite(nb->getTargetDensity()));
     runTiming(0.2f);
@@ -507,7 +695,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
     ASSERT_NE(macro_cell, nullptr);
     EXPECT_EQ(macro_cell->dx(), macro_dx);
     EXPECT_EQ(macro_cell->dy(), macro_dy);
-    EXPECT_EQ(macro_cell->inflationArea(), macro_inflation);
+    EXPECT_EQ(macro_cell->getInflationArea(), macro_inflation);
     EXPECT_EQ(nb->getMacroInstArea(),
               static_cast<int64_t>(macro_dx) * macro_dy);
     const double density_area = static_cast<double>(macro_cell->dDx())
@@ -526,7 +714,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
       }
       ++new_cells;
       EXPECT_NE(cell->changeType(), GCell::GCellChange::kRoutability);
-      EXPECT_EQ(cell->inflationArea(), 0);
+      EXPECT_EQ(cell->getInflationArea(), 0);
       EXPECT_GE(cell->gPins().size(), 2);
       for (const auto* pin : cell->gPins()) {
         ASSERT_NE(pin->getPbPin()->getDbITerm(), nullptr);
@@ -632,7 +820,7 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
   ASSERT_NE(macro_cell, nullptr);
   EXPECT_EQ(macro_cell->dx(), macro_dx);
   EXPECT_EQ(macro_cell->dy(), macro_dy);
-  EXPECT_EQ(macro_cell->inflationArea(), 0);
+  EXPECT_EQ(macro_cell->getInflationArea(), 0);
 }
 
 TEST_F(TimingRepairIntegrationTest,
@@ -726,7 +914,7 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_EQ(live_before, historical_charge);
   auto* driver = block_->findInst("fanout_driver");
   ASSERT_NE(liveCellFor(driver), nullptr);
-  ASSERT_GT(liveCellFor(driver)->inflationArea(), 0);
+  ASSERT_GT(liveCellFor(driver)->getInflationArea(), 0);
   ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
   ASSERT_FALSE(ep_.hasParasiticsInvalid());
   ASSERT_FALSE(grt_.haveRoutes());
@@ -738,11 +926,11 @@ TEST_F(TimingRepairIntegrationTest,
     ep_.estimateParasitics(est::ParasiticsSrc::kPlacement);
     ASSERT_TRUE(driver->swapMaster(lib_->findMaster("BUF_X32")));
     nbc_->fixPointers();
-    EXPECT_EQ(liveCellFor(driver)->inflationArea(), 0);
+    EXPECT_EQ(liveCellFor(driver)->getInflationArea(), 0);
     EXPECT_TRUE(ep_.hasParasiticsInvalid());
     odb::dbInst* deleted = nullptr;
     for (const auto* cell : nbc_->getGCells()) {
-      if (cell->isStdInstance() && cell->inflationArea() > 0
+      if (cell->isStdInstance() && cell->getInflationArea() > 0
           && cell->getName().starts_with("sink_")) {
         deleted = cell->insts().front()->dbInst();
         break;
@@ -808,7 +996,7 @@ TEST_F(TimingRepairIntegrationTest,
   const int64_t original = nb_vec_[0]->getNesterovInstsArea();
   runOrdinaryPass(1000000);
   ASSERT_NE(liveCellFor(driver), nullptr);
-  ASSERT_GT(liveCellFor(driver)->inflationArea(), 0);
+  ASSERT_GT(liveCellFor(driver)->getInflationArea(), 0);
   ASSERT_TRUE(routabilityNeeded());
   const int saved_dx = liveCellFor(driver)->dx();
   const int saved_dy = liveCellFor(driver)->dy();
@@ -855,7 +1043,7 @@ TEST_F(TimingRepairIntegrationTest,
   auto* cell = liveCellFor(driver);
   ASSERT_NE(cell, nullptr);
   ASSERT_EQ(cell->changeType(), GCell::GCellChange::kDownsize);
-  ASSERT_EQ(cell->inflationArea(), 0);
+  ASSERT_EQ(cell->getInflationArea(), 0);
   const int physical_dx = cell->dx();
   const int physical_dy = cell->dy();
   ASSERT_LT(static_cast<int64_t>(physical_dx) * physical_dy,
@@ -873,7 +1061,7 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_NE(cell, nullptr);
   EXPECT_EQ(cell->dx(), physical_dx);
   EXPECT_EQ(cell->dy(), physical_dy);
-  EXPECT_EQ(cell->inflationArea(), 0);
+  EXPECT_EQ(cell->getInflationArea(), 0);
   checkDensityAccounting();
   // Keep this downsized target material through the real repair. Do not make
   // the invariant conditional on whether resizer happened to delete it.
@@ -886,7 +1074,7 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_NE(cell, nullptr);
   EXPECT_EQ(cell->dx(), physical_dx);
   EXPECT_EQ(cell->dy(), physical_dy);
-  EXPECT_EQ(cell->inflationArea(), 0);
+  EXPECT_EQ(cell->getInflationArea(), 0);
   checkRetainedInsertions(true);
   checkDensityAccounting();
   auto* buffer = inflatedNewBuffer();
@@ -909,7 +1097,7 @@ TEST_F(TimingRepairIntegrationTest,
     ASSERT_NE(cell, nullptr);
     EXPECT_EQ(cell->dx(), physical_dx);
     EXPECT_EQ(cell->dy(), physical_dy);
-    EXPECT_EQ(cell->inflationArea(), 0);
+    EXPECT_EQ(cell->getInflationArea(), 0);
     EXPECT_EQ(nb_vec_[0]->getTotalFillerArea(), fillers);
     checkDensityAccounting();
   }
@@ -952,7 +1140,7 @@ TEST_F(TimingRepairIntegrationTest,
     EXPECT_EQ(rb_->inflateNewCells(), 0);
     EXPECT_EQ(cell->dx(), width);
     EXPECT_EQ(cell->dy(), height);
-    EXPECT_EQ(cell->inflationArea(), 0);
+    EXPECT_EQ(cell->getInflationArea(), 0);
     EXPECT_EQ(liveInflationArea(), 0);
   }
   rb_->updateRudyAverage(false);
@@ -977,14 +1165,14 @@ TEST_F(TimingRepairIntegrationTest, PhysicalResizeReclaimsLiveInflation)
       break;
     }
   }
-  const int64_t released = cell->inflationArea();
+  const int64_t released = cell->getInflationArea();
   const int64_t before = liveInflationArea();
   const char* replacement
       = buffer->getMaster()->getName() == std::string("BUF_X32") ? "BUF_X16"
                                                                  : "BUF_X32";
   ASSERT_TRUE(buffer->swapMaster(lib_->findMaster(replacement)));
   nbc_->fixPointers();
-  EXPECT_EQ(cell->inflationArea(), 0);
+  EXPECT_EQ(cell->getInflationArea(), 0);
   EXPECT_EQ(liveInflationArea(), before - released);
 }
 
@@ -1000,7 +1188,7 @@ TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
   int center_x = 0, center_y = 0;
   for (auto* cell : nbc_->getGCells()) {
     if (cell->contains(buffer)) {
-      released = cell->inflationArea();
+      released = cell->getInflationArea();
       center_x = cell->dCx();
       center_y = cell->dCy();
     }

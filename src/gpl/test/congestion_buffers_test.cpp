@@ -227,7 +227,7 @@ TEST_F(CongestionBuffersTest, RefreshesRudyAndPreservesExistingInflation)
   auto* existing_inst = existing->insts().front()->dbInst();
   const int existing_width = existing->dx();
   const int existing_height = existing->dy();
-  const int64_t existing_inflation = existing->inflationArea();
+  const int64_t existing_inflation = existing->getInflationArea();
   auto* hot = insertBuffer("hot");
   auto* cold = insertBuffer("cold", 45000);
   const int64_t hot_area = cellArea(cellFor(hot));

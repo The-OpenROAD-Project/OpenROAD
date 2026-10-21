@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,6 +27,7 @@ namespace gpl {
 
 class NesterovBaseCommon;
 class NesterovBase;
+class GCell;
 class GNet;
 class Die;
 struct PlaceOptions;
@@ -197,13 +199,14 @@ class RouteBase
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
   std::vector<int64_t> inflatedAreaDelta() const;
-  // Historical ordinary-routability charge, not post-completion live area.
   int64_t getTotalInflation() const;
   int getRevertCount() const;
 
   void printGCellInflation() const;
 
  private:
+  friend class TimingRepairIntegrationTest;
+
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
   grt::GlobalRouter* grouter_ = nullptr;
@@ -255,6 +258,10 @@ class RouteBase
 
   // The tile holding the given point, or nullptr if it falls outside the grid.
   Tile* getTile(int x, int y) const;
+
+  static int64_t inflateCell(GCell* cell,
+                             float ratio,
+                             std::optional<int64_t> area_limit = std::nullopt);
 
   // Flag the tiles that hold movable standard-cell area, and clear the flag on
   // every other tile. Call after the grid is built and before the congestion

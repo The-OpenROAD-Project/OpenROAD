@@ -674,6 +674,40 @@ void RouteBase::calculateRudyTiles()
   debugInflatedTiles();
 }
 
+int64_t RouteBase::inflateCell(GCell* cell,
+                               float ratio,
+                               std::optional<int64_t> area_limit)
+{
+  const int old_width = cell->dx();
+  const int old_height = cell->dy();
+  const int64_t old_area = static_cast<int64_t>(old_width) * old_height;
+  int width;
+  int height;
+  if (area_limit) {
+    if (old_area <= 0 || *area_limit <= 0 || !std::isfinite(ratio)
+        || ratio <= 1.0f) {
+      return 0;
+    }
+    const double bounded_ratio = std::min<double>(
+        ratio, 1.0 + static_cast<double>(*area_limit) / old_area);
+    const double scale = std::sqrt(bounded_ratio);
+    // Late inflation must fit the hard allowance paid for by whole fillers.
+    width = 2 * static_cast<int>(old_width * scale / 2);
+    height = 2 * static_cast<int>(old_height * scale / 2);
+    const int64_t delta = static_cast<int64_t>(width) * height - old_area;
+    if (width < old_width || height < old_height || delta <= 0
+        || delta > *area_limit) {
+      return 0;
+    }
+  } else {
+    // Preserve ordinary routability's float arithmetic and rounding exactly.
+    width = static_cast<int>(std::round(old_width * std::sqrt(ratio)));
+    height = static_cast<int>(std::round(old_height * std::sqrt(ratio)));
+  }
+  cell->setSize(width, height, GCell::GCellChange::kRoutability);
+  return static_cast<int64_t>(cell->dx()) * cell->dy() - old_area;
+}
+
 int64_t RouteBase::inflateNewCells()
 {
   std::unordered_set<odb::dbInst*> new_instances;
@@ -733,27 +767,10 @@ int64_t RouteBase::inflateNewCells()
           || tile->inflationRatio() <= 1.0f || available == 0) {
         continue;
       }
-      const int old_width = cell->dx();
-      const int old_height = cell->dy();
-      const int64_t old_area = static_cast<int64_t>(old_width) * old_height;
-      if (old_area <= 0) {
-        continue;
-      }
-      const double ratio
-          = std::min<double>(tile->inflationRatio(),
-                             1.0 + static_cast<double>(available) / old_area);
-      const double scale = std::sqrt(ratio);
-      // setSize stores even dimensions. Round down so integer geometry cannot
-      // overdraw either the regional density allowance or the total budget.
-      const int width = 2 * static_cast<int>(old_width * scale / 2);
-      const int height = 2 * static_cast<int>(old_height * scale / 2);
-      const int64_t delta = static_cast<int64_t>(width) * height - old_area;
-      if (width < old_width || height < old_height || delta <= 0
-          || delta > available) {
-        continue;
-      }
-      nbc_->getGCellByIndex(handle.getStorageIndex())
-          ->setSize(width, height, GCell::GCellChange::kRoutability);
+      const int64_t delta
+          = inflateCell(nbc_->getGCellByIndex(handle.getStorageIndex()),
+                        tile->inflationRatio(),
+                        available);
       available -= delta;
       added += delta;
     }
@@ -1075,22 +1092,9 @@ std::pair<bool, bool> RouteBase::routability(
         continue;
       }
 
-      int64_t prev_cell_area = static_cast<int64_t>(gCell->dx())
-                               * static_cast<int64_t>(gCell->dy());
-
-      // bloat
-      gCell->setSize(static_cast<int>(std::round(
-                         gCell->dx() * std::sqrt(tile->inflatedRatio()))),
-                     static_cast<int>(std::round(
-                         gCell->dy() * std::sqrt(tile->inflatedRatio()))),
-                     GCell::GCellChange::kRoutability);
-
-      int64_t new_cell_area = static_cast<int64_t>(gCell->dx())
-                              * static_cast<int64_t>(gCell->dy());
-
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
-      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
+      inflatedAreaDelta_[nb_index] += inflateCell(gCell, tile->inflatedRatio());
     }
 
     if (log_->debugCheck(GPL, "rudy", 1)) {

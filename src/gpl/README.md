@@ -57,26 +57,12 @@ long during routability-driven execution, consider raising the target RC value
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
 
-The optional `-timing_driven_congestion_inflation` experiment is disabled by
-default. With both timing-driven and routability-driven placement enabled, it
-refreshes RUDY after retained timing repairs only after ordinary routability
-refinement has finished. It inflates surviving newly inserted standard cells,
-without restarting the routability search. It shares the existing total
-inflation limit with ordinary routability; only the post-completion helper
-computes a live allowance from current geometry. This releases allowance when
-an inflated cell is deleted or physically resized. Ordinary routability keeps
-its historical budget accounting, min-RC snapshots and reported inflation total
-unchanged, even with the experiment enabled. Retained timing changes before
-routability completion remain subject to that existing policy.
-The live reference includes placement padding and pin-density extension; a move
-callback does not redefine physical padding as congestion inflation.
-Macro contributions to the budget are density-scaled. Inflation is limited by
-regional density headroom and available filler area, and removes whole filler
-cells to pay for the added virtual area instead of raising target density.
-Virtual timing repairs, early timing repairs and timing-only placement are
-unaffected. Routability and timing effects are design-dependent, and paired
-routing experiments have shown mixed timing results. No general QoR benefit
-is established; evaluate the opt-in policy on representative designs.
+Use `-timing_driven_congestion_inflation` to inflate new cells in congested
+areas after retained timing repairs, once routability refinement has finished.
+This experimental option is off by default and requires both timing-driven and
+routability-driven placement. It shares the inflation budget and removes fillers
+to pay for added area, without raising density or restarting routability.
+QoR is design-dependent; existing experiments show mixed timing results.
 
 Initial-placement arguments
 - They begin with `-initial_place`.

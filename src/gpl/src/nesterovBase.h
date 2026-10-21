@@ -121,7 +121,7 @@ class GCell
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
-  int64_t inflationArea() const;
+  int64_t getInflationArea() const;
   void setAreaChangeType(GCellChange change) { change_ = change; }
   GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
@@ -1088,8 +1088,8 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
-  // Pending callback creations, consumed by updateGCellState(). Resolve these
-  // through the live cell handles: repair may also delete or resize them.
+  // Instances created since the last optimizer-state update. Their callbacks
+  // have already built GCells; some may since have been deleted or resized.
   const std::vector<odb::dbInst*>& getNewInstances() const
   {
     return new_instances_;

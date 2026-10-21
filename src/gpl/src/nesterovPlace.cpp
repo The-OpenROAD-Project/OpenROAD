@@ -466,16 +466,13 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
+    // is_routability_need_ stays true before/during ordinary refinement.
+    // Only runRoutability() clears it, after the final pass and any restore.
     const bool retained_inflation
         = !virtual_td_iter && npVars_.routability_driven_mode
           && npVars_.timingDrivenCongestionInflation && !is_routability_need_;
     if (retained_inflation) {
-      // Completion is terminal for this placement object's routability search.
-      // Its min-RC restore has already finished inside routability(), and
-      // runRoutability cannot re-enter it. Keep live accounting local to this
-      // post-completion extension, not the ordinary search or its snapshots.
-      // Include inserted buffers in congestion pressure before initializing
-      // their optimizer state or rebuilding the device geometry.
+      // Inflate before initializing the new cells' optimizer/device state.
       rb_->inflateNewCells();
     }
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
