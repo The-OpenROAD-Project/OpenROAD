@@ -120,18 +120,19 @@ class TestConnect : public PdnTest
     return stream.str();
   }
 
-  // A VIARULE GENERATE from M<level> up to M<level + 1>: a 2 * cut_half
-  // square cut on a 100 pitch, enclosed by 10 on both metals.
+  // A VIARULE GENERATE from M<level> up to M<level + 1>: a cut_size square
+  // cut on a 100 pitch, enclosed by 10 on both metals.
   odb::dbTechViaGenerateRule* addGenerateRule(int level,
                                               const char* name,
-                                              int cut_half = kMinWidth / 4)
+                                              int cut_size = kMinWidth / 2)
   {
     auto* rule = odb::dbTechViaGenerateRule::create(tech(), name, false);
     odb::dbTechViaLayerRule::create(tech(), rule, m(level))
         ->setEnclosure(10, 10);
     auto* cut
         = odb::dbTechViaLayerRule::create(tech(), rule, stack_.cuts[level - 1]);
-    cut->setRect(odb::Rect(-cut_half, -cut_half, cut_half, cut_half));
+    cut->setRect(
+        odb::Rect(-cut_size / 2, -cut_size / 2, cut_size / 2, cut_size / 2));
     cut->setSpacing(100, 100);
     odb::dbTechViaLayerRule::create(tech(), rule, m(level + 1))
         ->setEnclosure(10, 10);
@@ -975,7 +976,7 @@ TEST_F(TestConnect, MakeViaPlacesNothingWhenNoRuleMeetsTheMinimumCuts)
 // Of two rules that can both build a via, the one with more cut area wins.
 TEST_F(TestConnect, MakeViaPrefersTheRuleWithMoreCutArea)
 {
-  addGenerateRule(1, "SMALL", /*cut_half=*/15);
+  addGenerateRule(1, "SMALL", /*cut_size=*/30);
   odb::dbTechViaGenerateRule* big = addGenerateRule(1, "BIG");
   Connect connect(grid_, m(1), m(2));
 
@@ -1155,7 +1156,7 @@ TEST_F(TestConnect, MakeViaStaggersSplitCutsOnTheGroundNet)
 // tech via, is available.
 TEST_F(TestConnect, AFixedGenerateRuleIsTheOnlyRuleUsed)
 {
-  odb::dbTechViaGenerateRule* small = addGenerateRule(1, "SMALL", 15);
+  odb::dbTechViaGenerateRule* small = addGenerateRule(1, "SMALL", 30);
   addGenerateRule(1, "BIG");
   addTechVia(1, "VIA12");
   Connect connect(grid_, m(1), m(2));
@@ -1221,7 +1222,7 @@ TEST_F(TestConnect, AGenerateRuleWithoutThreeLayersIsIgnored)
 // filterVias drops every generate rule and tech via whose name matches.
 TEST_F(TestConnect, FilterViasDropsMatchingRulesAndVias)
 {
-  odb::dbTechViaGenerateRule* small = addGenerateRule(1, "SMALL", 15);
+  odb::dbTechViaGenerateRule* small = addGenerateRule(1, "SMALL", 30);
   addGenerateRule(1, "BIG");
   Connect generate(grid_, m(1), m(2));
   generate.filterVias("BIG");
