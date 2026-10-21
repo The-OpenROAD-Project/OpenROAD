@@ -322,6 +322,27 @@ cc_test(
 )
 
 cc_test(
+    name = "route_base_test",
+    srcs = ["route_base_test.cpp"],
+    data = ["ar02.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "timing_base_test",
     srcs = ["timing_base_test.cpp"],
     env = GPU_ENV_OFF,
