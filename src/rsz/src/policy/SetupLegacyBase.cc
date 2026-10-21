@@ -981,6 +981,13 @@ bool SetupLegacyBase::terminateProgress(const int iteration,
   }
   if (iteration % opto_small_interval_ == 0) {
     const float curr_tns = totalNegativeSlack();
+    // TNS only sees true violations. Once it is 0, any remaining work targets
+    // the setup slack margin, which the fix rate cannot measure.
+    if (config_.setup_slack_margin > 0.0f
+        && (initial_tns >= 0.0f || curr_tns >= 0.0f)) {
+      prev_tns = curr_tns;
+      return false;
+    }
     float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
     prev_tns = curr_tns;
     if (iteration > 1000 && inc_fix_rate < fix_rate_threshold) {

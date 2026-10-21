@@ -10,6 +10,15 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",

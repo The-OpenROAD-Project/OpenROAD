@@ -5,22 +5,21 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[INFO ANT-0002] Found 13 net violations.
-[INFO ANT-0001] Found 13 pin violations.
+[INFO ANT-0002] Found 12 net violations.
+[INFO ANT-0001] Found 12 pin violations.
 [DEBUG GRT-repair_antennas] antenna violations clk
 [DEBUG GRT-repair_antennas] antenna violations req_msg[11]
 [DEBUG GRT-repair_antennas] antenna violations req_msg[15]
 [DEBUG GRT-repair_antennas] antenna violations req_msg[25]
 [DEBUG GRT-repair_antennas] antenna violations req_msg[2]
 [DEBUG GRT-repair_antennas] antenna violations resp_msg[11]
-[DEBUG GRT-repair_antennas] antenna violations resp_msg[13]
 [DEBUG GRT-repair_antennas] antenna violations resp_msg[5]
 [DEBUG GRT-repair_antennas] antenna violations _011_
 [DEBUG GRT-repair_antennas] antenna violations _019_
 [DEBUG GRT-repair_antennas] antenna violations _022_
 [DEBUG GRT-repair_antennas] antenna violations _298_
 [DEBUG GRT-repair_antennas] antenna violations dpath.a_lt_b$in0\[0\]
-[INFO GRT-0012] Found 13 antenna violations.
+[INFO GRT-0012] Found 12 antenna violations.
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 162000 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 169200 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 176400 rejected for capacity
@@ -34,7 +33,8 @@
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 234000 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 262800 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 270000 rejected for capacity
-[INFO GRT-0302] Inserted 13 jumpers for 12 nets.
+[DEBUG GRT-repair_antennas] net req_msg[25] jumper candidate at 118800 rejected for capacity
+[INFO GRT-0302] Inserted 11 jumpers for 11 nets.
 [DEBUG GRT-repair_antennas] antenna violations clk
 [INFO GRT-0012] Found 1 antenna violations.
 [INFO ANT-0002] Found 1 net violations.
