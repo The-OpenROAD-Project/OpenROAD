@@ -231,11 +231,9 @@ int Snapper::getPinOffset(odb::dbITerm* pin,
   return pin_offset;
 }
 
-int Snapper::getSnappedOrigin(odb::dbITerm* pin,
-                              const int position,
-                              const odb::dbTechLayerDir& direction)
+int Snapper::getSnappedOrigin(const int position, const int pin_offset)
 {
-  int origin = position - getPinOffset(pin, direction);
+  int origin = position - pin_offset;
   alignWithManufacturingGrid(origin);
   return origin;
 }
@@ -244,7 +242,8 @@ void Snapper::snapPinToPosition(odb::dbITerm* pin,
                                 const int position,
                                 const odb::dbTechLayerDir& direction)
 {
-  setOrigin(getSnappedOrigin(pin, position, direction), direction);
+  setOrigin(getSnappedOrigin(position, getPinOffset(pin, direction)),
+            direction);
 }
 
 void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
@@ -278,6 +277,7 @@ void Snapper::attemptSnapToExtraPatterns(
   const std::vector<int>& positions = layers_data_list[0].available_positions;
   std::vector<int> legal_positions;
   legal_positions.reserve(total_attempts + 1);
+  const int pin_offset = getPinOffset(snap_pin, target_direction);
   // Keep the existing nearest-first order, but cull before moving the macro.
   for (int i = 0; i <= total_attempts; i++) {
     int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
@@ -287,9 +287,8 @@ void Snapper::attemptSnapToExtraPatterns(
       continue;
     }
     const int position = positions[current_index];
-    if (isOriginInsideCore(
-            getSnappedOrigin(snap_pin, position, target_direction),
-            target_direction)) {
+    if (isOriginInsideCore(getSnappedOrigin(position, pin_offset),
+                           target_direction)) {
       legal_positions.push_back(position);
     }
   }
