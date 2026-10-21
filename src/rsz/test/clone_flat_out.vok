@@ -1086,7 +1086,7 @@ module hi_fanout (clk1,
     .Z(net34));
  BUF_X4 rebuffer35 (.A(net45),
     .Z(net35));
- BUF_X4 rebuffer37 (.A(net38),
+ BUF_X2 rebuffer37 (.A(net38),
     .Z(net37));
  BUF_X8 rebuffer38 (.A(net44),
     .Z(net38));
