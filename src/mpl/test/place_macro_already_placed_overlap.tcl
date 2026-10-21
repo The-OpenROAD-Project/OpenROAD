@@ -17,6 +17,8 @@ foreach {name location} {
   other_left {200 20}
   other_right {400 20}
 } {
+  # A successful place_macro locks the target; each rejection check must be movable.
+  $macro setPlacementStatus PLACED
   check "reject overlap with $name" {
     catch { place_macro -macro_name macro -location $location -exact } error_code
   } 1
