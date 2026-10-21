@@ -195,27 +195,21 @@ const Scene& FieldSolver::scene()
 }
 
 NetCapacitance FieldSolver::solve(const std::string_view net,
-                                  const SolveSettings& settings)
+                                  const SolverOptions& solver_options,
+                                  const SolveOptions& options)
 {
   const int master = findNet(net);
   if (master < 0) {
     logger_->error(utl::FSV, 9, "Net {} has no boxes.", net);
   }
-  const SolverOptions options{
-      .threads = settings.threads,
-      .seed = settings.seed,
-      .panels = settings.panels,
-  };
-  if (!solver_ || solver_options_.threads != options.threads
-      || solver_options_.seed != options.seed
-      || solver_options_.panels != options.panels) {
+  if (!solver_ || solver_options_ != solver_options) {
     solver_.reset();
     try {
-      solver_ = std::make_unique<Solver>(options);
+      solver_ = std::make_unique<Solver>(solver_options);
     } catch (const std::exception& e) {
       logger_->error(utl::FSV, 12, "{}", coreMessage(e));
     }
-    solver_options_ = options;
+    solver_options_ = solver_options;
   }
   // Outside the try below, so that its own error is not reported again.
   const Scene& s = scene();
@@ -224,7 +218,7 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
   result.nets = netNames();
   try {
     const auto start = std::chrono::steady_clock::now();
-    result.row = solver_->solve(s, master, settings.options);
+    result.row = solver_->solve(s, master, options);
     result.seconds = std::chrono::duration<double>(
                          std::chrono::steady_clock::now() - start)
                          .count();

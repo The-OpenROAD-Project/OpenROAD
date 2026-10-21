@@ -116,8 +116,8 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
                                   int panels)
 {
   // A negative value keeps the default.
-  fsv::SolveSettings settings;
-  fsv::SolveOptions& options = settings.options;
+  fsv::SolverOptions solver_options;
+  fsv::SolveOptions options;
   if (tol_total >= 0) {
     options.tol_total = tol_total;
   }
@@ -134,13 +134,13 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
     options.max_walks = max_walks;
   }
   if (seed >= 0) {
-    settings.seed = seed;
+    solver_options.seed = seed;
   }
   if (panels >= 0) {
-    settings.panels = panels;
+    solver_options.panels = panels;
   }
-  settings.threads = ord::OpenRoad::openRoad()->getThreadCount();
-  return getFieldSolver()->solve(net, settings);
+  solver_options.threads = ord::OpenRoad::openRoad()->getThreadCount();
+  return getFieldSolver()->solve(net, solver_options, options);
 }
 
 }  // namespace fsv

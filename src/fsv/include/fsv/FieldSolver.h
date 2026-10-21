@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
@@ -23,16 +22,6 @@ class Logger;
 namespace fsv {
 
 class Scene;
-
-// Settings for one FieldSolver::solve call: the solve tolerances plus the
-// solver settings that select a Solver.
-struct SolveSettings
-{
-  SolveOptions options;
-  int threads = 1;
-  uint64_t seed = 1;
-  int panels = 32;
-};
 
 // One master's row of the capacitance matrix, in fF.
 struct NetCapacitance
@@ -71,8 +60,11 @@ class FieldSolver
   void clearGeometry();
 
   std::vector<std::string> netNames() const;
-  // Solves one master net and reports its row.
-  NetCapacitance solve(std::string_view net, const SolveSettings& settings);
+  // Solves one master net and reports its row. The Solver is rebuilt only
+  // when solver_options change.
+  NetCapacitance solve(std::string_view net,
+                       const SolverOptions& solver_options,
+                       const SolveOptions& options);
 
  private:
   const Scene& scene();
