@@ -197,18 +197,28 @@ void LayeredCubeGreens::tabulateTopBottom(const double ratio)
       const double zt = -sm * sq * mirrored.flux;
       const double xb = cm * sq * b.value;
       const double xt = cm * sq * mirrored.value;
+      // Each panel's basis is ints[m][i] * ints[q][j]; the coefficients are
+      // folded into the i factor, and each parity fills only its tables.
+      const std::vector<double>& basis_j = ints[q];
       for (int i = 0; i < n_; i++) {
-        for (int j = 0; j < n_; j++) {
-          const double basis = ints[m][i] * ints[q][j];
-          const int p = i * n_ + j;
-          if (m % 2 == 1) {
-            bottom_[p] += pb * basis;
-            top_[p] += pt * basis;
-            fz_bottom_[p] += zb * basis;
-            fz_top_[p] += zt * basis;
-          } else {
-            fx_bottom_[p] += xb * basis;
-            fx_top_[p] += xt * basis;
+        const int row = i * n_;
+        if (m % 2 == 1) {
+          const double bi = pb * ints[m][i];
+          const double ti = pt * ints[m][i];
+          const double zbi = zb * ints[m][i];
+          const double zti = zt * ints[m][i];
+          for (int j = 0; j < n_; j++) {
+            bottom_[row + j] += bi * basis_j[j];
+            top_[row + j] += ti * basis_j[j];
+            fz_bottom_[row + j] += zbi * basis_j[j];
+            fz_top_[row + j] += zti * basis_j[j];
+          }
+        } else {
+          const double xbi = xb * ints[m][i];
+          const double xti = xt * ints[m][i];
+          for (int j = 0; j < n_; j++) {
+            fx_bottom_[row + j] += xbi * basis_j[j];
+            fx_top_[row + j] += xti * basis_j[j];
           }
         }
       }
@@ -261,27 +271,33 @@ void LayeredCubeGreens::tabulateSides(const double ratio)
       const double mu = m * kPi / 2;
       const double kappa = std::hypot(mu, q);
       const double center_x = 1 / (2 * std::cosh(kappa));
-      double p_coef = 0;
-      double fz_coef = 0;
-      double fn_coef = 0;
-      double ft_coef = 0;
+      // Each panel's basis is ints[m][i] * z_ints[j]. Odd m carries the
+      // value, z flux and normal x flux; even m the tangential x flux.
       if (m % 2 == 1) {
         const double sm = std::sin(mu);
-        p_coef = sm * value * center_x / norm;
-        fz_coef = sm * z_flux * center_x / norm;
-        fn_coef = sm * value * (-kappa / (2 * std::sinh(kappa))) / norm;
+        const double p_coef = sm * value * center_x / norm;
+        const double fz_coef = sm * z_flux * center_x / norm;
+        const double fn_coef
+            = sm * value * (-kappa / (2 * std::sinh(kappa))) / norm;
+        for (int i = 0; i < n_; i++) {
+          const int row = i * n_;
+          const double vi = p_coef * ints[m][i];
+          const double zi = fz_coef * ints[m][i];
+          const double ni = fn_coef * ints[m][i];
+          for (int j = 0; j < n_; j++) {
+            side_[row + j] += vi * z_ints[j];
+            fz_side_[row + j] += zi * z_ints[j];
+            fx_normal_[row + j] += ni * z_ints[j];
+          }
+        }
       } else {
-        const double cm = mu * std::cos(mu);
-        ft_coef = cm * value * center_x / norm;
-      }
-      for (int i = 0; i < n_; i++) {
-        for (int j = 0; j < n_; j++) {
-          const double basis = ints[m][i] * z_ints[j];
-          const int p = i * n_ + j;
-          side_[p] += p_coef * basis;
-          fz_side_[p] += fz_coef * basis;
-          fx_normal_[p] += fn_coef * basis;
-          fx_tangential_[p] += ft_coef * basis;
+        const double ft_coef = mu * std::cos(mu) * value * center_x / norm;
+        for (int i = 0; i < n_; i++) {
+          const int row = i * n_;
+          const double ti = ft_coef * ints[m][i];
+          for (int j = 0; j < n_; j++) {
+            fx_tangential_[row + j] += ti * z_ints[j];
+          }
         }
       }
     }

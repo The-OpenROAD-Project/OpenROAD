@@ -54,18 +54,19 @@ TO_FF = 1e9
 
 def read_structure(path):
     layers, boxes, background = [], [], None
-    for line in open(path):
-        words = line.split("#")[0].split()
-        if not words:
-            continue
-        if words[0] == "background":
-            background = float(words[1])
-        elif words[0] == "layer":
-            layers.append((float(words[1]), float(words[2])))
-        elif words[0] == "box":
-            boxes.append((words[1], [float(v) for v in words[2:8]]))
-        else:
-            raise ValueError(f"{path}: unknown line {line.strip()}")
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            words = line.split("#")[0].split()
+            if not words:
+                continue
+            if words[0] == "background":
+                background = float(words[1])
+            elif words[0] == "layer":
+                layers.append((float(words[1]), float(words[2])))
+            elif words[0] == "box":
+                boxes.append((words[1], [float(v) for v in words[2:8]]))
+            else:
+                raise ValueError(f"{path}: unknown line {line.strip()}")
     return background, layers, boxes
 
 
@@ -177,7 +178,7 @@ def run_fastercap(text, accuracy, timeout=None):
         sys.exit("set FSV_FASTERCAP to the FasterCap binary")
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "model.lst")
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(text)
         out = subprocess.run(
             [exe, "-b", path, f"-a{accuracy:g}"],
