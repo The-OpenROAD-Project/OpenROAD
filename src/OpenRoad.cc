@@ -45,6 +45,8 @@
 #include "exa/example.h"
 #include "fin/Finale.h"
 #include "fin/MakeFinale.h"
+#include "fsv/FieldSolver.h"
+#include "fsv/MakeFieldSolver.h"
 #include "gpl/MakeReplace.h"
 #include "gpl/Replace.h"
 #include "grt/GlobalRouter.h"
@@ -138,6 +140,7 @@ OpenRoad::~OpenRoad()
   delete tapcell_;
   delete macro_placer_;
   delete example_;
+  delete field_solver_;
   delete extractor_;
   delete detailed_router_;
   // Stop the web server first — its I/O threads access the database
@@ -277,6 +280,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
+  field_solver_ = new fsv::FieldSolver(logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
   watermark_
       = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
@@ -307,6 +311,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tap::initTapcell(tcl_interp);
   mpl::initMacroPlacer(tcl_interp);
   exa::initExample(tcl_interp);
+  fsv::initFieldSolver(tcl_interp);
   rcx::initOpenRCX(tcl_interp);
   pad::initICeWall(tcl_interp);
   rmp::initRestructure(tcl_interp);
