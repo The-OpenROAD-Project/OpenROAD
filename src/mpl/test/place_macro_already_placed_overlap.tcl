@@ -4,16 +4,22 @@ source "helpers.tcl"
 read_lef "./Nangate45/Nangate45.lef"
 read_lef "./testcases/place_macro_right_angle_rotation.lef"
 
-read_def "./testcases/place_macro_right_angle_rotation.def"
+read_def "./testcases/place_macro_already_placed_overlap.def"
 
 set block [ord::get_db_block]
 set macro [$block findInst macro]
-$macro setLocation 40000 40000
-$macro setPlacementStatus PLACED
+check "target starts placed" { $macro isPlaced } 1
 
-place_macro -macro_name macro -location {20 20} -orientation R90
+place_macro -macro_name macro -location {40 40} -exact
+check "target moves to the requested location" { $macro getLocation } {80000 80000}
 
-set def_file [make_result_file place_macro_already_placed_overlap.def]
-write_def $def_file
-
-diff_files place_macro_already_placed_overlap.defok $def_file
+foreach {name location} {
+  other_left {200 20}
+  other_right {400 20}
+} {
+  check "reject overlap with $name" {
+    catch { place_macro -macro_name macro -location $location -exact } error_code
+  } 1
+  check "report overlap with $name" { set error_code } MPL-0041
+}
+puts "Other placed macros still reject overlaps."
