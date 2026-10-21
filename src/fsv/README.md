@@ -12,31 +12,25 @@ capacitance matrix, together with a standard error.
 
 ## Status
 
-This is phase 1 of the implementation plan: a homogeneous 3D solver with a
-C++ API only. It provides:
+It provides:
 
 - Manhattan conductors above a grounded plane at z = 0. The domain is open
   laterally and above, with no artificial boundary.
-- A single uniform dielectric (`SolveOptions::eps_r`).
-- Exact cube Green's-function tables from the Fourier series, sampled with
-  alias tables.
-- First hops importance-sampled by the gradient of the Green's function. A
-  control variate exploits the zero-mean weights.
+- A uniform dielectric, or the planar dielectrics of a process stack read
+  from an ITF file (`fsv/Itf.h`, `fsv/Stack.h`). Conformal dielectrics are
+  read but not solved yet.
+- Exact cube Green's-function tables from Fourier series, for a uniform cube
+  and for a cube split by one planar interface (`LayeredCubeGreens`), sampled
+  with alias tables. A walk sizes each cube to hold at most one interface and
+  snaps it to a tabulated position.
+- First hops importance-sampled by the flux kernel, with interpolation
+  between tabulated interface positions so that their weights stay bounded.
+  A control variate exploits the zero-mean weights.
 - Deterministic results for any thread count, using a counter-based Philox
   RNG and fixed batches reduced in order.
 
-- A process-stack reader for ITF files (`fsv/Itf.h`): planar dielectrics,
-  conductors, nested conformal dielectrics and vias, with the ground plane at the
-  top of the lowest dielectric and the background dielectric above. It
-  covers the keywords the SkyWater 130 ITF uses, and reports any other
-  keyword by name. The solver does not use the stack yet.
-
-Later phases add the following:
-
-- Solving with planar and conformal dielectrics from the stack.
-- A 2D mode.
-- odb input.
-- Tcl and Python commands.
+Later phases add conformal dielectrics, a 2D mode, odb input, and Tcl and
+Python commands.
 
 ## Usage
 
@@ -47,7 +41,7 @@ geometry.addBox(a, {{0, 0, 0.5}, {4, 0.1, 0.6}});
 // ... more nets and boxes ...
 
 fsv::Solver solver({.threads = 32});       // shared tables + worker pool
-const fsv::Scene scene(geometry, 3.9);     // spatial index, eps_r
+const fsv::Scene scene(geometry, 3.9);     // uniform eps_r, or a Stack
 fsv::SolveOptions tolerances;              // 1% total, 5% coupling by default
 const fsv::CapRow row = solver.solve(scene, a, tolerances);
 // row.total(), row.coupling(net), row.ground, with standard errors.
@@ -62,3 +56,9 @@ bazelisk test //src/fsv/test/...
 bazelisk run //src/fsv/test:BenchCube   # accuracy and thread scaling
 bazelisk run //src/fsv/test:BenchGrid   # throughput on a two-layer wire grid
 ```
+
+`TestGolden` compares fsv with reference values for the structures in
+`test/golden`: cross sections against a 2D finite-volume solution
+(`fv2d_golden.py`, numpy and scipy), and a 3D structure against FasterCap
+(`fastercap_golden.py`), which is not a build dependency. The scripts
+regenerate the references.

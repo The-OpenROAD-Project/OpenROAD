@@ -40,6 +40,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGolden",
+    srcs = ["cpp/TestGolden.cpp"],
+    data = glob(["golden/*.txt"]),
+    deps = [
+        "//src/fsv",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestItf",
     srcs = ["cpp/TestItf.cpp"],
     data = ["sky130.itf"],
