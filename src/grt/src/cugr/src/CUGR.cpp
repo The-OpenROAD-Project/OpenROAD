@@ -45,6 +45,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
+#include "utl/algorithms.h"
 
 using utl::GRT;
 
@@ -243,9 +244,6 @@ void CUGR::clear()
   merged_nets_.clear();
   nets_to_route_.clear();
   incremental_candidates_.clear();
-  strict_accept_.clear();
-  relieving_overflow_ = false;
-  incremental_extra_reroutes_.clear();
   overflow_baseline_.clear();
   incremental_routing_ = false;
   full_slack_update_done_ = false;
@@ -900,14 +898,15 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
 
 double CUGR::mazeRoute(std::vector<int>& net_indices,
                        const CugrStage stage,
-                       const int iteration)
+                       const int iteration,
+                       const RerouteOptions& options)
 {
   if (net_indices.empty()) {
     return 0.0;
   }
 
   // The relief skips the slack refresh, which would re-time every pass.
-  if (critical_nets_percentage_ != 0 && !relieving_overflow_) {
+  if (critical_nets_percentage_ != 0 && options.refresh_critical) {
     // Maze passes keep the resistance-aware set the pattern stages chose.
     updateCriticalNets(net_indices, /* extend_res_aware= */ false);
   }
@@ -1000,7 +999,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     grid_graph_->addTreeUsage(*net);
     delta += grid_graph_->sumOverflow(touched_edges);
     // Relief neighbors move only if overflow drops; others may move sideways.
-    const bool strict = !strict_accept_.empty() && strict_accept_[net_index];
+    const bool strict = options.strict_accept != nullptr
+                        && (*options.strict_accept)[net_index];
     const bool keep
         = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
     if (!keep) {
@@ -1014,9 +1014,6 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     } else {
       overflow_change += delta;
       accepted.push_back(net_index);
-      if (strict) {
-        incremental_extra_reroutes_.push_back(net_index);
-      }
     }
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     grid.step();
@@ -1046,7 +1043,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   return overflow_change;
 }
 
-void CUGR::route(bool incremental)
+std::vector<odb::dbNet*> CUGR::route(bool incremental)
 {
   // The incremental scope comes exclusively from nets_to_route_; without it
   // the fallback below would treat the whole design as dirty.
@@ -1054,7 +1051,7 @@ void CUGR::route(bool incremental)
     // Keep the wrapper-era coverage: restore/remove-only rounds still get
     // their demand round-trip checked even though nothing reroutes.
     verifyDemandConsistency("incremental");
-    return;
+    return {};
   }
 
   if (resistance_aware_ && critical_nets_percentage_ == 0) {
@@ -1090,7 +1087,6 @@ void CUGR::route(bool incremental)
   if (incremental) {
     incremental_candidates_ = net_indices;
   }
-  incremental_extra_reroutes_.clear();
 
   patternRoute(net_indices);
   reportCongestionSources("stage 1 pattern");
@@ -1114,16 +1110,19 @@ void CUGR::route(bool incremental)
   if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
-  mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0);
+  mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0, {});
   reportCongestionSources("stage 4 maze");
   debugPass("stage 4");
   if (!incremental) {
     updateCongestedNets(net_indices);
   }
 
-  iterativeRRR(net_indices);
+  iterativeRRR(net_indices, {});
+  std::vector<odb::dbNet*> moved;
   if (incremental) {
-    relieveIncrementalOverflow(net_indices);
+    for (const int index : relieveIncrementalOverflow()) {
+      moved.push_back(gr_nets_[index]->getDbNet());
+    }
   }
 
   printStatistics();
@@ -1132,7 +1131,7 @@ void CUGR::route(bool incremental)
     incremental_routing_ = false;
     incremental_candidates_.clear();
     verifyDemandConsistency("incremental");
-    return;
+    return moved;
   }
 
   captureOverflowBaseline();
@@ -1141,6 +1140,7 @@ void CUGR::route(bool incremental)
   if (constants_.write_heatmap) {
     grid_graph_->write();
   }
+  return moved;
 }
 
 CUGR::Congestion2D CUGR::computeCongestion2D() const
@@ -1395,7 +1395,7 @@ void CUGR::debugPass(const std::string& tag)
 }
 
 void CUGR::iterativeRRR(std::vector<int>& net_indices,
-                        const bool reroute_all_candidates)
+                        const RerouteOptions& options)
 {
   // Gate on the integer overflow metric: sub-track overflow is left for
   // detailed-route jogs to absorb rather than spending RRR iterations.
@@ -1493,12 +1493,14 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices,
       logger_->info(
           GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     }
-    if (incremental_routing_ && reroute_all_candidates) {
+    if (incremental_routing_ && options.reroute_all_candidates) {
       // Incremental reroutes all dirty nets each iteration, not just congested.
       std::vector<int> reroute_set = incremental_candidates_;
-      overflow_change += mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
+      overflow_change
+          += mazeRoute(reroute_set, CugrStage::iterativeRRR, i, options);
     } else {
-      overflow_change += mazeRoute(net_indices, CugrStage::iterativeRRR, i);
+      overflow_change
+          += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
     }
     reportCongestionSources(fmt::format("rrr iteration {}", i));
     debugPass(fmt::format("rrr iteration {}", i));
@@ -1539,7 +1541,7 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices,
   }
 }
 
-void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
+std::vector<int> CUGR::relieveIncrementalOverflow()
 {
   // Rounds of growing the candidates; each runs the RRR loop once more.
   constexpr int kMaxRounds = 5;
@@ -1548,7 +1550,7 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
   constexpr double kTolerance = 1e-9;
 
   using Edge = std::array<int, 3>;
-  // Overflow above what the full route left: what incremental calls added.
+  // Overflow above the baseline: what incremental calls added.
   auto excess = [&](const Edge& edge) {
     const auto it = std::ranges::lower_bound(
         overflow_baseline_, edge, {}, &std::pair<Edge, double>::first);
@@ -1575,9 +1577,7 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
         }
       }
     }
-    std::ranges::sort(hot);
-    const auto duplicates = std::ranges::unique(hot);
-    hot.erase(duplicates.begin(), duplicates.end());
+    utl::sort_and_unique(hot);
     return hot;
   };
   auto overflow_on = [&](const std::vector<Edge>& edges) {
@@ -1589,25 +1589,22 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
   };
 
   std::vector<Edge> hot_edges = overflowed_edges();
-  if (hot_edges.empty()) {
-    return;
+  // Sub-track excess alone leaves the RRR loop nothing to reroute.
+  if (hot_edges.empty() || totalOverflow() == 0) {
+    return {};
   }
   std::vector<char> is_candidate(gr_nets_.size(), 0);
   for (const int index : incremental_candidates_) {
     is_candidate[index] = 1;
   }
-  strict_accept_.assign(gr_nets_.size(), 0);
-  relieving_overflow_ = true;
-  // Resets the relief state on every exit, an error included.
-  struct ReliefScope
-  {
-    CUGR& cugr;
-    ~ReliefScope()
-    {
-      cugr.relieving_overflow_ = false;
-      cugr.strict_accept_.clear();
-    }
-  } relief_scope{*this};
+  // Neighbors move only if overflow drops; the passes keep the slacks.
+  std::vector<char> strict_accept(gr_nets_.size(), 0);
+  const RerouteOptions options{.reroute_all_candidates = false,
+                               .strict_accept = &strict_accept,
+                               .refresh_critical = false};
+  // Each added net's tree before the relief; a rolled-back reroute keeps it.
+  std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
+  std::vector<int> net_indices;
   for (int round = 1; round <= kMaxRounds && !hot_edges.empty(); round++) {
     std::vector<std::pair<int, int>> hot_cells;
     BoxT window;
@@ -1615,9 +1612,7 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
       hot_cells.emplace_back(x, y);
       window.update(PointT(x, y));
     }
-    std::ranges::sort(hot_cells);
-    const auto duplicate_cells = std::ranges::unique(hot_cells);
-    hot_cells.erase(duplicate_cells.begin(), duplicate_cells.end());
+    utl::sort_and_unique(hot_cells);
     auto near_hot = [&](const BoxT& box) {
       const BoxT grown(box.lx() - kWindowMargin,
                        box.ly() - kWindowMargin,
@@ -1639,18 +1634,10 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
         continue;
       }
       grid_graph_->collectTreeEdges(*net, tree_edges);
-      auto edge = tree_edges.begin();
-      auto hot = hot_edges.begin();
-      while (edge != tree_edges.end() && hot != hot_edges.end()) {
-        if (*edge == *hot) {
-          added.push_back(net->getIndex());
-          break;
-        }
-        if (*edge < *hot) {
-          ++edge;
-        } else {
-          ++hot;
-        }
+      if (std::ranges::any_of(tree_edges, [&](const Edge& edge) {
+            return std::ranges::binary_search(hot_edges, edge);
+          })) {
+        added.push_back(net->getIndex());
       }
     }
     if (added.empty()) {
@@ -1658,19 +1645,19 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
     }
     for (const int index : added) {
       is_candidate[index] = 1;
-      strict_accept_[index] = 1;
+      strict_accept[index] = 1;
       incremental_candidates_.push_back(index);
+      added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
     }
     const double before = overflow_on(hot_edges);
-    iterativeRRR(net_indices, /* reroute_all_candidates= */ false);
+    iterativeRRR(net_indices, options);
     const double after = overflow_on(hot_edges);
     debugPrint(logger_,
                GRT,
                "incr",
                1,
                "Overflow relief round {}: {} nets added; overflow above the "
-               "full route's on the {} edges of the candidates {:.2f} -> "
-               "{:.2f}.",
+               "baseline on the {} edges of the candidates {:.2f} -> {:.2f}.",
                round,
                added.size(),
                hot_edges.size(),
@@ -1681,6 +1668,15 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
     }
     hot_edges = overflowed_edges();
   }
+  // The added nets whose tree changed: the reroutes the relief kept.
+  std::vector<int> moved;
+  for (const auto& [index, tree] : added_trees) {
+    if (gr_nets_[index]->getRoutingTree() != tree) {
+      moved.push_back(index);
+    }
+  }
+  std::ranges::sort(moved);
+  return moved;
 }
 
 void CUGR::captureOverflowBaseline()
@@ -1694,22 +1690,6 @@ void CUGR::markNetStale(odb::dbNet* db_net)
   if (it != db_net_map_.end() && it->second != nullptr) {
     it->second->setStale(true);
   }
-}
-
-std::vector<odb::dbNet*> CUGR::takeIncrementalExtraReroutes()
-{
-  std::ranges::sort(incremental_extra_reroutes_);
-  const auto duplicates = std::ranges::unique(incremental_extra_reroutes_);
-  incremental_extra_reroutes_.erase(duplicates.begin(), duplicates.end());
-  std::vector<odb::dbNet*> nets;
-  nets.reserve(incremental_extra_reroutes_.size());
-  for (const int index : incremental_extra_reroutes_) {
-    if (gr_nets_[index] != nullptr) {
-      nets.push_back(gr_nets_[index]->getDbNet());
-    }
-  }
-  incremental_extra_reroutes_.clear();
-  return nets;
 }
 
 void CUGR::write(const std::string& guide_file)

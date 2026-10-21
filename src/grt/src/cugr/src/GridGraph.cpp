@@ -1549,9 +1549,9 @@ GridGraph::overflowedEdges() const
   for (int layer = constants_.min_routing_layer; layer < num_layers_; layer++) {
     for (int x = 0; x < x_size_; x++) {
       for (int y = 0; y < y_size_; y++) {
-        const GraphEdge& edge = graph_edges_[layer][x][y];
-        if (edge.demand > edge.capacity) {
-          edges.push_back({{layer, x, y}, edge.demand - edge.capacity});
+        const std::array<int, 3> edge{layer, x, y};
+        if (const CapacityT overflow = edgeOverflow(edge); overflow > 0.0) {
+          edges.emplace_back(edge, overflow);
         }
       }
     }

@@ -783,10 +783,16 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 
   // CUGR's overflow relief also moves clean nets; check them again later.
   auto add_moved_nets = [&](const std::vector<odb::dbNet*>& moved) {
-    std::unordered_set<odb::dbNet*> listed(nets_to_repair.begin(),
-                                           nets_to_repair.end());
+    // Sized by the few moved nets, not by nets_to_repair (all nets at first).
+    std::unordered_set<odb::dbNet*> pending(moved.begin(), moved.end());
+    for (odb::dbNet* db_net : nets_to_repair) {
+      if (pending.empty()) {
+        break;
+      }
+      pending.erase(db_net);
+    }
     for (odb::dbNet* db_net : moved) {
-      if (listed.insert(db_net).second) {
+      if (pending.erase(db_net) > 0) {
         nets_to_repair.push_back(db_net);
       }
     }
@@ -1798,10 +1804,10 @@ void GlobalRouter::updatePinAccessPoints()
 // is_incremental_ is unset on the IncrementalGRoute path.
 void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
 {
-  cugr_->route(incremental);
+  // Nets CUGR moved to clear overflow need new routes and guides too.
+  const std::vector<odb::dbNet*> moved = cugr_->route(incremental);
   if (incremental) {
-    // Nets CUGR moved to clear overflow need new routes and guides too.
-    for (odb::dbNet* db_net : cugr_->takeIncrementalExtraReroutes()) {
+    for (odb::dbNet* db_net : moved) {
       const auto it = db_net_map_.find(db_net);
       if (it != db_net_map_.end() && it->second != nullptr) {
         // Their detailed wires, if any, describe the old route.
