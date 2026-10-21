@@ -107,6 +107,8 @@ class CUGR
   void route(bool incremental);
   // Takes the nets the last incremental route() moved to relieve overflow.
   std::vector<odb::dbNet*> takeIncrementalExtraReroutes();
+  // Takes the current overflow as the reference the overflow relief keeps.
+  void captureOverflowBaseline();
   // Keeps the overflow relief off a net whose pins here are out of date.
   void markNetStale(odb::dbNet* db_net);
   void write(const std::string& guide_file);
@@ -420,8 +422,8 @@ class CUGR
   bool relieving_overflow_ = false;
   // Indices of the nets markNetStale flagged.
   std::unordered_set<int> stale_nets_;
-  // Overflow per (layer, x, y) edge the last full route left; the relief
-  // ignores it.
+  // Overflow per (layer, x, y) edge at the last captureOverflowBaseline (a
+  // full route or adopted routing); the relief ignores it.
   std::vector<std::pair<std::array<int, 3>, double>> overflow_baseline_;
 
   bool resistance_aware_ = false;

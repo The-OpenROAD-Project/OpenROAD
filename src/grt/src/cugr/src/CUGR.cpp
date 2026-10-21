@@ -1135,7 +1135,7 @@ void CUGR::route(bool incremental)
     return;
   }
 
-  overflow_baseline_ = grid_graph_->overflowedEdges();
+  captureOverflowBaseline();
 
   debugCongestion2D();
   if (constants_.write_heatmap) {
@@ -1674,6 +1674,11 @@ void CUGR::relieveIncrementalOverflow(std::vector<int>& net_indices)
   }
   relieving_overflow_ = false;
   strict_accept_.clear();
+}
+
+void CUGR::captureOverflowBaseline()
+{
+  overflow_baseline_ = grid_graph_->overflowedEdges();
 }
 
 void CUGR::markNetStale(odb::dbNet* db_net)

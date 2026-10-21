@@ -713,6 +713,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                  from_wires,
                  from_guides,
                  failed);
+      // The overflow relief only clears overflow above the adopted routing.
+      cugr_->captureOverflowBaseline();
     } else {
       initFastRoute(min_layer, max_layer);
       // Repopulate edge usage from routes_ using updateNetResources, which

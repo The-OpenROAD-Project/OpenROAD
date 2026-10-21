@@ -22,8 +22,7 @@
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19607.4 -> 19607.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 5 diodes.
 [WARNING GRT-0305] Demoted 5 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
-[WARNING GRT-0305] Demoted 58 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
-[WARNING GRT-0305] Demoted 2 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[WARNING GRT-0305] Demoted 38 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-Routed nets with new guides: 44, keeping their old wire: 0
+Routed nets with new guides: 29, keeping their old wire: 0
