@@ -203,7 +203,7 @@ CapRow Solver::solve(const Scene& scene,
 
     // First hop: sample by |dP/dn|; Q = -eps * flux of grad(phi) through G.
     const double a = spatial_index.nearest(p).dist;
-    const CubeGreens::FirstHop hop = greens_->sampleFirstHop(face.axis, rng);
+    const FirstHop hop = greens_->sampleFirstHop(face.axis, rng);
     weight = -weight_scale * face.normalSign() * hop.sign / a;
     for (int k = 0; k < 3; k++) {
       p[k] += a * hop.offset[k];
