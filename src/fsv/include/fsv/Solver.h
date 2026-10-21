@@ -102,6 +102,8 @@ class Solver
       layered_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
+  // Guards layered_ while walks build tables.
+  std::mutex tables_mutex_;
 };
 
 }  // namespace fsv

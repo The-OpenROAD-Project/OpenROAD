@@ -42,9 +42,8 @@ class FieldSolver
   explicit FieldSolver(utl::Logger* logger);
   ~FieldSolver();
 
-  // Replaces the dielectric with the planar stack of an ITF file. Its
-  // conformal dielectrics are ignored, with a warning, until they are
-  // supported.
+  // Replaces the dielectric with the stack of an ITF file: its planar
+  // layers and conformal dielectrics.
   void readItf(const std::string& path);
   // Replaces the dielectric with a uniform relative permittivity.
   void setPermittivity(double eps);

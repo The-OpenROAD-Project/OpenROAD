@@ -45,6 +45,7 @@ cc_library(
         "src/AliasTable.cpp",
         "src/CubeGreens.cpp",
         "src/CubePanels.cpp",
+        "src/Dielectric.cpp",
         "src/LayeredCubeGreens.cpp",
         "src/SpatialIndex.cpp",
     ],
@@ -53,13 +54,17 @@ cc_library(
         "src/BoxFace.h",
         "src/CubeGreens.h",
         "src/CubePanels.h",
+        "src/Dielectric.h",
         "src/LayeredCubeGreens.h",
         "src/Philox.h",
         "src/SpatialIndex.h",
     ],
     includes = ["src"],
     visibility = ["//src/fsv:__subpackages__"],
-    deps = [":geometry"],
+    deps = [
+        ":geometry",
+        ":stack",
+    ],
 )
 
 # Process stack and its ITF reader.
