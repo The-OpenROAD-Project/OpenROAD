@@ -449,14 +449,9 @@ bool FlexPA::isIOTerm(frInstTerm* inst_term)
 
 bool FlexPA::isRoutableLayer(const frLayerNum layer_num)
 {
-  frTechObject* tech = getDesign()->getTech();
-  if (layer_num < tech->getBottomLayerNum()
-      || layer_num > tech->getTopLayerNum()) {
-    return false;
-  }
-  return tech->getLayer(layer_num)->isRoutable()
-         && layer_num >= router_cfg_->BOTTOM_ROUTING_LAYER
-         && layer_num <= router_cfg_->TOP_ROUTING_LAYER;
+  return layer_num >= router_cfg_->BOTTOM_ROUTING_LAYER
+         && layer_num <= router_cfg_->TOP_ROUTING_LAYER
+         && getDesign()->getTech()->getLayer(layer_num)->isRoutable();
 }
 
 int FlexPA::main()

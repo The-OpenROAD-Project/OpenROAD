@@ -910,12 +910,8 @@ void FlexPA::filterViaAccess(
     bool allow_up = isRoutableLayer(layer_num + 2);
     bool allow_down = isRoutableLayer(layer_num - 2);
     if (isStdCellTerm(inst_term) || isMacroCellTerm(inst_term)) {
-      allow_up = layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER;
+      allow_up = layer_num + 2 <= router_cfg_->TOP_ROUTING_LAYER;
       allow_down = false;
-    } else if (isIOTerm(inst_term)) {
-      allow_up = layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER;
-      allow_down = layer_num > getDesign()->getTech()->getBottomLayerNum()
-                   && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER;
     }
 
     // UP Vias
