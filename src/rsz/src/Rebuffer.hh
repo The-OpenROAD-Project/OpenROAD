@@ -11,11 +11,11 @@
 #include <optional>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
 #include "OptimizerTypes.hh"
+#include "absl/container/flat_hash_map.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/geom.h"
@@ -423,7 +423,7 @@ class Rebuffer : public sta::dbStaState
   };
 
   // Reuses gate delays at identical scene, load, and input-slew conditions.
-  using BufferDelayCache = std::unordered_map<
+  using BufferDelayCache = absl::flat_hash_map<
       BufferDelayKey,
       std::array<sta::ArcDelay, sta::RiseFall::index_count>,
       BufferDelayKeyHash>;

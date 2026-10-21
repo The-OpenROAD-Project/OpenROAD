@@ -17,16 +17,16 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -4.638 |      -75.7 |     38 | inst23/D
-     223* |      15 |      56 |        7 |      0 |    25 |   +10.9% |   -3.673 |      -58.4 |     38 | inst23/D
-    final |      15 |      56 |        7 |      0 |    25 |   +10.9% |   -3.673 |      -58.4 |     29 | inst23/D
+     285* |      16 |      53 |       10 |      0 |    21 |   +15.8% |   -3.531 |      -56.7 |     38 | capture_25/D
+    final |      16 |      53 |       10 |      0 |    21 |   +15.8% |   -3.531 |      -56.7 |     28 | capture_25/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 15 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 56 instances: 56 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 25 instances.
+[INFO RSZ-0059] Removed 16 buffers.
+[INFO RSZ-0040] Inserted 10 buffers.
+[INFO RSZ-0051] Resized 53 instances: 53 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 21 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_7 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: inst23 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: capture_25 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -35,41 +35,37 @@ Path Type: max
    0.0000    0.0000   clock clk (rise edge)
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ launch_7/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
-   0.8876    0.8876 ^ launch_7/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
-   0.1030    0.9906 v inst2/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.1672    1.1578 ^ inst3/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.2392    1.3970 ^ inst4/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_8)
-   0.0951    1.4921 v inst5/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.1937    1.6858 ^ inst6/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.1043    1.7901 v inst7/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
-   0.2798    2.0699 ^ inst8/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.1917    2.2616 v inst9/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.2618    2.5234 ^ inst10/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.2368    2.7602 ^ inst11/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_12)
-   0.3276    3.0878 ^ inst12/CO (gf180mcu_fd_sc_mcu9t5v0__addh_4)
-   0.1488    3.2366 v inst13/ZN (gf180mcu_fd_sc_mcu9t5v0__clkinv_4)
-   0.2252    3.4618 ^ inst14/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.2472    3.7090 ^ inst15/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_8)
-   0.1145    3.8235 v inst16/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
-   0.3338    4.1573 v inst17/Z (gf180mcu_fd_sc_mcu9t5v0__or2_4)
-   0.1882    4.3455 ^ inst18/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.1556    4.5011 v inst19/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_2)
-   0.2571    4.7582 ^ inst20/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_2)
-   0.1359    4.8941 v inst21/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi21_4)
-   0.4643    5.3584 ^ inst22/ZN (gf180mcu_fd_sc_mcu9t5v0__nor2_4)
-   0.0000    5.3584 ^ inst23/D (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
-             5.3584   data arrival time
+   0.8869    0.8869 ^ launch_7/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
+   0.1217    1.0086 v inst2/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.1704    1.1791 ^ inst3/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2392    1.4182 ^ inst4/Z (gf180mcu_fd_sc_mcu9t5v0__clkbuf_8)
+   0.0951    1.5133 v inst5/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2172    1.7305 ^ inst6/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.1028    1.8333 v inst7/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2765    2.1098 ^ inst8/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_4)
+   0.1472    2.2570 v inst9/ZN (gf180mcu_fd_sc_mcu9t5v0__nand3_4)
+   0.2586    2.5156 ^ inst10/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.1988    2.7144 ^ inst11/Z (gf180mcu_fd_sc_mcu9t5v0__buf_12)
+   0.3814    3.0958 ^ inst12/CO (gf180mcu_fd_sc_mcu9t5v0__addh_4)
+   0.0668    3.1626 v inst13/ZN (gf180mcu_fd_sc_mcu9t5v0__inv_8)
+   0.2026    3.3652 ^ inst14/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2338    3.5990 ^ inst15/Z (gf180mcu_fd_sc_mcu9t5v0__buf_4)
+   0.1370    3.7360 v inst16/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   1.3454    5.0814 ^ inst16_neighbor1/ZN (gf180mcu_fd_sc_mcu9t5v0__oai211_2)
+   0.1896    5.2710 ^ loadbuf_25/Z (gf180mcu_fd_sc_mcu9t5v0__buf_2)
+   0.0000    5.2710 ^ capture_25/D (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+             5.2710   data arrival time
 
    1.9500    1.9500   clock clk (rise edge)
    0.0000    1.9500   clock network delay (ideal)
    0.0000    1.9500   clock reconvergence pessimism
-             1.9500 ^ inst23/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
-  -0.2643    1.6857   library setup time
-             1.6857   data required time
+             1.9500 ^ capture_25/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+  -0.2105    1.7395   library setup time
+             1.7395   data required time
 -------------------------------------------------------------
-             1.6857   data required time
-            -5.3584   data arrival time
+             1.7395   data required time
+            -5.2710   data arrival time
 -------------------------------------------------------------
-            -3.6728   slack (VIOLATED)
+            -3.5315   slack (VIOLATED)
 
 

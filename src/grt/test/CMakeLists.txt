@@ -122,6 +122,7 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    report_net_detours1
     resistance_aware_asap7_cong_cugr
     resistance_aware_asap7_cugr
     resistance_aware_asap7_fr
@@ -149,6 +150,7 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    congested_routes_are_reported
     congestion_markers_cugr
     congestion_acceptance_is_recorded
     congestion_report_file_cugr

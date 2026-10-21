@@ -268,6 +268,9 @@ class GlobalRouter
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  // Routes exist but are congested and the congestion was not accepted
+  // (-allow_congestion), so haveRoutes() is false.
+  bool haveCongestedRoutes();
   bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
@@ -348,6 +351,13 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
+
+  // Detour reporting. The detour metric compares a net's final routed
+  // wirelength against its initial Steiner-tree wirelength captured before
+  // routing. ratio = final_wl / initial_steiner_wl; delta = final - initial.
+  void reportNetDetour(odb::dbNet* net, const char* file_name);
+  void reportNetDetours(int top_n, const char* file_name);
+  bool hasInitialSteinerWirelengths();
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
   // Report wire resistance
@@ -454,6 +464,13 @@ class GlobalRouter
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
+  // Detour metric: capture the initial Steiner-tree wirelength (from the STT
+  // builder) for each net before overflow-removal routing runs.
+  void computeInitialSteinerWirelengths(const std::vector<Net*>& nets);
+  void updateInitialSteinerWirelength(Net* net);
+  int computeNetInitialSteinerWirelength(Net* net);
+  int computeNetPlanarWirelength(odb::dbNet* db_net);
+  std::ofstream openDetourFile(const char* file_name);
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
                                int8_t& track_consumption,
@@ -596,6 +613,9 @@ class GlobalRouter
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
+  // Initial Steiner-tree wirelength per net (dbu), captured before
+  // overflow-removal routing. Used for the detour metric.
+  odb::PtrMap<odb::dbNet, int64_t> initial_steiner_wl_;
 
   odb::PtrMap<odb::dbNet, Net*> db_net_map_;
   Grid* grid_;
