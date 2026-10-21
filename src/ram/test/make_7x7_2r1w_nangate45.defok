@@ -39,11 +39,19 @@ VIAS 3 ;
     - via2_3_280_160_1_1_320_320 + VIARULE Via2Array-0 + CUTSIZE 7 7  + LAYERS metal2 via2 metal3  + CUTSPACING 9 9  + ENCLOSURE 3 3 3 3  ;
     - via3_4_280_160_1_1_320_320 + VIARULE Via3Array-0 + CUTSIZE 7 7  + LAYERS metal3 via3 metal4  + CUTSPACING 9 9  + ENCLOSURE 3 3 3 3  ;
 END VIAS
-COMPONENTS 374 ;
+COMPONENTS 373 ;
     - FILLER_1_296 FILLCELL_X2 + SOURCE DIST + PLACED ( 5624 140 ) FS ;
+    - FILLER_2_267 FILLCELL_X4 + SOURCE DIST + PLACED ( 5073 280 ) N ;
+    - FILLER_2_278 FILLCELL_X4 + SOURCE DIST + PLACED ( 5282 280 ) N ;
+    - FILLER_2_290 FILLCELL_X4 + SOURCE DIST + PLACED ( 5510 280 ) N ;
     - FILLER_3_296 FILLCELL_X2 + SOURCE DIST + PLACED ( 5624 420 ) FS ;
+    - FILLER_4_267 FILLCELL_X4 + SOURCE DIST + PLACED ( 5073 560 ) N ;
+    - FILLER_4_278 FILLCELL_X4 + SOURCE DIST + PLACED ( 5282 560 ) N ;
+    - FILLER_4_290 FILLCELL_X4 + SOURCE DIST + PLACED ( 5510 560 ) N ;
     - FILLER_5_296 FILLCELL_X2 + SOURCE DIST + PLACED ( 5624 700 ) FS ;
-    - FILLER_6_294 FILLCELL_X4 + SOURCE DIST + PLACED ( 5586 840 ) N ;
+    - FILLER_6_267 FILLCELL_X4 + SOURCE DIST + PLACED ( 5073 840 ) N ;
+    - FILLER_6_278 FILLCELL_X4 + SOURCE DIST + PLACED ( 5282 840 ) N ;
+    - FILLER_6_290 FILLCELL_X8 + SOURCE DIST + PLACED ( 5510 840 ) N ;
     - FILLER_7_100 FILLCELL_X2 + SOURCE DIST + PLACED ( 1900 980 ) FS ;
     - FILLER_7_106 FILLCELL_X8 + SOURCE DIST + PLACED ( 2014 980 ) FS ;
     - FILLER_7_114 FILLCELL_X8 + SOURCE DIST + PLACED ( 2166 980 ) FS ;
@@ -95,54 +103,45 @@ COMPONENTS 374 ;
     - buffer.in[4] BUF_X1 + PLACED ( 2603 980 ) FS ;
     - buffer.in[5] BUF_X1 + PLACED ( 3249 980 ) FS ;
     - buffer.in[6] BUF_X1 + PLACED ( 3895 980 ) FS ;
-    - decoder_p0.and_layer0_word0 AND2_X1 + PLACED ( 4997 0 ) N ;
-    - decoder_p0.and_layer0_word1 AND2_X1 + PLACED ( 4997 140 ) FS ;
-    - decoder_p0.and_layer0_word2 AND2_X1 + PLACED ( 4997 280 ) N ;
-    - decoder_p0.and_layer0_word3 AND2_X1 + PLACED ( 4997 420 ) FS ;
-    - decoder_p0.and_layer0_word4 AND2_X1 + PLACED ( 4997 560 ) N ;
-    - decoder_p0.and_layer0_word5 AND2_X1 + PLACED ( 4997 700 ) FS ;
-    - decoder_p0.and_layer0_word6 AND2_X1 + PLACED ( 4997 840 ) N ;
-    - decoder_p0.and_layer1_word0 AND2_X1 + PLACED ( 5073 0 ) N ;
-    - decoder_p0.and_layer1_word1 AND2_X1 + PLACED ( 5073 140 ) FS ;
-    - decoder_p0.and_layer1_word2 AND2_X1 + PLACED ( 5073 280 ) N ;
-    - decoder_p0.and_layer1_word3 AND2_X1 + PLACED ( 5073 420 ) FS ;
-    - decoder_p0.and_layer1_word4 AND2_X1 + PLACED ( 5073 560 ) N ;
-    - decoder_p0.and_layer1_word5 AND2_X1 + PLACED ( 5073 700 ) FS ;
-    - decoder_p0.and_layer1_word6 AND2_X1 + PLACED ( 5073 840 ) N ;
+    - decoder_p0.and_pre_a1_0_0 AND2_X1 + PLACED ( 5073 0 ) N ;
+    - decoder_p0.and_pre_a1_0_1 AND2_X1 + PLACED ( 5073 140 ) FS ;
+    - decoder_p0.and_pre_a1_0_2 AND2_X1 + PLACED ( 5073 420 ) FS ;
+    - decoder_p0.and_pre_a1_0_3 AND2_X1 + PLACED ( 5073 700 ) FS ;
+    - decoder_p0.and_word0 AND2_X1 + PLACED ( 4997 0 ) N ;
+    - decoder_p0.and_word1 AND2_X1 + PLACED ( 4997 140 ) FS ;
+    - decoder_p0.and_word2 AND2_X1 + PLACED ( 4997 280 ) N ;
+    - decoder_p0.and_word3 AND2_X1 + PLACED ( 4997 420 ) FS ;
+    - decoder_p0.and_word4 AND2_X1 + PLACED ( 4997 560 ) N ;
+    - decoder_p0.and_word5 AND2_X1 + PLACED ( 4997 700 ) FS ;
+    - decoder_p0.and_word6 AND2_X1 + PLACED ( 4997 840 ) N ;
     - decoder_p0.inv_p0_a0 INV_X1 + PLACED ( 5586 560 ) N ;
     - decoder_p0.inv_p0_a1 INV_X1 + PLACED ( 5586 280 ) N ;
     - decoder_p0.inv_p0_a2 INV_X1 + PLACED ( 5586 0 ) N ;
-    - decoder_p1.and_layer0_word0 AND2_X1 + PLACED ( 5206 0 ) N ;
-    - decoder_p1.and_layer0_word1 AND2_X1 + PLACED ( 5206 140 ) FS ;
-    - decoder_p1.and_layer0_word2 AND2_X1 + PLACED ( 5206 280 ) N ;
-    - decoder_p1.and_layer0_word3 AND2_X1 + PLACED ( 5206 420 ) FS ;
-    - decoder_p1.and_layer0_word4 AND2_X1 + PLACED ( 5206 560 ) N ;
-    - decoder_p1.and_layer0_word5 AND2_X1 + PLACED ( 5206 700 ) FS ;
-    - decoder_p1.and_layer0_word6 AND2_X1 + PLACED ( 5206 840 ) N ;
-    - decoder_p1.and_layer1_word0 AND2_X1 + PLACED ( 5282 0 ) N ;
-    - decoder_p1.and_layer1_word1 AND2_X1 + PLACED ( 5282 140 ) FS ;
-    - decoder_p1.and_layer1_word2 AND2_X1 + PLACED ( 5282 280 ) N ;
-    - decoder_p1.and_layer1_word3 AND2_X1 + PLACED ( 5282 420 ) FS ;
-    - decoder_p1.and_layer1_word4 AND2_X1 + PLACED ( 5282 560 ) N ;
-    - decoder_p1.and_layer1_word5 AND2_X1 + PLACED ( 5282 700 ) FS ;
-    - decoder_p1.and_layer1_word6 AND2_X1 + PLACED ( 5282 840 ) N ;
+    - decoder_p1.and_pre_a1_0_0 AND2_X1 + PLACED ( 5282 0 ) N ;
+    - decoder_p1.and_pre_a1_0_1 AND2_X1 + PLACED ( 5282 140 ) FS ;
+    - decoder_p1.and_pre_a1_0_2 AND2_X1 + PLACED ( 5282 420 ) FS ;
+    - decoder_p1.and_pre_a1_0_3 AND2_X1 + PLACED ( 5282 700 ) FS ;
+    - decoder_p1.and_word0 AND2_X1 + PLACED ( 5206 0 ) N ;
+    - decoder_p1.and_word1 AND2_X1 + PLACED ( 5206 140 ) FS ;
+    - decoder_p1.and_word2 AND2_X1 + PLACED ( 5206 280 ) N ;
+    - decoder_p1.and_word3 AND2_X1 + PLACED ( 5206 420 ) FS ;
+    - decoder_p1.and_word4 AND2_X1 + PLACED ( 5206 560 ) N ;
+    - decoder_p1.and_word5 AND2_X1 + PLACED ( 5206 700 ) FS ;
+    - decoder_p1.and_word6 AND2_X1 + PLACED ( 5206 840 ) N ;
     - decoder_p1.inv_p1_a0 INV_X1 + PLACED ( 5586 700 ) FS ;
     - decoder_p1.inv_p1_a1 INV_X1 + PLACED ( 5586 420 ) FS ;
     - decoder_p1.inv_p1_a2 INV_X1 + PLACED ( 5586 140 ) FS ;
-    - decoder_p2.and_layer0_word0 AND2_X1 + PLACED ( 5434 0 ) N ;
-    - decoder_p2.and_layer0_word1 AND2_X1 + PLACED ( 5434 140 ) FS ;
-    - decoder_p2.and_layer0_word2 AND2_X1 + PLACED ( 5434 280 ) N ;
-    - decoder_p2.and_layer0_word3 AND2_X1 + PLACED ( 5434 420 ) FS ;
-    - decoder_p2.and_layer0_word4 AND2_X1 + PLACED ( 5434 560 ) N ;
-    - decoder_p2.and_layer0_word5 AND2_X1 + PLACED ( 5434 700 ) FS ;
-    - decoder_p2.and_layer0_word6 AND2_X1 + PLACED ( 5434 840 ) N ;
-    - decoder_p2.and_layer1_word0 AND2_X1 + PLACED ( 5510 0 ) N ;
-    - decoder_p2.and_layer1_word1 AND2_X1 + PLACED ( 5510 140 ) FS ;
-    - decoder_p2.and_layer1_word2 AND2_X1 + PLACED ( 5510 280 ) N ;
-    - decoder_p2.and_layer1_word3 AND2_X1 + PLACED ( 5510 420 ) FS ;
-    - decoder_p2.and_layer1_word4 AND2_X1 + PLACED ( 5510 560 ) N ;
-    - decoder_p2.and_layer1_word5 AND2_X1 + PLACED ( 5510 700 ) FS ;
-    - decoder_p2.and_layer1_word6 AND2_X1 + PLACED ( 5510 840 ) N ;
+    - decoder_p2.and_pre_a1_0_0 AND2_X1 + PLACED ( 5510 0 ) N ;
+    - decoder_p2.and_pre_a1_0_1 AND2_X1 + PLACED ( 5510 140 ) FS ;
+    - decoder_p2.and_pre_a1_0_2 AND2_X1 + PLACED ( 5510 420 ) FS ;
+    - decoder_p2.and_pre_a1_0_3 AND2_X1 + PLACED ( 5510 700 ) FS ;
+    - decoder_p2.and_word0 AND2_X1 + PLACED ( 5434 0 ) N ;
+    - decoder_p2.and_word1 AND2_X1 + PLACED ( 5434 140 ) FS ;
+    - decoder_p2.and_word2 AND2_X1 + PLACED ( 5434 280 ) N ;
+    - decoder_p2.and_word3 AND2_X1 + PLACED ( 5434 420 ) FS ;
+    - decoder_p2.and_word4 AND2_X1 + PLACED ( 5434 560 ) N ;
+    - decoder_p2.and_word5 AND2_X1 + PLACED ( 5434 700 ) FS ;
+    - decoder_p2.and_word6 AND2_X1 + PLACED ( 5434 840 ) N ;
     - decoder_p2.inv_p2_a0 INV_X1 + PLACED ( 5624 560 ) N ;
     - decoder_p2.inv_p2_a1 INV_X1 + PLACED ( 5624 280 ) N ;
     - decoder_p2.inv_p2_a2 INV_X1 + PLACED ( 5624 0 ) N ;
@@ -555,7 +554,7 @@ PINS 34 ;
     - addr_r0[1] + NET addr_r0[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
-        + PLACED ( 5658 370 ) N ;
+        + PLACED ( 5658 510 ) N ;
     - addr_r0[2] + NET addr_r0[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
@@ -567,7 +566,7 @@ PINS 34 ;
     - addr_r1[1] + NET addr_r1[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
-        + PLACED ( 5658 398 ) N ;
+        + PLACED ( 5658 370 ) N ;
     - addr_r1[2] + NET addr_r1[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal3 ( -3 -3 ) ( 4 4 )
@@ -604,37 +603,36 @@ SPECIALNETS 2 ;
       ( tapcell.cell2_1 VDD ) ( tapcell.cell2_0 VDD ) ( tapcell.cell1_7 VDD ) ( tapcell.cell1_6 VDD ) ( tapcell.cell1_5 VDD ) ( tapcell.cell1_4 VDD ) ( tapcell.cell1_3 VDD ) ( tapcell.cell1_2 VDD )
       ( tapcell.cell1_1 VDD ) ( tapcell.cell1_0 VDD ) ( tapcell.cell0_7 VDD ) ( tapcell.cell0_6 VDD ) ( tapcell.cell0_5 VDD ) ( tapcell.cell0_4 VDD ) ( tapcell.cell0_3 VDD ) ( tapcell.cell0_2 VDD )
       ( tapcell.cell0_1 VDD ) ( tapcell.cell0_0 VDD ) ( decoder_p2.inv_p2_a0 VDD ) ( decoder_p2.inv_p2_a1 VDD ) ( decoder_p2.inv_p2_a2 VDD ) ( decoder_p1.inv_p1_a0 VDD ) ( decoder_p0.inv_p0_a0 VDD ) ( decoder_p1.inv_p1_a1 VDD )
-      ( decoder_p0.inv_p0_a1 VDD ) ( decoder_p1.inv_p1_a2 VDD ) ( decoder_p0.inv_p0_a2 VDD ) ( decoder_p2.and_layer1_word6 VDD ) ( decoder_p2.and_layer0_word6 VDD ) ( decoder_p2.and_layer1_word5 VDD ) ( decoder_p2.and_layer0_word5 VDD ) ( decoder_p2.and_layer1_word4 VDD )
-      ( decoder_p2.and_layer0_word4 VDD ) ( decoder_p2.and_layer1_word3 VDD ) ( decoder_p2.and_layer0_word3 VDD ) ( decoder_p2.and_layer1_word2 VDD ) ( decoder_p2.and_layer0_word2 VDD ) ( decoder_p2.and_layer1_word1 VDD ) ( decoder_p2.and_layer0_word1 VDD ) ( decoder_p2.and_layer1_word0 VDD )
-      ( decoder_p2.and_layer0_word0 VDD ) ( sel_buf_r_p2.sel_buf_6 VDD ) ( sel_buf_r_p2.sel_buf_5 VDD ) ( sel_buf_r_p2.sel_buf_4 VDD ) ( sel_buf_r_p2.sel_buf_3 VDD ) ( sel_buf_r_p2.sel_buf_2 VDD ) ( sel_buf_r_p2.sel_buf_1 VDD ) ( sel_buf_r_p2.sel_buf_0 VDD )
-      ( decoder_p1.and_layer1_word6 VDD ) ( decoder_p1.and_layer0_word6 VDD ) ( decoder_p1.and_layer1_word5 VDD ) ( decoder_p1.and_layer0_word5 VDD ) ( decoder_p1.and_layer1_word4 VDD ) ( decoder_p1.and_layer0_word4 VDD ) ( decoder_p1.and_layer1_word3 VDD ) ( decoder_p1.and_layer0_word3 VDD )
-      ( decoder_p1.and_layer1_word2 VDD ) ( decoder_p1.and_layer0_word2 VDD ) ( decoder_p1.and_layer1_word1 VDD ) ( decoder_p1.and_layer0_word1 VDD ) ( decoder_p1.and_layer1_word0 VDD ) ( decoder_p1.and_layer0_word0 VDD ) ( sel_buf_r_p1.sel_buf_6 VDD ) ( sel_buf_r_p1.sel_buf_5 VDD )
-      ( sel_buf_r_p1.sel_buf_4 VDD ) ( sel_buf_r_p1.sel_buf_3 VDD ) ( sel_buf_r_p1.sel_buf_2 VDD ) ( sel_buf_r_p1.sel_buf_1 VDD ) ( sel_buf_r_p1.sel_buf_0 VDD ) ( decoder_p0.and_layer1_word6 VDD ) ( decoder_p0.and_layer0_word6 VDD ) ( decoder_p0.and_layer1_word5 VDD )
-      ( decoder_p0.and_layer0_word5 VDD ) ( decoder_p0.and_layer1_word4 VDD ) ( decoder_p0.and_layer0_word4 VDD ) ( decoder_p0.and_layer1_word3 VDD ) ( decoder_p0.and_layer0_word3 VDD ) ( decoder_p0.and_layer1_word2 VDD ) ( decoder_p0.and_layer0_word2 VDD ) ( decoder_p0.and_layer1_word1 VDD )
-      ( decoder_p0.and_layer0_word1 VDD ) ( decoder_p0.and_layer1_word0 VDD ) ( decoder_p0.and_layer0_word0 VDD ) ( sel_buf_w_p0.sel_buf_6 VDD ) ( sel_buf_w_p0.sel_buf_5 VDD ) ( sel_buf_w_p0.sel_buf_4 VDD ) ( sel_buf_w_p0.sel_buf_3 VDD ) ( sel_buf_w_p0.sel_buf_2 VDD )
-      ( sel_buf_w_p0.sel_buf_1 VDD ) ( sel_buf_w_p0.sel_buf_0 VDD ) ( buffer.in[6] VDD ) ( buffer.in[5] VDD ) ( buffer.in[4] VDD ) ( buffer.in[3] VDD ) ( buffer.in[2] VDD ) ( buffer.in[1] VDD )
-      ( buffer.in[0] VDD ) ( storage_6_0_0.select_inv_1 VDD ) ( storage_6_0_0.select_inv_0 VDD ) ( storage_6_0_0.gcand VDD ) ( storage_6_0_0.cg VDD ) ( storage_6_0_0.bit6.obuf1 VDD ) ( storage_6_0_0.bit6.obuf0 VDD ) ( storage_6_0_0.bit6.bit VDD )
-      ( storage_6_0_0.bit5.obuf1 VDD ) ( storage_6_0_0.bit5.obuf0 VDD ) ( storage_6_0_0.bit5.bit VDD ) ( storage_6_0_0.bit4.obuf1 VDD ) ( storage_6_0_0.bit4.obuf0 VDD ) ( storage_6_0_0.bit4.bit VDD ) ( storage_6_0_0.bit3.obuf1 VDD ) ( storage_6_0_0.bit3.obuf0 VDD )
-      ( storage_6_0_0.bit3.bit VDD ) ( storage_6_0_0.bit2.obuf1 VDD ) ( storage_6_0_0.bit2.obuf0 VDD ) ( storage_6_0_0.bit2.bit VDD ) ( storage_6_0_0.bit1.obuf1 VDD ) ( storage_6_0_0.bit1.obuf0 VDD ) ( storage_6_0_0.bit1.bit VDD ) ( storage_6_0_0.bit0.obuf1 VDD )
-      ( storage_6_0_0.bit0.obuf0 VDD ) ( storage_6_0_0.bit0.bit VDD ) ( storage_5_0_0.select_inv_1 VDD ) ( storage_5_0_0.select_inv_0 VDD ) ( storage_5_0_0.gcand VDD ) ( storage_5_0_0.cg VDD ) ( storage_5_0_0.bit6.obuf1 VDD ) ( storage_5_0_0.bit6.obuf0 VDD )
-      ( storage_5_0_0.bit6.bit VDD ) ( storage_5_0_0.bit5.obuf1 VDD ) ( storage_5_0_0.bit5.obuf0 VDD ) ( storage_5_0_0.bit5.bit VDD ) ( storage_5_0_0.bit4.obuf1 VDD ) ( storage_5_0_0.bit4.obuf0 VDD ) ( storage_5_0_0.bit4.bit VDD ) ( storage_5_0_0.bit3.obuf1 VDD )
-      ( storage_5_0_0.bit3.obuf0 VDD ) ( storage_5_0_0.bit3.bit VDD ) ( storage_5_0_0.bit2.obuf1 VDD ) ( storage_5_0_0.bit2.obuf0 VDD ) ( storage_5_0_0.bit2.bit VDD ) ( storage_5_0_0.bit1.obuf1 VDD ) ( storage_5_0_0.bit1.obuf0 VDD ) ( storage_5_0_0.bit1.bit VDD )
-      ( storage_5_0_0.bit0.obuf1 VDD ) ( storage_5_0_0.bit0.obuf0 VDD ) ( storage_5_0_0.bit0.bit VDD ) ( storage_4_0_0.select_inv_1 VDD ) ( storage_4_0_0.select_inv_0 VDD ) ( storage_4_0_0.gcand VDD ) ( storage_4_0_0.cg VDD ) ( storage_4_0_0.bit6.obuf1 VDD )
-      ( storage_4_0_0.bit6.obuf0 VDD ) ( storage_4_0_0.bit6.bit VDD ) ( storage_4_0_0.bit5.obuf1 VDD ) ( storage_4_0_0.bit5.obuf0 VDD ) ( storage_4_0_0.bit5.bit VDD ) ( storage_4_0_0.bit4.obuf1 VDD ) ( storage_4_0_0.bit4.obuf0 VDD ) ( storage_4_0_0.bit4.bit VDD )
-      ( storage_4_0_0.bit3.obuf1 VDD ) ( storage_4_0_0.bit3.obuf0 VDD ) ( storage_4_0_0.bit3.bit VDD ) ( storage_4_0_0.bit2.obuf1 VDD ) ( storage_4_0_0.bit2.obuf0 VDD ) ( storage_4_0_0.bit2.bit VDD ) ( storage_4_0_0.bit1.obuf1 VDD ) ( storage_4_0_0.bit1.obuf0 VDD )
-      ( storage_4_0_0.bit1.bit VDD ) ( storage_4_0_0.bit0.obuf1 VDD ) ( storage_4_0_0.bit0.obuf0 VDD ) ( storage_4_0_0.bit0.bit VDD ) ( storage_3_0_0.select_inv_1 VDD ) ( storage_3_0_0.select_inv_0 VDD ) ( storage_3_0_0.gcand VDD ) ( storage_3_0_0.cg VDD )
-      ( storage_3_0_0.bit6.obuf1 VDD ) ( storage_3_0_0.bit6.obuf0 VDD ) ( storage_3_0_0.bit6.bit VDD ) ( storage_3_0_0.bit5.obuf1 VDD ) ( storage_3_0_0.bit5.obuf0 VDD ) ( storage_3_0_0.bit5.bit VDD ) ( storage_3_0_0.bit4.obuf1 VDD ) ( storage_3_0_0.bit4.obuf0 VDD )
-      ( storage_3_0_0.bit4.bit VDD ) ( storage_3_0_0.bit3.obuf1 VDD ) ( storage_3_0_0.bit3.obuf0 VDD ) ( storage_3_0_0.bit3.bit VDD ) ( storage_3_0_0.bit2.obuf1 VDD ) ( storage_3_0_0.bit2.obuf0 VDD ) ( storage_3_0_0.bit2.bit VDD ) ( storage_3_0_0.bit1.obuf1 VDD )
-      ( storage_3_0_0.bit1.obuf0 VDD ) ( storage_3_0_0.bit1.bit VDD ) ( storage_3_0_0.bit0.obuf1 VDD ) ( storage_3_0_0.bit0.obuf0 VDD ) ( storage_3_0_0.bit0.bit VDD ) ( storage_2_0_0.select_inv_1 VDD ) ( storage_2_0_0.select_inv_0 VDD ) ( storage_2_0_0.gcand VDD )
-      ( storage_2_0_0.cg VDD ) ( storage_2_0_0.bit6.obuf1 VDD ) ( storage_2_0_0.bit6.obuf0 VDD ) ( storage_2_0_0.bit6.bit VDD ) ( storage_2_0_0.bit5.obuf1 VDD ) ( storage_2_0_0.bit5.obuf0 VDD ) ( storage_2_0_0.bit5.bit VDD ) ( storage_2_0_0.bit4.obuf1 VDD )
-      ( storage_2_0_0.bit4.obuf0 VDD ) ( storage_2_0_0.bit4.bit VDD ) ( storage_2_0_0.bit3.obuf1 VDD ) ( storage_2_0_0.bit3.obuf0 VDD ) ( storage_2_0_0.bit3.bit VDD ) ( storage_2_0_0.bit2.obuf1 VDD ) ( storage_2_0_0.bit2.obuf0 VDD ) ( storage_2_0_0.bit2.bit VDD )
-      ( storage_2_0_0.bit1.obuf1 VDD ) ( storage_2_0_0.bit1.obuf0 VDD ) ( storage_2_0_0.bit1.bit VDD ) ( storage_2_0_0.bit0.obuf1 VDD ) ( storage_2_0_0.bit0.obuf0 VDD ) ( storage_2_0_0.bit0.bit VDD ) ( storage_1_0_0.select_inv_1 VDD ) ( storage_1_0_0.select_inv_0 VDD )
-      ( storage_1_0_0.gcand VDD ) ( storage_1_0_0.cg VDD ) ( storage_1_0_0.bit6.obuf1 VDD ) ( storage_1_0_0.bit6.obuf0 VDD ) ( storage_1_0_0.bit6.bit VDD ) ( storage_1_0_0.bit5.obuf1 VDD ) ( storage_1_0_0.bit5.obuf0 VDD ) ( storage_1_0_0.bit5.bit VDD )
-      ( storage_1_0_0.bit4.obuf1 VDD ) ( storage_1_0_0.bit4.obuf0 VDD ) ( storage_1_0_0.bit4.bit VDD ) ( storage_1_0_0.bit3.obuf1 VDD ) ( storage_1_0_0.bit3.obuf0 VDD ) ( storage_1_0_0.bit3.bit VDD ) ( storage_1_0_0.bit2.obuf1 VDD ) ( storage_1_0_0.bit2.obuf0 VDD )
-      ( storage_1_0_0.bit2.bit VDD ) ( storage_1_0_0.bit1.obuf1 VDD ) ( storage_1_0_0.bit1.obuf0 VDD ) ( storage_1_0_0.bit1.bit VDD ) ( storage_1_0_0.bit0.obuf1 VDD ) ( storage_1_0_0.bit0.obuf0 VDD ) ( storage_1_0_0.bit0.bit VDD ) ( storage_0_0_0.select_inv_1 VDD )
-      ( storage_0_0_0.select_inv_0 VDD ) ( storage_0_0_0.gcand VDD ) ( storage_0_0_0.cg VDD ) ( storage_0_0_0.bit6.obuf1 VDD ) ( storage_0_0_0.bit6.obuf0 VDD ) ( storage_0_0_0.bit6.bit VDD ) ( storage_0_0_0.bit5.obuf1 VDD ) ( storage_0_0_0.bit5.obuf0 VDD )
-      ( storage_0_0_0.bit5.bit VDD ) ( storage_0_0_0.bit4.obuf1 VDD ) ( storage_0_0_0.bit4.obuf0 VDD ) ( storage_0_0_0.bit4.bit VDD ) ( storage_0_0_0.bit3.obuf1 VDD ) ( storage_0_0_0.bit3.obuf0 VDD ) ( storage_0_0_0.bit3.bit VDD ) ( storage_0_0_0.bit2.obuf1 VDD )
-      ( storage_0_0_0.bit2.obuf0 VDD ) ( storage_0_0_0.bit2.bit VDD ) ( storage_0_0_0.bit1.obuf1 VDD ) ( storage_0_0_0.bit1.obuf0 VDD ) ( storage_0_0_0.bit1.bit VDD ) ( storage_0_0_0.bit0.obuf1 VDD ) ( storage_0_0_0.bit0.obuf0 VDD ) ( storage_0_0_0.bit0.bit VDD ) + USE POWER
+      ( decoder_p0.inv_p0_a1 VDD ) ( decoder_p1.inv_p1_a2 VDD ) ( decoder_p0.inv_p0_a2 VDD ) ( decoder_p2.and_pre_a1_0_3 VDD ) ( decoder_p2.and_pre_a1_0_2 VDD ) ( decoder_p2.and_pre_a1_0_1 VDD ) ( decoder_p2.and_pre_a1_0_0 VDD ) ( decoder_p2.and_word6 VDD )
+      ( decoder_p2.and_word5 VDD ) ( decoder_p2.and_word4 VDD ) ( decoder_p2.and_word3 VDD ) ( decoder_p2.and_word2 VDD ) ( decoder_p2.and_word1 VDD ) ( decoder_p2.and_word0 VDD ) ( sel_buf_r_p2.sel_buf_6 VDD ) ( sel_buf_r_p2.sel_buf_5 VDD )
+      ( sel_buf_r_p2.sel_buf_4 VDD ) ( sel_buf_r_p2.sel_buf_3 VDD ) ( sel_buf_r_p2.sel_buf_2 VDD ) ( sel_buf_r_p2.sel_buf_1 VDD ) ( sel_buf_r_p2.sel_buf_0 VDD ) ( decoder_p1.and_pre_a1_0_3 VDD ) ( decoder_p1.and_pre_a1_0_2 VDD ) ( decoder_p1.and_pre_a1_0_1 VDD )
+      ( decoder_p1.and_pre_a1_0_0 VDD ) ( decoder_p1.and_word6 VDD ) ( decoder_p1.and_word5 VDD ) ( decoder_p1.and_word4 VDD ) ( decoder_p1.and_word3 VDD ) ( decoder_p1.and_word2 VDD ) ( decoder_p1.and_word1 VDD ) ( decoder_p1.and_word0 VDD )
+      ( sel_buf_r_p1.sel_buf_6 VDD ) ( sel_buf_r_p1.sel_buf_5 VDD ) ( sel_buf_r_p1.sel_buf_4 VDD ) ( sel_buf_r_p1.sel_buf_3 VDD ) ( sel_buf_r_p1.sel_buf_2 VDD ) ( sel_buf_r_p1.sel_buf_1 VDD ) ( sel_buf_r_p1.sel_buf_0 VDD ) ( decoder_p0.and_pre_a1_0_3 VDD )
+      ( decoder_p0.and_pre_a1_0_2 VDD ) ( decoder_p0.and_pre_a1_0_1 VDD ) ( decoder_p0.and_pre_a1_0_0 VDD ) ( decoder_p0.and_word6 VDD ) ( decoder_p0.and_word5 VDD ) ( decoder_p0.and_word4 VDD ) ( decoder_p0.and_word3 VDD ) ( decoder_p0.and_word2 VDD )
+      ( decoder_p0.and_word1 VDD ) ( decoder_p0.and_word0 VDD ) ( sel_buf_w_p0.sel_buf_6 VDD ) ( sel_buf_w_p0.sel_buf_5 VDD ) ( sel_buf_w_p0.sel_buf_4 VDD ) ( sel_buf_w_p0.sel_buf_3 VDD ) ( sel_buf_w_p0.sel_buf_2 VDD ) ( sel_buf_w_p0.sel_buf_1 VDD )
+      ( sel_buf_w_p0.sel_buf_0 VDD ) ( buffer.in[6] VDD ) ( buffer.in[5] VDD ) ( buffer.in[4] VDD ) ( buffer.in[3] VDD ) ( buffer.in[2] VDD ) ( buffer.in[1] VDD ) ( buffer.in[0] VDD )
+      ( storage_6_0_0.select_inv_1 VDD ) ( storage_6_0_0.select_inv_0 VDD ) ( storage_6_0_0.gcand VDD ) ( storage_6_0_0.cg VDD ) ( storage_6_0_0.bit6.obuf1 VDD ) ( storage_6_0_0.bit6.obuf0 VDD ) ( storage_6_0_0.bit6.bit VDD ) ( storage_6_0_0.bit5.obuf1 VDD )
+      ( storage_6_0_0.bit5.obuf0 VDD ) ( storage_6_0_0.bit5.bit VDD ) ( storage_6_0_0.bit4.obuf1 VDD ) ( storage_6_0_0.bit4.obuf0 VDD ) ( storage_6_0_0.bit4.bit VDD ) ( storage_6_0_0.bit3.obuf1 VDD ) ( storage_6_0_0.bit3.obuf0 VDD ) ( storage_6_0_0.bit3.bit VDD )
+      ( storage_6_0_0.bit2.obuf1 VDD ) ( storage_6_0_0.bit2.obuf0 VDD ) ( storage_6_0_0.bit2.bit VDD ) ( storage_6_0_0.bit1.obuf1 VDD ) ( storage_6_0_0.bit1.obuf0 VDD ) ( storage_6_0_0.bit1.bit VDD ) ( storage_6_0_0.bit0.obuf1 VDD ) ( storage_6_0_0.bit0.obuf0 VDD )
+      ( storage_6_0_0.bit0.bit VDD ) ( storage_5_0_0.select_inv_1 VDD ) ( storage_5_0_0.select_inv_0 VDD ) ( storage_5_0_0.gcand VDD ) ( storage_5_0_0.cg VDD ) ( storage_5_0_0.bit6.obuf1 VDD ) ( storage_5_0_0.bit6.obuf0 VDD ) ( storage_5_0_0.bit6.bit VDD )
+      ( storage_5_0_0.bit5.obuf1 VDD ) ( storage_5_0_0.bit5.obuf0 VDD ) ( storage_5_0_0.bit5.bit VDD ) ( storage_5_0_0.bit4.obuf1 VDD ) ( storage_5_0_0.bit4.obuf0 VDD ) ( storage_5_0_0.bit4.bit VDD ) ( storage_5_0_0.bit3.obuf1 VDD ) ( storage_5_0_0.bit3.obuf0 VDD )
+      ( storage_5_0_0.bit3.bit VDD ) ( storage_5_0_0.bit2.obuf1 VDD ) ( storage_5_0_0.bit2.obuf0 VDD ) ( storage_5_0_0.bit2.bit VDD ) ( storage_5_0_0.bit1.obuf1 VDD ) ( storage_5_0_0.bit1.obuf0 VDD ) ( storage_5_0_0.bit1.bit VDD ) ( storage_5_0_0.bit0.obuf1 VDD )
+      ( storage_5_0_0.bit0.obuf0 VDD ) ( storage_5_0_0.bit0.bit VDD ) ( storage_4_0_0.select_inv_1 VDD ) ( storage_4_0_0.select_inv_0 VDD ) ( storage_4_0_0.gcand VDD ) ( storage_4_0_0.cg VDD ) ( storage_4_0_0.bit6.obuf1 VDD ) ( storage_4_0_0.bit6.obuf0 VDD )
+      ( storage_4_0_0.bit6.bit VDD ) ( storage_4_0_0.bit5.obuf1 VDD ) ( storage_4_0_0.bit5.obuf0 VDD ) ( storage_4_0_0.bit5.bit VDD ) ( storage_4_0_0.bit4.obuf1 VDD ) ( storage_4_0_0.bit4.obuf0 VDD ) ( storage_4_0_0.bit4.bit VDD ) ( storage_4_0_0.bit3.obuf1 VDD )
+      ( storage_4_0_0.bit3.obuf0 VDD ) ( storage_4_0_0.bit3.bit VDD ) ( storage_4_0_0.bit2.obuf1 VDD ) ( storage_4_0_0.bit2.obuf0 VDD ) ( storage_4_0_0.bit2.bit VDD ) ( storage_4_0_0.bit1.obuf1 VDD ) ( storage_4_0_0.bit1.obuf0 VDD ) ( storage_4_0_0.bit1.bit VDD )
+      ( storage_4_0_0.bit0.obuf1 VDD ) ( storage_4_0_0.bit0.obuf0 VDD ) ( storage_4_0_0.bit0.bit VDD ) ( storage_3_0_0.select_inv_1 VDD ) ( storage_3_0_0.select_inv_0 VDD ) ( storage_3_0_0.gcand VDD ) ( storage_3_0_0.cg VDD ) ( storage_3_0_0.bit6.obuf1 VDD )
+      ( storage_3_0_0.bit6.obuf0 VDD ) ( storage_3_0_0.bit6.bit VDD ) ( storage_3_0_0.bit5.obuf1 VDD ) ( storage_3_0_0.bit5.obuf0 VDD ) ( storage_3_0_0.bit5.bit VDD ) ( storage_3_0_0.bit4.obuf1 VDD ) ( storage_3_0_0.bit4.obuf0 VDD ) ( storage_3_0_0.bit4.bit VDD )
+      ( storage_3_0_0.bit3.obuf1 VDD ) ( storage_3_0_0.bit3.obuf0 VDD ) ( storage_3_0_0.bit3.bit VDD ) ( storage_3_0_0.bit2.obuf1 VDD ) ( storage_3_0_0.bit2.obuf0 VDD ) ( storage_3_0_0.bit2.bit VDD ) ( storage_3_0_0.bit1.obuf1 VDD ) ( storage_3_0_0.bit1.obuf0 VDD )
+      ( storage_3_0_0.bit1.bit VDD ) ( storage_3_0_0.bit0.obuf1 VDD ) ( storage_3_0_0.bit0.obuf0 VDD ) ( storage_3_0_0.bit0.bit VDD ) ( storage_2_0_0.select_inv_1 VDD ) ( storage_2_0_0.select_inv_0 VDD ) ( storage_2_0_0.gcand VDD ) ( storage_2_0_0.cg VDD )
+      ( storage_2_0_0.bit6.obuf1 VDD ) ( storage_2_0_0.bit6.obuf0 VDD ) ( storage_2_0_0.bit6.bit VDD ) ( storage_2_0_0.bit5.obuf1 VDD ) ( storage_2_0_0.bit5.obuf0 VDD ) ( storage_2_0_0.bit5.bit VDD ) ( storage_2_0_0.bit4.obuf1 VDD ) ( storage_2_0_0.bit4.obuf0 VDD )
+      ( storage_2_0_0.bit4.bit VDD ) ( storage_2_0_0.bit3.obuf1 VDD ) ( storage_2_0_0.bit3.obuf0 VDD ) ( storage_2_0_0.bit3.bit VDD ) ( storage_2_0_0.bit2.obuf1 VDD ) ( storage_2_0_0.bit2.obuf0 VDD ) ( storage_2_0_0.bit2.bit VDD ) ( storage_2_0_0.bit1.obuf1 VDD )
+      ( storage_2_0_0.bit1.obuf0 VDD ) ( storage_2_0_0.bit1.bit VDD ) ( storage_2_0_0.bit0.obuf1 VDD ) ( storage_2_0_0.bit0.obuf0 VDD ) ( storage_2_0_0.bit0.bit VDD ) ( storage_1_0_0.select_inv_1 VDD ) ( storage_1_0_0.select_inv_0 VDD ) ( storage_1_0_0.gcand VDD )
+      ( storage_1_0_0.cg VDD ) ( storage_1_0_0.bit6.obuf1 VDD ) ( storage_1_0_0.bit6.obuf0 VDD ) ( storage_1_0_0.bit6.bit VDD ) ( storage_1_0_0.bit5.obuf1 VDD ) ( storage_1_0_0.bit5.obuf0 VDD ) ( storage_1_0_0.bit5.bit VDD ) ( storage_1_0_0.bit4.obuf1 VDD )
+      ( storage_1_0_0.bit4.obuf0 VDD ) ( storage_1_0_0.bit4.bit VDD ) ( storage_1_0_0.bit3.obuf1 VDD ) ( storage_1_0_0.bit3.obuf0 VDD ) ( storage_1_0_0.bit3.bit VDD ) ( storage_1_0_0.bit2.obuf1 VDD ) ( storage_1_0_0.bit2.obuf0 VDD ) ( storage_1_0_0.bit2.bit VDD )
+      ( storage_1_0_0.bit1.obuf1 VDD ) ( storage_1_0_0.bit1.obuf0 VDD ) ( storage_1_0_0.bit1.bit VDD ) ( storage_1_0_0.bit0.obuf1 VDD ) ( storage_1_0_0.bit0.obuf0 VDD ) ( storage_1_0_0.bit0.bit VDD ) ( storage_0_0_0.select_inv_1 VDD ) ( storage_0_0_0.select_inv_0 VDD )
+      ( storage_0_0_0.gcand VDD ) ( storage_0_0_0.cg VDD ) ( storage_0_0_0.bit6.obuf1 VDD ) ( storage_0_0_0.bit6.obuf0 VDD ) ( storage_0_0_0.bit6.bit VDD ) ( storage_0_0_0.bit5.obuf1 VDD ) ( storage_0_0_0.bit5.obuf0 VDD ) ( storage_0_0_0.bit5.bit VDD )
+      ( storage_0_0_0.bit4.obuf1 VDD ) ( storage_0_0_0.bit4.obuf0 VDD ) ( storage_0_0_0.bit4.bit VDD ) ( storage_0_0_0.bit3.obuf1 VDD ) ( storage_0_0_0.bit3.obuf0 VDD ) ( storage_0_0_0.bit3.bit VDD ) ( storage_0_0_0.bit2.obuf1 VDD ) ( storage_0_0_0.bit2.obuf0 VDD )
+      ( storage_0_0_0.bit2.bit VDD ) ( storage_0_0_0.bit1.obuf1 VDD ) ( storage_0_0_0.bit1.obuf0 VDD ) ( storage_0_0_0.bit1.bit VDD ) ( storage_0_0_0.bit0.obuf1 VDD ) ( storage_0_0_0.bit0.obuf0 VDD ) ( storage_0_0_0.bit0.bit VDD ) + USE POWER
       + ROUTED metal4 14 + SHAPE STRIPE ( 4950 0 ) ( 4950 1120 )
       NEW metal4 14 + SHAPE STRIPE ( 4050 0 ) ( 4050 1120 )
       NEW metal4 14 + SHAPE STRIPE ( 3150 0 ) ( 3150 1120 )
@@ -727,37 +725,36 @@ SPECIALNETS 2 ;
       ( tapcell.cell2_1 VSS ) ( tapcell.cell2_0 VSS ) ( tapcell.cell1_7 VSS ) ( tapcell.cell1_6 VSS ) ( tapcell.cell1_5 VSS ) ( tapcell.cell1_4 VSS ) ( tapcell.cell1_3 VSS ) ( tapcell.cell1_2 VSS )
       ( tapcell.cell1_1 VSS ) ( tapcell.cell1_0 VSS ) ( tapcell.cell0_7 VSS ) ( tapcell.cell0_6 VSS ) ( tapcell.cell0_5 VSS ) ( tapcell.cell0_4 VSS ) ( tapcell.cell0_3 VSS ) ( tapcell.cell0_2 VSS )
       ( tapcell.cell0_1 VSS ) ( tapcell.cell0_0 VSS ) ( decoder_p2.inv_p2_a0 VSS ) ( decoder_p2.inv_p2_a1 VSS ) ( decoder_p2.inv_p2_a2 VSS ) ( decoder_p1.inv_p1_a0 VSS ) ( decoder_p0.inv_p0_a0 VSS ) ( decoder_p1.inv_p1_a1 VSS )
-      ( decoder_p0.inv_p0_a1 VSS ) ( decoder_p1.inv_p1_a2 VSS ) ( decoder_p0.inv_p0_a2 VSS ) ( decoder_p2.and_layer1_word6 VSS ) ( decoder_p2.and_layer0_word6 VSS ) ( decoder_p2.and_layer1_word5 VSS ) ( decoder_p2.and_layer0_word5 VSS ) ( decoder_p2.and_layer1_word4 VSS )
-      ( decoder_p2.and_layer0_word4 VSS ) ( decoder_p2.and_layer1_word3 VSS ) ( decoder_p2.and_layer0_word3 VSS ) ( decoder_p2.and_layer1_word2 VSS ) ( decoder_p2.and_layer0_word2 VSS ) ( decoder_p2.and_layer1_word1 VSS ) ( decoder_p2.and_layer0_word1 VSS ) ( decoder_p2.and_layer1_word0 VSS )
-      ( decoder_p2.and_layer0_word0 VSS ) ( sel_buf_r_p2.sel_buf_6 VSS ) ( sel_buf_r_p2.sel_buf_5 VSS ) ( sel_buf_r_p2.sel_buf_4 VSS ) ( sel_buf_r_p2.sel_buf_3 VSS ) ( sel_buf_r_p2.sel_buf_2 VSS ) ( sel_buf_r_p2.sel_buf_1 VSS ) ( sel_buf_r_p2.sel_buf_0 VSS )
-      ( decoder_p1.and_layer1_word6 VSS ) ( decoder_p1.and_layer0_word6 VSS ) ( decoder_p1.and_layer1_word5 VSS ) ( decoder_p1.and_layer0_word5 VSS ) ( decoder_p1.and_layer1_word4 VSS ) ( decoder_p1.and_layer0_word4 VSS ) ( decoder_p1.and_layer1_word3 VSS ) ( decoder_p1.and_layer0_word3 VSS )
-      ( decoder_p1.and_layer1_word2 VSS ) ( decoder_p1.and_layer0_word2 VSS ) ( decoder_p1.and_layer1_word1 VSS ) ( decoder_p1.and_layer0_word1 VSS ) ( decoder_p1.and_layer1_word0 VSS ) ( decoder_p1.and_layer0_word0 VSS ) ( sel_buf_r_p1.sel_buf_6 VSS ) ( sel_buf_r_p1.sel_buf_5 VSS )
-      ( sel_buf_r_p1.sel_buf_4 VSS ) ( sel_buf_r_p1.sel_buf_3 VSS ) ( sel_buf_r_p1.sel_buf_2 VSS ) ( sel_buf_r_p1.sel_buf_1 VSS ) ( sel_buf_r_p1.sel_buf_0 VSS ) ( decoder_p0.and_layer1_word6 VSS ) ( decoder_p0.and_layer0_word6 VSS ) ( decoder_p0.and_layer1_word5 VSS )
-      ( decoder_p0.and_layer0_word5 VSS ) ( decoder_p0.and_layer1_word4 VSS ) ( decoder_p0.and_layer0_word4 VSS ) ( decoder_p0.and_layer1_word3 VSS ) ( decoder_p0.and_layer0_word3 VSS ) ( decoder_p0.and_layer1_word2 VSS ) ( decoder_p0.and_layer0_word2 VSS ) ( decoder_p0.and_layer1_word1 VSS )
-      ( decoder_p0.and_layer0_word1 VSS ) ( decoder_p0.and_layer1_word0 VSS ) ( decoder_p0.and_layer0_word0 VSS ) ( sel_buf_w_p0.sel_buf_6 VSS ) ( sel_buf_w_p0.sel_buf_5 VSS ) ( sel_buf_w_p0.sel_buf_4 VSS ) ( sel_buf_w_p0.sel_buf_3 VSS ) ( sel_buf_w_p0.sel_buf_2 VSS )
-      ( sel_buf_w_p0.sel_buf_1 VSS ) ( sel_buf_w_p0.sel_buf_0 VSS ) ( buffer.in[6] VSS ) ( buffer.in[5] VSS ) ( buffer.in[4] VSS ) ( buffer.in[3] VSS ) ( buffer.in[2] VSS ) ( buffer.in[1] VSS )
-      ( buffer.in[0] VSS ) ( storage_6_0_0.select_inv_1 VSS ) ( storage_6_0_0.select_inv_0 VSS ) ( storage_6_0_0.gcand VSS ) ( storage_6_0_0.cg VSS ) ( storage_6_0_0.bit6.obuf1 VSS ) ( storage_6_0_0.bit6.obuf0 VSS ) ( storage_6_0_0.bit6.bit VSS )
-      ( storage_6_0_0.bit5.obuf1 VSS ) ( storage_6_0_0.bit5.obuf0 VSS ) ( storage_6_0_0.bit5.bit VSS ) ( storage_6_0_0.bit4.obuf1 VSS ) ( storage_6_0_0.bit4.obuf0 VSS ) ( storage_6_0_0.bit4.bit VSS ) ( storage_6_0_0.bit3.obuf1 VSS ) ( storage_6_0_0.bit3.obuf0 VSS )
-      ( storage_6_0_0.bit3.bit VSS ) ( storage_6_0_0.bit2.obuf1 VSS ) ( storage_6_0_0.bit2.obuf0 VSS ) ( storage_6_0_0.bit2.bit VSS ) ( storage_6_0_0.bit1.obuf1 VSS ) ( storage_6_0_0.bit1.obuf0 VSS ) ( storage_6_0_0.bit1.bit VSS ) ( storage_6_0_0.bit0.obuf1 VSS )
-      ( storage_6_0_0.bit0.obuf0 VSS ) ( storage_6_0_0.bit0.bit VSS ) ( storage_5_0_0.select_inv_1 VSS ) ( storage_5_0_0.select_inv_0 VSS ) ( storage_5_0_0.gcand VSS ) ( storage_5_0_0.cg VSS ) ( storage_5_0_0.bit6.obuf1 VSS ) ( storage_5_0_0.bit6.obuf0 VSS )
-      ( storage_5_0_0.bit6.bit VSS ) ( storage_5_0_0.bit5.obuf1 VSS ) ( storage_5_0_0.bit5.obuf0 VSS ) ( storage_5_0_0.bit5.bit VSS ) ( storage_5_0_0.bit4.obuf1 VSS ) ( storage_5_0_0.bit4.obuf0 VSS ) ( storage_5_0_0.bit4.bit VSS ) ( storage_5_0_0.bit3.obuf1 VSS )
-      ( storage_5_0_0.bit3.obuf0 VSS ) ( storage_5_0_0.bit3.bit VSS ) ( storage_5_0_0.bit2.obuf1 VSS ) ( storage_5_0_0.bit2.obuf0 VSS ) ( storage_5_0_0.bit2.bit VSS ) ( storage_5_0_0.bit1.obuf1 VSS ) ( storage_5_0_0.bit1.obuf0 VSS ) ( storage_5_0_0.bit1.bit VSS )
-      ( storage_5_0_0.bit0.obuf1 VSS ) ( storage_5_0_0.bit0.obuf0 VSS ) ( storage_5_0_0.bit0.bit VSS ) ( storage_4_0_0.select_inv_1 VSS ) ( storage_4_0_0.select_inv_0 VSS ) ( storage_4_0_0.gcand VSS ) ( storage_4_0_0.cg VSS ) ( storage_4_0_0.bit6.obuf1 VSS )
-      ( storage_4_0_0.bit6.obuf0 VSS ) ( storage_4_0_0.bit6.bit VSS ) ( storage_4_0_0.bit5.obuf1 VSS ) ( storage_4_0_0.bit5.obuf0 VSS ) ( storage_4_0_0.bit5.bit VSS ) ( storage_4_0_0.bit4.obuf1 VSS ) ( storage_4_0_0.bit4.obuf0 VSS ) ( storage_4_0_0.bit4.bit VSS )
-      ( storage_4_0_0.bit3.obuf1 VSS ) ( storage_4_0_0.bit3.obuf0 VSS ) ( storage_4_0_0.bit3.bit VSS ) ( storage_4_0_0.bit2.obuf1 VSS ) ( storage_4_0_0.bit2.obuf0 VSS ) ( storage_4_0_0.bit2.bit VSS ) ( storage_4_0_0.bit1.obuf1 VSS ) ( storage_4_0_0.bit1.obuf0 VSS )
-      ( storage_4_0_0.bit1.bit VSS ) ( storage_4_0_0.bit0.obuf1 VSS ) ( storage_4_0_0.bit0.obuf0 VSS ) ( storage_4_0_0.bit0.bit VSS ) ( storage_3_0_0.select_inv_1 VSS ) ( storage_3_0_0.select_inv_0 VSS ) ( storage_3_0_0.gcand VSS ) ( storage_3_0_0.cg VSS )
-      ( storage_3_0_0.bit6.obuf1 VSS ) ( storage_3_0_0.bit6.obuf0 VSS ) ( storage_3_0_0.bit6.bit VSS ) ( storage_3_0_0.bit5.obuf1 VSS ) ( storage_3_0_0.bit5.obuf0 VSS ) ( storage_3_0_0.bit5.bit VSS ) ( storage_3_0_0.bit4.obuf1 VSS ) ( storage_3_0_0.bit4.obuf0 VSS )
-      ( storage_3_0_0.bit4.bit VSS ) ( storage_3_0_0.bit3.obuf1 VSS ) ( storage_3_0_0.bit3.obuf0 VSS ) ( storage_3_0_0.bit3.bit VSS ) ( storage_3_0_0.bit2.obuf1 VSS ) ( storage_3_0_0.bit2.obuf0 VSS ) ( storage_3_0_0.bit2.bit VSS ) ( storage_3_0_0.bit1.obuf1 VSS )
-      ( storage_3_0_0.bit1.obuf0 VSS ) ( storage_3_0_0.bit1.bit VSS ) ( storage_3_0_0.bit0.obuf1 VSS ) ( storage_3_0_0.bit0.obuf0 VSS ) ( storage_3_0_0.bit0.bit VSS ) ( storage_2_0_0.select_inv_1 VSS ) ( storage_2_0_0.select_inv_0 VSS ) ( storage_2_0_0.gcand VSS )
-      ( storage_2_0_0.cg VSS ) ( storage_2_0_0.bit6.obuf1 VSS ) ( storage_2_0_0.bit6.obuf0 VSS ) ( storage_2_0_0.bit6.bit VSS ) ( storage_2_0_0.bit5.obuf1 VSS ) ( storage_2_0_0.bit5.obuf0 VSS ) ( storage_2_0_0.bit5.bit VSS ) ( storage_2_0_0.bit4.obuf1 VSS )
-      ( storage_2_0_0.bit4.obuf0 VSS ) ( storage_2_0_0.bit4.bit VSS ) ( storage_2_0_0.bit3.obuf1 VSS ) ( storage_2_0_0.bit3.obuf0 VSS ) ( storage_2_0_0.bit3.bit VSS ) ( storage_2_0_0.bit2.obuf1 VSS ) ( storage_2_0_0.bit2.obuf0 VSS ) ( storage_2_0_0.bit2.bit VSS )
-      ( storage_2_0_0.bit1.obuf1 VSS ) ( storage_2_0_0.bit1.obuf0 VSS ) ( storage_2_0_0.bit1.bit VSS ) ( storage_2_0_0.bit0.obuf1 VSS ) ( storage_2_0_0.bit0.obuf0 VSS ) ( storage_2_0_0.bit0.bit VSS ) ( storage_1_0_0.select_inv_1 VSS ) ( storage_1_0_0.select_inv_0 VSS )
-      ( storage_1_0_0.gcand VSS ) ( storage_1_0_0.cg VSS ) ( storage_1_0_0.bit6.obuf1 VSS ) ( storage_1_0_0.bit6.obuf0 VSS ) ( storage_1_0_0.bit6.bit VSS ) ( storage_1_0_0.bit5.obuf1 VSS ) ( storage_1_0_0.bit5.obuf0 VSS ) ( storage_1_0_0.bit5.bit VSS )
-      ( storage_1_0_0.bit4.obuf1 VSS ) ( storage_1_0_0.bit4.obuf0 VSS ) ( storage_1_0_0.bit4.bit VSS ) ( storage_1_0_0.bit3.obuf1 VSS ) ( storage_1_0_0.bit3.obuf0 VSS ) ( storage_1_0_0.bit3.bit VSS ) ( storage_1_0_0.bit2.obuf1 VSS ) ( storage_1_0_0.bit2.obuf0 VSS )
-      ( storage_1_0_0.bit2.bit VSS ) ( storage_1_0_0.bit1.obuf1 VSS ) ( storage_1_0_0.bit1.obuf0 VSS ) ( storage_1_0_0.bit1.bit VSS ) ( storage_1_0_0.bit0.obuf1 VSS ) ( storage_1_0_0.bit0.obuf0 VSS ) ( storage_1_0_0.bit0.bit VSS ) ( storage_0_0_0.select_inv_1 VSS )
-      ( storage_0_0_0.select_inv_0 VSS ) ( storage_0_0_0.gcand VSS ) ( storage_0_0_0.cg VSS ) ( storage_0_0_0.bit6.obuf1 VSS ) ( storage_0_0_0.bit6.obuf0 VSS ) ( storage_0_0_0.bit6.bit VSS ) ( storage_0_0_0.bit5.obuf1 VSS ) ( storage_0_0_0.bit5.obuf0 VSS )
-      ( storage_0_0_0.bit5.bit VSS ) ( storage_0_0_0.bit4.obuf1 VSS ) ( storage_0_0_0.bit4.obuf0 VSS ) ( storage_0_0_0.bit4.bit VSS ) ( storage_0_0_0.bit3.obuf1 VSS ) ( storage_0_0_0.bit3.obuf0 VSS ) ( storage_0_0_0.bit3.bit VSS ) ( storage_0_0_0.bit2.obuf1 VSS )
-      ( storage_0_0_0.bit2.obuf0 VSS ) ( storage_0_0_0.bit2.bit VSS ) ( storage_0_0_0.bit1.obuf1 VSS ) ( storage_0_0_0.bit1.obuf0 VSS ) ( storage_0_0_0.bit1.bit VSS ) ( storage_0_0_0.bit0.obuf1 VSS ) ( storage_0_0_0.bit0.obuf0 VSS ) ( storage_0_0_0.bit0.bit VSS ) + USE GROUND
+      ( decoder_p0.inv_p0_a1 VSS ) ( decoder_p1.inv_p1_a2 VSS ) ( decoder_p0.inv_p0_a2 VSS ) ( decoder_p2.and_pre_a1_0_3 VSS ) ( decoder_p2.and_pre_a1_0_2 VSS ) ( decoder_p2.and_pre_a1_0_1 VSS ) ( decoder_p2.and_pre_a1_0_0 VSS ) ( decoder_p2.and_word6 VSS )
+      ( decoder_p2.and_word5 VSS ) ( decoder_p2.and_word4 VSS ) ( decoder_p2.and_word3 VSS ) ( decoder_p2.and_word2 VSS ) ( decoder_p2.and_word1 VSS ) ( decoder_p2.and_word0 VSS ) ( sel_buf_r_p2.sel_buf_6 VSS ) ( sel_buf_r_p2.sel_buf_5 VSS )
+      ( sel_buf_r_p2.sel_buf_4 VSS ) ( sel_buf_r_p2.sel_buf_3 VSS ) ( sel_buf_r_p2.sel_buf_2 VSS ) ( sel_buf_r_p2.sel_buf_1 VSS ) ( sel_buf_r_p2.sel_buf_0 VSS ) ( decoder_p1.and_pre_a1_0_3 VSS ) ( decoder_p1.and_pre_a1_0_2 VSS ) ( decoder_p1.and_pre_a1_0_1 VSS )
+      ( decoder_p1.and_pre_a1_0_0 VSS ) ( decoder_p1.and_word6 VSS ) ( decoder_p1.and_word5 VSS ) ( decoder_p1.and_word4 VSS ) ( decoder_p1.and_word3 VSS ) ( decoder_p1.and_word2 VSS ) ( decoder_p1.and_word1 VSS ) ( decoder_p1.and_word0 VSS )
+      ( sel_buf_r_p1.sel_buf_6 VSS ) ( sel_buf_r_p1.sel_buf_5 VSS ) ( sel_buf_r_p1.sel_buf_4 VSS ) ( sel_buf_r_p1.sel_buf_3 VSS ) ( sel_buf_r_p1.sel_buf_2 VSS ) ( sel_buf_r_p1.sel_buf_1 VSS ) ( sel_buf_r_p1.sel_buf_0 VSS ) ( decoder_p0.and_pre_a1_0_3 VSS )
+      ( decoder_p0.and_pre_a1_0_2 VSS ) ( decoder_p0.and_pre_a1_0_1 VSS ) ( decoder_p0.and_pre_a1_0_0 VSS ) ( decoder_p0.and_word6 VSS ) ( decoder_p0.and_word5 VSS ) ( decoder_p0.and_word4 VSS ) ( decoder_p0.and_word3 VSS ) ( decoder_p0.and_word2 VSS )
+      ( decoder_p0.and_word1 VSS ) ( decoder_p0.and_word0 VSS ) ( sel_buf_w_p0.sel_buf_6 VSS ) ( sel_buf_w_p0.sel_buf_5 VSS ) ( sel_buf_w_p0.sel_buf_4 VSS ) ( sel_buf_w_p0.sel_buf_3 VSS ) ( sel_buf_w_p0.sel_buf_2 VSS ) ( sel_buf_w_p0.sel_buf_1 VSS )
+      ( sel_buf_w_p0.sel_buf_0 VSS ) ( buffer.in[6] VSS ) ( buffer.in[5] VSS ) ( buffer.in[4] VSS ) ( buffer.in[3] VSS ) ( buffer.in[2] VSS ) ( buffer.in[1] VSS ) ( buffer.in[0] VSS )
+      ( storage_6_0_0.select_inv_1 VSS ) ( storage_6_0_0.select_inv_0 VSS ) ( storage_6_0_0.gcand VSS ) ( storage_6_0_0.cg VSS ) ( storage_6_0_0.bit6.obuf1 VSS ) ( storage_6_0_0.bit6.obuf0 VSS ) ( storage_6_0_0.bit6.bit VSS ) ( storage_6_0_0.bit5.obuf1 VSS )
+      ( storage_6_0_0.bit5.obuf0 VSS ) ( storage_6_0_0.bit5.bit VSS ) ( storage_6_0_0.bit4.obuf1 VSS ) ( storage_6_0_0.bit4.obuf0 VSS ) ( storage_6_0_0.bit4.bit VSS ) ( storage_6_0_0.bit3.obuf1 VSS ) ( storage_6_0_0.bit3.obuf0 VSS ) ( storage_6_0_0.bit3.bit VSS )
+      ( storage_6_0_0.bit2.obuf1 VSS ) ( storage_6_0_0.bit2.obuf0 VSS ) ( storage_6_0_0.bit2.bit VSS ) ( storage_6_0_0.bit1.obuf1 VSS ) ( storage_6_0_0.bit1.obuf0 VSS ) ( storage_6_0_0.bit1.bit VSS ) ( storage_6_0_0.bit0.obuf1 VSS ) ( storage_6_0_0.bit0.obuf0 VSS )
+      ( storage_6_0_0.bit0.bit VSS ) ( storage_5_0_0.select_inv_1 VSS ) ( storage_5_0_0.select_inv_0 VSS ) ( storage_5_0_0.gcand VSS ) ( storage_5_0_0.cg VSS ) ( storage_5_0_0.bit6.obuf1 VSS ) ( storage_5_0_0.bit6.obuf0 VSS ) ( storage_5_0_0.bit6.bit VSS )
+      ( storage_5_0_0.bit5.obuf1 VSS ) ( storage_5_0_0.bit5.obuf0 VSS ) ( storage_5_0_0.bit5.bit VSS ) ( storage_5_0_0.bit4.obuf1 VSS ) ( storage_5_0_0.bit4.obuf0 VSS ) ( storage_5_0_0.bit4.bit VSS ) ( storage_5_0_0.bit3.obuf1 VSS ) ( storage_5_0_0.bit3.obuf0 VSS )
+      ( storage_5_0_0.bit3.bit VSS ) ( storage_5_0_0.bit2.obuf1 VSS ) ( storage_5_0_0.bit2.obuf0 VSS ) ( storage_5_0_0.bit2.bit VSS ) ( storage_5_0_0.bit1.obuf1 VSS ) ( storage_5_0_0.bit1.obuf0 VSS ) ( storage_5_0_0.bit1.bit VSS ) ( storage_5_0_0.bit0.obuf1 VSS )
+      ( storage_5_0_0.bit0.obuf0 VSS ) ( storage_5_0_0.bit0.bit VSS ) ( storage_4_0_0.select_inv_1 VSS ) ( storage_4_0_0.select_inv_0 VSS ) ( storage_4_0_0.gcand VSS ) ( storage_4_0_0.cg VSS ) ( storage_4_0_0.bit6.obuf1 VSS ) ( storage_4_0_0.bit6.obuf0 VSS )
+      ( storage_4_0_0.bit6.bit VSS ) ( storage_4_0_0.bit5.obuf1 VSS ) ( storage_4_0_0.bit5.obuf0 VSS ) ( storage_4_0_0.bit5.bit VSS ) ( storage_4_0_0.bit4.obuf1 VSS ) ( storage_4_0_0.bit4.obuf0 VSS ) ( storage_4_0_0.bit4.bit VSS ) ( storage_4_0_0.bit3.obuf1 VSS )
+      ( storage_4_0_0.bit3.obuf0 VSS ) ( storage_4_0_0.bit3.bit VSS ) ( storage_4_0_0.bit2.obuf1 VSS ) ( storage_4_0_0.bit2.obuf0 VSS ) ( storage_4_0_0.bit2.bit VSS ) ( storage_4_0_0.bit1.obuf1 VSS ) ( storage_4_0_0.bit1.obuf0 VSS ) ( storage_4_0_0.bit1.bit VSS )
+      ( storage_4_0_0.bit0.obuf1 VSS ) ( storage_4_0_0.bit0.obuf0 VSS ) ( storage_4_0_0.bit0.bit VSS ) ( storage_3_0_0.select_inv_1 VSS ) ( storage_3_0_0.select_inv_0 VSS ) ( storage_3_0_0.gcand VSS ) ( storage_3_0_0.cg VSS ) ( storage_3_0_0.bit6.obuf1 VSS )
+      ( storage_3_0_0.bit6.obuf0 VSS ) ( storage_3_0_0.bit6.bit VSS ) ( storage_3_0_0.bit5.obuf1 VSS ) ( storage_3_0_0.bit5.obuf0 VSS ) ( storage_3_0_0.bit5.bit VSS ) ( storage_3_0_0.bit4.obuf1 VSS ) ( storage_3_0_0.bit4.obuf0 VSS ) ( storage_3_0_0.bit4.bit VSS )
+      ( storage_3_0_0.bit3.obuf1 VSS ) ( storage_3_0_0.bit3.obuf0 VSS ) ( storage_3_0_0.bit3.bit VSS ) ( storage_3_0_0.bit2.obuf1 VSS ) ( storage_3_0_0.bit2.obuf0 VSS ) ( storage_3_0_0.bit2.bit VSS ) ( storage_3_0_0.bit1.obuf1 VSS ) ( storage_3_0_0.bit1.obuf0 VSS )
+      ( storage_3_0_0.bit1.bit VSS ) ( storage_3_0_0.bit0.obuf1 VSS ) ( storage_3_0_0.bit0.obuf0 VSS ) ( storage_3_0_0.bit0.bit VSS ) ( storage_2_0_0.select_inv_1 VSS ) ( storage_2_0_0.select_inv_0 VSS ) ( storage_2_0_0.gcand VSS ) ( storage_2_0_0.cg VSS )
+      ( storage_2_0_0.bit6.obuf1 VSS ) ( storage_2_0_0.bit6.obuf0 VSS ) ( storage_2_0_0.bit6.bit VSS ) ( storage_2_0_0.bit5.obuf1 VSS ) ( storage_2_0_0.bit5.obuf0 VSS ) ( storage_2_0_0.bit5.bit VSS ) ( storage_2_0_0.bit4.obuf1 VSS ) ( storage_2_0_0.bit4.obuf0 VSS )
+      ( storage_2_0_0.bit4.bit VSS ) ( storage_2_0_0.bit3.obuf1 VSS ) ( storage_2_0_0.bit3.obuf0 VSS ) ( storage_2_0_0.bit3.bit VSS ) ( storage_2_0_0.bit2.obuf1 VSS ) ( storage_2_0_0.bit2.obuf0 VSS ) ( storage_2_0_0.bit2.bit VSS ) ( storage_2_0_0.bit1.obuf1 VSS )
+      ( storage_2_0_0.bit1.obuf0 VSS ) ( storage_2_0_0.bit1.bit VSS ) ( storage_2_0_0.bit0.obuf1 VSS ) ( storage_2_0_0.bit0.obuf0 VSS ) ( storage_2_0_0.bit0.bit VSS ) ( storage_1_0_0.select_inv_1 VSS ) ( storage_1_0_0.select_inv_0 VSS ) ( storage_1_0_0.gcand VSS )
+      ( storage_1_0_0.cg VSS ) ( storage_1_0_0.bit6.obuf1 VSS ) ( storage_1_0_0.bit6.obuf0 VSS ) ( storage_1_0_0.bit6.bit VSS ) ( storage_1_0_0.bit5.obuf1 VSS ) ( storage_1_0_0.bit5.obuf0 VSS ) ( storage_1_0_0.bit5.bit VSS ) ( storage_1_0_0.bit4.obuf1 VSS )
+      ( storage_1_0_0.bit4.obuf0 VSS ) ( storage_1_0_0.bit4.bit VSS ) ( storage_1_0_0.bit3.obuf1 VSS ) ( storage_1_0_0.bit3.obuf0 VSS ) ( storage_1_0_0.bit3.bit VSS ) ( storage_1_0_0.bit2.obuf1 VSS ) ( storage_1_0_0.bit2.obuf0 VSS ) ( storage_1_0_0.bit2.bit VSS )
+      ( storage_1_0_0.bit1.obuf1 VSS ) ( storage_1_0_0.bit1.obuf0 VSS ) ( storage_1_0_0.bit1.bit VSS ) ( storage_1_0_0.bit0.obuf1 VSS ) ( storage_1_0_0.bit0.obuf0 VSS ) ( storage_1_0_0.bit0.bit VSS ) ( storage_0_0_0.select_inv_1 VSS ) ( storage_0_0_0.select_inv_0 VSS )
+      ( storage_0_0_0.gcand VSS ) ( storage_0_0_0.cg VSS ) ( storage_0_0_0.bit6.obuf1 VSS ) ( storage_0_0_0.bit6.obuf0 VSS ) ( storage_0_0_0.bit6.bit VSS ) ( storage_0_0_0.bit5.obuf1 VSS ) ( storage_0_0_0.bit5.obuf0 VSS ) ( storage_0_0_0.bit5.bit VSS )
+      ( storage_0_0_0.bit4.obuf1 VSS ) ( storage_0_0_0.bit4.obuf0 VSS ) ( storage_0_0_0.bit4.bit VSS ) ( storage_0_0_0.bit3.obuf1 VSS ) ( storage_0_0_0.bit3.obuf0 VSS ) ( storage_0_0_0.bit3.bit VSS ) ( storage_0_0_0.bit2.obuf1 VSS ) ( storage_0_0_0.bit2.obuf0 VSS )
+      ( storage_0_0_0.bit2.bit VSS ) ( storage_0_0_0.bit1.obuf1 VSS ) ( storage_0_0_0.bit1.obuf0 VSS ) ( storage_0_0_0.bit1.bit VSS ) ( storage_0_0_0.bit0.obuf1 VSS ) ( storage_0_0_0.bit0.obuf0 VSS ) ( storage_0_0_0.bit0.bit VSS ) + USE GROUND
       + ROUTED metal4 14 + SHAPE STRIPE ( 5400 -7 ) ( 5400 1127 )
       NEW metal4 14 + SHAPE STRIPE ( 4500 -7 ) ( 4500 1127 )
       NEW metal4 14 + SHAPE STRIPE ( 3600 -7 ) ( 3600 1127 )
@@ -860,7 +857,7 @@ SPECIALNETS 2 ;
       NEW metal2 0 + SHAPE STRIPE ( 900 0 ) via2_3_280_160_1_1_320_320
       NEW metal1 0 + SHAPE STRIPE ( 900 0 ) via1_2_280_160_1_1_300_300 ;
 END SPECIALNETS
-NETS 188 ;
+NETS 179 ;
     - D[0] ( PIN D[0] ) ( buffer.in[0] A ) + USE SIGNAL
       + ROUTED metal4 ( 9 1057 ) ( * 1113 0 )
       NEW metal3 ( 9 1057 ) ( 28 * )
@@ -927,54 +924,54 @@ NETS 188 ;
       NEW metal2 ( 712 1001 ) ( 750 * )
       NEW metal2 ( 750 777 ) ( * 903 )
       NEW metal2 ( 750 623 ) ( * 777 )
-      NEW metal2 ( 750 63 ) ( * 217 )
-      NEW metal2 ( 750 217 ) ( * 343 )
-      NEW metal2 ( 750 343 ) ( * 497 )
       NEW metal2 ( 750 497 ) ( * 623 )
+      NEW metal2 ( 750 343 ) ( * 497 )
+      NEW metal2 ( 750 217 ) ( * 343 )
+      NEW metal2 ( 750 63 ) ( * 217 )
       NEW metal1 ( 750 903 ) via1_4
       NEW metal1 ( 712 1001 ) via1_7
       NEW metal1 ( 750 777 ) via1_4
       NEW metal1 ( 750 623 ) via1_4
-      NEW metal1 ( 750 217 ) via1_4
-      NEW metal1 ( 750 63 ) via1_4
+      NEW metal1 ( 750 497 ) via1_4
       NEW metal1 ( 750 343 ) via1_4
-      NEW metal1 ( 750 497 ) via1_4 ;
+      NEW metal1 ( 750 217 ) via1_4
+      NEW metal1 ( 750 63 ) via1_4 ;
     - D_nets.b2 ( buffer.in[2] Z ) ( storage_6_0_0.bit2.bit D ) ( storage_5_0_0.bit2.bit D ) ( storage_4_0_0.bit2.bit D ) ( storage_3_0_0.bit2.bit D ) ( storage_2_0_0.bit2.bit D ) ( storage_1_0_0.bit2.bit D )
       ( storage_0_0_0.bit2.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 1396 903 ) ( * 1001 )
       NEW metal2 ( 1358 1001 ) ( 1396 * )
       NEW metal2 ( 1396 777 ) ( * 903 )
       NEW metal2 ( 1396 623 ) ( * 777 )
-      NEW metal2 ( 1396 63 ) ( * 217 )
-      NEW metal2 ( 1396 217 ) ( * 343 )
-      NEW metal2 ( 1396 343 ) ( * 497 )
       NEW metal2 ( 1396 497 ) ( * 623 )
+      NEW metal2 ( 1396 343 ) ( * 497 )
+      NEW metal2 ( 1396 217 ) ( * 343 )
+      NEW metal2 ( 1396 63 ) ( * 217 )
       NEW metal1 ( 1396 903 ) via1_4
       NEW metal1 ( 1358 1001 ) via1_7
       NEW metal1 ( 1396 777 ) via1_4
       NEW metal1 ( 1396 623 ) via1_4
-      NEW metal1 ( 1396 217 ) via1_4
-      NEW metal1 ( 1396 63 ) via1_4
+      NEW metal1 ( 1396 497 ) via1_4
       NEW metal1 ( 1396 343 ) via1_4
-      NEW metal1 ( 1396 497 ) via1_4 ;
+      NEW metal1 ( 1396 217 ) via1_4
+      NEW metal1 ( 1396 63 ) via1_4 ;
     - D_nets.b3 ( buffer.in[3] Z ) ( storage_6_0_0.bit3.bit D ) ( storage_5_0_0.bit3.bit D ) ( storage_4_0_0.bit3.bit D ) ( storage_3_0_0.bit3.bit D ) ( storage_2_0_0.bit3.bit D ) ( storage_1_0_0.bit3.bit D )
       ( storage_0_0_0.bit3.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2042 903 ) ( * 1001 )
       NEW metal2 ( 2004 1001 ) ( 2042 * )
       NEW metal2 ( 2042 777 ) ( * 903 )
       NEW metal2 ( 2042 623 ) ( * 777 )
-      NEW metal2 ( 2042 63 ) ( * 217 )
-      NEW metal2 ( 2042 217 ) ( * 343 )
-      NEW metal2 ( 2042 343 ) ( * 497 )
       NEW metal2 ( 2042 497 ) ( * 623 )
+      NEW metal2 ( 2042 343 ) ( * 497 )
+      NEW metal2 ( 2042 217 ) ( * 343 )
+      NEW metal2 ( 2042 63 ) ( * 217 )
       NEW metal1 ( 2042 903 ) via1_4
       NEW metal1 ( 2004 1001 ) via1_7
       NEW metal1 ( 2042 777 ) via1_4
       NEW metal1 ( 2042 623 ) via1_4
-      NEW metal1 ( 2042 217 ) via1_4
-      NEW metal1 ( 2042 63 ) via1_4
+      NEW metal1 ( 2042 497 ) via1_4
       NEW metal1 ( 2042 343 ) via1_4
-      NEW metal1 ( 2042 497 ) via1_4 ;
+      NEW metal1 ( 2042 217 ) via1_4
+      NEW metal1 ( 2042 63 ) via1_4 ;
     - D_nets.b4 ( buffer.in[4] Z ) ( storage_6_0_0.bit4.bit D ) ( storage_5_0_0.bit4.bit D ) ( storage_4_0_0.bit4.bit D ) ( storage_3_0_0.bit4.bit D ) ( storage_2_0_0.bit4.bit D ) ( storage_1_0_0.bit4.bit D )
       ( storage_0_0_0.bit4.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2688 903 ) ( * 1001 )
@@ -1060,10 +1057,10 @@ NETS 188 ;
       NEW metal4 ( 1017 945 ) ( * 1113 0 )
       NEW metal2 ( 997 805 ) ( * 945 )
       NEW metal2 ( 997 665 ) ( * 805 )
+      NEW metal2 ( 997 525 ) ( * 665 )
       NEW metal2 ( 997 385 ) ( * 525 )
       NEW metal2 ( 997 245 ) ( * 385 )
       NEW metal2 ( 997 105 ) ( * 245 )
-      NEW metal2 ( 997 525 ) ( * 665 )
       NEW metal1 ( 997 945 ) via1_4
       NEW metal2 ( 997 945 ) via2_5
       NEW metal3 ( 1017 945 ) via3_2
@@ -1079,10 +1076,10 @@ NETS 188 ;
       NEW metal4 ( 1633 945 ) ( * 1113 0 )
       NEW metal2 ( 1643 805 ) ( * 945 )
       NEW metal2 ( 1643 665 ) ( * 805 )
+      NEW metal2 ( 1643 525 ) ( * 665 )
       NEW metal2 ( 1643 385 ) ( * 525 )
       NEW metal2 ( 1643 245 ) ( * 385 )
       NEW metal2 ( 1643 105 ) ( * 245 )
-      NEW metal2 ( 1643 525 ) ( * 665 )
       NEW metal1 ( 1643 945 ) via1_4
       NEW metal2 ( 1643 945 ) via2_5
       NEW metal3 ( 1633 945 ) via3_2
@@ -1098,10 +1095,10 @@ NETS 188 ;
       NEW metal4 ( 2305 945 ) ( * 1113 0 )
       NEW metal2 ( 2289 805 ) ( * 945 )
       NEW metal2 ( 2289 665 ) ( * 805 )
+      NEW metal2 ( 2289 525 ) ( * 665 )
       NEW metal2 ( 2289 385 ) ( * 525 )
       NEW metal2 ( 2289 245 ) ( * 385 )
       NEW metal2 ( 2289 105 ) ( * 245 )
-      NEW metal2 ( 2289 525 ) ( * 665 )
       NEW metal1 ( 2289 945 ) via1_4
       NEW metal2 ( 2289 945 ) via2_5
       NEW metal3 ( 2305 945 ) via3_2
@@ -1193,10 +1190,10 @@ NETS 188 ;
       NEW metal4 ( 1129 945 ) ( * 1113 0 )
       NEW metal2 ( 1149 805 ) ( * 945 )
       NEW metal2 ( 1149 665 ) ( * 805 )
+      NEW metal2 ( 1149 525 ) ( * 665 )
       NEW metal2 ( 1149 385 ) ( * 525 )
       NEW metal2 ( 1149 245 ) ( * 385 )
       NEW metal2 ( 1149 105 ) ( * 245 )
-      NEW metal2 ( 1149 525 ) ( * 665 )
       NEW metal1 ( 1149 945 ) via1_4
       NEW metal2 ( 1149 945 ) via2_5
       NEW metal3 ( 1129 945 ) via3_2
@@ -1213,14 +1210,14 @@ NETS 188 ;
       NEW metal2 ( 1776 805 ) ( 1795 * )
       NEW metal2 ( 1776 805 ) ( * 945 )
       NEW metal2 ( 1795 665 ) ( * 805 )
-      NEW metal2 ( 1776 665 ) ( 1795 * )
       NEW metal2 ( 1776 525 ) ( 1795 * )
+      NEW metal2 ( 1776 525 ) ( * 665 )
+      NEW metal2 ( 1776 665 ) ( 1795 * )
       NEW metal2 ( 1795 385 ) ( * 525 )
       NEW metal2 ( 1776 245 ) ( 1795 * )
       NEW metal2 ( 1776 245 ) ( * 385 )
       NEW metal2 ( 1776 385 ) ( 1795 * )
       NEW metal2 ( 1795 105 ) ( * 245 )
-      NEW metal2 ( 1776 525 ) ( * 665 )
       NEW metal1 ( 1795 945 ) via1_4
       NEW metal2 ( 1795 945 ) via2_5
       NEW metal3 ( 1745 945 ) via3_2
@@ -1237,10 +1234,10 @@ NETS 188 ;
       NEW metal4 ( 2417 945 ) ( * 1113 0 )
       NEW metal2 ( 2441 805 ) ( * 945 )
       NEW metal2 ( 2441 665 ) ( * 805 )
+      NEW metal2 ( 2441 525 ) ( * 665 )
       NEW metal2 ( 2441 385 ) ( * 525 )
       NEW metal2 ( 2441 245 ) ( * 385 )
       NEW metal2 ( 2441 105 ) ( * 245 )
-      NEW metal2 ( 2441 525 ) ( * 665 )
       NEW metal1 ( 2441 945 ) via1_4
       NEW metal2 ( 2441 945 ) via2_5
       NEW metal3 ( 2417 945 ) via3_2
@@ -1307,692 +1304,619 @@ NETS 188 ;
       NEW metal1 ( 4379 385 ) via1_4
       NEW metal1 ( 4379 245 ) via1_4
       NEW metal1 ( 4379 105 ) via1_4 ;
-    - addr_r0.inv_addr[0] ( decoder_p1.inv_p1_a0 ZN ) ( decoder_p1.and_layer0_word6 A1 ) ( decoder_p1.and_layer0_word4 A1 ) ( decoder_p1.and_layer0_word2 A1 ) ( decoder_p1.and_layer0_word0 A1 ) + USE SIGNAL
-      + ROUTED metal3 ( 5215 903 ) ( 5614 * )
-      NEW metal2 ( 5614 819 ) ( * 903 )
-      NEW metal2 ( 5215 623 ) ( * 749 )
-      NEW metal2 ( 5196 749 ) ( 5215 * )
-      NEW metal2 ( 5196 749 ) ( * 805 )
-      NEW metal2 ( 5196 805 ) ( 5215 * )
-      NEW metal2 ( 5215 805 ) ( * 903 )
-      NEW metal2 ( 5215 343 ) ( * 469 )
-      NEW metal2 ( 5196 469 ) ( 5215 * )
-      NEW metal2 ( 5196 469 ) ( * 525 )
-      NEW metal2 ( 5196 525 ) ( 5215 * )
-      NEW metal2 ( 5215 525 ) ( * 623 )
-      NEW metal2 ( 5215 63 ) ( * 189 )
-      NEW metal2 ( 5196 189 ) ( 5215 * )
-      NEW metal2 ( 5196 189 ) ( * 245 )
-      NEW metal2 ( 5196 245 ) ( 5215 * )
-      NEW metal2 ( 5215 245 ) ( * 343 )
-      NEW metal1 ( 5215 903 ) via1_4
-      NEW metal2 ( 5215 903 ) via2_5
-      NEW metal2 ( 5614 903 ) via2_5
-      NEW metal1 ( 5614 819 ) via1_7
-      NEW metal1 ( 5215 623 ) via1_4
-      NEW metal1 ( 5215 343 ) via1_4
-      NEW metal1 ( 5215 63 ) via1_4 ;
-    - addr_r0.inv_addr[1] ( decoder_p1.inv_p1_a1 ZN ) ( decoder_p1.and_layer1_word5 A1 ) ( decoder_p1.and_layer1_word4 A1 ) ( decoder_p1.and_layer1_word1 A1 ) ( decoder_p1.and_layer1_word0 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5291 63 ) ( * 217 )
-      NEW metal2 ( 5253 623 ) ( 5291 * )
-      NEW metal2 ( 5253 217 ) ( * 623 )
-      NEW metal2 ( 5253 217 ) ( 5291 * )
-      NEW metal2 ( 5291 623 ) ( * 777 )
-      NEW metal2 ( 5614 413 ) ( * 441 )
-      NEW metal3 ( 5253 413 ) ( 5614 * )
-      NEW metal1 ( 5291 217 ) via1_4
+    - addr_r0.inv_addr[0] ( decoder_p1.inv_p1_a0 ZN ) ( decoder_p1.and_pre_a1_0_2 A1 ) ( decoder_p1.and_pre_a1_0_0 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5291 273 ) ( * 497 )
+      NEW metal2 ( 5272 273 ) ( 5291 * )
+      NEW metal2 ( 5272 189 ) ( * 273 )
+      NEW metal2 ( 5272 189 ) ( 5291 * )
+      NEW metal2 ( 5291 63 ) ( * 189 )
+      NEW metal3 ( 5291 721 ) ( 5614 * )
+      NEW metal2 ( 5291 497 ) ( * 721 )
+      NEW metal1 ( 5291 497 ) via1_4
       NEW metal1 ( 5291 63 ) via1_4
-      NEW metal1 ( 5291 623 ) via1_4
-      NEW metal1 ( 5291 777 ) via1_4
-      NEW metal1 ( 5614 441 ) via1_7
-      NEW metal2 ( 5614 413 ) via2_5
-      NEW metal2 ( 5253 413 ) via2_5 ;
-    - addr_r0.inv_addr[2] ( decoder_p1.inv_p1_a2 ZN ) ( decoder_p1.and_layer1_word3 A2 ) ( decoder_p1.and_layer1_word2 A2 ) ( decoder_p1.and_layer1_word1 A2 ) ( decoder_p1.and_layer1_word0 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5310 217 ) ( 5614 * )
-      NEW metal2 ( 5310 217 ) ( * 343 )
+      NEW metal2 ( 5291 721 ) via2_5
+      NEW metal1 ( 5614 721 ) via1_7
+      NEW metal2 ( 5614 721 ) via2_5 ;
+    - addr_r0.inv_addr[1] ( decoder_p1.inv_p1_a1 ZN ) ( decoder_p1.and_pre_a1_0_1 A2 ) ( decoder_p1.and_pre_a1_0_0 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5310 217 ) ( * 441 )
+      NEW metal3 ( 5310 441 ) ( 5614 * )
       NEW metal2 ( 5310 63 ) ( * 217 )
-      NEW metal2 ( 5310 343 ) ( * 497 )
       NEW metal1 ( 5310 217 ) via1_4
-      NEW metal2 ( 5310 217 ) via2_5
+      NEW metal2 ( 5310 441 ) via2_5
+      NEW metal1 ( 5614 441 ) via1_7
+      NEW metal2 ( 5614 441 ) via2_5
+      NEW metal1 ( 5310 63 ) via1_4 ;
+    - addr_r0.inv_addr[2] ( decoder_p1.inv_p1_a2 ZN ) ( decoder_p1.and_word3 A2 ) ( decoder_p1.and_word2 A2 ) ( decoder_p1.and_word1 A2 ) ( decoder_p1.and_word0 A2 ) + USE SIGNAL
+      + ROUTED metal3 ( 5234 217 ) ( 5614 * )
+      NEW metal2 ( 5234 217 ) ( * 343 )
+      NEW metal2 ( 5234 63 ) ( * 217 )
+      NEW metal2 ( 5234 343 ) ( * 497 )
+      NEW metal1 ( 5234 217 ) via1_4
+      NEW metal2 ( 5234 217 ) via2_5
       NEW metal1 ( 5614 217 ) via1_4
       NEW metal2 ( 5614 217 ) via2_5
-      NEW metal1 ( 5310 343 ) via1_4
-      NEW metal1 ( 5310 63 ) via1_4
-      NEW metal1 ( 5310 497 ) via1_4 ;
-    - addr_r0[0] ( PIN addr_r0[0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_layer0_word5 A1 ) ( decoder_p1.and_layer0_word3 A1 ) ( decoder_p1.and_layer0_word1 A1 ) + USE SIGNAL
-      + ROUTED metal3 ( 5215 217 ) ( 5217 * )
-      NEW metal3 ( 5217 217 ) ( * 259 )
-      NEW metal3 ( 5217 259 ) ( 5658 * 0 )
-      NEW metal3 ( 5177 497 ) ( 5215 * )
-      NEW metal2 ( 5177 259 ) ( * 497 )
-      NEW metal3 ( 5177 259 ) ( 5217 * )
-      NEW metal3 ( 5177 777 ) ( 5215 * )
-      NEW metal2 ( 5177 497 ) ( * 777 )
-      NEW metal2 ( 5557 777 ) ( 5595 * )
-      NEW metal2 ( 5557 259 ) ( * 777 )
-      NEW metal1 ( 5215 217 ) via1_4
-      NEW metal2 ( 5215 217 ) via2_5
-      NEW metal1 ( 5215 497 ) via1_4
-      NEW metal2 ( 5215 497 ) via2_5
-      NEW metal2 ( 5177 497 ) via2_5
-      NEW metal2 ( 5177 259 ) via2_5
-      NEW metal1 ( 5215 777 ) via1_4
-      NEW metal2 ( 5215 777 ) via2_5
-      NEW metal2 ( 5177 777 ) via2_5
+      NEW metal1 ( 5234 343 ) via1_4
+      NEW metal1 ( 5234 63 ) via1_4
+      NEW metal1 ( 5234 497 ) via1_4 ;
+    - addr_r0[0] ( PIN addr_r0[0] ) ( decoder_p1.inv_p1_a0 A ) ( decoder_p1.and_pre_a1_0_3 A1 ) ( decoder_p1.and_pre_a1_0_1 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5291 217 ) ( * 245 )
+      NEW metal3 ( 5291 245 ) ( 5301 * )
+      NEW metal3 ( 5301 245 ) ( * 259 )
+      NEW metal3 ( 5301 259 ) ( 5658 * 0 )
+      NEW metal3 ( 5291 777 ) ( 5595 * )
+      NEW metal2 ( 5329 259 ) ( * 777 )
+      NEW metal1 ( 5291 217 ) via1_4
+      NEW metal2 ( 5291 245 ) via2_5
+      NEW metal2 ( 5329 259 ) via2_5
+      NEW metal1 ( 5291 777 ) via1_4
+      NEW metal2 ( 5291 777 ) via2_5
       NEW metal1 ( 5595 777 ) via1_4
-      NEW metal2 ( 5557 259 ) via2_5 ;
-    - addr_r0[1] ( PIN addr_r0[1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_layer1_word6 A1 ) ( decoder_p1.and_layer1_word3 A1 ) ( decoder_p1.and_layer1_word2 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5291 497 ) ( * 525 )
-      NEW metal2 ( 5291 525 ) ( 5329 * )
-      NEW metal2 ( 5329 525 ) ( * 819 )
-      NEW metal3 ( 5291 819 ) ( 5329 * )
-      NEW metal2 ( 5291 819 ) ( * 903 )
-      NEW metal2 ( 5291 343 ) ( * 497 )
-      NEW metal3 ( 5329 497 ) ( 5595 * )
-      NEW metal2 ( 5329 497 ) ( * 525 )
-      NEW metal3 ( 5595 371 ) ( 5658 * 0 )
-      NEW metal2 ( 5595 371 ) ( * 497 )
-      NEW metal1 ( 5291 497 ) via1_4
-      NEW metal2 ( 5329 819 ) via2_5
-      NEW metal2 ( 5291 819 ) via2_5
-      NEW metal1 ( 5291 903 ) via1_4
-      NEW metal1 ( 5291 343 ) via1_4
+      NEW metal2 ( 5595 777 ) via2_5
+      NEW metal2 ( 5329 777 ) via2_5 ;
+    - addr_r0[1] ( PIN addr_r0[1] ) ( decoder_p1.inv_p1_a1 A ) ( decoder_p1.and_pre_a1_0_3 A2 ) ( decoder_p1.and_pre_a1_0_2 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5595 497 ) ( * 511 )
+      NEW metal3 ( 5595 511 ) ( 5658 * 0 )
+      NEW metal2 ( 5310 497 ) ( * 511 )
+      NEW metal3 ( 5310 511 ) ( 5595 * )
+      NEW metal2 ( 5310 511 ) ( * 777 )
       NEW metal1 ( 5595 497 ) via1_4
-      NEW metal2 ( 5595 497 ) via2_5
-      NEW metal2 ( 5329 497 ) via2_5
-      NEW metal2 ( 5595 371 ) via2_5 ;
-    - addr_r0[2] ( PIN addr_r0[2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_layer1_word6 A2 ) ( decoder_p1.and_layer1_word5 A2 ) ( decoder_p1.and_layer1_word4 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5595 217 ) ( * 287 )
-      NEW metal3 ( 5595 287 ) ( 5658 * 0 )
-      NEW metal2 ( 5310 553 ) ( * 623 )
-      NEW metal3 ( 5310 553 ) ( 5329 * )
-      NEW metal3 ( 5329 539 ) ( * 553 )
-      NEW metal3 ( 5329 539 ) ( 5424 * )
-      NEW metal2 ( 5424 287 ) ( * 539 )
-      NEW metal3 ( 5424 287 ) ( 5595 * )
-      NEW metal2 ( 5310 623 ) ( * 777 )
-      NEW metal2 ( 5310 777 ) ( * 903 )
+      NEW metal2 ( 5595 511 ) via2_5
+      NEW metal1 ( 5310 497 ) via1_4
+      NEW metal2 ( 5310 511 ) via2_5
+      NEW metal1 ( 5310 777 ) via1_4 ;
+    - addr_r0[2] ( PIN addr_r0[2] ) ( decoder_p1.inv_p1_a2 A ) ( decoder_p1.and_word6 A2 ) ( decoder_p1.and_word5 A2 ) ( decoder_p1.and_word4 A2 ) + USE SIGNAL
+      + ROUTED metal3 ( 5652 287 ) ( 5658 * 0 )
+      NEW metal3 ( 5652 287 ) ( * 301 )
+      NEW metal3 ( 5253 301 ) ( 5652 * )
+      NEW metal2 ( 5595 217 ) ( * 301 )
+      NEW metal2 ( 5234 623 ) ( 5253 * )
+      NEW metal2 ( 5234 623 ) ( * 777 )
+      NEW metal2 ( 5234 777 ) ( * 903 )
+      NEW metal2 ( 5253 301 ) ( * 623 )
+      NEW metal2 ( 5253 301 ) via2_5
       NEW metal1 ( 5595 217 ) via1_4
-      NEW metal2 ( 5595 287 ) via2_5
-      NEW metal1 ( 5310 623 ) via1_4
-      NEW metal2 ( 5310 553 ) via2_5
-      NEW metal2 ( 5424 539 ) via2_5
-      NEW metal2 ( 5424 287 ) via2_5
-      NEW metal1 ( 5310 777 ) via1_4
-      NEW metal1 ( 5310 903 ) via1_4 ;
-    - addr_r1.inv_addr[0] ( decoder_p2.inv_p2_a0 ZN ) ( decoder_p2.and_layer0_word6 A1 ) ( decoder_p2.and_layer0_word4 A1 ) ( decoder_p2.and_layer0_word2 A1 ) ( decoder_p2.and_layer0_word0 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5443 259 ) ( * 343 )
-      NEW metal2 ( 5424 259 ) ( 5443 * )
-      NEW metal2 ( 5424 63 ) ( * 259 )
-      NEW metal2 ( 5424 63 ) ( 5443 * )
-      NEW metal2 ( 5443 595 ) ( * 623 )
-      NEW metal2 ( 5443 595 ) ( 5481 * )
-      NEW metal2 ( 5481 469 ) ( * 595 )
-      NEW metal2 ( 5443 469 ) ( 5481 * )
-      NEW metal2 ( 5443 343 ) ( * 469 )
-      NEW metal3 ( 5481 581 ) ( 5652 * )
-      NEW metal2 ( 5424 903 ) ( 5443 * )
-      NEW metal2 ( 5424 623 ) ( * 903 )
-      NEW metal2 ( 5424 623 ) ( 5443 * )
-      NEW metal1 ( 5443 343 ) via1_4
-      NEW metal1 ( 5443 63 ) via1_4
-      NEW metal1 ( 5443 623 ) via1_4
-      NEW metal1 ( 5652 581 ) via1_7
-      NEW metal2 ( 5652 581 ) via2_5
-      NEW metal2 ( 5481 581 ) via2_5
-      NEW metal1 ( 5443 903 ) via1_4 ;
-    - addr_r1.inv_addr[1] ( decoder_p2.inv_p2_a1 ZN ) ( decoder_p2.and_layer1_word5 A1 ) ( decoder_p2.and_layer1_word4 A1 ) ( decoder_p2.and_layer1_word1 A1 ) ( decoder_p2.and_layer1_word0 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5519 623 ) ( * 777 )
-      NEW metal2 ( 5652 399 ) ( * 553 )
-      NEW metal3 ( 5637 553 ) ( 5652 * )
-      NEW metal3 ( 5637 553 ) ( * 567 )
-      NEW metal3 ( 5519 567 ) ( 5637 * )
-      NEW metal2 ( 5519 567 ) ( * 623 )
-      NEW metal2 ( 5519 217 ) ( * 259 )
-      NEW metal2 ( 5500 259 ) ( 5519 * )
-      NEW metal2 ( 5500 259 ) ( * 371 )
-      NEW metal2 ( 5500 371 ) ( 5519 * )
-      NEW metal2 ( 5519 371 ) ( * 469 )
-      NEW metal2 ( 5500 469 ) ( 5519 * )
-      NEW metal2 ( 5500 469 ) ( * 567 )
-      NEW metal2 ( 5500 567 ) ( 5519 * )
-      NEW metal2 ( 5519 63 ) ( * 217 )
-      NEW metal1 ( 5519 623 ) via1_4
-      NEW metal1 ( 5519 777 ) via1_4
-      NEW metal1 ( 5652 399 ) via1_7
-      NEW metal2 ( 5652 553 ) via2_5
-      NEW metal2 ( 5519 567 ) via2_5
-      NEW metal1 ( 5519 217 ) via1_4
-      NEW metal1 ( 5519 63 ) via1_4 ;
-    - addr_r1.inv_addr[2] ( decoder_p2.inv_p2_a2 ZN ) ( decoder_p2.and_layer1_word3 A2 ) ( decoder_p2.and_layer1_word2 A2 ) ( decoder_p2.and_layer1_word1 A2 ) ( decoder_p2.and_layer1_word0 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5538 63 ) ( * 105 )
-      NEW metal2 ( 5538 105 ) ( 5652 * )
-      NEW metal2 ( 5538 105 ) ( * 217 )
-      NEW metal2 ( 5538 217 ) ( * 343 )
-      NEW metal2 ( 5538 343 ) ( * 490 )
-      NEW metal1 ( 5538 63 ) via1_4
-      NEW metal1 ( 5652 105 ) via1_4
-      NEW metal1 ( 5538 217 ) via1_4
-      NEW metal1 ( 5538 343 ) via1_4
-      NEW metal1 ( 5538 490 ) via1_4 ;
-    - addr_r1[0] ( PIN addr_r1[0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_layer0_word5 A1 ) ( decoder_p2.and_layer0_word3 A1 ) ( decoder_p2.and_layer0_word1 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5443 217 ) ( * 245 )
-      NEW metal2 ( 5443 245 ) ( 5462 * )
-      NEW metal2 ( 5462 245 ) ( * 315 )
-      NEW metal3 ( 5462 315 ) ( 5658 * 0 )
-      NEW metal2 ( 5443 497 ) ( * 511 )
-      NEW metal3 ( 5386 511 ) ( 5443 * )
-      NEW metal2 ( 5386 315 ) ( * 511 )
-      NEW metal3 ( 5386 315 ) ( 5462 * )
-      NEW metal2 ( 5633 511 ) ( * 623 )
-      NEW metal3 ( 5443 511 ) ( 5633 * )
-      NEW metal2 ( 5443 693 ) ( * 777 )
-      NEW metal3 ( 5405 693 ) ( 5443 * )
-      NEW metal2 ( 5405 609 ) ( * 693 )
-      NEW metal2 ( 5405 609 ) ( 5424 * )
-      NEW metal2 ( 5424 581 ) ( * 609 )
-      NEW metal2 ( 5424 581 ) ( 5443 * )
-      NEW metal2 ( 5443 511 ) ( * 581 )
-      NEW metal1 ( 5443 217 ) via1_4
-      NEW metal2 ( 5462 315 ) via2_5
-      NEW metal1 ( 5443 497 ) via1_4
-      NEW metal2 ( 5443 511 ) via2_5
-      NEW metal2 ( 5386 511 ) via2_5
-      NEW metal2 ( 5386 315 ) via2_5
-      NEW metal1 ( 5633 623 ) via1_4
-      NEW metal2 ( 5633 511 ) via2_5
-      NEW metal1 ( 5443 777 ) via1_4
-      NEW metal2 ( 5443 693 ) via2_5
-      NEW metal2 ( 5405 693 ) via2_5 ;
-    - addr_r1[1] ( PIN addr_r1[1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_layer1_word6 A1 ) ( decoder_p2.and_layer1_word3 A1 ) ( decoder_p2.and_layer1_word2 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5519 497 ) ( * 511 )
-      NEW metal2 ( 5519 511 ) ( 5538 * )
-      NEW metal2 ( 5538 511 ) ( * 595 )
-      NEW metal3 ( 5500 595 ) ( 5538 * )
-      NEW metal2 ( 5500 595 ) ( * 609 )
-      NEW metal2 ( 5481 609 ) ( 5500 * )
-      NEW metal2 ( 5481 609 ) ( * 903 )
-      NEW metal2 ( 5481 903 ) ( 5519 * )
-      NEW metal2 ( 5633 343 ) ( * 469 )
-      NEW metal2 ( 5614 469 ) ( 5633 * )
-      NEW metal2 ( 5614 469 ) ( * 525 )
-      NEW metal3 ( 5538 525 ) ( 5614 * )
-      NEW metal3 ( 5519 343 ) ( 5609 * )
-      NEW metal3 ( 5609 343 ) ( * 357 )
-      NEW metal3 ( 5609 357 ) ( 5633 * )
-      NEW metal3 ( 5633 399 ) ( 5658 * 0 )
+      NEW metal2 ( 5595 301 ) via2_5
+      NEW metal1 ( 5234 623 ) via1_4
+      NEW metal1 ( 5234 777 ) via1_4
+      NEW metal1 ( 5234 903 ) via1_4 ;
+    - addr_r1.inv_addr[0] ( decoder_p2.inv_p2_a0 ZN ) ( decoder_p2.and_pre_a1_0_2 A1 ) ( decoder_p2.and_pre_a1_0_0 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5519 497 ) ( * 567 )
+      NEW metal3 ( 5519 567 ) ( 5652 * )
+      NEW metal2 ( 5652 567 ) ( * 581 )
+      NEW metal2 ( 5519 63 ) ( * 133 )
+      NEW metal3 ( 5519 133 ) ( 5557 * )
+      NEW metal2 ( 5557 133 ) ( * 553 )
+      NEW metal3 ( 5557 553 ) ( * 567 )
       NEW metal1 ( 5519 497 ) via1_4
-      NEW metal2 ( 5538 595 ) via2_5
-      NEW metal2 ( 5500 595 ) via2_5
-      NEW metal1 ( 5519 903 ) via1_4
-      NEW metal1 ( 5633 343 ) via1_4
-      NEW metal2 ( 5614 525 ) via2_5
-      NEW metal2 ( 5538 525 ) via2_5
-      NEW metal1 ( 5519 343 ) via1_4
-      NEW metal2 ( 5519 343 ) via2_5
-      NEW metal2 ( 5633 357 ) via2_5
-      NEW metal2 ( 5633 399 ) via2_5 ;
-    - addr_r1[2] ( PIN addr_r1[2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_layer1_word6 A2 ) ( decoder_p2.and_layer1_word5 A2 ) ( decoder_p2.and_layer1_word4 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5633 63 ) ( * 77 )
-      NEW metal3 ( 5633 77 ) ( 5637 * )
-      NEW metal3 ( 5637 77 ) ( * 91 )
-      NEW metal3 ( 5637 91 ) ( 5658 * 0 )
-      NEW metal3 ( 5386 623 ) ( 5538 * )
-      NEW metal2 ( 5386 595 ) ( * 623 )
-      NEW metal2 ( 5348 595 ) ( 5386 * )
-      NEW metal2 ( 5348 469 ) ( * 595 )
-      NEW metal2 ( 5329 469 ) ( 5348 * )
-      NEW metal2 ( 5329 91 ) ( * 469 )
-      NEW metal3 ( 5329 91 ) ( 5637 * )
-      NEW metal2 ( 5538 623 ) ( * 777 )
-      NEW metal2 ( 5538 777 ) ( * 903 )
-      NEW metal1 ( 5633 63 ) via1_4
-      NEW metal2 ( 5633 77 ) via2_5
-      NEW metal1 ( 5538 623 ) via1_4
-      NEW metal2 ( 5538 623 ) via2_5
-      NEW metal2 ( 5386 623 ) via2_5
-      NEW metal2 ( 5329 91 ) via2_5
+      NEW metal2 ( 5519 567 ) via2_5
+      NEW metal2 ( 5652 567 ) via2_5
+      NEW metal1 ( 5652 581 ) via1_7
+      NEW metal1 ( 5519 63 ) via1_4
+      NEW metal2 ( 5519 133 ) via2_5
+      NEW metal2 ( 5557 133 ) via2_5
+      NEW metal2 ( 5557 553 ) via2_5 ;
+    - addr_r1.inv_addr[1] ( decoder_p2.inv_p2_a1 ZN ) ( decoder_p2.and_pre_a1_0_1 A2 ) ( decoder_p2.and_pre_a1_0_0 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5538 217 ) ( * 245 )
+      NEW metal3 ( 5538 245 ) ( 5652 * )
+      NEW metal2 ( 5652 245 ) ( * 301 )
+      NEW metal2 ( 5538 63 ) ( * 217 )
+      NEW metal1 ( 5538 217 ) via1_4
+      NEW metal2 ( 5538 245 ) via2_5
+      NEW metal2 ( 5652 245 ) via2_5
+      NEW metal1 ( 5652 301 ) via1_7
+      NEW metal1 ( 5538 63 ) via1_4 ;
+    - addr_r1.inv_addr[2] ( decoder_p2.inv_p2_a2 ZN ) ( decoder_p2.and_word3 A2 ) ( decoder_p2.and_word2 A2 ) ( decoder_p2.and_word1 A2 ) ( decoder_p2.and_word0 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5462 63 ) ( * 77 )
+      NEW metal3 ( 5462 77 ) ( 5652 * )
+      NEW metal2 ( 5462 77 ) ( * 217 )
+      NEW metal2 ( 5462 217 ) ( * 343 )
+      NEW metal2 ( 5462 343 ) ( * 497 )
+      NEW metal1 ( 5462 63 ) via1_4
+      NEW metal2 ( 5462 77 ) via2_5
+      NEW metal1 ( 5652 77 ) via1_4
+      NEW metal2 ( 5652 77 ) via2_5
+      NEW metal1 ( 5462 217 ) via1_4
+      NEW metal1 ( 5462 343 ) via1_4
+      NEW metal1 ( 5462 497 ) via1_4 ;
+    - addr_r1[0] ( PIN addr_r1[0] ) ( decoder_p2.inv_p2_a0 A ) ( decoder_p2.and_pre_a1_0_3 A1 ) ( decoder_p2.and_pre_a1_0_1 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5633 623 ) ( * 693 )
+      NEW metal3 ( 5519 693 ) ( 5633 * )
+      NEW metal2 ( 5519 693 ) ( * 777 )
+      NEW metal3 ( 5652 315 ) ( 5658 * 0 )
+      NEW metal3 ( 5652 315 ) ( * 329 )
+      NEW metal2 ( 5652 329 ) ( * 399 )
+      NEW metal2 ( 5633 399 ) ( 5652 * )
+      NEW metal2 ( 5633 399 ) ( * 623 )
+      NEW metal2 ( 5519 217 ) ( * 315 )
+      NEW metal3 ( 5519 315 ) ( 5652 * )
+      NEW metal1 ( 5633 623 ) via1_4
+      NEW metal2 ( 5633 693 ) via2_5
+      NEW metal2 ( 5519 693 ) via2_5
+      NEW metal1 ( 5519 777 ) via1_4
+      NEW metal2 ( 5652 329 ) via2_5
+      NEW metal1 ( 5519 217 ) via1_4
+      NEW metal2 ( 5519 315 ) via2_5 ;
+    - addr_r1[1] ( PIN addr_r1[1] ) ( decoder_p2.inv_p2_a1 A ) ( decoder_p2.and_pre_a1_0_3 A2 ) ( decoder_p2.and_pre_a1_0_2 A2 ) + USE SIGNAL
+      + ROUTED metal3 ( 5525 497 ) ( 5538 * )
+      NEW metal4 ( 5525 497 ) ( * 609 )
+      NEW metal3 ( 5525 609 ) ( 5538 * )
+      NEW metal2 ( 5538 609 ) ( * 777 )
+      NEW metal2 ( 5633 343 ) ( * 357 )
+      NEW metal3 ( 5538 357 ) ( 5633 * )
+      NEW metal2 ( 5538 357 ) ( * 497 )
+      NEW metal3 ( 5633 371 ) ( 5658 * 0 )
+      NEW metal3 ( 5633 357 ) ( * 371 )
+      NEW metal1 ( 5538 497 ) via1_4
+      NEW metal2 ( 5538 497 ) via2_5
+      NEW metal3 ( 5525 497 ) via3_2
+      NEW metal3 ( 5525 609 ) via3_2
+      NEW metal2 ( 5538 609 ) via2_5
       NEW metal1 ( 5538 777 ) via1_4
-      NEW metal1 ( 5538 903 ) via1_4 ;
-    - addr_w.inv_addr[0] ( decoder_p0.inv_p0_a0 ZN ) ( decoder_p0.and_layer0_word6 A1 ) ( decoder_p0.and_layer0_word4 A1 ) ( decoder_p0.and_layer0_word2 A1 ) ( decoder_p0.and_layer0_word0 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5006 623 ) ( * 637 )
-      NEW metal3 ( 5006 637 ) ( 5614 * )
-      NEW metal2 ( 5006 833 ) ( * 903 )
-      NEW metal2 ( 4987 833 ) ( 5006 * )
-      NEW metal2 ( 4987 749 ) ( * 833 )
-      NEW metal2 ( 4987 749 ) ( 5006 * )
-      NEW metal2 ( 5006 637 ) ( * 749 )
-      NEW metal2 ( 5006 343 ) ( * 469 )
-      NEW metal2 ( 4987 469 ) ( 5006 * )
-      NEW metal2 ( 4987 469 ) ( * 525 )
-      NEW metal2 ( 4987 525 ) ( 5006 * )
-      NEW metal2 ( 5006 525 ) ( * 623 )
-      NEW metal2 ( 5006 63 ) ( * 189 )
-      NEW metal2 ( 4987 189 ) ( 5006 * )
-      NEW metal2 ( 4987 189 ) ( * 245 )
-      NEW metal2 ( 4987 245 ) ( 5006 * )
-      NEW metal2 ( 5006 245 ) ( * 343 )
-      NEW metal1 ( 5006 623 ) via1_4
-      NEW metal2 ( 5006 637 ) via2_5
-      NEW metal1 ( 5614 637 ) via1_4
-      NEW metal2 ( 5614 637 ) via2_5
-      NEW metal1 ( 5006 903 ) via1_4
-      NEW metal1 ( 5006 343 ) via1_4
-      NEW metal1 ( 5006 63 ) via1_4 ;
-    - addr_w.inv_addr[1] ( decoder_p0.inv_p0_a1 ZN ) ( decoder_p0.and_layer1_word5 A1 ) ( decoder_p0.and_layer1_word4 A1 ) ( decoder_p0.and_layer1_word1 A1 ) ( decoder_p0.and_layer1_word0 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5082 217 ) ( * 301 )
-      NEW metal3 ( 5082 301 ) ( 5614 * )
-      NEW metal2 ( 5082 63 ) ( * 217 )
-      NEW metal2 ( 5082 595 ) ( * 623 )
-      NEW metal2 ( 5082 595 ) ( 5120 * )
-      NEW metal2 ( 5120 301 ) ( * 595 )
-      NEW metal2 ( 5082 623 ) ( * 777 )
-      NEW metal1 ( 5082 217 ) via1_4
-      NEW metal2 ( 5082 301 ) via2_5
-      NEW metal1 ( 5614 301 ) via1_7
-      NEW metal2 ( 5614 301 ) via2_5
-      NEW metal1 ( 5082 63 ) via1_4
-      NEW metal1 ( 5082 623 ) via1_4
-      NEW metal2 ( 5120 301 ) via2_5
-      NEW metal1 ( 5082 777 ) via1_4 ;
-    - addr_w.inv_addr[2] ( decoder_p0.inv_p0_a2 ZN ) ( decoder_p0.and_layer1_word3 A2 ) ( decoder_p0.and_layer1_word2 A2 ) ( decoder_p0.and_layer1_word1 A2 ) ( decoder_p0.and_layer1_word0 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5101 49 ) ( * 63 )
-      NEW metal3 ( 5101 49 ) ( 5614 * )
-      NEW metal2 ( 5101 63 ) ( * 217 )
-      NEW metal2 ( 5101 217 ) ( * 343 )
-      NEW metal2 ( 5101 343 ) ( * 497 )
-      NEW metal1 ( 5101 63 ) via1_4
-      NEW metal2 ( 5101 49 ) via2_5
-      NEW metal1 ( 5614 49 ) via1_4
-      NEW metal2 ( 5614 49 ) via2_5
-      NEW metal1 ( 5101 217 ) via1_4
-      NEW metal1 ( 5101 343 ) via1_4
-      NEW metal1 ( 5101 497 ) via1_4 ;
-    - addr_w[0] ( PIN addr_w[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word5 A1 ) ( decoder_p0.and_layer0_word3 A1 ) ( decoder_p0.and_layer0_word1 A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 5595 595 ) ( * 623 )
-      NEW metal3 ( 5595 595 ) ( 5609 * )
-      NEW metal4 ( 5609 231 ) ( * 595 )
-      NEW metal3 ( 5609 231 ) ( 5658 * 0 )
-      NEW metal2 ( 5006 497 ) ( * 511 )
-      NEW metal2 ( 5006 511 ) ( 5025 * )
-      NEW metal2 ( 5025 511 ) ( * 525 )
-      NEW metal2 ( 5025 525 ) ( 5044 * )
-      NEW metal2 ( 5044 525 ) ( * 651 )
-      NEW metal3 ( 5044 651 ) ( 5595 * )
-      NEW metal2 ( 5595 623 ) ( * 651 )
-      NEW metal3 ( 5006 217 ) ( 5044 * )
-      NEW metal2 ( 5044 217 ) ( * 525 )
-      NEW metal3 ( 5006 777 ) ( 5044 * )
-      NEW metal2 ( 5044 651 ) ( * 777 )
-      NEW metal1 ( 5595 623 ) via1_4
-      NEW metal2 ( 5595 595 ) via2_5
-      NEW metal3 ( 5609 595 ) via3_2
-      NEW metal3 ( 5609 231 ) via3_2
-      NEW metal1 ( 5006 497 ) via1_4
-      NEW metal2 ( 5044 651 ) via2_5
-      NEW metal2 ( 5595 651 ) via2_5
-      NEW metal1 ( 5006 217 ) via1_4
-      NEW metal2 ( 5006 217 ) via2_5
-      NEW metal2 ( 5044 217 ) via2_5
-      NEW metal1 ( 5006 777 ) via1_4
-      NEW metal2 ( 5006 777 ) via2_5
-      NEW metal2 ( 5044 777 ) via2_5 ;
-    - addr_w[1] ( PIN addr_w[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word6 A1 ) ( decoder_p0.and_layer1_word3 A1 ) ( decoder_p0.and_layer1_word2 A1 ) + USE SIGNAL
+      NEW metal1 ( 5633 343 ) via1_4
+      NEW metal2 ( 5633 357 ) via2_5
+      NEW metal2 ( 5538 357 ) via2_5 ;
+    - addr_r1[2] ( PIN addr_r1[2] ) ( decoder_p2.inv_p2_a2 A ) ( decoder_p2.and_word6 A2 ) ( decoder_p2.and_word5 A2 ) ( decoder_p2.and_word4 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5633 63 ) ( * 91 )
+      NEW metal3 ( 5633 91 ) ( 5658 * 0 )
+      NEW metal2 ( 5462 609 ) ( * 623 )
+      NEW metal3 ( 5462 595 ) ( * 609 )
+      NEW metal3 ( 5462 595 ) ( 5553 * )
+      NEW metal4 ( 5553 91 ) ( * 595 )
+      NEW metal3 ( 5553 91 ) ( 5633 * )
+      NEW metal2 ( 5462 623 ) ( * 777 )
+      NEW metal2 ( 5462 777 ) ( * 903 )
+      NEW metal1 ( 5633 63 ) via1_4
+      NEW metal2 ( 5633 91 ) via2_5
+      NEW metal1 ( 5462 623 ) via1_4
+      NEW metal2 ( 5462 609 ) via2_5
+      NEW metal3 ( 5553 595 ) via3_2
+      NEW metal3 ( 5553 91 ) via3_2
+      NEW metal1 ( 5462 777 ) via1_4
+      NEW metal1 ( 5462 903 ) via1_4 ;
+    - addr_w.inv_addr[0] ( decoder_p0.inv_p0_a0 ZN ) ( decoder_p0.and_pre_a1_0_2 A1 ) ( decoder_p0.and_pre_a1_0_0 A1 ) + USE SIGNAL
       + ROUTED metal2 ( 5082 497 ) ( * 539 )
-      NEW metal3 ( 5082 539 ) ( 5139 * )
-      NEW metal2 ( 5139 539 ) ( * 609 )
-      NEW metal2 ( 5120 609 ) ( 5139 * )
-      NEW metal2 ( 5120 609 ) ( * 931 )
-      NEW metal2 ( 5082 931 ) ( 5120 * )
-      NEW metal2 ( 5082 903 ) ( * 931 )
-      NEW metal2 ( 5082 343 ) ( * 497 )
-      NEW metal2 ( 5595 329 ) ( * 343 )
-      NEW metal3 ( 5082 329 ) ( 5595 * )
-      NEW metal2 ( 5082 329 ) ( * 343 )
-      NEW metal3 ( 5637 343 ) ( 5658 * 0 )
-      NEW metal3 ( 5637 329 ) ( * 343 )
-      NEW metal3 ( 5595 329 ) ( 5637 * )
+      NEW metal3 ( 5082 539 ) ( 5614 * )
+      NEW metal2 ( 5082 63 ) ( * 189 )
+      NEW metal2 ( 5063 189 ) ( 5082 * )
+      NEW metal2 ( 5063 189 ) ( * 245 )
+      NEW metal2 ( 5063 245 ) ( 5082 * )
+      NEW metal2 ( 5082 245 ) ( * 497 )
+      NEW metal2 ( 5614 539 ) ( * 581 )
       NEW metal1 ( 5082 497 ) via1_4
       NEW metal2 ( 5082 539 ) via2_5
-      NEW metal2 ( 5139 539 ) via2_5
-      NEW metal1 ( 5082 903 ) via1_4
-      NEW metal1 ( 5082 343 ) via1_4
+      NEW metal2 ( 5614 539 ) via2_5
+      NEW metal1 ( 5082 63 ) via1_4
+      NEW metal1 ( 5614 581 ) via1_7 ;
+    - addr_w.inv_addr[1] ( decoder_p0.inv_p0_a1 ZN ) ( decoder_p0.and_pre_a1_0_1 A2 ) ( decoder_p0.and_pre_a1_0_0 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5101 217 ) ( * 231 )
+      NEW metal3 ( 5101 231 ) ( 5633 * )
+      NEW metal2 ( 5633 231 ) ( * 301 )
+      NEW metal2 ( 5614 301 ) ( 5633 * )
+      NEW metal2 ( 5101 63 ) ( * 217 )
+      NEW metal1 ( 5101 217 ) via1_4
+      NEW metal2 ( 5101 231 ) via2_5
+      NEW metal2 ( 5633 231 ) via2_5
+      NEW metal1 ( 5614 301 ) via1_7
+      NEW metal1 ( 5101 63 ) via1_4 ;
+    - addr_w.inv_addr[2] ( decoder_p0.inv_p0_a2 ZN ) ( decoder_p0.and_word3 A2 ) ( decoder_p0.and_word2 A2 ) ( decoder_p0.and_word1 A2 ) ( decoder_p0.and_word0 A2 ) + USE SIGNAL
+      + ROUTED metal3 ( 5025 63 ) ( 5614 * )
+      NEW metal2 ( 5025 63 ) ( * 217 )
+      NEW metal2 ( 5025 217 ) ( * 343 )
+      NEW metal2 ( 5025 343 ) ( * 497 )
+      NEW metal1 ( 5025 63 ) via1_4
+      NEW metal2 ( 5025 63 ) via2_5
+      NEW metal1 ( 5614 63 ) via1_4
+      NEW metal2 ( 5614 63 ) via2_5
+      NEW metal1 ( 5025 217 ) via1_4
+      NEW metal1 ( 5025 343 ) via1_4
+      NEW metal1 ( 5025 497 ) via1_4 ;
+    - addr_w[0] ( PIN addr_w[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_pre_a1_0_3 A1 ) ( decoder_p0.and_pre_a1_0_1 A1 ) + USE SIGNAL
+      + ROUTED metal3 ( 5082 217 ) ( 5120 * )
+      NEW metal3 ( 5652 231 ) ( 5658 * 0 )
+      NEW metal3 ( 5652 203 ) ( * 231 )
+      NEW metal3 ( 5215 203 ) ( 5652 * )
+      NEW metal3 ( 5215 203 ) ( * 217 )
+      NEW metal3 ( 5120 217 ) ( 5215 * )
+      NEW metal3 ( 5595 581 ) ( 5609 * )
+      NEW metal2 ( 5595 581 ) ( * 623 )
+      NEW metal3 ( 5082 623 ) ( 5120 * )
+      NEW metal2 ( 5082 623 ) ( * 777 )
+      NEW metal2 ( 5120 217 ) ( * 623 )
+      NEW metal4 ( 5609 203 ) ( * 581 )
+      NEW metal2 ( 5120 217 ) via2_5
+      NEW metal1 ( 5082 217 ) via1_4
+      NEW metal2 ( 5082 217 ) via2_5
+      NEW metal3 ( 5609 203 ) via3_2
+      NEW metal3 ( 5609 581 ) via3_2
+      NEW metal2 ( 5595 581 ) via2_5
+      NEW metal1 ( 5595 623 ) via1_4
+      NEW metal2 ( 5120 623 ) via2_5
+      NEW metal2 ( 5082 623 ) via2_5
+      NEW metal1 ( 5082 777 ) via1_4 ;
+    - addr_w[1] ( PIN addr_w[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_pre_a1_0_3 A2 ) ( decoder_p0.and_pre_a1_0_2 A2 ) + USE SIGNAL
+      + ROUTED metal3 ( 5595 343 ) ( 5658 * 0 )
+      NEW metal2 ( 5101 343 ) ( * 497 )
+      NEW metal3 ( 5101 343 ) ( 5595 * )
+      NEW metal2 ( 5101 497 ) ( * 777 )
       NEW metal1 ( 5595 343 ) via1_4
-      NEW metal2 ( 5595 329 ) via2_5
-      NEW metal2 ( 5082 329 ) via2_5 ;
-    - addr_w[2] ( PIN addr_w[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word6 A2 ) ( decoder_p0.and_layer1_word5 A2 ) ( decoder_p0.and_layer1_word4 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5595 63 ) ( 5658 * 0 )
-      NEW metal3 ( 5101 623 ) ( 5105 * )
-      NEW metal3 ( 5105 609 ) ( * 623 )
-      NEW metal3 ( 4968 609 ) ( 5105 * )
-      NEW metal2 ( 4968 63 ) ( * 609 )
-      NEW metal3 ( 4968 63 ) ( 5595 * )
-      NEW metal2 ( 5101 623 ) ( * 777 )
-      NEW metal2 ( 5101 777 ) ( * 903 )
+      NEW metal2 ( 5595 343 ) via2_5
+      NEW metal1 ( 5101 497 ) via1_4
+      NEW metal2 ( 5101 343 ) via2_5
+      NEW metal1 ( 5101 777 ) via1_4 ;
+    - addr_w[2] ( PIN addr_w[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_word6 A2 ) ( decoder_p0.and_word5 A2 ) ( decoder_p0.and_word4 A2 ) + USE SIGNAL
+      + ROUTED metal2 ( 5595 63 ) ( * 105 )
+      NEW metal3 ( 5044 105 ) ( 5595 * )
+      NEW metal3 ( 5652 63 ) ( 5658 * 0 )
+      NEW metal3 ( 5652 49 ) ( * 63 )
+      NEW metal3 ( 5595 49 ) ( 5652 * )
+      NEW metal2 ( 5595 49 ) ( * 63 )
+      NEW metal2 ( 5025 623 ) ( 5044 * )
+      NEW metal2 ( 5025 623 ) ( * 777 )
+      NEW metal2 ( 5025 777 ) ( * 903 )
+      NEW metal2 ( 5044 105 ) ( * 623 )
       NEW metal1 ( 5595 63 ) via1_4
-      NEW metal2 ( 5595 63 ) via2_5
-      NEW metal1 ( 5101 623 ) via1_4
-      NEW metal2 ( 5101 623 ) via2_5
-      NEW metal2 ( 4968 609 ) via2_5
-      NEW metal2 ( 4968 63 ) via2_5
-      NEW metal1 ( 5101 777 ) via1_4
-      NEW metal1 ( 5101 903 ) via1_4 ;
+      NEW metal2 ( 5595 105 ) via2_5
+      NEW metal2 ( 5044 105 ) via2_5
+      NEW metal2 ( 5595 49 ) via2_5
+      NEW metal1 ( 5025 623 ) via1_4
+      NEW metal1 ( 5025 777 ) via1_4
+      NEW metal1 ( 5025 903 ) via1_4 ;
     - clk ( PIN clk ) ( storage_6_0_0.cg CK ) ( storage_5_0_0.cg CK ) ( storage_4_0_0.cg CK ) ( storage_3_0_0.cg CK ) ( storage_2_0_0.cg CK ) ( storage_1_0_0.cg CK )
       ( storage_0_0_0.cg CK ) + USE SIGNAL
-      + ROUTED metal3 ( 4713 889 ) ( 4721 * )
+      + ROUTED metal2 ( 4702 49 ) ( * 231 )
+      NEW metal2 ( 4702 231 ) ( * 329 )
+      NEW metal2 ( 4702 329 ) ( * 511 )
+      NEW metal3 ( 4713 889 ) ( 4721 * )
       NEW metal4 ( 4713 889 ) ( * 1113 0 )
       NEW metal2 ( 4721 791 ) ( * 889 )
       NEW metal2 ( 4721 609 ) ( * 791 )
-      NEW metal2 ( 4721 511 ) ( * 609 )
-      NEW metal2 ( 4721 329 ) ( * 511 )
-      NEW metal2 ( 4721 231 ) ( * 329 )
-      NEW metal2 ( 4721 49 ) ( * 231 )
+      NEW metal2 ( 4702 609 ) ( 4721 * )
+      NEW metal2 ( 4702 511 ) ( * 609 )
+      NEW metal1 ( 4702 231 ) via1_7
+      NEW metal1 ( 4702 49 ) via1_7
+      NEW metal1 ( 4702 329 ) via1_7
+      NEW metal1 ( 4702 511 ) via1_7
       NEW metal1 ( 4721 889 ) via1_7
       NEW metal2 ( 4721 889 ) via2_5
       NEW metal3 ( 4713 889 ) via3_2
       NEW metal1 ( 4721 791 ) via1_7
-      NEW metal1 ( 4721 609 ) via1_7
-      NEW metal1 ( 4721 511 ) via1_7
-      NEW metal1 ( 4721 329 ) via1_7
-      NEW metal1 ( 4721 231 ) via1_7
-      NEW metal1 ( 4721 49 ) via1_7 ;
-    - decoder_p0.layer_in0_word0 ( decoder_p0.and_layer1_word0 ZN ) ( decoder_p0.and_layer0_word0 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5025 63 ) ( * 77 )
-      NEW metal3 ( 5025 77 ) ( 5139 * )
-      NEW metal1 ( 5025 63 ) via1_4
-      NEW metal2 ( 5025 77 ) via2_5
+      NEW metal1 ( 4721 609 ) via1_7 ;
+    - decoder_p0.pre_a1_0_0 ( decoder_p0.and_pre_a1_0_0 ZN ) ( decoder_p0.and_word4 A1 ) ( decoder_p0.and_word0 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 4968 63 ) ( 5006 * )
+      NEW metal3 ( 5006 77 ) ( 5139 * )
+      NEW metal2 ( 5006 63 ) ( * 77 )
+      NEW metal3 ( 4968 623 ) ( 5006 * )
+      NEW metal2 ( 4968 63 ) ( * 623 )
+      NEW metal1 ( 5006 63 ) via1_4
       NEW metal1 ( 5139 77 ) via1_4
-      NEW metal2 ( 5139 77 ) via2_5 ;
-    - decoder_p0.layer_in0_word1 ( decoder_p0.and_layer1_word1 ZN ) ( decoder_p0.and_layer0_word1 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5025 217 ) ( * 231 )
-      NEW metal3 ( 5025 231 ) ( 5139 * )
-      NEW metal1 ( 5025 217 ) via1_4
-      NEW metal2 ( 5025 231 ) via2_5
-      NEW metal1 ( 5139 231 ) via1_4
-      NEW metal2 ( 5139 231 ) via2_5 ;
-    - decoder_p0.layer_in0_word2 ( decoder_p0.and_layer1_word2 ZN ) ( decoder_p0.and_layer0_word2 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5025 343 ) ( 5139 * )
-      NEW metal1 ( 5025 343 ) via1_4
-      NEW metal2 ( 5025 343 ) via2_5
-      NEW metal1 ( 5139 343 ) via1_4
-      NEW metal2 ( 5139 343 ) via2_5 ;
-    - decoder_p0.layer_in0_word3 ( decoder_p0.and_layer1_word3 ZN ) ( decoder_p0.and_layer0_word3 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5025 483 ) ( * 490 )
-      NEW metal3 ( 5025 483 ) ( 5139 * )
-      NEW metal1 ( 5025 490 ) via1_4
-      NEW metal2 ( 5025 483 ) via2_5
-      NEW metal1 ( 5139 483 ) via1_4
-      NEW metal2 ( 5139 483 ) via2_5 ;
-    - decoder_p0.layer_in0_word4 ( decoder_p0.and_layer1_word4 ZN ) ( decoder_p0.and_layer0_word4 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5025 623 ) ( * 679 )
-      NEW metal3 ( 5025 679 ) ( 5139 * )
-      NEW metal1 ( 5025 623 ) via1_4
-      NEW metal2 ( 5025 679 ) via2_5
-      NEW metal1 ( 5139 679 ) via1_7
-      NEW metal2 ( 5139 679 ) via2_5 ;
-    - decoder_p0.layer_in0_word5 ( decoder_p0.and_layer1_word5 ZN ) ( decoder_p0.and_layer0_word5 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5025 777 ) ( * 791 )
-      NEW metal3 ( 5025 791 ) ( 5139 * )
-      NEW metal1 ( 5025 777 ) via1_4
-      NEW metal2 ( 5025 791 ) via2_5
-      NEW metal1 ( 5139 791 ) via1_4
-      NEW metal2 ( 5139 791 ) via2_5 ;
-    - decoder_p0.layer_in0_word6 ( decoder_p0.and_layer1_word6 ZN ) ( decoder_p0.and_layer0_word6 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5025 903 ) ( 5139 * )
-      NEW metal1 ( 5025 903 ) via1_4
-      NEW metal2 ( 5025 903 ) via2_5
-      NEW metal1 ( 5139 903 ) via1_4
-      NEW metal2 ( 5139 903 ) via2_5 ;
-    - decoder_p0.word0 ( decoder_p0.and_layer0_word0 ZN ) ( sel_buf_w_p0.sel_buf_0 A ) + USE SIGNAL
+      NEW metal2 ( 5139 77 ) via2_5
+      NEW metal2 ( 5006 77 ) via2_5
+      NEW metal2 ( 4968 623 ) via2_5
+      NEW metal1 ( 5006 623 ) via1_4
+      NEW metal2 ( 5006 623 ) via2_5 ;
+    - decoder_p0.pre_a1_0_1 ( decoder_p0.and_pre_a1_0_1 ZN ) ( decoder_p0.and_word5 A1 ) ( decoder_p0.and_word1 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5006 217 ) ( * 301 )
+      NEW metal2 ( 4987 301 ) ( 5006 * )
+      NEW metal2 ( 4987 301 ) ( * 371 )
+      NEW metal2 ( 4987 371 ) ( 5006 * )
+      NEW metal2 ( 5006 371 ) ( * 469 )
+      NEW metal2 ( 4987 469 ) ( 5006 * )
+      NEW metal3 ( 5006 259 ) ( 5139 * )
+      NEW metal2 ( 4987 651 ) ( 5006 * )
+      NEW metal2 ( 5006 651 ) ( * 777 )
+      NEW metal2 ( 4987 469 ) ( * 651 )
+      NEW metal1 ( 5006 217 ) via1_4
+      NEW metal1 ( 5139 259 ) via1_7
+      NEW metal2 ( 5139 259 ) via2_5
+      NEW metal2 ( 5006 259 ) via2_5
+      NEW metal1 ( 5006 777 ) via1_4 ;
+    - decoder_p0.pre_a1_0_2 ( decoder_p0.and_pre_a1_0_2 ZN ) ( decoder_p0.and_word6 A1 ) ( decoder_p0.and_word2 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5139 357 ) ( * 441 )
+      NEW metal3 ( 5077 357 ) ( 5139 * )
+      NEW metal3 ( 5077 343 ) ( * 357 )
+      NEW metal3 ( 5006 343 ) ( 5077 * )
+      NEW metal3 ( 5082 567 ) ( 5139 * )
+      NEW metal2 ( 5139 539 ) ( * 567 )
+      NEW metal2 ( 5063 581 ) ( 5082 * )
+      NEW metal2 ( 5063 581 ) ( * 637 )
+      NEW metal2 ( 5044 637 ) ( 5063 * )
+      NEW metal2 ( 5044 637 ) ( * 931 )
+      NEW metal2 ( 5006 931 ) ( 5044 * )
+      NEW metal2 ( 5006 903 ) ( * 931 )
+      NEW metal2 ( 5082 567 ) ( * 581 )
+      NEW metal1 ( 5139 441 ) via1_7
+      NEW metal2 ( 5139 357 ) via2_5
+      NEW metal1 ( 5006 343 ) via1_4
+      NEW metal2 ( 5006 343 ) via2_5
+      NEW metal2 ( 5082 567 ) via2_5
+      NEW metal2 ( 5139 567 ) via2_5
+      NEW metal1 ( 5139 539 ) via1_7
+      NEW metal1 ( 5006 903 ) via1_4 ;
+    - decoder_p0.pre_a1_0_3 ( decoder_p0.and_pre_a1_0_3 ZN ) ( decoder_p0.and_word3 A1 ) + USE SIGNAL
+      + ROUTED metal3 ( 5006 497 ) ( 5177 * )
+      NEW metal2 ( 5139 721 ) ( 5177 * )
+      NEW metal2 ( 5177 497 ) ( * 721 )
+      NEW metal2 ( 5177 497 ) via2_5
+      NEW metal1 ( 5006 497 ) via1_4
+      NEW metal2 ( 5006 497 ) via2_5
+      NEW metal1 ( 5139 721 ) via1_7 ;
+    - decoder_p0.word0 ( decoder_p0.and_word0 ZN ) ( sel_buf_w_p0.sel_buf_0 A ) + USE SIGNAL
       + ROUTED metal2 ( 4949 49 ) ( * 63 )
       NEW metal3 ( 4949 49 ) ( 5063 * )
       NEW metal1 ( 4949 63 ) via1_4
       NEW metal2 ( 4949 49 ) via2_5
       NEW metal1 ( 5063 49 ) via1_4
       NEW metal2 ( 5063 49 ) via2_5 ;
-    - decoder_p0.word1 ( decoder_p0.and_layer0_word1 ZN ) ( sel_buf_w_p0.sel_buf_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4949 203 ) ( * 217 )
-      NEW metal3 ( 4949 203 ) ( 5063 * )
+    - decoder_p0.word1 ( decoder_p0.and_word1 ZN ) ( sel_buf_w_p0.sel_buf_1 A ) + USE SIGNAL
+      + ROUTED metal2 ( 4949 161 ) ( * 217 )
+      NEW metal3 ( 4949 161 ) ( 5063 * )
       NEW metal1 ( 4949 217 ) via1_4
-      NEW metal2 ( 4949 203 ) via2_5
-      NEW metal1 ( 5063 203 ) via1_4
-      NEW metal2 ( 5063 203 ) via2_5 ;
-    - decoder_p0.word2 ( decoder_p0.and_layer0_word2 ZN ) ( sel_buf_w_p0.sel_buf_2 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4949 343 ) ( * 357 )
-      NEW metal3 ( 4949 357 ) ( 5063 * )
+      NEW metal2 ( 4949 161 ) via2_5
+      NEW metal1 ( 5063 161 ) via1_7
+      NEW metal2 ( 5063 161 ) via2_5 ;
+    - decoder_p0.word2 ( decoder_p0.and_word2 ZN ) ( sel_buf_w_p0.sel_buf_2 A ) + USE SIGNAL
+      + ROUTED metal2 ( 4949 329 ) ( * 343 )
+      NEW metal3 ( 4949 329 ) ( 5063 * )
       NEW metal1 ( 4949 343 ) via1_4
-      NEW metal2 ( 4949 357 ) via2_5
-      NEW metal1 ( 5063 357 ) via1_4
-      NEW metal2 ( 5063 357 ) via2_5 ;
-    - decoder_p0.word3 ( decoder_p0.and_layer0_word3 ZN ) ( sel_buf_w_p0.sel_buf_3 A ) + USE SIGNAL
-      + ROUTED metal3 ( 4949 497 ) ( 5063 * )
+      NEW metal2 ( 4949 329 ) via2_5
+      NEW metal1 ( 5063 329 ) via1_4
+      NEW metal2 ( 5063 329 ) via2_5 ;
+    - decoder_p0.word3 ( decoder_p0.and_word3 ZN ) ( sel_buf_w_p0.sel_buf_3 A ) + USE SIGNAL
+      + ROUTED metal2 ( 4949 497 ) ( * 511 )
+      NEW metal3 ( 4949 511 ) ( 5063 * )
       NEW metal1 ( 4949 497 ) via1_4
-      NEW metal2 ( 4949 497 ) via2_5
-      NEW metal1 ( 5063 497 ) via1_4
-      NEW metal2 ( 5063 497 ) via2_5 ;
-    - decoder_p0.word4 ( decoder_p0.and_layer0_word4 ZN ) ( sel_buf_w_p0.sel_buf_4 A ) + USE SIGNAL
-      + ROUTED metal3 ( 4949 623 ) ( 5063 * )
+      NEW metal2 ( 4949 511 ) via2_5
+      NEW metal1 ( 5063 511 ) via1_4
+      NEW metal2 ( 5063 511 ) via2_5 ;
+    - decoder_p0.word4 ( decoder_p0.and_word4 ZN ) ( sel_buf_w_p0.sel_buf_4 A ) + USE SIGNAL
+      + ROUTED metal2 ( 4949 623 ) ( * 665 )
+      NEW metal3 ( 4949 665 ) ( 5063 * )
       NEW metal1 ( 4949 623 ) via1_4
-      NEW metal2 ( 4949 623 ) via2_5
-      NEW metal1 ( 5063 623 ) via1_4
-      NEW metal2 ( 5063 623 ) via2_5 ;
-    - decoder_p0.word5 ( decoder_p0.and_layer0_word5 ZN ) ( sel_buf_w_p0.sel_buf_5 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4949 763 ) ( * 777 )
-      NEW metal3 ( 4949 763 ) ( 5063 * )
+      NEW metal2 ( 4949 665 ) via2_5
+      NEW metal1 ( 5063 665 ) via1_4
+      NEW metal2 ( 5063 665 ) via2_5 ;
+    - decoder_p0.word5 ( decoder_p0.and_word5 ZN ) ( sel_buf_w_p0.sel_buf_5 A ) + USE SIGNAL
+      + ROUTED metal3 ( 4949 777 ) ( 5063 * )
       NEW metal1 ( 4949 777 ) via1_4
-      NEW metal2 ( 4949 763 ) via2_5
-      NEW metal1 ( 5063 763 ) via1_4
-      NEW metal2 ( 5063 763 ) via2_5 ;
-    - decoder_p0.word6 ( decoder_p0.and_layer0_word6 ZN ) ( sel_buf_w_p0.sel_buf_6 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4949 903 ) ( * 931 )
-      NEW metal2 ( 4949 931 ) ( 5063 * )
+      NEW metal2 ( 4949 777 ) via2_5
+      NEW metal1 ( 5063 777 ) via1_4
+      NEW metal2 ( 5063 777 ) via2_5 ;
+    - decoder_p0.word6 ( decoder_p0.and_word6 ZN ) ( sel_buf_w_p0.sel_buf_6 A ) + USE SIGNAL
+      + ROUTED metal2 ( 4949 903 ) ( * 945 )
+      NEW metal2 ( 4949 945 ) ( 5063 * )
       NEW metal1 ( 4949 903 ) via1_4
-      NEW metal1 ( 5063 931 ) via1_4 ;
-    - decoder_p1.layer_in0_word0 ( decoder_p1.and_layer1_word0 ZN ) ( decoder_p1.and_layer0_word0 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5234 63 ) ( * 77 )
-      NEW metal3 ( 5234 77 ) ( 5348 * )
-      NEW metal1 ( 5234 63 ) via1_4
-      NEW metal2 ( 5234 77 ) via2_5
+      NEW metal1 ( 5063 945 ) via1_4 ;
+    - decoder_p1.pre_a1_0_0 ( decoder_p1.and_pre_a1_0_0 ZN ) ( decoder_p1.and_word4 A1 ) ( decoder_p1.and_word0 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5177 63 ) ( 5215 * )
+      NEW metal2 ( 5177 63 ) ( * 469 )
+      NEW metal2 ( 5177 469 ) ( 5196 * )
+      NEW metal3 ( 5215 77 ) ( 5348 * )
+      NEW metal2 ( 5215 63 ) ( * 77 )
+      NEW metal2 ( 5196 469 ) ( * 570 )
+      NEW metal2 ( 5196 570 ) ( 5215 * )
+      NEW metal2 ( 5215 570 ) ( * 623 )
+      NEW metal1 ( 5215 63 ) via1_4
       NEW metal1 ( 5348 77 ) via1_4
-      NEW metal2 ( 5348 77 ) via2_5 ;
-    - decoder_p1.layer_in0_word1 ( decoder_p1.and_layer1_word1 ZN ) ( decoder_p1.and_layer0_word1 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5234 203 ) ( * 217 )
-      NEW metal3 ( 5234 203 ) ( 5348 * )
-      NEW metal1 ( 5234 217 ) via1_4
-      NEW metal2 ( 5234 203 ) via2_5
-      NEW metal1 ( 5348 203 ) via1_4
-      NEW metal2 ( 5348 203 ) via2_5 ;
-    - decoder_p1.layer_in0_word2 ( decoder_p1.and_layer1_word2 ZN ) ( decoder_p1.and_layer0_word2 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5234 343 ) ( 5348 * )
-      NEW metal1 ( 5234 343 ) via1_4
-      NEW metal2 ( 5234 343 ) via2_5
-      NEW metal1 ( 5348 343 ) via1_4
-      NEW metal2 ( 5348 343 ) via2_5 ;
-    - decoder_p1.layer_in0_word3 ( decoder_p1.and_layer1_word3 ZN ) ( decoder_p1.and_layer0_word3 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5234 427 ) ( * 497 )
-      NEW metal3 ( 5234 427 ) ( 5348 * )
-      NEW metal2 ( 5348 427 ) ( * 441 )
-      NEW metal1 ( 5234 497 ) via1_4
-      NEW metal2 ( 5234 427 ) via2_5
+      NEW metal2 ( 5348 77 ) via2_5
+      NEW metal2 ( 5215 77 ) via2_5
+      NEW metal1 ( 5215 623 ) via1_4 ;
+    - decoder_p1.pre_a1_0_1 ( decoder_p1.and_pre_a1_0_1 ZN ) ( decoder_p1.and_word5 A1 ) ( decoder_p1.and_word1 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5215 217 ) ( * 315 )
+      NEW metal3 ( 5215 315 ) ( 5217 * )
+      NEW metal2 ( 5348 259 ) ( * 315 )
+      NEW metal3 ( 5217 315 ) ( 5348 * )
+      NEW metal3 ( 5215 651 ) ( 5217 * )
+      NEW metal2 ( 5215 651 ) ( * 777 )
+      NEW metal4 ( 5217 315 ) ( * 651 )
+      NEW metal1 ( 5215 217 ) via1_4
+      NEW metal2 ( 5215 315 ) via2_5
+      NEW metal3 ( 5217 315 ) via3_2
+      NEW metal1 ( 5348 259 ) via1_7
+      NEW metal2 ( 5348 315 ) via2_5
+      NEW metal3 ( 5217 651 ) via3_2
+      NEW metal2 ( 5215 651 ) via2_5
+      NEW metal1 ( 5215 777 ) via1_4 ;
+    - decoder_p1.pre_a1_0_2 ( decoder_p1.and_pre_a1_0_2 ZN ) ( decoder_p1.and_word6 A1 ) ( decoder_p1.and_word2 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5348 427 ) ( * 441 )
+      NEW metal3 ( 5215 427 ) ( 5348 * )
+      NEW metal2 ( 5215 343 ) ( * 427 )
+      NEW metal3 ( 5253 651 ) ( 5348 * )
+      NEW metal2 ( 5253 651 ) ( * 931 )
+      NEW metal2 ( 5215 931 ) ( 5253 * )
+      NEW metal2 ( 5215 903 ) ( * 931 )
+      NEW metal2 ( 5348 539 ) ( * 651 )
+      NEW metal1 ( 5348 441 ) via1_7
       NEW metal2 ( 5348 427 ) via2_5
-      NEW metal1 ( 5348 441 ) via1_7 ;
-    - decoder_p1.layer_in0_word4 ( decoder_p1.and_layer1_word4 ZN ) ( decoder_p1.and_layer0_word4 A2 ) + USE SIGNAL
-      + ROUTED metal3 ( 5234 623 ) ( 5348 * )
-      NEW metal1 ( 5234 623 ) via1_4
-      NEW metal2 ( 5234 623 ) via2_5
-      NEW metal1 ( 5348 623 ) via1_4
-      NEW metal2 ( 5348 623 ) via2_5 ;
-    - decoder_p1.layer_in0_word5 ( decoder_p1.and_layer1_word5 ZN ) ( decoder_p1.and_layer0_word5 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5234 777 ) ( * 791 )
-      NEW metal3 ( 5234 791 ) ( 5348 * )
-      NEW metal1 ( 5234 777 ) via1_4
-      NEW metal2 ( 5234 791 ) via2_5
-      NEW metal1 ( 5348 791 ) via1_4
-      NEW metal2 ( 5348 791 ) via2_5 ;
-    - decoder_p1.layer_in0_word6 ( decoder_p1.and_layer1_word6 ZN ) ( decoder_p1.and_layer0_word6 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5234 903 ) ( * 931 )
-      NEW metal2 ( 5234 931 ) ( 5348 * )
-      NEW metal1 ( 5234 903 ) via1_4
-      NEW metal1 ( 5348 931 ) via1_4 ;
-    - decoder_p1.word0 ( decoder_p1.and_layer0_word0 ZN ) ( sel_buf_r_p1.sel_buf_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 63 ) ( * 91 )
-      NEW metal3 ( 5158 91 ) ( 5272 * )
+      NEW metal2 ( 5215 427 ) via2_5
+      NEW metal1 ( 5215 343 ) via1_4
+      NEW metal1 ( 5348 539 ) via1_7
+      NEW metal2 ( 5348 651 ) via2_5
+      NEW metal2 ( 5253 651 ) via2_5
+      NEW metal1 ( 5215 903 ) via1_4 ;
+    - decoder_p1.pre_a1_0_3 ( decoder_p1.and_pre_a1_0_3 ZN ) ( decoder_p1.and_word3 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5215 553 ) ( 5234 * )
+      NEW metal2 ( 5215 497 ) ( * 553 )
+      NEW metal3 ( 5234 581 ) ( 5386 * )
+      NEW metal2 ( 5386 581 ) ( * 721 )
+      NEW metal2 ( 5348 721 ) ( 5386 * )
+      NEW metal2 ( 5234 553 ) ( * 581 )
+      NEW metal1 ( 5215 497 ) via1_4
+      NEW metal2 ( 5234 581 ) via2_5
+      NEW metal2 ( 5386 581 ) via2_5
+      NEW metal1 ( 5348 721 ) via1_7 ;
+    - decoder_p1.word0 ( decoder_p1.and_word0 ZN ) ( sel_buf_r_p1.sel_buf_0 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5158 49 ) ( * 63 )
+      NEW metal3 ( 5158 49 ) ( 5272 * )
       NEW metal1 ( 5158 63 ) via1_4
-      NEW metal2 ( 5158 91 ) via2_5
-      NEW metal1 ( 5272 91 ) via1_4
-      NEW metal2 ( 5272 91 ) via2_5 ;
-    - decoder_p1.word1 ( decoder_p1.and_layer0_word1 ZN ) ( sel_buf_r_p1.sel_buf_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 189 ) ( * 217 )
-      NEW metal3 ( 5158 189 ) ( 5272 * )
+      NEW metal2 ( 5158 49 ) via2_5
+      NEW metal1 ( 5272 49 ) via1_4
+      NEW metal2 ( 5272 49 ) via2_5 ;
+    - decoder_p1.word1 ( decoder_p1.and_word1 ZN ) ( sel_buf_r_p1.sel_buf_1 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5158 161 ) ( * 217 )
+      NEW metal3 ( 5158 161 ) ( 5272 * )
       NEW metal1 ( 5158 217 ) via1_4
-      NEW metal2 ( 5158 189 ) via2_5
-      NEW metal1 ( 5272 189 ) via1_4
-      NEW metal2 ( 5272 189 ) via2_5 ;
-    - decoder_p1.word2 ( decoder_p1.and_layer0_word2 ZN ) ( sel_buf_r_p1.sel_buf_2 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 343 ) ( * 357 )
-      NEW metal3 ( 5158 357 ) ( 5272 * )
+      NEW metal2 ( 5158 161 ) via2_5
+      NEW metal1 ( 5272 161 ) via1_7
+      NEW metal2 ( 5272 161 ) via2_5 ;
+    - decoder_p1.word2 ( decoder_p1.and_word2 ZN ) ( sel_buf_r_p1.sel_buf_2 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5158 329 ) ( * 343 )
+      NEW metal3 ( 5158 329 ) ( 5272 * )
       NEW metal1 ( 5158 343 ) via1_4
-      NEW metal2 ( 5158 357 ) via2_5
-      NEW metal1 ( 5272 357 ) via1_4
-      NEW metal2 ( 5272 357 ) via2_5 ;
-    - decoder_p1.word3 ( decoder_p1.and_layer0_word3 ZN ) ( sel_buf_r_p1.sel_buf_3 A ) + USE SIGNAL
+      NEW metal2 ( 5158 329 ) via2_5
+      NEW metal1 ( 5272 329 ) via1_4
+      NEW metal2 ( 5272 329 ) via2_5 ;
+    - decoder_p1.word3 ( decoder_p1.and_word3 ZN ) ( sel_buf_r_p1.sel_buf_3 A ) + USE SIGNAL
       + ROUTED metal2 ( 5158 497 ) ( * 511 )
       NEW metal3 ( 5158 511 ) ( 5272 * )
       NEW metal1 ( 5158 497 ) via1_4
       NEW metal2 ( 5158 511 ) via2_5
       NEW metal1 ( 5272 511 ) via1_4
       NEW metal2 ( 5272 511 ) via2_5 ;
-    - decoder_p1.word4 ( decoder_p1.and_layer0_word4 ZN ) ( sel_buf_r_p1.sel_buf_4 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 595 ) ( * 623 )
-      NEW metal3 ( 5158 595 ) ( 5272 * )
+    - decoder_p1.word4 ( decoder_p1.and_word4 ZN ) ( sel_buf_r_p1.sel_buf_4 A ) + USE SIGNAL
+      + ROUTED metal3 ( 5158 623 ) ( 5272 * )
       NEW metal1 ( 5158 623 ) via1_4
-      NEW metal2 ( 5158 595 ) via2_5
-      NEW metal1 ( 5272 595 ) via1_4
-      NEW metal2 ( 5272 595 ) via2_5 ;
-    - decoder_p1.word5 ( decoder_p1.and_layer0_word5 ZN ) ( sel_buf_r_p1.sel_buf_5 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 763 ) ( * 777 )
-      NEW metal3 ( 5158 763 ) ( 5272 * )
+      NEW metal2 ( 5158 623 ) via2_5
+      NEW metal1 ( 5272 623 ) via1_4
+      NEW metal2 ( 5272 623 ) via2_5 ;
+    - decoder_p1.word5 ( decoder_p1.and_word5 ZN ) ( sel_buf_r_p1.sel_buf_5 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5158 777 ) ( * 791 )
+      NEW metal3 ( 5158 791 ) ( 5272 * )
       NEW metal1 ( 5158 777 ) via1_4
-      NEW metal2 ( 5158 763 ) via2_5
-      NEW metal1 ( 5272 763 ) via1_4
-      NEW metal2 ( 5272 763 ) via2_5 ;
-    - decoder_p1.word6 ( decoder_p1.and_layer0_word6 ZN ) ( sel_buf_r_p1.sel_buf_6 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5158 903 ) ( * 959 )
-      NEW metal2 ( 5158 959 ) ( 5272 * )
+      NEW metal2 ( 5158 791 ) via2_5
+      NEW metal1 ( 5272 791 ) via1_4
+      NEW metal2 ( 5272 791 ) via2_5 ;
+    - decoder_p1.word6 ( decoder_p1.and_word6 ZN ) ( sel_buf_r_p1.sel_buf_6 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5158 903 ) ( * 945 )
+      NEW metal2 ( 5158 945 ) ( 5272 * )
       NEW metal1 ( 5158 903 ) via1_4
-      NEW metal1 ( 5272 959 ) via1_7 ;
-    - decoder_p2.layer_in0_word0 ( decoder_p2.and_layer1_word0 ZN ) ( decoder_p2.and_layer0_word0 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 35 ) ( * 63 )
-      NEW metal3 ( 5462 35 ) ( 5576 * )
-      NEW metal1 ( 5462 63 ) via1_4
-      NEW metal2 ( 5462 35 ) via2_5
+      NEW metal1 ( 5272 945 ) via1_4 ;
+    - decoder_p2.pre_a1_0_0 ( decoder_p2.and_pre_a1_0_0 ZN ) ( decoder_p2.and_word4 A1 ) ( decoder_p2.and_word0 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5443 35 ) ( * 63 )
+      NEW metal2 ( 5443 35 ) ( 5481 * )
+      NEW metal2 ( 5481 35 ) ( * 483 )
+      NEW metal3 ( 5441 483 ) ( 5481 * )
+      NEW metal2 ( 5481 35 ) ( 5576 * )
+      NEW metal3 ( 5441 623 ) ( 5443 * )
+      NEW metal4 ( 5441 483 ) ( * 623 )
+      NEW metal1 ( 5443 63 ) via1_4
+      NEW metal2 ( 5481 483 ) via2_5
+      NEW metal3 ( 5441 483 ) via3_2
       NEW metal1 ( 5576 35 ) via1_4
-      NEW metal2 ( 5576 35 ) via2_5 ;
-    - decoder_p2.layer_in0_word1 ( decoder_p2.and_layer1_word1 ZN ) ( decoder_p2.and_layer0_word1 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 203 ) ( * 217 )
-      NEW metal3 ( 5462 203 ) ( 5576 * )
-      NEW metal1 ( 5462 217 ) via1_4
-      NEW metal2 ( 5462 203 ) via2_5
-      NEW metal1 ( 5576 203 ) via1_4
-      NEW metal2 ( 5576 203 ) via2_5 ;
-    - decoder_p2.layer_in0_word2 ( decoder_p2.and_layer1_word2 ZN ) ( decoder_p2.and_layer0_word2 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 343 ) ( * 357 )
-      NEW metal3 ( 5462 357 ) ( 5576 * )
-      NEW metal1 ( 5462 343 ) via1_4
-      NEW metal2 ( 5462 357 ) via2_5
-      NEW metal1 ( 5576 357 ) via1_4
-      NEW metal2 ( 5576 357 ) via2_5 ;
-    - decoder_p2.layer_in0_word3 ( decoder_p2.and_layer1_word3 ZN ) ( decoder_p2.and_layer0_word3 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 497 ) ( * 553 )
-      NEW metal3 ( 5462 553 ) ( 5576 * )
-      NEW metal2 ( 5576 539 ) ( * 553 )
-      NEW metal1 ( 5462 497 ) via1_4
-      NEW metal2 ( 5462 553 ) via2_5
-      NEW metal2 ( 5576 553 ) via2_5
-      NEW metal1 ( 5576 539 ) via1_7 ;
-    - decoder_p2.layer_in0_word4 ( decoder_p2.and_layer1_word4 ZN ) ( decoder_p2.and_layer0_word4 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 623 ) ( * 665 )
-      NEW metal3 ( 5462 665 ) ( 5576 * )
-      NEW metal1 ( 5462 623 ) via1_4
-      NEW metal2 ( 5462 665 ) via2_5
-      NEW metal1 ( 5576 665 ) via1_4
-      NEW metal2 ( 5576 665 ) via2_5 ;
-    - decoder_p2.layer_in0_word5 ( decoder_p2.and_layer1_word5 ZN ) ( decoder_p2.and_layer0_word5 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 777 ) ( * 805 )
-      NEW metal3 ( 5462 805 ) ( 5576 * )
-      NEW metal1 ( 5462 777 ) via1_4
-      NEW metal2 ( 5462 805 ) via2_5
-      NEW metal1 ( 5576 805 ) via1_4
-      NEW metal2 ( 5576 805 ) via2_5 ;
-    - decoder_p2.layer_in0_word6 ( decoder_p2.and_layer1_word6 ZN ) ( decoder_p2.and_layer0_word6 A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 5462 903 ) ( * 931 )
-      NEW metal2 ( 5462 931 ) ( 5576 * )
-      NEW metal1 ( 5462 903 ) via1_4
-      NEW metal1 ( 5576 931 ) via1_4 ;
-    - decoder_p2.word0 ( decoder_p2.and_layer0_word0 ZN ) ( sel_buf_r_p2.sel_buf_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 63 ) ( * 77 )
-      NEW metal2 ( 5367 77 ) ( 5386 * )
-      NEW metal3 ( 5386 77 ) ( 5500 * )
+      NEW metal3 ( 5441 623 ) via3_2
+      NEW metal1 ( 5443 623 ) via1_4
+      NEW metal2 ( 5443 623 ) via2_5 ;
+    - decoder_p2.pre_a1_0_1 ( decoder_p2.and_pre_a1_0_1 ZN ) ( decoder_p2.and_word5 A1 ) ( decoder_p2.and_word1 A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 5443 217 ) ( * 315 )
+      NEW metal3 ( 5443 315 ) ( * 329 )
+      NEW metal3 ( 5357 329 ) ( 5443 * )
+      NEW metal4 ( 5357 329 ) ( * 665 )
+      NEW metal3 ( 5357 665 ) ( 5443 * )
+      NEW metal2 ( 5443 665 ) ( * 777 )
+      NEW metal2 ( 5576 259 ) ( * 329 )
+      NEW metal3 ( 5443 329 ) ( 5576 * )
+      NEW metal1 ( 5443 217 ) via1_4
+      NEW metal2 ( 5443 315 ) via2_5
+      NEW metal3 ( 5357 329 ) via3_2
+      NEW metal3 ( 5357 665 ) via3_2
+      NEW metal2 ( 5443 665 ) via2_5
+      NEW metal1 ( 5443 777 ) via1_4
+      NEW metal1 ( 5576 259 ) via1_7
+      NEW metal2 ( 5576 329 ) via2_5 ;
+    - decoder_p2.pre_a1_0_2 ( decoder_p2.and_pre_a1_0_2 ZN ) ( decoder_p2.and_word6 A1 ) ( decoder_p2.and_word2 A1 ) + USE SIGNAL
+      + ROUTED metal3 ( 5500 525 ) ( 5576 * )
+      NEW metal2 ( 5500 525 ) ( * 609 )
+      NEW metal2 ( 5481 609 ) ( 5500 * )
+      NEW metal2 ( 5481 609 ) ( * 805 )
+      NEW metal3 ( 5443 805 ) ( 5481 * )
+      NEW metal2 ( 5443 805 ) ( * 903 )
+      NEW metal2 ( 5443 343 ) ( * 469 )
+      NEW metal3 ( 5443 469 ) ( 5500 * )
+      NEW metal2 ( 5500 469 ) ( * 525 )
+      NEW metal1 ( 5576 525 ) via1_4
+      NEW metal2 ( 5576 525 ) via2_5
+      NEW metal2 ( 5500 525 ) via2_5
+      NEW metal2 ( 5481 805 ) via2_5
+      NEW metal2 ( 5443 805 ) via2_5
+      NEW metal1 ( 5443 903 ) via1_4
+      NEW metal1 ( 5443 343 ) via1_4
+      NEW metal2 ( 5443 469 ) via2_5
+      NEW metal2 ( 5500 469 ) via2_5 ;
+    - decoder_p2.pre_a1_0_3 ( decoder_p2.and_pre_a1_0_3 ZN ) ( decoder_p2.and_word3 A1 ) + USE SIGNAL
+      + ROUTED metal4 ( 5469 497 ) ( * 567 )
+      NEW metal3 ( 5443 497 ) ( 5469 * )
+      NEW metal3 ( 5469 581 ) ( 5576 * )
+      NEW metal3 ( 5576 581 ) ( * 679 )
+      NEW metal2 ( 5576 679 ) ( * 721 )
+      NEW metal3 ( 5469 567 ) ( * 581 )
+      NEW metal3 ( 5469 567 ) via3_2
+      NEW metal3 ( 5469 497 ) via3_2
+      NEW metal1 ( 5443 497 ) via1_4
+      NEW metal2 ( 5443 497 ) via2_5
+      NEW metal2 ( 5576 679 ) via2_5
+      NEW metal1 ( 5576 721 ) via1_7 ;
+    - decoder_p2.word0 ( decoder_p2.and_word0 ZN ) ( sel_buf_r_p2.sel_buf_0 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 63 ) ( * 119 )
+      NEW metal3 ( 5367 119 ) ( 5500 * )
       NEW metal1 ( 5367 63 ) via1_4
-      NEW metal2 ( 5386 77 ) via2_5
-      NEW metal1 ( 5500 77 ) via1_4
-      NEW metal2 ( 5500 77 ) via2_5 ;
-    - decoder_p2.word1 ( decoder_p2.and_layer0_word1 ZN ) ( sel_buf_r_p2.sel_buf_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 217 ) ( * 231 )
-      NEW metal3 ( 5367 231 ) ( 5500 * )
+      NEW metal2 ( 5367 119 ) via2_5
+      NEW metal1 ( 5500 119 ) via1_7
+      NEW metal2 ( 5500 119 ) via2_5 ;
+    - decoder_p2.word1 ( decoder_p2.and_word1 ZN ) ( sel_buf_r_p2.sel_buf_1 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 217 ) ( * 245 )
+      NEW metal3 ( 5367 245 ) ( 5500 * )
       NEW metal1 ( 5367 217 ) via1_4
-      NEW metal2 ( 5367 231 ) via2_5
-      NEW metal1 ( 5500 231 ) via1_4
-      NEW metal2 ( 5500 231 ) via2_5 ;
-    - decoder_p2.word2 ( decoder_p2.and_layer0_word2 ZN ) ( sel_buf_r_p2.sel_buf_2 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 343 ) ( * 399 )
-      NEW metal3 ( 5367 399 ) ( 5500 * )
+      NEW metal2 ( 5367 245 ) via2_5
+      NEW metal1 ( 5500 245 ) via1_4
+      NEW metal2 ( 5500 245 ) via2_5 ;
+    - decoder_p2.word2 ( decoder_p2.and_word2 ZN ) ( sel_buf_r_p2.sel_buf_2 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 343 ) ( * 357 )
+      NEW metal3 ( 5367 357 ) ( 5500 * )
       NEW metal1 ( 5367 343 ) via1_4
-      NEW metal2 ( 5367 399 ) via2_5
-      NEW metal1 ( 5500 399 ) via1_7
-      NEW metal2 ( 5500 399 ) via2_5 ;
-    - decoder_p2.word3 ( decoder_p2.and_layer0_word3 ZN ) ( sel_buf_r_p2.sel_buf_3 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 455 ) ( * 497 )
-      NEW metal3 ( 5367 455 ) ( 5385 * )
-      NEW metal3 ( 5385 427 ) ( * 455 )
-      NEW metal3 ( 5385 427 ) ( 5500 * )
-      NEW metal2 ( 5500 427 ) ( * 441 )
+      NEW metal2 ( 5367 357 ) via2_5
+      NEW metal1 ( 5500 357 ) via1_4
+      NEW metal2 ( 5500 357 ) via2_5 ;
+    - decoder_p2.word3 ( decoder_p2.and_word3 ZN ) ( sel_buf_r_p2.sel_buf_3 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 413 ) ( * 497 )
+      NEW metal3 ( 5367 413 ) ( 5500 * )
+      NEW metal2 ( 5500 413 ) ( * 441 )
       NEW metal1 ( 5367 497 ) via1_4
-      NEW metal2 ( 5367 455 ) via2_5
-      NEW metal2 ( 5500 427 ) via2_5
+      NEW metal2 ( 5367 413 ) via2_5
+      NEW metal2 ( 5500 413 ) via2_5
       NEW metal1 ( 5500 441 ) via1_7 ;
-    - decoder_p2.word4 ( decoder_p2.and_layer0_word4 ZN ) ( sel_buf_r_p2.sel_buf_4 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 623 ) ( * 679 )
-      NEW metal3 ( 5367 679 ) ( 5500 * )
+    - decoder_p2.word4 ( decoder_p2.and_word4 ZN ) ( sel_buf_r_p2.sel_buf_4 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 623 ) ( * 637 )
+      NEW metal3 ( 5367 637 ) ( 5500 * )
       NEW metal1 ( 5367 623 ) via1_4
-      NEW metal2 ( 5367 679 ) via2_5
-      NEW metal1 ( 5500 679 ) via1_7
-      NEW metal2 ( 5500 679 ) via2_5 ;
-    - decoder_p2.word5 ( decoder_p2.and_layer0_word5 ZN ) ( sel_buf_r_p2.sel_buf_5 A ) + USE SIGNAL
-      + ROUTED metal3 ( 5367 777 ) ( 5500 * )
+      NEW metal2 ( 5367 637 ) via2_5
+      NEW metal1 ( 5500 637 ) via1_4
+      NEW metal2 ( 5500 637 ) via2_5 ;
+    - decoder_p2.word5 ( decoder_p2.and_word5 ZN ) ( sel_buf_r_p2.sel_buf_5 A ) + USE SIGNAL
+      + ROUTED metal2 ( 5367 777 ) ( * 791 )
+      NEW metal3 ( 5367 791 ) ( 5500 * )
       NEW metal1 ( 5367 777 ) via1_4
-      NEW metal2 ( 5367 777 ) via2_5
-      NEW metal1 ( 5500 777 ) via1_4
-      NEW metal2 ( 5500 777 ) via2_5 ;
-    - decoder_p2.word6 ( decoder_p2.and_layer0_word6 ZN ) ( sel_buf_r_p2.sel_buf_6 A ) + USE SIGNAL
-      + ROUTED metal2 ( 5367 903 ) ( * 959 )
-      NEW metal2 ( 5367 959 ) ( 5500 * )
+      NEW metal2 ( 5367 791 ) via2_5
+      NEW metal1 ( 5500 791 ) via1_4
+      NEW metal2 ( 5500 791 ) via2_5 ;
+    - decoder_p2.word6 ( decoder_p2.and_word6 ZN ) ( sel_buf_r_p2.sel_buf_6 A ) + USE SIGNAL
+      + ROUTED metal3 ( 5367 903 ) ( 5500 * )
       NEW metal1 ( 5367 903 ) via1_4
-      NEW metal1 ( 5500 959 ) via1_7 ;
+      NEW metal2 ( 5367 903 ) via2_5
+      NEW metal1 ( 5500 903 ) via1_4
+      NEW metal2 ( 5500 903 ) via2_5 ;
     - r_sel_p1.select_r0 ( sel_buf_r_p1.sel_buf_0 Z ) ( storage_0_0_0.select_inv_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4873 35 ) ( * 63 )
-      NEW metal3 ( 4873 35 ) ( 5196 * )
+      + ROUTED metal2 ( 4873 63 ) ( * 91 )
+      NEW metal3 ( 4873 91 ) ( 5196 * )
       NEW metal1 ( 4873 63 ) via1_4
-      NEW metal2 ( 4873 35 ) via2_5
-      NEW metal1 ( 5196 35 ) via1_4
-      NEW metal2 ( 5196 35 ) via2_5 ;
+      NEW metal2 ( 4873 91 ) via2_5
+      NEW metal1 ( 5196 91 ) via1_4
+      NEW metal2 ( 5196 91 ) via2_5 ;
     - r_sel_p1.select_r1 ( sel_buf_r_p1.sel_buf_1 Z ) ( storage_1_0_0.select_inv_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4873 161 ) ( * 217 )
-      NEW metal3 ( 4873 161 ) ( 5196 * )
+      + ROUTED metal2 ( 4873 203 ) ( * 217 )
+      NEW metal3 ( 4873 203 ) ( 5196 * )
       NEW metal1 ( 4873 217 ) via1_4
-      NEW metal2 ( 4873 161 ) via2_5
-      NEW metal1 ( 5196 161 ) via1_7
-      NEW metal2 ( 5196 161 ) via2_5 ;
+      NEW metal2 ( 4873 203 ) via2_5
+      NEW metal1 ( 5196 203 ) via1_4
+      NEW metal2 ( 5196 203 ) via2_5 ;
     - r_sel_p1.select_r2 ( sel_buf_r_p1.sel_buf_2 Z ) ( storage_2_0_0.select_inv_0 A ) + USE SIGNAL
       + ROUTED metal2 ( 4873 343 ) ( * 371 )
       NEW metal3 ( 4873 371 ) ( 5196 * )
@@ -2002,49 +1926,50 @@ NETS 188 ;
       NEW metal2 ( 5196 371 ) via2_5 ;
     - r_sel_p1.select_r3 ( sel_buf_r_p1.sel_buf_3 Z ) ( storage_3_0_0.select_inv_0 A ) + USE SIGNAL
       + ROUTED metal2 ( 4873 441 ) ( * 497 )
-      NEW metal3 ( 4873 441 ) ( 5196 * )
+      NEW metal3 ( 4873 441 ) ( 4930 * )
+      NEW metal2 ( 4930 441 ) ( * 469 )
+      NEW metal3 ( 4930 469 ) ( 5196 * )
+      NEW metal3 ( 5196 441 ) ( * 469 )
       NEW metal1 ( 4873 497 ) via1_4
       NEW metal2 ( 4873 441 ) via2_5
+      NEW metal2 ( 4930 441 ) via2_5
+      NEW metal2 ( 4930 469 ) via2_5
       NEW metal1 ( 5196 441 ) via1_7
       NEW metal2 ( 5196 441 ) via2_5 ;
     - r_sel_p1.select_r4 ( sel_buf_r_p1.sel_buf_4 Z ) ( storage_4_0_0.select_inv_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4873 623 ) ( * 679 )
-      NEW metal3 ( 4873 679 ) ( 4993 * )
-      NEW metal3 ( 4993 679 ) ( * 693 )
-      NEW metal3 ( 4993 693 ) ( 5196 * )
-      NEW metal2 ( 5196 679 ) ( * 693 )
+      + ROUTED metal2 ( 4873 623 ) ( * 637 )
+      NEW metal3 ( 4873 637 ) ( 5196 * )
       NEW metal1 ( 4873 623 ) via1_4
-      NEW metal2 ( 4873 679 ) via2_5
-      NEW metal2 ( 5196 693 ) via2_5
-      NEW metal1 ( 5196 679 ) via1_7 ;
+      NEW metal2 ( 4873 637 ) via2_5
+      NEW metal1 ( 5196 637 ) via1_4
+      NEW metal2 ( 5196 637 ) via2_5 ;
     - r_sel_p1.select_r5 ( sel_buf_r_p1.sel_buf_5 Z ) ( storage_5_0_0.select_inv_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4873 721 ) ( * 777 )
-      NEW metal3 ( 4873 721 ) ( 5196 * )
+      + ROUTED metal2 ( 4873 763 ) ( * 777 )
+      NEW metal3 ( 4873 763 ) ( 5196 * )
       NEW metal1 ( 4873 777 ) via1_4
-      NEW metal2 ( 4873 721 ) via2_5
-      NEW metal1 ( 5196 721 ) via1_7
-      NEW metal2 ( 5196 721 ) via2_5 ;
+      NEW metal2 ( 4873 763 ) via2_5
+      NEW metal1 ( 5196 763 ) via1_4
+      NEW metal2 ( 5196 763 ) via2_5 ;
     - r_sel_p1.select_r6 ( sel_buf_r_p1.sel_buf_6 Z ) ( storage_6_0_0.select_inv_0 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4873 903 ) ( * 917 )
-      NEW metal3 ( 4873 917 ) ( 5196 * )
+      + ROUTED metal3 ( 4873 903 ) ( 5196 * )
       NEW metal1 ( 4873 903 ) via1_4
-      NEW metal2 ( 4873 917 ) via2_5
-      NEW metal1 ( 5196 917 ) via1_4
-      NEW metal2 ( 5196 917 ) via2_5 ;
+      NEW metal2 ( 4873 903 ) via2_5
+      NEW metal1 ( 5196 903 ) via1_4
+      NEW metal2 ( 5196 903 ) via2_5 ;
     - r_sel_p2.select_r0 ( sel_buf_r_p2.sel_buf_0 Z ) ( storage_0_0_0.select_inv_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4911 63 ) ( * 105 )
-      NEW metal3 ( 4911 105 ) ( 5405 * )
+      + ROUTED metal2 ( 4911 35 ) ( * 63 )
+      NEW metal3 ( 4911 35 ) ( 5405 * )
       NEW metal1 ( 4911 63 ) via1_4
-      NEW metal2 ( 4911 105 ) via2_5
-      NEW metal1 ( 5405 105 ) via1_4
-      NEW metal2 ( 5405 105 ) via2_5 ;
+      NEW metal2 ( 4911 35 ) via2_5
+      NEW metal1 ( 5405 35 ) via1_4
+      NEW metal2 ( 5405 35 ) via2_5 ;
     - r_sel_p2.select_r1 ( sel_buf_r_p2.sel_buf_1 Z ) ( storage_1_0_0.select_inv_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4911 175 ) ( * 217 )
-      NEW metal3 ( 4911 175 ) ( 5405 * )
+      + ROUTED metal2 ( 4911 189 ) ( * 217 )
+      NEW metal3 ( 4911 189 ) ( 5405 * )
       NEW metal1 ( 4911 217 ) via1_4
-      NEW metal2 ( 4911 175 ) via2_5
-      NEW metal1 ( 5405 175 ) via1_4
-      NEW metal2 ( 5405 175 ) via2_5 ;
+      NEW metal2 ( 4911 189 ) via2_5
+      NEW metal1 ( 5405 189 ) via1_4
+      NEW metal2 ( 5405 189 ) via2_5 ;
     - r_sel_p2.select_r2 ( sel_buf_r_p2.sel_buf_2 Z ) ( storage_2_0_0.select_inv_1 A ) + USE SIGNAL
       + ROUTED metal2 ( 4911 343 ) ( * 385 )
       NEW metal3 ( 4911 385 ) ( 5405 * )
@@ -2053,23 +1978,19 @@ NETS 188 ;
       NEW metal1 ( 5405 385 ) via1_4
       NEW metal2 ( 5405 385 ) via2_5 ;
     - r_sel_p2.select_r3 ( sel_buf_r_p2.sel_buf_3 Z ) ( storage_3_0_0.select_inv_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4911 497 ) ( * 525 )
-      NEW metal3 ( 4911 525 ) ( 5405 * )
+      + ROUTED metal2 ( 4911 483 ) ( * 497 )
+      NEW metal3 ( 4911 483 ) ( 5405 * )
       NEW metal1 ( 4911 497 ) via1_4
-      NEW metal2 ( 4911 525 ) via2_5
-      NEW metal1 ( 5405 525 ) via1_4
-      NEW metal2 ( 5405 525 ) via2_5 ;
+      NEW metal2 ( 4911 483 ) via2_5
+      NEW metal1 ( 5405 483 ) via1_4
+      NEW metal2 ( 5405 483 ) via2_5 ;
     - r_sel_p2.select_r4 ( sel_buf_r_p2.sel_buf_4 Z ) ( storage_4_0_0.select_inv_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4911 581 ) ( * 623 )
-      NEW metal3 ( 4911 581 ) ( 5021 * )
-      NEW metal3 ( 5021 581 ) ( * 595 )
-      NEW metal3 ( 5021 595 ) ( 5133 * )
-      NEW metal3 ( 5133 581 ) ( * 595 )
-      NEW metal3 ( 5133 581 ) ( 5405 * )
+      + ROUTED metal2 ( 4911 609 ) ( * 623 )
+      NEW metal3 ( 4911 609 ) ( 5405 * )
       NEW metal1 ( 4911 623 ) via1_4
-      NEW metal2 ( 4911 581 ) via2_5
-      NEW metal1 ( 5405 581 ) via1_7
-      NEW metal2 ( 5405 581 ) via2_5 ;
+      NEW metal2 ( 4911 609 ) via2_5
+      NEW metal1 ( 5405 609 ) via1_4
+      NEW metal2 ( 5405 609 ) via2_5 ;
     - r_sel_p2.select_r5 ( sel_buf_r_p2.sel_buf_5 Z ) ( storage_5_0_0.select_inv_1 A ) + USE SIGNAL
       + ROUTED metal2 ( 4911 777 ) ( * 805 )
       NEW metal3 ( 4911 805 ) ( 5405 * )
@@ -2078,18 +1999,18 @@ NETS 188 ;
       NEW metal1 ( 5405 805 ) via1_4
       NEW metal2 ( 5405 805 ) via2_5 ;
     - r_sel_p2.select_r6 ( sel_buf_r_p2.sel_buf_6 Z ) ( storage_6_0_0.select_inv_1 A ) + USE SIGNAL
-      + ROUTED metal2 ( 4911 889 ) ( * 903 )
-      NEW metal3 ( 4911 889 ) ( 5405 * )
+      + ROUTED metal2 ( 4911 903 ) ( * 917 )
+      NEW metal3 ( 4911 917 ) ( 5405 * )
       NEW metal1 ( 4911 903 ) via1_4
-      NEW metal2 ( 4911 889 ) via2_5
-      NEW metal1 ( 5405 889 ) via1_4
-      NEW metal2 ( 5405 889 ) via2_5 ;
+      NEW metal2 ( 4911 917 ) via2_5
+      NEW metal1 ( 5405 917 ) via1_4
+      NEW metal2 ( 5405 917 ) via2_5 ;
     - storage_0_0_0.bit0.storage ( storage_0_0_0.bit0.obuf1 A ) ( storage_0_0_0.bit0.obuf0 A ) ( storage_0_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal2 ( 332 63 ) ( 427 * )
+      NEW metal2 ( 560 63 ) ( 579 * )
       NEW metal2 ( 560 49 ) ( * 63 )
       NEW metal2 ( 427 49 ) ( 560 * )
       NEW metal2 ( 427 49 ) ( * 63 )
-      NEW metal2 ( 560 63 ) ( 579 * )
       NEW metal1 ( 427 63 ) via1_4
       NEW metal1 ( 332 63 ) via1_4
       NEW metal1 ( 579 63 ) via1_4 ;
@@ -2149,102 +2070,105 @@ NETS 188 ;
       NEW metal2 ( 4455 63 ) via2_5 ;
     - storage_0_0_0.gclock ( storage_0_0_0.cg GCK ) ( storage_0_0_0.bit6.bit CK ) ( storage_0_0_0.bit5.bit CK ) ( storage_0_0_0.bit4.bit CK ) ( storage_0_0_0.bit3.bit CK ) ( storage_0_0_0.bit2.bit CK ) ( storage_0_0_0.bit1.bit CK )
       ( storage_0_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 49 ) ( * 63 )
+      + ROUTED metal2 ( 826 49 ) ( * 63 )
+      NEW metal2 ( 180 49 ) ( * 63 )
+      NEW metal3 ( 180 49 ) ( 826 * )
       NEW metal2 ( 4056 49 ) ( * 63 )
-      NEW metal3 ( 4056 49 ) ( 4778 * )
+      NEW metal2 ( 1472 49 ) ( * 63 )
+      NEW metal2 ( 2118 49 ) ( * 63 )
+      NEW metal3 ( 1472 49 ) ( 2118 * )
       NEW metal2 ( 2764 49 ) ( * 63 )
+      NEW metal3 ( 2118 49 ) ( 2764 * )
       NEW metal2 ( 3410 49 ) ( * 63 )
       NEW metal3 ( 2764 49 ) ( 3410 * )
-      NEW metal3 ( 3410 49 ) ( 4056 * )
-      NEW metal2 ( 2118 49 ) ( * 63 )
-      NEW metal2 ( 1472 49 ) ( * 63 )
-      NEW metal3 ( 1472 49 ) ( 2118 * )
-      NEW metal2 ( 826 49 ) ( * 63 )
       NEW metal3 ( 826 49 ) ( 1472 * )
-      NEW metal3 ( 180 49 ) ( 826 * )
-      NEW metal3 ( 2118 49 ) ( 2764 * )
+      NEW metal3 ( 3410 49 ) ( 4056 * )
+      NEW metal3 ( 4056 49 ) ( 4778 * )
+      NEW metal1 ( 826 63 ) via1_4
+      NEW metal2 ( 826 49 ) via2_5
       NEW metal1 ( 180 63 ) via1_4
       NEW metal2 ( 180 49 ) via2_5
       NEW metal1 ( 4056 63 ) via1_4
       NEW metal2 ( 4056 49 ) via2_5
-      NEW metal1 ( 4778 49 ) via1_4
-      NEW metal2 ( 4778 49 ) via2_5
+      NEW metal1 ( 1472 63 ) via1_4
+      NEW metal2 ( 1472 49 ) via2_5
+      NEW metal1 ( 2118 63 ) via1_4
+      NEW metal2 ( 2118 49 ) via2_5
       NEW metal1 ( 2764 63 ) via1_4
       NEW metal2 ( 2764 49 ) via2_5
       NEW metal1 ( 3410 63 ) via1_4
       NEW metal2 ( 3410 49 ) via2_5
-      NEW metal1 ( 2118 63 ) via1_4
-      NEW metal2 ( 2118 49 ) via2_5
-      NEW metal1 ( 1472 63 ) via1_4
-      NEW metal2 ( 1472 49 ) via2_5
-      NEW metal1 ( 826 63 ) via1_4
-      NEW metal2 ( 826 49 ) via2_5 ;
+      NEW metal1 ( 4778 49 ) via1_4
+      NEW metal2 ( 4778 49 ) via2_5 ;
     - storage_0_0_0.select0_b ( storage_0_0_0.select_inv_0 ZN ) ( storage_0_0_0.bit6.obuf0 EN ) ( storage_0_0_0.bit5.obuf0 EN ) ( storage_0_0_0.bit4.obuf0 EN ) ( storage_0_0_0.bit3.obuf0 EN ) ( storage_0_0_0.bit2.obuf0 EN ) ( storage_0_0_0.bit1.obuf0 EN )
       ( storage_0_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 77 ) ( 4892 * )
+      + ROUTED metal3 ( 465 77 ) ( 1111 * )
       NEW metal3 ( 3695 77 ) ( 4341 * )
-      NEW metal3 ( 3049 77 ) ( 3695 * )
-      NEW metal3 ( 1111 77 ) ( 1757 * )
-      NEW metal3 ( 1757 77 ) ( 2403 * )
-      NEW metal3 ( 465 77 ) ( 1111 * )
       NEW metal3 ( 2403 77 ) ( 3049 * )
+      NEW metal3 ( 1757 77 ) ( 2403 * )
+      NEW metal3 ( 1111 77 ) ( 1757 * )
+      NEW metal3 ( 3049 77 ) ( 3695 * )
+      NEW metal3 ( 4341 77 ) ( 4892 * )
+      NEW metal1 ( 1111 77 ) via1_4
+      NEW metal2 ( 1111 77 ) via2_5
       NEW metal1 ( 465 77 ) via1_4
       NEW metal2 ( 465 77 ) via2_5
       NEW metal1 ( 4341 77 ) via1_4
       NEW metal2 ( 4341 77 ) via2_5
-      NEW metal1 ( 4892 77 ) via1_4
-      NEW metal2 ( 4892 77 ) via2_5
       NEW metal1 ( 3695 77 ) via1_4
       NEW metal2 ( 3695 77 ) via2_5
       NEW metal1 ( 3049 77 ) via1_4
       NEW metal2 ( 3049 77 ) via2_5
-      NEW metal1 ( 1111 77 ) via1_4
-      NEW metal2 ( 1111 77 ) via2_5
+      NEW metal1 ( 2403 77 ) via1_4
+      NEW metal2 ( 2403 77 ) via2_5
       NEW metal1 ( 1757 77 ) via1_4
       NEW metal2 ( 1757 77 ) via2_5
-      NEW metal1 ( 2403 77 ) via1_4
-      NEW metal2 ( 2403 77 ) via2_5 ;
+      NEW metal1 ( 4892 77 ) via1_4
+      NEW metal2 ( 4892 77 ) via2_5 ;
     - storage_0_0_0.select1_b ( storage_0_0_0.select_inv_1 ZN ) ( storage_0_0_0.bit6.obuf1 EN ) ( storage_0_0_0.bit5.obuf1 EN ) ( storage_0_0_0.bit4.obuf1 EN ) ( storage_0_0_0.bit3.obuf1 EN ) ( storage_0_0_0.bit2.obuf1 EN ) ( storage_0_0_0.bit1.obuf1 EN )
       ( storage_0_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 91 ) ( 4493 * )
-      NEW metal3 ( 4493 91 ) ( 4930 * )
-      NEW metal3 ( 3201 91 ) ( 3847 * )
-      NEW metal3 ( 617 91 ) ( 1263 * )
-      NEW metal3 ( 1263 91 ) ( 1909 * )
+      + ROUTED metal3 ( 617 91 ) ( 1263 * )
+      NEW metal3 ( 3847 91 ) ( 4493 * )
+      NEW metal2 ( 4493 63 ) ( * 91 )
       NEW metal3 ( 1909 91 ) ( 2555 * )
       NEW metal3 ( 2555 91 ) ( 3201 * )
-      NEW metal1 ( 3847 91 ) via1_4
-      NEW metal2 ( 3847 91 ) via2_5
-      NEW metal1 ( 4493 91 ) via1_4
-      NEW metal2 ( 4493 91 ) via2_5
-      NEW metal1 ( 4930 91 ) via1_4
-      NEW metal2 ( 4930 91 ) via2_5
-      NEW metal1 ( 3201 91 ) via1_4
-      NEW metal2 ( 3201 91 ) via2_5
+      NEW metal3 ( 1263 91 ) ( 1909 * )
+      NEW metal3 ( 3201 91 ) ( 3847 * )
+      NEW metal3 ( 4493 63 ) ( 4930 * )
       NEW metal1 ( 1263 91 ) via1_4
       NEW metal2 ( 1263 91 ) via2_5
       NEW metal1 ( 617 91 ) via1_4
       NEW metal2 ( 617 91 ) via2_5
+      NEW metal1 ( 3847 91 ) via1_4
+      NEW metal2 ( 3847 91 ) via2_5
+      NEW metal1 ( 4493 91 ) via1_4
+      NEW metal2 ( 4493 91 ) via2_5
+      NEW metal2 ( 4493 63 ) via2_5
       NEW metal1 ( 1909 91 ) via1_4
       NEW metal2 ( 1909 91 ) via2_5
       NEW metal1 ( 2555 91 ) via1_4
-      NEW metal2 ( 2555 91 ) via2_5 ;
+      NEW metal2 ( 2555 91 ) via2_5
+      NEW metal1 ( 3201 91 ) via1_4
+      NEW metal2 ( 3201 91 ) via2_5
+      NEW metal1 ( 4930 63 ) via1_4
+      NEW metal2 ( 4930 63 ) via2_5 ;
     - storage_0_0_0.we ( storage_0_0_0.gcand ZN ) ( storage_0_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal3 ( 4645 63 ) ( 4854 * )
+      + ROUTED metal2 ( 4645 35 ) ( * 63 )
+      NEW metal3 ( 4645 35 ) ( 4854 * )
       NEW metal1 ( 4645 63 ) via1_4
-      NEW metal2 ( 4645 63 ) via2_5
-      NEW metal1 ( 4854 63 ) via1_4
-      NEW metal2 ( 4854 63 ) via2_5 ;
+      NEW metal2 ( 4645 35 ) via2_5
+      NEW metal1 ( 4854 35 ) via1_4
+      NEW metal2 ( 4854 35 ) via2_5 ;
     - storage_1_0_0.bit0.storage ( storage_1_0_0.bit0.obuf1 A ) ( storage_1_0_0.bit0.obuf0 A ) ( storage_1_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 217 ) ( 427 * )
-      NEW metal3 ( 427 217 ) ( 560 * )
       NEW metal2 ( 560 217 ) ( 579 * )
+      NEW metal3 ( 427 217 ) ( 560 * )
       NEW metal1 ( 427 217 ) via1_4
       NEW metal2 ( 427 217 ) via2_5
       NEW metal1 ( 332 217 ) via1_4
       NEW metal2 ( 332 217 ) via2_5
-      NEW metal2 ( 560 217 ) via2_5
-      NEW metal1 ( 579 217 ) via1_4 ;
+      NEW metal1 ( 579 217 ) via1_4
+      NEW metal2 ( 560 217 ) via2_5 ;
     - storage_1_0_0.bit1.storage ( storage_1_0_0.bit1.obuf1 A ) ( storage_1_0_0.bit1.obuf0 A ) ( storage_1_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 217 ) ( 1073 * )
       NEW metal3 ( 1073 217 ) ( 1225 * )
@@ -2301,115 +2225,112 @@ NETS 188 ;
       NEW metal2 ( 4455 217 ) via2_5 ;
     - storage_1_0_0.gclock ( storage_1_0_0.cg GCK ) ( storage_1_0_0.bit6.bit CK ) ( storage_1_0_0.bit5.bit CK ) ( storage_1_0_0.bit4.bit CK ) ( storage_1_0_0.bit3.bit CK ) ( storage_1_0_0.bit2.bit CK ) ( storage_1_0_0.bit1.bit CK )
       ( storage_1_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 217 ) ( * 231 )
+      + ROUTED metal2 ( 826 217 ) ( * 231 )
+      NEW metal2 ( 180 217 ) ( * 231 )
+      NEW metal3 ( 180 231 ) ( 826 * )
       NEW metal2 ( 4056 217 ) ( * 231 )
-      NEW metal3 ( 4056 231 ) ( 4778 * )
+      NEW metal2 ( 1472 217 ) ( * 231 )
+      NEW metal2 ( 2118 217 ) ( * 231 )
+      NEW metal3 ( 1472 231 ) ( 2118 * )
       NEW metal2 ( 2764 217 ) ( * 231 )
+      NEW metal3 ( 2118 231 ) ( 2764 * )
       NEW metal2 ( 3410 217 ) ( * 231 )
       NEW metal3 ( 2764 231 ) ( 3410 * )
-      NEW metal3 ( 3410 231 ) ( 4056 * )
-      NEW metal2 ( 2118 217 ) ( * 231 )
-      NEW metal2 ( 1472 217 ) ( * 231 )
-      NEW metal3 ( 1472 231 ) ( 2118 * )
-      NEW metal2 ( 826 217 ) ( * 231 )
       NEW metal3 ( 826 231 ) ( 1472 * )
-      NEW metal3 ( 180 231 ) ( 826 * )
-      NEW metal3 ( 2118 231 ) ( 2764 * )
+      NEW metal3 ( 3410 231 ) ( 4056 * )
+      NEW metal3 ( 4056 231 ) ( 4778 * )
+      NEW metal1 ( 826 217 ) via1_4
+      NEW metal2 ( 826 231 ) via2_5
       NEW metal1 ( 180 217 ) via1_4
       NEW metal2 ( 180 231 ) via2_5
       NEW metal1 ( 4056 217 ) via1_4
       NEW metal2 ( 4056 231 ) via2_5
-      NEW metal1 ( 4778 231 ) via1_4
-      NEW metal2 ( 4778 231 ) via2_5
+      NEW metal1 ( 1472 217 ) via1_4
+      NEW metal2 ( 1472 231 ) via2_5
+      NEW metal1 ( 2118 217 ) via1_4
+      NEW metal2 ( 2118 231 ) via2_5
       NEW metal1 ( 2764 217 ) via1_4
       NEW metal2 ( 2764 231 ) via2_5
       NEW metal1 ( 3410 217 ) via1_4
       NEW metal2 ( 3410 231 ) via2_5
-      NEW metal1 ( 2118 217 ) via1_4
-      NEW metal2 ( 2118 231 ) via2_5
-      NEW metal1 ( 1472 217 ) via1_4
-      NEW metal2 ( 1472 231 ) via2_5
-      NEW metal1 ( 826 217 ) via1_4
-      NEW metal2 ( 826 231 ) via2_5 ;
+      NEW metal1 ( 4778 231 ) via1_4
+      NEW metal2 ( 4778 231 ) via2_5 ;
     - storage_1_0_0.select0_b ( storage_1_0_0.select_inv_0 ZN ) ( storage_1_0_0.bit6.obuf0 EN ) ( storage_1_0_0.bit5.obuf0 EN ) ( storage_1_0_0.bit4.obuf0 EN ) ( storage_1_0_0.bit3.obuf0 EN ) ( storage_1_0_0.bit2.obuf0 EN ) ( storage_1_0_0.bit1.obuf0 EN )
       ( storage_1_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 189 ) ( 4892 * )
+      + ROUTED metal3 ( 465 189 ) ( 1111 * )
       NEW metal3 ( 3695 189 ) ( 4341 * )
-      NEW metal3 ( 3453 189 ) ( * 203 )
-      NEW metal3 ( 3453 189 ) ( 3695 * )
-      NEW metal3 ( 3049 203 ) ( 3453 * )
-      NEW metal3 ( 1111 189 ) ( 1757 * )
+      NEW metal3 ( 2403 189 ) ( 3049 * )
       NEW metal3 ( 1757 189 ) ( 2403 * )
-      NEW metal3 ( 2403 189 ) ( * 203 )
-      NEW metal3 ( 465 189 ) ( 1111 * )
-      NEW metal3 ( 2403 203 ) ( 3049 * )
+      NEW metal3 ( 1111 189 ) ( 1757 * )
+      NEW metal3 ( 3049 189 ) ( 3695 * )
+      NEW metal3 ( 4341 189 ) ( 4560 * )
+      NEW metal3 ( 4560 175 ) ( * 189 )
+      NEW metal3 ( 4560 175 ) ( 4892 * )
+      NEW metal1 ( 1111 189 ) via1_4
+      NEW metal2 ( 1111 189 ) via2_5
       NEW metal1 ( 465 189 ) via1_4
       NEW metal2 ( 465 189 ) via2_5
       NEW metal1 ( 4341 189 ) via1_4
       NEW metal2 ( 4341 189 ) via2_5
-      NEW metal1 ( 4892 189 ) via1_4
-      NEW metal2 ( 4892 189 ) via2_5
       NEW metal1 ( 3695 189 ) via1_4
       NEW metal2 ( 3695 189 ) via2_5
-      NEW metal1 ( 3049 203 ) via1_4
-      NEW metal2 ( 3049 203 ) via2_5
-      NEW metal1 ( 1111 189 ) via1_4
-      NEW metal2 ( 1111 189 ) via2_5
+      NEW metal1 ( 3049 189 ) via1_4
+      NEW metal2 ( 3049 189 ) via2_5
+      NEW metal1 ( 2403 189 ) via1_4
+      NEW metal2 ( 2403 189 ) via2_5
       NEW metal1 ( 1757 189 ) via1_4
       NEW metal2 ( 1757 189 ) via2_5
-      NEW metal1 ( 2403 189 ) via1_4
-      NEW metal2 ( 2403 189 ) via2_5 ;
+      NEW metal1 ( 4892 175 ) via1_4
+      NEW metal2 ( 4892 175 ) via2_5 ;
     - storage_1_0_0.select1_b ( storage_1_0_0.select_inv_1 ZN ) ( storage_1_0_0.bit6.obuf1 EN ) ( storage_1_0_0.bit5.obuf1 EN ) ( storage_1_0_0.bit4.obuf1 EN ) ( storage_1_0_0.bit3.obuf1 EN ) ( storage_1_0_0.bit2.obuf1 EN ) ( storage_1_0_0.bit1.obuf1 EN )
       ( storage_1_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal2 ( 4493 203 ) ( * 217 )
-      NEW metal3 ( 4493 217 ) ( 4930 * )
+      + ROUTED metal3 ( 617 203 ) ( 1263 * )
+      NEW metal2 ( 4493 203 ) ( * 217 )
       NEW metal3 ( 3847 203 ) ( 4489 * )
       NEW metal3 ( 4489 203 ) ( * 217 )
       NEW metal3 ( 4489 217 ) ( 4493 * )
-      NEW metal2 ( 3847 175 ) ( * 203 )
-      NEW metal2 ( 3201 175 ) ( * 189 )
-      NEW metal3 ( 3201 175 ) ( 3847 * )
-      NEW metal3 ( 617 203 ) ( 1263 * )
+      NEW metal2 ( 3847 161 ) ( * 203 )
+      NEW metal3 ( 1909 203 ) ( 2555 * )
+      NEW metal3 ( 2555 203 ) ( 3201 * )
+      NEW metal2 ( 3201 161 ) ( * 203 )
       NEW metal3 ( 1263 203 ) ( 1909 * )
-      NEW metal2 ( 2555 175 ) ( * 189 )
-      NEW metal3 ( 1909 175 ) ( 2555 * )
-      NEW metal2 ( 1909 175 ) ( * 203 )
-      NEW metal3 ( 2555 175 ) ( 3201 * )
-      NEW metal1 ( 4493 203 ) via1_4
-      NEW metal2 ( 4493 217 ) via2_5
-      NEW metal1 ( 4930 217 ) via1_4
-      NEW metal2 ( 4930 217 ) via2_5
-      NEW metal1 ( 3847 203 ) via1_4
-      NEW metal2 ( 3847 203 ) via2_5
-      NEW metal2 ( 3847 175 ) via2_5
-      NEW metal1 ( 3201 189 ) via1_4
-      NEW metal2 ( 3201 175 ) via2_5
+      NEW metal3 ( 3201 161 ) ( 3847 * )
+      NEW metal3 ( 4493 217 ) ( 4930 * )
       NEW metal1 ( 1263 203 ) via1_4
       NEW metal2 ( 1263 203 ) via2_5
       NEW metal1 ( 617 203 ) via1_4
       NEW metal2 ( 617 203 ) via2_5
+      NEW metal1 ( 4493 203 ) via1_4
+      NEW metal2 ( 4493 217 ) via2_5
+      NEW metal1 ( 3847 203 ) via1_4
+      NEW metal2 ( 3847 203 ) via2_5
+      NEW metal2 ( 3847 161 ) via2_5
       NEW metal1 ( 1909 203 ) via1_4
       NEW metal2 ( 1909 203 ) via2_5
-      NEW metal1 ( 2555 189 ) via1_4
-      NEW metal2 ( 2555 175 ) via2_5
-      NEW metal2 ( 1909 175 ) via2_5 ;
+      NEW metal1 ( 2555 203 ) via1_4
+      NEW metal2 ( 2555 203 ) via2_5
+      NEW metal1 ( 3201 203 ) via1_4
+      NEW metal2 ( 3201 203 ) via2_5
+      NEW metal2 ( 3201 161 ) via2_5
+      NEW metal1 ( 4930 217 ) via1_4
+      NEW metal2 ( 4930 217 ) via2_5 ;
     - storage_1_0_0.we ( storage_1_0_0.gcand ZN ) ( storage_1_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal2 ( 4645 203 ) ( * 217 )
-      NEW metal3 ( 4645 203 ) ( 4854 * )
+      + ROUTED metal2 ( 4645 217 ) ( * 245 )
+      NEW metal3 ( 4645 245 ) ( 4854 * )
       NEW metal1 ( 4645 217 ) via1_4
-      NEW metal2 ( 4645 203 ) via2_5
-      NEW metal1 ( 4854 203 ) via1_4
-      NEW metal2 ( 4854 203 ) via2_5 ;
+      NEW metal2 ( 4645 245 ) via2_5
+      NEW metal1 ( 4854 245 ) via1_4
+      NEW metal2 ( 4854 245 ) via2_5 ;
     - storage_2_0_0.bit0.storage ( storage_2_0_0.bit0.obuf1 A ) ( storage_2_0_0.bit0.obuf0 A ) ( storage_2_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 343 ) ( 427 * )
-      NEW metal3 ( 427 343 ) ( 560 * )
       NEW metal2 ( 560 343 ) ( 579 * )
+      NEW metal3 ( 427 343 ) ( 560 * )
       NEW metal1 ( 427 343 ) via1_4
       NEW metal2 ( 427 343 ) via2_5
       NEW metal1 ( 332 343 ) via1_4
       NEW metal2 ( 332 343 ) via2_5
-      NEW metal2 ( 560 343 ) via2_5
-      NEW metal1 ( 579 343 ) via1_4 ;
+      NEW metal1 ( 579 343 ) via1_4
+      NEW metal2 ( 560 343 ) via2_5 ;
     - storage_2_0_0.bit1.storage ( storage_2_0_0.bit1.obuf1 A ) ( storage_2_0_0.bit1.obuf0 A ) ( storage_2_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 343 ) ( 1073 * )
       NEW metal3 ( 1073 343 ) ( 1225 * )
@@ -2466,105 +2387,106 @@ NETS 188 ;
       NEW metal2 ( 4455 343 ) via2_5 ;
     - storage_2_0_0.gclock ( storage_2_0_0.cg GCK ) ( storage_2_0_0.bit6.bit CK ) ( storage_2_0_0.bit5.bit CK ) ( storage_2_0_0.bit4.bit CK ) ( storage_2_0_0.bit3.bit CK ) ( storage_2_0_0.bit2.bit CK ) ( storage_2_0_0.bit1.bit CK )
       ( storage_2_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 329 ) ( * 343 )
+      + ROUTED metal2 ( 826 329 ) ( * 343 )
+      NEW metal2 ( 180 329 ) ( * 343 )
+      NEW metal3 ( 180 329 ) ( 826 * )
       NEW metal2 ( 4056 329 ) ( * 343 )
-      NEW metal3 ( 4056 329 ) ( 4778 * )
+      NEW metal2 ( 1472 329 ) ( * 343 )
+      NEW metal2 ( 2118 329 ) ( * 343 )
+      NEW metal3 ( 1472 329 ) ( 2118 * )
       NEW metal2 ( 2764 329 ) ( * 343 )
+      NEW metal3 ( 2118 329 ) ( 2764 * )
       NEW metal2 ( 3410 329 ) ( * 343 )
       NEW metal3 ( 2764 329 ) ( 3410 * )
-      NEW metal3 ( 3410 329 ) ( 4056 * )
-      NEW metal2 ( 2118 329 ) ( * 343 )
-      NEW metal2 ( 1472 329 ) ( * 343 )
-      NEW metal3 ( 1472 329 ) ( 2118 * )
-      NEW metal2 ( 826 329 ) ( * 343 )
       NEW metal3 ( 826 329 ) ( 1472 * )
-      NEW metal3 ( 180 329 ) ( 826 * )
-      NEW metal3 ( 2118 329 ) ( 2764 * )
+      NEW metal3 ( 3410 329 ) ( 4056 * )
+      NEW metal3 ( 4056 329 ) ( 4778 * )
+      NEW metal1 ( 826 343 ) via1_4
+      NEW metal2 ( 826 329 ) via2_5
       NEW metal1 ( 180 343 ) via1_4
       NEW metal2 ( 180 329 ) via2_5
       NEW metal1 ( 4056 343 ) via1_4
       NEW metal2 ( 4056 329 ) via2_5
-      NEW metal1 ( 4778 329 ) via1_4
-      NEW metal2 ( 4778 329 ) via2_5
+      NEW metal1 ( 1472 343 ) via1_4
+      NEW metal2 ( 1472 329 ) via2_5
+      NEW metal1 ( 2118 343 ) via1_4
+      NEW metal2 ( 2118 329 ) via2_5
       NEW metal1 ( 2764 343 ) via1_4
       NEW metal2 ( 2764 329 ) via2_5
       NEW metal1 ( 3410 343 ) via1_4
       NEW metal2 ( 3410 329 ) via2_5
-      NEW metal1 ( 2118 343 ) via1_4
-      NEW metal2 ( 2118 329 ) via2_5
-      NEW metal1 ( 1472 343 ) via1_4
-      NEW metal2 ( 1472 329 ) via2_5
-      NEW metal1 ( 826 343 ) via1_4
-      NEW metal2 ( 826 329 ) via2_5 ;
+      NEW metal1 ( 4778 329 ) via1_4
+      NEW metal2 ( 4778 329 ) via2_5 ;
     - storage_2_0_0.select0_b ( storage_2_0_0.select_inv_0 ZN ) ( storage_2_0_0.bit6.obuf0 EN ) ( storage_2_0_0.bit5.obuf0 EN ) ( storage_2_0_0.bit4.obuf0 EN ) ( storage_2_0_0.bit3.obuf0 EN ) ( storage_2_0_0.bit2.obuf0 EN ) ( storage_2_0_0.bit1.obuf0 EN )
       ( storage_2_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 357 ) ( 4892 * )
+      + ROUTED metal3 ( 465 357 ) ( 1111 * )
       NEW metal3 ( 3695 357 ) ( 4341 * )
-      NEW metal3 ( 3049 357 ) ( 3695 * )
-      NEW metal3 ( 1111 357 ) ( 1757 * )
-      NEW metal3 ( 1757 357 ) ( 2403 * )
-      NEW metal3 ( 465 357 ) ( 1111 * )
       NEW metal3 ( 2403 357 ) ( 3049 * )
+      NEW metal3 ( 1757 357 ) ( 2403 * )
+      NEW metal3 ( 1111 357 ) ( 1757 * )
+      NEW metal3 ( 3049 357 ) ( 3695 * )
+      NEW metal3 ( 4341 357 ) ( 4892 * )
+      NEW metal1 ( 1111 357 ) via1_4
+      NEW metal2 ( 1111 357 ) via2_5
       NEW metal1 ( 465 357 ) via1_4
       NEW metal2 ( 465 357 ) via2_5
       NEW metal1 ( 4341 357 ) via1_4
       NEW metal2 ( 4341 357 ) via2_5
-      NEW metal1 ( 4892 357 ) via1_4
-      NEW metal2 ( 4892 357 ) via2_5
       NEW metal1 ( 3695 357 ) via1_4
       NEW metal2 ( 3695 357 ) via2_5
       NEW metal1 ( 3049 357 ) via1_4
       NEW metal2 ( 3049 357 ) via2_5
-      NEW metal1 ( 1111 357 ) via1_4
-      NEW metal2 ( 1111 357 ) via2_5
+      NEW metal1 ( 2403 357 ) via1_4
+      NEW metal2 ( 2403 357 ) via2_5
       NEW metal1 ( 1757 357 ) via1_4
       NEW metal2 ( 1757 357 ) via2_5
-      NEW metal1 ( 2403 357 ) via1_4
-      NEW metal2 ( 2403 357 ) via2_5 ;
+      NEW metal1 ( 4892 357 ) via1_4
+      NEW metal2 ( 4892 357 ) via2_5 ;
     - storage_2_0_0.select1_b ( storage_2_0_0.select_inv_1 ZN ) ( storage_2_0_0.bit6.obuf1 EN ) ( storage_2_0_0.bit5.obuf1 EN ) ( storage_2_0_0.bit4.obuf1 EN ) ( storage_2_0_0.bit3.obuf1 EN ) ( storage_2_0_0.bit2.obuf1 EN ) ( storage_2_0_0.bit1.obuf1 EN )
       ( storage_2_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 371 ) ( 4493 * )
-      NEW metal3 ( 4493 343 ) ( 4930 * )
-      NEW metal2 ( 4493 343 ) ( * 371 )
-      NEW metal3 ( 3201 371 ) ( 3847 * )
-      NEW metal3 ( 617 371 ) ( 1263 * )
-      NEW metal3 ( 1263 371 ) ( 1909 * )
+      + ROUTED metal3 ( 617 371 ) ( 1263 * )
+      NEW metal2 ( 3847 315 ) ( * 357 )
+      NEW metal2 ( 4493 315 ) ( * 357 )
+      NEW metal3 ( 3847 315 ) ( 4493 * )
       NEW metal3 ( 1909 371 ) ( 2555 * )
       NEW metal3 ( 2555 371 ) ( 3201 * )
-      NEW metal1 ( 3847 371 ) via1_4
-      NEW metal2 ( 3847 371 ) via2_5
-      NEW metal1 ( 4493 371 ) via1_4
-      NEW metal2 ( 4493 371 ) via2_5
-      NEW metal1 ( 4930 343 ) via1_4
-      NEW metal2 ( 4930 343 ) via2_5
-      NEW metal2 ( 4493 343 ) via2_5
-      NEW metal1 ( 3201 371 ) via1_4
-      NEW metal2 ( 3201 371 ) via2_5
+      NEW metal2 ( 3201 315 ) ( * 371 )
+      NEW metal3 ( 1263 371 ) ( 1909 * )
+      NEW metal3 ( 3201 315 ) ( 3847 * )
+      NEW metal3 ( 4493 315 ) ( 4930 * )
       NEW metal1 ( 1263 371 ) via1_4
       NEW metal2 ( 1263 371 ) via2_5
       NEW metal1 ( 617 371 ) via1_4
       NEW metal2 ( 617 371 ) via2_5
+      NEW metal1 ( 3847 357 ) via1_4
+      NEW metal2 ( 3847 315 ) via2_5
+      NEW metal1 ( 4493 357 ) via1_4
+      NEW metal2 ( 4493 315 ) via2_5
       NEW metal1 ( 1909 371 ) via1_4
       NEW metal2 ( 1909 371 ) via2_5
       NEW metal1 ( 2555 371 ) via1_4
-      NEW metal2 ( 2555 371 ) via2_5 ;
+      NEW metal2 ( 2555 371 ) via2_5
+      NEW metal1 ( 3201 371 ) via1_4
+      NEW metal2 ( 3201 371 ) via2_5
+      NEW metal2 ( 3201 315 ) via2_5
+      NEW metal1 ( 4930 315 ) via1_4
+      NEW metal2 ( 4930 315 ) via2_5 ;
     - storage_2_0_0.we ( storage_2_0_0.gcand ZN ) ( storage_2_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal2 ( 4645 315 ) ( * 343 )
-      NEW metal3 ( 4645 315 ) ( 4854 * )
+      + ROUTED metal3 ( 4645 343 ) ( 4854 * )
       NEW metal1 ( 4645 343 ) via1_4
-      NEW metal2 ( 4645 315 ) via2_5
-      NEW metal1 ( 4854 315 ) via1_4
-      NEW metal2 ( 4854 315 ) via2_5 ;
+      NEW metal2 ( 4645 343 ) via2_5
+      NEW metal1 ( 4854 343 ) via1_4
+      NEW metal2 ( 4854 343 ) via2_5 ;
     - storage_3_0_0.bit0.storage ( storage_3_0_0.bit0.obuf1 A ) ( storage_3_0_0.bit0.obuf0 A ) ( storage_3_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 497 ) ( 427 * )
-      NEW metal3 ( 427 497 ) ( 560 * )
       NEW metal2 ( 560 497 ) ( 579 * )
+      NEW metal3 ( 427 497 ) ( 560 * )
       NEW metal1 ( 427 497 ) via1_4
       NEW metal2 ( 427 497 ) via2_5
       NEW metal1 ( 332 497 ) via1_4
       NEW metal2 ( 332 497 ) via2_5
-      NEW metal2 ( 560 497 ) via2_5
-      NEW metal1 ( 579 497 ) via1_4 ;
+      NEW metal1 ( 579 497 ) via1_4
+      NEW metal2 ( 560 497 ) via2_5 ;
     - storage_3_0_0.bit1.storage ( storage_3_0_0.bit1.obuf1 A ) ( storage_3_0_0.bit1.obuf0 A ) ( storage_3_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 497 ) ( 1073 * )
       NEW metal3 ( 1073 497 ) ( 1225 * )
@@ -2621,92 +2543,95 @@ NETS 188 ;
       NEW metal2 ( 4455 497 ) via2_5 ;
     - storage_3_0_0.gclock ( storage_3_0_0.cg GCK ) ( storage_3_0_0.bit6.bit CK ) ( storage_3_0_0.bit5.bit CK ) ( storage_3_0_0.bit4.bit CK ) ( storage_3_0_0.bit3.bit CK ) ( storage_3_0_0.bit2.bit CK ) ( storage_3_0_0.bit1.bit CK )
       ( storage_3_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 497 ) ( * 511 )
+      + ROUTED metal2 ( 826 497 ) ( * 511 )
+      NEW metal2 ( 180 497 ) ( * 511 )
+      NEW metal3 ( 180 511 ) ( 826 * )
       NEW metal2 ( 4056 497 ) ( * 511 )
-      NEW metal3 ( 4056 511 ) ( 4778 * )
+      NEW metal2 ( 1472 497 ) ( * 511 )
+      NEW metal2 ( 2118 497 ) ( * 511 )
+      NEW metal3 ( 1472 511 ) ( 2118 * )
       NEW metal2 ( 2764 497 ) ( * 511 )
+      NEW metal3 ( 2118 511 ) ( 2764 * )
       NEW metal2 ( 3410 497 ) ( * 511 )
       NEW metal3 ( 2764 511 ) ( 3410 * )
-      NEW metal3 ( 3410 511 ) ( 4056 * )
-      NEW metal2 ( 2118 497 ) ( * 511 )
-      NEW metal2 ( 1472 497 ) ( * 511 )
-      NEW metal3 ( 1472 511 ) ( 2118 * )
-      NEW metal2 ( 826 497 ) ( * 511 )
       NEW metal3 ( 826 511 ) ( 1472 * )
-      NEW metal3 ( 180 511 ) ( 826 * )
-      NEW metal3 ( 2118 511 ) ( 2764 * )
+      NEW metal3 ( 3410 511 ) ( 4056 * )
+      NEW metal3 ( 4056 511 ) ( 4778 * )
+      NEW metal1 ( 826 497 ) via1_4
+      NEW metal2 ( 826 511 ) via2_5
       NEW metal1 ( 180 497 ) via1_4
       NEW metal2 ( 180 511 ) via2_5
       NEW metal1 ( 4056 497 ) via1_4
       NEW metal2 ( 4056 511 ) via2_5
-      NEW metal1 ( 4778 511 ) via1_4
-      NEW metal2 ( 4778 511 ) via2_5
+      NEW metal1 ( 1472 497 ) via1_4
+      NEW metal2 ( 1472 511 ) via2_5
+      NEW metal1 ( 2118 497 ) via1_4
+      NEW metal2 ( 2118 511 ) via2_5
       NEW metal1 ( 2764 497 ) via1_4
       NEW metal2 ( 2764 511 ) via2_5
       NEW metal1 ( 3410 497 ) via1_4
       NEW metal2 ( 3410 511 ) via2_5
-      NEW metal1 ( 2118 497 ) via1_4
-      NEW metal2 ( 2118 511 ) via2_5
-      NEW metal1 ( 1472 497 ) via1_4
-      NEW metal2 ( 1472 511 ) via2_5
-      NEW metal1 ( 826 497 ) via1_4
-      NEW metal2 ( 826 511 ) via2_5 ;
+      NEW metal1 ( 4778 511 ) via1_4
+      NEW metal2 ( 4778 511 ) via2_5 ;
     - storage_3_0_0.select0_b ( storage_3_0_0.select_inv_0 ZN ) ( storage_3_0_0.bit6.obuf0 EN ) ( storage_3_0_0.bit5.obuf0 EN ) ( storage_3_0_0.bit4.obuf0 EN ) ( storage_3_0_0.bit3.obuf0 EN ) ( storage_3_0_0.bit2.obuf0 EN ) ( storage_3_0_0.bit1.obuf0 EN )
       ( storage_3_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 469 ) ( 4892 * )
+      + ROUTED metal3 ( 465 469 ) ( 1111 * )
       NEW metal3 ( 3695 469 ) ( 4341 * )
-      NEW metal3 ( 3049 469 ) ( 3695 * )
-      NEW metal3 ( 1111 469 ) ( 1757 * )
-      NEW metal3 ( 1757 469 ) ( 2403 * )
-      NEW metal3 ( 465 469 ) ( 1111 * )
       NEW metal3 ( 2403 469 ) ( 3049 * )
+      NEW metal3 ( 1757 469 ) ( 2403 * )
+      NEW metal3 ( 1111 469 ) ( 1757 * )
+      NEW metal3 ( 3049 469 ) ( 3695 * )
+      NEW metal3 ( 4341 469 ) ( 4892 * )
+      NEW metal1 ( 1111 469 ) via1_4
+      NEW metal2 ( 1111 469 ) via2_5
       NEW metal1 ( 465 469 ) via1_4
       NEW metal2 ( 465 469 ) via2_5
       NEW metal1 ( 4341 469 ) via1_4
       NEW metal2 ( 4341 469 ) via2_5
-      NEW metal1 ( 4892 469 ) via1_4
-      NEW metal2 ( 4892 469 ) via2_5
       NEW metal1 ( 3695 469 ) via1_4
       NEW metal2 ( 3695 469 ) via2_5
       NEW metal1 ( 3049 469 ) via1_4
       NEW metal2 ( 3049 469 ) via2_5
-      NEW metal1 ( 1111 469 ) via1_4
-      NEW metal2 ( 1111 469 ) via2_5
+      NEW metal1 ( 2403 469 ) via1_4
+      NEW metal2 ( 2403 469 ) via2_5
       NEW metal1 ( 1757 469 ) via1_4
       NEW metal2 ( 1757 469 ) via2_5
-      NEW metal1 ( 2403 469 ) via1_4
-      NEW metal2 ( 2403 469 ) via2_5 ;
+      NEW metal1 ( 4892 469 ) via1_4
+      NEW metal2 ( 4892 469 ) via2_5 ;
     - storage_3_0_0.select1_b ( storage_3_0_0.select_inv_1 ZN ) ( storage_3_0_0.bit6.obuf1 EN ) ( storage_3_0_0.bit5.obuf1 EN ) ( storage_3_0_0.bit4.obuf1 EN ) ( storage_3_0_0.bit3.obuf1 EN ) ( storage_3_0_0.bit2.obuf1 EN ) ( storage_3_0_0.bit1.obuf1 EN )
       ( storage_3_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 483 ) ( 4493 * )
-      NEW metal3 ( 4493 483 ) ( 4930 * )
-      NEW metal3 ( 3201 483 ) ( 3847 * )
-      NEW metal3 ( 617 483 ) ( 1263 * )
-      NEW metal3 ( 1263 483 ) ( 1909 * )
+      + ROUTED metal3 ( 617 483 ) ( 1263 * )
+      NEW metal3 ( 3847 483 ) ( 4493 * )
       NEW metal3 ( 1909 483 ) ( 2555 * )
       NEW metal3 ( 2555 483 ) ( 3201 * )
-      NEW metal1 ( 3847 483 ) via1_4
-      NEW metal2 ( 3847 483 ) via2_5
-      NEW metal1 ( 4493 483 ) via1_4
-      NEW metal2 ( 4493 483 ) via2_5
-      NEW metal1 ( 4930 483 ) via1_4
-      NEW metal2 ( 4930 483 ) via2_5
-      NEW metal1 ( 3201 483 ) via1_4
-      NEW metal2 ( 3201 483 ) via2_5
+      NEW metal3 ( 1263 483 ) ( 1909 * )
+      NEW metal3 ( 3201 483 ) ( 3847 * )
+      NEW metal3 ( 4493 483 ) ( 4560 * )
+      NEW metal3 ( 4560 483 ) ( * 497 )
+      NEW metal3 ( 4560 497 ) ( 4930 * )
       NEW metal1 ( 1263 483 ) via1_4
       NEW metal2 ( 1263 483 ) via2_5
       NEW metal1 ( 617 483 ) via1_4
       NEW metal2 ( 617 483 ) via2_5
+      NEW metal1 ( 3847 483 ) via1_4
+      NEW metal2 ( 3847 483 ) via2_5
+      NEW metal1 ( 4493 483 ) via1_4
+      NEW metal2 ( 4493 483 ) via2_5
       NEW metal1 ( 1909 483 ) via1_4
       NEW metal2 ( 1909 483 ) via2_5
       NEW metal1 ( 2555 483 ) via1_4
-      NEW metal2 ( 2555 483 ) via2_5 ;
+      NEW metal2 ( 2555 483 ) via2_5
+      NEW metal1 ( 3201 483 ) via1_4
+      NEW metal2 ( 3201 483 ) via2_5
+      NEW metal1 ( 4930 497 ) via1_4
+      NEW metal2 ( 4930 497 ) via2_5 ;
     - storage_3_0_0.we ( storage_3_0_0.gcand ZN ) ( storage_3_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal3 ( 4645 497 ) ( 4854 * )
+      + ROUTED metal2 ( 4645 483 ) ( * 497 )
+      NEW metal3 ( 4645 483 ) ( 4854 * )
       NEW metal1 ( 4645 497 ) via1_4
-      NEW metal2 ( 4645 497 ) via2_5
-      NEW metal1 ( 4854 497 ) via1_4
-      NEW metal2 ( 4854 497 ) via2_5 ;
+      NEW metal2 ( 4645 483 ) via2_5
+      NEW metal1 ( 4854 483 ) via1_4
+      NEW metal2 ( 4854 483 ) via2_5 ;
     - storage_4_0_0.bit0.storage ( storage_4_0_0.bit0.obuf1 A ) ( storage_4_0_0.bit0.obuf0 A ) ( storage_4_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 623 ) ( 427 * )
       NEW metal2 ( 560 623 ) ( 579 * )
@@ -2777,7 +2702,6 @@ NETS 188 ;
       NEW metal2 ( 180 609 ) ( * 623 )
       NEW metal3 ( 180 609 ) ( 826 * )
       NEW metal2 ( 4056 609 ) ( * 623 )
-      NEW metal3 ( 4056 609 ) ( 4778 * )
       NEW metal2 ( 1472 609 ) ( * 623 )
       NEW metal2 ( 2118 609 ) ( * 623 )
       NEW metal3 ( 1472 609 ) ( 2118 * )
@@ -2787,14 +2711,13 @@ NETS 188 ;
       NEW metal3 ( 2764 609 ) ( 3410 * )
       NEW metal3 ( 826 609 ) ( 1472 * )
       NEW metal3 ( 3410 609 ) ( 4056 * )
+      NEW metal3 ( 4056 609 ) ( 4778 * )
       NEW metal1 ( 826 623 ) via1_4
       NEW metal2 ( 826 609 ) via2_5
       NEW metal1 ( 180 623 ) via1_4
       NEW metal2 ( 180 609 ) via2_5
       NEW metal1 ( 4056 623 ) via1_4
       NEW metal2 ( 4056 609 ) via2_5
-      NEW metal1 ( 4778 609 ) via1_4
-      NEW metal2 ( 4778 609 ) via2_5
       NEW metal1 ( 1472 623 ) via1_4
       NEW metal2 ( 1472 609 ) via2_5
       NEW metal1 ( 2118 623 ) via1_4
@@ -2802,24 +2725,26 @@ NETS 188 ;
       NEW metal1 ( 2764 623 ) via1_4
       NEW metal2 ( 2764 609 ) via2_5
       NEW metal1 ( 3410 623 ) via1_4
-      NEW metal2 ( 3410 609 ) via2_5 ;
+      NEW metal2 ( 3410 609 ) via2_5
+      NEW metal1 ( 4778 609 ) via1_4
+      NEW metal2 ( 4778 609 ) via2_5 ;
     - storage_4_0_0.select0_b ( storage_4_0_0.select_inv_0 ZN ) ( storage_4_0_0.bit6.obuf0 EN ) ( storage_4_0_0.bit5.obuf0 EN ) ( storage_4_0_0.bit4.obuf0 EN ) ( storage_4_0_0.bit3.obuf0 EN ) ( storage_4_0_0.bit2.obuf0 EN ) ( storage_4_0_0.bit1.obuf0 EN )
       ( storage_4_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 637 ) ( 1111 * )
-      NEW metal3 ( 4341 637 ) ( 4892 * )
       NEW metal3 ( 3695 637 ) ( 4341 * )
       NEW metal3 ( 2403 637 ) ( 3049 * )
       NEW metal3 ( 1757 637 ) ( 2403 * )
       NEW metal3 ( 1111 637 ) ( 1757 * )
       NEW metal3 ( 3049 637 ) ( 3695 * )
+      NEW metal3 ( 4341 637 ) ( 4560 * )
+      NEW metal3 ( 4560 623 ) ( * 637 )
+      NEW metal3 ( 4560 623 ) ( 4892 * )
       NEW metal1 ( 1111 637 ) via1_4
       NEW metal2 ( 1111 637 ) via2_5
       NEW metal1 ( 465 637 ) via1_4
       NEW metal2 ( 465 637 ) via2_5
       NEW metal1 ( 4341 637 ) via1_4
       NEW metal2 ( 4341 637 ) via2_5
-      NEW metal1 ( 4892 637 ) via1_4
-      NEW metal2 ( 4892 637 ) via2_5
       NEW metal1 ( 3695 637 ) via1_4
       NEW metal2 ( 3695 637 ) via2_5
       NEW metal1 ( 3049 637 ) via1_4
@@ -2827,16 +2752,18 @@ NETS 188 ;
       NEW metal1 ( 2403 637 ) via1_4
       NEW metal2 ( 2403 637 ) via2_5
       NEW metal1 ( 1757 637 ) via1_4
-      NEW metal2 ( 1757 637 ) via2_5 ;
+      NEW metal2 ( 1757 637 ) via2_5
+      NEW metal1 ( 4892 623 ) via1_4
+      NEW metal2 ( 4892 623 ) via2_5 ;
     - storage_4_0_0.select1_b ( storage_4_0_0.select_inv_1 ZN ) ( storage_4_0_0.bit6.obuf1 EN ) ( storage_4_0_0.bit5.obuf1 EN ) ( storage_4_0_0.bit4.obuf1 EN ) ( storage_4_0_0.bit3.obuf1 EN ) ( storage_4_0_0.bit2.obuf1 EN ) ( storage_4_0_0.bit1.obuf1 EN )
       ( storage_4_0_0.bit0.obuf1 EN ) + USE SIGNAL
       + ROUTED metal3 ( 617 651 ) ( 1263 * )
       NEW metal3 ( 3847 651 ) ( 4493 * )
-      NEW metal3 ( 4493 651 ) ( 4930 * )
       NEW metal3 ( 1909 651 ) ( 2555 * )
       NEW metal3 ( 2555 651 ) ( 3201 * )
       NEW metal3 ( 1263 651 ) ( 1909 * )
       NEW metal3 ( 3201 651 ) ( 3847 * )
+      NEW metal3 ( 4493 651 ) ( 4930 * )
       NEW metal1 ( 1263 651 ) via1_4
       NEW metal2 ( 1263 651 ) via2_5
       NEW metal1 ( 617 651 ) via1_4
@@ -2845,20 +2772,21 @@ NETS 188 ;
       NEW metal2 ( 3847 651 ) via2_5
       NEW metal1 ( 4493 651 ) via1_4
       NEW metal2 ( 4493 651 ) via2_5
-      NEW metal1 ( 4930 651 ) via1_4
-      NEW metal2 ( 4930 651 ) via2_5
       NEW metal1 ( 1909 651 ) via1_4
       NEW metal2 ( 1909 651 ) via2_5
       NEW metal1 ( 2555 651 ) via1_4
       NEW metal2 ( 2555 651 ) via2_5
       NEW metal1 ( 3201 651 ) via1_4
-      NEW metal2 ( 3201 651 ) via2_5 ;
+      NEW metal2 ( 3201 651 ) via2_5
+      NEW metal1 ( 4930 651 ) via1_4
+      NEW metal2 ( 4930 651 ) via2_5 ;
     - storage_4_0_0.we ( storage_4_0_0.gcand ZN ) ( storage_4_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal3 ( 4645 623 ) ( 4854 * )
+      + ROUTED metal2 ( 4645 595 ) ( * 623 )
+      NEW metal3 ( 4645 595 ) ( 4854 * )
       NEW metal1 ( 4645 623 ) via1_4
-      NEW metal2 ( 4645 623 ) via2_5
-      NEW metal1 ( 4854 623 ) via1_4
-      NEW metal2 ( 4854 623 ) via2_5 ;
+      NEW metal2 ( 4645 595 ) via2_5
+      NEW metal1 ( 4854 595 ) via1_4
+      NEW metal2 ( 4854 595 ) via2_5 ;
     - storage_5_0_0.bit0.storage ( storage_5_0_0.bit0.obuf1 A ) ( storage_5_0_0.bit0.obuf0 A ) ( storage_5_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 777 ) ( 427 * )
       NEW metal2 ( 560 777 ) ( 579 * )
@@ -2929,7 +2857,6 @@ NETS 188 ;
       NEW metal2 ( 180 777 ) ( * 791 )
       NEW metal3 ( 180 791 ) ( 826 * )
       NEW metal2 ( 4056 777 ) ( * 791 )
-      NEW metal3 ( 4056 791 ) ( 4778 * )
       NEW metal2 ( 1472 777 ) ( * 791 )
       NEW metal2 ( 2118 777 ) ( * 791 )
       NEW metal3 ( 1472 791 ) ( 2118 * )
@@ -2939,14 +2866,13 @@ NETS 188 ;
       NEW metal3 ( 2764 791 ) ( 3410 * )
       NEW metal3 ( 826 791 ) ( 1472 * )
       NEW metal3 ( 3410 791 ) ( 4056 * )
+      NEW metal3 ( 4056 791 ) ( 4778 * )
       NEW metal1 ( 826 777 ) via1_4
       NEW metal2 ( 826 791 ) via2_5
       NEW metal1 ( 180 777 ) via1_4
       NEW metal2 ( 180 791 ) via2_5
       NEW metal1 ( 4056 777 ) via1_4
       NEW metal2 ( 4056 791 ) via2_5
-      NEW metal1 ( 4778 791 ) via1_4
-      NEW metal2 ( 4778 791 ) via2_5
       NEW metal1 ( 1472 777 ) via1_4
       NEW metal2 ( 1472 791 ) via2_5
       NEW metal1 ( 2118 777 ) via1_4
@@ -2954,24 +2880,24 @@ NETS 188 ;
       NEW metal1 ( 2764 777 ) via1_4
       NEW metal2 ( 2764 791 ) via2_5
       NEW metal1 ( 3410 777 ) via1_4
-      NEW metal2 ( 3410 791 ) via2_5 ;
+      NEW metal2 ( 3410 791 ) via2_5
+      NEW metal1 ( 4778 791 ) via1_4
+      NEW metal2 ( 4778 791 ) via2_5 ;
     - storage_5_0_0.select0_b ( storage_5_0_0.select_inv_0 ZN ) ( storage_5_0_0.bit6.obuf0 EN ) ( storage_5_0_0.bit5.obuf0 EN ) ( storage_5_0_0.bit4.obuf0 EN ) ( storage_5_0_0.bit3.obuf0 EN ) ( storage_5_0_0.bit2.obuf0 EN ) ( storage_5_0_0.bit1.obuf0 EN )
       ( storage_5_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 749 ) ( 1111 * )
-      NEW metal3 ( 4341 749 ) ( 4892 * )
       NEW metal3 ( 3695 749 ) ( 4341 * )
       NEW metal3 ( 2403 749 ) ( 3049 * )
       NEW metal3 ( 1757 749 ) ( 2403 * )
       NEW metal3 ( 1111 749 ) ( 1757 * )
       NEW metal3 ( 3049 749 ) ( 3695 * )
+      NEW metal3 ( 4341 749 ) ( 4892 * )
       NEW metal1 ( 1111 749 ) via1_4
       NEW metal2 ( 1111 749 ) via2_5
       NEW metal1 ( 465 749 ) via1_4
       NEW metal2 ( 465 749 ) via2_5
       NEW metal1 ( 4341 749 ) via1_4
       NEW metal2 ( 4341 749 ) via2_5
-      NEW metal1 ( 4892 749 ) via1_4
-      NEW metal2 ( 4892 749 ) via2_5
       NEW metal1 ( 3695 749 ) via1_4
       NEW metal2 ( 3695 749 ) via2_5
       NEW metal1 ( 3049 749 ) via1_4
@@ -2979,18 +2905,19 @@ NETS 188 ;
       NEW metal1 ( 2403 749 ) via1_4
       NEW metal2 ( 2403 749 ) via2_5
       NEW metal1 ( 1757 749 ) via1_4
-      NEW metal2 ( 1757 749 ) via2_5 ;
+      NEW metal2 ( 1757 749 ) via2_5
+      NEW metal1 ( 4892 749 ) via1_4
+      NEW metal2 ( 4892 749 ) via2_5 ;
     - storage_5_0_0.select1_b ( storage_5_0_0.select_inv_1 ZN ) ( storage_5_0_0.bit6.obuf1 EN ) ( storage_5_0_0.bit5.obuf1 EN ) ( storage_5_0_0.bit4.obuf1 EN ) ( storage_5_0_0.bit3.obuf1 EN ) ( storage_5_0_0.bit2.obuf1 EN ) ( storage_5_0_0.bit1.obuf1 EN )
       ( storage_5_0_0.bit0.obuf1 EN ) + USE SIGNAL
       + ROUTED metal3 ( 617 763 ) ( 1263 * )
       NEW metal3 ( 3847 763 ) ( 4493 * )
-      NEW metal3 ( 4909 777 ) ( 4930 * )
-      NEW metal3 ( 4909 763 ) ( * 777 )
-      NEW metal3 ( 4493 763 ) ( 4909 * )
+      NEW metal2 ( 4493 735 ) ( * 763 )
       NEW metal3 ( 1909 763 ) ( 2555 * )
       NEW metal3 ( 2555 763 ) ( 3201 * )
       NEW metal3 ( 1263 763 ) ( 1909 * )
       NEW metal3 ( 3201 763 ) ( 3847 * )
+      NEW metal3 ( 4493 735 ) ( 4930 * )
       NEW metal1 ( 1263 763 ) via1_4
       NEW metal2 ( 1263 763 ) via2_5
       NEW metal1 ( 617 763 ) via1_4
@@ -2999,14 +2926,15 @@ NETS 188 ;
       NEW metal2 ( 3847 763 ) via2_5
       NEW metal1 ( 4493 763 ) via1_4
       NEW metal2 ( 4493 763 ) via2_5
-      NEW metal1 ( 4930 777 ) via1_4
-      NEW metal2 ( 4930 777 ) via2_5
+      NEW metal2 ( 4493 735 ) via2_5
       NEW metal1 ( 1909 763 ) via1_4
       NEW metal2 ( 1909 763 ) via2_5
       NEW metal1 ( 2555 763 ) via1_4
       NEW metal2 ( 2555 763 ) via2_5
       NEW metal1 ( 3201 763 ) via1_4
-      NEW metal2 ( 3201 763 ) via2_5 ;
+      NEW metal2 ( 3201 763 ) via2_5
+      NEW metal1 ( 4930 735 ) via1_4
+      NEW metal2 ( 4930 735 ) via2_5 ;
     - storage_5_0_0.we ( storage_5_0_0.gcand ZN ) ( storage_5_0_0.cg E ) + USE SIGNAL
       + ROUTED metal3 ( 4645 777 ) ( 4854 * )
       NEW metal1 ( 4645 777 ) via1_4
@@ -3083,7 +3011,6 @@ NETS 188 ;
       NEW metal2 ( 180 889 ) ( * 903 )
       NEW metal3 ( 180 889 ) ( 826 * )
       NEW metal2 ( 4056 903 ) ( * 917 )
-      NEW metal3 ( 4056 917 ) ( 4778 * )
       NEW metal2 ( 4056 861 ) ( * 903 )
       NEW metal2 ( 3410 861 ) ( * 903 )
       NEW metal2 ( 2764 861 ) ( * 903 )
@@ -3094,14 +3021,13 @@ NETS 188 ;
       NEW metal3 ( 1472 861 ) ( 2118 * )
       NEW metal3 ( 826 889 ) ( 1472 * )
       NEW metal3 ( 3410 861 ) ( 4056 * )
+      NEW metal3 ( 4056 917 ) ( 4778 * )
       NEW metal1 ( 826 903 ) via1_4
       NEW metal2 ( 826 889 ) via2_5
       NEW metal1 ( 180 903 ) via1_4
       NEW metal2 ( 180 889 ) via2_5
       NEW metal1 ( 4056 903 ) via1_4
       NEW metal2 ( 4056 917 ) via2_5
-      NEW metal1 ( 4778 917 ) via1_4
-      NEW metal2 ( 4778 917 ) via2_5
       NEW metal2 ( 4056 861 ) via2_5
       NEW metal1 ( 3410 903 ) via1_4
       NEW metal2 ( 3410 861 ) via2_5
@@ -3111,11 +3037,12 @@ NETS 188 ;
       NEW metal2 ( 2118 861 ) via2_5
       NEW metal1 ( 1472 903 ) via1_4
       NEW metal2 ( 1472 861 ) via2_5
-      NEW metal2 ( 1472 889 ) via2_5 ;
+      NEW metal2 ( 1472 889 ) via2_5
+      NEW metal1 ( 4778 917 ) via1_4
+      NEW metal2 ( 4778 917 ) via2_5 ;
     - storage_6_0_0.select0_b ( storage_6_0_0.select_inv_0 ZN ) ( storage_6_0_0.bit6.obuf0 EN ) ( storage_6_0_0.bit5.obuf0 EN ) ( storage_6_0_0.bit4.obuf0 EN ) ( storage_6_0_0.bit3.obuf0 EN ) ( storage_6_0_0.bit2.obuf0 EN ) ( storage_6_0_0.bit1.obuf0 EN )
       ( storage_6_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 917 ) ( 1111 * )
-      NEW metal3 ( 4341 931 ) ( 4892 * )
       NEW metal3 ( 3695 931 ) ( 4341 * )
       NEW metal3 ( 3453 917 ) ( * 931 )
       NEW metal3 ( 3453 931 ) ( 3695 * )
@@ -3123,14 +3050,13 @@ NETS 188 ;
       NEW metal3 ( 1757 917 ) ( 2403 * )
       NEW metal3 ( 1111 917 ) ( 1757 * )
       NEW metal3 ( 3049 917 ) ( 3453 * )
+      NEW metal3 ( 4341 931 ) ( 4892 * )
       NEW metal1 ( 1111 917 ) via1_4
       NEW metal2 ( 1111 917 ) via2_5
       NEW metal1 ( 465 917 ) via1_4
       NEW metal2 ( 465 917 ) via2_5
       NEW metal1 ( 4341 931 ) via1_4
       NEW metal2 ( 4341 931 ) via2_5
-      NEW metal1 ( 4892 931 ) via1_4
-      NEW metal2 ( 4892 931 ) via2_5
       NEW metal1 ( 3695 931 ) via1_4
       NEW metal2 ( 3695 931 ) via2_5
       NEW metal1 ( 3049 917 ) via1_4
@@ -3138,19 +3064,21 @@ NETS 188 ;
       NEW metal1 ( 2403 917 ) via1_4
       NEW metal2 ( 2403 917 ) via2_5
       NEW metal1 ( 1757 917 ) via1_4
-      NEW metal2 ( 1757 917 ) via2_5 ;
+      NEW metal2 ( 1757 917 ) via2_5
+      NEW metal1 ( 4892 931 ) via1_4
+      NEW metal2 ( 4892 931 ) via2_5 ;
     - storage_6_0_0.select1_b ( storage_6_0_0.select_inv_1 ZN ) ( storage_6_0_0.bit6.obuf1 EN ) ( storage_6_0_0.bit5.obuf1 EN ) ( storage_6_0_0.bit4.obuf1 EN ) ( storage_6_0_0.bit3.obuf1 EN ) ( storage_6_0_0.bit2.obuf1 EN ) ( storage_6_0_0.bit1.obuf1 EN )
       ( storage_6_0_0.bit0.obuf1 EN ) + USE SIGNAL
       + ROUTED metal3 ( 617 931 ) ( 1263 * )
       NEW metal2 ( 3847 931 ) ( * 959 )
       NEW metal2 ( 4493 931 ) ( * 959 )
       NEW metal3 ( 3847 959 ) ( 4493 * )
-      NEW metal3 ( 4493 959 ) ( 4930 * )
       NEW metal3 ( 1909 931 ) ( 2555 * )
       NEW metal3 ( 2555 931 ) ( 3201 * )
       NEW metal3 ( 3201 931 ) ( * 959 )
       NEW metal3 ( 1263 931 ) ( 1909 * )
       NEW metal3 ( 3201 959 ) ( 3847 * )
+      NEW metal3 ( 4493 959 ) ( 4930 * )
       NEW metal1 ( 1263 931 ) via1_4
       NEW metal2 ( 1263 931 ) via2_5
       NEW metal1 ( 617 931 ) via1_4
@@ -3159,92 +3087,92 @@ NETS 188 ;
       NEW metal2 ( 3847 959 ) via2_5
       NEW metal1 ( 4493 931 ) via1_4
       NEW metal2 ( 4493 959 ) via2_5
-      NEW metal1 ( 4930 959 ) via1_7
-      NEW metal2 ( 4930 959 ) via2_5
       NEW metal1 ( 1909 931 ) via1_4
       NEW metal2 ( 1909 931 ) via2_5
       NEW metal1 ( 2555 931 ) via1_4
       NEW metal2 ( 2555 931 ) via2_5
       NEW metal1 ( 3201 931 ) via1_4
-      NEW metal2 ( 3201 931 ) via2_5 ;
+      NEW metal2 ( 3201 931 ) via2_5
+      NEW metal1 ( 4930 959 ) via1_7
+      NEW metal2 ( 4930 959 ) via2_5 ;
     - storage_6_0_0.we ( storage_6_0_0.gcand ZN ) ( storage_6_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal3 ( 4645 903 ) ( 4854 * )
+      + ROUTED metal2 ( 4645 875 ) ( * 903 )
+      NEW metal3 ( 4645 875 ) ( 4854 * )
       NEW metal1 ( 4645 903 ) via1_4
-      NEW metal2 ( 4645 903 ) via2_5
-      NEW metal1 ( 4854 903 ) via1_4
-      NEW metal2 ( 4854 903 ) via2_5 ;
+      NEW metal2 ( 4645 875 ) via2_5
+      NEW metal1 ( 4854 875 ) via1_4
+      NEW metal2 ( 4854 875 ) via2_5 ;
     - w_sel_p0.select_w0 ( sel_buf_w_p0.sel_buf_0 Z ) ( storage_0_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 21 ) ( * 63 )
-      NEW metal3 ( 4797 21 ) ( 4987 * )
+      + ROUTED metal2 ( 4797 63 ) ( * 105 )
+      NEW metal3 ( 4797 105 ) ( 4987 * )
       NEW metal1 ( 4797 63 ) via1_4
-      NEW metal2 ( 4797 21 ) via2_5
-      NEW metal1 ( 4987 21 ) via1_7
-      NEW metal2 ( 4987 21 ) via2_5 ;
+      NEW metal2 ( 4797 105 ) via2_5
+      NEW metal1 ( 4987 105 ) via1_4
+      NEW metal2 ( 4987 105 ) via2_5 ;
     - w_sel_p0.select_w1 ( sel_buf_w_p0.sel_buf_1 Z ) ( storage_1_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 119 ) ( * 217 )
-      NEW metal3 ( 4797 119 ) ( 4987 * )
-      NEW metal2 ( 4987 119 ) ( * 161 )
+      + ROUTED metal2 ( 4797 217 ) ( * 273 )
+      NEW metal3 ( 4797 273 ) ( 4987 * )
+      NEW metal2 ( 4987 259 ) ( * 273 )
       NEW metal1 ( 4797 217 ) via1_4
-      NEW metal2 ( 4797 119 ) via2_5
-      NEW metal2 ( 4987 119 ) via2_5
-      NEW metal1 ( 4987 161 ) via1_7 ;
+      NEW metal2 ( 4797 273 ) via2_5
+      NEW metal2 ( 4987 273 ) via2_5
+      NEW metal1 ( 4987 259 ) via1_7 ;
     - w_sel_p0.select_w2 ( sel_buf_w_p0.sel_buf_2 Z ) ( storage_2_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 301 ) ( * 343 )
-      NEW metal3 ( 4797 301 ) ( 4987 * )
-      NEW metal1 ( 4797 343 ) via1_4
-      NEW metal2 ( 4797 301 ) via2_5
-      NEW metal1 ( 4987 301 ) via1_7
-      NEW metal2 ( 4987 301 ) via2_5 ;
-    - w_sel_p0.select_w3 ( sel_buf_w_p0.sel_buf_3 Z ) ( storage_3_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 399 ) ( * 497 )
+      + ROUTED metal2 ( 4797 343 ) ( * 399 )
       NEW metal3 ( 4797 399 ) ( 4987 * )
-      NEW metal2 ( 4987 399 ) ( * 441 )
-      NEW metal1 ( 4797 497 ) via1_4
+      NEW metal1 ( 4797 343 ) via1_4
       NEW metal2 ( 4797 399 ) via2_5
-      NEW metal2 ( 4987 399 ) via2_5
+      NEW metal1 ( 4987 399 ) via1_7
+      NEW metal2 ( 4987 399 ) via2_5 ;
+    - w_sel_p0.select_w3 ( sel_buf_w_p0.sel_buf_3 Z ) ( storage_3_0_0.gcand A1 ) + USE SIGNAL
+      + ROUTED metal2 ( 4797 455 ) ( * 497 )
+      NEW metal3 ( 4797 455 ) ( 4993 * )
+      NEW metal3 ( 4993 427 ) ( * 455 )
+      NEW metal3 ( 4987 427 ) ( 4993 * )
+      NEW metal2 ( 4987 427 ) ( * 441 )
+      NEW metal1 ( 4797 497 ) via1_4
+      NEW metal2 ( 4797 455 ) via2_5
+      NEW metal2 ( 4987 427 ) via2_5
       NEW metal1 ( 4987 441 ) via1_7 ;
     - w_sel_p0.select_w4 ( sel_buf_w_p0.sel_buf_4 Z ) ( storage_4_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 595 ) ( * 623 )
-      NEW metal3 ( 4797 595 ) ( 4987 * )
+      + ROUTED metal2 ( 4797 623 ) ( * 679 )
+      NEW metal3 ( 4797 679 ) ( 4987 * )
       NEW metal1 ( 4797 623 ) via1_4
-      NEW metal2 ( 4797 595 ) via2_5
-      NEW metal1 ( 4987 595 ) via1_4
-      NEW metal2 ( 4987 595 ) via2_5 ;
+      NEW metal2 ( 4797 679 ) via2_5
+      NEW metal1 ( 4987 679 ) via1_7
+      NEW metal2 ( 4987 679 ) via2_5 ;
     - w_sel_p0.select_w5 ( sel_buf_w_p0.sel_buf_5 Z ) ( storage_5_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 735 ) ( * 777 )
-      NEW metal3 ( 4797 735 ) ( 4968 * )
-      NEW metal2 ( 4968 721 ) ( * 735 )
-      NEW metal2 ( 4968 721 ) ( 4987 * )
+      + ROUTED metal2 ( 4797 777 ) ( * 819 )
+      NEW metal3 ( 4797 819 ) ( 4987 * )
       NEW metal1 ( 4797 777 ) via1_4
-      NEW metal2 ( 4797 735 ) via2_5
-      NEW metal2 ( 4968 735 ) via2_5
-      NEW metal1 ( 4987 721 ) via1_7 ;
+      NEW metal2 ( 4797 819 ) via2_5
+      NEW metal1 ( 4987 819 ) via1_7
+      NEW metal2 ( 4987 819 ) via2_5 ;
     - w_sel_p0.select_w6 ( sel_buf_w_p0.sel_buf_6 Z ) ( storage_6_0_0.gcand A1 ) + USE SIGNAL
-      + ROUTED metal2 ( 4797 875 ) ( * 903 )
-      NEW metal3 ( 4797 875 ) ( 4987 * )
+      + ROUTED metal2 ( 4797 889 ) ( * 903 )
+      NEW metal3 ( 4797 889 ) ( 4987 * )
       NEW metal1 ( 4797 903 ) via1_4
-      NEW metal2 ( 4797 875 ) via2_5
-      NEW metal1 ( 4987 875 ) via1_4
-      NEW metal2 ( 4987 875 ) via2_5 ;
+      NEW metal2 ( 4797 889 ) via2_5
+      NEW metal1 ( 4987 889 ) via1_4
+      NEW metal2 ( 4987 889 ) via2_5 ;
     - we[0] ( PIN we[0] ) ( storage_6_0_0.gcand A2 ) ( storage_5_0_0.gcand A2 ) ( storage_4_0_0.gcand A2 ) ( storage_3_0_0.gcand A2 ) ( storage_2_0_0.gcand A2 ) ( storage_1_0_0.gcand A2 )
       ( storage_0_0_0.gcand A2 ) + USE SIGNAL
-      + ROUTED metal2 ( 4816 903 ) ( * 917 )
-      NEW metal3 ( 4816 917 ) ( 4825 * )
-      NEW metal4 ( 4825 917 ) ( * 1113 0 )
+      + ROUTED metal2 ( 4816 63 ) ( * 217 )
+      NEW metal2 ( 4816 217 ) ( * 343 )
+      NEW metal2 ( 4816 343 ) ( * 497 )
+      NEW metal3 ( 4816 903 ) ( 4825 * )
+      NEW metal4 ( 4825 903 ) ( * 1113 0 )
       NEW metal2 ( 4816 777 ) ( * 903 )
       NEW metal2 ( 4816 623 ) ( * 777 )
       NEW metal2 ( 4816 497 ) ( * 623 )
-      NEW metal2 ( 4816 343 ) ( * 497 )
-      NEW metal2 ( 4816 217 ) ( * 343 )
-      NEW metal2 ( 4816 63 ) ( * 217 )
-      NEW metal1 ( 4816 903 ) via1_4
-      NEW metal2 ( 4816 917 ) via2_5
-      NEW metal3 ( 4825 917 ) via3_2
-      NEW metal1 ( 4816 777 ) via1_4
-      NEW metal1 ( 4816 623 ) via1_4
-      NEW metal1 ( 4816 497 ) via1_4
-      NEW metal1 ( 4816 343 ) via1_4
       NEW metal1 ( 4816 217 ) via1_4
-      NEW metal1 ( 4816 63 ) via1_4 ;
+      NEW metal1 ( 4816 63 ) via1_4
+      NEW metal1 ( 4816 343 ) via1_4
+      NEW metal1 ( 4816 497 ) via1_4
+      NEW metal1 ( 4816 903 ) via1_4
+      NEW metal2 ( 4816 903 ) via2_5
+      NEW metal3 ( 4825 903 ) via3_2
+      NEW metal1 ( 4816 777 ) via1_4
+      NEW metal1 ( 4816 623 ) via1_4 ;
 END NETS
 END DESIGN

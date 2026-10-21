@@ -31,17 +31,13 @@ VIAS 2 ;
     - via2_3_480_480_1_1_320_320 + VIARULE M1M2_PR + CUTSIZE 15 15  + LAYERS met1 via met2  + CUTSPACING 17 17  + ENCLOSURE 8 16 16 8  ;
     - via3_4_480_480_1_1_400_400 + VIARULE M2M3_PR + CUTSIZE 20 20  + LAYERS met2 via2 met3  + CUTSPACING 20 20  + ENCLOSURE 14 8 6 14  ;
 END VIAS
-COMPONENTS 326 ;
-    - FILLER_1_237 sky130_fd_sc_hd__fill_2 + SOURCE DIST + PLACED ( 10902 272 ) FS ;
-    - FILLER_1_239 sky130_fd_sc_hd__fill_1 + SOURCE DIST + PLACED ( 10994 272 ) FS ;
-    - FILLER_3_237 sky130_fd_sc_hd__fill_2 + SOURCE DIST + PLACED ( 10902 816 ) FS ;
-    - FILLER_3_239 sky130_fd_sc_hd__fill_1 + SOURCE DIST + PLACED ( 10994 816 ) FS ;
-    - FILLER_5_237 sky130_fd_sc_hd__fill_2 + SOURCE DIST + PLACED ( 10902 1360 ) FS ;
-    - FILLER_5_239 sky130_fd_sc_hd__fill_1 + SOURCE DIST + PLACED ( 10994 1360 ) FS ;
+COMPONENTS 318 ;
+    - FILLER_1_232 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 10672 272 ) FS ;
+    - FILLER_3_232 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 10672 816 ) FS ;
+    - FILLER_5_232 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 10672 1360 ) FS ;
     - FILLER_6_237 sky130_fd_sc_hd__fill_2 + SOURCE DIST + PLACED ( 10902 1632 ) N ;
     - FILLER_6_239 sky130_fd_sc_hd__fill_1 + SOURCE DIST + PLACED ( 10994 1632 ) N ;
-    - FILLER_7_237 sky130_fd_sc_hd__fill_2 + SOURCE DIST + PLACED ( 10902 1904 ) FS ;
-    - FILLER_7_239 sky130_fd_sc_hd__fill_1 + SOURCE DIST + PLACED ( 10994 1904 ) FS ;
+    - FILLER_7_232 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 10672 1904 ) FS ;
     - FILLER_8_104 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 4784 2176 ) N ;
     - FILLER_8_112 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 5152 2176 ) N ;
     - FILLER_8_12 sky130_fd_sc_hd__fill_8 + SOURCE DIST + PLACED ( 552 2176 ) N ;
@@ -89,22 +85,18 @@ COMPONENTS 326 ;
     - buffer.in[5] sky130_fd_sc_hd__buf_1 + PLACED ( 5796 2176 ) N ;
     - buffer.in[6] sky130_fd_sc_hd__buf_1 + PLACED ( 6946 2176 ) N ;
     - buffer.in[7] sky130_fd_sc_hd__buf_1 + PLACED ( 8096 2176 ) N ;
-    - decoder_p0.and_layer0_word0 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 0 ) N ;
-    - decoder_p0.and_layer0_word1 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 272 ) FS ;
-    - decoder_p0.and_layer0_word2 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 544 ) N ;
-    - decoder_p0.and_layer0_word3 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 816 ) FS ;
-    - decoder_p0.and_layer0_word4 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1088 ) N ;
-    - decoder_p0.and_layer0_word5 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1360 ) FS ;
-    - decoder_p0.and_layer0_word6 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1632 ) N ;
-    - decoder_p0.and_layer0_word7 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1904 ) FS ;
-    - decoder_p0.and_layer1_word0 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 0 ) N ;
-    - decoder_p0.and_layer1_word1 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 272 ) FS ;
-    - decoder_p0.and_layer1_word2 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 544 ) N ;
-    - decoder_p0.and_layer1_word3 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 816 ) FS ;
-    - decoder_p0.and_layer1_word4 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1088 ) N ;
-    - decoder_p0.and_layer1_word5 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1360 ) FS ;
-    - decoder_p0.and_layer1_word6 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1632 ) N ;
-    - decoder_p0.and_layer1_word7 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1904 ) FS ;
+    - decoder_p0.and_pre_a1_0_0 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 0 ) N ;
+    - decoder_p0.and_pre_a1_0_1 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 544 ) N ;
+    - decoder_p0.and_pre_a1_0_2 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1088 ) N ;
+    - decoder_p0.and_pre_a1_0_3 sky130_fd_sc_hd__and2_0 + PLACED ( 10672 1632 ) N ;
+    - decoder_p0.and_word0 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 0 ) N ;
+    - decoder_p0.and_word1 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 272 ) FS ;
+    - decoder_p0.and_word2 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 544 ) N ;
+    - decoder_p0.and_word3 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 816 ) FS ;
+    - decoder_p0.and_word4 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1088 ) N ;
+    - decoder_p0.and_word5 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1360 ) FS ;
+    - decoder_p0.and_word6 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1632 ) N ;
+    - decoder_p0.and_word7 sky130_fd_sc_hd__and2_0 + PLACED ( 10442 1904 ) FS ;
     - decoder_p0.inv_p0_a0 sky130_fd_sc_hd__clkinv_1 + PLACED ( 10902 1088 ) N ;
     - decoder_p0.inv_p0_a1 sky130_fd_sc_hd__clkinv_1 + PLACED ( 10902 544 ) N ;
     - decoder_p0.inv_p0_a2 sky130_fd_sc_hd__clkinv_1 + PLACED ( 10902 0 ) N ;
@@ -467,11 +459,11 @@ PINS 23 ;
     - addr_rw[0] + NET addr_rw[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
-        + PLACED ( 11000 442 ) N ;
+        + PLACED ( 11000 714 ) N ;
     - addr_rw[1] + NET addr_rw[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
-        + PLACED ( 11000 714 ) N ;
+        + PLACED ( 11000 850 ) N ;
     - addr_rw[2] + NET addr_rw[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
@@ -497,30 +489,30 @@ SPECIALNETS 2 ;
       ( tapcell.cell3_0 VPWR ) ( tapcell.cell2_8 VPWR ) ( tapcell.cell2_7 VPWR ) ( tapcell.cell2_6 VPWR ) ( tapcell.cell2_5 VPWR ) ( tapcell.cell2_4 VPWR ) ( tapcell.cell2_3 VPWR ) ( tapcell.cell2_2 VPWR )
       ( tapcell.cell2_1 VPWR ) ( tapcell.cell2_0 VPWR ) ( tapcell.cell1_8 VPWR ) ( tapcell.cell1_7 VPWR ) ( tapcell.cell1_6 VPWR ) ( tapcell.cell1_5 VPWR ) ( tapcell.cell1_4 VPWR ) ( tapcell.cell1_3 VPWR )
       ( tapcell.cell1_2 VPWR ) ( tapcell.cell1_1 VPWR ) ( tapcell.cell1_0 VPWR ) ( tapcell.cell0_8 VPWR ) ( tapcell.cell0_7 VPWR ) ( tapcell.cell0_6 VPWR ) ( tapcell.cell0_5 VPWR ) ( tapcell.cell0_4 VPWR )
-      ( tapcell.cell0_3 VPWR ) ( tapcell.cell0_2 VPWR ) ( tapcell.cell0_1 VPWR ) ( tapcell.cell0_0 VPWR ) ( decoder_p0.inv_p0_a0 VPWR ) ( decoder_p0.inv_p0_a1 VPWR ) ( decoder_p0.inv_p0_a2 VPWR ) ( decoder_p0.and_layer1_word7 VPWR )
-      ( decoder_p0.and_layer0_word7 VPWR ) ( decoder_p0.and_layer1_word6 VPWR ) ( decoder_p0.and_layer0_word6 VPWR ) ( decoder_p0.and_layer1_word5 VPWR ) ( decoder_p0.and_layer0_word5 VPWR ) ( decoder_p0.and_layer1_word4 VPWR ) ( decoder_p0.and_layer0_word4 VPWR ) ( decoder_p0.and_layer1_word3 VPWR )
-      ( decoder_p0.and_layer0_word3 VPWR ) ( decoder_p0.and_layer1_word2 VPWR ) ( decoder_p0.and_layer0_word2 VPWR ) ( decoder_p0.and_layer1_word1 VPWR ) ( decoder_p0.and_layer0_word1 VPWR ) ( decoder_p0.and_layer1_word0 VPWR ) ( decoder_p0.and_layer0_word0 VPWR ) ( sel_buf_rw_p0.sel_buf_7 VPWR )
-      ( sel_buf_rw_p0.sel_buf_6 VPWR ) ( sel_buf_rw_p0.sel_buf_5 VPWR ) ( sel_buf_rw_p0.sel_buf_4 VPWR ) ( sel_buf_rw_p0.sel_buf_3 VPWR ) ( sel_buf_rw_p0.sel_buf_2 VPWR ) ( sel_buf_rw_p0.sel_buf_1 VPWR ) ( sel_buf_rw_p0.sel_buf_0 VPWR ) ( buffer.in[7] VPWR )
-      ( buffer.in[6] VPWR ) ( buffer.in[5] VPWR ) ( buffer.in[4] VPWR ) ( buffer.in[3] VPWR ) ( buffer.in[2] VPWR ) ( buffer.in[1] VPWR ) ( buffer.in[0] VPWR ) ( storage_7_0_0.select_inv_0 VPWR )
-      ( storage_7_0_0.gcand VPWR ) ( storage_7_0_0.cg VPWR ) ( storage_7_0_0.bit7.obuf0 VPWR ) ( storage_7_0_0.bit7.bit VPWR ) ( storage_7_0_0.bit6.obuf0 VPWR ) ( storage_7_0_0.bit6.bit VPWR ) ( storage_7_0_0.bit5.obuf0 VPWR ) ( storage_7_0_0.bit5.bit VPWR )
-      ( storage_7_0_0.bit4.obuf0 VPWR ) ( storage_7_0_0.bit4.bit VPWR ) ( storage_7_0_0.bit3.obuf0 VPWR ) ( storage_7_0_0.bit3.bit VPWR ) ( storage_7_0_0.bit2.obuf0 VPWR ) ( storage_7_0_0.bit2.bit VPWR ) ( storage_7_0_0.bit1.obuf0 VPWR ) ( storage_7_0_0.bit1.bit VPWR )
-      ( storage_7_0_0.bit0.obuf0 VPWR ) ( storage_7_0_0.bit0.bit VPWR ) ( storage_6_0_0.select_inv_0 VPWR ) ( storage_6_0_0.gcand VPWR ) ( storage_6_0_0.cg VPWR ) ( storage_6_0_0.bit7.obuf0 VPWR ) ( storage_6_0_0.bit7.bit VPWR ) ( storage_6_0_0.bit6.obuf0 VPWR )
-      ( storage_6_0_0.bit6.bit VPWR ) ( storage_6_0_0.bit5.obuf0 VPWR ) ( storage_6_0_0.bit5.bit VPWR ) ( storage_6_0_0.bit4.obuf0 VPWR ) ( storage_6_0_0.bit4.bit VPWR ) ( storage_6_0_0.bit3.obuf0 VPWR ) ( storage_6_0_0.bit3.bit VPWR ) ( storage_6_0_0.bit2.obuf0 VPWR )
-      ( storage_6_0_0.bit2.bit VPWR ) ( storage_6_0_0.bit1.obuf0 VPWR ) ( storage_6_0_0.bit1.bit VPWR ) ( storage_6_0_0.bit0.obuf0 VPWR ) ( storage_6_0_0.bit0.bit VPWR ) ( storage_5_0_0.select_inv_0 VPWR ) ( storage_5_0_0.gcand VPWR ) ( storage_5_0_0.cg VPWR )
-      ( storage_5_0_0.bit7.obuf0 VPWR ) ( storage_5_0_0.bit7.bit VPWR ) ( storage_5_0_0.bit6.obuf0 VPWR ) ( storage_5_0_0.bit6.bit VPWR ) ( storage_5_0_0.bit5.obuf0 VPWR ) ( storage_5_0_0.bit5.bit VPWR ) ( storage_5_0_0.bit4.obuf0 VPWR ) ( storage_5_0_0.bit4.bit VPWR )
-      ( storage_5_0_0.bit3.obuf0 VPWR ) ( storage_5_0_0.bit3.bit VPWR ) ( storage_5_0_0.bit2.obuf0 VPWR ) ( storage_5_0_0.bit2.bit VPWR ) ( storage_5_0_0.bit1.obuf0 VPWR ) ( storage_5_0_0.bit1.bit VPWR ) ( storage_5_0_0.bit0.obuf0 VPWR ) ( storage_5_0_0.bit0.bit VPWR )
-      ( storage_4_0_0.select_inv_0 VPWR ) ( storage_4_0_0.gcand VPWR ) ( storage_4_0_0.cg VPWR ) ( storage_4_0_0.bit7.obuf0 VPWR ) ( storage_4_0_0.bit7.bit VPWR ) ( storage_4_0_0.bit6.obuf0 VPWR ) ( storage_4_0_0.bit6.bit VPWR ) ( storage_4_0_0.bit5.obuf0 VPWR )
-      ( storage_4_0_0.bit5.bit VPWR ) ( storage_4_0_0.bit4.obuf0 VPWR ) ( storage_4_0_0.bit4.bit VPWR ) ( storage_4_0_0.bit3.obuf0 VPWR ) ( storage_4_0_0.bit3.bit VPWR ) ( storage_4_0_0.bit2.obuf0 VPWR ) ( storage_4_0_0.bit2.bit VPWR ) ( storage_4_0_0.bit1.obuf0 VPWR )
-      ( storage_4_0_0.bit1.bit VPWR ) ( storage_4_0_0.bit0.obuf0 VPWR ) ( storage_4_0_0.bit0.bit VPWR ) ( storage_3_0_0.select_inv_0 VPWR ) ( storage_3_0_0.gcand VPWR ) ( storage_3_0_0.cg VPWR ) ( storage_3_0_0.bit7.obuf0 VPWR ) ( storage_3_0_0.bit7.bit VPWR )
-      ( storage_3_0_0.bit6.obuf0 VPWR ) ( storage_3_0_0.bit6.bit VPWR ) ( storage_3_0_0.bit5.obuf0 VPWR ) ( storage_3_0_0.bit5.bit VPWR ) ( storage_3_0_0.bit4.obuf0 VPWR ) ( storage_3_0_0.bit4.bit VPWR ) ( storage_3_0_0.bit3.obuf0 VPWR ) ( storage_3_0_0.bit3.bit VPWR )
-      ( storage_3_0_0.bit2.obuf0 VPWR ) ( storage_3_0_0.bit2.bit VPWR ) ( storage_3_0_0.bit1.obuf0 VPWR ) ( storage_3_0_0.bit1.bit VPWR ) ( storage_3_0_0.bit0.obuf0 VPWR ) ( storage_3_0_0.bit0.bit VPWR ) ( storage_2_0_0.select_inv_0 VPWR ) ( storage_2_0_0.gcand VPWR )
-      ( storage_2_0_0.cg VPWR ) ( storage_2_0_0.bit7.obuf0 VPWR ) ( storage_2_0_0.bit7.bit VPWR ) ( storage_2_0_0.bit6.obuf0 VPWR ) ( storage_2_0_0.bit6.bit VPWR ) ( storage_2_0_0.bit5.obuf0 VPWR ) ( storage_2_0_0.bit5.bit VPWR ) ( storage_2_0_0.bit4.obuf0 VPWR )
-      ( storage_2_0_0.bit4.bit VPWR ) ( storage_2_0_0.bit3.obuf0 VPWR ) ( storage_2_0_0.bit3.bit VPWR ) ( storage_2_0_0.bit2.obuf0 VPWR ) ( storage_2_0_0.bit2.bit VPWR ) ( storage_2_0_0.bit1.obuf0 VPWR ) ( storage_2_0_0.bit1.bit VPWR ) ( storage_2_0_0.bit0.obuf0 VPWR )
-      ( storage_2_0_0.bit0.bit VPWR ) ( storage_1_0_0.select_inv_0 VPWR ) ( storage_1_0_0.gcand VPWR ) ( storage_1_0_0.cg VPWR ) ( storage_1_0_0.bit7.obuf0 VPWR ) ( storage_1_0_0.bit7.bit VPWR ) ( storage_1_0_0.bit6.obuf0 VPWR ) ( storage_1_0_0.bit6.bit VPWR )
-      ( storage_1_0_0.bit5.obuf0 VPWR ) ( storage_1_0_0.bit5.bit VPWR ) ( storage_1_0_0.bit4.obuf0 VPWR ) ( storage_1_0_0.bit4.bit VPWR ) ( storage_1_0_0.bit3.obuf0 VPWR ) ( storage_1_0_0.bit3.bit VPWR ) ( storage_1_0_0.bit2.obuf0 VPWR ) ( storage_1_0_0.bit2.bit VPWR )
-      ( storage_1_0_0.bit1.obuf0 VPWR ) ( storage_1_0_0.bit1.bit VPWR ) ( storage_1_0_0.bit0.obuf0 VPWR ) ( storage_1_0_0.bit0.bit VPWR ) ( storage_0_0_0.select_inv_0 VPWR ) ( storage_0_0_0.gcand VPWR ) ( storage_0_0_0.cg VPWR ) ( storage_0_0_0.bit7.obuf0 VPWR )
-      ( storage_0_0_0.bit7.bit VPWR ) ( storage_0_0_0.bit6.obuf0 VPWR ) ( storage_0_0_0.bit6.bit VPWR ) ( storage_0_0_0.bit5.obuf0 VPWR ) ( storage_0_0_0.bit5.bit VPWR ) ( storage_0_0_0.bit4.obuf0 VPWR ) ( storage_0_0_0.bit4.bit VPWR ) ( storage_0_0_0.bit3.obuf0 VPWR )
-      ( storage_0_0_0.bit3.bit VPWR ) ( storage_0_0_0.bit2.obuf0 VPWR ) ( storage_0_0_0.bit2.bit VPWR ) ( storage_0_0_0.bit1.obuf0 VPWR ) ( storage_0_0_0.bit1.bit VPWR ) ( storage_0_0_0.bit0.obuf0 VPWR ) ( storage_0_0_0.bit0.bit VPWR ) + USE POWER
+      ( tapcell.cell0_3 VPWR ) ( tapcell.cell0_2 VPWR ) ( tapcell.cell0_1 VPWR ) ( tapcell.cell0_0 VPWR ) ( decoder_p0.inv_p0_a0 VPWR ) ( decoder_p0.inv_p0_a1 VPWR ) ( decoder_p0.inv_p0_a2 VPWR ) ( decoder_p0.and_pre_a1_0_3 VPWR )
+      ( decoder_p0.and_pre_a1_0_2 VPWR ) ( decoder_p0.and_pre_a1_0_1 VPWR ) ( decoder_p0.and_pre_a1_0_0 VPWR ) ( decoder_p0.and_word7 VPWR ) ( decoder_p0.and_word6 VPWR ) ( decoder_p0.and_word5 VPWR ) ( decoder_p0.and_word4 VPWR ) ( decoder_p0.and_word3 VPWR )
+      ( decoder_p0.and_word2 VPWR ) ( decoder_p0.and_word1 VPWR ) ( decoder_p0.and_word0 VPWR ) ( sel_buf_rw_p0.sel_buf_7 VPWR ) ( sel_buf_rw_p0.sel_buf_6 VPWR ) ( sel_buf_rw_p0.sel_buf_5 VPWR ) ( sel_buf_rw_p0.sel_buf_4 VPWR ) ( sel_buf_rw_p0.sel_buf_3 VPWR )
+      ( sel_buf_rw_p0.sel_buf_2 VPWR ) ( sel_buf_rw_p0.sel_buf_1 VPWR ) ( sel_buf_rw_p0.sel_buf_0 VPWR ) ( buffer.in[7] VPWR ) ( buffer.in[6] VPWR ) ( buffer.in[5] VPWR ) ( buffer.in[4] VPWR ) ( buffer.in[3] VPWR )
+      ( buffer.in[2] VPWR ) ( buffer.in[1] VPWR ) ( buffer.in[0] VPWR ) ( storage_7_0_0.select_inv_0 VPWR ) ( storage_7_0_0.gcand VPWR ) ( storage_7_0_0.cg VPWR ) ( storage_7_0_0.bit7.obuf0 VPWR ) ( storage_7_0_0.bit7.bit VPWR )
+      ( storage_7_0_0.bit6.obuf0 VPWR ) ( storage_7_0_0.bit6.bit VPWR ) ( storage_7_0_0.bit5.obuf0 VPWR ) ( storage_7_0_0.bit5.bit VPWR ) ( storage_7_0_0.bit4.obuf0 VPWR ) ( storage_7_0_0.bit4.bit VPWR ) ( storage_7_0_0.bit3.obuf0 VPWR ) ( storage_7_0_0.bit3.bit VPWR )
+      ( storage_7_0_0.bit2.obuf0 VPWR ) ( storage_7_0_0.bit2.bit VPWR ) ( storage_7_0_0.bit1.obuf0 VPWR ) ( storage_7_0_0.bit1.bit VPWR ) ( storage_7_0_0.bit0.obuf0 VPWR ) ( storage_7_0_0.bit0.bit VPWR ) ( storage_6_0_0.select_inv_0 VPWR ) ( storage_6_0_0.gcand VPWR )
+      ( storage_6_0_0.cg VPWR ) ( storage_6_0_0.bit7.obuf0 VPWR ) ( storage_6_0_0.bit7.bit VPWR ) ( storage_6_0_0.bit6.obuf0 VPWR ) ( storage_6_0_0.bit6.bit VPWR ) ( storage_6_0_0.bit5.obuf0 VPWR ) ( storage_6_0_0.bit5.bit VPWR ) ( storage_6_0_0.bit4.obuf0 VPWR )
+      ( storage_6_0_0.bit4.bit VPWR ) ( storage_6_0_0.bit3.obuf0 VPWR ) ( storage_6_0_0.bit3.bit VPWR ) ( storage_6_0_0.bit2.obuf0 VPWR ) ( storage_6_0_0.bit2.bit VPWR ) ( storage_6_0_0.bit1.obuf0 VPWR ) ( storage_6_0_0.bit1.bit VPWR ) ( storage_6_0_0.bit0.obuf0 VPWR )
+      ( storage_6_0_0.bit0.bit VPWR ) ( storage_5_0_0.select_inv_0 VPWR ) ( storage_5_0_0.gcand VPWR ) ( storage_5_0_0.cg VPWR ) ( storage_5_0_0.bit7.obuf0 VPWR ) ( storage_5_0_0.bit7.bit VPWR ) ( storage_5_0_0.bit6.obuf0 VPWR ) ( storage_5_0_0.bit6.bit VPWR )
+      ( storage_5_0_0.bit5.obuf0 VPWR ) ( storage_5_0_0.bit5.bit VPWR ) ( storage_5_0_0.bit4.obuf0 VPWR ) ( storage_5_0_0.bit4.bit VPWR ) ( storage_5_0_0.bit3.obuf0 VPWR ) ( storage_5_0_0.bit3.bit VPWR ) ( storage_5_0_0.bit2.obuf0 VPWR ) ( storage_5_0_0.bit2.bit VPWR )
+      ( storage_5_0_0.bit1.obuf0 VPWR ) ( storage_5_0_0.bit1.bit VPWR ) ( storage_5_0_0.bit0.obuf0 VPWR ) ( storage_5_0_0.bit0.bit VPWR ) ( storage_4_0_0.select_inv_0 VPWR ) ( storage_4_0_0.gcand VPWR ) ( storage_4_0_0.cg VPWR ) ( storage_4_0_0.bit7.obuf0 VPWR )
+      ( storage_4_0_0.bit7.bit VPWR ) ( storage_4_0_0.bit6.obuf0 VPWR ) ( storage_4_0_0.bit6.bit VPWR ) ( storage_4_0_0.bit5.obuf0 VPWR ) ( storage_4_0_0.bit5.bit VPWR ) ( storage_4_0_0.bit4.obuf0 VPWR ) ( storage_4_0_0.bit4.bit VPWR ) ( storage_4_0_0.bit3.obuf0 VPWR )
+      ( storage_4_0_0.bit3.bit VPWR ) ( storage_4_0_0.bit2.obuf0 VPWR ) ( storage_4_0_0.bit2.bit VPWR ) ( storage_4_0_0.bit1.obuf0 VPWR ) ( storage_4_0_0.bit1.bit VPWR ) ( storage_4_0_0.bit0.obuf0 VPWR ) ( storage_4_0_0.bit0.bit VPWR ) ( storage_3_0_0.select_inv_0 VPWR )
+      ( storage_3_0_0.gcand VPWR ) ( storage_3_0_0.cg VPWR ) ( storage_3_0_0.bit7.obuf0 VPWR ) ( storage_3_0_0.bit7.bit VPWR ) ( storage_3_0_0.bit6.obuf0 VPWR ) ( storage_3_0_0.bit6.bit VPWR ) ( storage_3_0_0.bit5.obuf0 VPWR ) ( storage_3_0_0.bit5.bit VPWR )
+      ( storage_3_0_0.bit4.obuf0 VPWR ) ( storage_3_0_0.bit4.bit VPWR ) ( storage_3_0_0.bit3.obuf0 VPWR ) ( storage_3_0_0.bit3.bit VPWR ) ( storage_3_0_0.bit2.obuf0 VPWR ) ( storage_3_0_0.bit2.bit VPWR ) ( storage_3_0_0.bit1.obuf0 VPWR ) ( storage_3_0_0.bit1.bit VPWR )
+      ( storage_3_0_0.bit0.obuf0 VPWR ) ( storage_3_0_0.bit0.bit VPWR ) ( storage_2_0_0.select_inv_0 VPWR ) ( storage_2_0_0.gcand VPWR ) ( storage_2_0_0.cg VPWR ) ( storage_2_0_0.bit7.obuf0 VPWR ) ( storage_2_0_0.bit7.bit VPWR ) ( storage_2_0_0.bit6.obuf0 VPWR )
+      ( storage_2_0_0.bit6.bit VPWR ) ( storage_2_0_0.bit5.obuf0 VPWR ) ( storage_2_0_0.bit5.bit VPWR ) ( storage_2_0_0.bit4.obuf0 VPWR ) ( storage_2_0_0.bit4.bit VPWR ) ( storage_2_0_0.bit3.obuf0 VPWR ) ( storage_2_0_0.bit3.bit VPWR ) ( storage_2_0_0.bit2.obuf0 VPWR )
+      ( storage_2_0_0.bit2.bit VPWR ) ( storage_2_0_0.bit1.obuf0 VPWR ) ( storage_2_0_0.bit1.bit VPWR ) ( storage_2_0_0.bit0.obuf0 VPWR ) ( storage_2_0_0.bit0.bit VPWR ) ( storage_1_0_0.select_inv_0 VPWR ) ( storage_1_0_0.gcand VPWR ) ( storage_1_0_0.cg VPWR )
+      ( storage_1_0_0.bit7.obuf0 VPWR ) ( storage_1_0_0.bit7.bit VPWR ) ( storage_1_0_0.bit6.obuf0 VPWR ) ( storage_1_0_0.bit6.bit VPWR ) ( storage_1_0_0.bit5.obuf0 VPWR ) ( storage_1_0_0.bit5.bit VPWR ) ( storage_1_0_0.bit4.obuf0 VPWR ) ( storage_1_0_0.bit4.bit VPWR )
+      ( storage_1_0_0.bit3.obuf0 VPWR ) ( storage_1_0_0.bit3.bit VPWR ) ( storage_1_0_0.bit2.obuf0 VPWR ) ( storage_1_0_0.bit2.bit VPWR ) ( storage_1_0_0.bit1.obuf0 VPWR ) ( storage_1_0_0.bit1.bit VPWR ) ( storage_1_0_0.bit0.obuf0 VPWR ) ( storage_1_0_0.bit0.bit VPWR )
+      ( storage_0_0_0.select_inv_0 VPWR ) ( storage_0_0_0.gcand VPWR ) ( storage_0_0_0.cg VPWR ) ( storage_0_0_0.bit7.obuf0 VPWR ) ( storage_0_0_0.bit7.bit VPWR ) ( storage_0_0_0.bit6.obuf0 VPWR ) ( storage_0_0_0.bit6.bit VPWR ) ( storage_0_0_0.bit5.obuf0 VPWR )
+      ( storage_0_0_0.bit5.bit VPWR ) ( storage_0_0_0.bit4.obuf0 VPWR ) ( storage_0_0_0.bit4.bit VPWR ) ( storage_0_0_0.bit3.obuf0 VPWR ) ( storage_0_0_0.bit3.bit VPWR ) ( storage_0_0_0.bit2.obuf0 VPWR ) ( storage_0_0_0.bit2.bit VPWR ) ( storage_0_0_0.bit1.obuf0 VPWR )
+      ( storage_0_0_0.bit1.bit VPWR ) ( storage_0_0_0.bit0.obuf0 VPWR ) ( storage_0_0_0.bit0.bit VPWR ) + USE POWER
       + ROUTED met3 48 + SHAPE STRIPE ( 0 1000 ) ( 11040 1000 )
       NEW met2 48 + SHAPE STRIPE ( 10000 0 ) ( 10000 2472 )
       NEW met2 48 + SHAPE STRIPE ( 6000 0 ) ( 6000 2472 )
@@ -559,30 +551,30 @@ SPECIALNETS 2 ;
       ( tapcell.cell3_0 VGND ) ( tapcell.cell2_8 VGND ) ( tapcell.cell2_7 VGND ) ( tapcell.cell2_6 VGND ) ( tapcell.cell2_5 VGND ) ( tapcell.cell2_4 VGND ) ( tapcell.cell2_3 VGND ) ( tapcell.cell2_2 VGND )
       ( tapcell.cell2_1 VGND ) ( tapcell.cell2_0 VGND ) ( tapcell.cell1_8 VGND ) ( tapcell.cell1_7 VGND ) ( tapcell.cell1_6 VGND ) ( tapcell.cell1_5 VGND ) ( tapcell.cell1_4 VGND ) ( tapcell.cell1_3 VGND )
       ( tapcell.cell1_2 VGND ) ( tapcell.cell1_1 VGND ) ( tapcell.cell1_0 VGND ) ( tapcell.cell0_8 VGND ) ( tapcell.cell0_7 VGND ) ( tapcell.cell0_6 VGND ) ( tapcell.cell0_5 VGND ) ( tapcell.cell0_4 VGND )
-      ( tapcell.cell0_3 VGND ) ( tapcell.cell0_2 VGND ) ( tapcell.cell0_1 VGND ) ( tapcell.cell0_0 VGND ) ( decoder_p0.inv_p0_a0 VGND ) ( decoder_p0.inv_p0_a1 VGND ) ( decoder_p0.inv_p0_a2 VGND ) ( decoder_p0.and_layer1_word7 VGND )
-      ( decoder_p0.and_layer0_word7 VGND ) ( decoder_p0.and_layer1_word6 VGND ) ( decoder_p0.and_layer0_word6 VGND ) ( decoder_p0.and_layer1_word5 VGND ) ( decoder_p0.and_layer0_word5 VGND ) ( decoder_p0.and_layer1_word4 VGND ) ( decoder_p0.and_layer0_word4 VGND ) ( decoder_p0.and_layer1_word3 VGND )
-      ( decoder_p0.and_layer0_word3 VGND ) ( decoder_p0.and_layer1_word2 VGND ) ( decoder_p0.and_layer0_word2 VGND ) ( decoder_p0.and_layer1_word1 VGND ) ( decoder_p0.and_layer0_word1 VGND ) ( decoder_p0.and_layer1_word0 VGND ) ( decoder_p0.and_layer0_word0 VGND ) ( sel_buf_rw_p0.sel_buf_7 VGND )
-      ( sel_buf_rw_p0.sel_buf_6 VGND ) ( sel_buf_rw_p0.sel_buf_5 VGND ) ( sel_buf_rw_p0.sel_buf_4 VGND ) ( sel_buf_rw_p0.sel_buf_3 VGND ) ( sel_buf_rw_p0.sel_buf_2 VGND ) ( sel_buf_rw_p0.sel_buf_1 VGND ) ( sel_buf_rw_p0.sel_buf_0 VGND ) ( buffer.in[7] VGND )
-      ( buffer.in[6] VGND ) ( buffer.in[5] VGND ) ( buffer.in[4] VGND ) ( buffer.in[3] VGND ) ( buffer.in[2] VGND ) ( buffer.in[1] VGND ) ( buffer.in[0] VGND ) ( storage_7_0_0.select_inv_0 VGND )
-      ( storage_7_0_0.gcand VGND ) ( storage_7_0_0.cg VGND ) ( storage_7_0_0.bit7.obuf0 VGND ) ( storage_7_0_0.bit7.bit VGND ) ( storage_7_0_0.bit6.obuf0 VGND ) ( storage_7_0_0.bit6.bit VGND ) ( storage_7_0_0.bit5.obuf0 VGND ) ( storage_7_0_0.bit5.bit VGND )
-      ( storage_7_0_0.bit4.obuf0 VGND ) ( storage_7_0_0.bit4.bit VGND ) ( storage_7_0_0.bit3.obuf0 VGND ) ( storage_7_0_0.bit3.bit VGND ) ( storage_7_0_0.bit2.obuf0 VGND ) ( storage_7_0_0.bit2.bit VGND ) ( storage_7_0_0.bit1.obuf0 VGND ) ( storage_7_0_0.bit1.bit VGND )
-      ( storage_7_0_0.bit0.obuf0 VGND ) ( storage_7_0_0.bit0.bit VGND ) ( storage_6_0_0.select_inv_0 VGND ) ( storage_6_0_0.gcand VGND ) ( storage_6_0_0.cg VGND ) ( storage_6_0_0.bit7.obuf0 VGND ) ( storage_6_0_0.bit7.bit VGND ) ( storage_6_0_0.bit6.obuf0 VGND )
-      ( storage_6_0_0.bit6.bit VGND ) ( storage_6_0_0.bit5.obuf0 VGND ) ( storage_6_0_0.bit5.bit VGND ) ( storage_6_0_0.bit4.obuf0 VGND ) ( storage_6_0_0.bit4.bit VGND ) ( storage_6_0_0.bit3.obuf0 VGND ) ( storage_6_0_0.bit3.bit VGND ) ( storage_6_0_0.bit2.obuf0 VGND )
-      ( storage_6_0_0.bit2.bit VGND ) ( storage_6_0_0.bit1.obuf0 VGND ) ( storage_6_0_0.bit1.bit VGND ) ( storage_6_0_0.bit0.obuf0 VGND ) ( storage_6_0_0.bit0.bit VGND ) ( storage_5_0_0.select_inv_0 VGND ) ( storage_5_0_0.gcand VGND ) ( storage_5_0_0.cg VGND )
-      ( storage_5_0_0.bit7.obuf0 VGND ) ( storage_5_0_0.bit7.bit VGND ) ( storage_5_0_0.bit6.obuf0 VGND ) ( storage_5_0_0.bit6.bit VGND ) ( storage_5_0_0.bit5.obuf0 VGND ) ( storage_5_0_0.bit5.bit VGND ) ( storage_5_0_0.bit4.obuf0 VGND ) ( storage_5_0_0.bit4.bit VGND )
-      ( storage_5_0_0.bit3.obuf0 VGND ) ( storage_5_0_0.bit3.bit VGND ) ( storage_5_0_0.bit2.obuf0 VGND ) ( storage_5_0_0.bit2.bit VGND ) ( storage_5_0_0.bit1.obuf0 VGND ) ( storage_5_0_0.bit1.bit VGND ) ( storage_5_0_0.bit0.obuf0 VGND ) ( storage_5_0_0.bit0.bit VGND )
-      ( storage_4_0_0.select_inv_0 VGND ) ( storage_4_0_0.gcand VGND ) ( storage_4_0_0.cg VGND ) ( storage_4_0_0.bit7.obuf0 VGND ) ( storage_4_0_0.bit7.bit VGND ) ( storage_4_0_0.bit6.obuf0 VGND ) ( storage_4_0_0.bit6.bit VGND ) ( storage_4_0_0.bit5.obuf0 VGND )
-      ( storage_4_0_0.bit5.bit VGND ) ( storage_4_0_0.bit4.obuf0 VGND ) ( storage_4_0_0.bit4.bit VGND ) ( storage_4_0_0.bit3.obuf0 VGND ) ( storage_4_0_0.bit3.bit VGND ) ( storage_4_0_0.bit2.obuf0 VGND ) ( storage_4_0_0.bit2.bit VGND ) ( storage_4_0_0.bit1.obuf0 VGND )
-      ( storage_4_0_0.bit1.bit VGND ) ( storage_4_0_0.bit0.obuf0 VGND ) ( storage_4_0_0.bit0.bit VGND ) ( storage_3_0_0.select_inv_0 VGND ) ( storage_3_0_0.gcand VGND ) ( storage_3_0_0.cg VGND ) ( storage_3_0_0.bit7.obuf0 VGND ) ( storage_3_0_0.bit7.bit VGND )
-      ( storage_3_0_0.bit6.obuf0 VGND ) ( storage_3_0_0.bit6.bit VGND ) ( storage_3_0_0.bit5.obuf0 VGND ) ( storage_3_0_0.bit5.bit VGND ) ( storage_3_0_0.bit4.obuf0 VGND ) ( storage_3_0_0.bit4.bit VGND ) ( storage_3_0_0.bit3.obuf0 VGND ) ( storage_3_0_0.bit3.bit VGND )
-      ( storage_3_0_0.bit2.obuf0 VGND ) ( storage_3_0_0.bit2.bit VGND ) ( storage_3_0_0.bit1.obuf0 VGND ) ( storage_3_0_0.bit1.bit VGND ) ( storage_3_0_0.bit0.obuf0 VGND ) ( storage_3_0_0.bit0.bit VGND ) ( storage_2_0_0.select_inv_0 VGND ) ( storage_2_0_0.gcand VGND )
-      ( storage_2_0_0.cg VGND ) ( storage_2_0_0.bit7.obuf0 VGND ) ( storage_2_0_0.bit7.bit VGND ) ( storage_2_0_0.bit6.obuf0 VGND ) ( storage_2_0_0.bit6.bit VGND ) ( storage_2_0_0.bit5.obuf0 VGND ) ( storage_2_0_0.bit5.bit VGND ) ( storage_2_0_0.bit4.obuf0 VGND )
-      ( storage_2_0_0.bit4.bit VGND ) ( storage_2_0_0.bit3.obuf0 VGND ) ( storage_2_0_0.bit3.bit VGND ) ( storage_2_0_0.bit2.obuf0 VGND ) ( storage_2_0_0.bit2.bit VGND ) ( storage_2_0_0.bit1.obuf0 VGND ) ( storage_2_0_0.bit1.bit VGND ) ( storage_2_0_0.bit0.obuf0 VGND )
-      ( storage_2_0_0.bit0.bit VGND ) ( storage_1_0_0.select_inv_0 VGND ) ( storage_1_0_0.gcand VGND ) ( storage_1_0_0.cg VGND ) ( storage_1_0_0.bit7.obuf0 VGND ) ( storage_1_0_0.bit7.bit VGND ) ( storage_1_0_0.bit6.obuf0 VGND ) ( storage_1_0_0.bit6.bit VGND )
-      ( storage_1_0_0.bit5.obuf0 VGND ) ( storage_1_0_0.bit5.bit VGND ) ( storage_1_0_0.bit4.obuf0 VGND ) ( storage_1_0_0.bit4.bit VGND ) ( storage_1_0_0.bit3.obuf0 VGND ) ( storage_1_0_0.bit3.bit VGND ) ( storage_1_0_0.bit2.obuf0 VGND ) ( storage_1_0_0.bit2.bit VGND )
-      ( storage_1_0_0.bit1.obuf0 VGND ) ( storage_1_0_0.bit1.bit VGND ) ( storage_1_0_0.bit0.obuf0 VGND ) ( storage_1_0_0.bit0.bit VGND ) ( storage_0_0_0.select_inv_0 VGND ) ( storage_0_0_0.gcand VGND ) ( storage_0_0_0.cg VGND ) ( storage_0_0_0.bit7.obuf0 VGND )
-      ( storage_0_0_0.bit7.bit VGND ) ( storage_0_0_0.bit6.obuf0 VGND ) ( storage_0_0_0.bit6.bit VGND ) ( storage_0_0_0.bit5.obuf0 VGND ) ( storage_0_0_0.bit5.bit VGND ) ( storage_0_0_0.bit4.obuf0 VGND ) ( storage_0_0_0.bit4.bit VGND ) ( storage_0_0_0.bit3.obuf0 VGND )
-      ( storage_0_0_0.bit3.bit VGND ) ( storage_0_0_0.bit2.obuf0 VGND ) ( storage_0_0_0.bit2.bit VGND ) ( storage_0_0_0.bit1.obuf0 VGND ) ( storage_0_0_0.bit1.bit VGND ) ( storage_0_0_0.bit0.obuf0 VGND ) ( storage_0_0_0.bit0.bit VGND ) + USE GROUND
+      ( tapcell.cell0_3 VGND ) ( tapcell.cell0_2 VGND ) ( tapcell.cell0_1 VGND ) ( tapcell.cell0_0 VGND ) ( decoder_p0.inv_p0_a0 VGND ) ( decoder_p0.inv_p0_a1 VGND ) ( decoder_p0.inv_p0_a2 VGND ) ( decoder_p0.and_pre_a1_0_3 VGND )
+      ( decoder_p0.and_pre_a1_0_2 VGND ) ( decoder_p0.and_pre_a1_0_1 VGND ) ( decoder_p0.and_pre_a1_0_0 VGND ) ( decoder_p0.and_word7 VGND ) ( decoder_p0.and_word6 VGND ) ( decoder_p0.and_word5 VGND ) ( decoder_p0.and_word4 VGND ) ( decoder_p0.and_word3 VGND )
+      ( decoder_p0.and_word2 VGND ) ( decoder_p0.and_word1 VGND ) ( decoder_p0.and_word0 VGND ) ( sel_buf_rw_p0.sel_buf_7 VGND ) ( sel_buf_rw_p0.sel_buf_6 VGND ) ( sel_buf_rw_p0.sel_buf_5 VGND ) ( sel_buf_rw_p0.sel_buf_4 VGND ) ( sel_buf_rw_p0.sel_buf_3 VGND )
+      ( sel_buf_rw_p0.sel_buf_2 VGND ) ( sel_buf_rw_p0.sel_buf_1 VGND ) ( sel_buf_rw_p0.sel_buf_0 VGND ) ( buffer.in[7] VGND ) ( buffer.in[6] VGND ) ( buffer.in[5] VGND ) ( buffer.in[4] VGND ) ( buffer.in[3] VGND )
+      ( buffer.in[2] VGND ) ( buffer.in[1] VGND ) ( buffer.in[0] VGND ) ( storage_7_0_0.select_inv_0 VGND ) ( storage_7_0_0.gcand VGND ) ( storage_7_0_0.cg VGND ) ( storage_7_0_0.bit7.obuf0 VGND ) ( storage_7_0_0.bit7.bit VGND )
+      ( storage_7_0_0.bit6.obuf0 VGND ) ( storage_7_0_0.bit6.bit VGND ) ( storage_7_0_0.bit5.obuf0 VGND ) ( storage_7_0_0.bit5.bit VGND ) ( storage_7_0_0.bit4.obuf0 VGND ) ( storage_7_0_0.bit4.bit VGND ) ( storage_7_0_0.bit3.obuf0 VGND ) ( storage_7_0_0.bit3.bit VGND )
+      ( storage_7_0_0.bit2.obuf0 VGND ) ( storage_7_0_0.bit2.bit VGND ) ( storage_7_0_0.bit1.obuf0 VGND ) ( storage_7_0_0.bit1.bit VGND ) ( storage_7_0_0.bit0.obuf0 VGND ) ( storage_7_0_0.bit0.bit VGND ) ( storage_6_0_0.select_inv_0 VGND ) ( storage_6_0_0.gcand VGND )
+      ( storage_6_0_0.cg VGND ) ( storage_6_0_0.bit7.obuf0 VGND ) ( storage_6_0_0.bit7.bit VGND ) ( storage_6_0_0.bit6.obuf0 VGND ) ( storage_6_0_0.bit6.bit VGND ) ( storage_6_0_0.bit5.obuf0 VGND ) ( storage_6_0_0.bit5.bit VGND ) ( storage_6_0_0.bit4.obuf0 VGND )
+      ( storage_6_0_0.bit4.bit VGND ) ( storage_6_0_0.bit3.obuf0 VGND ) ( storage_6_0_0.bit3.bit VGND ) ( storage_6_0_0.bit2.obuf0 VGND ) ( storage_6_0_0.bit2.bit VGND ) ( storage_6_0_0.bit1.obuf0 VGND ) ( storage_6_0_0.bit1.bit VGND ) ( storage_6_0_0.bit0.obuf0 VGND )
+      ( storage_6_0_0.bit0.bit VGND ) ( storage_5_0_0.select_inv_0 VGND ) ( storage_5_0_0.gcand VGND ) ( storage_5_0_0.cg VGND ) ( storage_5_0_0.bit7.obuf0 VGND ) ( storage_5_0_0.bit7.bit VGND ) ( storage_5_0_0.bit6.obuf0 VGND ) ( storage_5_0_0.bit6.bit VGND )
+      ( storage_5_0_0.bit5.obuf0 VGND ) ( storage_5_0_0.bit5.bit VGND ) ( storage_5_0_0.bit4.obuf0 VGND ) ( storage_5_0_0.bit4.bit VGND ) ( storage_5_0_0.bit3.obuf0 VGND ) ( storage_5_0_0.bit3.bit VGND ) ( storage_5_0_0.bit2.obuf0 VGND ) ( storage_5_0_0.bit2.bit VGND )
+      ( storage_5_0_0.bit1.obuf0 VGND ) ( storage_5_0_0.bit1.bit VGND ) ( storage_5_0_0.bit0.obuf0 VGND ) ( storage_5_0_0.bit0.bit VGND ) ( storage_4_0_0.select_inv_0 VGND ) ( storage_4_0_0.gcand VGND ) ( storage_4_0_0.cg VGND ) ( storage_4_0_0.bit7.obuf0 VGND )
+      ( storage_4_0_0.bit7.bit VGND ) ( storage_4_0_0.bit6.obuf0 VGND ) ( storage_4_0_0.bit6.bit VGND ) ( storage_4_0_0.bit5.obuf0 VGND ) ( storage_4_0_0.bit5.bit VGND ) ( storage_4_0_0.bit4.obuf0 VGND ) ( storage_4_0_0.bit4.bit VGND ) ( storage_4_0_0.bit3.obuf0 VGND )
+      ( storage_4_0_0.bit3.bit VGND ) ( storage_4_0_0.bit2.obuf0 VGND ) ( storage_4_0_0.bit2.bit VGND ) ( storage_4_0_0.bit1.obuf0 VGND ) ( storage_4_0_0.bit1.bit VGND ) ( storage_4_0_0.bit0.obuf0 VGND ) ( storage_4_0_0.bit0.bit VGND ) ( storage_3_0_0.select_inv_0 VGND )
+      ( storage_3_0_0.gcand VGND ) ( storage_3_0_0.cg VGND ) ( storage_3_0_0.bit7.obuf0 VGND ) ( storage_3_0_0.bit7.bit VGND ) ( storage_3_0_0.bit6.obuf0 VGND ) ( storage_3_0_0.bit6.bit VGND ) ( storage_3_0_0.bit5.obuf0 VGND ) ( storage_3_0_0.bit5.bit VGND )
+      ( storage_3_0_0.bit4.obuf0 VGND ) ( storage_3_0_0.bit4.bit VGND ) ( storage_3_0_0.bit3.obuf0 VGND ) ( storage_3_0_0.bit3.bit VGND ) ( storage_3_0_0.bit2.obuf0 VGND ) ( storage_3_0_0.bit2.bit VGND ) ( storage_3_0_0.bit1.obuf0 VGND ) ( storage_3_0_0.bit1.bit VGND )
+      ( storage_3_0_0.bit0.obuf0 VGND ) ( storage_3_0_0.bit0.bit VGND ) ( storage_2_0_0.select_inv_0 VGND ) ( storage_2_0_0.gcand VGND ) ( storage_2_0_0.cg VGND ) ( storage_2_0_0.bit7.obuf0 VGND ) ( storage_2_0_0.bit7.bit VGND ) ( storage_2_0_0.bit6.obuf0 VGND )
+      ( storage_2_0_0.bit6.bit VGND ) ( storage_2_0_0.bit5.obuf0 VGND ) ( storage_2_0_0.bit5.bit VGND ) ( storage_2_0_0.bit4.obuf0 VGND ) ( storage_2_0_0.bit4.bit VGND ) ( storage_2_0_0.bit3.obuf0 VGND ) ( storage_2_0_0.bit3.bit VGND ) ( storage_2_0_0.bit2.obuf0 VGND )
+      ( storage_2_0_0.bit2.bit VGND ) ( storage_2_0_0.bit1.obuf0 VGND ) ( storage_2_0_0.bit1.bit VGND ) ( storage_2_0_0.bit0.obuf0 VGND ) ( storage_2_0_0.bit0.bit VGND ) ( storage_1_0_0.select_inv_0 VGND ) ( storage_1_0_0.gcand VGND ) ( storage_1_0_0.cg VGND )
+      ( storage_1_0_0.bit7.obuf0 VGND ) ( storage_1_0_0.bit7.bit VGND ) ( storage_1_0_0.bit6.obuf0 VGND ) ( storage_1_0_0.bit6.bit VGND ) ( storage_1_0_0.bit5.obuf0 VGND ) ( storage_1_0_0.bit5.bit VGND ) ( storage_1_0_0.bit4.obuf0 VGND ) ( storage_1_0_0.bit4.bit VGND )
+      ( storage_1_0_0.bit3.obuf0 VGND ) ( storage_1_0_0.bit3.bit VGND ) ( storage_1_0_0.bit2.obuf0 VGND ) ( storage_1_0_0.bit2.bit VGND ) ( storage_1_0_0.bit1.obuf0 VGND ) ( storage_1_0_0.bit1.bit VGND ) ( storage_1_0_0.bit0.obuf0 VGND ) ( storage_1_0_0.bit0.bit VGND )
+      ( storage_0_0_0.select_inv_0 VGND ) ( storage_0_0_0.gcand VGND ) ( storage_0_0_0.cg VGND ) ( storage_0_0_0.bit7.obuf0 VGND ) ( storage_0_0_0.bit7.bit VGND ) ( storage_0_0_0.bit6.obuf0 VGND ) ( storage_0_0_0.bit6.bit VGND ) ( storage_0_0_0.bit5.obuf0 VGND )
+      ( storage_0_0_0.bit5.bit VGND ) ( storage_0_0_0.bit4.obuf0 VGND ) ( storage_0_0_0.bit4.bit VGND ) ( storage_0_0_0.bit3.obuf0 VGND ) ( storage_0_0_0.bit3.bit VGND ) ( storage_0_0_0.bit2.obuf0 VGND ) ( storage_0_0_0.bit2.bit VGND ) ( storage_0_0_0.bit1.obuf0 VGND )
+      ( storage_0_0_0.bit1.bit VGND ) ( storage_0_0_0.bit0.obuf0 VGND ) ( storage_0_0_0.bit0.bit VGND ) + USE GROUND
       + ROUTED met3 48 + SHAPE STRIPE ( 0 2000 ) ( 11040 2000 )
       NEW met2 48 + SHAPE STRIPE ( 8000 -24 ) ( 8000 2448 )
       NEW met2 48 + SHAPE STRIPE ( 4000 -24 ) ( 4000 2448 )
@@ -604,7 +596,7 @@ SPECIALNETS 2 ;
       NEW met1 0 + SHAPE STRIPE ( 4000 544 ) via2_3_480_480_1_1_320_320
       NEW met1 0 + SHAPE STRIPE ( 4000 0 ) via2_3_480_480_1_1_320_320 ;
 END SPECIALNETS
-NETS 144 ;
+NETS 140 ;
     - D[0] ( PIN D[0] ) ( buffer.in[0] A ) + USE SIGNAL
       + ROUTED met2 ( 115 2295 ) ( * 2414 0 )
       NEW met1 ( 69 2295 ) ( 115 * )
@@ -1220,119 +1212,91 @@ NETS 144 ;
       NEW met1 ( 9131 493 ) M1M2_PR
       NEW li1 ( 9131 221 ) L1M1_PR_MR
       NEW met1 ( 9131 221 ) M1M2_PR ;
-    - addr_rw.inv_addr[0] ( decoder_p0.inv_p0_a0 Y ) ( decoder_p0.and_layer0_word6 A ) ( decoder_p0.and_layer0_word4 A ) ( decoder_p0.and_layer0_word2 A ) ( decoder_p0.and_layer0_word0 A ) + USE SIGNAL
-      + ROUTED met2 ( 10465 187 ) ( * 697 )
-      NEW met2 ( 10465 697 ) ( * 1241 )
-      NEW met1 ( 10465 1275 ) ( 10971 * )
-      NEW met1 ( 10465 1241 ) ( * 1275 )
-      NEW met2 ( 10465 1241 ) ( * 1785 )
-      NEW li1 ( 10465 1785 ) L1M1_PR_MR
-      NEW met1 ( 10465 1785 ) M1M2_PR
-      NEW li1 ( 10465 697 ) L1M1_PR_MR
-      NEW met1 ( 10465 697 ) M1M2_PR
-      NEW li1 ( 10465 187 ) L1M1_PR_MR
-      NEW met1 ( 10465 187 ) M1M2_PR
-      NEW li1 ( 10465 1241 ) L1M1_PR_MR
-      NEW met1 ( 10465 1241 ) M1M2_PR
-      NEW li1 ( 10971 1275 ) L1M1_PR_MR ;
-    - addr_rw.inv_addr[1] ( decoder_p0.inv_p0_a1 Y ) ( decoder_p0.and_layer1_word5 A ) ( decoder_p0.and_layer1_word4 A ) ( decoder_p0.and_layer1_word1 A ) ( decoder_p0.and_layer1_word0 A ) + USE SIGNAL
-      + ROUTED met1 ( 10695 765 ) ( 10971 * )
-      NEW met2 ( 10695 765 ) ( * 1241 )
-      NEW met2 ( 10695 391 ) ( * 765 )
-      NEW met2 ( 10695 187 ) ( * 391 )
-      NEW met2 ( 10695 1241 ) ( * 1445 )
-      NEW li1 ( 10695 1445 ) L1M1_PR_MR
-      NEW met1 ( 10695 1445 ) M1M2_PR
+    - addr_rw.inv_addr[0] ( decoder_p0.inv_p0_a0 Y ) ( decoder_p0.and_pre_a1_0_2 A ) ( decoder_p0.and_pre_a1_0_0 A ) + USE SIGNAL
+      + ROUTED met2 ( 10695 187 ) ( * 1241 )
+      NEW met1 ( 10695 1241 ) ( 10971 * )
       NEW li1 ( 10695 1241 ) L1M1_PR_MR
       NEW met1 ( 10695 1241 ) M1M2_PR
-      NEW li1 ( 10971 765 ) L1M1_PR_MR
-      NEW met1 ( 10695 765 ) M1M2_PR
-      NEW li1 ( 10695 391 ) L1M1_PR_MR
-      NEW met1 ( 10695 391 ) M1M2_PR
       NEW li1 ( 10695 187 ) L1M1_PR_MR
-      NEW met1 ( 10695 187 ) M1M2_PR ;
-    - addr_rw.inv_addr[2] ( decoder_p0.inv_p0_a2 Y ) ( decoder_p0.and_layer1_word3 B ) ( decoder_p0.and_layer1_word2 B ) ( decoder_p0.and_layer1_word1 B ) ( decoder_p0.and_layer1_word0 B ) + USE SIGNAL
-      + ROUTED met2 ( 10787 697 ) ( * 935 )
-      NEW met2 ( 10787 425 ) ( * 697 )
-      NEW met2 ( 10787 153 ) ( * 425 )
-      NEW met1 ( 10787 153 ) ( 10971 * )
-      NEW li1 ( 10787 697 ) L1M1_PR_MR
-      NEW met1 ( 10787 697 ) M1M2_PR
-      NEW li1 ( 10787 935 ) L1M1_PR_MR
-      NEW met1 ( 10787 935 ) M1M2_PR
-      NEW li1 ( 10787 425 ) L1M1_PR_MR
-      NEW met1 ( 10787 425 ) M1M2_PR
+      NEW met1 ( 10695 187 ) M1M2_PR
+      NEW li1 ( 10971 1241 ) L1M1_PR_MR ;
+    - addr_rw.inv_addr[1] ( decoder_p0.inv_p0_a1 Y ) ( decoder_p0.and_pre_a1_0_1 B ) ( decoder_p0.and_pre_a1_0_0 B ) + USE SIGNAL
+      + ROUTED met1 ( 10787 663 ) ( 10971 * )
+      NEW met2 ( 10787 153 ) ( * 663 )
+      NEW li1 ( 10787 663 ) L1M1_PR_MR
+      NEW li1 ( 10971 663 ) L1M1_PR_MR
       NEW li1 ( 10787 153 ) L1M1_PR_MR
       NEW met1 ( 10787 153 ) M1M2_PR
-      NEW li1 ( 10971 153 ) L1M1_PR_MR ;
-    - addr_rw[0] ( PIN addr_rw[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_layer0_word7 A ) ( decoder_p0.and_layer0_word5 A ) ( decoder_p0.and_layer0_word3 A ) ( decoder_p0.and_layer0_word1 A ) + USE SIGNAL
-      + ROUTED met1 ( 10465 1445 ) ( 10511 * )
-      NEW met1 ( 10465 1989 ) ( 10511 * )
-      NEW met2 ( 10511 1445 ) ( * 1989 )
-      NEW met1 ( 10465 391 ) ( 10511 * )
-      NEW met2 ( 10511 391 ) ( * 442 )
-      NEW met3 ( 10511 442 ) ( 10994 * 0 )
-      NEW met1 ( 10465 901 ) ( 10511 * )
-      NEW met2 ( 10511 442 ) ( * 901 )
-      NEW met1 ( 10511 1173 ) ( 10925 * )
-      NEW met2 ( 10511 901 ) ( * 1173 )
-      NEW met2 ( 10511 1173 ) ( * 1445 )
-      NEW li1 ( 10465 1445 ) L1M1_PR_MR
-      NEW met1 ( 10511 1445 ) M1M2_PR
-      NEW li1 ( 10465 1989 ) L1M1_PR_MR
-      NEW met1 ( 10511 1989 ) M1M2_PR
-      NEW li1 ( 10465 391 ) L1M1_PR_MR
-      NEW met1 ( 10511 391 ) M1M2_PR
-      NEW met2 ( 10511 442 ) M2M3_PR
-      NEW li1 ( 10465 901 ) L1M1_PR_MR
-      NEW met1 ( 10511 901 ) M1M2_PR
-      NEW li1 ( 10925 1173 ) L1M1_PR_MR
-      NEW met1 ( 10511 1173 ) M1M2_PR ;
-    - addr_rw[1] ( PIN addr_rw[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_layer1_word7 A ) ( decoder_p0.and_layer1_word6 A ) ( decoder_p0.and_layer1_word3 A ) ( decoder_p0.and_layer1_word2 A ) + USE SIGNAL
+      NEW met1 ( 10787 663 ) M1M2_PR ;
+    - addr_rw.inv_addr[2] ( decoder_p0.inv_p0_a2 Y ) ( decoder_p0.and_word3 B ) ( decoder_p0.and_word2 B ) ( decoder_p0.and_word1 B ) ( decoder_p0.and_word0 B ) + USE SIGNAL
+      + ROUTED met1 ( 10557 119 ) ( 10971 * )
+      NEW met2 ( 10557 119 ) ( * 391 )
+      NEW met2 ( 10557 391 ) ( * 663 )
+      NEW met2 ( 10557 663 ) ( * 935 )
+      NEW li1 ( 10557 119 ) L1M1_PR_MR
+      NEW li1 ( 10971 119 ) L1M1_PR_MR
+      NEW li1 ( 10557 391 ) L1M1_PR_MR
+      NEW met1 ( 10557 391 ) M1M2_PR
+      NEW met1 ( 10557 119 ) M1M2_PR
+      NEW li1 ( 10557 663 ) L1M1_PR_MR
+      NEW met1 ( 10557 663 ) M1M2_PR
+      NEW li1 ( 10557 935 ) L1M1_PR_MR
+      NEW met1 ( 10557 935 ) M1M2_PR ;
+    - addr_rw[0] ( PIN addr_rw[0] ) ( decoder_p0.inv_p0_a0 A ) ( decoder_p0.and_pre_a1_0_3 A ) ( decoder_p0.and_pre_a1_0_1 A ) + USE SIGNAL
       + ROUTED met1 ( 10695 1785 ) ( 10925 * )
-      NEW met2 ( 10695 1785 ) ( * 1989 )
-      NEW met1 ( 10695 901 ) ( 10925 * )
-      NEW met1 ( 10695 697 ) ( 10741 * )
-      NEW met2 ( 10741 697 ) ( * 901 )
-      NEW met1 ( 10741 663 ) ( 10925 * )
-      NEW met1 ( 10741 663 ) ( * 697 )
+      NEW met1 ( 10695 731 ) ( 10741 * )
+      NEW met2 ( 10741 714 ) ( * 731 )
       NEW met3 ( 10741 714 ) ( 10994 * 0 )
-      NEW met2 ( 10925 901 ) ( * 1785 )
-      NEW li1 ( 10695 1785 ) L1M1_PR_MR
+      NEW met1 ( 10741 1173 ) ( 10925 * )
+      NEW met2 ( 10741 731 ) ( * 1173 )
+      NEW met2 ( 10925 1173 ) ( * 1785 )
       NEW met1 ( 10925 1785 ) M1M2_PR
-      NEW li1 ( 10695 1989 ) L1M1_PR_MR
-      NEW met1 ( 10695 1989 ) M1M2_PR
-      NEW met1 ( 10695 1785 ) M1M2_PR
-      NEW li1 ( 10695 901 ) L1M1_PR_MR
-      NEW met1 ( 10925 901 ) M1M2_PR
-      NEW li1 ( 10695 697 ) L1M1_PR_MR
-      NEW met1 ( 10741 697 ) M1M2_PR
-      NEW met1 ( 10741 901 ) M1M2_PR
-      NEW li1 ( 10925 663 ) L1M1_PR_MR
-      NEW met2 ( 10741 714 ) M2M3_PR ;
-    - addr_rw[2] ( PIN addr_rw[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_layer1_word7 B ) ( decoder_p0.and_layer1_word6 B ) ( decoder_p0.and_layer1_word5 B ) ( decoder_p0.and_layer1_word4 B ) + USE SIGNAL
-      + ROUTED met1 ( 10787 1479 ) ( 10879 * )
-      NEW met1 ( 10787 1751 ) ( 10879 * )
-      NEW met2 ( 10879 1479 ) ( * 1751 )
-      NEW met1 ( 10787 2023 ) ( 10879 * )
-      NEW met2 ( 10879 1751 ) ( * 2023 )
-      NEW met2 ( 10925 119 ) ( * 170 )
-      NEW met3 ( 10925 170 ) ( 10994 * 0 )
-      NEW met1 ( 10787 1207 ) ( 10879 * )
-      NEW met2 ( 10879 170 ) ( * 1207 )
-      NEW met2 ( 10879 170 ) ( 10925 * )
-      NEW met2 ( 10879 1207 ) ( * 1479 )
-      NEW li1 ( 10787 1479 ) L1M1_PR_MR
-      NEW met1 ( 10879 1479 ) M1M2_PR
+      NEW li1 ( 10695 1785 ) L1M1_PR_MR
+      NEW li1 ( 10695 731 ) L1M1_PR_MR
+      NEW met1 ( 10741 731 ) M1M2_PR
+      NEW met2 ( 10741 714 ) M2M3_PR
+      NEW li1 ( 10925 1173 ) L1M1_PR_MR
+      NEW met1 ( 10741 1173 ) M1M2_PR
+      NEW met1 ( 10925 1173 ) M1M2_PR ;
+    - addr_rw[1] ( PIN addr_rw[1] ) ( decoder_p0.inv_p0_a1 A ) ( decoder_p0.and_pre_a1_0_3 B ) ( decoder_p0.and_pre_a1_0_2 B ) + USE SIGNAL
+      + ROUTED met2 ( 10787 1380 ) ( * 1751 )
+      NEW met1 ( 10787 1207 ) ( 10833 * )
+      NEW met2 ( 10833 629 ) ( * 1207 )
+      NEW met1 ( 10833 629 ) ( 10925 * )
+      NEW met2 ( 10787 1380 ) ( 10833 * )
+      NEW met2 ( 10833 1207 ) ( * 1380 )
+      NEW met3 ( 10833 850 ) ( 10994 * 0 )
       NEW li1 ( 10787 1751 ) L1M1_PR_MR
-      NEW met1 ( 10879 1751 ) M1M2_PR
-      NEW li1 ( 10787 2023 ) L1M1_PR_MR
-      NEW met1 ( 10879 2023 ) M1M2_PR
-      NEW li1 ( 10925 119 ) L1M1_PR_MR
-      NEW met1 ( 10925 119 ) M1M2_PR
-      NEW met2 ( 10925 170 ) M2M3_PR
+      NEW met1 ( 10787 1751 ) M1M2_PR
       NEW li1 ( 10787 1207 ) L1M1_PR_MR
-      NEW met1 ( 10879 1207 ) M1M2_PR ;
+      NEW met1 ( 10833 1207 ) M1M2_PR
+      NEW met1 ( 10833 629 ) M1M2_PR
+      NEW li1 ( 10925 629 ) L1M1_PR_MR
+      NEW met2 ( 10833 850 ) M2M3_PR ;
+    - addr_rw[2] ( PIN addr_rw[2] ) ( decoder_p0.inv_p0_a2 A ) ( decoder_p0.and_word7 B ) ( decoder_p0.and_word6 B ) ( decoder_p0.and_word5 B ) ( decoder_p0.and_word4 B ) + USE SIGNAL
+      + ROUTED met2 ( 10557 1479 ) ( * 1751 )
+      NEW met2 ( 10557 1751 ) ( * 2023 )
+      NEW met2 ( 10925 85 ) ( * 170 )
+      NEW met3 ( 10925 170 ) ( 10994 * 0 )
+      NEW met1 ( 10560 1241 ) ( 10603 * )
+      NEW met1 ( 10603 1241 ) ( * 1275 )
+      NEW met1 ( 10603 1275 ) ( 10879 * )
+      NEW met2 ( 10879 170 ) ( * 1275 )
+      NEW met2 ( 10879 170 ) ( 10925 * )
+      NEW met1 ( 10557 1241 ) ( 10560 * )
+      NEW met2 ( 10557 1241 ) ( * 1479 )
+      NEW li1 ( 10557 1479 ) L1M1_PR_MR
+      NEW met1 ( 10557 1479 ) M1M2_PR
+      NEW li1 ( 10557 1751 ) L1M1_PR_MR
+      NEW met1 ( 10557 1751 ) M1M2_PR
+      NEW li1 ( 10557 2023 ) L1M1_PR_MR
+      NEW met1 ( 10557 2023 ) M1M2_PR
+      NEW li1 ( 10925 85 ) L1M1_PR_MR
+      NEW met1 ( 10925 85 ) M1M2_PR
+      NEW met2 ( 10925 170 ) M2M3_PR
+      NEW li1 ( 10560 1241 ) L1M1_PR_MR
+      NEW met1 ( 10879 1275 ) M1M2_PR
+      NEW met1 ( 10557 1241 ) M1M2_PR ;
     - clk ( PIN clk ) ( storage_7_0_0.cg CLK ) ( storage_6_0_0.cg CLK ) ( storage_5_0_0.cg CLK ) ( storage_4_0_0.cg CLK ) ( storage_3_0_0.cg CLK ) ( storage_2_0_0.cg CLK )
       ( storage_1_0_0.cg CLK ) ( storage_0_0_0.cg CLK ) + USE SIGNAL
       + ROUTED met2 ( 9315 1513 ) ( * 1751 )
@@ -1352,86 +1316,91 @@ NETS 144 ;
       NEW met1 ( 9315 663 ) M1M2_PR
       NEW met1 ( 9315 969 ) M1M2_PR
       NEW met1 ( 9315 1207 ) M1M2_PR ;
-    - decoder_p0.layer_in0_word0 ( decoder_p0.and_layer1_word0 X ) ( decoder_p0.and_layer0_word0 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 119 ) ( 10879 * )
-      NEW li1 ( 10557 119 ) L1M1_PR_MR
-      NEW li1 ( 10879 119 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word1 ( decoder_p0.and_layer1_word1 X ) ( decoder_p0.and_layer0_word1 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 357 ) ( * 391 )
-      NEW met1 ( 10557 357 ) ( 10879 * )
-      NEW li1 ( 10557 391 ) L1M1_PR_MR
-      NEW li1 ( 10879 357 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word2 ( decoder_p0.and_layer1_word2 X ) ( decoder_p0.and_layer0_word2 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 629 ) ( * 663 )
-      NEW met1 ( 10557 629 ) ( 10879 * )
-      NEW li1 ( 10557 663 ) L1M1_PR_MR
-      NEW li1 ( 10879 629 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word3 ( decoder_p0.and_layer1_word3 X ) ( decoder_p0.and_layer0_word3 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 969 ) ( 10879 * )
-      NEW li1 ( 10557 969 ) L1M1_PR_MR
-      NEW li1 ( 10879 969 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word4 ( decoder_p0.and_layer1_word4 X ) ( decoder_p0.and_layer0_word4 B ) + USE SIGNAL
-      + ROUTED met1 ( 10419 1207 ) ( 10557 * )
-      NEW met1 ( 10419 1207 ) ( * 1309 )
-      NEW met1 ( 10419 1309 ) ( 10879 * )
-      NEW li1 ( 10557 1207 ) L1M1_PR_MR
-      NEW li1 ( 10879 1309 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word5 ( decoder_p0.and_layer1_word5 X ) ( decoder_p0.and_layer0_word5 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 1513 ) ( * 1547 )
-      NEW met1 ( 10557 1547 ) ( 10879 * )
-      NEW li1 ( 10557 1513 ) L1M1_PR_MR
-      NEW li1 ( 10879 1547 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word6 ( decoder_p0.and_layer1_word6 X ) ( decoder_p0.and_layer0_word6 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 1785 ) ( * 1819 )
-      NEW met1 ( 10557 1819 ) ( 10879 * )
-      NEW li1 ( 10557 1785 ) L1M1_PR_MR
-      NEW li1 ( 10879 1819 ) L1M1_PR_MR ;
-    - decoder_p0.layer_in0_word7 ( decoder_p0.and_layer1_word7 X ) ( decoder_p0.and_layer0_word7 B ) + USE SIGNAL
-      + ROUTED met1 ( 10557 2057 ) ( * 2091 )
-      NEW met1 ( 10557 2091 ) ( 10879 * )
-      NEW li1 ( 10557 2057 ) L1M1_PR_MR
-      NEW li1 ( 10879 2091 ) L1M1_PR_MR ;
-    - decoder_p0.word0 ( decoder_p0.and_layer0_word0 X ) ( sel_buf_rw_p0.sel_buf_0 A ) + USE SIGNAL
+    - decoder_p0.pre_a1_0_0 ( decoder_p0.and_pre_a1_0_0 X ) ( decoder_p0.and_word4 A ) ( decoder_p0.and_word0 A ) + USE SIGNAL
+      + ROUTED met2 ( 10465 187 ) ( * 1241 )
+      NEW met1 ( 10465 221 ) ( 10879 * )
+      NEW met1 ( 10465 187 ) ( * 221 )
+      NEW li1 ( 10465 187 ) L1M1_PR_MR
+      NEW met1 ( 10465 187 ) M1M2_PR
+      NEW li1 ( 10465 1241 ) L1M1_PR_MR
+      NEW met1 ( 10465 1241 ) M1M2_PR
+      NEW li1 ( 10879 221 ) L1M1_PR_MR ;
+    - decoder_p0.pre_a1_0_1 ( decoder_p0.and_pre_a1_0_1 X ) ( decoder_p0.and_word5 A ) ( decoder_p0.and_word1 A ) + USE SIGNAL
+      + ROUTED met1 ( 10465 1445 ) ( 10511 * )
+      NEW met1 ( 10787 595 ) ( 10879 * )
+      NEW met1 ( 10787 595 ) ( * 629 )
+      NEW met1 ( 10511 629 ) ( 10787 * )
+      NEW met1 ( 10465 391 ) ( 10511 * )
+      NEW met2 ( 10511 391 ) ( * 629 )
+      NEW met2 ( 10511 629 ) ( * 1445 )
+      NEW met1 ( 10511 1445 ) M1M2_PR
+      NEW li1 ( 10465 1445 ) L1M1_PR_MR
+      NEW li1 ( 10879 595 ) L1M1_PR_MR
+      NEW met1 ( 10511 629 ) M1M2_PR
+      NEW li1 ( 10465 391 ) L1M1_PR_MR
+      NEW met1 ( 10511 391 ) M1M2_PR ;
+    - decoder_p0.pre_a1_0_2 ( decoder_p0.and_pre_a1_0_2 X ) ( decoder_p0.and_word6 A ) ( decoder_p0.and_word2 A ) + USE SIGNAL
+      + ROUTED met2 ( 10465 1380 ) ( * 1785 )
+      NEW met1 ( 10695 1139 ) ( 10879 * )
+      NEW met1 ( 10695 1139 ) ( * 1173 )
+      NEW met1 ( 10419 1173 ) ( 10695 * )
+      NEW met2 ( 10419 1173 ) ( * 1380 )
+      NEW met2 ( 10419 1380 ) ( 10465 * )
+      NEW met1 ( 10419 731 ) ( 10465 * )
+      NEW met2 ( 10419 731 ) ( * 1173 )
+      NEW li1 ( 10465 1785 ) L1M1_PR_MR
+      NEW met1 ( 10465 1785 ) M1M2_PR
+      NEW li1 ( 10879 1139 ) L1M1_PR_MR
+      NEW met1 ( 10419 1173 ) M1M2_PR
+      NEW li1 ( 10465 731 ) L1M1_PR_MR
+      NEW met1 ( 10419 731 ) M1M2_PR ;
+    - decoder_p0.pre_a1_0_3 ( decoder_p0.and_pre_a1_0_3 X ) ( decoder_p0.and_word7 A ) ( decoder_p0.and_word3 A ) + USE SIGNAL
+      + ROUTED met1 ( 10373 2023 ) ( 10465 * )
+      NEW met1 ( 10373 1819 ) ( 10879 * )
+      NEW met1 ( 10373 935 ) ( 10465 * )
+      NEW met2 ( 10373 935 ) ( * 2023 )
+      NEW li1 ( 10465 2023 ) L1M1_PR_MR
+      NEW met1 ( 10373 2023 ) M1M2_PR
+      NEW li1 ( 10879 1819 ) L1M1_PR_MR
+      NEW met1 ( 10373 1819 ) M1M2_PR
+      NEW met1 ( 10373 935 ) M1M2_PR
+      NEW li1 ( 10465 935 ) L1M1_PR_MR ;
+    - decoder_p0.word0 ( decoder_p0.and_word0 X ) ( sel_buf_rw_p0.sel_buf_0 A ) + USE SIGNAL
       + ROUTED met1 ( 10281 119 ) ( * 153 )
       NEW met1 ( 10281 153 ) ( 10649 * )
       NEW li1 ( 10281 119 ) L1M1_PR_MR
       NEW li1 ( 10649 153 ) L1M1_PR_MR ;
-    - decoder_p0.word1 ( decoder_p0.and_layer0_word1 X ) ( sel_buf_rw_p0.sel_buf_1 A ) + USE SIGNAL
+    - decoder_p0.word1 ( decoder_p0.and_word1 X ) ( sel_buf_rw_p0.sel_buf_1 A ) + USE SIGNAL
       + ROUTED met1 ( 10281 425 ) ( 10649 * )
       NEW li1 ( 10281 425 ) L1M1_PR_MR
       NEW li1 ( 10649 425 ) L1M1_PR_MR ;
-    - decoder_p0.word2 ( decoder_p0.and_layer0_word2 X ) ( sel_buf_rw_p0.sel_buf_2 A ) + USE SIGNAL
+    - decoder_p0.word2 ( decoder_p0.and_word2 X ) ( sel_buf_rw_p0.sel_buf_2 A ) + USE SIGNAL
       + ROUTED met1 ( 10281 663 ) ( 10419 * )
       NEW met1 ( 10419 595 ) ( * 663 )
       NEW met1 ( 10419 595 ) ( 10649 * )
       NEW li1 ( 10281 663 ) L1M1_PR_MR
       NEW li1 ( 10649 595 ) L1M1_PR_MR ;
-    - decoder_p0.word3 ( decoder_p0.and_layer0_word3 X ) ( sel_buf_rw_p0.sel_buf_3 A ) + USE SIGNAL
-      + ROUTED met1 ( 10281 969 ) ( * 1003 )
-      NEW met1 ( 10281 1003 ) ( 10649 * )
+    - decoder_p0.word3 ( decoder_p0.and_word3 X ) ( sel_buf_rw_p0.sel_buf_3 A ) + USE SIGNAL
+      + ROUTED met1 ( 10281 969 ) ( 10649 * )
       NEW li1 ( 10281 969 ) L1M1_PR_MR
-      NEW li1 ( 10649 1003 ) L1M1_PR_MR ;
-    - decoder_p0.word4 ( decoder_p0.and_layer0_word4 X ) ( sel_buf_rw_p0.sel_buf_4 A ) + USE SIGNAL
-      + ROUTED met1 ( 10281 1173 ) ( * 1207 )
-      NEW met1 ( 10281 1173 ) ( 10419 * )
-      NEW met1 ( 10419 1139 ) ( * 1173 )
-      NEW met1 ( 10419 1139 ) ( 10649 * )
+      NEW li1 ( 10649 969 ) L1M1_PR_MR ;
+    - decoder_p0.word4 ( decoder_p0.and_word4 X ) ( sel_buf_rw_p0.sel_buf_4 A ) + USE SIGNAL
+      + ROUTED met1 ( 10281 1207 ) ( 10649 * )
       NEW li1 ( 10281 1207 ) L1M1_PR_MR
-      NEW li1 ( 10649 1139 ) L1M1_PR_MR ;
-    - decoder_p0.word5 ( decoder_p0.and_layer0_word5 X ) ( sel_buf_rw_p0.sel_buf_5 A ) + USE SIGNAL
-      + ROUTED met1 ( 10281 1479 ) ( * 1513 )
-      NEW met1 ( 10281 1479 ) ( 10649 * )
+      NEW li1 ( 10649 1207 ) L1M1_PR_MR ;
+    - decoder_p0.word5 ( decoder_p0.and_word5 X ) ( sel_buf_rw_p0.sel_buf_5 A ) + USE SIGNAL
+      + ROUTED met1 ( 10281 1513 ) ( 10649 * )
       NEW li1 ( 10281 1513 ) L1M1_PR_MR
-      NEW li1 ( 10649 1479 ) L1M1_PR_MR ;
-    - decoder_p0.word6 ( decoder_p0.and_layer0_word6 X ) ( sel_buf_rw_p0.sel_buf_6 A ) + USE SIGNAL
-      + ROUTED met1 ( 10281 1751 ) ( 10649 * )
+      NEW li1 ( 10649 1513 ) L1M1_PR_MR ;
+    - decoder_p0.word6 ( decoder_p0.and_word6 X ) ( sel_buf_rw_p0.sel_buf_6 A ) + USE SIGNAL
+      + ROUTED met1 ( 10281 1717 ) ( * 1751 )
+      NEW met1 ( 10281 1717 ) ( 10649 * )
       NEW li1 ( 10281 1751 ) L1M1_PR_MR
-      NEW li1 ( 10649 1751 ) L1M1_PR_MR ;
-    - decoder_p0.word7 ( decoder_p0.and_layer0_word7 X ) ( sel_buf_rw_p0.sel_buf_7 A ) + USE SIGNAL
-      + ROUTED met1 ( 10281 2023 ) ( * 2057 )
-      NEW met1 ( 10281 2023 ) ( 10649 * )
+      NEW li1 ( 10649 1717 ) L1M1_PR_MR ;
+    - decoder_p0.word7 ( decoder_p0.and_word7 X ) ( sel_buf_rw_p0.sel_buf_7 A ) + USE SIGNAL
+      + ROUTED met1 ( 10281 2057 ) ( 10649 * )
       NEW li1 ( 10281 2057 ) L1M1_PR_MR
-      NEW li1 ( 10649 2023 ) L1M1_PR_MR ;
+      NEW li1 ( 10649 2057 ) L1M1_PR_MR ;
     - rw_sel_p0.select_wr0 ( sel_buf_rw_p0.sel_buf_0 X ) ( storage_0_0_0.select_inv_0 A ) ( storage_0_0_0.gcand A ) + USE SIGNAL
       + ROUTED met1 ( 10143 85 ) ( 10373 * )
       NEW met1 ( 10373 51 ) ( * 85 )
@@ -1465,9 +1434,8 @@ NETS 144 ;
       NEW li1 ( 9913 935 ) L1M1_PR_MR
       NEW li1 ( 10143 969 ) L1M1_PR_MR ;
     - rw_sel_p0.select_wr4 ( sel_buf_rw_p0.sel_buf_4 X ) ( storage_4_0_0.select_inv_0 A ) ( storage_4_0_0.gcand A ) + USE SIGNAL
-      + ROUTED met1 ( 10143 1173 ) ( 10235 * )
-      NEW met1 ( 10235 1139 ) ( * 1173 )
-      NEW met1 ( 10235 1139 ) ( 10373 * )
+      + ROUTED met1 ( 10143 1173 ) ( 10373 * )
+      NEW met1 ( 10373 1139 ) ( * 1173 )
       NEW met1 ( 9913 1241 ) ( 10143 * )
       NEW met1 ( 10143 1173 ) ( * 1241 )
       NEW li1 ( 10143 1173 ) L1M1_PR_MR
@@ -1482,8 +1450,9 @@ NETS 144 ;
       NEW li1 ( 9913 1479 ) L1M1_PR_MR
       NEW li1 ( 10143 1513 ) L1M1_PR_MR ;
     - rw_sel_p0.select_wr6 ( sel_buf_rw_p0.sel_buf_6 X ) ( storage_6_0_0.select_inv_0 A ) ( storage_6_0_0.gcand A ) + USE SIGNAL
-      + ROUTED met1 ( 10143 1717 ) ( 10373 * )
-      NEW met1 ( 10373 1683 ) ( * 1717 )
+      + ROUTED met1 ( 10143 1717 ) ( 10235 * )
+      NEW met1 ( 10235 1683 ) ( * 1717 )
+      NEW met1 ( 10235 1683 ) ( 10373 * )
       NEW met1 ( 9913 1785 ) ( 10143 * )
       NEW met1 ( 10143 1717 ) ( * 1785 )
       NEW li1 ( 10143 1717 ) L1M1_PR_MR
@@ -2132,20 +2101,19 @@ NETS 144 ;
       ( storage_5_0_0.bit1.bit CLK ) ( storage_5_0_0.bit0.bit CLK ) + USE SIGNAL
       + ROUTED met1 ( 1219 1513 ) ( 2369 * )
       NEW met1 ( 69 1513 ) ( 1219 * )
-      NEW met2 ( 8119 1411 ) ( * 1513 )
+      NEW met1 ( 8901 1445 ) ( * 1513 )
+      NEW met1 ( 8901 1445 ) ( 9867 * )
       NEW met1 ( 6969 1513 ) ( 8119 * )
       NEW met1 ( 5819 1513 ) ( 6969 * )
       NEW met1 ( 4669 1513 ) ( 5819 * )
       NEW met1 ( 3519 1513 ) ( 4669 * )
       NEW met1 ( 2369 1513 ) ( 3519 * )
-      NEW met1 ( 8119 1411 ) ( 9867 * )
+      NEW met1 ( 8119 1513 ) ( 8901 * )
       NEW li1 ( 2369 1513 ) L1M1_PR_MR
       NEW li1 ( 1219 1513 ) L1M1_PR_MR
       NEW li1 ( 69 1513 ) L1M1_PR_MR
-      NEW li1 ( 9867 1411 ) L1M1_PR_MR
+      NEW li1 ( 9867 1445 ) L1M1_PR_MR
       NEW li1 ( 8119 1513 ) L1M1_PR_MR
-      NEW met1 ( 8119 1513 ) M1M2_PR
-      NEW met1 ( 8119 1411 ) M1M2_PR
       NEW li1 ( 6969 1513 ) L1M1_PR_MR
       NEW li1 ( 5819 1513 ) L1M1_PR_MR
       NEW li1 ( 4669 1513 ) L1M1_PR_MR
@@ -2157,9 +2125,9 @@ NETS 144 ;
       NEW met1 ( 897 1411 ) ( * 1479 )
       NEW met1 ( 3197 1411 ) ( * 1479 )
       NEW met1 ( 2047 1411 ) ( 3197 * )
-      NEW met1 ( 8947 1445 ) ( * 1479 )
-      NEW met1 ( 8947 1445 ) ( 10189 * )
-      NEW met1 ( 8947 1479 ) ( * 1513 )
+      NEW met1 ( 8947 1513 ) ( * 1547 )
+      NEW met1 ( 8947 1547 ) ( 10189 * )
+      NEW met2 ( 8947 1411 ) ( * 1513 )
       NEW met1 ( 4347 1411 ) ( * 1479 )
       NEW met1 ( 5497 1411 ) ( * 1479 )
       NEW met1 ( 4347 1411 ) ( 5497 * )
@@ -2167,23 +2135,23 @@ NETS 144 ;
       NEW met1 ( 5497 1411 ) ( 6647 * )
       NEW met1 ( 7797 1411 ) ( * 1479 )
       NEW met1 ( 6647 1411 ) ( 7797 * )
-      NEW met1 ( 8165 1479 ) ( * 1513 )
-      NEW met1 ( 7797 1479 ) ( 8165 * )
       NEW met1 ( 3197 1411 ) ( 4347 * )
-      NEW met1 ( 8165 1513 ) ( 8947 * )
+      NEW met1 ( 7797 1411 ) ( 8947 * )
       NEW li1 ( 2047 1479 ) L1M1_PR_MR
       NEW li1 ( 897 1479 ) L1M1_PR_MR
       NEW li1 ( 3197 1479 ) L1M1_PR_MR
-      NEW li1 ( 8947 1479 ) L1M1_PR_MR
-      NEW li1 ( 10189 1445 ) L1M1_PR_MR
+      NEW li1 ( 8947 1513 ) L1M1_PR_MR
+      NEW li1 ( 10189 1547 ) L1M1_PR_MR
+      NEW met1 ( 8947 1411 ) M1M2_PR
+      NEW met1 ( 8947 1513 ) M1M2_PR
       NEW li1 ( 4347 1479 ) L1M1_PR_MR
       NEW li1 ( 5497 1479 ) L1M1_PR_MR
       NEW li1 ( 6647 1479 ) L1M1_PR_MR
       NEW li1 ( 7797 1479 ) L1M1_PR_MR ;
     - storage_5_0_0.we ( storage_5_0_0.gcand X ) ( storage_5_0_0.cg GATE ) + USE SIGNAL
-      + ROUTED met1 ( 9453 1547 ) ( 10097 * )
-      NEW li1 ( 9453 1547 ) L1M1_PR_MR
-      NEW li1 ( 10097 1547 ) L1M1_PR_MR ;
+      + ROUTED met1 ( 9453 1581 ) ( 10097 * )
+      NEW li1 ( 9453 1581 ) L1M1_PR_MR
+      NEW li1 ( 10097 1581 ) L1M1_PR_MR ;
     - storage_6_0_0.bit0.storage ( storage_6_0_0.bit0.obuf0 A ) ( storage_6_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED met1 ( 805 1785 ) ( * 1819 )
       NEW met1 ( 759 1819 ) ( 805 * )
