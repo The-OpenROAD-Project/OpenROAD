@@ -344,7 +344,8 @@ bool SwapPinsGenerator::simulateExpr(
       return port_stimulus[expr->port()][table_index];
   }
 
-  resizer_.logger()->error(utl::RSZ, 91, "unrecognized expr op from OpenSTA");
+  resizer_.logger()->error(
+      utl::RSZ, kMsgUnknownFuncExprOp, "unrecognized expr op from OpenSTA");
   return false;
 }
 

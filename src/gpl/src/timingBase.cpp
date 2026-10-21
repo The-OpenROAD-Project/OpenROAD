@@ -24,6 +24,31 @@ namespace gpl {
 
 using utl::GPL;
 
+size_t slackRampAnchorIndex(const size_t net_count, const float nets_percentage)
+{
+  if (nets_percentage <= 0.0f) {
+    return 0;
+  }
+  // net_count covers nets_percentage % of the constrained nets, so dividing by
+  // it expresses the anchor as a percentage of the whole design instead.
+  const auto anchor
+      = static_cast<size_t>(net_count * kSlackMinPercent / nets_percentage);
+  return std::min(net_count - 1, anchor);
+}
+
+float computeTimingNetWeight(const float net_slack,
+                             const float slack_min,
+                             const float slack_max,
+                             const float net_weight_max)
+{
+  if (slack_max <= slack_min) {
+    return 1.0f;
+  }
+  const float criticality = std::clamp(
+      (slack_max - net_slack) / (slack_max - slack_min), 0.0f, 1.0f);
+  return 1.0f + (net_weight_max - 1.0f) * criticality;
+}
+
 // TimingBase
 TimingBase::TimingBase() = default;
 
@@ -151,20 +176,33 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
     return false;
   }
 
-  // min/max slack for worst nets
-  auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
-  auto slack_max
-      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
-            .value();
+  // worst_slack_nets is sorted by increasing slack, so the ramp runs from the
+  // anchor percentile up to the best slack still in the list.
+  const size_t slack_min_index
+      = slackRampAnchorIndex(worst_slack_nets.size(), nets_percentage_);
+  const auto worst_slack
+      = rs_->resizeNetSlack(worst_slack_nets.front()).value();
+  const auto slack_min
+      = rs_->resizeNetSlack(worst_slack_nets[slack_min_index]).value();
+  const auto slack_max = rs_->resizeNetSlack(worst_slack_nets.back()).value();
 
-  log_->info(GPL, 106, "Timing-driven: worst slack {}", slack_min);
-
-  if (sta::fuzzyInf(slack_min)) {
+  if (sta::fuzzyInf(worst_slack)) {
     log_->warn(GPL,
                102,
                "Timing-driven: no slacks found. Timing-driven mode disabled.");
     return false;
   }
+
+  log_->info(GPL, 106, "Timing-driven: worst slack {}", worst_slack);
+  debugPrint(log_,
+             GPL,
+             "timing",
+             1,
+             "Timing-driven: weight ramp {} to {}, anchored on net {} of {}.",
+             slack_min,
+             slack_max,
+             slack_min_index + 1,
+             worst_slack_nets.size());
 
   int weighted_net_count = 0;
   for (auto& gNet : nbc_->getGNets()) {
@@ -177,16 +215,8 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore,
       }
       auto net_slack = net_slack_opt.value();
       if (net_slack < slack_max) {
-        if (slack_max == slack_min) {
-          gNet->setTimingWeight(1.0);
-        } else {
-          // weight(min_slack) = net_weight_max_
-          // weight(max_slack) = 1
-          const float weight = 1
-                               + (net_weight_max_ - 1) * (slack_max - net_slack)
-                                     / (slack_max - slack_min);
-          gNet->setTimingWeight(weight);
-        }
+        gNet->setTimingWeight(computeTimingNetWeight(
+            net_slack, slack_min, slack_max, net_weight_max_));
         weighted_net_count++;
       }
       debugPrint(log_,

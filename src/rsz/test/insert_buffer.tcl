@@ -52,9 +52,9 @@ puts "Inserted with inferred net: [get_name $buf4]"
 set verilog_filename "insert_buffer.v"
 set buffered_verilog_filename [make_result_file $verilog_filename]
 write_verilog $buffered_verilog_filename
-diff_file insert_buffer.vok $buffered_verilog_filename
+diff_files insert_buffer.vok $buffered_verilog_filename
 
 set def_filename "insert_buffer.def"
 set buffered_def_filename [make_result_file $def_filename]
 write_def $buffered_def_filename
-diff_file insert_buffer.defok $buffered_def_filename
+diff_files insert_buffer.defok $buffered_def_filename

@@ -10,4 +10,4 @@ tapcell -distance "20" -tapcell_master "TAPCELL_X2" \
 
 write_def $def_file
 
-diff_file allow_one_site_gaps.defok $def_file
+diff_files allow_one_site_gaps.defok $def_file

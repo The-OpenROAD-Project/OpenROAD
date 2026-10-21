@@ -9,8 +9,8 @@ read_def check_buffers.def
 create_clock -period 5 clk
 set_wire_rc -clock -layer metal5
 
-set_debug RSZ "inferClockBufferList" 1
-set_debug CTS "buffering" 1
+set_debug_level RSZ "inferClockBufferList" 1
+set_debug_level CTS "buffering" 1
 
 set_cts_config -wire_unit 20 \
   -distance_between_buffers 100 \

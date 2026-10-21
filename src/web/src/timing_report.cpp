@@ -125,7 +125,7 @@ void TimingReport::expandPath(sta::Path* path,
     // back off, and what dbNetwork composes for the unfolded model.
     if (block != nullptr) {
       if (odb::dbChipInst* chip_inst = db_network->chipInstOf(block)) {
-        pin_name.insert(0, chip_inst->getName() + "/");
+        pin_name.insert(0, chip_inst->getName() + odb::kChipletPathDelimiter);
       }
     }
 

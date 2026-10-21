@@ -59,7 +59,7 @@ class Core
   int getDatabaseUnit() const { return database_unit_; }
   int getPerimeter() const;
   odb::Point getMirroredPosition(const odb::Point& position) const;
-  std::vector<odb::Line> getDieAreaEdges();
+  const std::vector<odb::Line>& getDieAreaEdges() const;
 
  private:
   odb::Rect boundary_;

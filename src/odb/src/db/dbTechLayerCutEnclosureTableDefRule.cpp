@@ -17,7 +17,7 @@
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbTechLayerCutEnclosureTableDefRule>;
-
+// User Code Begin Static
 static bool operator==(
     const dbTechLayerCutEnclosureTableDefRule::DefaultRow& lhs,
     const dbTechLayerCutEnclosureTableDefRule::DefaultRow& rhs)
@@ -34,6 +34,7 @@ static bool operator==(const dbTechLayerCutEnclosureTableDefRule::WidthRow& lhs,
          && lhs.overhang1 == rhs.overhang1 && lhs.overhang2 == rhs.overhang2
          && lhs.overhang3 == rhs.overhang3 && lhs.overhang4 == rhs.overhang4;
 }
+// User Code End Static
 
 bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
@@ -61,7 +62,10 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
 bool _dbTechLayerCutEnclosureTableDefRule::operator<(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
 {
+  // User Code Begin <
   return false;
+  // User Code End <
+  return true;
 }
 
 _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(

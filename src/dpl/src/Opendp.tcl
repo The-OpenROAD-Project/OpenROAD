@@ -10,14 +10,15 @@ sta::define_cmd_args "detailed_placement" { \
                            [-site_search_window sites] \
                            [-row_search_window rows] \
                            [-drc_penalty penalty] \
-                           [-disable_window_extension]}
+                           [-disable_window_extension] \
+                           [-quiet]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name \
           -site_search_window -row_search_window -drc_penalty} \
     flags {-disallow_one_site_gaps -incremental -use_diamond_legalizer \
-           -disable_window_extension}
+           -disable_window_extension -quiet}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -79,8 +80,14 @@ proc detailed_placement { args } {
       $file_name [info exists flags(-incremental)] \
       [info exists flags(-use_diamond_legalizer)] \
       $site_search_window $row_search_window $drc_penalty \
-      [info exists flags(-disable_window_extension)]
-    dpl::report_legalization_stats
+      [info exists flags(-disable_window_extension)] \
+      [info exists flags(-quiet)]
+    # -quiet also skips the analysis report and its metrics.  Tools that call
+    # detailed_placement as a service (CTS, GRT) use it so their logs and
+    # metrics files are not overwritten by an incidental legalization.
+    if { ![info exists flags(-quiet)] } {
+      dpl::report_legalization_stats
+    }
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
   }
@@ -154,6 +161,8 @@ proc remove_fillers { args } {
 
 sta::define_cmd_args "check_placement" {[-verbose] \
                                         [-disallow_one_site_gaps] \
+                                        [-fixed] \
+                                        [-placeable] \
                                         [-report_file_name file_name]}
 
 proc check_placement { args } {
@@ -162,8 +171,15 @@ proc check_placement { args } {
   }
 
   sta::parse_key_args "check_placement" args \
-    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
+    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps -fixed -placeable}
   set verbose [info exists flags(-verbose)]
+  set check_fixed [info exists flags(-fixed)]
+  set check_placeable [info exists flags(-placeable)]
+  # Without either flag, check both.
+  if { !$check_fixed && !$check_placeable } {
+    set check_fixed 1
+    set check_placeable 1
+  }
   sta::check_argc_eq0 "check_placement" $args
   set file_name ""
   if { [info exists keys(-report_file_name)] } {
@@ -172,7 +188,7 @@ proc check_placement { args } {
   if { [info exists flags(-disallow_one_site_gaps)] } {
     utl::warn DPL 4 "-disallow_one_site_gaps is deprecated"
   }
-  dpl::check_placement_cmd $verbose $file_name
+  dpl::check_placement_cmd $verbose $file_name $check_fixed $check_placeable
 }
 
 sta::define_cmd_args "optimize_mirroring" {}

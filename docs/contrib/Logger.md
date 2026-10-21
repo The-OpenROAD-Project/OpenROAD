@@ -419,6 +419,22 @@ Regression tests should not have any `UKN-0000` messages in their ok
 files. A simple grep should indicate that you still have pending calls
 to pre-logger error/warn functions.
 
+The tool `BUILD` file must also list `//src/utl` in the `deps` of the
+tool library so it can find the logger header files.
+
+``` starlark
+cc_library(
+    name = "<library_target>",
+    ...
+    deps = [
+        "//src/utl",
+    ],
+)
+```
+
+### CMake (deprecated)
+
+CMake is deprecated and will be removed on Nov. 1, 2026.
 The `cmake` file for the tool must also be updated to include spdlog in
 the link libraries so it can find the header files if they are not in
 the normal system directories.

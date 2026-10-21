@@ -99,6 +99,7 @@ or_integration_tests(
     pdn_boundary_mirrored_pins
     pdn_boundary_pg_pins
     pdn_boundary_place_pin
+    pdn_boundary_place_pin_rules
     pdn_boundary_stripes
     pdn_boundary_stripes_length
     pdn_boundary_stripes_no_pins
@@ -110,6 +111,7 @@ or_integration_tests(
     pin_length
     pin_length_error
     pin_thick_multiplier
+    place_config
     place_pin1
     place_pin2
     place_pin3
@@ -141,3 +143,7 @@ or_integration_tests(
     write_pin_placement6
 )
 
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

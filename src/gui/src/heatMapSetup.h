@@ -12,7 +12,7 @@
 #include <QString>
 #include <QWidget>
 
-#include "gui/heatMap.h"
+#include "web/heatMap.h"
 
 namespace gui {
 
@@ -20,7 +20,7 @@ class HeatMapSetup : public QDialog
 {
   Q_OBJECT
  public:
-  HeatMapSetup(HeatMapDataSource& source,
+  HeatMapSetup(web::HeatMapDataSource& source,
                const QString& title,
                bool use_dbu,
                int dbu,
@@ -45,7 +45,7 @@ class HeatMapSetup : public QDialog
   void destroyMap();
 
  private:
-  HeatMapDataSource& source_;
+  web::HeatMapDataSource& source_;
   bool use_dbu_;
   int dbu_;
 
@@ -71,11 +71,12 @@ class HeatMapSetup : public QDialog
   QPushButton* rebuild_;
   QPushButton* close_;
 
-  void addBooleanOption(QFormLayout* layout,
-                        const HeatMapDataSource::MapSettingBoolean& option);
+  void addBooleanOption(
+      QFormLayout* layout,
+      const web::HeatMapDataSource::MapSettingBoolean& option);
   void addMultiChoiceOption(
       QFormLayout* layout,
-      const HeatMapDataSource::MapSettingMultiChoice& option);
+      const web::HeatMapDataSource::MapSettingMultiChoice& option);
 };
 
 }  // namespace gui

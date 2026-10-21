@@ -6,10 +6,10 @@
 #include "gpl/Replace.h"
 #include "graphicsImpl.h"
 #include "graphicsNone.h"
-#include "gui/gui.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
+#include "web/core.h"
 
 extern "C" {
 extern int Gpl_Init(Tcl_Interp* interp);
@@ -27,7 +27,7 @@ void initReplace(Tcl_Interp* tcl_interp)
 
 void initReplaceGraphics(Replace* replace, utl::Logger* log)
 {
-  if (gui::Gui::get() == nullptr) {
+  if (web::Gui::get() == nullptr) {
     replace->setGraphicsInterface(gpl::GraphicsNone());
   } else {
     replace->setGraphicsInterface(gpl::GraphicsImpl(log));

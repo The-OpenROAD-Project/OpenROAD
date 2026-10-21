@@ -46,8 +46,7 @@ class WirelengthGradientBackend
   // of nbc_gcells_ for the multi-region case). Caller pre-sizes `out` to
   // gCells.size(). Hot path of NesterovBase::updateGradients().
   virtual void getCellGradients(const std::vector<GCellHandle>& gCells,
-                                std::vector<FloatPoint>& out)
-      = 0;
+                                std::vector<FloatPoint>& out) = 0;
 
   // Per-cell gradient (cold path: NesterovBase::updateSingleGradient via the
   // db-callback hook). Backend may cache prior bulk results.

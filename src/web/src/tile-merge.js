@@ -153,15 +153,16 @@ export function setItemVisible(item, visible) {
 }
 
 // Panes that stay unmerged and so are not counted by the grouping, but do hold
-// a full grid of tiles each: _instances, _pins, and the always-on highlight
-// overlay.  (_modules and the heatmap are only mounted when enabled, so they are
-// not reserved for; they will push the total up when switched on.)
+// a full grid of tiles each: _instances, _pins, _inst_labels (on with the
+// instance names, the default) and the always-on highlight overlay.  (_modules
+// and the heatmap are only mounted when enabled, so they are not reserved for;
+// they will push the total up when switched on.)
 //
 // At dpr 1 these are ~6 MB each and hardly matter.  At dpr 3 a tile is 2.25 MB,
-// so a pane is ~54 MB and the three together are ~162 MB — enough that a budget
+// so a pane is ~54 MB and the four together are ~216 MB — enough that a budget
 // which ignored them would report a comfortable fit while the real total sat
 // above the ceiling.
-export const UNMERGED_PANE_COUNT = 3;
+export const UNMERGED_PANE_COUNT = 4;
 
 // Budget left for the merged panes once the unmerged ones are charged for.
 //

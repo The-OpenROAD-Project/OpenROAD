@@ -9,7 +9,8 @@ proc route_case { case } {
   puts $stream [list set case $case]
   puts $stream [list source [file normalize routing_lifecycle_flow.tcl]]
   close $stream
-  exec [info nameofexecutable] -no_splash -no_init -exit $script > $log 2>@1
+  exec [info nameofexecutable] -no_splash -no_init -exit \
+    -threads [thread_count] $script > $log 2>@1
   set stream [open $log r]
   set output [read $stream]
   close $stream

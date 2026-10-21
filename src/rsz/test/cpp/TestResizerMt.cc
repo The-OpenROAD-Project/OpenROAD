@@ -1,201 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
+// Estimator basics, cell-swap candidates, thread pool and STA warm-up
+// concurrency.
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
-#include <cstddef>
-#include <cstdlib>
-#include <iomanip>
-#include <ios>
-#include <memory>
-#include <optional>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "DelayEstimator.hh"
-#include "RepairSetupContext.hh"
-#include "rsz/Resizer.hh"
-#define private public
-#define protected public
-#include "SetupLegacyMtPolicy.hh"
-#undef protected
-#undef private
-#include "MoveCommitter.hh"
-#include "OptimizerTypes.hh"
-#include "VtSwapMtCandidate.hh"
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "gtest/gtest.h"
-#include "odb/db.h"
-#include "sta/Delay.hh"
-#include "sta/Graph.hh"
-#include "sta/Liberty.hh"
-#include "sta/LibertyClass.hh"
-#include "sta/MinMax.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/Scene.hh"
-#include "sta/Sta.hh"
-#define protected public
-#include "tst/IntegratedFixture.h"
-#undef protected
-#include "MoveGenerator.hh"
-
-#define private public
-#define protected public
-#include "SetupMt1Policy.hh"
-#undef protected
-#undef private
-
-#include "utl/ThreadPool.h"
+#include "TestResizerMtFixture.hh"
 
 namespace rsz {
-
-class TestResizerMt : public tst::IntegratedFixture
-{
- protected:
-  TestResizerMt()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
-  {
-    readLiberty(getFilePath("_main/test/Nangate45/Nangate45_lvt.lib"));
-    if (!updateLib(lib_, "_main/test/Nangate45/Nangate45_lvt.lef")) {
-      throw std::runtime_error("failed to load Nangate45_lvt.lef");
-    }
-  }
-
-  void SetUp() override
-  {
-    readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
-    sta_->updateTiming(true);
-  }
-
-  sta::Vertex* findEndpointVertex(const char* endpoint_name) const
-  {
-    for (sta::Vertex* endpoint : sta_->endpoints()) {
-      const sta::Pin* pin = endpoint != nullptr ? endpoint->pin() : nullptr;
-      if (pin != nullptr
-          && std::string(sta_->network()->pathName(pin)) == endpoint_name) {
-        return endpoint;
-      }
-    }
-    return nullptr;
-  }
-
-  Target makeTarget(const char* endpoint_name,
-                    const char* inst_name,
-                    const char* pin_name) const
-  {
-    odb::dbInst* db_inst = block_->findInst(inst_name);
-    if (db_inst == nullptr) {
-      ADD_FAILURE() << "missing db instance " << inst_name;
-      return {};
-    }
-
-    sta::Instance* inst = db_network_->dbToSta(db_inst);
-    if (inst == nullptr) {
-      ADD_FAILURE() << "missing sta instance " << inst_name;
-      return {};
-    }
-
-    sta::Pin* pin = db_network_->findPin(inst, pin_name);
-    if (pin == nullptr) {
-      ADD_FAILURE() << "missing pin " << inst_name << "/" << pin_name;
-      return {};
-    }
-
-    sta::Vertex* endpoint = findEndpointVertex(endpoint_name);
-    if (endpoint == nullptr) {
-      ADD_FAILURE() << "missing endpoint " << endpoint_name;
-      return {};
-    }
-
-    sta::Path* path = sta_->vertexWorstSlackPath(endpoint, sta::MinMax::max());
-    if (path == nullptr) {
-      ADD_FAILURE() << "missing worst slack path for " << endpoint_name;
-      return {};
-    }
-
-    sta::PathExpanded expanded(path, sta_.get());
-    int path_index = -1;
-    for (int index = expanded.startIndex(); index < expanded.size(); ++index) {
-      const sta::Path* path_vertex = expanded.path(index);
-      if (path_vertex != nullptr && path_vertex->pin(sta_.get()) == pin) {
-        path_index = index;
-        break;
-      }
-    }
-    if (path_index < 0) {
-      ADD_FAILURE() << "missing target pin on path for " << inst_name << "/"
-                    << pin_name;
-      return {};
-    }
-
-    return makePathDriverTarget(
-        path, expanded, path_index, path->slack(sta_.get()), resizer_);
-  }
-
-  GeneratorContext makeGeneratorContext(
-      Resizer& resizer,
-      MoveCommitter& committer,
-      const OptimizerRunConfig& run_config,
-      const OptimizationPolicyConfig& policy_config) const
-  {
-    return GeneratorContext{.resizer = resizer,
-                            .committer = committer,
-                            .run_config = run_config,
-                            .policy_config = policy_config};
-  }
-
-  void placeInst(const char* inst_name, int x, int y) const
-  {
-    odb::dbInst* db_inst = block_->findInst(inst_name);
-    ASSERT_NE(db_inst, nullptr);
-    db_inst->setLocation(x, y);
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  }
-};
-
-static std::vector<std::string> evaluationSignature(
-    const std::vector<TargetEvaluation>& evaluations)
-{
-  std::vector<std::string> signature;
-  signature.reserve(evaluations.size());
-  for (const TargetEvaluation& evaluation : evaluations) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(9);
-    oss << "c=" << evaluation.candidates.size();
-    oss << ";e=" << evaluation.estimates.size();
-    oss << ";best=" << evaluation.hasBestCandidate();
-    oss << ";bestLegal=" << evaluation.best_estimate.legal;
-    oss << ";bestScore=" << evaluation.best_estimate.score;
-    for (size_t index = 0; index < evaluation.candidates.size(); ++index) {
-      oss << "|" << moveName(evaluation.candidates[index]->type());
-      oss << ":" << evaluation.estimates[index].legal;
-      oss << ":" << evaluation.estimates[index].score;
-    }
-    signature.push_back(oss.str());
-  }
-  return signature;
-}
-
-static std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
-    SetupMt1Policy& policy,
-    const std::vector<Target>& targets)
-{
-  return policy.thread_pool_->parallelMap(
-      targets, [&policy](const Target& target) -> TargetEvaluation {
-        return policy.generateAndEstimateTarget(target);
-      });
-}
 
 static void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
 {
@@ -292,33 +103,7 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
   return oss.str();
 }
 
-class ScopedEnv
-{
- public:
-  ScopedEnv(const char* name, const char* value) : name_(name)
-  {
-    const char* old_value = std::getenv(name_);
-    if (old_value != nullptr) {
-      old_value_ = old_value;
-    }
-    setenv(name_, value, 1);
-  }
-
-  ~ScopedEnv()
-  {
-    if (old_value_.has_value()) {
-      setenv(name_, old_value_->c_str(), 1);
-    } else {
-      unsetenv(name_);
-    }
-  }
-
- private:
-  const char* name_;
-  std::optional<std::string> old_value_;
-};
-
-TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
+TEST_F(TestResizerMt, BuildEstimatorContextAndEstimateLvtCandidate)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -331,15 +116,16 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
-  const DelayStageState& target_stage = arc_delay.target();
+
+  const EstimatorContext& estimator_context = context.value();
+  const DelayStageState& target_stage = estimator_context.target();
   ASSERT_NE(target_stage.arc.inputPort(), nullptr);
   ASSERT_NE(target_stage.arc.outputPort(), nullptr);
   EXPECT_EQ(target_stage.arc.inputPort()->name(), "A");
   EXPECT_EQ(target_stage.arc.outputPort()->name(), "Z");
-  ASSERT_EQ(arc_delay.path_stages.size(), 1);
-  EXPECT_EQ(arc_delay.target_stage_index, 0);
-  EXPECT_EQ(arc_delay.delay_estimation_levels, 0);
+  ASSERT_EQ(estimator_context.path_stages.size(), 1);
+  EXPECT_EQ(estimator_context.target_stage_index, 0);
+  EXPECT_EQ(estimator_context.delay_estimation_levels, 0);
   EXPECT_GT(target_stage.load_cap, 0.0f);
   EXPECT_GT(target_stage.current_delay, 0.0f);
 
@@ -348,34 +134,34 @@ TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_GT(estimate.arrival_impr, 0.0f);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
+TEST_F(TestResizerMt, BuildEstimatorContextWithOneLevelPathWindow)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
   const Target target = makeTarget("path_out", "path_target", "ZN");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = DelayEstimator::buildContext(resizer, target, 1, &fail_reason);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
   if (!context.has_value()) {
     return;
   }
 
-  const ArcDelayState& arc_delay = context.value();
-  EXPECT_EQ(arc_delay.delay_estimation_levels, 1);
-  ASSERT_EQ(arc_delay.path_stages.size(), 3);
-  ASSERT_EQ(arc_delay.target_stage_index, 1);
-  EXPECT_EQ(arc_delay.path_stages[0].arc.outputPort()->name(), "Z");
-  EXPECT_EQ(arc_delay.path_stages[1].arc.outputPort()->name(), "ZN");
-  EXPECT_EQ(arc_delay.path_stages[2].arc.outputPort()->name(), "Z");
-  for (const DelayStageState& stage : arc_delay.path_stages) {
+  const EstimatorContext& estimator_context = context.value();
+  EXPECT_EQ(estimator_context.delay_estimation_levels, 1);
+  ASSERT_EQ(estimator_context.path_stages.size(), 3);
+  ASSERT_EQ(estimator_context.target_stage_index, 1);
+  EXPECT_EQ(estimator_context.path_stages[0].arc.outputPort()->name(), "Z");
+  EXPECT_EQ(estimator_context.path_stages[1].arc.outputPort()->name(), "ZN");
+  EXPECT_EQ(estimator_context.path_stages[2].arc.outputPort()->name(), "Z");
+  for (const DelayStageState& stage : estimator_context.path_stages) {
     EXPECT_GT(stage.current_delay, 0.0f);
     EXPECT_GT(stage.current_slew, 0.0f);
   }
@@ -385,7 +171,7 @@ TEST_F(TestResizerMt, BuildArcDelayStateWithOneLevelPathWindow)
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
@@ -397,7 +183,7 @@ TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
   const Target target = makeTarget("path_out", "path_target", "ZN");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> context
+  const std::optional<EstimatorContext> context
       = DelayEstimator::buildContext(resizer, target, 1, &fail_reason, true);
   ASSERT_TRUE(context.has_value()) << failReasonName(fail_reason);
 
@@ -415,39 +201,71 @@ TEST_F(TestResizerMt, SlewBiasContextBuildLeavesTimingUpdateUsable)
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, SetupLegacyMtPolicyClampsNegativeDelayEstimationLevels)
+TEST_F(TestResizerMt, SlewBiasCacheReusesSamplingUntilClear)
 {
-  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
-  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
+  resizer_.runRepairSetupPreamble();
+  sta::Scene* scene = sta_->cmdScene();
+  for (const char* name : {"path_pre1/Z", "path_side_buf/Z"}) {
+    const sta::Pin* driver = sta_->network()->findPin(name);
+    ASSERT_NE(driver, nullptr);
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float pin_cap = 0.0f;
+      float sdc_wire_cap = 0.0f;
+      float fanout = 0.0f;
+      bool has_net_load = false;
+      sta_->graphDelayCalc()->netCaps(driver,
+                                      rf,
+                                      scene,
+                                      sta::MinMax::max(),
+                                      pin_cap,
+                                      sdc_wire_cap,
+                                      fanout,
+                                      has_net_load);
+      scene->parasitics(sta::MinMax::max())
+          ->makePiElmore(driver, rf, sta::MinMax::max(), 1e-15f, 1.0f, pin_cap);
+    }
+  }
+  sta_->updateTiming(true);
+  const Target target = makeTarget("path_out", "path_target", "ZN");
+  const std::optional<EstimatorContext> context
+      = DelayEstimator::buildContext(resizer_, target, 1);
+  ASSERT_TRUE(context.has_value());
+  ASSERT_GT(context->target_stage_index, 0);
 
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
+  DelayEstimatorCache cache;
+  const float max_load_delta
+      = cache.maxEquivalentInputCapIncrease(resizer_, context->target());
+  ASSERT_GT(max_load_delta, 0.0f);
+  const DelayStageState& fanin_stage
+      = context->path_stages[context->target_stage_index - 1];
 
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupLegacyMtPolicy policy(resizer, committer, setup_context, config);
-  // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start());
-}
+  ProfileTestDirectory directory;
+  {
+    RepairSetupProfiler profiler(resizer_,
+                                 RepairSetupProfiler::Mode::kTiming,
+                                 directory.root().string());
+    profiler.beginPhase("PARALLEL_EVAL", 1);
+    const ProfileIteration iteration("test_pass");
+    const SlewBiasModel first
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    const SlewBiasModel cached
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    EXPECT_EQ(cached.valid, first.valid);
+    cache.clear();
+    const SlewBiasModel after_clear
+        = cache.getOrSampleSlewBias(resizer_, fanin_stage, max_load_delta);
+    EXPECT_EQ(after_clear.valid, first.valid);
+    profiler.complete(true);
+  }
 
-TEST_F(TestResizerMt, SetupMt1PolicyClampsNegativeDelayEstimationLevels)
-{
-  ScopedEnv candidate_count("RSZ_VTSWAP_CANDIDATES", "10");
-  ScopedEnv max_moves("RSZ_VTSWAP_MAX_MOVES", "100");
-  ScopedEnv delay_levels("RSZ_MT_DELAY_LEVELS", "-3");
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  // Negative envar values are clamped by the policy consumer.
-  EXPECT_NO_THROW(policy.start());
+  const std::string stats
+      = readProfileFile(directory.root() / "run_1/stats.csv");
+  EXPECT_NE(stats.find(",\"count\",\"slew_bias_model_hits\",\"\",1,1,1\n"),
+            std::string::npos)
+      << stats;
+  EXPECT_NE(stats.find(",\"count\",\"slew_bias_model_misses\",\"\",2,2,2\n"),
+            std::string::npos)
+      << stats;
 }
 
 TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
@@ -462,19 +280,20 @@ TEST_F(TestResizerMt, RejectCandidateWithMismatchedOutputPort)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
+
+  const EstimatorContext& estimator_context = context.value();
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1");
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_FALSE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kMissingCandidatePort);
 }
 
-TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
+TEST_F(TestResizerMt, BuildEstimatorContextCapturesOutputSlewMergeArcs)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -486,14 +305,15 @@ TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
   if (!context.has_value()) {
     return;
   }
-  const ArcDelayState& arc_delay = context.value();
-  const SelectedArc& target_arc = arc_delay.target().arc;
+
+  const EstimatorContext& estimator_context = context.value();
+  const SelectedArc& target_arc = estimator_context.target().arc;
   ASSERT_NE(target_arc.inputPort(), nullptr);
   ASSERT_NE(target_arc.outputPort(), nullptr);
   EXPECT_EQ(target_arc.inputPort()->name(), "A1");
   EXPECT_EQ(target_arc.outputPort()->name(), "ZN");
-  EXPECT_GE(arc_delay.target().output_slew_merge_arcs.size(), 1);
-  EXPECT_GT(arc_delay.target().current_model_slew, 0.0f);
+  EXPECT_GE(estimator_context.target().output_slew_merge_arcs.size(), 1);
+  EXPECT_GT(estimator_context.target().current_model_slew, 0.0f);
 
   sta::Vertex* driver_vertex = sta_->graph()->pinDrvrVertex(target.driver_pin);
   ASSERT_NE(driver_vertex, nullptr);
@@ -501,31 +321,32 @@ TEST_F(TestResizerMt, BuildArcDelayStateCapturesOutputSlewMergeArcs)
       = target_arc.scene->dcalcAnalysisPtIndex(target_arc.min_max);
   const float graph_slew = sta::delayAsFloat(sta_->graph()->slew(
       driver_vertex, target_arc.outputRiseFall(), dcalc_ap));
-  EXPECT_FLOAT_EQ(arc_delay.target().current_slew, graph_slew);
+  EXPECT_FLOAT_EQ(estimator_context.target().current_slew, graph_slew);
 
   sta::LibertyCell* candidate_cell
       = sta_->network()->findLibertyCell("NAND2_X1_L");
   ASSERT_NE(candidate_cell, nullptr);
 
   const DelayEstimate estimate
-      = DelayEstimator::estimate(arc_delay, candidate_cell);
+      = DelayEstimator::estimate(estimator_context, candidate_cell);
   EXPECT_TRUE(estimate.legal);
   EXPECT_EQ(estimate.reason, FailReason::kEstimateLegal);
 }
 
-TEST_F(TestResizerMt, Mt1CandidateEstimateUsesSelectedArcAndCachedState)
+TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
-  const Target target = makeTarget("out0", "target", "Z");
+  Target target = makeTarget("out0", "target", "Z");
 
   FailReason fail_reason = FailReason::kNone;
-  const std::optional<ArcDelayState> arc_delay
+  const std::optional<EstimatorContext> estimator_context
       = DelayEstimator::buildContext(resizer, target, 0, &fail_reason);
-  ASSERT_TRUE(arc_delay.has_value()) << failReasonName(fail_reason);
-  if (!arc_delay.has_value()) {
+  ASSERT_TRUE(estimator_context.has_value()) << failReasonName(fail_reason);
+  if (!estimator_context.has_value()) {
     return;
   }
+  target.estimator_context = estimator_context;
 
   sta::Instance* target_inst = target.inst(resizer);
   sta::LibertyCell* current_cell = sta_->network()->libertyCell(target_inst);
@@ -535,13 +356,7 @@ TEST_F(TestResizerMt, Mt1CandidateEstimateUsesSelectedArcAndCachedState)
       = sta_->network()->findLibertyCell("BUF_X1_L");
   ASSERT_NE(candidate_cell, nullptr);
 
-  VtSwapMtCandidate candidate(resizer,
-                              target,
-                              target.driver_pin,
-                              target_inst,
-                              current_cell,
-                              candidate_cell,
-                              arc_delay.value());
+  VtSwapMtCandidate candidate(resizer, target, target_inst, candidate_cell);
 
   const Estimate estimate = candidate.estimate();
   ASSERT_TRUE(estimate.legal);
@@ -722,7 +537,7 @@ TEST(TestResizerMtThreadPool,
     targets[index] = index;
   }
 
-  // Model the Mt1 nesting pattern: outer multi-target fanout, two generate
+  // Model a nested pattern: outer multi-target fanout, two generate
   // tasks per target, and ten estimate tasks per generate task.
   std::vector<std::vector<std::vector<int>>> nested_results
       = thread_pool.parallelMap(targets, [&thread_pool](const int& target) {
@@ -817,150 +632,6 @@ TEST(TestResizerMtThreadPool, ParallelMapWaitsForAllTasksBeforeRethrow)
                std::runtime_error);
 
   EXPECT_EQ(completed.load(std::memory_order_relaxed), 3);
-}
-
-TEST_F(TestResizerMt,
-       SetupMt1PolicyThreadPoolSupportsNestedMultiTargetGenerateEstimate)
-{
-  sta_->setThreadCount(4);
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  policy.start();
-
-  ASSERT_NE(policy.thread_pool_, nullptr);
-  ASSERT_GE(policy.thread_pool_->threadCount(), 1u);
-
-  std::vector<Target> targets;
-  targets.push_back(makeTarget("path_out", "path_pre1", "Z"));
-  targets.push_back(makeTarget("path_out", "path_target", "ZN"));
-  targets.push_back(makeTarget("out0", "target", "Z"));
-  ASSERT_EQ(targets.size(), 3u);
-
-  // Fully warm up swappable-cell and leakage caches on the main thread before
-  // worker threads perform target-local generation and estimation.
-  warmupAllSwappableCells(resizer, sta_->network());
-  policy.prewarmTargets(targets);
-  policy.prepareTargets(targets);
-  for (const Target& target : targets) {
-    ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
-  }
-
-  // Exercise the same production path: prepared targets are walked serially,
-  // while each target uses the shared pool for move-type and candidate fanout.
-  std::vector<TargetEvaluation> evaluations
-      = policy.generateAndEstimateTargets(targets);
-
-  ASSERT_EQ(evaluations.size(), targets.size());
-
-  int evaluations_with_candidates = 0;
-  int evaluations_with_multiple_estimates = 0;
-  int evaluations_with_legal_best = 0;
-  for (size_t index = 0; index < evaluations.size(); ++index) {
-    const TargetEvaluation& evaluation = evaluations[index];
-    ASSERT_NE(targets[index].driver_pin, nullptr);
-    EXPECT_EQ(evaluation.candidates.size(), evaluation.estimates.size());
-
-    if (!evaluation.candidates.empty()) {
-      ++evaluations_with_candidates;
-    }
-    if (evaluation.estimates.size() >= 2) {
-      ++evaluations_with_multiple_estimates;
-    }
-
-    for (const std::unique_ptr<MoveCandidate>& candidate :
-         evaluation.candidates) {
-      ASSERT_NE(candidate, nullptr);
-      EXPECT_TRUE(candidate->type() == MoveType::kVtSwap
-                  || candidate->type() == MoveType::kSizeUp);
-    }
-
-    if (evaluation.hasBestCandidate()) {
-      ++evaluations_with_legal_best;
-      const MoveCandidate* best_candidate = &evaluation.bestCandidate();
-      size_t best_candidate_index = 0;
-      while (best_candidate_index < evaluation.candidates.size()
-             && evaluation.candidates[best_candidate_index].get()
-                    != best_candidate) {
-        ++best_candidate_index;
-      }
-      ASSERT_LT(best_candidate_index, evaluation.candidates.size());
-      ASSERT_LT(best_candidate_index, evaluation.estimates.size());
-      EXPECT_TRUE(evaluation.best_estimate.legal);
-      EXPECT_FLOAT_EQ(evaluation.best_estimate.score,
-                      evaluation.estimates[best_candidate_index].score);
-    }
-  }
-
-  EXPECT_GE(evaluations_with_candidates, 2);
-  EXPECT_GE(evaluations_with_multiple_estimates, 2);
-  EXPECT_GE(evaluations_with_legal_best, 1);
-}
-
-TEST_F(TestResizerMt, NestedTargetParallelGenerateEstimateIsDeterministic)
-{
-  sta_->setThreadCount(8);
-
-  Resizer& resizer = resizer_;
-  resizer.runRepairSetupPreamble();
-  sta_->updateTiming(true);
-
-  MoveCommitter committer(resizer);
-  RepairSetupContext setup_context(resizer);
-
-  OptimizerRunConfig config;
-  config.setup_slack_margin = 1.0;
-  SetupMt1Policy policy(resizer, committer, setup_context, config);
-  policy.start();
-
-  ASSERT_NE(policy.thread_pool_, nullptr);
-  ASSERT_EQ(policy.thread_pool_->threadCount(), 7u);
-
-  std::vector<Target> targets;
-  targets.reserve(12);
-  for (int repeat = 0; repeat < 4; ++repeat) {
-    targets.push_back(makeTarget("path_out", "path_pre1", "Z"));
-    targets.push_back(makeTarget("path_out", "path_target", "ZN"));
-    targets.push_back(makeTarget("out0", "target", "Z"));
-  }
-
-  // Match the production Mt1 pipeline: prewarm shared Liberty/cell caches
-  // before worker threads perform target-local generation and estimation.
-  policy.prewarmTargets(targets);
-  policy.prepareTargets(targets);
-  for (const Target& target : targets) {
-    ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
-  }
-
-  const std::vector<TargetEvaluation> baseline_evaluations
-      = generateAndEstimateTargetsInParallel(policy, targets);
-  const std::vector<std::string> baseline_signature
-      = evaluationSignature(baseline_evaluations);
-  ASSERT_EQ(baseline_signature.size(), targets.size());
-
-  constexpr int kRepeatCount = 3;
-  for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
-    const std::vector<TargetEvaluation> evaluations
-        = generateAndEstimateTargetsInParallel(policy, targets);
-    const std::vector<std::string> signature = evaluationSignature(evaluations);
-    EXPECT_EQ(signature, baseline_signature)
-        << "Nested parallel target generate/estimate produced a different "
-           "signature at repeat "
-        << repeat
-        << ". If this fails or crashes, inspect live STA access in "
-           "SizeUpMtGenerator::generate(), VtSwapMtCandidate::estimate(), "
-           "Resizer::replacementPreservesMaxCap(), and "
-           "Sta::checkCapacitance().";
-  }
 }
 
 }  // namespace rsz

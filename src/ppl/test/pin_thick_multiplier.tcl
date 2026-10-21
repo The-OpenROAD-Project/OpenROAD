@@ -15,4 +15,4 @@ set def_file [make_result_file pin_thick_multiplier.def]
 
 write_def $def_file
 
-diff_file pin_thick_multiplier.defok $def_file
+diff_files pin_thick_multiplier.defok $def_file

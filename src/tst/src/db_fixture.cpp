@@ -8,9 +8,11 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
 
@@ -90,6 +92,46 @@ odb::dbTech* DbFixture::loadTechLef(const char* name,
       db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
   auto path = getFilePath(lef_file);
   return lef_reader.createTech(name, path.c_str());
+}
+
+odb::dbLib* DbFixture::loadLibLef(odb::dbTech* tech,
+                                  const char* name,
+                                  const std::string& lef_file)
+{
+  odb::lefin lef_reader(
+      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  auto path = getFilePath(lef_file);
+  return lef_reader.createLib(tech, name, path.c_str());
+}
+
+odb::dbLib* DbFixture::loadTechAndLibLef(const char* tech_name,
+                                         const char* lib_name,
+                                         const std::string& lef_file)
+{
+  odb::lefin lef_reader(
+      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  auto path = getFilePath(lef_file);
+  return lef_reader.createTechAndLib(tech_name, lib_name, path.c_str());
+}
+
+odb::dbBlock* DbFixture::readDef(const std::string& def_file,
+                                 std::vector<odb::dbLib*> libs)
+{
+  if (libs.empty()) {
+    for (odb::dbLib* lib : db_->getLibs()) {
+      libs.push_back(lib);
+    }
+  }
+  if (libs.empty()) {
+    throw std::runtime_error("No library LEF loaded before DEF: " + def_file);
+  }
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), libs.front()->getTech());
+  odb::defin def_reader(db_.get(), &logger_);
+  auto path = getFilePath(def_file);
+  if (!def_reader.readChip(libs, path.c_str(), chip)) {
+    throw std::runtime_error("Could not read DEF: " + def_file);
+  }
+  return chip->getBlock();
 }
 
 odb::dbInst* DbFixture::makeInst(odb::dbBlock* block,

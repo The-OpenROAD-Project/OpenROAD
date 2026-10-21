@@ -208,6 +208,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
     for (int v = 0; v < hgraph->GetNumVertices(); v++) {
       if (hgraph->GetFixedAttr(v) > -1) {
         solution[v] = hgraph->GetFixedAttr(v);
+        fixed_vertices_map[v] = hgraph->GetFixedAttr(v);
       }
     }
   }

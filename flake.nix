@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2024-2025, The OpenROAD Authors
 
-# To use Nix just to get an environment with dependencies:
+# To use Nix just to get an environment with dependencies for the deprecated
+# CMake build (CMake support will be removed on Nov. 1, 2026):
 #   1. Install Nix: https://github.com/DeterminateSystems/nix-installer
 #   2. Invoke `nix develop` in your shell. First invocation will
 #      take around 5 minutes depending on your internet connection and

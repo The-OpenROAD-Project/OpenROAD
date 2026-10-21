@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for mkdtemp()
+#include <unistd.h>  // macOS declares mkdtemp() here rather than in stdlib.h
 
 #include <filesystem>
 #include <fstream>

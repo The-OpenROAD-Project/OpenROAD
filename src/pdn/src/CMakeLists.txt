@@ -21,6 +21,7 @@ target_sources(pdn
     domain.cpp
     power_cells.cpp
     grid.cpp
+    polygon.cpp
     grid_component.cpp
     rings.cpp
     straps.cpp
@@ -41,7 +42,7 @@ target_link_libraries(pdn
   PRIVATE
     odb
     utl_lib
-    gui
+    gui_core
     Boost::boost
 )
 
@@ -71,7 +72,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       pdn
       odb
-      gui
+      gui_core
     )
 
 endif()

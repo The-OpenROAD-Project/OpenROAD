@@ -82,7 +82,7 @@ _merge_files()     splice generated sections into the real source files,
 | `parser.py` | The section merger. Knows how to find `Generator Code`/`User Code` regions in an existing file and splice new generated content in without losing hand-written code. |
 | `schema.json` | Top-level schema: `classes_dir`, the list of `iterators`, the list of `relations`, and `extern_enums`. |
 | `schema/**/*.json` | One file per database class (grouped into `chip/`, `tech/`, `gds/`, `scan/` subdirectories). |
-| `templates/*.jinja` | The Jinja2 templates that emit C++ / CMake. |
+| `templates/*.jinja` | The Jinja2 templates that emit C++ and the CMake source list (legacy; Bazel globs sources). |
 | `test_*.py` | Unit tests (see [Testing](#testing)). |
 | `generate` | Thin shell wrapper: `python3 gen.py`. |
 
@@ -245,7 +245,7 @@ blocks for you to fill in — only the boilerplate around them is generated.
   - `dbObject.h.jinja` / `dbObject.cpp.jinja` → the `dbObjectType` enum entries
     and the hash↔type maps.
   - `dbCompare.inc.jinja` → deleted `std::less<dbFoo*>` specializations.
-  - `CMakeLists.txt.jinja` → the generated-source list in `src/CMakeLists.txt`.
+  - `CMakeLists.txt.jinja` → the generated-source list in `src/CMakeLists.txt` (legacy; Bazel globs sources).
 
 Each class is assigned a stable `dbObjectType` hash (explicit `hash` key, else
 FNV-1a of the name); a collision between two classes is a hard error.
@@ -284,7 +284,7 @@ Key consequences for developers:
 - Empty `User Code` blocks are removed by default to keep files tidy. To add
   code to a section that is currently emitted as empty, regenerate with
   `--keep_empty`, fill in the block, then drop the flag and regenerate again.
-- `CMakeLists.txt` uses `#`-style markers; everything else uses `//`.
+- `CMakeLists.txt` (legacy) uses `#`-style markers; everything else uses `//`.
 - Files that don't yet exist are simply copied out; existing files are merged.
 
 ## Testing

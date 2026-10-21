@@ -19,6 +19,17 @@ Detailed guides are in `docs/agents/` subdirectory:
 4. When amending submodule commits, parent repo submodule reference must also be updated via `git submodule update --init --recursive`. It is needed after any merge/pull.
 5. **Trace bugs upstream** -- when a bug appears in output (e.g., Verilog), find the data creation point (e.g., `buffer_ports`, `remove_buffers`), not the serialization point (e.g., `VerilogWriter`).
 
+## Build and Test
+
+Bazel is the build system. CMake is deprecated and will be removed on Nov. 1, 2026.
+Register tests in Bazel `BUILD` files only. CMake test registration is not required.
+New source files and new tools still need their CMake entries until CMake is removed or the macOS CI job moves to Bazel.
+That job builds with CMake on every pull request and runs no `ctest`.
+
+- Build: `bazelisk build //:openroad` (the binary is `bazel-bin/openroad`)
+- Test one module: `bazelisk test //src/<module>/test/...`
+- Test one Tcl test: `bazelisk test --test_output=errors //src/<module>/test:<name>-tcl_test`
+
 ## AI Agent Skills
 
 Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claude Code).
@@ -27,5 +38,5 @@ Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claud
 |-------|---------|------------|
 | `triage-issue` | Reproduce bug and minimize test case with whittle.py | `/triage-issue <issue#>` |
 | `fix-bug` | Trace root cause, implement fix, create tests, prepare commit | `/fix-bug <issue#-or-error-code>` |
-| `add-test` | Add integration/unit tests with dual CMake+Bazel registration | `/add-test <module> [description]` |
+| `add-test` | Add integration/unit tests registered in Bazel (CMake is deprecated) | `/add-test <module> [description]` |
 | `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |

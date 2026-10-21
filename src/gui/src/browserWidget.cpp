@@ -300,12 +300,12 @@ void BrowserWidget::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void BrowserWidget::setDBInstDescriptor(DbInstDescriptor* desciptor)
+void BrowserWidget::setDBInstDescriptor(web::DbInstDescriptor* desciptor)
 {
   inst_descriptor_ = desciptor;
 }
 
-Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
+web::Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
 {
   QStandardItem* item = model_->itemFromIndex(index);
   QVariant data = item->data();
@@ -315,7 +315,7 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
       data = ref->data();
     }
 
-    auto* gui = Gui::get();
+    auto* gui = web::Gui::get();
     auto* inst = data.value<odb::dbInst*>();
     if (inst != nullptr) {
       return gui->makeSelected(inst);
@@ -326,7 +326,7 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
     }
   }
 
-  return Selected();
+  return web::Selected();
 }
 
 void BrowserWidget::selectionChanged(const QItemSelection& selected,
@@ -346,7 +346,7 @@ void BrowserWidget::clicked(const QModelIndex& index)
     return;
   }
 
-  Selected sel = getSelectedFromIndex(index);
+  web::Selected sel = getSelectedFromIndex(index);
 
   if (sel) {
     emit select({std::move(sel)});
@@ -692,7 +692,7 @@ void BrowserWidget::itemContextMenu(const QPoint& point)
   menu_->popup(view_->viewport()->mapToGlobal(point));
 }
 
-SelectionSet BrowserWidget::getMenuItemChildren()
+web::SelectionSet BrowserWidget::getMenuItemChildren()
 {
   if (!menu_item_) {
     return {};
@@ -703,8 +703,8 @@ SelectionSet BrowserWidget::getMenuItemChildren()
     return {};
   }
 
-  auto* gui = Gui::get();
-  SelectionSet children;
+  auto* gui = web::Gui::get();
+  web::SelectionSet children;
   for (auto* child : getChildren(module)) {
     children.insert(gui->makeSelected(child));
   }

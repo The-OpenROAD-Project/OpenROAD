@@ -11,14 +11,18 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "report_html.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "web/web.h"
+#include "web_assets.h"
 
 namespace web {
 namespace {
@@ -108,6 +112,33 @@ class SaveReportTest : public tst::Nangate45Fixture
     return haystack.find(needle) != std::string::npos;
   }
 
+  // The licence comment's [begin, end) in a report, delimiters included; both
+  // npos when there is none.
+  static std::pair<size_t, size_t> licenceComment(const std::string& html)
+  {
+    const size_t begin = html.find("<!--");
+    const size_t end = html.find("-->", begin);
+    if (end == std::string::npos) {
+      return {std::string::npos, std::string::npos};
+    }
+    return {begin, end + 3};
+  }
+
+  // The bundle's inline module, or "" when the report has none.
+  static std::string moduleScript(const std::string& html)
+  {
+    const std::string open = "<script type=\"module\">";
+    const size_t begin = html.find(open);
+    if (begin == std::string::npos) {
+      return {};
+    }
+    const size_t end = html.find("</script>", begin);
+    if (end == std::string::npos) {
+      return {};
+    }
+    return html.substr(begin + open.size(), end - begin - open.size());
+  }
+
   std::vector<std::string> output_files_;
 };
 
@@ -134,8 +165,28 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // The golden-layout themes theme.js switches between, by id.
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
+  // leaflet's stylesheet, bundled into the report's own <style> block.
+  EXPECT_TRUE(contains(html, ".leaflet-pane"));
+}
+
+// The report copies the served page's stylesheets, so the two cascades cannot
+// drift apart.
+TEST_F(SaveReportTest, UsesTheServedPagesStylesheets)
+{
+  const std::string path = tempHtml("page_styles");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  ASSERT_NE(page, nullptr);
+  const std::string head = reportHead(assetText(*page));
+  ASSERT_TRUE(contains(head, "<style id=\"gl-theme-dark\">"));
+  EXPECT_TRUE(contains(html, head));
+  // golden-layout's base sheet, which the viewer needs as much as leaflet's.
+  EXPECT_TRUE(contains(html, ".lm_root"));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -147,32 +198,127 @@ TEST_F(SaveReportTest, ContainsStaticCache)
   EXPECT_TRUE(contains(html, "window.__STATIC_CACHE__"));
 }
 
+// Inline as a module: golden-layout will not lay out a page still being parsed,
+// and a classic <script> would run mid-parse and leave the report blank.
 TEST_F(SaveReportTest, ContainsInlinedJS)
 {
   const std::string path = tempHtml("inlined_js");
   generateReport(path);
-  const std::string html = readFile(path);
+  const std::string script = moduleScript(readFile(path));
 
-  EXPECT_TRUE(contains(html, "class WebSocketManager"));
-  EXPECT_TRUE(contains(html, "fromCache"));
-  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
-  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
-  EXPECT_TRUE(contains(html, "function computeGroupCount"));
-  EXPECT_TRUE(contains(html, "TimingWidget"));
-  EXPECT_TRUE(contains(html, "ChartsWidget"));
+  // Minifying renames identifiers but keeps strings and property names: the
+  // cone-sync channel, the static cache lookup and two widgets' names.
+  for (const char* marker :
+       {"openroad-cone-sync", "fromCache", "TimingWidget", "ChartsWidget"}) {
+    EXPECT_TRUE(contains(script, marker)) << marker;
+  }
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+// The report carries the libraries' licences in a comment after the charset,
+// which a browser only looks for in the first 1024 bytes.
+TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("licenses");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
-  EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  const size_t charset = html.find("<meta charset=\"utf-8\">");
+  ASSERT_NE(charset, std::string::npos);
+  EXPECT_LT(charset, 1024u);
+  const auto [begin, end] = licenceComment(html);
+  ASSERT_NE(begin, std::string::npos);
+  EXPECT_LT(charset, begin);
+  const std::string comment = html.substr(begin, end - begin);
+  for (const char* package :
+       {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
+    EXPECT_TRUE(contains(comment, package)) << package;
+  }
+  EXPECT_TRUE(contains(comment, "Eclipse Public License"));
+}
+
+// A saved report opens with no server and no network; bundle_test scans its
+// script, and this checks what saveReport writes around it.
+TEST_F(SaveReportTest, IsSelfContained)
+{
+  const std::string path = tempHtml("self_contained");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  for (const char* cdn : {"unpkg.com",
+                          "cdn.jsdelivr.net",
+                          "esm.sh",
+                          "nturley.github.io",
+                          "neilturley.dev"}) {
+    EXPECT_FALSE(contains(html, cdn)) << cdn;
+  }
+  EXPECT_FALSE(contains(html, "<script src="));
+  EXPECT_FALSE(contains(html, "<link "));
+  EXPECT_FALSE(contains(html, "@import"));
+}
+
+// The schematic and 3D panels need a live server, so the report bundle leaves
+// their libraries out (see entry-report.js).
+TEST_F(SaveReportTest, LeavesTheLivePanelsLibrariesOut)
+{
+  const std::string path = tempHtml("no_live_panels");
+  generateReport(path);
+  // The script alone: the licence comment names these libraries too.
+  const std::string script = moduleScript(readFile(path));
+  ASSERT_FALSE(script.empty());
+
+  // Markers from the libraries themselves; the widgets' own code stays in.
+  EXPECT_FALSE(contains(script, "org.eclipse.elk"));
+  EXPECT_FALSE(contains(script, "onml"));
+  EXPECT_FALSE(contains(script, "__THREE__"));
+  EXPECT_FALSE(contains(script, "Three.js Authors"));
+}
+
+// Nothing inside a <script> the report writes may end it early.
+TEST_F(SaveReportTest, ScriptsAreBalanced)
+{
+  const std::string path = tempHtml("balanced_scripts");
+  generateReport(path);
+  std::string html = readFile(path);
+  // The licence comment quotes text, not markup.
+  const auto [begin, end] = licenceComment(html);
+  ASSERT_NE(begin, std::string::npos);
+  html.erase(begin, end - begin);
+
+  EXPECT_GE(countOccurrences(html, "<script"), 3);
+  EXPECT_EQ(countOccurrences(html, "<script"),
+            countOccurrences(html, "</script>"));
+}
+
+// ─── Report HTML Helpers ────────────────────────────────────────────────────
+
+// What a saved report copies is exactly the marked block of the page.
+TEST(ReportHtml, ReportHeadIsTheMarkedBlock)
+{
+  const std::string html
+      = "<head><title>t</title><!-- saved-report:begin --><style>a{}</style>"
+        "<!-- saved-report:end --><link rel=\"icon\" href=\"i.png\"></head>";
+  EXPECT_EQ(reportHead(html), "<style>a{}</style>");
+}
+
+TEST(ReportHtml, ReportHeadNeedsBothMarkers)
+{
+  EXPECT_EQ(reportHead("<style>a{}</style></head>"), "");
+  EXPECT_EQ(reportHead("<!-- saved-report:begin --><style></style>"), "");
+  EXPECT_EQ(reportHead("<!-- saved-report:end --><!-- saved-report:begin -->"),
+            "");
+}
+
+TEST(ReportHtml, ScriptSafeJsonEscapesEveryLessThan)
+{
+  const std::string json = R"({"name":"</script><!--x"})";
+  const std::string safe = scriptSafeJson(json);
+  EXPECT_EQ(safe, "{\"name\":\"\\u003c/script>\\u003c!--x\"}");
+  EXPECT_EQ(boost::json::parse(safe), boost::json::parse(json));
+}
+
+TEST(ReportHtml, HtmlCommentSafeSplitsTheDelimiters)
+{
+  EXPECT_EQ(htmlCommentSafe("a-->b<!--c--!>d"), "a-- >b<! --c--! >d");
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────

@@ -56,8 +56,8 @@ Path Type: min
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |    +0.0% | -28.672 | -31.828 | u_capture_con/D
-    final |       0 |       2 |            0 |   +18.9% |  16.515 |   0.000 | u_capture_con/D
+        0 |       0 |       0 |            0 |    +0.0% | -28.673 | -31.830 | u_capture_con/D
+    final |       0 |       2 |            0 |   +18.9% |  16.516 |   0.000 | u_capture_con/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)

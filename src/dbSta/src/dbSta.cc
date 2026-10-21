@@ -474,7 +474,11 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 
 odb::PtrSet<odb::dbNet> dbSta::findClkNets()
 {
-  sta::Mode* mode = cmdMode();
+  return findClkNets(cmdMode());
+}
+
+odb::PtrSet<odb::dbNet> dbSta::findClkNets(Mode* mode)
+{
   ensureClkNetwork(mode);
   odb::PtrSet<odb::dbNet> clk_nets;
   for (Clock* clk : mode->sdc()->clocks()) {

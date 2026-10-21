@@ -16,7 +16,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "gui/gui.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;
@@ -76,15 +76,15 @@ class SessionRegistry
   std::unordered_map<std::size_t, SessionCallbacks> senders_;
 };
 
-// The web viewer's bridge to gui::Gui.  Installed as the Gui's
-// HeadlessViewer so renderers (gpl::GraphicsImpl, etc.) can drive pause
+// The web viewer's bridge to web::Gui.  Installed as the Gui's
+// GuiBackend so renderers (gpl::GraphicsImpl, etc.) can drive pause
 // and redraw even when the Qt GUI is not present.  Also owns the
-// gui::Chart factory so addChart() returns WebChart instances.
+// web::Chart factory so addChart() returns WebChart instances.
 //
 // Lifetime: constructed by WebServer before sessions start, destroyed
 // after all sessions are torn down.  The destructor signals any thread
 // blocked in pause() so the placer doesn't hang on shutdown.
-class WebViewerHook : public gui::HeadlessViewer
+class WebViewerHook : public web::GuiBackend
 {
  public:
   WebViewerHook();
@@ -95,15 +95,25 @@ class WebViewerHook : public gui::HeadlessViewer
   // Flush accumulated log output to all connected clients.
   void drainLogs();
 
-  // --- gui::HeadlessViewer ---
+  // --- web::GuiBackend ---
   void redraw() override;
   void pause(int timeout_ms) override;
   bool isPaused() const override;
 
+  // A renderer turned on from Tcl (pdn::set_debug_renderer, say) never
+  // pauses, so the clients must be told to re-read the control list when one
+  // comes or goes.  Gui calls these before it changes its renderer set, and
+  // the command may go on to change more, so they only note the change; the
+  // server tells the clients once the command or script is done.
+  void registerRenderer(Renderer* renderer) override;
+  void unregisterRenderer(Renderer* renderer) override;
+  // Whether a renderer came or went since the last call.
+  bool takeRenderersChanged();
+
   // Per-renderer display controls (issue #10619, the Qt DisplayControls rows
   // built by registerRenderer from Renderer::getDisplayControls()).
   //
-  // gui::Renderer::checkDisplayControl composes the path "Group/Name" and
+  // web::Renderer::checkDisplayControl composes the path "Group/Name" and
   // routes it here through Gui::checkDisplayControlsVisible when there is no
   // Qt window.  The base class answers "everything visible", which made every
   // sub-control read as on: FlexDRGraphics registers ten of them, six
@@ -134,10 +144,28 @@ class WebViewerHook : public gui::HeadlessViewer
   using DrainLogsFn = std::function<void()>;
   void setDrainLogsFn(DrainLogsFn fn);
 
-  // gui::Chart factory.  The WebServer installs this on gui::Gui via
+  // Optional hooks around pause(), all run on the pausing thread.
+  // WebServer uses them to draw the renderers while a command is paused and
+  // to let browser requests in while a startup script is paused.
+  struct PauseHooks
+  {
+    // Runs first.
+    std::function<void()> enter;
+    // Runs as pause() returns.
+    std::function<void()> leave;
+    // Runs before leave when requestExit() ended the pause.
+    std::function<void()> exit;
+  };
+  void setPauseHooks(PauseHooks hooks);
+
+  // End the current pause and run PauseHooks::exit on the paused thread.
+  // Returns false, doing nothing, when not paused or there is no exit hook.
+  bool requestExit();
+
+  // web::Chart factory.  The WebServer installs this on web::Gui via
   // setChartFactory.  The hook retains ownership of every chart it
   // creates so clients can query them later.
-  gui::Chart* createChart(const std::string& name,
+  web::Chart* createChart(const std::string& name,
                           const std::string& x_label,
                           const std::vector<std::string>& y_labels);
 
@@ -156,7 +184,7 @@ class WebViewerHook : public gui::HeadlessViewer
   // --- Custom UI registered from Tcl (create_menu_item /
   // create_toolbar_button) --------------------------------------------------
   //
-  // Mirrors gui::MainWindow's buttons_/menu_actions_ maps: the hook is the
+  // Mirrors web::MainWindow's buttons_/menu_actions_ maps: the hook is the
   // server-side source of truth so the definitions survive page reloads and
   // are served to clients that connect after the commands ran.  Each add/
   // remove broadcasts the full registry to connected clients so live edits
@@ -179,7 +207,7 @@ class WebViewerHook : public gui::HeadlessViewer
   };
 
   // A menu item.  `path` is a '/'-separated menu hierarchy (default
-  // "Custom Scripts"), matching gui::MainWindow::findMenu.
+  // "Custom Scripts"), matching web::MainWindow::findMenu.
   struct CustomMenuItem
   {
     std::string key;
@@ -249,6 +277,8 @@ class WebViewerHook : public gui::HeadlessViewer
   std::string display_state_json_;
 
   DrainLogsFn drain_logs_;
+  PauseHooks pause_hooks_;
+  bool exit_requested_ = false;  // guarded by pause_mutex_
 
   mutable std::mutex pause_mutex_;
   std::condition_variable pause_cv_;
@@ -273,14 +303,16 @@ class WebViewerHook : public gui::HeadlessViewer
   int next_menu_id_ = 0;
 
   // Per-renderer display controls, keyed by the "Group/Name" path
-  // gui::Renderer::checkDisplayControl builds.  Read from render threads.
+  // web::Renderer::checkDisplayControl builds.  Read from render threads.
   mutable std::mutex renderer_controls_mutex_;
   std::map<std::string, bool> renderer_control_visible_;
   std::set<const void*> seeded_renderers_;
+  // Set by (un)registerRenderer, taken once the change has settled.
+  std::atomic<bool> renderers_changed_{false};
 };
 
 // Installs each registered renderer's own control defaults into `hook`, once
-// per renderer.  Defined in web.cpp, which may reach gui::Gui.
+// per renderer.  Defined in web.cpp, which may reach web::Gui.
 void seedRendererControls(WebViewerHook* hook);
 
 // Serialized per-renderer display controls for the `renderer_controls`
@@ -291,7 +323,7 @@ std::string rendererControlsJson(WebViewerHook* hook);
 // Applies Qt's mutual-exclusivity rule after a per-renderer control is
 // switched on: the siblings it names, within its own group, go off ("" names
 // every sibling), as DisplayControls::itemChanged does.  Defined in web.cpp,
-// which may reach gui::Gui — this header must not, so that the targets which
+// which may reach web::Gui — this header must not, so that the targets which
 // link only the hook stay free of it.
 void applyRendererControlExclusivity(WebViewerHook* hook,
                                      const std::string& path);

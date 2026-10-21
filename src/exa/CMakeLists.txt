@@ -51,7 +51,7 @@ target_link_libraries(exa
   PRIVATE
     ${TCL_LIBRARY}
     exa_lib
-    gui
+    gui_core
 )
 
 messages(
@@ -74,7 +74,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(exa_py
     PUBLIC
       exa_lib
-      gui
+      gui_core
       odb
   )
 

@@ -9,11 +9,11 @@
 ########## IR report #################
 Net              : VSS
 Corner           : default
-Total power      : 3.01e-02 W
+Total power      : 5.22e-03 W
 Supply voltage   : 0.00e+00 V
-Worstcase voltage: 7.47e-02 V
-Average voltage  : 5.25e-02 V
-Average IR drop  : 5.25e-02 V
-Worstcase IR drop: 7.47e-02 V
-Percentage drop  : 6.79 %
+Worstcase voltage: 1.16e-02 V
+Average voltage  : 9.18e-03 V
+Average IR drop  : 9.18e-03 V
+Worstcase IR drop: 1.16e-02 V
+Percentage drop  : 1.06 %
 ######################################

@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -13,7 +14,11 @@ COMPULSORY_TESTS = [
     "write_artnet",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+PASSFAIL_TESTS = [
+    "ilp_fixed_vertices",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -75,11 +80,25 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "TestILPFixedVertices",
+    srcs = ["cpp/TestILPFixedVertices.cpp"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/par",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 py_test(
     name = "par_man_tcl_check",

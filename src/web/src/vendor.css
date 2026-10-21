@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2026, The OpenROAD Authors */
+
+/* Bundled so esbuild inlines the icons their url()s reach. */
+
+@import 'leaflet/dist/leaflet.css';
+@import 'golden-layout/dist/css/goldenlayout-base.css';

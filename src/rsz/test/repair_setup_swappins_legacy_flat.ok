@@ -7,12 +7,12 @@ worst slack max -0.04
 [INFO RSZ-0100] Repair move sequence: SwapPinsMove 
 [INFO RSZ-0094] Found 2 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
-   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
-          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
-       5* |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.1 |       -0.0 |      2 | y2
-    final |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.1 |       -0.0 |      2 | y2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.0 |      2 | y2
+       5* |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.0 |      2 | y2
+    final |       0 |       0 |        0 |      0 |     2 |    +0.0% |   -0.035 |       -0.0 |      2 | y2
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

@@ -1,0 +1,79 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO DUAL
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN DUAL 0 0 ;
+  SIZE 0.95 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.1 0.5 0.17 0.9 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.30000000000000004 0.5 0.37 0.9 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.5 0.5 0.57 0.9 ;
+    END
+  END Y
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.7000000000000001 0.5 0.77 0.9 ;
+    END
+  END Z
+END DUAL
+
+MACRO HALF
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN HALF 0 0 ;
+  SIZE 0.95 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.1 0.5 0.17 0.9 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.30000000000000004 0.5 0.37 0.9 ;
+    END
+  END Y
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.5 0.5 0.57 0.9 ;
+    END
+  END Z
+END HALF
+
+END LIBRARY

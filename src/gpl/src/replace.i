@@ -230,6 +230,7 @@ set_debug_cmd(int pause_iterations,
               bool draw_bins,
               bool initial,
               const char* inst_name,
+              const char* pin_name,
               int start_iter,
               int start_rudy,
               int rudy_stride,
@@ -237,10 +238,14 @@ set_debug_cmd(int pause_iterations,
               const char* images_path)
 {
   Replace* replace = getReplace();
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
   odb::dbInst* inst = nullptr;
   if (inst_name) {
-    auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
     inst = block->findInst(inst_name);
+  }
+  odb::dbBTerm* pin = nullptr;
+  if (pin_name) {
+    pin = block->findBTerm(pin_name);
   }
 
   std::string resolved_path = (images_path && *images_path)
@@ -248,8 +253,20 @@ set_debug_cmd(int pause_iterations,
                                   : "REPORTS_DIR";
 
   replace->setDebug(pause_iterations, update_iterations, draw_bins,
-                    initial, inst, start_iter, start_rudy, rudy_stride,
+                    initial, inst, pin, start_iter, start_rudy, rudy_stride,
                     generate_images, resolved_path);
+}
+
+float
+estimate_target_density_cmd(
+  const std::map<std::string, std::string>& keys,
+  const std::map<std::string, std::string>& flags)
+{
+  gpl::PlaceOptions options = getOptions(keys, flags);
+  Replace* replace = getReplace();
+  int threads = ord::OpenRoad::openRoad()->getThreadCount();
+
+  return replace->estimateTargetDensity(options, threads);
 }
 
 %} // inline

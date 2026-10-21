@@ -29,8 +29,8 @@ class Label
  public:
   Label(const odb::Point& pt,
         const std::string& text,
-        const Painter::Anchor& anchor,
-        const Painter::Color& color,
+        const web::Painter::Anchor& anchor,
+        const web::Painter::Color& color,
         std::optional<int> size = {},
         std::optional<std::string> name = {});
 
@@ -40,12 +40,12 @@ class Label
   void setName(const std::string& name) { name_ = name; }
   const std::string& getText() const { return text_; }
   void setText(const std::string& text) { text_ = text; }
-  Painter::Anchor getAnchor() const { return anchor_; }
-  void setAnchor(const Painter::Anchor& anchor) { anchor_ = anchor; }
+  web::Painter::Anchor getAnchor() const { return anchor_; }
+  void setAnchor(const web::Painter::Anchor& anchor) { anchor_ = anchor; }
   const std::optional<int>& getSize() const { return size_; }
   void setSize(const std::optional<int>& size) { size_ = size; }
-  const Painter::Color& getColor() const { return color_; }
-  void setColor(const Painter::Color& color) { color_ = color; }
+  const web::Painter::Color& getColor() const { return color_; }
+  void setColor(const web::Painter::Color& color) { color_ = color; }
 
   const odb::Rect& getOutline() const { return outline_; }
   void setOutline(const odb::Rect& outline) { outline_ = outline; }
@@ -53,9 +53,9 @@ class Label
  private:
   odb::Point pt_;
   std::string text_;
-  Painter::Color color_;
+  web::Painter::Color color_;
   std::optional<int> size_;
-  Painter::Anchor anchor_;
+  web::Painter::Anchor anchor_;
 
   std::string name_;
 
@@ -64,7 +64,7 @@ class Label
 
 using Labels = std::vector<std::unique_ptr<Label>>;
 
-class LabelDescriptor : public Descriptor
+class LabelDescriptor : public web::Descriptor
 {
  public:
   LabelDescriptor(const Labels& labels, utl::Logger* logger);
@@ -73,16 +73,16 @@ class LabelDescriptor : public Descriptor
   std::string getTypeName() const override;
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(const std::any& object, Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 
   Properties getProperties(const std::any& object) const override;
   Editors getEditors(const std::any& object) const override;
   Actions getActions(const std::any& object) const override;
-  Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
-      const std::function<void(const Selected&)>& func) const override;
+      const std::function<void(const web::Selected&)>& func) const override;
 
  private:
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);

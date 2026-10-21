@@ -22,4 +22,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file colocated_pins.guideok $guide_file
+diff_files colocated_pins.guideok $guide_file

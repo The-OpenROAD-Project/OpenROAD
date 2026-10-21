@@ -148,6 +148,8 @@ export function createMenuBar(app) {
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },
             { label: 'Charts', action: () => app.focusComponent('ChartsWidget') },
             { label: 'Help', action: () => app.focusComponent('HelpWidget') },
+            { type: 'separator' },
+            { label: 'Reset to Default Layout', action: () => app.resetLayout() },
         ]},
         { label: 'Help', items: [
             { label: 'Keyboard Shortcuts', action: () => app.focusComponent('HelpWidget') },
@@ -295,7 +297,12 @@ export function createMenuBar(app) {
     }
 
     function render() {
-        bar.innerHTML = '';
+        // Replace only the menus: other children (the debug Continue button,
+        // the script-running badge) stay, after the menus.
+        for (const el of bar.querySelectorAll(':scope > .menu-label')) {
+            el.remove();
+        }
+        const firstOther = bar.firstChild;
         openMenu = null;
         // Rebuilt from scratch: a button removed from the registry must lose
         // its key too.
@@ -347,7 +354,7 @@ export function createMenuBar(app) {
                 }
             });
 
-            bar.appendChild(label);
+            bar.insertBefore(label, firstOther);
         }
     }
 

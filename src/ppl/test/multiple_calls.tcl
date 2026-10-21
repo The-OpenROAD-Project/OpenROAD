@@ -15,4 +15,4 @@ set def_file2 [make_result_file mc2_iop.def]
 
 write_def $def_file2
 
-diff_file $def_file1 $def_file2
+diff_files $def_file1 $def_file2

@@ -280,10 +280,10 @@ TEST_F(NestedJournalTest, NestedRestoreLeavesParentJournalRecoverable)
 
 TEST_F(NestedJournalTest, CommitOutsideAnyJournalIsSafe)
 {
-  // Several policies (MeasuredVtSwapPolicy, SetupCritVtSwapPolicy, ...)
-  // call commit() without a surrounding beginJournal() and follow up with
-  // acceptPendingMoves() directly. The committer must not crash on the empty
-  // pending_move_results_ stack and must still account for the move.
+  // SetupCritVtSwapPolicy calls commit() without a surrounding
+  // beginJournal() and follows up with acceptPendingMoves() directly. The
+  // committer must not crash on the empty pending_move_results_ stack and
+  // must still account for the move.
   ASSERT_EQ(committer_->pendingMoves(MoveType::kSizeUp), 0);
   auto cand = makeCandidate(MoveType::kSizeUp, inst_a_);
   ASSERT_TRUE(committer_->commit(*cand).accepted);

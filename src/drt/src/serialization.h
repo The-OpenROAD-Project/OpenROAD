@@ -303,6 +303,26 @@ void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 }
 
 template <class Archive>
+void serialize(Archive& ar, odb::Point3D& p, const unsigned int version)
+{
+  if (drt::is_loading(ar)) {
+    drt::frCoord x = 0, y = 0, z = 0;
+    (ar) & x;
+    (ar) & y;
+    (ar) & z;
+    p = {x, y, z};
+  } else {
+    drt::frCoord x, y, z;
+    x = p.x();
+    y = p.y();
+    z = p.z();
+    (ar) & x;
+    (ar) & y;
+    (ar) & z;
+  }
+}
+
+template <class Archive>
 void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
   odb::dbSigType::Value v = odb::dbSigType::SIGNAL;

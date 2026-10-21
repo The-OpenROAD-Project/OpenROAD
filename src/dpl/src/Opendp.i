@@ -32,13 +32,15 @@ detailed_placement_cmd(int max_displacment_x,
                        int site_search_window,
                        int row_search_window,
                        double drc_penalty,
-                       bool disable_window_extension){
+                       bool disable_window_extension,
+                       bool quiet){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
                             incremental, use_diamond_legalizer,
                             site_search_window, row_search_window,
-                            drc_penalty, disable_window_extension);
+                            drc_penalty, disable_window_extension,
+                            quiet);
 }
 
 void
@@ -49,10 +51,14 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose, const char* report_file_name)
+check_placement_cmd(bool verbose,
+                    const char* report_file_name,
+                    bool check_fixed,
+                    bool check_placeable)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose, std::string(report_file_name));
+  opendp->checkPlacement(
+      verbose, std::string(report_file_name), check_fixed, check_placeable);
 }
 
 

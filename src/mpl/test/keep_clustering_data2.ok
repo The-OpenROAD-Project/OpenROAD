@@ -16,8 +16,8 @@ Die Area: (0.00, 0.00) (400.00, 400.00),  Floorplan Area: (10.07, 11.20) (389.88
 	Number of macros: 2
 	Macros to be placed: 2
 	Area of macros: 20000.00
-	Base halo (L, B, R, T): (0.00, 0.00, 0.00, 0.00)
-	Area of macros with halos: 20028.00
+	Minimum channel (Width, Height): (0.00, 0.00)
+	Area of macros with halos: 20056.04
 	Area of std cell instances + Area of macros: 20006.38
 	Floorplan area: 143568.18
 	Design Utilization: 0.14

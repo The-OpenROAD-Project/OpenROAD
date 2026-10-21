@@ -282,18 +282,17 @@ END COMPONENTS
 PINS 218 ;
     - VDD + NET VDD + SPECIAL + DIRECTION INOUT + USE POWER
       + PORT
-        + LAYER TopMetal2 ( -1000 -114400 ) ( 1000 114400 )
-        + LAYER TopMetal2 ( -30200 -340420 ) ( -28200 468940 )
-        + LAYER TopMetal2 ( -105800 -340420 ) ( -103800 468940 )
-        + LAYER TopMetal2 ( -181400 -340420 ) ( -179400 468940 )
-        + LAYER TopMetal2 ( -257000 -340420 ) ( -255000 468940 )
-        + LAYER TopMetal2 ( -332600 -340420 ) ( -330600 468940 )
-        + LAYER TopMetal2 ( -408200 -340420 ) ( -406200 468940 )
-        + LAYER TopMetal2 ( -483800 -340420 ) ( -481800 468940 )
-        + LAYER TopMetal2 ( -559400 -340420 ) ( -557400 468940 )
-        + LAYER TopMetal2 ( -635000 -340420 ) ( -633000 468940 )
-        + LAYER TopMetal2 ( -710600 -340420 ) ( -708600 468940 )
-        + FIXED ( 790000 347760 ) N ;
+        + LAYER TopMetal2 ( -1000 -404680 ) ( 1000 404680 )
+        + LAYER TopMetal2 ( -76600 -404680 ) ( -74600 404680 )
+        + LAYER TopMetal2 ( -152200 -404680 ) ( -150200 404680 )
+        + LAYER TopMetal2 ( -227800 -404680 ) ( -225800 404680 )
+        + LAYER TopMetal2 ( -303400 -404680 ) ( -301400 404680 )
+        + LAYER TopMetal2 ( -379000 -404680 ) ( -377000 404680 )
+        + LAYER TopMetal2 ( -454600 -404680 ) ( -452600 404680 )
+        + LAYER TopMetal2 ( -530200 -404680 ) ( -528200 404680 )
+        + LAYER TopMetal2 ( -605800 -404680 ) ( -603800 404680 )
+        + LAYER TopMetal2 ( -681400 -404680 ) ( -679400 404680 )
+        + FIXED ( 760800 412020 ) N ;
     - VSS + NET VSS + SPECIAL + DIRECTION INOUT + USE GROUND
       + PORT
         + LAYER TopMetal2 ( -1000 -404680 ) ( 1000 404680 )

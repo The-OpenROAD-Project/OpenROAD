@@ -22,4 +22,4 @@ global_route -resistance_aware -res_aware_nets_percentage 30 -verbose
 
 write_guides $guide_file
 
-diff_file res_aware_nets_percentage.guideok $guide_file
+diff_files res_aware_nets_percentage.guideok $guide_file

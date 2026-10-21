@@ -76,7 +76,7 @@ Any change affecting placement, routing, timing, or physical design:
 ### Priority 3: Testing
 
 - Does every code change have an accompanying test?
-- Are tests registered in **both CMake and Bazel**?
+- Are tests registered in **Bazel** (`BUILD`)? CMake is deprecated; do not ask for CMake test registration. A new source file or tool still needs its CMake entry (the macOS CI job builds with CMake).
 - Do golden files look reasonable?
 - Are test inputs minimal?
 
@@ -138,11 +138,8 @@ Modules: <list>
 **Be concise.** One-word or one-sentence items when the issue is clear
 (e.g., "const", "unreachable after throw", "`int64_t` for area").
 
-**Ask probing questions** for non-obvious issues rather than prescribing
-fixes:
-- "Have you tested this on a real design?"
-- "Could this hide a bug?"
-- "What happens if this is null?"
+**Indicate complex issues** where fixes need careful consideration or
+  have alternative solutions worth considering.
 
 **Lead with severity**: `bug:`, `nit:`, `question:`, `suggestion:`.
 

@@ -43,4 +43,4 @@ global_route -verbose -use_cugr
 
 write_guides $guide_file
 
-diff_file soft_ndr_4w_6s_cugr.guideok $guide_file
+diff_files soft_ndr_4w_6s_cugr.guideok $guide_file

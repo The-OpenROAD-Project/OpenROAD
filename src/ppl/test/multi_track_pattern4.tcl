@@ -11,4 +11,4 @@ set def_file [make_result_file multi_track_pattern4.def]
 
 write_def $def_file
 
-diff_file multi_track_pattern4.defok $def_file
+diff_files multi_track_pattern4.defok $def_file

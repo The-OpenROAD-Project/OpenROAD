@@ -1298,6 +1298,10 @@ inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
 inline constexpr int MAX_INT = 0x7fffffff;
 inline constexpr int MIN_INT = 0x80000000;
 
+// Separates dbChipInst names in a chiplet hierarchy path, e.g.
+// "soc_inst/mem_inst".
+inline constexpr char kChipletPathDelimiter = '/';
+
 ///
 /// Defines the type of shapes.
 ///

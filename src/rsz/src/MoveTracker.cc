@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <iomanip>
 #include <ios>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <sstream>
@@ -268,10 +269,12 @@ void MoveTracker::trackMove(const sta::Pin* pin,
   // journal level, so a nested restore can reject exactly that level. With
   // no open journal it goes to the flat bucket commitMoves()/rejectMoves()
   // drain.
+  MoveStateData move(pin, move_type, state);
+  move.endpoint_pin = current_endpoint_;
   if (pending_move_levels_.empty()) {
-    pending_moves_.emplace_back(pin, move_type, state);
+    pending_moves_.push_back(std::move(move));
   } else {
-    pending_move_levels_.top().emplace_back(pin, move_type, state);
+    pending_move_levels_.top().push_back(std::move(move));
   }
 }
 
@@ -282,16 +285,17 @@ void MoveTracker::finalizeMoves(const std::vector<MoveStateData>& level,
     moves_.emplace_back(move.pin, move_count_++, move.move_type, final_state);
     // Store in move event list for detailed reports
     pin_move_events_[move.pin].emplace_back(move.move_type, final_state);
-  }
 
-  // Track per-endpoint statistics
-  if (current_endpoint_ && !level.empty()) {
-    auto& counts = endpoint_move_counts_[current_endpoint_];
-    std::get<0>(counts) += level.size();  // attempts
-    if (final_state == MoveStateType::ATTEMPT_COMMIT) {
-      std::get<2>(counts) += level.size();  // commits
-    } else {
-      std::get<1>(counts) += level.size();  // rejects
+    // Track per-endpoint statistics on the endpoint each move was recorded
+    // for; a batch journal level holds moves of many endpoints.
+    if (move.endpoint_pin != nullptr) {
+      auto& counts = endpoint_move_counts_[move.endpoint_pin];
+      ++std::get<0>(counts);  // attempts
+      if (final_state == MoveStateType::ATTEMPT_COMMIT) {
+        ++std::get<2>(counts);  // commits
+      } else {
+        ++std::get<1>(counts);  // rejects
+      }
     }
   }
 }
@@ -342,6 +346,29 @@ void MoveTracker::restoreJournal()
   std::vector<MoveStateData> level = std::move(pending_move_levels_.top());
   pending_move_levels_.pop();
   finalizeMoves(level, MoveStateType::ATTEMPT_REJECT);
+}
+
+bool MoveTracker::rejectPendingMove(const sta::Pin* pin,
+                                    const std::string& move_type)
+{
+  if (pending_move_levels_.empty()) {
+    return false;
+  }
+
+  std::vector<MoveStateData>& pending = pending_move_levels_.top();
+  const std::vector<MoveStateData>::reverse_iterator move = std::find_if(
+      pending.rbegin(), pending.rend(), [&](const MoveStateData& item) {
+        return item.pin == pin && item.move_type == move_type;
+      });
+  if (move == pending.rend()) {
+    return false;
+  }
+
+  // finalizeMoves() charges the move to the endpoint it was recorded for.
+  finalizeMoves({*move}, MoveStateType::ATTEMPT_REJECT);
+  pending.erase(std::next(move).base());
+
+  return true;
 }
 
 int MoveTracker::getVisitCount(const sta::Pin* pin) const
@@ -1482,6 +1509,9 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
 
 void MoveTracker::captureOriginalEndpointSlack()
 {
+  if (!report_enabled_) {
+    return;
+  }
   // Capture the original slack for all violating endpoints
   // This should be called once at the very beginning before any phases
   sta::VertexSet& endpoints = sta_->search()->endpoints();
@@ -1507,6 +1537,9 @@ void MoveTracker::captureOriginalEndpointSlack()
 
 void MoveTracker::capturePrePhaseSlack()
 {
+  if (!report_enabled_) {
+    return;
+  }
   // Capture slack at the start of a phase for all tracked endpoints
   // This becomes the PreSlk column
   for (auto& [endpoint_pin, slack_tuple] : endpoint_slack_) {
@@ -1521,6 +1554,9 @@ void MoveTracker::capturePrePhaseSlack()
 
 void MoveTracker::captureInitialSlackDistribution()
 {
+  if (!report_enabled_) {
+    return;
+  }
   // Clear any previous data
   initial_pin_slack_.clear();
   initial_endpoint_slack_.clear();

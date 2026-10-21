@@ -3,21 +3,21 @@
 
 #include "graphics.h"
 
-#include "gui/gui.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace exa {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void Graphics::makeInstance(odb::dbInst* instance)
 {
   instance_ = instance;
 
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
 
   gui->redraw();
 
@@ -28,21 +28,21 @@ void Graphics::makeInstance(odb::dbInst* instance)
 }
 
 // drawObjects is called to draw any layer independent objects
-void Graphics::drawObjects(gui::Painter& painter)
+void Graphics::drawObjects(web::Painter& painter)
 {
   if (!instance_) {
     return;
   }
 
-  painter.setPen(gui::Painter::kRed);
-  painter.setBrush(gui::Painter::kRed, gui::Painter::Brush::kDiagonal);
+  painter.setPen(web::Painter::kRed);
+  painter.setBrush(web::Painter::kRed, web::Painter::Brush::kDiagonal);
   painter.drawRect(instance_->getBBox()->getBox());
 }
 
 /* static */
 bool Graphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 }  // namespace exa

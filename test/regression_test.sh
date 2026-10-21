@@ -19,7 +19,7 @@ standalone_python)
     ;;
 python)
     if "$OPENROAD_EXE" -help 2>&1 | grep -q -- "-python"; then
-        CMD="$OPENROAD_EXE -python -no_splash -no_init -exit $TEST_NAME.$TEST_EXT"
+        CMD="$OPENROAD_EXE -python -no_splash -no_init -exit -threads 1 $TEST_NAME.$TEST_EXT"
     else
         CMD="python3 -u $TEST_NAME.$TEST_EXT"
     fi
@@ -30,7 +30,7 @@ python)
     if [ "$TEST_CHECK_METRICS" == "True" ]; then
         METRICS_OPT="-metrics $METRICS_FILE"
     fi
-    CMD="$OPENROAD_EXE -no_splash -no_init -exit $METRICS_OPT $TEST_NAME.$TEST_EXT"
+    CMD="$OPENROAD_EXE -no_splash -no_init -exit -threads 1 $METRICS_OPT $TEST_NAME.$TEST_EXT"
     ;;
 esac
 

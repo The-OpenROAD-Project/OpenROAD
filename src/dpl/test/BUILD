@@ -11,6 +11,8 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "aes",
     "blockage01",
+    "blocked_via_layers",
+    "blocked_via_pins",
     "cell_on_block1",
     "cell_on_block2",
     "centered_floorplan",
@@ -23,6 +25,8 @@ COMPULSORY_TESTS = [
     "check7",
     "check8",
     "check9",
+    "check_fixed_only",
+    "check_placeable_only",
     "diamond01",
     "diamond_multi_height",
     "diamond_one_site_gap",
@@ -126,6 +130,14 @@ filegroup(
                 "sky130hd/sky130hd.tlef",
                 "sky130hd/sky130hd_std_cell.lef",
             ],
+            "blocked_via_layers": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "blocked_via_pins": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
             "cell_on_block1": [
                 "block2.lef",
             ],
@@ -151,6 +163,13 @@ filegroup(
                 "extra.lef",
             ],
             "check9": [
+                "extra.lef",
+            ],
+            "check_fixed_only": [
+                "extra.lef",
+            ],
+            "check_placeable_only": [
+                "check_fixed_only.def",
                 "extra.lef",
             ],
             "diamond01": [
@@ -320,11 +339,13 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
+    data = ["extra.lef"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

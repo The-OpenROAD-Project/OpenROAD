@@ -133,11 +133,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int site_search_window,
                                const int row_search_window,
                                const double drc_penalty,
-                               const bool disable_window_extension)
+                               const bool disable_window_extension,
+                               const bool quiet)
 {
   utl::Timer timer;
   incremental_ = incremental;
   use_diamond_legalizer_ |= use_diamond_legalizer;
+  quiet_ = quiet;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -183,18 +185,22 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                       / static_cast<double>(core_area))
                                          * 100.0
                                    : 0.0;
-    logger_->info(
-        DPL, 6, "Core area: {:.2f} um^2", block_->dbuAreaToMicrons(core_area));
-    logger_->info(DPL,
-                  7,
-                  "Movable instances area: {:.2f} um^2",
-                  block_->dbuAreaToMicrons(inst_area));
-    logger_->info(DPL,
-                  8,
-                  "Fixed instances area within core: {:.2f} um^2",
-                  block_->dbuAreaToMicrons(fixed_area));
-    logger_->info(DPL, 9, "Utilization: {:.1f}%", utilization);
-    logger_->metric("utilization__before__dpl", utilization);
+    if (!quiet_) {
+      logger_->info(DPL,
+                    6,
+                    "Core area: {:.2f} um^2",
+                    block_->dbuAreaToMicrons(core_area));
+      logger_->info(DPL,
+                    7,
+                    "Movable instances area: {:.2f} um^2",
+                    block_->dbuAreaToMicrons(inst_area));
+      logger_->info(DPL,
+                    8,
+                    "Fixed instances area within core: {:.2f} um^2",
+                    block_->dbuAreaToMicrons(fixed_area));
+      logger_->info(DPL, 9, "Utilization: {:.1f}%", utilization);
+      logger_->metric("utilization__before__dpl", utilization);
+    }
     if (utilization > 100.0) {
       logger_->error(
           DPL, 38, "Utilization greater than 100%, impossible to legalize");
@@ -212,15 +218,19 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
 
-  logger_->info(DPL,
-                5,
-                "Diamond search max displacement: +/- {} sites horizontally, "
-                "+/- {} rows vertically.",
-                max_displacement_x_,
-                max_displacement_y_);
+  if (!quiet_) {
+    logger_->info(DPL,
+                  5,
+                  "Diamond search max displacement: +/- {} sites horizontally, "
+                  "+/- {} rows vertically.",
+                  max_displacement_x_,
+                  max_displacement_y_);
+  }
 
   if (use_diamond_legalizer_) {
-    logger_->info(DPL, 1101, "Legalizing using diamond search.");
+    if (!quiet_) {
+      logger_->info(DPL, 1101, "Legalizing using diamond search.");
+    }
     diamondDPL();
     findDisplacementStats();
     updateDbInstLocations();
@@ -248,10 +258,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       groupInitPixels2();
       groupInitPixels();
     }
-    logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
+    if (!quiet_) {
+      logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
+    }
 
     NegotiationLegalizer negotiation(
         this, db_, logger_, debug_observer_.get(), network_.get());
+    negotiation.setQuiet(quiet_);
     negotiation.setDisableWindowExtension(disable_window_extension);
     if (site_search_window >= 0) {
       negotiation.setSiteSearchWindow(site_search_window);
@@ -280,10 +293,73 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       }
     }
 
+    total_moves_ = negotiation.totalMoves();
+    negotiation_iters_phase1_ = negotiation.phase1Iterations();
+    negotiation_iters_phase2_ = negotiation.phase2Iterations();
+    negotiation_converge_phase_ = negotiation.convergePhase();
+    negotiation_diamond_recoveries_ = negotiation.diamondRecoveries();
+    negotiation_finish_ = negotiation.finishDescription();
     findDisplacementStats();
     updateDbInstLocations();
   }
-  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
+  const double runtime = timer.elapsed();
+  if (quiet_) {
+    reportLegalizationSummary(runtime);
+  }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", runtime);
+}
+
+void Opendp::detailedPlacementQuiet()
+{
+  detailedPlacement(0,
+                    0,
+                    /* report_file_name */ "",
+                    /* incremental */ false,
+                    /* use_diamond_legalizer */ false,
+                    /* site_search_window */ -1,
+                    /* row_search_window */ -1,
+                    /* drc_penalty */ -1.0,
+                    /* disable_window_extension */ false,
+                    /* quiet */ true);
+}
+
+// Compact stand-in for reportLegalizationStats() under -quiet.
+void Opendp::reportLegalizationSummary(const double runtime)
+{
+  odb::WireLengthEvaluator eval(block_);
+  const double hpwl_legal = eval.hpwl();
+  const double hpwl_delta = (hpwl_before_ == 0.0) ? 0.0
+                                                  : (hpwl_legal - hpwl_before_)
+                                                        / hpwl_before_ * 100;
+  logger_->info(DPL,
+                501,
+                "Legalized with {} moves: displacement total {:.1f} u, max "
+                "{:.1f} u; HPWL {:.1f} -> {:.1f} u ({:+.1f} %).",
+                total_moves_,
+                block_->dbuToMicrons(displacement_sum_),
+                block_->dbuToMicrons(displacement_max_),
+                block_->dbuToMicrons(hpwl_before_),
+                block_->dbuToMicrons(hpwl_legal),
+                hpwl_delta);
+
+  cumulative_moves_ += total_moves_;
+  cumulative_displacement_ += displacement_sum_;
+  cumulative_displacement_max_
+      = std::max(cumulative_displacement_max_, displacement_max_);
+  // Sum of the per-call deltas.
+  // Other tools move the design between two legalizations, and their HPWL cost
+  // is not detailed placement's.
+  cumulative_hpwl_delta_ += hpwl_legal - hpwl_before_;
+  cumulative_runtime_ += runtime;
+
+  logger_->metric("dpl__total__moves", cumulative_moves_);
+  logger_->metric("dpl__instance__displacement__total",
+                  block_->dbuToMicrons(cumulative_displacement_));
+  logger_->metric("dpl__instance__displacement__max",
+                  block_->dbuToMicrons(cumulative_displacement_max_));
+  logger_->metric("dpl__hpwl__delta",
+                  block_->dbuToMicrons(cumulative_hpwl_delta_));
+  logger_->metric("dpl__legalize__runtime", cumulative_runtime_);
 }
 
 void Opendp::updateDbInstLocations()
@@ -308,19 +384,45 @@ void Opendp::updateDbInstLocations()
 
 void Opendp::reportLegalizationStats() const
 {
-  logger_->report("Placement Analysis");
+  logger_->report("Detailed Placement Analysis");
   logger_->report("---------------------------------");
+  const std::string legalizer_name
+      = use_diamond_legalizer_ ? "diamond search" : "negotiation";
+  logger_->report("legalizer            {}", legalizer_name);
+  logger_->metric("dpl__legalizer__type", legalizer_name);
+  logger_->metric("dpl__total__moves", total_moves_);
+
+  logger_->report("total moves          {:10d}", total_moves_);
+  if (isUseNegotiationLegalizer()) {
+    const int negotiation_iters
+        = negotiation_iters_phase1_ + negotiation_iters_phase2_;
+    if (logger_->debugCheck(utl::GPL, "negotiation", 1)) {
+      logger_->report("negotiation finish   {}", negotiation_finish_);
+      logger_->report("total iterations     {:10d}", negotiation_iters);
+      logger_->report("  phase 1 iterations {:10d}", negotiation_iters_phase1_);
+      logger_->report("  phase 2 iterations {:10d}", negotiation_iters_phase2_);
+      logger_->report("diamond recoveries   {:10d}",
+                      negotiation_diamond_recoveries_);
+    }
+    logger_->metric("dpl__negotiation__iterations__total", negotiation_iters);
+    // Phase that converged (1 or 2), -1 when negotiation did not converge,
+    // 0 when it never ran because every cell was already legal.
+    logger_->metric("dpl__negotiation__converge__phase",
+                    negotiation_converge_phase_);
+    logger_->metric("dpl__negotiation__diamond__recovery__count",
+                    negotiation_diamond_recoveries_);
+  }
   logger_->report("total displacement   {:10.1f} u",
                   block_->dbuToMicrons(displacement_sum_));
-  logger_->metric("design__instance__displacement__total",
+  logger_->metric("dpl__instance__displacement__total",
                   block_->dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u",
                   block_->dbuToMicrons(displacement_avg_));
-  logger_->metric("design__instance__displacement__mean",
+  logger_->metric("dpl__instance__displacement__mean",
                   block_->dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u",
                   block_->dbuToMicrons(displacement_max_));
-  logger_->metric("design__instance__displacement__max",
+  logger_->metric("dpl__instance__displacement__max",
                   block_->dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
                   block_->dbuToMicrons(hpwl_before_));
@@ -328,15 +430,16 @@ void Opendp::reportLegalizationStats() const
   const double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u",
                   block_->dbuToMicrons(hpwl_legal));
-  logger_->metric("route__wirelength__estimated",
-                  block_->dbuToMicrons(hpwl_legal));
   const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
-  logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
+  logger_->metric("dpl__route__wirelength__estimated",
+                  block_->dbuToMicrons(hpwl_legal));
+  logger_->metric("dpl__hpwl__delta",
+                  block_->dbuToMicrons(hpwl_legal - hpwl_before_));
   logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }
 

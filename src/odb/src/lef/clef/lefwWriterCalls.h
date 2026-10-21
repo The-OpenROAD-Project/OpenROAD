@@ -105,7 +105,6 @@ enum lefwCallbackType_e
 
   /* NEW CALLBACKS - each callback has its own type.  For each callback
    * that you add, you must add an item to this enum. */
-
 };
 
 /* Declarations of function signatures for each type of callback.

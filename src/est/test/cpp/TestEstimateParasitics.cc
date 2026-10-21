@@ -365,6 +365,49 @@ TEST_F(TestEstimateParasitics, ScanClockIdealOnlyInTestMode)
   ep_.setIncrementalParasiticsEnabled(false);
 }
 
+// Verifies that the nets updateParasiticsForObserver() estimates early stay in
+// pendingNetCount() until the next updateParasitics(), so an observer that
+// reads timing between repair steps leaves the count a caller reads unchanged.
+TEST_F(TestEstimateParasitics, ObserverUpdateKeepsNetsPending)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+  placeDesign();
+  ep_.estimateWireParasitics();
+
+  sta::Net* d_net = flatNet(findTopPin("d"));
+  sta::Net* q0_net = flatNet(findTopPin("q0"));
+  ASSERT_NE(d_net, nullptr);
+  ASSERT_NE(q0_net, nullptr);
+
+  ep_.setParasiticsSrc(ParasiticsSrc::kPlacement);
+  ep_.setIncrementalParasiticsEnabled(true);
+  ep_.parasiticsInvalid(d_net);
+  EXPECT_EQ(ep_.pendingNetCount(), 1u);
+
+  // The observer estimates d, which stays pending.
+  ep_.updateParasiticsForObserver();
+  EXPECT_TRUE(ep_.parasiticsValid());
+  EXPECT_EQ(ep_.pendingNetCount(), 1u);
+
+  // A pending net invalid again counts once.
+  ep_.parasiticsInvalid(d_net);
+  ep_.parasiticsInvalid(q0_net);
+  EXPECT_EQ(ep_.pendingNetCount(), 2u);
+  ep_.updateParasiticsForObserver();
+  EXPECT_EQ(ep_.pendingNetCount(), 2u);
+
+  // ensureWireParasitic() settles a pending net as it settles an invalid one.
+  sta::PinSet* q0_drivers = db_network_->drivers(q0_net);
+  ASSERT_TRUE(q0_drivers != nullptr && !q0_drivers->empty());
+  ep_.ensureWireParasitic(*q0_drivers->begin(), q0_net);
+  EXPECT_EQ(ep_.pendingNetCount(), 1u);
+
+  // updateParasitics() settles every pending net.
+  ep_.updateParasitics();
+  EXPECT_EQ(ep_.pendingNetCount(), 0u);
+  ep_.setIncrementalParasiticsEnabled(false);
+}
+
 // Verifies that wire RC values are stored per chip: chip-specific values take
 // precedence over the defaults, and chips without an entry use the defaults.
 TEST_F(TestEstimateParasitics, WireRcPerTech)

@@ -1,11 +1,14 @@
 # Helper procs for the boundary PDN tests. A violation is a signal pin shape
 # closer to a blocking shape than the required spacing: "overlap" requires
-# plain intersection, "spacing" uses the layer default spacing and "table"
-# the width-dependent spacing for wide shapes.
+# plain intersection, "spacing" uses the layer default spacing, "table" the
+# width-dependent spacing for wide shapes and an integer an explicit value.
 
 proc get_required_spacing { layer pin_box llx lly urx ury mode } {
   if { $mode == "overlap" } {
     return 0
+  }
+  if { [string is integer -strict $mode] } {
+    return $mode
   }
   if { $mode == "table" } {
     set pin_dx [expr { [$pin_box xMax] - [$pin_box xMin] }]

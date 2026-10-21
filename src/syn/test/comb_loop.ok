@@ -1,0 +1,68 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/fakeram45_64x7.lef, created 1 library cells
+[INFO ODB-0227] LEF file: comb_loop_cells.lef, created 2 library cells
+Top level design units:
+    false_loop
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[INFO SYN-0017] mapCombinationals: done
+[INFO SYN-0040] gatefusion: 0 fusions applied, area delta 0.0000
+  input: 1 cells, 4 bits
+  name (tentative): 2 cells, 0 bits
+  output: 1 cells, 0 bits
+  target: NAND2_X1: 1 cells, 1 bits, area 0.798
+  target: OAI21_X1: 1 cells, 1 bits, area 1.064
+  target: XNOR2_X1: 2 cells, 2 bits, area 3.192
+  target: XOR2_X1: 3 cells, 3 bits, area 4.788
+  total: 11 cells, 11 bits, area 9.842
+[INFO SYN-0031] Export to ODB: created 7 instances, 4 nets, 8 ports
+false_loop synthesized
+Top level design units:
+    ram_loop
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[INFO SYN-0017] mapCombinationals: done
+[INFO SYN-0040] gatefusion: 0 fusions applied, area delta 0.0000
+  input: 3 cells, 14 bits
+  loop_breaker: 7 cells, 7 bits
+  name (tentative): 4 cells, 0 bits
+  output: 1 cells, 0 bits
+  target: LOGIC1_X1: 1 cells, 1 bits, area 0.532
+  target: XOR2_X1: 7 cells, 7 bits, area 11.172
+  target: fakeram45_64x7: 1 cells, 7 bits, area 3011.12
+  total: 24 cells, 36 bits, area 3022.82
+[INFO SYN-0031] Export to ODB: created 9 instances, 15 nets, 21 ports
+ram_loop synthesized
+Top level design units:
+    dual_no_loop
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[INFO SYN-0017] mapCombinationals: done
+[INFO SYN-0040] gatefusion: 0 fusions applied, area delta 0.0000
+  input: 1 cells, 1 bits
+  loop_breaker: 1 cells, 1 bits
+  name (tentative): 3 cells, 0 bits
+  output: 1 cells, 0 bits
+  target: DUAL: 1 cells, 2 bits, area 2
+  total: 7 cells, 4 bits, area 2
+[INFO SYN-0031] Export to ODB: created 1 instances, 1 nets, 2 ports
+dual_no_loop synthesized
+Top level design units:
+    half_loop
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[WARNING SYN-0079] Combinational loop through: y, %5
+[ERROR SYN-0080] Design contains 1 combinational loop(s). Combinational loops, including latches inferred from incomplete assignments in always blocks, are not supported.
+SYN-0080
+Top level design units:
+    latch_clock_gate
+
+Build succeeded: 0 errors, 0 warnings
+[INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
+[WARNING SYN-0079] Combinational loop through: %9, en_latch, %8
+[ERROR SYN-0080] Design contains 1 combinational loop(s). Combinational loops, including latches inferred from incomplete assignments in always blocks, are not supported.
+SYN-0080

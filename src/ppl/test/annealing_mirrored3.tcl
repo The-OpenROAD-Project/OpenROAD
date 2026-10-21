@@ -20,4 +20,4 @@ set def_file [make_result_file annealing_mirrored3.def]
 
 write_def $def_file
 
-diff_file annealing_mirrored3.defok $def_file
+diff_files annealing_mirrored3.defok $def_file

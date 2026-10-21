@@ -144,6 +144,11 @@ class GRNet
   {
     return preferred_aps_;
   }
+  // Restores a saved getPreferredAccessPoints(), as a rolled-back reroute does.
+  void setPreferredAccessPoints(std::map<int, AccessPoint> aps)
+  {
+    preferred_aps_ = std::move(aps);
+  }
   // Terminals keyed by the pin index that also keys getPinAccessPoints().
   const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
   {

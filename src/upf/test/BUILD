@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -57,6 +58,21 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "TestPowerDomainRegions",
+    size = "small",
+    srcs = ["cpp/TestPowerDomainRegions.cc"],
+    deps = [
+        "//src/dbSta",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/upf",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 py_test(
     name = "upf_man_tcl_check",

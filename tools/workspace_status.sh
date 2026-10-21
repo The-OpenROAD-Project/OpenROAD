@@ -17,5 +17,10 @@ else
 fi
 echo "STABLE_GIT_VERSION ${GIT_VERSION}"
 
+# Committer time of HEAD as a Unix timestamp, the SOURCE_DATE_EPOCH format.
+# //docs:man_pages stamps it into each page's footer date.
+GIT_COMMIT_TIME=$(git log -1 --format=%ct 2>/dev/null || echo "")
+echo "STABLE_GIT_COMMIT_TIME ${GIT_COMMIT_TIME}"
+
 STA_GIT_SHA1=$(git -C src/sta rev-parse HEAD 2>/dev/null || echo "unknown")
 echo "STABLE_STA_GIT_SHA1 ${STA_GIT_SHA1}"

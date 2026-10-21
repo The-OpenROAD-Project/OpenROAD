@@ -64,7 +64,7 @@ target_link_libraries(cts
     dbSta_lib
     rsz_lib
     OpenSTA
-    gui
+    gui_core
     Boost::headers
  )
 

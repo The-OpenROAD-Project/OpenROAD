@@ -8,10 +8,10 @@
 
 #include "SteinerRenderer.h"
 #include "est/EstimateParasitics.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "tcl.h"
 #include "utl/decode.h"
+#include "web/core.h"
 
 extern "C" {
 extern int Est_Init(Tcl_Interp* interp);
@@ -22,7 +22,7 @@ extern const char* est_tcl_inits[];
 
 void initGui(est::EstimateParasitics* estimate_parasitics)
 {
-  if (gui::Gui::enabled()) {
+  if (web::Gui::enabled()) {
     auto steiner_renderer = std::make_unique<SteinerRenderer>();
     estimate_parasitics->initSteinerRenderer(std::move(steiner_renderer));
   }

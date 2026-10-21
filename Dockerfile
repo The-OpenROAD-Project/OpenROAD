@@ -18,13 +18,16 @@ ARG INSTALLER_ARGS=""
 COPY etc/DependencyInstaller.sh /tmp/.
 RUN <<EOF
 set -e
-/tmp/DependencyInstaller.sh -ci -base
-# The dev image serves both build systems, so it carries the Bazel dependency
-# set too: bazelisk plus the libxml2 and X11/xcb runtime libraries the Bazel
-# build needs, which on Ubuntu 26.04 include the libxml2.so.2 compatibility
-# symlink without which the prebuilt LLVM lld cannot load.
+/tmp/DependencyInstaller.sh -cmake -ci -base
+# Bazel is the default build system: this step installs bazelisk plus the
+# libxml2 and X11/xcb runtime libraries the Bazel build needs, which on Ubuntu
+# 26.04 include the libxml2.so.2 compatibility symlink without which the
+# prebuilt LLVM lld cannot load. The -common step below installs the CMake
+# dependencies, which stay for the deprecated CMake build. Run this step after
+# the first -ci: -ci installs the latest bazelisk, which would replace the
+# pinned one.
 /tmp/DependencyInstaller.sh -bazel
-/tmp/DependencyInstaller.sh -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
+/tmp/DependencyInstaller.sh -cmake -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
 if echo "$fromImage" | grep -q "ubuntu"; then
     echo "fromImage contains 'ubuntu' — stripping section from libQt5Core.so"
     strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || true
@@ -50,6 +53,7 @@ ARG numThreads=NotSet
 ARG orVersion=""
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF
@@ -59,9 +63,11 @@ WORKDIR /OpenROAD
 COPY --chown=user:user . .
 # Keep Bazel's build cache out of the published builder image.
 RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
+set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
-# Preserve the path used by builder-image consumers.
+test -x /OpenROAD/install/bin/openroad
+# Legacy builder-image path, the CMake binary location. Remove with CMake.
 mkdir -p build/bin
 ln -s ../../install/bin/openroad build/bin/openroad
 rm -f bazel-OpenROAD bazel-bin bazel-out bazel-testlogs
@@ -79,6 +85,7 @@ COPY --chown=root:root --from=builder /OpenROAD/install/ /usr/
 ENV OPENROAD_EXE=/usr/bin/openroad
 
 RUN <<EOF
+set -e
 groupadd user --gid 9000
 useradd --create-home --uid 9000 -g user --skel /etc/skel --shell /bin/bash user
 EOF

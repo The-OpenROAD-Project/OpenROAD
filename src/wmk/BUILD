@@ -2,8 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -75,22 +74,7 @@ cc_library(
 )
 
 cc_library(
-    name = "wmk_private_hdrs",
-    hdrs = [
-        "src/Keys.h",
-        "src/Options.h",
-        "src/RoutingStat.h",
-        "src/Wirelength.h",
-    ],
-    includes = [
-        "src",
-    ],
-    visibility = ["//src/wmk:__subpackages__"],
-    deps = ["//src/odb/src/db"],
-)
-
-cc_library(
-    name = "wmk",
+    name = "wmk_impl",
     srcs = [
         "src/CtsWatermark.cpp",
         "src/Keys.cpp",
@@ -103,12 +87,19 @@ cc_library(
     ],
     hdrs = [
         "include/wmk/Watermark.h",
+        "src/Keys.h",
+        "src/Options.h",
+        "src/RoutingStat.h",
+        "src/Wirelength.h",
     ],
     includes = [
         "include",
+        "src",
+    ],
+    visibility = [
+        "//src/wmk:__subpackages__",
     ],
     deps = [
-        ":wmk_private_hdrs",
         ":hmac_sha256",
         ":marks",
         ":claims",
@@ -130,6 +121,22 @@ cc_library(
 )
 
 cc_library(
+    name = "wmk",
+    hdrs = [
+        "include/wmk/Watermark.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":verify_result",
+        ":wmk_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+    ],
+)
+
+cc_library(
     name = "ui",
     srcs = [
         "src/MakeWatermark.cpp",
@@ -146,8 +153,7 @@ cc_library(
     deps = [
         ":hmac_sha256",
         ":marks",
-        ":wmk",
-        ":wmk_private_hdrs",
+        ":wmk_impl",
         "//:ord",
         "//src/odb/src/db",
         "//src/utl",
@@ -190,7 +196,7 @@ python_wrap_cc(
         "src/watermark-py.i",
         "//:error_swig-py",
     ],
-    module = "wmk",
+    module = "wmk_py",
     root_swig_src = "src/watermark-py.i",
     swig_includes = [
         "include",
@@ -214,13 +220,18 @@ messages_txt(
     ],
 )
 
-# Keep timing-dependent bindings in _openroadpy.so. A separate WMK extension
-# would link another copy of OpenSTA's singleton state (such as port directions)
-# and interpret the Design's Liberty objects using that uninitialized copy.
-py_library(
-    name = "wmk_py",
-    srcs = ["wmk.py"],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = ["//:openroad_py"],
+# Compiled into //:_openroad.so with the other Python modules rather than a
+# separate extension: that would link another copy of OpenSTA's singleton
+# state (such as port directions) and interpret the Design's Liberty objects
+# using that uninitialized copy.
+python_wrap_library(
+    name = "py_wrap",
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":hmac_sha256",
+        ":wmk",
+    ],
 )

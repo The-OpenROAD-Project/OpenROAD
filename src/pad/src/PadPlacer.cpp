@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "boost/geometry/index/predicates.hpp"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -27,6 +26,7 @@
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 
@@ -46,7 +46,7 @@ PadPlacer::PadPlacer(utl::Logger* logger,
 void PadPlacer::guiPause(const std::string& reason) const
 {
   logger_->report("Pausing pad placement on {}: {}", row_->getName(), reason);
-  gui::Gui::get()->pause();
+  web::Gui::get()->pause();
 }
 
 void PadPlacer::populateInstWidths()
@@ -627,7 +627,7 @@ UniformPadPlacer::UniformPadPlacer(utl::Logger* logger,
 void UniformPadPlacer::place()
 {
   const bool gui_debug
-      = getLogger()->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+      = getLogger()->debugCheck(utl::PAD, "Place", 1) && web::Gui::enabled();
 
   float initial_target_spacing
       = static_cast<float>(getRowWidth() - getTotalInstWidths())
@@ -728,7 +728,7 @@ void BumpAlignedPadPlacer::place()
   int offset = getRowStart();
 
   const bool gui_debug
-      = getLogger()->debugCheck(utl::PAD, "Place", 1) && gui::Gui::enabled();
+      = getLogger()->debugCheck(utl::PAD, "Place", 1) && web::Gui::enabled();
 
   auto& insts = getInsts();
 
@@ -1082,8 +1082,8 @@ odb::PtrMap<odb::dbInst, int> PlacerPadPlacer::initialPoolMapping() const
 
 void PlacerPadPlacer::debugPause(const std::string& msg) const
 {
-  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
-    auto* gui = gui::Gui::get();
+  if (web::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Pause", 1)) {
+    auto* gui = web::Gui::get();
     gui->clearHighlights();
     for (const auto& [inst, iterms] : iterm_connections_) {
       for (auto* iterm : iterms) {
@@ -1098,8 +1098,8 @@ void PlacerPadPlacer::debugPause(const std::string& msg) const
 
 void PlacerPadPlacer::place()
 {
-  if (gui::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Place", 1)) {
-    chart_ = gui::Gui::get()->addChart(
+  if (web::Gui::enabled() && getLogger()->debugCheck(utl::PAD, "Place", 1)) {
+    chart_ = web::Gui::get()->addChart(
         fmt::format("PAD ({})", getRow()->getName()),
         "Iteration",
         {"RDL Estimate (μm)", "Move (μm)"});
@@ -1846,7 +1846,7 @@ void PlacerPadPlacer::debugCheckPlacement() const
     }
   }
 
-  if (!invalid.empty() && gui::Gui::enabled()) {
+  if (!invalid.empty() && web::Gui::enabled()) {
     guiPause(fmt::format("invalid position(s) for {}", instNameList(invalid)));
   }
 }

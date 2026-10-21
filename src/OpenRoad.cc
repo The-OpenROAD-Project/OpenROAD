@@ -262,7 +262,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       db_, logger_, service_registry_, distributer_, stt_builder_);
   drt::initGui(detailed_router_);
 
-  replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);
+  replace_ = new gpl::Replace(
+      db_, sta_, resizer_, global_router_, ioPlacer_, logger_);
   pdnsim_ = new psm::PDNSim(logger_, db_, sta_, estimate_parasitics_, opendp_);
   pdngen_ = new pdn::PdnGen(db_, logger_);
   ram_gen_ = new ram::RamGen(getDbNetwork(),
@@ -274,7 +275,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                              global_router_,
                              detailed_router_);
   icewall_ = new pad::ICeWall(db_, logger_);
-  dft_ = new dft::Dft(db_, sta_, logger_);
+  dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
   watermark_
@@ -591,7 +592,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 
 void OpenRoad::readDb(std::istream& stream)
 {
-  if (db_->getChip() && db_->getChip()->getBlock()) {
+  if (!db_->getChips().empty()) {
     logger_->error(
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
@@ -711,9 +712,18 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;  // -1 is max cores
   } else {
+    bool valid = false;
     try {
-      max_threads = std::stoi(threads);
-    } catch (const std::invalid_argument&) {
+      size_t pos = 0;
+      const int parsed = std::stoi(threads, &pos);
+      // Reject trailing characters such as "4abc" or "8.5".
+      if (threads[pos] == '\0') {
+        max_threads = parsed;
+        valid = true;
+      }
+    } catch (const std::logic_error&) {  // invalid_argument or out_of_range
+    }
+    if (!valid) {
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
     }

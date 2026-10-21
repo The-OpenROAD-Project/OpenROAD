@@ -19,15 +19,15 @@
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frRegionQuery.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace drt {
 
 // Descriptor for Grid Graph nodes and their edges
-class GridGraphDescriptor : public gui::Descriptor
+class GridGraphDescriptor : public web::Descriptor
 {
  public:
   struct Data
@@ -43,14 +43,14 @@ class GridGraphDescriptor : public gui::Descriptor
   std::string getTypeName() const override;
   bool getBBox(const std::any& object, odb::Rect& bbox) const override;
 
-  void highlight(const std::any& object, gui::Painter& painter) const override;
+  void highlight(const std::any& object, web::Painter& painter) const override;
 
   Properties getProperties(const std::any& object) const override;
-  gui::Selected makeSelected(const std::any& object) const override;
+  web::Selected makeSelected(const std::any& object) const override;
   bool lessThan(const std::any& l, const std::any& r) const override;
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>& func) const override;
+      const std::function<void(const web::Selected&)>& func) const override;
 };
 
 std::string GridGraphDescriptor::getName(const std::any& object) const
@@ -76,7 +76,7 @@ bool GridGraphDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 }
 
 void GridGraphDescriptor::highlight(const std::any& object,
-                                    gui::Painter& painter) const
+                                    web::Painter& painter) const
 {
   odb::Rect bbox;
   getBBox(object, bbox);
@@ -86,7 +86,7 @@ void GridGraphDescriptor::highlight(const std::any& object,
   painter.drawRect(bbox);
 }
 
-gui::Descriptor::Properties GridGraphDescriptor::getProperties(
+web::Descriptor::Properties GridGraphDescriptor::getProperties(
     const std::any& object) const
 {
   auto data = std::any_cast<Data>(object);
@@ -102,7 +102,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   Properties props({{"X", graph->xCoord(x) / dbu_per_uu},
                     {"Y", graph->yCoord(y) / dbu_per_uu},
                     {"Layer", layer->getName()}});
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
 
   // put these after the edges so they are always in the same spot for
   // faster navigation.
@@ -180,12 +180,12 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   return props;
 }
 
-gui::Selected GridGraphDescriptor::makeSelected(const std::any& object) const
+web::Selected GridGraphDescriptor::makeSelected(const std::any& object) const
 {
   if (auto data = std::any_cast<Data>(&object)) {
-    return gui::Selected(*data, this);
+    return web::Selected(*data, this);
   }
-  return gui::Selected();
+  return web::Selected();
 }
 
 bool GridGraphDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -200,7 +200,7 @@ bool GridGraphDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void GridGraphDescriptor::visitAllObjects(
-    const std::function<void(const gui::Selected&)>& func) const
+    const std::function<void(const web::Selected&)>& func) const
 {
 }
 
@@ -235,7 +235,7 @@ FlexDRGraphics::FlexDRGraphics(frDebugSettings* settings,
       settings_(settings),
       current_iter_(-1),
       last_pt_layer_(-1),
-      gui_(gui::Gui::get()),
+      gui_(web::Gui::get()),
       logger_(logger)
 {
   // Build the layer map between opendb & tr
@@ -270,7 +270,7 @@ const char* FlexDRGraphics::getDisplayControlGroupName()
   return "FlexDR";
 }
 
-void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   if (layer_map_.empty()) {
     return;
@@ -419,14 +419,14 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     return;
   }
   // Draw markers
-  painter.setPen(gui::Painter::kGreen, /* cosmetic */ true);
+  painter.setPen(web::Painter::kGreen, /* cosmetic */ true);
   for (auto& marker : design_->getTopBlock()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       odb::Rect box = marker->getBBox();
       drawMarker(box.xMin(), box.yMin(), box.xMax(), box.yMax(), painter);
     }
   }
-  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+  painter.setPen(web::Painter::kYellow, /* cosmetic */ true);
   for (auto& marker : worker_->getGCWorker()->getMarkers()) {
     if (marker->getLayerNum() == layerNum) {
       odb::Rect box = marker->getBBox();
@@ -436,7 +436,7 @@ void FlexDRGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 }
 
 void FlexDRGraphics::drawObj(frBlockObject* fig,
-                             gui::Painter& painter,
+                             web::Painter& painter,
                              int layerNum)
 {
   odb::Rect box;
@@ -507,7 +507,7 @@ void FlexDRGraphics::drawMarker(int xl,
                                 int yl,
                                 int xh,
                                 int yh,
-                                gui::Painter& painter)
+                                web::Painter& painter)
 {
   painter.drawRect({xl, yl, xh, yh});
   painter.drawLine({xl, yl}, {xh, yh});
@@ -559,14 +559,14 @@ void FlexDRGraphics::debugWholeDesign()
   gui_->pause();
   drawWholeDesign_ = false;
 }
-void FlexDRGraphics::drawObjects(gui::Painter& painter)
+void FlexDRGraphics::drawObjects(web::Painter& painter)
 {
   if (!worker_) {
     return;
   }
 
-  painter.setBrush(gui::Painter::kTransparent);
-  painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
+  painter.setBrush(web::Painter::kTransparent);
+  painter.setPen(web::Painter::kYellow, /* cosmetic */ true);
 
   odb::Rect box;
   worker_->getRouteBox(box);
@@ -785,13 +785,13 @@ void FlexDRGraphics::status(const std::string& message)
 /* static */
 bool FlexDRGraphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 void FlexDRGraphics::init()
 {
   if (guiActive()) {
-    gui::Gui::get()->registerDescriptor<GridGraphDescriptor::Data>(
+    web::Gui::get()->registerDescriptor<GridGraphDescriptor::Data>(
         new GridGraphDescriptor);
   }
 }

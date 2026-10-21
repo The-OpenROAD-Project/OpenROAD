@@ -6,16 +6,16 @@
 #include "Net.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace grt {
 
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
     : groute_(groute), tech_(tech)
 {
-  gui::Gui::get()->registerRenderer(this);
+  web::Gui::get()->registerRenderer(this);
 }
 
 void GrouteRenderer::highlightRoute(odb::dbNet* net, bool show_pin_locations)
@@ -25,7 +25,7 @@ void GrouteRenderer::highlightRoute(odb::dbNet* net, bool show_pin_locations)
   redraw();
 }
 
-void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   painter.setPen(layer);
   painter.setBrush(layer);
@@ -82,7 +82,7 @@ void GrouteRenderer::clearRoute()
 
 void GrouteRenderer::drawViaRect(const GSegment& seg,
                                  odb::dbTechLayer* layer,
-                                 gui::Painter& painter)
+                                 web::Painter& painter)
 {
   int width = layer->getMinWidth() * 2;
   odb::Point ll(seg.init_x - width, seg.init_y - width);

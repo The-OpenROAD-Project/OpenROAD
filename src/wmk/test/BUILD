@@ -189,8 +189,7 @@ cc_test(
     name = "TestRoutingStat",
     srcs = ["cpp/TestRoutingStat.cpp"],
     deps = [
-        "//src/wmk",
-        "//src/wmk:wmk_private_hdrs",
+        "//src/wmk:wmk_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

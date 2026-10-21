@@ -417,6 +417,18 @@ std::vector<odb::Polygon> IRSolver::determineShortShapes(
       // intersect in a zero area rect and are not shorted
       continue;
     }
+    if (const odb::Polygon* polygon = shape->getPolygon()) {
+      // a shape with 45 degree edges does not fill its box
+      using boost::polygon::operators::operator&;
+      const odb::geom::BoostPolygonSet overlap_set
+          = odb::geom::toPolygonSet(*polygon) & rect;
+      std::vector<odb::Polygon> overlaps
+          = odb::geom::extractPolygons(overlap_set);
+      short_shapes.insert(short_shapes.end(),
+                          std::make_move_iterator(overlaps.begin()),
+                          std::make_move_iterator(overlaps.end()));
+      continue;
+    }
     short_shapes.emplace_back(check.intersect(rect));
   }
 
@@ -455,8 +467,13 @@ std::vector<odb::Polygon> IRSolver::determineShortShapes(
 
     // odb::Rect is a boost rectangle, so it intersects the set as-is rather
     // than being built into a polygon set of its own for every shape.
-    const odb::geom::BoostPolygonSet overlap_set
-        = check_polygon & shape->getShape();
+    odb::geom::BoostPolygonSet overlap_set;
+    if (const odb::Polygon* shape_polygon = shape->getPolygon()) {
+      // a shape with 45 degree edges does not fill its box
+      overlap_set = check_polygon & odb::geom::toPolygonSet(*shape_polygon);
+    } else {
+      overlap_set = check_polygon & shape->getShape();
+    }
     if (overlap_set.empty()) {
       continue;
     }
@@ -1121,24 +1138,40 @@ SourceNodes IRSolver::generateSourceNodesGenericFull() const
 SourceNodes IRSolver::generateSourceNodesGenericStraps() const
 {
   odb::dbTechLayer* top_layer = network_->getTopLayer();
+  // The connect layer is the routing layer immediately outside the source
+  // layer, it sets the pitch and width of the generated strap pattern.
+  // Backside layers are declared outermost-first, so their routing level
+  // grows toward the substrate and the layer outside this one is at
+  // level - 1 rather than level + 1.
+  const int connect_level
+      = top_layer->getRoutingLevel() + (top_layer->isBackside() ? -1 : 1);
+  // Routing levels are 1-based, a level of 0 would match the non-routing
+  // layers rather than miss.
   odb::dbTechLayer* connect_layer
-      = getTech()->findRoutingLayer(top_layer->getRoutingLevel() + 1);
+      = connect_level > 0 ? getTech()->findRoutingLayer(connect_level)
+                          : nullptr;
   if (connect_layer == nullptr) {
     connect_layer = top_layer;
   }
   const int pitch = generated_source_settings_.strap_track_pitch
                     * connect_layer->getPitch();
+  if (pitch <= 0) {
+    logger_->error(utl::PSM, 76, "Invalid pitch for strap generation.");
+  }
   const int offset = pitch / 2;
   const int width = connect_layer->getWidth();
 
   const double dbus = getBlock()->getDbUnitsPerMicron();
-  logger_->info(
-      utl::PSM,
-      72,
-      "Using strap pattern on {} with pitch {:.4f}um and offset {:.4f}um.",
-      connect_layer->getName(),
-      pitch / dbus,
-      offset / dbus);
+  // The sources land on the top layer, connect_layer only sets the pitch
+  // and width of the pattern, so name both.
+  logger_->info(utl::PSM,
+                72,
+                "Using strap pattern on {} with {} pitch {:.4f}um and offset "
+                "{:.4f}um.",
+                top_layer->getName(),
+                connect_layer->getName(),
+                pitch / dbus,
+                offset / dbus);
 
   const odb::Rect core_area = getBlock()->getCoreArea();
   const odb::Rect die_area = getBlock()->getDieArea();
@@ -1184,8 +1217,9 @@ SourceNodes IRSolver::generateSourceNodesGenericBumps() const
 
   logger_->info(utl::PSM,
                 73,
-                "Using bump pattern with x-pitch {:.4f}um, y-pitch {:.4f}um, "
-                "and size {:.4f}um with an reduction factor of {}x.",
+                "Using bump pattern on {} with x-pitch {:.4f}um, y-pitch "
+                "{:.4f}um, and size {:.4f}um with a reduction factor of {}x.",
+                network_->getTopLayer()->getName(),
                 dx / dbus,
                 dy / dbus,
                 size / dbus,

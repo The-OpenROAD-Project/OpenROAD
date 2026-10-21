@@ -15,4 +15,4 @@ set def_file [make_result_file cut_rows_min_step_bottom_right.def]
 check_placement -verbose
 
 write_def $def_file
-diff_file cut_rows_min_step_bottom_right.defok $def_file
+diff_files cut_rows_min_step_bottom_right.defok $def_file

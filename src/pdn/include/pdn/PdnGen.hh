@@ -22,7 +22,19 @@ enum ExtensionMode
   kCore,
   kRings,
   kBoundary,
+  kPadRing,
   kFixed
+};
+
+// The point of a strap group that the strap offset places, in the order they
+// fall along the group
+enum class StrapOffsetType
+{
+  kStart,   // leading edge of the first strap
+  kFirst,   // center of the first strap
+  kCenter,  // center of the whole group
+  kLast,    // center of the last strap
+  kEnd      // trailing edge of the last strap
 };
 
 enum StartsWith
@@ -128,7 +140,8 @@ class PdnGen
   void makeFollowpin(Grid* grid,
                      odb::dbTechLayer* layer,
                      int width,
-                     ExtensionMode extend);
+                     ExtensionMode extend,
+                     int extend_distance = 0);
   void makeStrap(Grid* grid,
                  odb::dbTechLayer* layer,
                  int width,
@@ -140,7 +153,9 @@ class PdnGen
                  StartsWith starts_with,
                  ExtensionMode extend,
                  const std::vector<odb::dbNet*>& nets,
-                 bool allow_out_of_core);
+                 bool allow_out_of_core,
+                 StrapOffsetType offset_type = StrapOffsetType::kFirst,
+                 int extend_distance = 0);
   void makeConnect(
       Grid* grid,
       odb::dbTechLayer* layer0,

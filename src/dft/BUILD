@@ -32,6 +32,7 @@ cc_library(
         "//src/dft/src/stitch",
         "//src/dft/src/utils",
         "//src/odb/src/db",
+        "//src/rsz",
         "//src/utl",
         "@boost.property_tree",
     ],

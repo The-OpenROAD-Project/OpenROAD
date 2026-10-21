@@ -31,3 +31,10 @@ report_equiv_cells sky130_fd_sc_hd__clkinv_2
 report_equiv_cells -all sky130_fd_sc_hd__clkinv_2
 
 report_equiv_cells sky130_fd_sc_hd__clkinv_2
+
+# o211ai_1 has unusually low leakage, so every larger o211ai exceeds a 4X
+# leakage limit.  The smallest larger cell (o211ai_2) remains swappable.
+reset_opt_config
+set_opt_config -limit_sizing_leakage 4.0
+
+report_equiv_cells -all -match_cell_footprint sky130_fd_sc_hd__o211ai_1

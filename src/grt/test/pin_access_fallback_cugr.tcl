@@ -32,4 +32,4 @@ global_route -use_cugr -critical_nets_percentage 30 -resistance_aware -verbose
 
 set guide_file [make_result_file pin_access_fallback_cugr.guide]
 write_guides $guide_file
-diff_file pin_access_fallback_cugr.guideok $guide_file
+diff_files pin_access_fallback_cugr.guideok $guide_file

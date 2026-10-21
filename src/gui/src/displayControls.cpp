@@ -177,7 +177,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
     if (data.isValid()) {
       dbTechLayer* layer = data.value<dbTechLayer*>();
       if (layer != nullptr) {
-        auto selected = Gui::get()->makeSelected(layer);
+        auto selected = web::Gui::get()->makeSelected(layer);
         if (selected) {
           auto props = selected.getProperties();
 
@@ -567,8 +567,8 @@ DisplayControls::DisplayControls(QWidget* parent)
   custom_controls_start_ = root->rowCount();
 
   // register renderers
-  if (gui::Gui::get() != nullptr) {
-    for (auto renderer : gui::Gui::get()->renderers()) {
+  if (web::Gui::get() != nullptr) {
+    for (auto renderer : web::Gui::get()->renderers()) {
       registerRenderer(renderer);
     }
   }
@@ -827,7 +827,7 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // custom renderers
   settings->beginGroup("custom");
-  for (auto renderer : Gui::get()->renderers()) {
+  for (auto renderer : web::Gui::get()->renderers()) {
     saveRendererState(renderer);
   }
   for (const auto& [group, renderer_settings] : custom_controls_settings_) {
@@ -866,7 +866,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->endGroup();
 }
 
-void DisplayControls::saveRendererState(Renderer* renderer)
+void DisplayControls::saveRendererState(web::Renderer* renderer)
 {
   const std::string& group_name = renderer->getSettingsGroupName();
   if (group_name.empty()) {
@@ -1043,9 +1043,9 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     }
 
     if (auto* tech_layer = user_data.value<dbTechLayer*>()) {
-      emit selected(Gui::get()->makeSelected(tech_layer));
+      emit selected(web::Gui::get()->makeSelected(tech_layer));
     } else if (auto* site = user_data.value<odb::dbSite*>()) {
-      emit selected(Gui::get()->makeSelected(site));
+      emit selected(web::Gui::get()->makeSelected(site));
     } else {
       continue;
     }
@@ -1394,7 +1394,7 @@ void DisplayControls::setSTA(sta::dbSta* sta)
   checkLiberty();
 }
 
-void DisplayControls::setDBInstDescriptor(DbInstDescriptor* desciptor)
+void DisplayControls::setDBInstDescriptor(web::DbInstDescriptor* desciptor)
 {
   inst_descriptor_ = desciptor;
 }
@@ -1936,7 +1936,7 @@ QFont DisplayControls::ioPinMarkersFont() const
   return pin_markers_font_;
 }
 
-void DisplayControls::registerRenderer(Renderer* renderer)
+void DisplayControls::registerRenderer(web::Renderer* renderer)
 {
   if (custom_controls_.contains(renderer)) {
     // already registered
@@ -2034,7 +2034,7 @@ void DisplayControls::registerRenderer(Renderer* renderer)
   }
 }
 
-void DisplayControls::unregisterRenderer(Renderer* renderer)
+void DisplayControls::unregisterRenderer(web::Renderer* renderer)
 {
   saveRendererState(renderer);
 

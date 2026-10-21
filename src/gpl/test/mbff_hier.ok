@@ -5,10 +5,10 @@
 [INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 Alpha = 40.0, Beta = 0.0, #paths = 0, max size = -1
-Total ILP Cost: 229.603
+Total ILP Cost: 229.607
 Total Timing Critical Path Displacement: 0.0
 Average slot-to-flop displacement: 2.270
-Final Objective Value: 229.603
+Final Objective Value: 229.607
 Sizes used
   4-bit: 2
 [WARNING EST-0010] Signal/clock horizontal wire resistance is 0.

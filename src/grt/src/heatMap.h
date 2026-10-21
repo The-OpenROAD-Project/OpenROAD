@@ -5,12 +5,12 @@
 
 #include <string>
 
-#include "gui/heatMap.h"
 #include "odb/db.h"
+#include "web/heatMap.h"
 
 namespace grt {
 
-class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource
+class RoutingCongestionDataSource : public web::GlobalRoutingDataSource
 {
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
@@ -60,7 +60,7 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource
   double max_;
 };
 
-gui::HeatMapSourceHandle registerRoutingCongestionHeatMapSource(
+web::HeatMapSourceHandle registerRoutingCongestionHeatMapSource(
     utl::Logger* logger,
     odb::dbDatabase* db);
 

@@ -6,17 +6,24 @@ to be stable enough that an alternate client (custom browser app,
 headless test driver, third-party visualization) can be implemented
 against it without reading the JavaScript reference frontend.
 
-The server exposes one HTTP route for static assets and one WebSocket
-endpoint for all dynamic operations. The WebSocket carries a small
-binary framing with JSON or PNG payloads.
+The server exposes HTTP routes for its embedded assets and a layout
+image, and one WebSocket endpoint for all dynamic operations. The
+WebSocket carries a small binary framing with JSON or PNG payloads.
 
 ## Connecting
 
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
-- HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+- HTTP `GET` serves the three assets embedded in the binary: `/` (or
+  `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
+  string or fragment is ignored. `GET /download/image` renders a PNG of
+  the layout from its query parameters. Anything else is 404, and no
+  method other than GET is supported.
+- The assets are stored gzipped. When `Accept-Encoding` allows
+  gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
+  wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
@@ -188,6 +195,66 @@ finished building (the `refresh` push fires when this flips to true).
 `pin_max_size` is the largest BPin dimension in DBU, used by the client
 to size the pin-marker overlay.
 
+### `layer_extents`
+
+Return where each tech layer's `tile`s can have content, so the client
+can skip requesting tiles that would come back empty.
+
+No request fields beyond the envelope.
+
+**Response (JSON):**
+```json
+{
+  "supported": true,
+  "layers": {
+    "metal1": [x0, y0, x1, y1],
+    "metal9": null
+  },
+  "gated": {
+    "inst_pins": {"metal1": [x0, y0, x1, y1]},
+    "blockages": {"metal1": [x0, y0, x1, y1]},
+    "routing_obstructions": {},
+    "fills": {}
+  }
+}
+```
+
+Each rect is a conservative bounding box, as fractions of the zoom-0 tile
+with `y` running down, so tile `(z, x, y)` covers `[x, x+1] × [y, y+1] / 2^z`.
+`layers` holds each tech layer's routing, special-net and BTerm shapes
+(`null`: none anywhere). `gated` holds, per `tile` visibility flag, the
+extent of what that flag alone draws on each layer it reaches — master pins,
+master obstructions, routing obstructions and fills; a layer that source
+does not reach is absent. A tile can be skipped when it misses the layer's
+`layers` rect and every `gated` rect whose flag is not off. A layer missing
+from `layers` (the `_`-prefixed pseudo layers) must always be requested,
+unless it is in `sized` below.
+Only design geometry is covered: tracks and the debug overlays also draw on
+layer tiles, so tiles are requested regardless while those are on.
+`supported` is false for multi-chiplet designs, and the client then
+requests every tile.
+
+A layer in `sized` draws only on features long enough on screen — the
+instance and pin names of `_inst_labels` need an instance at least
+`min_css_px` CSS pixels at its longest side:
+```json
+"sized": {
+  "_inst_labels": {
+    "min_css_px": 14,
+    "by_size": [[0.0001, [x0, y0, x1, y1]], [0.0002, [x0, y0, x1, y1]],
+                [0.0004, null]]
+  }
+}
+```
+Each `by_size` entry is a size, as a fraction of the zoom-0 tile, and the
+extent of every feature at least that large, in ascending size; the last is
+past the largest feature and `null`. At zoom `z` on tiles `T` CSS pixels wide
+a feature needs `min_css_px / (T · 2^z)`; the tile can be skipped when it
+misses the extent of the last entry no larger than that (or of the first).
+
+The extents describe the design when the request was served; after a
+`refresh` push they must be discarded and fetched again.
+
 ### `tech`
 
 Return tech-layer metadata, sites, and block info.
@@ -201,6 +268,11 @@ No request fields.
   "layer_colors": [[r, g, b], ...],
   "sites": ["FreePDK45_38x28_10R_NP_162NW_34O", "..."],
   "has_liberty": true,
+  "overlays": [
+    {"name": "_inst_labels", "z_index": 999,
+     "shown_by": [["inst_names"], ["inst_pins", "inst_pin_names"]],
+     "layers_by": [["inst_pins", "inst_pin_names"]]}
+  ],
   "dbu_per_micron": 1000,
   "block_name": "top"
 }
@@ -208,6 +280,15 @@ No request fields.
 
 `layer_colors` is parallel to `layers`; each entry is RGB in `0..255`.
 `block_name` is the empty string when no block is loaded.
+
+`overlays` lists the self-painting pseudo layers this design can draw (an
+overlay with nothing to draw, such as `_regions` in a design without regions,
+is left out), each a `tile` layer of its own: `z_index` is its pane order
+against the tech layers (`3` upwards), `_instances` (`0`) and `_pins` (`1`).
+`shown_by` and `layers_by` are groups of `tile` visibility keys, on when every
+key of any one group is on: the overlay draws anything when `shown_by` is on,
+and what it draws depends on `visible_layers` when `layers_by` is on (an
+empty group always is), so its tiles must be fetched again when those change.
 
 ---
 
@@ -782,14 +863,24 @@ Toggle one marker's `visited` or `visible` flag.
 
 ### `drc_update_category_visibility`
 
-Bulk-set every marker in a category to a single `visible` value.
+Bulk-set every marker in a category — and in its subcategories — to a
+single `visible` value.
 
-| Field      | Type     | Required | Description           |
-| ---------- | -------- | :------: | --------------------- |
-| `category` | `string` |    ✓     | Top-level name.       |
-| `visible`  | `bool`   |    ✓     | New visibility.       |
+| Field      | Type       | Required | Description                                                                                     |
+| ---------- | ---------- | :------: | ----------------------------------------------------------------------------------------------- |
+| `path`     | `string[]` |          | Category names from the top-level category down to the target, e.g. `["PSM","VDD","Unconnected shape"]`. |
+| `category` | `string`   |          | Top-level name. Used only when `path` is absent or empty.                                       |
+| `visible`  | `bool`     |    ✓     | New visibility.                                                                                 |
 
-**Response (JSON):** `{"ok": 1, "category": "...", "visible": <bool>, "count": <updated>}`.
+One of `path` or `category` must name a category. Subcategory names are
+unique only among siblings — `check_power_grid` builds both
+`PSM/VDD/Unconnected shape` and `PSM/VSS/Unconnected shape` — so a
+subcategory can be addressed only by its full `path`.
+
+**Response (JSON):** `{"ok": 1, "category": "<leaf name>", "path": [...], "visible": <bool>, "count": <updated>}`.
+
+When no category matches, the response is an error with
+`Category not found: <path joined by "/">`.
 
 ### `drc_highlight`
 
@@ -887,7 +978,8 @@ always sends the full set.
 | `net_signal`, `net_power`, `net_ground`, `net_clock`, `net_reset`, `net_tieoff`, `net_scan`, `net_analog` | `true` | By `dbSigType`. |
 | `routing`, `routing_segments`, `routing_vias`, `special_nets`, `srouting_segments`, `srouting_vias` | `true` | Wires & vias. |
 | `pins`, `pin_markers`, `pin_names` | `true` | BTerm shapes & labels. |
-| `inst_names`, `inst_pins`, `inst_pin_names` | `true` | ITerm shapes & labels. |
+| `inst_names`, `inst_pins` | `true` | Instance labels & ITerm shapes. |
+| `inst_pin_names`       | `false` | ITerm labels, off as in the Qt GUI. |
 | `blockages`, `placement_blockages`, `routing_obstructions` | `true` | dbBlockage / dbObstruction. |
 | `rows`                 | `false` | Enables the row-outline overlay; gates `site_<name>` lookup. |
 | `tracks_pref`, `tracks_non_pref` | `false` | Routing-track overlay. |

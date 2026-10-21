@@ -38,6 +38,7 @@ class Maze3DTestPeer
 
   static void route(FastRouteCore& router, const std::vector<int>& net_ids)
   {
+    router.getOverflow3D();
     router.tree_order_pv_.clear();
     for (int net_id : net_ids) {
       OrderNetPin order{};
@@ -46,6 +47,7 @@ class Maze3DTestPeer
     }
     router.mazeRouteMSMDOrder3D(
         /*expand=*/3, /*ripupTHlb=*/0, /*ripupTHub=*/10);
+    router.getOverflow3D();
   }
 
   static std::vector<int> getUsage(const FastRouteCore& router)
@@ -110,6 +112,7 @@ class Maze3DTest : public tst::DbFixture
 
   void SetUp() override
   {
+    logger_.setDebugLevel(utl::GRT, "overflowcheck", 1);
     auto* tech = odb::dbTech::create(db_.get(), "tech");
     auto* chip = odb::dbChip::create(db_.get(), tech);
     block_ = odb::dbBlock::create(chip, "top");

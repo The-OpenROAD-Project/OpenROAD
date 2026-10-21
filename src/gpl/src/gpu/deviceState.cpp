@@ -106,12 +106,10 @@ void DeviceState::buildTopology(const std::vector<GCell>& gCellStor,
   s.h_inst_wl_grad_y = Kokkos::create_mirror_view(s.d_inst_wl_grad_y);
 
   // ---- Build host CSR + static pin attributes ----
-  // I/O pins (BTerm) are not part of this device-side GCell pool. They either
-  // have no owning GCell or, under concurrent IO placement, own one in
-  // NesterovBase's ioPinStor_, which this pool does not model. Both resolve to
-  // inst_id = -1, so updatePinLocations() leaves d_pin_cx/d_pin_cy unchanged
-  // after the initial absolute coordinates are seeded below. This is why
-  // concurrent IO placement uses the CPU wirelength and HPWL backends.
+  // I/O pins (BTerm) have no owning GCell, so they resolve to inst_id = -1
+  // and updatePinLocations() leaves d_pin_cx/d_pin_cy unchanged after the
+  // initial absolute coordinates are seeded below. This is why concurrent IO
+  // placement, which moves them, uses the CPU wirelength and HPWL backends.
   std::vector<int> h_pin_offset_cx(num_pins_);
   std::vector<int> h_pin_offset_cy(num_pins_);
   std::vector<int> h_pin_inst_id(num_pins_);

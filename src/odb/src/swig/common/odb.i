@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #ifdef BAZEL
-%module(package="src.odb") odb
+%module(package="src.odb") odb_py
 #endif
 
 %{

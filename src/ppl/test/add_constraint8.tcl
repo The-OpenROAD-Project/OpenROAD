@@ -11,4 +11,4 @@ place_pins -hor_layers metal3 -ver_layers metal2
 set def_file [make_result_file add_constraint8.def]
 write_def $def_file
 
-diff_file add_constraint8.defok $def_file
+diff_files add_constraint8.defok $def_file

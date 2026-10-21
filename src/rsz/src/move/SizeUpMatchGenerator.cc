@@ -119,6 +119,16 @@ bool SizeUpMatchGenerator::resolveDriverTarget(
                resizer_.network()->pathName(inst));
     return false;
   }
+  if (resizer_.isFixed(inst)) {
+    debugPrint(resizer_.logger(),
+               RSZ,
+               "size_up_match_move",
+               2,
+               "REJECT SizeUpMatchMove {}: {} is fixed",
+               resizer_.network()->pathName(drvr_pin),
+               resizer_.network()->pathName(inst));
+    return false;
+  }
   if (!resizer_.isLogicStdCell(inst)) {
     debugPrint(resizer_.logger(),
                RSZ,

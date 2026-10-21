@@ -9,4 +9,4 @@ detailed_placement
 
 set def_file [make_result_file cell_on_block2.def]
 write_def $def_file
-diff_file cell_on_block2.defok $def_file
+diff_files cell_on_block2.defok $def_file

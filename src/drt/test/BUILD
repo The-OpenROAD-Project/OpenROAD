@@ -21,6 +21,7 @@ COMPULSORY_TESTS = [
     "ndr_no_auto_taper",
     "obstruction",
     "pa_single_pin",
+    "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
@@ -172,10 +173,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -199,11 +198,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        # drt only exports header TritonRoute.h, but we need other symbols
-        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",

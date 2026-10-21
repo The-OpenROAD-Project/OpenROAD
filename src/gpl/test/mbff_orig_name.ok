@@ -15,10 +15,10 @@ orig_name field registered at session init (pre-cluster_flops).
 [INFO IFP-0104] Effective utilization:                0.019
 [INFO IFP-0105] Number of instances:                      4
 Alpha = 40.0, Beta = 1.0, #paths = 0, max size = -1
-Total ILP Cost: 112.643
+Total ILP Cost: 112.644
 Total Timing Critical Path Displacement: 0.0
 Average slot-to-flop displacement: 1.730
-Final Objective Value: 112.643
+Final Objective Value: 112.644
 Sizes used
   4-bit: 1
 Startpoint: d4 (input port clocked by clk)

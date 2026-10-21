@@ -7,9 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <deque>
-#include <limits>
 #include <map>
-#include <numeric>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -17,6 +15,7 @@
 #include "boost/heap/d_ary_heap.hpp"
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
+#include "neighbors.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -29,83 +28,6 @@ using odb::Point;
 using std::vector;
 using stt::Tree;
 using utl::Logger;
-
-/////////// Nearest Neighbors
-
-// This is the method in "Prim-Dijkstra Revisited" section 4.
-// The key idea is: "We say that vi is a neighbor of vj if the smallest
-// bounding box containing vi and vj contains no other nodes."
-
-// This has nothing to do with the Guibas & Stolfi method despite its
-// mention in the paper and the comments of the original code.  GS is
-// not a good choice as it excludes edges that may be optimal for high
-// alpha values.
-
-using Neighbors = std::vector<int>;
-static vector<Neighbors> get_nearest_neighbors(const vector<Point>& pts)
-{
-  thread_local static vector<int> data;
-  data.clear();
-
-  const size_t pt_count = pts.size();
-
-  vector<Neighbors> neighbors(pt_count);
-
-  // These keep track of the closest node in X seen so far in the
-  // respective quandrant of each node (the index).  Any node beyond
-  // this coordinate would have another node in its bbox and is
-  // therefore not a nearest neighbor.  This depends on processing the
-  // nodes in order of increasing y distance.
-  data.reserve(pt_count * 5);
-  data.resize(pt_count * 2, std::numeric_limits<int>::max());
-  data.resize(pt_count * 4, std::numeric_limits<int>::min());
-  data.resize(pt_count * 5);
-  int* const ur = &data[0];  // NOLINT
-  int* const lr = &data[pt_count];
-  int* const ul = &data[pt_count * 2];
-  int* const ll = &data[pt_count * 3];
-  int* const sorted = &data[pt_count * 4];
-
-  // sort in y-axis
-  std::iota(sorted, sorted + pt_count, 0);
-  std::stable_sort(sorted, sorted + pt_count, [&pts](int i, int j) {
-    return std::make_pair(pts[i].getY(), pts[i].getX())
-           < std::make_pair(pts[j].getY(), pts[j].getX());
-  });
-
-  // Compute neighbors going from bottom to top in Y
-  for (int idx = 0; idx < pt_count; ++idx) {
-    const int pt_idx = sorted[idx];
-    const int pt_x = pts[pt_idx].getX();
-    // Update upper neighbors of all pts below pt (below.y <= pt.y)
-    for (int i = 0; i < idx; ++i) {
-      const int below_idx = sorted[i];
-      const int below_x = pts[below_idx].getX();
-      if (below_x <= pt_x && pt_x < ur[below_idx]) {  // pt in ur
-        neighbors[below_idx].push_back(pt_idx);
-        ur[below_idx] = pt_x;
-      } else if (ul[below_idx] < pt_x && pt_x < below_x) {  // pt in ul
-        neighbors[below_idx].push_back(pt_idx);
-        ul[below_idx] = pt_x;
-      }
-    }
-
-    // Set all lower neighbors for 'pt' (below.y <= pt.y)
-    for (int i = idx - 1; i >= 0; --i) {
-      const int below_idx = sorted[i];
-      const int below_x = pts[below_idx].getX();
-      if (pt_x <= below_x && below_x < lr[pt_idx]) {  // below in lr
-        neighbors[pt_idx].push_back(below_idx);
-        lr[pt_idx] = below_x;
-      } else if (ll[pt_idx] < below_x && below_x < pt_x) {  // below in ll
-        neighbors[pt_idx].push_back(below_idx);
-        ll[pt_idx] = below_x;
-      }
-    }
-  }
-
-  return neighbors;
-}
 
 /////////// Minimum Spanning Tree per PD costing
 
@@ -456,7 +378,7 @@ Tree primDijkstra(const vector<int>& x,
     node_point[graph.addNode()] = pts[i];
   }
 
-  const auto nn = get_nearest_neighbors(pts);
+  const auto nn = getNearestNeighbors(pts);
 
   auto driver_node = ListGraph::nodeFromId(driver_index);
   buildSpanningTree(node_point, driver_node, alpha, nn, graph);

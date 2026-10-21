@@ -12,7 +12,7 @@
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "Util.h"
-#include "gui/gui.h"
+#include "web/core.h"
 
 namespace utl {
 class Logger;
@@ -24,7 +24,7 @@ class HTreeBuilder;
 class SinkClustering;
 
 // This class draws debugging graphics on the layout
-class CtsGraphics : public gui::Renderer, public CtsObserver
+class CtsGraphics : public web::Renderer, public CtsObserver
 {
  public:
   void initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock) override;
@@ -39,14 +39,14 @@ class CtsGraphics : public gui::Renderer, public CtsObserver
   void status(const std::string& message) override;
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
 
  private:
-  void drawHTree(gui::Painter& painter);
-  void drawCluster(gui::Painter& painter);
+  void drawHTree(web::Painter& painter);
+  void drawCluster(web::Painter& painter);
 
   Clock* clock_;
   HTreeBuilder* h_tree_builder_;

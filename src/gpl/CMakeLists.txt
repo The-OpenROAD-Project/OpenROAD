@@ -31,6 +31,7 @@ add_library(gpl_lib
   src/nesterovPlace.cpp
   src/placerBase.cpp
   src/nesterovBase.cpp
+  src/ioPinBase.cpp
   src/fft.cpp
   src/fftsg.cpp
   src/fftsg2d.cpp
@@ -158,6 +159,7 @@ target_link_libraries(gpl_lib
     dbSta_lib
     rsz_lib
     grt_lib
+    ppl
     ortools::ortools
     Threads::Threads
     OpenMP::OpenMP_CXX
@@ -168,7 +170,7 @@ target_link_libraries(gpl
     gpl_lib
     utl_lib
     Eigen3::Eigen
-    gui
+    gui_core
     odb
     OpenSTA
     rsz
@@ -197,7 +199,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PUBLIC
       utl_lib
       Eigen3::Eigen
-      gui
+      gui_core
       odb
       OpenSTA
       rsz

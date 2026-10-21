@@ -12,4 +12,4 @@ global_placement -density 0.6 -init_density_penalty 0.01 -skip_initial_place
 
 set def_file [make_result_file $test_name.def]
 write_def $def_file
-diff_file $def_file core01.defok
+diff_files $def_file core01.defok

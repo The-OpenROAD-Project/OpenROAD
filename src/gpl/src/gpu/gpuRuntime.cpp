@@ -67,9 +67,10 @@ void ensureKokkosInitialized()
     if (Kokkos::is_initialized()) {
       return;
     }
-    Kokkos::InitializationSettings settings;
-    settings.set_disable_warnings(true);
-    Kokkos::initialize(settings);
+    // Keep Kokkos warnings enabled. In particular, Kokkos reports when the
+    // compiled CUDA architecture differs from the selected device. Compatible
+    // architectures can still run, but the mismatch may reduce performance.
+    Kokkos::initialize();
     std::atexit([] {
       if (Kokkos::is_initialized() && !Kokkos::is_finalized()) {
         Kokkos::finalize();

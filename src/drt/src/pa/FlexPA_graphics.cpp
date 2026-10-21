@@ -14,10 +14,10 @@
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
-#include "gui/gui.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace drt {
 
@@ -29,7 +29,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
     : logger_(logger),
       settings_(settings),
       inst_(nullptr),
-      gui_(gui::Gui::get()),
+      gui_(web::Gui::get()),
       pin_(nullptr),
       inst_term_(nullptr),
       top_block_(design->getTopBlock()),
@@ -78,7 +78,7 @@ FlexPAGraphics::FlexPAGraphics(frDebugSettings* settings,
   gui_->registerRenderer(this);
 }
 
-void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
+void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
   frLayerNum layer_num;
   if (!shapes_.empty()) {
@@ -129,8 +129,8 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
   }
 
   if (pa_markers_) {
-    painter.setPen(gui::Painter::kYellow, /* cosmetic */ true);
-    painter.setBrush(gui::Painter::kTransparent);
+    painter.setPen(web::Painter::kYellow, /* cosmetic */ true);
+    painter.setBrush(web::Painter::kTransparent);
     for (auto& marker : *pa_markers_) {
       if (marker->getLayerNum() == layer_num) {
         painter.drawRect(marker->getBBox());
@@ -142,7 +142,7 @@ void FlexPAGraphics::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     if (ap.getLayerNum() != layer_num) {
       continue;
     }
-    auto color = ap.hasAccess() ? gui::Painter::kGreen : gui::Painter::kRed;
+    auto color = ap.hasAccess() ? web::Painter::kGreen : web::Painter::kRed;
     painter.setPen(color, /* cosmetic */ true);
 
     const odb::Point& pt = ap.getPoint();
@@ -372,7 +372,7 @@ void FlexPAGraphics::status(const std::string& message)
 /* static */
 bool FlexPAGraphics::guiActive()
 {
-  return gui::Gui::enabled();
+  return web::Gui::enabled();
 }
 
 }  // namespace drt

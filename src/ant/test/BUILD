@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -5,13 +6,7 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
-    "ant_check",
-    "ant_report",
-    "check_api1",
-    "check_disjoint_stubs",
-    "check_drt1",
     "check_grt1",
-    "check_output_pin_bridge",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
@@ -34,34 +29,11 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "ant_report": [
-                "ant_check.lef",
-                "ant_check.def",
-            ],
-            "check_api1": [
-                "merged_spacing.lef",
-                "sw130_random.def",
-            ],
-            "check_disjoint_stubs": [
-                "ant_check.lef",
-            ],
-            "check_drt1": [
-                "merged_spacing.lef",
-                "sw130_random.def",
-            ],
             "check_grt1": [
                 "gcd_sky130.def",
                 "sky130hs/sky130hs_tt.lib",
                 "sky130hs/sky130hs_std_cell.lef",
                 "sky130hs/sky130hs.tlef",
-            ],
-            "check_output_pin_bridge": [
-                "ant_check.lef",
-            ],
-            "no-check_grt1": [
-                "gcd_sky130.def",
-                "sky130hs/sky130hs_tt.lib",
-                "sky130hs/sky130hs_std_cell.lef",
             ],
         }.get(test_name, []),
     )
@@ -77,6 +49,30 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+# Binding tests: pass/fail checks, no golden log.
+regression_test(
+    name = "check_antennas_cmd",
+    check_log = False,
+    check_passfail = True,
+    data = [
+        "ant_check.def",
+        "ant_check.lef",
+        ":regression_resources",
+    ],
+)
+
+py_test(
+    name = "ant_api_test",
+    size = "small",
+    srcs = ["ant_api.py"],
+    data = [
+        "ant_check.def",
+        "ant_check.lef",
+    ],
+    main = "ant_api.py",
+    deps = ["//python/openroad:openroadpy"],
+)
 
 py_test(
     name = "ant_man_tcl_check",
@@ -96,4 +92,86 @@ doc_check_test(
         "//src/ant:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+exports_files(
+    [
+        "ant_check.def",
+        "ant_check.lef",
+    ],
+    visibility = ["//python/openroad:__pkg__"],
+)
+
+cc_test(
+    name = "TestAntennaRules",
+    size = "small",
+    srcs = ["cpp/TestAntennaRules.cpp"],
+    deps = [
+        "//src/ant:ant_internal",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestAntennaReport",
+    size = "small",
+    srcs = ["cpp/TestAntennaReport.cpp"],
+    deps = [
+        "//src/ant",
+        "//src/ant:ant_internal",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestAntennaSynthetic",
+    size = "small",
+    srcs = [
+        "cpp/AntennaTestUtil.h",
+        "cpp/TestAntennaSynthetic.cpp",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/ant:ant_internal",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@openmp",
+    ],
+)
+
+cc_test(
+    name = "TestAntennaDesigns",
+    size = "small",
+    srcs = [
+        "cpp/AntennaTestUtil.h",
+        "cpp/TestAntennaDesigns.cpp",
+    ],
+    data = [
+        "ant_check.def",
+        "ant_check.lef",
+        "merged_spacing.lef",
+        "sw130_random.def",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/ant:ant_internal",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

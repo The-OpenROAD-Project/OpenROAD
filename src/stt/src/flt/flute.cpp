@@ -224,6 +224,11 @@ void Flute::initLUT(const int to_d, LutType lut, NumSoln numsoln)
   lut_valid_d_ = to_d;
 }
 
+void Flute::completeLUT()
+{
+  ensureLUT(kMaxLutDegree);
+}
+
 void Flute::ensureLUT(const int d)
 {
   if (lut_ == nullptr) {

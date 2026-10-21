@@ -5,6 +5,15 @@ entries:
   entries:
   - file: user/Build.md
     title: Building OpenROAD
+    entries:
+    - file: user/Bazel.md
+      title: Building and testing with Bazel
+    - file: user/Bazel-caching.md
+      title: Bazel Caching
+    - file: user/Bazel-targets.md
+      title: Bazel Targets
+    - file: user/Build-CMake.md
+      title: Building with CMake (deprecated)
   - url: https://openroad-flow-scripts.readthedocs.io/
     title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
   - file: tutorials/index

@@ -9,4 +9,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file gcd.guideok $guide_file
+diff_files gcd.guideok $guide_file

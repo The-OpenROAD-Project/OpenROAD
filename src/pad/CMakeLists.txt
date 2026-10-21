@@ -33,7 +33,7 @@ target_link_libraries(pad
   PRIVATE
     utl_lib
     odb
-    gui
+    gui_core
     Boost::boost
 )
 
