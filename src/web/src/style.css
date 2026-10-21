@@ -1098,12 +1098,6 @@ ide-pane,
 
 /* ─── Maximized Panes (Expanded Across IDE Workspace) ─────────────────────── */
 
-ide-pane[maximized] .ide-btn-collapse,
-ide-pane.maximized .ide-btn-collapse,
-.ide-pane.maximized .ide-btn-collapse {
-    display: none !important;
-}
-
 #gl-container.maximized-main {
     grid-template-columns: 0px 0px 1fr 0px 0px !important;
 }

@@ -147,11 +147,16 @@ describe('GridLayoutManager', () => {
         assert.ok(!inspTab.hidden);
     });
 
-    it('collapses and restores panes via controls, gutter buttons, and classes', () => {
+    it('collapses and restores panes via controls, gutter buttons, and classes', async () => {
         layout.registerComponentFactoryFunction('DisplayControls', () => {});
         layout.registerComponentFactoryFunction('Inspector', () => {});
         layout.registerComponentFactoryFunction('TclConsole', () => {});
         layout.loadLayout({});
+
+        await Promise.all([
+            layout.panes.right.updateComplete,
+            layout.panes.bottom.updateComplete,
+        ]);
 
         // Left pane: collapse via helper / API, restore via gutter expand button
         const gutterLeft = containerEl.querySelector('#gutter-expand-left');
@@ -162,7 +167,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
 
         // Right pane: collapse via header button, restore via gutter button
-        const btnCollapseRight = layout.panes.right.el.shadowRoot.querySelector('.ide-btn-collapse');
+        const btnCollapseRight = layout.panes.right.shadowRoot.querySelector('.ide-btn-collapse');
         const gutterRight = containerEl.querySelector('#gutter-expand-right');
         assert.ok(btnCollapseRight);
         assert.ok(gutterRight);
@@ -172,7 +177,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-right'));
 
         // Bottom pane: collapse via header button, restore via gutter button
-        const btnCollapseBottom = layout.panes.bottom.el.shadowRoot.querySelector('.ide-btn-collapse');
+        const btnCollapseBottom = layout.panes.bottom.shadowRoot.querySelector('.ide-btn-collapse');
         const gutterBottom = containerEl.querySelector('#gutter-expand-bottom');
         assert.ok(btnCollapseBottom);
         assert.ok(gutterBottom);
@@ -187,7 +192,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
     });
 
-    it('resets layout to defaults', () => {
+    it('resets layout to defaults', async () => {
         layout.registerComponentFactoryFunction('DisplayControls', () => {});
         layout.registerComponentFactoryFunction('LayoutViewer', () => {});
         layout.registerComponentFactoryFunction('SchematicWidget', () => {});
@@ -203,9 +208,12 @@ describe('GridLayoutManager', () => {
         layout.collapsePane('right');
         layout.collapsePane('bottom');
         layout.maximizePane('main');
+        await layout.panes.main.updateComplete;
+        assert.ok(layout.panes.main.hasAttribute('maximized'));
 
         // Reset
         layout.resetLayout();
+        await layout.panes.main.updateComplete;
 
         assert.equal(containerEl.style.getPropertyValue('--pane-left-width'), '240px');
         assert.equal(containerEl.style.getPropertyValue('--pane-right-width'), '340px');
@@ -213,7 +221,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
         assert.ok(!containerEl.classList.contains('hide-right'));
         assert.ok(!containerEl.querySelector('#pane-center').classList.contains('hide-bottom'));
-        assert.ok(!containerEl.querySelector('#pane-main').hasAttribute('maximized'));
+        assert.ok(!layout.panes.main.hasAttribute('maximized'));
         assert.equal(layout.activeTabs.main, 'LayoutViewer');
         assert.equal(layout.activeTabs.left, 'DisplayControls');
     });
@@ -222,11 +230,12 @@ describe('GridLayoutManager', () => {
         layout.registerComponentFactoryFunction('LayoutViewer', () => {});
         layout.loadLayout({});
 
-        const btnMaxMain = layout.panes.main.el.shadowRoot.querySelector('.ide-btn-maximize');
+        const mainPane = layout.panes.main;
+        await mainPane.updateComplete;
+        const btnMaxMain = mainPane.shadowRoot.querySelector('.ide-btn-maximize');
         assert.ok(btnMaxMain);
 
         btnMaxMain.click();
-        const mainPane = containerEl.querySelector('#pane-main');
         await mainPane.updateComplete;
         assert.ok(mainPane.maximized);
         assert.ok(mainPane.hasAttribute('maximized'));
@@ -240,9 +249,10 @@ describe('GridLayoutManager', () => {
     });
 
     it('toggles maximized pane state and restores layout correctly', async () => {
-        const bottomPane = containerEl.querySelector('#pane-bottom');
-        const btnMaxBottom = layout.panes.bottom.el.shadowRoot.querySelector('.ide-btn-maximize');
-        const btnColBottom = layout.panes.bottom.el.shadowRoot.querySelector('.ide-btn-collapse');
+        const bottomPane = layout.panes.bottom;
+        await bottomPane.updateComplete;
+        const btnMaxBottom = bottomPane.shadowRoot.querySelector('.ide-btn-maximize');
+        const btnColBottom = bottomPane.shadowRoot.querySelector('.ide-btn-collapse');
 
         assert.ok(btnMaxBottom);
         assert.ok(btnColBottom);
