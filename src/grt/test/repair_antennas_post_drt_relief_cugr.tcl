@@ -1,6 +1,7 @@
 # Post-DRT repair_antennas on a congested CUGR route: nets the overflow
 # relief moves must drop their detailed wires, like the dirty nets.
 source "helpers.tcl"
+source "repair_antennas_relief_helpers.tcl"
 # Suppress DRT init logging: region/guide query sizes are a function of the
 # exact route geometry, not the repair contract this test locks.
 suppress_message DRT 33
@@ -22,42 +23,10 @@ global_route -use_cugr
 
 detailed_route -verbose 0
 
-proc guide_geometry { net } {
-  set rows {}
-  foreach guide [$net getGuides] {
-    set box [$guide getBox]
-    lappend rows [list [$box xMin] [$box yMin] [$box xMax] [$box yMax] \
-      [[$guide getLayer] getName]]
-  }
-  return [lsort $rows]
-}
-
-# Record each routed net's wire and guides before the repair.
 set block [ord::get_db_block]
-foreach net [$block getNets] {
-  if { [$net getWire] ne "NULL" } {
-    set prior_wire([$net getName]) [$net getWire]
-    set prior_guides([$net getName]) [guide_geometry $net]
-  }
-}
+record_routed_nets $block
 
 set_debug_level GRT verify_demand 1
 repair_antennas
 
-# A routed net with new guides must have dropped its old wire.
-set rerouted 0
-set stale 0
-foreach net [$block getNets] {
-  set name [$net getName]
-  if {
-    [info exists prior_wire($name)]
-    && [guide_geometry $net] ne $prior_guides($name)
-  } {
-    incr rerouted
-    if { [$net getWire] eq $prior_wire($name) } {
-      puts "Net $name keeps its old wire"
-      incr stale
-    }
-  }
-}
-puts "Routed nets with new guides: $rerouted, keeping their old wire: $stale"
+report_moved_wires $block
