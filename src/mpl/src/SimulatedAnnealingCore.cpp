@@ -693,11 +693,7 @@ void SimulatedAnnealingCore<T>::reportLocations() const
 
   // Then, the fixed terminals.
   const int number_of_moveable_macros = static_cast<int>(pos_seq_.size());
-  for (int i = 0; i < macros_.size(); ++i) {
-    if (i < number_of_moveable_macros) {
-      continue;
-    }
-
+  for (int i = number_of_moveable_macros; i < macros_.size(); ++i) {
     const T& macro = macros_[i];
     logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     "fixed",
