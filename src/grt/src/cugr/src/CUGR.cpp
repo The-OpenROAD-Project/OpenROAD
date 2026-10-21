@@ -875,11 +875,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
-    const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
-    const bool old_adopted = net->isAdopted();
-    // The maze re-selects the access points; a rollback needs the old ones.
-    std::map<int, AccessPoint> old_access_points
-        = net->getPreferredAccessPoints();
+    // A rollback restores the route and the access points the maze re-selects.
+    GRNet::SavedRoute old_route = net->saveRoute();
     // Overflow change of the transaction, measured on the touched edges.
     grid_graph_->collectTreeEdges(*net, touched_edges);
     double delta = -grid_graph_->sumOverflow(touched_edges);
@@ -939,9 +936,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
-      net->setRoutingTree(old_tree);
-      net->setAdopted(old_adopted);
-      net->setPreferredAccessPoints(std::move(old_access_points));
+      net->restoreRoute(std::move(old_route));
       grid_graph_->addTreeUsage(*net);
       rejected++;
     } else {
