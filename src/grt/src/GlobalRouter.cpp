@@ -460,14 +460,13 @@ void GlobalRouter::startIncremental()
 {
   ensureEngineSelected();
   is_incremental_ = true;
+  // A design read from odb has its global routing only as guides; load them
+  // so the update starts from the existing routing, not an empty grid.
+  if (designIsPlaced()) {
+    loadGuidesFromDB();
+  }
   if (!initialized_ || haveDetailedRoutes()) {
-    int min_layer, max_layer;
-    getMinMaxLayer(min_layer, max_layer);
-    if (use_cugr_) {
-      initCUGR(min_layer, max_layer);
-    } else {
-      initFastRoute(min_layer, max_layer);
-    }
+    initEngineWithExistingRouting();
   }
   grouter_cbk_ = new GRouteDbCbk(this);
   grouter_cbk_->addOwner(block_);
@@ -655,6 +654,94 @@ void GlobalRouter::updateDbCongestion()
   }
 }
 
+// Initialize the routing engine from the design and adopt the existing
+// routing into its demand: the detailed wires of routed nets and the global
+// routes of the others.  Used when the engine state cannot be reused: the
+// routes were read from odb in a new process, or nets are detailed routed.
+void GlobalRouter::initEngineWithExistingRouting()
+{
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+  if (use_cugr_) {
+    initCUGR(min_layer, max_layer);
+    // Adopt the existing routing into CUGR's demand, like FastRoute's
+    // findNetsObstructions: real wires for detailed-routed nets, guide
+    // routes otherwise. updateNet releases a net's demand on reroute.
+    int from_wires = 0;
+    int from_guides = 0;
+    int failed = 0;
+    for (odb::dbNet* db_net : block_->getNets()) {
+      const bool is_routed = isDetailedRouted(db_net);
+      auto it = routes_.find(db_net);
+      if (!is_routed && it == routes_.end()) {
+        continue;  // nothing to adopt (e.g. single-pin nets)
+      }
+      if (is_routed
+          && cugr_->restoreNetRoute(db_net,
+                                    makeRouteFromWires(db_net, max_layer))) {
+        from_wires++;
+      } else if (it != routes_.end()
+                 && cugr_->restoreNetRoute(db_net, it->second)) {
+        from_guides++;
+        debugPrint(logger_,
+                   GRT,
+                   "repair_antennas",
+                   2,
+                   "net {} adopted from guides (routed: {})",
+                   db_net->getConstName(),
+                   is_routed);
+      } else {
+        failed++;
+        debugPrint(logger_,
+                   GRT,
+                   "repair_antennas",
+                   2,
+                   "net {} adoption failed",
+                   db_net->getConstName());
+      }
+    }
+    debugPrint(logger_,
+               GRT,
+               "repair_antennas",
+               1,
+               "Demand adoption: {} nets from wires, {} from guides, {} "
+               "failed",
+               from_wires,
+               from_guides,
+               failed);
+    // The overflow relief only clears overflow above the adopted routing.
+    cugr_->captureOverflowBaseline();
+  } else {
+    initFastRoute(min_layer, max_layer);
+    // Repopulate edge usage from routes_ using updateNetResources, which
+    // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
+    // there is too much congestion
+    std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
+    int net_id;
+    bool exists;
+    for (const auto& [db_net, groute] : routes_) {
+      if (!isDetailedRouted(db_net)) {
+        auto it = db_net_map_.find(db_net);
+        if (it != db_net_map_.end()) {
+          updateNetResources(it->second, false);
+          // Mark the net so congestion-loop releases use the matching
+          // GRoute-based path (updateNetResources) rather than the
+          // sttree-based clearNetRoute (which sees empty sttrees here
+          // and would leave the 3D usage un-released, causing underflow).
+          it->second->setAreSegmentsRestored(true);
+          if (db_net->getNonDefaultRule() != nullptr) {
+            fastroute_->getNetId(db_net, net_id, exists);
+            ndr_nets.emplace_back(db_net, net_id);
+          }
+        }
+      }
+    }
+    // Disable the extra edge cost for NDR nets on congested 2D edges.
+    // Uses routes_ segments directly since sttrees are not yet populated.
+    disableCongestedNDRNetsFromRoutes(ndr_nets);
+  }
+}
+
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  int iterations,
                                  float ratio_margin,
@@ -664,86 +751,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 {
   ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
-    int min_layer, max_layer;
-    getMinMaxLayer(min_layer, max_layer);
-    if (use_cugr_) {
-      initCUGR(min_layer, max_layer);
-      // Adopt the existing routing into CUGR's demand, like FastRoute's
-      // findNetsObstructions: real wires for detailed-routed nets, guide
-      // routes otherwise. updateNet releases a net's demand on reroute.
-      int from_wires = 0;
-      int from_guides = 0;
-      int failed = 0;
-      for (odb::dbNet* db_net : block_->getNets()) {
-        const bool is_routed = isDetailedRouted(db_net);
-        auto it = routes_.find(db_net);
-        if (!is_routed && it == routes_.end()) {
-          continue;  // nothing to adopt (e.g. single-pin nets)
-        }
-        if (is_routed
-            && cugr_->restoreNetRoute(db_net,
-                                      makeRouteFromWires(db_net, max_layer))) {
-          from_wires++;
-        } else if (it != routes_.end()
-                   && cugr_->restoreNetRoute(db_net, it->second)) {
-          from_guides++;
-          debugPrint(logger_,
-                     GRT,
-                     "repair_antennas",
-                     2,
-                     "net {} adopted from guides (routed: {})",
-                     db_net->getConstName(),
-                     is_routed);
-        } else {
-          failed++;
-          debugPrint(logger_,
-                     GRT,
-                     "repair_antennas",
-                     2,
-                     "net {} adoption failed",
-                     db_net->getConstName());
-        }
-      }
-      debugPrint(logger_,
-                 GRT,
-                 "repair_antennas",
-                 1,
-                 "Demand adoption: {} nets from wires, {} from guides, {} "
-                 "failed",
-                 from_wires,
-                 from_guides,
-                 failed);
-      // The overflow relief only clears overflow above the adopted routing.
-      cugr_->captureOverflowBaseline();
-    } else {
-      initFastRoute(min_layer, max_layer);
-      // Repopulate edge usage from routes_ using updateNetResources, which
-      // uses layer_edge_cost (essential to NDR nets). Applies soft NDR if
-      // there is too much congestion
-      std::vector<std::pair<odb::dbNet*, int>> ndr_nets;
-      int net_id;
-      bool exists;
-      for (const auto& [db_net, groute] : routes_) {
-        if (!isDetailedRouted(db_net)) {
-          auto it = db_net_map_.find(db_net);
-          if (it != db_net_map_.end()) {
-            updateNetResources(it->second, false);
-            // Mark the net so congestion-loop releases use the matching
-            // GRoute-based path (updateNetResources) rather than the
-            // sttree-based clearNetRoute (which sees empty sttrees here
-            // and would leave the 3D usage un-released, causing underflow).
-            it->second->setAreSegmentsRestored(true);
-            if (db_net->getNonDefaultRule() != nullptr) {
-              fastroute_->getNetId(db_net, net_id, exists);
-              ndr_nets.emplace_back(db_net, net_id);
-            }
-          }
-        }
-      }
-      // Disable the extra edge cost for NDR nets on congested 2D edges.
-      // Uses routes_ segments directly since sttrees are not yet populated.
-      disableCongestedNDRNetsFromRoutes(ndr_nets);
-    }
+    initEngineWithExistingRouting();
   }
   if (repair_antennas_ == nullptr) {
     repair_antennas_
@@ -7245,9 +7253,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
   fastroute_->setResistanceAware(resistance_aware_);
 
   if (!initialized_) {
-    int min_layer, max_layer;
-    getMinMaxLayer(min_layer, max_layer);
-    initFastRoute(min_layer, max_layer);
+    initEngineWithExistingRouting();
   }
 
   if (!dirty_nets_.empty()) {
