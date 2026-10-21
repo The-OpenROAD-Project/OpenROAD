@@ -32,4 +32,8 @@ globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || ((id) => cl
 if (dom.window.customElements) {
     globalThis.customElements = dom.window.customElements;
 }
+if (dom.window.AbortController) {
+    globalThis.AbortController = dom.window.AbortController;
+    globalThis.AbortSignal = dom.window.AbortSignal;
+}
 export { dom };

@@ -430,7 +430,7 @@ describe('GridLayoutManager', () => {
         pane.remove();
     });
 
-    it('renders and manages <ide-tab> custom elements properly', () => {
+    it('renders and manages <ide-tab> custom elements properly', async () => {
         const tab = document.createElement('ide-tab');
         tab.id = 'tab-test-component';
         tab.setAttribute('for', 'test-component');
@@ -475,6 +475,17 @@ describe('GridLayoutManager', () => {
         tab.setActive(false);
         assert.ok(!tab.classList.contains('active'));
         assert.equal(tab.getAttribute('aria-selected'), 'false');
+
+        // Test Lit reactivity with Light DOM
+        tab.title = 'Updated Title';
+        tab.active = true;
+        tab.closable = false;
+        await tab.updateComplete;
+
+        assert.equal(tab.titleEl.textContent, 'Updated Title');
+        assert.ok(tab.classList.contains('active'));
+        assert.equal(tab.getAttribute('aria-selected'), 'true');
+        assert.equal(tab.querySelector('.ide-tab-close'), null);
 
         tab.remove();
     });

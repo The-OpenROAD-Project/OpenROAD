@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <csignal>
 #include <map>
 #include <memory>
@@ -103,7 +104,12 @@ class CUGR
   // Reset per-session netlist state (like FastRouteCore::clear); Tcl-applied
   // configuration survives, and init() rebuilds design_/grid_graph_.
   void clear();
-  void route(bool incremental);
+  // Returns the nets an incremental route also moved to relieve overflow.
+  std::vector<odb::dbNet*> route(bool incremental);
+  // Takes the current overflow as the reference the overflow relief keeps.
+  void captureOverflowBaseline();
+  // Keeps the overflow relief off a net whose pins here are out of date.
+  void markNetStale(odb::dbNet* db_net);
   void write(const std::string& guide_file);
   NetRouteMap getRoutes();
   GRoute getNetRoute(odb::dbNet* db_net);
@@ -280,12 +286,23 @@ class CUGR
   // neutral first PatternRoute.
   void patternRouteResAware(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
+  // How a rip-up and reroute pass treats its nets; the relief alters it.
+  struct RerouteOptions
+  {
+    // Incremental only: reroute every candidate, not only the congested ones.
+    bool reroute_all_candidates = true;
+    // Per net index, nonzero: keep a reroute only if it lowers overflow.
+    std::vector<char> strict_accept;
+    // Refresh slacks and the critical set before a maze pass.
+    bool refresh_critical = true;
+  };
   // iterativeRRR re-enters this stage, so the caller labels the debug dump.
   // Rolls back reroutes that add overflow; returns the accepted reroutes'
   // total overflow change (<= 0 up to the float slack of the accept test).
   double mazeRoute(std::vector<int>& net_indices,
                    CugrStage stage,
-                   int iteration);
+                   int iteration,
+                   const RerouteOptions& options);
 
   // Debug prints after a maze pass: the total overflow (group rrr) and, after
   // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
@@ -308,8 +325,25 @@ class CUGR
    *
    * @param net_indices Reused scratch buffer (cleared on entry by
    *                    `updateCongestedNets`).
+   * @param options     How each pass treats its nets (`RerouteOptions`).
    */
-  void iterativeRRR(std::vector<int>& net_indices);
+  void iterativeRRR(std::vector<int>& net_indices,
+                    const RerouteOptions& options);
+  // Incremental: reroutes the nets sharing added overflow; returns those moved.
+  std::vector<int> relieveIncrementalOverflow();
+  // A routing edge as (layer, x, y), as GridGraph::collectTreeEdges lists it.
+  using EdgeId = std::array<int, 3>;
+  // An edge's overflow above the baseline: what incremental calls added.
+  double addedOverflow(const EdgeId& edge) const;
+  // The edges of the nets' trees that carry added overflow, sorted.
+  std::vector<EdgeId> findCongestedEdges(
+      const std::vector<int>& net_indices) const;
+  // Added overflow summed over the edges.
+  double sumAddedOverflow(const std::vector<EdgeId>& edges) const;
+  // Routed nets outside the candidates that use an edge, near its gcell.
+  std::vector<int> findNetsOnCongestedEdges(
+      const std::vector<EdgeId>& edges,
+      const std::vector<char>& is_candidate) const;
   // res_aware_order selects the multi-factor res-aware ordering; false uses
   // the default slack/bbox order.
   void sortNetIndices(std::vector<int>& net_indices,
@@ -403,6 +437,8 @@ class CUGR
   std::vector<int> parasitics_dirty_nets_;
   // Dirty-net set for the current incremental pass; scopes congestion checks.
   std::vector<int> incremental_candidates_;
+  // Per-edge overflow at the last captureOverflowBaseline; relief ignores it.
+  std::vector<std::pair<EdgeId, double>> overflow_baseline_;
 
   bool resistance_aware_ = false;
   // Per-run normalisers for getResAwareScore (default 1 => well-defined).

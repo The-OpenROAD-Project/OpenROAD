@@ -237,8 +237,12 @@ class GridGraph
   // The (layer, x, y) edges the net's tree occupies, each once and sorted.
   void collectTreeEdges(const GRNet& net,
                         std::vector<std::array<int, 3>>& edges) const;
+  // Demand above capacity on one (layer, x, y) edge, 0 when it fits.
+  CapacityT edgeOverflow(const std::array<int, 3>& edge) const;
   // Overflow on the given edges under the current demand.
   double sumOverflow(const std::vector<std::array<int, 3>>& edges) const;
+  // Overflowed (layer, x, y) edges with their overflow, sorted by edge.
+  std::vector<std::pair<std::array<int, 3>, CapacityT>> overflowedEdges() const;
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
