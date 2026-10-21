@@ -7649,7 +7649,7 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
 
     // Skip the max-cap check on scan-enable/scan-in pins because they
     // tend to be high fanout pins
-    if (db_network_ != nullptr && mode != nullptr) {
+    if (db_network_ != nullptr) {
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
       odb::dbModITerm* moditerm = nullptr;

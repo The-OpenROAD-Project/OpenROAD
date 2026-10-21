@@ -4,7 +4,9 @@
 #include "SizeUpGenerator.hh"
 
 #include <algorithm>
+#include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -209,9 +211,12 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
         return (leak && *leak > 0.0f) ? leak : std::nullopt;
       }
       case CostType::kLefArea: {
-        const odb::dbMaster* master = resizer_.dbNetwork()->staToDb(c);
-        if (master != nullptr && master->getArea() > 0) {
-          return static_cast<float>(master->getArea());
+        auto* db_network = resizer_.dbNetwork();
+        if (db_network != nullptr) {
+          const odb::dbMaster* master = db_network->staToDb(c);
+          if (master != nullptr && master->getArea() > 0) {
+            return static_cast<float>(master->getArea());
+          }
         }
         return std::nullopt;
       }
@@ -222,12 +227,19 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
     return std::nullopt;
   };
 
+  // Original cell costs under each metric, precomputed once: `cell` is constant
+  // across the candidate loop, so this avoids repeating the staToDb/cellLeakage
+  // lookups for the old cell on every swappable candidate.
+  const std::array<std::optional<float>, 3> cell_costs
+      = {cost_of(cell, CostType::kLeakage),
+         cost_of(cell, CostType::kLefArea),
+         cost_of(cell, CostType::kLibArea)};
+
   // new/old cost on the first metric BOTH cells support (never mixes units).
-  auto cost_ratio = [&](sta::LibertyCell* old_cell,
-                        sta::LibertyCell* new_cell) -> std::optional<float> {
+  auto cost_ratio = [&](sta::LibertyCell* new_cell) -> std::optional<float> {
     for (const CostType type :
          {CostType::kLeakage, CostType::kLefArea, CostType::kLibArea}) {
-      const std::optional<float> old_cost = cost_of(old_cell, type);
+      const std::optional<float>& old_cost = cell_costs[static_cast<int>(type)];
       const std::optional<float> new_cost = cost_of(new_cell, type);
       if (old_cost && new_cost) {
         return *new_cost / *old_cost;
@@ -301,7 +313,7 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
       continue;
     }
     // Selection: best delay-gain per unit power among eligible candidates.
-    const std::optional<float> ratio = cost_ratio(cell, swappable);
+    const std::optional<float> ratio = cost_ratio(swappable);
     if (!ratio) {
       continue;
     }
