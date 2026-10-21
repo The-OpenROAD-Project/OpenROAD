@@ -354,6 +354,26 @@ TEST_F(AntennaSyntheticTest, RatioMarginOnCumulativeRatios)
   EXPECT_TRUE(margin.csr->violated);
 }
 
+// ANTENNAAREAMINUSDIFF can make a layer's ratio negative.  The cumulative
+// ratio is truncated to zero there, so the next layer starts from zero
+// rather than from the negative value (LEF/DEF 5.8 Appendix C, Example 2).
+TEST_F(AntennaSyntheticTest, NegativeCumulativeRatioTruncatedToZero)
+{
+  // M1: (1.02 - 100 * 0.5) / 0.5 < 0.
+  tst::applyAntennaRule(
+      m1(), {.diff_car = constantPwl(1000), .area_minus_diff = 100});
+  tst::applyAntennaRule(m2(), {.diff_car = constantPwl(1000)});
+  odb::dbNet* net = gateNet("n1", 0, driver(/*diff_area=*/0.5));
+  routeUpToM2(net);
+
+  const LayerCheck m1_check = layerCheck(net, m1());
+  const LayerCheck m2_check = layerCheck(net, m2());
+  EXPECT_LT(m1_check.par.actual, 0);
+  EXPECT_DOUBLE_EQ(m1_check.car.actual, 0);
+  EXPECT_GT(m2_check.par.actual, 0);
+  EXPECT_NEAR(m2_check.car.actual, m2_check.par.actual, 1e-9);
+}
+
 // A gate wired up through a via accumulates the PAR/PSR of every layer
 // below into CAR/CSR, and the cut layer gets a PAR of its own.
 TEST_F(AntennaSyntheticTest, CumulativeRatiosAcrossLayers)
