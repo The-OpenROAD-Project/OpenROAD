@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -183,39 +184,18 @@ class GridGraph
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
   /**
-   * @brief Sets the multiplier applied to the logistic-cost slopes.
+   * @brief Sets the multiplier applied to the congestion cost.
    *
-   * Scales `constants_.cost_logistic_slope` and
-   * `constants_.maze_logistic_slope` wherever they are read by
-   * `getWireCost`, `extractWireCostView` and `updateWireCostView`. Used
-   * by CUGR's iterative RRR loop to sharpen the per-edge cost gradient
-   * between iterations. The default value 1.0 leaves the cost surface
-   * unchanged.
+   * Scales the congestion cost height and the slopes
+   * `constants_.cost_logistic_slope` and `constants_.maze_logistic_slope`
+   * in `congestionCost`, shared by `getWireCost` and the wire-cost views.
+   * Used by CUGR's iterative RRR loop to raise the congestion cost between
+   * iterations. The default value 1.0 leaves the cost surface unchanged.
    *
    * @param m New multiplier value. Must be > 0.
    */
   void setCostMultiplier(double m) { cost_multiplier_ = m; }
   double getCostMultiplier() const { return cost_multiplier_; }
-
-  /**
-   * @brief Counts congested edges traversed by a routing tree.
-   *
-   * Walks the tree's wire segments and returns how many edges satisfy
-   * `demand > capacity * threshold`. At threshold == 1.0 this collapses
-   * to strict overflow (`demand > capacity`); at threshold < 1.0 it
-   * widens to include near-overflow ("congested but not yet
-   * overflowing") edges. Edges sitting exactly at capacity are
-   * intentionally *not* flagged — being full is not the same as being
-   * congested. Used by the RRR loop to extend the rip-up set beyond
-   * strictly-overflowed nets.
-   *
-   * @param tree      Routing tree to walk.
-   * @param threshold Per-edge utilization cutoff in [0.0, 1.0].
-   *
-   * @returns Number of tree edges meeting the predicate (>= 0).
-   */
-  int checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                      double threshold) const;
 
   // Misc
   AccessPointMap selectAccessPoints(GRNet* net) const;
@@ -253,6 +233,12 @@ class GridGraph
   void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
                        const std::vector<double>& net_costs = {},
                        bool adopted = false);
+
+  // The (layer, x, y) edges the net's tree occupies, each once and sorted.
+  void collectTreeEdges(const GRNet& net,
+                        std::vector<std::array<int, 3>>& edges) const;
+  // Overflow on the given edges under the current demand.
+  double sumOverflow(const std::vector<std::array<int, 3>>& edges) const;
 
   // Debug: snapshot/restore per-edge demand for consistency checks.
   std::vector<std::vector<std::vector<CapacityT>>> snapshotDemand() const;
@@ -339,9 +325,8 @@ class GridGraph
    */
   void extractWireCostView(GridGraphView<CostT>& view,
                            const std::vector<double>& net_costs) const;
-  void updateWireCostView(
-      GridGraphView<CostT>& view,
-      const std::shared_ptr<GRTreeNode>& routing_tree) const;
+  // Refreshes `view` on the 2D edges the net's tree charges (commitTree).
+  void updateWireCostView(GridGraphView<CostT>& view, const GRNet& net) const;
 
   // For visualization
   void write(const std::string& heatmap_file = "heatmap.txt") const;
@@ -353,6 +338,20 @@ class GridGraph
   std::vector<odb::Point> congestion_dirty_tiles_;
   std::vector<bool> congestion_tile_marked_;
 
+  // Per-direction inputs of the 2D wire-cost view (extractWireCostView).
+  struct WireCostViewContext
+  {
+    std::array<std::vector<int>, 2> layers;
+    std::array<CostT, 2> unit_length_short_cost;
+    std::array<double, 2> net_factor;
+  };
+  WireCostViewContext makeWireCostViewContext(
+      const std::vector<double>& net_costs) const;
+  // Cost of one 2D edge, shared by the full and incremental extraction.
+  CostT wireCostViewCell(const WireCostViewContext& context,
+                         int direction,
+                         int x,
+                         int y) const;
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
   // Find the gridlines_ within [locInterval.low, locInterval.high]
@@ -383,6 +382,11 @@ class GridGraph
                               AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
+  // Congestion cost term: `base` scaled by the RRR multiplier and the logistic.
+  CostT congestionCost(CostT base,
+                       CapacityT capacity,
+                       CapacityT resource,
+                       double slope) const;
   CostT getWireCost(int layer_index,
                     PointT lower,
                     CapacityT demand = 1.0,
@@ -473,6 +477,8 @@ class GridGraph
   CostT unit_length_wire_cost_;
   CostT unit_via_cost_;
   std::vector<CostT> unit_length_short_costs_;
+  // The NDR-blind context of the shared 2D view; fixed once the grid exists.
+  WireCostViewContext default_view_context_;
 
   int total_length_ = 0;
   int total_num_vias_ = 0;

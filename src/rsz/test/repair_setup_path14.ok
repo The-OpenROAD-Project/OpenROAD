@@ -12,13 +12,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.939 |       -9.4 |     13 | inst14/D
-     102* |       3 |      30 |        7 |      0 |     8 |    +8.7% |   -0.888 |       -3.0 |     13 | inst14/D
-    final |       3 |      30 |        7 |      0 |     8 |    +8.7% |   -0.888 |       -3.0 |     10 | inst14/D
+     160* |       1 |      43 |       10 |      0 |    10 |   +13.7% |   -0.636 |       -1.7 |     13 | inst14/D
+    final |       1 |      43 |       10 |      0 |    10 |   +13.7% |   -0.636 |       -1.7 |     10 | inst14/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 3 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 30 instances: 30 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 8 instances.
+[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0040] Inserted 10 buffers.
+[INFO RSZ-0051] Resized 43 instances: 43 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 10 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_2 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst14 (rising edge-triggered flip-flop clocked by clk)
@@ -30,33 +30,34 @@ Path Type: max
    0.0000    0.0000   clock clk (rise edge)
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ launch_2/CLK (sky130_fd_sc_hd__dfrtp_2)
-   0.4749    0.4749 v launch_2/Q (sky130_fd_sc_hd__dfrtp_2)
-   0.4126    0.8876 v inst1/X (sky130_fd_sc_hd__xnor3_1)
-   0.2553    1.1429 ^ inst2/X (sky130_fd_sc_hd__xor2_2)
-   0.1112    1.2540 v inst3/Y (sky130_fd_sc_hd__mux2i_1)
-   0.1755    1.4296 v inst4/X (sky130_fd_sc_hd__buf_4)
-   0.1695    1.5991 ^ inst5/Y (sky130_fd_sc_hd__xnor2_4)
-   0.1318    1.7309 ^ inst6/X (sky130_fd_sc_hd__buf_6)
-   0.0495    1.7803 v inst7/Y (sky130_fd_sc_hd__nor2_4)
-   0.1329    1.9132 v inst8/X (sky130_fd_sc_hd__buf_6)
-   0.1457    2.0589 ^ inst9/Y (sky130_fd_sc_hd__a211oi_2)
-   0.0644    2.1233 v inst10/Y (sky130_fd_sc_hd__nor3_1)
-   0.2874    2.4107 ^ inst11/Y (sky130_fd_sc_hd__a211oi_1)
-   0.2105    2.6212 v inst12/Y (sky130_fd_sc_hd__o2111ai_1)
-   0.4373    3.0586 ^ inst13/Y (sky130_fd_sc_hd__a32oi_4)
-   0.0094    3.0680 ^ inst14/D (sky130_fd_sc_hd__dfxtp_1)
-             3.0680   data arrival time
+   0.4750    0.4750 v launch_2/Q (sky130_fd_sc_hd__dfrtp_2)
+   0.4494    0.9245 v inst1/X (sky130_fd_sc_hd__xnor3_2)
+   0.1878    1.1123 v inst2/X (sky130_fd_sc_hd__xor2_4)
+   0.1733    1.2856 ^ inst3/Y (sky130_fd_sc_hd__mux2i_1)
+   0.1548    1.4404 ^ inst4/X (sky130_fd_sc_hd__buf_6)
+   0.1225    1.5629 ^ inst5/Y (sky130_fd_sc_hd__xnor2_4)
+   0.1319    1.6948 ^ inst6/X (sky130_fd_sc_hd__buf_6)
+   0.0485    1.7433 v inst7/Y (sky130_fd_sc_hd__nor2_4)
+   0.1284    1.8717 v inst8/X (sky130_fd_sc_hd__buf_8)
+   0.1462    2.0180 ^ inst9/Y (sky130_fd_sc_hd__a211oi_2)
+   0.0827    2.1007 v inst10/Y (sky130_fd_sc_hd__nor3_1)
+   0.2319    2.3326 ^ inst11/Y (sky130_fd_sc_hd__a211oi_2)
+   0.1849    2.5174 v inst12/Y (sky130_fd_sc_hd__o2111ai_1)
+   0.2191    2.7365 ^ inst13/Y (sky130_fd_sc_hd__a32oi_4)
+   0.1635    2.9000 ^ rebuffer1/X (sky130_fd_sc_hd__buf_12)
+   0.0094    2.9094 ^ inst14/D (sky130_fd_sc_hd__dfxtp_1)
+             2.9094   data arrival time
 
    2.3400    2.3400   clock clk (rise edge)
    0.0000    2.3400   clock network delay (ideal)
    0.0000    2.3400   clock reconvergence pessimism
              2.3400 ^ inst14/CLK (sky130_fd_sc_hd__dfxtp_1)
-  -0.1598    2.1802   library setup time
-             2.1802   data required time
+  -0.0670    2.2730   library setup time
+             2.2730   data required time
 -------------------------------------------------------------
-             2.1802   data required time
-            -3.0680   data arrival time
+             2.2730   data required time
+            -2.9094   data arrival time
 -------------------------------------------------------------
-            -0.8878   slack (VIOLATED)
+            -0.6364   slack (VIOLATED)
 
 
