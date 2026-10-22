@@ -41,9 +41,11 @@ dielectrics. Conformal dielectric k of a box is the box grown by the sum of
 the first k SW_T on all four sides, line ends included, and by the sum of
 the first k TW_T on top; its bottom stays at the box's bottom. Conductors
 cut into conformal dielectrics, and conformal dielectrics replace the planar
-layers they cross. Shells of the same conformal dielectric merge where wires
-are close; shells of different ones must not overlap, and a scene where they
-do is rejected.
+layers they cross. The boxes of one net on one layer grow their shells from
+their union, so a wire drawn as several boxes gets the shells of the merged
+wire. Shells of the same conformal dielectric merge where wires are close;
+between different nets or layers, shells of different ones must not
+overlap, and a scene where they do is rejected.
 
 ## Commands
 
