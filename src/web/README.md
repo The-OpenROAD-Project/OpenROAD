@@ -86,17 +86,24 @@ save_image
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
-| `path` | Output PNG file path. |
+| `path` | Output PNG file path. With `-web`, a path that does not end in `.png` gets `.png` added. |
 
 When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
+With no Qt window open, `-web` draws what the `gui::set_display_controls`
+calls have chosen, with the same paths and defaults as the Qt display controls.
+That is how one script, such as ORFS's `save_images.tcl`, can save the same
+views with either renderer.
+
 #### Display option keys (web mode)
 
-Display options control which elements are rendered when using `-web`.
-Each option is a `{key value}` pair where the key matches a visibility
-field and the value is `true` or `false`.
+Display options control which elements are rendered when using `-web`, for
+that image only. Each option is a `{key value}` pair where the value is `true`
+or `false`. The key is either one of the visibility fields below or a display
+control path such as `Nets/Power` or `Instances/*`, matched the way
+`gui::set_display_controls` matches it. Any other key is an error.
 
 | Key | Default | Description |
 | --- | ------- | ----------- |
@@ -106,8 +113,9 @@ field and the value is `true` or `false`.
 | `macros` | true | Macros |
 | `routing` | true | Signal routing |
 | `special_nets` | true | Power/ground straps |
-| `pins` | true | Instance pins |
+| `pins` | true | IO pin shapes |
 | `pin_markers` | true | IO pin direction markers |
+| `inst_pins` | true | Instance pins |
 | `blockages` | true | Blockages |
 | `net_signal` | true | Signal nets |
 | `net_power` | true | Power nets |
@@ -137,6 +145,11 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 # Hide routing and power nets
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
+                layout.png
+
+# The same, by display-control paths
+save_image -web -display_option {{Shape Types/Routing/*} false} \
+                -display_option {Nets/Power false} \
                 layout.png
 
 # Save with RUDY congestion heatmap overlay

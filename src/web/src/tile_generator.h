@@ -30,6 +30,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "web/core.h"
 #include "web_painter.h"
 
 namespace sta {
@@ -155,6 +156,9 @@ struct TileFrame
   double pxX(double dbu) const { return (dbu - origin_x) * scale; }
   double pxY(double dbu) const { return (dbu - origin_y) * scale; }
 };
+
+// The tile renderer's color for a web::Painter one; they share the RGBA layout.
+Color toTileColor(const Painter::Color& c);
 
 struct SelectionResult
 {
@@ -1152,6 +1156,10 @@ class TileGenerator
                        int width = 3,
                        int dim = -1);
 
+  bool pinNamesFitImage(odb::dbBlock* block,
+                        const odb::Rect& area,
+                        double scale,
+                        double tile_scale) const;
   void computePinLabelMargin();
 
   odb::dbDatabase* db_;

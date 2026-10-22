@@ -13,6 +13,11 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "save_images_web",
+]
+
+PASSFAIL_TESTS = [
+    "save_images_web",
 ]
 
 filegroup(
@@ -35,6 +40,8 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    check_log = test_name not in PASSFAIL_TESTS,
+    check_passfail = test_name in PASSFAIL_TESTS,
     data = [":test_resources"],
 ) for test_name in TESTS]
 

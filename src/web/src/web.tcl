@@ -125,7 +125,7 @@ proc save_image { args } {
         } else {
           set val "false"
         }
-        lappend pairs "\"$key\":$val"
+        lappend pairs "[web::json_string $key]:$val"
       }
       set vis_json "\{[join $pairs ,]\}"
     }
@@ -209,6 +209,12 @@ proc warn_qt_unsupported { cmd unsupported } {
     return
   }
   utl::warn WEB 76 "$cmd: the Qt GUI does not support [join $unsupported {, }]; ignored."
+}
+
+# A JSON string for `text`; a display-control pattern can hold backslashes
+# and quotes.
+proc json_string { text } {
+  return "\"[string map {\\ \\\\ \" \\\"} $text]\""
 }
 }
 
@@ -424,7 +430,7 @@ proc save_animated_gif { args } {
       } else {
         set oval "false"
       }
-      lappend pairs "\"$okey\":$oval"
+      lappend pairs "[web::json_string $okey]:$oval"
     }
     set vis_json "\{[join $pairs ,]\}"
   }
