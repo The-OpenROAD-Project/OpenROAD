@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <map>
-#include <set>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 #include "odb/db.h"
@@ -442,9 +442,9 @@ class extSpef
   bool _calib = false;
   bool _diff = false;
   std::map<std::tuple<uint32_t, char, uint32_t>, uint32_t> _diffCapNodeIds;
-  std::set<uint32_t> _diffInputNets;
-  std::set<uint32_t> _diffReadNets;
-  std::set<uint32_t> _diffReadInsts;
+  std::unordered_set<uint32_t> _diffInputNets;
+  std::unordered_set<uint32_t> _diffReadNets;
+  std::unordered_set<uint32_t> _diffReadInsts;
   bool _match = false;
   odb::dbNet* _d_corner_net;
   odb::dbNet* _d_net;
