@@ -275,8 +275,6 @@ class CUGR
   // How a rip-up and reroute pass treats its nets; the relief alters it.
   struct RerouteOptions
   {
-    // Incremental only: reroute every candidate, not only the congested ones.
-    bool reroute_all_candidates = true;
     // Per net index, nonzero: keep a reroute only if it lowers overflow.
     std::vector<char> strict_accept;
     // Refresh slacks and the critical set before a maze pass.

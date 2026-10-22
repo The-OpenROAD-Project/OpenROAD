@@ -1014,9 +1014,10 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
 
-  // Incremental re-optimizes every dirty net each stage: the congested-set
-  // narrowing between the stages below is skipped, so net_indices stays the
-  // full dirty set; congestion checks still scope via incremental_candidates_.
+  // Incremental re-optimizes every dirty net in stages 1-4: the congested-set
+  // narrowing between them is skipped, so net_indices stays the full dirty
+  // set. The RRR loop then reroutes only the congested ones, found among
+  // incremental_candidates_.
   incremental_routing_ = incremental;
   if (incremental) {
     incremental_candidates_ = net_indices;
@@ -1412,15 +1413,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices,
       logger_->info(
           GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     }
-    if (incremental_routing_ && options.reroute_all_candidates) {
-      // Incremental reroutes all dirty nets each iteration, not just congested.
-      std::vector<int> reroute_set = incremental_candidates_;
-      overflow_change
-          += mazeRoute(reroute_set, CugrStage::iterativeRRR, i, options);
-    } else {
-      overflow_change
-          += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
-    }
+    overflow_change
+        += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
     debugPass("rrr iteration", i);
 
     stagnant_passes
@@ -1474,8 +1468,7 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     is_candidate[index] = 1;
   }
   // Neighbors move only if overflow drops; the passes keep the slacks.
-  RerouteOptions options{.reroute_all_candidates = false,
-                         .strict_accept = std::vector<char>(gr_nets_.size(), 0),
+  RerouteOptions options{.strict_accept = std::vector<char>(gr_nets_.size(), 0),
                          .refresh_critical = false};
   // Each added net's tree before the relief; a rolled-back reroute keeps it.
   std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
