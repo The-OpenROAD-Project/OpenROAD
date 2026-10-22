@@ -5,17 +5,17 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
 #include <cmath>
 #include <fstream>
 #include <functional>
 #include <istream>
+#include <locale>
 #include <map>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -48,15 +48,18 @@ constexpr std::string_view kSubstrate = "SUBSTRATE";
   throw std::runtime_error("ITF: " + std::string(message));
 }
 
-// Parses a token as a finite number. std::from_chars ignores the C locale,
-// so a decimal point parses the same everywhere (std::strtod does not).
+// Parses a token as a finite number. The stream uses the classic locale, so
+// a decimal point parses the same whatever the C locale is (std::strtod
+// does not). Floating-point std::from_chars would too, but it is unavailable
+// before macOS 26.
 double parseNumber(const Token& token, const std::string_view key)
 {
-  const char* first = token.text.data();
-  const char* last = first + token.text.size();
+  std::istringstream in{std::string(token.text)};
+  in.imbue(std::locale::classic());
   double v = 0;
-  const auto [end, error] = std::from_chars(first, last, v);
-  if (error != std::errc{} || end != last || !std::isfinite(v)) {
+  in >> v;
+  const bool whole = !in.fail() && in.peek() == std::char_traits<char>::eof();
+  if (!whole || !std::isfinite(v)) {
     fail(token.line,
          std::string(key) + " expects a finite number, got '" + token.text
              + "'");

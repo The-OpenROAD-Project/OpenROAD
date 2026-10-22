@@ -3,6 +3,8 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -91,5 +93,50 @@ cc_binary(
     deps = [
         "//src/fsv",
         "//src/fsv:geometry",
+    ],
+)
+
+TESTS = [
+    "field_solver_errors",
+    "field_solver_itf",
+    "field_solver_uniform",
+]
+
+filegroup(
+    name = "test_resources",
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = test_name,
+    data = [":test_resources"],
+) for test_name in TESTS]
+
+py_test(
+    name = "fsv_man_tcl_check",
+    srcs = ["fsv_man_tcl_check.py"],
+    data = ["//src/fsv:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "fsv_readme_msgs_check",
+    data = [
+        "//src/fsv:doc_files",
+        "//src/fsv:messages_txt",
     ],
 )

@@ -365,9 +365,6 @@ proc repair_timing { args } {
   set effort "high"
   if { [info exists keys(-effort)] } {
     set effort $keys(-effort)
-    if { [lsearch -exact {low medium high} $effort] == -1 } {
-      utl::error RSZ 3242 "-effort must be low, medium or high."
-    }
     if { [lsearch -exact [string toupper $phases] "PARALLEL_EVAL"] == -1 } {
       utl::warn RSZ 3244 "-effort has no effect unless -phases lists PARALLEL_EVAL."
     }
@@ -376,9 +373,7 @@ proc repair_timing { args } {
   set profile_mode 0
   if { [info exists keys(-profile_mode)] } {
     set profile_mode $keys(-profile_mode)
-    if { [lsearch -exact {0 1 2 3} $profile_mode] == -1 } {
-      utl::error RSZ 3243 "-profile_mode must be 0, 1, 2 or 3."
-    }
+    sta::check_integer "-profile_mode" $profile_mode
   }
   set profile_dir ""
   if { [info exists keys(-profile_dir)] } {

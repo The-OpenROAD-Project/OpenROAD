@@ -1,12 +1,55 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { LitElement, html } from 'lit';
-import { ref, createRef } from 'lit/directives/ref.js';
+import { LitElement, html, css, svg, nothing } from 'lit';
 import { when } from 'lit/directives/when.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 
 // ─── Native CSS Grid IDE Layout Manager & Custom Elements ────────────────────
+
+/**
+ * Lightweight event emitter for layout manager and component containers.
+ */
+export class EventEmitter {
+    constructor() {
+        this.eventListeners = new Map();
+    }
+
+    on(event, cb) {
+        if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, new Set());
+        }
+        this.eventListeners.get(event).add(cb);
+    }
+
+    off(event, cb) {
+        this.eventListeners.get(event)?.delete(cb);
+    }
+
+    emit(event, ...args) {
+        const listeners = this.eventListeners.get(event);
+        if (listeners) {
+            for (const cb of listeners) {
+                try { cb(...args); } catch (e) { console.error(e); }
+            }
+        }
+    }
+
+    fire(event, ...args) {
+        this.emit(event, ...args);
+    }
+}
+
+/**
+ * Dispatches a bubbling, composed custom event from a DOM node.
+ */
+export function emitEvent(host, type, detail = {}) {
+    host.dispatchEvent(new CustomEvent(type, {
+        bubbles: true,
+        composed: true,
+        detail,
+    }));
+}
 
 /**
  * <ide-pane> - Encapsulated IDE window pane custom element using Lit.
@@ -21,61 +64,97 @@ export class IdePaneElement extends LitElement {
         collapsed: { type: Boolean, reflect: true },
     };
 
+    static styles = css`
+        :host {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-panel);
+            position: relative;
+        }
+
+        :host([hidden]) {
+            display: none !important;
+        }
+
+        :host([maximized]) .ide-btn-collapse {
+            display: none !important;
+        }
+
+        .ide-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 28px;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--line-1);
+            padding: 0 4px;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .ide-tabs {
+            display: flex;
+            height: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .ide-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ide-controls {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .ide-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: var(--radius-xs);
+            background: transparent;
+            border: none;
+            color: var(--fg-muted);
+            cursor: pointer;
+            font-size: 11px;
+            padding: 0;
+            transition: background-color 120ms ease, color 120ms ease;
+        }
+
+        .ide-btn:hover {
+            background: var(--bg-hover);
+            color: var(--fg-primary);
+        }
+
+        .ide-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+    `;
+
     constructor() {
         super();
-        this.tabsRef = createRef();
-        this.contentRef = createRef();
-        this.headerRef = createRef();
-        this.controlsRef = createRef();
-        this.maximizeBtnRef = createRef();
-        this.collapseBtnRef = createRef();
         this._onMaximizeClick = this._onMaximizeClick.bind(this);
         this._onCollapseClick = this._onCollapseClick.bind(this);
-        this._onResetLayoutClick = this._onResetLayoutClick.bind(this);
-    }
-
-    createRenderRoot() {
-        return this;
     }
 
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('ide-pane', `ide-pane-${this.paneName}`);
-        this.performUpdate();
     }
 
     get paneName() {
-        return this.name || this.getAttribute('name') || this.id.replace(/^pane-/, '') || 'pane';
-    }
-
-    get tabsEl() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.tabsRef.value;
-    }
-
-    get contentEl() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.contentRef.value;
-    }
-
-    get headerEl() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.headerRef.value;
-    }
-
-    get controlsEl() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.controlsRef.value;
-    }
-
-    get maximizeBtn() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.maximizeBtnRef.value;
-    }
-
-    get collapseBtn() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.collapseBtnRef.value;
+        return this.name || this.id.replace(/^pane-/, '') || 'pane';
     }
 
     get _collapseIcon() {
@@ -95,77 +174,41 @@ export class IdePaneElement extends LitElement {
         return `Collapse ${capitalized}`;
     }
 
-    _emit(type, detail = {}) {
-        this.dispatchEvent(new CustomEvent(type, {
-            bubbles: true,
-            composed: true,
-            detail,
-        }));
-    }
-
     _onMaximizeClick(e) {
         e.stopPropagation();
-        this._emit('ide-pane-maximize', { pane: this.paneName });
+        emitEvent(this, 'ide-pane-maximize', { pane: this.paneName });
     }
 
     _onCollapseClick(e) {
         e.stopPropagation();
-        this._emit('ide-pane-collapse', { pane: this.paneName });
-    }
-
-    _onResetLayoutClick(e) {
-        e.stopPropagation();
-        this._emit('ide-layout-reset');
+        emitEvent(this, 'ide-pane-collapse', { pane: this.paneName });
     }
 
     setMaximized(isMax) {
         this.maximized = !!isMax;
-        this.classList.toggle('maximized', this.maximized);
-        if (this.maximizeBtn) {
-            this.maximizeBtn.textContent = this.maximized ? '⧉' : '⤢';
-            this.maximizeBtn.title = this.maximized ? 'Restore' : 'Maximize';
-        }
     }
 
     setCollapsed(isCollapsed) {
         this.collapsed = !!isCollapsed;
-        this.classList.toggle('collapsed', this.collapsed);
-        if (this.collapseBtn) {
-            this.collapseBtn.textContent = this._collapseIcon;
-            this.collapseBtn.title = this._collapseTitle;
-        }
-    }
-
-    build() {
-        if (!this.hasUpdated) this.performUpdate();
-    }
-
-    updated(changedProperties) {
-        super.updated(changedProperties);
-        if (changedProperties.has('maximized')) {
-            this.classList.toggle('maximized', !!this.maximized);
-        }
-        if (changedProperties.has('collapsed')) {
-            this.classList.toggle('collapsed', !!this.collapsed);
-        }
     }
 
     render() {
         const name = this.paneName;
         const prefix = this.id || `pane-${name}`;
-        const hasMax = this.maximizable || this.hasAttribute('maximizable');
-        const hasCol = this.collapsible || this.hasAttribute('collapsible');
+        const hasMax = this.maximizable;
+        const hasCol = this.collapsible;
 
         return html`
-            <div class="ide-header" id="${prefix}-header" ${ref(this.headerRef)}>
-                <div class="ide-tabs" id="${prefix}-tabs" ${ref(this.tabsRef)}></div>
-                <div class="ide-controls" id="${prefix}-controls" ${ref(this.controlsRef)}>
+            <div class="ide-header" id="${prefix}-header">
+                <div class="ide-tabs" id="${prefix}-tabs">
+                    <slot name="tabs"></slot>
+                </div>
+                <div class="ide-controls" id="${prefix}-controls">
                     ${when(hasMax, () => html`
                         <button
                             class="ide-btn ide-btn-maximize"
                             id="btn-maximize-${name}"
                             title=${ifDefined(this.maximized ? 'Restore' : 'Maximize')}
-                            ${ref(this.maximizeBtnRef)}
                             @click=${this._onMaximizeClick}
                         >${this.maximized ? '⧉' : '⤢'}</button>
                     `)}
@@ -174,25 +217,13 @@ export class IdePaneElement extends LitElement {
                             class="ide-btn ide-btn-collapse"
                             id="btn-collapse-${name}"
                             title=${ifDefined(this._collapseTitle)}
-                            ${ref(this.collapseBtnRef)}
                             @click=${this._onCollapseClick}
                         >${this._collapseIcon}</button>
                     `)}
                 </div>
             </div>
-            <div class="ide-content" id="${prefix}-content" ${ref(this.contentRef)}>
-                ${when(name === 'main', () => html`
-                    <div id="ide-empty-state" class="ide-empty-state" style="display: none;">
-                        <div class="ide-empty-icon">⧉</div>
-                        <div class="ide-empty-title">All views are closed</div>
-                        <div class="ide-empty-desc">Reopen a view from the Windows menu or restore the default layout.</div>
-                        <button
-                            id="btn-empty-reset-layout"
-                            class="or-btn or-btn-primary"
-                            @click=${this._onResetLayoutClick}
-                        >Reset to Default Layout</button>
-                    </div>
-                `)}
+            <div class="ide-content" id="${prefix}-content">
+                <slot></slot>
             </div>
         `;
     }
@@ -286,7 +317,6 @@ export class IdeSplitterElement extends LitElement {
 
         this.setAttribute('role', 'separator');
         this.classList.add('ide-splitter');
-        this.performUpdate();
 
         this.addEventListener('pointerdown', (e) => this.drag.start(e, this.isVertical), { signal });
         this.addEventListener('dblclick', () => this._emit('reset'), { signal });
@@ -295,10 +325,6 @@ export class IdeSplitterElement extends LitElement {
     disconnectedCallback() {
         super.disconnectedCallback();
         this._connectedAbort?.abort();
-    }
-
-    build() {
-        // Idempotent backward-compatibility stub
     }
 
     updated(changedProperties) {
@@ -310,29 +336,49 @@ export class IdeSplitterElement extends LitElement {
     }
 
     get targetPane() {
-        return this.for || this.getAttribute('for') || '';
+        return this.for || '';
     }
 
     get isVertical() {
-        return (this.orientation || this.getAttribute('orientation') || 'vertical') === 'vertical';
+        return this.orientation === 'vertical';
     }
 
     _emit(type, detail = {}) {
-        this.dispatchEvent(new CustomEvent(`ide-splitter-${type}`, {
-            bubbles: true,
-            composed: true,
-            detail: {
-                for: this.targetPane,
-                orientation: this.isVertical ? 'vertical' : 'horizontal',
-                ...detail,
-            },
-        }));
+        emitEvent(this, `ide-splitter-${type}`, {
+            for: this.targetPane,
+            orientation: this.isVertical ? 'vertical' : 'horizontal',
+            ...detail,
+        });
     }
 }
 
+const makeIcon = (paths) => svg`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+    aria-hidden="true">${paths}</svg>`;
+
 /**
- * <ide-tab> - Encapsulated IDE tab custom element using Lit (Light DOM).
- * Manages its title label, active state, accessibility attributes, and optional close action.
+ * Tab icon SVG glyphs for IDE panels.
+ * Standard 24x24 viewBox stroke glyphs in Feather / Lucide style.
+ */
+export const TabIcon = Object.freeze({
+    LAYOUT:           makeIcon(svg`<rect x="2.5" y="2.5" width="19" height="19" rx="2"/><path d="M2.5 9h19M9 2.5v19"/>`),
+    SCHEMATIC:        makeIcon(svg`<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M6 15.5V8a2 2 0 012-2h7.5"/>`),
+    VIEWER_3D:        makeIcon(svg`<path d="M12 2.5l9 5v9l-9 5-9-5v-9z"/><path d="M12 12l9-4.5M12 12v9.5M12 12L3 7.5"/>`),
+    DISPLAY_CONTROLS: makeIcon(svg`<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>`),
+    INSPECTOR:        makeIcon(svg`<path d="M4 6h16M4 12h16M4 18h10"/>`),
+    HIERARCHY:        makeIcon(svg`<path d="M5 4v13a2 2 0 002 2h4M5 10h6"/><rect x="13" y="2" width="7" height="5" rx="1"/><rect x="13" y="15" width="7" height="5" rx="1"/>`),
+    TIMING:           makeIcon(svg`<path d="M2 14h5l3-8 4 14 3-6h5"/>`),
+    DRC:              makeIcon(svg`<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>`),
+    SELECT_HIGHLIGHT: makeIcon(svg`<path d="M4 3l14 9-6 1 4 7-3 2-4-7-5 4z"/>`),
+    CLOCK_TREE:       makeIcon(svg`<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>`),
+    CHARTS:           makeIcon(svg`<path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/>`),
+    TCL_CONSOLE:      makeIcon(svg`<path d="M5 8l4 4-4 4M12 16h7"/>`),
+    HELP:             makeIcon(svg`<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 115 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>`),
+});
+
+/**
+ * <ide-tab> - Encapsulated IDE tab custom element using Lit and Shadow DOM.
+ * Manages its title label, icon, active state, accessibility attributes, and optional close action.
  */
 export class IdeTabElement extends LitElement {
     static properties = {
@@ -340,20 +386,105 @@ export class IdeTabElement extends LitElement {
         closable: { type: Boolean, reflect: true },
         for: { type: String },
         active: { type: Boolean, reflect: true },
+        icon: { attribute: false },
     };
+
+    static styles = css`
+        :host {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm, 6px);
+            height: 26px;
+            margin-top: 1px;
+            padding: 0 10px;
+            background: transparent;
+            color: var(--fg-muted);
+            font-family: var(--font-sans);
+            font-size: var(--fs-12);
+            border-bottom: 2px solid transparent;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 120ms ease, color 120ms ease;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        :host([hidden]) {
+            display: none !important;
+        }
+
+        :host(:hover) {
+            background: var(--bg-hover);
+            color: var(--fg-secondary);
+        }
+
+        :host([active]) {
+            background: var(--bg-panel);
+            color: var(--fg-bright);
+            border-bottom: 2px solid var(--accent-tab);
+        }
+
+        .ide-tab-icon,
+        ::slotted([slot="icon"]),
+        .or-tab-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 13px;
+            height: 13px;
+            opacity: 0.7;
+        }
+
+        :host([active]) .ide-tab-icon,
+        :host([active]) ::slotted([slot="icon"]),
+        :host([active]) .or-tab-icon {
+            color: var(--accent-tab);
+            opacity: 1;
+        }
+
+        .ide-tab-icon svg,
+        ::slotted([slot="icon"]) svg,
+        .or-tab-icon svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .ide-tab-title {
+            user-select: none;
+            padding-top: 0;
+        }
+
+        .ide-tab-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+            border-radius: var(--radius-xs);
+            margin-left: 4px;
+            font-size: 10px;
+            line-height: 1;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+        }
+
+        .ide-tab-close:hover {
+            opacity: 1;
+            background: var(--bg-hover);
+            color: var(--sem-error);
+        }
+    `;
 
     constructor() {
         super();
         this._connectedAbort = null;
-        this.titleRef = createRef();
-        this.closeBtnRef = createRef();
+        this.icon = null;
         this._onClick = this._onClick.bind(this);
         this._onCloseClick = this._onCloseClick.bind(this);
-    }
-
-    // Light DOM: Do not use Shadow DOM
-    createRenderRoot() {
-        return this;
     }
 
     connectedCallback() {
@@ -361,13 +492,12 @@ export class IdeTabElement extends LitElement {
         this._connectedAbort = new AbortController();
         const { signal } = this._connectedAbort;
 
-        this.classList.add('ide-tab', 'lm_tab');
+        this.classList.add('ide-tab');
         this.setAttribute('role', 'tab');
         if (!this.hasAttribute('aria-selected')) {
             this.setAttribute('aria-selected', 'false');
         }
         this.addEventListener('click', this._onClick, { signal });
-        this.performUpdate();
     }
 
     disconnectedCallback() {
@@ -375,74 +505,37 @@ export class IdeTabElement extends LitElement {
         this._connectedAbort?.abort();
     }
 
-    _emit(type, detail = {}) {
-        this.dispatchEvent(new CustomEvent(type, {
-            bubbles: true,
-            composed: true,
-            detail,
-        }));
-    }
-
     _onClick(e) {
-        if (e && e.target && e.target.closest('.ide-tab-close')) return;
-        this._emit('tab-select', { componentType: this.targetComponent });
+        const path = e.composedPath ? e.composedPath() : [e.target];
+        if (path.some(el => el.classList?.contains('ide-tab-close'))) return;
+        emitEvent(this, 'tab-select', { componentType: this.targetComponent });
     }
 
     _onCloseClick(e) {
         e.stopPropagation();
-        this._emit('tab-close', { componentType: this.targetComponent });
+        emitEvent(this, 'tab-close', { componentType: this.targetComponent });
     }
 
     get targetComponent() {
-        return this.for || this.getAttribute('for') || this.getAttribute('data-component') || this.id.replace(/^tab-/, '') || '';
-    }
-
-    get titleText() {
-        return this.title || '';
-    }
-
-    set titleText(value) {
-        this.title = value;
-    }
-
-    get titleEl() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.titleRef.value;
-    }
-
-    get closeBtn() {
-        if (!this.hasUpdated) this.performUpdate();
-        return this.closeBtnRef.value;
+        return this.for || this.getAttribute('data-component') || this.id.replace(/^tab-/, '') || '';
     }
 
     setActive(isActive) {
         this.active = !!isActive;
-        this.performUpdate();
     }
 
     updated(changedProperties) {
         super.updated(changedProperties);
         if (changedProperties.has('active')) {
-            this.classList.toggle('active', this.active);
-            this.classList.toggle('lm_active', this.active);
             this.setAttribute('aria-selected', this.active ? 'true' : 'false');
         }
     }
 
     render() {
-        const title = this.title || '';
-        const isClosable = Boolean(this.closable);
-
         return html`
-            <span class="ide-tab-title lm_title" ${ref(this.titleRef)}>${title}</span>
-            ${when(isClosable, () => html`
-                <span
-                    class="ide-tab-close lm_close_tab"
-                    title="Close"
-                    ${ref(this.closeBtnRef)}
-                    @click=${this._onCloseClick}
-                >✕</span>
-            `)}
+            ${this.icon ? html`<span class="ide-tab-icon or-tab-icon">${this.icon}</span>` : nothing}
+            <span class="ide-tab-title">${this.title || ''}</span>
+            ${this.closable ? html`<span class="ide-tab-close" title="Close" @click=${this._onCloseClick}>✕</span>` : nothing}
         `;
     }
 }
@@ -453,56 +546,40 @@ if (!customElements.get('ide-splitter')) customElements.define('ide-splitter', I
 if (!customElements.get('ide-tab')) customElements.define('ide-tab', IdeTabElement);
 
 export const COMPONENT_CONFIG = {
-    DisplayControls: { pane: 'left',   title: 'Display Controls', closable: false },
-    LayoutViewer:    { pane: 'main',   title: 'Layout',           closable: false },
-    SchematicWidget: { pane: 'main',   title: 'Schematic',        closable: true },
-    '3DViewer':      { pane: 'main',   title: '3D Viewer',        closable: true },
-    TclConsole:      { pane: 'bottom', title: 'Tcl Console',      closable: false },
-    Inspector:       { pane: 'right',  title: 'Inspector',        closable: true },
-    Browser:         { pane: 'right',  title: 'Hierarchy',        closable: true },
-    TimingWidget:    { pane: 'right',  title: 'Timing',           closable: true },
-    DRCWidget:       { pane: 'right',  title: 'DRC',              closable: true },
-    SelectHighlight: { pane: 'right',  title: 'Select Highlight', closable: true },
-    ClockWidget:     { pane: 'right',  title: 'Clock Tree',       closable: true },
-    ChartsWidget:    { pane: 'right',  title: 'Charts',           closable: true },
-    HelpWidget:      { pane: 'right',  title: 'Help',             closable: true },
+    DisplayControls: { pane: 'left',   title: 'Display Controls', icon: TabIcon.DISPLAY_CONTROLS, closable: false },
+    LayoutViewer:    { pane: 'main',   title: 'Layout',           icon: TabIcon.LAYOUT,           closable: false },
+    SchematicWidget: { pane: 'main',   title: 'Schematic',        icon: TabIcon.SCHEMATIC },
+    '3DViewer':      { pane: 'main',   title: '3D Viewer',        icon: TabIcon.VIEWER_3D },
+    TclConsole:      { pane: 'bottom', title: 'Tcl Console',      icon: TabIcon.TCL_CONSOLE,      closable: false },
+    Inspector:       { pane: 'right',  title: 'Inspector',        icon: TabIcon.INSPECTOR },
+    Browser:         { pane: 'right',  title: 'Hierarchy',        icon: TabIcon.HIERARCHY },
+    TimingWidget:    { pane: 'right',  title: 'Timing',           icon: TabIcon.TIMING },
+    DRCWidget:       { pane: 'right',  title: 'DRC',              icon: TabIcon.DRC },
+    SelectHighlight: { pane: 'right',  title: 'Select Highlight', icon: TabIcon.SELECT_HIGHLIGHT },
+    ClockWidget:     { pane: 'right',  title: 'Clock Tree',       icon: TabIcon.CLOCK_TREE },
+    ChartsWidget:    { pane: 'right',  title: 'Charts',           icon: TabIcon.CHARTS },
+    HelpWidget:      { pane: 'right',  title: 'Help',             icon: TabIcon.HELP },
+};
+
+export const DEFAULT_ACTIVE_TABS = {
+    left: 'DisplayControls',
+    main: 'LayoutViewer',
+    bottom: 'TclConsole',
+    right: 'Inspector',
 };
 
 /**
  * Sizing bounds, default dimensions, and drag characteristics for IDE splitters.
  */
 export const SPLITTER_CONFIG = {
-    left: {
-        cssVar: '--pane-left-width',
-        defaultSize: '240px',
-        minSize: 140,
-        maxFraction: 0.45,
-        dimension: 'width',
-        isVertical: true,
-        invertDelta: false,
-    },
-    right: {
-        cssVar: '--pane-right-width',
-        defaultSize: '340px',
-        minSize: 160,
-        maxFraction: 0.5,
-        dimension: 'width',
-        isVertical: true,
-        invertDelta: true,
-    },
-    bottom: {
-        cssVar: '--pane-bottom-height',
-        defaultSize: '220px',
-        minSize: 70,
-        maxFraction: 0.75,
-        dimension: 'height',
-        isVertical: false,
-        invertDelta: true,
-    },
+    left:   { cssVar: '--pane-left-width',     defaultSize: 240, minSize: 140, maxFraction: 0.45 },
+    right:  { cssVar: '--pane-right-width',    defaultSize: 340, minSize: 160, maxFraction: 0.50, invertDelta: true },
+    bottom: { cssVar: '--pane-bottom-height',  defaultSize: 220, minSize: 70,  maxFraction: 0.75, invertDelta: true },
 };
 
-export class GridLayoutManager {
+export class GridLayoutManager extends EventEmitter {
     constructor(containerEl) {
+        super();
         this.containerEl = containerEl;
         this.factories = new Map();
         this.components = new Map();
@@ -513,33 +590,12 @@ export class GridLayoutManager {
             right: null,
         };
         this.closedComponents = new Set();
-        this.eventListeners = new Map();
         this._resizeScheduled = false;
 
         this._ensureDOM();
         this._initSplitters();
         this._initControls();
         this._initResizeObserver();
-    }
-
-    on(event, cb) {
-        if (!this.eventListeners.has(event)) {
-            this.eventListeners.set(event, new Set());
-        }
-        this.eventListeners.get(event).add(cb);
-    }
-
-    off(event, cb) {
-        this.eventListeners.get(event)?.delete(cb);
-    }
-
-    emit(event, ...args) {
-        const listeners = this.eventListeners.get(event);
-        if (listeners) {
-            for (const cb of listeners) {
-                try { cb(...args); } catch (e) { console.error(e); }
-            }
-        }
     }
 
     _ensureDOM() {
@@ -558,58 +614,26 @@ export class GridLayoutManager {
      * when initializing with an empty container (e.g. dynamic instantiation or unit tests).
      */
     _buildInitialLayoutTree() {
-        // 1. Gutter expand affordances for collapsed panels
-        this.containerEl.appendChild(this._createGutterButton('left', '▶ Display Controls', 'Restore Display Controls'));
-        this.containerEl.appendChild(this._createGutterButton('right', '◀ Tools & Inspector', 'Restore Right Panel'));
-
-        // 2. Left Pane & Splitter
-        this.containerEl.appendChild(this._createPane('pane-left', 'left'));
-        this.containerEl.appendChild(this._createSplitter('splitter-left', 'left', 'vertical', 'Drag to resize panel'));
-
-        // 3. Center Area (Main Viewer + Console)
-        const center = document.createElement('main');
-        center.id = 'pane-center';
-        center.className = 'ide-center';
-
-        center.appendChild(this._createPane('pane-main', 'main', { maximizable: true }));
-        center.appendChild(this._createSplitter('splitter-bottom', 'bottom', 'horizontal', 'Drag to resize console'));
-        center.appendChild(this._createGutterButton('bottom', '▲ Tcl Console', 'Restore Tcl Console'));
-        center.appendChild(this._createPane('pane-bottom', 'bottom', { maximizable: true, collapsible: true }));
-
-        this.containerEl.appendChild(center);
-
-        // 4. Right Splitter & Pane
-        this.containerEl.appendChild(this._createSplitter('splitter-right', 'right', 'vertical', 'Drag to resize panel'));
-        this.containerEl.appendChild(this._createPane('pane-right', 'right', { maximizable: true, collapsible: true }));
-    }
-
-    _createGutterButton(side, text, title) {
-        const btn = document.createElement('button');
-        btn.id = `gutter-expand-${side}`;
-        btn.className = `ide-gutter-expand ide-gutter-${side}`;
-        btn.title = title;
-        const span = document.createElement('span');
-        span.textContent = text;
-        btn.appendChild(span);
-        return btn;
-    }
-
-    _createPane(id, name, options = {}) {
-        const pane = document.createElement('ide-pane');
-        pane.id = id;
-        pane.setAttribute('name', name);
-        if (options.maximizable) pane.setAttribute('maximizable', '');
-        if (options.collapsible) pane.setAttribute('collapsible', '');
-        return pane;
-    }
-
-    _createSplitter(id, forPane, orientation, title) {
-        const splitter = document.createElement('ide-splitter');
-        splitter.id = id;
-        splitter.setAttribute('for', forPane);
-        splitter.setAttribute('orientation', orientation);
-        splitter.title = title;
-        return splitter;
+        this.containerEl.innerHTML = `
+            <button id="gutter-expand-left" class="ide-gutter-expand ide-gutter-left" title="Restore Display Controls">
+                <span>▶ Display Controls</span>
+            </button>
+            <button id="gutter-expand-right" class="ide-gutter-expand ide-gutter-right" title="Restore Right Panel">
+                <span>◀ Tools &amp; Inspector</span>
+            </button>
+            <ide-pane id="pane-left" name="left"></ide-pane>
+            <ide-splitter id="splitter-left" for="left" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+            <main id="pane-center" class="ide-center">
+                <ide-pane id="pane-main" name="main" maximizable></ide-pane>
+                <ide-splitter id="splitter-bottom" for="bottom" orientation="horizontal" title="Drag to resize console"></ide-splitter>
+                <button id="gutter-expand-bottom" class="ide-gutter-expand ide-gutter-bottom" title="Restore Tcl Console">
+                    <span>▲ Tcl Console</span>
+                </button>
+                <ide-pane id="pane-bottom" name="bottom" maximizable collapsible></ide-pane>
+            </main>
+            <ide-splitter id="splitter-right" for="right" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+            <ide-pane id="pane-right" name="right" maximizable collapsible></ide-pane>
+        `;
     }
 
     _resolvePaneReferences() {
@@ -618,14 +642,11 @@ export class GridLayoutManager {
 
         for (const name of paneNames) {
             const el = this.containerEl.querySelector(`#pane-${name}`);
-            if (el?.build) el.build();
-
-            this.panes[name] = {
-                el,
-                paneComponent: el,
-                tabsEl: el?.tabsEl || this.containerEl.querySelector(`#pane-${name}-tabs`),
-                contentEl: el?.contentEl || this.containerEl.querySelector(`#pane-${name}-content`),
-            };
+            if (el) {
+                el.el = el;
+                el.paneComponent = el;
+            }
+            this.panes[name] = el;
         }
 
         this.centerEl = this.containerEl.querySelector('#pane-center');
@@ -639,14 +660,17 @@ export class GridLayoutManager {
             const cfg = SPLITTER_CONFIG[paneName];
             if (!cfg) return;
 
-            const referenceEl = paneName === 'bottom'
+            const isVertical = (e.detail?.orientation || 'vertical') === 'vertical';
+            const referenceEl = !isVertical
                 ? (this.centerEl || this.containerEl)
                 : this.containerEl;
             const containerRect = referenceEl.getBoundingClientRect();
-            const paneRect = this.panes[paneName]?.el?.getBoundingClientRect() || {};
+            const paneRect = this.panes[paneName]?.getBoundingClientRect() || {};
 
-            const containerSpan = cfg.dimension === 'width' ? containerRect.width : containerRect.height;
-            const currentSpan = cfg.dimension === 'width' ? (paneRect.width || 240) : (paneRect.height || 220);
+            const containerSpan = isVertical ? containerRect.width : containerRect.height;
+            const currentSpan = isVertical
+                ? (paneRect.width || cfg.defaultSize)
+                : (paneRect.height || cfg.defaultSize);
 
             dragInfo = {
                 paneName,
@@ -678,78 +702,18 @@ export class GridLayoutManager {
             const paneName = e.detail?.for;
             this._resetSplitterPane(paneName);
         });
-
-        this._setupFallbackSplitters();
     }
 
     _resetSplitterPane(paneName) {
         const cfg = SPLITTER_CONFIG[paneName];
         if (!cfg) return;
 
-        this.containerEl.style.setProperty(cfg.cssVar, cfg.defaultSize);
+        this.containerEl.style.setProperty(cfg.cssVar, `${cfg.defaultSize}px`);
         if (this.isPaneCollapsed(paneName)) {
             this.restorePane(paneName);
         } else {
             this.saveLayout();
             this.notifyResize();
-        }
-    }
-
-    _setupFallbackSplitters() {
-        for (const [paneName, cfg] of Object.entries(SPLITTER_CONFIG)) {
-            const splitterEl = this.containerEl.querySelector(`#splitter-${paneName}`);
-            if (!splitterEl || splitterEl instanceof IdeSplitterElement) continue;
-
-            const isLeftOrTop = !cfg.invertDelta;
-            const isVertical = cfg.isVertical;
-
-            splitterEl.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                try { splitterEl.setPointerCapture(e.pointerId); } catch (_) {}
-                splitterEl.classList.add('dragging');
-                if (document.body) {
-                    document.body.classList.add('is-resizing', isVertical ? 'is-resizing-v' : 'is-resizing-h');
-                }
-
-                const startPos = isVertical ? e.clientX : e.clientY;
-                const referenceEl = paneName === 'bottom' ? (this.centerEl || this.containerEl) : this.containerEl;
-                const cRect = referenceEl.getBoundingClientRect();
-                const pRect = this.panes[paneName]?.el?.getBoundingClientRect() || {};
-                const currentSize = cfg.dimension === 'width' ? (pRect.width || 240) : (pRect.height || 220);
-                const containerSpan = cfg.dimension === 'width' ? cRect.width : cRect.height;
-                const maxLimit = Math.round(containerSpan * cfg.maxFraction) || 500;
-
-                const dragAbort = new AbortController();
-                const { signal } = dragAbort;
-
-                const onMove = (ev) => {
-                    const currentPos = isVertical ? ev.clientX : ev.clientY;
-                    const delta = isLeftOrTop ? (currentPos - startPos) : (startPos - currentPos);
-                    const newSize = Math.round(currentSize + delta);
-                    const clamped = Math.max(cfg.minSize, Math.min(maxLimit, newSize));
-                    this.containerEl.style.setProperty(cfg.cssVar, `${clamped}px`);
-                    this.notifyResize();
-                };
-
-                const onUp = (ev) => {
-                    try { splitterEl.releasePointerCapture(ev.pointerId); } catch (_) {}
-                    splitterEl.classList.remove('dragging');
-                    if (document.body) {
-                        document.body.classList.remove('is-resizing', 'is-resizing-v', 'is-resizing-h');
-                    }
-                    dragAbort.abort();
-                    this.saveLayout();
-                    this.notifyResize();
-                };
-
-                window.addEventListener('pointermove', onMove, { signal });
-                window.addEventListener('pointerup', onUp, { signal });
-                window.addEventListener('pointercancel', onUp, { signal });
-            });
-
-            splitterEl.addEventListener('dblclick', () => {
-                this._resetSplitterPane(paneName);
-            });
         }
     }
 
@@ -773,24 +737,6 @@ export class GridLayoutManager {
                 gutter.addEventListener('click', () => this.restorePane(side));
             }
         }
-
-        // Fallback listeners for controls not inside an <ide-pane> custom element
-        const fallbackControls = [
-            { sel: '#btn-collapse-left', handler: () => this.toggleCollapse('left') },
-            { sel: '#btn-collapse-right', handler: () => this.toggleCollapse('right') },
-            { sel: '#btn-collapse-bottom', handler: () => this.toggleCollapse('bottom') },
-            { sel: '#btn-maximize-main', handler: () => this.toggleMaximize('main') },
-            { sel: '#btn-maximize-bottom', handler: () => this.toggleMaximize('bottom') },
-            { sel: '#btn-maximize-right', handler: () => this.toggleMaximize('right') },
-            { sel: '#btn-empty-reset-layout', handler: () => this.resetLayout() },
-        ];
-
-        for (const { sel, handler } of fallbackControls) {
-            const el = this.containerEl.querySelector(sel);
-            if (el && !el.closest('ide-pane')) {
-                el.addEventListener('click', handler);
-            }
-        }
     }
 
     /**
@@ -798,11 +744,9 @@ export class GridLayoutManager {
      */
     isPaneMaximized(paneName) {
         if (!paneName) {
-            return this.containerEl.classList.contains('maximized-main')
-                || this.containerEl.classList.contains('maximized-bottom')
-                || this.containerEl.classList.contains('maximized-right');
+            return ['main', 'bottom', 'right'].some(name => !!this.panes[name]?.maximized);
         }
-        return this.containerEl.classList.contains(`maximized-${paneName}`);
+        return !!this.panes[paneName]?.maximized;
     }
 
     /**
@@ -819,12 +763,8 @@ export class GridLayoutManager {
         for (const name of MAXIMIZABLE_PANES) {
             const active = (name === targetPane);
             this.containerEl.classList.toggle(`maximized-${name}`, active);
-            this.panes[name]?.paneComponent?.setMaximized(active);
-
-            const btn = this.containerEl.querySelector(`#btn-maximize-${name}`);
-            if (btn) {
-                btn.textContent = active ? '⧉' : '⤢';
-                btn.title = active ? 'Restore' : 'Maximize';
+            if (this.panes[name]) {
+                this.panes[name].maximized = active;
             }
         }
 
@@ -858,7 +798,7 @@ export class GridLayoutManager {
      */
     isPaneCollapsed(paneName) {
         const targetEl = (paneName === 'bottom') ? this.centerEl : this.containerEl;
-        return targetEl ? targetEl.classList.contains(`hide-${paneName}`) : false;
+        return !!this.panes[paneName]?.collapsed || (targetEl ? targetEl.classList.contains(`hide-${paneName}`) : false);
     }
 
     /**
@@ -870,21 +810,8 @@ export class GridLayoutManager {
         if (!targetEl) return;
 
         targetEl.classList.toggle(`hide-${paneName}`, shouldCollapse);
-        this.panes[paneName]?.paneComponent?.setCollapsed?.(shouldCollapse);
-
-        // Update header collapse button icon if present outside or inside the pane
-        const btn = this.containerEl.querySelector(`#btn-collapse-${paneName}`);
-        if (btn) {
-            const icons = {
-                bottom: { collapsed: '▲', expanded: '▼' },
-                left:   { collapsed: '▶', expanded: '◀' },
-                right:  { collapsed: '◀', expanded: '▶' },
-            };
-            const pair = icons[paneName] || { collapsed: '▶', expanded: '◀' };
-            btn.textContent = shouldCollapse ? pair.collapsed : pair.expanded;
-            btn.title = shouldCollapse
-                ? `Expand ${paneName.charAt(0).toUpperCase() + paneName.slice(1)}`
-                : `Collapse ${paneName.charAt(0).toUpperCase() + paneName.slice(1)}`;
+        if (this.panes[paneName]) {
+            this.panes[paneName].collapsed = shouldCollapse;
         }
 
         this.saveLayout();
@@ -903,20 +830,13 @@ export class GridLayoutManager {
         this._setPaneCollapsed(paneName, false);
     }
 
-    _updateEmptyState() {
-        const emptyStateEl = this.containerEl.querySelector('#ide-empty-state');
-        if (!emptyStateEl) return;
-        const hasActiveMain = !!this.activeTabs.main;
-        emptyStateEl.style.display = hasActiveMain ? 'none' : 'flex';
-    }
-
     resetLayout() {
         try {
             localStorage.removeItem('or_ide_layout');
         } catch (_) {}
 
         for (const [paneName, cfg] of Object.entries(SPLITTER_CONFIG)) {
-            this.containerEl.style.setProperty(cfg.cssVar, cfg.defaultSize);
+            this.containerEl.style.setProperty(cfg.cssVar, `${cfg.defaultSize}px`);
         }
 
         for (const name of ['left', 'right', 'bottom']) {
@@ -927,22 +847,17 @@ export class GridLayoutManager {
 
         this.closedComponents.clear();
         for (const comp of this.components.values()) {
-            comp.tabEl.style.display = '';
-            comp.contentDiv.style.display = '';
+            comp.tabEl.hidden = false;
+            comp.contentDiv.hidden = false;
         }
 
-        if (this.components.has('DisplayControls')) this.activateTab('DisplayControls');
-        if (this.components.has('LayoutViewer')) this.activateTab('LayoutViewer');
-        if (this.components.has('TclConsole')) this.activateTab('TclConsole');
-        if (this.components.has('Inspector')) this.activateTab('Inspector');
+        for (const compType of Object.values(DEFAULT_ACTIVE_TABS)) {
+            if (this.components.has(compType)) this.activateTab(compType);
+        }
 
-        this._updateEmptyState();
         this.saveLayout();
         this.notifyResize();
         this.emit('stateChanged');
-        if (typeof app !== 'undefined' && app.map) {
-            setTimeout(() => app.map.invalidateSize({ animate: false }), 0);
-        }
     }
 
     _initResizeObserver() {
@@ -959,10 +874,10 @@ export class GridLayoutManager {
     }
 
     loadLayout(config) {
-        for (const [componentType, cfg] of Object.entries(COMPONENT_CONFIG)) {
+        for (const componentType of Object.keys(COMPONENT_CONFIG)) {
             const factory = this.factories.get(componentType);
             if (!factory) continue;
-            this._mountComponent(componentType, cfg.pane, cfg.title, cfg.closable, factory);
+            this._mountComponent(componentType, factory);
         }
 
         let savedState = null;
@@ -987,82 +902,63 @@ export class GridLayoutManager {
                 }
             }
 
-            this.activateTab(savedState.activeTabs?.left || 'DisplayControls');
-            this.activateTab(savedState.activeTabs?.main || 'LayoutViewer');
-            this.activateTab(savedState.activeTabs?.bottom || 'TclConsole');
-            this.activateTab(savedState.activeTabs?.right || 'Inspector');
-
-            if (savedState.hideLeft) this.collapsePane('left');
-            if (savedState.hideRight) this.collapsePane('right');
-            if (savedState.hideBottom) this.collapsePane('bottom');
-        } else {
-            this.activateTab('DisplayControls');
-            this.activateTab('LayoutViewer');
-            this.activateTab('TclConsole');
-            this.activateTab('Inspector');
+            for (const side of ['left', 'right', 'bottom']) {
+                const key = `hide${side[0].toUpperCase()}${side.slice(1)}`;
+                if (savedState[key]) this.collapsePane(side);
+            }
         }
 
-        this._updateEmptyState();
+        for (const [pane, defaultType] of Object.entries(DEFAULT_ACTIVE_TABS)) {
+            this.activateTab(savedState?.activeTabs?.[pane] || defaultType);
+        }
+
         this.notifyResize();
         this.emit('stateChanged');
     }
 
-    _mountComponent(componentType, paneName, title, closable, factory) {
+    _mountComponent(componentType, factory) {
         if (this.components.has(componentType)) return;
 
-        const pane = this.panes[paneName];
+        const cfg = COMPONENT_CONFIG[componentType] || {
+            pane: 'right',
+            title: componentType,
+            closable: true,
+        };
+        const pane = this.panes[cfg.pane];
         if (!pane) return;
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'ide-component-container';
         contentDiv.id = `cmp-${componentType}`;
-        pane.contentEl.appendChild(contentDiv);
+        pane.appendChild(contentDiv);
 
+        const closable = cfg.closable !== false;
         const tabEl = document.createElement('ide-tab');
         tabEl.id = `tab-${componentType}`;
-        tabEl.setAttribute('for', componentType);
+        tabEl.slot = 'tabs';
+        tabEl.for = componentType;
         tabEl.setAttribute('data-component', componentType);
-        tabEl.setAttribute('title', title);
+        tabEl.title = cfg.title;
         if (closable) tabEl.setAttribute('closable', '');
+        if (cfg.icon) tabEl.icon = cfg.icon;
 
-        tabEl.addEventListener('tab-select', () => {
-            this.activateTab(componentType);
-        });
-        tabEl.addEventListener('tab-close', () => {
-            this.closeComponent(componentType);
-        });
+        tabEl.addEventListener('tab-select', () => this.activateTab(componentType));
+        tabEl.addEventListener('tab-close', () => this.closeComponent(componentType));
+        pane.appendChild(tabEl);
 
-        pane.tabsEl.appendChild(tabEl);
-
-        const listeners = new Map();
-        const container = {
+        const container = Object.assign(new EventEmitter(), {
             element: contentDiv,
             get width() { return contentDiv.clientWidth; },
             get height() { return contentDiv.clientHeight; },
-            title: title,
-            on: (event, cb) => {
-                if (!listeners.has(event)) listeners.set(event, new Set());
-                listeners.get(event).add(cb);
-            },
-            off: (event, cb) => {
-                listeners.get(event)?.delete(cb);
-            },
-            fire: (event, ...args) => {
-                const set = listeners.get(event);
-                if (set) {
-                    for (const cb of set) {
-                        try { cb(...args); } catch (e) { console.error(e); }
-                    }
-                }
-            },
+            title: cfg.title,
             focus: () => this.focusComponent(componentType),
             close: () => this.closeComponent(componentType),
-        };
+        });
 
         const comp = {
             componentType,
-            paneName,
-            title,
+            paneName: cfg.pane,
+            title: cfg.title,
             closable,
             tabEl,
             contentDiv,
@@ -1082,7 +978,7 @@ export class GridLayoutManager {
      */
     isComponentActive(comp) {
         if (!comp) return false;
-        return !!comp.contentDiv?.classList.contains('active');
+        return this.activeTabs[comp.paneName] === comp.componentType;
     }
 
     /**
@@ -1092,7 +988,7 @@ export class GridLayoutManager {
     _setComponentActive(comp, isActive) {
         if (!comp) return;
         const active = !!isActive;
-        comp.tabEl?.setActive(active);
+        if (comp.tabEl) comp.tabEl.active = active;
         comp.contentDiv?.classList.toggle('active', active);
     }
 
@@ -1117,8 +1013,8 @@ export class GridLayoutManager {
         }
 
         this.activeTabs[comp.paneName] = componentType;
-        comp.tabEl.style.display = '';
-        comp.contentDiv.style.display = '';
+        comp.tabEl.hidden = false;
+        comp.contentDiv.hidden = false;
         this._setComponentActive(comp, true);
         this.closedComponents.delete(componentType);
 
@@ -1126,20 +1022,10 @@ export class GridLayoutManager {
         comp.container.fire('open');
         comp.container.fire('resize');
 
-        if (typeof app !== 'undefined') {
-            if (componentType === 'LayoutViewer' && app.map) {
-                setTimeout(() => app.map.invalidateSize({ animate: false }), 0);
-            }
-            if (componentType === '3DViewer' && app.threeDViewerWidget) {
-                setTimeout(() => app.threeDViewerWidget.onOpen(), 0);
-            }
-        }
-
         try {
             comp.tabEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
         } catch (_) {}
 
-        this._updateEmptyState();
         this.notifyResize();
         this.emit('stateChanged');
     }
@@ -1148,8 +1034,8 @@ export class GridLayoutManager {
         const comp = this.components.get(componentType);
         if (!comp || !comp.closable) return;
 
-        comp.tabEl.style.display = 'none';
-        comp.contentDiv.style.display = 'none';
+        comp.tabEl.hidden = true;
+        comp.contentDiv.hidden = true;
         this._setComponentActive(comp, false);
         comp.container.fire('hide');
         this.closedComponents.add(componentType);
@@ -1172,7 +1058,6 @@ export class GridLayoutManager {
             }
         }
 
-        this._updateEmptyState();
         this.notifyResize();
         this.emit('stateChanged');
     }
@@ -1182,8 +1067,7 @@ export class GridLayoutManager {
         if (!comp) {
             const factory = this.factories.get(componentType);
             if (factory) {
-                const cfg = COMPONENT_CONFIG[componentType] || { pane: 'right', title: componentType, closable: true };
-                this._mountComponent(componentType, cfg.pane, cfg.title, cfg.closable, factory);
+                this._mountComponent(componentType, factory);
             } else {
                 return;
             }
@@ -1193,9 +1077,9 @@ export class GridLayoutManager {
 
     saveLayout() {
         const state = {
-            leftWidth: parseInt(this.containerEl.style.getPropertyValue('--pane-left-width') || '240', 10),
-            rightWidth: parseInt(this.containerEl.style.getPropertyValue('--pane-right-width') || '340', 10),
-            bottomHeight: parseInt(this.containerEl.style.getPropertyValue('--pane-bottom-height') || '220', 10),
+            leftWidth: parseInt(this.containerEl.style.getPropertyValue(SPLITTER_CONFIG.left.cssVar) || SPLITTER_CONFIG.left.defaultSize, 10),
+            rightWidth: parseInt(this.containerEl.style.getPropertyValue(SPLITTER_CONFIG.right.cssVar) || SPLITTER_CONFIG.right.defaultSize, 10),
+            bottomHeight: parseInt(this.containerEl.style.getPropertyValue(SPLITTER_CONFIG.bottom.cssVar) || SPLITTER_CONFIG.bottom.defaultSize, 10),
             hideLeft: this.isPaneCollapsed('left'),
             hideRight: this.isPaneCollapsed('right'),
             hideBottom: this.isPaneCollapsed('bottom'),

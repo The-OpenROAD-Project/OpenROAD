@@ -237,8 +237,6 @@ class CUGR
   // Debug (set_debug_level GRT verify_demand 1): recompute grid-graph demand
   // from every committed tree and report drift from the tracked demand.
   void verifyDemandConsistency(const char* tag);
-  // Debug group congestion_sources: splits overflow by wire and via source.
-  void reportCongestionSources(const std::string& tag);
 
   /**
    * @brief Computes per-layer NDR demand / cost multipliers for a net.
@@ -268,18 +266,6 @@ class CUGR
    */
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
-  // A pin gcell and its top pin-access layer; vias above it are climbs.
-  struct PinAccessTop
-  {
-    std::pair<int, int> gcell;
-    int top;
-  };
-  // The net's pin-access tops, one per pin gcell, sorted by gcell.
-  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
-  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
-  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
-  // Overflow the net's removal alone would relieve, pin-access pads excluded.
-  double computeReliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the
@@ -304,9 +290,8 @@ class CUGR
                    int iteration,
                    const RerouteOptions& options);
 
-  // Debug prints after a maze pass: the total overflow (group rrr) and, after
-  // refreshing the rerouted nets' parasitics, WNS and TNS (group rrr_timing).
-  void debugPass(const std::string& tag);
+  // Debug print after a maze pass: the total overflow (group rrr).
+  void debugPass(const char* stage, int iteration = -1);
   /**
    * @brief Stage 5 — iterative rip-up and re-route.
    *

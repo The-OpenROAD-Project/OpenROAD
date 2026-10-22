@@ -306,6 +306,9 @@ CapRow Solver::solve(const Scene& scene,
   if (solve_options.hop_guard <= 0) {
     throw std::invalid_argument("fsv: hop_guard must be positive");
   }
+  if (solve_options.max_walks <= 0) {
+    throw std::invalid_argument("fsv: max_walks must be positive");
+  }
   const SpatialIndex& spatial_index = scene.index();
   const double capture = solve_options.capture_rel * scene.minDimension();
   const GaussianSurface gauss
