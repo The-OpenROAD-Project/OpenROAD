@@ -222,9 +222,9 @@ bazelisk run //src/fsv/test:BenchGrid   # throughput on a two-layer wire grid
 
 - cross sections with planar and conformal dielectrics against a 2D
   finite-volume solution (`fv2d_golden.py`, numpy and scipy);
-- line ends and crossings with conformal dielectrics against a 3D
-  finite-volume solution (`fv3d_golden.py`, numpy, scipy and pyamg);
-- a 3D structure against FasterCap (`fastercap_golden.py`).
+- a crossing, and line ends and a crossing with conformal dielectrics,
+  against a 3D finite-volume solution (`fv3d_golden.py`, numpy, scipy and
+  pyamg).
 
 None of these tools is a build dependency; the scripts regenerate the
 references. `test/README.md` lists which test uses which structures and

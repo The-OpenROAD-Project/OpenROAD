@@ -38,8 +38,7 @@ Each comparison has three parts in `golden/`:
 | Test | Structures | Reference file | Generator | Comparison |
 | ----- | ----- | ----- | ----- | ----- |
 | `CrossSection.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `nested_conformal`, `merged_conformal`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py`: 2D finite volumes, extrapolated in grid spacing (numpy, scipy) | Per unit length. The structures are cross sections; the test extrudes them to wires 10 and 30 µm long, solves both in 3D, and compares (C(30) − C(10)) / 20, which cancels the end effects. Totals within 0.3%, couplings of at least 5% of the total within 0.5%, each plus 3σ. |
-| `ThreeD.MatchesFiniteVolume` | `conformal_line_ends`, `conformal_crossing` | `box_3d.txt` (fF) | `fv3d_golden.py`: 3D finite volumes, extrapolated in grid spacing (numpy, scipy, pyamg) | The 3D structure as given: line ends and crossings, which cross sections cannot show. Totals within 0.5%, couplings of at least 5% within 1%, each plus 3σ. |
-| `FasterCap.Crossing` | `crossing` | `fastercap.txt` (fF) | `fastercap_golden.py`: FasterCap, a boundary-element solver | The 3D structure as given. Totals within 3%, couplings within 6%, each plus 3σ; the ground reference is the total minus the couplings. FasterCap is good to only a few percent here (see its script). |
+| `ThreeD.MatchesFiniteVolume` | `crossing`, `conformal_line_ends`, `conformal_crossing` | `box_3d.txt` (fF) | `fv3d_golden.py`: 3D finite volumes, extrapolated in grid spacing (numpy, scipy, pyamg) | The 3D structure as given: crossings and line ends, which cross sections cannot show. Totals within 0.5%, couplings of at least 5% within 1%, each plus 3σ. |
 
 ### Adding or changing a structure
 

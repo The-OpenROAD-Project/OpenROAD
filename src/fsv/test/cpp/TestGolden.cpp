@@ -7,10 +7,9 @@
 // - cross sections, with planar and conformal dielectrics, against a 2D
 //   finite-volume solution (cross_section.txt, from fv2d_golden.py),
 //   accurate to about 1e-3;
-// - 3D structures with conformal dielectrics against a 3D finite-volume
-//   solution (box_3d.txt, from fv3d_golden.py), accurate to about 2e-3;
-// - a 3D structure against FasterCap (fastercap.txt, from
-//   fastercap_golden.py), whose own error is a few percent.
+// - 3D structures (a crossing, and line ends and a crossing with conformal
+//   dielectrics) against a 3D finite-volume solution (box_3d.txt, from
+//   fv3d_golden.py), accurate to about 2e-3.
 
 #include <cmath>
 #include <fstream>
@@ -241,10 +240,10 @@ class ThreeD : public testing::TestWithParam<std::string>
 };
 
 // 3D structures against a 3D finite-volume solution (box_3d.txt, from
-// fv3d_golden.py): line ends and crossings with conformal dielectrics, which
-// cross sections cannot show. Totals within 0.5% and couplings of at least
-// 5% of the total within 1%, each plus three standard errors; the reference
-// is good to about 0.2%.
+// fv3d_golden.py): a crossing, and line ends and a crossing with conformal
+// dielectrics, which cross sections cannot show. Totals within 0.5% and
+// couplings of at least 5% of the total within 1%, each plus three standard
+// errors; the reference is good to about 0.2%.
 TEST_P(ThreeD, MatchesFiniteVolume)
 {
   const std::string name = GetParam();
@@ -274,49 +273,9 @@ TEST_P(ThreeD, MatchesFiniteVolume)
 
 INSTANTIATE_TEST_SUITE_P(Conformal,
                          ThreeD,
-                         testing::Values("conformal_line_ends",
+                         testing::Values("crossing",
+                                         "conformal_line_ends",
                                          "conformal_crossing"));
-
-// Totals within 3% and couplings of at least 5% of the total within 6%,
-// each plus three standard errors. The tolerances cover the reference's own
-// error, about 1.5% from its dielectric discretization (measured against the
-// finite-volume cross sections) plus its truncated ground plate and layers.
-// The plate also loses the flux that escapes past its edge, so the ground
-// reference is the total minus the couplings: the flux an infinite plane
-// would collect.
-TEST(FasterCap, Crossing)
-{
-  const std::string name = "crossing";
-  const Structure s = readStructure(name);
-  const Geometry& geometry = s.geometry;
-  const Golden golden = readGolden("fastercap.txt");
-  const Scene scene(geometry, s.stack);
-  Solver solver({.threads = 8});
-  const SolveOptions options = solveOptions(2e-3);
-  for (int master = 0; master < geometry.netCount(); master++) {
-    const std::string& m = geometry.netName(master);
-    const CapRow row = solver.solve(scene, master, options);
-    const double total = golden.at({name, m, m});
-    double ground = -total;
-    for (int net = 0; net < geometry.netCount(); net++) {
-      if (net != master) {
-        ground -= golden.at({name, m, geometry.netName(net)});
-      }
-    }
-    for (int net = 0; net <= geometry.netCount(); net++) {
-      const std::string n = netName(geometry, net);
-      const double expected
-          = net == geometry.netCount() ? ground : golden.at({name, m, n});
-      if (net != master && std::abs(expected) < 0.05 * total) {
-        continue;
-      }
-      const Entry e = entry(row, net);
-      const double tol = net == master ? 0.03 : 0.06;
-      EXPECT_NEAR(e.value, expected, tol * std::abs(expected) + 3 * e.sigma)
-          << name << " " << m << " to " << n;
-    }
-  }
-}
 
 }  // namespace
 }  // namespace fsv
