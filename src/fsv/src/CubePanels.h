@@ -11,7 +11,8 @@
 namespace fsv {
 
 // Shared by the Green's-function tables of the cube [-1, 1]^3, whose faces
-// are each split into n x n equal panels.
+// are each split into n x n equal panels, and of the square [-1, 1]^2, whose
+// edges are each split into n equal panels.
 
 // Highest Fourier mode kept along a face. Terms decay like exp(-pi * m / 2),
 // so modes past ~80 are below double precision.
@@ -33,5 +34,16 @@ struct FirstHop
 // Point on a face at panel (i, j), offset (u, v) in [0, 1) within it; i runs
 // along the face's first tangent axis and j along the second.
 Vec3 cubeFacePoint(BoxFace face, int n, int i, int j, double u, double v);
+
+// The square [-1, 1]^2 in the y-z plane (x = 0) has four edges, the faces
+// normal to y and z; edge e is BoxFace::fromIndex(2 + e).
+inline constexpr int kSquareEdges = 4;
+inline BoxFace squareEdge(const int e)
+{
+  return BoxFace::fromIndex(2 + e);
+}
+
+// Point on an edge at panel i, offset u in [0, 1) within it, with x = 0.
+Vec3 squareEdgePoint(BoxFace edge, int n, int i, double u);
 
 }  // namespace fsv
