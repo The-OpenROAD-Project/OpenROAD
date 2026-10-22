@@ -139,7 +139,8 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     std::string cell_name = cell->name();
 
     int connected_outputs = 0;
-    sta::InstancePinIterator* pin_iter = network->pinIterator(instance);
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network->pinIterator(instance));
     while (pin_iter->hasNext()) {
       sta::Pin* pin = pin_iter->next();
 
