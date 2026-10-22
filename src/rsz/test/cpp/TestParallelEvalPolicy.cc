@@ -4,6 +4,8 @@
 // PARALLEL_EVAL policy: presets, batch control, stop rules, selection
 // and cone weights.
 
+#include <utility>
+
 #include "TestResizerMtFixture.hh"
 
 namespace rsz {
@@ -859,22 +861,24 @@ TEST(TestBatchSelector, BatchSelectorDefersForwardDependency)
   impact3.write_instances = {inst3};
   impact3.timing_effect_nets = {net3};
 
-  std::vector<BatchCandidate> candidates{{.evaluation_index = 0,
-                                          .local_score = 10.0f,
-                                          .priority_score = 10.0f,
-                                          .impact = impact0},
-                                         {.evaluation_index = 1,
-                                          .local_score = 9.0f,
-                                          .priority_score = 9.0f,
-                                          .impact = impact1},
-                                         {.evaluation_index = 2,
-                                          .local_score = 8.0f,
-                                          .priority_score = 8.0f,
-                                          .impact = impact2},
-                                         {.evaluation_index = 3,
-                                          .local_score = 7.0f,
-                                          .priority_score = 7.0f,
-                                          .impact = impact3}};
+  std::vector<BatchCandidate> candidates;
+  candidates.reserve(4);
+  candidates.push_back({.evaluation_index = 0,
+                        .local_score = 10.0f,
+                        .priority_score = 10.0f,
+                        .impact = std::move(impact0)});
+  candidates.push_back({.evaluation_index = 1,
+                        .local_score = 9.0f,
+                        .priority_score = 9.0f,
+                        .impact = std::move(impact1)});
+  candidates.push_back({.evaluation_index = 2,
+                        .local_score = 8.0f,
+                        .priority_score = 8.0f,
+                        .impact = std::move(impact2)});
+  candidates.push_back({.evaluation_index = 3,
+                        .local_score = 7.0f,
+                        .priority_score = 7.0f,
+                        .impact = std::move(impact3)});
 
   const BatchSelector selector({});
   const BatchSelection selection = selector.select(candidates, 64, false);
@@ -985,7 +989,7 @@ TEST(TestBatchSelector, BatchSelectorReservesSlotsForTheWorstPath)
                           .local_score = 100.0f - static_cast<float>(index),
                           .priority_score = 100.0f - static_cast<float>(index),
                           .endpoint_slack = -1e-9f * (1.0f + index),
-                          .impact = impact});
+                          .impact = std::move(impact)});
   }
 
   BatchSelector selector({.wns_reserve_pct = 25});
@@ -1041,7 +1045,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyReservesInsideTheSetupMargin)
          .local_score = 100.0f - static_cast<float>(index),
          .priority_score = 100.0f - static_cast<float>(index),
          .endpoint_slack = 10e-12f - 0.1e-12f * static_cast<float>(index),
-         .impact = impact});
+         .impact = std::move(impact)});
   }
 
   // selectBatch() turns the reserve on when WNS stalls: the worst endpoint
@@ -1063,7 +1067,7 @@ TEST(TestBatchSelector, BatchSelectorStopsAtScoreTail)
     candidates.push_back({.evaluation_index = index,
                           .local_score = score,
                           .priority_score = score,
-                          .impact = impact});
+                          .impact = std::move(impact)});
   }
 
   BatchSelector selector({.score_floor_start = 16, .min_score_ratio = 0.25f});
