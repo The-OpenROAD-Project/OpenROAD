@@ -10,6 +10,8 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "supported",
     "clocktree_virtual_clock",
+    "dump_heatmap_headless",
+    "no_window",
     "save_animated_gif_headless",
     "save_image_headless",
     "select_name_patterns",
@@ -18,6 +20,8 @@ ALL_TESTS = [
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "clocktree_virtual_clock",
+    "dump_heatmap_headless",
+    "no_window",
     "save_animated_gif_headless",
     "save_image_headless",
     "select_name_patterns",

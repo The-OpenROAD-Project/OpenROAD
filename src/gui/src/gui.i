@@ -79,8 +79,7 @@ bool enabled()
 }
 
 // True only while the Qt main window is running.  Tcl commands that a
-// non-Qt viewer also implements dispatch on this, so makeGui.cpp defines it
-// too and it is always callable.
+// non-Qt viewer also implements dispatch on this.
 bool has_ui()
 {
   return web::Gui::hasUI();
@@ -306,6 +305,10 @@ void fit()
 void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
 {
   auto gui = web::Gui::get();
+  if (!web::Gui::hasUI() && gui->getLauncher() == nullptr) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 113, "Command gui::save_image is not available as OpenROAD was not compiled with QT support.");
+  }
   gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, display_settings);
 }
 
@@ -789,9 +792,10 @@ void trigger_action(const std::string& name)
   gui->triggerAction(name);
 }
 
+// Whether this build has the Qt gui: only gui.cpp installs a launcher.
 bool supported()
 {
-  return true;
+  return web::Gui::get()->getLauncher() != nullptr;
 }
 
 void minimize()
