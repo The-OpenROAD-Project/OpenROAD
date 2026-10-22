@@ -154,7 +154,9 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
             50,
             "Instance {} of type {} has more than one output connected. "
             "Multioutput cells with more than one output used are not "
-            "supported.");
+            "supported.",
+            network->name(instance),
+            cell_name);
       }
 
       sta::LibertyPort* port = network->libertyPort(pin);
