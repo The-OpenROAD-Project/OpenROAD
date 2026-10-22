@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "Dielectric.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
@@ -329,14 +330,175 @@ TEST(Solver, SceneEpsMatchesStack)
   EXPECT_EQ(scene.epsAt(10.0), stack.epsAt(10.0));
 }
 
-TEST(Solver, RejectsConformalDielectrics)
+// The etch-stop stack with conductor layers for both wires: M1 (the lower
+// wire, in the 2.7 ILD) wrapped by the given conformal dielectrics, and M2
+// (the upper wire, in the 3.9 background) by a 4.5 shell.
+Stack conformalStack(
+    const std::vector<Stack::ConformalDielectric>& m1_conformals)
 {
+  Stack stack = etchStopStack();
+  stack.conductors.push_back(
+      {.name = "M1", .bottom = 0.5, .top = 0.7, .conformals = m1_conformals});
+  stack.conductors.push_back({.name = "M2",
+                              .bottom = 1.1,
+                              .top = 1.3,
+                              .conformals = {{"C2", 0.03, 0.02, 4.5}}});
+  return stack;
+}
+
+// A conformal dielectric with the permittivity of the layer around it
+// changes nothing but the cubes, so the result agrees statistically.
+TEST(Solver, EqualPermittivityConformalMatchesPlanar)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
   Stack stack = etchStopStack();
   stack.conductors.push_back({.name = "M1",
                               .bottom = 0.5,
                               .top = 0.7,
-                              .conformals = {{"C", 0.01, 0.01, 4.5}}});
-  EXPECT_THROW(Scene(wiresAcrossEtchStop(), stack), std::invalid_argument);
+                              .conformals = {{"C", 0.05, 0.05, 2.7}}});
+  SolveOptions options;
+  options.tol_total = 0.002;
+  Solver solver({.threads = 8});
+  const CapRow planar
+      = solver.solve(Scene(geometry, etchStopStack()), 0, options);
+  const CapRow conformal = solver.solve(Scene(geometry, stack), 0, options);
+  EXPECT_NEAR(conformal.total(),
+              planar.total(),
+              4 * std::hypot(conformal.sigma[0], planar.sigma[0]));
+}
+
+// A conformal dielectric that fills the rest of its layer, far beyond the
+// wire, matches the planar stack with that layer split at the wire's
+// bottom.
+TEST(Solver, ConformalFillingLayerMatchesPlanar)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  Stack stack = etchStopStack();
+  stack.conductors.push_back({.name = "M1",
+                              .bottom = 0.5,
+                              .top = 0.7,
+                              .conformals = {{"C", 30, 0.1, 5.0}}});
+  const Stack split = planarStack({{0.5, 2.7}, {0.8, 5.0}, {1.0, 7.0}}, 3.9);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  Solver solver({.threads = 8});
+  const CapRow conformal = solver.solve(Scene(geometry, stack), 0, options);
+  const CapRow planar = solver.solve(Scene(geometry, split), 0, options);
+  EXPECT_NEAR(conformal.total(),
+              planar.total(),
+              0.003 * planar.total()
+                  + 4 * std::hypot(conformal.sigma[0], planar.sigma[0]));
+}
+
+// Shells raise or lower the capacitance with their permittivity, keep the
+// Maxwell matrix symmetric, and give the same result for any thread count.
+TEST(Solver, ConformalReciprocityAndDeterminism)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(
+      geometry,
+      conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
+  SolveOptions options;
+  options.tol_total = 0.004;
+  options.tol_coupling = 0.01;
+  Solver solver({.threads = 8});
+  const CapRow r0 = solver.solve(scene, 0, options);
+  const CapRow r1 = solver.solve(scene, 1, options);
+  EXPECT_NEAR(r0.cap[1], r1.cap[0], 4 * std::hypot(r0.sigma[1], r1.sigma[0]));
+
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 32768;
+  const CapRow one = Solver({.threads = 1}).solve(scene, 0, fixed);
+  const CapRow many = Solver({.threads = 6}).solve(scene, 0, fixed);
+  EXPECT_EQ(one.cap, many.cap);
+  EXPECT_EQ(one.hops, many.hops);
+
+  const Scene high_k(geometry, conformalStack({{"C", 0.05, 0.05, 7.0}}));
+  const Scene low_k(geometry, conformalStack({{"C", 0.05, 0.05, 1.5}}));
+  const CapRow high = solver.solve(high_k, 0, options);
+  const CapRow low = solver.solve(low_k, 0, options);
+  EXPECT_GT(high.total(),
+            low.total() + 4 * std::hypot(high.sigma[0], low.sigma[0]));
+}
+
+// A wire drawn as two abutting boxes of one net gets the shells of the
+// merged wire (the union of its boxes), and matches the single box.
+TEST(Solver, SplitWireMatchesSingleBox)
+{
+  const std::vector<Stack::ConformalDielectric> nested{
+      {"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}};
+  Geometry whole;
+  whole.addNet("lower");
+  whole.addNet("upper");
+  whole.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  whole.addBox(1, {{0, 0.3, 1.1}, {2, 0.5, 1.3}});
+  Geometry split;
+  split.addNet("lower");
+  split.addNet("upper");
+  split.addBox(0, {{0, 0, 0.5}, {0.8, 0.2, 0.7}});
+  split.addBox(0, {{0.8, 0, 0.5}, {2, 0.2, 0.7}});
+  split.addBox(1, {{0, 0.3, 1.1}, {2, 0.5, 1.3}});
+  const Stack stack = conformalStack(nested);
+  const Scene whole_scene(whole, stack);
+  const Scene split_scene(split, stack);
+  // Along the seam the union rule gives the inner shell, as for one box.
+  EXPECT_EQ(split_scene.dielectric().eps({0.8, -0.01, 0.6}), 7.0);
+  EXPECT_EQ(split_scene.dielectric().eps({0.8, -0.04, 0.6}), 3.0);
+  SolveOptions options;
+  options.tol_total = 0.003;
+  Solver solver({.threads = 8});
+  const CapRow a = solver.solve(whole_scene, 0, options);
+  const CapRow b = solver.solve(split_scene, 0, options);
+  EXPECT_NEAR(a.total(), b.total(), 4 * std::hypot(a.sigma[0], b.sigma[0]));
+}
+
+// Conformal dielectrics in a stack without planar interfaces: the shells
+// meet only the background, whose permittivity the tables must still know.
+// A planar interface far above, with a negligible contrast, does not change
+// the result.
+TEST(Solver, ConformalWithoutPlanarInterfaces)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  Stack bare = planarStack({{1.0, 3.9}}, 3.9);
+  bare.conductors.push_back({.name = "M1",
+                             .bottom = 0.5,
+                             .top = 0.7,
+                             .conformals = {{"C", 0.05, 0.05, 7.0}}});
+  Stack layered = bare;
+  layered.dielectrics = {{.name = "D", .bottom = 0, .top = 20, .eps = 3.9}};
+  layered.background_eps = 3.9 * (1 + 1e-9);
+  const Scene bare_scene(geometry, bare);
+  ASSERT_TRUE(bare_scene.interfaces().empty());
+  SolveOptions options;
+  options.tol_total = 0.003;
+  Solver solver({.threads = 8});
+  const CapRow a = solver.solve(bare_scene, 0, options);
+  const CapRow b = solver.solve(Scene(geometry, layered), 0, options);
+  EXPECT_NEAR(a.total(), b.total(), 4 * std::hypot(a.sigma[0], b.sigma[0]));
+  const CapRow uniform = solver.solve(Scene(geometry, 3.9), 0, options);
+  EXPECT_GT(a.total(),
+            uniform.total() + 4 * std::hypot(a.sigma[0], uniform.sigma[0]));
+}
+
+// Shells of the same conformal dielectric merge; shells of different ones
+// may not overlap.
+TEST(Solver, RejectsOverlappingConformals)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addNet("b");
+  geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  geometry.addBox(1, {{0, 0.3, 0.5}, {2, 0.5, 0.7}});
+  Stack stack = etchStopStack();
+  stack.conductors.push_back({.name = "M1",
+                              .bottom = 0.5,
+                              .top = 0.7,
+                              .conformals = {{"C", 0.06, 0.02, 4.5}}});
+  EXPECT_NO_THROW(Scene(geometry, stack));
+  // Each wire's outer shell D reaches into the other's inner shell C.
+  stack.conductors.back().conformals
+      = {{"C", 0.04, 0.02, 4.5}, {"D", 0.03, 0.02, 3.5}};
+  EXPECT_THROW(Scene(geometry, stack), std::invalid_argument);
 }
 
 }  // namespace

@@ -5,8 +5,7 @@
 [ERROR FSV-0021] -box cannot be combined with -layer or -rect.
 [ERROR FSV-0005] Net a: box must lie above the ground plane
 [ERROR FSV-0004] The permittivity must be positive.
-[INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 vias.
-[WARNING FSV-0003] Ignoring 7 conformal dielectrics, which are not supported yet.
+[INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 conformal dielectrics, 7 vias.
 [ERROR FSV-0007] Layer met9 is not a conductor or via of the ITF stack.
 [ERROR FSV-0009] Net b has no boxes.
 [ERROR FSV-0025] -tol_total must be a number greater than 0.
@@ -14,10 +13,10 @@
 [ERROR FSV-0027] -max_walks must be an integer of at least 1.
 [ERROR FSV-0028] -panels must be a positive multiple of 16.
 [ERROR FSV-0012] panels must be a positive multiple of 16
-[INFO FSV-0011] Net a: total 0.16297 fF +- 0.0048 after 16384 walks (110.2 hops per walk).
-  ground                    0.16297 +- 0.0048 fF
+[INFO FSV-0011] Net a: total 0.17138 fF +- 0.0067 after 16384 walks (173.2 hops per walk).
+  ground                    0.17138 +- 0.0067 fF
 [ERROR FSV-0001] ITF: cannot open missing.itf
-[INFO FSV-0002] Read ITF substrate_via: 1 dielectrics, 1 conductors, 1 vias.
+[INFO FSV-0002] Read ITF substrate_via: 1 dielectrics, 1 conductors, 0 conformal dielectrics, 1 vias.
 [ERROR FSV-0014] Via tie lands on the ground plane, which would ground its net.
 Summary 17 / 17 (100% pass)
 pass

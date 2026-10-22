@@ -4,10 +4,12 @@
 // Compares fsv with reference capacitances on structures with planar
 // dielectric stacks. The structures and the references live in
 // src/fsv/test/golden:
-// - cross sections against a 2D finite-volume solution
-//   (cross_section.txt, from fv2d_golden.py), accurate to about 1e-3;
-// - a 3D structure against FasterCap (fastercap.txt, from
-//   fastercap_golden.py), whose own error is a few percent.
+// - cross sections, with planar and conformal dielectrics, against a 2D
+//   finite-volume solution (cross_section.txt, from fv2d_golden.py),
+//   accurate to about 1e-3;
+// - 3D structures (a crossing, and line ends and a crossing with conformal
+//   dielectrics) against a 3D finite-volume solution (box_3d.txt, from
+//   fv3d_golden.py), accurate to about 2e-3.
 
 #include <cmath>
 #include <fstream>
@@ -35,8 +37,11 @@ struct Structure
 };
 
 // Reads the golden structure format: "background <eps>", "layer <top>
-// <eps>" bottom-up from the ground plane, and "box <net> x0 y0 z0 x1 y1 z1".
-// A positive `length` replaces every box's x extent with [0, length].
+// <eps>" bottom-up from the ground plane, "box <net> x0 y0 z0 x1 y1 z1", and
+// "conformal <name> <bottom> <top> <SW_T> <TW_T> <eps>", a conformal
+// dielectric of the conductor layer [bottom, top] (nesting outward in
+// order). A positive `length` replaces every box's x extent with
+// [0, length].
 Structure readStructure(const std::string& name, const double length = 0)
 {
   Structure s;
@@ -74,6 +79,26 @@ Structure readStructure(const std::string& name, const double length = 0)
         nets[net] = s.geometry.addNet(net);
       }
       s.geometry.addBox(nets[net], b);
+    } else if (kind == "conformal") {
+      Stack::ConformalDielectric c;
+      double layer_bottom = 0;
+      double layer_top = 0;
+      words >> c.name >> layer_bottom >> layer_top >> c.side_thickness
+          >> c.top_thickness >> c.eps;
+      Stack::Conductor* layer = nullptr;
+      for (Stack::Conductor& existing : s.stack.conductors) {
+        if (existing.bottom == layer_bottom && existing.top == layer_top) {
+          layer = &existing;
+        }
+      }
+      if (layer == nullptr) {
+        layer = &s.stack.conductors.emplace_back(Stack::Conductor{
+            .name = "layer" + std::to_string(s.stack.conductors.size()),
+            .bottom = layer_bottom,
+            .top = layer_top,
+            .conformals = {}});
+      }
+      layer->conformals.push_back(c);
     }
   }
   return s;
@@ -201,24 +226,30 @@ INSTANTIATE_TEST_SUITE_P(
     Planar,
     CrossSection,
     testing::Values(CrossSectionCase{"etch_stop_pair", {"lower", "upper"}},
-                    CrossSectionCase{"three_wires", {"left", "middle"}}),
+                    CrossSectionCase{"three_wires", {"left", "middle"}},
+                    CrossSectionCase{"conformal_pair", {"a"}},
+                    CrossSectionCase{"nested_conformal", {"a"}},
+                    CrossSectionCase{"merged_conformal", {"a", "b"}},
+                    CrossSectionCase{"sky130_met1_pair", {"a"}}),
     [](const testing::TestParamInfo<CrossSectionCase>& info) {
       return info.param.structure;
     });
 
-// Totals within 3% and couplings of at least 5% of the total within 6%,
-// each plus three standard errors. The tolerances cover the reference's own
-// error, about 1.5% from its dielectric discretization (measured against the
-// finite-volume cross sections) plus its truncated ground plate and layers.
-// The plate also loses the flux that escapes past its edge, so the ground
-// reference is the total minus the couplings: the flux an infinite plane
-// would collect.
-TEST(FasterCap, Crossing)
+class ThreeD : public testing::TestWithParam<std::string>
 {
-  const std::string name = "crossing";
+};
+
+// 3D structures against a 3D finite-volume solution (box_3d.txt, from
+// fv3d_golden.py): a crossing, and line ends and a crossing with conformal
+// dielectrics, which cross sections cannot show. Totals within 0.5% and
+// couplings of at least 5% of the total within 1%, each plus three standard
+// errors; the reference is good to about 0.2%.
+TEST_P(ThreeD, MatchesFiniteVolume)
+{
+  const std::string name = GetParam();
   const Structure s = readStructure(name);
   const Geometry& geometry = s.geometry;
-  const Golden golden = readGolden("fastercap.txt");
+  const Golden golden = readGolden("box_3d.txt");
   const Scene scene(geometry, s.stack);
   Solver solver({.threads = 8});
   const SolveOptions options = solveOptions(2e-3);
@@ -226,26 +257,25 @@ TEST(FasterCap, Crossing)
     const std::string& m = geometry.netName(master);
     const CapRow row = solver.solve(scene, master, options);
     const double total = golden.at({name, m, m});
-    double ground = -total;
-    for (int net = 0; net < geometry.netCount(); net++) {
-      if (net != master) {
-        ground -= golden.at({name, m, geometry.netName(net)});
-      }
-    }
     for (int net = 0; net <= geometry.netCount(); net++) {
       const std::string n = netName(geometry, net);
-      const double expected
-          = net == geometry.netCount() ? ground : golden.at({name, m, n});
+      const double expected = golden.at({name, m, n});
       if (net != master && std::abs(expected) < 0.05 * total) {
         continue;
       }
       const Entry e = entry(row, net);
-      const double tol = net == master ? 0.03 : 0.06;
+      const double tol = net == master ? 5e-3 : 1e-2;
       EXPECT_NEAR(e.value, expected, tol * std::abs(expected) + 3 * e.sigma)
           << name << " " << m << " to " << n;
     }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(Conformal,
+                         ThreeD,
+                         testing::Values("crossing",
+                                         "conformal_line_ends",
+                                         "conformal_crossing"));
 
 }  // namespace
 }  // namespace fsv

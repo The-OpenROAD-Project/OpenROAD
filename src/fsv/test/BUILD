@@ -20,6 +20,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestDielectric",
+    srcs = ["cpp/TestDielectric.cpp"],
+    deps = [
+        "//src/fsv:core",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestLayeredCubeGreens",
     srcs = ["cpp/TestLayeredCubeGreens.cpp"],
     deps = [
@@ -43,8 +55,10 @@ cc_test(
 
 cc_test(
     name = "TestGolden",
+    size = "large",
     srcs = ["cpp/TestGolden.cpp"],
     data = glob(["golden/*.txt"]),
+    shard_count = 4,
     deps = [
         "//src/fsv",
         "//src/fsv:geometry",
@@ -71,6 +85,7 @@ cc_test(
     srcs = ["cpp/TestSolver.cpp"],
     deps = [
         "//src/fsv",
+        "//src/fsv:core",
         "//src/fsv:geometry",
         "//src/fsv:stack",
         "@googletest//:gtest",

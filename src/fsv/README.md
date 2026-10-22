@@ -16,13 +16,15 @@ It provides:
 
 - Manhattan conductors above a grounded plane at z = 0. The domain is open
   laterally and above, with no artificial boundary.
-- A uniform dielectric, or the planar dielectrics of a process stack read
-  from an ITF file (`fsv/Itf.h`, `fsv/Stack.h`). Conformal dielectrics are
-  read but not solved yet; the Tcl commands ignore them with a warning.
+- A uniform dielectric, or the dielectrics of a process stack read from an
+  ITF file (`fsv/Itf.h`, `fsv/Stack.h`): planar layers, and conformal
+  dielectrics around the conductors of each layer.
 - Exact cube Green's-function tables from Fourier series, for a uniform cube
-  and for a cube split by one planar interface (`LayeredCubeGreens`), sampled
-  with alias tables. A walk sizes each cube to hold at most one interface and
-  snaps it to a tabulated position.
+  and for a cube split by one interface plane (`LayeredCubeGreens`), sampled
+  with alias tables. A walk sizes each cube to hold at most one interface
+  plane, of any orientation, and snaps it to a tabulated position
+  (`Dielectric`). Within the capture distance of an edge where two
+  interfaces meet, cubes keep a minimum size.
 - First hops importance-sampled by the flux kernel, with interpolation
   between tabulated interface positions so that their weights stay bounded.
   A control variate exploits the zero-mean weights.
@@ -30,8 +32,20 @@ It provides:
   RNG and fixed batches reduced in order.
 - Tcl commands that read a stack, define conductors and solve.
 
-Later phases add conformal dielectrics, a 2D mode, odb input, and Python
-commands.
+Later phases add a 2D mode, odb input, and Python commands.
+
+## Conformal dielectrics
+
+A box whose z extent equals a conductor layer's gets that layer's conformal
+dielectrics. Conformal dielectric k of a box is the box grown by the sum of
+the first k SW_T on all four sides, line ends included, and by the sum of
+the first k TW_T on top; its bottom stays at the box's bottom. Conductors
+cut into conformal dielectrics, and conformal dielectrics replace the planar
+layers they cross. The boxes of one net on one layer grow their shells from
+their union, so a wire drawn as several boxes gets the shells of the merged
+wire. Shells of the same conformal dielectric merge where wires are close;
+between different nets or layers, shells of different ones must not
+overlap, and a scene where they do is rejected.
 
 ## Commands
 
@@ -51,8 +65,8 @@ conductor may touch that bounding box yet.
 The `read_itf` command reads a process stack from an ITF file and makes it
 the dielectric. The ground plane is the top of the lowest dielectric, and the
 background permittivity fills everything above the stack. Conformal
-dielectrics are ignored with a warning until they are supported. The
-conductors defined so far are kept.
+dielectrics wrap the boxes on their conductor layers (see Conformal
+dielectrics above). The conductors defined so far are kept.
 
 ```tcl
 read_itf
@@ -204,14 +218,22 @@ bazelisk run //src/fsv/test:BenchGrid   # throughput on a two-layer wire grid
 ```
 
 `TestGolden` compares fsv with reference values for the structures in
-`test/golden`: cross sections against a 2D finite-volume solution
-(`fv2d_golden.py`, numpy and scipy), and a 3D structure against FasterCap
-(`fastercap_golden.py`), which is not a build dependency. The scripts
-regenerate the references.
+`test/golden`:
+
+- cross sections with planar and conformal dielectrics against a 2D
+  finite-volume solution (`fv2d_golden.py`, numpy and scipy);
+- a crossing, and line ends and a crossing with conformal dielectrics,
+  against a 3D finite-volume solution (`fv3d_golden.py`, numpy, scipy and
+  pyamg).
+
+None of these tools is a build dependency; the scripts regenerate the
+references. `test/README.md` lists which test uses which structures and
+reference files, and how to add or regenerate them.
 
 ## Limitations
 
-- Conformal dielectrics are not solved.
+- Only conformal dielectrics with THICKNESS = 0 (shells around the wires,
+  nothing deposited between them) and no BW_T are read.
 - No other conductor may touch a master net's bounding box.
 - Geometry is given box by box; reading it from the design database comes
   later.

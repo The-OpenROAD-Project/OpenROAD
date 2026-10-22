@@ -9,14 +9,35 @@ extents are ignored). Needs numpy and scipy:
 
   python3 fv2d_golden.py etch_stop_pair.txt three_wires.txt > cross_section.txt
 
-The grid is uniform with spacing h around the wires and grows geometrically
-out to grounded far boundaries FAR µm away; wire faces and layer interfaces
-lie on cell faces. Each value is extrapolated from h = 0.01, 0.005 and
+To see a structure and its grid instead (needs matplotlib):
+
+  python3 fv2d_golden.py --plot plots --h 0.01 nested_conformal.txt
+
+writes plots/nested_conformal.png: the uniform region around the wires with
+every cell, and the whole domain out to the grounded far boundaries.
+
+The grid is uniform with spacing h around the wires and their shells, from
+the ground plane up, and grows geometrically out to grounded far boundaries
+FAR µm away; wire faces, shell faces and layer interfaces lie on cell
+faces. Each value is extrapolated from h = 0.01, 0.005 and
 0.0025 µm, assuming the error falls by a constant ratio per halving (the
 corners make the order fractional, about 1.3). The header reports the largest
 change from the finest grid to the extrapolated value.
+
+Conformal dielectrics follow the rules in the fsv plan, applied here
+independently of fsv: a line "conformal <name> <bottom> <top> <SW_T> <TW_T>
+<eps>" wraps every box whose z extent is [bottom, top]; lines for the same
+extent nest outward in order. Conformal k of a box is the box grown by the
+sum of the first k SW_T on its sides and the first k TW_T on top, with its
+bottom kept. The boxes of one net on one layer grow their shells from their
+union: a point takes the shallowest conformal any of them puts there.
+Conductors cut into conformal dielectrics, conformal dielectrics replace the
+planar layers they cross, shells of the same conformal dielectric merge, and
+otherwise shells of different ones must not overlap.
 """
 
+import argparse
+import os
 import sys
 
 import numpy as np
@@ -33,7 +54,8 @@ GROWTH = 1.08
 
 
 def read_structure(path):
-    layers, boxes, background = [], [], None
+    """(background, layers, boxes, conformals) of a structure file."""
+    layers, boxes, conformals, background = [], [], [], None
     with open(path, encoding="utf-8") as f:
         for line in f:
             words = line.split("#")[0].split()
@@ -45,9 +67,37 @@ def read_structure(path):
                 layers.append((float(words[1]), float(words[2])))
             elif words[0] == "box":
                 boxes.append((words[1], [float(v) for v in words[2:8]]))
+            elif words[0] == "conformal":
+                conformals.append((words[1], *[float(v) for v in words[2:7]]))
             else:
                 raise ValueError(f"{path}: unknown line {line.strip()}")
-    return background, layers, boxes
+    return background, layers, boxes, conformals
+
+
+def shells(boxes, conformals):
+    """(name, eps, outer, inner, group, depth) of every conformal shell,
+    innermost first per box. outer and inner are (y0, z0, y1, z1): the box
+    grown by this conformal and those inside it, and by those inside it only.
+    The boxes of one net on one layer form a group (a number), whose shells
+    grow from the union of its boxes; depth is 1 for the innermost
+    conformal."""
+    result = []
+    groups = {}
+    for net, b in boxes:
+        inner = (b[1], b[2], b[4], b[5])
+        side = top = 0.0
+        depth = 0
+        for name, bottom, ztop, sw, tw, eps in conformals:
+            if abs(b[2] - bottom) > 1e-9 or abs(b[5] - ztop) > 1e-9:
+                continue
+            side += sw
+            top += tw
+            depth += 1
+            outer = (b[1] - side, b[2], b[4] + side, b[5] + top)
+            group = groups.setdefault((net, bottom, ztop), len(groups))
+            result.append((name, eps, outer, inner, group, depth))
+            inner = outer
+    return result
 
 
 def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
@@ -68,38 +118,89 @@ def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
     return np.array(sorted(lines))
 
 
-def solve(background, layers, boxes, h):
+class Grid:
+    """A structure discretized at spacing h: the grid lines Y and Z, and per
+    cell its permittivity, the net it belongs to (-1 outside conductors) and
+    its conformal dielectric ("" outside shells)."""
+
+    def __init__(self, background, layers, boxes, h, conformals=()):
+        self.names = list(dict.fromkeys(name for name, _ in boxes))
+        self.shells = shells(boxes, conformals)
+        y_breaks = [v for _, b in boxes for v in (b[1], b[4])]
+        y_breaks += [v for s in self.shells for v in (s[2][0], s[2][2])]
+        z_breaks = [v for _, b in boxes for v in (b[2], b[5])]
+        z_breaks += [v for s in self.shells for v in (s[2][1], s[2][3])]
+        # The uniform grid covers the wires and shells; layer tops above it
+        # are grid lines in the growing cells.
+        z_hi = max(z_breaks) + MARGIN
+        z_breaks += [top for top, _ in layers]
+        y_lo, y_hi = min(y_breaks) - MARGIN, max(y_breaks) + MARGIN
+        # The uniform region, (y0, z0, y1, z1).
+        self.near = (y_lo, 0.0, y_hi, z_hi)
+        self.Y = grid_lines(y_breaks, y_lo, y_hi, h, y_lo - FAR, y_hi + FAR)
+        self.Z = grid_lines(z_breaks + [0.0], 0.0, z_hi, h, 0.0, z_hi + FAR)
+        yc = 0.5 * (self.Y[1:] + self.Y[:-1])
+        zc = 0.5 * (self.Z[1:] + self.Z[:-1])
+        shape = (len(yc), len(zc))
+
+        def eps_at(z):
+            for top, eps in layers:
+                if z < top:
+                    return eps
+            return background
+
+        self.eps = np.repeat(
+            np.array([eps_at(z) for z in zc])[None, :], shape[0], axis=0
+        )
+        self.owner = -np.ones(shape, dtype=int)
+        for name, b in boxes:
+            inside = (
+                (yc[:, None] > b[1])
+                & (yc[:, None] < b[4])
+                & (zc[None, :] > b[2])
+                & (zc[None, :] < b[5])
+            )
+            self.owner[inside] = self.names.index(name)
+        free = self.owner < 0
+        # Conformal dielectrics replace the planar layers; conductors cut
+        # into them.
+        self.shell_of = np.full(shape, "", dtype=object)
+
+        def within(r):
+            return (
+                (yc[:, None] > r[0])
+                & (yc[:, None] < r[2])
+                & (zc[None, :] > r[1])
+                & (zc[None, :] < r[3])
+            )
+
+        # Shallowest first: a cell keeps the first shell that claims it when
+        # the next comes from the same group (the union rule) or is the same
+        # conformal dielectric; another one from another group overlaps.
+        group_of = np.full(shape, -1, dtype=int)
+        for name, shell_eps, outer, _, group, _ in sorted(
+            self.shells, key=lambda shell: shell[5]
+        ):
+            inside = within(outer) & free
+            claimed = inside & (self.shell_of != "")
+            clash = claimed & (self.shell_of != name) & (group_of != group)
+            if clash.any():
+                other = self.shell_of[clash][0]
+                raise ValueError(f"conformal dielectrics {other} and {name} overlap")
+            new = inside & (self.shell_of == "")
+            self.shell_of[new] = name
+            group_of[new] = group
+            self.eps[new] = shell_eps
+
+
+def solve(background, layers, boxes, h, conformals=()):
     """The Maxwell matrix per unit length (fF/µm), nets in first-seen
     order, with the ground column last."""
-    names = list(dict.fromkeys(name for name, _ in boxes))
-    y_breaks = [v for _, b in boxes for v in (b[1], b[4])]
-    z_breaks = [v for _, b in boxes for v in (b[2], b[5])]
-    z_breaks += [top for top, _ in layers]
-    y_lo, y_hi = min(y_breaks) - MARGIN, max(y_breaks) + MARGIN
-    z_hi = max(z_breaks) + MARGIN
-    Y = grid_lines(y_breaks, y_lo, y_hi, h, y_lo - FAR, y_hi + FAR)
-    Z = grid_lines(z_breaks + [0.0], 0.0, z_hi, h, 0.0, z_hi + FAR)
-    yc, zc = 0.5 * (Y[1:] + Y[:-1]), 0.5 * (Z[1:] + Z[:-1])
-    dy, dz = np.diff(Y), np.diff(Z)
-    ny, nz = len(yc), len(zc)
-
-    def eps_at(z):
-        for top, eps in layers:
-            if z < top:
-                return eps
-        return background
-
-    eps = np.repeat(np.array([eps_at(z) for z in zc])[None, :], ny, axis=0)
-    # Cells inside a wire hold its net index; free cells hold -1.
-    owner = -np.ones((ny, nz), dtype=int)
-    for name, b in boxes:
-        inside = (
-            (yc[:, None] > b[1])
-            & (yc[:, None] < b[4])
-            & (zc[None, :] > b[2])
-            & (zc[None, :] < b[5])
-        )
-        owner[inside] = names.index(name)
+    grid = Grid(background, layers, boxes, h, conformals)
+    names = grid.names
+    eps, owner = grid.eps, grid.owner
+    dy, dz = np.diff(grid.Y), np.diff(grid.Z)
+    ny, nz = eps.shape
     free = owner < 0
     index = -np.ones((ny, nz), dtype=int)
     index[free] = np.arange(free.sum())
@@ -181,12 +282,176 @@ def extrapolate(values):
     return f3 + d2 / (d1 / d2 - 1)
 
 
+def plot(path, out_dir, h):
+    """Writes <out_dir>/<structure>.png: the permittivity of every cell, the
+    conductors, the conformal shells, the planar interfaces and the grid at
+    spacing h, near the wires and over the whole domain."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.colors as mcolors
+    import matplotlib.patches as mpatches
+    import matplotlib.pyplot as plt
+
+    background, layers, boxes, conformals = read_structure(path)
+    grid = Grid(background, layers, boxes, h, conformals)
+    structure = os.path.basename(path).removesuffix(".txt")
+    ink, muted, copper = "#17202a", "#586472", "#b5652b"
+    eps_values = grid.eps[grid.owner < 0]
+    norm = mcolors.Normalize(vmin=min(1.0, eps_values.min()), vmax=eps_values.max())
+    shell_styles = ["-", "--", ":", "-."]
+    materials = list(dict.fromkeys(name for name, *_ in grid.shells))
+
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(14, 6),
+        gridspec_kw={"width_ratios": [1.3, 1]},
+        layout="constrained",
+    )
+    for ax, near in zip(axes, (True, False)):
+        mesh = ax.pcolormesh(
+            grid.Y,
+            grid.Z,
+            np.ma.masked_where(grid.owner >= 0, grid.eps).T,
+            cmap="Blues",
+            norm=norm,
+            edgecolors=(0.55, 0.6, 0.65, 0.5),
+            linewidth=0.15 if near else 0.05,
+        )
+        ax.pcolormesh(
+            grid.Y,
+            grid.Z,
+            np.ma.masked_where(grid.owner < 0, np.zeros(grid.owner.shape)).T,
+            cmap=mcolors.ListedColormap([copper]),
+        )
+        ax.axhline(0, color=ink, linewidth=3)
+        if near:
+            for name, b in boxes:
+                ax.text(
+                    0.5 * (b[1] + b[4]),
+                    0.5 * (b[2] + b[5]),
+                    name,
+                    color="white",
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    family="monospace",
+                )
+            for name, shell_eps, outer, *_ in grid.shells:
+                ax.add_patch(
+                    mpatches.Rectangle(
+                        (outer[0], outer[1]),
+                        outer[2] - outer[0],
+                        outer[3] - outer[1],
+                        fill=False,
+                        edgecolor=ink,
+                        linewidth=1.0,
+                        linestyle=shell_styles[materials.index(name) % 4],
+                    )
+                )
+            y0, z0, y1, z1 = grid.near
+            bottom = 0.0
+            for top, eps in layers:
+                if top <= z1:
+                    ax.axhline(top, color=muted, linewidth=0.8, linestyle=(0, (1, 2)))
+                mid = 0.5 * (bottom + min(top, z1))
+                if bottom < z1:
+                    ax.text(
+                        y1, mid, f" ε {eps:g}", color=muted, va="center", fontsize=8
+                    )
+                bottom = top
+            if bottom < z1:
+                ax.text(
+                    y1,
+                    0.5 * (bottom + z1),
+                    f" ε {background:g}",
+                    color=muted,
+                    va="center",
+                    fontsize=8,
+                )
+            ax.set_xlim(y0, y1)
+            ax.set_ylim(z0, z1)
+            ax.set_title("Uniform region: every cell", color=ink, fontsize=11)
+            handles = [
+                mpatches.Patch(color=copper, label="conductor"),
+                *[
+                    plt.Line2D(
+                        [],
+                        [],
+                        color=ink,
+                        linestyle=shell_styles[i % 4],
+                        label=f"{m} (ε {next(e for n, e, *_ in grid.shells if n == m):g})",
+                    )
+                    for i, m in enumerate(materials)
+                ],
+            ]
+            ax.legend(handles=handles, loc="upper left", fontsize=8, framealpha=0.9)
+        else:
+            y0, z0, y1, z1 = grid.near
+            ax.add_patch(
+                mpatches.Rectangle(
+                    (y0, z0),
+                    y1 - y0,
+                    z1 - z0,
+                    fill=False,
+                    edgecolor="#b0307a",
+                    linewidth=1.2,
+                )
+            )
+            ax.set_xlim(grid.Y[0], grid.Y[-1])
+            ax.set_ylim(grid.Z[0], grid.Z[-1])
+            ax.set_title(
+                "Whole domain, out to the grounded far boundaries",
+                color=ink,
+                fontsize=11,
+            )
+        ax.set_aspect("equal")
+        ax.set_xlabel("y (µm)", color=muted)
+        ax.set_ylabel("z (µm)", color=muted)
+        ax.tick_params(colors=muted, labelsize=8)
+    bar = fig.colorbar(mesh, ax=axes, shrink=0.8)
+    bar.set_label("relative permittivity", color=muted)
+    bar.ax.tick_params(colors=muted, labelsize=8)
+    cells = grid.eps.size
+    fig.suptitle(
+        f"{structure}: h = {h:g} µm, {cells} cells "
+        f"({len(grid.Y) - 1} × {len(grid.Z) - 1})",
+        color=ink,
+        fontsize=13,
+    )
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, f"{structure}.png")
+    fig.savefig(out, dpi=200)
+    plt.close(fig)
+    return out
+
+
 def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("structures", nargs="+", help="structure files")
+    parser.add_argument(
+        "--plot",
+        metavar="DIR",
+        help="draw each structure and its grid into DIR instead of solving",
+    )
+    parser.add_argument(
+        "--h",
+        type=float,
+        default=SPACINGS[0],
+        help=f"grid spacing for --plot, µm (default {SPACINGS[0]:g})",
+    )
+    args = parser.parse_args()
+    if args.plot:
+        for path in args.structures:
+            print(plot(path, args.plot, args.h))
+        return
+
     results = []
     worst = 0.0
-    for path in sys.argv[1:]:
-        background, layers, boxes = read_structure(path)
-        solutions = [solve(background, layers, boxes, h) for h in SPACINGS]
+    for path in args.structures:
+        background, layers, boxes, conformals = read_structure(path)
+        solutions = [solve(background, layers, boxes, h, conformals) for h in SPACINGS]
         names = solutions[0][0]
         matrices = np.array([m for _, m in solutions])
         structure = path.rsplit("/", 1)[-1].removesuffix(".txt")

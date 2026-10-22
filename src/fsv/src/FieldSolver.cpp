@@ -8,6 +8,7 @@
 #include <cmath>
 #include <exception>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -50,25 +51,21 @@ void FieldSolver::readItf(const std::string& path)
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
-  int conformals = 0;
-  for (Stack::Conductor& c : stack.conductors) {
-    conformals += static_cast<int>(c.conformals.size());
-    c.conformals.clear();
+  std::set<std::string> conformals;
+  for (const Stack::Conductor& c : stack.conductors) {
+    for (const Stack::ConformalDielectric& cf : c.conformals) {
+      conformals.insert(cf.name);
+    }
   }
   logger_->info(utl::FSV,
                 2,
-                "Read ITF {}: {} dielectrics, {} conductors, {} vias.",
+                "Read ITF {}: {} dielectrics, {} conductors, {} conformal "
+                "dielectrics, {} vias.",
                 stack.technology,
                 stack.dielectrics.size(),
                 stack.conductors.size(),
+                conformals.size(),
                 stack.vias.size());
-  if (conformals > 0) {
-    logger_->warn(utl::FSV,
-                  3,
-                  "Ignoring {} conformal dielectrics, which are not supported "
-                  "yet.",
-                  conformals);
-  }
   scene_.reset();
   stack_ = std::move(stack);
   has_stack_ = true;
