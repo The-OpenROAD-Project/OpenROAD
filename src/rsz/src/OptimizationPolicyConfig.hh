@@ -114,12 +114,12 @@ struct ParallelEvalPolicyConfig
   // once those batches spent stall_batches times the current cap in moves.
   // Progress is a saved checkpoint that improves WNS by
   // progress_wns_period_pct percent of the reference clock period or TNS by
-  // progress_pct percent of its initial value.
+  // progress_tns_pct percent of its initial value.
   int stall_batches{6};
   // Absolute cap on consecutive stalled batches.
   int stall_max_batches{24};
   // Minimum TNS improvement relative to the initial magnitude.
-  float progress_pct{0.5f};
+  float progress_tns_pct{0.5f};
   // Minimum WNS improvement in percent of the reference clock period.
   float progress_wns_period_pct{0.04f};
 
