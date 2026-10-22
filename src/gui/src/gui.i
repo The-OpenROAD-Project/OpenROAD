@@ -3,6 +3,8 @@
 
 %{
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
@@ -10,10 +12,12 @@
 
 using utl::GUI;
 
-bool check_gui(const char* command)
+// With any_viewer, the script view serves the command when no Qt window is
+// up; otherwise it needs the window.
+bool check_gui(const char* command, bool any_viewer = false)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  if (!web::Gui::hasUI()) {
+  if (!(any_viewer ? web::Gui::hasViewer() : web::Gui::hasUI())) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -70,6 +74,14 @@ namespace std {
 }
 
 %rename(pause) gui_pause;
+
+%typemap(out) std::vector<std::string> {
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  for (const std::string& item : *(&$1)) {
+    Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(item.c_str(), item.size()));
+  }
+  Tcl_SetObjResult(interp, list);
+}
 
 %inline %{
 
@@ -295,7 +307,7 @@ void design_created()
 
 void fit()
 {
-  if (!check_gui("fit")) {
+  if (!check_gui("fit", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -390,7 +402,7 @@ void clear_highlights(int highlight_group = 0)
 
 void set_display_controls(const char* name, const char* display_type, const char* value)
 {
-  if (!check_gui("set_display_controls")) {
+  if (!check_gui("set_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -421,7 +433,7 @@ void set_display_controls(const char* name, const char* display_type, const char
 
 bool check_display_controls(const char* name, const char* display_type)
 {
-  if (!check_gui("check_display_controls")) {
+  if (!check_gui("check_display_controls", true)) {
     return false;
   }
   auto gui = web::Gui::get();
@@ -446,7 +458,7 @@ bool check_display_controls(const char* name, const char* display_type)
 
 void save_display_controls()
 {
-  if (!check_gui("set_display_controls")) {
+  if (!check_gui("save_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -455,11 +467,20 @@ void save_display_controls()
 
 void restore_display_controls()
 {
-  if (!check_gui("restore_display_controls")) {
+  if (!check_gui("restore_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
   gui->restoreDisplayControls();
+}
+
+// The paths set_display_controls can name, as a Tcl list.
+std::vector<std::string> display_control_paths()
+{
+  if (!check_gui("display_control_paths", true)) {
+    return {};
+  }
+  return web::Gui::get()->displayControlPaths();
 }
 
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)

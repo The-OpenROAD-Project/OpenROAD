@@ -101,6 +101,8 @@ field and the value is `true` or `false`.
 | Key | Default | Description |
 | --- | ------- | ----------- |
 | `stdcells` | true | Standard cells |
+| `std_physical` | `stdcells` | Liberty cells with no ports, such as decaps |
+| `std_other` | `stdcells` | Cells with no Liberty cell that are not core masters |
 | `macros` | true | Macros |
 | `routing` | true | Signal routing |
 | `special_nets` | true | Power/ground straps |
@@ -325,6 +327,14 @@ whichever one synced last.
 
 Because Tcl commands typed into the browser console run on the server, this is
 normally invoked from the viewer's own console after arranging the panel.
+
+This command is not `gui::save_display_controls`. With no Qt window open,
+`gui::set_display_controls`, `gui::check_display_controls`,
+`gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
+act on a copy of the Qt display-control tree kept on the server, with the
+same paths and defaults. That copy works in a build without Qt and needs no
+running server, but it is separate from what a browser shows. Of the colors,
+only `Misc/Background` is kept there.
 
 ### Restore Display Controls
 

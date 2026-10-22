@@ -1221,6 +1221,18 @@ bool DisplayControls::checkControlByPath(const std::string& path,
   return false;
 }
 
+std::vector<std::string> DisplayControls::controlPaths()
+{
+  std::map<std::string, QStandardItem*> controls;
+  collectControls(model_->invisibleRootItem(), kVisible, controls);
+  std::vector<std::string> paths;
+  paths.reserve(controls.size());
+  for (const auto& [path, item] : controls) {
+    paths.push_back(path);
+  }
+  return paths;
+}
+
 void DisplayControls::collectControls(
     const QStandardItem* parent,
     Column column,

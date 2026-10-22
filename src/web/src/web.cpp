@@ -48,9 +48,11 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "renderer_controls.h"
 #include "report_html.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
+#include "script_view.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -516,23 +518,27 @@ bool isRegisteredHeatMapName(const std::string& name)
   return false;
 }
 
+void seedRendererControls(RendererControls& controls)
+{
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+    // The controls a renderer declares are fixed once it has registered, so
+    // one pass per renderer is enough — the render path calls this on every
+    // tile and must not pay for the walk each time.
+    if (!controls.markSeeded(renderer)) {
+      continue;
+    }
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      controls.seed(renderer->displayControlPath(name), control.visibility);
+    }
+  }
+}
+
 void seedRendererControls(WebViewerHook* hook)
 {
   if (hook == nullptr) {
     return;
   }
-  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
-    // The controls a renderer declares are fixed once it has registered, so
-    // one pass per renderer is enough — the render path calls this on every
-    // tile and must not pay for the walk each time.
-    if (!hook->markRendererSeeded(renderer)) {
-      continue;
-    }
-    for (const auto& [name, control] : renderer->getDisplayControls()) {
-      hook->seedDisplayControlVisible(renderer->displayControlPath(name),
-                                      control.visibility);
-    }
-  }
+  seedRendererControls(hook->rendererControls());
 }
 
 // Serializes the per-renderer display controls for the `renderer_controls`
@@ -560,7 +566,6 @@ std::string rendererControlsJson(WebViewerHook* hook)
   // Matching the name alone would silently drop an unrelated renderer's
   // control that happened to be called "Pin Density"; matching the group
   // alone would drop a real renderer that picked the same group name.
-  static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
   for (web::Renderer* renderer : web::Gui::get()->renderers()) {
@@ -595,12 +600,22 @@ std::string rendererControlsJson(WebViewerHook* hook)
   return boost::json::serialize(root);
 }
 
+void setRendererControl(RendererControls& controls,
+                        const std::string& path,
+                        const bool value)
+{
+  controls.set(path, value);
+  if (value) {
+    applyRendererControlExclusivity(controls, path);
+  }
+}
+
 // The per-renderer control just switched on at `path` turns off the siblings
 // it declares mutually exclusive with, mirroring
 // DisplayControls::itemChanged: exclusivity is scoped to the parent group, an
 // empty name means "every sibling", and renderers that share a group name
 // share the parent, so a sibling can belong to another renderer.
-void applyRendererControlExclusivity(WebViewerHook* hook,
+void applyRendererControlExclusivity(RendererControls& controls,
                                      const std::string& path)
 {
   std::string group;
@@ -638,7 +653,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
       if (control_path == path) {
         continue;
       }
-      hook->setDisplayControlVisible(control_path, false);
+      controls.set(control_path, false);
     }
   }
 }
@@ -858,10 +873,7 @@ WebSocketSession::WebSocketSession(
         try {
           const std::string path = std::string(req.json.at("path").as_string());
           const bool value = req.json.at("value").as_bool();
-          viewer_hook_->setDisplayControlVisible(path, value);
-          if (value) {
-            applyRendererControlExclusivity(viewer_hook_, path);
-          }
+          setRendererControl(viewer_hook_->rendererControls(), path, value);
           // Every client shows the same server-side state, so tell them all;
           // the renderers redraw from the new values on the next tile.
           viewer_hook_->sessions().broadcast(
@@ -1680,8 +1692,10 @@ WebServer::WebServer(odb::dbDatabase* db,
       logger_(logger),
       interp_(interp),
       num_threads_(1),
-      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger))
+      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
+      script_view_(std::make_unique<ScriptView>(db, logger))
 {
+  web::Gui::get()->setScriptView(script_view_.get());
 }
 
 void WebServer::setThreadCount(int num_threads)
@@ -1761,6 +1775,13 @@ WebServer::~WebServer()
   if (log_sink_) {
     logger_->removeSink(log_sink_);
     log_sink_.reset();
+  }
+  // The script view goes with us, so nothing may reach it afterwards.
+  if (web::Gui::get()->getScriptView() == script_view_.get()) {
+    web::Gui::get()->setScriptView(nullptr);
+  }
+  if (viewer_hook_) {
+    viewer_hook_->setRendererControls(nullptr);
   }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
