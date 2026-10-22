@@ -396,7 +396,7 @@ class RepairTargetCollector
 
   // Startpoint set for this collector; see walkStartpoints().
   std::vector<CachedStartpoint> startpoints_;
-  bool startpoints_collected_{false};
+  bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;
   sta::Search* search_{nullptr};
