@@ -863,10 +863,12 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
 
     // make sure any top level bterms are connected to this net too...
     if (parent_module == block_->getTopModule()) {
-      std::unique_ptr<NetConnectedPinIterator> pin_iter{
-          network_->connectedPinIterator(inst_pin_net)};
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
+      // Only terminals on this local net belong to the top module.
+      // Traversing through child feedthroughs would reconnect unrelated ports.
+      std::unique_ptr<NetTermIterator> term_iter{
+          network_->termIterator(inst_pin_net)};
+      while (term_iter->hasNext()) {
+        const Pin* pin = network_->pin(term_iter->next());
         staToDb(parent_module, pin, bterm, iterm, mod_bterm, mod_iterm);
         if (bterm) {
           bterm->connect(upper_mod_net);

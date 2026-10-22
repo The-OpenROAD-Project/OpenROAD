@@ -12,11 +12,11 @@ BEFORE_BORROW 0.4545
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.076 |       -0.3 |      7 | enable_latch/D
-      28* |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.2 |      7 | enable_latch/D
-    final |       1 |       5 |        1 |      0 |     0 |   +13.6% |   -0.048 |       -0.2 |      7 | enable_latch/D
+      29* |       1 |       6 |        1 |      0 |     0 |   +19.1% |   -0.048 |       -0.2 |      7 | enable_latch/D
+    final |       1 |       6 |        1 |      0 |     0 |   +19.1% |   -0.048 |       -0.2 |      7 | enable_latch/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 1 buffers.
 [INFO RSZ-0040] Inserted 1 buffers.
-[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 6 instances: 6 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 AFTER_BORROW 0.4502

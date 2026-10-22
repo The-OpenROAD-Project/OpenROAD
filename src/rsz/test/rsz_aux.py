@@ -95,6 +95,7 @@ def repair_timing(
     skip_last_gasp=False,
     skip_vt_swap=False,
     skip_crit_vt_swap=False,
+    effort="high",
     repair_tns=100,
     max_passes=10000,
     max_iterations=-1,
@@ -120,6 +121,8 @@ def repair_timing(
         _error(utl.RSZ, 1030, "repair_tns must be between 0 and 100.")
     if not (0 <= max_buffer_percent <= 100):
         _error(utl.RSZ, 1031, "max_buffer_percent must be between 0 and 100.")
+    if effort not in ("low", "medium", "high"):
+        _error(utl.RSZ, 1034, "effort must be low, medium or high.")
 
     if recover_power is not None:
         if not (0 <= recover_power <= 100):
@@ -153,6 +156,7 @@ def repair_timing(
             skip_last_gasp,
             skip_vt_swap,
             skip_crit_vt_swap,
+            effort,
         )
 
     if hold:

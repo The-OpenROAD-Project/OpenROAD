@@ -16,6 +16,8 @@ or_integration_tests(
     set_wire_rc_rdl_ignored
     set_wire_rc_selectors
     set_wire_rc_rdl_mixed_tech
+  PASSFAIL_TESTS
+    estimate_parasitics_source
 )
 
 add_executable(TestEstimateParasitics cpp/TestEstimateParasitics.cc)

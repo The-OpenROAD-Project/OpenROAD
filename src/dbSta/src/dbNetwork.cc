@@ -695,7 +695,10 @@ bool DbInstancePinIterator::hasNext()
   if (top_) {
     while (bitr_ != bitr_end_) {
       dbBTerm* bterm = *bitr_;
-      if (!network_->isPGSupply(bterm)) {
+      // Keep real supply ports (they never become graph vertices); hide only
+      // signal-typed ports that sit on a supply net.  DbNetTermIterator uses
+      // the same predicate so the pin walk and the term walk agree.
+      if (!network_->isSupplyOnlyByNet(bterm)) {
         next_ = network_->dbToSta(bterm);
         bitr_++;
         return true;
@@ -877,7 +880,9 @@ Term* DbNetTermIterator::next()
   while (iter_ != end_) {
     dbBTerm* bterm = *iter_;
     iter_++;
-    if (!network_->isPGSupply(bterm)) {
+    // Same predicate as DbInstancePinIterator's top branch, so a supply port
+    // visible in the pin walk is also visible here.
+    if (!network_->isSupplyOnlyByNet(bterm)) {
       return network_->dbToStaTerm(bterm);
     }
   }
@@ -1139,8 +1144,10 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
 
   // One plain Cell per unique chiplet master (names the chip-insts; the
   // binding point for a vendor ETM LibertyCell later), with a descriptive
-  // Port per bound chip-bump bterm. Bump timing pins are the pad iterms,
-  // not these ports.
+  // Port per bterm of the master's block. Every such bterm is reachable as
+  // a Pin by net traversal, and port(const Pin*) resolves it here, so a
+  // bterm without a bump (e.g. a package-facing port) needs a Port too.
+  // Bump timing pins are the pad iterms, not these ports.
   chip_master_lib_ = makeLibrary("3dic_chip_master_lib", "");
   for (odb::dbChipInst* chip_inst : chip->getChipInsts()) {
     odb::dbChip* master = chip_inst->getMasterChip();
@@ -1150,19 +1157,14 @@ void dbNetwork::makeTopCellForChip(odb::dbChip* chip)
     Cell* master_cell
         = makeCell(chip_master_lib_, master->getName(), /*is_leaf=*/false, "");
     chip_master_cells_[master] = master_cell;
-    for (odb::dbChipRegion* region : master->getChipRegions()) {
-      for (odb::dbChipBump* bump : region->getChipBumps()) {
-        odb::dbBTerm* bterm = bump->getBTerm();
-        if (bterm == nullptr) {
-          // Spare bump (no port/net binding): not a logical endpoint, no
-          // Port to synthesize. Connected bumps are guaranteed a bterm by
-          // STA-3005; spares are likewise filtered out of pin enumeration.
-          continue;
-        }
-        Port* port = makePort(master_cell, bterm->getConstName());
-        setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
-        registerConcretePort(port);
-      }
+    odb::dbBlock* block = master->getBlock();
+    if (block == nullptr) {
+      continue;
+    }
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      Port* port = makePort(master_cell, bterm->getConstName());
+      setDirection(port, dbToSta(bterm->getSigType(), bterm->getIoType()));
+      registerConcretePort(port);
     }
   }
 }
@@ -2197,7 +2199,15 @@ Port* dbNetwork::port(const Pin* pin) const
     ret = dbToSta(mterm);
   } else if (bterm) {
     const char* port_name = bterm->getConstName();
-    ret = findPort(top_cell_, port_name);
+    // 3DIC: a chiplet bterm's Port is on its chip-inst's master cell (see
+    // makeTopCellForChip), not on the stack's top cell. Mirrors instance().
+    Cell* port_cell = top_cell_;
+    if (has3DicChip()) {
+      if (odb::dbChipInst* chip_inst = chipInstOf(bterm->getBlock())) {
+        port_cell = cell(dbToSta(chip_inst));
+      }
+    }
+    ret = findPort(port_cell, port_name);
   } else if (moditerm) {
     std::string port_sname = moditerm->getName();
     const char* port_cname = port_sname.c_str();
@@ -5973,6 +5983,23 @@ bool dbNetwork::isPGSupply(dbBTerm* bterm) const
 {
   if (bterm->getSigType().isSupply()) {
     return true;
+  }
+
+  return isPGSupply(bterm->getNet());
+}
+
+// A BTerm whose own sig type is POWER/GROUND is a real supply port.  dbNetwork
+// reports power/ground direction for it, so Graph::makePinVertex() never makes
+// a vertex, and write_verilog needs it visible to emit the "assign <port> =
+// <net>;" alias when the port and its supply net have different names
+// (#10414).  A signal-typed BTerm that merely sits on a special supply net is
+// the bump-style port from #8957: its direction is bidirect, so exposing it
+// would add two graph vertices (load plus bidirect driver).  Keep the former,
+// hide the latter.
+bool dbNetwork::isSupplyOnlyByNet(dbBTerm* bterm) const
+{
+  if (bterm->getSigType().isSupply()) {
+    return false;
   }
 
   return isPGSupply(bterm->getNet());

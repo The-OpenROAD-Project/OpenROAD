@@ -206,6 +206,7 @@ cc_library(
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
+        "include/grt/RoutingCongestion.h",
         "include/grt/Rudy.h",
     ],
     includes = [
@@ -216,6 +217,7 @@ cc_library(
         ":grt_impl",
         ":route_pt",
         "//src/odb/src/db",
+        "//src/utl",
     ],
 )
 

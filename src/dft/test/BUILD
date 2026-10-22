@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "scan_architect_clock_mix_sky130",
     "scan_architect_no_mix_sky130",
     "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
     "sub_modules_sky130",
@@ -51,6 +52,9 @@ filegroup(
             ],
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
+            ],
+            "scan_replace_dont_use_sky130": [
+                "one_cell_sky130.def",
             ],
             "scandef_core_sky130": [
                 "register_bank_cores.lef",

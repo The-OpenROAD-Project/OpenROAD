@@ -34,6 +34,7 @@ TESTS = [
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
+    "simple01-td-restart",
     "simple01-uniform",
     "simple01-vcts",
     "simple01-vcts-clamp",
@@ -316,6 +317,17 @@ cc_test(
         "//src/odb/src/db",
         "//src/tst:db_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_base_test",
+    srcs = ["timing_base_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

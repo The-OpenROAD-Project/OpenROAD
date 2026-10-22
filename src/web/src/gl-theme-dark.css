@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2026, The OpenROAD Authors */
+
+/* Its own bundle: theme.js toggles this stylesheet against the light one
+   through their `disabled` property, so the two cannot share a file. */
+
+@import 'golden-layout/dist/css/themes/goldenlayout-dark-theme.css';

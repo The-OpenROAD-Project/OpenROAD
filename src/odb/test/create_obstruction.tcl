@@ -41,3 +41,36 @@ check "obstruction count" {llength [$block getObstructions]} 4
 set def_file [make_result_file create_obstruction.def]
 write_def $def_file
 diff_files create_obstruction.defok $def_file
+
+# Modified obstructions need individual LAYER and RECT entries in abstract LEF,
+# because merging their geometry would discard the modifiers.
+set spacing_obstruction [create_obstruction -layer met1 -region {30 30 40 40} -min_spacing 1.5]
+set width_obstruction [create_obstruction -layer met1 -region {50 50 60 60} -effective_width 0.5]
+set lef_file [make_result_file create_obstruction.lef]
+write_abstract_lef -bloat_factor 0 $lef_file
+set lef_stream [open $lef_file r]
+set lef_text [read $lef_stream]
+close $lef_stream
+check "LEF obstruction spacing" {
+  regexp {LAYER met1 SPACING 1\.5 ;\n\s+RECT  30 30 40 40 ;} $lef_text
+} 1
+check "LEF obstruction design rule width" {
+  regexp {LAYER met1 DESIGNRULEWIDTH 0\.5 ;\n\s+RECT  50 50 60 60 ;} $lef_text
+} 1
+suppress_message ODB 227
+read_lef $lef_file
+
+# A layer whose only shape is a modified obstruction is still occupied and
+# must be covered when bloating occupied layers.
+create_obstruction -layer met4 -region {30 30 40 40} -min_spacing 1.5
+set bloat_lef_file [make_result_file create_obstruction_bloat.lef]
+write_abstract_lef -bloat_occupied_layers $bloat_lef_file
+set lef_stream [open $bloat_lef_file r]
+set lef_text [read $lef_stream]
+close $lef_stream
+check "LEF bloat obstruction spacing" {
+  regexp {LAYER met4 SPACING 1\.5 ;\n\s+RECT  30 30 40 40 ;} $lef_text
+} 1
+check "LEF bloat covers modified-only layer" {
+  regexp {LAYER met4 ;\n\s+RECT  10 10 80 80 ;} $lef_text
+} 1

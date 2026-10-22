@@ -289,6 +289,30 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
   spef_files.clear();
 }
 
+void
+ensure_parasitics_cmd(const char* path)
+{
+  ensureLinked();
+  ParasiticsSrc src = getEstimateParasitics()->designParasiticsSrc();
+  if (src != ParasiticsSrc::kNone) {
+    estimate_parasitics_cmd(src, path);
+  }
+}
+
+const char*
+parasitics_source()
+{
+  ensureLinked();
+  return getEstimateParasitics()->parasiticsSource();
+}
+
+void
+spef_read()
+{
+  ensureLinked();
+  getEstimateParasitics()->spefRead();
+}
+
 // For debugging. Does not protect against annotating power/gnd.
 void
 estimate_parasitic_net(const Net *net)

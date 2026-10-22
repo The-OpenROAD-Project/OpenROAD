@@ -1,0 +1,24 @@
+# fsv cross-section references from fv2d_golden.py, in fF/µm.
+# Finite volumes at h = 0.01, 0.005, 0.0025 µm,
+# extrapolated to h = 0; the extrapolation moves no entry by more
+# than 6.0e-04 of its row's total.
+# <structure> <master> <net> <capacitance>; cap[master] is the total,
+# other entries are minus the coupling (Maxwell matrix).
+etch_stop_pair lower lower 0.0897293
+etch_stop_pair lower upper -0.0373311
+etch_stop_pair lower ground -0.0523982
+etch_stop_pair upper lower -0.0373311
+etch_stop_pair upper upper 0.0864918
+etch_stop_pair upper ground -0.0491606
+three_wires left left 0.155876
+three_wires left middle -0.0892538
+three_wires left right -0.0051964
+three_wires left ground -0.0614254
+three_wires middle left -0.0892538
+three_wires middle middle 0.211432
+three_wires middle right -0.0892538
+three_wires middle ground -0.0329241
+three_wires right left -0.0051964
+three_wires right middle -0.0892538
+three_wires right right 0.155876
+three_wires right ground -0.0614254

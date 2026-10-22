@@ -161,6 +161,10 @@ class dbNetwork : public ConcreteNetwork
   bool isPGSupply(odb::dbITerm* iterm) const;
   bool isPGSupply(odb::dbBTerm* bterm) const;
   bool isPGSupply(odb::dbNet* net) const;
+  // True when the only thing making bterm look like supply is the net it sits
+  // on, i.e. it is a signal-typed port connected to a supply net.  Used to
+  // hide those while keeping real (POWER/GROUND) supply ports visible.
+  bool isSupplyOnlyByNet(odb::dbBTerm* bterm) const;
 
   // ---- 3DIC (3DBlox) cross-chiplet STA ----
   // Top dbChip when a 3Dbx design is active; null otherwise.

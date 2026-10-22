@@ -122,6 +122,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/exa",
     "//src/exa:ui",
     "//src/fin",
+    "//src/fsv:field_solver",
+    "//src/fsv:ui",
     "//src/gpl",
     "//src/gpl:ui",
     "//src/grt",

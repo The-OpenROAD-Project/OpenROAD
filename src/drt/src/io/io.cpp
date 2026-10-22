@@ -2624,6 +2624,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (!rule->getMinimumCuts(numCuts, width)) {
       continue;
     }
+    // Every via has at least one cut, so a single-cut rule can't be violated.
+    if (numCuts <= 1) {
+      continue;
+    }
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());

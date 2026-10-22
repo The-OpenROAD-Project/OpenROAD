@@ -523,15 +523,21 @@ class TileGeneratorTest : public tst::Nangate45Fixture
                            const unsigned h,
                            const odb::Rect& rect)
   {
-    const int left = colOf(bounds, w, rect.xMin()) - 1;
-    const int right = colOf(bounds, w, rect.xMax()) + 1;
-    const int top = rowOf(bounds, w, h, rect.yMax()) - 1;
-    const int bottom = rowOf(bounds, w, h, rect.yMin()) + 1;
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // A tile must have its fixed dimensions before indexing its RGBA pixels.
+    if (w != kSize || h != kSize || rgba.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return 0;
+    }
+    const int left = colOf(bounds, kSize, rect.xMin()) - 1;
+    const int right = colOf(bounds, kSize, rect.xMax()) + 1;
+    const int top = rowOf(bounds, kSize, kSize, rect.yMax()) - 1;
+    const int bottom = rowOf(bounds, kSize, kSize, rect.yMin()) + 1;
     int outside = 0;
-    for (int y = 0; y < static_cast<int>(h); ++y) {
-      for (int x = 0; x < static_cast<int>(w); ++x) {
+    for (int y = 0; y < kTileSize; ++y) {
+      for (int x = 0; x < kTileSize; ++x) {
         const bool inside = x >= left && x <= right && y >= top && y <= bottom;
-        if (!inside && rgba[4UL * (y * w + x) + 3] > 0) {
+        if (!inside && rgba[4UL * (y * kSize + x) + 3] > 0) {
           ++outside;
         }
       }
@@ -608,10 +614,24 @@ class TileGeneratorTest : public tst::Nangate45Fixture
       EXPECT_EQ(tile_gen_->getBounds(), bounds);
       const TileVisibility vis
           = pin_name ? pinNamesOnlyVis() : TileVisibility{};
-      const auto left = decodePng(
-          tile_gen_->generateTile("_inst_labels", 2, 1, 2, vis), w, h);
-      const auto right = decodePng(
-          tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis), w, h);
+      unsigned left_w = 0, left_h = 0, right_w = 0, right_h = 0;
+      const auto left
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 1, 2, vis),
+                      left_w,
+                      left_h);
+      const auto right
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis),
+                      right_w,
+                      right_h);
+      constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+      // Both decoded tiles must fit the fixed-size stitched image.
+      if (left_w != kSize || left_h != kSize || right_w != kSize
+          || right_h != kSize || left.size() != 4UL * kSize * kSize
+          || right.size() != 4UL * kSize * kSize) {
+        ADD_FAILURE() << "invalid decoded tile dimensions";
+        return std::vector<unsigned char>{};
+      }
+      w = h = kSize;
       std::vector<unsigned char> out(8UL * w * h);
       for (unsigned y = 0; y < h; ++y) {
         std::memcpy(&out[8UL * y * w], &left[4UL * y * w], 4UL * w);
@@ -642,6 +662,11 @@ class TileGeneratorTest : public tst::Nangate45Fixture
       inst->setLocation(x0 + half_tile, y0);
       const auto inside = stitch(w, h);
       odb::dbInst::destroy(inst);
+      if (across.size() != 8UL * kTileSize * kTileSize
+          || inside.size() != 8UL * kTileSize * kTileSize) {
+        ADD_FAILURE() << "invalid stitched tile size";
+        return;
+      }
       ASSERT_EQ(w, 256u);
 
       int lit = 0;
@@ -661,9 +686,10 @@ class TileGeneratorTest : public tst::Nangate45Fixture
 
   LabelWash measureLabelWash(bool TileVisibility::* cover
                              = &TileVisibility::placement_blockages,
-                             TileVisibility vis = labelOnlyVis())
+                             const TileVisibility& base_vis = labelOnlyVis())
   {
     LabelWash out;
+    TileVisibility vis = base_vis;
     vis.inst_names = true;
 
     unsigned pw = 0, ph = 0;
@@ -1442,7 +1468,13 @@ TEST_F(TileGeneratorTest, ObstructionsUseQtLighterColour)
   unsigned w = 0, h = 0;
   const auto px = decodePng(
       tile_gen_->generateTile("metal4", 0, 0, 0, TileVisibility{}), w, h);
-  const size_t centre = 4UL * ((h / 2) * w + w / 2);
+  constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+  // The fixed tile dimensions must match the decoded RGBA buffer.
+  if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+    ADD_FAILURE() << "invalid decoded tile dimensions";
+    return;
+  }
+  const size_t centre = 4UL * ((kTileSize / 2) * kTileSize + kTileSize / 2);
   EXPECT_EQ(px[centre], 235);
   EXPECT_EQ(px[centre + 1], 255);
   EXPECT_EQ(px[centre + 2], 196);
@@ -2206,6 +2238,13 @@ TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
     tile_gen_->eagerInit();
     unsigned w = 0, h = 0;
     const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // The crop loops index a fixed-size tile decoded from the PNG.
+    if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return std::pair{0U, std::vector<unsigned char>{}};
+    }
+    w = h = kSize;
     unsigned x0 = w, y0 = h, x1 = 0, y1 = 0;
     for (unsigned y = 0; y < h; ++y) {
       for (unsigned x = 0; x < w; ++x) {

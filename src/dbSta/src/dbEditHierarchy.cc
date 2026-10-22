@@ -445,6 +445,10 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
     // 3.8. During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     cleanUnusedHierPins(source_parent_tree, dest_parent_tree);
+  } else if (source_db_mod_net && dest_pin->getModNet() != source_db_mod_net) {
+    // Same module: the dest joins the source's hierarchical net, or the
+    // hierarchical view leaves it undriven.
+    dest_pin->connect(source_db_mod_net);
   }
 
   dlogHierConnDone();
