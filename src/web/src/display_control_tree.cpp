@@ -177,24 +177,31 @@ void DisplayControlTree::addDesignRows(odb::dbDatabase* db)
     }
   }
 
-  // DisplayControls::libInit: a site starts as Rows is when it is added.
+  // DisplayControls::libInit: a site starts as Rows is when it is added, the
+  // same for every site added now.
+  auto rows_on = [this] {
+    if (const Leaf* rows = find(kRows)) {
+      return rows->visible.value_or(false);
+    }
+    bool on = true;
+    for (const auto& [path, leaf] : leaves_) {
+      if (path.starts_with(std::string(kRows) + "/")) {
+        on = on && leaf.visible.value_or(false);
+      }
+    }
+    return on;
+  };
+  std::optional<bool> on;
   for (odb::dbLib* lib : db->getLibs()) {
     for (odb::dbSite* site : lib->getSites()) {
       const std::string path = std::string(kRows) + "/" + site->getName();
       if (leaves_.contains(path)) {
         continue;
       }
-      bool on = true;
-      if (const Leaf* rows = find(kRows)) {
-        on = rows->visible.value_or(false);
-      } else {
-        for (const auto& [other, leaf] : leaves_) {
-          if (other.starts_with(std::string(kRows) + "/")) {
-            on = on && leaf.visible.value_or(false);
-          }
-        }
+      if (!on) {
+        on = rows_on();
+        leaves_.erase(kRows);
       }
-      leaves_.erase(kRows);
       addLeaf(path, {.visible = on, .selectable = on});
     }
   }

@@ -169,8 +169,12 @@ void ScriptView::setDisplayControlColor(const std::string& name,
 {
   const std::scoped_lock lock(mutex_);
   refreshLocked();
-  bool found = !matchLocked(tree_, name, /*selectable=*/false).empty();
-  bool ignored = false;
+  const std::vector<Match> matches
+      = matchLocked(tree_, name, /*selectable=*/false);
+  bool found = !matches.empty();
+  // A renderer's control has no color here.
+  bool ignored = std::ranges::any_of(
+      matches, [](const Match& match) { return match.leaf == nullptr; });
   for (const auto& [path, leaf] : tree_.leaves()) {
     if (!DisplayControlTree::matches(name, path)) {
       continue;
