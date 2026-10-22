@@ -1327,6 +1327,9 @@ void GuideProcessor::initPinGCellMap(
     pin_gcell_map[instTerm];
   }
   for (auto& term : net->getBTerms()) {
+    if (term->isShapelessChipBumpPort()) {
+      continue;
+    }
     pin_gcell_map[term];
   }
 }
@@ -1401,6 +1404,9 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
     pins.push_back(inst_term);
   }
   for (auto& bterm : net->getBTerms()) {
+    if (bterm->isShapelessChipBumpPort()) {
+      continue;
+    }
     pins.push_back(bterm);
   }
 

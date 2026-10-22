@@ -1583,6 +1583,9 @@ void FlexPA::genAllAccessPoints()
         if (!net || net->isSpecial()) {
           continue;
         }
+        if (term->isShapelessChipBumpPort()) {
+          continue;
+        }
         int n_aps = 0;
         for (auto& pin : term->getPins()) {
           n_aps += genPinAccess(pin.get(), nullptr);

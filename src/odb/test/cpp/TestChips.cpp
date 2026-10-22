@@ -602,5 +602,36 @@ TEST_F(SimpleDbFixture, test_chip_parasitics_serialization)
   EXPECT_EQ(r_seg2->getTargetCapNode()->getChipNet(), net2);
 }
 
+TEST_F(SimpleDbFixture, test_shapeless_chip_bump_port)
+{
+  createSimpleDB();
+
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+  dbChipRegion* region = dbChipRegion::create(
+      chip, "bump_region", dbChipRegion::Side::FRONT, nullptr);
+  dbMaster* bump_master = dbMaster::create(db_->findLib("lib1"), "BUMP_CELL");
+  bump_master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm::create(bump_master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  bump_master->setFrozen();
+  dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
+  dbChipBump* bump = dbChipBump::create(region, bump_inst);
+
+  dbNet* net = dbNet::create(block, "SIG1");
+  dbBTerm* bterm = dbBTerm::create(net, "SIG1");
+  bump_inst->findITerm("PAD")->connect(net);
+
+  EXPECT_FALSE(bterm->isShapelessChipBumpPort());
+  EXPECT_FALSE(block->designIsRouted(false));
+
+  bump->setBTerm(bterm);
+  EXPECT_TRUE(bterm->isShapelessChipBumpPort());
+  EXPECT_TRUE(block->designIsRouted(false));
+
+  dbBPin::create(bterm);
+  EXPECT_FALSE(bterm->isShapelessChipBumpPort());
+  EXPECT_FALSE(block->designIsRouted(false));
+}
+
 }  // namespace
 }  // namespace odb

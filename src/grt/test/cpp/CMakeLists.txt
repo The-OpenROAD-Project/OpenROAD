@@ -100,3 +100,18 @@ gtest_discover_tests(TestRoutingCongestion
 )
 
 add_dependencies(build_and_test TestRoutingCongestion)
+
+add_executable(TestChipBumpPort TestChipBumpPort.cpp)
+
+target_link_libraries(TestChipBumpPort
+    GTest::gtest
+    GTest::gtest_main
+    grt_lib
+    tst
+)
+
+gtest_discover_tests(TestChipBumpPort
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestChipBumpPort)

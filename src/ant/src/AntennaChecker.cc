@@ -1034,6 +1034,9 @@ NetCheck AntennaChecker::Impl::checkNet(odb::dbNet* net,
 bool AntennaChecker::Impl::designIsPlaced()
 {
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    if (bterm->isShapelessChipBumpPort()) {
+      continue;
+    }
     if (bterm->getFirstPinPlacementStatus() == odb::dbPlacementStatus::NONE) {
       return false;
     }
@@ -1054,6 +1057,17 @@ bool AntennaChecker::Impl::designIsPlaced()
   return true;
 }
 
+static int routableTermCount(odb::dbNet* net)
+{
+  int count = net->getITermCount();
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    if (!bterm->isShapelessChipBumpPort()) {
+      count++;
+    }
+  }
+  return count;
+}
+
 bool AntennaChecker::Impl::haveGuides()
 {
   if (!designIsPlaced()) {
@@ -1062,8 +1076,8 @@ bool AntennaChecker::Impl::haveGuides()
 
   for (odb::dbNet* net : block_->getNets()) {
     // check term count due to 1-pin nets in multiple designs.
-    if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
-        && !net->isConnectedByAbutment()) {
+    if (!net->isSpecial() && net->getGuides().empty()
+        && routableTermCount(net) > 1 && !net->isConnectedByAbutment()) {
       return false;
     }
   }

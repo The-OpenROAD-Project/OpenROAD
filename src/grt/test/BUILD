@@ -335,6 +335,25 @@ cc_test(
 )
 
 cc_test(
+    name = "TestChipBumpPort",
+    size = "small",
+    srcs = ["cpp/TestChipBumpPort.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestMaze3D",
     size = "small",
     srcs = ["cpp/TestMaze3D.cpp"],
