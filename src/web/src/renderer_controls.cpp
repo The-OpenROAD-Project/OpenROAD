@@ -8,17 +8,12 @@
 
 namespace web {
 
-bool RendererControls::check(const std::string& path) const
+bool RendererControls::check(const std::string& path,
+                             const bool default_val) const
 {
   const std::scoped_lock lock(mutex_);
   const auto it = visible_.find(path);
-  return it == visible_.end() ? true : it->second;
-}
-
-bool RendererControls::contains(const std::string& path) const
-{
-  const std::scoped_lock lock(mutex_);
-  return visible_.contains(path);
+  return it == visible_.end() ? default_val : it->second;
 }
 
 void RendererControls::set(const std::string& path, const bool value)
