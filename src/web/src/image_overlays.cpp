@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "dbDescriptors.h"
+#include "odb/db.h"
 #include "script_view.h"
 #include "tile_generator.h"
 #include "web/core.h"
@@ -15,6 +17,16 @@ namespace web {
 ImageOverlays buildImageOverlays(ScriptView::Frame frame)
 {
   ImageOverlays overlays;
+
+  // DRCRenderer::drawObjects, which Qt draws among the renderers, before the
+  // selection.
+  if (frame.markers != nullptr) {
+    overlays.passes.emplace_back([markers = frame.markers](Painter& painter) {
+      static_cast<const DbMarkerDescriptor*>(
+          Gui::get()->getDescriptor<odb::dbMarker*>())
+          ->paintMarkers(markers, painter);
+    });
+  }
 
   // RenderThread::drawSelected.
   if (!frame.selection.empty()) {

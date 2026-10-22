@@ -83,6 +83,8 @@ class ScriptView : public GuiBackend
   void addHighlighted(const SelectionSet& selection,
                       int highlight_group) override;
   void clearHighlighted(int highlight_group) override;
+  // The DRC viewer's category, kept by name as DRCWidget does.
+  void selectMarkers(odb::dbMarkerCategory* markers) override;
 
   // Shared with the web viewer, so the browser's renderer toggles and Tcl's
   // agree.
@@ -97,6 +99,8 @@ class ScriptView : public GuiBackend
     // Empty when Misc/Highlight selected is off.
     SelectionSet selection;
     HighlightSet highlights;
+    // The markers the DRC viewer would show, if any.
+    odb::dbMarkerCategory* markers = nullptr;
   };
   // The current controls with `overrides` (TileVisibility JSON keys or
   // display-control patterns) on top, leaving the controls as they were.
@@ -211,6 +215,7 @@ class ScriptView : public GuiBackend
   std::optional<Painter::Color> background_;
   SelectionSet selection_;
   HighlightSet highlights_;
+  std::string marker_category_;
   std::vector<odb::dbChip*> watched_chips_;
   std::vector<odb::dbBlock*> watched_;
   std::vector<std::unique_ptr<MarkerWatcher>> marker_watchers_;

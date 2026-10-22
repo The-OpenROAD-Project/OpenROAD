@@ -2305,8 +2305,21 @@ bool patternCovers(const FillPattern pattern, const int ax, const int ay)
     case FillPattern::kDots:
       return wrapMod(ax, kDotPeriod) < kDotSize
              && wrapMod(ay, kDotPeriod) < kDotSize;
+    case FillPattern::kDiagonalCross:
+      // Qt's DiagCrossPattern: one-pixel lines in an 8x8 cell.
+      return wrapMod(ax + ay, kHatchPeriod) == 0
+             || wrapMod(ax - ay, kHatchPeriod) == 0;
   }
   return true;
+}
+
+// The fill a Painter brush asks for, as the Qt gui draws it.
+FillPattern painterFill(const web::Painter::Brush style)
+{
+  if (style == web::Painter::Brush::kDiagonal) {
+    return FillPattern::kDiagonalCross;
+  }
+  return static_cast<FillPattern>(style);
 }
 
 }  // namespace
@@ -7056,6 +7069,9 @@ void TileGenerator::rasterizeWebPainterOp(std::vector<unsigned char>& image,
     // Fill first (if the brush paints), outline on top.
     if (r->brush.style != web::Painter::Brush::kNone && r->brush.color.a > 0) {
       const Color fill = toTileColor(r->brush.color);
+      const FillPattern pattern = painterFill(r->brush.style);
+      const int ox = patternAnchor(frame.origin_x, scale);
+      const int oy = patternAnchor(frame.origin_y, scale);
       // Clipped to the buffer: a rect much larger than the tile would
       // otherwise visit every one of its pixels.
       const int y_lo = std::max(px.yMin(), 0);
@@ -7064,7 +7080,9 @@ void TileGenerator::rasterizeWebPainterOp(std::vector<unsigned char>& image,
       const int x_hi = std::min(px.xMax(), dim);
       for (int iy = y_lo; iy < y_hi; ++iy) {
         for (int ix = x_lo; ix < x_hi; ++ix) {
-          blendPixel(image, ix, dim - 1 - iy, fill, dim);
+          if (patternCovers(pattern, ix + ox, iy + oy)) {
+            blendPixel(image, ix, dim - 1 - iy, fill, dim);
+          }
         }
       }
     }
@@ -7141,7 +7159,8 @@ void TileGenerator::rasterizeWebPainterOp(std::vector<unsigned char>& image,
                   poly,
                   frame,
                   toTileColor(p->brush.color),
-                  /*blend=*/true);
+                  /*blend=*/true,
+                  painterFill(p->brush.style));
     }
     if (p->pen.color.a > 0) {
       const Color pen = toTileColor(p->pen.color);

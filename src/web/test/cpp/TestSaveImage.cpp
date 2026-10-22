@@ -1227,5 +1227,57 @@ TEST_F(SaveImageViewTest, SelectionAndHighlightGroupsAreDrawn)
   EXPECT_EQ(readBytes(save("cleared")), readBytes(plain));
 }
 
+// The DRC viewer's markers, as DRCRenderer draws them: a white outline and a
+// cross hatch, and an X for a marker too small to see.
+TEST_F(SaveImageViewTest, DrcMarkersAreDrawn)
+{
+  DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+  const std::string plain = save("no_markers");
+
+  odb::dbMarkerCategory* drc = odb::dbMarkerCategory::create(block_, "DRC");
+  odb::dbMarkerCategory* shorts = odb::dbMarkerCategory::create(drc, "Short");
+  odb::dbMarker::create(shorts)->addShape(
+      odb::Rect(30000, 30000, 70000, 70000));
+  odb::dbMarker::create(shorts)->addShape(
+      odb::Rect(85000, 85000, 85100, 85100));
+  Gui::get()->selectMarkers(shorts);
+
+  unsigned w = 0, h = 0;
+  const auto before = decodePngFile(plain, w, h);
+  const auto pixels = decodePngFile(save("markers"), w, h);
+  // Inside the large marker, away from its outline: hatched, not filled.
+  int hatched = 0;
+  int untouched = 0;
+  const double scale = static_cast<double>(w) / 110000;
+  for (int y = static_cast<int>((105000 - 65000) * scale);
+       y < static_cast<int>((105000 - 35000) * scale);
+       ++y) {
+    for (int x = static_cast<int>(35000 * scale) + 5;
+         x < static_cast<int>(65000 * scale) + 5;
+         ++x) {
+      const size_t i = (static_cast<size_t>(y) * w + x) * 4;
+      if (pixels[i] > before[i] + 20) {
+        ++hatched;
+      } else if (pixels[i] == before[i]) {
+        ++untouched;
+      }
+    }
+  }
+  EXPECT_GT(hatched, 0);
+  EXPECT_GT(untouched, hatched) << "a hatch leaves most pixels alone";
+  // The small marker's X, around its center.
+  int near_x = 0;
+  for (const auto& [x, y] : pixelsOf(pixels, w, Painter::kWhite)) {
+    if (std::abs(x - (85050 + 5000) * scale) < 12
+        && std::abs(y - (105000 - 85050) * scale) < 12) {
+      ++near_x;
+    }
+  }
+  EXPECT_GT(near_x, 0);
+
+  Gui::get()->selectMarkers(nullptr);
+  EXPECT_EQ(readBytes(save("markers_cleared")), readBytes(plain));
+}
+
 }  // namespace
 }  // namespace web

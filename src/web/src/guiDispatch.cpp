@@ -1225,10 +1225,9 @@ void Gui::clearTimingPath()
 
 void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->selectMarkers(markers);
   }
-  activeBackend()->selectMarkers(markers);
 }
 
 void Gui::selectClockviewerClock(const std::string& clock_name,

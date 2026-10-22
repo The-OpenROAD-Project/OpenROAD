@@ -366,5 +366,19 @@ TEST_F(ScriptViewSelectionTest, ADestroyInAChipletDropsTheSelection)
   EXPECT_TRUE(view_.frame().highlights[0].empty());
 }
 
+// As DRCWidget::selectCategory: the top category is shown, and one destroyed
+// since is simply not drawn.
+TEST_F(ScriptViewTest, MarkersAreTheTopCategory)
+{
+  odb::dbMarkerCategory* drc = odb::dbMarkerCategory::create(block_, "DRC");
+  odb::dbMarkerCategory* shorts = odb::dbMarkerCategory::create(drc, "Short");
+  view_.selectMarkers(shorts);
+  EXPECT_EQ(view_.frame().markers, drc);
+  odb::dbMarkerCategory::destroy(drc);
+  EXPECT_EQ(view_.frame().markers, nullptr);
+  view_.selectMarkers(nullptr);
+  EXPECT_EQ(view_.frame().markers, nullptr);
+}
+
 }  // namespace
 }  // namespace web

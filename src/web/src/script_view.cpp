@@ -286,7 +286,20 @@ ScriptView::Frame ScriptView::frame(
     frame.selection = selection_;
   }
   frame.highlights = highlights_;
+  odb::dbChip* chip = db_ != nullptr ? db_->getChip() : nullptr;
+  if (!marker_category_.empty() && chip != nullptr) {
+    frame.markers = chip->findMarkerCategory(marker_category_.c_str());
+  }
   return frame;
+}
+
+void ScriptView::selectMarkers(odb::dbMarkerCategory* markers)
+{
+  const std::scoped_lock lock(mutex_);
+  // The top category, as DRCWidget::selectCategory shows; by name, so one
+  // destroyed since is simply not found.
+  marker_category_
+      = markers != nullptr ? markers->getTopCategory()->getName() : "";
 }
 
 void ScriptView::watchBlockLocked()

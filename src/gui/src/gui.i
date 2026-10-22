@@ -548,7 +548,7 @@ void gui_pause(int timeout = 0)
 
 void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("select_marker_category")) {
+  if (!check_gui("select_marker_category", true)) {
     return;
   }
   auto gui = web::Gui::get();
