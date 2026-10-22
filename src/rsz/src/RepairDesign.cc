@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <limits>
 #include <map>
 #include <memory>
@@ -711,8 +712,10 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
   };
 
   // 1. Collect all sinks
-  std::vector<EnqueuedPin> sinks;
+  std::deque<EnqueuedPin> sinks;
   std::vector<EnqueuedPin> output_sinks;
+  float load = 0.0;
+  float output_load = 0.0;
   bool driver_has_negative_slack = false;
 
   sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
@@ -730,6 +733,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       sta::Instance* inst = network_->instance(pin);
       if (!resizer_->dontTouch(inst)) {
         sinks.push_back({const_cast<sta::Pin*>(pin), req_path, 0.0, 0});
+        load += sinks.back().capacitance(network_, resizer_->tgt_slew_corner_);
       } else {
         logger_->warn(RSZ,
                       143,
@@ -740,7 +744,9 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
     } else if (pin != drvr_pin && network_->isTopLevelPort(pin)
                && network_->direction(pin)->isAnyOutput()) {
       EnqueuedPin out_sink{const_cast<sta::Pin*>(pin), nullptr, 0.0, 0};
-      if (out_sink.capacitance(network_, resizer_->tgt_slew_corner_) > 0.0f) {
+      const float out_cap
+          = out_sink.capacitance(network_, resizer_->tgt_slew_corner_);
+      if (out_cap > 0.0f) {
         sta::Vertex* vertex = graph_->pinLoadVertex(pin);
         out_sink.required_path
             = sta_->vertexWorstSlackPath(vertex, sta::MinMax::max());
@@ -749,6 +755,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
           driver_has_negative_slack = true;
         }
         output_sinks.push_back(out_sink);
+        output_load += out_cap;
       }
     }
   }
@@ -762,6 +769,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
   // optimistic annotated target slews during performEarlySizingRound.
   if (driver_has_negative_slack) {
     sinks.insert(sinks.end(), output_sinks.begin(), output_sinks.end());
+    load += output_load;
   }
 
   // Keep track of the vertices at the boundary of the tree so we know where
@@ -776,9 +784,9 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
   const float gate_gain = resizer_->sizing_cap_ratio_;
   bool repaired_net = false;
 
-  float load = 0.0;
-  for (auto& sink : sinks) {
-    load += sink.capacitance(network_, resizer_->tgt_slew_corner_);
+  if (sinks.size() <= max_fanout
+      && (!has_driver_cin || load <= cin * gate_gain)) {
+    return false;
   }
   std::ranges::sort(sinks, PinRequiredHigher(network_));
 
