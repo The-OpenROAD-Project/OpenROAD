@@ -153,12 +153,21 @@ static CandidateSteiner best_steiner_for_node(
 
   // Loop through all edge pairs.  N^2 but N is small.
   for (ListGraph::IncEdgeIt edge1(graph, node); edge1 != INVALID; ++edge1) {
-    auto n1 = graph.runningNode(edge1);
+    ListGraph::Node n1 = graph.runningNode(edge1);
     const Point pt1 = node_point[n1];
+    // Co-located neighbors have zero-length edges and cannot share wire
+    // overlap (gain == 0); skipping them avoids O(K^2) pair scans across K
+    // co-located pins.
+    if (pt1 == pt_node) {
+      continue;
+    }
     ListGraph::IncEdgeIt edge2(edge1);
     for (++edge2; edge2 != INVALID; ++edge2) {
-      auto n2 = graph.runningNode(edge2);
+      ListGraph::Node n2 = graph.runningNode(edge2);
       const Point pt2 = node_point[n2];
+      if (pt2 == pt_node) {
+        continue;
+      }
 
       Point pt_steiner = pt_node;
       if (std::min(pt1.getX(), pt2.getX()) > pt_node.getX()) {
@@ -287,26 +296,40 @@ static void splitDegree4Nodes(ListGraph& graph,
       continue;
     }
 
-    auto new_node = graph.addNode();
-    node_point[new_node] = node_point[node];
+    ListGraph::Node left_node = graph.addNode();
+    node_point[left_node] = node_point[node];
 
-    edge_cnt = 0;
+    const int left_cnt = edge_cnt / 2;
+    const int right_cnt = edge_cnt - 1 - left_cnt;
+    ListGraph::Node right_node = INVALID;
+    if (right_cnt > 1) {
+      right_node = graph.addNode();
+      node_point[right_node] = node_point[node];
+    }
+
+    const int keep_cnt = (right_node == INVALID) ? 2 : 1;
+    int seen_cnt = 0;
     ListGraph::IncEdgeIt edge(graph, node);
     while (edge != INVALID) {
-      if (++edge_cnt >= 3) {
-        auto working_edge = edge;
-        ++edge;
-        if (graph.u(working_edge) == node) {
-          graph.changeU(working_edge, new_node);
-        } else {
-          graph.changeV(working_edge, new_node);
-        }
+      ListGraph::Edge working_edge = edge;
+      ++edge;
+      if (++seen_cnt <= keep_cnt) {
+        continue;
+      }
+      ListGraph::Node target_node
+          = (seen_cnt <= keep_cnt + left_cnt) ? left_node : right_node;
+      if (graph.u(working_edge) == node) {
+        graph.changeU(working_edge, target_node);
       } else {
-        ++edge;
+        graph.changeV(working_edge, target_node);
       }
     }
-    graph.addEdge(node, new_node);
-    to_process.push_back(new_node);
+    graph.addEdge(node, left_node);
+    to_process.push_back(left_node);
+    if (right_node != INVALID) {
+      graph.addEdge(node, right_node);
+      to_process.push_back(right_node);
+    }
   }
 }
 
