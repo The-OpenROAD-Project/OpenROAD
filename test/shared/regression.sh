@@ -53,9 +53,26 @@ _bazel_regression()
         exit 1
     fi
 
+    # The bazel query lexer has no escapes, so pick a quote that the regex
+    # does not contain.
+    local q
+    if [[ "$regex" != *'"'* ]]; then
+        q='"'
+    elif [[ "$regex" != *"'"* ]]; then
+        q="'"
+    else
+        echo "regression: the -R regex cannot contain both \" and '" >&2
+        exit 2
+    fi
+
     # The query regex is matched against the full label, for example
     # //src/rsz/test:repair_tie12_hier-tcl_test.
-    local query="filter(\"${regex}\", kind(\".*_test rule\", //src/${tool}/...))"
+    # Tests tagged "manual" are left out, as in "bazel test //src/<tool>/...".
+    # Bazel query matches a list attribute as the string "[a, b]", so the
+    # tags regex matches only a whole "manual" element.
+    local pkg="//src/${tool}/..."
+    local query="filter(${q}${regex}${q}, kind(\".*_test rule\", ${pkg}))"
+    query+=' except attr("tags", "[\[ ]manual[,\]]", '"${pkg})"
     local targets
     targets=$("$bazel" query --output=label "$query")
     if [ -z "$targets" ]; then
@@ -68,7 +85,10 @@ _bazel_regression()
         target_list+=("$target")
     done <<< "$targets"
     echo "regression: running ${#target_list[@]} test(s) that match '${regex}'"
-    "$bazel" test "${bazel_args[@]}" -- "${target_list[@]}"
+    # Targets named on the command line fail when incompatible with the
+    # platform (for example GPU-only tests), so skip them instead.
+    "$bazel" test --skip_incompatible_explicit_targets "${bazel_args[@]}" \
+        -- "${target_list[@]}"
 }
 
 _get_tool_name

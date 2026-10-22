@@ -46,6 +46,9 @@ The script queries the test targets below `//src/<module>/` whose label matches 
 It passes all other arguments to `bazelisk test`.
 Without `-R`, it runs all tests of the module.
 It fails when no test matches.
+It does not select tests tagged `manual`; run them by label with `bazelisk test`.
+It skips targets that are not compatible with the platform, for example GPU-only tests.
+The regex cannot contain both `"` and `'`.
 `--test_filter` selects gtest cases in a C++ test only.
 
 ### Creating a New Integration Test
