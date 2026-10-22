@@ -208,6 +208,19 @@ TEST_F(ScriptViewTest, RendererControlsAreSharedWithTheHook)
   Gui::get()->unregisterRenderer(&renderer);
 }
 
+// Only Misc/Background has a color here; a renderer's control has none either.
+TEST_F(ScriptViewTest, ARendererControlsColorIsIgnored)
+{
+  ControlsOnlyRenderer renderer;
+  renderer.addDisplayControl("A", true);
+  Gui::get()->registerRenderer(&renderer);
+  getLogger()->redirectStringBegin();
+  view_.setDisplayControlColor("Test Group/A", Painter::kRed);
+  EXPECT_NE(getLogger()->redirectStringEnd().find("WEB-0129"),
+            std::string::npos);
+  Gui::get()->unregisterRenderer(&renderer);
+}
+
 // With no Qt window the Gui's display-control calls land here, and a script
 // view is not a backend: Gui::enabled() stays false.
 TEST_F(ScriptViewTest, GuiRoutesToTheScriptView)
