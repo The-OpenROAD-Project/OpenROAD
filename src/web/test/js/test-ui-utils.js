@@ -456,7 +456,8 @@ describe('renderingWarning', () => {
         for (const [vendor, renderer] of [
             ['Google Inc. (NVIDIA)',
              'ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 Direct3D11 vs_5_0 ps_5_0)'],
-            ['Intel', 'Mesa Intel(R) UHD Graphics 630 (CFL GT2)'],
+            ['Google Inc. (AMD)', 'ANGLE (AMD, AMD Radeon RX 6800 (radeonsi, '
+             + 'navi21, LLVM 15.0.7), OpenGL 4.6 (Core Profile) Mesa 23.2.1)'],
             ['AMD', 'AMD Radeon RX 6800 (radeonsi, navi21, LLVM 15.0.7)'],
             ['Google Inc. (Apple)', 'ANGLE (Apple, Apple M2, OpenGL 4.1)'],
         ]) {

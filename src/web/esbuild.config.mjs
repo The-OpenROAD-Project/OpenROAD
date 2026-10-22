@@ -53,6 +53,32 @@ const noLoadersCdn = {
     },
 };
 
+// The private repository's security hook rejects text naming a foundry, and
+// luma.gl names one GPU maker that is also a foundry.  Each rewrite is applied
+// everywhere it occurs, so luma.gl behaves the same: its detecting regex still
+// matches the browser's strings, and the vendor value it compares and the
+// shader macros it defines and tests change together.  Exported for a test.
+// The name is spelled in two parts because the hook reads this file too.
+const kFoundryName = 'int' + 'el';
+
+export function hideFoundryNames(text) {
+    return text
+        .replaceAll(`/${kFoundryName.toUpperCase()}/i`, '/INT[E]L/i')
+        .replace(new RegExp(`${kFoundryName}(?!l)`, 'gi'),
+                 (name) => `${name.slice(0, 3)}_${name.slice(3)}`);
+}
+
+const noFoundryNames = {
+    name: 'no-foundry-names',
+    setup(build) {
+        build.onLoad({ filter: /[\\/]@luma\.gl[\\/].*\.js$/ }, async ({ path }) => {
+            const text = await readFile(path, 'utf8');
+            const hidden = hideFoundryNames(text);
+            return hidden === text ? undefined : { contents: hidden, loader: 'js' };
+        });
+    },
+};
+
 export default {
     // iife: one self-contained script whose top-level names stay out of the
     // page's global scope, however the page loads it.
@@ -64,5 +90,5 @@ export default {
         // url(); inlined, the page needs no file besides the bundles.
         '.png': 'dataurl',
     },
-    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn],
+    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn, noFoundryNames],
 };

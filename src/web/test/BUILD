@@ -111,6 +111,13 @@ js_test(
 )
 
 js_test(
+    name = "esbuild_config_test",
+    data = ["//src/web:esbuild.config.mjs"],
+    entry_point = "js/test-esbuild-config.js",
+    no_copy_to_bin = ["//src/web:esbuild.config.mjs"],
+)
+
+js_test(
     name = "schematic_pins_test",
     data = [
         "//src/web:esbuild.config.mjs",
