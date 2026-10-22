@@ -24,7 +24,7 @@ constexpr const char* kSite = "Rows/FreePDK45_38x28_10R_NP_162NW_34O";
 class ScriptViewTest : public tst::Nangate45Fixture
 {
  protected:
-  ScriptView view_{getDb(), getLogger()};
+  ScriptView view_{getDb(), getSta(), getLogger()};
 };
 
 // A renderer that only exists to carry display controls.
@@ -378,6 +378,31 @@ TEST_F(ScriptViewTest, MarkersAreTheTopCategory)
   EXPECT_EQ(view_.frame().markers, nullptr);
   view_.selectMarkers(nullptr);
   EXPECT_EQ(view_.frame().markers, nullptr);
+}
+
+// TimingPathRenderer's rows: each one turns off its part of the path.
+TEST_F(ScriptViewTest, TimingPathRowsPickWhatIsDrawn)
+{
+  ScriptView::Frame frame = view_.frame();
+  EXPECT_TRUE(frame.timing_path_parts.data);
+  EXPECT_TRUE(frame.timing_path_parts.launch_clock);
+  EXPECT_TRUE(frame.timing_path_parts.capture_clock);
+  EXPECT_TRUE(frame.timing_path_parts.legend);
+
+  view_.setDisplayControlVisible("Timing Path/Launch clock", false);
+  view_.setDisplayControlVisible("Timing Path/Legend", false);
+  frame = view_.frame();
+  EXPECT_TRUE(frame.timing_path_parts.data);
+  EXPECT_FALSE(frame.timing_path_parts.launch_clock);
+  EXPECT_TRUE(frame.timing_path_parts.capture_clock);
+  EXPECT_FALSE(frame.timing_path_parts.legend);
+}
+
+// With no linked network STA throws, which reaches Tcl as an error.
+TEST_F(ScriptViewTest, AFailedSearchLeavesNoPath)
+{
+  EXPECT_ANY_THROW(view_.showWorstTimingPath(true));
+  EXPECT_FALSE(view_.frame().timing_path.has_value());
 }
 
 }  // namespace

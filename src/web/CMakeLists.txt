@@ -108,6 +108,7 @@ target_sources(web
     src/font_data.cpp
     src/glyph_cache.cpp
     src/tile_generator.cpp
+    src/timing_path_painter.cpp
     src/timing_report.cpp
     src/asset_gzip.cpp
     src/web.cpp

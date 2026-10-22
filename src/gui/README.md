@@ -930,6 +930,8 @@ gui::show_worst_path
     [-setup|-hold]
 ```
 
+With no Qt window open, the path is kept for `save_image -web` to draw.
+
 #### Options
 
 | Switch Name | Description |
@@ -939,7 +941,8 @@ gui::show_worst_path
 
 ### Clear Timing Path
 
-Clear the selected timing path in the Timing Report widget:
+Clear the selected timing path in the Timing Report widget, or with no Qt
+window open, the one kept for `save_image -web`:
 
 ```tcl
 gui::clear_timing_path

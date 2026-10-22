@@ -163,6 +163,7 @@ cc_library(
         "include/web/core.h",
         "include/web/descriptor_registry.h",
         "include/web/heatMap.h",
+        "include/web/timing_path_style.h",
         # The Qt gui's widgets build on these: its windows and views name
         # the descriptors, and its layout tabs take colours from the same
         # palette.  Private while this code and the gui shared a package;
@@ -219,6 +220,7 @@ cc_library(
         "src/search.cpp",
         "src/search.h",
         "src/tile_generator.cpp",
+        "src/timing_path_painter.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
         "src/web_chart.cpp",
@@ -243,6 +245,7 @@ cc_library(
         "src/renderer_controls.h",
         "src/script_view.h",
         "src/tile_generator.h",
+        "src/timing_path_painter.h",
         "src/timing_report.h",
         "src/web_chart.h",
         "src/web_painter.h",

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <any>
+#include <array>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -27,6 +28,8 @@
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
+#include "timing_path_painter.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
@@ -1354,6 +1357,123 @@ TEST_F(SaveImageViewTest, HeatMapAndLegendAreDrawn)
   gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
   EXPECT_EQ(readBytes(via_option), readBytes(save("legend_again")));
   gui->unregisterHeatMap(&heat_map);
+}
+
+// TimingPathRenderer's look: the path's instances in magenta, its terminals in
+// blue, its nets from driver to sink; each control drops its part and only it.
+TEST_F(SaveImageTest, TimingPathIsDrawnAsQtDraws)
+{
+  DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+  makeBTermAtEdge("clk", "metal2", 0, 50000, 400, 400);
+  odb::dbBTerm* clk = block_->findBTerm("clk");
+  odb::dbInst* buf1 = block_->findInst("buf1");
+  odb::dbInst* buf2 = placeInst("BUF_X16", "buf2", 60000, 60000);
+  odb::dbInst* buf3 = placeInst("BUF_X16", "buf3", 20000, 80000);
+  odb::dbInst* buf4 = placeInst("BUF_X16", "buf4", 80000, 20000);
+  buf1->findITerm("A")->connect(clk->getNet());
+  // driver's Z to sink's A on a net of its own.
+  auto hop = [&](odb::dbInst* driver, odb::dbInst* sink, const bool is_clock) {
+    odb::dbNet* net = odb::dbNet::create(
+        block_, (driver->getName() + "_" + sink->getName()).c_str());
+    odb::dbITerm* z = driver->findITerm("Z");
+    odb::dbITerm* a = sink->findITerm("A");
+    z->connect(net);
+    a->connect(net);
+    return std::vector<TimingNode>{
+        TimingNode{
+            .pin_name = z->getName(),
+            .is_clock = is_clock,
+            .iterm = z,
+            .is_driver = true,
+        },
+        TimingNode{
+            .pin_name = a->getName(),
+            .is_clock = is_clock,
+            .iterm = a,
+        },
+    };
+  };
+  const std::vector<TimingNode> launch = {
+      TimingNode{
+          .pin_name = "clk",
+          .is_clock = true,
+          .bterm = clk,
+          .is_driver = true,
+      },
+      TimingNode{
+          .pin_name = "buf1/A",
+          .is_clock = true,
+          .iterm = buf1->findITerm("A"),
+      },
+  };
+  const std::vector<TimingNode> data = hop(buf1, buf2, false);
+  const std::vector<TimingNode> capture = hop(buf3, buf4, true);
+  std::vector<TimingNode> launch_and_data = launch;
+  launch_and_data.insert(launch_and_data.end(), data.begin(), data.end());
+  makeTileGen();
+
+  auto render = [&](const std::vector<TimingNode>& data_nodes,
+                    const std::vector<TimingNode>& capture_nodes,
+                    const TimingPathParts& parts) {
+    TimingPathSummary path;
+    path.data_nodes = data_nodes;
+    path.capture_nodes = capture_nodes;
+    ImageOverlays overlays;
+    overlays.passes.emplace_back([path, parts](Painter& painter) {
+      paintTimingPath(path, parts, painter);
+    });
+    return tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                        512,
+                                        0,
+                                        TileVisibility(),
+                                        Color(),
+                                        nullptr,
+                                        nullptr,
+                                        &overlays);
+  };
+  const auto plain = tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 0, 0), 512, 0, TileVisibility(), Color());
+  // Pixels the overlay brightened in `hue`'s channels (r, g, b) and no other:
+  // what blending one of the path's colors over the plain image does.
+  using Hue = std::array<bool, 3>;
+  auto tinted
+      = [&plain](const std::vector<unsigned char>& rgba, const Hue& hue) {
+          int n = 0;
+          for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+            bool match = true;
+            for (int c = 0; c < 3; ++c) {
+              const int delta = int{rgba[i + c]} - int{plain[i + c]};
+              match = match && (hue[c] ? delta > 10 : delta <= 0);
+            }
+            n += match ? 1 : 0;
+          }
+          return n;
+        };
+  constexpr Hue kMagenta{true, false, true};
+  constexpr Hue kBlue{false, false, true};
+  constexpr Hue kCyan{false, true, true};
+  constexpr Hue kRed{true, false, false};
+  constexpr Hue kGreen{false, true, false};
+
+  EXPECT_GT(tinted(render(data, {}, {}), kMagenta), 0) << "instances";
+  EXPECT_GT(tinted(render({launch.front()}, {}, {}), kBlue), 0) << "terms";
+  EXPECT_GT(tinted(render(launch, {}, {}), kCyan), 0) << "launch clock";
+  EXPECT_GT(tinted(render(data, {}, {}), kRed), 0) << "data";
+  EXPECT_GT(tinted(render({}, capture, {}), kGreen), 0) << "capture clock";
+  EXPECT_EQ(tinted(render(data, {}, {}), kCyan), 0);
+  EXPECT_EQ(tinted(render(data, {}, {}), kGreen), 0);
+
+  EXPECT_EQ(render(launch_and_data, capture, {.data = false}),
+            render(launch, capture, {}));
+  EXPECT_EQ(render(launch_and_data, capture, {.launch_clock = false}),
+            render(data, capture, {}));
+  EXPECT_EQ(render(launch_and_data, capture, {.capture_clock = false}),
+            render(launch_and_data, {}, {}));
+  EXPECT_EQ(
+      render(launch_and_data,
+             capture,
+             {.data = false, .launch_clock = false, .capture_clock = false}),
+      plain);
 }
 
 }  // namespace

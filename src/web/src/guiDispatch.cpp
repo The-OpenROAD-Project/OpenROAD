@@ -1209,18 +1209,16 @@ void Gui::timingPathsThrough(const std::set<Term>& terms)
 
 void Gui::showWorstTimingPath(bool setup)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->showWorstTimingPath(setup);
   }
-  activeBackend()->showWorstTimingPath(setup);
 }
 
 void Gui::clearTimingPath()
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->clearTimingPath();
   }
-  activeBackend()->clearTimingPath();
 }
 
 void Gui::selectMarkers(odb::dbMarkerCategory* markers)

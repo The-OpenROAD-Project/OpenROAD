@@ -357,7 +357,7 @@ void save_histogram_image(const char* filename, const char* mode, int width_px =
 
 void show_worst_path_internal(bool setup = true)
 {
-  if (!check_gui("show_worst_path")) {
+  if (!check_gui("show_worst_path", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -366,7 +366,7 @@ void show_worst_path_internal(bool setup = true)
 
 void clear_timing_path_internal()
 {
-  if (!check_gui("clear_timing_path")) {
+  if (!check_gui("clear_timing_path", true)) {
     return;
   }
   auto gui = web::Gui::get();

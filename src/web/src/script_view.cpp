@@ -17,22 +17,30 @@
 #include "odb/db.h"
 #include "renderer_controls.h"
 #include "tile_generator.h"
+#include "timing_path_painter.h"
+#include "timing_report.h"
 #include "utl/Logger.h"
 #include "web/core.h"
 #include "web/heatMap.h"
+#include "web/timing_path_style.h"
 
 namespace web {
 
 namespace {
 
-// TimingPathRenderer's controls (staGui.cpp), which the Qt gui lists whether
-// or not its timing widget is open.
-constexpr const char* kTimingPathRows[] = {
-    "Timing Path/Data path",
-    "Timing Path/Launch clock",
-    "Timing Path/Capture clock",
-    "Timing Path/Legend",
+// TimingPathRenderer's controls, which the Qt gui lists whether or not its
+// timing widget is open, and the part of the path each one draws.
+constexpr std::pair<const char*, bool TimingPathParts::*> kTimingPathRows[] = {
+    {kTimingPathDataRow, &TimingPathParts::data},
+    {kTimingPathLaunchClockRow, &TimingPathParts::launch_clock},
+    {kTimingPathCaptureClockRow, &TimingPathParts::capture_clock},
+    {kTimingPathLegendRow, &TimingPathParts::legend},
 };
+
+std::string timingPathRow(const char* name)
+{
+  return std::string(kTimingPathGroup) + "/" + name;
+}
 
 constexpr const char* kBackground = "Misc/Background";
 
@@ -43,11 +51,14 @@ const char* columnName(const bool selectable)
 
 }  // namespace
 
-ScriptView::ScriptView(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+ScriptView::ScriptView(odb::dbDatabase* db,
+                       sta::dbSta* sta,
+                       utl::Logger* logger)
+    : db_(db), sta_(sta), logger_(logger)
 {
-  for (const char* path : kTimingPathRows) {
-    tree_.addLeaf(path, {.visible = true, .selectable = std::nullopt});
+  for (const auto& [name, part] : kTimingPathRows) {
+    tree_.addLeaf(timingPathRow(name),
+                  {.visible = true, .selectable = std::nullopt});
   }
 }
 
@@ -296,6 +307,12 @@ ScriptView::Frame ScriptView::frame(
     frame.selection = selection_;
   }
   frame.highlights = highlights_;
+  frame.timing_path = timing_path_;
+  for (const auto& [name, part] : kTimingPathRows) {
+    const DisplayControlTree::Leaf* leaf = tree.find(timingPathRow(name));
+    frame.timing_path_parts.*part
+        = leaf != nullptr && leaf->visible.value_or(false);
+  }
   odb::dbChip* chip = db_ != nullptr ? db_->getChip() : nullptr;
   if (!marker_category_.empty() && chip != nullptr) {
     frame.markers = chip->findMarkerCategory(marker_category_.c_str());
@@ -402,6 +419,26 @@ void ScriptView::forgetLocked()
   for (SelectionSet& group : highlights_) {
     group.clear();
   }
+  timing_path_.reset();
+}
+
+void ScriptView::showWorstTimingPath(const bool setup)
+{
+  // An STA error goes to the caller and, as in TimingWidget, leaves no path.
+  clearTimingPath();
+  std::optional<TimingPathSummary> path;
+  if (sta_ != nullptr) {
+    path = TimingReport(sta_).getWorstPath(setup);
+  }
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  timing_path_ = std::move(path);
+}
+
+void ScriptView::clearTimingPath()
+{
+  const std::scoped_lock lock(mutex_);
+  timing_path_.reset();
 }
 
 void ScriptView::setSelected(const Selected& selection)

@@ -1695,7 +1695,7 @@ WebServer::WebServer(odb::dbDatabase* db,
       interp_(interp),
       num_threads_(1),
       tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
-      script_view_(std::make_unique<ScriptView>(db, logger))
+      script_view_(std::make_unique<ScriptView>(db, sta, logger))
 {
   web::Gui::get()->setScriptView(script_view_.get());
 }

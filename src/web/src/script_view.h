@@ -15,6 +15,8 @@
 #include "odb/dbChipCallBackObj.h"
 #include "renderer_controls.h"
 #include "tile_generator.h"
+#include "timing_path_painter.h"
+#include "timing_report.h"
 #include "web/core.h"
 
 namespace odb {
@@ -41,6 +43,10 @@ class dbSWire;
 class dbWire;
 }  // namespace odb
 
+namespace sta {
+class dbSta;
+}  // namespace sta
+
 namespace utl {
 class Logger;
 }
@@ -52,7 +58,7 @@ namespace web {
 class ScriptView : public GuiBackend
 {
  public:
-  ScriptView(odb::dbDatabase* db, utl::Logger* logger);
+  ScriptView(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
   void redraw() override {}
   void pause(int /* timeout_ms */) override {}
@@ -85,6 +91,9 @@ class ScriptView : public GuiBackend
   void clearHighlighted(int highlight_group) override;
   // The DRC viewer's category, kept by name as DRCWidget does.
   void selectMarkers(odb::dbMarkerCategory* markers) override;
+  // The path the timing report would show first, taken now as Qt's is.
+  void showWorstTimingPath(bool setup) override;
+  void clearTimingPath() override;
 
   // Shared with the web viewer, so the browser's renderer toggles and Tcl's
   // agree.
@@ -103,6 +112,8 @@ class ScriptView : public GuiBackend
     odb::dbMarkerCategory* markers = nullptr;
     // The heat map whose control is on, if any.
     HeatMapDataSource* heat_map = nullptr;
+    std::optional<TimingPathSummary> timing_path;
+    TimingPathParts timing_path_parts;
   };
   // The current controls with `overrides` (TileVisibility JSON keys or
   // display-control patterns) on top, leaving the controls as they were.
@@ -213,6 +224,7 @@ class ScriptView : public GuiBackend
   void set(const std::string& name, bool selectable, bool value);
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   utl::Logger* logger_;
 
   std::mutex mutex_;
@@ -223,6 +235,7 @@ class ScriptView : public GuiBackend
   HighlightSet highlights_;
   std::string marker_category_;
   std::string shown_heat_map_;
+  std::optional<TimingPathSummary> timing_path_;
   std::vector<odb::dbChip*> watched_chips_;
   std::vector<odb::dbBlock*> watched_;
   std::vector<std::unique_ptr<MarkerWatcher>> marker_watchers_;

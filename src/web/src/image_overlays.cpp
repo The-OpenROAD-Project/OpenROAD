@@ -10,8 +10,10 @@
 #include "odb/db.h"
 #include "script_view.h"
 #include "tile_generator.h"
+#include "timing_path_painter.h"
 #include "web/core.h"
 #include "web/heatMap.h"
+#include "web/timing_path_style.h"
 
 namespace web {
 
@@ -39,6 +41,17 @@ ImageOverlays buildImageOverlays(ScriptView::Frame frame)
           Gui::get()->getDescriptor<odb::dbMarker*>())
           ->paintMarkers(markers, painter);
     });
+  }
+
+  // TimingPathRenderer::drawObjects.
+  if (frame.timing_path) {
+    overlays.passes.emplace_back(
+        [path = std::move(*frame.timing_path), parts = frame.timing_path_parts](
+            Painter& painter) { paintTimingPath(path, parts, painter); });
+    if (frame.timing_path_parts.legend) {
+      overlays.legends.emplace_back(
+          [](Painter& painter) { paintTimingPathLegend(painter); });
+    }
   }
 
   // RenderThread::drawSelected.
