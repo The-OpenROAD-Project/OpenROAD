@@ -509,6 +509,18 @@ TEST(Solver, CrossSectionIgnoresX)
   EXPECT_EQ(a.ground, b.ground);
 }
 
+// Nets apart along x overlap once a cross section ignores x: rejected.
+TEST(Solver, CrossSectionRejectsOverlapAlongX)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addNet("b");
+  geometry.addBox(0, {{0, 0, 0.5}, {1, 0.2, 0.7}});
+  geometry.addBox(1, {{5, 0, 0.5}, {6, 0.2, 0.7}});
+  EXPECT_NO_THROW(Scene(geometry, 3.9));
+  EXPECT_THROW(Scene(geometry, 3.9, CrossSection{}), std::invalid_argument);
+}
+
 // A cross section's Maxwell matrix is symmetric, and its results do not
 // depend on the thread count.
 TEST(Solver, CrossSectionReciprocityAndDeterminism)

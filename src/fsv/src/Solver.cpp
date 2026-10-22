@@ -11,6 +11,7 @@
 #include <exception>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
@@ -151,7 +152,7 @@ GaussianSurface makeGaussianSurface(const Geometry& geometry,
     if (linfGap(bbox, shell.outer) >= limit) {
       continue;
     }
-    for (int k = cross_section ? 1 : 0; k < 3; k++) {
+    for (int k = 0; k < 3; k++) {
       for (const double c : {shell.outer.lo[k], shell.outer.hi[k]}) {
         for (const double d : {bbox.lo[k] - c, c - bbox.hi[k]}) {
           if (d > 0 && d < limit) {
@@ -259,6 +260,7 @@ struct Plane
 
   static Axis toTable(const Axis world, const Axis normal)
   {
+    checkNormal(normal);
     if (normal == Axis::kZ) {
       return world;
     }
@@ -267,10 +269,20 @@ struct Plane
 
   static Vec3 toWorld(const Vec3& table, const Axis normal)
   {
+    checkNormal(normal);
     if (normal == Axis::kZ) {
       return table;
     }
     return {table[0], table[2], table[1]};
+  }
+
+  // The boxes of a cross section reach so far along x that no cube meets
+  // an x-normal interface; one would mean a broken scene.
+  static void checkNormal(const Axis normal)
+  {
+    if (normal == Axis::kX) {
+      throw std::logic_error("fsv: x-normal interface in a cross section");
+    }
   }
 };
 
@@ -691,6 +703,26 @@ CapRow runRounds(WorkerPool& pool,
   return row;
 }
 
+// The two-dielectric tables for one permittivity ratio, by interface
+// position, from a solver's cache. Cached only once every position is
+// built, so a failure leaves no partial entry.
+template <class Layered>
+const Tables<Layered>& cachedTables(std::map<double, Tables<Layered>>& cache,
+                                    const int panels,
+                                    const double ratio)
+{
+  const auto cached = cache.find(ratio);
+  if (cached != cache.end()) {
+    return cached->second;
+  }
+  constexpr int kK = Layered::kPositions;
+  Tables<Layered> tables;
+  for (int position = 1 - kK; position < kK; position++) {
+    tables.push_back(Layered::shared(panels, position, ratio));
+  }
+  return cache.emplace(ratio, std::move(tables)).first->second;
+}
+
 // The panel count, checked before any table is built: every tabulated
 // interface position must lie on a panel boundary.
 int checkedPanels(const int panels)
@@ -708,48 +740,12 @@ int checkedPanels(const int panels)
 Solver::Solver(const SolverOptions& options)
     : options_(options),
       greens_(CubeGreens::shared(checkedPanels(options.panels))),
-      square_greens_(SquareGreens::shared(options.panels)),
+      square_greens_(SquareGreens::shared(checkedPanels(options.panels))),
       pool_(std::make_unique<WorkerPool>(options.threads))
 {
 }
 
 Solver::~Solver() = default;
-
-const std::vector<std::shared_ptr<const LayeredCubeGreens>>&
-Solver::layeredTables(const double ratio)
-{
-  const auto cached = layered_.find(ratio);
-  if (cached != layered_.end()) {
-    return cached->second;
-  }
-  // Cached only once every position is built, so a failure leaves no
-  // partial entry.
-  constexpr int kK = LayeredCubeGreens::kPositions;
-  std::vector<std::shared_ptr<const LayeredCubeGreens>> tables;
-  for (int position = 1 - kK; position < kK; position++) {
-    tables.push_back(
-        LayeredCubeGreens::shared(options_.panels, position, ratio));
-  }
-  return layered_.emplace(ratio, std::move(tables)).first->second;
-}
-
-const std::vector<std::shared_ptr<const LayeredSquareGreens>>&
-Solver::layeredSquareTables(const double ratio)
-{
-  const auto cached = layered_squares_.find(ratio);
-  if (cached != layered_squares_.end()) {
-    return cached->second;
-  }
-  // Cached only once every position is built, so a failure leaves no
-  // partial entry.
-  constexpr int kK = LayeredSquareGreens::kPositions;
-  std::vector<std::shared_ptr<const LayeredSquareGreens>> tables;
-  for (int position = 1 - kK; position < kK; position++) {
-    tables.push_back(
-        LayeredSquareGreens::shared(options_.panels, position, ratio));
-  }
-  return layered_squares_.emplace(ratio, std::move(tables)).first->second;
-}
 
 CapRow Solver::solve(const Scene& scene,
                      const int master,
@@ -771,7 +767,7 @@ CapRow Solver::solve(const Scene& scene,
     LayeredTableCache<LayeredSquareGreens> tables(
         scene.dielectric(),
         [this](const double ratio) -> const Tables<LayeredSquareGreens>& {
-          return layeredSquareTables(ratio);
+          return cachedTables(layered_squares_, options_.panels, ratio);
         },
         tables_mutex_);
     const Walker<Plane> walker(scene,
@@ -786,7 +782,7 @@ CapRow Solver::solve(const Scene& scene,
   LayeredTableCache<LayeredCubeGreens> tables(
       scene.dielectric(),
       [this](const double ratio) -> const Tables<LayeredCubeGreens>& {
-        return layeredTables(ratio);
+        return cachedTables(layered_, options_.panels, ratio);
       },
       tables_mutex_);
   const Walker<Space> walker(

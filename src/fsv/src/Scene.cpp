@@ -139,6 +139,22 @@ Scene::Scene(std::unique_ptr<Geometry> stretched,
       min_dimension_ = std::min(min_dimension_, b.hi[k] - b.lo[k]);
     }
   }
+  // Without their x extents, boxes of different nets that were apart along
+  // x may overlap.
+  if (stretched_) {
+    const std::vector<Box>& boxes = geometry_.boxes();
+    for (size_t i = 0; i < boxes.size(); i++) {
+      for (size_t j = i + 1; j < boxes.size(); j++) {
+        const int a = geometry_.boxNet(static_cast<int>(i));
+        const int b = geometry_.boxNet(static_cast<int>(j));
+        if (a != b && overlaps(boxes[i], boxes[j])) {
+          throw std::invalid_argument(
+              "fsv: in the cross section, boxes of nets " + geometry_.netName(a)
+              + " and " + geometry_.netName(b) + " overlap");
+        }
+      }
+    }
+  }
   dielectric_ = std::make_unique<Dielectric>(
       eps_r, std::vector<Stack::PlanarInterface>{}, std::vector<Shell>{});
 }
@@ -204,8 +220,9 @@ void Scene::addStack(const Stack& stack)
         }
         side += cf.side_thickness;
         top += cf.top_thickness;
+        // A cross section's boxes have no ends to wrap along x.
         Box outer = box;
-        for (int k = 0; k < 2; k++) {
+        for (int k = crossSection() ? 1 : 0; k < 2; k++) {
           outer.lo[k] -= side;
           outer.hi[k] += side;
         }

@@ -276,6 +276,7 @@ INSTANTIATE_TEST_SUITE_P(
     LongLine,
     testing::Values(CrossSectionCase{"etch_stop_pair", {"lower", "upper"}},
                     CrossSectionCase{"three_wires", {"left", "middle"}},
+                    CrossSectionCase{"conformal_pair", {"a"}},
                     CrossSectionCase{"sky130_met1_pair", {"a"}}),
     kCaseName);
 

@@ -36,6 +36,8 @@ class Scene
   // Cross sections in the y-z plane: every box is infinitely long in x, its
   // x extent ignored, and solves give capacitance per unit length (fF/µm).
   // Conformal dielectrics grow on the sides only (there are no line ends).
+  // Throws std::invalid_argument if boxes of different nets overlap once
+  // their x extents are ignored.
   Scene(const Geometry& geometry, double eps_r, CrossSection);
   Scene(const Geometry& geometry, const Stack& stack, CrossSection);
   ~Scene();

@@ -66,7 +66,7 @@ void FieldSolver::readItf(const std::string& path)
                 stack.conductors.size(),
                 conformals.size(),
                 stack.vias.size());
-  scene_.reset();
+  resetScenes();
   stack_ = std::move(stack);
   has_stack_ = true;
 }
@@ -76,7 +76,7 @@ void FieldSolver::setPermittivity(const double eps)
   if (!(eps > 0) || !std::isfinite(eps)) {
     logger_->error(utl::FSV, 4, "The permittivity must be positive.");
   }
-  scene_.reset();
+  resetScenes();
   stack_ = Stack();
   has_stack_ = false;
   eps_ = eps;
@@ -96,7 +96,7 @@ void FieldSolver::addBox(const std::string_view net, const Box& box)
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 5, "Net {}: {}", net, coreMessage(e));
   }
-  scene_.reset();
+  resetScenes();
   if (is_new) {
     geometry_.addNet(net);
     net_index_.emplace(std::string(net), index);
@@ -158,7 +158,7 @@ void FieldSolver::addLayerRect(const std::string_view net,
 
 void FieldSolver::clearGeometry()
 {
-  scene_.reset();
+  resetScenes();
   geometry_ = Geometry();
   net_index_.clear();
 }
@@ -178,28 +178,31 @@ int FieldSolver::findNet(const std::string_view net) const
   return it == net_index_.end() ? -1 : it->second;
 }
 
+void FieldSolver::resetScenes()
+{
+  for (std::unique_ptr<Scene>& scene : scenes_) {
+    scene.reset();
+  }
+}
+
 const Scene& FieldSolver::scene(const bool cross_section)
 {
-  if (scene_ && scene_cross_section_ != cross_section) {
-    scene_.reset();
-  }
-  if (!scene_) {
+  std::unique_ptr<Scene>& scene = scenes_[cross_section ? 1 : 0];
+  if (!scene) {
     try {
       if (cross_section) {
-        scene_
-            = has_stack_
-                  ? std::make_unique<Scene>(geometry_, stack_, CrossSection{})
-                  : std::make_unique<Scene>(geometry_, eps_, CrossSection{});
+        scene = has_stack_
+                    ? std::make_unique<Scene>(geometry_, stack_, CrossSection{})
+                    : std::make_unique<Scene>(geometry_, eps_, CrossSection{});
       } else {
-        scene_ = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
-                            : std::make_unique<Scene>(geometry_, eps_);
+        scene = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
+                           : std::make_unique<Scene>(geometry_, eps_);
       }
     } catch (const std::exception& e) {
       logger_->error(utl::FSV, 8, "{}", coreMessage(e));
     }
-    scene_cross_section_ = cross_section;
   }
-  return *scene_;
+  return *scene;
 }
 
 NetCapacitance FieldSolver::solve(const std::string_view net,

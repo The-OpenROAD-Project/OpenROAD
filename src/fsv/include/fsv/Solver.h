@@ -94,13 +94,6 @@ class Solver
                const SolveOptions& options = {});
 
  private:
-  // Two-dielectric tables for one permittivity ratio, by interface position.
-  const std::vector<std::shared_ptr<const LayeredCubeGreens>>& layeredTables(
-      double ratio);
-  // The same for squares, for cross sections.
-  const std::vector<std::shared_ptr<const LayeredSquareGreens>>&
-  layeredSquareTables(double ratio);
-
   SolverOptions options_;
   std::shared_ptr<const CubeGreens> greens_;
   std::shared_ptr<const SquareGreens> square_greens_;
@@ -111,7 +104,7 @@ class Solver
       layered_squares_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
-  // Guards layered_ while walks build tables.
+  // Guards layered_ and layered_squares_ while walks build tables.
   std::mutex tables_mutex_;
 };
 
