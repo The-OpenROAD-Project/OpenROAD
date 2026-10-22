@@ -78,13 +78,40 @@ class PlacementDRC::FixedSupplyVias
       if (!net->isSpecial() || !net->getSigType().isSupply()) {
         continue;
       }
+      // Cells are built to abut their supply rails, so a via shape inside a
+      // same-net followpin adds no edge a cell could violate.
+      std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> followpins;
+      for (odb::dbSWire* swire : net->getSWires()) {
+        for (odb::dbSBox* sbox : swire->getWires()) {
+          if (!sbox->isVia()
+              && sbox->getWireShapeType() == odb::dbWireShapeType::FOLLOWPIN) {
+            followpins.emplace_back(sbox->getBox(), sbox->getTechLayer());
+          }
+        }
+      }
+      const boost::geometry::index::rtree<
+          std::pair<odb::Rect, odb::dbTechLayer*>,
+          boost::geometry::index::quadratic<16>>
+          followpin_index(followpins.begin(), followpins.end());
+      auto inside_followpin = [&](const odb::dbShape& shape) {
+        const odb::Rect box = shape.getBox();
+        return std::any_of(
+            followpin_index.qbegin(boost::geometry::index::intersects(box)),
+            followpin_index.qend(),
+            [&](const auto& rail) {
+              return rail.second == shape.getTechLayer()
+                     && rail.first.contains(box);
+            });
+      };
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* sbox : swire->getWires()) {
           if (sbox->isVia()) {
             std::vector<odb::dbShape> shapes;
             sbox->getViaBoxes(shapes);
             for (const odb::dbShape& shape : shapes) {
-              addFixedShape(shape.getTechLayer(), shape.getBox(), net);
+              if (!inside_followpin(shape)) {
+                addFixedShape(shape.getTechLayer(), shape.getBox(), net);
+              }
             }
           }
         }
@@ -601,8 +628,9 @@ class PlacementDRC::FixedSupplyVias
       const odb::Rect fixed_rect(0, 0, fixed.first, fixed.second);
       for (const DimensionClass& cell : dimensions_it->second) {
         const odb::Rect cell_rect(0, 0, cell.first, cell.second);
-        max_spacing
-            = std::max(max_spacing, spacing(layer, fixed_rect, cell_rect));
+        max_spacing = std::max({max_spacing,
+                                spacing(layer, fixed_rect, cell_rect),
+                                eolSpacing(layer, fixed_rect, cell_rect)});
       }
     }
     return max_spacing;
@@ -808,7 +836,12 @@ class PlacementDRC::FixedSupplyVias
         = static_cast<int64_t>(core.yMin()) + grid_->gridYToDbu(GridY{row}).v;
     const int64_t vertical_gap
         = verticalDistance(fixed.rect, cell_shape.rect, origin_y);
-    const int64_t x_keepout = horizontalKeepout(space, vertical_gap);
+    // Touching or overlapping shapes always conflict.
+    const int64_t x_keepout = std::max(
+        {horizontalKeepout(space, vertical_gap),
+         eolKeepout(
+             cell_shape.layer, fixed.rect, cell_shape.rect, vertical_gap),
+         vertical_gap == 0 ? int64_t{0} : int64_t{-1}});
     if (x_keepout < 0) {
       return false;
     }
@@ -875,7 +908,9 @@ class PlacementDRC::FixedSupplyVias
                fixed.net,
                cell_shape.rect,
                fixed.rect,
-               spacing(cell_shape.layer, fixed.rect, cell_shape.rect)});
+               std::max(
+                   spacing(cell_shape.layer, fixed.rect, cell_shape.rect),
+                   eolSpacing(cell_shape.layer, fixed.rect, cell_shape.rect))});
         }
       }
     }
@@ -1057,7 +1092,8 @@ class PlacementDRC::FixedSupplyVias
   // narrower than its EOLWIDTH, so applying it to every shape would invent
   // keepouts around wide geometry and displace cells for a rule that does not
   // apply to them.  A rectangle's end-of-line edges are its narrow ones, so the
-  // shape's minimum dimension is the edge width to test.
+  // shape's minimum dimension is the edge width to test.  This is only the
+  // rule's reach, for the query halo; eolKeepout() decides the conflict.
   int eolSpacing(odb::dbTechLayer* layer,
                  const odb::Rect& fixed,
                  const odb::Rect& cell) const
@@ -1075,7 +1111,8 @@ class PlacementDRC::FixedSupplyVias
       if (!fixed_is_eol && !cell_is_eol) {
         continue;
       }
-      max_spacing = std::max(max_spacing, rule->getEolSpace());
+      max_spacing
+          = std::max({max_spacing, rule->getEolSpace(), rule->getEolWithin()});
       debugPrint(logger_,
                  DPL,
                  "fixed_supply_via",
@@ -1089,6 +1126,37 @@ class PlacementDRC::FixedSupplyVias
                  rule->getEolWidth());
     }
     return max_spacing;
+  }
+
+  // End-of-line spacing only reaches past an edge narrower than EOLWIDTH: EOL
+  // space beyond it and WITHIN to either side, a rectangle rather than a
+  // circle.  Returns the largest horizontal gap that still violates at this
+  // vertical gap, or -1.
+  static int64_t eolKeepout(odb::dbTechLayer* layer,
+                            const odb::Rect& fixed,
+                            const odb::Rect& cell,
+                            const int64_t vertical_gap)
+  {
+    int64_t keepout = -1;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      return keepout;
+    }
+    for (auto rule : layer->getTechLayerSpacingEolRules()) {
+      const int width = rule->getEolWidth();
+      const int space = rule->getEolSpace();
+      const int within = rule->getEolWithin();
+      for (const odb::Rect& rect : {fixed, cell}) {
+        // Narrow top and bottom edges: space vertically, within sideways.
+        if (rect.dx() < width && vertical_gap < space) {
+          keepout = std::max<int64_t>(keepout, within - 1);
+        }
+        // Narrow left and right edges: space sideways, within vertically.
+        if (rect.dy() < width && vertical_gap < within) {
+          keepout = std::max<int64_t>(keepout, space - 1);
+        }
+      }
+    }
+    return keepout;
   }
 
   int spacing(odb::dbTechLayer* layer,
@@ -1120,8 +1188,7 @@ class PlacementDRC::FixedSupplyVias
         = std::max({layer->getSpacing(fixed_width, length),
                     layer->getSpacing(cell_width, length),
                     layer->findTwSpacing(fixed_width, cell_width, length),
-                    lef58_spacing,
-                    eolSpacing(layer, fixed, cell)});
+                    lef58_spacing});
     // The LEF58 PRL table supports an exact width/length query, so use it
     // rather than the shape-independent bound above.
     for (auto rule : layer->getTechLayerSpacingTablePrlRules()) {
