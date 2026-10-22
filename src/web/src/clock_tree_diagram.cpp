@@ -753,7 +753,8 @@ std::vector<unsigned char> renderClockTreeDiagram(
   const double scene_h = diagram.scene_max.y - diagram.scene_min.y;
   double scale = 1.0;
   if (scene_w > 0 && scene_h > 0) {
-    scale = std::min((width - 4) / scene_w, (height - 4) / scene_h);
+    scale = std::max(0.0,
+                     std::min((width - 4) / scene_w, (height - 4) / scene_h));
   }
   const double center_x = (diagram.scene_min.x + diagram.scene_max.x) / 2;
   const double center_y = (diagram.scene_min.y + diagram.scene_max.y) / 2;
