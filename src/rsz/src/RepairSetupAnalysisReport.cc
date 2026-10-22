@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "RepairSetupAnalysis.hh"
+#include "RepairSetupMoveSampler.hh"
 #include "RepairSetupProfiler.hh"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
@@ -538,7 +538,7 @@ double RepairSetupAnalysisReport::elapsed() const
 }
 
 void RepairSetupAnalysisReport::beginMove(const Context& context,
-                                          RepairSetupAnalysis& observer)
+                                          RepairSetupMoveSampler& observer)
 {
   const ProfileScope scope("analysis_observation");
   edits_.clear();
@@ -591,7 +591,7 @@ void RepairSetupAnalysisReport::dumpWindow(
 }
 
 void RepairSetupAnalysisReport::endMove(const MoveResult& result,
-                                        RepairSetupAnalysis& observer)
+                                        RepairSetupMoveSampler& observer)
 {
   const ProfileScope scope("analysis_observation");
   Entry& entry = *active_;
@@ -653,7 +653,7 @@ void RepairSetupAnalysisReport::measureDeltas(const Context& context,
 void RepairSetupAnalysisReport::writeMoveRow(
     const Entry& entry,
     const bool accepted,
-    const RepairSetupAnalysis& observer,
+    const RepairSetupMoveSampler& observer,
     const double after_time)
 {
   const Context& context = entry.context;
@@ -707,7 +707,7 @@ void RepairSetupAnalysisReport::writeMoveRow(
 
 void RepairSetupAnalysisReport::reportFlaggedMove(
     const Entry& entry,
-    const RepairSetupAnalysis& observer)
+    const RepairSetupMoveSampler& observer)
 {
   RepairSetupProfiler::event("analysis_bad_moves");
   // The report leads with the run-local outcome, so a move still inside an
@@ -837,7 +837,7 @@ void RepairSetupAnalysisReport::dumpSnapshot(const AnalysisSnapshot& snapshot,
 
 void RepairSetupAnalysisReport::classify(
     Entry& entry,
-    const RepairSetupAnalysis& observer) const
+    const RepairSetupMoveSampler& observer) const
 {
   if (entry.wns_delta.has_value() && *entry.wns_delta < -kNoise) {
     entry.findings.push_back("global_wns_loss");
@@ -920,7 +920,7 @@ void RepairSetupAnalysisReport::classify(
 void RepairSetupAnalysisReport::writeOverview(
     std::ostream& output,
     const Entry& entry,
-    const RepairSetupAnalysis& observer) const
+    const RepairSetupMoveSampler& observer) const
 {
   const std::optional<double> raw_gain
       = entry.context.estimate.has_value()
@@ -1241,7 +1241,7 @@ void RepairSetupAnalysisReport::writePaths(
 
 RepairSetupAnalysisReport::CaseReport RepairSetupAnalysisReport::renderCase(
     const Entry& entry,
-    const RepairSetupAnalysis& observer) const
+    const RepairSetupMoveSampler& observer) const
 {
   // Everything but the outcome reads the state of this apply, so it is
   // rendered now; the head ends where the outcome goes.

@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "OptimizerTypes.hh"
-#include "RepairSetupAnalysis.hh"
+#include "RepairSetupMoveSampler.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
@@ -64,7 +64,7 @@ std::string rolesString(const std::set<std::string>& roles)
 
 }  // namespace
 
-void RepairSetupAnalysis::captureSelectedWindow(const Target& target)
+void RepairSetupMoveSampler::captureSelectedWindow(const Target& target)
 {
   sta::Network* network = resizer_.network();
   const sta::Path* path = target.driverPath(resizer_);
@@ -109,7 +109,8 @@ void RepairSetupAnalysis::captureSelectedWindow(const Target& target)
   }
 }
 
-void RepairSetupAnalysis::watchPin(const sta::Pin* pin, const std::string& role)
+void RepairSetupMoveSampler::watchPin(const sta::Pin* pin,
+                                      const std::string& role)
 {
   sta::Network* network = resizer_.network();
   if (pin != nullptr && !network->direction(pin)->isPowerGround()) {
@@ -117,7 +118,7 @@ void RepairSetupAnalysis::watchPin(const sta::Pin* pin, const std::string& role)
   }
 }
 
-void RepairSetupAnalysis::watchNeighborhood()
+void RepairSetupMoveSampler::watchNeighborhood()
 {
   sta::Network* network = resizer_.network();
   const sta::Pin* target = network->findPin(target_pin_name_);
@@ -171,7 +172,7 @@ void RepairSetupAnalysis::watchNeighborhood()
   }
 }
 
-AnalysisPathState RepairSetupAnalysis::capturePath(
+AnalysisPathState RepairSetupMoveSampler::capturePath(
     const sta::Path* path,
     const std::string& kind) const
 {
@@ -215,7 +216,7 @@ AnalysisPathState RepairSetupAnalysis::capturePath(
   return result;
 }
 
-AnalysisPinState RepairSetupAnalysis::captureElectrical(
+AnalysisPinState RepairSetupMoveSampler::captureElectrical(
     const sta::Pin* pin,
     const std::set<std::string>& roles,
     const sta::Scene* scene,
@@ -264,7 +265,7 @@ AnalysisPinState RepairSetupAnalysis::captureElectrical(
   return state;
 }
 
-void RepairSetupAnalysis::capturePinStates(AnalysisSnapshot& snapshot) const
+void RepairSetupMoveSampler::capturePinStates(AnalysisSnapshot& snapshot) const
 {
   sta::Network* network = resizer_.network();
   const sta::StaState* sta = resizer_.staState();
@@ -363,7 +364,7 @@ void RepairSetupAnalysis::capturePinStates(AnalysisSnapshot& snapshot) const
   }
 }
 
-void RepairSetupAnalysis::captureArcStates(AnalysisSnapshot& snapshot) const
+void RepairSetupMoveSampler::captureArcStates(AnalysisSnapshot& snapshot) const
 {
   sta::Network* network = resizer_.network();
   sta::Graph* graph = resizer_.graph();
@@ -418,7 +419,7 @@ void RepairSetupAnalysis::captureArcStates(AnalysisSnapshot& snapshot) const
   }
 }
 
-AnalysisSnapshot RepairSetupAnalysis::snapshot()
+AnalysisSnapshot RepairSetupMoveSampler::snapshot()
 {
   AnalysisSnapshot result;
   result.metrics = sample();

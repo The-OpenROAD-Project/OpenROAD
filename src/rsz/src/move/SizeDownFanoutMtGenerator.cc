@@ -635,14 +635,13 @@ std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>> measureLoads(
   return loads;
 }
 
-// A positive budget bounds the delay change; a negative one allows no growth.
+// A positive budget bounds the delay change; zero or a negative one allows no
+// growth.
 bool fitsDelayBudget(const sta::Slack delay_budget,
                      const float worst_delay_change)
 {
-  const bool violates_budget
-      = (delay_budget > 0 && worst_delay_change > delay_budget)
-        || (delay_budget < 0 && worst_delay_change > 0);
-  return !violates_budget;
+  return delay_budget > 0 ? worst_delay_change <= delay_budget
+                          : worst_delay_change <= 0;
 }
 
 }  // namespace

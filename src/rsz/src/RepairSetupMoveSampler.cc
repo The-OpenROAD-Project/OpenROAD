@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
-#include "RepairSetupAnalysis.hh"
+#include "RepairSetupMoveSampler.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -29,10 +29,11 @@ bool finiteDelay(const sta::Delay& delay, const sta::StaState* sta)
 
 }  // namespace
 
-RepairSetupAnalysis::RepairSetupAnalysis(Resizer& resizer,
-                                         const Target& target,
-                                         const sta::Pin* original_endpoint,
-                                         const sta::Pin* policy_endpoint)
+RepairSetupMoveSampler::RepairSetupMoveSampler(
+    Resizer& resizer,
+    const Target& target,
+    const sta::Pin* original_endpoint,
+    const sta::Pin* policy_endpoint)
     : resizer_(resizer)
 {
   sta::Network* network = resizer_.network();
@@ -69,7 +70,7 @@ RepairSetupAnalysis::RepairSetupAnalysis(Resizer& resizer,
   captureSelectedWindow(target);
 }
 
-void RepairSetupAnalysis::captureWindow(const Target& target)
+void RepairSetupMoveSampler::captureWindow(const Target& target)
 {
   if (!target.estimator_context.has_value()
       || target.estimator_context->path_stages.empty()) {
@@ -122,7 +123,7 @@ void RepairSetupAnalysis::captureWindow(const Target& target)
   }
 }
 
-std::set<std::string> RepairSetupAnalysis::targetNetPins() const
+std::set<std::string> RepairSetupMoveSampler::targetNetPins() const
 {
   std::set<std::string> names;
   sta::Network* network = resizer_.network();
@@ -138,7 +139,7 @@ std::set<std::string> RepairSetupAnalysis::targetNetPins() const
   return names;
 }
 
-std::optional<double> RepairSetupAnalysis::pinSlack(
+std::optional<double> RepairSetupMoveSampler::pinSlack(
     const std::string& pin_name) const
 {
   const sta::Pin* pin = resizer_.network()->findPin(pin_name);
@@ -174,7 +175,8 @@ std::optional<double> RepairSetupAnalysis::pinSlack(
   return std::isfinite(minimum) ? std::optional<double>(minimum) : std::nullopt;
 }
 
-bool RepairSetupAnalysis::matchesPath(const sta::PathExpanded& expanded) const
+bool RepairSetupMoveSampler::matchesPath(
+    const sta::PathExpanded& expanded) const
 {
   if (expanded.size() != path_points_.size()
       || latchDataPath(expanded) != nullptr) {
@@ -208,20 +210,23 @@ bool RepairSetupAnalysis::matchesPath(const sta::PathExpanded& expanded) const
   return true;
 }
 
-std::optional<double> RepairSetupAnalysis::windowDelay() const
+std::optional<double> RepairSetupMoveSampler::windowDelay() const
 {
   if (stage_indices_.empty() || targetNetPins() != target_net_pin_names_) {
     return std::nullopt;
   }
 
-  const sta::Pin* endpoint = resizer_.network()->findPin(endpoint_pin_name_);
-  if (endpoint == nullptr) {
+  // The window is measured on the captured path, which ends at the selected
+  // path end: the endpoint, the target driver of a prefix, or a latch D pin.
+  const sta::Pin* path_end
+      = resizer_.network()->findPin(path_points_.back().pin_name);
+  if (path_end == nullptr) {
     return std::nullopt;
   }
 
   sta::Vertex* vertex = path_points_.back().bidirect_driver
-                            ? resizer_.graph()->pinDrvrVertex(endpoint)
-                            : resizer_.graph()->pinLoadVertex(endpoint);
+                            ? resizer_.graph()->pinDrvrVertex(path_end)
+                            : resizer_.graph()->pinLoadVertex(path_end);
   if (vertex == nullptr) {
     return std::nullopt;
   }
@@ -253,7 +258,7 @@ std::optional<double> RepairSetupAnalysis::windowDelay() const
   return std::nullopt;
 }
 
-std::map<std::string, double> RepairSetupAnalysis::sample() const
+std::map<std::string, double> RepairSetupMoveSampler::sample() const
 {
   std::map<std::string, double> values;
   sta::dbSta* sta = resizer_.sta();

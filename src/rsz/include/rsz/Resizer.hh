@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -608,8 +609,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
-  // "low" or "medium"; anything else is the default, high.
-  static RepairEffort repairEffortFromString(const std::string& effort);
+  // "low", "medium" or "high"; anything else is error RSZ-3242.
+  RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(sta::Vertex* drvr);
@@ -951,18 +952,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement);
+  // The load a driver can still take under its max-cap limit: none once the
+  // limit is violated, and no bound without a limit.
+  float maxCapIncrease(const sta::Pin* drvr_pin);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
-
-  // One driver's current load, cap limit, and violation state.
-  struct DriverCapLimit
-  {
-    // Total load currently driven on this net.
-    float cap{0.0f};
-    // Effective max-cap limit for this driver.
-    float max_cap{0.0f};
-    // True when the driver's current max-cap check has negative slack.
-    bool negative_slack{false};
-  };
 
   // Cached fanin max-cap headroom for one input pin of a candidate cell.
   struct InputCapBudget
@@ -971,8 +964,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     const sta::LibertyPort* port{nullptr};
     // Input capacitance of that current port.
     float current_cap{0.0f};
-    // Limits for all drivers that STA associates with the input net.
-    std::vector<DriverCapLimit> driver_limits;
+    // The smallest maxCapIncrease() of the drivers of the input net.
+    float max_cap_increase{std::numeric_limits<float>::infinity()};
   };
 
   // Capture fanin max-cap state once before screening equivalent cells.
@@ -993,6 +986,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
+  // Whether removeBuffer() keeps the output net of buffer and moves the pins
+  // of its input net onto it, instead of the other way round.
+  bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
   bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
