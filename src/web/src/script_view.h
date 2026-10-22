@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "display_control_tree.h"
@@ -101,6 +103,24 @@ class ScriptView : public GuiBackend
   void showWidget(const std::string& name, bool show) override;
   void selectClockviewerClock(const std::string& clock_name,
                               std::optional<int> depth) override;
+  // As ClockWidget::saveImage: the viewer takes `scene` and `clock_name` as
+  // for a select, and is left shown or hidden as it was.
+  void saveClockTreeImage(const std::string& clock_name,
+                          const std::string& filename,
+                          const std::string& scene,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override;
+
+  // Draws a tree for saveClockTreeImage; the WebServer, which owns the tile
+  // generator, installs it.
+  using ClockTreeImageWriter = std::function<void(const ClockTree& tree,
+                                                  const std::string& filename,
+                                                  int width,
+                                                  int height)>;
+  void setClockTreeImageWriter(ClockTreeImageWriter writer)
+  {
+    clock_tree_image_writer_ = std::move(writer);
+  }
 
   // Shared with the web viewer, so the browser's renderer toggles and Tcl's
   // agree.
@@ -231,9 +251,11 @@ class ScriptView : public GuiBackend
       const std::map<std::string, bool>& overrides);
   // Gives the heat map that is shown the onShow/onHide Qt's renderer gives it.
   void showHeatMapLocked(HeatMapDataSource* heat_map);
+  void selectClockviewerClockLocked(const std::string& clock_name,
+                                    std::optional<int> depth);
   // ClockTreeRenderer's row, which a registration brings back on.
   void showClockTreesRowLocked(bool show);
-  // ClockWidget's scene box, which starts on the first scene.
+  // ClockWidget's scene box: the first scene until a save picks another.
   sta::Scene* clockViewerSceneLocked() const;
   // The clocks ClockWidget::populate shows a tree for, in its order.
   std::vector<std::string> clockNamesLocked() const;
@@ -265,6 +287,9 @@ class ScriptView : public GuiBackend
   // Set by the first selectClockviewerClock, as ClockWidget populates then.
   bool clock_viewer_populated_ = false;
   std::string clock_viewer_clock_;
+  // By name, as a scene can be defined again.
+  std::string clock_viewer_scene_;
+  ClockTreeImageWriter clock_tree_image_writer_;
   std::map<std::string, int> clock_tree_depths_;
 
   struct Saved

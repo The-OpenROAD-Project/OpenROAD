@@ -205,6 +205,7 @@ cc_library(
     name = "web",
     srcs = [
         "src/asset_gzip.cpp",
+        "src/clock_tree_diagram.cpp",
         "src/clock_tree_report.cpp",
         "src/display_control_tree.cpp",
         "src/font_atlas.h",
@@ -254,6 +255,7 @@ cc_library(
         "src/web_viewer_hook.h",
         "src/request_handler.h",
         "src/report_html.h",
+        "src/clock_tree_diagram.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
         "src/web_assets.h",

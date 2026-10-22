@@ -96,6 +96,7 @@ add_custom_command(
 
 target_sources(web
   PRIVATE
+    src/clock_tree_diagram.cpp
     src/clock_tree_report.cpp
     src/color.cpp
     src/display_control_tree.cpp

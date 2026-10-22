@@ -161,6 +161,9 @@ struct TileFrame
 // Drawn once over a whole saved image at its own resolution, in Qt's order
 // (RenderThread::draw): after the layers and under the labels.
 using ImagePass = std::function<void(Painter&)>;
+// About the height Qt's default application font draws at, for the text in
+// a saved image.
+inline constexpr int kImageFontPx = 20;
 
 // Between a web::Painter color and the tile renderer's, which share the RGBA
 // layout.
@@ -858,6 +861,19 @@ class TileGenerator
                  const Color& bg = {},
                  const ImageOverlays* overlays = nullptr) const;
 
+  // `pass` alone over `bg` into a width x height RGBA buffer, not of the
+  // layout; it draws in 1/units_per_pixel pixels, with y up from the bottom.
+  std::vector<unsigned char> renderPainterImage(int width,
+                                                int height,
+                                                const Color& bg,
+                                                int units_per_pixel,
+                                                const ImagePass& pass) const;
+  // Writes an RGBA buffer as a PNG file, logging it as saveImage does.
+  void savePng(const std::string& filename,
+               const std::vector<unsigned char>& rgba,
+               int width,
+               int height) const;
+
   // Where a label goes, decided by the caller.  A chiplet rendered in its own
   // frame cannot draw text into that frame — the reverse mapping that places
   // the frame would mirror the glyphs — so the caller routes the label
@@ -985,6 +1001,13 @@ class TileGenerator
   size_t tileCacheSize() const;  // for tests
 
  private:
+  // The threads a saved image renders with.
+  int imageThreadCount() const;
+  // PNG bytes for an RGBA buffer, the error logged if the encoder fails.
+  std::vector<unsigned char> encodePng(const std::vector<unsigned char>& rgba,
+                                       int width,
+                                       int height) const;
+
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
   std::vector<unsigned char> renderTileBuffer(

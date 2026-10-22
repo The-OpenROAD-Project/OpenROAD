@@ -43,6 +43,7 @@
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "boost/json/value.hpp"
+#include "clock_tree_diagram.h"
 #include "clock_tree_report.h"
 #include "color.h"
 #include "hierarchy_report.h"
@@ -1697,6 +1698,12 @@ WebServer::WebServer(odb::dbDatabase* db,
       tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
       script_view_(std::make_unique<ScriptView>(db, sta, logger))
 {
+  script_view_->setClockTreeImageWriter([this](const ClockTree& tree,
+                                               const std::string& filename,
+                                               const int width,
+                                               const int height) {
+    saveClockTreeImage(tree, filename, width, height);
+  });
   web::Gui::get()->setScriptView(script_view_.get());
 }
 
@@ -2296,6 +2303,19 @@ void WebServer::saveImage(const std::string& filename,
                         image.vis,
                         image.background,
                         &image.overlays);
+}
+
+void WebServer::saveClockTreeImage(const ClockTree& tree,
+                                   const std::string& filename,
+                                   const int width,
+                                   const int height)
+{
+  TileGenerator& tiles = ensureGenerator();
+  tiles.savePng(pngPath(filename, logger_),
+                renderClockTreeDiagram(
+                    layoutClockTreeDiagram(tree), width, height, tiles),
+                width,
+                height);
 }
 
 namespace {

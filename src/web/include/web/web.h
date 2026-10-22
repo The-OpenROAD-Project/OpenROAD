@@ -39,6 +39,7 @@ namespace web {
 struct Color;
 class Search;
 
+class ClockTree;
 class ClockTreeReport;
 class ScriptView;
 class TileGenerator;
@@ -290,6 +291,11 @@ class WebServer
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.
   TileGenerator& ensureGenerator();
+  // save_clocktree_image's diagram, for the script view.
+  void saveClockTreeImage(const ClockTree& tree,
+                          const std::string& filename,
+                          int width,
+                          int height);
 
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;

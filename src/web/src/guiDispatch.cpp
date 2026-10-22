@@ -704,11 +704,13 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
                              int width_px,
                              int height_px)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->saveClockTreeImage(clock_name,
+                               filename,
+                               scene,
+                               sizeOrAuto(width_px),
+                               sizeOrAuto(height_px));
   }
-  activeBackend()->saveClockTreeImage(
-      clock_name, filename, scene, sizeOrAuto(width_px), sizeOrAuto(height_px));
 }
 
 void Gui::saveHistogramImage(const std::string& filename,

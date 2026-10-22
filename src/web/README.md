@@ -352,9 +352,9 @@ This command is not `gui::save_display_controls`. With no Qt window open,
 act on a copy of the Qt display-control tree kept on the server, with the
 same paths and defaults; `select`, `gui::clear_selections`,
 `gui::clear_highlights`, `gui::select_marker_category`, `gui::show_worst_path`,
-`gui::clear_timing_path`, `gui::select_clockviewer_clock`, and
-`gui::show_widget`/`gui::hide_widget` for the "Clock Tree Viewer" act on a
-selection kept there too. That copy works in a build without Qt and needs no
+`gui::clear_timing_path`, `gui::select_clockviewer_clock`,
+`save_clocktree_image`, and `gui::show_widget`/`gui::hide_widget` for the
+"Clock Tree Viewer" act on a selection kept there too. That copy works in a build without Qt and needs no
 running server, but it is separate from what a browser shows. Of the colors,
 only `Misc/Background` is kept there.
 

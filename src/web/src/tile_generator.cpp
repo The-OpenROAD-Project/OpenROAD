@@ -975,9 +975,6 @@ constexpr float kPinMarkerSizeRatio = 0.02;
 constexpr int kMinPinMarkerSize = 8;
 constexpr int kMinPinNameSizePixels = 20;
 constexpr int kPinLabelFontHeight = 14;  // pre-baked atlas size for pin labels
-// About the height Qt's default application font draws at, for the text in
-// a saved image's overlays.
-constexpr int kImageFontPx = 20;
 constexpr int kItermLabelFontHeight = 10;  // atlas size for ITerm pin labels
 constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
 // The least an instance's longest side must measure on screen, in CSS px,
@@ -6577,8 +6574,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
 
   // Render each tile.  Each (tx, ty) tile maps to a disjoint rectangle of
   // `output`, so tiles render concurrently without locking.
-  const int num_threads
-      = num_threads_ > 0 ? num_threads_ : (sta_ ? sta_->threadCount() : 1);
+  const int num_threads = imageThreadCount();
   std::unique_ptr<utl::ThreadPool> thread_pool;
   if (num_threads > 1 && total_tiles > 1) {
     thread_pool = std::make_unique<utl::ThreadPool>(num_threads);
@@ -6786,13 +6782,8 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
     return {};  // renderImageBuffer already logged the error.
   }
 
-  // Encode to PNG.
-  unsigned encode_error = 0;
-  std::vector<unsigned char> png_data
-      = encodeImagePng(final_buf, final_w, final_h, &encode_error);
-  if (encode_error != 0) {
-    logger_->error(
-        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(encode_error));
+  std::vector<unsigned char> png_data = encodePng(final_buf, final_w, final_h);
+  if (png_data.empty()) {
     return {};
   }
   if (out_width) {
@@ -6814,8 +6805,73 @@ void TileGenerator::saveImage(const std::string& filename,
 {
   int final_w = 0;
   int final_h = 0;
-  const std::vector<unsigned char> png_data = renderImagePng(
+  const std::vector<unsigned char> image = renderImageBuffer(
       region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h, overlays);
+  if (image.empty()) {
+    return;  // renderImageBuffer already logged the error.
+  }
+  savePng(filename, image, final_w, final_h);
+}
+
+std::vector<unsigned char> TileGenerator::encodePng(
+    const std::vector<unsigned char>& rgba,
+    const int width,
+    const int height) const
+{
+  unsigned encode_error = 0;
+  std::vector<unsigned char> png_data
+      = encodeImagePng(rgba, width, height, &encode_error);
+  if (encode_error != 0) {
+    logger_->error(
+        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(encode_error));
+    return {};
+  }
+  return png_data;
+}
+
+int TileGenerator::imageThreadCount() const
+{
+  if (num_threads_ > 0) {
+    return num_threads_;
+  }
+  return sta_ ? sta_->threadCount() : 1;
+}
+
+std::vector<unsigned char> TileGenerator::renderPainterImage(
+    const int width,
+    const int height,
+    const Color& bg,
+    const int units_per_pixel,
+    const ImagePass& pass) const
+{
+  std::vector<unsigned char> image(4UL * width * height);
+  fillSpan(image, bg);
+  ImageOverlays overlays;
+  overlays.passes.push_back(pass);
+  const int num_threads = imageThreadCount();
+  std::unique_ptr<utl::ThreadPool> pool;
+  if (num_threads > 1) {
+    pool = std::make_unique<utl::ThreadPool>(num_threads);
+  }
+  drawImageOverlays(image,
+                    width,
+                    height,
+                    0.0,
+                    static_cast<double>(height) * units_per_pixel,
+                    1.0 / units_per_pixel,
+                    &overlays,
+                    {},
+                    pool.get(),
+                    num_threads);
+  return image;
+}
+
+void TileGenerator::savePng(const std::string& filename,
+                            const std::vector<unsigned char>& rgba,
+                            const int width,
+                            const int height) const
+{
+  const std::vector<unsigned char> png_data = encodePng(rgba, width, height);
   if (png_data.empty()) {
     return;
   }
@@ -6828,7 +6884,7 @@ void TileGenerator::saveImage(const std::string& filename,
                    lodepng_error_text(save_error));
   }
   logger_->info(
-      utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
+      utl::WEB, 24, "Saved {}x{} image to {}", width, height, filename);
 }
 
 TileVisibility overlayOnlyVisibility()

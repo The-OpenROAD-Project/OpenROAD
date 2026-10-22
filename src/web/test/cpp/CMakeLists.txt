@@ -31,6 +31,7 @@ set(WEB_TESTS
   TestSaveDisplayControls
   TestScriptView
   TestClockTreeOverlay
+  TestClockTreeDiagram
   TestGif
   TestWebAssets
   TestHeatMap

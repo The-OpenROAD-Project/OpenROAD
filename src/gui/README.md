@@ -115,6 +115,10 @@ save_clocktree_image
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 
+With no Qt window open, the web viewer draws the same diagram, as a PNG
+file (a path with another extension gets `.png` added). A size not given is
+1024 pixels.
+
 ### Save Timing Histogram Image
 
 This command saves the screenshot of timing histogram given options

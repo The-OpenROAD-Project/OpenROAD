@@ -474,6 +474,12 @@ void ScriptView::selectClockviewerClock(const std::string& clock_name,
 {
   const std::scoped_lock lock(mutex_);
   watchBlockLocked();
+  selectClockviewerClockLocked(clock_name, depth);
+}
+
+void ScriptView::selectClockviewerClockLocked(const std::string& clock_name,
+                                              const std::optional<int> depth)
+{
   // As ClockWidget::selectClock: the viewer is shown, and populated on first
   // use with the first clock current, before the clock is looked for.
   const bool was_shown = clock_viewer_shown_;
@@ -501,6 +507,45 @@ void ScriptView::selectClockviewerClock(const std::string& clock_name,
   }
 }
 
+void ScriptView::saveClockTreeImage(const std::string& clock_name,
+                                    const std::string& filename,
+                                    const std::string& scene,
+                                    const std::optional<int> width_px,
+                                    const std::optional<int> height_px)
+{
+  std::shared_ptr<const ClockTree> tree;
+  {
+    const std::scoped_lock lock(mutex_);
+    watchBlockLocked();
+    const bool was_shown = clock_viewer_shown_;
+    sta::Scene* current = clockViewerSceneLocked();
+    if (!scene.empty() && (current == nullptr || scene != current->name())) {
+      if (sta_ == nullptr || sta_->findScene(scene) == nullptr) {
+        logger_->error(utl::WEB, 134, "Unable to find \"{}\" scene", scene);
+      }
+      // Another scene: ClockWidget populates again, for that scene.
+      clock_viewer_scene_ = scene;
+      clock_viewer_populated_ = false;
+    }
+    selectClockviewerClockLocked(clock_name, std::nullopt);
+    tree = buildClockTreeLocked(clock_viewer_clock_);
+    if (!was_shown) {
+      clock_viewer_shown_ = false;
+      showClockTreesRowLocked(false);
+    }
+  }
+  if (tree == nullptr || !clock_tree_image_writer_) {
+    return;
+  }
+  // ClockWidget sizes the image as the viewer is; a script view has no
+  // viewer, so a size not given is save_image -web's default width.
+  constexpr int kDefaultSize = 1024;
+  clock_tree_image_writer_(*tree,
+                           filename,
+                           width_px.value_or(kDefaultSize),
+                           height_px.value_or(kDefaultSize));
+}
+
 void ScriptView::showClockTreesRowLocked(const bool show)
 {
   tree_.removeLeaf(kClockTreesControl);
@@ -512,10 +557,13 @@ void ScriptView::showClockTreesRowLocked(const bool show)
 
 sta::Scene* ScriptView::clockViewerSceneLocked() const
 {
-  if (sta_ == nullptr || sta_->scenes().empty()) {
+  if (sta_ == nullptr) {
     return nullptr;
   }
-  return sta_->scenes().front();
+  if (sta::Scene* scene = sta_->findScene(clock_viewer_scene_)) {
+    return scene;
+  }
+  return sta_->scenes().empty() ? nullptr : sta_->scenes().front();
 }
 
 std::vector<std::string> ScriptView::clockNamesLocked() const

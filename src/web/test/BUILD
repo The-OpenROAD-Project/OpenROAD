@@ -531,6 +531,30 @@ cc_test(
 )
 
 cc_test(
+    name = "clock_tree_diagram_test",
+    srcs = [
+        "cpp/TestClockTreeDiagram.cpp",
+        "cpp/clock_tree_fixture.h",
+    ],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "script_view_test",
     srcs = ["cpp/TestScriptView.cpp"],
     data = [

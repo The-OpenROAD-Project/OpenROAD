@@ -52,13 +52,15 @@ set worst_path [make_result_file save_images_worst_path.png]
 set cleared [make_result_file save_images_cleared_path.png]
 set clock_tree [make_result_file save_images_clock_tree.png]
 set clock_hidden [make_result_file save_images_clock_hidden.png]
+set clock_diagram [make_result_file save_images_clock_diagram.png]
 set webp [make_result_file save_images_ext.webp]
 set escaped [make_result_file save_images_escaped_key.png]
 set unescaped [make_result_file save_images_unescaped_key.png]
 # results/ survives between runs, so a run that writes nothing must not find
 # last run's files.
 foreach path [list $all $routing $placement $heat_map $worst_path $cleared \
-  $clock_tree $clock_hidden $webp.png $escaped $unescaped] {
+  $clock_tree $clock_hidden $clock_diagram $webp.png \
+  $escaped $unescaped] {
   file delete $path
 }
 
@@ -94,6 +96,7 @@ gui::clear_timing_path
 save_image -web -width 400 $cleared
 
 gui::show_widget "Clock Tree Viewer"
+save_clocktree_image -clock core_clock -width 300 -height 200 $clock_diagram
 gui::select_clockviewer_clock core_clock
 save_image -web -width 400 $clock_tree
 gui::hide_widget "Clock Tree Viewer"
@@ -108,7 +111,7 @@ save_image -web -width 100 -display_option {{Nets/\Power} false} $escaped
 save_image -web -width 100 -display_option {{Nets/Power} false} $unescaped
 
 foreach path [list $all $routing $placement $heat_map $worst_path $cleared \
-  $clock_tree $clock_hidden $webp.png] {
+  $clock_tree $clock_hidden $clock_diagram $webp.png] {
   if { ![file exists $path] } {
     fail "[file tail $path] was not written"
   }
@@ -119,6 +122,9 @@ if { [file exists $webp] } {
 lassign [png_size $all] width height
 if { $width != 400 } {
   fail "asked for 400px wide, got $width"
+}
+if { [png_size $clock_diagram] ne {300 200} } {
+  fail "asked for a 300x200 clock tree, got [png_size $clock_diagram]"
 }
 if { [read_file_bytes $all] eq [read_file_bytes $routing] } {
   fail "hiding the power and ground nets did not change the image"

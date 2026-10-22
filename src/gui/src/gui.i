@@ -326,7 +326,7 @@ void save_image(const char* filename, double xlo, double ylo, double xhi, double
 
 void save_clocktree_image(const char* filename, const char* clock_name, const char* scene = "", int width_px = 0, int height_px = 0)
 {
-  if (!check_gui("save_clocktree_image")) {
+  if (!check_gui("save_clocktree_image", true)) {
     return;
   }
   auto gui = web::Gui::get();
