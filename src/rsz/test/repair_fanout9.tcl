@@ -34,3 +34,9 @@ set_dont_use $dont_use
 estimate_parasitics -placement
 
 repair_design
+puts "fanout1 cell: [get_property [get_cells fanout1] ref_name]"
+
+# Verify fully_rebuffer preserves the default fanout backstop when recovering buffers.
+create_clock -period 10 clk1
+rsz::fully_rebuffer NULL
+repair_design
