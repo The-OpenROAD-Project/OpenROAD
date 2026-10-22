@@ -2867,7 +2867,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3 && timing_tree; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(
@@ -2932,7 +2932,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
           = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
     }
 
-    BnetPtr area_opt_tree = timing_tree;
+    BnetPtr area_opt_tree = std::move(timing_tree);
     {
       utl::DebugScopedTimer timer(ra_runtime);
       for (int i = 0; i < 5 && area_opt_tree; i++) {
