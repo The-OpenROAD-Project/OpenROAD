@@ -170,8 +170,12 @@ void ScriptView::setDisplayControlColor(const std::string& name,
 {
   const std::scoped_lock lock(mutex_);
   refreshLocked();
-  bool found = !matchLocked(tree_, name, /*selectable=*/false).empty();
-  bool ignored = false;
+  const std::vector<Match> matches
+      = matchLocked(tree_, name, /*selectable=*/false);
+  bool found = !matches.empty();
+  // A renderer's control has no color here.
+  bool ignored = std::ranges::any_of(
+      matches, [](const Match& match) { return match.leaf == nullptr; });
   for (const auto& [path, leaf] : tree_.leaves()) {
     if (!DisplayControlTree::matches(name, path)) {
       continue;
@@ -267,10 +271,20 @@ ScriptView::Frame ScriptView::frame(
                      "{} is neither a display control nor a display option.",
                      key);
     }
+    bool renderer_matched = false;
     for (const Match& match : matches) {
       if (match.leaf != nullptr) {
         match.leaf->visible = value;
+      } else {
+        renderer_matched = true;
       }
+    }
+    if (renderer_matched) {
+      logger_->warn(utl::WEB,
+                    135,
+                    "Renderer controls matching {} cannot be set for one "
+                    "image; ignoring them.",
+                    key);
     }
   }
 
