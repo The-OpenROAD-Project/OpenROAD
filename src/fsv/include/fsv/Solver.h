@@ -15,6 +15,8 @@ namespace fsv {
 
 class CubeGreens;
 class LayeredCubeGreens;
+class LayeredSquareGreens;
+class SquareGreens;
 class WorkerPool;
 
 // Settings fixed for the life of a Solver. Results depend only on these, the
@@ -58,8 +60,9 @@ struct SolveOptions
   int64_t hop_guard = 1000000;
 };
 
-// One row of the Maxwell capacitance matrix, in fF. cap[master] is the total
-// capacitance; cap[j] for j != master is minus the coupling to net j.
+// One row of the Maxwell capacitance matrix, in fF (fF/µm for a cross-section
+// scene). cap[master] is the total capacitance; cap[j] for j != master is
+// minus the coupling to net j.
 struct CapRow
 {
   int master = -1;
@@ -94,12 +97,18 @@ class Solver
   // Two-dielectric tables for one permittivity ratio, by interface position.
   const std::vector<std::shared_ptr<const LayeredCubeGreens>>& layeredTables(
       double ratio);
+  // The same for squares, for cross sections.
+  const std::vector<std::shared_ptr<const LayeredSquareGreens>>&
+  layeredSquareTables(double ratio);
 
   SolverOptions options_;
   std::shared_ptr<const CubeGreens> greens_;
+  std::shared_ptr<const SquareGreens> square_greens_;
   // Held so that the tables are reused across solves.
   std::map<double, std::vector<std::shared_ptr<const LayeredCubeGreens>>>
       layered_;
+  std::map<double, std::vector<std::shared_ptr<const LayeredSquareGreens>>>
+      layered_squares_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
   // Guards layered_ while walks build tables.

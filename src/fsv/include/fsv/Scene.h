@@ -14,6 +14,11 @@ namespace fsv {
 class Dielectric;
 class SpatialIndex;
 
+// Selects a cross-section scene (see Scene).
+struct CrossSection
+{
+};
+
 // A geometry prepared for solving: its nearest-conductor index and the
 // dielectric. Build one per geometry and reuse it for every master. The
 // geometry must outlive the scene and must not change while it exists.
@@ -28,12 +33,20 @@ class Scene
   // not positive, if the dielectrics are not in strictly increasing order of
   // their tops, or if shells of different conformal dielectrics overlap.
   Scene(const Geometry& geometry, const Stack& stack);
+  // Cross sections in the y-z plane: every box is infinitely long in x, its
+  // x extent ignored, and solves give capacitance per unit length (fF/µm).
+  // Conformal dielectrics grow on the sides only (there are no line ends).
+  Scene(const Geometry& geometry, double eps_r, CrossSection);
+  Scene(const Geometry& geometry, const Stack& stack, CrossSection);
   ~Scene();
 
   Scene(const Scene&) = delete;
   Scene& operator=(const Scene&) = delete;
 
+  // The geometry as solved: for a cross section, a copy whose boxes are
+  // stretched along x. Nets and boxes keep their indices.
   const Geometry& geometry() const { return geometry_; }
+  bool crossSection() const { return stretched_ != nullptr; }
   // Relative permittivity of the planar stack at height z, away from
   // conformal dielectrics; on an interface, the one above.
   double epsAt(double z) const;
@@ -45,6 +58,12 @@ class Scene
   const SpatialIndex& index() const { return *index_; }
 
  private:
+  Scene(std::unique_ptr<Geometry> stretched,
+        const Geometry& geometry,
+        double eps_r);
+  void addStack(const Stack& stack);
+
+  std::unique_ptr<Geometry> stretched_;  // for a cross section
   const Geometry& geometry_;
   std::unique_ptr<Dielectric> dielectric_;
   double min_dimension_;

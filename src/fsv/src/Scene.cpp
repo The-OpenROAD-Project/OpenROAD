@@ -25,6 +25,32 @@ namespace {
 // A box's z extent matches a conductor layer's within this (µm).
 constexpr double kLayerTolerance = 1e-9;
 
+// Half the length of the boxes of a cross section along x (µm): far enough
+// that no cube query ever sees their ends.
+constexpr double kCrossSectionHalfLength = 1e6;
+
+std::unique_ptr<Geometry> stretched(const Geometry& geometry)
+{
+  auto copy = std::make_unique<Geometry>();
+  for (int net = 0; net < geometry.netCount(); net++) {
+    copy->addNet(geometry.netName(net));
+  }
+  const std::vector<Box>& boxes = geometry.boxes();
+  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
+    Box box = boxes[b];
+    box.lo[0] = -kCrossSectionHalfLength;
+    box.hi[0] = kCrossSectionHalfLength;
+    copy->addBox(geometry.boxNet(b), box);
+  }
+  return copy;
+}
+
+double baseEps(const Stack& stack)
+{
+  return stack.dielectrics.empty() ? stack.background_eps
+                                   : stack.dielectrics.front().eps;
+}
+
 bool overlaps(const Box& a, const Box& b)
 {
   for (int k = 0; k < 3; k++) {
@@ -76,14 +102,39 @@ bool anyLeft(const Box& box,
 }  // namespace
 
 Scene::Scene(const Geometry& geometry, const double eps_r)
-    : geometry_(geometry),
+    : Scene(nullptr, geometry, eps_r)
+{
+}
+
+Scene::Scene(const Geometry& geometry, const Stack& stack)
+    : Scene(nullptr, geometry, baseEps(stack))
+{
+  addStack(stack);
+}
+
+Scene::Scene(const Geometry& geometry, const double eps_r, CrossSection)
+    : Scene(stretched(geometry), geometry, eps_r)
+{
+}
+
+Scene::Scene(const Geometry& geometry, const Stack& stack, CrossSection)
+    : Scene(stretched(geometry), geometry, baseEps(stack))
+{
+  addStack(stack);
+}
+
+Scene::Scene(std::unique_ptr<Geometry> stretched,
+             const Geometry& geometry,
+             const double eps_r)
+    : stretched_(std::move(stretched)),
+      geometry_(stretched_ ? *stretched_ : geometry),
       min_dimension_(std::numeric_limits<double>::max()),
-      index_(std::make_unique<SpatialIndex>(geometry.boxes()))
+      index_(std::make_unique<SpatialIndex>(geometry_.boxes()))
 {
   if (!(eps_r > 0) || !std::isfinite(eps_r)) {
     throw std::invalid_argument("fsv: permittivity must be positive");
   }
-  for (const Box& b : geometry.boxes()) {
+  for (const Box& b : geometry_.boxes()) {
     for (int k = 0; k < 3; k++) {
       min_dimension_ = std::min(min_dimension_, b.hi[k] - b.lo[k]);
     }
@@ -92,10 +143,7 @@ Scene::Scene(const Geometry& geometry, const double eps_r)
       eps_r, std::vector<Stack::PlanarInterface>{}, std::vector<Shell>{});
 }
 
-Scene::Scene(const Geometry& geometry, const Stack& stack)
-    : Scene(geometry,
-            stack.dielectrics.empty() ? stack.background_eps
-                                      : stack.dielectrics.front().eps)
+void Scene::addStack(const Stack& stack)
 {
   auto check_eps = [](const double eps, const std::string& what) {
     if (!(eps > 0) || !std::isfinite(eps)) {
@@ -132,7 +180,7 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
   std::map<std::pair<int, int>, int> groups;
   std::vector<std::string> material_names;
   std::vector<Shell> shells;
-  const std::vector<Box>& boxes = geometry.boxes();
+  const std::vector<Box>& boxes = geometry_.boxes();
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
     const Box& box = boxes[b];
     for (int layer = 0; layer < static_cast<int>(stack.conductors.size());
@@ -143,7 +191,7 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
         continue;
       }
       const int group = groups
-                            .try_emplace({geometry.boxNet(b), layer},
+                            .try_emplace({geometry_.boxNet(b), layer},
                                          static_cast<int>(groups.size()))
                             .first->second;
       Box inner = box;
@@ -211,10 +259,7 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
     }
   }
   dielectric_ = std::make_unique<Dielectric>(
-      stack.dielectrics.empty() ? stack.background_eps
-                                : stack.dielectrics.front().eps,
-      stack.planarInterfaces(),
-      std::move(shells));
+      baseEps(stack), stack.planarInterfaces(), std::move(shells));
 }
 
 Scene::~Scene() = default;

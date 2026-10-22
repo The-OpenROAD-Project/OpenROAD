@@ -480,6 +480,97 @@ TEST(Solver, ConformalWithoutPlanarInterfaces)
             uniform.total() + 4 * std::hypot(a.sigma[0], uniform.sigma[0]));
 }
 
+// The etch-stop wires drawn with the given length along x.
+Geometry wiresAcrossEtchStop(const double length)
+{
+  Geometry geometry;
+  geometry.addNet("lower");
+  geometry.addNet("upper");
+  geometry.addBox(0, {{0, 0, 0.5}, {length, 0.2, 0.7}});
+  geometry.addBox(1, {{0, 0.3, 1.1}, {length, 0.5, 1.3}});
+  return geometry;
+}
+
+// A cross section ignores the boxes' x extents: any extent gives the same
+// walks.
+TEST(Solver, CrossSectionIgnoresX)
+{
+  const Stack stack = conformalStack({{"C", 0.05, 0.05, 7.0}});
+  SolveOptions options;
+  options.min_walks = options.max_walks = 32768;
+  Solver solver({.threads = 4});
+  const Geometry short_wires = wiresAcrossEtchStop(1.0);
+  const Geometry long_wires = wiresAcrossEtchStop(50.0);
+  const CapRow a
+      = solver.solve(Scene(short_wires, stack, CrossSection{}), 0, options);
+  const CapRow b
+      = solver.solve(Scene(long_wires, stack, CrossSection{}), 0, options);
+  EXPECT_EQ(a.cap, b.cap);
+  EXPECT_EQ(a.ground, b.ground);
+}
+
+// A cross section's Maxwell matrix is symmetric, and its results do not
+// depend on the thread count.
+TEST(Solver, CrossSectionReciprocityAndDeterminism)
+{
+  const Geometry geometry = wiresAcrossEtchStop();
+  const Scene scene(
+      geometry,
+      conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}),
+      CrossSection{});
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  const CapRow r0 = solver.solve(scene, 0, options);
+  const CapRow r1 = solver.solve(scene, 1, options);
+  EXPECT_NEAR(r0.cap[1], r1.cap[0], 4 * std::hypot(r0.sigma[1], r1.sigma[0]));
+
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 32768;
+  const CapRow one = Solver({.threads = 1}).solve(scene, 0, fixed);
+  const CapRow many = Solver({.threads = 6}).solve(scene, 0, fixed);
+  EXPECT_EQ(one.cap, many.cap);
+  EXPECT_EQ(one.hops, many.hops);
+}
+
+// The 2D mode agrees with long-line 3D per unit length: the difference of
+// 3D solves on 10 and 30 um wires cancels their end effects. Within 0.5%
+// plus three standard errors.
+TEST(Solver, CrossSectionMatchesLongLine3D)
+{
+  const Stack stack = conformalStack({{"C", 0.05, 0.05, 7.0}});
+  const Geometry ten = wiresAcrossEtchStop(10.0);
+  const Geometry thirty = wiresAcrossEtchStop(30.0);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  options.coupling_threshold = 0.05;
+  Solver solver({.threads = 8});
+  const CapRow cross
+      = solver.solve(Scene(ten, stack, CrossSection{}), 0, options);
+  const CapRow a = solver.solve(Scene(ten, stack), 0, options);
+  const CapRow b = solver.solve(Scene(thirty, stack), 0, options);
+  const auto per_length
+      = [&](const double va, const double vb) { return (vb - va) / 20; };
+  const auto sigma = [&](const double sa, const double sb, const double s2) {
+    return std::hypot(std::hypot(sa, sb) / 20, s2);
+  };
+  EXPECT_NEAR(cross.total(),
+              per_length(a.total(), b.total()),
+              0.005 * cross.total()
+                  + 3 * sigma(a.sigma[0], b.sigma[0], cross.sigma[0]));
+  EXPECT_NEAR(cross.cap[1],
+              per_length(a.cap[1], b.cap[1]),
+              0.005 * std::abs(cross.cap[1])
+                  + 3 * sigma(a.sigma[1], b.sigma[1], cross.sigma[1]));
+  EXPECT_NEAR(
+      cross.ground,
+      per_length(a.ground, b.ground),
+      0.005 * std::abs(cross.ground)
+          + 3 * sigma(a.ground_sigma, b.ground_sigma, cross.ground_sigma));
+}
+
 // Shells of the same conformal dielectric merge; shells of different ones
 // may not overlap.
 TEST(Solver, RejectsOverlappingConformals)

@@ -6,7 +6,7 @@
 // src/fsv/test/golden:
 // - cross sections, with planar and conformal dielectrics, against a 2D
 //   finite-volume solution (cross_section.txt, from fv2d_golden.py),
-//   accurate to about 1e-3;
+//   accurate to about 1e-3: in the 2D mode, and some as long lines in 3D;
 // - 3D structures (a crossing, and line ends and a crossing with conformal
 //   dielectrics) against a 3D finite-volume solution (box_3d.txt, from
 //   fv3d_golden.py), accurate to about 2e-3.
@@ -176,18 +176,67 @@ struct CrossSectionCase
   std::vector<std::string> masters;
 };
 
-class CrossSection : public testing::TestWithParam<CrossSectionCase>
+const auto kCaseName
+    = [](const testing::TestParamInfo<CrossSectionCase>& info) {
+        return info.param.structure;
+      };
+
+class TwoD : public testing::TestWithParam<CrossSectionCase>
 {
 };
 
-// The difference of two wire lengths cancels the end effects and leaves the
-// per-unit-length matrix, provided each wire's two ends do not interact: at
-// 5 um they still do for the upper etch_stop_pair wire (+0.8% on its
-// ground). Totals within 0.3% and couplings of at least 5% of the total
-// within 0.5%, each plus three standard errors: the tables' panel
-// discretization is about 1e-3. Masters are listed per structure; three_wires
+// The 2D mode on each cross section: totals within 0.3% and couplings of at
+// least 5% of the total within 0.5%, each plus three standard errors; the
+// tables' panel discretization is about 1e-3.
+TEST_P(TwoD, MatchesFiniteVolume)
+{
+  const std::string& name = GetParam().structure;
+  const Structure s = readStructure(name);
+  const Geometry& geometry = s.geometry;
+  const Golden golden = readGolden("cross_section.txt");
+  const Scene scene(geometry, s.stack, CrossSection{});
+  Solver solver({.threads = 8});
+  const SolveOptions options = solveOptions(1e-3);
+  for (const std::string& m : GetParam().masters) {
+    const int master = netIndex(geometry, m);
+    const CapRow row = solver.solve(scene, master, options);
+    const double total = golden.at({name, m, m});
+    for (int net = 0; net <= geometry.netCount(); net++) {
+      const std::string n = netName(geometry, net);
+      const double expected = golden.at({name, m, n});
+      if (net != master && std::abs(expected) < 0.05 * total) {
+        continue;
+      }
+      const Entry e = entry(row, net);
+      const double tol = net == master ? 3e-3 : 5e-3;
+      EXPECT_NEAR(e.value, expected, tol * std::abs(expected) + 3 * e.sigma)
+          << name << " " << m << " to " << n;
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Planar,
+    TwoD,
+    testing::Values(CrossSectionCase{"etch_stop_pair", {"lower", "upper"}},
+                    CrossSectionCase{"three_wires", {"left", "middle"}},
+                    CrossSectionCase{"conformal_pair", {"a"}},
+                    CrossSectionCase{"nested_conformal", {"a"}},
+                    CrossSectionCase{"merged_conformal", {"a", "b"}},
+                    CrossSectionCase{"sky130_met1_pair", {"a"}}),
+    kCaseName);
+
+class LongLine : public testing::TestWithParam<CrossSectionCase>
+{
+};
+
+// The 3D solver per unit length on the same cross sections: the difference
+// of two wire lengths cancels the end effects and leaves the per-unit-length
+// matrix, provided each wire's two ends do not interact: at 5 um they still
+// do for the upper etch_stop_pair wire (+0.8% on its ground). The same
+// tolerances as TwoD. Masters are listed per structure; three_wires
 // skips "right", the mirror image of "left".
-TEST_P(CrossSection, MatchesFiniteVolume)
+TEST_P(LongLine, MatchesFiniteVolume)
 {
   constexpr double kShort = 10;
   constexpr double kLong = 30;
@@ -224,16 +273,11 @@ TEST_P(CrossSection, MatchesFiniteVolume)
 
 INSTANTIATE_TEST_SUITE_P(
     Planar,
-    CrossSection,
+    LongLine,
     testing::Values(CrossSectionCase{"etch_stop_pair", {"lower", "upper"}},
                     CrossSectionCase{"three_wires", {"left", "middle"}},
-                    CrossSectionCase{"conformal_pair", {"a"}},
-                    CrossSectionCase{"nested_conformal", {"a"}},
-                    CrossSectionCase{"merged_conformal", {"a", "b"}},
                     CrossSectionCase{"sky130_met1_pair", {"a"}}),
-    [](const testing::TestParamInfo<CrossSectionCase>& info) {
-      return info.param.structure;
-    });
+    kCaseName);
 
 class ThreeD : public testing::TestWithParam<std::string>
 {
