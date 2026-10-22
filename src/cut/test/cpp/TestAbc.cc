@@ -42,6 +42,13 @@
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 
+// Without explicit main the main from ABC is picked over gtest's one
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+
 // Headers have duplicate declarations so we include
 // a forward one to get at this function without angering
 // gcc.
