@@ -6,7 +6,8 @@
 Solves the 3D Laplace equation by finite volumes: a ground plane at z = 0,
 planar layers, box conductors and conformal dielectrics, in the structure
 format of fv2d_golden.py, whose conformal rules this applies in 3D (shells
-grow on all four sides, line ends included). Needs numpy, scipy and pyamg,
+grow on all four sides, line ends included, and from the union of a net's
+boxes on a layer). Needs numpy, scipy and pyamg,
 for example in a virtual environment:
 
   python3 -m venv venv && venv/bin/pip install numpy scipy pyamg
@@ -56,17 +57,21 @@ def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
 
 
 def shells(boxes, conformals):
-    """(name, eps, outer, inner) of every conformal shell, innermost first
-    per box; outer and inner are (x0, y0, z0, x1, y1, z1)."""
+    """(name, eps, outer, inner, group, depth) of every conformal shell,
+    innermost first per box, as in fv2d_golden.shells; outer and inner are
+    (x0, y0, z0, x1, y1, z1)."""
     result = []
-    for _, b in boxes:
+    groups = {}
+    for net, b in boxes:
         inner = tuple(b)
         side = top = 0.0
+        depth = 0
         for name, bottom, ztop, sw, tw, eps in conformals:
             if abs(b[2] - bottom) > 1e-9 or abs(b[5] - ztop) > 1e-9:
                 continue
             side += sw
             top += tw
+            depth += 1
             outer = (
                 b[0] - side,
                 b[1] - side,
@@ -75,7 +80,8 @@ def shells(boxes, conformals):
                 b[4] + side,
                 b[5] + top,
             )
-            result.append((name, eps, outer, inner))
+            group = groups.setdefault((net, bottom, ztop), len(groups))
+            result.append((name, eps, outer, inner, group, depth))
             inner = outer
     return result
 
@@ -118,14 +124,24 @@ def solve(background, layers, boxes, conformals, h, far=FAR):
     free = owner < 0
     shell_of = np.full(shape, -1, dtype=np.int32)
     materials = list(dict.fromkeys(s[0] for s in shell_list))
-    for name, shell_eps, outer, inner in shell_list:
-        inside = within(outer) & ~within(inner) & free
+    # The union rule of fv2d_golden.Grid: shallowest first, a cell keeps the
+    # first shell that claims it when the next comes from the same group or
+    # is the same conformal dielectric; another one from another group
+    # overlaps.
+    group_of = np.full(shape, -1, dtype=np.int32)
+    for name, shell_eps, outer, _, group, _ in sorted(
+        shell_list, key=lambda shell: shell[5]
+    ):
+        inside = within(outer) & free
         m = materials.index(name)
-        if (inside & (shell_of >= 0) & (shell_of != m)).any():
+        claimed = inside & (shell_of >= 0)
+        if (claimed & (shell_of != m) & (group_of != group)).any():
             raise ValueError(f"conformal dielectric {name} overlaps another")
-        shell_of[inside] = m
-        eps[inside] = shell_eps
-    del X, Y, Z, shell_of
+        new = inside & (shell_of < 0)
+        shell_of[new] = m
+        group_of[new] = group
+        eps[new] = shell_eps
+    del X, Y, Z, shell_of, group_of
 
     index = -np.ones(shape, dtype=np.int64)
     index[free] = np.arange(int(free.sum()))

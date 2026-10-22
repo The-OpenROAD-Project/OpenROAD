@@ -29,9 +29,11 @@ independently of fsv: a line "conformal <name> <bottom> <top> <SW_T> <TW_T>
 <eps>" wraps every box whose z extent is [bottom, top]; lines for the same
 extent nest outward in order. Conformal k of a box is the box grown by the
 sum of the first k SW_T on its sides and the first k TW_T on top, with its
-bottom kept. Conductors cut into conformal dielectrics, conformal dielectrics
-replace the planar layers they cross, shells of the same conformal
-dielectric merge, and shells of different ones must not overlap.
+bottom kept. The boxes of one net on one layer grow their shells from their
+union: a point takes the shallowest conformal any of them puts there.
+Conductors cut into conformal dielectrics, conformal dielectrics replace the
+planar layers they cross, shells of the same conformal dielectric merge, and
+otherwise shells of different ones must not overlap.
 """
 
 import argparse
@@ -73,20 +75,27 @@ def read_structure(path):
 
 
 def shells(boxes, conformals):
-    """(name, eps, outer, inner) of every conformal shell, innermost first
-    per box. outer and inner are (y0, z0, y1, z1): the shell is the outer
-    rectangle minus the inner one (the box or the next shell in)."""
+    """(name, eps, outer, inner, group, depth) of every conformal shell,
+    innermost first per box. outer and inner are (y0, z0, y1, z1): the box
+    grown by this conformal and those inside it, and by those inside it only.
+    The boxes of one net on one layer form a group (a number), whose shells
+    grow from the union of its boxes; depth is 1 for the innermost
+    conformal."""
     result = []
-    for _, b in boxes:
+    groups = {}
+    for net, b in boxes:
         inner = (b[1], b[2], b[4], b[5])
         side = top = 0.0
+        depth = 0
         for name, bottom, ztop, sw, tw, eps in conformals:
             if abs(b[2] - bottom) > 1e-9 or abs(b[5] - ztop) > 1e-9:
                 continue
             side += sw
             top += tw
+            depth += 1
             outer = (b[1] - side, b[2], b[4] + side, b[5] + top)
-            result.append((name, eps, outer, inner))
+            group = groups.setdefault((net, bottom, ztop), len(groups))
+            result.append((name, eps, outer, inner, group, depth))
             inner = outer
     return result
 
@@ -165,14 +174,23 @@ class Grid:
                 & (zc[None, :] < r[3])
             )
 
-        for name, shell_eps, outer, inner in self.shells:
-            inside = within(outer) & ~within(inner) & free
-            clash = inside & (self.shell_of != "") & (self.shell_of != name)
+        # Shallowest first: a cell keeps the first shell that claims it when
+        # the next comes from the same group (the union rule) or is the same
+        # conformal dielectric; another one from another group overlaps.
+        group_of = np.full(shape, -1, dtype=int)
+        for name, shell_eps, outer, _, group, _ in sorted(
+            self.shells, key=lambda shell: shell[5]
+        ):
+            inside = within(outer) & free
+            claimed = inside & (self.shell_of != "")
+            clash = claimed & (self.shell_of != name) & (group_of != group)
             if clash.any():
                 other = self.shell_of[clash][0]
                 raise ValueError(f"conformal dielectrics {other} and {name} overlap")
-            self.shell_of[inside] = name
-            self.eps[inside] = shell_eps
+            new = inside & (self.shell_of == "")
+            self.shell_of[new] = name
+            group_of[new] = group
+            self.eps[new] = shell_eps
 
 
 def solve(background, layers, boxes, h, conformals=()):
@@ -320,7 +338,7 @@ def plot(path, out_dir, h):
                     fontsize=9,
                     family="monospace",
                 )
-            for name, shell_eps, outer, _ in grid.shells:
+            for name, shell_eps, outer, *_ in grid.shells:
                 ax.add_patch(
                     mpatches.Rectangle(
                         (outer[0], outer[1]),
