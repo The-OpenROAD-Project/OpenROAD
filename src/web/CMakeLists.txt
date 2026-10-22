@@ -99,6 +99,7 @@ target_sources(web
     src/color.cpp
     src/display_control_tree.cpp
     src/hierarchy_report.cpp
+    src/image_overlays.cpp
     src/renderer_controls.cpp
     src/report_html.cpp
     src/request_handler.cpp

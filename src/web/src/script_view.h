@@ -4,18 +4,41 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "display_control_tree.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "odb/dbChipCallBackObj.h"
 #include "renderer_controls.h"
 #include "tile_generator.h"
 #include "web/core.h"
 
 namespace odb {
+class dbBlock;
+class dbBlockage;
+class dbBPin;
+class dbBTerm;
+class dbChip;
 class dbDatabase;
+class dbInst;
+class dbITerm;
+class dbMarker;
+class dbMarkerCategory;
+class dbModBTerm;
+class dbModInst;
+class dbModITerm;
+class dbModNet;
+class dbModule;
+class dbNet;
+class dbObstruction;
+class dbRegion;
+class dbRow;
+class dbSWire;
+class dbWire;
 }  // namespace odb
 
 namespace utl {
@@ -52,6 +75,15 @@ class ScriptView : public GuiBackend
   bool checkRendererControl(const std::string& path) override;
   void setRendererControl(const std::string& path, bool value) override;
 
+  // The selection and highlight groups, by MainWindow's rules.
+  void setSelected(const Selected& selection) override;
+  void addSelected(const Selected& selection) override;
+  void addSelected(const SelectionSet& selection, bool find_in_cts) override;
+  void removeSelectedByType(const std::string& type) override;
+  void addHighlighted(const SelectionSet& selection,
+                      int highlight_group) override;
+  void clearHighlighted(int highlight_group) override;
+
   // Shared with the web viewer, so the browser's renderer toggles and Tcl's
   // agree.
   RendererControls& rendererControls() { return renderer_controls_; }
@@ -62,6 +94,9 @@ class ScriptView : public GuiBackend
     TileVisibility vis;
     // Set only once a script has chosen Misc/Background's color.
     std::optional<Painter::Color> background;
+    // Empty when Misc/Highlight selected is off.
+    SelectionSet selection;
+    HighlightSet highlights;
   };
   // The current controls with `overrides` (TileVisibility JSON keys or
   // display-control patterns) on top, leaving the controls as they were.
@@ -82,6 +117,89 @@ class ScriptView : public GuiBackend
                                  const std::string& pattern,
                                  bool selectable);
   bool check(const std::string& name, bool selectable);
+  // A destroyed object would leave a dangling Selected, so destroying anything
+  // that can be selected drops the selection and the highlights.
+  class BlockWatcher : public odb::dbBlockCallBackObj
+  {
+   public:
+    explicit BlockWatcher(ScriptView* view) : view_(view) {}
+    void inDbInstDestroy(odb::dbInst* /* inst */) override { view_->forget(); }
+    void inDbModInstDestroy(odb::dbModInst* /* inst */) override
+    {
+      view_->forget();
+    }
+    void inDbModuleDestroy(odb::dbModule* /* module */) override
+    {
+      view_->forget();
+    }
+    void inDbNetDestroy(odb::dbNet* /* net */) override { view_->forget(); }
+    void inDbModNetDestroy(odb::dbModNet* /* net */) override
+    {
+      view_->forget();
+    }
+    void inDbITermDestroy(odb::dbITerm* /* iterm */) override
+    {
+      view_->forget();
+    }
+    void inDbModITermDestroy(odb::dbModITerm* /* iterm */) override
+    {
+      view_->forget();
+    }
+    void inDbBTermDestroy(odb::dbBTerm* /* bterm */) override
+    {
+      view_->forget();
+    }
+    void inDbModBTermDestroy(odb::dbModBTerm* /* bterm */) override
+    {
+      view_->forget();
+    }
+    void inDbBPinDestroy(odb::dbBPin* /* pin */) override { view_->forget(); }
+    void inDbBlockageDestroy(odb::dbBlockage* /* blockage */) override
+    {
+      view_->forget();
+    }
+    void inDbObstructionDestroy(odb::dbObstruction* /* obs */) override
+    {
+      view_->forget();
+    }
+    void inDbRegionDestroy(odb::dbRegion* /* region */) override
+    {
+      view_->forget();
+    }
+    void inDbRowDestroy(odb::dbRow* /* row */) override { view_->forget(); }
+    void inDbWireDestroy(odb::dbWire* /* wire */) override { view_->forget(); }
+    void inDbSWireDestroy(odb::dbSWire* /* wire */) override
+    {
+      view_->forget();
+    }
+
+   private:
+    ScriptView* view_;
+  };
+  // The markers live on the chip, not on its block.
+  class MarkerWatcher : public odb::dbChipCallBackObj
+  {
+   public:
+    explicit MarkerWatcher(ScriptView* view) : view_(view) {}
+    void inDbMarkerDestroy(odb::dbMarker* /* marker */) override
+    {
+      view_->forget();
+    }
+    void inDbMarkerCategoryDestroy(
+        odb::dbMarkerCategory* /* category */) override
+    {
+      view_->forget();
+    }
+
+   private:
+    ScriptView* view_;
+  };
+
+  // Watches every chip and its block, dropping a selection made in another
+  // design.
+  void watchBlockLocked();
+  void forget();
+  void forgetLocked();
   void set(const std::string& name, bool selectable, bool value);
 
   odb::dbDatabase* db_;
@@ -91,6 +209,12 @@ class ScriptView : public GuiBackend
   DisplayControlTree tree_;
   RendererControls renderer_controls_;
   std::optional<Painter::Color> background_;
+  SelectionSet selection_;
+  HighlightSet highlights_;
+  std::vector<odb::dbChip*> watched_chips_;
+  std::vector<odb::dbBlock*> watched_;
+  std::vector<std::unique_ptr<MarkerWatcher>> marker_watchers_;
+  std::vector<std::unique_ptr<BlockWatcher>> watchers_;
 
   struct Saved
   {

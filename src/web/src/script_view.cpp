@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -277,7 +278,133 @@ ScriptView::Frame ScriptView::frame(
   tree.apply(frame.vis);
   frame.vis.setFlags(flags);
   frame.background = background_;
+  watchBlockLocked();
+  const DisplayControlTree::Leaf* highlight_selected
+      = tree.find("Misc/Highlight selected");
+  if (highlight_selected != nullptr
+      && highlight_selected->visible.value_or(false)) {
+    frame.selection = selection_;
+  }
+  frame.highlights = highlights_;
   return frame;
+}
+
+void ScriptView::watchBlockLocked()
+{
+  // Every chip's block: in 3DBlox what is selected can sit in any chiplet.
+  std::vector<odb::dbChip*> chips;
+  std::vector<odb::dbBlock*> blocks;
+  if (db_ != nullptr) {
+    for (odb::dbChip* chip : db_->getChips()) {
+      chips.push_back(chip);
+      if (odb::dbBlock* block = chip->getBlock()) {
+        blocks.push_back(block);
+      }
+    }
+  }
+  auto owned = [](const auto& watcher) { return watcher->hasOwner(); };
+  if (chips == watched_chips_ && blocks == watched_
+      && std::ranges::all_of(marker_watchers_, owned)
+      && std::ranges::all_of(watchers_, owned)) {
+    return;
+  }
+  // Another design, or a watched one destroyed: nothing selected is left.
+  forgetLocked();
+  marker_watchers_.clear();
+  watchers_.clear();
+  watched_chips_ = chips;
+  watched_ = blocks;
+  for (odb::dbChip* chip : chips) {
+    auto watcher = std::make_unique<MarkerWatcher>(this);
+    watcher->addOwner(chip);
+    marker_watchers_.push_back(std::move(watcher));
+  }
+  for (odb::dbBlock* block : blocks) {
+    auto watcher = std::make_unique<BlockWatcher>(this);
+    watcher->addOwner(block);
+    watchers_.push_back(std::move(watcher));
+  }
+}
+
+void ScriptView::forget()
+{
+  const std::scoped_lock lock(mutex_);
+  forgetLocked();
+}
+
+void ScriptView::forgetLocked()
+{
+  selection_.clear();
+  for (SelectionSet& group : highlights_) {
+    group.clear();
+  }
+}
+
+void ScriptView::setSelected(const Selected& selection)
+{
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  selection_.clear();
+  if (selection) {
+    selection_.insert(selection);
+  }
+}
+
+void ScriptView::addSelected(const Selected& selection)
+{
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  if (selection) {
+    selection_.insert(selection);
+  }
+}
+
+void ScriptView::addSelected(const SelectionSet& selection,
+                             const bool /* find_in_cts */)
+{
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  for (const Selected& selected : selection) {
+    if (selected) {
+      selection_.insert(selected);
+    }
+  }
+}
+
+void ScriptView::removeSelectedByType(const std::string& type)
+{
+  const std::scoped_lock lock(mutex_);
+  std::erase_if(selection_, [&type](const Selected& selected) {
+    return selected.getTypeName() == type;
+  });
+}
+
+void ScriptView::addHighlighted(const SelectionSet& selection,
+                                const int highlight_group)
+{
+  // No dialog to ask for a group, so a negative one is ignored.
+  if (highlight_group < 0 || highlight_group >= kNumHighlightSet) {
+    return;
+  }
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  for (const Selected& selected : selection) {
+    if (selected) {
+      highlights_[highlight_group].insert(selected);
+    }
+  }
+}
+
+void ScriptView::clearHighlighted(const int highlight_group)
+{
+  const std::scoped_lock lock(mutex_);
+  if (highlight_group < 0) {
+    for (SelectionSet& group : highlights_) {
+      group.clear();
+    }
+  } else if (highlight_group < kNumHighlightSet) {
+    highlights_[highlight_group].clear();
+  }
 }
 
 }  // namespace web

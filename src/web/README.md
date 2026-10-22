@@ -93,9 +93,10 @@ image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
 With no Qt window open, `-web` draws what the `gui::set_display_controls`
-calls have chosen, with the same paths and defaults as the Qt display controls.
-That is how one script, such as ORFS's `save_images.tcl`, can save the same
-views with either renderer.
+calls have chosen, with the same paths and defaults as the Qt display controls,
+and over it the selection and highlight groups from `select`, as the Qt GUI
+does. That is how one script, such as ORFS's `save_images.tcl`, can save the
+same views with either renderer.
 
 #### Display option keys (web mode)
 
@@ -345,9 +346,10 @@ This command is not `gui::save_display_controls`. With no Qt window open,
 `gui::set_display_controls`, `gui::check_display_controls`,
 `gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
 act on a copy of the Qt display-control tree kept on the server, with the
-same paths and defaults. That copy works in a build without Qt and needs no
-running server, but it is separate from what a browser shows. Of the colors,
-only `Misc/Background` is kept there.
+same paths and defaults; `select`, `gui::clear_selections` and
+`gui::clear_highlights` act on a selection kept there too. That copy works in
+a build without Qt and needs no running server, but it is separate from what a
+browser shows. Of the colors, only `Misc/Background` is kept there.
 
 ### Restore Display Controls
 

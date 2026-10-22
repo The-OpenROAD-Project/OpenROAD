@@ -1,6 +1,7 @@
 # With no Qt window, in a build with or without Qt, the gui:: commands exist
-# and answer: the display controls act on the web viewer's script view, and
-# the commands that need a window log GUI-0001 rather than fail.
+# and answer: the display controls and the selection act on the web viewer's
+# script view, and the commands that need a window log GUI-0001 rather than
+# fail.
 
 set script_dir [file dirname [info script]]
 set openroad_test_dir [file normalize [file join $script_dir .. .. .. test]]
@@ -52,6 +53,11 @@ gui::set_display_controls "Nets/*" visible true
 if { ![gui::check_display_controls "Nets/Power" visible] } {
   fail "Nets/* did not reach Nets/Power"
 }
+if { [select -type Inst -name {FILLER*} -highlight 1] != 266 } {
+  fail "select did not reach the script view"
+}
+gui::clear_highlights -1
+gui::clear_selections
 gui::show_widget "Clock Tree Viewer"
 gui::hide_widget "Clock Tree Viewer"
 gui::restore_display_controls

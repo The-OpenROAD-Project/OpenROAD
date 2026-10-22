@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <any>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -15,6 +16,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/json/parse.hpp"
@@ -1052,6 +1054,177 @@ TEST_F(SaveImageViewTest, ScriptBackgroundIsUsed)
   EXPECT_EQ(pixels[0], 255);
   EXPECT_EQ(pixels[1], 0);
   EXPECT_EQ(pixels[2], 255);
+}
+
+// ─── Overlays drawn once over the image ─────────────────────────────────────
+
+namespace {
+
+// The pixels of an RGBA buffer that are (close to) `c`.
+std::vector<std::pair<int, int>> pixelsOf(
+    const std::vector<unsigned char>& rgba,
+    const int width,
+    const Painter::Color& c)
+{
+  std::vector<std::pair<int, int>> found;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (std::abs(rgba[i] - c.r) < 8 && std::abs(rgba[i + 1] - c.g) < 8
+        && std::abs(rgba[i + 2] - c.b) < 8 && rgba[i + 3] > 0) {
+      const int p = static_cast<int>(i / 4);
+      found.emplace_back(p % width, p / width);
+    }
+  }
+  return found;
+}
+
+}  // namespace
+
+// The pass is drawn at the image's own scale from the same crop as the layout,
+// so a rect lands on the pixels its DBU map to, at any width.
+TEST_F(SaveImageTest, OverlaysLineUpWithTheImage)
+{
+  const Painter::Color kMarker(255, 0, 255);
+  const odb::Rect box(20000, 30000, 60000, 70000);
+  ImageOverlays overlays;
+  overlays.passes.emplace_back([&box, &kMarker](Painter& painter) {
+    painter.setPen(kMarker, true, 1);
+    painter.setBrush(Painter::kTransparent);
+    painter.drawRect(box);
+  });
+  // The default frame: the die plus 5% of it on each side.
+  const odb::Rect area(-5000, -5000, 105000, 105000);
+  for (const int width : {300, 511, 1024, 1500}) {
+    int w = 0;
+    int h = 0;
+    const auto rgba = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                   width,
+                                                   0,
+                                                   TileVisibility(),
+                                                   Color(),
+                                                   &w,
+                                                   &h,
+                                                   &overlays);
+    const auto marker = pixelsOf(rgba, w, kMarker);
+    ASSERT_FALSE(marker.empty()) << width;
+    int min_x = w;
+    int min_y = h;
+    for (const auto& [x, y] : marker) {
+      min_x = std::min(min_x, x);
+      min_y = std::min(min_y, y);
+    }
+    const double scale = static_cast<double>(w) / area.dx();
+    EXPECT_NEAR(min_x, (box.xMin() - area.xMin()) * scale, 1.0) << width;
+    EXPECT_NEAR(min_y, (area.yMax() - box.yMax()) * scale, 1.0) << width;
+  }
+}
+
+// Labels are drawn at the image's scale, so they are the size asked for
+// whatever the width of the image.
+TEST_F(SaveImageTest, LabelsKeepTheirSizeAtAnyWidth)
+{
+  constexpr Color kWhite{.r = 255, .g = 255, .b = 255, .a = 255};
+  tile_gen_->addLabel(
+      odb::Point(50000, 50000), "LABEL", kWhite, 20, "center", "size");
+  TileVisibility vis = noOverlaysVis();
+  vis.stdcells = false;
+  auto label_height = [&](const int width) {
+    int w = 0;
+    int h = 0;
+    const auto rgba = tile_gen_->renderImageBuffer(
+        odb::Rect(0, 0, 0, 0), width, 0, vis, Color(), &w, &h);
+    int top = h;
+    int bottom = -1;
+    for (const auto& [x, y] :
+         pixelsOf(rgba, w, Painter::Color(255, 255, 255))) {
+      if (std::abs(x - w / 2) < w / 4) {
+        top = std::min(top, y);
+        bottom = std::max(bottom, y);
+      }
+    }
+    return bottom - top;
+  };
+  const int small = label_height(512);
+  EXPECT_GT(small, 5);
+  EXPECT_NEAR(label_height(2048), small, 1);
+}
+
+TEST_F(SaveImageTest, OverlaysDoNotDependOnTheThreadCount)
+{
+  for (int i = 0; i < 20; ++i) {
+    placeInst("BUF_X16", ("b" + std::to_string(i)).c_str(), 4000 * i, 4000 * i);
+  }
+  makeTileGen();
+  ImageOverlays overlays;
+  overlays.passes.emplace_back([](Painter& painter) {
+    painter.setPen(Painter::kYellow, true, 1);
+    painter.setBrush(Painter::Color(Painter::kRed, 100));
+    for (int i = 0; i < 20; ++i) {
+      painter.drawRect(
+          odb::Rect(4000 * i, 4000 * i, 4000 * i + 3000, 4000 * i + 3000));
+    }
+  });
+  tile_gen_->setThreadCount(1);
+  const auto one = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                1024,
+                                                0,
+                                                TileVisibility(),
+                                                Color(),
+                                                nullptr,
+                                                nullptr,
+                                                &overlays);
+  tile_gen_->setThreadCount(8);
+  const auto eight = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                  1024,
+                                                  0,
+                                                  TileVisibility(),
+                                                  Color(),
+                                                  nullptr,
+                                                  nullptr,
+                                                  &overlays);
+  ASSERT_FALSE(one.empty());
+  EXPECT_EQ(one, eight);
+}
+
+// select draws as Qt's drawSelected and drawHighlighted do: the selection in
+// a yellow outline unless Misc/Highlight selected is off, and each highlight
+// group filled in its color.
+TEST_F(SaveImageViewTest, SelectionAndHighlightGroupsAreDrawn)
+{
+  placeInst("BUF_X16", "buf2", 60000, 60000);
+  DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+  Gui* gui = Gui::get();
+  const std::string plain = save("plain");
+
+  // A highlight is drawn over the selection, so the outline is checked on an
+  // instance that is only selected.
+  EXPECT_EQ(gui->select("Inst", "buf2", "", std::any(), true, -1), 1);
+  EXPECT_EQ(gui->select("Inst", "buf1", "", std::any(), true, 4), 1);
+  unsigned w = 0, h = 0;
+  const auto plain_pixels = decodePngFile(plain, w, h);
+  // Pixels the red group's fill made redder than in the plain image.
+  auto reddened = [&plain_pixels](const std::vector<unsigned char>& rgba) {
+    int count = 0;
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i] > plain_pixels[i] + 30
+          && rgba[i + 1] <= plain_pixels[i + 1] + 8) {
+        ++count;
+      }
+    }
+    return count;
+  };
+  auto pixels = decodePngFile(save("highlighted"), w, h);
+  EXPECT_FALSE(pixelsOf(pixels, w, Painter::kHighlight).empty());
+  EXPECT_GT(reddened(pixels), 0);
+
+  gui->setDisplayControlsVisible("Misc/Highlight selected", false);
+  pixels = decodePngFile(save("unselected"), w, h);
+  EXPECT_TRUE(pixelsOf(pixels, w, Painter::kHighlight).empty());
+  EXPECT_GT(reddened(pixels), 0);
+
+  gui->setDisplayControlsVisible("Misc/Highlight selected", true);
+  gui->clearHighlights(-1);
+  gui->clearSelections();
+  EXPECT_EQ(readBytes(save("cleared")), readBytes(plain));
 }
 
 }  // namespace

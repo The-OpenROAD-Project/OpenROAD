@@ -209,6 +209,7 @@ cc_library(
         "src/font_data.h",
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
+        "src/image_overlays.cpp",
         "src/module_color_palette.h",
         "src/renderer_controls.cpp",
         "src/report_html.cpp",
@@ -238,6 +239,7 @@ cc_library(
         # libraries, with visibility for the //src/web/test path (see :color).
         "src/display_control_tree.h",
         "src/glyph_cache.h",
+        "src/image_overlays.h",
         "src/renderer_controls.h",
         "src/script_view.h",
         "src/tile_generator.h",

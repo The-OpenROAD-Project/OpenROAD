@@ -224,23 +224,22 @@ std::string joinWithCommas(const std::vector<std::string>& items)
 
 void Gui::setSelected(const Selected& selection)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->setSelected(selection);
   }
-  activeBackend()->setSelected(selection);
 }
 
 void Gui::removeSelectedByType(const std::string& type)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->removeSelectedByType(type);
   }
-  activeBackend()->removeSelectedByType(type);
 }
 
 void Gui::addSelectedNet(const std::string& name)
 {
-  if (!hasUI()) {
+  auto* target = viewTarget();
+  if (target == nullptr) {
     return;
   }
   auto* block = getBlock(db_);
@@ -253,12 +252,13 @@ void Gui::addSelectedNet(const std::string& name)
     return;
   }
 
-  activeBackend()->addSelected(makeSelected(net));
+  target->addSelected(makeSelected(net));
 }
 
 void Gui::addSelectedInst(const std::string& name)
 {
-  if (!hasUI()) {
+  auto* target = viewTarget();
+  if (target == nullptr) {
     return;
   }
   auto* block = getBlock(db_);
@@ -271,7 +271,7 @@ void Gui::addSelectedInst(const std::string& name)
     return;
   }
 
-  activeBackend()->addSelected(makeSelected(inst));
+  target->addSelected(makeSelected(inst));
 }
 
 const SelectionSet& Gui::selection()
@@ -332,7 +332,8 @@ void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
 
 void Gui::addInstToHighlightSet(const std::string& name, int highlight_group)
 {
-  if (!hasUI()) {
+  auto* target = viewTarget();
+  if (target == nullptr) {
     return;
   }
   auto* block = getBlock(db_);
@@ -347,12 +348,13 @@ void Gui::addInstToHighlightSet(const std::string& name, int highlight_group)
   }
   SelectionSet sel_inst_set;
   sel_inst_set.insert(makeSelected(inst));
-  activeBackend()->addHighlighted(sel_inst_set, highlight_group);
+  target->addHighlighted(sel_inst_set, highlight_group);
 }
 
 void Gui::addNetToHighlightSet(const std::string& name, int highlight_group)
 {
-  if (!hasUI()) {
+  auto* target = viewTarget();
+  if (target == nullptr) {
     return;
   }
   auto* block = getBlock(db_);
@@ -367,7 +369,7 @@ void Gui::addNetToHighlightSet(const std::string& name, int highlight_group)
   }
   SelectionSet selection_set;
   selection_set.insert(makeSelected(net));
-  activeBackend()->addHighlighted(selection_set, highlight_group);
+  target->addHighlighted(selection_set, highlight_group);
 }
 
 int Gui::selectAt(const odb::Rect& area, bool append)
@@ -404,18 +406,16 @@ void Gui::animateSelection(int repeat)
 
 void Gui::clearSelections()
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->setSelected(Selected());
   }
-  activeBackend()->setSelected(Selected());
 }
 
 void Gui::clearHighlights(int highlight_group)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->clearHighlighted(highlight_group);
   }
-  activeBackend()->clearHighlighted(highlight_group);
 }
 
 void Gui::zoomTo(const odb::Rect& rect_dbu)
@@ -1054,7 +1054,8 @@ int Gui::select(const std::string& type,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
-  if (!hasUI()) {
+  auto* target = viewTarget();
+  if (target == nullptr) {
     return 0;
   }
 
@@ -1105,9 +1106,9 @@ int Gui::select(const std::string& type,
       selected_set.insert(sel);
     });
 
-    activeBackend()->addSelected(selected_set, true);
+    target->addSelected(selected_set, true);
     if (highlight_group != -1) {
-      activeBackend()->addHighlighted(selected_set, highlight_group);
+      target->addHighlighted(selected_set, highlight_group);
     }
 
     result = selected_set.size();

@@ -43,7 +43,8 @@ class HeatMapDataSource;
 
 namespace utl {
 class Logger;
-}
+class ThreadPool;
+}  // namespace utl
 
 namespace web {
 
@@ -157,8 +158,16 @@ struct TileFrame
   double pxY(double dbu) const { return (dbu - origin_y) * scale; }
 };
 
+// Drawn once over a whole saved image at its own resolution, in Qt's order
+// (RenderThread::draw): after the layers and under the labels.
+using ImagePass = std::function<void(Painter&)>;
+
 // The tile renderer's color for a web::Painter one; they share the RGBA layout.
 Color toTileColor(const Painter::Color& c);
+struct ImageOverlays
+{
+  std::vector<ImagePass> passes;
+};
 
 struct SelectionResult
 {
@@ -816,7 +825,9 @@ class TileGenerator
                                                const TileVisibility& vis,
                                                const Color& bg = {},
                                                int* out_width = nullptr,
-                                               int* out_height = nullptr) const;
+                                               int* out_height = nullptr,
+                                               const ImageOverlays* overlays
+                                               = nullptr) const;
 
   // Render full design (or region) to PNG bytes, as renderImageBuffer does
   // to raw pixels.  Returns an empty vector on error.
@@ -826,7 +837,9 @@ class TileGenerator
                                             const TileVisibility& vis,
                                             const Color& bg = {},
                                             int* out_width = nullptr,
-                                            int* out_height = nullptr) const;
+                                            int* out_height = nullptr,
+                                            const ImageOverlays* overlays
+                                            = nullptr) const;
 
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
@@ -838,7 +851,8 @@ class TileGenerator
                  int width_px,
                  double dbu_per_pixel,
                  const TileVisibility& vis,
-                 const Color& bg = {}) const;
+                 const Color& bg = {},
+                 const ImageOverlays* overlays = nullptr) const;
 
   // Where a label goes, decided by the caller.  A chiplet rendered in its own
   // frame cannot draw text into that frame — the reverse mapping that places
@@ -942,6 +956,11 @@ class TileGenerator
   void rasterizeWebPainterOps(std::vector<unsigned char>& image,
                               const std::vector<DrawOp>& ops,
                               const TileFrame& frame) const;
+  // One op into a dim x dim tile buffer.
+  void rasterizeWebPainterOp(std::vector<unsigned char>& image,
+                             const DrawOp& op,
+                             const TileFrame& frame,
+                             int dim) const;
 
   // ─── Server-side tile cache ──────────────────────────────────────────
   //
@@ -1066,19 +1085,6 @@ class TileGenerator
                       const std::vector<TextLabel>& labels,
                       const TileFrame& frame) const;
 
-  // Raw (un-encoded) RGBA tile with only the user labels drawn on a
-  // transparent background, for the given Leaflet z/x/y.  Used to composite
-  // labels into save_image.  `labels` is passed in (snapshot once per image)
-  // so the mutex isn't locked and copied per tile.  Returns empty if `labels`
-  // is empty.
-  std::vector<unsigned char> renderLabelTile(
-      int z,
-      int x,
-      int y,
-      const std::vector<TextLabel>& labels,
-      double dpr = 1.0,
-      int tile_px = 0) const;
-
   // Objects the registered renderers claim for a click, via the installed
   // RendererSelectCallback.  Empty when no callback is installed.
   std::vector<SelectionResult> selectFromRenderers(
@@ -1156,6 +1162,18 @@ class TileGenerator
                        int width = 3,
                        int dim = -1);
 
+  // Draws `overlays` and `labels` over a finished saved image whose top-left
+  // pixel is at (origin_x, top_y) in DBU, at `scale` pixels per DBU.
+  void drawImageOverlays(std::vector<unsigned char>& image,
+                         int width,
+                         int height,
+                         double origin_x,
+                         double top_y,
+                         double scale,
+                         const ImageOverlays* overlays,
+                         const std::vector<TextLabel>& labels,
+                         utl::ThreadPool* pool,
+                         int num_threads) const;
   bool pinNamesFitImage(odb::dbBlock* block,
                         const odb::Rect& area,
                         double scale,

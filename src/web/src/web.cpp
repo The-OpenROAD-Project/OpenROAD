@@ -46,6 +46,7 @@
 #include "clock_tree_report.h"
 #include "color.h"
 #include "hierarchy_report.h"
+#include "image_overlays.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
@@ -2253,6 +2254,7 @@ struct ScriptImage
 {
   TileVisibility vis;
   Color background;
+  ImageOverlays overlays;
 };
 
 ScriptImage scriptImage(ScriptView& view,
@@ -2260,8 +2262,14 @@ ScriptImage scriptImage(ScriptView& view,
                         const std::string& vis_json,
                         utl::Logger* logger)
 {
-  const ScriptView::Frame frame = view.frame(parseOverrides(vis_json, logger));
-  return {.vis = frame.vis, .background = imageBackground(frame, hook)};
+  ScriptView::Frame frame = view.frame(parseOverrides(vis_json, logger));
+  TileVisibility vis = frame.vis;
+  const Color background = imageBackground(frame, hook);
+  return {
+      .vis = std::move(vis),
+      .background = background,
+      .overlays = buildImageOverlays(std::move(frame)),
+  };
 }
 }  // namespace
 
@@ -2285,7 +2293,8 @@ void WebServer::saveImage(const std::string& filename,
                         width_px,
                         dbu_per_pixel,
                         image.vis,
-                        image.background);
+                        image.background,
+                        &image.overlays);
 }
 
 namespace {
@@ -2707,8 +2716,15 @@ void WebServer::gifAddFrame(std::optional<int> key,
       = scriptImage(*script_view_, viewer_hook_.get(), vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
-      region, width_px, dbu_per_pixel, image.vis, image.background, &w, &h);
+  std::vector<unsigned char> rgba
+      = generator_->renderImageBuffer(region,
+                                      width_px,
+                                      dbu_per_pixel,
+                                      image.vis,
+                                      image.background,
+                                      &w,
+                                      &h,
+                                      &image.overlays);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }
