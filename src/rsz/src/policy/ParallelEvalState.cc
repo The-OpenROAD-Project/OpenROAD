@@ -102,7 +102,7 @@ void StallMonitor::onSaved(const sta::Slack prev_tns,
   // Progress must be a visible part of the reference clock period or of the
   // initial TNS; otherwise tiny gains keep paying full timing updates.
   const float tns_step = std::abs(sta::delayAsFloat(initial_tns_))
-                         * config_.progress_pct / 100.0f;
+                         * config_.progress_tns_pct / 100.0f;
   const float wns_step
       = reference_period_ * config_.progress_wns_period_pct / 100.0f;
   const bool wns_progressed

@@ -417,7 +417,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   struct StopKnobs
   {
     int stall_max_batches;
-    float progress_pct;
+    float progress_tns_pct;
     float progress_wns_period_pct;
     int endpoints;
     int max_endpoints;
@@ -430,7 +430,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
           const ParallelEvalPolicyConfig tuned
               = OptimizationPolicyConfig::forParallelEval(effort).parallel_eval;
           return StopKnobs{tuned.stall_max_batches,
-                           tuned.progress_pct,
+                           tuned.progress_tns_pct,
                            tuned.progress_wns_period_pct,
                            tuned.wns_tail_endpoints,
                            tuned.wns_tail_max_endpoints,
@@ -449,13 +449,13 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   const StopKnobs medium = knobs(RepairEffort::kMedium);
   EXPECT_EQ(medium.endpoints, high.endpoints);
   EXPECT_LE(medium.stall_max_batches, high.stall_max_batches);
-  EXPECT_GE(medium.progress_pct, high.progress_pct);
+  EXPECT_GE(medium.progress_tns_pct, high.progress_tns_pct);
   EXPECT_GE(medium.progress_wns_period_pct, high.progress_wns_period_pct);
   EXPECT_LE(medium.max_endpoints, high.max_endpoints);
   EXPECT_LE(medium.work_pct, high.work_pct);
   EXPECT_LE(medium.min_work, high.min_work);
   EXPECT_TRUE(medium.stall_max_batches < high.stall_max_batches
-              || medium.progress_pct > high.progress_pct);
+              || medium.progress_tns_pct > high.progress_tns_pct);
   EXPECT_TRUE(medium.max_endpoints < high.max_endpoints
               || medium.work_pct < high.work_pct
               || medium.min_work < high.min_work);
@@ -464,7 +464,7 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   const StopKnobs low = knobs(RepairEffort::kLow);
   EXPECT_EQ(low.endpoints, 0);
   EXPECT_EQ(low.stall_max_batches, high.stall_max_batches);
-  EXPECT_FLOAT_EQ(low.progress_pct, high.progress_pct);
+  EXPECT_FLOAT_EQ(low.progress_tns_pct, high.progress_tns_pct);
   EXPECT_FLOAT_EQ(low.progress_wns_period_pct, high.progress_wns_period_pct);
 
   EXPECT_EQ(resizer_.repairEffortFromString("low"), RepairEffort::kLow);

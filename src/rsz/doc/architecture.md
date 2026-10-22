@@ -752,7 +752,7 @@ The batches end after `max_checkpoint_misses` missed batches in a row, or on one
 
 ### Stop Rules
 
-The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_period_pct` percent of the reference clock period nor TNS by `progress_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved WNS by less than `stall_wns_period_pct` percent of the reference clock period and the failing endpoint count by less than `stall_failing_endpoint_pct` percent per batch, and TNS did not progress.
+The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_period_pct` percent of the reference clock period nor TNS by `progress_tns_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved WNS by less than `stall_wns_period_pct` percent of the reference clock period and the failing endpoint count by less than `stall_failing_endpoint_pct` percent per batch, and TNS did not progress.
 
 The reference clock period is the shortest period of a clock with source pins, fixed for the run; a virtual clock counts only when no clock has pins, and without clocks the initial WNS is the scale. A share of the WNS itself would vanish as WNS approaches zero, so tiny gains near closure would never stall the batches.
 
