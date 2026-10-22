@@ -38,6 +38,8 @@ _IDENTIFIER_URLS = {
     "https://npms.io/search?q=ponyfill",
     "https://leafletjs.com",
     "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
+    # Three's GGX shader cites its sampling method in a GLSL comment.
+    "https://jcgt.org/published/0007/04/01/",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
 }
@@ -88,6 +90,10 @@ class Scanner(unittest.TestCase):
         self.assertFalse(_is_identifier_url("https://leafletjs.com/l.js"))
         self.assertFalse(_is_identifier_url("https://leafletjs.com.example/l.js"))
         self.assertFalse(_is_identifier_url("https://lodash.com/lodash.js"))
+        self.assertTrue(_is_identifier_url("https://jcgt.org/published/0007/04/01/"))
+        self.assertFalse(
+            _is_identifier_url("https://jcgt.org/published/0007/04/01/code.js")
+        )
 
     def test_finds_scheme_relative_fetches(self):
         for text in (
