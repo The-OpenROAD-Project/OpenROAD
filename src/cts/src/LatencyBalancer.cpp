@@ -89,7 +89,7 @@ std::pair<double, double> LatencyBalancer::getMinMaxBufferDelay()
   }
   std::pair<double, double> min_max_buffer_delay;
   min_max_buffer_delay.first = std::numeric_limits<double>::max();
-  min_max_buffer_delay.second = 0.0;
+  min_max_buffer_delay.second = -std::numeric_limits<double>::max();
   for (const auto& buffer_delay : buffersDelay_) {
     min_max_buffer_delay.first
         = std::min(min_max_buffer_delay.first, buffer_delay / dpUnit_);
@@ -745,6 +745,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
 double LatencyBalancer::usefulSkewTarget(odb::dbInst* inst,
                                          bool& has_useful_skew) const
 {
+  has_useful_skew = false;
   if (!options_->applyUsefulSkew() || inst == nullptr) {
     return 0.0;
   }
@@ -763,14 +764,18 @@ void LatencyBalancer::balanceLatencies(int nodeId)
 
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
-    if (node->arrival.has_value() && node->inputTerm != nullptr) {
+    if (node->arrival.has_value()) {
       if (options_->applyUsefulSkew()) {
-        // use useful skew of RSZ
-        bool has_useful_skew = false;
-        double useful_skew
-            = usefulSkewTarget(node->inputTerm->getInst(), has_useful_skew);
-        if (has_useful_skew) {
-          node->dlyNeeded = std::llround(useful_skew * dpUnit_);
+        if (node->inputTerm != nullptr) {
+          // use useful skew of RSZ
+          bool has_useful_skew = false;
+          double useful_skew
+              = usefulSkewTarget(node->inputTerm->getInst(), has_useful_skew);
+          if (has_useful_skew) {
+            node->dlyNeeded = std::llround(useful_skew * dpUnit_);
+          } else {
+            node->dlyNeeded = 0.0;
+          }
         } else {
           node->dlyNeeded = 0.0;
         }
