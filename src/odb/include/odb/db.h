@@ -10166,7 +10166,7 @@ class dbTechLayerCutEnclosureTableDefRule : public dbObject
  public:
   struct DefaultRow
   {
-    int above_below;
+    dbCutEnclosureAboveBelow above_below;
     int overhang1;
     int overhang2;
     int overhang3;
@@ -10175,7 +10175,7 @@ class dbTechLayerCutEnclosureTableDefRule : public dbObject
   struct WidthRow
   {
     int width;
-    int above_below;
+    dbCutEnclosureAboveBelow above_below;
     int overhang1;
     int overhang2;
     int overhang3;
@@ -10193,7 +10193,6 @@ class dbTechLayerCutEnclosureTableDefRule : public dbObject
   static dbTechLayerCutEnclosureTableDefRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerCutEnclosureTableDefRule* obj);
   // User Code Begin dbTechLayerCutEnclosureTableDefRule
-  // above_below: 0 = both, 1 = above, 2 = below
   void addDefaultRow(const DefaultRow& row);
   void addWidthRow(const WidthRow& row);
   void getDefaultRows(std::vector<DefaultRow>& rows) const;

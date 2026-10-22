@@ -77,22 +77,30 @@ static dbIStream& operator>>(
     dbIStream& stream,
     dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
 {
-  stream >> obj.above_below;
   stream >> obj.overhang1;
   stream >> obj.overhang2;
   stream >> obj.overhang3;
   stream >> obj.overhang4;
+  // User Code Begin >>DefaultRow
+  int above_below;
+  stream >> above_below;
+  obj.above_below = static_cast<dbCutEnclosureAboveBelow>(above_below);
+  // User Code End >>DefaultRow
   return stream;
 }
 static dbIStream& operator>>(dbIStream& stream,
                              dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
 {
   stream >> obj.width;
-  stream >> obj.above_below;
   stream >> obj.overhang1;
   stream >> obj.overhang2;
   stream >> obj.overhang3;
   stream >> obj.overhang4;
+  // User Code Begin >>WidthRow
+  int above_below;
+  stream >> above_below;
+  obj.above_below = static_cast<dbCutEnclosureAboveBelow>(above_below);
+  // User Code End >>WidthRow
   return stream;
 }
 dbIStream& operator>>(dbIStream& stream,
@@ -112,11 +120,13 @@ static dbOStream& operator<<(
     dbOStream& stream,
     const dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
 {
-  stream << obj.above_below;
   stream << obj.overhang1;
   stream << obj.overhang2;
   stream << obj.overhang3;
   stream << obj.overhang4;
+  // User Code Begin <<DefaultRow
+  stream << static_cast<int>(obj.above_below);
+  // User Code End <<DefaultRow
   return stream;
 }
 static dbOStream& operator<<(
@@ -124,11 +134,13 @@ static dbOStream& operator<<(
     const dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
 {
   stream << obj.width;
-  stream << obj.above_below;
   stream << obj.overhang1;
   stream << obj.overhang2;
   stream << obj.overhang3;
   stream << obj.overhang4;
+  // User Code Begin <<WidthRow
+  stream << static_cast<int>(obj.above_below);
+  // User Code End <<WidthRow
   return stream;
 }
 dbOStream& operator<<(dbOStream& stream,
@@ -215,14 +227,6 @@ void dbTechLayerCutEnclosureTableDefRule::destroy(
 // User Code Begin dbTechLayerCutEnclosureTableDefRulePublicMethods
 void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 {
-  if (row.above_below < 0 || row.above_below > 2) {
-    getImpl()->getLogger()->error(
-        utl::ODB,
-        3800,
-        "DefaultRow.above_below must be 0 (both), 1 (above), or 2 (below), "
-        "got {}",
-        row.above_below);
-  }
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->default_rows_.push_back(row);
@@ -230,14 +234,6 @@ void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 
 void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
 {
-  if (row.above_below < 0 || row.above_below > 2) {
-    getImpl()->getLogger()->error(
-        utl::ODB,
-        3801,
-        "WidthRow.above_below must be 0 (both), 1 (above), or 2 (below), "
-        "got {}",
-        row.above_below);
-  }
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->width_rows_.push_back(row);

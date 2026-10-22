@@ -32,7 +32,11 @@
     {
       "name": "DefaultRow",
       "fields": [
-        { "name": "above_below", "type": "int" },
+        {
+          "name": "above_below",
+          "type": "dbCutEnclosureAboveBelow",
+          "flags": ["no-serial"]
+        },
         { "name": "overhang1", "type": "int" },
         { "name": "overhang2", "type": "int" },
         { "name": "overhang3", "type": "int" },
@@ -44,7 +48,11 @@
       "name": "WidthRow",
       "fields": [
         { "name": "width", "type": "int" },
-        { "name": "above_below", "type": "int" },
+        {
+          "name": "above_below",
+          "type": "dbCutEnclosureAboveBelow",
+          "flags": ["no-serial"]
+        },
         { "name": "overhang1", "type": "int" },
         { "name": "overhang2", "type": "int" },
         { "name": "overhang3", "type": "int" },

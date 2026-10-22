@@ -769,14 +769,14 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   EXPECT_TRUE(rule->isCutClassValid());
   EXPECT_EQ(rule->getCutClass(), cutClass);
 
-  rule->addDefaultRow({0, 40, 40, 60, 60});
-  rule->addWidthRow({300, 1, 20, 20, 40, 40});
-  rule->addWidthRow({300, 2, 50, 60, 0, 0});
+  rule->addDefaultRow({dbCutEnclosureAboveBelow::kBoth, 40, 40, 60, 60});
+  rule->addWidthRow({300, dbCutEnclosureAboveBelow::kAbove, 20, 20, 40, 40});
+  rule->addWidthRow({300, dbCutEnclosureAboveBelow::kBelow, 50, 60, 0, 0});
 
   std::vector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> defaultRows;
   rule->getDefaultRows(defaultRows);
   ASSERT_EQ(defaultRows.size(), 1);
-  EXPECT_EQ(defaultRows[0].above_below, 0);
+  EXPECT_EQ(defaultRows[0].above_below, dbCutEnclosureAboveBelow::kBoth);
   EXPECT_EQ(defaultRows[0].overhang1, 40);
   EXPECT_EQ(defaultRows[0].overhang2, 40);
   EXPECT_EQ(defaultRows[0].overhang3, 60);
@@ -786,13 +786,13 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   rule->getWidthRows(widthRows);
   ASSERT_EQ(widthRows.size(), 2);
   EXPECT_EQ(widthRows[0].width, 300);
-  EXPECT_EQ(widthRows[0].above_below, 1);
+  EXPECT_EQ(widthRows[0].above_below, dbCutEnclosureAboveBelow::kAbove);
   EXPECT_EQ(widthRows[0].overhang1, 20);
   EXPECT_EQ(widthRows[0].overhang2, 20);
   EXPECT_EQ(widthRows[0].overhang3, 40);
   EXPECT_EQ(widthRows[0].overhang4, 40);
   EXPECT_EQ(widthRows[1].width, 300);
-  EXPECT_EQ(widthRows[1].above_below, 2);
+  EXPECT_EQ(widthRows[1].above_below, dbCutEnclosureAboveBelow::kBelow);
   EXPECT_EQ(widthRows[1].overhang1, 50);
   EXPECT_EQ(widthRows[1].overhang2, 60);
   EXPECT_EQ(widthRows[1].overhang3, 0);
@@ -833,7 +833,7 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   std::vector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> defaultRows2;
   rule2->getDefaultRows(defaultRows2);
   ASSERT_EQ(defaultRows2.size(), 1);
-  EXPECT_EQ(defaultRows2[0].above_below, 0);
+  EXPECT_EQ(defaultRows2[0].above_below, dbCutEnclosureAboveBelow::kBoth);
   EXPECT_EQ(defaultRows2[0].overhang1, 40);
   EXPECT_EQ(defaultRows2[0].overhang2, 40);
   EXPECT_EQ(defaultRows2[0].overhang3, 60);
@@ -843,22 +843,17 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   rule2->getWidthRows(widthRows2);
   ASSERT_EQ(widthRows2.size(), 2);
   EXPECT_EQ(widthRows2[0].width, 300);
-  EXPECT_EQ(widthRows2[0].above_below, 1);
+  EXPECT_EQ(widthRows2[0].above_below, dbCutEnclosureAboveBelow::kAbove);
   EXPECT_EQ(widthRows2[0].overhang1, 20);
   EXPECT_EQ(widthRows2[0].overhang2, 20);
   EXPECT_EQ(widthRows2[0].overhang3, 40);
   EXPECT_EQ(widthRows2[0].overhang4, 40);
   EXPECT_EQ(widthRows2[1].width, 300);
-  EXPECT_EQ(widthRows2[1].above_below, 2);
+  EXPECT_EQ(widthRows2[1].above_below, dbCutEnclosureAboveBelow::kBelow);
   EXPECT_EQ(widthRows2[1].overhang1, 50);
   EXPECT_EQ(widthRows2[1].overhang2, 60);
   EXPECT_EQ(widthRows2[1].overhang3, 0);
   EXPECT_EQ(widthRows2[1].overhang4, 0);
-
-  // above_below is only ever 0/1/2 (both/above/below); out-of-range values
-  // are rejected rather than silently stored.
-  EXPECT_THROW(rule->addDefaultRow({3, 0, 0, 0, 0}), std::runtime_error);
-  EXPECT_THROW(rule->addWidthRow({300, 3, 0, 0, 0, 0}), std::runtime_error);
 
   dbTechLayerCutEnclosureTableDefRule::destroy(rule);
   EXPECT_EQ(layer->getTechLayerCutEnclosureTableDefRules().size(), 0);
