@@ -270,10 +270,20 @@ ScriptView::Frame ScriptView::frame(
                      "{} is neither a display control nor a display option.",
                      key);
     }
+    bool renderer_matched = false;
     for (const Match& match : matches) {
       if (match.leaf != nullptr) {
         match.leaf->visible = value;
+      } else {
+        renderer_matched = true;
       }
+    }
+    if (renderer_matched) {
+      logger_->warn(utl::WEB,
+                    135,
+                    "Renderer controls matching {} cannot be set for one "
+                    "image; ignoring them.",
+                    key);
     }
   }
 
