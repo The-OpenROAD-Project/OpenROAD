@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 3 components and 18 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 2 nets and 6 connections.
+[ERROR RSZ-3242] -effort must be low, medium or high.
+RSZ-3242
+[ERROR RSZ-3243] -profile_mode must be 0, 1, 2 or 3.
+RSZ-3243

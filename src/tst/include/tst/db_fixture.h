@@ -33,23 +33,23 @@ struct InstOptions
   bool physical_only{false};
   odb::dbModule* parent_module{nullptr};
   odb::dbSourceType type{odb::dbSourceType::NONE};
-  odb::Point location;
+  odb::Point location{};
   odb::dbPlacementStatus status{odb::dbPlacementStatus::NONE};
-  std::vector<ITermInfo> iterms;
+  std::vector<ITermInfo> iterms{};
 };
 
 struct BTermOptions
 {
   struct BPinInfo
   {
-    const char* layer_name;
-    odb::Rect rect;
+    const char* layer_name{nullptr};
+    odb::Rect rect{};
     odb::dbPlacementStatus status{odb::dbPlacementStatus::PLACED};
   };
 
   odb::dbIoType io_type{odb::dbIoType::INPUT};
   odb::dbSigType sig_type{odb::dbSigType::SIGNAL};
-  std::vector<BPinInfo> bpins;
+  std::vector<BPinInfo> bpins{};
 };
 
 // Base fixture for tests that only manipulate an odb database. It has no

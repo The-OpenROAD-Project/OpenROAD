@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -179,6 +180,20 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// A file that cannot be written is an error, not a "Saved" message.
+TEST_F(SaveImageTest, UnwritableFileIsAnError)
+{
+  const std::filesystem::path missing
+      = std::filesystem::temp_directory_path()
+        / ("web_test_missing_" + std::to_string(::getpid()));
+  const std::string path = (missing / "image.png").string();
+  ASSERT_FALSE(std::filesystem::exists(missing));
+
+  EXPECT_THROW(tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}),
+               std::exception);
+  EXPECT_FALSE(std::filesystem::exists(path));
 }
 
 // Tiles are rasterized on transparency, so the pixels no layer covers come out
