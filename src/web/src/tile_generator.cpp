@@ -975,6 +975,9 @@ constexpr float kPinMarkerSizeRatio = 0.02;
 constexpr int kMinPinMarkerSize = 8;
 constexpr int kMinPinNameSizePixels = 20;
 constexpr int kPinLabelFontHeight = 14;  // pre-baked atlas size for pin labels
+// About the height Qt's default application font draws at, for the text in
+// a saved image's overlays.
+constexpr int kImageFontPx = 20;
 constexpr int kItermLabelFontHeight = 10;  // atlas size for ITerm pin labels
 constexpr int kInstNameFontHeight = 12;    // atlas size for instance names
 // The least an instance's longest side must measure on screen, in CSS px,
@@ -2001,6 +2004,8 @@ void TileGenerator::drawImageOverlays(std::vector<unsigned char>& image,
   auto record = [&](const std::vector<ImagePass>& passes) {
     // Not culled below a pixel: Qt's cosmetic pen still marks a small object.
     WebPainter painter(bounds, scale, /*cull_subpixel=*/false);
+    // Text a pass does not size itself comes out as Qt's default font does.
+    painter.setFont(Painter::Font("sans-serif", kImageFontPx));
     for (const ImagePass& pass : passes) {
       painter.saveState();
       pass(painter);
@@ -2009,10 +2014,12 @@ void TileGenerator::drawImageOverlays(std::vector<unsigned char>& image,
     return painter.takeOps();
   };
   std::vector<DrawOp> ops;
+  std::vector<DrawOp> legend_ops;
   if (overlays != nullptr) {
     ops = record(overlays->passes);
+    legend_ops = record(overlays->legends);
   }
-  if (ops.empty() && labels.empty()) {
+  if (ops.empty() && labels.empty() && legend_ops.empty()) {
     return;
   }
 
@@ -2045,10 +2052,12 @@ void TileGenerator::drawImageOverlays(std::vector<unsigned char>& image,
     return tiles;
   };
   const std::vector<std::vector<int>> ops_by_tile = by_tile(ops);
+  const std::vector<std::vector<int>> legends_by_tile = by_tile(legend_ops);
   auto draw_tiles = [&](const int start, const int end) {
     std::vector<unsigned char> tile(4UL * kDim * kDim);
     for (int i = start; i < end; ++i) {
-      if (ops_by_tile[i].empty() && labels.empty()) {
+      if (ops_by_tile[i].empty() && legends_by_tile[i].empty()
+          && labels.empty()) {
         continue;
       }
       const int ox = (i % tiles_x) * kDim;
@@ -2067,6 +2076,9 @@ void TileGenerator::drawImageOverlays(std::vector<unsigned char>& image,
         rasterizeWebPainterOp(tile, ops[op], frame, kDim);
       }
       drawTextLabels(tile, labels, frame);
+      for (const int op : legends_by_tile[i]) {
+        rasterizeWebPainterOp(tile, legend_ops[op], frame, kDim);
+      }
       compositeTile(tile,
                     kDim,
                     image.data(),

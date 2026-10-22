@@ -45,12 +45,14 @@ read_def [file join $openroad_test_dir gcd_nangate45.def]
 set all [make_result_file save_images_all.png]
 set routing [make_result_file save_images_routing.png]
 set placement [make_result_file save_images_placement.png]
+set heat_map [make_result_file save_images_heat_map.png]
 set webp [make_result_file save_images_ext.webp]
 set escaped [make_result_file save_images_escaped_key.png]
 set unescaped [make_result_file save_images_unescaped_key.png]
 # results/ survives between runs, so a run that writes nothing must not find
 # last run's files.
-foreach path [list $all $routing $placement $webp.png $escaped $unescaped] {
+foreach path [list $all $routing $placement $heat_map $webp.png $escaped \
+  $unescaped] {
   file delete $path
 }
 
@@ -73,6 +75,11 @@ gui::set_display_controls "Shape Types/Routing/*" visible false
 gui::set_display_controls "Instances/Physical/Fill cell" visible false
 gui::set_display_controls "Misc/Instances/*" visible false
 save_image -web -width 400 $placement
+
+gui::set_display_controls "Heat Maps/Placement Density" visible true
+gui::set_heatmap Placement ShowLegend 1
+save_image -web -width 400 $heat_map
+gui::set_display_controls "Heat Maps/Placement Density" visible false
 gui::restore_display_controls
 
 # Only PNG is written, so another extension gets one added.
@@ -82,7 +89,7 @@ save_image -web -width 100 $webp
 save_image -web -width 100 -display_option {{Nets/\Power} false} $escaped
 save_image -web -width 100 -display_option {{Nets/Power} false} $unescaped
 
-foreach path [list $all $routing $placement $webp.png] {
+foreach path [list $all $routing $placement $heat_map $webp.png] {
   if { ![file exists $path] } {
     fail "[file tail $path] was not written"
   }
@@ -99,6 +106,9 @@ if { [read_file_bytes $all] eq [read_file_bytes $routing] } {
 }
 if { [read_file_bytes $routing] eq [read_file_bytes $placement] } {
   fail "hiding the routing did not change the image"
+}
+if { [read_file_bytes $placement] eq [read_file_bytes $heat_map] } {
+  fail "the placement density heat map was not drawn"
 }
 if { [read_file_bytes $escaped] ne [read_file_bytes $unescaped] } {
   fail "a backslash in a display option did not match as an escape"

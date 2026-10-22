@@ -101,6 +101,8 @@ class ScriptView : public GuiBackend
     HighlightSet highlights;
     // The markers the DRC viewer would show, if any.
     odb::dbMarkerCategory* markers = nullptr;
+    // The heat map whose control is on, if any.
+    HeatMapDataSource* heat_map = nullptr;
   };
   // The current controls with `overrides` (TileVisibility JSON keys or
   // display-control patterns) on top, leaving the controls as they were.
@@ -204,6 +206,10 @@ class ScriptView : public GuiBackend
   void watchBlockLocked();
   void forget();
   void forgetLocked();
+  HeatMapDataSource* activeHeatMapLocked(
+      const std::map<std::string, bool>& overrides);
+  // Gives the heat map that is shown the onShow/onHide Qt's renderer gives it.
+  void showHeatMapLocked(HeatMapDataSource* heat_map);
   void set(const std::string& name, bool selectable, bool value);
 
   odb::dbDatabase* db_;
@@ -216,6 +222,7 @@ class ScriptView : public GuiBackend
   SelectionSet selection_;
   HighlightSet highlights_;
   std::string marker_category_;
+  std::string shown_heat_map_;
   std::vector<odb::dbChip*> watched_chips_;
   std::vector<odb::dbBlock*> watched_;
   std::vector<std::unique_ptr<MarkerWatcher>> marker_watchers_;

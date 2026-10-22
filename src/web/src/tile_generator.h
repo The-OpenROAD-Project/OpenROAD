@@ -167,6 +167,8 @@ Color toTileColor(const Painter::Color& c);
 struct ImageOverlays
 {
   std::vector<ImagePass> passes;
+  // Drawn after the labels, so a legend stays readable.
+  std::vector<ImagePass> legends;
 };
 
 struct SelectionResult

@@ -19,6 +19,7 @@
 #include "tile_generator.h"
 #include "utl/Logger.h"
 #include "web/core.h"
+#include "web/heatMap.h"
 
 namespace web {
 
@@ -254,6 +255,7 @@ ScriptView::Frame ScriptView::frame(
   // The patterns go on a copy, so an image's options do not stick.
   DisplayControlTree tree = tree_;
   std::map<std::string, bool> flags;
+  std::map<std::string, bool> renderer_overrides;
   for (const auto& [key, value] : overrides) {
     if (TileVisibility::isFlag(key)) {
       flags.emplace(key, value);
@@ -270,6 +272,8 @@ ScriptView::Frame ScriptView::frame(
     for (const Match& match : matches) {
       if (match.leaf != nullptr) {
         match.leaf->visible = value;
+      } else {
+        renderer_overrides[match.path] = value;
       }
     }
   }
@@ -278,6 +282,12 @@ ScriptView::Frame ScriptView::frame(
   tree.apply(frame.vis);
   frame.vis.setFlags(flags);
   frame.background = background_;
+  frame.heat_map = activeHeatMapLocked(renderer_overrides);
+  if (frame.heat_map != nullptr && frame.heat_map->getShortName() == "RUDY") {
+    // Drawn as the heat map, so not again by the tiles' own RUDY layer.
+    frame.vis.rudy = false;
+  }
+  showHeatMapLocked(frame.heat_map);
   watchBlockLocked();
   const DisplayControlTree::Leaf* highlight_selected
       = tree.find("Misc/Highlight selected");
@@ -300,6 +310,47 @@ void ScriptView::selectMarkers(odb::dbMarkerCategory* markers)
   // destroyed since is simply not found.
   marker_category_
       = markers != nullptr ? markers->getTopCategory()->getName() : "";
+}
+
+HeatMapDataSource* ScriptView::activeHeatMapLocked(
+    const std::map<std::string, bool>& overrides)
+{
+  // By name, so the answer does not depend on the set's pointer order; the
+  // controls exclude each other, so normally one at most is on.
+  std::vector<HeatMapDataSource*> sources(Gui::get()->getHeatMaps().begin(),
+                                          Gui::get()->getHeatMaps().end());
+  std::ranges::sort(sources, {}, &HeatMapDataSource::getName);
+  for (HeatMapDataSource* source : sources) {
+    const std::string path
+        = std::string(kHeatMapGroup) + "/" + source->getName();
+    const auto it = overrides.find(path);
+    const bool on = it != overrides.end()
+                        ? it->second
+                        : renderer_controls_.contains(path)
+                              && renderer_controls_.check(path);
+    if (on) {
+      return source;
+    }
+  }
+  return nullptr;
+}
+
+void ScriptView::showHeatMapLocked(HeatMapDataSource* heat_map)
+{
+  const std::string name = heat_map != nullptr ? heat_map->getName() : "";
+  if (name == shown_heat_map_) {
+    return;
+  }
+  for (HeatMapDataSource* source : Gui::get()->getHeatMaps()) {
+    if (source->getName() == shown_heat_map_) {
+      source->hide();
+    }
+  }
+  if (heat_map != nullptr) {
+    heat_map->ensureMap();
+    heat_map->show();
+  }
+  shown_heat_map_ = name;
 }
 
 void ScriptView::watchBlockLocked()

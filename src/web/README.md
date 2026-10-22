@@ -94,9 +94,11 @@ pixels; larger requests are clamped automatically.
 
 With no Qt window open, `-web` draws what the `gui::set_display_controls`
 calls have chosen, with the same paths and defaults as the Qt display controls,
-and over it the DRC markers of `gui::select_marker_category` and the selection
-and highlight groups from `select`, as the Qt GUI does. That is how one script,
-such as ORFS's `save_images.tcl`, can save the same views with either renderer.
+and over it the heat map whose `Heat Maps/*` control is on (with its legend
+when `gui::set_heatmap <map> ShowLegend 1`), the DRC markers of
+`gui::select_marker_category`, and the selection and highlight groups from
+`select`, as the Qt GUI does. That is how one script, such as ORFS's
+`save_images.tcl`, can save the same views with either renderer.
 
 #### Display option keys (web mode)
 

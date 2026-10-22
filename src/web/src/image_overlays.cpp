@@ -11,12 +11,25 @@
 #include "script_view.h"
 #include "tile_generator.h"
 #include "web/core.h"
+#include "web/heatMap.h"
 
 namespace web {
 
 ImageOverlays buildImageOverlays(ScriptView::Frame frame)
 {
   ImageOverlays overlays;
+
+  // HeatMapRenderer::drawObjects, the bins first, under everything else.
+  if (frame.heat_map != nullptr) {
+    overlays.passes.emplace_back([heat_map = frame.heat_map](Painter& painter) {
+      heat_map->ensureMap();
+      paintHeatMap(*heat_map, painter);
+    });
+    overlays.legends.emplace_back(
+        [heat_map = frame.heat_map](Painter& painter) {
+          paintHeatMapLegend(*heat_map, painter);
+        });
+  }
 
   // DRCRenderer::drawObjects, which Qt draws among the renderers, before the
   // selection.

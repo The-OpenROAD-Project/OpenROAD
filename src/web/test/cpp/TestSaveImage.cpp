@@ -1279,5 +1279,82 @@ TEST_F(SaveImageViewTest, DrcMarkersAreDrawn)
   EXPECT_EQ(readBytes(save("markers_cleared")), readBytes(plain));
 }
 
+namespace {
+
+// Every bin the same value, so the map covers the whole design.
+class UniformHeatMap : public HeatMapDataSource
+{
+ public:
+  explicit UniformHeatMap(utl::Logger* logger)
+      : HeatMapDataSource(logger, "Uniform", "Uniform")
+  {
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(getBounds(), 1.0);
+    return true;
+  }
+
+  void combineMapData(bool /* base_has_value */,
+                      double& base,
+                      double new_data,
+                      double /* data_area */,
+                      double /* intersection_area */,
+                      double /* rect_area */) override
+  {
+    base = new_data;
+  }
+};
+
+}  // namespace
+
+// The heat map whose control is on is drawn as HeatMapRenderer draws it, and
+// its legend once, in the image's top right corner.
+TEST_F(SaveImageViewTest, HeatMapAndLegendAreDrawn)
+{
+  UniformHeatMap heat_map(getLogger());
+  heat_map.setChip(chip_);
+  Gui* gui = Gui::get();
+  gui->registerHeatMap(&heat_map);
+
+  const std::string plain = save("no_heat_map");
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
+  const std::string shown = save("heat_map");
+  EXPECT_NE(readBytes(shown), readBytes(plain));
+
+  gui->setHeatMapSetting("Uniform", "ShowLegend", true);
+  unsigned w = 0, h = 0;
+  const auto without_legend = decodePngFile(shown, w, h);
+  const auto with_legend = decodePngFile(save("legend"), w, h);
+  int in_corner = 0;
+  int elsewhere = 0;
+  for (size_t i = 0; i + 3 < with_legend.size(); i += 4) {
+    const auto at = static_cast<std::ptrdiff_t>(i);
+    if (std::equal(with_legend.begin() + at,
+                   with_legend.begin() + at + 4,
+                   without_legend.begin() + at)) {
+      continue;
+    }
+    const int p = static_cast<int>(i / 4);
+    const int x = p % static_cast<int>(w);
+    const int y = p / static_cast<int>(w);
+    (x > static_cast<int>(w) / 2 && y < static_cast<int>(h) * 3 / 4 ? in_corner
+                                                                    : elsewhere)
+        += 1;
+  }
+  EXPECT_GT(in_corner, 0);
+  EXPECT_EQ(elsewhere, 0);
+
+  // A -display_option naming the control turns it on for that image.
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", false);
+  const std::string via_option
+      = save("option", R"({"Heat Maps/Uniform":true})");
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
+  EXPECT_EQ(readBytes(via_option), readBytes(save("legend_again")));
+  gui->unregisterHeatMap(&heat_map);
+}
+
 }  // namespace
 }  // namespace web

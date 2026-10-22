@@ -46,6 +46,36 @@ class UniformHeatMap : public HeatMapDataSource
   }
 };
 
+// Counts the show and hide hooks the viewers' calls lead to.
+class CountingHeatMap : public UniformHeatMap
+{
+ public:
+  using UniformHeatMap::UniformHeatMap;
+
+  void onShow() override { ++shows; }
+  void onHide() override { ++hides; }
+
+  int shows = 0;
+  int hides = 0;
+};
+
+// The layout's renderer and the script view can both show a map: it is shown
+// once for the first and hidden once the last is done.
+TEST(HeatMapViewersTest, OnlyTheFirstShowAndTheLastHideCount)
+{
+  utl::Logger logger;
+  CountingHeatMap heat_map(&logger);
+  heat_map.show();
+  heat_map.show();
+  EXPECT_EQ(heat_map.shows, 1);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 0);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 1);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 1) << "a hide with no viewer left";
+}
+
 // A renderer that only exists to carry a display control.
 class ControlsOnlyRenderer : public Renderer
 {

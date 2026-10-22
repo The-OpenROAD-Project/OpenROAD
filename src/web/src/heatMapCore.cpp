@@ -913,6 +913,27 @@ void HeatMapDataSource::onShow()
   }
 }
 
+void HeatMapDataSource::show()
+{
+  const std::scoped_lock lock(viewers_mutex_);
+  ++viewers_;
+  if (viewers_ == 1) {
+    onShow();
+  }
+}
+
+void HeatMapDataSource::hide()
+{
+  const std::scoped_lock lock(viewers_mutex_);
+  if (viewers_ == 0) {
+    return;
+  }
+  --viewers_;
+  if (viewers_ == 0) {
+    onHide();
+  }
+}
+
 void HeatMapDataSource::onHide()
 {
   if (destroyMapOnNotVisible()) {
@@ -1445,7 +1466,7 @@ class HeatMapRenderer : public Renderer
     if (!checkDisplayControl(datasource_.getName())) {
       if (!first_paint_) {
         first_paint_ = true;
-        datasource_.onHide();
+        datasource_.hide();
       }
       return;
     }
@@ -1453,42 +1474,11 @@ class HeatMapRenderer : public Renderer
     if (first_paint_) {
       first_paint_ = false;
       datasource_.ensureMap();
-      datasource_.onShow();
+      datasource_.show();
     }
 
-    for (const auto& map_point : datasource_.getVisibleMap(
-             painter.getBounds(), painter.getPixelsPerDBU())) {
-      painter.setPen(map_point.color, true);
-      painter.setBrush(map_point.color);
-      painter.drawRect(map_point.rect);
-
-      if (datasource_.getShowNumbers()) {
-        const int x = map_point.rect.xCenter();
-        const int y = map_point.rect.yCenter();
-        const Painter::Anchor text_anchor = Painter::Anchor::kCenter;
-        const double text_rect_margin = 0.8;
-
-        const std::string text
-            = datasource_.formatValue(map_point.value, false);
-        const odb::Rect text_bound
-            = painter.stringBoundaries(x, y, text_anchor, text);
-        if (text_bound.dx() < text_rect_margin * map_point.rect.dx()
-            && text_bound.dy() < text_rect_margin * map_point.rect.dy()) {
-          painter.setPen(Painter::kWhite, true);
-          painter.drawString(x, y, text_anchor, text);
-        }
-      }
-    }
-
-    if (datasource_.getShowLegend()) {
-      std::vector<std::pair<int, std::string>> legend;
-      for (const auto& [color_index, color_value] :
-           datasource_.getLegendValues()) {
-        legend.emplace_back(color_index,
-                            datasource_.formatValue(color_value, true));
-      }
-      datasource_.getColorGenerator().drawLegend(painter, legend);
-    }
+    paintHeatMap(datasource_, painter);
+    paintHeatMapLegend(datasource_, painter);
   }
 
   std::string getSettingsGroupName() override
@@ -1526,6 +1516,44 @@ class HeatMapRenderer : public Renderer
 };
 
 }  // namespace
+
+void paintHeatMap(HeatMapDataSource& source, Painter& painter)
+{
+  for (const auto& map_point :
+       source.getVisibleMap(painter.getBounds(), painter.getPixelsPerDBU())) {
+    painter.setPen(map_point.color, true);
+    painter.setBrush(map_point.color);
+    painter.drawRect(map_point.rect);
+
+    if (source.getShowNumbers()) {
+      const int x = map_point.rect.xCenter();
+      const int y = map_point.rect.yCenter();
+      const Painter::Anchor text_anchor = Painter::Anchor::kCenter;
+      const double text_rect_margin = 0.8;
+
+      const std::string text = source.formatValue(map_point.value, false);
+      const odb::Rect text_bound
+          = painter.stringBoundaries(x, y, text_anchor, text);
+      if (text_bound.dx() < text_rect_margin * map_point.rect.dx()
+          && text_bound.dy() < text_rect_margin * map_point.rect.dy()) {
+        painter.setPen(Painter::kWhite, true);
+        painter.drawString(x, y, text_anchor, text);
+      }
+    }
+  }
+}
+
+void paintHeatMapLegend(HeatMapDataSource& source, Painter& painter)
+{
+  if (!source.getShowLegend()) {
+    return;
+  }
+  std::vector<std::pair<int, std::string>> legend;
+  for (const auto& [color_index, color_value] : source.getLegendValues()) {
+    legend.emplace_back(color_index, source.formatValue(color_value, true));
+  }
+  source.getColorGenerator().drawLegend(painter, legend);
+}
 
 std::unique_ptr<Renderer> makeHeatMapRenderer(HeatMapDataSource& datasource)
 {
