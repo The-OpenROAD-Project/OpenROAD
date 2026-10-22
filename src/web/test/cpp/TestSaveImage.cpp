@@ -1352,8 +1352,11 @@ TEST_F(SaveImageViewTest, HeatMapAndLegendAreDrawn)
 
   // A -display_option naming the control turns it on for that image.
   gui->setDisplayControlsVisible("Heat Maps/Uniform", false);
+  getLogger()->redirectStringBegin();
   const std::string via_option
       = save("option", R"({"Heat Maps/Uniform":true})");
+  EXPECT_EQ(getLogger()->redirectStringEnd().find("WEB-0135"),
+            std::string::npos);
   gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
   EXPECT_EQ(readBytes(via_option), readBytes(save("legend_again")));
   gui->unregisterHeatMap(&heat_map);
