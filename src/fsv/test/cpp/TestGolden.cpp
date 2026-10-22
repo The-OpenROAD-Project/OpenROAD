@@ -7,6 +7,8 @@
 // - cross sections, with planar and conformal dielectrics, against a 2D
 //   finite-volume solution (cross_section.txt, from fv2d_golden.py),
 //   accurate to about 1e-3;
+// - 3D structures with conformal dielectrics against a 3D finite-volume
+//   solution (box_3d.txt, from fv3d_golden.py), accurate to about 2e-3;
 // - a 3D structure against FasterCap (fastercap.txt, from
 //   fastercap_golden.py), whose own error is a few percent.
 
@@ -233,6 +235,47 @@ INSTANTIATE_TEST_SUITE_P(
     [](const testing::TestParamInfo<CrossSectionCase>& info) {
       return info.param.structure;
     });
+
+class ThreeD : public testing::TestWithParam<std::string>
+{
+};
+
+// 3D structures against a 3D finite-volume solution (box_3d.txt, from
+// fv3d_golden.py): line ends and crossings with conformal dielectrics, which
+// cross sections cannot show. Totals within 0.5% and couplings of at least
+// 5% of the total within 1%, each plus three standard errors; the reference
+// is good to about 0.2%.
+TEST_P(ThreeD, MatchesFiniteVolume)
+{
+  const std::string name = GetParam();
+  const Structure s = readStructure(name);
+  const Geometry& geometry = s.geometry;
+  const Golden golden = readGolden("box_3d.txt");
+  const Scene scene(geometry, s.stack);
+  Solver solver({.threads = 8});
+  const SolveOptions options = solveOptions(2e-3);
+  for (int master = 0; master < geometry.netCount(); master++) {
+    const std::string& m = geometry.netName(master);
+    const CapRow row = solver.solve(scene, master, options);
+    const double total = golden.at({name, m, m});
+    for (int net = 0; net <= geometry.netCount(); net++) {
+      const std::string n = netName(geometry, net);
+      const double expected = golden.at({name, m, n});
+      if (net != master && std::abs(expected) < 0.05 * total) {
+        continue;
+      }
+      const Entry e = entry(row, net);
+      const double tol = net == master ? 5e-3 : 1e-2;
+      EXPECT_NEAR(e.value, expected, tol * std::abs(expected) + 3 * e.sigma)
+          << name << " " << m << " to " << n;
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Conformal,
+                         ThreeD,
+                         testing::Values("conformal_line_ends",
+                                         "conformal_crossing"));
 
 // Totals within 3% and couplings of at least 5% of the total within 6%,
 // each plus three standard errors. The tolerances cover the reference's own

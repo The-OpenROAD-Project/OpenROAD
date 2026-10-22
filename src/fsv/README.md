@@ -216,11 +216,17 @@ bazelisk run //src/fsv/test:BenchGrid   # throughput on a two-layer wire grid
 ```
 
 `TestGolden` compares fsv with reference values for the structures in
-`test/golden`: cross sections with planar and conformal dielectrics against
-a 2D finite-volume solution
-(`fv2d_golden.py`, numpy and scipy), and a 3D structure against FasterCap
-(`fastercap_golden.py`), which is not a build dependency. The scripts
-regenerate the references.
+`test/golden`:
+
+- cross sections with planar and conformal dielectrics against a 2D
+  finite-volume solution (`fv2d_golden.py`, numpy and scipy);
+- line ends and crossings with conformal dielectrics against a 3D
+  finite-volume solution (`fv3d_golden.py`, numpy, scipy and pyamg);
+- a 3D structure against FasterCap (`fastercap_golden.py`).
+
+None of these tools is a build dependency; the scripts regenerate the
+references. `test/README.md` lists which test uses which structures and
+reference files, and how to add or regenerate them.
 
 ## Limitations
 
