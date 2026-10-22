@@ -858,6 +858,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   // A reroute that adds overflow beyond float noise is rolled back and
   // retried next pass.
   constexpr double kAcceptTolerance = 1e-9;
+  // Longest route a relief move may leave, relative to the net's old one.
+  constexpr double kMaxReliefStretch = 1.25;
   int rejected = 0;
   double overflow_change = 0.0;
   // Only accepted reroutes change a route, so only they need new parasitics.
@@ -931,8 +933,12 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     // Relief neighbors move only if overflow drops; others may move sideways.
     const bool strict
         = !options.strict_accept.empty() && options.strict_accept[net_index];
-    const bool keep
-        = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
+    bool keep = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
+    // Nor may a relief move stretch the route past kMaxReliefStretch.
+    if (keep && strict) {
+      keep = grid_graph_->getTreeLength(net->getRoutingTree())
+             <= kMaxReliefStretch * grid_graph_->getTreeLength(old_route.tree);
+    }
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
