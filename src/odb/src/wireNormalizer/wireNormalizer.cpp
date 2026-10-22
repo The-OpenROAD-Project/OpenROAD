@@ -4,17 +4,16 @@
 #include "wireNormalizer.h"
 
 #include <algorithm>
-#include <cstdio>
 #include <cstdlib>
 #include <memory>
-#include <tuple>
 
 #include "connectionGraph.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
-#include "odb/dbWireCodec.h"
-#include "odb/isotropy.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "shapeSearch.h"
 #include "utl/Logger.h"
 

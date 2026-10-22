@@ -3,9 +3,6 @@
 
 #include "connectionGraph.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <memory>
 #include <vector>
 
 #include "wireNormalizer.h"
