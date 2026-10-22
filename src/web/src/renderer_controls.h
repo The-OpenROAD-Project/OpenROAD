@@ -17,9 +17,8 @@ class RendererControls
  public:
   using Values = std::map<std::string, bool>;
 
-  // A path nobody set or seeded reads as visible.
-  bool check(const std::string& path) const;
-  bool contains(const std::string& path) const;
+  // A path nobody set or seeded reads as `default_val`.
+  bool check(const std::string& path, bool default_val = true) const;
   void set(const std::string& path, bool value);
   // Sets `path` unless it already has a value, so a renderer registering
   // again keeps what the user chose.
