@@ -139,17 +139,21 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     std::string cell_name = cell->name();
 
     int connected_outputs = 0;
-    sta::InstancePinIterator *pin_iter = network->pinIterator(instance);
+    sta::InstancePinIterator* pin_iter = network->pinIterator(instance);
     while (pin_iter->hasNext()) {
-      sta::Pin *pin = pin_iter->next();
+      sta::Pin* pin = pin_iter->next();
 
-      if (!network->net(pin) || !network->direction(pin)->isOutput()) continue;
+      if (!network->net(pin) || !network->direction(pin)->isOutput()) {
+        continue;
+      }
 
       if (++connected_outputs > 1) {
-        logger->error(utl::CUT,
-                      50,
-                      "Instance {} of type {} has more than one output connected. "
-                      "Multioutput cells with more than one output used are not supported.");
+        logger->error(
+            utl::CUT,
+            50,
+            "Instance {} of type {} has more than one output connected. "
+            "Multioutput cells with more than one output used are not "
+            "supported.");
       }
 
       sta::LibertyPort* port = network->libertyPort(pin);
@@ -167,16 +171,18 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
 
       // Is a regular standard cell
       if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
-        logger->error(utl::CUT,
-                      24,
-                      "cell: {} was not found in the ABC library. Please report "
-                      "this internal error.",
-                      cell_name);
+        logger->error(
+            utl::CUT,
+            24,
+            "cell: {} was not found in the ABC library. Please report "
+            "this internal error.",
+            cell_name);
       }
       abc::Abc_Obj_t* abc_cell = abc::Abc_NtkCreateNode(&abc_network);
       abc::Abc_ObjSetData(abc_cell, cell_name_to_mio.at(cell_name));
       std::string instance_name = network->name(instance);
-      abc::Abc_ObjAssignName(abc_cell, instance_name.data(), /*pSuffix=*/nullptr);
+      abc::Abc_ObjAssignName(
+          abc_cell, instance_name.data(), /*pSuffix=*/nullptr);
       instance_map[instance] = abc_cell;
     }
   }

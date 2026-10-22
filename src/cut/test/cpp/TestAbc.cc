@@ -723,7 +723,7 @@ TEST_F(AbcTestSky130,
   ASSERT_NE(abc_network, nullptr);
   ASSERT_EQ(abc::Abc_NtkPoNum(abc_network.get()), 2);
   EXPECT_EQ(abc::Abc_NtkNodeNum(abc_network.get()), 2);
-  abc::Mio_Library_t* mio_library 
+  abc::Mio_Library_t* mio_library
       = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
 
   std::string tie_hi_name = "tie_hi";

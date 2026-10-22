@@ -618,11 +618,13 @@ void AbcLibrary::InitializeConstGates()
       abc::word constant_1 = ~constant_0;
       abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
       if (truth_table == constant_0) {
-        const0_gates_.insert({current_cell->pName, abc::SC_CellPinName(current_cell, i)});
+        const0_gates_.insert(
+            {current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
 
       if (truth_table == constant_1) {
-        const1_gates_.insert({current_cell->pName, abc::SC_CellPinName(current_cell, i)});
+        const1_gates_.insert(
+            {current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
     }
   }
@@ -694,7 +696,8 @@ std::pair<abc::SC_Cell*, abc::SC_Pin*> AbcLibrary::ConstantOneCell()
   return const1_cell_.value();
 }
 
-bool AbcLibrary::IsConst0Port(const std::string& cell_name, const std::string& port_name)
+bool AbcLibrary::IsConst0Port(const std::string& cell_name,
+                              const std::string& port_name)
 {
   if (!const_gates_initalized_) {
     InitializeConstGates();
@@ -704,7 +707,8 @@ bool AbcLibrary::IsConst0Port(const std::string& cell_name, const std::string& p
   }
   return false;
 }
-bool AbcLibrary::IsConst1Port(const std::string& cell_name, const std::string& port_name)
+bool AbcLibrary::IsConst1Port(const std::string& cell_name,
+                              const std::string& port_name)
 {
   if (!const_gates_initalized_) {
     InitializeConstGates();
