@@ -37,7 +37,7 @@ check_error "panels come in multiples of 16" {
 } FSV-0028
 # Below the command's own check, the solver's error is reported once.
 check_error "the solver rejects a panel count" {
-  fsv::solve_net_cmd a -1 -1 -1 -1 -1 -1 20
+  fsv::solve_net_cmd a -1 -1 -1 -1 -1 -1 20 0
 } FSV-0012
 set result [solve_capacitance -seed 3000000000 -tol_total 0.05]
 check "a seed beyond 32 bits is accepted" { dict exists $result a total } 1

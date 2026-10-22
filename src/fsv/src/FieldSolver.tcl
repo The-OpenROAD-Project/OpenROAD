@@ -58,6 +58,7 @@ proc clear_field_solver { args } {
 }
 
 sta::define_cmd_args "solve_capacitance" {[-coupling_threshold fraction]\
+                                           [-cross_section]\
                                            [-max_walks walks]\
                                            [-min_walks walks]\
                                            [-nets nets]\
@@ -70,8 +71,9 @@ proc solve_capacitance { args } {
   sta::parse_key_args "solve_capacitance" args \
     keys {-coupling_threshold -max_walks -min_walks -nets -panels -seed \
           -tol_coupling -tol_total} \
-    flags {}
+    flags {-cross_section}
   sta::check_argc_eq0 "solve_capacitance" $args
+  set cross_section [info exists flags(-cross_section)]
 
   # -1 keeps the solver's default.
   set values {}
@@ -101,7 +103,7 @@ proc solve_capacitance { args } {
 
   set result [dict create]
   foreach net $nets {
-    dict set result $net [fsv::solve_net_cmd $net {*}$values]
+    dict set result $net [fsv::solve_net_cmd $net {*}$values $cross_section]
   }
   return $result
 }

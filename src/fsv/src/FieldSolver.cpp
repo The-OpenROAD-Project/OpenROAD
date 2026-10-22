@@ -178,22 +178,34 @@ int FieldSolver::findNet(const std::string_view net) const
   return it == net_index_.end() ? -1 : it->second;
 }
 
-const Scene& FieldSolver::scene()
+const Scene& FieldSolver::scene(const bool cross_section)
 {
+  if (scene_ && scene_cross_section_ != cross_section) {
+    scene_.reset();
+  }
   if (!scene_) {
     try {
-      scene_ = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
-                          : std::make_unique<Scene>(geometry_, eps_);
+      if (cross_section) {
+        scene_
+            = has_stack_
+                  ? std::make_unique<Scene>(geometry_, stack_, CrossSection{})
+                  : std::make_unique<Scene>(geometry_, eps_, CrossSection{});
+      } else {
+        scene_ = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
+                            : std::make_unique<Scene>(geometry_, eps_);
+      }
     } catch (const std::exception& e) {
       logger_->error(utl::FSV, 8, "{}", coreMessage(e));
     }
+    scene_cross_section_ = cross_section;
   }
   return *scene_;
 }
 
 NetCapacitance FieldSolver::solve(const std::string_view net,
                                   const SolverOptions& solver_options,
-                                  const SolveOptions& options)
+                                  const SolveOptions& options,
+                                  const bool cross_section)
 {
   const int master = findNet(net);
   if (master < 0) {
@@ -209,9 +221,10 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
     solver_options_ = solver_options;
   }
   // Outside the try below, so that its own error is not reported again.
-  const Scene& s = scene();
+  const Scene& s = scene(cross_section);
   NetCapacitance result;
   result.net = std::string(net);
+  result.cross_section = cross_section;
   result.nets = netNames();
   try {
     const auto start = std::chrono::steady_clock::now();
@@ -231,25 +244,29 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
 void FieldSolver::report(const NetCapacitance& result) const
 {
   const CapRow& row = result.row;
+  const std::string_view unit = result.cross_section ? "fF/um" : "fF";
   logger_->info(utl::FSV,
                 11,
-                "Net {}: total {:.5g} fF +- {:.2g} after {} walks ({:.1f} "
+                "Net {}: total {:.5g} {} +- {:.2g} after {} walks ({:.1f} "
                 "hops per walk).",
                 result.net,
                 row.total(),
+                unit,
                 row.sigma[row.master],
                 row.walks,
                 static_cast<double>(row.hops) / row.walks);
-  logger_->report("  {:<20} {:>12.5g} +- {:.2g} fF",
+  logger_->report("  {:<20} {:>12.5g} +- {:.2g} {}",
                   "ground",
                   -row.ground,
-                  row.ground_sigma);
+                  row.ground_sigma,
+                  unit);
   for (int net = 0; net < static_cast<int>(row.cap.size()); net++) {
     if (net != row.master) {
-      logger_->report("  {:<20} {:>12.5g} +- {:.2g} fF",
+      logger_->report("  {:<20} {:>12.5g} +- {:.2g} {}",
                       result.nets[net],
                       row.coupling(net),
-                      row.sigma[net]);
+                      row.sigma[net],
+                      unit);
     }
   }
 }

@@ -58,6 +58,7 @@ fsv::FieldSolver* getFieldSolver()
   put(dict, "walks", Tcl_NewWideIntObj(row.walks));
   put(dict, "hops", Tcl_NewWideIntObj(row.hops));
   put(dict, "seconds", Tcl_NewDoubleObj($1.seconds));
+  put(dict, "cross_section", Tcl_NewBooleanObj($1.cross_section));
   Tcl_SetObjResult(interp, dict);
 }
 
@@ -113,7 +114,8 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
                                   long long min_walks,
                                   long long max_walks,
                                   long long seed,
-                                  int panels)
+                                  int panels,
+                                  bool cross_section)
 {
   // A negative value keeps the default.
   fsv::SolverOptions solver_options;
@@ -140,7 +142,7 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
     solver_options.panels = panels;
   }
   solver_options.threads = ord::OpenRoad::openRoad()->getThreadCount();
-  return getFieldSolver()->solve(net, solver_options, options);
+  return getFieldSolver()->solve(net, solver_options, options, cross_section);
 }
 
 }  // namespace fsv

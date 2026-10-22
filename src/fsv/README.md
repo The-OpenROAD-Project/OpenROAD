@@ -30,9 +30,13 @@ It provides:
   A control variate exploits the zero-mean weights.
 - Deterministic results for any thread count, using a counter-based Philox
   RNG and fixed batches reduced in order.
+- Cross sections (`Scene(..., CrossSection{})`, `solve_capacitance
+  -cross_section`): a 2D walk on squares in the y-z plane, with the square
+  counterparts of the cube tables (`SquareGreens`, `LayeredSquareGreens`),
+  giving capacitance per unit length. Boxes are infinitely long in x.
 - Tcl commands that read a stack, define conductors and solve.
 
-Later phases add a 2D mode, odb input, and Python commands.
+Later phases add odb input and Python commands.
 
 ## Conformal dielectrics
 
@@ -142,6 +146,7 @@ Each value is a dict with these keys:
   capacitance and standard error. Couplings are positive.
 - `walks`, `hops`: the walks taken and their total hops.
 - `seconds`: the solve's wall-clock time.
+- `cross_section`: 1 when the row is per unit length (`-cross_section`).
 
 The solve stops when the standard error of the total, and of each coupling
 of at least `-coupling_threshold` of the total, falls below its tolerance.
@@ -151,6 +156,7 @@ on the thread count.
 ```tcl
 solve_capacitance
     [-coupling_threshold fraction]
+    [-cross_section]
     [-max_walks walks]
     [-min_walks walks]
     [-nets nets]
@@ -165,6 +171,7 @@ solve_capacitance
 | Switch Name | Description |
 | ----- | ----- |
 | `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float` in the range `[0, 1]`. The default is `0.01`. |
+| `-cross_section` | Solve the conductors as a cross section in the y-z plane: every box is infinitely long in x, its x extent is ignored, and the results are per unit length, in fF/µm. Conformal dielectrics grow on the sides only. |
 | `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`, at least 1. The default is `100000000`. |
 | `-min_walks` | Walks before the tolerances are first checked. The type is `int`. The default is `16384`. |
 | `-nets` | Master nets to solve. The type is a list of net names. The default is every net. |
