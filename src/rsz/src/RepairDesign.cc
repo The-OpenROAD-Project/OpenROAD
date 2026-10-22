@@ -2034,6 +2034,13 @@ void RepairDesign::subdivideRegion(LoadRegion& region, int max_fanout)
         logger_->critical(RSZ, 83, "pin outside regions");
       }
     }
+    // If all pins landed in one half, shrink its bbox to the tight pin bounds
+    // to avoid recursively bisecting empty space (e.g., co-located pins).
+    if (region.regions_[0].pins_.empty()) {
+      region.regions_[1].bbox_ = findBbox(region.regions_[1].pins_);
+    } else if (region.regions_[1].pins_.empty()) {
+      region.regions_[0].bbox_ = findBbox(region.regions_[0].pins_);
+    }
     if (graphics_) {
       graphics_->subdivide(cut);
     }
