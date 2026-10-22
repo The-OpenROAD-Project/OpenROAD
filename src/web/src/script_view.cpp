@@ -13,13 +13,18 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "display_control_tree.h"
 #include "odb/db.h"
 #include "renderer_controls.h"
+#include "sta/Clock.hh"
+#include "sta/Scene.hh"
+#include "sta/Sdc.hh"
 #include "tile_generator.h"
 #include "timing_path_painter.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web/clockTree.h"
 #include "web/core.h"
 #include "web/heatMap.h"
 #include "web/timing_path_style.h"
@@ -313,6 +318,15 @@ ScriptView::Frame ScriptView::frame(
     frame.timing_path_parts.*part
         = leaf != nullptr && leaf->visible.value_or(false);
   }
+  const DisplayControlTree::Leaf* clock_trees = tree.find(kClockTreesControl);
+  if (clock_viewer_shown_ && clock_trees != nullptr
+      && clock_trees->visible.value_or(false)) {
+    frame.clock_tree = buildClockTreeLocked(clock_viewer_clock_);
+    const auto depth = clock_tree_depths_.find(clock_viewer_clock_);
+    if (depth != clock_tree_depths_.end()) {
+      frame.clock_tree_depth = depth->second;
+    }
+  }
   odb::dbChip* chip = db_ != nullptr ? db_->getChip() : nullptr;
   if (!marker_category_.empty() && chip != nullptr) {
     frame.markers = chip->findMarkerCategory(marker_category_.c_str());
@@ -439,6 +453,100 @@ void ScriptView::clearTimingPath()
 {
   const std::scoped_lock lock(mutex_);
   timing_path_.reset();
+}
+
+void ScriptView::showWidget(const std::string& name, const bool show)
+{
+  // Of the docks, only the clock tree viewer draws on the layout.
+  if (name != kClockTreeViewerTitle && name != kClockTreeViewerName) {
+    return;
+  }
+  const std::scoped_lock lock(mutex_);
+  if (show == clock_viewer_shown_) {
+    return;
+  }
+  clock_viewer_shown_ = show;
+  showClockTreesRowLocked(show && !clock_viewer_clock_.empty());
+}
+
+void ScriptView::selectClockviewerClock(const std::string& clock_name,
+                                        const std::optional<int> depth)
+{
+  const std::scoped_lock lock(mutex_);
+  watchBlockLocked();
+  // As ClockWidget::selectClock: the viewer is shown, and populated on first
+  // use with the first clock current, before the clock is looked for.
+  const bool was_shown = clock_viewer_shown_;
+  clock_viewer_shown_ = true;
+  const std::vector<std::string> names = clockNamesLocked();
+  std::string current = clock_viewer_clock_;
+  if (!clock_viewer_populated_) {
+    clock_viewer_populated_ = true;
+    clock_tree_depths_.clear();
+    current = names.empty() ? "" : names.front();
+  }
+  const bool found = std::ranges::find(names, clock_name) != names.end();
+  if (found) {
+    current = clock_name;
+    if (depth) {
+      clock_tree_depths_[clock_name] = *depth;
+    }
+  }
+  if (!was_shown || current != clock_viewer_clock_) {
+    showClockTreesRowLocked(!current.empty());
+  }
+  clock_viewer_clock_ = current;
+  if (!found) {
+    logger_->error(utl::WEB, 133, "Unable to find clock: {}", clock_name);
+  }
+}
+
+void ScriptView::showClockTreesRowLocked(const bool show)
+{
+  tree_.removeLeaf(kClockTreesControl);
+  if (show) {
+    tree_.addLeaf(kClockTreesControl,
+                  {.visible = true, .selectable = std::nullopt});
+  }
+}
+
+sta::Scene* ScriptView::clockViewerSceneLocked() const
+{
+  if (sta_ == nullptr || sta_->scenes().empty()) {
+    return nullptr;
+  }
+  return sta_->scenes().front();
+}
+
+std::vector<std::string> ScriptView::clockNamesLocked() const
+{
+  std::vector<std::string> names;
+  if (sta::Scene* scene = clockViewerSceneLocked()) {
+    for (sta::Clock* clock : scene->sdc()->clocks()) {
+      // A virtual clock, or one on a pin with no net, has no tree to show.
+      if (ClockTree(clock, sta_->getDbNetwork()).getNet() != nullptr) {
+        names.push_back(clock->name());
+      }
+    }
+  }
+  return names;
+}
+
+std::shared_ptr<const ClockTree> ScriptView::buildClockTreeLocked(
+    const std::string& clock_name) const
+{
+  sta::Scene* scene = clockViewerSceneLocked();
+  const sta::Clock* clock
+      = scene != nullptr ? scene->sdc()->findClock(clock_name) : nullptr;
+  if (clock == nullptr) {
+    return nullptr;
+  }
+  for (auto& tree : buildClockTrees(sta_, scene, clock)) {
+    if (tree->getNet() != nullptr) {
+      return std::move(tree);
+    }
+  }
+  return nullptr;
 }
 
 void ScriptView::setSelected(const Selected& selection)

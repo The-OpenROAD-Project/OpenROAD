@@ -10,7 +10,8 @@
 namespace web {
 
 // What a saved image draws over the layout for `frame`, in Qt's order
-// (RenderThread::draw).
-ImageOverlays buildImageOverlays(ScriptView::Frame frame);
+// (RenderThread::draw), over an image filled with `background`.
+ImageOverlays buildImageOverlays(ScriptView::Frame frame,
+                                 const Painter::Color& background);
 
 }  // namespace web

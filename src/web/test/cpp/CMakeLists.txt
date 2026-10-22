@@ -30,6 +30,7 @@ set(WEB_TESTS
   TestLabels
   TestSaveDisplayControls
   TestScriptView
+  TestClockTreeOverlay
   TestGif
   TestWebAssets
   TestHeatMap

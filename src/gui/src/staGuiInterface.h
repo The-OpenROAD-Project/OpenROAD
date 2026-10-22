@@ -8,27 +8,24 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
-#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/SdcClass.hh"
+#include "web/clockTree.h"
 
 namespace sta {
 class Scene;
-class PathExpanded;
 }  // namespace sta
 
 namespace gui {
@@ -239,88 +236,7 @@ class TimingPath
                bool only_data) const;
 };
 
-class ClockTree
-{
- public:
-  using PinDelays = std::map<const sta::Pin*, sta::Delay>;
-
-  ClockTree(ClockTree* parent, sta::Net* net);
-  ClockTree(sta::Clock* clock, sta::dbNetwork* network);
-
-  ClockTree* getParent() const { return parent_; }
-  sta::dbNetwork* getNetwork() const { return network_; }
-
-  sta::Net* getNet() const { return net_; }
-
-  int getLevel() const { return level_; }
-  bool isRoot() const { return level_ == 0; }
-
-  std::set<const sta::Pin*> getDrivers(bool visibility) const;
-  std::set<const sta::Pin*> getLeaves(bool visibility) const;
-
-  const std::vector<std::unique_ptr<ClockTree>>& getFanout() const
-  {
-    return fanout_;
-  }
-
-  sta::Clock* getClock() const { return clock_; }
-
-  const PinDelays& getDriverDelays() const { return drivers_; }
-  const PinDelays& getChildSinkDelays() const { return child_sinks_; }
-  const PinDelays& getLeavesDelays() const { return leaves_; }
-
-  std::pair<const sta::Pin*, sta::Delay> getPairedSink(
-      const sta::Pin* paired_pin) const;
-
-  int getTotalFanout(bool visibility) const;
-  int getTotalLeaves(bool visibility) const;
-  int getMaxLeaves(bool visibility) const;
-  sta::Delay getMinimumArrival(bool visibility) const;
-  sta::Delay getMaximumArrival(bool visibility) const;
-  sta::Delay getMinimumDriverDelay(bool visibility) const;
-  int getSinkCount() const;
-
-  odb::PtrSet<odb::dbNet> getNets(bool visibility) const;
-
-  void addPath(sta::PathExpanded& path, const sta::StaState* sta);
-
-  std::vector<std::pair<const sta::Pin*, const sta::Pin*>> findPathTo(
-      const sta::Pin* pin) const;
-  ClockTree* findTree(odb::dbNet* net, bool include_children = true);
-  ClockTree* findTree(sta::Net* net, bool include_children = true);
-
-  void setSubtreeVisibility(bool visibility);
-  bool getSubtreeVisibility() const { return subtree_visibility_; };
-  bool isVisible() const
-  {
-    return (parent_) ? parent_->getSubtreeVisibility() : true;
-  };
-
- private:
-  ClockTree* parent_;
-
-  sta::Clock* clock_;
-  sta::dbNetwork* network_;
-  sta::Net* net_;
-
-  int level_;
-
-  PinDelays drivers_;
-  PinDelays child_sinks_;
-  PinDelays leaves_;
-
-  std::vector<std::unique_ptr<ClockTree>> fanout_;
-
-  bool subtree_visibility_;
-
-  void addPath(sta::PathExpanded& path, int idx, const sta::StaState* sta);
-  ClockTree* getTree(sta::Net* net);
-  bool isLeaf(const sta::Pin* pin) const;
-  bool addVertex(sta::Vertex* vertex, sta::Delay delay);
-  sta::Net* getNet(const sta::Pin* pin) const;
-
-  std::map<const sta::Pin*, std::set<const sta::Pin*>> getPinMapping() const;
-};
+using ClockTree = web::ClockTree;
 
 class STAGuiInterface
 {

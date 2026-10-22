@@ -11,13 +11,15 @@
 #include "script_view.h"
 #include "tile_generator.h"
 #include "timing_path_painter.h"
+#include "web/clockTree.h"
 #include "web/core.h"
 #include "web/heatMap.h"
 #include "web/timing_path_style.h"
 
 namespace web {
 
-ImageOverlays buildImageOverlays(ScriptView::Frame frame)
+ImageOverlays buildImageOverlays(ScriptView::Frame frame,
+                                 const Painter::Color& background)
 {
   ImageOverlays overlays;
 
@@ -52,6 +54,16 @@ ImageOverlays buildImageOverlays(ScriptView::Frame frame)
       overlays.legends.emplace_back(
           [](Painter& painter) { paintTimingPathLegend(painter); });
     }
+  }
+
+  // ClockTreeRenderer::drawObjects, registered once the viewer is shown.
+  if (frame.clock_tree != nullptr) {
+    overlays.passes.emplace_back(
+        [tree = std::move(frame.clock_tree),
+         depth = frame.clock_tree_depth,
+         trunk = clockTreeTrunkColor(background)](Painter& painter) {
+          paintClockTree(*tree, depth, trunk, painter);
+        });
   }
 
   // RenderThread::drawSelected.

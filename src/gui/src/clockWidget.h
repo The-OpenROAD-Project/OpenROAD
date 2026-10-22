@@ -36,6 +36,7 @@
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "staGuiInterface.h"
+#include "web/clockTree.h"
 
 namespace sta {
 class dbSta;
@@ -43,10 +44,6 @@ class dbSta;
 
 namespace utl {
 class Logger;
-}
-
-namespace web {
-class ColorGenerator;
 }
 
 namespace gui {
@@ -83,14 +80,7 @@ class ClockTreeRenderer : public web::Renderer
   odb::dbITerm* path_to_;
 
   static constexpr int kPenWidth = 2;
-  static constexpr const char* kRenderLabel = "Clock trees";
-
-  void drawTree(web::Painter& painter,
-                const web::Descriptor* descriptor,
-                web::ColorGenerator& colorgenerator,
-                ClockTree* tree,
-                int depth);
-  void setPen(web::Painter& painter, const web::Painter::Color& color);
+  static constexpr const char* kRenderLabel = web::kClockTreesControl;
 };
 
 // Handles drawing a dbNet in the clock tree scene

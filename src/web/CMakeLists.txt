@@ -26,6 +26,7 @@ find_package(ZLIB REQUIRED)
 # replaces, and they are on the web tile renderer's hot path.
 add_library(gui_core
   src/bufferTreeDescriptor.cpp
+  src/clockTree.cpp
   src/colorGenerator.cpp
   src/dbDescriptors.cpp
   src/descriptor_registry.cpp

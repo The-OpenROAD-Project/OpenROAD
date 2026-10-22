@@ -1231,18 +1231,16 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
 void Gui::selectClockviewerClock(const std::string& clock_name,
                                  std::optional<int> depth)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->selectClockviewerClock(clock_name, depth);
   }
-  activeBackend()->selectClockviewerClock(clock_name, depth);
 }
 
 void Gui::showWidget(const std::string& name, bool show)
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->showWidget(name, show);
   }
-  activeBackend()->showWidget(name, show);
 }
 
 void Gui::triggerAction(const std::string& name)

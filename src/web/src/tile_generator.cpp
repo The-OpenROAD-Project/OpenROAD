@@ -7022,6 +7022,11 @@ Color toTileColor(const web::Painter::Color& c)
   };
 }
 
+web::Painter::Color toPainterColor(const Color& c)
+{
+  return web::Painter::Color(c.r, c.g, c.b, c.a);
+}
+
 /* static */
 void TileGenerator::setRendererHooks(RendererHooks hooks)
 {

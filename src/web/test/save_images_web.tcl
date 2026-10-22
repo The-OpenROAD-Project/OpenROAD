@@ -50,13 +50,15 @@ set placement [make_result_file save_images_placement.png]
 set heat_map [make_result_file save_images_heat_map.png]
 set worst_path [make_result_file save_images_worst_path.png]
 set cleared [make_result_file save_images_cleared_path.png]
+set clock_tree [make_result_file save_images_clock_tree.png]
+set clock_hidden [make_result_file save_images_clock_hidden.png]
 set webp [make_result_file save_images_ext.webp]
 set escaped [make_result_file save_images_escaped_key.png]
 set unescaped [make_result_file save_images_unescaped_key.png]
 # results/ survives between runs, so a run that writes nothing must not find
 # last run's files.
 foreach path [list $all $routing $placement $heat_map $worst_path $cleared \
-  $webp.png $escaped $unescaped] {
+  $clock_tree $clock_hidden $webp.png $escaped $unescaped] {
   file delete $path
 }
 
@@ -90,6 +92,12 @@ gui::show_worst_path
 save_image -web -width 400 $worst_path
 gui::clear_timing_path
 save_image -web -width 400 $cleared
+
+gui::show_widget "Clock Tree Viewer"
+gui::select_clockviewer_clock core_clock
+save_image -web -width 400 $clock_tree
+gui::hide_widget "Clock Tree Viewer"
+save_image -web -width 400 $clock_hidden
 gui::restore_display_controls
 
 # Only PNG is written, so another extension gets one added.
@@ -100,7 +108,7 @@ save_image -web -width 100 -display_option {{Nets/\Power} false} $escaped
 save_image -web -width 100 -display_option {{Nets/Power} false} $unescaped
 
 foreach path [list $all $routing $placement $heat_map $worst_path $cleared \
-  $webp.png] {
+  $clock_tree $clock_hidden $webp.png] {
   if { ![file exists $path] } {
     fail "[file tail $path] was not written"
   }
@@ -123,6 +131,12 @@ if { [read_file_bytes $placement] eq [read_file_bytes $heat_map] } {
 }
 if { [read_file_bytes $worst_path] eq [read_file_bytes $cleared] } {
   fail "the worst path was not drawn"
+}
+if { [read_file_bytes $clock_tree] eq [read_file_bytes $clock_hidden] } {
+  fail "the clock tree was not drawn"
+}
+if { [read_file_bytes $clock_hidden] ne [read_file_bytes $cleared] } {
+  fail "hiding the clock tree viewer left something drawn"
 }
 if { [read_file_bytes $escaped] ne [read_file_bytes $unescaped] } {
   fail "a backslash in a display option did not match as an escape"

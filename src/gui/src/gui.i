@@ -335,7 +335,7 @@ void save_clocktree_image(const char* filename, const char* clock_name, const ch
 
 void select_clockviewer_clock(const char* clock_name, int depth = 0)
 {
-  if (!check_gui("select_clockviewer_clock")) {
+  if (!check_gui("select_clockviewer_clock", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -562,7 +562,7 @@ void select_marker_category(const char* name)
 
 void show_widget(const char* name)
 {
-  if (!check_gui("show_widget")) {
+  if (!check_gui("show_widget", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -571,7 +571,7 @@ void show_widget(const char* name)
 
 void hide_widget(const char* name)
 {
-  if (!check_gui("hide_widget")) {
+  if (!check_gui("hide_widget", true)) {
     return;
   }
   auto gui = web::Gui::get();

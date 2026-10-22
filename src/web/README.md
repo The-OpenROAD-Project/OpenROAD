@@ -97,9 +97,10 @@ calls have chosen, with the same paths and defaults as the Qt display controls,
 and over it the heat map whose `Heat Maps/*` control is on (with its legend
 when `gui::set_heatmap <map> ShowLegend 1`), the DRC markers of
 `gui::select_marker_category`, the path of `gui::show_worst_path` with the
-`Timing Path/*` controls, and the selection and highlight groups from `select`,
-as the Qt GUI does. That is how one script, such as ORFS's `save_images.tcl`,
-can save the same views with either renderer.
+`Timing Path/*` controls, the tree of `gui::select_clockviewer_clock` while
+the "Clock Tree Viewer" is shown, and the selection and highlight groups from
+`select`, as the Qt GUI does. That is how one script, such as ORFS's
+`save_images.tcl`, can save the same views with either renderer.
 
 #### Display option keys (web mode)
 
@@ -350,10 +351,12 @@ This command is not `gui::save_display_controls`. With no Qt window open,
 `gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
 act on a copy of the Qt display-control tree kept on the server, with the
 same paths and defaults; `select`, `gui::clear_selections`,
-`gui::clear_highlights`, `gui::select_marker_category`, `gui::show_worst_path`
-and `gui::clear_timing_path` act on a selection kept there too. That copy
-works in a build without Qt and needs no running server, but it is separate
-from what a browser shows. Of the colors, only `Misc/Background` is kept there.
+`gui::clear_highlights`, `gui::select_marker_category`, `gui::show_worst_path`,
+`gui::clear_timing_path`, `gui::select_clockviewer_clock`, and
+`gui::show_widget`/`gui::hide_widget` for the "Clock Tree Viewer" act on a
+selection kept there too. That copy works in a build without Qt and needs no
+running server, but it is separate from what a browser shows. Of the colors,
+only `Misc/Background` is kept there.
 
 ### Restore Display Controls
 

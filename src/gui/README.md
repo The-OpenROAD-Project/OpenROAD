@@ -782,6 +782,9 @@ gui::select_clockviewer_clock
 | ---- | ---- |
 | `name` |  name of clock to select |
 
+With no Qt window open, `save_image -web` draws that clock's tree on the
+layout while the "Clock Tree Viewer" is shown.
+
 ### GUI Display Controls
 
 Control the visible and selected elements in the layout:
@@ -882,6 +885,9 @@ gui::show_widget
 | Switch Name | Description |
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
+
+With no Qt window open, only the "Clock Tree Viewer" can be shown or hidden;
+the other names are ignored.
 
 ### Hide widget
 

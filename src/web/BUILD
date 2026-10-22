@@ -144,6 +144,7 @@ cc_library(
     name = "core",
     srcs = [
         "src/bufferTreeDescriptor.cpp",
+        "src/clockTree.cpp",
         "src/colorGenerator.cpp",
         "src/dbDescriptors.cpp",
         "src/descriptor_registry.cpp",
@@ -160,6 +161,7 @@ cc_library(
         "src/staDescriptors.cpp",
     ],
     hdrs = [
+        "include/web/clockTree.h",
         "include/web/core.h",
         "include/web/descriptor_registry.h",
         "include/web/heatMap.h",

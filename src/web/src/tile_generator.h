@@ -162,8 +162,10 @@ struct TileFrame
 // (RenderThread::draw): after the layers and under the labels.
 using ImagePass = std::function<void(Painter&)>;
 
-// The tile renderer's color for a web::Painter one; they share the RGBA layout.
+// Between a web::Painter color and the tile renderer's, which share the RGBA
+// layout.
 Color toTileColor(const Painter::Color& c);
+Painter::Color toPainterColor(const Color& c);
 struct ImageOverlays
 {
   std::vector<ImagePass> passes;

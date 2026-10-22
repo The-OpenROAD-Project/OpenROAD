@@ -34,6 +34,7 @@ class DisplayControlTree
   void addDesignRows(odb::dbDatabase* db);
   // Adds `path` unless it is already a leaf.
   void addLeaf(const std::string& path, const Leaf& leaf);
+  void removeLeaf(const std::string& path) { leaves_.erase(path); }
 
   const Leaves& leaves() const { return leaves_; }
   Leaf* find(const std::string& path);

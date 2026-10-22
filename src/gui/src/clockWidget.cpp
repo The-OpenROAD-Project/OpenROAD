@@ -38,13 +38,13 @@
 #include <utility>
 #include <vector>
 
-#include "colorGenerator.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "odb/db.h"
+#include "options.h"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -54,6 +54,7 @@
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
 #include "utl/Logger.h"
+#include "web/clockTree.h"
 
 Q_DECLARE_METATYPE(odb::dbBTerm*);
 Q_DECLARE_METATYPE(odb::dbITerm*);
@@ -84,8 +85,13 @@ void ClockTreeRenderer::drawObjects(web::Painter& painter)
     return;
   }
 
-  web::ColorGenerator generator;
-  drawTree(painter, descriptor, generator, tree_, 0);
+  web::Painter::Color background = web::Painter::kBlack;
+  if (auto* options = dynamic_cast<QtOptions*>(painter.getOptions())) {
+    const QColor color = options->background();
+    background = web::Painter::Color(color.red(), color.green(), color.blue());
+  }
+  web::paintClockTree(
+      *tree_, max_depth_, web::clockTreeTrunkColor(background), painter);
 
   if (path_to_ != nullptr) {
     painter.setPen(web::Painter::kCyan, true, kPenWidth);
@@ -106,36 +112,6 @@ void ClockTreeRenderer::drawObjects(web::Painter& painter)
           painter);
     }
   }
-}
-
-void ClockTreeRenderer::drawTree(web::Painter& painter,
-                                 const web::Descriptor* descriptor,
-                                 web::ColorGenerator& colorgenerator,
-                                 ClockTree* tree,
-                                 int depth)
-{
-  odb::dbNet* net = tree->getNetwork()->staToDb(tree->getNet());
-  descriptor->highlight(net, painter);
-
-  const web::Painter::Color pen_color = painter.getPenColor();
-  const bool change_color = depth < max_depth_ && tree->getSinkCount() > 1;
-  if (change_color) {
-    depth++;
-  }
-  for (const auto& fanout : tree->getFanout()) {
-    if (change_color) {
-      setPen(painter, colorgenerator.getColor());
-    }
-    drawTree(painter, descriptor, colorgenerator, fanout.get(), depth);
-  }
-
-  setPen(painter, pen_color);
-}
-
-void ClockTreeRenderer::setPen(web::Painter& painter,
-                               const web::Painter::Color& color)
-{
-  painter.setPenAndBrush(color, true, web::Painter::kSolid, kPenWidth);
 }
 
 void ClockTreeRenderer::setPathTo(odb::dbITerm* term)
@@ -1544,7 +1520,7 @@ void ClockTreeView::updateColorDepth(int depth)
 ////////////////
 
 ClockWidget::ClockWidget(QWidget* parent)
-    : QDockWidget("Clock Tree Viewer", parent),
+    : QDockWidget(web::kClockTreeViewerTitle, parent),
       logger_(nullptr),
       block_(nullptr),
       sta_(nullptr),
@@ -1554,7 +1530,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       scene_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
 {
-  setObjectName("clock_viewer");  // for settings
+  setObjectName(web::kClockTreeViewerName);  // for settings
 
   QWidget* container = new QWidget(this);
 

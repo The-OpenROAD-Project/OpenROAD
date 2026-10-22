@@ -2268,7 +2268,8 @@ ScriptImage scriptImage(ScriptView& view,
   return {
       .vis = std::move(vis),
       .background = background,
-      .overlays = buildImageOverlays(std::move(frame)),
+      .overlays
+      = buildImageOverlays(std::move(frame), toPainterColor(background)),
   };
 }
 }  // namespace

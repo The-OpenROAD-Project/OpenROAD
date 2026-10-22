@@ -17,6 +17,7 @@
 #include "tile_generator.h"
 #include "timing_path_painter.h"
 #include "timing_report.h"
+#include "web/clockTree.h"
 #include "web/core.h"
 
 namespace odb {
@@ -45,6 +46,7 @@ class dbWire;
 
 namespace sta {
 class dbSta;
+class Scene;
 }  // namespace sta
 
 namespace utl {
@@ -94,6 +96,11 @@ class ScriptView : public GuiBackend
   // The path the timing report would show first, taken now as Qt's is.
   void showWorstTimingPath(bool setup) override;
   void clearTimingPath() override;
+  // The clock tree viewer as ClockWidget keeps it: whether it is shown, the
+  // clock whose tree it draws on the layout, and each clock's color depth.
+  void showWidget(const std::string& name, bool show) override;
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth) override;
 
   // Shared with the web viewer, so the browser's renderer toggles and Tcl's
   // agree.
@@ -114,6 +121,9 @@ class ScriptView : public GuiBackend
     HeatMapDataSource* heat_map = nullptr;
     std::optional<TimingPathSummary> timing_path;
     TimingPathParts timing_path_parts;
+    // The tree the clock tree viewer draws on the layout, if any.
+    std::shared_ptr<const ClockTree> clock_tree;
+    int clock_tree_depth = 1;
   };
   // The current controls with `overrides` (TileVisibility JSON keys or
   // display-control patterns) on top, leaving the controls as they were.
@@ -221,6 +231,16 @@ class ScriptView : public GuiBackend
       const std::map<std::string, bool>& overrides);
   // Gives the heat map that is shown the onShow/onHide Qt's renderer gives it.
   void showHeatMapLocked(HeatMapDataSource* heat_map);
+  // ClockTreeRenderer's row, which a registration brings back on.
+  void showClockTreesRowLocked(bool show);
+  // ClockWidget's scene box, which starts on the first scene.
+  sta::Scene* clockViewerSceneLocked() const;
+  // The clocks ClockWidget::populate shows a tree for, in its order.
+  std::vector<std::string> clockNamesLocked() const;
+  // Built anew each time: a tree points into the netlist and the SDC, which a
+  // later command can change.
+  std::shared_ptr<const ClockTree> buildClockTreeLocked(
+      const std::string& clock_name) const;
   void set(const std::string& name, bool selectable, bool value);
 
   odb::dbDatabase* db_;
@@ -240,6 +260,12 @@ class ScriptView : public GuiBackend
   std::vector<odb::dbBlock*> watched_;
   std::vector<std::unique_ptr<MarkerWatcher>> marker_watchers_;
   std::vector<std::unique_ptr<BlockWatcher>> watchers_;
+
+  bool clock_viewer_shown_ = false;
+  // Set by the first selectClockviewerClock, as ClockWidget populates then.
+  bool clock_viewer_populated_ = false;
+  std::string clock_viewer_clock_;
+  std::map<std::string, int> clock_tree_depths_;
 
   struct Saved
   {
