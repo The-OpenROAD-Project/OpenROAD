@@ -24,7 +24,7 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          buildMapOptions, buildVisibilityFlags, clampArrowStep,
-         computeBoundsTransforms, computeScaleBar, decorateTabIcons,
+         computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
          rafCoalesce, showToast, unitLabel }
@@ -1276,19 +1276,6 @@ updateStatus();
 
 // Mount layout components
 app.goldenLayout.loadLayout(defaultLayoutConfig);
-addTabIcons();
-
-// Add the per-panel tab icons and make sure headers update
-function addTabIcons() {
-    if (decorateTabIcons(document.getElementById('gl-container')) > 0) {
-        app.goldenLayout.updateSize();
-    }
-}
-
-// Persist layout on changes
-app.goldenLayout.on('stateChanged', () => {
-    addTabIcons();
-});
 
 // Sync layout size on window resize
 function syncLayoutSize() {
