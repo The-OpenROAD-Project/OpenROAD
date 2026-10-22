@@ -1852,6 +1852,8 @@ void extMain::run()
     // clear the table for a possible subsequent block extraction.
     extRCModel* rules_model = _modelTable->pop();
     if (delete_model_at_extraction_) {
+      _currentModel = nullptr;
+      _metRCTable.resetCnt(0);
       delete rules_model;
     }
   }
@@ -2151,17 +2153,23 @@ uint32_t extMain::readSPEF(char* filename,
                            bool calib,
                            int app_print_limit)
 {
-  if (!_spef || _spef->getBlock() != _block) {
+  const bool pure_diff = diff && !calib;
+  std::unique_ptr<extSpef> comparison;
+  if (pure_diff) {
+    // A comparison must not reuse or leave behind an incremental import reader.
+    comparison = std::make_unique<extSpef>(_tech, _block, logger_, "", this);
+  } else if (!_spef || _spef->getBlock() != _block) {
     delete _spef;
     _spef = new extSpef(_tech, _block, logger_, "", this);
   }
-  _spef->_moreToRead = moreToRead;
-  _spef->incr_rRun();
+  extSpef* spef = pure_diff ? comparison.get() : _spef;
+  spef->_moreToRead = moreToRead;
+  spef->incr_rRun();
 
   if (_extRun == 0) {
     getPrevControl();
   }
-  _spef->setCornerCnt(_cornerCnt);
+  spef->setCornerCnt(_cornerCnt);
   if (!diff && !calib) {
     _foreign = true;
   }
@@ -2174,15 +2182,22 @@ uint32_t extMain::readSPEF(char* filename,
     logger_->warn(RCX, 3, "Read SPEF into extracted db!");
   }
 
-  if (openSpefFile(filename, 0) > 0) {
+  const bool opened
+      = pure_diff
+            ? spef->setInSpef(filename && filename[0] ? filename : nullptr)
+            : openSpefFile(filename, 0) == 0;
+  if (!opened) {
     return 0;
   }
+  if (pure_diff) {
+    spef->setUseIdsFlag(true, false);
+  }
 
-  _spef->_noCapNumCollapse = noCapNumCollapse;
-  _spef->_capNodeFile = nullptr;
+  spef->_noCapNumCollapse = noCapNumCollapse;
+  spef->_capNodeFile = nullptr;
   if (capNodeMapFile && capNodeMapFile[0] != '\0') {
-    _spef->_capNodeFile = fopen(capNodeMapFile, "w");
-    if (_spef->_capNodeFile == nullptr) {
+    spef->_capNodeFile = fopen(capNodeMapFile, "w");
+    if (spef->_capNodeFile == nullptr) {
       logger_->warn(
           RCX, 5, "Can't open SPEF file {} to write.", capNodeMapFile);
     }
@@ -2193,42 +2208,49 @@ uint32_t extMain::readSPEF(char* filename,
     findSomeNet(_block, netNames, inets, logger_);
   }
 
-  uint32_t cnt = _spef->readBlock(0,
-                                  inets,
-                                  force,
-                                  rConn,
-                                  nodeCoord,
-                                  rCap,
-                                  rOnlyCCcap,
-                                  rRes,
-                                  cc_thres,
-                                  length_unit,
-                                  _extracted,
-                                  keepLoadedCorner,
-                                  stampWire,
-                                  testParsing,
-                                  app_print_limit,
-                                  m_map,
-                                  corner,
-                                  low,
-                                  up,
-                                  excludeSubWord,
-                                  subWord,
-                                  statsFile,
-                                  dbCornerName,
-                                  calibrateBaseCorner,
-                                  spefCorner,
-                                  fixLoop,
-                                  _rsegCoord);
-  genScaledExt();
+  bool comparison_rseg_coord = _rsegCoord;
+  uint32_t cnt
+      = spef->readBlock(0,
+                        inets,
+                        force,
+                        rConn,
+                        nodeCoord,
+                        rCap,
+                        rOnlyCCcap,
+                        rRes,
+                        cc_thres,
+                        length_unit,
+                        _extracted,
+                        keepLoadedCorner,
+                        stampWire,
+                        testParsing,
+                        app_print_limit,
+                        m_map,
+                        corner,
+                        low,
+                        up,
+                        excludeSubWord,
+                        subWord,
+                        statsFile,
+                        dbCornerName,
+                        calibrateBaseCorner,
+                        spefCorner,
+                        fixLoop,
+                        pure_diff ? comparison_rseg_coord : _rsegCoord);
+  if (!pure_diff) {
+    genScaledExt();
+  }
 
-  if (_spef->_capNodeFile) {
-    fclose(_spef->_capNodeFile);
+  if (spef->_capNodeFile) {
+    fclose(spef->_capNodeFile);
+    spef->_capNodeFile = nullptr;
   }
 
   if (diff || cnt == 0) {
-    delete _spef;
-    _spef = nullptr;
+    if (!pure_diff) {
+      delete _spef;
+      _spef = nullptr;
+    }
     return 0;
   }
   int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;

@@ -6,7 +6,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <map>
+#include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "odb/db.h"
@@ -67,6 +69,9 @@ class extSpef
   void preserveFlag(bool v);
   int getWriteCorner(int corner, const char* name);
   void setUseIdsFlag(bool diff = false, bool calib = false);
+  bool isPureDiff() const { return _diff && !_calib; }
+  void closeDiffFiles();
+  uint32_t getDiffCapNodeId(odb::dbNet* net, char kind, uint32_t node) const;
   void setGzipFlag(bool gzFlag);
   void setDesign(const char* name);
   void writeBlock(const char* nodeCoord,
@@ -416,7 +421,7 @@ class extSpef
   char _nDvdName[2000];
   bool _inputNet = false;
 
-  NameTable* _notFoundInst;
+  NameTable* _notFoundInst = nullptr;
   NameTable* _nodeHashTable = nullptr;
   uint32_t _tmpCapId = 1;
   char _tmpBuff1[1024];
@@ -436,6 +441,10 @@ class extSpef
   float _lowerCalibLimit;
   bool _calib = false;
   bool _diff = false;
+  std::map<std::tuple<uint32_t, char, uint32_t>, uint32_t> _diffCapNodeIds;
+  std::set<uint32_t> _diffInputNets;
+  std::set<uint32_t> _diffReadNets;
+  std::set<uint32_t> _diffReadInsts;
   bool _match = false;
   odb::dbNet* _d_corner_net;
   odb::dbNet* _d_net;
@@ -443,7 +452,7 @@ class extSpef
   uint32_t _unmatchedSpefInst;
   FILE* _diffLogFP = nullptr;
   FILE* _diffOutFP = nullptr;
-  uint32_t _diffLogCnt;
+  uint32_t _diffLogCnt = 0;
   double _upperThres;
   double _lowerThres;
 
