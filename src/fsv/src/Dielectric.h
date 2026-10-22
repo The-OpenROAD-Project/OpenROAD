@@ -10,18 +10,25 @@
 
 namespace fsv {
 
-// One conformal dielectric around one conductor box: the region inside
-// `outer` and outside `inner`, which is the conductor box or the next shell
-// in.
+// One conformal dielectric around one conductor box: `outer` is the box
+// grown by the summed thicknesses of this conformal and those inside it,
+// and `inner` the same for the next one in (or the box itself).
+//
+// The boxes of one net on one layer form a group, whose shells grow from
+// the union of its boxes: a point takes the conformal of the smallest depth
+// whose outer box, of any box in the group, contains it. For a single box
+// that is the region inside `outer` and outside `inner`.
 struct Shell
 {
   Box outer;
   Box inner;
   double eps;
   // Identifies the conformal dielectric. Shells of the same one may overlap
-  // (they merge); shells of different ones may not.
+  // (they merge); outside a group, shells of different ones may not.
   int material;
-  int box;  // the conductor box it wraps
+  int box;    // the conductor box it wraps
+  int group;  // its net and layer
+  int depth;  // 1 for the innermost conformal of its box
 };
 
 // The permittivity of a scene outside its conductors: planar layers, and
@@ -71,6 +78,9 @@ class Dielectric
             double min_half_size = 0) const;
 
   bool uniform() const { return planar_.empty() && shells_.empty(); }
+  // The permittivity below the first planar interface (everywhere, when
+  // there are none) outside the shells.
+  double baseEps() const { return base_eps_; }
   const std::vector<Stack::PlanarInterface>& planar() const { return planar_; }
   const std::vector<Shell>& shells() const { return shells_; }
 

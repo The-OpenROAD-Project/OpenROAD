@@ -54,12 +54,17 @@ double Dielectric::planarEps(const double z) const
 
 const Shell* Dielectric::shellAt(const Vec3& p) const
 {
+  // The shallowest shell containing p: within a group that is the union
+  // rule, and across groups only shells of one conformal dielectric may
+  // overlap.
+  const Shell* best = nullptr;
   for (const Shell& s : shells_) {
-    if (strictlyInside(p, s.outer) && !strictlyInside(p, s.inner)) {
-      return &s;
+    if (strictlyInside(p, s.outer)
+        && (best == nullptr || s.depth < best->depth)) {
+      best = &s;
     }
   }
-  return nullptr;
+  return best;
 }
 
 double Dielectric::eps(const Vec3& p) const

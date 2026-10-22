@@ -8,6 +8,7 @@
 #include <cmath>
 #include <exception>
 #include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -50,9 +51,11 @@ void FieldSolver::readItf(const std::string& path)
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
-  int conformals = 0;
+  std::set<std::string> conformals;
   for (const Stack::Conductor& c : stack.conductors) {
-    conformals += static_cast<int>(c.conformals.size());
+    for (const Stack::ConformalDielectric& cf : c.conformals) {
+      conformals.insert(cf.name);
+    }
   }
   logger_->info(utl::FSV,
                 2,
@@ -61,7 +64,7 @@ void FieldSolver::readItf(const std::string& path)
                 stack.technology,
                 stack.dielectrics.size(),
                 stack.conductors.size(),
-                conformals,
+                conformals.size(),
                 stack.vias.size());
   scene_.reset();
   stack_ = std::move(stack);

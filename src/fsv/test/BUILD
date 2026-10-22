@@ -85,6 +85,7 @@ cc_test(
     srcs = ["cpp/TestSolver.cpp"],
     deps = [
         "//src/fsv",
+        "//src/fsv:core",
         "//src/fsv:geometry",
         "//src/fsv:stack",
         "@googletest//:gtest",

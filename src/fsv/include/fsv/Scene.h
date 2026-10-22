@@ -34,8 +34,6 @@ class Scene
   Scene& operator=(const Scene&) = delete;
 
   const Geometry& geometry() const { return geometry_; }
-  // Relative permittivity at a point outside the conductors.
-  double eps(const Vec3& p) const;
   // Relative permittivity of the planar stack at height z, away from
   // conformal dielectrics; on an interface, the one above.
   double epsAt(double z) const;

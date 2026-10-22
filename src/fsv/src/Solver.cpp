@@ -8,9 +8,11 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -154,11 +156,15 @@ GaussianSurface makeGaussianSurface(const Geometry& geometry,
       }
     }
   }
-  const double clearance = 0.25 * offset;
-  const bool clear = std::ranges::none_of(
-      faces, [&](const double d) { return std::abs(d - offset) < clearance; });
-  if (!clear) {
-    std::ranges::sort(faces);
+  std::ranges::sort(faces);
+  // Moving the offset changes its clearance, so repeat until it holds.
+  for (int attempt = 0; attempt < 4; attempt++) {
+    const double clearance = 0.25 * offset;
+    if (std::ranges::none_of(faces, [&](const double d) {
+          return std::abs(d - offset) < clearance;
+        })) {
+      break;
+    }
     // Gaps between consecutive faces, bounded by 0 and the limit, which are
     // not faces.
     double best = offset;
@@ -166,10 +172,10 @@ GaussianSurface makeGaussianSurface(const Geometry& geometry,
     double widest = -1;
     double widest_mid = offset;
     for (size_t i = 0; i <= faces.size(); i++) {
-      const double lo = i == 0 ? 0 : faces[i - 1] + clearance;
-      const double hi = i == faces.size() ? limit : faces[i] - clearance;
       const double gap_lo = i == 0 ? 0 : faces[i - 1];
       const double gap_hi = i == faces.size() ? limit : faces[i];
+      const double lo = i == 0 ? 0 : gap_lo + clearance;
+      const double hi = i == faces.size() ? limit : gap_hi - clearance;
       if (gap_hi - gap_lo > widest) {
         widest = gap_hi - gap_lo;
         widest_mid = 0.5 * (gap_lo + gap_hi);
@@ -301,7 +307,7 @@ CapRow Solver::solve(const Scene& scene,
   const Dielectric& dielectric = scene.dielectric();
   // Two-dielectric tables for each ordered pair of the scene's
   // permittivities, built the first time a walk needs them.
-  std::vector<double> eps_values;
+  std::vector<double> eps_values{dielectric.baseEps()};
   for (const Stack::PlanarInterface& i : dielectric.planar()) {
     eps_values.push_back(i.eps_below);
     eps_values.push_back(i.eps_above);
@@ -489,9 +495,20 @@ CapRow Solver::solve(const Scene& scene,
   int round_size
       = std::min(options_.first_round_batches, options_.round_batches);
   std::atomic<int> claim{0};
+  // A worker cannot throw: the first failure (from building a table, say)
+  // is kept and rethrown here after the round.
+  std::exception_ptr failure;
+  std::mutex failure_mutex;
   const std::function<void()> work = [&]() {
-    for (int b = claim++; b < round_size; b = claim++) {
-      runBatch(round_first + b, tallies[b]);
+    try {
+      for (int b = claim++; b < round_size; b = claim++) {
+        runBatch(round_first + b, tallies[b]);
+      }
+    } catch (...) {
+      const std::lock_guard failure_lock(failure_mutex);
+      if (!failure) {
+        failure = std::current_exception();
+      }
     }
   };
 
@@ -505,6 +522,9 @@ CapRow Solver::solve(const Scene& scene,
     std::fill(tallies.begin(), tallies.begin() + round_size, Tally(columns));
     claim = 0;
     pool_->run(work);
+    if (failure) {
+      std::rethrow_exception(failure);
+    }
     for (int b = 0; b < round_size; b++) {
       total.add(tallies[b]);
     }

@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Dielectric.h"
@@ -113,30 +114,43 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
     bottom = d.top;
   }
   check_eps(stack.background_eps, "the background");
+  for (const Stack::Conductor& c : stack.conductors) {
+    for (const Stack::ConformalDielectric& cf : c.conformals) {
+      check_eps(cf.eps, "conformal dielectric " + cf.name);
+      if (!(cf.side_thickness >= 0 && cf.top_thickness >= 0)) {
+        throw std::invalid_argument("fsv: conformal dielectric " + cf.name
+                                    + " has a negative thickness");
+      }
+    }
+  }
 
   // A box on a conductor layer (its z extent equals the layer's) gets the
   // layer's conformal dielectrics, each the box grown by the summed side
-  // and top thicknesses so far.
+  // and top thicknesses so far. The boxes of one net on one layer form a
+  // group (see Shell).
   std::map<std::string, int> materials;
+  std::map<std::pair<int, int>, int> groups;
   std::vector<std::string> material_names;
   std::vector<Shell> shells;
   const std::vector<Box>& boxes = geometry.boxes();
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
     const Box& box = boxes[b];
-    for (const Stack::Conductor& c : stack.conductors) {
+    for (int layer = 0; layer < static_cast<int>(stack.conductors.size());
+         layer++) {
+      const Stack::Conductor& c = stack.conductors[layer];
       if (std::abs(box.lo[2] - c.bottom) > kLayerTolerance
           || std::abs(box.hi[2] - c.top) > kLayerTolerance) {
         continue;
       }
+      const int group = groups
+                            .try_emplace({geometry.boxNet(b), layer},
+                                         static_cast<int>(groups.size()))
+                            .first->second;
       Box inner = box;
       double side = 0;
       double top = 0;
+      int depth = 0;
       for (const Stack::ConformalDielectric& cf : c.conformals) {
-        check_eps(cf.eps, "conformal dielectric " + cf.name);
-        if (!(cf.side_thickness >= 0 && cf.top_thickness >= 0)) {
-          throw std::invalid_argument("fsv: conformal dielectric " + cf.name
-                                      + " has a negative thickness");
-        }
         if (cf.side_thickness == 0 && cf.top_thickness == 0) {
           continue;
         }
@@ -153,20 +167,22 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
         if (added) {
           material_names.push_back(cf.name);
         }
-        shells.push_back({outer, inner, cf.eps, it->second, b});
+        shells.push_back({outer, inner, cf.eps, it->second, b, group, ++depth});
         inner = outer;
       }
       break;
     }
   }
 
-  // Shells of different conformal dielectrics may not overlap, except where
-  // a conductor cuts into them.
+  // Outside a group, shells of different conformal dielectrics may not
+  // overlap, except where a conductor cuts into them. A shell's region is
+  // its outer box minus the shallower shells of its group.
   for (size_t i = 0; i < shells.size(); i++) {
     for (size_t j = i + 1; j < shells.size(); j++) {
       const Shell& a = shells[i];
       const Shell& s = shells[j];
-      if (a.material == s.material || !overlaps(a.outer, s.outer)) {
+      if (a.material == s.material || a.group == s.group
+          || !overlaps(a.outer, s.outer)) {
         continue;
       }
       Box both;
@@ -174,7 +190,14 @@ Scene::Scene(const Geometry& geometry, const Stack& stack)
         both.lo[k] = std::max(a.outer.lo[k], s.outer.lo[k]);
         both.hi[k] = std::min(a.outer.hi[k], s.outer.hi[k]);
       }
-      std::vector<const Box*> holes{&a.inner, &s.inner};
+      std::vector<const Box*> holes;
+      for (const Shell& t : shells) {
+        const bool shallower = (t.group == a.group && t.depth < a.depth)
+                               || (t.group == s.group && t.depth < s.depth);
+        if (shallower && overlaps(both, t.outer)) {
+          holes.push_back(&t.outer);
+        }
+      }
       for (const Box& box : boxes) {
         if (overlaps(both, box)) {
           holes.push_back(&box);
@@ -204,11 +227,6 @@ const std::vector<Stack::PlanarInterface>& Scene::interfaces() const
 double Scene::epsAt(const double z) const
 {
   return dielectric_->planarEps(z);
-}
-
-double Scene::eps(const Vec3& p) const
-{
-  return dielectric_->eps(p);
 }
 
 }  // namespace fsv

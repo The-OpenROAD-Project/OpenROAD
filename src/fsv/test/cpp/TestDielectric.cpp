@@ -19,12 +19,14 @@ Dielectric twoWires()
   const std::vector<Stack::PlanarInterface> planar{{0.6, 2.7, 3.9},
                                                    {1.2, 3.9, 1.0}};
   std::vector<Shell> shells;
+  int wire_index = 0;
   for (const double x0 : {0.0, 0.42}) {
     const Box wire{{x0, 0, 0.5}, {x0 + 0.2, 3, 0.8}};
     const Box inner{{x0 - 0.05, -0.05, 0.5}, {x0 + 0.25, 3.05, 0.84}};
     const Box outer{{x0 - 0.12, -0.12, 0.5}, {x0 + 0.32, 3.12, 0.9}};
-    shells.push_back({inner, wire, 7.0, 0, 0});
-    shells.push_back({outer, inner, 4.5, 1, 0});
+    shells.push_back({inner, wire, 7.0, 0, wire_index, wire_index, 1});
+    shells.push_back({outer, inner, 4.5, 1, wire_index, wire_index, 2});
+    wire_index++;
   }
   return Dielectric(2.7, planar, shells);
 }
@@ -36,10 +38,12 @@ Dielectric sidewallOnly()
 {
   const std::vector<Stack::PlanarInterface> planar{{0.5, 4.2, 3.9}};
   std::vector<Shell> shells;
+  int wire_index = 0;
   for (const double x0 : {0.0, 0.5}) {
     const Box wire{{x0, 0, 0.5}, {x0 + 0.3, 0.14, 0.86}};
     const Box shell{{x0 - 0.03, -0.03, 0.5}, {x0 + 0.33, 0.17, 0.86}};
-    shells.push_back({shell, wire, 3.5, 0, 0});
+    shells.push_back({shell, wire, 3.5, 0, wire_index, wire_index, 1});
+    wire_index++;
   }
   return Dielectric(4.2, planar, shells);
 }
