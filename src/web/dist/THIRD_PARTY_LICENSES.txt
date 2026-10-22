@@ -634,13 +634,13 @@ will be liable to anyone for any damages related to this
 software or this license, under any kind of legal claim.***
 
 ==============================================================================
-three 0.160.0 (MIT)
+three 0.186.1 (MIT)
 Source: https://github.com/mrdoob/three.js
 ==============================================================================
 
 The MIT License
 
-Copyright © 2010-2023 three.js authors
+Copyright © 2010-2026 three.js authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
