@@ -921,7 +921,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool removeBufferIfPossible(sta::Instance* buffer,
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement);
+                                  const sta::LibertyCell* replacement,
+                                  const sta::Mode* mode = nullptr);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
 
   // One driver's current load, cap limit, and violation state.
