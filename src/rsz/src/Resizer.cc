@@ -6309,15 +6309,37 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     }
   }
 
+  // Restore the design's initial clock latencies before aborting so a failed
+  // budget never leaves the cutting-plane's tentative set_clock_latency
+  // annotations in the SDC. Without this, an abort would corrupt downstream
+  // timing with skew that was computed but never realized.
+  auto restore_initial_latencies = [&]() {
+    for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+      if (initial_pin_latency_set[i]) {
+        sta_->setClockLatency(ck_clocks[i],
+                              const_cast<sta::Pin*>(ck_pins[i]),
+                              sta::RiseFallBoth::riseFall(),
+                              sta::MinMaxAll::all(),
+                              initial_latency[i],
+                              sdc);
+      } else {
+        sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+      }
+    }
+    sta_->findRequireds();
+  };
+
   if (final_result.status == SkewLPSolver::Status::kHoldInfeasible) {
     logger_->warn(utl::RSZ,
                   602,
                   "compute_skew_budget: hold-infeasible — skew alone "
                   "cannot satisfy hold guardband.");
+    restore_initial_latencies();
     return;
   }
   if (final_result.status == SkewLPSolver::Status::kSolverFailure) {
     logger_->warn(utl::RSZ, 1225, "compute_skew_budget: LP solver failure.");
+    restore_initial_latencies();
     return;
   }
   if (final_result.status == SkewLPSolver::Status::kSetupInfeasible) {
