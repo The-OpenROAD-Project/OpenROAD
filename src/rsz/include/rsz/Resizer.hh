@@ -425,6 +425,35 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                         float slack_margin);
 
   ////////////////////////////////////////////////////////////////
+  // Useful-skew budgeting via a minimum-perturbation LP. Emits
+  // set_clock_latency annotations on register CK pins for CTS to consume.
+  // See doc/useful_skew.md for the algorithm.
+  struct SkewBudgetOptions
+  {
+    float max_skew = 0.0f;            // Δ_max; 0 ⇒ default 0.15 * min period
+    float hold_margin = 50e-12f;      // G_h, seconds
+    bool one_sided = false;           // t ∈ [0, Δ_max]: delay-only schedule
+                                      // physically realizable by CTS
+    float quantum = 0.0f;             // snap final targets to multiples of
+                                      // this (the CTS delay-buffer delay);
+                                      // 0 ⇒ no snapping
+    float edge_threshold = 200e-12f;  // setup-endpoint candidate window
+                                      // for the augmentation pass
+    float emit_threshold = 1e-12f;    // below this, don't annotate
+    // Iter-0 augmentation pass: one batched findPathEnds over the
+    // critical endpoint set with this per-endpoint depth. 0 disables
+    // (pure cutting-plane); Tcl default is 200.
+    int paths_per_endpoint = 0;
+    // Cutting-plane iteration cap. Each iteration applies the LP's
+    // tentative latencies, re-walks endpoints with VertexPathIterator
+    // (which surfaces a *different* worst-per-tag launch once shifts
+    // change which path is critical), augments the LP edge set, and
+    // re-solves. Converges in a handful of iterations.
+    int max_iterations = 8;
+  };
+  void computeSkewBudget(const SkewBudgetOptions& opts);
+
+  ////////////////////////////////////////////////////////////////
 
   // Area of the design in meter^2.
   double designArea();
