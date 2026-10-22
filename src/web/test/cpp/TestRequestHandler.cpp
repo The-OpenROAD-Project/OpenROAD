@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <functional>
 #include <iterator>
@@ -28,6 +30,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
@@ -743,7 +746,7 @@ TEST_F(TileHandlerTest, DrawnTileIsStillAPngResponse)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-// The highlight overlay is one of the panes that never merges, and it holds
+// The highlight overlay is a slot of its own that never merges, and it holds
 // nothing at all until something is selected -- so it is the single tile layer
 // most worth not sending an image for.
 TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
@@ -1025,6 +1028,206 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// Requests `layer` and returns the cache size afterwards, so a hit shows as no
+// growth.
+size_t requestAndCount(TileHandler& handler,
+                       SessionState& state,
+                       const TileGenerator& gen,
+                       const std::string& fields)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,)" + fields + "}");
+  handler.handleTile(req, state);
+  return gen.tileCacheSize();
+}
+
+TEST_F(TileHandlerTest, ClientOnlyKeysHitTheCache)
+{
+  // The client sends its display options (scale bar, rulers...) with every
+  // tile; they draw nothing on the server and must not split the cache.
+  const size_t first = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"metal1","scale_bar":true)");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"metal1","scale_bar":false,)"
+                            R"("rulers":true)"),
+            first);
+}
+
+TEST_F(TileHandlerTest, VisibleLayersOnlyKeyThePinsLayer)
+{
+  const size_t metal1 = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"metal1","visible_layers":["m1"])");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"metal1","visible_layers":["m2"])"),
+            metal1);
+  const size_t pins = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"_pins","visible_layers":["m1"])");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"_pins","visible_layers":["m2"])"),
+            pins + 1);
+}
+
+// ─── tile_group ─────────────────────────────────────────────────────────────
+
+// Overlapping pin shapes on metal1 and metal2, so a group's stacking order and
+// blending both show in its pixels.
+class TileGroupTest : public TileHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    TileHandlerTest::SetUp();
+    addPinBox("p1", "metal1", odb::Rect(20000, 20000, 60000, 60000));
+    addPinBox("p2", "metal2", odb::Rect(40000, 40000, 80000, 80000));
+    gen_->eagerInit();
+  }
+
+  void addPinBox(const char* name, const char* layer_name, const odb::Rect& box)
+  {
+    odb::dbNet* net = odb::dbNet::create(block_, name);
+    odb::dbBTerm* bterm = odb::dbBTerm::create(net, name);
+    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+    odb::dbTechLayer* layer = getDb()->getTech()->findLayer(layer_name);
+    ASSERT_NE(layer, nullptr);
+    odb::dbBox::create(
+        bpin, layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
+    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  WebSocketResponse group(const std::string& fields, const uint32_t id = 1)
+  {
+    WebSocketRequest req;
+    req.id = id;
+    req.type = WebSocketRequest::kTileGroup;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,"tile_px":256,)" + fields + "}");
+    return handler_->handleTileGroup(req, state_);
+  }
+
+  WebSocketResponse single(const std::string& layer)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(R"({"z":0,"x":0,"y":0,"tile_px":256,"layer":")" + layer
+                        + R"("})");
+    return handler_->handleTile(req, state_);
+  }
+
+  static std::vector<unsigned char> pixels(const WebSocketResponse& resp)
+  {
+    std::vector<unsigned char> rgba;
+    unsigned w = 0;
+    unsigned h = 0;
+    EXPECT_EQ(lodepng::decode(rgba, w, h, resp.payload), 0u);
+    return rgba;
+  }
+
+  // Straight-alpha src-over, the model both the browser's canvas merge and the
+  // server compositor follow.
+  static void over(std::vector<unsigned char>& dst,
+                   const std::vector<unsigned char>& src)
+  {
+    for (size_t i = 0; i + 3 < dst.size(); i += 4) {
+      const double sa = src[i + 3] / 255.0;
+      const double da = dst[i + 3] / 255.0;
+      const double oa = sa + (da * (1 - sa));
+      for (size_t c = 0; c < 3; ++c) {
+        const double v
+            = oa > 0 ? ((src[i + c] * sa) + (dst[i + c] * da * (1 - sa))) / oa
+                     : 0;
+        dst[i + c] = static_cast<unsigned char>(std::lround(v));
+      }
+      dst[i + 3] = static_cast<unsigned char>(std::lround(oa * 255));
+    }
+  }
+};
+
+TEST_F(TileGroupTest, OneLayerGroupIsThatLayersTile)
+{
+  const auto resp = group(R"("layers":["metal1"])");
+  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_EQ(pixels(resp), pixels(single("metal1")));
+}
+
+TEST_F(TileGroupTest, ComposesItsLayersBottomToTop)
+{
+  const auto resp = group(R"("layers":["metal1","metal2"])");
+  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
+  std::vector<unsigned char> expected = pixels(single("metal1"));
+  over(expected, pixels(single("metal2")));
+  const std::vector<unsigned char> actual = pixels(resp);
+  ASSERT_EQ(actual.size(), expected.size());
+  int worst = 0;
+  for (size_t i = 0; i < actual.size(); ++i) {
+    worst = std::max(worst, std::abs(actual[i] - expected[i]));
+  }
+  EXPECT_LE(worst, 1);
+
+  EXPECT_NE(pixels(group(R"("layers":["metal2","metal1"])")), actual)
+      << "the overlap must depend on which layer is on top";
+}
+
+TEST_F(TileGroupTest, GroupOfEmptyLayersIsEmpty)
+{
+  const auto resp = group(R"("layers":["metal9","metal10"])");
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(resp.payload.empty());
+}
+
+TEST_F(TileGroupTest, EachLayerKeepsItsFillPattern)
+{
+  const auto solid = pixels(group(R"("layers":["metal1"],"patterns":[1])"));
+  EXPECT_EQ(solid, pixels(group(R"("layers":["metal1"])")));
+  EXPECT_NE(solid, pixels(group(R"("layers":["metal1"],"patterns":[3])")));
+}
+
+TEST_F(TileGroupTest, CachedByLayersInOrderAndPatterns)
+{
+  group(R"("layers":["metal1","metal2"])");
+  const size_t size = gen_->tileCacheSize();
+  group(R"("layers":["metal1","metal2"],"scale_bar":true)");
+  EXPECT_EQ(gen_->tileCacheSize(), size);
+  group(R"("layers":["metal2","metal1"])");
+  EXPECT_EQ(gen_->tileCacheSize(), size + 1);
+  group(R"("layers":["metal1","metal2"],"patterns":[1,3])");
+  EXPECT_EQ(gen_->tileCacheSize(), size + 2);
+}
+
+TEST_F(TileGroupTest, CancelledBeforeRender)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
+    state_.cancelled_ids.insert(7);
+  }
+  const auto resp = group(R"("layers":["metal1"])", 7);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_EQ(payloadStr(resp), "cancelled");
+}
+
+TEST_F(TileGroupTest, RejectsBadInput)
+{
+  for (const char* fields : {R"("nolayers":1)",
+                             R"("layers":[])",
+                             R"("layers":"metal1")",
+                             R"("layers":["_pins"])",
+                             R"("layers":[1])",
+                             R"("layers":["metal1"],"patterns":[1,1])",
+                             R"("layers":["metal1"],"patterns":["x"])"}) {
+    const auto resp = group(fields);
+    EXPECT_EQ(resp.type, WebSocketResponse::kError) << fields;
+    EXPECT_TRUE(payloadStr(resp).starts_with("bad tile_group request"))
+        << fields;
+  }
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -1855,7 +2058,7 @@ TEST_F(TileHandlerTest, TileRejectsNonIntegerZoomInsteadOfThrowing)
   }
 }
 
-// Leaflet asks for tiles beyond the 2^z grid whenever the design is smaller
+// A client may ask for tiles beyond the 2^z grid when the design is smaller
 // than the viewport or while panning at the border, and the renderers answer
 // those with a transparent tile.  A range check here would turn ordinary
 // panning into a stream of errors, so off-grid coordinates must still render.
@@ -2236,9 +2439,9 @@ TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
   EXPECT_NE(json.find("\"selected\":[]"), std::string::npos);
 }
 
-// Leaflet's zoomSnap=0 lets the client send fractional zoom values; the
-// handler must accept them without erroring out.  Regression test for the
-// click-to-select breakage after strict-typing the request fields.
+// A client may send fractional zoom values; the handler must accept them
+// without erroring out.  Regression test for the click-to-select breakage
+// after strict-typing the request fields.
 TEST_F(SelectHandlerTest, SelectAcceptsFractionalZoom)
 {
   WebSocketRequest req;

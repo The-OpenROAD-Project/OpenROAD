@@ -4,8 +4,10 @@
   "type": "module",
   "description": "Browser libraries for the web viewer, bundled by esbuild into the assets embedded in the OpenROAD binary (issue #11065).",
   "dependencies": {
+    "@deck.gl/core": "9.4.0",
+    "@deck.gl/extensions": "9.4.0",
+    "@deck.gl/layers": "9.4.0",
     "golden-layout": "2.6.0",
-    "leaflet": "1.9.4",
     "lit": "^3.3.3",
     "netlistsvg": "1.0.2",
     "three": "0.160.0"

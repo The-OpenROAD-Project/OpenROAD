@@ -10,12 +10,16 @@
 //   Escape   : cancel → IDLE
 //   Shift+K  : clear all rulers
 
-import { dbuToLatLng, latLngToDbu } from './coordinates.js';
+import { dbuToWorld, worldToDbu } from './coordinates.js';
+import { DRAW_ORDER, toRgba } from './layout-view.js';
 import { beginSelection } from './ui-utils.js';
 
 const RULER_COLOR = '#00ffff';
 const RULER_SELECTED_COLOR = '#ffff00';
 const SNAP_INDICATOR_COLOR = '#ffffff';
+
+// Screen distance within which a click picks a ruler line.
+const kRulerHitPx = 4;
 
 const IDLE = 0;
 const FIRST_POINT = 1;
@@ -38,34 +42,15 @@ export class RulerManager {
         this._ctrlHeld = false;
         this._shiftHeld = false;
 
-        // Leaflet layers
-        this._rulerPane = null;
-        this._rulerLayerGroup = null;
-        this._previewGroup = null;  // rubber-band during MEASURING
-        this._snapGroup = null;     // snap indicator
-
         // Debounce state
         this._snapTimer = null;
         this._lastSnapResult = null;
+        this._snapShapes = null;
+        this._preview = null;      // { shapes, label: { world, text } }
 
-        // Map event handlers (bound references for cleanup)
-        this._onMouseMove = this._handleMouseMove.bind(this);
-        this._onMapClick = this._handleMapClick.bind(this);
-
-        this._initLayers();
-    }
-
-    _initLayers() {
-        const map = this._app.map;
-        if (!map) return;
-
-        this._rulerPane = map.createPane('ruler-pane');
-        this._rulerPane.style.zIndex = '700';
-        this._rulerPane.style.pointerEvents = 'auto';
-
-        this._rulerLayerGroup = L.layerGroup([], { pane: 'ruler-pane' }).addTo(map);
-        this._previewGroup = L.layerGroup([], { pane: 'ruler-pane' }).addTo(map);
-        this._snapGroup = L.layerGroup([], { pane: 'ruler-pane' }).addTo(map);
+        // Tick lengths are in screen pixels, so a zoom redraws the rulers;
+        // the labels are world-anchored markers and follow on their own.
+        app.view?.on('zoom', () => this._renderRulerShapes());
     }
 
     isActive() {
@@ -73,9 +58,12 @@ export class RulerManager {
     }
 
     updateVisibility() {
-        if (this._rulerPane) {
-            this._rulerPane.style.display = this._visibility.rulers ? '' : 'none';
-        }
+        this._renderAll();
+        this._drawTransient();
+    }
+
+    _shown() {
+        return this._visibility.rulers !== false;
     }
 
     toggleRulerMode() {
@@ -90,18 +78,15 @@ export class RulerManager {
         this._state = IDLE;
         this._pt0 = null;
         this._lastSnapResult = null;
-        this._clearPreview();
-        this._clearSnap();
+        this._clearTransient();
         this._setCursor(false);
-        this._removeMapListeners();
     }
 
     clearAllRulers() {
         this._rulers = [];
         this._selectedRulerId = null;
-        this._rulerLayerGroup.clearLayers();
-        this._clearPreview();
-        this._clearSnap();
+        this._renderAll();
+        this._clearTransient();
         if (this._state !== IDLE) {
             this.cancelRulerBuild();
         }
@@ -114,7 +99,6 @@ export class RulerManager {
         this._pt0 = null;
         this._lastSnapResult = null;
         this._setCursor(true);
-        this._addMapListeners();
     }
 
     _enterMeasuring(pt0) {
@@ -122,36 +106,25 @@ export class RulerManager {
         this._pt0 = pt0;
     }
 
-    // ─── Map event wiring ────────────────────────────────────────────
+    // ─── Pointer input (from view-input via main.js) ─────────────────
 
-    _addMapListeners() {
-        const map = this._app.map;
-        if (!map) return;
-        map.getContainer().addEventListener('mousemove', this._onMouseMove);
-        map.on('click', this._onMapClick);
+    _toDbu(world) {
+        return worldToDbu(world[0], world[1], this._app.designScale,
+                          this._app.designOriginX, this._app.designOriginY);
     }
 
-    _removeMapListeners() {
-        const map = this._app.map;
-        if (!map) return;
-        map.getContainer().removeEventListener('mousemove', this._onMouseMove);
-        map.off('click', this._onMapClick);
+    _toWorld(x, y) {
+        return dbuToWorld(x, y, this._app.designScale,
+                          this._app.designOriginX, this._app.designOriginY);
     }
 
-    _handleMouseMove(e) {
+    handleMouseMove(world, e) {
         if (this._state === IDLE) return;
 
         this._ctrlHeld = e.ctrlKey || e.metaKey;
         this._shiftHeld = e.shiftKey;
 
-        const map = this._app.map;
-        const rect = map.getContainer().getBoundingClientRect();
-        const pt = map.containerPointToLatLng([
-            e.clientX - rect.left, e.clientY - rect.top
-        ]);
-        const dbu = latLngToDbu(pt.lat, pt.lng,
-            this._app.designScale, this._app.designMaxDXDY,
-            this._app.designOriginX, this._app.designOriginY);
+        const dbu = this._toDbu(world);
 
         // Debounce snap requests at ~50ms
         if (this._snapTimer) clearTimeout(this._snapTimer);
@@ -160,21 +133,13 @@ export class RulerManager {
         }, 50);
     }
 
-    _handleMapClick(e) {
+    handleMapClick(world, e) {
         if (this._state === IDLE) return;
 
-        L.DomEvent.stopPropagation(e);
+        this._ctrlHeld = e.ctrlKey || e.metaKey;
+        this._shiftHeld = e.shiftKey;
 
-        // Read modifier keys from the native DOM event
-        const orig = e.originalEvent;
-        if (orig) {
-            this._ctrlHeld = orig.ctrlKey || orig.metaKey;
-            this._shiftHeld = orig.shiftKey;
-        }
-
-        const dbu = latLngToDbu(e.latlng.lat, e.latlng.lng,
-            this._app.designScale, this._app.designMaxDXDY,
-            this._app.designOriginX, this._app.designOriginY);
+        const dbu = this._toDbu(world);
 
         // Use the last snap result if available, otherwise raw click
         const snapped = this._getSnappedPoint(dbu.dbuX, dbu.dbuY);
@@ -187,8 +152,7 @@ export class RulerManager {
             // where you can keep placing rulers until pressing 'k' or Escape)
             this._state = FIRST_POINT;
             this._pt0 = null;
-            this._clearPreview();
-            this._clearSnap();
+            this._clearTransient();
             this._lastSnapResult = null;
         }
     }
@@ -202,7 +166,7 @@ export class RulerManager {
         // Ctrl held: skip snap entirely, use raw cursor position
         if (this._ctrlHeld) {
             this._lastSnapResult = null;
-            this._clearSnap();
+            this._snapShapes = null;
             this._updatePreview(dbuX, dbuY);
             return;
         }
@@ -212,7 +176,7 @@ export class RulerManager {
         const radius = dbuPerMicron;  // 1 micron search radius
 
         // Point snap threshold: max(10 pixels in DBU, 10 DBU)
-        const zoom = app.map.getZoom();
+        const zoom = app.view.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
         // designScale is CSS px per DBU at zoom 0, so it already carries the
         // tile size the map was built with -- which is not a constant.
@@ -310,75 +274,67 @@ export class RulerManager {
     }
 
     _updateSnapIndicator(snap) {
-        this._clearSnap();
-        if (!snap?.found) return;
-
-        const scale = this._app.designScale;
-        const maxDXDY = this._app.designMaxDXDY;
-        const originX = this._app.designOriginX;
-        const originY = this._app.designOriginY;
-
-        if (snap.is_point) {
-            const ll = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY, originX, originY);
-            const marker = L.circleMarker(ll, {
-                radius: 5,
-                color: SNAP_INDICATOR_COLOR,
-                fillColor: SNAP_INDICATOR_COLOR,
-                fillOpacity: 0.5,
-                weight: 1,
-                pane: 'ruler-pane',
-                interactive: false,
-            });
-            this._snapGroup.addLayer(marker);
-        } else {
-            const p1 = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY, originX, originY);
-            const p2 = dbuToLatLng(snap.edge[1][0], snap.edge[1][1], scale, maxDXDY, originX, originY);
-            const line = L.polyline([p1, p2], {
-                color: SNAP_INDICATOR_COLOR,
-                weight: 1,
-                pane: 'ruler-pane',
-                interactive: false,
-            });
-            this._snapGroup.addLayer(line);
+        this._snapShapes = null;
+        if (snap?.found) {
+            const white = toRgba(SNAP_INDICATOR_COLOR);
+            if (snap.is_point) {
+                this._snapShapes = [{
+                    kind: 'circle',
+                    center: this._toWorld(snap.edge[0][0], snap.edge[0][1]),
+                    radius: 5, stroke: white, width: 1,
+                    fill: toRgba(SNAP_INDICATOR_COLOR, 0.5),
+                }];
+            } else {
+                this._snapShapes = [{
+                    kind: 'path',
+                    points: [this._toWorld(snap.edge[0][0], snap.edge[0][1]),
+                             this._toWorld(snap.edge[1][0], snap.edge[1][1])],
+                    stroke: white, width: 1,
+                }];
+            }
         }
+        this._drawTransient();
     }
 
     _updatePreview(rawX, rawY) {
-        this._clearPreview();
-        if (this._state !== MEASURING || !this._pt0) return;
+        this._preview = null;
+        if (this._state === MEASURING && this._pt0) {
+            const snapped = this._getSnappedPoint(rawX, rawY);
+            const p0 = this._toWorld(this._pt0.x, this._pt0.y);
+            const p1 = this._toWorld(snapped.x, snapped.y);
+            const dist = this._computeDistance(this._pt0, snapped);
+            this._preview = {
+                shapes: [{ kind: 'path', points: [p0, p1],
+                           stroke: toRgba(RULER_COLOR), width: 2,
+                           dash: [6, 4] }],
+                label: { world: [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2],
+                         text: this._formatDistance(dist) },
+            };
+        }
+        this._drawTransient();
+    }
 
-        const scale = this._app.designScale;
-        const maxDXDY = this._app.designMaxDXDY;
-        const originX = this._app.designOriginX;
-        const originY = this._app.designOriginY;
-        const snapped = this._getSnappedPoint(rawX, rawY);
+    // The snap indicator and the rubber-band preview.
+    _drawTransient() {
+        const view = this._app.view;
+        if (!view) return;
+        const shown = this._shown();
+        view.setOverlay('ruler-snap', shown ? this._snapShapes : null,
+                        { order: DRAW_ORDER.ruler });
+        view.setOverlay('ruler-preview', shown && this._preview
+            ? this._preview.shapes : null, { order: DRAW_ORDER.ruler });
+        view.clearMarkers('ruler-preview');
+        if (shown && this._preview) {
+            view.addMarker('ruler-preview', 'label', this._preview.label.world,
+                           this._labelElement(this._preview.label.text));
+        }
+    }
 
-        const p0 = dbuToLatLng(this._pt0.x, this._pt0.y, scale, maxDXDY, originX, originY);
-        const p1 = dbuToLatLng(snapped.x, snapped.y, scale, maxDXDY, originX, originY);
-
-        const line = L.polyline([p0, p1], {
-            color: RULER_COLOR,
-            weight: 2,
-            dashArray: '6,4',
-            pane: 'ruler-pane',
-            interactive: false,
-        });
-        this._previewGroup.addLayer(line);
-
-        // Show distance label
-        const dist = this._computeDistance(this._pt0, snapped);
-        const midLat = (p0[0] + p1[0]) / 2;
-        const midLng = (p0[1] + p1[1]) / 2;
-        const label = L.marker([midLat, midLng], {
-            icon: L.divIcon({
-                className: 'ruler-label',
-                html: this._formatDistance(dist),
-                iconSize: null,
-            }),
-            pane: 'ruler-pane',
-            interactive: false,
-        });
-        this._previewGroup.addLayer(label);
+    _labelElement(text) {
+        const el = document.createElement('div');
+        el.className = 'ruler-label';
+        el.textContent = text;
+        return el;
     }
 
     // ─── Ruler creation and rendering ────────────────────────────────
@@ -395,65 +351,40 @@ export class RulerManager {
             euclidian: this._app.rulerStyle !== 'manhattan',
         };
         this._rulers.push(ruler);
-        this._renderRuler(ruler);
         this._selectRuler(id);
         return ruler;
     }
 
-    _renderRuler(ruler) {
-        const scale = this._app.designScale;
-        const maxDXDY = this._app.designMaxDXDY;
-        const originX = this._app.designOriginX;
-        const originY = this._app.designOriginY;
-
-        const p0 = dbuToLatLng(ruler.pt0.x, ruler.pt0.y, scale, maxDXDY, originX, originY);
-        const p1 = dbuToLatLng(ruler.pt1.x, ruler.pt1.y, scale, maxDXDY, originX, originY);
-        const isSelected = ruler.id === this._selectedRulerId;
-        const color = isSelected ? RULER_SELECTED_COLOR : RULER_COLOR;
-
-        const group = L.layerGroup([], { pane: 'ruler-pane' });
-
-        // Build path points: straight line (euclidian) or L-shape (Manhattan)
+    // World points of a ruler's path: straight, or the Manhattan L.
+    _rulerPath(ruler) {
         const joinPt = ruler.euclidian
             ? null : this._getManhattanJoinPt(ruler.pt0, ruler.pt1);
-        const pJoin = joinPt
-            ? dbuToLatLng(joinPt.x, joinPt.y, scale, maxDXDY, originX, originY)
-            : null;
-        const pathPoints = pJoin ? [p0, pJoin, p1] : [p0, p1];
+        const pts = joinPt ? [ruler.pt0, joinPt, ruler.pt1]
+            : [ruler.pt0, ruler.pt1];
+        return { joinPt, points: pts.map((p) => this._toWorld(p.x, p.y)) };
+    }
 
-        // Main ruler line
-        const mainLine = L.polyline(pathPoints, {
-            color,
-            weight: 2,
-            pane: 'ruler-pane',
-            interactive: true,
-        });
-        mainLine.on('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            this._selectRuler(ruler.id);
-        });
-        group.addLayer(mainLine);
+    _rulerShapes(ruler) {
+        const isSelected = ruler.id === this._selectedRulerId;
+        const color = toRgba(isSelected ? RULER_SELECTED_COLOR : RULER_COLOR);
+        const { joinPt, points } = this._rulerPath(ruler);
+        const shapes = [{ kind: 'path', points, stroke: color, width: 2 }];
 
-        // Endcap ticks — perpendicular to each segment direction
-        const zoom = this._app.map.getZoom();
+        // Endcap ticks, 8 px either side, perpendicular to each segment.
+        const zoom = this._app.view.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
-        const dbuPerPixel = 1 / (scale * numTiles);
+        const dbuPerPixel = 1 / (this._app.designScale * numTiles);
         const tickLen = 8 * dbuPerPixel;
-
         const addTick = (pt, segDx, segDy) => {
             const segLen = Math.sqrt(segDx * segDx + segDy * segDy);
             if (segLen === 0) return;
             const px = -segDy / segLen;
             const py = segDx / segLen;
-            const t0 = dbuToLatLng(pt.x + px * tickLen, pt.y + py * tickLen, scale, maxDXDY, originX, originY);
-            const t1 = dbuToLatLng(pt.x - px * tickLen, pt.y - py * tickLen, scale, maxDXDY, originX, originY);
-            group.addLayer(L.polyline([t0, t1], {
-                color, weight: 2, pane: 'ruler-pane', interactive: false,
-            }));
+            shapes.push({ kind: 'path', stroke: color, width: 2, points: [
+                this._toWorld(pt.x + px * tickLen, pt.y + py * tickLen),
+                this._toWorld(pt.x - px * tickLen, pt.y - py * tickLen)] });
         };
-
         if (joinPt) {
-            // Manhattan: ticks perpendicular to each segment
             addTick(ruler.pt0, joinPt.x - ruler.pt0.x, joinPt.y - ruler.pt0.y);
             addTick(ruler.pt1, ruler.pt1.x - joinPt.x, ruler.pt1.y - joinPt.y);
         } else {
@@ -462,38 +393,65 @@ export class RulerManager {
             addTick(ruler.pt0, dx, dy);
             addTick(ruler.pt1, dx, dy);
         }
-
-        // Distance label at midpoint (or join point for Manhattan)
-        const dist = this._computeDistance(ruler.pt0, ruler.pt1, ruler.euclidian);
-        const midLat = pJoin ? pJoin[0] : (p0[0] + p1[0]) / 2;
-        const midLng = pJoin ? pJoin[1] : (p0[1] + p1[1]) / 2;
-        const label = L.marker([midLat, midLng], {
-            icon: L.divIcon({
-                className: 'ruler-label',
-                html: this._formatDistance(dist),
-                iconSize: null,
-            }),
-            pane: 'ruler-pane',
-            interactive: false,
-        });
-        group.addLayer(label);
-
-        ruler._layerGroup = group;
-        this._rulerLayerGroup.addLayer(group);
+        return shapes;
     }
 
-    _rerenderAll() {
-        this._rulerLayerGroup.clearLayers();
+    _renderAll() {
+        this._renderRulerShapes();
+        this._renderRulerLabels();
+    }
+
+    _renderRulerShapes() {
+        const view = this._app.view;
+        if (!view || !this._app.designScale) return;
+        view.setOverlay('rulers', this._shown()
+            ? this._rulers.flatMap((r) => this._rulerShapes(r)) : null,
+                        { order: DRAW_ORDER.ruler });
+    }
+
+    _renderRulerLabels() {
+        const view = this._app.view;
+        if (!view || !this._app.designScale) return;
+        view.clearMarkers('ruler-labels');
+        if (!this._shown()) return;
+        // Distance label at the midpoint, or at the join for Manhattan.
         for (const ruler of this._rulers) {
-            this._renderRuler(ruler);
+            const { joinPt, points } = this._rulerPath(ruler);
+            const at = joinPt ? points[1]
+                : [(points[0][0] + points[1][0]) / 2,
+                   (points[0][1] + points[1][1]) / 2];
+            const dist = this._computeDistance(ruler.pt0, ruler.pt1,
+                                               ruler.euclidian);
+            view.addMarker('ruler-labels', ruler.id, at,
+                           this._labelElement(this._formatDistance(dist)));
         }
+    }
+
+    // Select the ruler whose line passes within a few pixels of `world`.
+    // Returns true when one did, so the click is not also a selection.
+    handleRulerClick(world) {
+        const view = this._app.view;
+        if (!view || !this._shown() || this._rulers.length === 0) {
+            return false;
+        }
+        const p = view.project(world);
+        for (const ruler of this._rulers) {
+            const pts = this._rulerPath(ruler).points.map((w) => view.project(w));
+            for (let i = 0; i + 1 < pts.length; i++) {
+                if (segmentDistance(p, pts[i], pts[i + 1]) <= kRulerHitPx) {
+                    this._selectRuler(ruler.id);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // ─── Selection and inspector ─────────────────────────────────────
 
     _selectRuler(rulerId) {
         this._selectedRulerId = rulerId;
-        this._rerenderAll();
+        this._renderAll();
 
         const ruler = this._rulers.find(r => r.id === rulerId);
         if (!ruler) return;
@@ -565,7 +523,7 @@ export class RulerManager {
                         ruler.euclidian = newValue.trim().toLowerCase() === 'true';
                         break;
                 }
-                this._rerenderAll();
+                this._renderAll();
                 this._selectRuler(ruler.id);
             },
         };
@@ -596,11 +554,8 @@ export class RulerManager {
         const idx = this._rulers.findIndex(r => r.id === rulerId);
         if (idx === -1) return;
 
-        const ruler = this._rulers[idx];
-        if (ruler._layerGroup) {
-            this._rulerLayerGroup.removeLayer(ruler._layerGroup);
-        }
         this._rulers.splice(idx, 1);
+        this._renderAll();
 
         if (this._selectedRulerId === rulerId) {
             this._selectedRulerId = null;
@@ -630,20 +585,27 @@ export class RulerManager {
     }
 
     _setCursor(crosshair) {
-        const container = this._app.map?.getContainer();
-        if (!container) return;
-        if (crosshair) {
-            container.classList.add('ruler-mode-cursor');
-        } else {
-            container.classList.remove('ruler-mode-cursor');
-        }
+        this._app.view?.setCursorMode('ruler', crosshair);
     }
 
-    _clearPreview() {
-        this._previewGroup?.clearLayers();
+    _clearTransient() {
+        this._preview = null;
+        this._snapShapes = null;
+        this._drawTransient();
     }
 
     _clearSnap() {
-        this._snapGroup?.clearLayers();
+        this._snapShapes = null;
+        this._drawTransient();
     }
+}
+
+// Distance in px from point p to segment ab.
+function segmentDistance(p, a, b) {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len2 = dx * dx + dy * dy;
+    let t = len2 > 0 ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }

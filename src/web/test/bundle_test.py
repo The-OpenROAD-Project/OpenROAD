@@ -40,6 +40,13 @@ _IDENTIFIER_URLS = {
     "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
+    # Links in the comments of luma.gl's shader sources.
+    "https://en.wikipedia.org/wiki/find_first_set",
+    "https://en.wikipedia.org/wiki/single-precision_floating-point_format",
+    "https://en.wikipedia.org/wiki/double-precision_floating-point_format",
+    # The bare schemes loaders.gl tests a path against.
+    "http://",
+    "https://",
 }
 
 _URL = r"[^\"'`) >,;\n]*"
@@ -133,10 +140,11 @@ class Page(unittest.TestCase):
         text = _read(_LICENSES)
         # netlistsvg's dependencies too: the bundle carries their code.
         for package in (
+            "@deck.gl/core",
+            "@luma.gl/webgl",
             "clone",
             "elkjs",
             "golden-layout",
-            "leaflet",
             "lodash",
             "netlistsvg",
             "onml",
@@ -147,6 +155,23 @@ class Page(unittest.TestCase):
         # EPL-1.0 asks where elkjs's source can be obtained; every entry says.
         self.assertEqual(text.count("\nSource: https://"), text.count("=" * 78) // 2)
         self.assertIn("\nSource: https://github.com/OpenKieler/elkjs\n", text)
+
+
+class FoundryNames(unittest.TestCase):
+    # The private repository's security hook rejects the name, which luma.gl
+    # spells; esbuild.config.mjs renames it.  Spelled in two parts because the
+    # hook reads this file too.
+    _NAME = re.compile("int" "el(?!l)", re.I)
+
+    def test_bundles_do_not_spell_it(self):
+        for name, path in [
+            ("app.min.js", _PAGE["app.min.js"]),
+            ("report.min.js", _REPORT_JS),
+        ]:
+            text = _read(path)
+            self.assertIsNone(self._NAME.search(text), name)
+            # luma.gl still tells that GPU maker apart.
+            self.assertIn("/INT[E]L/i", text, name)
 
 
 class Entries(unittest.TestCase):

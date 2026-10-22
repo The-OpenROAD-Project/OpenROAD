@@ -54,6 +54,10 @@ export class WebSocketManager {
         // Requests waiting for an in-flight slot (insertion-ordered = FIFO).
         // Not yet on the wire, so cancel() can drop them for free.
         this._queue = new Map(); // id -> {msg, resolve, reject}
+        // Background requests (tiles prefetched around the view): sent only
+        // while _queue is empty, and left out of pendingCount.
+        this._bgQueue = new Map();
+        this._bgSent = new Set();
         // Requests sent but not yet answered by the server (the real wire
         // window). Incremented on send, decremented when a reply for that sent
         // id arrives — even a stale one for a cancelled request.
@@ -86,7 +90,8 @@ export class WebSocketManager {
     // Total requests the user is still waiting on: those on the wire plus those
     // held back by the scheduler and not yet dispatched.
     get pendingCount() {
-        return this.pending.size + (this._queue ? this._queue.size : 0);
+        return this.pending.size - this._bgSent.size
+            + (this._queue ? this._queue.size : 0);
     }
 
     // Create a cache-backed instance (no WebSocket connection).
@@ -97,6 +102,8 @@ export class WebSocketManager {
         mgr.nextId = 1;
         mgr.pending = new Map();
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
+        mgr._bgQueue = new Map();
+        mgr._bgSent = new Set();
         mgr._inFlight = 0;
         mgr._inFlightIds = new Set();
         mgr._unknownPayloadTypes = new Set();
@@ -167,12 +174,15 @@ export class WebSocketManager {
             handler.reject(new Error('WebSocket closed'));
         }
         this.pending.clear();
+        this._bgSent.clear();
         // Drop anything still queued — it never reached the wire. Reject so
         // callers settle; tile callers .catch() and re-request on reconnect.
-        for (const [id, entry] of this._queue) {
-            entry.reject(new Error('WebSocket closed'));
+        for (const queue of [this._queue, this._bgQueue]) {
+            for (const [id, entry] of queue) {
+                entry.reject(new Error('WebSocket closed'));
+            }
+            queue.clear();
         }
-        this._queue.clear();
         if (this._shutdown) {
             console.log('WebSocket closed (server stopped)');
             this._stopLivenessMonitor(); // no socket will reopen
@@ -257,6 +267,7 @@ export class WebSocketManager {
             return; // stale response (e.g. tile scrolled away / cancelled)
         }
         this.pending.delete(id);
+        this._bgSent.delete(id);
         this._pump(); // let the next queued request go out
         this.onStatusChange();
 
@@ -280,7 +291,7 @@ export class WebSocketManager {
             handler.resolve(null);
         } else {
             // An unrecognised payload type must still settle the promise, or
-            // the tile it belongs to hangs unresolved forever and Leaflet
+            // the tile it belongs to hangs unresolved forever and the view
             // never reveals it. A server newer than this client lands here.
             //
             // Rejected rather than resolved with null: only type 3 carries
@@ -304,7 +315,7 @@ export class WebSocketManager {
         }
     }
 
-    request(msg) {
+    request(msg, { background = false } = {}) {
         if (this._cache) {
             return this._cacheRequest(msg);
         }
@@ -324,7 +335,8 @@ export class WebSocketManager {
         promise.requestId = id;
         // Enqueue rather than send directly; _pump() releases it onto the wire
         // once an in-flight slot is available. While queued it is cancellable.
-        this._queue.set(id, { msg, resolve: resolveFn, reject: rejectFn });
+        (background ? this._bgQueue : this._queue)
+            .set(id, { msg, resolve: resolveFn, reject: rejectFn });
         this._pump();
         return promise;
     }
@@ -337,14 +349,19 @@ export class WebSocketManager {
             return;
         }
         while (this._inFlight < this._maxInFlight
-               && this._queue.size > 0
+               && (this._queue.size > 0 || this._bgQueue.size > 0)
                && this.socket.bufferedAmount < MAX_BUFFERED_BYTES) {
-            const [id, entry] = this._queue.entries().next().value;
-            this._queue.delete(id);
+            const background = this._queue.size === 0;
+            const queue = background ? this._bgQueue : this._queue;
+            const [id, entry] = queue.entries().next().value;
+            queue.delete(id);
             this.pending.set(id, {
                 resolve: entry.resolve,
                 reject: entry.reject,
             });
+            if (background) {
+                this._bgSent.add(id);
+            }
             this.socket.send(JSON.stringify(entry.msg));
             this._inFlightIds.add(id);
             this._inFlight++;
@@ -352,19 +369,33 @@ export class WebSocketManager {
         this.onStatusChange();
     }
 
+    // A background request that is now needed on screen moves to the back of
+    // the foreground queue, or, if already sent, counts as pending again.
+    promote(id) {
+        const entry = this._bgQueue.get(id);
+        if (entry) {
+            this._bgQueue.delete(id);
+            this._queue.set(id, entry);
+            this._pump();
+        } else if (this._bgSent.delete(id)) {
+            this.onStatusChange();
+        }
+    }
+
     cancel(id) {
         // If still queued it never hit the wire — drop it for free (no server
         // work, no buffered bytes). This is the cancellation that actually
         // matters; cancelling an already-sent request can't recall the bytes.
         // Settle the promise so callers don't leak a forever-pending request.
-        const queued = this._queue.get(id);
+        const queued = this._queue.get(id) || this._bgQueue.get(id);
         if (queued) {
             this._queue.delete(id);
+            this._bgQueue.delete(id);
             queued.reject(new Error('Request cancelled'));
             this.onStatusChange();
             return;
         }
-        
+
         // Already sent: stop tracking the reply, but do NOT free the wire slot
         // or pump — the server still has to process those bytes, and the slot
         // frees only when its (now stale) reply arrives. Freeing it here would
@@ -372,13 +403,14 @@ export class WebSocketManager {
         //
         // The promise is rejected as well, for the same reason as the queued
         // branch: dropping the handler without settling leaves the caller
-        // awaiting forever, and a caller with a `finally` never runs it. The
-        // merged tile layer frees its decoded ImageBitmaps there, so a silent
+        // awaiting forever, and a caller with a `finally` never runs it.
+        // renderMergedTile frees its decoded ImageBitmaps there, so a silent
         // drop here means every pruned or refreshed tile keeps its decodes
         // alive — the unbounded decoded-image growth the merge exists to bound.
         // The stale reply is still ignored: the handler is gone from `pending`.
         const sent = this.pending.get(id);
         const had = this.pending.delete(id);
+        this._bgSent.delete(id);
         if (sent) {
             sent.reject(new Error('Request cancelled'));
         }
@@ -453,7 +485,7 @@ export class WebSocketManager {
         // Signature 2: saturated with work queued, yet silent for DEAD_MS.
         if (!wedged
             && this._inFlight >= this._maxInFlight
-            && this._queue.size > 0
+            && this._queue.size + this._bgQueue.size > 0
             && this._lastRecvAt > 0
             && now - this._lastRecvAt > DEAD_MS) {
             wedged = true;

@@ -533,8 +533,8 @@ bool parseTileCoords(const boost::json::object& json,
     error = "\"z\" is outside [0, " + std::to_string(kMaxTileZoom) + "]";
     return false;
   }
-  // x and y are deliberately NOT range-checked against the 2^z grid.  Leaflet
-  // routinely asks for tiles off the edge of the world -- whenever the design
+  // x and y are deliberately NOT range-checked against the 2^z grid.  A client
+  // may ask for tiles off the edge of the world -- whenever the design
   // is smaller than the viewport, or while panning at the border -- and the
   // renderers answer those with a transparent tile.  Rejecting them turns
   // ordinary panning into a stream of errors: a first cut of this check
@@ -1724,7 +1724,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     consumeStaleSelection(state);
     TileVisibility vis;
     vis.parseFromJson(req.json);
-    // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
+    // A client may send a fractional zoom; accept either int or
     // double on the wire and truncate to selectAt's integer zoom level.
     const auto& zoom_v = req.json.at("zoom");
     const int zoom = zoom_v.is_int64() ? static_cast<int>(zoom_v.get_int64())
@@ -4987,6 +4987,11 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
+  d.add("tile_group",
+        WebSocketRequest::kTileGroup,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleTileGroup(req, state);
+        });
   d.add("bounds",
         WebSocketRequest::kBounds,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5120,6 +5125,34 @@ void TileHandler::syncHeatMapsLocked(SessionState& state)
   }
 }
 
+namespace {
+
+WebSocketResponse cancelledResponse(const uint32_t id)
+{
+  return errorResponse(id, "cancelled");
+}
+
+std::set<uint32_t> snapshotFocusNets(SessionState& state)
+{
+  std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+  return state.focus_net_ids;
+}
+
+// An empty cache entry is a tile the renderer drew nothing into, stored
+// without the bytes of a transparent PNG nobody would decode.
+WebSocketResponse cachedTileResponse(const uint32_t id,
+                                     std::vector<unsigned char> cached)
+{
+  WebSocketResponse resp;
+  resp.id = id;
+  resp.type
+      = cached.empty() ? WebSocketResponse::kEmpty : WebSocketResponse::kPng;
+  resp.payload = std::move(cached);
+  return resp;
+}
+
+}  // namespace
+
 WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                           SessionState& state)
 {
@@ -5167,12 +5200,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  z,
                  x,
                  y);
-      WebSocketResponse resp;
-      resp.id = req.id;
-      resp.type = WebSocketResponse::kError;
-      const std::string msg = "cancelled";
-      resp.payload.assign(msg.begin(), msg.end());
-      return resp;
+      return cancelledResponse(req.id);
     }
   }
 
@@ -5188,12 +5216,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::map<uint32_t, Color>* mod_ptr
       = mod_colors.empty() ? nullptr : &mod_colors;
 
-  // Snapshot focus nets
-  std::set<uint32_t> focus_nets;
-  {
-    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
-    focus_nets = state.focus_net_ids;
-  }
+  const std::set<uint32_t> focus_nets = snapshotFocusNets(state);
   const std::set<uint32_t>* focus_ptr
       = focus_nets.empty() ? nullptr : &focus_nets;
 
@@ -5217,39 +5240,20 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 
   std::string cache_key;
   if (cacheable) {
-    // Key = the full render determinant: the request JSON minus the per-call
-    // id, with dpr pinned to the quantized value actually rendered.
-    // Selectability (the s_* flags and selectable_layers) does NOT affect the
-    // rendered tile, so it is excluded — toggling "selectable" must not
-    // invalidate the cache.
-    boost::json::object key_obj = req.json;
-    key_obj.erase("id");
-    key_obj.erase("selectable_layers");
-    std::vector<std::string> sel_keys;
-    for (const auto& kv : key_obj) {
-      const std::string_view k = kv.key();
-      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
-        sel_keys.emplace_back(k);
-      }
-    }
-    for (const std::string& k : sel_keys) {
-      key_obj.erase(k);
-    }
-    key_obj["dpr"] = dpr;
-    // Pinned like dpr: two clients on different displays ask for different
-    // pixel counts of the same tile, and they are different images.
-    key_obj["tile_px"] = tile_px;
-    cache_key = boost::json::serialize(key_obj);
+    // Key = what the render reads: the tile, the rendered dpr and pixel count,
+    // and the parsed visibility this layer depends on.  Selectability and keys
+    // the server does not parse never reach it.
+    const boost::json::object tile_obj{{"layer", layer},
+                                       {"z", z},
+                                       {"x", x},
+                                       {"y", y},
+                                       {"dpr", dpr},
+                                       {"tile_px", tile_px}};
+    cache_key = boost::json::serialize(tile_obj)
+                + TileGenerator::tileCacheKey(vis, layer);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
-      WebSocketResponse resp;
-      resp.id = req.id;
-      // An empty cache entry is a tile the renderer drew nothing into; it is
-      // stored that way so a blank tile costs an LRU slot and not the bytes of
-      // a transparent PNG nobody will decode.
-      resp.type = cached.empty() ? WebSocketResponse::kEmpty
-                                 : WebSocketResponse::kPng;
-      resp.payload = std::move(cached);
+      WebSocketResponse resp = cachedTileResponse(req.id, std::move(cached));
       debugPrint(gen_->getLogger(),
                  utl::WEB,
                  "tile",
@@ -5313,6 +5317,153 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              vis.detailed,
              resp.payload.size());
 
+  return resp;
+}
+
+namespace {
+
+// Bounds the work one tile_group request can ask for.
+constexpr size_t kMaxGroupLayers = 256;
+
+// Reads a tile_group's layer list and its matching fill patterns.  Returns an
+// error message, empty on success.
+std::string parseTileGroupLayers(const boost::json::object& json,
+                                 std::vector<std::string>& layers,
+                                 std::vector<FillPattern>& patterns)
+{
+  const auto layers_it = json.find("layers");
+  if (layers_it == json.end() || !layers_it->value().is_array()) {
+    return "layers must be an array";
+  }
+  const boost::json::array& names = layers_it->value().get_array();
+  if (names.empty() || names.size() > kMaxGroupLayers) {
+    return "layers must hold 1 to " + std::to_string(kMaxGroupLayers)
+           + " names";
+  }
+  for (const boost::json::value& name : names) {
+    // Pseudo layers ("_pins", ...) are always requested one by one.
+    if (!name.is_string() || name.get_string().empty()
+        || name.get_string().front() == '_') {
+      return "layers must be tech layer names";
+    }
+    layers.emplace_back(name.get_string());
+  }
+  const auto patterns_it = json.find("patterns");
+  if (patterns_it == json.end()) {
+    patterns.assign(layers.size(), FillPattern::kSolid);
+    return {};
+  }
+  if (!patterns_it->value().is_array()
+      || patterns_it->value().get_array().size() != layers.size()) {
+    return "patterns must match layers";
+  }
+  for (const boost::json::value& pattern : patterns_it->value().get_array()) {
+    if (!pattern.is_int64()) {
+      return "patterns must be integers";
+    }
+    patterns.push_back(toFillPattern(pattern.get_int64()));
+  }
+  return {};
+}
+
+}  // namespace
+
+WebSocketResponse TileHandler::handleTileGroup(const WebSocketRequest& req,
+                                               SessionState& state)
+{
+  int z = 0;
+  int x = 0;
+  int y = 0;
+  if (std::string coord_error;
+      !parseTileCoords(req.json, z, x, y, coord_error)) {
+    return errorResponse(req.id, "bad tile_group request: " + coord_error);
+  }
+  std::vector<std::string> layers;
+  std::vector<FillPattern> patterns;
+  if (const std::string error
+      = parseTileGroupLayers(req.json, layers, patterns);
+      !error.empty()) {
+    return errorResponse(req.id, "bad tile_group request: " + error);
+  }
+
+  // Abandoned while queued, or between two of the group's layers.
+  bool was_cancelled = false;
+  const auto cancelled = [&state, &was_cancelled, id = req.id] {
+    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
+    was_cancelled = state.cancelled_ids.erase(id) > 0;
+    return was_cancelled;
+  };
+  if (cancelled()) {
+    return cancelledResponse(req.id);
+  }
+
+  TileVisibility vis;
+  vis.parseFromJson(req.json);
+
+  // Focused nets dim the others on tech layers; module colors only paint
+  // _modules, which never joins a group.
+  const std::set<uint32_t> focus_nets = snapshotFocusNets(state);
+  const std::set<uint32_t>* focus_ptr
+      = focus_nets.empty() ? nullptr : &focus_nets;
+
+  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
+  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
+
+  const bool cacheable = focus_ptr == nullptr && !vis.debug
+                         && !vis.debug_renderers && !vis.debug_live;
+  std::string cache_key;
+  if (cacheable) {
+    boost::json::array group;
+    for (size_t i = 0; i < layers.size(); ++i) {
+      group.push_back(
+          boost::json::array{layers[i], static_cast<int>(patterns[i])});
+    }
+    const boost::json::object tile_obj{{"group", std::move(group)},
+                                       {"z", z},
+                                       {"x", x},
+                                       {"y", y},
+                                       {"dpr", dpr},
+                                       {"tile_px", tile_px}};
+    // Every member is a tech layer, so they share one visibility key.
+    cache_key = boost::json::serialize(tile_obj)
+                + TileGenerator::tileCacheKey(vis, layers.front());
+    std::vector<unsigned char> cached;
+    if (gen_->tileCacheGet(cache_key, cached)) {
+      return cachedTileResponse(req.id, std::move(cached));
+    }
+  }
+
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kPng;
+  resp.payload = gen_->generateGroupTile(
+      layers, patterns, z, x, y, vis, focus_ptr, dpr, tile_px, cancelled);
+  if (was_cancelled) {
+    return cancelledResponse(req.id);
+  }
+  if (resp.payload.empty()) {
+    return errorResponse(req.id, "tile_group: PNG encode failed");
+  }
+  markEmptyIfBlank(resp);
+  if (cacheable) {
+    gen_->tileCachePut(std::move(cache_key), resp.payload);
+  }
+
+  debugPrint(gen_->getLogger(),
+             utl::WEB,
+             "tile",
+             1,
+             "tile_group: id={} layers={} z/x/y={}/{}/{} dpr={} tile_px={} "
+             "cache={} bytes={}",
+             req.id,
+             layers.size(),
+             z,
+             x,
+             y,
+             dpr,
+             tile_px,
+             cacheable ? "miss" : "off",
+             resp.payload.size());
   return resp;
 }
 

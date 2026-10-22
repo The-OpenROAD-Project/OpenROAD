@@ -544,8 +544,8 @@ The module has two parts:
   Tiles are rendered from ODB geometry and encoded as PNG using lodepng.
 
 - **JavaScript frontend** (`src/main.js`, `src/index.html`, `src/style.css`) —
-  A single-page application using Leaflet.js for the map and GoldenLayout for
-  resizable panels. Communicates with the server over a binary WebSocket
+  A single-page application using deck.gl (WebGL) for the layout view and
+  GoldenLayout for resizable panels. Communicates with the server over a binary WebSocket
   protocol.
 
 ## Browser libraries
@@ -559,7 +559,7 @@ the result, so the browser only talks to the OpenROAD process.
 
 | Package | Used for |
 | --- | --- |
-| `leaflet` | the tiled layout view |
+| `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/extensions` | the layout view, drawn with WebGL through `deck-global.js` |
 | `golden-layout` | the dockable panel layout |
 | `netlistsvg` | the schematic, laid out by its own `elkjs` |
 | `three` | the 3D viewer, through `three-subset.js` |
