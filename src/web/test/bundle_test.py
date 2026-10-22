@@ -164,7 +164,10 @@ class FoundryNames(unittest.TestCase):
     _NAME = re.compile("int" "el(?!l)", re.I)
 
     def test_bundles_do_not_spell_it(self):
-        for name, path in [("app.min.js", _PAGE["app.min.js"]), ("report.min.js", _REPORT_JS)]:
+        for name, path in [
+            ("app.min.js", _PAGE["app.min.js"]),
+            ("report.min.js", _REPORT_JS),
+        ]:
             text = _read(path)
             self.assertIsNone(self._NAME.search(text), name)
             # luma.gl still tells that GPU maker apart.
