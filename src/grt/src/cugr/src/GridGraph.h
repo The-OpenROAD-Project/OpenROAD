@@ -234,6 +234,8 @@ class GridGraph
                        const std::vector<double>& net_costs = {},
                        bool adopted = false);
 
+  // Overflow the net's removal alone would relieve, pin-access pads excluded.
+  double reliefScore(const GRNet& net, double threshold) const;
   // The (layer, x, y) edges the net's tree occupies, each once and sorted.
   void collectTreeEdges(const GRNet& net,
                         std::vector<std::array<int, 3>>& edges) const;
@@ -277,22 +279,9 @@ class GridGraph
       PointT loc,
       const std::vector<double>& net_costs,
       const std::function<void(int, PointT, CapacityT, double)>& fn) const;
-  // Non-template forEachViaColumnImpl for callers outside GridGraph.cpp.
-  void forEachViaColumn(const std::shared_ptr<GRTreeNode>& tree,
-                        const std::function<void(PointT, int, int)>& fn) const;
-  // Non-template forEachTreeWireEdgeImpl for callers outside GridGraph.cpp.
-  void forEachTreeWireEdge(
-      const std::shared_ptr<GRTreeNode>& tree,
-      bool adopted,
-      const std::function<void(int, PointT, bool)>& fn) const;
-  // Flank edges a wrong-way wire through `cell` loads: fn(edge, demand).
-  void forEachWrongWayFlankEdge(
-      int layer_index,
-      PointT cell,
-      const std::function<void(PointT, CapacityT)>& fn) const;
 
   // Enumerate the lower cells of the preferred-direction edges a wire from
-  // u to v occupies on `layer_index` — the cells commitWire charges.
+  // u to v occupies on `layer_index` — the cells commitTree charges.
   void forEachWireEdge(int layer_index,
                        PointT u,
                        PointT v,
@@ -405,20 +394,10 @@ class GridGraph
               PointT lower,
               CapacityT demand,
               double net_factor = 1.0);
-  void commitWire(int layer_index,
-                  PointT lower,
-                  bool rip_up = false,
-                  double net_factor = 1.0);
   void commitTree(const std::shared_ptr<GRTreeNode>& tree,
                   bool rip_up = false,
                   const std::vector<double>& net_costs = {},
                   bool adopted = false);
-  // Demand of an adopted wrong-way wire crossing the gcell at `loc`,
-  // deposited on the layer's flanking edges like a via stub.
-  void commitWrongWayWire(int layer_index,
-                          PointT loc,
-                          bool rip_up,
-                          double layer_factor);
   // Track length of the pad a via stack spanning [low, high] puts on
   // `layer`: the end pads on `low` and `high`, and on intermediate layers
   // the larger of the overlapping pads of the vias below and above.
@@ -457,10 +436,45 @@ class GridGraph
   void forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
                                bool adopted,
                                F&& fn) const;
+  // Flank edges a wrong-way wire through `cell` loads: fn(edge, demand).
   template <typename F>
   void forEachWrongWayFlankEdgeImpl(int layer_index, PointT cell, F&& fn) const;
   template <typename F>
   void forEachWireEdgeImpl(int layer_index, PointT u, PointT v, F&& fn) const;
+  // What a tree charges an edge for.
+  enum class DemandKind
+  {
+    kWire,      // a wire along the layer's preferred direction
+    kWrongWay,  // the pad of an adopted wrong-way wire on its flanking edges
+    kViaPad     // the pad of a via stack on its flanking edges
+  };
+  // One edge charge of a tree.
+  struct TreeDemand
+  {
+    int layer;
+    PointT edge;       // the edge's lower gcell
+    CapacityT demand;  // before the layer's NDR factor
+    double factor;     // the layer's NDR factor
+    DemandKind kind;
+    PointT source;  // the gcell of the wire or the via stack
+  };
+  // Visits each edge charge commitTree deposits for a tree, in its order:
+  // the wires, the wrong-way pads, then the via pads.
+  template <typename F>
+  void forEachTreeDemandImpl(const std::shared_ptr<GRTreeNode>& tree,
+                             bool adopted,
+                             const std::vector<double>& net_costs,
+                             F&& fn) const;
+  // A pin gcell and its top pin-access layer; vias above it are climbs.
+  struct PinAccessTop
+  {
+    std::pair<int, int> gcell;
+    int top;
+  };
+  // The net's pin-access tops, one per pin gcell, sorted by gcell.
+  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
+  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
+  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;
@@ -484,8 +498,6 @@ class GridGraph
   // The NDR-blind context of the shared 2D view; fixed once the grid exists.
   WireCostViewContext default_view_context_;
 
-  int total_length_ = 0;
-  int total_num_vias_ = 0;
   // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
   // (l, x, y+1)} depending on the routing direction of the layer
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
