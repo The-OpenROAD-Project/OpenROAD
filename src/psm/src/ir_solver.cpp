@@ -144,9 +144,6 @@ struct IRSolver::AssemblyData
     Voltage voltage;
   };
 
-  AssemblyData() = default;
-
-  sta::Scene* corner = nullptr;
   std::map<Node*, std::size_t> node_index;
   ConductanceMatrix g_matrix;
   std::map<Node*, Current> sta_currents;
@@ -1610,11 +1607,6 @@ bool IRSolver::buildSourceMap(std::map<std::size_t, Voltage>& sources) const
   return !sources.empty();
 }
 
-std::size_t IRSolver::getAssemblyVoltageSourceCount() const
-{
-  return assembly_->voltage_sources.size();
-}
-
 namespace {
 
 odb::PtrMap<odb::dbInst, IRSolver::Power> mapInstanceCurrents(
@@ -1845,11 +1837,6 @@ void IRSolver::addAssemblyLoads(odb::dbNet* net,
   assembly_->voltage_vector.resize(0);
 }
 
-std::size_t IRSolver::getAssemblyCurrentLoadCount() const
-{
-  return assembly_->sta_currents.size();
-}
-
 namespace {
 
 void buildCondMatrixAndVoltages(
@@ -1940,11 +1927,6 @@ void buildLinearSystem(const std::vector<Node*>& nodes,
 }
 
 }  // namespace
-
-std::size_t IRSolver::getAssemblyNodeCount() const
-{
-  return assembly_->node_index.size();
-}
 
 namespace {
 
@@ -2500,7 +2482,6 @@ IRSolver::Voltage IRSolver::getNominalVoltage(sta::Scene* corner,
 
 void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
 {
-  assembly_->corner = corner;
   assembly_->node_index.clear();
   assembly_->g_matrix.resize(0, 0);
   assembly_->j_vector.resize(0);
@@ -2557,7 +2538,7 @@ void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
                     logger_);
   currents_[corner] = std::move(currents);
 
-  if (getAssemblyVoltageSourceCount() == 0) {
+  if (assembly_->voltage_sources.empty()) {
     logger_->error(utl::PSM,
                    138,
                    "No voltage source is defined for 3D net {}.",
@@ -2613,11 +2594,6 @@ bool IRSolver::hasSolution(sta::Scene* corner) const
     return !voltages_.at(corner).empty() && !currents_.at(corner).empty();
   }
   return false;
-}
-
-const Eigen::VectorXd& IRSolver::getAssemblyVoltageVector() const
-{
-  return assembly_->voltage_vector;
 }
 
 void IRSolver::reportNoSolution(sta::Scene* corner) const

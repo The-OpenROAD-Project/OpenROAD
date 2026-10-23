@@ -131,6 +131,13 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
     return;
   }
 
+  if (!sta_->getDbNetwork()->has3DicChip()
+      || sta_->getDbNetwork()->topChip() != db_->getChip()) {
+    logger_->error(utl::PSM,
+                   151,
+                   "OpenSTA has no timing network for the loaded 3D assembly.");
+  }
+
   auto* chip_net = findChipNet(net);
 
   auto& solver = assembly_solvers_[chip_net][corner];
@@ -146,18 +153,6 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   } else {
     logger_->info(utl::PSM, 13, "Reusing previous solution");
   }
-  const auto& voltages = solver->getAssemblyVoltageVector();
-  logger_->info(
-      utl::PSM,
-      129,
-      "Solved combined 3D power grid {}: {} nodes, {} current loads, {} "
-      "fixed-voltage sources, and voltage range {:.6g} to {:.6g} V.",
-      chip_net->getName(),
-      solver->getAssemblyNodeCount(),
-      solver->getAssemblyCurrentLoadCount(),
-      solver->getAssemblyVoltageSourceCount(),
-      voltages.minCoeff(),
-      voltages.maxCoeff());
   solver->report(corner);
   if (enable_em) {
     solver->reportEM(corner);
@@ -184,15 +179,17 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
     IRNetwork network(chip_net, logger_, floorplanning, resistance);
     checkAssemblyConnectivity(
         network, floorplanning, require_bterm, error_file);
-    logger_->info(utl::PSM,
-                  104,
-                  "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
-                  "connections ({} inter-die).",
-                  chip_net->getName(),
-                  network.getChipletNetworkCount(),
-                  network.getNodeCount(),
-                  network.getConnectionCount(),
-                  network.getInterDieConnectionCount());
+    debugPrint(logger_,
+               utl::PSM,
+               "stats",
+               1,
+               "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
+               "connections ({} inter-die).",
+               chip_net->getName(),
+               network.getChipletNetworkCount(),
+               network.getNodeCount(),
+               network.getConnectionCount(),
+               network.getInterDieConnectionCount());
     return true;
   }
 
@@ -268,20 +265,13 @@ std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
       resistance == interchip_resistances_.end()
           ? std::nullopt
           : std::optional<double>(resistance->second));
-  auto solver = std::make_unique<IRSolver>(std::move(network),
-                                           sta_,
-                                           estimate_parasitics_,
-                                           logger_,
-                                           user_voltages_,
-                                           user_powers_,
-                                           generated_source_settings_);
-  if (!sta_->getDbNetwork()->has3DicChip()
-      || sta_->getDbNetwork()->topChip() != db_->getChip()) {
-    logger_->error(utl::PSM,
-                   151,
-                   "OpenSTA has no timing network for the loaded 3D assembly.");
-  }
-  return solver;
+  return std::make_unique<IRSolver>(std::move(network),
+                                    sta_,
+                                    estimate_parasitics_,
+                                    logger_,
+                                    user_voltages_,
+                                    user_powers_,
+                                    generated_source_settings_);
 }
 
 void PDNSim::checkAssemblyConnectivity(IRNetwork& network,

@@ -13,9 +13,7 @@
 [INFO ODB-0253]     Updated 5 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
-[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
 [INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_external_power_source.loc.
-[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 4 fixed-voltage sources, and voltage range 1.09989 to 1.1 V.
 ########## IR report #################
 Net              : VDD
 Corner           : low_resistance
@@ -28,7 +26,6 @@ Worstcase IR drop: 1.11e-04 V
 Percentage drop  : 0.01 %
 ######################################
 [INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_external_power_source.loc.
-[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 4 fixed-voltage sources, and voltage range 1.09887 to 1.1 V.
 ########## IR report #################
 Net              : VDD
 Corner           : high_resistance
@@ -41,7 +38,6 @@ Worstcase IR drop: 1.13e-03 V
 Percentage drop  : 0.10 %
 ######################################
 [INFO PSM-0013] Reusing previous solution
-[INFO PSM-0129] Solved combined 3D power grid VDD: 112 nodes, 6 current loads, 4 fixed-voltage sources, and voltage range 1.09989 to 1.1 V.
 ########## IR report #################
 Net              : VDD
 Corner           : low_resistance

@@ -13,5 +13,3 @@
 [INFO ODB-0253]     Updated 5 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
-[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).
-[INFO PSM-0104] Built 3D power grid VSS: 2 chiplet PDNs, 112 nodes, and 121 connections (1 inter-die).

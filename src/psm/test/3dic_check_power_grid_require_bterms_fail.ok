@@ -15,7 +15,6 @@
 [INFO ODB-0133]     Created 7 nets and 12 connections.
 
 Command - check_power_grid -net VDD -dont_require_terminals
-[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 111 nodes, and 120 connections (1 inter-die).
 
 Command - check_power_grid -net VDD
 [ERROR PSM-0025] VDD does not contain any terminals
