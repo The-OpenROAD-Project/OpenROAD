@@ -198,9 +198,26 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
 
   // Outside a group, shells of different conformal dielectrics may not
   // overlap, except where a conductor cuts into them. A shell's region is
-  // its outer box minus the shallower shells of its group.
+  // its outer box minus the shallower shells of its group. Pairs are checked
+  // in index order, so the error names the same pair however the indexes
+  // visit them.
+  std::vector<AlignedBox<D>> outers;
+  outers.reserve(shells.size());
+  for (const Shell<D>& shell : shells) {
+    outers.push_back(shell.outer);
+  }
+  const SpatialIndex<D> shell_index(outers);
+  const SpatialIndex<D> box_index(boxes);
+  std::vector<int> candidates;
   for (size_t i = 0; i < shells.size(); i++) {
-    for (size_t j = i + 1; j < shells.size(); j++) {
+    candidates.clear();
+    shell_index.forEachOverlapping(shells[i].outer, [&](const int j) {
+      if (j > static_cast<int>(i)) {
+        candidates.push_back(j);
+      }
+    });
+    std::ranges::sort(candidates);
+    for (const int j : candidates) {
       const Shell<D>& a = shells[i];
       const Shell<D>& s = shells[j];
       if (a.material == s.material || a.group == s.group
@@ -213,18 +230,19 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
         both.hi[k] = std::min(a.outer.hi[k], s.outer.hi[k]);
       }
       std::vector<const AlignedBox<D>*> holes;
-      for (const Shell<D>& t : shells) {
+      shell_index.forEachOverlapping(both, [&](const int k) {
+        const Shell<D>& t = shells[k];
         const bool shallower = (t.group == a.group && t.depth < a.depth)
                                || (t.group == s.group && t.depth < s.depth);
         if (shallower && overlaps(both, t.outer)) {
           holes.push_back(&t.outer);
         }
-      }
-      for (const AlignedBox<D>& box : boxes) {
-        if (overlaps(both, box)) {
-          holes.push_back(&box);
+      });
+      box_index.forEachOverlapping(both, [&](const int k) {
+        if (overlaps(both, boxes[k])) {
+          holes.push_back(&boxes[k]);
         }
-      }
+      });
       if (anyLeft(both, holes, 0)) {
         throw std::invalid_argument("fsv: conformal dielectrics "
                                     + material_names[a.material] + " and "
@@ -236,14 +254,24 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
       baseEps(stack), stack.planarInterfaces(), std::move(shells));
 }
 
-// Rectangles of different nets may not overlap.
+// Rectangles of different nets may not overlap; the first pair in index
+// order is reported.
 void checkNoOverlap(const Geometry2D& geometry)
 {
   const std::vector<Rect>& rects = geometry.rects();
+  const SpatialIndex<2> index(rects);
+  std::vector<int> candidates;
   for (size_t i = 0; i < rects.size(); i++) {
-    for (size_t j = i + 1; j < rects.size(); j++) {
+    candidates.clear();
+    index.forEachOverlapping(rects[i], [&](const int j) {
+      if (j > static_cast<int>(i)) {
+        candidates.push_back(j);
+      }
+    });
+    std::ranges::sort(candidates);
+    for (const int j : candidates) {
       const int a = geometry.rectNet(static_cast<int>(i));
-      const int b = geometry.rectNet(static_cast<int>(j));
+      const int b = geometry.rectNet(j);
       if (a != b && overlaps(rects[i], rects[j])) {
         throw std::invalid_argument("fsv: rectangles of nets "
                                     + geometry.netName(a) + " and "

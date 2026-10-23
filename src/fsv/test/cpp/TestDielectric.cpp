@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
+#include <cmath>
 #include <random>
 #include <vector>
 
@@ -138,6 +140,177 @@ void checkCubes(const Dielectric<D>& d, const AlignedBox<D>& region)
   }
   // The structures have interfaces of every orientation near the wires.
   EXPECT_GT(splits, 1000);
+}
+
+// A routed patch: crossing wires on two layers, each wire with two nested
+// shells. The outer shells of neighbours on a layer merge (same material);
+// the layers' shells are different materials and do not overlap.
+Dielectric<3> wireGrid()
+{
+  const std::vector<Stack::PlanarInterface> planar{{0.6, 2.7, 3.9},
+                                                   {1.6, 3.9, 1.0}};
+  std::vector<Shell<3>> shells;
+  int box = 0;
+  for (int layer = 0; layer < 2; layer++) {
+    const double z0 = layer == 0 ? 0.5 : 1.1;
+    for (int i = 0; i < 30; i++) {
+      const double c = 0.3 * i;
+      Box wire{{-0.5, c, z0}, {9, c + 0.14, z0 + 0.2}};
+      if (layer == 1) {
+        wire = {{c, -0.5, z0}, {c + 0.14, 9, z0 + 0.2}};
+      }
+      Box inner = wire;
+      Box outer = wire;
+      for (int k = 0; k < 2; k++) {
+        inner.lo[k] -= 0.02;
+        inner.hi[k] += 0.02;
+        outer.lo[k] -= 0.09;
+        outer.hi[k] += 0.09;
+      }
+      inner.hi[2] += 0.02;
+      outer.hi[2] += 0.05;
+      shells.push_back({inner, wire, 7.0, 2 * layer, box, box, 1});
+      shells.push_back({outer, inner, 4.5, 2 * layer + 1, box, box, 2});
+      box++;
+    }
+  }
+  return Dielectric<3>(2.7, planar, shells);
+}
+
+// The permittivity by a scan over every shell: the shallowest containing
+// the point, else the planar stack.
+double bruteEps(const Dielectric<3>& d, const Vec3& p)
+{
+  const Shell<3>* best = nullptr;
+  for (const Shell<3>& s : d.shells()) {
+    bool inside = true;
+    for (int k = 0; k < 3; k++) {
+      inside = inside && p[k] > s.outer.lo[k] && p[k] < s.outer.hi[k];
+    }
+    if (inside && (best == nullptr || s.depth < best->depth)) {
+      best = &s;
+    }
+  }
+  return best != nullptr ? best->eps : d.planarEps(p[2]);
+}
+
+// The cube's size and plane by a scan over every interface piece: the
+// nearest piece (planar first, then shells and faces in index order among
+// equals) may cut the cube, every other piece limits it.
+void bruteCube(const Dielectric<3>& d,
+               const Vec3& p,
+               const double max_half_size,
+               double& half_size,
+               int& axis,
+               double& coordinate)
+{
+  struct Piece
+  {
+    int axis;
+    double coordinate;
+    double distance;
+  };
+  std::vector<Piece> pieces;
+  std::vector<double> planes;
+  for (const Stack::PlanarInterface& i : d.planar()) {
+    planes.push_back(i.z);
+  }
+  std::ranges::sort(planes, [&](const double a, const double b) {
+    return std::abs(a - p[2]) < std::abs(b - p[2]);
+  });
+  for (int i = 0; i < std::min<int>(2, planes.size()); i++) {
+    pieces.push_back({2, planes[i], std::abs(planes[i] - p[2])});
+  }
+  for (const Shell<3>& s : d.shells()) {
+    for (int a = 0; a < 3; a++) {
+      double excess = 0;
+      for (int t = 0; t < 3; t++) {
+        if (t != a) {
+          excess
+              = std::max({excess, s.outer.lo[t] - p[t], p[t] - s.outer.hi[t]});
+        }
+      }
+      for (const double c : {s.outer.lo[a], s.outer.hi[a]}) {
+        pieces.push_back({a, c, std::max(std::abs(p[a] - c), excess)});
+      }
+    }
+  }
+  const Piece* nearest = nullptr;
+  for (const Piece& piece : pieces) {
+    if (piece.distance < max_half_size
+        && (nearest == nullptr || piece.distance < nearest->distance)) {
+      nearest = &piece;
+    }
+  }
+  half_size = max_half_size;
+  axis = -1;
+  coordinate = 0;
+  if (nearest == nullptr) {
+    return;
+  }
+  for (const Piece& piece : pieces) {
+    const bool coplanar
+        = piece.axis == nearest->axis
+          && std::abs(piece.coordinate - nearest->coordinate) <= 1e-9;
+    if (piece.distance < max_half_size && !coplanar) {
+      half_size = std::min(half_size, piece.distance);
+    }
+  }
+  axis = nearest->axis;
+  coordinate = nearest->coordinate;
+}
+
+// More shells around one spot than the dielectric lists: 100 stacked short
+// wires whose shells of one conformal dielectric all overlap there.
+Dielectric<3> shellPile()
+{
+  std::vector<Shell<3>> shells;
+  for (int i = 0; i < 100; i++) {
+    const double c = 0.01 * i;
+    const Box wire{{c, c, 0.5}, {c + 0.2, c + 0.2, 0.7}};
+    const Box outer{{c - 0.5, c - 0.5, 0.5}, {c + 0.7, c + 0.7, 1.0}};
+    shells.push_back({outer, wire, 4.5, 0, i, i, 1});
+  }
+  return Dielectric<3>(2.7, {{0.8, 2.7, 3.9}}, shells);
+}
+
+// Permittivities and cubes match a scan exactly at random points in
+// `region`, of which at least min_splits have split cubes.
+void checkAgainstScan(const Dielectric<3>& d,
+                      const Box& region,
+                      const int min_splits)
+{
+  std::mt19937_64 rng(11);
+  std::uniform_real_distribution<double> unit(0, 1);
+  int splits = 0;
+  for (int trial = 0; trial < 20000; trial++) {
+    Vec3 p;
+    for (int k = 0; k < 3; k++) {
+      p[k] = region.lo[k] + unit(rng) * (region.hi[k] - region.lo[k]);
+    }
+    ASSERT_EQ(d.eps(p), bruteEps(d, p)) << trial;
+    const double max_half_size = 0.4;
+    double half_size = 0;
+    int axis = -1;
+    double coordinate = 0;
+    bruteCube(d, p, max_half_size, half_size, axis, coordinate);
+    const Dielectric<3>::Cube c = d.cube(p, max_half_size);
+    ASSERT_EQ(c.half_size, half_size) << trial;
+    if (c.split) {
+      ASSERT_EQ(c.axis, axis) << trial;
+      ASSERT_EQ(c.coordinate, coordinate) << trial;
+      splits++;
+    }
+  }
+  EXPECT_GE(splits, min_splits);
+}
+
+// The shell index finds every shell a scan finds, on a patch with many
+// shells, and where more shells are near a point than fit in a list.
+TEST(Dielectric, IndexMatchesScan)
+{
+  checkAgainstScan(wireGrid(), {{-1, -1, 0.3}, {10, 10, 1.8}}, 1000);
+  checkAgainstScan(shellPile(), {{-1, -1, 0.3}, {2, 2, 1.3}}, 100);
 }
 
 TEST(Dielectric, CubeHoldsAtMostOnePlane)

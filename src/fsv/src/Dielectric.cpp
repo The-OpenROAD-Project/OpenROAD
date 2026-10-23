@@ -20,6 +20,17 @@ namespace {
 constexpr double kCoplanar = 1e-9;
 
 template <int D>
+std::vector<AlignedBox<D>> outerBoxes(const std::vector<Shell<D>>& shells)
+{
+  std::vector<AlignedBox<D>> boxes;
+  boxes.reserve(shells.size());
+  for (const Shell<D>& s : shells) {
+    boxes.push_back(s.outer);
+  }
+  return boxes;
+}
+
+template <int D>
 bool strictlyInside(const std::type_identity_t<Vec<D>>& p,
                     const AlignedBox<D>& b)
 {
@@ -39,7 +50,8 @@ Dielectric<D>::Dielectric(const double base_eps,
                           std::vector<Shell<D>> shells)
     : base_eps_(base_eps),
       planar_(std::move(planar)),
-      shells_(std::move(shells))
+      shells_(std::move(shells)),
+      shell_index_(outerBoxes(shells_))
 {
 }
 
@@ -57,19 +69,53 @@ double Dielectric<D>::planarEps(const double z) const
 }
 
 template <int D>
-const Shell<D>* Dielectric<D>::shellAt(const Vec<D>& p) const
+bool Dielectric<D>::listShells(const AlignedBox<D>& query,
+                               ShellList& list) const
 {
-  // The shallowest shell containing p: within a group that is the union
-  // rule, and across groups only shells of one conformal dielectric may
-  // overlap.
-  const Shell<D>* best = nullptr;
-  for (const Shell<D>& s : shells_) {
+  bool full = false;
+  shell_index_.forEachOverlapping(query, [&](const int i) {
+    if (list.size == ShellList::kCapacity) {
+      full = true;
+      return;
+    }
+    list.index[list.size++] = i;
+  });
+  return !full;
+}
+
+template <int D>
+template <bool kAll>
+const Shell<D>* Dielectric<D>::shellAt(const Vec<D>& p,
+                                       const ShellList* list) const
+{
+  // The shallowest shell containing p, the lowest index among equals:
+  // within a group that is the union rule, and across groups only shells of
+  // one conformal dielectric may overlap.
+  const int count = kAll ? static_cast<int>(shells_.size()) : list->size;
+  int best = -1;
+  for (int n = 0; n < count; n++) {
+    const int i = kAll ? n : list->index[n];
+    const Shell<D>& s = shells_[i];
+    // A scan visits shells in index order, so it never meets a lower one.
     if (strictlyInside(p, s.outer)
-        && (best == nullptr || s.depth < best->depth)) {
-      best = &s;
+        && (best < 0 || s.depth < shells_[best].depth
+            || (!kAll && s.depth == shells_[best].depth && i < best))) {
+      best = i;
     }
   }
-  return best;
+  return best < 0 ? nullptr : &shells_[best];
+}
+
+template <int D>
+const Shell<D>* Dielectric<D>::shellAt(const Vec<D>& p) const
+{
+  if (shells_.size() > kScanLimit) {
+    ShellList list;
+    if (listShells({p, p}, list)) {
+      return shellAt<false>(p, &list);
+    }
+  }
+  return shellAt<true>(p, nullptr);
 }
 
 template <int D>
@@ -100,12 +146,37 @@ void Dielectric<D>::forEachPiece(const Vec<D>& p,
       const int i = du <= dd ? up++ : down--;
       const double d = std::min(du, dd);
       if (d < max_half_size) {
-        visit(Piece{kZ, planar_[i].z, d});
+        visit(Piece{kZ, planar_[i].z, d, -1, pass});
       }
     }
   }
   // The faces of the shell boxes.
-  for (const Shell<D>& s : shells_) {
+  AlignedBox<D> near;
+  for (int k = 0; k < D; k++) {
+    near.lo[k] = p[k] - max_half_size;
+    near.hi[k] = p[k] + max_half_size;
+  }
+  if (shells_.size() > kScanLimit) {
+    ShellList list;
+    if (listShells(near, list)) {
+      shellPieces<false>(p, max_half_size, &list, visit);
+      return;
+    }
+  }
+  shellPieces<true>(p, max_half_size, nullptr, visit);
+}
+
+template <int D>
+template <bool kAll, typename Visit>
+void Dielectric<D>::shellPieces(const Vec<D>& p,
+                                const double max_half_size,
+                                const ShellList* list,
+                                Visit visit) const
+{
+  const int count = kAll ? static_cast<int>(shells_.size()) : list->size;
+  for (int n = 0; n < count; n++) {
+    const int i = kAll ? n : list->index[n];
+    const Shell<D>& s = shells_[i];
     if (linfDistance(p, s.outer) >= max_half_size) {
       continue;
     }
@@ -118,10 +189,11 @@ void Dielectric<D>::forEachPiece(const Vec<D>& p,
               = std::max({excess, s.outer.lo[t] - p[t], p[t] - s.outer.hi[t]});
         }
       }
-      for (const double c : {s.outer.lo[a], s.outer.hi[a]}) {
+      for (int side = 0; side < 2; side++) {
+        const double c = side == 0 ? s.outer.lo[a] : s.outer.hi[a];
         const double d = std::max(std::abs(p[a] - c), excess);
         if (d < max_half_size) {
-          visit(Piece{a, c, d});
+          visit(Piece{a, c, d, i, 2 * a + side});
         }
       }
     }
@@ -140,7 +212,7 @@ typename Dielectric<D>::Cube Dielectric<D>::cube(
   bool any = false;
   Piece nearest{D - 1, 0, max_half_size};
   forEachPiece(p, max_half_size, [&](const Piece& piece) {
-    if (!any || piece.distance < nearest.distance) {
+    if (!any || piece.before(nearest)) {
       nearest = piece;
       any = true;
     }

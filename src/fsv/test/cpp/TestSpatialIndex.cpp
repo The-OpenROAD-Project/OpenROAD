@@ -110,5 +110,40 @@ TEST(SpatialIndex, RectsMatchBruteForce)
   }
 }
 
+// The overlap query returns exactly the boxes a scan finds, touching ones
+// included.
+TEST(SpatialIndex, OverlapsMatchBruteForce)
+{
+  Philox rng(13, 0);
+  std::vector<Box> boxes;
+  for (int b = 0; b < 400; b++) {
+    Box box;
+    for (int k = 0; k < 3; k++) {
+      // On a 0.05 grid, so that queries often touch boxes exactly.
+      box.lo[k] = 0.05 * static_cast<int>(rng.uniform() * 400);
+      box.hi[k] = box.lo[k] + 0.05 * (1 + static_cast<int>(rng.uniform() * 40));
+    }
+    boxes.push_back(box);
+  }
+  const SpatialIndex<3> index(boxes);
+  for (int q = 0; q < 2000; q++) {
+    Box query;
+    for (int k = 0; k < 3; k++) {
+      query.lo[k] = 0.05 * static_cast<int>(rng.uniform() * 440) - 1;
+      query.hi[k] = query.lo[k] + 0.05 * static_cast<int>(rng.uniform() * 20);
+    }
+    std::vector<int> found;
+    index.forEachOverlapping(query, [&](const int i) { found.push_back(i); });
+    std::ranges::sort(found);
+    std::vector<int> expected;
+    for (int i = 0; i < static_cast<int>(boxes.size()); i++) {
+      if (linfGap(query, boxes[i]) == 0) {
+        expected.push_back(i);
+      }
+    }
+    ASSERT_EQ(found, expected) << "query " << q;
+  }
+}
+
 }  // namespace
 }  // namespace fsv
