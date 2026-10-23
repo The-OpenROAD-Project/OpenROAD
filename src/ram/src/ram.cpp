@@ -1615,12 +1615,17 @@ void RamGen::findMasters()
     }
   }
 
-  clock_gate_cell_ = findMaster(
-      [](sta::LibertyPort* port) { return port->libertyCell()->isClockGate(); },
-      "clock gate",
-      /*required=*/true,
-      clock_gate_cell_);
-  clock_gate_ports_ = buildPortMap(clock_gate_cell_);
+  // -write_style mux holds every flop by a mux, with no clock gate
+  if (!write_mux_) {
+    clock_gate_cell_ = findMaster(
+        [](sta::LibertyPort* port) {
+          return port->libertyCell()->isClockGate();
+        },
+        "clock gate",
+        /*required=*/true,
+        clock_gate_cell_);
+    clock_gate_ports_ = buildPortMap(clock_gate_cell_);
+  }
 
   // for input buffers
   buffer_cell_ = findMaster(
