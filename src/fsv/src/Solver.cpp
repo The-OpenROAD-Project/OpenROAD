@@ -792,11 +792,9 @@ int checkedPanels(const int panels)
 }  // namespace
 
 Solver::Solver(const SolverOptions& options)
-    : options_(options),
-      greens_(CubeGreens::shared(checkedPanels(options.panels))),
-      square_greens_(SquareGreens::shared(checkedPanels(options.panels))),
-      pool_(std::make_unique<WorkerPool>(options.threads))
+    : options_(options), pool_(std::make_unique<WorkerPool>(options.threads))
 {
+  checkedPanels(options.panels);
 }
 
 Solver::~Solver() = default;
@@ -806,6 +804,9 @@ CapRow Solver::solve(const Scene& scene,
                      const SolveOptions& solve_options)
 {
   const std::lock_guard lock(solve_mutex_);
+  if (!greens_) {
+    greens_ = CubeGreens::shared(options_.panels);
+  }
   return solveScene<Space>(scene,
                            master,
                            options_,
@@ -821,6 +822,9 @@ CapRow Solver::solve(const Scene2D& scene,
                      const SolveOptions& solve_options)
 {
   const std::lock_guard lock(solve_mutex_);
+  if (!square_greens_) {
+    square_greens_ = SquareGreens::shared(options_.panels);
+  }
   return solveScene<Plane>(scene,
                            master,
                            options_,

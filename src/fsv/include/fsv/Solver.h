@@ -78,9 +78,9 @@ struct CapRow
 };
 
 // Reusable solver: holds the Green's-function tables (shared process-wide by
-// panel count) and a persistent worker pool. Create one per run and call
-// solve() for any number of scenes and masters. Calls to solve() on the same
-// Solver are serialized.
+// panel count, built on first use) and a persistent worker pool. Create one per
+// run and call solve() for any number of scenes and masters. Calls to solve()
+// on the same Solver are serialized.
 class Solver
 {
  public:
@@ -99,6 +99,7 @@ class Solver
 
  private:
   SolverOptions options_;
+  // Built by the first solve that needs them.
   std::shared_ptr<const CubeGreens> greens_;
   std::shared_ptr<const SquareGreens> square_greens_;
   // Held so that the tables are reused across solves.
