@@ -60,9 +60,9 @@ struct SolveOptions
   int64_t hop_guard = 1000000;
 };
 
-// One row of the Maxwell capacitance matrix, in fF (fF/µm for a cross-section
-// scene). cap[master] is the total capacitance; cap[j] for j != master is
-// minus the coupling to net j.
+// One row of the Maxwell capacitance matrix, in fF (fF/µm for a Scene2D).
+// cap[master] is the total capacitance; cap[j] for j != master is minus the
+// coupling to net j.
 struct CapRow
 {
   int master = -1;
@@ -90,6 +90,10 @@ class Solver
   // Throws std::invalid_argument for a bad master or options, and
   // std::runtime_error if any walk exceeds SolveOptions::hop_guard.
   CapRow solve(const Scene& scene,
+               int master,
+               const SolveOptions& options = {});
+  // A cross section: the row is per unit length, in fF/µm.
+  CapRow solve(const Scene2D& scene,
                int master,
                const SolveOptions& options = {});
 

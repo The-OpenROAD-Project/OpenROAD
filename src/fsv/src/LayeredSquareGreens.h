@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "AliasTable.h"
-#include "BoxFace.h"
 #include "CubePanels.h"
 #include "LayerModes.h"
 #include "Philox.h"
@@ -16,18 +15,18 @@
 
 namespace fsv {
 
-// Surface Green's function of the square [-1, 1]^2 in the y-z plane seen
+// Surface Green's function of the square [-1, 1]^2 in the x-z plane seen
 // from its center when an interface z = t splits it into eps_below and
 // eps_above: the 2D counterpart of LayeredCubeGreens, with the same
 // positions, series and kernel conventions.
 //
-// - Top and bottom edges: sine modes along y, with hyperbolic z profiles
+// - Top and bottom edges: sine modes along x, with hyperbolic z profiles
 //   joined at the interface.
 // - Side edges: the Sturm-Liouville eigenfunctions in z of LayerModes.
 //
 // First-hop kernels at the center, per unit half-size: along z the flux
-// eps * dP/dz with eps in units of eps_below; along y the plain derivative
-// dP/dy, which the caller multiplies by the permittivity on its side.
+// eps * dP/dz with eps in units of eps_below; along x the plain derivative
+// dP/dx, which the caller multiplies by the permittivity on its side.
 class LayeredSquareGreens
 {
  public:
@@ -47,22 +46,22 @@ class LayeredSquareGreens
   // Height of the interface in the unit square.
   double interfaceZ() const { return t_; }
 
-  // Probability of panel i on the bottom edge z = -1 (i along y), the top
-  // edge z = +1, and a side edge y = +-1 (i along z; the same for both).
+  // Probability of panel i on the bottom edge z = -1 (i along x), the top
+  // edge z = +1, and a side edge x = +-1 (i along z; the same for both).
   double bottomProbability(int i) const { return bottom_[i]; }
   double topProbability(int i) const { return top_[i]; }
   double sideProbability(int i) const { return side_[i]; }
 
-  // First-hop kernel for panel i of an edge: eps * dP/dz along z, dP/dy
-  // along y (see above).
-  double flux(Axis axis, BoxFace edge, int i) const;
+  // First-hop kernel for panel i of an edge along axis 0 (x) or 1 (z):
+  // eps * dP/dz along z, dP/dx along x (see above).
+  double flux(int axis, SquareEdge edge, int i) const;
   // Sum of |flux(axis, ...)| over all panels of all edges.
-  double fluxNorm(Axis axis) const { return flux_norm_[index(axis) - 1]; }
+  double fluxNorm(int axis) const { return flux_norm_[axis]; }
 
-  // Draws a landing point on the boundary of the square (x = 0).
-  Vec3 sampleTransition(Philox& rng) const;
+  // Draws a landing point on the boundary of the square.
+  Vec2 sampleTransition(Philox& rng) const;
   // Draws a landing point with density |flux(axis, ...)| / fluxNorm(axis).
-  FirstHop sampleFirstHop(Axis axis, Philox& rng) const;
+  FirstHop2D sampleFirstHop(int axis, Philox& rng) const;
 
  private:
   void tabulateTopBottom(double ratio);
@@ -78,11 +77,11 @@ class LayeredSquareGreens
   std::vector<double> fz_bottom_;
   std::vector<double> fz_top_;
   std::vector<double> fz_side_;
-  // Flux along y on the edge y = -1 (negated on y = +1), and on the bottom
+  // Flux along x on the edge x = -1 (negated on x = +1), and on the bottom
   // and top edges.
-  std::vector<double> fy_normal_;
-  std::vector<double> fy_bottom_;
-  std::vector<double> fy_top_;
+  std::vector<double> fx_normal_;
+  std::vector<double> fx_bottom_;
+  std::vector<double> fx_top_;
 
   std::unique_ptr<AliasTable> alias_;  // over kSquareEdges * n panels
   std::array<std::vector<double>, 2> hop_sign_;

@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "fsv/Geometry.h"
@@ -180,29 +181,37 @@ int FieldSolver::findNet(const std::string_view net) const
 
 void FieldSolver::resetScenes()
 {
-  for (std::unique_ptr<Scene>& scene : scenes_) {
-    scene.reset();
-  }
+  section_scene_.reset();
+  section_.reset();
+  scene_.reset();
 }
 
-const Scene& FieldSolver::scene(const bool cross_section)
+const Scene& FieldSolver::scene()
 {
-  std::unique_ptr<Scene>& scene = scenes_[cross_section ? 1 : 0];
-  if (!scene) {
+  if (!scene_) {
     try {
-      if (cross_section) {
-        scene = has_stack_
-                    ? std::make_unique<Scene>(geometry_, stack_, CrossSection{})
-                    : std::make_unique<Scene>(geometry_, eps_, CrossSection{});
-      } else {
-        scene = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
-                           : std::make_unique<Scene>(geometry_, eps_);
-      }
+      scene_ = has_stack_ ? std::make_unique<Scene>(geometry_, stack_)
+                          : std::make_unique<Scene>(geometry_, eps_);
     } catch (const std::exception& e) {
       logger_->error(utl::FSV, 8, "{}", coreMessage(e));
     }
   }
-  return *scene;
+  return *scene_;
+}
+
+const Scene2D& FieldSolver::crossSectionScene()
+{
+  if (!section_scene_) {
+    try {
+      auto section = std::make_unique<Geometry2D>(fsv::crossSection(geometry_));
+      section_scene_ = has_stack_ ? std::make_unique<Scene2D>(*section, stack_)
+                                  : std::make_unique<Scene2D>(*section, eps_);
+      section_ = std::move(section);
+    } catch (const std::exception& e) {
+      logger_->error(utl::FSV, 15, "{}", coreMessage(e));
+    }
+  }
+  return *section_scene_;
 }
 
 NetCapacitance FieldSolver::solve(const std::string_view net,
@@ -224,14 +233,16 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
     solver_options_ = solver_options;
   }
   // Outside the try below, so that its own error is not reported again.
-  const Scene& s = scene(cross_section);
+  const Scene* s = cross_section ? nullptr : &scene();
+  const Scene2D* s2 = cross_section ? &crossSectionScene() : nullptr;
   NetCapacitance result;
   result.net = std::string(net);
   result.cross_section = cross_section;
   result.nets = netNames();
   try {
     const auto start = std::chrono::steady_clock::now();
-    result.row = solver_->solve(s, master, options);
+    result.row = s ? solver_->solve(*s, master, options)
+                   : solver_->solve(*s2, master, options);
     result.seconds = std::chrono::duration<double>(
                          std::chrono::steady_clock::now() - start)
                          .count();

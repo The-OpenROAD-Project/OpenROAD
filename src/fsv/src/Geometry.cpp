@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace fsv {
 
@@ -30,6 +31,45 @@ void Geometry::addBox(const int net, const Box& box)
   }
   boxes_.push_back(box);
   box_nets_.push_back(net);
+}
+
+int Geometry2D::addNet(const std::string_view name)
+{
+  net_names_.emplace_back(name);
+  return netCount() - 1;
+}
+
+void Geometry2D::addRect(const int net, const Rect& rect)
+{
+  if (net < 0 || net >= netCount()) {
+    throw std::invalid_argument("fsv: unknown net " + std::to_string(net));
+  }
+  for (int k = 0; k < 2; k++) {
+    if (!(rect.lo[k] < rect.hi[k])) {
+      throw std::invalid_argument("fsv: empty rectangle");
+    }
+  }
+  if (rect.lo[1] <= 0) {
+    throw std::invalid_argument(
+        "fsv: rectangle must lie above the ground plane");
+  }
+  rects_.push_back(rect);
+  rect_nets_.push_back(net);
+}
+
+Geometry2D crossSection(const Geometry& geometry)
+{
+  Geometry2D section;
+  for (int net = 0; net < geometry.netCount(); net++) {
+    section.addNet(geometry.netName(net));
+  }
+  const std::vector<Box>& boxes = geometry.boxes();
+  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
+    section.addRect(
+        geometry.boxNet(b),
+        {{boxes[b].lo[0], boxes[b].lo[2]}, {boxes[b].hi[0], boxes[b].hi[2]}});
+  }
+  return section;
 }
 
 }  // namespace fsv

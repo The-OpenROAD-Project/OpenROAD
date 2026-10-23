@@ -14,7 +14,7 @@
 
 namespace fsv {
 
-// Surface Green's function of a homogeneous square [-1, 1]^2 in the y-z
+// Surface Green's function of a homogeneous square [-1, 1]^2 in the x-z
 // plane seen from its center, tabulated over N panels per edge from the
 // exact Fourier series: the 2D counterpart of CubeGreens, for cross
 // sections. P is the same on all four edges.
@@ -35,19 +35,19 @@ class SquareGreens
 
   // Probability of panel i on one edge; edges sum to 1/4 each.
   double panelProbability(int i) const { return prob_[i]; }
-  // d/dz of P for panel i (along y) on the edge z = -1, which is normal to
+  // d/dz of P for panel i (along x) on the edge z = -1, which is normal to
   // z. On the edge z = +1 the value is negated.
   double normalEdgeGradient(int i) const { return normal_edge_[i]; }
-  // d/dz of P for panel i (along z) on the edge y = -1, which is parallel
-  // to z; the same on y = +1.
+  // d/dz of P for panel i (along z) on the edge x = -1, which is parallel
+  // to z; the same on x = +1.
   double parallelEdgeGradient(int i) const { return parallel_edge_[i]; }
 
-  // Draws a landing point on the boundary of the square (x = 0).
-  Vec3 sampleTransition(Philox& rng) const;
+  // Draws a landing point on the boundary of the square.
+  Vec2 sampleTransition(Philox& rng) const;
 
   // Draws a landing point with density |dP/d(derivative_axis)| /
-  // gradientNorm(); the axis is y or z.
-  FirstHop sampleFirstHop(Axis derivative_axis, Philox& rng) const;
+  // gradientNorm(); the axis is 0 (x) or 1 (z).
+  FirstHop2D sampleFirstHop(int derivative_axis, Philox& rng) const;
   // Sum of |dP/dz| over all panels of all edges.
   double gradientNorm() const { return gradient_norm_; }
 
@@ -66,7 +66,7 @@ class SquareGreens
   std::vector<double> normal_edge_;
   std::vector<double> parallel_edge_;
   AliasTable prob_alias_;
-  // First-hop tables for y and z over kSquareEdges * N panels.
+  // First-hop tables for x and z over kSquareEdges * N panels.
   std::array<std::vector<double>, 2> hop_sign_;
   std::vector<AliasTable> hop_alias_;
   double gradient_norm_ = 0;

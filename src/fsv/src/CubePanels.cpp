@@ -41,16 +41,14 @@ Vec3 cubeFacePoint(const BoxFace face,
   return p;
 }
 
-Vec3 squareEdgePoint(const BoxFace edge,
+Vec2 squareEdgePoint(const SquareEdge edge,
                      const int n,
                      const int i,
                      const double u)
 {
-  // The edge's tangent in the y-z plane is the other of y and z.
-  const Axis tangent = edge.axis == Axis::kY ? Axis::kZ : Axis::kY;
-  Vec3 p{0, 0, 0};
-  p[index(edge.axis)] = edge.normalSign();
-  p[index(tangent)] = -1.0 + 2.0 * (i + u) / n;
+  Vec2 p;
+  p[edge.axis] = edge.normalSign();
+  p[1 - edge.axis] = -1.0 + 2.0 * (i + u) / n;
   return p;
 }
 

@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "AliasTable.h"
-#include "BoxFace.h"
 #include "CubePanels.h"
 #include "LayerModes.h"
 #include "Philox.h"
@@ -53,12 +52,12 @@ LayeredSquareGreens::LayeredSquareGreens(const int panels,
 
 void LayeredSquareGreens::tabulateTopBottom(const double ratio)
 {
-  // Bottom edge data in mode m along y: the z profile of LayerModes with
+  // Bottom edge data in mode m along x: the z profile of LayerModes with
   // k = m pi / 2. The top edge is the bottom edge of the square mirrored
   // z -> -z, which also flips the sign of the z flux.
   const auto ints = panelSineIntegrals(n_);
   for (auto* table :
-       {&bottom_, &top_, &fz_bottom_, &fz_top_, &fy_bottom_, &fy_top_}) {
+       {&bottom_, &top_, &fz_bottom_, &fz_top_, &fx_bottom_, &fx_top_}) {
     table->assign(n_, 0.0);
   }
   for (int m = 1; m <= kMaxMode; m++) {
@@ -75,11 +74,11 @@ void LayeredSquareGreens::tabulateTopBottom(const double ratio)
         fz_top_[i] += -sm * mirrored.flux * ints[m][i];
       }
     } else {
-      // Even m: y derivative, phi_m'(0) = k cos(k).
+      // Even m: x derivative, phi_m'(0) = k cos(k).
       const double cm = k * std::cos(k);
       for (int i = 0; i < n_; i++) {
-        fy_bottom_[i] += cm * b.value * ints[m][i];
-        fy_top_[i] += cm * mirrored.value * ints[m][i];
+        fx_bottom_[i] += cm * b.value * ints[m][i];
+        fx_top_[i] += cm * mirrored.value * ints[m][i];
       }
     }
   }
@@ -87,68 +86,67 @@ void LayeredSquareGreens::tabulateTopBottom(const double ratio)
 
 void LayeredSquareGreens::tabulateSides(const double ratio)
 {
-  // Side edge y = -1 with data g(z): the potential is a sum over modes
-  //   b_k Z_k(z) sinh(q_k (1 - y)) / sinh(2 q_k)
+  // Side edge x = -1 with data g(z): the potential is a sum over modes
+  //   b_k Z_k(z) sinh(q_k (1 - x)) / sinh(2 q_k)
   // with b_k from the eps-weighted orthogonality of the Z_k. At the center
-  // the y factor is 1 / (2 cosh(q)) and its y derivative -q / (2 sinh(q)).
+  // the x factor is 1 / (2 cosh(q)) and its x derivative -q / (2 sinh(q)).
   const double e_lo = 1.0;
   const double e_hi = ratio;
-  for (auto* table : {&side_, &fz_side_, &fy_normal_}) {
+  for (auto* table : {&side_, &fz_side_, &fx_normal_}) {
     table->assign(n_, 0.0);
   }
   const int position = static_cast<int>(std::lround(t_ * kPositions));
   for (const ZMode& mode : zModes(position, e_lo, e_hi)) {
     const double q = mode.q;
     const ModeTerms terms = modeTerms(mode, t_, n_, e_lo, e_hi);
-    const double center_y = 1 / (2 * std::cosh(q));
-    const double p_coef = terms.value * center_y / terms.norm;
-    const double fz_coef = terms.flux * center_y / terms.norm;
+    const double center_x = 1 / (2 * std::cosh(q));
+    const double p_coef = terms.value * center_x / terms.norm;
+    const double fz_coef = terms.flux * center_x / terms.norm;
     const double fn_coef = terms.value * (-q / (2 * std::sinh(q))) / terms.norm;
     for (int j = 0; j < n_; j++) {
       side_[j] += p_coef * terms.panel[j];
       fz_side_[j] += fz_coef * terms.panel[j];
-      fy_normal_[j] += fn_coef * terms.panel[j];
+      fx_normal_[j] += fn_coef * terms.panel[j];
     }
   }
 }
 
-double LayeredSquareGreens::flux(const Axis axis,
-                                 const BoxFace edge,
+double LayeredSquareGreens::flux(const int axis,
+                                 const SquareEdge edge,
                                  const int i) const
 {
-  if (axis == Axis::kZ) {
-    if (edge.axis == Axis::kY) {
+  if (axis == 1) {
+    if (edge.axis == 0) {
       return fz_side_[i];
     }
     return edge.high ? fz_top_[i] : fz_bottom_[i];
   }
-  if (edge.axis == Axis::kY) {
-    return edge.high ? -fy_normal_[i] : fy_normal_[i];
+  if (edge.axis == 0) {
+    return edge.high ? -fx_normal_[i] : fx_normal_[i];
   }
-  return edge.high ? fy_top_[i] : fy_bottom_[i];
+  return edge.high ? fx_top_[i] : fx_bottom_[i];
 }
 
 void LayeredSquareGreens::buildSamplers()
 {
   std::vector<double> weights(kSquareEdges * n_);
   for (int e = 0; e < kSquareEdges; e++) {
-    const BoxFace edge = squareEdge(e);
+    const SquareEdge edge = squareEdge(e);
     const std::vector<double>& table
-        = edge.axis == Axis::kY ? side_ : (edge.high ? top_ : bottom_);
+        = edge.axis == 0 ? side_ : (edge.high ? top_ : bottom_);
     for (int i = 0; i < n_; i++) {
       weights[e * n_ + i] = std::max(0.0, table[i]);
     }
   }
   alias_ = std::make_unique<AliasTable>(weights);
 
-  for (const Axis axis : {Axis::kY, Axis::kZ}) {
-    const int d = index(axis) - 1;
+  for (int d = 0; d < 2; d++) {
     hop_sign_[d].resize(weights.size());
     flux_norm_[d] = 0;
     for (int e = 0; e < kSquareEdges; e++) {
-      const BoxFace edge = squareEdge(e);
+      const SquareEdge edge = squareEdge(e);
       for (int i = 0; i < n_; i++) {
-        const double g = flux(axis, edge, i);
+        const double g = flux(d, edge, i);
         const int idx = e * n_ + i;
         weights[idx] = std::abs(g);
         hop_sign_[d][idx] = g < 0 ? -1.0 : 1.0;
@@ -179,15 +177,16 @@ std::shared_ptr<const LayeredSquareGreens> LayeredSquareGreens::shared(
   return tables;
 }
 
-Vec3 LayeredSquareGreens::sampleTransition(Philox& rng) const
+Vec2 LayeredSquareGreens::sampleTransition(Philox& rng) const
 {
   const int idx = alias_->sample(rng.uniform());
   return squareEdgePoint(squareEdge(idx / n_), n_, idx % n_, rng.uniform());
 }
 
-FirstHop LayeredSquareGreens::sampleFirstHop(const Axis axis, Philox& rng) const
+FirstHop2D LayeredSquareGreens::sampleFirstHop(const int axis,
+                                               Philox& rng) const
 {
-  const int d = index(axis) - 1;
+  const int d = axis;
   const int idx = hop_alias_[d]->sample(rng.uniform());
   return {squareEdgePoint(squareEdge(idx / n_), n_, idx % n_, rng.uniform()),
           hop_sign_[d][idx]};

@@ -22,6 +22,7 @@ class Logger;
 namespace fsv {
 
 class Scene;
+class Scene2D;
 
 // One master's row of the capacitance matrix, in fF, or fF/µm for a cross
 // section.
@@ -62,15 +63,17 @@ class FieldSolver
 
   std::vector<std::string> netNames() const;
   // Solves one master net and reports its row. The Solver is rebuilt only
-  // when solver_options change. A cross section treats every box as
-  // infinitely long in x and gives capacitance per unit length.
+  // when solver_options change. A cross section projects every box onto
+  // the x-z plane, treats it as infinitely long in y and gives capacitance
+  // per unit length.
   NetCapacitance solve(std::string_view net,
                        const SolverOptions& solver_options,
                        const SolveOptions& options,
                        bool cross_section = false);
 
  private:
-  const Scene& scene(bool cross_section);
+  const Scene& scene();
+  const Scene2D& crossSectionScene();
   void resetScenes();
   int findNet(std::string_view net) const;
   void report(const NetCapacitance& result) const;
@@ -81,9 +84,11 @@ class FieldSolver
   double eps_ = 1.0;
   Geometry geometry_;
   std::map<std::string, int, std::less<>> net_index_;
-  // Built on demand from the dielectric and geometry, for 3D [0] and cross
-  // sections [1]; reset when either changes.
-  std::array<std::unique_ptr<Scene>, 2> scenes_;
+  // Built on demand from the dielectric and geometry; reset when either
+  // changes. The cross section's scene refers to its projected geometry.
+  std::unique_ptr<Scene> scene_;
+  std::unique_ptr<Geometry2D> section_;
+  std::unique_ptr<Scene2D> section_scene_;
   std::unique_ptr<Solver> solver_;
   SolverOptions solver_options_;
 };

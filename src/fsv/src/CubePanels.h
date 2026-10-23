@@ -25,25 +25,37 @@ std::vector<std::vector<double>> panelSineIntegrals(int n);
 // A first-hop landing point with the sign of the flux kernel there. The
 // first hop draws panels by the kernel's magnitude and carries its sign in
 // the walk's weight.
-struct FirstHop
+template <int D>
+struct BasicFirstHop
 {
-  Vec3 offset;  // landing point on the surface of [-1, 1]^3
+  Vec<D> offset;  // landing point on the surface of [-1, 1]^D
   double sign;
 };
+using FirstHop = BasicFirstHop<3>;
+using FirstHop2D = BasicFirstHop<2>;
 
 // Point on a face at panel (i, j), offset (u, v) in [0, 1) within it; i runs
 // along the face's first tangent axis and j along the second.
 Vec3 cubeFacePoint(BoxFace face, int n, int i, int j, double u, double v);
 
-// The square [-1, 1]^2 in the y-z plane (x = 0) has four edges, the faces
-// normal to y and z; edge e is BoxFace::fromIndex(2 + e).
-inline constexpr int kSquareEdges = 4;
-inline BoxFace squareEdge(const int e)
+// An edge of the square [-1, 1]^2 in the x-z plane: the one normal to `axis`
+// (0 for x, 1 for z) at its low or high coordinate.
+struct SquareEdge
 {
-  return BoxFace::fromIndex(2 + e);
+  int axis;
+  bool high;
+
+  double normalSign() const { return high ? 1.0 : -1.0; }
+};
+
+// Edge e of the four is axis e / 2, high e % 2.
+inline constexpr int kSquareEdges = 4;
+inline SquareEdge squareEdge(const int e)
+{
+  return {e / 2, e % 2 == 1};
 }
 
-// Point on an edge at panel i, offset u in [0, 1) within it, with x = 0.
-Vec3 squareEdgePoint(BoxFace edge, int n, int i, double u);
+// Point on an edge at panel i, offset u in [0, 1) within it.
+Vec2 squareEdgePoint(SquareEdge edge, int n, int i, double u);
 
 }  // namespace fsv

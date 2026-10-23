@@ -30,10 +30,11 @@ It provides:
   A control variate exploits the zero-mean weights.
 - Deterministic results for any thread count, using a counter-based Philox
   RNG and fixed batches reduced in order.
-- Cross sections (`Scene(..., CrossSection{})`, `solve_capacitance
-  -cross_section`): a 2D walk on squares in the y-z plane, with the square
-  counterparts of the cube tables (`SquareGreens`, `LayeredSquareGreens`),
-  giving capacitance per unit length. Boxes are infinitely long in x.
+- Cross sections (`Geometry2D` rectangles in the x-z plane, solved through
+  `Scene2D`; `solve_capacitance -cross_section`): a 2D walk on squares, with
+  the square counterparts of the cube tables (`SquareGreens`,
+  `LayeredSquareGreens`), giving capacitance per unit length. Wires run
+  along y, infinitely long.
 - Tcl commands that read a stack, define conductors and solve.
 
 Later phases add odb input and Python commands.
@@ -171,7 +172,7 @@ solve_capacitance
 | Switch Name | Description |
 | ----- | ----- |
 | `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float` in the range `[0, 1]`. The default is `0.01`. |
-| `-cross_section` | Solve the conductors as a cross section in the y-z plane: every box is infinitely long in x, its x extent is ignored, and the results are per unit length, in fF/µm. Conformal dielectrics grow on the sides only. |
+| `-cross_section` | Solve the conductors as a cross section in the x-z plane: every box is infinitely long in y, its y extent is ignored, and the results are per unit length, in fF/µm. Conformal dielectrics grow on the x sides and on top. Nets whose boxes overlap once projected onto the x-z plane are an error. |
 | `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`, at least 1. The default is `100000000`. |
 | `-min_walks` | Walks before the tolerances are first checked. The type is `int`. The default is `16384`. |
 | `-nets` | Master nets to solve. The type is a list of net names. The default is every net. |
