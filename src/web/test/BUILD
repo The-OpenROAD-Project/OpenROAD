@@ -43,6 +43,7 @@ JS_FILES = ["//src/web:js_files"]
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
+    "//src/web:node_modules/lit",
 ] + JS_FILES
 
 py_test(

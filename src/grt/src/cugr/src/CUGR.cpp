@@ -45,6 +45,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
+#include "utl/algorithms.h"
 
 using utl::GRT;
 
@@ -52,6 +53,12 @@ namespace grt {
 
 // Sentinel demoteNonCriticalNets writes so a net sorts last; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
+// Overflow relief rounds; each grows the candidates and reruns the RRR loop.
+constexpr int kReliefRounds = 5;
+// A relief neighbor's pin box is at most this many gcells from congestion.
+constexpr int kReliefMargin = 5;
+// Float slack of the relief's overflow comparisons.
+constexpr double kReliefTolerance = 1e-9;
 
 namespace {
 
@@ -243,6 +250,7 @@ void CUGR::clear()
   merged_nets_.clear();
   nets_to_route_.clear();
   incremental_candidates_.clear();
+  overflow_baseline_.clear();
   incremental_routing_ = false;
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
@@ -651,79 +659,6 @@ std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
   return widths;
 }
 
-std::vector<CUGR::PinAccessTop> CUGR::pinAccessTops(const GRNet& net) const
-{
-  const int net_min_layer
-      = std::max(constants_.min_routing_layer, net.getLayerRange().min_layer);
-  std::vector<PinAccessTop> tops;
-  tops.reserve(net.getPreferredAccessPoints().size());
-  for (const auto& [index, ap] : net.getPreferredAccessPoints()) {
-    tops.push_back({.gcell = {ap.point.x(), ap.point.y()},
-                    .top = std::max(ap.layers.high(), net_min_layer)});
-  }
-  // One entry per gcell, at its highest top: sort it first, keep the first.
-  std::ranges::sort(tops, [](const PinAccessTop& a, const PinAccessTop& b) {
-    return std::tie(a.gcell, b.top) < std::tie(b.gcell, a.top);
-  });
-  const auto duplicates = std::ranges::unique(tops, {}, &PinAccessTop::gcell);
-  tops.erase(duplicates.begin(), duplicates.end());
-  return tops;
-}
-
-int CUGR::pinAccessTop(const std::vector<PinAccessTop>& tops, const PointT loc)
-{
-  const std::pair<int, int> gcell(loc.x(), loc.y());
-  const auto it
-      = std::ranges::lower_bound(tops, gcell, {}, &PinAccessTop::gcell);
-  return (it != tops.end() && it->gcell == gcell) ? it->top : -1;
-}
-
-double CUGR::computeReliefScore(const GRNet& net, const double threshold) const
-{
-  const auto& tree = net.getRoutingTree();
-  if (!tree) {
-    return 0.0;
-  }
-  double score = 0.0;
-  auto relieve = [&](const int layer, const PointT edge, const double demand) {
-    if (layer < constants_.min_routing_layer) {
-      return;
-    }
-    const GraphEdge e = grid_graph_->getEdge(layer, edge.x(), edge.y());
-    const double overflow = e.demand - e.capacity * threshold;
-    if (overflow > 0.0) {
-      score += std::min(demand, overflow);
-    }
-  };
-  grid_graph_->forEachTreeWireEdge(
-      tree, net.isAdopted(), [&](int layer, PointT cell, bool wrong_way) {
-        const double factor = net.getNdrCost(layer);
-        if (wrong_way) {
-          grid_graph_->forEachWrongWayFlankEdge(
-              layer, cell, [&](PointT edge, CapacityT pad) {
-                relieve(layer, edge, pad * factor);
-              });
-        } else {
-          relieve(layer, cell, factor);
-        }
-      });
-  const auto pin_tops = pinAccessTops(net);
-  grid_graph_->forEachViaColumn(tree, [&](PointT loc, int low, int high) {
-    const int access_top = pinAccessTop(pin_tops, loc);
-    grid_graph_->forEachStackFlankEdge(
-        low,
-        high,
-        loc,
-        net.getNdrCosts(),
-        [&](int layer, PointT edge, CapacityT pad, double factor) {
-          if (layer > access_top) {
-            relieve(layer, edge, pad * factor);
-          }
-        });
-  });
-  return score;
-}
-
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
                                const double threshold)
 {
@@ -733,7 +668,7 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
     if (net == nullptr || !net->getRoutingTree()) {
       return;
     }
-    if (computeReliefScore(*net, threshold) > 0.0) {
+    if (grid_graph_->reliefScore(*net, threshold) > 0.0) {
       net_indices.push_back(index);
     }
   };
@@ -894,15 +829,17 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   debugNetTopology(CugrStage::patternRouteWithDetours, 0);
 }
 
-void CUGR::mazeRoute(std::vector<int>& net_indices,
-                     const CugrStage stage,
-                     const int iteration)
+double CUGR::mazeRoute(std::vector<int>& net_indices,
+                       const CugrStage stage,
+                       const int iteration,
+                       const RerouteOptions& options)
 {
   if (net_indices.empty()) {
-    return;
+    return 0.0;
   }
 
-  if (critical_nets_percentage_ != 0) {
+  // The relief's passes skip the slack refresh, which would re-time each one.
+  if (critical_nets_percentage_ != 0 && options.refresh_critical) {
     // Maze passes keep the resistance-aware set the pattern stages chose.
     updateCriticalNets(net_indices, /* extend_res_aware= */ false);
   }
@@ -918,8 +855,18 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
   sortNetIndices(net_indices,
                  resistance_aware_ && critical_nets_percentage_ != 0);
   SparseGrid grid(10, 10, 0, 0);
+  // A reroute that adds overflow beyond float noise is rolled back and
+  // retried next pass.
+  constexpr double kAcceptTolerance = 1e-9;
+  int rejected = 0;
+  double overflow_change = 0.0;
+  // Only accepted reroutes change a route, so only they need new parasitics.
+  std::vector<int> accepted;
+  accepted.reserve(net_indices.size());
   // Hoisted to reuse storage across NDR nets.
   GridGraphView<CostT> ndr_wire_cost_view;
+  // Edges of the tree being measured, reused across nets.
+  std::vector<std::array<int, 3>> touched_edges;
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -928,7 +875,13 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
+    // A rollback restores the route and the access points the maze re-selects.
+    GRNet::SavedRoute old_route = net->saveRoute();
+    // Overflow change of the transaction, measured on the touched edges.
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    double delta = -grid_graph_->sumOverflow(touched_edges);
     grid_graph_->removeTreeUsage(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     // Checked where the maze reads the view, after every refresh so far.
     if (verify_view) {
@@ -971,7 +924,25 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
+    grid_graph_->collectTreeEdges(*net, touched_edges);
+    delta -= grid_graph_->sumOverflow(touched_edges);
     grid_graph_->addTreeUsage(*net);
+    delta += grid_graph_->sumOverflow(touched_edges);
+    // Relief neighbors move only if overflow drops; others may move sideways.
+    const bool strict
+        = !options.strict_accept.empty() && options.strict_accept[net_index];
+    const bool keep
+        = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
+    if (!keep) {
+      grid_graph_->removeTreeUsage(*net);
+      grid_graph_->updateWireCostView(wire_cost_view, *net);
+      net->restoreRoute(std::move(old_route));
+      grid_graph_->addTreeUsage(*net);
+      rejected++;
+    } else {
+      overflow_change += delta;
+      accepted.push_back(net_index);
+    }
     grid_graph_->updateWireCostView(wire_cost_view, *net);
     grid.step();
   }
@@ -982,14 +953,25 @@ void CUGR::mazeRoute(std::vector<int>& net_indices,
              "iteration {}: {} nets rerouted, {} view cells differ from a "
              "full extraction (max drift {:.3g}).",
              iteration,
-             net_indices.size(),
+             accepted.size() + rejected,
              view_mismatches,
              view_max_drift);
-  collectReroutedNets(net_indices);
+  debugPrint(logger_,
+             GRT,
+             "rrr",
+             1,
+             "iteration {}: {} nets rerouted, {} of them rolled back (the new "
+             "route added overflow); overflow change {:.2f}.",
+             iteration,
+             accepted.size() + rejected,
+             rejected,
+             overflow_change);
+  collectReroutedNets(accepted);
   debugNetTopology(stage, iteration);
+  return overflow_change;
 }
 
-void CUGR::route(bool incremental)
+std::vector<odb::dbNet*> CUGR::route(bool incremental)
 {
   // The incremental scope comes exclusively from nets_to_route_; without it
   // the fallback below would treat the whole design as dirty.
@@ -997,7 +979,7 @@ void CUGR::route(bool incremental)
     // Keep the wrapper-era coverage: restore/remove-only rounds still get
     // their demand round-trip checked even though nothing reroutes.
     verifyDemandConsistency("incremental");
-    return;
+    return {};
   }
 
   if (resistance_aware_ && critical_nets_percentage_ == 0) {
@@ -1035,19 +1017,15 @@ void CUGR::route(bool incremental)
   }
 
   patternRoute(net_indices);
-  reportCongestionSources("stage 1 pattern");
 
-  // Debug switch no_res_aware_stage skips stage 2.
-  if (!incremental && !logger_->debugCheck(GRT, "no_res_aware_stage", 1)) {
+  if (!incremental) {
     // Stage 2: resistance-aware re-route of the critical nets (full route
     // only, not congestion-gated; it ignores the congested set).
     patternRouteResAware(net_indices);
-    reportCongestionSources("stage 2 res-aware");
     updateCongestedNets(net_indices);
   }
 
   patternRouteWithDetours(net_indices);
-  reportCongestionSources("stage 3 detours");
   if (!incremental) {
     updateCongestedNets(net_indices);
   }
@@ -1056,14 +1034,20 @@ void CUGR::route(bool incremental)
   if (verbose_ && !net_indices.empty()) {
     logger_->report("Stage 4: Maze routing on sparsified graph.");
   }
-  mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0);
-  reportCongestionSources("stage 4 maze");
+  mazeRoute(net_indices, CugrStage::mazeRoute, /* iteration */ 0, {});
   debugPass("stage 4");
   if (!incremental) {
     updateCongestedNets(net_indices);
   }
 
-  iterativeRRR(net_indices);
+  iterativeRRR(net_indices, {});
+  // The relief's moves need new routes and guides in GlobalRouter too.
+  std::vector<odb::dbNet*> moved;
+  if (incremental) {
+    for (const int index : relieveIncrementalOverflow()) {
+      moved.push_back(gr_nets_[index]->getDbNet());
+    }
+  }
 
   printStatistics();
 
@@ -1071,13 +1055,16 @@ void CUGR::route(bool incremental)
     incremental_routing_ = false;
     incremental_candidates_.clear();
     verifyDemandConsistency("incremental");
-    return;
+    return moved;
   }
+
+  captureOverflowBaseline();
 
   debugCongestion2D();
   if (constants_.write_heatmap) {
     grid_graph_->write();
   }
+  return moved;
 }
 
 CUGR::Congestion2D CUGR::computeCongestion2D() const
@@ -1308,30 +1295,20 @@ void CUGR::debugNetTopology(const CugrStage stage, const int iteration)
   debug_.renderer->drawAndPause(std::move(frame));
 }
 
-void CUGR::debugPass(const std::string& tag)
+void CUGR::debugPass(const char* stage, const int iteration)
 {
-  if (logger_->debugCheck(GRT, "rrr", 1)) {
-    debugPrint(
-        logger_, GRT, "rrr", 1, "{}: total overflow {}.", tag, totalOverflow());
-  }
-  if (!hasTiming() || !logger_->debugCheck(GRT, "rrr_timing", 1)) {
-    return;
-  }
-  updateNetSlacks({});
-  sta::Slack wns = 0.0;
-  sta::Vertex* vertex = nullptr;
-  sta_->worstSlack(sta::MinMax::max(), wns, vertex);
+  // debugPrint builds the tag only when the group prints.
   debugPrint(logger_,
              GRT,
-             "rrr_timing",
+             "rrr",
              1,
-             "{}: WNS {:.4g} TNS {:.5g}",
-             tag,
-             wns,
-             sta_->totalNegativeSlack(sta::MinMax::max()));
+             "{}: total overflow {}.",
+             iteration < 0 ? stage : fmt::format("{} {}", stage, iteration),
+             totalOverflow());
 }
 
-void CUGR::iterativeRRR(std::vector<int>& net_indices)
+void CUGR::iterativeRRR(std::vector<int>& net_indices,
+                        const RerouteOptions& options)
 {
   // Gate on the integer overflow metric: sub-track overflow is left for
   // detailed-route jogs to absorb rather than spending RRR iterations.
@@ -1352,6 +1329,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
   constexpr double kCongestionThreshold = 1.0;
   // Iterations in the congested set before an NDR net is demoted.
   constexpr int kSoftNdrStreakThreshold = 2;
+  // Stop after this many passes in a row that each remove < 1 track.
+  constexpr double kMinPassImprovement = 1.0;
+  constexpr int kMaxStagnantPasses = 2;
+  int stagnant_passes = 0;
 
   std::unordered_map<int, int> ndr_congested_streak;
   int soft_ndr_demotions = 0;
@@ -1367,6 +1348,10 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
     std::unordered_set<int> currently_congested(net_indices.begin(),
                                                 net_indices.end());
     std::vector<std::string> demoted_now;
+    // A demotion relieves overflow too, so it counts toward the pass's change.
+    double overflow_change = 0.0;
+    // A congested NDR net not demoted yet is demoted if it stays congested.
+    bool demotion_pending = false;
     for (const int net_index : net_indices) {
       if (gr_nets_[net_index] == nullptr) {
         continue;
@@ -1377,10 +1362,17 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       }
       const int streak = ++ndr_congested_streak[net_index];
       if (streak >= kSoftNdrStreakThreshold) {
-        grid_graph_->removeTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        // The net-aware forms keep an adopted tree's wrong-way spans legal.
+        std::vector<std::array<int, 3>> touched_edges;
+        grid_graph_->collectTreeEdges(*net, touched_edges);
+        overflow_change -= grid_graph_->sumOverflow(touched_edges);
+        grid_graph_->removeTreeUsage(*net);
         net->setSoftNdr();
-        grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
+        grid_graph_->addTreeUsage(*net);
+        overflow_change += grid_graph_->sumOverflow(touched_edges);
         demoted_now.push_back(net->getName());
+      } else {
+        demotion_pending = true;
       }
     }
     // Reset streaks for nets that recovered (no longer congested).
@@ -1414,15 +1406,34 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
       logger_->info(
           GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     }
-    if (incremental_routing_) {
+    if (incremental_routing_ && options.reroute_all_candidates) {
       // Incremental reroutes all dirty nets each iteration, not just congested.
       std::vector<int> reroute_set = incremental_candidates_;
-      mazeRoute(reroute_set, CugrStage::iterativeRRR, i);
+      overflow_change
+          += mazeRoute(reroute_set, CugrStage::iterativeRRR, i, options);
     } else {
-      mazeRoute(net_indices, CugrStage::iterativeRRR, i);
+      overflow_change
+          += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
     }
-    reportCongestionSources(fmt::format("rrr iteration {}", i));
-    debugPass(fmt::format("rrr iteration {}", i));
+    debugPass("rrr iteration", i);
+
+    stagnant_passes
+        = -overflow_change < kMinPassImprovement ? stagnant_passes + 1 : 0;
+    if (stagnant_passes >= kMaxStagnantPasses && !demotion_pending) {
+      // Report only when overflow is left; incremental defers to GRT-0128.
+      if (verbose_ && !incremental_routing_ && i < congestion_iterations_
+          && totalOverflow() > 0) {
+        logger_->info(GRT,
+                      124,
+                      "Iterative RRR stopped after iteration {}: the last {} "
+                      "iterations each removed less than {:.0f} track of "
+                      "overflow.",
+                      i,
+                      kMaxStagnantPasses,
+                      kMinPassImprovement);
+      }
+      break;
+    }
   }
   grid_graph_->setCostMultiplier(1.0);
   if (verbose_ && soft_ndr_demotions > 0) {
@@ -1439,6 +1450,167 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices)
                     "Iterative RRR finished with congestion remaining ({}).",
                     residual);
     }
+  }
+}
+
+std::vector<int> CUGR::relieveIncrementalOverflow()
+{
+  // Look for overflow only on the rerouted nets' edges, not the neighbors'.
+  const std::vector<int> rerouted = incremental_candidates_;
+  std::vector<EdgeId> congested_edges = findCongestedEdges(rerouted);
+  // Sub-track added overflow alone leaves the RRR loop nothing to reroute.
+  if (congested_edges.empty() || totalOverflow() == 0) {
+    return {};
+  }
+  // Nets already in the RRR loop: the rerouted ones, then the added ones.
+  std::vector<char> is_candidate(gr_nets_.size(), 0);
+  for (const int index : incremental_candidates_) {
+    is_candidate[index] = 1;
+  }
+  // Neighbors move only if overflow drops; the passes keep the slacks.
+  RerouteOptions options{.reroute_all_candidates = false,
+                         .strict_accept = std::vector<char>(gr_nets_.size(), 0),
+                         .refresh_critical = false};
+  // Each added net's tree before the relief; a rolled-back reroute keeps it.
+  std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
+  std::vector<int> net_indices;
+  for (int round = 1; round <= kReliefRounds && !congested_edges.empty();
+       round++) {
+    const std::vector<int> added
+        = findNetsOnCongestedEdges(congested_edges, is_candidate);
+    if (added.empty()) {
+      break;
+    }
+    // Added nets join the candidates under strict acceptance.
+    for (const int index : added) {
+      is_candidate[index] = 1;
+      options.strict_accept[index] = 1;
+      incremental_candidates_.push_back(index);
+      added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
+    }
+    // Reroute and measure the added overflow; stop once a round stops gaining.
+    const double before = sumAddedOverflow(congested_edges);
+    iterativeRRR(net_indices, options);
+    const double after = sumAddedOverflow(congested_edges);
+    debugPrint(logger_,
+               GRT,
+               "incr",
+               1,
+               "Overflow relief round {}: {} nets added; added overflow on the "
+               "{} congested edges {:.2f} -> {:.2f}.",
+               round,
+               added.size(),
+               congested_edges.size(),
+               before,
+               after);
+    if (before - after <= kReliefTolerance) {
+      break;
+    }
+    congested_edges = findCongestedEdges(rerouted);
+  }
+  // The added nets whose tree changed: the reroutes the relief kept.
+  std::vector<int> moved;
+  for (const auto& [index, tree] : added_trees) {
+    if (gr_nets_[index]->getRoutingTree() != tree) {
+      moved.push_back(index);
+    }
+  }
+  std::ranges::sort(moved);
+  return moved;
+}
+
+double CUGR::addedOverflow(const EdgeId& edge) const
+{
+  const auto it = std::ranges::lower_bound(
+      overflow_baseline_, edge, {}, &std::pair<EdgeId, double>::first);
+  const CapacityT baseline
+      = (it != overflow_baseline_.end() && it->first == edge) ? it->second
+                                                              : 0.0;
+  return grid_graph_->edgeOverflow(edge) - baseline;
+}
+
+std::vector<CUGR::EdgeId> CUGR::findCongestedEdges(
+    const std::vector<int>& net_indices) const
+{
+  std::vector<EdgeId> congested_edges;
+  std::vector<EdgeId> tree_edges;
+  for (const int index : net_indices) {
+    const GRNet* net = gr_nets_[index].get();
+    if (net == nullptr || !net->getRoutingTree()) {
+      continue;
+    }
+    grid_graph_->collectTreeEdges(*net, tree_edges);
+    for (const EdgeId& edge : tree_edges) {
+      if (addedOverflow(edge) > kReliefTolerance) {
+        congested_edges.push_back(edge);
+      }
+    }
+  }
+  utl::sort_and_unique(congested_edges);
+  return congested_edges;
+}
+
+double CUGR::sumAddedOverflow(const std::vector<EdgeId>& edges) const
+{
+  double sum = 0.0;
+  for (const EdgeId& edge : edges) {
+    sum += std::max<CapacityT>(0.0, addedOverflow(edge));
+  }
+  return sum;
+}
+
+std::vector<int> CUGR::findNetsOnCongestedEdges(
+    const std::vector<EdgeId>& edges,
+    const std::vector<char>& is_candidate) const
+{
+  // The congested gcells and their box, to skip nets far from all of them.
+  std::vector<std::pair<int, int>> congested_gcells;
+  BoxT window;
+  for (const auto& [layer, x, y] : edges) {
+    congested_gcells.emplace_back(x, y);
+    window.update(PointT(x, y));
+  }
+  utl::sort_and_unique(congested_gcells);
+  std::vector<int> nets;
+  std::vector<EdgeId> tree_edges;
+  for (const auto& net : gr_nets_) {
+    if (net == nullptr || is_candidate[net->getIndex()] || net->getNumPins() < 2
+        || !net->getRoutingTree() || net->isStale()) {
+      continue;
+    }
+    // The pin box, grown by the margin, must reach a congested gcell.
+    const BoxT& box = net->getBoundingBox();
+    const BoxT grown(box.lx() - kReliefMargin,
+                     box.ly() - kReliefMargin,
+                     box.hx() + kReliefMargin,
+                     box.hy() + kReliefMargin);
+    if (!grown.hasIntersectWith(window)
+        || std::ranges::none_of(congested_gcells, [&](const auto& gcell) {
+             return grown.contain(PointT(gcell.first, gcell.second));
+           })) {
+      continue;
+    }
+    // Only the nets that use one of the congested edges.
+    grid_graph_->collectTreeEdges(*net, tree_edges);
+    if (std::ranges::any_of(tree_edges, [&](const EdgeId& edge) {
+          return std::ranges::binary_search(edges, edge);
+        })) {
+      nets.push_back(net->getIndex());
+    }
+  }
+  return nets;
+}
+
+void CUGR::captureOverflowBaseline()
+{
+  overflow_baseline_ = grid_graph_->overflowedEdges();
+}
+
+void CUGR::markNetStale(odb::dbNet* db_net)
+{
+  const auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end() && it->second != nullptr) {
+    it->second->setStale(true);
   }
 }
 
@@ -1744,7 +1916,7 @@ void CUGR::printStatistics() const
   }
 
   // Overflow is computed from edge.demand (which includes via-stub
-  // demand). This is the same metric used by CUGR's computeReliefScore,
+  // demand). This is the same metric used by GridGraph::reliefScore,
   // updateCongestedNets, and extractCongestionView.
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
@@ -2610,255 +2782,6 @@ void CUGR::saveCongestion()
       }
     }
   }
-}
-
-void CUGR::reportCongestionSources(const std::string& tag)
-{
-  if (incremental_routing_
-      || !logger_->debugCheck(GRT, "congestion_sources", 1)) {
-    return;
-  }
-  // Demand per edge by source: wires, pin-access, bend or stack via pads.
-  enum Source
-  {
-    kWire,
-    kPinVia,
-    kBendVia,
-    kStackVia,
-    kNumSources
-  };
-  const int num_layers = grid_graph_->getNumLayers();
-  const int x_size = grid_graph_->getXSize();
-  const int y_size = grid_graph_->getYSize();
-  const size_t num_edges = static_cast<size_t>(num_layers) * x_size * y_size;
-  std::array<std::vector<CapacityT>, kNumSources> demand;
-  for (auto& source : demand) {
-    source.assign(num_edges, 0.0);
-  }
-  auto overflowed = [&](int layer, PointT edge) {
-    const GraphEdge e = grid_graph_->getEdge(layer, edge.x(), edge.y());
-    return e.demand > e.capacity;
-  };
-  // Owner criticality at the start of the pass; res-aware nets are critical.
-  const bool demoted_any = std::ranges::any_of(gr_nets_, [](const auto& net) {
-    return net != nullptr && net->getSlack() >= kDemotedSlack;
-  });
-  const float slack_threshold
-      = demoted_any ? kDemotedSlack : criticalSlackThreshold();
-  // Without a critical percentage no net is routed as critical.
-  auto is_critical = [&](const GRNet& net) {
-    return net.isResAware()
-           || (critical_nets_percentage_ != 0
-               && (demoted_any ? net.getSlack() < slack_threshold
-                               : net.getSlack() <= slack_threshold));
-  };
-  enum Group
-  {
-    kCritical,
-    kNonCritical,
-    kNumGroups
-  };
-  struct GroupStats
-  {
-    // Avoidable (bend and stack) pad demand per edge.
-    std::vector<CapacityT> pad;
-    int nets = 0;
-    long vias = 0;
-    // Vias above the pin access of their column: the climbs the router chose.
-    long climbs = 0;
-    double on_overflowed = 0.0;
-    double without = 0.0;
-  };
-  std::array<GroupStats, kNumGroups> groups;
-  for (auto& group : groups) {
-    group.pad.assign(num_edges, 0.0);
-  }
-  int res_aware_nets = 0;
-
-  int selected_nets = 0;
-  int wire_selected = 0;
-  int via_owners = 0;
-  for (const auto& net : gr_nets_) {
-    if (net == nullptr || !net->getRoutingTree()) {
-      continue;
-    }
-    GroupStats& group = groups[is_critical(*net) ? kCritical : kNonCritical];
-    group.nets++;
-    res_aware_nets += net->isResAware();
-    const auto& costs = net->getNdrCosts();
-    const auto pin_tops = pinAccessTops(*net);
-    bool on_overflowed_wire = false;
-    bool avoidable_pad_on_overflow = false;
-    grid_graph_->forEachTreeWireEdge(
-        net->getRoutingTree(),
-        net->isAdopted(),
-        [&](int layer, PointT cell, bool wrong_way) {
-          const double factor = net->getNdrCost(layer);
-          if (wrong_way) {
-            grid_graph_->forEachWrongWayFlankEdge(
-                layer, cell, [&](PointT edge, CapacityT pad) {
-                  demand[kWire][grid_graph_->edgeFlatIndex(
-                      layer, edge.x(), edge.y())] += pad * factor;
-                });
-            return;
-          }
-          demand[kWire][grid_graph_->edgeFlatIndex(layer, cell.x(), cell.y())]
-              += factor;
-          // The wire-only test, to compare with the relief-score selection.
-          on_overflowed_wire |= overflowed(layer, cell);
-        });
-    grid_graph_->forEachViaColumn(
-        net->getRoutingTree(), [&](PointT loc, int low, int high) {
-          const int access_top = pinAccessTop(pin_tops, loc);
-          group.vias += high - low;
-          group.climbs += std::max(0, high - std::max(low, access_top));
-          const Source chosen = high - low == 1 ? kBendVia : kStackVia;
-          grid_graph_->forEachStackFlankEdge(
-              low,
-              high,
-              loc,
-              costs,
-              [&](int layer, PointT edge, CapacityT pad, double factor) {
-                const Source source = layer <= access_top ? kPinVia : chosen;
-                const size_t index
-                    = grid_graph_->edgeFlatIndex(layer, edge.x(), edge.y());
-                demand[source][index] += pad * factor;
-                if (source == kPinVia) {
-                  return;
-                }
-                group.pad[index] += pad * factor;
-                if (layer >= constants_.min_routing_layer
-                    && overflowed(layer, edge)) {
-                  avoidable_pad_on_overflow = true;
-                }
-              });
-        });
-    const bool selected = computeReliefScore(*net, 1.0) > 0.0;
-    selected_nets += selected;
-    wire_selected += on_overflowed_wire;
-    via_owners += avoidable_pad_on_overflow;
-  }
-
-  // Overflow as sources are added: pin access, wires, bends, then stacks.
-  double total_overflow = 0.0;
-  double max_overflow = 0.0;
-  std::array<double, kNumSources> ladder{};
-  std::array<double, kNumSources> on_overflowed{};
-  // Overflow left with one source removed: the bound on fixing that source.
-  std::array<double, kNumSources> without{};
-  int overflowed_edges = 0;
-  int wire_only_edges = 0;
-  int via_only_edges = 0;
-  double max_mismatch = 0.0;
-  for (int layer = constants_.min_routing_layer; layer < num_layers; layer++) {
-    const bool horizontal
-        = grid_graph_->getLayerDirection(layer) == MetalLayer::H;
-    for (int x = 0; x + horizontal < x_size; x++) {
-      for (int y = 0; y + !horizontal < y_size; y++) {
-        const GraphEdge edge = grid_graph_->getEdge(layer, x, y);
-        const size_t index = grid_graph_->edgeFlatIndex(layer, x, y);
-        const double wire = demand[kWire][index];
-        const double pin = demand[kPinVia][index];
-        const double bend = demand[kBendVia][index];
-        const double stack = demand[kStackVia][index];
-        max_mismatch = std::max(
-            max_mismatch, std::abs(wire + pin + bend + stack - edge.demand));
-        const double overflow = edge.demand - edge.capacity;
-        if (overflow <= 0) {
-          continue;
-        }
-        overflowed_edges++;
-        total_overflow += overflow;
-        max_overflow = std::max(max_overflow, overflow);
-        wire_only_edges += pin + bend + stack == 0;
-        via_only_edges += wire == 0;
-        ladder[kPinVia] += std::max(0.0, pin - edge.capacity);
-        ladder[kWire] += std::max(0.0, pin + wire - edge.capacity);
-        ladder[kBendVia] += std::max(0.0, pin + wire + bend - edge.capacity);
-        ladder[kStackVia] += overflow;
-        for (int source = 0; source < kNumSources; source++) {
-          const double source_demand = demand[source][index];
-          on_overflowed[source] += source_demand;
-          without[source] += std::max(0.0, overflow - source_demand);
-        }
-        for (GroupStats& group : groups) {
-          const double pad = group.pad[index];
-          group.without += std::max(0.0, overflow - pad);
-          group.on_overflowed += pad;
-        }
-      }
-    }
-  }
-  const double on_overflowed_total
-      = std::max(1e-12,
-                 on_overflowed[kWire] + on_overflowed[kPinVia]
-                     + on_overflowed[kBendVia] + on_overflowed[kStackVia]);
-  auto share = [&](Source source) {
-    return 100.0 * on_overflowed[source] / on_overflowed_total;
-  };
-  auto print = [&](const std::string& line) {
-    debugPrint(logger_, GRT, "congestion_sources", 1, "[{}] {}", tag, line);
-  };
-  print(
-      fmt::format("overflow total={:.2f} max={:.2f} on {} edges "
-                  "(wire-only={}, wire+via={}, via-only={}); vias={}; "
-                  "routed nets={}; demand mismatch={:.2g}",
-                  total_overflow,
-                  max_overflow,
-                  overflowed_edges,
-                  wire_only_edges,
-                  overflowed_edges - wire_only_edges - via_only_edges,
-                  via_only_edges,
-                  groups[kCritical].vias + groups[kNonCritical].vias,
-                  groups[kCritical].nets + groups[kNonCritical].nets,
-                  max_mismatch));
-  print(
-      fmt::format("overflow by source: pin-access vias={:.2f} +wires={:.2f} "
-                  "+bend vias={:.2f} +stack vias={:.2f}",
-                  ladder[kPinVia],
-                  ladder[kWire],
-                  ladder[kBendVia],
-                  ladder[kStackVia]));
-  print(
-      fmt::format("demand on overflowed edges: wires={:.2f} ({:.0f}%) "
-                  "pin-access vias={:.2f} ({:.0f}%) bend vias={:.2f} "
-                  "({:.0f}%) stack vias={:.2f} ({:.0f}%)",
-                  on_overflowed[kWire],
-                  share(kWire),
-                  on_overflowed[kPinVia],
-                  share(kPinVia),
-                  on_overflowed[kBendVia],
-                  share(kBendVia),
-                  on_overflowed[kStackVia],
-                  share(kStackVia)));
-  print(
-      fmt::format("overflow without: pin-access vias={:.2f} wires={:.2f} "
-                  "bend vias={:.2f} stack vias={:.2f}",
-                  without[kPinVia],
-                  without[kWire],
-                  without[kBendVia],
-                  without[kStackVia]));
-  auto group_line = [&](const char* name, const GroupStats& group) {
-    return fmt::format(
-        "{} nets={}: vias={} climbs={} avoidable pads on overflowed "
-        "edges={:.2f} overflow without them={:.2f}",
-        name,
-        group.nets,
-        group.vias,
-        group.climbs,
-        group.on_overflowed,
-        group.without);
-  };
-  print(fmt::format("{} ({} res-aware); {}",
-                    group_line("critical", groups[kCritical]),
-                    res_aware_nets,
-                    group_line("non-critical", groups[kNonCritical])));
-  print(
-      fmt::format("nets: selected={} (with a wire on an overflowed edge={}) "
-                  "owning avoidable pads on overflowed edges={}",
-                  selected_nets,
-                  wire_selected,
-                  via_owners));
 }
 
 void CUGR::verifyDemandConsistency(const char* tag)

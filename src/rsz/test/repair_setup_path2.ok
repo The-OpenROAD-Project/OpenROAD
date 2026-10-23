@@ -46,13 +46,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -184.565 |    -1425.4 |     13 | capture_17/D
-      89* |      10 |      33 |       10 |      0 |    14 |    +1.6% |  -31.350 |     -143.7 |     13 | capture_23/D
-    final |      10 |      39 |       10 |      0 |    14 |    +1.6% |  -31.414 |     -140.1 |      7 | capture_23/D
+      80* |       9 |      34 |       10 |      0 |     2 |    +1.9% |  -34.705 |     -162.8 |     13 | capture_23/D
+    final |       9 |      43 |       10 |      0 |     2 |    +1.9% |  -35.009 |     -161.1 |      7 | capture_23/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 10 buffers.
+[INFO RSZ-0059] Removed 9 buffers.
 [INFO RSZ-0040] Inserted 10 buffers.
-[INFO RSZ-0051] Resized 39 instances: 11 up, 0 up match, 0 down, 28 VT
-[INFO RSZ-0043] Swapped pins on 14 instances.
+[INFO RSZ-0051] Resized 43 instances: 12 up, 0 up match, 0 down, 31 VT
+[INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_4 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: capture_23 (rising edge-triggered flip-flop clocked by clk)
@@ -64,32 +64,32 @@ Path Type: max
    0.0000    0.0000   clock clk (rise edge)
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ launch_4/CLK (DFFHQx4_ASAP7_75t_SL)
-  36.1972   36.1972 v launch_4/Q (DFFHQx4_ASAP7_75t_SL)
-  26.9598   63.1570 ^ inst1/Y (XOR2x2_ASAP7_75t_SL)
-  14.6911   77.8481 ^ inst2/Y (XNOR2x2_ASAP7_75t_SL)
-   5.5350   83.3831 v inst3/Y (NOR2x1p5_ASAP7_75t_SL)
-  12.0537   95.4368 ^ inst4/Y (OAI21x1_ASAP7_75t_SL)
-   7.4646  102.9014 v inst5/Y (NAND3x1_ASAP7_75t_SL)
-  10.3840  113.2854 ^ inst6/Y (NAND2x2_ASAP7_75t_SL)
-  11.1901  124.4755 v inst7/CON (HAxp5_ASAP7_75t_SL)
-  16.9055  141.3810 ^ inst7/SN (HAxp5_ASAP7_75t_SL)
-  13.7585  155.1395 v inst8/Y (INVx1_ASAP7_75t_SL)
-  21.0705  176.2100 ^ inst9/Y (NAND3x2_ASAP7_75t_SL)
-  12.3806  188.5906 ^ rebuffer3/Y (BUFx3_ASAP7_75t_SL)
-  19.4166  208.0071 ^ inst9_neighbor3/Y (AO21x2_ASAP7_75t_SL)
-  10.6261  218.6333 ^ capture_23/D (DFFHQx4_ASAP7_75t_R)
-           218.6333   data arrival time
+  36.1853   36.1853 v launch_4/Q (DFFHQx4_ASAP7_75t_SL)
+  25.9188   62.1042 ^ inst1/Y (XOR2x2_ASAP7_75t_SL)
+  15.8793   77.9834 ^ inst2/Y (XNOR2x2_ASAP7_75t_SL)
+   5.3454   83.3288 v inst3/Y (NOR2x1p5_ASAP7_75t_SL)
+  11.0459   94.3748 ^ inst4/Y (OAI21x1_ASAP7_75t_SL)
+   8.8637  103.2385 v inst5/Y (NAND3x1_ASAP7_75t_SL)
+   8.2550  111.4935 ^ inst6/Y (NAND2x2_ASAP7_75t_SL)
+  15.9399  127.4334 v inst7/CON (HAxp5_ASAP7_75t_SL)
+  17.8532  145.2866 ^ inst7/SN (HAxp5_ASAP7_75t_SL)
+  14.0993  159.3858 v inst8/Y (INVx1_ASAP7_75t_SL)
+  19.6235  179.0093 ^ inst9/Y (NAND3x2_ASAP7_75t_SL)
+  12.6629  191.6722 ^ rebuffer3/Y (BUFx3_ASAP7_75t_SL)
+  19.9368  211.6089 ^ inst9_neighbor3/Y (AO21x2_ASAP7_75t_SL)
+  10.6223  222.2312 ^ capture_23/D (DFFHQx4_ASAP7_75t_R)
+           222.2312   data arrival time
 
  200.0000  200.0000   clock clk (rise edge)
    0.0000  200.0000   clock network delay (ideal)
    0.0000  200.0000   clock reconvergence pessimism
            200.0000 ^ capture_23/CLK (DFFHQx4_ASAP7_75t_R)
- -12.7802  187.2198   library setup time
-           187.2198   data required time
+ -12.7778  187.2222   library setup time
+           187.2222   data required time
 -------------------------------------------------------------
-           187.2198   data required time
-          -218.6333   data arrival time
+           187.2222   data required time
+          -222.2312   data arrival time
 -------------------------------------------------------------
-           -31.4135   slack (VIOLATED)
+           -35.0091   slack (VIOLATED)
 
 

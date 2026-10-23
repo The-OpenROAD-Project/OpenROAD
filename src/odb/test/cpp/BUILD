@@ -165,6 +165,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestInsertBuffer",
+    srcs = ["TestInsertBuffer.cpp"],
+    data = ["insert_buffer_port_alias.v"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestJournal",
     srcs = ["TestJournal.cpp"],
     deps = [
@@ -222,6 +235,18 @@ cc_test(
     deps = [
         "//src/odb/src/db",
         "//src/odb/test/cpp/helper",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestNetAbutment",
+    srcs = ["TestNetAbutment.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

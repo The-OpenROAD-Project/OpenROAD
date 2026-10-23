@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 // IR abstraction layer: types matching the surface of the Yosys ir.h but
 // backed by syn::Net and syn::Bundle. The frontend code includes this

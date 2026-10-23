@@ -31,43 +31,38 @@
 #include <utility>
 #include <vector>
 
-// Expose scaled-library fixture hooks without changing OpenSTA production APIs.
-#define protected public
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#undef protected
-
-#include "DelayEstimator.hh"
-#include "Rebuffer.hh"
-#include "RepairSetupAnalysis.hh"
-#include "RepairSetupAnalysisTarget.hh"
-#include "RepairSetupProfiler.hh"
-#include "SequentialTimingEstimator.hh"
-#include "rsz/Resizer.hh"
-#define private public
-#define protected public
-// RepairSetupContext pulls in RepairTargetCollector, whose scan internals
-// are exercised directly below.
-#include "RepairSetupContext.hh"
-#undef protected
-#undef private
 #include "BatchSelector.hh"
 #include "BottleneckAnalysis.hh"
 #include "BufferGenerator.hh"
+#include "DelayEstimator.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
+#include "RebufferMtCandidate.hh"
+#include "RebufferMtGenerator.hh"
+#include "RepairSetupAnalysisTarget.hh"
+#include "RepairSetupContext.hh"
+#include "RepairSetupMoveSampler.hh"
+#include "RepairSetupProfiler.hh"
+#include "SequentialTimingEstimator.hh"
+#include "SetupParallelEvalPolicy.hh"
 #include "SizeUpCandidate.hh"
 #include "SizeUpMtCandidate.hh"
-#define private public
 #include "SizeUpMtGenerator.hh"
-#undef private
+#include "SplitLoadMtCandidate.hh"
+#include "SplitLoadMtGenerator.hh"
+#include "SwapPinsMtCandidate.hh"
+#include "UnbufferMtCandidate.hh"
+#include "UnbufferMtGenerator.hh"
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -87,26 +82,195 @@
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
-#define protected public
 #include "tst/IntegratedFixture.h"
-#undef protected
-#include "MoveGenerator.hh"
-#include "RebufferMtGenerator.hh"
-#include "SplitLoadMtCandidate.hh"
-#include "SplitLoadMtGenerator.hh"
-#include "SwapPinsMtCandidate.hh"
-#include "UnbufferMtCandidate.hh"
-#include "UnbufferMtGenerator.hh"
-
-#define private public
-#define protected public
-#include "SetupParallelEvalPolicy.hh"
-#undef protected
-#undef private
-
 #include "utl/ThreadPool.h"
 
 namespace rsz {
+
+// The tests reach the internals of the rsz classes through this peer, which
+// SetupParallelEvalPolicy, StallMonitor, WnsTail, SizeUpMtGenerator,
+// RepairTargetCollector and BottleneckAnalysis befriend.
+class ResizerTestPeer
+{
+ public:
+  // === SetupParallelEvalPolicy ==============================================
+  static std::vector<MoveType>& moveSequence(SetupParallelEvalPolicy& policy)
+  {
+    return policy.move_sequence_;
+  }
+  static const OptimizationPolicy::GeneratorVector& moveGenerators(
+      const SetupParallelEvalPolicy& policy)
+  {
+    return policy.move_generators_;
+  }
+  static OptimizationPolicyConfig& policyConfig(SetupParallelEvalPolicy& policy)
+  {
+    return policy.policy_config_;
+  }
+  static void prewarmTargets(SetupParallelEvalPolicy& policy,
+                             const std::vector<Target>& targets)
+  {
+    policy.prewarmTargets(targets);
+  }
+  static void prepareTargets(SetupParallelEvalPolicy& policy,
+                             std::vector<Target>& targets)
+  {
+    policy.prepareTargets(targets);
+  }
+  static void prepareTarget(SetupParallelEvalPolicy& policy,
+                            Target& target,
+                            const PrepareCacheMask mask)
+  {
+    policy.prepareTarget(target, mask);
+  }
+  static std::vector<TargetEvaluation> generateCandidates(
+      SetupParallelEvalPolicy& policy,
+      const std::vector<Target*>& targets)
+  {
+    return policy.generateCandidates(targets);
+  }
+  static void estimateTargets(SetupParallelEvalPolicy& policy,
+                              std::vector<TargetEvaluation>& evaluations)
+  {
+    policy.estimateTargets(evaluations);
+  }
+  static int targetFanout(SetupParallelEvalPolicy& policy, const Target& target)
+  {
+    return policy.targetFanout(target);
+  }
+  static bool startWnsTail(SetupParallelEvalPolicy& policy, const char* reason)
+  {
+    return policy.startWnsTail(reason);
+  }
+  static size_t collectTargetEndpoints(SetupParallelEvalPolicy& policy)
+  {
+    return policy.collectTargetEndpoints().target_endpoints;
+  }
+  static bool withinMaxUtilization(SetupParallelEvalPolicy& policy)
+  {
+    return policy.withinMaxUtilization();
+  }
+  static void openBatchJournal(SetupParallelEvalPolicy& policy)
+  {
+    policy.openBatchJournal();
+  }
+  static bool finishAtMaxArea(SetupParallelEvalPolicy& policy)
+  {
+    return policy.finishAtMaxArea();
+  }
+  static void undoBatch(SetupParallelEvalPolicy& policy) { policy.undoBatch(); }
+  static void startSmallBatchRetry(SetupParallelEvalPolicy& policy)
+  {
+    policy.startSmallBatchRetry();
+  }
+  static int effectiveBatchCap(SetupParallelEvalPolicy& policy,
+                               const size_t failing_endpoint_count)
+  {
+    return policy.effectiveBatchCap(failing_endpoint_count);
+  }
+  static void noteMissedBatch(SetupParallelEvalPolicy& policy,
+                              const bool utilization_legal)
+  {
+    policy.noteMissedBatch(utilization_legal);
+  }
+  static void applyStopRules(SetupParallelEvalPolicy& policy,
+                             const int batch_moves)
+  {
+    policy.applyStopRules(batch_moves);
+  }
+  static int& committedMoves(SetupParallelEvalPolicy& policy)
+  {
+    return policy.committed_moves_;
+  }
+  static int& batchIndex(SetupParallelEvalPolicy& policy)
+  {
+    return policy.batch_index_;
+  }
+  static bool& smallBatchRetryStarted(SetupParallelEvalPolicy& policy)
+  {
+    return policy.small_batch_retry_started_;
+  }
+  static bool batchJournalOpen(SetupParallelEvalPolicy& policy)
+  {
+    return policy.batch_journal_open_;
+  }
+  static BatchSelector& batchSelector(SetupParallelEvalPolicy& policy)
+  {
+    return *policy.batch_selector_;
+  }
+  static StallMonitor& stall(SetupParallelEvalPolicy& policy)
+  {
+    return policy.stall_;
+  }
+  static WnsTail& tail(SetupParallelEvalPolicy& policy) { return policy.tail_; }
+  static MissTabu& tabu(SetupParallelEvalPolicy& policy)
+  {
+    return policy.tabu_;
+  }
+
+  // === StallMonitor and WnsTail =============================================
+  static int& lastCap(StallMonitor& stall) { return stall.last_cap_; }
+  static int& batches(WnsTail& tail) { return tail.batches_; }
+  static int& batchesWithoutGain(WnsTail& tail)
+  {
+    return tail.batches_without_gain_;
+  }
+  static int& endpoints(WnsTail& tail) { return tail.endpoints_; }
+  static bool& greedyStalled(WnsTail& tail) { return tail.greedy_stalled_; }
+
+  // === SizeUpMtGenerator ====================================================
+  using SizeUpOptions = SizeUpMtGenerator::SizeUpOptions;
+  static const SizeUpOptions& findSizeUpOptions(
+      const SizeUpMtGenerator& generator,
+      const sta::LibertyPort* drvr_port,
+      const sta::Scene* scene,
+      const sta::MinMax* min_max)
+  {
+    return generator.findSizeUpOptions(drvr_port, scene, min_max);
+  }
+  static SizeUpOptions buildSizeUpOptions(const SizeUpMtGenerator& generator,
+                                          const sta::LibertyPort* drvr_port,
+                                          const sta::Scene* scene,
+                                          const sta::MinMax* min_max)
+  {
+    return generator.buildSizeUpOptions(drvr_port, scene, min_max);
+  }
+  static size_t sizeUpOptionCount(const SizeUpMtGenerator& generator)
+  {
+    return generator.size_up_options_.size();
+  }
+
+  // === RepairTargetCollector ================================================
+  static sta::Slack endpointPathSlack(const RepairTargetCollector& collector,
+                                      sta::Vertex* endpoint)
+  {
+    return collector.endpointPathSlack(endpoint);
+  }
+  static utl::ThreadPool* scanThreadPool(const RepairTargetCollector& collector)
+  {
+    return collector.scan_thread_pool_;
+  }
+
+  // === BottleneckAnalysis ===================================================
+  // The vertex deficit and accumulated downstream endpoint deficits.
+  struct ConeDeficits
+  {
+    float slack_deficit;
+    float endpoint_deficit_sum;
+  };
+  static std::optional<ConeDeficits> coneDeficits(
+      const BottleneckAnalysis& analysis,
+      const sta::Vertex* vertex)
+  {
+    const int32_t node_index = analysis.nodeOf(vertex);
+    if (node_index < 0) {
+      return std::nullopt;
+    }
+    const BottleneckAnalysis::Node& node = analysis.nodes_[node_index];
+    return ConeDeficits{.slack_deficit = node.slack_deficit,
+                        .endpoint_deficit_sum = node.endpoint_deficit_sum};
+  }
+};
 
 // Shared Nangate45 fixture for MT estimator, policy, and profiler tests.
 class TestResizerMt : public tst::IntegratedFixture
@@ -235,6 +399,31 @@ class TestResizerMt : public tst::IntegratedFixture
     ASSERT_NE(db_inst, nullptr);
     db_inst->setLocation(x, y);
     db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+};
+
+// OpenSTA keeps its scaled-model hooks protected.  A derived class may take a
+// pointer to a protected member and call it on any base object, so the
+// flip-flop tests attach scaled models without changing OpenSTA.
+class ScaledTimingArc : public sta::TimingArc
+{
+ public:
+  static void addModel(sta::TimingArc* arc,
+                       const sta::OperatingConditions* op_cond,
+                       sta::TimingModel* model)
+  {
+    (arc->*&ScaledTimingArc::addScaledModel)(op_cond, model);
+  }
+};
+
+class ScaledLibertyPort : public sta::LibertyPort
+{
+ public:
+  static void addPort(sta::LibertyPort* port,
+                      sta::OperatingConditions* op_cond,
+                      sta::LibertyPort* scaled_port)
+  {
+    (port->*&ScaledLibertyPort::addScaledPort)(op_cond, scaled_port);
   }
 };
 

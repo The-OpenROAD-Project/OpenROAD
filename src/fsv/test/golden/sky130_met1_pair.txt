@@ -1,0 +1,17 @@
+# Cross section of two minimum-width met1 wires at minimum spacing in the
+# SkyWater 130 stack, with the sidewall conformal dielectric NILD3_C. Layer
+# heights are those of src/fsv/test/sky130.itf (see TestItf.cpp). Wires run
+# along x; their x extents are ignored.
+background 1.0
+layer 0.9361 3.9
+layer 1.1111 7.3
+layer 1.3011 4.05
+layer 1.9311 4.5
+layer 2.7111 4.2
+layer 3.9461 4.1
+layer 5.2961 4.0
+layer 5.6738 7.5
+layer 11.8084 2.94
+box a 0 0 1.3011 1 0.14 1.6611
+box b 0 0.28 1.3011 1 0.42 1.6611
+conformal NILD3_C 1.3011 1.6611 0.03 0 3.5

@@ -41,19 +41,19 @@ using estimator_detail::wireElmoreDelay;
 namespace {
 
 // Calibration of the buffer-tree model.  The factors were fitted against STA
-// on the rebuffer accuracy report (report_delay_estimator_accuracy with
-// -rebuffer_tree), which prints the estimate of every stage of the planned
-// tree next to the delay STA measures after the tree is built.
+// on the rebuffer accuracy report,
+// report_delay_estimator_accuracy_for_rebuffering, which prints the estimate
+// of every stage of the planned tree next to the delay STA measures after the
+// tree is built.  The data set is the Nangate45 cases of that report, the
+// report_delay_estimator_rebuffer_* tests; other platforms are not checked.
+// The estimate only ranks candidate trees and STA times each batch before it
+// is kept, so an off factor costs QoR, not correctness.
 //
 // The effective load of a buffer stage as a fraction of its lumped downstream
 // capacitance: on the target path, on a side path, and for a direct load.
 constexpr float kBufferTreeTargetEffectiveLoadCapFactor = 0.65f;
 constexpr float kBufferTreeSideEffectiveLoadCapFactor = 0.875f;
 constexpr float kBufferTreeDirectLoadCapFactor = 0.60f;
-// A final buffer whose downstream cap per input slew reaches the ratio takes
-// its output slew at the lower effective-load fraction.
-constexpr float kBufferTreeHighCapSlewRatio = 2.5e-3f;
-constexpr float kBufferTreeHighCapSlewFactor = 0.60f;
 // A stage that keeps part of its load keeps its slew at least to this power
 // of the load ratio.
 constexpr float kLoadRatioSlewFloorExponent = 0.85f;
@@ -90,6 +90,11 @@ float bufferTreeEffectiveLoadCap(const float total_load_cap, const float factor)
   return std::max(total_load_cap * factor, 0.0f);
 }
 
+// A stage after the tree keeps at least 50% to 80% of its current delay: 80%
+// when its input slew does not improve, falling to 50% as the slew gets
+// sharper.  A safeguard: the input slew of these stages comes from the
+// approximate tree model, so the table delta alone could credit them with
+// more delay gain than the built tree gives.
 float boundBufferTreeDownstreamStageDelay(const DelayStageState& stage,
                                           const float input_slew,
                                           const float stage_delay)
@@ -273,26 +278,6 @@ bool treeStageTiming(const DelayStageState& target_stage,
                                     buffer_delay,
                                     buffer_output_slew)) {
         return false;
-      }
-
-      const bool high_cap_final_buffer
-          = tree_stage.drives_distributed_load
-            && !load_path.hasBufferAfter(stage_index) && input_slew > 0.0f
-            && tree_stage.downstream_cap / input_slew
-                   >= kBufferTreeHighCapSlewRatio;
-      if (high_cap_final_buffer) {
-        float unused_buffer_delay = 0.0f;
-        float high_cap_output_slew = 0.0f;
-        const float slew_load_cap = bufferTreeEffectiveLoadCap(
-            tree_stage.downstream_cap, kBufferTreeHighCapSlewFactor);
-        if (lookupBufferDelayAndSlew(target_stage,
-                                     tree_stage.buffer_cell,
-                                     input_slew,
-                                     slew_load_cap,
-                                     unused_buffer_delay,
-                                     high_cap_output_slew)) {
-          buffer_output_slew = high_cap_output_slew;
-        }
       }
 
       stage_trace = {.path_index = target_stage.path_index,
