@@ -1600,18 +1600,31 @@ RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,
   RectList intersections;
 
   for (const odb::Rect& candidate_blockage : candidate_blockages) {
-    odb::Rect intersection;
-    candidate_blockage.intersection(outline, intersection);
-
-    if (intersection.isInverted() || intersection.area() == 0) {
-      continue;
+    const std::optional<odb::Rect> intersection
+        = findOffsetIntersection(candidate_blockage, outline);
+    if (intersection) {
+      intersections.push_back(*intersection);
     }
-
-    intersection.moveDelta(-outline.xMin(), -outline.yMin());
-    intersections.push_back(intersection);
   }
 
   return intersections;
+}
+
+// The part of the candidate blockage inside the outline, in the
+// outline's coordinates.
+std::optional<odb::Rect> HierRTLMP::findOffsetIntersection(
+    const odb::Rect& candidate_blockage,
+    const odb::Rect& outline) const
+{
+  odb::Rect intersection;
+  candidate_blockage.intersection(outline, intersection);
+
+  if (intersection.isInverted() || intersection.area() == 0) {
+    return std::nullopt;
+  }
+
+  intersection.moveDelta(-outline.xMin(), -outline.yMin());
+  return intersection;
 }
 
 void HierRTLMP::eliminateOverlaps(std::vector<odb::Rect>& blockages) const
