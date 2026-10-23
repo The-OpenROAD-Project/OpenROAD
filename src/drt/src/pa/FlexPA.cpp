@@ -447,6 +447,13 @@ bool FlexPA::isIOTerm(frInstTerm* inst_term)
   return inst_term == nullptr;
 }
 
+bool FlexPA::isRoutableLayer(const frLayerNum layer_num)
+{
+  return layer_num >= router_cfg_->BOTTOM_ROUTING_LAYER
+         && layer_num <= router_cfg_->TOP_ROUTING_LAYER
+         && getDesign()->getTech()->getLayer(layer_num)->isRoutable();
+}
+
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");
