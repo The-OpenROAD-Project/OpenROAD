@@ -168,7 +168,7 @@ http::response<http::string_body> textResponse(const http::status status,
                                                const bool keep_alive)
 {
   http::response<http::string_body> res{status, version};
-  res.set(http::field::server, "Boost.Beast Server (C++17)");
+  res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
   res.keep_alive(keep_alive);
   return res;

@@ -340,10 +340,14 @@ TEST_F(ListenerFixture, ImageDownloadWithoutADesignAnswers404)
   EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
 }
 
-// An escaping utl::Logger::error would drop the connection unanswered.
+// An escaping utl::Logger::error would drop the connection unanswered.  Like
+// every other response, the 500 carries no wildcard CORS header.
 TEST_F(DegenerateDesignFixture, FailedRenderAnswers500AndKeepsServing)
 {
-  EXPECT_EQ(statusOf(httpGet(withToken("/download/image?type=entire"))), 500);
+  const std::string head = httpGet(withToken("/download/image?type=entire"));
+  EXPECT_EQ(statusOf(head), 500);
+  EXPECT_EQ(head.find("Access-Control-Allow-Origin"), std::string::npos)
+      << head;
   EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
 }
 
