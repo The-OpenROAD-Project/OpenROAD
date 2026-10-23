@@ -2457,11 +2457,17 @@ void RamGen::generate(const int mask_size,
 
   // -register_read_address 1: a plain positive-edge flop for the read addresses
   if (register_read_address_ > 0) {
-    // a plain flop: positive-edge, no clear or preset
+    // a plain flop: positive-edge, no clear or preset, its data a pin
+    // (D or !D: a scan flop's is a mux)
     auto plain = [](const sta::LibertyCell* cell) {
       for (const auto& seq : cell->sequentials()) {
+        const sta::FuncExpr* d = seq.data();
+        if (d && d->op() == sta::FuncExpr::Op::not_) {
+          d = d->left();
+        }
         if (seq.isRegister() && !seq.clear() && !seq.preset() && seq.clock()
-            && seq.clock()->op() == sta::FuncExpr::Op::port) {
+            && seq.clock()->op() == sta::FuncExpr::Op::port && d
+            && d->op() == sta::FuncExpr::Op::port) {
           return true;
         }
       }

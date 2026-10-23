@@ -25,6 +25,7 @@ foreach {id options} {
   99 {-cells {and2 AND2x2_ASAP7_75t_R inv}}
   54 {-w_ports 2 -use_latch 1}
   55 {-w_ports 2 -column_mux_ratio 2}
+  79 {-register_read_address 1 -cells {addr_flop SDFHx1_ASAP7_75t_R}}
   64 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value 12abc}
   64 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value -1}
   64 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value 0x}
