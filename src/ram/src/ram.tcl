@@ -133,16 +133,6 @@ proc generate_ram_netlist { args } {
     set use_latch $keys(-use_latch)
   }
 
-  # More than one write port: each has its own address decoder and its
-  # own data, a word written by two in a cycle keeps the last one's.
-  if { $w_ports > 1 && $use_latch } {
-    utl::error RAM 54 "More than one write port is not supported with -use_latch."
-  }
-  if { $w_ports > 1 && $column_mux_ratio > 1 } {
-    utl::error RAM 55 "More than one write port is not supported with\
-      -column_mux_ratio above 1."
-  }
-
   set tapcell ""
   set max_tap_dist 0
   if { [info exists keys(-tapcell)] } {
