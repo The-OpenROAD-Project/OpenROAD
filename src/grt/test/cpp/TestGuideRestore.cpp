@@ -63,6 +63,43 @@ class GuideRestoreTest : public tst::Fixture,
     router_.globalRoute(/*save_guides=*/true);
   }
 
+  void mergeBufferNetsOnce()
+  {
+    odb::dbNet* preserved = block_->findNet("n2");
+    odb::dbNet* removed = block_->findNet("n3");
+    ASSERT_NE(preserved, nullptr);
+    ASSERT_NE(removed, nullptr);
+    const GRoute before = router_.getRoutes().at(preserved);
+    const GRoute inherited = router_.getRoutes().at(removed);
+    GRoute distinct;
+    for (const GSegment& segment : inherited) {
+      if (!segment.isVia()
+          && std::count(inherited.begin(), inherited.end(), segment) == 1
+          && std::count(before.begin(), before.end(), segment) == 0) {
+        distinct.push_back(segment);
+      }
+    }
+    ASSERT_FALSE(distinct.empty());
+
+    odb::dbInst* buffer = block_->findInst("b1");
+    ASSERT_NE(buffer, nullptr);
+    for (odb::dbITerm* iterm : buffer->getITerms()) {
+      iterm->disconnect();
+    }
+    preserved->mergeNet(removed);
+
+    const GRoute& merged = router_.getRoutes().at(preserved);
+    // A connector may overlap one inherited segment, but not the entire route.
+    // Duplicate callbacks append every inherited segment a second time.
+    int minimum_copies = merged.size();
+    for (const GSegment& segment : distinct) {
+      minimum_copies = std::min(
+          minimum_copies,
+          static_cast<int>(std::count(merged.begin(), merged.end(), segment)));
+    }
+    EXPECT_EQ(minimum_copies, 1);
+  }
+
   odb::dbBlock* block_ = nullptr;
   utl::ServiceRegistry registry_{&logger_};
   stt::SteinerTreeBuilder stt_{&logger_};
@@ -115,6 +152,58 @@ TEST_P(GuideRestoreTest, EcoUndoPreservesVias)
     ASSERT_NE(restored, restored_routes.end());
     EXPECT_EQ(getVias(restored->second), getVias(route));
   }
+}
+
+TEST_P(GuideRestoreTest, NestedScopesMergeOnce)
+{
+  IncrementalGRoute outer(&router_, block_);
+  IncrementalGRoute inner(&router_, block_);
+  mergeBufferNetsOnce();
+}
+
+TEST_P(GuideRestoreTest, ManualAndScopedOwnersMergeOnce)
+{
+  router_.startIncremental();
+  {
+    IncrementalGRoute inner(&router_, block_);
+    mergeBufferNetsOnce();
+  }
+  router_.endIncremental();
+}
+
+TEST_P(GuideRestoreTest, ScopedAndManualOwnersMergeOnce)
+{
+  IncrementalGRoute outer(&router_, block_);
+  router_.startIncremental();
+  mergeBufferNetsOnce();
+  router_.endIncremental();
+}
+
+TEST_P(GuideRestoreTest, OuterScopeSurvivesInnerScope)
+{
+  IncrementalGRoute outer(&router_, block_);
+  {
+    IncrementalGRoute inner(&router_, block_);
+  }
+  mergeBufferNetsOnce();
+}
+
+TEST_P(GuideRestoreTest, ManualOwnerSurvivesScopedOwner)
+{
+  router_.startIncremental();
+  {
+    IncrementalGRoute inner(&router_, block_);
+  }
+  mergeBufferNetsOnce();
+  router_.endIncremental();
+}
+
+TEST_P(GuideRestoreTest, ScopedOwnerSurvivesManualOwner)
+{
+  IncrementalGRoute outer(&router_, block_);
+  router_.startIncremental();
+  router_.endIncremental();
+  mergeBufferNetsOnce();
 }
 
 INSTANTIATE_TEST_SUITE_P(RoutingEngines,
