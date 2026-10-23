@@ -486,9 +486,10 @@ void WebServer::serve(int port,
       // typed in the browser during a script's pause -- only "Live" draws, at
       // the user's risk.  Holding renderer_mutex keeps a command from
       // starting, or resuming from its pause, mid-draw.
-      std::shared_lock<std::shared_mutex> idle;
+      std::shared_lock<std::shared_mutex> idle(tcl->renderer_mutex,
+                                               std::defer_lock);
       if (!debug_live) {
-        idle = std::shared_lock<std::shared_mutex>(tcl->renderer_mutex);
+        idle.lock();
         if (tcl->running) {
           tcl->draw_skipped = true;
           return;

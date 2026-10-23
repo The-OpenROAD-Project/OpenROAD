@@ -15,7 +15,7 @@ py_test(
     srcs = ["check_visibility.py"],
     args = [
         "--build-file=$(location //:BUILD.bazel)",
-        "--rule-type=cc_binary",
+        "--rule-type=stamped_binary",
         "--target=openroad",
         "--expect=public",
     ],

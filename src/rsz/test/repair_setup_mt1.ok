@@ -116,7 +116,7 @@
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 100 instances: 14 up, 0 up match, 0 down, 86 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Pre-ECO:   WNS= -66.849   TNS=-1781.197   Area=      45 um^2   Power= 1.273357e-03 W
-Post-ECO:  WNS= -44.101   TNS=-521.051   Area=      46 um^2   Power= 1.386179e-03 W
-Delta:     WNS=  22.748   TNS=1260.146   Area=      +1 um^2   Power=+1.128223e-04 W
+Pre-ECO:   WNS= -66.849   TNS=-1781.197   Area=      45 um^2   Power= 8.454882e-04 W
+Post-ECO:  WNS= -44.101   TNS=-521.051   Area=      46 um^2   Power= 8.909445e-04 W
+Delta:     WNS=  22.748   TNS=1260.146   Area=      +1 um^2   Power=+4.545634e-05 W
 pass

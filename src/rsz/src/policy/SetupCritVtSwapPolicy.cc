@@ -18,6 +18,7 @@
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
 #include "PathGroupFilter.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "VtSwapCandidate.hh"
 #include "est/EstimateParasitics.h"
@@ -49,14 +50,27 @@ void SetupCritVtSwapPolicy::iterate()
   int& num_viols = setup_context_.violation_count;
   // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
   if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
+    RepairSetupProfiler::event("skip_crit_vt_swap");
     markRunComplete(true);
     return;
   }
-  committer_.capturePrePhaseSlack();
-  if (swapVTCritCells(num_viols)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+
+  // The timing the sweep starts from, which no earlier phase may have sampled.
+  if (RepairSetupProfiler::enabled()) {
+    const ProfileScope collection("qor_collection");
+    sta::Slack wns;
+    sta::Vertex* worst_vertex;
+    target_collector_->worstSlack(wns, worst_vertex);
+    RepairSetupProfiler::qor(
+        "phase_before", wns, target_collector_->totalNegativeSlack());
   }
+
+  const ProfileIteration iteration("crit_instance_sweep");
+  committer_.tracker().capturePrePhaseSlack();
+  if (swapVTCritCells(num_viols)) {
+    resizer_.updateParasiticsAndTiming();
+  }
+
   committer_.printTrackerPhaseSummary("VT Swap Phase Summary", nullptr, false);
   markRunComplete(true);
 }
@@ -67,6 +81,8 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   ViolatingEnds violating_ends
       = collectViolatingEndpoints(config_.setup_slack_margin);
   if (violating_ends.size() > kMaxCritEndpoints) {
+    RepairSetupProfiler::event("skip_endpoint_limit",
+                               violating_ends.size() - kMaxCritEndpoints);
     violating_ends.resize(kMaxCritEndpoints);
   }
   // Collect a bounded fanin cone across the worst endpoints, then VT-swap that
@@ -81,15 +97,21 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   crit_inst_set.reserve(max_crit_insts);
   std::unordered_set<sta::Vertex*> visited;
   std::unordered_set<sta::Instance*> notSwappable;
-  const std::optional<std::unordered_set<sta::Vertex*>> group_fanout
-      = findGroupFanout();
-  for (const auto& [endpoint, slack] : violating_ends) {
-    traverseFaninCone(endpoint,
-                      group_fanout.has_value() ? &*group_fanout : nullptr,
-                      crit_insts,
-                      crit_inst_set,
-                      visited,
-                      notSwappable);
+
+  {
+    const ProfileScope profile("target_collection");
+    const std::optional<std::unordered_set<sta::Vertex*>> group_fanout
+        = findGroupFanout();
+    for (const auto& [endpoint, slack] : violating_ends) {
+      traverseFaninCone(endpoint,
+                        group_fanout.has_value() ? &*group_fanout : nullptr,
+                        crit_insts,
+                        crit_inst_set,
+                        visited,
+                        notSwappable);
+    }
+
+    RepairSetupProfiler::event("targets_collected", crit_insts.size());
   }
   debugPrint(logger_,
              RSZ,
@@ -101,12 +123,14 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   for (const auto& [inst, inst_slack] : crit_insts) {
     sta::LibertyCell* best_cell = nullptr;
     if (!resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_cell)) {
+      RepairSetupProfiler::event(
+          "skip_not_swappable", 1, moveName(MoveType::kVtSwap));
       continue;
     }
     sta::LibertyCell* current_cell = network_->libertyCell(inst);
 
     sta::Pin* output_pin = nullptr;
-    if (committer_.moveTrackerEnabled(2)) {
+    if (committer_.moveTrackerEnabled(2) || RepairSetupProfiler::enabled()) {
       output_pin = outputPin(inst);
     }
 
@@ -125,6 +149,13 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
 
     VtSwapCandidate candidate(
         resizer_, target, output_pin, inst, current_cell, best_cell);
+
+    // CRIT applies constructed candidates without invoking estimate().
+    RepairSetupProfiler::moveGenerated(candidate);
+    RepairSetupProfiler::event(
+        "estimate_skipped", 1, moveName(candidate.type()));
+    RepairSetupProfiler::event("winners", 1, moveName(candidate.type()));
+    RepairSetupProfiler::moveSelected(candidate);
     committer_.trackMoveAttempt(output_pin, MoveType::kVtSwap);
     const MoveResult result = committer_.commit(candidate);
     if (result.accepted) {
@@ -139,10 +170,10 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
   }
   if (changed) {
     committer_.acceptPendingMoves();
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    resizer_.updateParasiticsAndTiming();
     num_viols = collectViolatingEndpoints(config_.setup_slack_margin).size();
   } else {
+    RepairSetupProfiler::stop("no_change");
     committer_.rejectPendingMoves();
   }
 
@@ -206,15 +237,20 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
   }
 
   visited.insert(endpoint);
-  std::queue<sta::Vertex*> queue;
-  queue.push(endpoint);
+  using SlackVertex = std::pair<sta::Slack, sta::Vertex*>;
+  auto cmp = [](const SlackVertex& a, const SlackVertex& b) {
+    return a.first > b.first;
+  };
+  std::priority_queue<SlackVertex, std::vector<SlackVertex>, decltype(cmp)>
+      queue(cmp);
+  queue.emplace(sta_->slack(endpoint, max_), endpoint);
   int endpoint_insts = 0;
   sta::LibertyCell* best_lib_cell;
 
-  // Walk backward only through violating fanin logic and cap the number of
-  // instances contributed by each endpoint.
+  // Walk backward through violating fanin logic ordered by worst slack first,
+  // capping the number of instances contributed by each endpoint.
   while (!queue.empty() && endpoint_insts < kMaxCritInstancesPerEndpoint) {
-    sta::Vertex* current = queue.front();
+    sta::Vertex* current = queue.top().second;
     queue.pop();
 
     sta::Pin* pin = current->pin();
@@ -258,7 +294,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
       if (!visited.contains(fanin_vertex)) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (sta::fuzzyLess(fanin_slack, config_.setup_slack_margin)) {
-          queue.push(fanin_vertex);
+          queue.emplace(fanin_slack, fanin_vertex);
           visited.insert(fanin_vertex);
         }
       }

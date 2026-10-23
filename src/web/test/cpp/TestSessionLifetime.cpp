@@ -300,15 +300,15 @@ TEST_F(ListenerFixture, TicketRedirectsToTheTokenExactlyOnce)
 }
 
 // Deny by default: a route nobody listed is gated too.
-TEST_F(ListenerFixture, OnlyScriptsAndStylesGoWithoutTheToken)
+TEST_F(ListenerFixture, OnlyThePageAmongTheAssetsNeedsTheToken)
 {
   for (const char* target :
        {"/", "/index.html", "/download/image?type=entire", "/no-such-route"}) {
     EXPECT_EQ(statusOf(httpGet(target)), 401) << target;
   }
   EXPECT_EQ(statusOf(httpGet(withToken("/no-such-route"))), 404);
-  EXPECT_EQ(statusOf(httpGet("/main.js")), 200);
-  EXPECT_EQ(statusOf(httpGet("/style.css")), 200);
+  EXPECT_EQ(statusOf(httpGet("/app.min.js")), 200);
+  EXPECT_EQ(statusOf(httpGet("/THIRD_PARTY_LICENSES.txt")), 200);
 }
 
 // The viewer gives up only on this server's refusal, not on a proxy's 401.
