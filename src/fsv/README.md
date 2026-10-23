@@ -61,9 +61,11 @@ overlap, and a scene where they do is rejected.
 
 Coordinates are in µm and capacitances in fF. The commands keep one
 dielectric (a uniform permittivity, 1.0 until set, or an ITF stack) and one
-set of conductors, which each solve uses. A net is a set of boxes. A master
-net's Gaussian surface encloses the bounding box of its boxes, so no other
-conductor may touch that bounding box yet.
+set of conductors, which each solve uses. A net is a set of boxes, which
+may overlap. A master net's Gaussian surface is the boundary of its boxes,
+each grown by its own offset (at most half its gap to other conductors), so
+nets may wrap around each other; no other conductor may touch a master's
+box.
 
 ### Read ITF
 
@@ -282,6 +284,5 @@ reference files, and how to add or regenerate them.
 
 - Only conformal dielectrics with THICKNESS = 0 (shells around the wires,
   nothing deposited between them) and no BW_T are read.
-- No other conductor may touch a master net's bounding box.
 - Geometry is given box by box; reading it from the design database comes
   later.

@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -39,14 +40,19 @@ namespace {
 // Vacuum permittivity in fF/µm.
 constexpr double kEps0 = 8.8541878128e-3;
 
-// Box around the master on which walks start; charge is the flux through it.
-// In 2D, a rectangle whose edges carry the charge per unit length.
+// The closed surface around the master on which walks start; its charge is
+// the flux through it. It is the boundary of the union of the master's
+// boxes, each grown by its own offset. In 2D its edges carry the charge per
+// unit length.
 template <int D>
 struct GaussianSurface
 {
-  AlignedBox<D> box;
-  // By face 2 * axis + (high ? 1 : 0), the order of BoxFace::index() in 3D.
-  std::array<double, 2 * D> face_area;
+  // The grown boxes, and the running sum of their faces' areas (lengths,
+  // in 2D), by box and then face 2 * axis + (high ? 1 : 0), the order of
+  // BoxFace::index() in 3D.
+  std::vector<AlignedBox<D>> boxes;
+  std::vector<double> cumulative;
+  // Of every face, including the parts inside the union.
   double area = 0;
 };
 
@@ -97,47 +103,29 @@ std::pair<double, double> estimate(const Tally& t, const int c, const double n)
   return {mean, std::sqrt(var / n)};
 }
 
+// The offset by which one master box grows: a fraction of its smallest
+// dimension, at most half the gap to the nearest other conductor or the
+// ground plane.
 template <int D>
-GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
-                                       const std::function<int(int)>& box_net,
-                                       const Dielectric<D>& dielectric,
-                                       const int master,
-                                       const double offset_frac)
+double boxOffset(const AlignedBox<D>& box,
+                 const std::vector<AlignedBox<D>>& boxes,
+                 const std::function<int(int)>& box_net,
+                 const Dielectric<D>& dielectric,
+                 const int master,
+                 const double offset_frac)
 {
-  AlignedBox<D> bbox{};
-  bool first = true;
+  double gap = box.lo[D - 1];
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
     if (box_net(b) != master) {
-      continue;
-    }
-    if (first) {
-      bbox = boxes[b];
-      first = false;
-      continue;
-    }
-    for (int k = 0; k < D; k++) {
-      bbox.lo[k] = std::min(bbox.lo[k], boxes[b].lo[k]);
-      bbox.hi[k] = std::max(bbox.hi[k], boxes[b].hi[k]);
-    }
-  }
-  if (first) {
-    throw std::invalid_argument("fsv: master net has no boxes");
-  }
-  // Offset: a fraction of the master's smallest dimension, at most half the
-  // gap to the nearest other conductor or the ground plane.
-  double gap = bbox.lo[D - 1];
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (box_net(b) != master) {
-      gap = std::min(gap, linfGap(bbox, boxes[b]));
+      gap = std::min(gap, linfGap(box, boxes[b]));
     }
   }
   if (gap <= 0) {
-    throw std::invalid_argument(
-        "fsv: another conductor touches the master's bounding box");
+    throw std::invalid_argument("fsv: another conductor touches the master");
   }
   double min_dim = std::numeric_limits<double>::max();
   for (int k = 0; k < D; k++) {
-    min_dim = std::min(min_dim, bbox.hi[k] - bbox.lo[k]);
+    min_dim = std::min(min_dim, box.hi[k] - box.lo[k]);
   }
   const double limit = 0.5 * gap;
   double offset = std::min(limit, offset_frac * min_dim);
@@ -149,12 +137,12 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
   // into the middle of the widest gap between them.
   std::vector<double> faces;
   for (const Shell<D>& shell : dielectric.shells()) {
-    if (linfGap(bbox, shell.outer) >= limit) {
+    if (linfGap(box, shell.outer) >= limit) {
       continue;
     }
     for (int k = 0; k < D; k++) {
       for (const double c : {shell.outer.lo[k], shell.outer.hi[k]}) {
-        for (const double d : {bbox.lo[k] - c, c - bbox.hi[k]}) {
+        for (const double d : {box.lo[k] - c, c - box.hi[k]}) {
           if (d > 0 && d < limit) {
             faces.push_back(d);
           }
@@ -198,24 +186,84 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
     offset = std::isfinite(best_move) ? best : widest_mid;
   }
 
+  return offset;
+}
+
+// The master's Gaussian surface: each of its boxes grown by its own offset
+// (see boxOffset). Tight spots get small offsets locally instead of
+// shrinking the whole surface.
+template <int D>
+GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
+                                       const std::function<int(int)>& box_net,
+                                       const Dielectric<D>& dielectric,
+                                       const int master,
+                                       const double offset_frac)
+{
   GaussianSurface<D> g;
-  for (int k = 0; k < D; k++) {
-    g.box.lo[k] = bbox.lo[k] - offset;
-    g.box.hi[k] = bbox.hi[k] + offset;
-  }
-  // Each face's area (length, in 2D) is the product of its tangent extents.
-  for (int a = 0; a < D; a++) {
-    double area = 1;
-    for (int t = 0; t < D; t++) {
-      if (t != a) {
-        area *= g.box.hi[t] - g.box.lo[t];
-      }
+  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
+    if (box_net(b) != master) {
+      continue;
     }
-    g.face_area[2 * a] = area;
-    g.face_area[2 * a + 1] = area;
-    g.area += 2 * area;
+    const double offset
+        = boxOffset(boxes[b], boxes, box_net, dielectric, master, offset_frac);
+    AlignedBox<D> grown;
+    for (int k = 0; k < D; k++) {
+      grown.lo[k] = boxes[b].lo[k] - offset;
+      grown.hi[k] = boxes[b].hi[k] + offset;
+    }
+    // Each face's area (length, in 2D) is the product of its tangent
+    // extents.
+    for (int a = 0; a < D; a++) {
+      double area = 1;
+      for (int t = 0; t < D; t++) {
+        if (t != a) {
+          area *= grown.hi[t] - grown.lo[t];
+        }
+      }
+      g.cumulative.push_back(g.area + area);
+      g.cumulative.push_back(g.area + 2 * area);
+      g.area += 2 * area;
+    }
+    g.boxes.push_back(grown);
+  }
+  if (g.boxes.empty()) {
+    throw std::invalid_argument("fsv: master net has no boxes");
   }
   return g;
+}
+
+// Whether a point q on face (axis, high) of grown box b lies on the
+// boundary of the union of the grown boxes, and b owns it there: q is not
+// inside another grown box, not on a face where another box continues
+// outward, and not on a coplanar face of a lower-index box. Points on
+// another box's edges have measure zero.
+template <int D>
+bool exposed(const GaussianSurface<D>& g,
+             const int b,
+             const int axis,
+             const bool high,
+             const std::type_identity_t<Vec<D>>& q)
+{
+  for (int c = 0; c < static_cast<int>(g.boxes.size()); c++) {
+    const AlignedBox<D>& e = g.boxes[c];
+    bool across = c != b;  // q is strictly inside e's tangent extent
+    for (int t = 0; across && t < D; t++) {
+      across = t == axis || (q[t] > e.lo[t] && q[t] < e.hi[t]);
+    }
+    if (!across) {
+      continue;
+    }
+    if (q[axis] > e.lo[axis] && q[axis] < e.hi[axis]) {
+      return false;  // inside e
+    }
+    if ((high ? e.lo[axis] : e.hi[axis]) == q[axis]) {
+      return false;  // e continues outward
+    }
+    if (c < b && (high ? e.hi[axis] : e.lo[axis]) == q[axis]) {
+      return false;  // a coplanar face of a lower-index box
+    }
+  }
+  return true;
 }
 
 // Heights within this fraction of a cube's size count as on the interface.
@@ -411,7 +459,13 @@ class Walker
   {
     Philox rng(key_, static_cast<uint64_t>(walk_id));
     Face face{};
-    Point p = startPoint(rng, face);
+    Point p;
+    if (!startPoint(rng, p, face)) {
+      // Inside the surface: a sample of weight 0.
+      weight = 0;
+      hops = 0;
+      return geometry_.netCount();
+    }
     weight = firstHop(p, face, rng);
     // Transition hops until the walk is captured by a conductor.
     for (hops = 0; hops < hop_guard_; hops++) {
@@ -434,26 +488,27 @@ class Walker
   }
 
  private:
-  // A point on the Gaussian surface: a face by area, then uniform on it.
-  Point startPoint(Philox& rng, Face& face) const
+  // A point on a face of a grown box, drawn by area and then uniform on
+  // the face. Returns false when the point is not on the surface (see
+  // exposed); rejecting it keeps the estimate unbiased.
+  bool startPoint(Philox& rng, Point& p, Face& face) const
   {
-    double u = rng.uniform() * gauss_.area;
-    int f = 0;
-    while (f < 2 * D - 1 && u >= gauss_.face_area[f]) {
-      u -= gauss_.face_area[f];
-      f++;
-    }
-    face = {f / 2, f % 2 == 1};
-    Point p;
-    p[face.axis]
-        = face.high ? gauss_.box.hi[face.axis] : gauss_.box.lo[face.axis];
+    const double u = rng.uniform() * gauss_.area;
+    const int last = static_cast<int>(gauss_.cumulative.size()) - 1;
+    const int f = std::min(
+        last,
+        static_cast<int>(std::ranges::upper_bound(gauss_.cumulative, u)
+                         - gauss_.cumulative.begin()));
+    const int b = f / (2 * D);
+    face = {(f % (2 * D)) / 2, f % 2 == 1};
+    const AlignedBox<D>& box = gauss_.boxes[b];
+    p[face.axis] = face.high ? box.hi[face.axis] : box.lo[face.axis];
     for (int t = 0; t < D; t++) {
       if (t != face.axis) {
-        p[t] = gauss_.box.lo[t]
-               + rng.uniform() * (gauss_.box.hi[t] - gauss_.box.lo[t]);
+        p[t] = box.lo[t] + rng.uniform() * (box.hi[t] - box.lo[t]);
       }
     }
-    return p;
+    return exposed(gauss_, b, face.axis, face.high, p);
   }
 
   // First hop from p on the surface's face: sample by |eps dP/dn|, since
