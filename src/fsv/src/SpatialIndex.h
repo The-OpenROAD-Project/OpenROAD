@@ -10,8 +10,10 @@
 namespace fsv {
 
 // Nearest conductor to a point in the L-infinity metric, which is the
-// half-size of the largest cube centered on the point that touches no
-// conductor. The ground plane z = 0 counts as a conductor.
+// half-size of the largest cube (square, in 2D) centered on the point that
+// touches no conductor. The ground plane (the last coordinate = 0) counts as
+// a conductor. Instantiated for D = 2 and 3.
+template <int D>
 class SpatialIndex
 {
  public:
@@ -23,15 +25,15 @@ class SpatialIndex
     int box;  // index into the boxes, or kGround
   };
 
-  explicit SpatialIndex(const std::vector<Box>& boxes);
+  explicit SpatialIndex(const std::vector<AlignedBox<D>>& boxes);
 
-  Nearest nearest(const Vec3& p) const;
+  Nearest nearest(const Vec<D>& p) const;
 
  private:
   // Bounding-volume hierarchy node; a leaf when count > 0.
   struct Node
   {
-    Box bounds;
+    AlignedBox<D> bounds;
     int left = -1;
     int right = -1;
     int first = 0;
@@ -49,7 +51,7 @@ class SpatialIndex
   // split point.
   int partition(int first, int last, bool by_cost);
 
-  std::vector<Box> boxes_;
+  std::vector<AlignedBox<D>> boxes_;
   std::vector<int> order_;
   std::vector<Node> nodes_;
 };

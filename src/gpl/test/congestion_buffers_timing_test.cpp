@@ -235,14 +235,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     }
     float current_a = 1.0f;
     ASSERT_TRUE(np_->isPlacementSettled());
-    np_->runRoutability(0,
-                        0,
-                        "",
-                        1.0f,
-                        np_->wireLengthCoefX_,
-                        np_->wireLengthCoefY_,
-                        ordinary_iterations_,
-                        current_a);
+    np_->runRoutability(0, 0, "", ordinary_iterations_, current_a);
   }
 
   void completeRoutability(bool inflate_ordinary_cells = false)
@@ -452,18 +445,17 @@ TEST_F(TimingRepairIntegrationTest,
   auto* transient = odb::dbInst::create(
       block_, lib_->findMaster("BUF_X1"), "callback_transient");
   ASSERT_NE(liveCellFor(transient), nullptr);
-  EXPECT_EQ(pending.back(), transient);
+  EXPECT_TRUE(pending.contains(transient));
   odb::dbInst::destroy(transient);
   EXPECT_EQ(liveCellFor(transient), nullptr);
-  EXPECT_EQ(pending.back(), transient)
-      << "deletion removes the live cell, not its queued identity";
+  EXPECT_FALSE(pending.contains(transient))
+      << "deletion must remove the pending identity with the live cell";
   nbc_->fixPointers();
   nb_vec_[0]->refreshIoPins();
 
   ASSERT_GT(rb_->inflateNewCells(), 0);
   nbc_->rebuildDeviceState();
-  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
-                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   checkRetainedInsertions(true);
   checkDensityAccounting();
@@ -947,8 +939,7 @@ TEST_F(TimingRepairIntegrationTest,
   }
   ASSERT_FALSE(ep_.isIncrementalParasiticsEnabled());
   ASSERT_FALSE(ep_.hasParasiticsInvalid());
-  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
-                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   ASSERT_LT(nb_vec_[0]->getInflationArea(), live_before);
   EXPECT_EQ(rb_->getTotalInflation(), historical_charge);
@@ -1053,8 +1044,7 @@ TEST_F(TimingRepairIntegrationTest,
   const int physical_dy = cell->dy();
   ASSERT_LT(static_cast<int64_t>(physical_dx) * physical_dy,
             static_cast<int64_t>(saved_dx) * saved_dy);
-  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
-                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   checkDensityAccounting();
   // An attempted ordinary pass after completion cannot restore the old
@@ -1150,8 +1140,7 @@ TEST_F(TimingRepairIntegrationTest,
   }
   rb_->updateRudyAverage(false);
   EXPECT_GT(rb_->getOverflowedTilesCount(), 0);
-  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
-                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   checkDensityAccounting();
 }
@@ -1214,8 +1203,7 @@ TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
   block_->findInst("sink_0")->findITerm("A1")->connect(output);
   nbc_->fixPointers();
   ASSERT_GT(rb_->inflateNewCells(), 0);
-  nb_vec_[0]->updateGCellState(np_->getWireLengthCoefX(),
-                               np_->getWireLengthCoefY());
+  nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
 }

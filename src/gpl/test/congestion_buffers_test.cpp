@@ -820,7 +820,7 @@ TEST_F(MacroOnlyDensityTest,
   // The retained-repair caller refreshes every domain, including domains
   // without creations. Run its callback-state and density-refresh sequence.
   for (const auto& nb : nb_vec_) {
-    nb->updateGCellState(1.0f, 1.0f);
+    nb->updateGCellState();
     std::feclearexcept(FE_ALL_EXCEPT);
     nb->updateTimingDrivenDensity();
     ASSERT_TRUE(std::isfinite(nb->getTargetDensity()));
@@ -848,7 +848,7 @@ TEST_F(MacroOnlyDensityTest, ZeroAvailableAreaWithRetainedCellRejectsDensity)
   auto* buffer = insertBuffer("no_space_for_retained_cell", 1000, groups_[0]);
   ASSERT_NE(cellFor(buffer), nullptr);
   ASSERT_GT(cellArea(cellFor(buffer)), 0);
-  nb_->updateGCellState(1.0f, 1.0f);
+  nb_->updateGCellState();
   ASSERT_TRUE(nb_->getNewInstances().empty());
   expectDensityUpdateRejected();
   EXPECT_GT(nb_->getStdInstArea(), 0);

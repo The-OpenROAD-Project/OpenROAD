@@ -10,6 +10,7 @@
 #include "AliasTable.h"
 #include "BoxFace.h"
 #include "CubePanels.h"
+#include "LayerModes.h"
 #include "Philox.h"
 #include "fsv/Geometry.h"
 
@@ -42,7 +43,7 @@ class LayeredCubeGreens
 {
  public:
   // Tabulated interface positions per half cube.
-  static constexpr int kPositions = 8;
+  static constexpr int kPositions = kInterfacePositions;
 
   // `ratio` = eps_above / eps_below. `panels` must be a multiple of
   // 2 * kPositions so that the interface lies on a panel boundary.

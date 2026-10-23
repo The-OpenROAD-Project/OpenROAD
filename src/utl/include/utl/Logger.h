@@ -59,6 +59,7 @@ class Progress;
   X(EXA)                \
   X(FIN)                \
   X(FLW)                \
+  X(FSV)                \
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \

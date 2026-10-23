@@ -11,13 +11,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.667 |      -10.4 |     21 | capture_9/D
-     432* |      13 |     131 |       29 |      1 |    20 |   +11.1% |   -0.443 |       -7.5 |     21 | capture_55/D
-    final |      13 |     131 |       29 |      1 |    20 |   +11.1% |   -0.443 |       -7.5 |     21 | capture_55/D
+     406* |      14 |     117 |       28 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
+    final |      14 |     117 |       28 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 13 buffers.
-[INFO RSZ-0040] Inserted 29 buffers.
-[INFO RSZ-0051] Resized 131 instances: 131 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 20 instances.
+[INFO RSZ-0059] Removed 14 buffers.
+[INFO RSZ-0040] Inserted 28 buffers.
+[INFO RSZ-0051] Resized 117 instances: 117 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 5 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_142 (rising edge-triggered flip-flop clocked by core_clock)
@@ -48,7 +48,7 @@ Path Type: max
 
 
 Startpoint: launch_58 (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: capture_55 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_2 (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -68,48 +68,48 @@ Path Type: max
    0.0175    0.4542 v inst10/ZN (NAND2_X4)
    0.0240    0.4781 ^ inst11/ZN (OAI21_X4)
    0.0248    0.5030 ^ inst12/Z (BUF_X8)
-   0.0124    0.5154 v inst14/ZN (NAND2_X4)
-   0.1110    0.6264 ^ inst15/S (FA_X1)
-   0.0100    0.6365 v inst16/ZN (INV_X1)
-   0.0902    0.7267 v inst17/S (FA_X1)
-   0.0626    0.7893 v inst18/S (HA_X1)
-   0.1249    0.9142 ^ inst19/S (FA_X1)
-   0.0100    0.9242 v inst20/ZN (INV_X1)
-   0.1129    1.0371 ^ inst21/S (FA_X1)
-   0.0091    1.0462 v inst22/ZN (INV_X2)
-   0.1212    1.1674 ^ inst23/S (FA_X1)
-   0.0535    1.2209 ^ inst24/S (HA_X1)
-   0.0323    1.2532 ^ inst25/ZN (OR2_X2)
-   0.0139    1.2670 v inst26/ZN (AOI21_X4)
-   0.0902    1.3573 ^ inst27/ZN (AOI211_X2)
-   0.0145    1.3717 v inst28/ZN (NOR4_X4)
-   0.0314    1.4031 ^ inst29/ZN (OAI21_X4)
-   0.0298    1.4329 v inst30/ZN (NAND4_X4)
-   0.0385    1.4715 v inst31/ZN (AND3_X4)
-   0.0246    1.4960 ^ inst32/ZN (OAI21_X4)
-   0.0244    1.5204 ^ inst33/Z (BUF_X4)
-   0.0146    1.5351 v inst34/ZN (OAI21_X4)
-   0.0319    1.5670 ^ inst35/ZN (XNOR2_X2)
-   0.0453    1.6122 ^ inst36/Z (MUX2_X2)
-   0.0157    1.6279 v inst37/ZN (AOI21_X4)
-   0.0905    1.7185 ^ inst38/ZN (OAI33_X1)
-   0.0447    1.7632 ^ inst39/Z (BUF_X4)
-   0.0348    1.7980 ^ rebuffer2/Z (BUF_X4)
-   0.0205    1.8185 ^ inst39_neighbor2/Z (BUF_X8)
-   0.0239    1.8424 ^ loadbuf_55/Z (BUF_X2)
-   0.0000    1.8424 ^ capture_55/D (DFF_X1)
-             1.8424   data arrival time
+   0.0128    0.5158 v inst14/ZN (NAND2_X4)
+   0.1236    0.6394 ^ inst15/S (FA_X1)
+   0.0091    0.6484 v inst16/ZN (INV_X2)
+   0.0967    0.7451 v inst17/S (FA_X1)
+   0.0612    0.8063 v inst18/S (HA_X1)
+   0.1156    0.9219 ^ inst19/S (FA_X1)
+   0.0100    0.9319 v inst20/ZN (INV_X1)
+   0.1088    1.0407 ^ inst21/S (FA_X1)
+   0.0099    1.0506 v inst22/ZN (INV_X1)
+   0.1133    1.1639 ^ inst23/S (FA_X1)
+   0.0535    1.2174 ^ inst24/S (HA_X1)
+   0.0278    1.2451 ^ inst25/ZN (OR2_X2)
+   0.0140    1.2591 v inst26/ZN (AOI21_X2)
+   0.0849    1.3440 ^ inst27/ZN (AOI211_X2)
+   0.0145    1.3584 v inst28/ZN (NOR4_X4)
+   0.0314    1.3898 ^ inst29/ZN (OAI21_X4)
+   0.0298    1.4196 v inst30/ZN (NAND4_X4)
+   0.0389    1.4585 v inst31/ZN (AND3_X4)
+   0.0296    1.4881 ^ inst32/ZN (OAI21_X4)
+   0.0246    1.5127 ^ inst33/Z (BUF_X4)
+   0.0150    1.5277 v inst34/ZN (OAI21_X4)
+   0.0349    1.5626 ^ inst35/ZN (XNOR2_X2)
+   0.0499    1.6125 ^ inst36/Z (MUX2_X1)
+   0.0184    1.6309 v inst37/ZN (AOI21_X2)
+   0.0904    1.7214 ^ inst38/ZN (OAI33_X1)
+   0.0403    1.7617 ^ inst39/Z (BUF_X4)
+   0.0309    1.7926 ^ rebuffer6/Z (BUF_X8)
+   0.0217    1.8143 ^ clone3/Z (BUF_X16)
+   0.0191    1.8334 v inst40_neighbor7/ZN (OAI21_X4)
+   0.0057    1.8391 v capture_2/D (DFF_X1)
+             1.8391   data arrival time
 
    1.4300    1.4300   clock core_clock (rise edge)
    0.0000    1.4300   clock network delay (ideal)
    0.0000    1.4300   clock reconvergence pessimism
-             1.4300 ^ capture_55/CK (DFF_X1)
-  -0.0305    1.3995   library setup time
-             1.3995   data required time
+             1.4300 ^ capture_2/CK (DFF_X1)
+  -0.0446    1.3854   library setup time
+             1.3854   data required time
 -------------------------------------------------------------
-             1.3995   data required time
-            -1.8424   data arrival time
+             1.3854   data required time
+            -1.8391   data arrival time
 -------------------------------------------------------------
-            -0.4429   slack (VIOLATED)
+            -0.4537   slack (VIOLATED)
 
 
