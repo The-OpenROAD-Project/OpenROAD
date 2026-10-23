@@ -1922,21 +1922,21 @@ IRNetwork::Nodes IRNetwork::getAllNodes() const
   if (isAssembly()) {
     for (const ChipletNetwork& chiplet : chiplet_networks_) {
       const Nodes local_nodes = chiplet.network->getAllNodes();
-      nodes.insert(local_nodes.begin(), local_nodes.end());
+      nodes.insert(nodes.end(), local_nodes.begin(), local_nodes.end());
     }
     return nodes;
   }
 
   for (const auto& [layer, layer_nodes] : nodes_) {
     for (const auto& node : layer_nodes) {
-      nodes.insert(node.get());
+      nodes.push_back(node.get());
     }
   }
   for (const auto& node : iterm_nodes_) {
-    nodes.insert(node.get());
+    nodes.push_back(node.get());
   }
   for (const auto& node : bpin_nodes_) {
-    nodes.insert(node.get());
+    nodes.push_back(node.get());
   }
   return nodes;
 }
@@ -2031,7 +2031,7 @@ IRNetwork::Nodes IRNetwork::getDisconnectedNodes() const
   const NodePtrMap<Connection> connection_map = getConnectionMap();
   std::unordered_set<Node*> visited;
   std::queue<Node*> pending;
-  Node* start = *nodes.begin();
+  Node* start = nodes.front();
   visited.insert(start);
   pending.push(start);
   while (!pending.empty()) {
@@ -2052,7 +2052,7 @@ IRNetwork::Nodes IRNetwork::getDisconnectedNodes() const
   Nodes disconnected;
   for (Node* node : nodes) {
     if (!visited.contains(node)) {
-      disconnected.insert(node);
+      disconnected.push_back(node);
     }
   }
   return disconnected;
