@@ -278,7 +278,7 @@ proc generate_ram_netlist { args } {
     }
   }
 
-  # A read latency of 1: the read addresses registered.
+  # -register_read_address 1: the read addresses registered.
   set register_read_address 0
   if { [info exists keys(-register_read_address)] } {
     set register_read_address $keys(-register_read_address)

@@ -2739,7 +2739,8 @@ void RamGen::generate(const int mask_size,
     decoder_output_nets[p]
         = makeDecoderOutputNets(fmt::format("decoder_p{}", p), num_selects);
     // output nets of each decoder buffers
-    // write-capable ports to index 0 since there can only be 1
+    // the write-capable ports first: the read-write port, then the
+    // write ports
     if (p < rw_ports) {
       write_select_nets[w_sel_idx] = makeSelectNets(
           fmt::format("rw_sel_p{}", p), num_selects, RamPortType::ReadWrite);
@@ -2950,7 +2951,8 @@ void RamGen::generate(const int mask_size,
   for (int row = 0; row < num_rows; ++row) {
     // one select_b_net per row for column_mux_ratio > 1
     vector<dbNet*> shared_select_b_nets(r_total);
-    if (column_mux_ratio > 1 && !banked_) {
+    // (the AND-OR trees read the true selects: none)
+    if (column_mux_ratio > 1 && !banked_ && !and_or_read_) {
       for (int i = 0; i < r_total; ++i) {
         shared_select_b_nets[i]
             = makeNet(fmt::format("row{}", row), fmt::format("select{}_b", i));
@@ -3191,7 +3193,7 @@ void RamGen::generate(const int mask_size,
   // append buffer, decoder, and inverter columns per port
   for (int p = 0; p < total_ports; ++p) {
     // buffer column
-    // keeping convention of write-capable ports at index 0
+    // the write-capable ports first, as above
     if (p < rw_ports) {
       makeBufferColumn(fmt::format("sel_buf_rw_p{}", p),
                        num_rows,
@@ -3470,13 +3472,6 @@ void RamGen::generate(const int mask_size,
                          w_ports);
 }
 
-// -periphery unplaced: the periphery left for a parent to place and the
-// outline cut to what stays, the placed core, so a parent sizing its
-// floorplan by utilization charges the core and nothing else. Each pin
-// goes where its connections land, the centroid of the cells on its net
-// (those of the periphery too, while they are still placed), on the pin
-// layer's track grid inside the outline: these pins are for a macro
-// placer to orient the core by, never routed.
 // A liberty function as a Verilog expression, its pins by their nets;
 // none where a pin has no net or the function is incomplete.
 static std::optional<std::string> verilogExpr(
@@ -3740,6 +3735,13 @@ void RamGen::splitPeriphery()
   out << ");\nendmodule\n";
 }
 
+// -periphery unplaced: the periphery left for a parent to place and the
+// outline cut to what stays, the placed core, so a parent sizing its
+// floorplan by utilization charges the core and nothing else. Each pin
+// goes where its connections land, the centroid of the cells on its net
+// (those of the periphery too, while they are still placed), on the pin
+// layer's tracks inside the outline: these pins are for a macro
+// placer to orient the core by, never routed.
 void RamGen::unplacePeriphery()
 {
   const size_t periphery_count = periphery_insts_.size();
