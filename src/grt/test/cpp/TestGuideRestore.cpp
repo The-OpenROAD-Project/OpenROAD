@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -98,6 +99,24 @@ class GuideRestoreTest : public tst::Fixture,
           static_cast<int>(std::count(merged.begin(), merged.end(), segment)));
     }
     EXPECT_EQ(minimum_copies, 1);
+  }
+
+  void mergeWithoutObserver()
+  {
+    odb::dbNet* preserved = block_->findNet("n2");
+    odb::dbNet* removed = block_->findNet("n3");
+    ASSERT_NE(preserved, nullptr);
+    ASSERT_NE(removed, nullptr);
+    const GRoute before = router_.getRoutes().at(preserved);
+    odb::dbInst* buffer = block_->findInst("b1");
+    ASSERT_NE(buffer, nullptr);
+    for (odb::dbITerm* iterm : buffer->getITerms()) {
+      iterm->disconnect();
+    }
+    preserved->mergeNet(removed);
+    EXPECT_EQ(router_.getRoutes().at(preserved), before);
+    // Edits outside a routing scope intentionally leave the routing stale.
+    router_.clear();
   }
 
   odb::dbBlock* block_ = nullptr;
@@ -204,6 +223,35 @@ TEST_P(GuideRestoreTest, ScopedOwnerSurvivesManualOwner)
   router_.startIncremental();
   router_.endIncremental();
   mergeBufferNetsOnce();
+}
+
+TEST_P(GuideRestoreTest, FinalOwnerStopsObservation)
+{
+  {
+    IncrementalGRoute outer(&router_, block_);
+    IncrementalGRoute inner(&router_, block_);
+  }
+  mergeWithoutObserver();
+}
+
+TEST_P(GuideRestoreTest, CallbackCanBeReacquired)
+{
+  {
+    IncrementalGRoute previous(&router_, block_);
+  }
+  IncrementalGRoute current(&router_, block_);
+  mergeBufferNetsOnce();
+}
+
+TEST_P(GuideRestoreTest, ExceptionUnwindingStopsObservation)
+{
+  try {
+    IncrementalGRoute outer(&router_, block_);
+    IncrementalGRoute inner(&router_, block_);
+    throw std::runtime_error("unwind routing scopes");
+  } catch (const std::runtime_error&) {
+  }
+  mergeWithoutObserver();
 }
 
 INSTANTIATE_TEST_SUITE_P(RoutingEngines,
