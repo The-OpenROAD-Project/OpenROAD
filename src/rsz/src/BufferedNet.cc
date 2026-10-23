@@ -512,6 +512,32 @@ using SteinerPtAdjacents = std::vector<std::vector<SteinerPt>>;
 using SteinerPtPinVisited
     = std::unordered_set<odb::Point, est::PointHash, est::PointEqual>;
 
+static BufferedNetPtr makeBalancedBufferedNetJunctions(
+    std::vector<BufferedNetPtr>& bnets,
+    const odb::Point& loc,
+    const Resizer* resizer)
+{
+  if (bnets.empty()) {
+    return nullptr;
+  }
+  while (bnets.size() > 1) {
+    const size_t count = bnets.size();
+    size_t out_idx = 0;
+    for (size_t i = 0; i + 1 < count; i += 2) {
+      bnets[out_idx++] = make_shared<BufferedNet>(BufferedNetType::junction,
+                                                  loc,
+                                                  std::move(bnets[i]),
+                                                  std::move(bnets[i + 1]),
+                                                  resizer);
+    }
+    if (count % 2 == 1) {
+      bnets[out_idx++] = std::move(bnets[count - 1]);
+    }
+    bnets.resize(out_idx);
+  }
+  return std::move(bnets.front());
+}
+
 static BufferedNetPtr makeBufferedNetFromTree(
     const est::SteinerTree* tree,
     const est::SteinerPt from,
@@ -525,13 +551,14 @@ static BufferedNetPtr makeBufferedNetFromTree(
     utl::Logger* logger,
     const sta::Network* network)
 {
-  BufferedNetPtr bnet = nullptr;
+  std::vector<BufferedNetPtr> bnets;
   const sta::PinSeq* pins = tree->pins(to);
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (pins && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
+    bnets.reserve(pins->size() + adjacents[to].size());
     for (const sta::Pin* pin : *pins) {
       if (network->isLoad(pin)) {
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(
@@ -545,15 +572,7 @@ static BufferedNetPtr makeBufferedNetFromTree(
                      "",
                      level,
                      bnet1->to_string(resizer));
-          if (bnet) {
-            bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                            tree->location(to),
-                                            bnet,
-                                            bnet1,
-                                            resizer);
-          } else {
-            bnet = std::move(bnet1);
-          }
+          bnets.push_back(std::move(bnet1));
         }
       }
     }
@@ -573,18 +592,12 @@ static BufferedNetPtr makeBufferedNetFromTree(
                                                      logger,
                                                      network);
       if (bnet1) {
-        if (bnet) {
-          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                          tree->location(to),
-                                          bnet,
-                                          bnet1,
-                                          resizer);
-        } else {
-          bnet = std::move(bnet1);
-        }
+        bnets.push_back(std::move(bnet1));
       }
     }
   }
+  BufferedNetPtr bnet
+      = makeBalancedBufferedNetJunctions(bnets, to_loc, resizer);
   if (bnet && from != est::SteinerTree::kNullPt
       && tree->location(to) != tree->location(from)) {
     bnet = make_shared<BufferedNet>(BufferedNetType::wire,
@@ -650,18 +663,17 @@ static BufferedNetPtr makeBufferedNetFromTree2(
     const sta::Network* network,
     std::map<odb::Point, std::vector<BufferedNetPtr>>& sink_map)
 {
-  BufferedNetPtr bnet = nullptr;
+  std::vector<BufferedNetPtr> bnets;
   const odb::Point to_loc = tree->location(to);
   // If there is more than one node at a location we don't want to
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (sink_map.contains(to_loc) && !pins_visited.contains(to_loc)) {
     pins_visited.insert(to_loc);
-    for (BufferedNetPtr sink : sink_map[to_loc]) {
-      if (bnet) {
-        bnet = make_shared<BufferedNet>(
-            BufferedNetType::junction, to_loc, bnet, sink, resizer);
-      } else {
-        bnet = std::move(sink);
+    auto& sinks_at_loc = sink_map[to_loc];
+    bnets.reserve(sinks_at_loc.size() + adjacents[to].size());
+    for (BufferedNetPtr& sink : sinks_at_loc) {
+      if (sink) {
+        bnets.push_back(std::move(sink));
       }
     }
   }
@@ -681,18 +693,12 @@ static BufferedNetPtr makeBufferedNetFromTree2(
                                                       network,
                                                       sink_map);
       if (bnet1) {
-        if (bnet) {
-          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                          tree->location(to),
-                                          bnet,
-                                          bnet1,
-                                          resizer);
-        } else {
-          bnet = std::move(bnet1);
-        }
+        bnets.push_back(std::move(bnet1));
       }
     }
   }
+  BufferedNetPtr bnet
+      = makeBalancedBufferedNetJunctions(bnets, to_loc, resizer);
   if (bnet && from != est::SteinerTree::kNullPt
       && tree->location(to) != tree->location(from)) {
     bnet = make_shared<BufferedNet>(BufferedNetType::wire,
