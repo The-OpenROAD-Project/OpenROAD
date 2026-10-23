@@ -273,10 +273,14 @@ TEST_F(ListenerFixture, ImageDownloadWithoutADesignAnswers404)
   EXPECT_EQ(statusOf(httpGet("/")), 200);
 }
 
-// An escaping utl::Logger::error would drop the connection unanswered.
+// An escaping utl::Logger::error would drop the connection unanswered.  The
+// 500 keeps the CORS header, or a cross-origin client could not read it.
 TEST_F(DegenerateDesignFixture, FailedRenderAnswers500AndKeepsServing)
 {
-  EXPECT_EQ(statusOf(httpGet("/download/image?type=entire")), 500);
+  const std::string head = httpGet("/download/image?type=entire");
+  EXPECT_EQ(statusOf(head), 500);
+  EXPECT_NE(head.find("Access-Control-Allow-Origin: *"), std::string::npos)
+      << head;
   EXPECT_EQ(statusOf(httpGet("/")), 200);
 }
 

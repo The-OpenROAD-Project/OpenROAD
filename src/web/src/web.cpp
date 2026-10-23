@@ -221,8 +221,9 @@ http::response<http::string_body> textResponse(const http::status status,
                                                const bool keep_alive)
 {
   http::response<http::string_body> res{status, version};
-  res.set(http::field::server, "Boost.Beast Server (C++17)");
+  res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
+  res.set(http::field::access_control_allow_origin, "*");
   res.keep_alive(keep_alive);
   return res;
 }
@@ -323,7 +324,6 @@ static http::response<http::string_body> dispatch_request(
     ScriptGate& script_gate)
 {
   auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
-  res.set(http::field::access_control_allow_origin, "*");
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the download handler needs the
