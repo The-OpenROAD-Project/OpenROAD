@@ -226,6 +226,11 @@ void MacroPlacer::setMinChannelSize(int width, int height)
   hier_rtlmp_->setMinChannelSize(width, height);
 }
 
+void MacroPlacer::setAnnealingSteps(int steps)
+{
+  hier_rtlmp_->setAnnealingSteps(steps);
+}
+
 void MacroPlacer::blockMacroChannels()
 {
   hier_rtlmp_->blockMacroChannels();

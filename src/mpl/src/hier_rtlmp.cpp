@@ -38,6 +38,8 @@
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/util.h"
+#include "packing.h"
+#include "packingAdapter.h"
 #include "par/PartitionMgr.h"
 #include "pusher.h"
 #include "snapper.h"
@@ -402,6 +404,28 @@ void HierRTLMP::setRootShapes()
   tree_->root->setSoftMacro(std::move(root_soft_macro));
 }
 
+std::string HierRTLMP::explainOutline(const PackingProblem& problem,
+                                      const PackingResult& result) const
+{
+  // Outlines snap to the core's sites and rows, so the fixes are on that
+  // grid; IO pad rows have sites of their own.
+  int site_width = 1;
+  int row_height = 1;
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    site_width = site->getWidth();
+    row_height = site->getHeight();
+    break;
+  }
+  return explainDoesNotFit(problem,
+                           result,
+                           findFixes(problem, site_width, row_height),
+                           block_->getDbUnitsPerMicron());
+}
+
 // Determine the macro tilings within each cluster in a bottom-up manner.
 // (Post-Order DFS manner)
 // Coarse shaping:  In this step, we only consider the size of macros
@@ -630,10 +654,37 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 
   if (tilings_set.empty()) {
-    logger_->error(MPL,
-                   3,
-                   "There are no valid tilings for mixed cluster: {}",
-                   parent->getName());
+    // No annealing run found an arrangement; settle whether one exists.
+    const PackingProblem problem = toPackingProblem(outline, macros, 0);
+    const PackingResult fit = checkPacking(problem);
+    if (fit.status == PackingStatus::kFits) {
+      int width = 0;
+      int height = 0;
+      for (const PlacedBlock& block : fit.placement) {
+        width = std::max(width, block.x + block.width);
+        height = std::max(height, block.y + block.height);
+      }
+      debugPrint(logger_,
+                 MPL,
+                 "coarse_shaping",
+                 1,
+                 "Annealing found no tiling for {}; the exact check found "
+                 "{} x {}",
+                 parent->getName(),
+                 width,
+                 height);
+      tilings_set.insert({width, height});
+    } else {
+      logger_->error(
+          MPL,
+          3,
+          "There are no valid tilings for mixed cluster {}{}",
+          parent->getName(),
+          fit.status == PackingStatus::kDoesNotFit
+              ? ". " + explainOutline(problem, fit)
+                    + "\n  The outline is the core area."
+              : "; the exact check could not decide within its budget.");
+    }
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
