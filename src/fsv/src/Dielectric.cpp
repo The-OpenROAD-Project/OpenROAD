@@ -120,6 +120,31 @@ const Shell<D>* Dielectric<D>::shellAt(const Vec<D>& p) const
 }
 
 template <int D>
+const typename Dielectric<D>::ShellList* Dielectric<D>::nearShells(
+    const Vec<D>& p,
+    const double r,
+    ShellList& list) const
+{
+  if (shells_.size() <= kScanLimit) {
+    return nullptr;
+  }
+  AlignedBox<D> box;
+  for (int k = 0; k < D; k++) {
+    box.lo[k] = p[k] - r;
+    box.hi[k] = p[k] + r;
+  }
+  return listShells(box, list) ? &list : nullptr;
+}
+
+template <int D>
+double Dielectric<D>::eps(const Vec<D>& q, const ShellList* near) const
+{
+  const Shell<D>* s
+      = near != nullptr ? shellAt<false>(q, near) : shellAt<true>(q, nullptr);
+  return s != nullptr ? s->eps : planarEps(q[D - 1]);
+}
+
+template <int D>
 double Dielectric<D>::eps(const Vec<D>& p) const
 {
   const Shell<D>* s = shellAt(p);
@@ -130,6 +155,7 @@ template <int D>
 template <typename Visit>
 void Dielectric<D>::forEachPiece(const Vec<D>& p,
                                  const double max_half_size,
+                                 const ShellList* near,
                                  Visit visit) const
 {
   constexpr int kZ = D - 1;
@@ -147,24 +173,16 @@ void Dielectric<D>::forEachPiece(const Vec<D>& p,
       const int i = du <= dd ? up++ : down--;
       const double d = std::min(du, dd);
       if (d < max_half_size) {
-        visit(Piece{kZ, planar_[i].z, d, -1, pass});
+        visit(Piece{kZ, planar_[i].z, d});
       }
     }
   }
   // The faces of the shell boxes.
-  AlignedBox<D> near;
-  for (int k = 0; k < D; k++) {
-    near.lo[k] = p[k] - max_half_size;
-    near.hi[k] = p[k] + max_half_size;
+  if (near != nullptr) {
+    shellPieces<false>(p, max_half_size, near, visit);
+  } else {
+    shellPieces<true>(p, max_half_size, nullptr, visit);
   }
-  if (shells_.size() > kScanLimit) {
-    ShellList list;
-    if (listShells(near, list)) {
-      shellPieces<false>(p, max_half_size, &list, visit);
-      return;
-    }
-  }
-  shellPieces<true>(p, max_half_size, nullptr, visit);
 }
 
 template <int D>
@@ -194,7 +212,7 @@ void Dielectric<D>::shellPieces(const Vec<D>& p,
         const double c = side == 0 ? s.outer.lo[a] : s.outer.hi[a];
         const double d = std::max(std::abs(p[a] - c), excess);
         if (d < max_half_size) {
-          visit(Piece{a, c, d, i, 2 * a + side});
+          visit(Piece{a, c, d, i});
         }
       }
     }
@@ -210,9 +228,15 @@ typename Dielectric<D>::Cube Dielectric<D>::cube(
   // Interface pieces closer than max_half_size. The nearest plane may cut
   // the cube; every other piece limits its size, so each half of the cube
   // holds no interface and is uniform.
+  // One list of nearby shells serves every query below; it reaches as far
+  // as a floored cube, so the points on either side of the plane find
+  // their shells in it too.
+  ShellList list;
+  const ShellList* near
+      = nearShells(p, std::max(max_half_size, min_half_size), list);
   bool any = false;
   Piece nearest{D - 1, 0, max_half_size};
-  forEachPiece(p, max_half_size, [&](const Piece& piece) {
+  forEachPiece(p, max_half_size, near, [&](const Piece& piece) {
     if (!any || piece.before(nearest)) {
       nearest = piece;
       any = true;
@@ -222,7 +246,7 @@ typename Dielectric<D>::Cube Dielectric<D>::cube(
     return {max_half_size};
   }
   double half_size = max_half_size;
-  forEachPiece(p, max_half_size, [&](const Piece& piece) {
+  forEachPiece(p, max_half_size, near, [&](const Piece& piece) {
     const bool coplanar
         = piece.axis == nearest.axis
           && std::abs(piece.coordinate - nearest.coordinate) <= kCoplanar;
@@ -247,8 +271,8 @@ typename Dielectric<D>::Cube Dielectric<D>::cube(
   Vec<D> plus = p;
   minus[a] = nearest.coordinate - depth;
   plus[a] = nearest.coordinate + depth;
-  result.eps_minus = eps(minus);
-  result.eps_plus = eps(plus);
+  result.eps_minus = eps(minus, near);
+  result.eps_plus = eps(plus, near);
   if (result.eps_minus != result.eps_plus) {
     result.split = true;
     result.axis = nearest.axis;
