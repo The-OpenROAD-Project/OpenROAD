@@ -106,6 +106,12 @@ class Interconnect3DTest : public tst::Nangate45Fixture
       return;
     }
     result["dbu_per_micron"] = getDb()->getDbuPerMicron();
+    result["bootstrap_tech"] = serializeTechResponse(*gen_);
+    ASSERT_FALSE(result.at("bootstrap_tech")
+                     .as_object()
+                     .at("layers")
+                     .as_array()
+                     .empty());
     std::ofstream file(std::filesystem::path(directory) / filename);
     ASSERT_TRUE(file.is_open());
     file << boost::json::serialize(result);
