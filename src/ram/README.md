@@ -44,6 +44,7 @@ generate_ram [-mask_size bits]
              [-storage_cell name]
              [-tristate_cell name]
              [-inv_cell name]
+             [-output_buffer_cell name|none]
              [-power_net_name name]
              [-ground_net_name name]
              -routing_layer config
@@ -69,6 +70,7 @@ generate_ram [-mask_size bits]
 | `-storage_cell` | Name of the master to use for the storage device (i.e. a flip-flop). Must be positive-edge triggered. Default: auto-select from the loaded cell library. |
 | `-tristate_cell` | Name of the master to use for the tristate device (i.e. a tristate inverter). It is currently assumed that the device is inverting. Default: auto-select from the loaded cell library. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
+| `-output_buffer_cell` | Non-inverting buffer master for each output bit of every read-capable port. Default: use the automatically selected buffer. Set to `none` to connect the final read stage directly to the output pins. Buffers are placed beside the input buffers in the I/O row, after any column mux, and do not add read latency. The master must be a `CORE` cell on the storage cell's placement site and fit its single-height rows and site grid. Its physical signal terminals must match the single input and output in Liberty, including directions and signal types; primary supply terminals must match their Liberty roles. Invalid masters are rejected before creating the design. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |
 | `-power_net_name` | Name of the power net to create. Default: `VDD`. |
 | `-ground_net_name` | Name of the ground net to create. Default: `VSS`. |

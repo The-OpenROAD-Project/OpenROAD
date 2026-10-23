@@ -107,7 +107,8 @@ class RamGen
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
-                int max_tap_dist);
+                int max_tap_dist,
+                const std::string& output_buffer_cell = "");
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
@@ -134,6 +135,14 @@ class RamGen
 
  private:
   void findMasters();
+  odb::dbSite* checkStorageSite();
+  void findOutputBuffer(const std::string& name);
+  void checkOutputBufferPins(odb::dbMaster* master,
+                             const std::map<PortRole, std::string>& ports);
+  void makeOutputBuffers(
+      Cell* cell,
+      int bit,
+      const std::vector<std::vector<odb::dbNet*>>& read_nets);
   std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name);
@@ -228,6 +237,7 @@ class RamGen
   odb::dbMaster* and2_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
+  odb::dbMaster* output_buffer_cell_{nullptr};
   odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* latch_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
@@ -241,6 +251,7 @@ class RamGen
   std::map<PortRole, std::string> and2_ports_;
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
+  std::map<PortRole, std::string> output_buffer_ports_;
   std::map<PortRole, std::string> latch_ports_;
 
   std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
