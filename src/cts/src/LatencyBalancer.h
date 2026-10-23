@@ -86,7 +86,7 @@ class LatencyBalancer
   // Public: TritonCTS calls it on the quantum_balancer to size the useful-skew
   // emit_threshold / max_skew before computeSkewBudget.
   void computeBuffersDelay(double extra_out_cap);
-  double usefulSkewTarget(odb::dbInst* inst, bool& has_useful_skew) const;
+  std::optional<double> usefulSkewTarget(odb::dbInst* inst) const;
 
  private:
   void initSta();

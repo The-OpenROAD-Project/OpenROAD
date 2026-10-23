@@ -77,10 +77,7 @@ int LatencyBalancer::run()
                   "inserted {} delay buffers for applying useful skew",
                   delayBufIndex_);
   } else {
-    logger_->info(CTS,
-                  36,
-                  " inserted {} delay buffers",
-                  delayBufIndex_);
+    logger_->info(CTS, 36, " inserted {} delay buffers", delayBufIndex_);
   }
   return delayBufIndex_;
 }
@@ -755,20 +752,17 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   return dpResult.buffers;
 }
 
-double LatencyBalancer::usefulSkewTarget(odb::dbInst* inst,
-                                         bool& has_useful_skew) const
+std::optional<double> LatencyBalancer::usefulSkewTarget(odb::dbInst* inst) const
 {
-  has_useful_skew = false;
   if (!options_->applyUsefulSkew() || inst == nullptr) {
-    return 0.0;
+    return std::nullopt;
   }
   odb::dbDoubleProperty* prop
       = odb::dbDoubleProperty::find(inst, "useful_skew_target");
   if (prop) {
-    has_useful_skew = true;
     return prop->getValue();
   }
-  return 0.0;
+  return std::nullopt;
 }
 
 void LatencyBalancer::balanceLatencies(int nodeId)
@@ -779,19 +773,11 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   if (node->childrenIds.empty()) {
     if (node->arrival.has_value()) {
       if (options_->applyUsefulSkew()) {
-        if (node->inputTerm != nullptr) {
-          // use useful skew of RSZ
-          bool has_useful_skew = false;
-          double useful_skew
-              = usefulSkewTarget(node->inputTerm->getInst(), has_useful_skew);
-          if (has_useful_skew) {
-            node->dlyNeeded = std::llround(useful_skew * dpUnit_);
-          } else {
-            node->dlyNeeded = 0.0;
-          }
-        } else {
-          node->dlyNeeded = 0.0;
-        }
+        // use useful skew of RSZ; absent target -> baseline (0)
+        odb::dbInst* inst
+            = node->inputTerm ? node->inputTerm->getInst() : nullptr;
+        node->dlyNeeded
+            = std::llround(usefulSkewTarget(inst).value_or(0.0) * dpUnit_);
       } else {
         node->dlyNeeded
             = std::llround((worseDelay_ - *node->arrival) * dpUnit_);
