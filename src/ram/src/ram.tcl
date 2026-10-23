@@ -297,6 +297,25 @@ proc generate_ram_netlist { args } {
     }
   }
 
+  # The options added for register files are experimental: their
+  # interface may change, or move to a command of their own.
+  set experimental {}
+  foreach key {-read_style -zero_word -reset_value -banks -bank_columns -bank_order
+    -rb_ports -register_read_address -write_style -write_priority -cells -name
+    -decoder -bit_folds -periphery -pin_layer -wrapper_verilog -service_columns
+    -bank_column_layout} {
+    if { [info exists keys($key)] } {
+      lappend experimental $key
+    }
+  }
+  if { $rw_ports + $w_ports > 1 } {
+    lappend experimental "more than one write port"
+  }
+  if { $experimental != {} } {
+    utl::info RAM 105 "Experimental: [join $experimental {, }]; the interface\
+      may change."
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
@@ -535,6 +554,7 @@ proc generate_ram { args } {
     $ver_name $ver_width $ver_pitch $hor_name $hor_width $hor_pitch
 
   if { [info exists keys(-tracks)] } {
+    utl::info RAM 106 "Experimental: -tracks; the interface may change."
     source $keys(-tracks)
   } else {
     make_tracks -x_offset 0 -y_offset 0

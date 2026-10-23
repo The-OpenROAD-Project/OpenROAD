@@ -3374,7 +3374,7 @@ void RamGen::generate(const int mask_size,
   ram_grid_.setOrigin(ram_origin);
   ram_grid_.gridInit();
 
-  // -service_columns {every sites}: after every `every` storage columns
+  // -service_columns {every sites}: after every `every` array columns
   // an empty column `sites` sites wide, room a parent's buffers can take
   // inside the array
   if (service_every > 0 && service_sites > 0) {

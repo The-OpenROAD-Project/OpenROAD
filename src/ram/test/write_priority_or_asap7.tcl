@@ -1,5 +1,5 @@
 # -write_priority or: where both write ports write a word in one cycle it
-# takes the OR of their data, as firtool's register files describe it.
+# takes the OR of their data.
 source "helpers.tcl"
 source "ram_sim.tcl"
 source "routed.tcl"
