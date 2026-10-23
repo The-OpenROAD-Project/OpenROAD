@@ -2707,7 +2707,10 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
   }
   std::string cellName
       = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
-  dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
+  // In the module of the buffer it loads, so that it joins the buffer's
+  // output net there instead of across a module boundary.
+  dummyInst = odb::dbInst::create(
+      block_, master, cellName.c_str(), false, inst->getDbInst()->getModule());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
   dummyInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -2734,6 +2737,13 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
   odb::dbNet* sinkNet = iTerm->getNet();
   odb::dbITerm* dummyInputPin = getFirstInput(dummyInst);
   dummyInputPin->connect(sinkNet);
+  // As for a sink: without it the hierarchical view leaves the dummy
+  // load off the net, and its capacitance is not seen once the database
+  // is read back.
+  if (network_->hasHierarchy()) {
+    network_->hierarchicalConnect(
+        iTerm, dummyInputPin, sinkNet->getConstName());
+  }
   dummyClock.setInputPinObj(dummyInputPin);
   subNet.addInst(dummyClock);
 }

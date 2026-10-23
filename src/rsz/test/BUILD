@@ -191,6 +191,7 @@ TESTS = [
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
     "repair_setup_undo2",
+    "repair_timing_option_errors",
     "repair_timing_path_group1",
     "repair_timing_path_group2",
     "repair_timing_path_group3",
@@ -250,6 +251,7 @@ TESTS = [
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
     "report_buffers_no_lef",
+    "report_delay_estimator_rebuffer_driver_pin",
     "report_delay_estimator_rebuffer_fanout8",
     "report_delay_estimator_rebuffer_minimal",
     "report_delay_estimator_rebuffer_prebuffered",
@@ -395,6 +397,7 @@ test_suite(
     tests = [
         ":TestBufRem1",
         ":TestResizer",
+        ":TestSkewBudget",
     ],
 )
 
@@ -564,6 +567,22 @@ cc_test(
         "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Standalone unit tests for the LP-based useful-skew solver
+# (SkewLPSolver). No STA / dbSta deps; pure synthetic LP cases.
+cc_test(
+    name = "TestSkewBudget",
+    size = "small",
+    srcs = ["cpp/TestSkewBudget.cc"],
+    copts = ["-Isrc/rsz/src"],
+    features = ["-layering_check"],  # includes private SkewBudget.hh
+    deps = [
+        "//src/rsz",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -71,7 +71,7 @@ PARALLEL_EVAL / SetupParallelEvalPolicy (EXPERIMENTAL):
     select a score-ordered conflict-free batch      <- [ST]
   commit the batch into the open journal            <- [ST]
   update parasitics and timing once                 <- [ST]
-  save, salvage, keep or undo the batch             <- [ST]
+  save, salvage, speculate or undo the batch        <- [ST]
 ```
 
 **Key components**
@@ -685,7 +685,7 @@ flowchart TD
     J --> K[One parasitics and timing update]
     K --> L{Beats the checkpoint?}
     L -->|yes| M[Save the checkpoint]
-    L -->|no| N[Salvage, keep on speculation, or undo]
+    L -->|no| N[Salvage, speculate or undo]
     M --> O[Stop rules and WNS tail]
     N --> O
 ```
@@ -716,28 +716,28 @@ The cap is the failing endpoint count, clamped to `min_batch_cap` and `max_batch
 Each target keeps its best candidate by score, and the score alone ranks the targets against each other. Once a saved batch left WNS where it was, the targets are weighted by their share of the violating cone instead:
 
 ```
-priority = score * (1 + alpha * w^gamma)
+priority = score * (1 + bottleneck_scale * severity_ratio^bottleneck_exponent)
 ```
 
-`w` is the target's cone need relative to the largest one in the cone. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and, for each cone vertex, sums the slack need of the endpoints behind it and of the sources in front of it.
+The slack deficit of a vertex is `slack_margin - slack`. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and sums the deficits of distinct downstream endpoints and upstream startpoints at each vertex. Their geometric mean is the bottleneck severity; `severity_ratio` divides it by the largest severity in the cone (or is zero outside the cone). This prioritizes shared violating paths while WNS is stalled, not only the single worst path.
 
 `parallel_eval.priority` (`BatchPriorityConfig`) holds the ranking options:
 
 | Field | Default | Effect |
 |---|---|---|
-| `alpha` | `2` | Strength of the cone-need bonus. `0` ranks by score alone. |
-| `gamma` | `2` | Emphasis on the most shared bottlenecks. |
-| `weight_max_wns_stall_batches` | `8` | The weight applies to at most this many stalled batches in a row. `0` ranks by score alone. |
+| `bottleneck_scale` | `2` | Strength of the bottleneck priority factor. `0` ranks by score alone. |
+| `bottleneck_exponent` | `2` | Emphasis on the most shared bottlenecks. |
+| `bottleneck_max_wns_stall_batches` | `8` | The bonus applies to at most this many WNS-stalled saved batches in a row. `0` ranks by score alone. |
 | `bottleneck_refresh_batches` | `4` | Batches one analysis serves. The start of the WNS tail refreshes it. |
 | `bottleneck_max_endpoints` | `1024` | Violating endpoints one analysis weighs, worst slack first. |
-| `bottleneck_max_sources` | `1024` | Distinct cone sources one analysis weighs. |
+| `bottleneck_max_startpoints` | `1024` | Distinct cone startpoints one analysis weighs. |
 
 ### Batch Selection
 
 `BatchSelector` walks the ranked targets and admits a candidate unless it conflicts with one already in the batch:
 
 - Structural conflicts are always checked: two moves may not write the same instance or net, reconnect the same pin, or write an instance that the other reconnects. A `RebufferMt` candidate reserves both its driver instance and the net it rewrites.
-- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path.
+- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path. The check is one way, so a candidate that changes what a member's estimate read is still admitted. Every estimate reads the pre-batch timing either way, and the batch outcome below catches a batch that misses.
 
 ### Batch Outcome
 
@@ -792,7 +792,7 @@ The tail may spend `wns_tail_work_pct` percent of the work of the batch stage, a
 | `2` | adds `events.csv` | Pass and batch events: commits, checkpoints, undo and stop reasons. |
 | `3` | adds `analysis/` | Per-move observations and reports. |
 
-Mode 3 measures every applied move with `RepairSetupAnalysis`, a main-thread timing observer, and writes:
+Mode 3 measures every applied move with `RepairSetupMoveSampler`, a main-thread timing observer, and writes:
 
 | File | Content |
 |---|---|
@@ -835,7 +835,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 | Target collection | `RepairTargetCollector.*` |
 | Estimation | `DelayEstimator.*`, `DelayEstimatorBufferTree.cc`, `DelayEstimatorInternal.hh`, `SequentialTimingEstimator.*`, `Rebuffer.*`, `BufferedNet.*` |
 | Estimator reports | `DelayEstimatorReporter.*` |
-| Profiler | `RepairSetupProfiler.*`, `RepairSetupAnalysis.*`, `RepairSetupAnalysisSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
+| Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupMoveSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
 | Thread pool | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` |
 
 ## Future Work

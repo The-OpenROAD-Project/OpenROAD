@@ -44,6 +44,7 @@ npm_link_all_packages(name = "node_modules")
 _BUNDLED_PACKAGES = [":node_modules/" + p for p in [
     "golden-layout",
     "leaflet",
+    "lit",
     "netlistsvg",
     "three",
 ]]

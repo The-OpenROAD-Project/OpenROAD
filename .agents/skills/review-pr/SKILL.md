@@ -138,11 +138,8 @@ Modules: <list>
 **Be concise.** One-word or one-sentence items when the issue is clear
 (e.g., "const", "unreachable after throw", "`int64_t` for area").
 
-**Ask probing questions** for non-obvious issues rather than prescribing
-fixes:
-- "Have you tested this on a real design?"
-- "Could this hide a bug?"
-- "What happens if this is null?"
+**Indicate complex issues** where fixes need careful consideration or
+  have alternative solutions worth considering.
 
 **Lead with severity**: `bug:`, `nit:`, `question:`, `suggestion:`.
 
