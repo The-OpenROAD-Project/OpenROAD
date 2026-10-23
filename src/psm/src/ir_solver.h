@@ -148,11 +148,6 @@ class IRSolver
 
   IRNetwork* getNetwork() const { return network_.get(); }
 
-  std::size_t getAssemblyNodeCount() const;
-  std::size_t getAssemblyCurrentLoadCount() const;
-  std::size_t getAssemblyVoltageSourceCount() const;
-  const Eigen::VectorXd& getAssemblyVoltageVector() const;
-
  private:
   struct AssemblyData;
 

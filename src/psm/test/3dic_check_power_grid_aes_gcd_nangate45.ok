@@ -11,10 +11,7 @@
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
-[INFO PSM-0104] Built 3D power grid VDD: 2 chiplet PDNs, 124555 nodes, and 165847 connections (4 inter-die).
-[INFO PSM-0104] Built 3D power grid VSS: 2 chiplet PDNs, 107855 nodes, and 137524 connections (2 inter-die).
 [INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45_vdd.loc.
-[INFO PSM-0129] Solved combined 3D power grid VDD: 124555 nodes, 20459 current loads, 1 fixed-voltage sources, and voltage range 1.00923 to 1.1 V.
 ########## IR report #################
 Net              : VDD
 Corner           : default
