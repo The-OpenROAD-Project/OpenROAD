@@ -75,12 +75,8 @@ proc analyze_power_grid { args } {
   }
 
   set is_3d [psm::is_3d_design [[ord::get_db] getChip]]
-  if { $is_3d } {
-    foreach key {-source_type -allow_reuse -em_outfile} {
-      if { [info exists keys($key)] || [info exists flags($key)] } {
-        utl::error PSM 157 "$key is not supported for a 3D assembly."
-      }
-    }
+  if { $is_3d && [info exists keys(-source_type)] } {
+    utl::error PSM 157 "-source_type is not supported for a 3D assembly."
   }
 
   set enable_em [info exists flags(-enable_em)]

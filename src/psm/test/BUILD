@@ -73,6 +73,7 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "3dic_external_power_source-em.rptok",
         "3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45.3dbv",
         "3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45.3dbx",
         "3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45.v",

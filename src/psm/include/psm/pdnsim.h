@@ -162,6 +162,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   GeneratedSourceSettings generated_source_settings_;
   std::optional<double> interchip_resistance_;
   odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
+  odb::PtrMap<odb::dbChipNet, std::unique_ptr<IRSolver>> assembly_solvers_;
   odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
   odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 
