@@ -111,6 +111,8 @@ entries:
     entries:
     - file: main/src/rcx/doc/calibration
       title: Calibration
+  - file: main/src/fsv/README
+    title: Capacitance Field Solver
   - file: main/src/ram/README
     title: RAM Generator
   - file: main/src/wmk/README
