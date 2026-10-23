@@ -170,6 +170,21 @@ SolveOptions solveOptions(const double tol_total)
   return options;
 }
 
+// A cross-section structure's rectangles: its boxes' x and z extents.
+Geometry2D crossSection(const Geometry& geometry)
+{
+  Geometry2D section;
+  for (int net = 0; net < geometry.netCount(); net++) {
+    section.addNet(geometry.netName(net));
+  }
+  for (int b = 0; b < static_cast<int>(geometry.boxes().size()); b++) {
+    const Box& box = geometry.boxes()[b];
+    section.addRect(geometry.boxNet(b),
+                    {{box.lo[0], box.lo[2]}, {box.hi[0], box.hi[2]}});
+  }
+  return section;
+}
+
 struct CrossSectionCase
 {
   std::string structure;

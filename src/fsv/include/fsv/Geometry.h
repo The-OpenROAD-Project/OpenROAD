@@ -88,10 +88,6 @@ class Geometry2D
   std::vector<int> rect_nets_;
 };
 
-// The geometry's cross section: each box projected onto the x-z plane, its
-// y extent dropped. Nets keep their indices and names.
-Geometry2D crossSection(const Geometry& geometry);
-
 // L-infinity distance from a point to a box (0 when inside). Inline: it is
 // the innermost operation of the nearest-conductor query. D is deduced from
 // the box: std::array's size_t extent cannot deduce an int.

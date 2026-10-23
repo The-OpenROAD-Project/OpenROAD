@@ -97,6 +97,19 @@ void add_layer_rect_cmd(const char* net,
   getFieldSolver()->addLayerRect(net, layer, {x0, y0, x1, y1});
 }
 
+void add_rect_cmd(const char* net, double x0, double z0, double x1, double z1)
+{
+  getFieldSolver()->addRect(net, {{x0, z0}, {x1, z1}});
+}
+
+void add_layer_span_cmd(const char* net,
+                        const char* layer,
+                        double x0,
+                        double x1)
+{
+  getFieldSolver()->addLayerSpan(net, layer, x0, x1);
+}
+
 void clear_cmd()
 {
   getFieldSolver()->clearGeometry();
@@ -114,8 +127,7 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
                                   long long min_walks,
                                   long long max_walks,
                                   long long seed,
-                                  int panels,
-                                  bool cross_section)
+                                  int panels)
 {
   // A negative value keeps the default.
   fsv::SolverOptions solver_options;
@@ -142,7 +154,7 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
     solver_options.panels = panels;
   }
   solver_options.threads = ord::OpenRoad::openRoad()->getThreadCount();
-  return getFieldSolver()->solve(net, solver_options, options, cross_section);
+  return getFieldSolver()->solve(net, solver_options, options);
 }
 
 }  // namespace fsv

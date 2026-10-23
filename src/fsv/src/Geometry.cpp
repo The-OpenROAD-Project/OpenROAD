@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace fsv {
 
@@ -55,21 +54,6 @@ void Geometry2D::addRect(const int net, const Rect& rect)
   }
   rects_.push_back(rect);
   rect_nets_.push_back(net);
-}
-
-Geometry2D crossSection(const Geometry& geometry)
-{
-  Geometry2D section;
-  for (int net = 0; net < geometry.netCount(); net++) {
-    section.addNet(geometry.netName(net));
-  }
-  const std::vector<Box>& boxes = geometry.boxes();
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    section.addRect(
-        geometry.boxNet(b),
-        {{boxes[b].lo[0], boxes[b].lo[2]}, {boxes[b].hi[0], boxes[b].hi[2]}});
-  }
-  return section;
 }
 
 }  // namespace fsv
