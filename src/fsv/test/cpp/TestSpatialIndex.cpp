@@ -22,6 +22,17 @@ TEST(SpatialIndex, GroundOnly)
   EXPECT_DOUBLE_EQ(index.nearest({1, 2, -1e-12}).dist, 0);
 }
 
+// An index over no boxes finds no overlaps.
+TEST(SpatialIndex, EmptyHasNoOverlaps)
+{
+  int found = 0;
+  SpatialIndex<3>({}).forEachOverlapping({{0, 0, 0}, {1, 1, 1}},
+                                         [&](int) { found++; });
+  SpatialIndex<2>({}).forEachOverlapping({{0, 0}, {1, 1}},
+                                         [&](int) { found++; });
+  EXPECT_EQ(found, 0);
+}
+
 // Branch-and-bound result matches a brute-force scan, inside the layout and
 // far outside it.
 TEST(SpatialIndex, MatchesBruteForce)

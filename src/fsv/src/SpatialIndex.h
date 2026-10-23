@@ -37,6 +37,9 @@ class SpatialIndex
   template <typename Visit>
   void forEachOverlapping(const AlignedBox<D>& query, Visit visit) const
   {
+    if (nodes_.empty()) {
+      return;
+    }
     std::array<int, kStackSize> stack;
     int top = 0;
     stack[top++] = 0;
