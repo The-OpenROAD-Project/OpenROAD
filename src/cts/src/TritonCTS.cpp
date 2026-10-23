@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "BottomUpBuffering.h"
 #include "Clock.h"
 #include "CtsOptions.h"
 #include "HTreeBuilder.h"
@@ -90,33 +91,89 @@ TritonCTS::~TritonCTS()
 void TritonCTS::runTritonCts()
 {
   utl::Timer timer;
-  odb::dbChip* chip = db_->getChip();
-  odb::dbBlock* block = chip->getBlock();
+  auto* block = db_->getChip()->getBlock();
+  const auto roots = rootBuffers_;
+  const auto sinks = sinkBuffers_;
+  const auto roots_count = options_->getNumClockRoots();
+  const auto sinks_count = options_->getNumSinks();
+  const auto buffers_count = options_->getNumBuffersInserted();
+  const auto nets_count = options_->getNumClockSubnets();
+  const auto buffer_counts = options_->getBufferCount();
+  const auto dummy_counts = options_->getDummyCount();
+  const auto config = options_->saveRunConfiguration();
+  bool reversible_build = false;
+  BufferingAudit audit;
   options_->addOwner(block);
-
-  setupCharacterization();
-  findClockRoots();
-  populateTritonCTS();
-  if (builders_.empty()) {
-    logger_->warn(CTS, 82, "No valid clock nets in the design.");
-  } else {
-    checkCharacterization();
-    buildClockTrees();
-    writeDataToDb();
-    setAllClocksPropagated();
-    if (options_->getRepairClockNets()) {
-      repairClockNets();
+  try {
+    if (options_->bottomUpBuffering()) {
+      validateBottomUpWireRC();
     }
-    balanceMacroRegisterLatencies();
+    setupCharacterization();
+    if (options_->bottomUpBuffering()) {
+      odb::dbDatabase::beginEco(block);
+      reversible_build = true;
+    }
+    // Gate cloning and macro/register splitting also belong to the
+    // reversible planning phase, not just the abstract buffer selection.
+    findClockRoots();
+    populateTritonCTS();
+    if (builders_.empty()) {
+      logger_->warn(CTS, 82, "No valid clock nets in the design.");
+    } else {
+      checkCharacterization();
+      buildClockTrees();
+    }
+    if (reversible_build) {
+      odb::dbDatabase::commitEco(block);
+      reversible_build = false;
+    }
+    if (!builders_.empty()) {
+      runClockTreeSynthesis();
+      if (options_->bottomUpBuffering()) {
+        audit = checkClockTreeElectricals();
+      }
+    }
+  } catch (...) {
+    resetRunState();
+    if (reversible_build) {
+      odb::dbDatabase::undoEco(block);
+    }
+    rootBuffers_ = roots;
+    sinkBuffers_ = sinks;
+    options_->setNumClockRoots(roots_count);
+    options_->setNumSinks(sinks_count);
+    options_->setNumBuffersInserted(buffers_count);
+    options_->setNumClockSubnets(nets_count);
+    options_->restoreBufferCounts(buffer_counts, dummy_counts);
+    options_->restoreRunConfiguration(config);
+    throw;
   }
+  resetRunState();
+  logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
+  if (!audit.error.empty()) {
+    logger_->error(CTS, 557, "{}", audit.error);
+  }
+}
 
-  // reset
+void TritonCTS::runClockTreeSynthesis()
+{
+  writeDataToDb();
+  setAllClocksPropagated();
+  if (options_->getRepairClockNets()) {
+    repairClockNets();
+  }
+  balanceMacroRegisterLatencies();
+}
+
+void TritonCTS::resetRunState()
+{
   techChar_.reset();
   builders_.clear();
   staClockNets_.clear();
   visitedClockNets_.clear();
   inst2clkbuf_.clear();
   driver2subnet_.clear();
+  net2builder_.clear();
   numberOfClocks_ = 0;
   numClkNets_ = 0;
   numFixedNets_ = 0;
@@ -127,7 +184,6 @@ void TritonCTS::runTritonCts()
   delayBufIndex_ = 0;
   options_->setMaxWl(0);
   options_->removeOwner();
-  logger_->info(CTS, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
@@ -317,6 +373,11 @@ void TritonCTS::buildClockTrees()
     builder->setLogger(logger_);
     builder->initBlockages();
     builder->run();
+  }
+  if (options_->bottomUpBuffering()) {
+    for (auto& builder : std::ranges::reverse_view(builders_)) {
+      bufferClockTreeBottomUp(builder.get());
+    }
   }
 }
 
@@ -2453,7 +2514,7 @@ static float getInputCap(const sta::LibertyCell* cell)
   return 0.0;
 }
 
-static sta::LibertyCell* findBestDummyCell(
+sta::LibertyCell* TritonCTS::findBestDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates,
     float deltaCap)
 {

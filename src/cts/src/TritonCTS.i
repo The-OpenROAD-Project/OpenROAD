@@ -275,6 +275,12 @@ set_repair_clock_nets(bool value)
 {
   getTritonCts()->getParms()->setRepairClockNets(value);
 }
+
+void
+set_bottom_up_buffering(bool value)
+{
+  getTritonCts()->getParms()->setBottomUpBuffering(value);
+}
  
 void
 run_triton_cts()

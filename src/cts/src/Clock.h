@@ -56,6 +56,8 @@ class ClockInst
 
   std::string getName() const { return name_; }
   std::string getMaster() const { return master_; }
+  void setMaster(const std::string& master) { master_ = master; }
+  void setLocation(int x, int y) { location_ = Point<int>(x, y); }
   int getX() const { return location_.getX(); }
   int getY() const { return location_.getY(); }
   Point<int> getLocation() const { return location_; }
@@ -101,7 +103,7 @@ class ClockSubNet
   explicit ClockSubNet(const std::string& name) : name_(name) {}
 
   void setNetObj(odb::dbNet* net) { netObj_ = net; }
-  odb::dbNet* getNetObj() { return netObj_; }
+  odb::dbNet* getNetObj() const { return netObj_; }
   void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
   bool isLeafLevel() const { return leafLevel_; }
 
@@ -191,6 +193,14 @@ class Clock
   {
     subNets_.emplace_back(name + "_" + getName());
     return subNets_.back();
+  }
+
+  void clearSubNets() { subNets_.clear(); }
+  void clearBuffering()
+  {
+    subNets_.clear();
+    clockBuffers_.clear();
+    mapNameToInst_.clear();
   }
 
   void addSink(const std::string& name, int x, int y)
