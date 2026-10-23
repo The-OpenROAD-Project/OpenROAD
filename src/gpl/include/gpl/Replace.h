@@ -62,9 +62,6 @@ struct PlaceOptions
   bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
   bool timingDrivenRepairTiming = false;
-  // Experimental, post-routability inflation of retained timing insertions.
-  // Off by default until paired routing benchmarks establish a QoR benefit.
-  bool timingDrivenCongestionInflation = false;
   float timingDrivenRepairTnsEndPercent = 1.0;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;

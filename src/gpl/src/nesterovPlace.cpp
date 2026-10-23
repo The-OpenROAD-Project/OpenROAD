@@ -468,9 +468,9 @@ void NesterovPlace::runTimingDriven(int iter,
     getTopLevelNB()->refreshIoPins();
     // is_routability_need_ stays true before/during ordinary refinement.
     // Only runRoutability() clears it, after the final pass and any restore.
-    const bool retained_inflation
-        = !virtual_td_iter && npVars_.routability_driven_mode
-          && npVars_.timingDrivenCongestionInflation && !is_routability_need_;
+    const bool retained_inflation = !virtual_td_iter
+                                    && npVars_.routability_driven_mode
+                                    && !is_routability_need_;
     if (retained_inflation) {
       // Inflate before initializing the new cells' optimizer/device state.
       rb_->inflateNewCells();

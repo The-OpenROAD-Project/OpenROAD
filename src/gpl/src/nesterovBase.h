@@ -851,7 +851,6 @@ struct NesterovPlaceVars
 
   bool timingDrivenMode;
   bool timingDrivenRepairTiming;
-  const bool timingDrivenCongestionInflation;
   float timingDrivenRepairTnsEndPercent;
   int timingDrivenIterCounter = 0;
   const bool routability_driven_mode;

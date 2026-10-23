@@ -3,10 +3,12 @@
 
 #include <cfenv>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "gpl/Replace.h"
@@ -19,6 +21,7 @@
 #include "src/gpl/src/placerBase.h"
 #include "src/gpl/src/routeBase.h"
 #include "tst/IntegratedFixture.h"
+#include "utl/Logger.h"
 
 namespace gpl {
 namespace {
@@ -26,6 +29,84 @@ namespace {
 int64_t cellArea(const GCell* cell)
 {
   return static_cast<int64_t>(cell->dx()) * cell->dy();
+}
+
+TEST(TileGridTest, DefaultRudyRebuildResetsTileStateAndReferences)
+{
+  utl::Logger logger;
+  TileGrid grid;
+  grid.setLogger(&logger);
+  grid.setLx(-20);
+  grid.setLy(30);
+  grid.setTileSize(10, 15);
+  grid.setTileCnt(3, 2);
+  const PlaceOptions options;
+  ASSERT_TRUE(options.routabilityUseRudy);
+
+  for (int rebuild = 0; rebuild < 20; ++rebuild) {
+    grid.initTiles(options.routabilityUseRudy);
+    ASSERT_EQ(grid.tiles().size(), 6u);
+    std::unordered_set<const Tile*> references;
+    for (size_t index = 0; index < grid.tiles().size(); ++index) {
+      const int x = static_cast<int>(index % 3);
+      const int y = static_cast<int>(index / 3);
+      auto* tile = grid.tiles()[index];
+      ASSERT_NE(tile, nullptr);
+      EXPECT_TRUE(references.insert(tile).second);
+      EXPECT_EQ(tile->x(), x);
+      EXPECT_EQ(tile->y(), y);
+      EXPECT_EQ(tile->lx(), -20 + x * 10);
+      EXPECT_EQ(tile->ly(), 30 + y * 15);
+      EXPECT_EQ(tile->ux(), tile->lx() + 10);
+      EXPECT_EQ(tile->uy(), tile->ly() + 15);
+      EXPECT_FLOAT_EQ(tile->inflationRatio(), 1.0f);
+      EXPECT_FLOAT_EQ(tile->inflatedRatio(), 0.0f);
+      EXPECT_TRUE(tile->isActionable());
+      tile->setInflationRatio(2.0f);
+      tile->setInflatedRatio(3.0f);
+      tile->setActionable(false);
+    }
+  }
+}
+
+TEST(TileGridTest, DefaultRudyRebuildHandlesGrowthClearAndShrink)
+{
+  utl::Logger logger;
+  TileGrid grid;
+  grid.setLogger(&logger);
+  const PlaceOptions options;
+  for (const auto count : {odb::Point(2, 3),
+                           odb::Point(40, 30),
+                           odb::Point(0, 0),
+                           odb::Point(1, 2),
+                           odb::Point(3, 1)}) {
+    grid.setLx(-70);
+    grid.setLy(-90);
+    grid.setTileSize(7, 11);
+    grid.setTileCnt(count.x(), count.y());
+    grid.initTiles(options.routabilityUseRudy);
+    ASSERT_EQ(grid.tiles().size(), static_cast<size_t>(count.x()) * count.y());
+    std::unordered_set<const Tile*> references;
+    for (size_t index = 0; index < grid.tiles().size(); ++index) {
+      const int x = static_cast<int>(index % count.x());
+      const int y = static_cast<int>(index / count.x());
+      auto* tile = grid.tiles()[index];
+      ASSERT_NE(tile, nullptr);
+      EXPECT_TRUE(references.insert(tile).second);
+      EXPECT_EQ(tile->x(), x);
+      EXPECT_EQ(tile->y(), y);
+      EXPECT_EQ(tile->lx(), -70 + tile->x() * 7);
+      EXPECT_EQ(tile->ly(), -90 + tile->y() * 11);
+      EXPECT_EQ(tile->ux(), tile->lx() + 7);
+      EXPECT_EQ(tile->uy(), tile->ly() + 11);
+      EXPECT_FLOAT_EQ(tile->inflationRatio(), 1.0f);
+      EXPECT_FLOAT_EQ(tile->inflatedRatio(), 0.0f);
+      EXPECT_TRUE(tile->isActionable());
+      tile->setInflationRatio(2.0f);
+      tile->setInflatedRatio(3.0f);
+      tile->setActionable(false);
+    }
+  }
 }
 
 // Real RUDY, callback-created buffers and the real placement density model.
@@ -58,8 +139,6 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     options_.density = 0.7f;
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
-    options_.timingDrivenCongestionInflation = true;
-    configureOptions();
     const PlacerBaseVars pb_vars(options_);
     pbc_ = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
     const NesterovBaseVars nb_vars(options_);
@@ -84,7 +163,6 @@ class CongestionBuffersTest : public tst::IntegratedFixture
   }
 
   virtual void configureDesign() {}
-  virtual void configureOptions() {}
   virtual bool checkInitialDensity() const { return false; }
   virtual std::vector<odb::dbGroup*> placementGroups() { return {nullptr}; }
 
@@ -695,11 +773,6 @@ class MacroOnlyDensityTest : public CongestionBuffersTest
     groups_[0]->getRegion()->addInst(macro);
   }
 
-  void configureOptions() override
-  {
-    options_.timingDrivenCongestionInflation = false;
-  }
-
   bool checkInitialDensity() const override { return true; }
   virtual int macroWidthExcess() const { return 0; }
   std::vector<odb::dbGroup*> placementGroups() override { return groups_; }
@@ -729,7 +802,6 @@ class MacroOnlyDensityTest : public CongestionBuffersTest
 TEST_F(MacroOnlyDensityTest,
        RetainedCreationInOtherRegionPreservesMacroOnlyDensity)
 {
-  ASSERT_FALSE(options_.timingDrivenCongestionInflation);
   ASSERT_EQ(nb_->getWhiteSpaceArea(), nb_->getPb()->macroInstsArea());
   ASSERT_EQ(nb_->getStdInstArea(), 0);
   ASSERT_EQ(nb_->getTotalFillerArea(), 0);

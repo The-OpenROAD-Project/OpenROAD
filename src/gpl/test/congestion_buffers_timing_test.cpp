@@ -70,7 +70,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     grt_.setMaxRoutingLayer(6);
     grt_.getRudy()->setWireWidth(1000000);
     // Reserve filler area for an ordinary pass followed by a real timing
-    // repair; the experimental policy may not raise density to fund inflation.
+    // repair; inflation may not raise density to fund its added area.
     options_.density = 0.78f;
     options_.timingDrivenMode = true;
     options_.routabilityDrivenMode = true;
@@ -113,13 +113,11 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   void makePlacer(bool routability = true,
                   bool timing = true,
-                  bool inflation = true,
                   const std::vector<odb::dbGroup*>& groups = {nullptr},
                   bool check_density = false)
   {
     options_.routabilityDrivenMode = routability;
     options_.timingDrivenMode = timing;
-    options_.timingDrivenCongestionInflation = inflation;
     pbc_ = std::make_shared<PlacerBaseCommon>(
         db_.get(), PlacerBaseVars(options_), &logger_);
     for (auto* group : groups) {
@@ -326,8 +324,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
       EXPECT_EQ(liveInflationArea(), 0);
     }
     const auto& nb = nb_vec_[0];
-    if (options_.timingDrivenCongestionInflation
-        && options_.routabilityDrivenMode && !routabilityNeeded()) {
+    if (options_.routabilityDrivenMode && !routabilityNeeded()) {
       EXPECT_EQ(nb->getMovableArea(),
                 nb->getNesterovInstsArea() + nb->getTotalFillerArea());
     } else {
@@ -578,8 +575,7 @@ TEST_F(MacroOnlyTimingRepairIntegrationTest,
 {
   ASSERT_NE(macro_master_, nullptr);
   ASSERT_NE(db_network_->dbToSta(macro_master_), nullptr);
-  makePlacer(false, true, false, groups_, true);
-  ASSERT_FALSE(options_.timingDrivenCongestionInflation);
+  makePlacer(false, true, groups_, true);
   const auto& macro_region = nb_vec_[1];
   ASSERT_EQ(macro_region->getWhiteSpaceArea(),
             macro_region->getPb()->macroInstsArea());
@@ -684,10 +680,10 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
       EXPECT_TRUE(std::isfinite(bin.getTargetDensity()));
       EXPECT_EQ(bin.getTargetDensity(), expected);
     }
-    const float opt_in_density
+    const float post_routability_density
         = static_cast<float>(nb->getStdInstArea() + fillers)
           / static_cast<float>(whitespace - macro_area);
-    EXPECT_GT(std::abs(expected - opt_in_density), 1e-6f)
+    EXPECT_GT(std::abs(expected - post_routability_density), 1e-6f)
         << "Mixed macros must distinguish legacy accounting from the new "
            "helper";
     ASSERT_EQ(macro_->getMaster(), macro_master);
@@ -729,18 +725,21 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
 };
 
 TEST_F(MixedMacroTimingRepairIntegrationTest,
-       DefaultOffCompletedRepairKeepsLegacyMacroDensity)
+       CompletedRepairWithZeroBudgetUsesLiveMacroDensity)
 {
-  ASSERT_FALSE(PlaceOptions{}.timingDrivenCongestionInflation);
-  makePlacer(true, true, false);
+  options_.routabilityMaxInflationTotal = 0.0f;
+  makePlacer();
   completeRoutability();
   ASSERT_FALSE(routabilityNeeded());
-  expectLegacyDensityAfterRetainedRepair();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+  checkRetainedInsertions(false);
+  checkDensityAccounting();
   EXPECT_EQ(liveInflationArea(), 0);
 }
 
 TEST_F(MixedMacroTimingRepairIntegrationTest,
-       OptInBeforeFirstRoutabilityPassKeepsLegacyMacroDensity)
+       BeforeFirstRoutabilityPassKeepsLegacyMacroDensity)
 {
   makePlacer();
   ASSERT_TRUE(routabilityNeeded());
@@ -752,7 +751,7 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
 }
 
 TEST_F(MixedMacroTimingRepairIntegrationTest,
-       OptInActiveRoutabilityRepairKeepsLegacyMacroDensity)
+       ActiveRoutabilityRepairKeepsLegacyMacroDensity)
 {
   makePlacer();
   runOrdinaryPass(1000000);
@@ -766,7 +765,7 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
 }
 
 TEST_F(MixedMacroTimingRepairIntegrationTest,
-       OptInWithoutRoutabilityKeepsLegacyMacroDensity)
+       WithoutRoutabilityKeepsLegacyMacroDensity)
 {
   makePlacer(false);
   expectLegacyDensityAfterRetainedRepair();
@@ -802,7 +801,7 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
 }
 
 TEST_F(MixedMacroTimingRepairIntegrationTest,
-       CompletedOptInRepairUsesLiveMacroDensity)
+       CompletedRepairUsesLiveMacroDensity)
 {
   makePlacer();
   completeRoutability();
@@ -878,14 +877,19 @@ TEST_F(TimingRepairIntegrationTest, BeforeFirstRoutabilityPassDefersInflation)
 }
 
 TEST_F(TimingRepairIntegrationTest,
-       DefaultOffKeepsCompletedRoutabilityUnmodified)
+       DefaultCompletedRoutabilityInflatesNewBuffers)
 {
-  ASSERT_FALSE(PlaceOptions{}.timingDrivenCongestionInflation);
-  makePlacer(true, true, false);
+  makePlacer();
   completeRoutability();
   runTiming(0.2f);
+  const auto [inserted, inflated] = retainedInsertionCounts();
+  RecordProperty("retained_new_cells", inserted);
+  RecordProperty("inflated_new_cells", inflated);
+  RecordProperty("ordinary_passes", ordinary_iterations_);
+  RecordProperty("routability_complete", !routabilityNeeded());
   ASSERT_EQ(timing_iterations_, 1);
-  checkRetainedInsertions(false);
+  checkRetainedInsertions(true);
+  checkDensityAccounting();
 }
 
 TEST_F(TimingRepairIntegrationTest,
@@ -904,9 +908,9 @@ TEST_F(TimingRepairIntegrationTest,
 }
 
 TEST_F(TimingRepairIntegrationTest,
-       DefaultOffRetainsOrdinaryBudgetAfterPhysicalResizeAndDeletion)
+       RetainsOrdinaryBudgetAfterPhysicalResizeAndDeletion)
 {
-  makePlacer(true, true, false);
+  makePlacer();
   completeRoutability(true);
   const int64_t historical_charge = rb_->getTotalInflation();
   const int64_t live_before = nb_vec_[0]->getInflationArea();
@@ -953,7 +957,8 @@ TEST_F(TimingRepairIntegrationTest,
   runTiming(0.2f);
   ASSERT_EQ(timing_iterations_, 1);
   EXPECT_EQ(rb_->getTotalInflation(), historical_charge);
-  EXPECT_EQ(inflatedNewBuffer(), nullptr);
+  checkRetainedInsertions(true);
+  checkDensityAccounting();
   int new_cells = 0;
   for (auto* inst : block_->getInsts()) {
     new_cells += !initial_names_.contains(inst->getName());

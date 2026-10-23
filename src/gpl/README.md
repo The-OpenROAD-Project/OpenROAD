@@ -57,12 +57,10 @@ long during routability-driven execution, consider raising the target RC value
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
 
-Use `-timing_driven_congestion_inflation` to inflate new cells in congested
-areas after retained timing repairs, once routability refinement has finished.
-This experimental option is off by default and requires both timing-driven and
-routability-driven placement. It shares the inflation budget and removes fillers
-to pay for added area, without raising density or restarting routability.
-QoR is design-dependent; existing experiments show mixed timing results.
+With timing-driven and routability-driven placement enabled, retained timing
+repairs also inflate new cells in congested areas after routability refinement
+finishes. This shares the inflation budget and removes fillers to pay for added
+area, without raising density or restarting routability.
 
 Initial-placement arguments
 - They begin with `-initial_place`.
@@ -109,7 +107,6 @@ global_placement
     [-timing_driven_net_weight_max timing_driven_net_weight_max]\
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-timing_driven_repair_timing]\
-    [-timing_driven_congestion_inflation]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
@@ -182,7 +179,6 @@ global_placement
 | `-timing_driven_nets_percentage` | Set the reweighted percentage of nets in timing-driven mode. The default value is 10. Allowed values are floats `[0, 100]`. |
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
 | `-timing_driven_repair_timing` | **Experimental.** Enable a conservative `repair_setup` pass during last timing-driven iteration. The intent is to apply minimal buffering and gate sizing so that the placement better correlates with global routing timing. Only the worst setup violators are targeted. Disruptive operations (pin swap, gate cloning, VT swap) are suppressed to avoid topology changes during placement. Not ready for production use. |
-| `-timing_driven_congestion_inflation` | **Experimental, disabled by default.** After ordinary routability refinement finishes, inflate retained new timing-repair cells using refreshed RUDY congestion. Requires both `-timing_driven` and `-routability_driven` to have an effect. Shares `-routability_max_inflation_total` with existing live inflation and consumes available filler cells; does not raise density to fund inflation. Ordinary budget accounting and min-RC restoration are unchanged. No QoR benefit is established. |
 | `-timing_driven_repair_tns_end_percent` | **Experimental.** When `-timing_driven_repair_timing` is enabled, controls the percentage of violating endpoints targeted by the `repair_setup` call. The default value is `1.0` and the allowed values are floats `[0, 100]`. |
 
 ### Placement Configuration

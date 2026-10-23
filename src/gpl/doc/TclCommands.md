@@ -4,7 +4,6 @@
 global_placement
     [-skip_initial_place]
     [-incremental]
-    [-timing_driven_congestion_inflation]
     [-bin_grid_count grid_count]
     [-density density]
     [-init_density_penalty init_density_penalty]
@@ -23,6 +22,11 @@ global_placement
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
 * __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
 
+When timing-driven and routability-driven placement are both enabled, retained
+timing-repair cells in congested areas are inflated after routability refinement
+finishes. This uses the shared inflation allowance and available fillers without
+raising density or restarting routability.
+
 ## Tuning Parameters
 * __bin_grid_count__ : Set bin grid's count manually. Default: Defined by internal algorithm. [64,128,256,512,..., int]
 * __density__ : Set target density. Default: 0.70 [0-1, float]
@@ -32,7 +36,6 @@ global_placement
 * __overflow__ : Set target overflow for termination condition. Default: 0.1 [0-1, float]
 
 ## Other Options
-* __timing_driven_congestion_inflation__ : Experimental, disabled by default. With timing-driven and routability-driven placement, inflate retained new timing-repair cells only after routability refinement finishes. The post-completion helper uses a live allowance under the shared inflation limit and consumes available filler area without raising density. Ordinary budget accounting and min-RC restoration are unchanged. No QoR benefit is established.
 * __verbose_level__ [0-10, int] : Set verbose level for RePlAce. Default: 1
 * __random_seed__ [int] : Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement. Default is 1.
 * __perturb_dist__ [float] : Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller.

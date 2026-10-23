@@ -1215,7 +1215,6 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
       timingDrivenMode(options.timingDrivenMode),
       timingDrivenRepairTiming(options.timingDrivenRepairTiming),
-      timingDrivenCongestionInflation(options.timingDrivenCongestionInflation),
       timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
