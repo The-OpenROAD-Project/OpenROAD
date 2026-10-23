@@ -49,7 +49,7 @@ struct PointIndexableGetter
 class IRNetwork
 {
  public:
-  using Nodes = std::set<Node*>;
+  using Nodes = std::vector<Node*>;
   template <typename T>
   using NodePtrMap = std::map<Node*, std::vector<T*>>;
 
