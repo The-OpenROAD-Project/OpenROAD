@@ -92,23 +92,6 @@ void LatencyBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
-std::pair<double, double> LatencyBalancer::getMinMaxBufferDelay()
-{
-  if (buffersDelay_.empty()) {
-    return {0.0, 0.0};
-  }
-  std::pair<double, double> min_max_buffer_delay;
-  min_max_buffer_delay.first = std::numeric_limits<double>::max();
-  min_max_buffer_delay.second = -std::numeric_limits<double>::max();
-  for (const auto& buffer_delay : buffersDelay_) {
-    min_max_buffer_delay.first
-        = std::min(min_max_buffer_delay.first, buffer_delay / dpUnit_);
-    min_max_buffer_delay.second
-        = std::max(min_max_buffer_delay.second, buffer_delay / dpUnit_);
-  }
-  return min_max_buffer_delay;
-}
-
 void LatencyBalancer::computeBuffersDelay(double extra_out_cap)
 {
   debugPrint(logger_, CTS, "insertion delay", 3, "Buffer list = [");
