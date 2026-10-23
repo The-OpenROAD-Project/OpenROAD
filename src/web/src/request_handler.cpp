@@ -4209,6 +4209,87 @@ WebSocketResponse SelectHandler::handleSchematicFull(
   return resp;
 }
 
+namespace {
+
+// Keep footprints and net membership separate: dbChipNet does not describe
+// routed wire geometry. Resolve the live traversal, not the load-time unfolded
+// bump model, which is stale after interactive chip placement edits.
+void append3DInterconnects(const std::vector<ChipletNode>& nodes,
+                           const std::map<std::string, size_t>& chiplet_indices,
+                           boost::json::object& root)
+{
+  boost::json::array bumps;
+  std::map<std::pair<std::string, uint32_t>, size_t> bump_indices;
+  for (const ChipletNode& node : nodes) {
+    const auto chiplet = chiplet_indices.find(node.path);
+    if (node.inst == nullptr || chiplet == chiplet_indices.end()) {
+      continue;
+    }
+    for (odb::dbChipRegionInst* region_inst : node.inst->getRegions()) {
+      odb::dbChipRegion* region = region_inst->getChipRegion();
+      odb::Cuboid surface = region->getCuboid();
+      node.world_xfm.apply(surface);
+      const auto side = region->getSide();
+      int z = surface.zCenter();
+      if (side == odb::dbChipRegion::Side::FRONT) {
+        z = node.isFlipped() ? surface.zMin() : surface.zMax();
+      } else if (side == odb::dbChipRegion::Side::BACK) {
+        z = node.isFlipped() ? surface.zMax() : surface.zMin();
+      }
+      for (odb::dbChipBumpInst* bump_inst : region_inst->getChipBumpInsts()) {
+        odb::dbInst* inst = bump_inst->getChipBump()->getInst();
+        if (inst == nullptr || !inst->isPlaced()) {
+          continue;
+        }
+        odb::Rect footprint = inst->getBBox()->getBox();
+        node.world_xfm.apply(footprint);
+        bump_indices[{node.path, bump_inst->getId()}] = bumps.size();
+        bumps.emplace_back(boost::json::array{chiplet->second,
+                                              footprint.xMin(),
+                                              footprint.yMin(),
+                                              footprint.xMax(),
+                                              footprint.yMax(),
+                                              z});
+      }
+    }
+  }
+
+  boost::json::array nets;
+  // A grouping chip can itself be instantiated more than once. Prefix every
+  // relative bump path with this occurrence, so repeated masters never alias.
+  for (const ChipletNode& node : nodes) {
+    for (odb::dbChipNet* net : node.chip->getChipNets()) {
+      boost::json::array endpoints;
+      std::set<size_t> seen;
+      for (uint32_t i = 0; i < net->getNumBumpInsts(); ++i) {
+        std::vector<odb::dbChipInst*> path;
+        odb::dbChipBumpInst* bump = net->getBumpInst(i, path);
+        if (bump == nullptr) {
+          continue;
+        }
+        std::string chiplet_path = node.path;
+        for (odb::dbChipInst* inst : path) {
+          chiplet_path += odb::kChipletPathDelimiter;
+          chiplet_path += inst->getName();
+        }
+        const auto found = bump_indices.find({chiplet_path, bump->getId()});
+        if (found != bump_indices.end() && seen.insert(found->second).second) {
+          endpoints.emplace_back(found->second);
+        }
+      }
+      if (endpoints.size() > 1) {
+        nets.emplace_back(boost::json::object{
+            {"name", node.path + odb::kChipletPathDelimiter + net->getName()},
+            {"bumps", std::move(endpoints)}});
+      }
+    }
+  }
+  root["bumps"] = std::move(bumps);
+  root["nets"] = std::move(nets);
+}
+
+}  // namespace
+
 WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -4228,6 +4309,8 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
 
     boost::json::object root;
     boost::json::array chiplets;
+    std::map<std::string, size_t> chiplet_indices;
+    const auto& nodes = gen_->chiplets();
 
     // One box per leaf chiplet, placed by the same traversal the 2D viewer
     // uses.  chiplets() carries each node's composed world transform (from
@@ -4237,7 +4320,7 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     constexpr int kDefaultChipHeight = 100000;
     constexpr int kDefaultChipThickness = 10000;
 
-    for (const ChipletNode& node : gen_->chiplets()) {
+    for (const ChipletNode& node : nodes) {
       // Leaves only: a chip that holds chip insts is a grouping node with no
       // geometry of its own, and the root has no dbChipInst at all.
       if (node.inst == nullptr || node.chip == nullptr
@@ -4278,8 +4361,10 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
       obj["width"] = extent.dx();
       obj["height"] = extent.dy();
       obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
+      chiplet_indices[node.path] = chiplets.size();
       chiplets.emplace_back(std::move(obj));
     }
+    append3DInterconnects(nodes, chiplet_indices, root);
     root["chiplets"] = std::move(chiplets);
     writePayload(resp, root);
   } catch (const std::exception& e) {

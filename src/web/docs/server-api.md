@@ -27,6 +27,33 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
+## 3D Interconnect Data
+
+`get_3d_data` returns `chiplets`, `bumps`, and `nets` arrays. Coordinates are
+in the database's DBU, in the root chip's coordinate system. Chiplet entries
+contain `name` (the hierarchical occurrence path), `x`, `y`, `z`, `width`,
+`height`, and `thickness`.
+
+Each `bumps` entry is the compact array
+`[chiplet_index, xmin, ymin, xmax, ymax, surface_z]`. The index references
+`chiplets`. The XY footprint is the placed bump instance's bounding box,
+transformed through the complete chip-instance hierarchy. Z is the owning
+region's surface, including face-down orientation. Unplaced bumps are omitted.
+Footprints do not imply a bump height or an exact pin polygon.
+
+Each `nets` entry contains `name` (a hierarchical net occurrence path) and
+`bumps` (distinct indices into the response's `bumps` array). Nets with fewer
+than two displayed terminals are omitted. These are logical `dbChipNet`
+memberships, not routed wire segments. The frontend draws first-terminal
+flight lines to the remaining terminals, with no physical routing claim.
+Repeated chip masters retain separate occurrence indices and connectivity.
+
+The viewer offers independent Bumps, Net links, and Chip bodies controls.
+Bump footprints and link endpoints follow the same visual stacking offsets
+as their owning chips; True Z removes those offsets. No TSV shapes are
+inferred from the chip-level TSV flag: ODB does not expose dedicated TSV
+geometry here. Designs without chip data instead return an `info` message.
+
 ## Wire frame format
 
 Every WebSocket message — both client→server and server→client — is a

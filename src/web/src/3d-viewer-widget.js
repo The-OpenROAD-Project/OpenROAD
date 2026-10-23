@@ -4,6 +4,7 @@
 import {getThemeColors, setCookie} from './theme.js';
 import {downloadUrl, copyPngToClipboard} from './image-export.js';
 import {isStaticMode} from './ui-utils.js';
+import {createInterconnectMeshes} from './interconnect3d.js';
 
 // window.THREE, set before main.js loads; a saved report has none.
 const THREE = globalThis.THREE;
@@ -15,7 +16,7 @@ const kZoomInFactor = 0.9;
 const kZoomOutFactor = 1.1;
 const kMinDistanceFraction = 0.1;
 const kMaxDistanceFraction = 20.0;
-const kInitialDistanceFactor = 3.0;
+const kFitPadding = 1.1;
 const kZScale = 2.0;
 const kNearFarFactor = 2.0;
 const kMinZNear = 10.0;
@@ -108,6 +109,9 @@ export class ThreeDViewerWidget {
     this._tooltip.className = 'or-tooltip';
     this._canvasContainer.appendChild(this._tooltip);
 
+    this._showBumps = true;
+    this._showLinks = true;
+    this._showChipBodies = true;
     this._optionsOverlay = this._createOptionsOverlay();
     this._canvasContainer.appendChild(this._optionsOverlay);
 
@@ -124,7 +128,9 @@ export class ThreeDViewerWidget {
     this._themeObserver.observe(document.documentElement,
                                 {attributes : true, attributeFilter : [ 'data-theme' ]});
 
-    this._camera = new THREE.PerspectiveCamera(45, 1, 10, 100000);
+    const aspect = container.width > 0 && container.height > 0
+        ? container.width / container.height : 1;
+    this._camera = new THREE.PerspectiveCamera(45, aspect, 10, 100000);
     this._camera.position.set(0, 0, 1000);
 
     try {
@@ -313,6 +319,25 @@ export class ThreeDViewerWidget {
     trueZLabel.appendChild(trueZCb);
     trueZLabel.appendChild(document.createTextNode('True Z (no stacking)'));
     overlay.appendChild(trueZLabel);
+    for (const [key, text, title] of [
+      ['_showBumps', 'Bumps', 'Physical bump footprints at region surfaces'],
+      ['_showLinks', 'Net links', 'Logical connectivity, not routed wires'],
+      ['_showChipBodies', 'Chip bodies', 'Show solid die bodies'],
+    ]) {
+      const label = document.createElement('label');
+      label.title = title;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = this[key];
+      checkbox.addEventListener('change', () => {
+        this[key] = checkbox.checked;
+        this._updateInterconnectVisibility();
+        this.render();
+      });
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(text));
+      overlay.appendChild(label);
+    }
 
     // PNG export (2x) + copy-to-clipboard of the current 3D view.
     const btnRow = document.createElement('div');
@@ -379,7 +404,8 @@ export class ThreeDViewerWidget {
     }
 
     this._setRaycasterFromEvent(event);
-    const meshes = this._chipletMeshes.map((m) => m.mesh);
+    const meshes = this._chipletMeshes.map((m) => m.mesh)
+                       .filter(mesh => mesh.visible);
     const hits = this._raycaster.intersectObjects(meshes, false);
     if (hits.length === 0) {
       this._hideTooltip();
@@ -521,6 +547,7 @@ export class ThreeDViewerWidget {
       while (this._designGroup.children.length > 0) {
         const child = this._designGroup.children[0];
         this._designGroup.remove(child);
+        if (child.isInstancedMesh) child.dispose();
         if (child.geometry)
           child.geometry.dispose();
         if (child.material && !child.material._shared)
@@ -551,11 +578,34 @@ export class ThreeDViewerWidget {
     }
   }
 
+  _fitCameraDistance() {
+    const b = this._sceneBounds;
+    const tanVertical = Math.tan(this._camera.fov * DEG2RAD / 2) /
+                        this._camera.zoom;
+    const tanHorizontal = tanVertical * this._camera.aspect;
+    const corner = new THREE.Vector3();
+    let distance = 0;
+    // In camera-aligned coordinates a corner is at depth distance - z.
+    // Solve both perspective inequalities for every corner, including the
+    // near-plane clearance, instead of approximating the stack as a sphere.
+    for (const x of [b.minX, b.maxX]) {
+      for (const y of [b.minY, b.maxY]) {
+        for (const z of [b.minZ, b.maxZ]) {
+          corner.set(x, y, z).sub(this._sceneCenter)
+                .applyQuaternion(this._rotation);
+          distance = Math.max(distance, corner.z + Math.max(
+              Math.abs(corner.x) * kFitPadding / tanHorizontal,
+              Math.abs(corner.y) * kFitPadding / tanVertical,
+              kMinZNear * kFitPadding));
+        }
+      }
+    }
+    return distance;
+  }
+
   // Set distance, rotation (pitch -45°, yaw +45°) and pan to defaults.
   // Caller is responsible for calling _updateCamera() afterward.
   _setInitialCameraState() {
-    this._distance = this._boundingRadius * kInitialDistanceFactor;
-
     const pitch = new THREE.Quaternion().setFromAxisAngle(
         new THREE.Vector3(1, 0, 0), -45 * DEG2RAD);
     const yaw = new THREE.Quaternion().setFromAxisAngle(
@@ -564,6 +614,7 @@ export class ThreeDViewerWidget {
 
     this._panX = 0;
     this._panY = 0;
+    this._distance = this._fitCameraDistance();
   }
 
   resetCamera() {
@@ -584,10 +635,18 @@ export class ThreeDViewerWidget {
     if (width === 0 || height === 0)
       return;
 
+    const previousFit = this._sceneBounds ? this._fitCameraDistance() : null;
     this._camera.aspect = width / height;
     this._camera.updateProjectionMatrix();
     this._renderer.setSize(width, height);
-    this.render();
+    if (previousFit !== null) {
+      // Preserve the user's zoom relative to a fitted view, plus their
+      // rotation and pan. A fitted landscape view stays fitted in portrait.
+      this._distance *= this._fitCameraDistance() / previousFit;
+      this._updateCamera();
+    } else {
+      this.render();
+    }
   }
 
   render() {
@@ -700,6 +759,8 @@ export class ThreeDViewerWidget {
 
     const dbu = this._app.getDbuPerMicron();
     const bounds = this._buildChiplets(data.chiplets, dbu);
+    this._buildInterconnects(data, dbu);
+    this._updateInterconnectVisibility();
     if (bounds.minX === Infinity)
       return;
 
@@ -711,9 +772,11 @@ export class ThreeDViewerWidget {
 
   _clearScene() {
     this._chipletMeshes = [];
+    this._interconnectMeshes = null;
     while (this._designGroup.children.length > 0) {
       const child = this._designGroup.children[0];
       this._designGroup.remove(child);
+      if (child.isInstancedMesh) child.dispose();
       if (child.geometry)
         child.geometry.dispose();
       if (child.material && !child.material._shared)
@@ -745,6 +808,7 @@ export class ThreeDViewerWidget {
         ? new Array(chiplets.length).fill(0)
         : computeZOffsetSlots(chiplets);
 
+    this._chipletStackOffsets = [];
     chiplets.forEach((chiplet, idx) => {
       const width = chiplet.width / dbu;
       const height = chiplet.height / dbu;
@@ -767,6 +831,7 @@ export class ThreeDViewerWidget {
       const stackGap = depth * kStackGapFactor;
       const cz = ((chiplet.z / dbu) * kZScale) + depth / 2 +
                  zOffsets[idx] * (depth + stackGap);
+      this._chipletStackOffsets[idx] = zOffsets[idx] * (depth + stackGap);
 
       mesh.position.set(cx, cy, cz);
       this._designGroup.add(mesh);
@@ -786,6 +851,23 @@ export class ThreeDViewerWidget {
     });
 
     return bounds;
+  }
+
+  _buildInterconnects(data, dbu) {
+    this._interconnectMeshes = createInterconnectMeshes(
+        data, this._chipletStackOffsets, dbu, kZScale, THREE);
+    for (const mesh of Object.values(this._interconnectMeshes)) {
+      if (mesh) this._designGroup.add(mesh);
+    }
+  }
+
+  _updateInterconnectVisibility() {
+    const {bumps, links} = this._interconnectMeshes || {};
+    if (bumps) bumps.visible = this._showBumps;
+    if (links) links.visible = this._showLinks;
+    for (const {mesh} of this._chipletMeshes || []) {
+      mesh.visible = this._showChipBodies;
+    }
   }
 
   _buildGrid(bounds) {
