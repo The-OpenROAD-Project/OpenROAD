@@ -143,6 +143,9 @@ class dbJournal
   void undo_connectObject();
   void undo_disconnectObject();
   void undo_swapObject();
+  // Pops the preferred access points recorded by dbInst::swapMaster.  When
+  // restore is true they are put back on the instance's iterms.
+  void popSwapAccessPoints(dbInst* inst, bool restore);
   void undo_updateField();
   void undo_updateNetField();
   void undo_updateModNetField();

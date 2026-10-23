@@ -549,7 +549,8 @@ class GlobalRouter
   void checkPinPlacement();
 
   // incremental funcions
-  std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
+  std::vector<Net*> updateDirtyRoutes(bool save_guides = false,
+                                      bool update_pin_access = true);
   std::vector<Net*> updateDirtyRoutesCugr(bool save_guides);
   std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
@@ -731,6 +732,9 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets. Returns every net it rerouted.
+  // Pin access is not updated here because the changed instances are
+  // not legalized yet; pins without access points route from the center
+  // of their shapes until endIncremental updates pin access.
   std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();

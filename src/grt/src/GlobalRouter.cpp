@@ -7258,7 +7258,8 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
 
 std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides)
 {
-  const std::vector<Net*> nets = groute_->updateDirtyRoutes(save_guides);
+  const std::vector<Net*> nets
+      = groute_->updateDirtyRoutes(save_guides, /*update_pin_access=*/false);
   std::vector<odb::dbNet*> rerouted;
   rerouted.reserve(nets.size());
   for (Net* net : nets) {
@@ -7295,10 +7296,14 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
+std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides,
+                                                  bool update_pin_access)
 {
-  if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
-    pa->updateDirtyPinAccess();
+  if (update_pin_access) {
+    if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
+      // New access points mark their nets dirty, so they are rerouted below.
+      pa->updateDirtyPinAccess();
+    }
   }
 
   std::vector<Net*> rerouted = use_cugr_
