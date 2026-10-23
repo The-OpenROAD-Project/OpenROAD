@@ -15,6 +15,8 @@ namespace fsv {
 
 class CubeGreens;
 class LayeredCubeGreens;
+class LayeredSquareGreens;
+class SquareGreens;
 class WorkerPool;
 
 // Settings fixed for the life of a Solver. Results depend only on these, the
@@ -58,8 +60,9 @@ struct SolveOptions
   int64_t hop_guard = 1000000;
 };
 
-// One row of the Maxwell capacitance matrix, in fF. cap[master] is the total
-// capacitance; cap[j] for j != master is minus the coupling to net j.
+// One row of the Maxwell capacitance matrix, in fF (fF/µm for a Scene2D).
+// cap[master] is the total capacitance; cap[j] for j != master is minus the
+// coupling to net j.
 struct CapRow
 {
   int master = -1;
@@ -75,9 +78,9 @@ struct CapRow
 };
 
 // Reusable solver: holds the Green's-function tables (shared process-wide by
-// panel count) and a persistent worker pool. Create one per run and call
-// solve() for any number of scenes and masters. Calls to solve() on the same
-// Solver are serialized.
+// panel count, built on first use) and a persistent worker pool. Create one per
+// run and call solve() for any number of scenes and masters. Calls to solve()
+// on the same Solver are serialized.
 class Solver
 {
  public:
@@ -89,20 +92,24 @@ class Solver
   CapRow solve(const Scene& scene,
                int master,
                const SolveOptions& options = {});
+  // A cross section: the row is per unit length, in fF/µm.
+  CapRow solve(const Scene2D& scene,
+               int master,
+               const SolveOptions& options = {});
 
  private:
-  // Two-dielectric tables for one permittivity ratio, by interface position.
-  const std::vector<std::shared_ptr<const LayeredCubeGreens>>& layeredTables(
-      double ratio);
-
   SolverOptions options_;
+  // Built by the first solve that needs them.
   std::shared_ptr<const CubeGreens> greens_;
+  std::shared_ptr<const SquareGreens> square_greens_;
   // Held so that the tables are reused across solves.
   std::map<double, std::vector<std::shared_ptr<const LayeredCubeGreens>>>
       layered_;
+  std::map<double, std::vector<std::shared_ptr<const LayeredSquareGreens>>>
+      layered_squares_;
   std::unique_ptr<WorkerPool> pool_;
   std::mutex solve_mutex_;
-  // Guards layered_ while walks build tables.
+  // Guards layered_ and layered_squares_ while walks build tables.
   std::mutex tables_mutex_;
 };
 

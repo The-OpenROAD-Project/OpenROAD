@@ -1,9 +1,9 @@
 # Cross section of three wires closer than twice their conformal
 # dielectric's side thickness, so the shells merge between them. Wires run
-# along x; their x extents are ignored.
+# along y; their y extents are ignored.
 background 3.9
 layer 1.0 4.2
-box a 0 0 0.5 1 0.14 0.86
-box b 0 0.24 0.5 1 0.38 0.86
-box c 0 0.48 0.5 1 0.62 0.86
+box a 0 0 0.5 0.14 1 0.86
+box b 0.24 0 0.5 0.38 1 0.86
+box c 0.48 0 0.5 0.62 1 0.86
 conformal M 0.5 0.86 0.06 0.03 3.0

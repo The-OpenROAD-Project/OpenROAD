@@ -18,10 +18,11 @@ namespace fsv {
 // the union of its boxes: a point takes the conformal of the smallest depth
 // whose outer box, of any box in the group, contains it. For a single box
 // that is the region inside `outer` and outside `inner`.
+template <int D>
 struct Shell
 {
-  Box outer;
-  Box inner;
+  AlignedBox<D> outer;
+  AlignedBox<D> inner;
   double eps;
   // Identifies the conformal dielectric. Shells of the same one may overlap
   // (they merge); outside a group, shells of different ones may not.
@@ -31,24 +32,27 @@ struct Shell
   int depth;  // 1 for the innermost conformal of its box
 };
 
-// The permittivity of a scene outside its conductors: planar layers, and
-// conformal shells, which replace the planar layers they cross.
+// The permittivity of a scene outside its conductors: planar layers, normal
+// to the last axis (z), and conformal shells, which replace the planar
+// layers they cross. Instantiated for D = 3 and for cross sections, D = 2.
 //
 // Interfaces are the faces of the shells' outer boxes and the planar
 // interfaces. A face or plane hidden inside a higher-precedence region, such
 // as a planar interface inside a shell, still counts; that only makes cubes
 // smaller, never wrong.
+template <int D>
 class Dielectric
 {
  public:
-  // The largest cube at a point, of at most a given half-size, in which the
-  // permittivity is uniform or changes across one axis-aligned plane.
+  // The largest cube (square, in 2D) at a point, of at most a given
+  // half-size, in which the permittivity is uniform or changes across one
+  // axis-aligned plane.
   struct Cube
   {
     double half_size;
     // The plane, when the permittivity changes across it inside the cube.
     bool split = false;
-    Axis axis = Axis::kZ;
+    int axis = D - 1;       // the plane's normal, a component index
     double coordinate = 0;  // of the plane along `axis`
     double distance = 0;    // from the point to the plane
     double eps_minus = 0;   // below the plane along `axis`
@@ -63,17 +67,17 @@ class Dielectric
   // when there are none. The interfaces are in increasing z.
   Dielectric(double base_eps,
              std::vector<Stack::PlanarInterface> planar,
-             std::vector<Shell> shells);
+             std::vector<Shell<D>> shells);
 
   // Relative permittivity at a point outside the conductors.
-  double eps(const Vec3& p) const;
+  double eps(const Vec<D>& p) const;
   // Relative permittivity of the planar layers at height z; on an
   // interface, the one above.
   double planarEps(double z) const;
   // Below min_half_size the cube is floored: walks that drift into an edge
   // would otherwise take ever smaller cubes, and stall once rounding puts
   // them on it.
-  Cube cube(const Vec3& p,
+  Cube cube(const Vec<D>& p,
             double max_half_size,
             double min_half_size = 0) const;
 
@@ -82,26 +86,26 @@ class Dielectric
   // there are none) outside the shells.
   double baseEps() const { return base_eps_; }
   const std::vector<Stack::PlanarInterface>& planar() const { return planar_; }
-  const std::vector<Shell>& shells() const { return shells_; }
+  const std::vector<Shell<D>>& shells() const { return shells_; }
 
  private:
   // A piece of an interface plane near a point, with the L-infinity
   // distance from the point to it.
   struct Piece
   {
-    Axis axis;
+    int axis;
     double coordinate;
     double distance;
   };
 
-  const Shell* shellAt(const Vec3& p) const;
+  const Shell<D>* shellAt(const Vec<D>& p) const;
   // Calls visit(Piece) for each interface piece closer than max_half_size.
   template <typename Visit>
-  void forEachPiece(const Vec3& p, double max_half_size, Visit visit) const;
+  void forEachPiece(const Vec<D>& p, double max_half_size, Visit visit) const;
 
   double base_eps_;
   std::vector<Stack::PlanarInterface> planar_;
-  std::vector<Shell> shells_;
+  std::vector<Shell<D>> shells_;
 };
 
 }  // namespace fsv

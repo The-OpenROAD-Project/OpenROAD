@@ -58,6 +58,7 @@ fsv::FieldSolver* getFieldSolver()
   put(dict, "walks", Tcl_NewWideIntObj(row.walks));
   put(dict, "hops", Tcl_NewWideIntObj(row.hops));
   put(dict, "seconds", Tcl_NewDoubleObj($1.seconds));
+  put(dict, "cross_section", Tcl_NewBooleanObj($1.cross_section));
   Tcl_SetObjResult(interp, dict);
 }
 
@@ -94,6 +95,19 @@ void add_layer_rect_cmd(const char* net,
                         double y1)
 {
   getFieldSolver()->addLayerRect(net, layer, {x0, y0, x1, y1});
+}
+
+void add_rect_cmd(const char* net, double x0, double z0, double x1, double z1)
+{
+  getFieldSolver()->addRect(net, {{x0, z0}, {x1, z1}});
+}
+
+void add_layer_span_cmd(const char* net,
+                        const char* layer,
+                        double x0,
+                        double x1)
+{
+  getFieldSolver()->addLayerSpan(net, layer, x0, x1);
 }
 
 void clear_cmd()

@@ -30,10 +30,7 @@ proc add_field_solver_box { args } {
   sta::parse_key_args "add_field_solver_box" args \
     keys {-net -box -layer -rect} flags {}
   sta::check_argc_eq0 "add_field_solver_box" $args
-  if { ![info exists keys(-net)] } {
-    utl::error FSV 20 "-net is required."
-  }
-  set net $keys(-net)
+  set net [fsv::required_key -net [array get keys]]
   if { [info exists keys(-box)] } {
     if { [info exists keys(-layer)] || [info exists keys(-rect)] } {
       utl::error FSV 21 "-box cannot be combined with -layer or -rect."
@@ -45,6 +42,30 @@ proc add_field_solver_box { args } {
     fsv::add_layer_rect_cmd $net $keys(-layer) {*}$rect
   } else {
     utl::error FSV 22 "Give -box, or -layer with -rect."
+  }
+}
+
+sta::define_cmd_args "add_field_solver_rect" {-net net\
+                                               [-rect rect]\
+                                               [-layer layer]\
+                                               [-x span]}
+
+proc add_field_solver_rect { args } {
+  sta::parse_key_args "add_field_solver_rect" args \
+    keys {-net -rect -layer -x} flags {}
+  sta::check_argc_eq0 "add_field_solver_rect" $args
+  set net [fsv::required_key -net [array get keys]]
+  if { [info exists keys(-rect)] } {
+    if { [info exists keys(-layer)] || [info exists keys(-x)] } {
+      utl::error FSV 16 "-rect cannot be combined with -layer or -x."
+    }
+    set rect [fsv::check_numbers "-rect" $keys(-rect) 4]
+    fsv::add_rect_cmd $net {*}$rect
+  } elseif { [info exists keys(-layer)] && [info exists keys(-x)] } {
+    set span [fsv::check_numbers "-x" $keys(-x) 2]
+    fsv::add_layer_span_cmd $net $keys(-layer) {*}$span
+  } else {
+    utl::error FSV 17 "Give -rect, or -layer with -x."
   }
 }
 
@@ -96,7 +117,7 @@ proc solve_capacitance { args } {
     set nets [fsv::net_names_cmd]
   }
   if { [llength $nets] == 0 } {
-    utl::error FSV 23 "No nets to solve; add boxes with add_field_solver_box."
+    utl::error FSV 23 "No nets to solve; add boxes or rectangles first."
   }
 
   set result [dict create]
@@ -107,6 +128,15 @@ proc solve_capacitance { args } {
 }
 
 namespace eval fsv {
+# The value of a required key, from a parse_key_args array.
+proc required_key { key keys_list } {
+  array set keys $keys_list
+  if { ![info exists keys($key)] } {
+    utl::error FSV 20 "$key is required."
+  }
+  return $keys($key)
+}
+
 proc check_tolerance { key value } {
   if { !([string is double -strict $value] && $value > 0) } {
     utl::error FSV 25 "$key must be a number greater than 0."

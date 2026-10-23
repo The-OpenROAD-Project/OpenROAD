@@ -30,9 +30,14 @@ It provides:
   A control variate exploits the zero-mean weights.
 - Deterministic results for any thread count, using a counter-based Philox
   RNG and fixed batches reduced in order.
+- Cross sections (`Geometry2D` rectangles in the x-z plane, solved through
+  `Scene2D`; `add_field_solver_rect`): a 2D walk on squares, with
+  the square counterparts of the cube tables (`SquareGreens`,
+  `LayeredSquareGreens`), giving capacitance per unit length. Wires run
+  along y, infinitely long.
 - Tcl commands that read a stack, define conductors and solve.
 
-Later phases add a 2D mode, odb input, and Python commands.
+Later phases add odb input and Python commands.
 
 ## Conformal dielectrics
 
@@ -121,10 +126,41 @@ add_field_solver_box
 | `-layer` | Conductor or via layer name of the ITF stack. The type is `string`. Requires `-rect` and a stack from `read_itf`. |
 | `-rect` | Corners of the box in the x-y plane in µm. The type is a list of 4 `float`s. Requires `-layer`. |
 
+### Add Field Solver Rect
+
+The `add_field_solver_rect` command adds a conductor rectangle of a cross
+section to a net, creating the net on first use. A cross section lies in
+the x-z plane; its wires run along y, infinitely long, and its results are
+per unit length, in fF/µm. Conformal dielectrics grow on the x sides and on
+top. Rectangles of different nets must not overlap. Give the rectangle
+either by its corners, or by a layer of the ITF stack and an x span, in
+which case the layer gives the z extent.
+
+The field solver holds either boxes or rectangles: the first shape added
+after `clear_field_solver` decides which, and adding the other kind is an
+error.
+
+```tcl
+add_field_solver_rect
+    -net net
+    [-rect {x0 z0 x1 z1}]
+    [-layer layer]
+    [-x {x0 x1}]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | Net name. The type is `string`. Required. |
+| `-rect` | Corners of the rectangle in the x-z plane in µm, above the ground plane at z = 0. The type is a list of 4 `float`s. Excludes `-layer` and `-x`. |
+| `-layer` | Conductor or via layer name of the ITF stack. The type is `string`. Requires `-x` and a stack from `read_itf`. |
+| `-x` | The rectangle's x span in µm. The type is a list of 2 `float`s. Requires `-layer`. |
+
 ### Clear Field Solver
 
-The `clear_field_solver` command removes every net and box. The dielectric
-is kept.
+The `clear_field_solver` command removes every net, box and rectangle. The
+dielectric is kept.
 
 ```tcl
 clear_field_solver
@@ -142,6 +178,8 @@ Each value is a dict with these keys:
   capacitance and standard error. Couplings are positive.
 - `walks`, `hops`: the walks taken and their total hops.
 - `seconds`: the solve's wall-clock time.
+- `cross_section`: 1 when the row is per unit length, for rectangles from
+  `add_field_solver_rect`.
 
 The solve stops when the standard error of the total, and of each coupling
 of at least `-coupling_threshold` of the total, falls below its tolerance.
@@ -186,7 +224,17 @@ set result [solve_capacitance -nets a -tol_total 0.005]
 puts [dict get $result a couplings b]
 ```
 
-See also `./test/field_solver_uniform.tcl` and `./test/field_solver_itf.tcl`.
+The same met1 pair as a cross section, per unit length:
+
+```text
+clear_field_solver
+add_field_solver_rect -net a -layer met1 -x {0 0.14}
+add_field_solver_rect -net b -layer met1 -x {0.28 0.42}
+set result [solve_capacitance -nets a -tol_total 0.005]
+```
+
+See also `./test/field_solver_uniform.tcl`, `./test/field_solver_itf.tcl`
+and `./test/field_solver_cross_section.tcl`.
 
 ## C++ API
 

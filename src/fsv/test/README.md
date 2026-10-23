@@ -8,10 +8,10 @@ bazelisk test //src/fsv/test/...
 
 | Kind | Tests | What they check |
 | ----- | ----- | ----- |
-| Unit | `TestCubeGreens`, `TestLayeredCubeGreens`, `TestDielectric`, `TestSpatialIndex`, `TestItf` | The Green's-function tables, the cube query, the nearest-conductor index and the ITF reader, against exact results. |
+| Unit | `TestCubeGreens`, `TestLayeredCubeGreens`, `TestSquareGreens`, `TestDielectric`, `TestSpatialIndex`, `TestItf` | The Green's-function tables, the cube query, the nearest-conductor index and the ITF reader, against exact results. |
 | Solver | `TestSolver` | Analytic and self-consistency checks: a cube over ground, reciprocity, permittivity scaling, identical results for any thread count, panel convergence, and conformal invariants. |
 | Golden | `TestGolden` | fsv against reference solutions computed by other solvers; see below. |
-| Tcl | `field_solver_*` | The Tcl commands; each compares its log with the `.ok` file of the same name. |
+| Tcl | `field_solver_*` | The Tcl commands, including a cross section against its 2D reference; each compares its log with the `.ok` file of the same name. |
 | Docs | `fsv_man_tcl_check`, `fsv_readme_msgs_check` | The module README against the command definitions and messages. |
 
 ## Golden tests
@@ -37,7 +37,8 @@ Each comparison has three parts in `golden/`:
 
 | Test | Structures | Reference file | Generator | Comparison |
 | ----- | ----- | ----- | ----- | ----- |
-| `CrossSection.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `nested_conformal`, `merged_conformal`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py`: 2D finite volumes, extrapolated in grid spacing (numpy, scipy) | Per unit length. The structures are cross sections; the test extrudes them to wires 10 and 30 µm long, solves both in 3D, and compares (C(30) − C(10)) / 20, which cancels the end effects. Totals within 0.3%, couplings of at least 5% of the total within 0.5%, each plus 3σ. |
+| `TwoD.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `nested_conformal`, `merged_conformal`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py`: 2D finite volumes, extrapolated in grid spacing (numpy, scipy) | Per unit length, in fsv's 2D mode (cross-section scenes). Totals within 0.3%, couplings of at least 5% of the total within 0.5%, each plus 3σ. |
+| `LongLine.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py` | The 3D solver per unit length: the test extrudes the cross sections to wires 10 and 30 µm long, solves both in 3D, and compares (C(30) − C(10)) / 20, which cancels the end effects. The same tolerances. |
 | `ThreeD.MatchesFiniteVolume` | `crossing`, `conformal_line_ends`, `conformal_crossing` | `box_3d.txt` (fF) | `fv3d_golden.py`: 3D finite volumes, extrapolated in grid spacing (numpy, scipy, pyamg) | The 3D structure as given: crossings and line ends, which cross sections cannot show. Totals within 0.5%, couplings of at least 5% within 1%, each plus 3σ. |
 
 ### Adding or changing a structure

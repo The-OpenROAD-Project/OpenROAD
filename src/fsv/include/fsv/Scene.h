@@ -11,7 +11,9 @@
 
 namespace fsv {
 
+template <int D>
 class Dielectric;
+template <int D>
 class SpatialIndex;
 
 // A geometry prepared for solving: its nearest-conductor index and the
@@ -39,16 +41,48 @@ class Scene
   double epsAt(double z) const;
   // Planar interfaces in increasing z; empty for a uniform dielectric.
   const std::vector<Stack::PlanarInterface>& interfaces() const;
-  const Dielectric& dielectric() const { return *dielectric_; }
+  const Dielectric<3>& dielectric() const { return *dielectric_; }
   // Smallest box dimension, which scales the capture distance.
   double minDimension() const { return min_dimension_; }
-  const SpatialIndex& index() const { return *index_; }
+  const SpatialIndex<3>& index() const { return *index_; }
 
  private:
   const Geometry& geometry_;
-  std::unique_ptr<Dielectric> dielectric_;
+  std::unique_ptr<Dielectric<3>> dielectric_;
   double min_dimension_;
-  std::unique_ptr<SpatialIndex> index_;
+  std::unique_ptr<SpatialIndex<3>> index_;
+};
+
+// A cross section prepared for solving, the 2D counterpart of Scene: the
+// rectangles of a Geometry2D in the x-z plane, infinitely long along y.
+// Conformal dielectrics grow on the sides (along x) and on top. Solving it
+// gives capacitance per unit length.
+class Scene2D
+{
+ public:
+  // A uniform dielectric of relative permittivity eps_r.
+  explicit Scene2D(const Geometry2D& geometry, double eps_r = 1.0);
+  // The dielectrics of a process stack, as for Scene, around every
+  // rectangle whose z extent equals a conductor layer's. Throws
+  // std::invalid_argument for the stacks Scene rejects, and if rectangles
+  // of different nets overlap.
+  Scene2D(const Geometry2D& geometry, const Stack& stack);
+  ~Scene2D();
+
+  Scene2D(const Scene2D&) = delete;
+  Scene2D& operator=(const Scene2D&) = delete;
+
+  const Geometry2D& geometry() const { return geometry_; }
+  const Dielectric<2>& dielectric() const { return *dielectric_; }
+  // Smallest rectangle dimension, which scales the capture distance.
+  double minDimension() const { return min_dimension_; }
+  const SpatialIndex<2>& index() const { return *index_; }
+
+ private:
+  const Geometry2D& geometry_;
+  std::unique_ptr<Dielectric<2>> dielectric_;
+  double min_dimension_;
+  std::unique_ptr<SpatialIndex<2>> index_;
 };
 
 }  // namespace fsv
