@@ -483,7 +483,7 @@ void SACoreSoftMacro::calBoundaryPenalty()
 void SACoreSoftMacro::calSoftBlockagePenalty()
 {
   soft_blockage_penalty_ = 0.0;
-  if (soft_blockages_.empty() || soft_blockage_weight_ <= 0.0) {
+  if (pin_access_blockages_.empty() || soft_blockage_weight_ <= 0.0) {
     return;
   }
 
@@ -495,7 +495,7 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
     return;
   }
 
-  for (const odb::Rect& blockage : soft_blockages_) {
+  for (const odb::Rect& blockage : pin_access_blockages_) {
     for (const int macro_id : pos_seq_) {
       const SoftMacro& soft_macro = macros_[macro_id];
       Cluster* cluster = soft_macro.getCluster();
@@ -1175,9 +1175,10 @@ int SACoreSoftMacro::getSegmentIndex(const int segment,
   return index;
 }
 
-void SACoreSoftMacro::setSoftBlockages(const RectList& soft_blockages)
+void SACoreSoftMacro::setPinAccessBlockages(
+    const RectList& pin_access_blockages)
 {
-  soft_blockages_ = soft_blockages;
+  pin_access_blockages_ = pin_access_blockages;
 }
 
 std::vector<odb::Point> SACoreSoftMacro::getClustersLocations() const

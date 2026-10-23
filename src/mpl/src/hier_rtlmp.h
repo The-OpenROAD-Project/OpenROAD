@@ -308,7 +308,7 @@ class HierRTLMP
   Channel min_channel_;
 
   std::vector<odb::Rect> placement_blockages_;
-  std::vector<odb::Rect> io_blockages_;
+  std::vector<odb::Rect> pin_access_blockages_;  // These are virtual to MPL.
 
   PinAccessDepthLimits pin_access_depth_limits_;
   float tiny_cluster_max_number_of_std_cells_{0};

@@ -319,9 +319,9 @@ TEST_F(TestPusher, PushRevertedBiased)
 }
 
 // When pushing a macro cluster toward its closest boundary would cause it to
-// overlap with an IO blockage, the move is reverted and the cluster stays at
-// its original position.
-TEST_F(TestPusher, PushRevertedOnIOBlockageOverlap)
+// overlap with a pin access blockage, the move is reverted and the cluster
+// stays at its original position.
+TEST_F(TestPusher, PushRevertedOnPinAccessBlockageOverlap)
 {
   auto root = makeRootWithStdCells();
 
@@ -330,13 +330,14 @@ TEST_F(TestPusher, PushRevertedOnIOBlockageOverlap)
   addMacroCluster(root.get(), "macro_cluster", 10000, 0);
   HardMacro* raw_hard_macro = hard_macro_storage_.back().get();
 
-  // IO blockage covers the left side where the macro would land.
-  const std::vector<odb::Rect> io_blockages = {odb::Rect(0, 0, 50000, 100000)};
+  // Pin access blockage covers the left side where the macro would land.
+  const std::vector<odb::Rect> pin_access_blockages
+      = {odb::Rect(0, 0, 50000, 100000)};
 
-  Pusher pusher(&logger_, root.get(), block(), io_blockages);
+  Pusher pusher(&logger_, root.get(), block(), pin_access_blockages);
   pusher.pushMacrosToCoreBoundaries();
 
-  // Push reverted: the moved cluster box overlaps the IO blockage.
+  // Push reverted: the moved cluster box overlaps the pin access blockage.
   EXPECT_EQ(raw_hard_macro->getX(), 10000);
   EXPECT_EQ(raw_hard_macro->getY(), 0);
 }
