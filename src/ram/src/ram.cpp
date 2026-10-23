@@ -3410,6 +3410,22 @@ void RamGen::splitPeriphery()
     t->setIoType(io);
     t->setSigType(odb::dbSigType::SIGNAL);
   }
+  // the pin placer constrains what is left of the pin lists
+  std::set<uint> gone;  // by id: odb objects have no order
+  for (dbBTerm* t : dropped) {
+    gone.insert(t->getId());
+  }
+  auto forget = [&gone](std::vector<dbBTerm*>& terms) {
+    std::erase_if(terms,
+                  [&gone](dbBTerm* t) { return gone.count(t->getId()) > 0; });
+  };
+  forget(data_inputs_);
+  for (auto& terms : addr_inputs_) {
+    forget(terms);
+  }
+  for (auto& terms : q_outputs_) {
+    forget(terms);
+  }
   for (dbBTerm* t : dropped) {
     odb::dbBTerm::destroy(t);
   }
