@@ -188,10 +188,36 @@ class RamGen
 
   std::unique_ptr<Layout> generateTapColumn(int num_rows, int tapcell_col);
 
+  // One AND gate of the row decoder; row is the word line it drives, or -1
+  // for a predecode gate.
+  struct DecoderGate
+  {
+    std::string name;
+    std::vector<odb::dbNet*> inputs;
+    odb::dbNet* output;
+    int row;
+  };
+
+  std::vector<odb::dbNet*> buildDecoder(
+      const std::string& prefix,
+      int lo,
+      int width,
+      int count,
+      const std::vector<odb::dbNet*>& addr_nets,
+      const std::vector<odb::dbNet*>& inv_addr_nets,
+      const std::vector<odb::dbNet*>& out_nets,
+      std::vector<DecoderGate>& gates);
+
   void makeDecoderColumn(const std::string& prefix,
                          int num_rows,
-                         const std::vector<std::vector<odb::dbNet*>>& addr_nets,
+                         const std::vector<odb::dbNet*>& addr_nets,
+                         const std::vector<odb::dbNet*>& inv_addr_nets,
                          const std::vector<odb::dbNet*>& decoder_output_nets);
+  void makeAnd(Cell* cell,
+               const std::string& prefix,
+               const std::string& name,
+               const std::vector<odb::dbNet*>& inputs,
+               odb::dbNet* output);
   void makeBufferColumn(const std::string& prefix,
                         int num_rows,
                         const std::vector<odb::dbNet*>& decoder_output_nets,
@@ -226,6 +252,8 @@ class RamGen
   odb::dbMaster* tristate_cell_{nullptr};
   odb::dbMaster* inv_cell_{nullptr};
   odb::dbMaster* and2_cell_{nullptr};
+  odb::dbMaster* and3_cell_{nullptr};
+  odb::dbMaster* and4_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* aoi22_cell_{nullptr};
@@ -239,6 +267,8 @@ class RamGen
   std::map<PortRole, std::string> tristate_ports_;
   std::map<PortRole, std::string> inv_ports_;
   std::map<PortRole, std::string> and2_ports_;
+  std::map<PortRole, std::string> and3_ports_;
+  std::map<PortRole, std::string> and4_ports_;
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
   std::map<PortRole, std::string> latch_ports_;
@@ -251,6 +281,8 @@ class RamGen
       aoi22_out_;
   Grid ram_grid_;
   bool use_latch_{false};
+  // widest AND the predecode stages may use (the final stage is always AND2)
+  static constexpr int max_and_inputs_ = 3;
 };
 
 }  // namespace ram

@@ -24,6 +24,7 @@
 [INFO RAM-0016] Selected inverter cell INV_X1
 [INFO RAM-0016] Selected tristate cell TBUF_X1
 [INFO RAM-0016] Selected and2 cell AND2_X1
+[INFO RAM-0016] Selected and3 cell AND3_X1
 [INFO RAM-0016] Selected clock gate cell CLKGATE_X1
 [INFO RAM-0016] Selected buffer cell BUF_X1
 [INFO RAM-0016] Selected aoi22 cell AOI22_X1
@@ -45,8 +46,8 @@
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 125.20 um.
-[INFO DPL-0001] Placed 36 filler instances.
+[INFO PPL-0012] I/O nets HPWL: 123.78 um.
+[INFO DPL-0001] Placed 39 filler instances.
 [INFO DRT-0167] List of default vias:
   Layer via2
     default via: via2_5
@@ -67,7 +68,7 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] active shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] metal1 shape region query size = 4625.
+[INFO DRT-0033] metal1 shape region query size = 4592.
 [INFO DRT-0033] via1 shape region query size = 36.
 [INFO DRT-0033] metal2 shape region query size = 72.
 [INFO DRT-0033] via2 shape region query size = 36.
@@ -89,9 +90,9 @@
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
-[INFO DRT-0036] metal1 guide region query size = 288.
+[INFO DRT-0036] metal1 guide region query size = 287.
 [INFO DRT-0036] via1 guide region query size = 0.
-[INFO DRT-0036] metal2 guide region query size = 220.
+[INFO DRT-0036] metal2 guide region query size = 222.
 [INFO DRT-0036] via2 guide region query size = 0.
 [INFO DRT-0036] metal3 guide region query size = 146.
 [INFO DRT-0036] via3 guide region query size = 0.
