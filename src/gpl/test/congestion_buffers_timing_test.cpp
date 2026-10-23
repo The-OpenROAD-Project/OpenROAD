@@ -231,11 +231,37 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     for (const auto& nb : nb_vec_) {
       nb->peak_coordi_distance_ = 1.0f;
       nb->coordiDistance_ = 0.0f;
-      nb->saveSnapshot();
     }
     float current_a = 1.0f;
+    const bool capture_snapshot
+        = !np_->is_routability_snapshot_saved_
+          && np_->npVars_.routability_driven_mode
+          && overflow <= np_->npVars_.routability_snapshot_overflow;
+    const float current_wl_x = np_->wireLengthCoefX_;
+    const float current_wl_y = np_->wireLengthCoefY_;
+    np_->routabilitySnapshot(0, current_a, "", ordinary_iterations_, 0);
+    if (capture_snapshot) {
+      ASSERT_TRUE(np_->is_routability_snapshot_saved_);
+      EXPECT_FLOAT_EQ(np_->route_snapshot_wl_coef_x_, current_wl_x);
+      EXPECT_FLOAT_EQ(np_->route_snapshot_wl_coef_y_, current_wl_y);
+      EXPECT_FLOAT_EQ(np_->route_snapshot_a_, current_a);
+      ASSERT_TRUE(std::isfinite(current_wl_x));
+      ASSERT_TRUE(std::isfinite(current_wl_y));
+      ASSERT_GT(current_wl_x, 0.0f);
+      ASSERT_GT(current_wl_y, 0.0f);
+    }
     ASSERT_TRUE(np_->isPlacementSettled());
+    const int previous_iterations = ordinary_iterations_;
     np_->runRoutability(0, 0, "", ordinary_iterations_, current_a);
+    if (ordinary_iterations_ > previous_iterations
+        && (routabilityNeeded()
+            || rb_->getRudyAverage() >= rb_->rbVars_.targetRC)) {
+      ASSERT_TRUE(np_->is_routability_snapshot_saved_);
+      EXPECT_FLOAT_EQ(np_->wireLengthCoefX_, np_->route_snapshot_wl_coef_x_);
+      EXPECT_FLOAT_EQ(np_->wireLengthCoefY_, np_->route_snapshot_wl_coef_y_);
+      EXPECT_FLOAT_EQ(current_a, np_->route_snapshot_a_);
+      EXPECT_GT(current_a, 0.0f);
+    }
   }
 
   void completeRoutability(bool inflate_ordinary_cells = false)
