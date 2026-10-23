@@ -29,6 +29,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -2584,15 +2585,85 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
   group->writeTR(error_file);
 }
 
-void IRSolver::writeErrorFile(std::ofstream& report) const
+namespace {
+
+// writeTR() reports marker coordinates relative to the chiplet origin.
+// Apply the chiplet placement transform so this report uses coordinates
+// relative to the 3D assembly origin.
+void writeMarkerSources(std::ofstream& report, odb::dbMarker* marker)
+{
+  report << "\tsrcs:";
+  for (odb::dbObject* source : marker->getSources()) {
+    switch (source->getObjectType()) {
+      case odb::dbNetObj:
+        report << " net:" << static_cast<odb::dbNet*>(source)->getName();
+        break;
+      case odb::dbInstObj:
+        report << " inst:" << static_cast<odb::dbInst*>(source)->getName();
+        break;
+      case odb::dbITermObj:
+        report << " iterm:" << static_cast<odb::dbITerm*>(source)->getName();
+        break;
+      case odb::dbBTermObj:
+        report << " bterm:" << static_cast<odb::dbBTerm*>(source)->getName();
+        break;
+      case odb::dbObstructionObj:
+        report << " obstruction: ";
+        break;
+      default:
+        report << " " << source->getTypeName();
+        break;
+    }
+  }
+  report << '\n';
+}
+
+void writeMarker(std::ofstream& report,
+                 odb::dbMarker* marker,
+                 const odb::dbTransform& transform,
+                 double dbus)
+{
+  report << "violation type: " << marker->getCategory()->getName() << '\n';
+  writeMarkerSources(report, marker);
+  if (!marker->getComment().empty()) {
+    report << "\tcomment: " << marker->getComment() << '\n';
+  }
+
+  odb::Rect bbox = marker->getBBox();
+  transform.apply(bbox);
+  report << fmt::format(
+      "\tbbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer ",
+      bbox.xMin() / dbus,
+      bbox.yMin() / dbus,
+      bbox.xMax() / dbus,
+      bbox.yMax() / dbus);
+  if (marker->getTechLayer() != nullptr) {
+    report << marker->getTechLayer()->getName();
+  } else {
+    report << '-';
+  }
+  report << '\n';
+}
+
+}  // namespace
+
+void IRSolver::writeAssemblyErrorFile(std::ofstream& report,
+                                      const odb::dbTransform& transform,
+                                      double dbus) const
 {
   odb::dbMarkerCategory* group
       = getBlock()->findMarkerCategory(kMarkerCategory);
-  if (group != nullptr) {
-    group = group->findMarkerCategory(net_->getName().c_str());
-    if (group != nullptr) {
-      group->writeTR(report);
-    }
+  if (group == nullptr) {
+    return;
+  }
+
+  group = group->findMarkerCategory(net_->getName().c_str());
+  if (group == nullptr) {
+    return;
+  }
+
+  for (odb::dbMarker* marker : group->getAllMarkers()) {
+    writeMarker(report, marker, transform, dbus);
   }
 }
 

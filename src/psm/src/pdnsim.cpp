@@ -316,6 +316,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
 
   // Reuse the existing 2D connectivity checks inside each chiplet.
   bool local_ok = true;
+  const double assembly_dbus = db_->getDbuPerMicron();
   for (const auto& [chiplet, net] : network.getChipletNets()) {
     auto local_network
         = std::make_unique<IRNetwork>(net, logger_, floorplanning);
@@ -328,7 +329,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
                    generated_source_settings_);
     if (report.is_open()) {
       report << "Chiplet " << chiplet->getName() << ", net " << net->getName()
-             << " (coordinates in local microns)\n";
+             << " (coordinates relative to the assembly origin in microns)\n";
     }
     try {
       if (!local.check(require_bterm, !floorplanning)) {
@@ -341,21 +342,13 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
       }
     }
     if (report.is_open()) {
-      local.writeErrorFile(report);
+      local.writeAssemblyErrorFile(
+          report, chiplet->getTransform(), assembly_dbus);
     }
   }
   const auto disconnected = network.getDisconnectedNodes();
-  if (report.is_open()) {
-    const auto owners = network.getNodeChiplets();
-    std::vector<std::string> descriptions;
-    for (Node* node : disconnected) {
-      descriptions.push_back(node->describe(
-          std::string("Disconnected ") + owners.at(node)->getName() + "/"));
-    }
-    std::ranges::sort(descriptions);
-    for (const auto& description : descriptions) {
-      report << description << '\n';
-    }
+  if (report.is_open() && !disconnected.empty()) {
+    report << "The 3D power grid for " << name << " is disconnected.\n";
   }
   if (!local_ok) {
     logger_->error(utl::PSM,
