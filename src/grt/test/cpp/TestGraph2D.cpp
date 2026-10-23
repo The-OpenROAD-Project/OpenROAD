@@ -403,6 +403,30 @@ TEST_F(Graph2DTest, SameExtentInitDiscardsResetFlagsAndAllowsRequeueing)
   EXPECT_EQ(Graph2DTestPeer::historyCount(graph_), 0u);
 }
 
+TEST_F(Graph2DTest, SameExtentInitDropsTheNDRNetsOfThePreviousRun)
+{
+  FrNet ndr_net;
+  ndr_net.reset(nullptr, false, 0, 2, 0, 1, 0, nullptr);
+  graph_.updateUsageH(1, 1, &ndr_net, 2);
+  ASSERT_EQ(graph_.getUsageH(1, 1), 2);
+  // No layer has capacity: the net misses its track on the best layer.
+  ASSERT_EQ(graph_.getNDRDeficit(&ndr_net, 1, 1, EdgeDirection::Horizontal), 1);
+
+  // The next run deletes the nets, and a new one can take the address of a
+  // deleted one. It must not be taken for a net already using the edge.
+  graph_.init(kXGrid, kYGrid, 2, &logger_);
+  graph_.initCap3D();
+  EXPECT_EQ(graph_.getTotalNDRDeficit(), 0);
+  EXPECT_EQ(graph_.getNDRDeficit(&ndr_net, 1, 1, EdgeDirection::Horizontal), 0);
+  graph_.updateUsageH(1, 1, &ndr_net, 2);
+  EXPECT_EQ(graph_.getUsageH(1, 1), 2);
+  EXPECT_EQ(graph_.getTotalNDRDeficit(), 1);
+  graph_.updateUsageH(1, 1, &ndr_net, -2);
+  EXPECT_EQ(graph_.getUsageH(1, 1), 0);
+  EXPECT_FALSE(graph_.hasNDRDeficit(1, 1, EdgeDirection::Horizontal));
+  EXPECT_EQ(graph_.getTotalNDRDeficit(), 0);
+}
+
 TEST_F(Graph2DTest, DeduplicatesAndReusesPendingListsAcrossManyRuns)
 {
   for (int run = 0; run < 2000; run++) {

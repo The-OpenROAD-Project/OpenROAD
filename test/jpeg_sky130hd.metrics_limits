@@ -20,5 +20,5 @@
  ,"DRT::max_capacitance_slack" : "-24.709304579771743"
  ,"DRT::max_fanout_slack" : "0"
  ,"DRT::clock_period" : "8.0"
- ,"DRT::ANT::errors" : "0"
+ ,"DRT::ANT::errors" : "1"
 }
