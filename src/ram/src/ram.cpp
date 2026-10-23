@@ -2318,6 +2318,7 @@ void RamGen::generate(const int mask_size,
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
   }
   const int slices_per_word = word_size / mask_size;
+  slices_per_row_ = bit_folds_ > 1 ? 1 : slices_per_word;
   // the block's name: -name, or RAM<words>x<bits>
   const std::string ram_name
       = name.empty() ? fmt::format("RAM{}x{}", num_words, word_bits) : name;

@@ -382,7 +382,8 @@ proc ram_sim::check { condition message } {
 # Random writes and reads against a model of what the RAM is meant to
 # hold. Options (a dict):
 #   words, bits         the RAM's shape
-#   writes              ports: {addr data we}, `we` a single-bit enable
+#   writes              ports: {addr data we}, `we` the enable pins, every
+#                       mask slice's, set together: a whole word written
 #   reads               ports: {addr data}
 #   banked_reads        ports: {addr data bank}, the word that address in
 #                       that bank holds given by `bank_word`
@@ -416,14 +417,18 @@ proc ram_sim::exercise { options } {
       set e [expr { rand() < 0.7 }]
       set_bus $addr $abits $a
       set_bus $data $bits $d
-      set_port $we $e
+      foreach pin $we {
+        set_port $pin $e
+      }
       if { $e } {
         lappend written $a $d
       }
     }
     cycle clk
     foreach port [dict get $o writes] {
-      set_port [lindex $port 2] 0
+      foreach pin [lindex $port 2] {
+        set_port $pin 0
+      }
     }
     set next $mem
     set hit [dict create]

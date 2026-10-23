@@ -432,17 +432,24 @@ class RamGen
   // after them, so a word's selects and write enables span its own bits
   // and not the row
   bool words_contiguous_{false};
+  int slices_per_row_{1};  // a word's slices in a row: 1 with -bit_folds
+  // contiguous: a word's slices side by side, each its bits and then its
+  // select column, the row's next word after them
+  int contiguousColumn(int slice, int word, int mask_size) const
+  {
+    return (word * slices_per_row_ + (bit_folds_ > 1 ? 0 : slice))
+           * (mask_size + 1);
+  }
   int bitColumn(int slice, int bit, int word, int mask_size) const
   {
-    return sliceOffset(slice)
-           + (words_contiguous_ ? word * (mask_size + 1) + bit
-                                : bit * words_per_row_ + word);
+    return words_contiguous_ ? contiguousColumn(slice, word, mask_size) + bit
+                             : sliceOffset(slice) + bit * words_per_row_ + word;
   }
   int selColumn(int slice, int word, int mask_size) const
   {
-    return sliceOffset(slice)
-           + (words_contiguous_ ? word * (mask_size + 1) + mask_size
-                                : mask_size * words_per_row_ + word);
+    return words_contiguous_
+               ? contiguousColumn(slice, word, mask_size) + mask_size
+               : sliceOffset(slice) + mask_size * words_per_row_ + word;
   }
   std::string pin_layer_;
   bool marking_periphery_{false};
