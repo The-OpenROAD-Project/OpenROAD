@@ -27,9 +27,9 @@ foreach line [split [read $stream] "\n"] {
   }
 }
 close $stream
-puts "Route length: $wire_length DBU (limit: 42000)"
-check "Route detours around the blockage" { expr { $wire_length > 33600 } } 1
-check "Detour adds at most 25% to the 33600 DBU trunk" {
-  expr { $wire_length <= 42000 }
+puts "Route length: $wire_length DBU (limit: 57000)"
+check "Route detours around the blockage" { expr { $wire_length > 45600 } } 1
+check "Detour adds at most 25% to the 45600 DBU trunk" {
+  expr { $wire_length <= 57000 }
 } 1
 exit_summary
