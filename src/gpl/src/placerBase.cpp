@@ -955,6 +955,9 @@ void PlacerBaseCommon::init()
 
       if (!pbVars_.skipIoMode) {
         for (dbBTerm* bTerm : db_net->getBTerms()) {
+          if (bTerm->isShapelessChipBumpPort()) {
+            continue;
+          }
           Pin temp_pin(bTerm, log_, pbVars_.placeIosMode);
           temp_pin.setNet(temp_net_ptr);
           pinStor_.push_back(temp_pin);
@@ -1000,6 +1003,9 @@ void PlacerBaseCommon::init()
     }
     if (!pbVars_.skipIoMode) {
       for (dbBTerm* bTerm : pb_net.getDbNet()->getBTerms()) {
+        if (bTerm->isShapelessChipBumpPort()) {
+          continue;
+        }
         pb_net.addPin(dbToPb(bTerm));
       }
     }

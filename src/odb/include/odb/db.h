@@ -1557,6 +1557,12 @@ class dbBTerm : public dbObject
   dbChipBump* getChipBump() const;
 
   ///
+  /// True if a chip bump is associated and the block-terminal has no pins:
+  /// the bump's instance terminal is its physical connection.
+  ///
+  bool isShapelessChipBumpPort() const;
+
+  ///
   /// Get the hierarchical parent iterm of this bterm.
   ///
   /// Returns nullptr if this bterm has no parent iterm.

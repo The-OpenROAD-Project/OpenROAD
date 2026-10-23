@@ -404,12 +404,23 @@ bool GlobalRouter::haveDetailedRoutes()
   return false;
 }
 
+static int routableTermCount(odb::dbNet* net)
+{
+  int count = net->getITermCount();
+  for (odb::dbBTerm* bterm : net->getBTerms()) {
+    if (!bterm->isShapelessChipBumpPort()) {
+      count++;
+    }
+  }
+  return count;
+}
+
 bool GlobalRouter::haveDbGuides()
 {
   for (odb::dbNet* net : block_->getNets()) {
     // check term count due to 1-pin nets in multiple designs.
-    if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
-        && !net->isConnectedByAbutment()) {
+    if (!net->isSpecial() && net->getGuides().empty()
+        && routableTermCount(net) > 1 && !net->isConnectedByAbutment()) {
       return false;
     }
   }
@@ -5936,7 +5947,7 @@ void GlobalRouter::makeBtermPins(Net* net,
     if (!pin_layers.empty()) {
       Pin pin(bterm, pin_pos, pin_layers, pin_boxes, getRectMiddle(die_area));
       net->addPin(pin);
-    } else if (check_pin_placement_) {
+    } else if (check_pin_placement_ && !bterm->isShapelessChipBumpPort()) {
       logger_->error(
           GRT,
           42,
