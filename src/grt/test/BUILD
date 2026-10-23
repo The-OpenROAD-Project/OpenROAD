@@ -209,6 +209,19 @@ regression_test(
     data = [":test_resources"],
 )
 
+[
+    regression_test(
+        name = name,
+        check_log = False,
+        check_passfail = True,
+        data = [":test_resources"],
+    )
+    for name in [
+        "incremental_nested_callbacks",
+        "incremental_nested_callbacks_cugr",
+    ]
+]
+
 regression_test(
     name = "snapshot_batched_smoke",
     check_log = False,
