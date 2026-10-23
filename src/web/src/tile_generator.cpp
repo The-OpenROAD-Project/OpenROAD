@@ -1070,7 +1070,7 @@ namespace {
 struct BoolField
 {
   const char* key;
-  bool TileVisibility::*field;
+  bool TileVisibility::* field;
   bool default_val;
 };
 
@@ -6545,8 +6545,13 @@ void TileGenerator::saveImage(const std::string& filename,
   int final_h = 0;
   const std::vector<unsigned char> png_data = renderImagePng(
       region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
-  if (lodepng::save_file(png_data, filename) != 0) {
-    logger_->error(utl::WEB, 117, "Could not write {}.", filename);
+  const unsigned save_error = lodepng::save_file(png_data, filename);
+  if (save_error != 0) {
+    logger_->error(utl::WEB,
+                   116,
+                   "Cannot write image to {}: {}",
+                   filename,
+                   lodepng_error_text(save_error));
   }
   logger_->info(
       utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
+#include "ioPinBase.h"
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
@@ -79,7 +80,8 @@ void GraphicsImpl::debugForNesterovPlace(
     std::vector<std::shared_ptr<PlacerBase>>& pbVec,
     std::vector<std::shared_ptr<NesterovBase>>& nbVec,
     bool draw_bins,
-    odb::dbInst* debug_inst)
+    odb::dbInst* debug_inst,
+    odb::dbBTerm* debug_pin)
 {
   pbc_ = std::move(pbc);
   nbc_ = std::move(nbc);
@@ -98,13 +100,16 @@ void GraphicsImpl::debugForNesterovPlace(
     initCharts();
     addDisplayControl(kDrawInstances, true);
     addDisplayControl(kDrawTimingNets, false);
+    addDisplayControl(kDrawIoPins, true);
     registerWithGui();
 
+    selected_pin_ = debug_pin;
     if (debug_inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
         auto cell = nbc_->getGCellByIndex(idx);
         if (cell->contains(debug_inst)) {
           selected_ = idx;
+          selected_inst_ = debug_inst;
           break;
         }
       }
@@ -358,6 +363,69 @@ void GraphicsImpl::drawSingleGCell(const GCell* gCell,
   painter.drawRect({xl, yl, xh, yh});
 }
 
+const IoPinBase* GraphicsImpl::ioPins() const
+{
+  if (nbVec_.empty()) {
+    return nullptr;
+  }
+  return nbVec_[0]->getIoPins();
+}
+
+std::optional<size_t> GraphicsImpl::findSelectedPin() const
+{
+  const IoPinBase* io = ioPins();
+  if (io == nullptr || selected_pin_ == nullptr) {
+    return std::nullopt;
+  }
+  return io->findPin(selected_pin_);
+}
+
+void GraphicsImpl::drawIoPins(web::Painter& painter)
+{
+  const IoPinBase* io = ioPins();
+  if (io == nullptr) {
+    return;
+  }
+  web::Painter::Color fill = web::Painter::kRed;
+  fill.a = 180;
+  painter.setPen(web::Painter::kRed, /*cosmetic=*/true, /*width=*/2);
+  painter.setBrush(fill);
+  for (size_t i = 0; i < io->size(); ++i) {
+    painter.drawRect(io->pinRect(i));
+  }
+}
+
+void GraphicsImpl::drawSelectedIoPin(web::Painter& painter)
+{
+  const std::optional<size_t> idx = findSelectedPin();
+  if (!idx) {
+    return;
+  }
+  const IoPinBase* io = ioPins();
+  web::Painter::Color selected = web::Painter::kYellow;
+  selected.a = 180;
+  painter.setBrush(selected);
+  painter.drawRect(io->pinRect(*idx));
+
+  const GPin* gpin = io->getGPin(*idx);
+  if (gpin != nullptr && gpin->getGNet() != nullptr) {
+    painter.setPen(web::Painter::kYellow, true);
+    for (const GPin* other_pin : gpin->getGNet()->getGPins()) {
+      if (other_pin != gpin) {
+        painter.drawLine(
+            gpin->cx(), gpin->cy(), other_pin->cx(), other_pin->cy());
+      }
+    }
+  }
+  const odb::Rect at = io->pinRect(*idx);
+  const FloatPoint target = io->target(*idx);
+  painter.setPen(web::Painter::kCyan, true, 2);
+  painter.drawLine(at.xCenter(),
+                   at.yCenter(),
+                   static_cast<int>(std::lround(target.x)),
+                   static_cast<int>(std::lround(target.y)));
+}
+
 void GraphicsImpl::drawTimingNets(web::Painter& painter)
 {
   const auto& gnets = nbc_->getGNets();
@@ -423,6 +491,11 @@ void GraphicsImpl::drawNesterov(web::Painter& painter)
 
   if (checkDisplayControl(kDrawTimingNets)) {
     drawTimingNets(painter);
+  }
+
+  if (checkDisplayControl(kDrawIoPins)) {
+    drawIoPins(painter);
+    drawSelectedIoPin(painter);
   }
 
   // Create lighter versions of the region_colors_ with alpha 50
@@ -569,8 +642,45 @@ void GraphicsImpl::drawObjects(web::Painter& painter)
   }
 }
 
+void GraphicsImpl::instDestroyed(odb::dbInst* db_inst)
+{
+  if (db_inst == selected_inst_) {
+    selected_ = kInvalidIndex;
+    nb_selected_index_ = kInvalidIndex;
+    selected_inst_ = nullptr;
+  }
+}
+
+// Timing-driven repairs swap-remove and append GCells, so selected_ can be
+// stale or past the end of storage; find the selected instance's GCell again.
+void GraphicsImpl::resyncSelection()
+{
+  if (selected_ == kInvalidIndex || !nbc_) {
+    return;
+  }
+  const size_t size = nbc_->getGCells().size();
+  if (selected_ < size
+      && (!selected_inst_
+          || nbc_->getGCellByIndex(selected_)->contains(selected_inst_))) {
+    return;
+  }
+  selected_ = kInvalidIndex;
+  if (!selected_inst_) {
+    return;
+  }
+  for (size_t idx = 0; idx < size; ++idx) {
+    if (nbc_->getGCellByIndex(idx)->contains(selected_inst_)) {
+      selected_ = idx;
+      return;
+    }
+  }
+}
+
 void GraphicsImpl::reportSelected()
 {
+  if (const std::optional<size_t> idx = findSelectedPin()) {
+    ioPins()->report(*idx);
+  }
   if (selected_ == kInvalidIndex) {
     return;
   }
@@ -613,6 +723,27 @@ void GraphicsImpl::reportSelected()
     logger_->report("  overall ({: .2e}, {: .2e})",
                     wlGrad.x + densityPenalty * densityGrad.x,
                     wlGrad.y + densityPenalty * densityGrad.y);
+
+    // Previous and current position with the stored gradient the Nesterov
+    // step uses (preconditioned, so on a different scale than "overall").
+    const auto state
+        = nbVec_[nb_index]->getSlpState(gcell->insts().front()->dbInst());
+    if (state) {
+      odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
+      auto um = [block](float dbu) {
+        return block->dbuToMicrons(static_cast<double>(dbu));
+      };
+      logger_->report("  prev pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
+                      um(state->prev_pos.x),
+                      um(state->prev_pos.y),
+                      state->prev_grad.x,
+                      state->prev_grad.y);
+      logger_->report("  cur  pos ({:.4f}, {:.4f}) um  grad ({:+.6e}, {:+.6e})",
+                      um(state->cur_pos.x),
+                      um(state->cur_pos.y),
+                      state->cur_grad.x,
+                      state->cur_grad.y);
+    }
   }
 }
 
@@ -700,6 +831,7 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
 
 void GraphicsImpl::cellPlotImpl(bool pause)
 {
+  resyncSelection();
   web::Gui::get()->redraw();
   if (pause) {
     reportSelected();
@@ -727,9 +859,25 @@ web::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
                                        const odb::Rect& region)
 {
   selected_ = kInvalidIndex;
+  selected_pin_ = nullptr;
 
   if (layer || !nbc_) {
     return web::SelectionSet();
+  }
+
+  if (const IoPinBase* io = ioPins()) {
+    for (size_t i = 0; i < io->size(); ++i) {
+      if (!io->pinRect(i).intersects(region)) {
+        continue;
+      }
+      selected_pin_ = io->getBTerm(i);
+      nb_selected_index_ = kInvalidIndex;
+      web::Gui::get()->redraw();
+      reportSelected();
+      web::SelectionSet selected;
+      selected.insert(web::Gui::get()->makeSelected(selected_pin_));
+      return selected;
+    }
   }
 
   for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
@@ -750,6 +898,7 @@ web::SelectionSet GraphicsImpl::select(odb::dbTechLayer* layer,
     selected_ = idx;
     odb::dbInst* db_inst
         = cell->isInstance() ? cell->insts().front()->dbInst() : nullptr;
+    selected_inst_ = db_inst;
     if (db_inst != nullptr) {
       for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
         for (size_t gc_idx = 0; gc_idx < nbVec_[nb_idx]->getGCells().size();

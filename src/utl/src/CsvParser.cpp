@@ -3,6 +3,8 @@
 
 #include "utl/CsvParser.h"
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
@@ -33,7 +35,7 @@ std::vector<std::vector<std::string>> readCsv(const std::string& file_path,
   int line_no = 0;
   while (std::getline(in, line)) {
     ++line_no;
-    if (line.empty()) {
+    if (boost::algorithm::all(line, boost::algorithm::is_space())) {
       continue;
     }
     std::vector<std::string> cells;
