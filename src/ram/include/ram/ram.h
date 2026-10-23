@@ -198,6 +198,10 @@ class RamGen
   // reset's polarity, what a cleared flop reads, and the tie cell that
   // holds the unused pin off
   void findResetPins();
+  // The smallest cell with an output at the constant `one` (or 0), or the
+  // cell `given`, checked; `pin` gets that output. A cell may drive both
+  // levels on two pins, as sky130's conb_1 does.
+  odb::dbMaster* findTie(bool one, odb::dbMaster* given, std::string& pin);
   // The smallest cell `match` accepts; none is an error unless not
   // `required`, then nullptr. A cell `given` is checked by `match`
   // instead, on any of its outputs. Cells with more than one output are

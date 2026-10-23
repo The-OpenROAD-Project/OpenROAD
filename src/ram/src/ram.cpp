@@ -1086,14 +1086,8 @@ dbMaster* RamGen::findMaster(
       if (!out || !match(out->libertyPort())) {
         continue;
       }
-      // not a cell the library keeps from use, but for a tie cell, which
-      // libraries mark dont_use to keep it from synthesis (Nangate45's
-      // LOGIC0_X1 and LOGIC1_X1)
-      auto function = out->libertyPort()->function();
-      const bool tie = function
-                       && (function->op() == sta::FuncExpr::Op::zero
-                           || function->op() == sta::FuncExpr::Op::one);
-      if (liberty->dontUse() && !tie) {
+      // not a cell the library keeps from use (a tie: findTie)
+      if (liberty->dontUse()) {
         continue;
       }
 
@@ -1322,6 +1316,59 @@ static int twoInputTable(sta::LibertyPort* out)
   return table;
 }
 
+dbMaster* RamGen::findTie(const bool one, dbMaster* given, std::string& pin)
+{
+  const auto level = one ? sta::FuncExpr::Op::one : sta::FuncExpr::Op::zero;
+  const char* name = one ? "tie high" : "tie low";
+  // the cell's output at `level`, or none
+  auto output = [level](sta::LibertyCell* liberty) -> sta::LibertyPort* {
+    std::unique_ptr<sta::ConcreteCellPortIterator> ports(
+        liberty->portIterator());
+    while (ports->hasNext()) {
+      auto port = ports->next()->libertyPort();
+      if (port && port->direction()->isOutput() && port->function()
+          && port->function()->op() == level) {
+        return port;
+      }
+    }
+    return nullptr;
+  };
+  dbMaster* best = nullptr;
+  sta::LibertyPort* best_port = nullptr;
+  float best_area = std::numeric_limits<float>::max();
+  for (auto lib : db_->getLibs()) {
+    for (auto master : lib->getMasters()) {
+      if (given && master != given) {
+        continue;
+      }
+      auto liberty = network_->libertyCell(network_->dbToSta(master));
+      if (!liberty || liberty->isIsolationCell() || liberty->isLevelShifter()) {
+        continue;
+      }
+      // a tie cell may be dont_use, which keeps it from synthesis
+      // (Nangate45's LOGIC0_X1 and LOGIC1_X1); it is the cell to tie with
+      auto port = output(liberty);
+      if (port && liberty->area() < best_area) {
+        best_area = liberty->area();
+        best = master;
+        best_port = port;
+      }
+    }
+  }
+  if (!best) {
+    if (given) {
+      logger_->error(
+          RAM, 79, "Cell {} is not a {} cell.", given->getName(), name);
+    }
+    logger_->error(RAM, 10, "Can't find {} cell", name);
+  }
+  if (!given) {
+    logger_->info(RAM, 16, "Selected {} cell {}", name, best->getName());
+  }
+  pin = best_port->name();
+  return best;
+}
+
 // `text` as a word of `width` bits, least significant first: decimal,
 // hexadecimal after 0x or octal after 0, as C writes them. Empty where
 // `text` is not such a number or needs more than `width` bits; `fits`
@@ -1440,18 +1487,7 @@ void RamGen::findResetPins()
 
   // the unused pin of each flop held at its inactive level
   const bool off_high = reset_active_low_;
-  tie_off_cell_ = findMaster(
-      [off_high](sta::LibertyPort* port) {
-        auto f = port->function();
-        return f && port->direction()->isOutput()
-               && f->op()
-                      == (off_high ? sta::FuncExpr::Op::one
-                                   : sta::FuncExpr::Op::zero);
-      },
-      off_high ? "tie high" : "tie low",
-      /*required=*/true,
-      tie_off_cell_);
-  tie_off_pin_ = buildPortMap(tie_off_cell_)[{PortRoleType::DataOut, 0}];
+  tie_off_cell_ = findTie(off_high, tie_off_cell_, tie_off_pin_);
 
   bool fits = true;
   reset_bits_ = parseWord(reset_value_, word_bits_, fits);
