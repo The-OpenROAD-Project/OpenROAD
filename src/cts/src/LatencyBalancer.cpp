@@ -50,10 +50,17 @@ using utl::CTS;
 
 int LatencyBalancer::run()
 {
-  logger_->info(CTS,
-                33,
-                "Balancing latency for clock {}",
-                root_->getClock().getSdcName());
+  if (options_->applyUsefulSkew()) {
+    logger_->info(CTS,
+                  544,
+                  "Applying useful skew for clock {}",
+                  root_->getClock().getSdcName());
+  } else {
+    logger_->info(CTS,
+                  33,
+                  "Balancing latency for clock {}",
+                  root_->getClock().getSdcName());
+  }
   initSta();
   findLeafBuilders(root_);
   // buildGraph branches internally on options_->applyUsefulSkew(): the
@@ -64,11 +71,17 @@ int LatencyBalancer::run()
     return 0;
   }
   balanceLatencies(0);
-  logger_->info(CTS,
-                36,
-                " inserted {} delay buffers",
-                delayBufIndex_,
-                root_->getClock().getSdcName());
+  if (options_->applyUsefulSkew()) {
+    logger_->info(CTS,
+                  545,
+                  "inserted {} delay buffers for applying useful skew",
+                  delayBufIndex_);
+  } else {
+    logger_->info(CTS,
+                  36,
+                  " inserted {} delay buffers",
+                  delayBufIndex_);
+  }
   return delayBufIndex_;
 }
 
