@@ -31,9 +31,11 @@ When using the `-timing_driven` flag, `gpl` does a virtual `repair_design`
 to find slacks and
 weight nets with low slack. It adjusts the worst slacks (modified with 
 `-timing_driven_nets_percentage`) using a multiplier (modified with 
-`-timing_driven_net_weight_max`). The multiplier
-is scaled from the full value for the worst slack, to 1.0 at the
-`timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
+`-timing_driven_net_weight_max`). The multiplier is at its full value for the
+worst 0.2% of the timing-constrained nets and is scaled down linearly to 1.0 at
+the `timing_driven_nets_percentage` point. That 0.2% is a fraction of the whole
+design, not of the selected set, so `timing_driven_nets_percentage` moves only
+the top of the ramp. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing. 
 
 Timing-driven iterations are triggered based on a list of overflow threshold 
@@ -347,10 +349,10 @@ Example scripts demonstrating how to run `gpl` on a sample design on `core01` as
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/gpl/...
 ```
 
 ## Limitations

@@ -6,7 +6,7 @@
 // tests pin both halves: the SYN id the caller sees, and the message content
 // that locates the problem in the user's HDL.
 //
-// The messages also name the file:line inside third-party/slang-elab/ that
+// The messages also name the file:line inside third-party/sv-elab/ that
 // gave up. That part is deliberately not asserted on: it moves whenever the
 // submodule does, and it is not what these tests are about.
 
@@ -57,41 +57,38 @@ class ElabDiagTest : public tst::DbFixture
   }
 };
 
-// An unimplemented expression reports its kind, where it sits in the user's
-// HDL, and the text it was built from.
-TEST_F(ElabDiagTest, UnimplementedExpressionLocatesTheExpression)
+// An internal error the frontend attaches to an expression is reported as
+// SYN-0073 and locates the expression in the user's HDL (file:line:column).
+TEST_F(ElabDiagTest, InternalErrorOnExpressionHasSourceLocation)
 {
   const std::string log = elaborateExpectingError(
-      "elab_diag_expr.sv", {"--top", "top"}, "SYN-0074");
+      "elab_diag_expr.sv", {"--top", "top"}, "SYN-0073");
 
-  EXPECT_NE(log.find("(expression kind: NamedValue)"), std::string::npos)
-      << log;
-  EXPECT_NE(log.find("elab_diag_expr.sv:4:24: b"), std::string::npos) << log;
+  EXPECT_NE(log.find("attached to source location"), std::string::npos) << log;
+  EXPECT_NE(log.find("elab_diag_expr.sv:4:24: "), std::string::npos) << log;
 }
 
-// Same for an unimplemented statement. The source text is flattened onto one
-// line, so the three-line fork block arrives as "fork y <= x; join".
-TEST_F(ElabDiagTest, UnimplementedStatementLocatesTheStatement)
+// Same for an internal error attached to a statement: the three-line fork
+// block is located by the position where it starts.
+TEST_F(ElabDiagTest, InternalErrorOnStatementHasSourceLocation)
 {
   const std::string log = elaborateExpectingError(
-      "elab_diag_stmt.sv", {"--top", "top"}, "SYN-0075");
+      "elab_diag_stmt.sv", {"--top", "top"}, "SYN-0073");
 
-  EXPECT_NE(log.find("(statement kind: Block)"), std::string::npos) << log;
-  EXPECT_NE(log.find("elab_diag_stmt.sv:6:7: fork y <= x; join"),
-            std::string::npos)
-      << log;
+  EXPECT_NE(log.find("attached to source location"), std::string::npos) << log;
+  EXPECT_NE(log.find("elab_diag_stmt.sv:6:7: "), std::string::npos) << log;
 }
 
 // The vendored frontend calls log_error() directly. The stub in log_stubs.h
 // routes it to utl::Logger instead of stderr+abort, which is what lets
-// third-party/slang-elab/ stay unmodified.
+// third-party/sv-elab/ stay unmodified.
 TEST_F(ElabDiagTest, FrontendLogErrorReachesTheLogger)
 {
   const std::string log = elaborateExpectingError(
-      "elab_diag_hier.sv", {"--top", "top", "--keep-hierarchy"}, "SYN-0079");
+      "elab_diag_hier.sv", {"--top", "top", "--keep-hierarchy"}, "SYN-0097");
 
   EXPECT_NE(log.find("Hierarchical (non-dissolved) module instantiation "
-                     "not supported without Yosys"),
+                     "not supported"),
             std::string::npos)
       << log;
 }

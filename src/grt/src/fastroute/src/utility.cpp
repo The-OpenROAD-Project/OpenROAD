@@ -2020,31 +2020,58 @@ void FastRouteCore::check2DEdgesUsage()
     return;
   }
 
+  // Stops global route early, unless the route accepts congestion
+  // (-allow_congestion), as the end of routing does (GRT-0115/0116).
+  // Separate warn/error ids: find_messages.py allows one call site per id.
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
-    if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {
-      logger_->error(GRT,
-                     228,
-                     "Horizontal edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageH(x, y),
-                     max_h_edge_usage);
+    const int usage = graph2d_.getUsageH(x, y);
+    if (usage > max_h_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      251,
+                      "Horizontal edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_h_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       228,
+                       "Horizontal edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_h_edge_usage);
+      }
     }
   }
 
   // check vertical edges
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-    if (graph2d_.getUsageV(x, y) > max_v_edge_usage) {
-      logger_->error(GRT,
-                     229,
-                     "Vertical edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageV(x, y),
-                     max_v_edge_usage);
+    const int usage = graph2d_.getUsageV(x, y);
+    if (usage > max_v_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      299,
+                      "Vertical edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_v_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       229,
+                       "Vertical edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_v_edge_usage);
+      }
     }
   }
 }

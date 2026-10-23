@@ -10,6 +10,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -65,7 +66,10 @@ class RollbackCandidate
 class ScanReplace
 {
  public:
-  ScanReplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  ScanReplace(odb::dbDatabase* db,
+              sta::dbSta* sta,
+              rsz::Resizer* resizer,
+              utl::Logger* logger);
 
   // Populates the internal state with available scan cells (if there is any).
   // This method doesn't change the design
@@ -105,6 +109,7 @@ class ScanReplace
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
+  rsz::Resizer* resizer_;
   utl::Logger* logger_;
   sta::dbNetwork* db_network_;
 };
