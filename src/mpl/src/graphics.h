@@ -53,7 +53,8 @@ class Graphics : public web::Renderer, public MplObserver
 
   void drawObjects(web::Painter& painter) override;
 
-  void setSoftBlockages(const std::vector<odb::Rect>& soft_blockages) override;
+  void setPinAccessBlockages(
+      const std::vector<odb::Rect>& pin_access_blockages) override;
   void setNets(const BundledNetList& nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
@@ -81,7 +82,7 @@ class Graphics : public web::Renderer, public MplObserver
   void resetPenalties();
   void drawCluster(Cluster* cluster, web::Painter& painter);
   void drawBlockedRegionsIndication(web::Painter& painter);
-  void drawSoftBlockages(web::Painter& painter);
+  void drawPinAccessBlockages(web::Painter& painter);
   void drawOffsetRect(const odb::Rect& rect,
                       const std::string& center_text,
                       web::Painter& painter);
@@ -115,7 +116,7 @@ class Graphics : public web::Renderer, public MplObserver
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
-  std::vector<odb::Rect> soft_blockages_;
+  std::vector<odb::Rect> pin_access_blockages_;
   BundledNetList nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};

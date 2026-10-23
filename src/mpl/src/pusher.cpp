@@ -19,16 +19,17 @@ using utl::MPL;
 Pusher::Pusher(utl::Logger* logger,
                Cluster* root,
                odb::dbBlock* block,
-               const std::vector<odb::Rect>& io_blockages)
+               const std::vector<odb::Rect>& pin_access_blockages)
     : logger_(logger), root_(root), block_(block)
 {
   core_ = block_->getCoreArea();
-  setIOBlockages(io_blockages);
+  setPinAccessBlockages(pin_access_blockages);
 }
 
-void Pusher::setIOBlockages(const std::vector<odb::Rect>& io_blockages)
+void Pusher::setPinAccessBlockages(
+    const std::vector<odb::Rect>& pin_access_blockages)
 {
-  io_blockages_ = io_blockages;
+  pin_access_blockages_ = pin_access_blockages;
 }
 
 void Pusher::fetchMacroClusters(Cluster* parent,
@@ -199,7 +200,7 @@ void Pusher::pushMacroClusterToCoreBoundaries(
                toString(boundary));
 
     if (overlapsWithHardMacro(cluster_box, macro_cluster->getId())
-        || overlapsWithIOBlockage(cluster_box)) {
+        || overlapsWithPinAccessBlockage(cluster_box)) {
       // Move back to original position.
       moveMacroClusterBox(cluster_box, boundary, -distance);
     } else {
@@ -281,16 +282,17 @@ bool Pusher::overlapsWithHardMacro(const odb::Rect& cluster_box, int cluster_id)
   return false;
 }
 
-bool Pusher::overlapsWithIOBlockage(const odb::Rect& cluster_box) const
+bool Pusher::overlapsWithPinAccessBlockage(const odb::Rect& cluster_box) const
 {
-  for (const odb::Rect& io_blockage : io_blockages_) {
-    if (cluster_box.overlaps(io_blockage)) {
+  for (const odb::Rect& blockage : pin_access_blockages_) {
+    if (cluster_box.overlaps(blockage)) {
       debugPrint(logger_,
                  MPL,
                  "boundary_push",
                  1,
-                 "\tFound overlap with IO blockage {}. Push will be reverted.",
-                 io_blockage);
+                 "\tFound overlap with pin access blockage {}. Push will be "
+                 "reverted.",
+                 blockage);
       return true;
     }
   }

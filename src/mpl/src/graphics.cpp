@@ -341,13 +341,13 @@ void Graphics::drawCluster(Cluster* cluster, web::Painter& painter)
   }
 }
 
-void Graphics::drawSoftBlockages(web::Painter& painter)
+void Graphics::drawPinAccessBlockages(web::Painter& painter)
 {
-  if (!soft_blockages_.empty()) {
+  if (!pin_access_blockages_.empty()) {
     painter.setPen(web::Painter::kGray, true);
     painter.setBrush(web::Painter::kGray, web::Painter::kDiagonal);
 
-    for (const auto& blockage : soft_blockages_) {
+    for (const auto& blockage : pin_access_blockages_) {
       drawOffsetRect(blockage, "", painter);
     }
   }
@@ -396,7 +396,7 @@ void Graphics::drawObjects(web::Painter& painter)
   }
 
   if (!soft_macros_.empty()) {
-    drawSoftBlockages(painter);
+    drawPinAccessBlockages(painter);
   }
 
   painter.setPen(web::Painter::kWhite, true);
@@ -682,9 +682,10 @@ void Graphics::setSoftMacroBrush(web::Painter& painter,
   }
 }
 
-void Graphics::setSoftBlockages(const std::vector<odb::Rect>& soft_blockages)
+void Graphics::setPinAccessBlockages(
+    const std::vector<odb::Rect>& pin_access_blockages)
 {
-  soft_blockages_ = soft_blockages;
+  pin_access_blockages_ = pin_access_blockages;
 }
 
 void Graphics::setShowBundledNets(bool show_bundled_nets)
@@ -783,7 +784,7 @@ void Graphics::eraseDrawing()
 
   soft_macros_.clear();
   hard_macros_.clear();
-  soft_blockages_.clear();
+  pin_access_blockages_.clear();
   nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();

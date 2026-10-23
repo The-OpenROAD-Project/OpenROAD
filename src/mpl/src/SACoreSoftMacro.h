@@ -65,7 +65,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
-  void setSoftBlockages(const RectList& soft_blockages);
+  void setPinAccessBlockages(const RectList& pin_access_blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
 
@@ -127,7 +127,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void findFixedMacros();
 
-  std::vector<odb::Rect> soft_blockages_;
+  std::vector<odb::Rect> pin_access_blockages_;
   std::vector<odb::Rect> fixed_macros_;
 
   Cluster* root_;

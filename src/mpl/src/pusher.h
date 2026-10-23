@@ -23,12 +23,13 @@ class Pusher
   Pusher(utl::Logger* logger,
          Cluster* root,
          odb::dbBlock* block,
-         const std::vector<odb::Rect>& io_blockages);
+         const std::vector<odb::Rect>& pin_access_blockages);
 
   void pushMacrosToCoreBoundaries();
 
  private:
-  void setIOBlockages(const std::vector<odb::Rect>& io_blockages);
+  void setPinAccessBlockages(
+      const std::vector<odb::Rect>& pin_access_blockages);
   bool designHasSingleCentralizedMacroArray();
   void pushMacroClusterToCoreBoundaries(
       Cluster* macro_cluster,
@@ -41,7 +42,7 @@ class Pusher
                            Boundary boundary,
                            int distance);
   bool overlapsWithHardMacro(const odb::Rect& cluster_box, int cluster_id);
-  bool overlapsWithIOBlockage(const odb::Rect& cluster_box) const;
+  bool overlapsWithPinAccessBlockage(const odb::Rect& cluster_box) const;
 
   utl::Logger* logger_;
 
@@ -49,7 +50,7 @@ class Pusher
   odb::dbBlock* block_;
   odb::Rect core_;
 
-  std::vector<odb::Rect> io_blockages_;
+  std::vector<odb::Rect> pin_access_blockages_;
   std::vector<HardMacro*> hard_macros_;
 };
 

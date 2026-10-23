@@ -37,7 +37,10 @@ class MplObserver
   virtual void finishedClustering(PhysicalHierarchy* tree) {}
 
   virtual void setMaxLevel(int max_level) {}
-  virtual void setSoftBlockages(const std::vector<odb::Rect>& soft_blockages) {}
+  virtual void setPinAccessBlockages(
+      const std::vector<odb::Rect>& pin_access_blockages)
+  {
+  }
   virtual void setNets(const BundledNetList& nets) {}
   virtual void setShowBundledNets(bool show_bundled_nets) {}
   virtual void setShowClustersIds(bool show_clusters_ids) {}

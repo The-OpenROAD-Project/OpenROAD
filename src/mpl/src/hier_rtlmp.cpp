@@ -229,7 +229,7 @@ void HierRTLMP::run()
     graphics_->drawResult();
   }
 
-  Pusher pusher(logger_, tree_->root.get(), block_, io_blockages_);
+  Pusher pusher(logger_, tree_->root.get(), block_, pin_access_blockages_);
   pusher.pushMacrosToCoreBoundaries();
 
   updateMacrosOnDb();
@@ -294,7 +294,7 @@ void HierRTLMP::init()
   tree_ = std::make_unique<PhysicalHierarchy>();
   skip_macro_placement_ = false;
   placement_blockages_.clear();
-  io_blockages_.clear();
+  pin_access_blockages_.clear();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, logger_, tritonpart_, graphics_.get());
 
@@ -1096,7 +1096,7 @@ void HierRTLMP::createPinAccessBlockage(const BoundaryRegion& region,
     }
   }
 
-  io_blockages_.push_back(blockage);
+  pin_access_blockages_.push_back(blockage);
 }
 
 std::vector<Cluster*> HierRTLMP::getClustersOfUnplacedIOPins() const
@@ -1268,9 +1268,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
   eliminateOverlaps(hard_blockages);
   createSoftMacrosForBlockages(hard_blockages, macros);
 
-  RectList soft_blockages = findOffsetIntersections(io_blockages_, outline);
+  RectList pin_access_blockages
+      = findOffsetIntersections(pin_access_blockages_, outline);
   if (graphics_) {
-    graphics_->setSoftBlockages(soft_blockages);
+    graphics_->setPinAccessBlockages(pin_access_blockages);
   }
 
   // We store the io clusters to push them into the macros' vector
@@ -1441,7 +1442,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-      sa->setSoftBlockages(soft_blockages);
+      sa->setPinAccessBlockages(pin_access_blockages);
       if (single_array_single_std_cell_cluster) {
         sa->forceCentralization();
       }
