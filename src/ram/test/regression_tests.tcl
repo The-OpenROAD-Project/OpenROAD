@@ -9,6 +9,7 @@ record_tests {
   and_or_read_asap7
   zero_word_asap7
   reset_asap7
+  reset_nangate45
   banks_asap7
   banked_read_ports_asap7
   register_read_address_asap7

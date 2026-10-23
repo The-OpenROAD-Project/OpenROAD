@@ -17,6 +17,7 @@ PASSFAIL_TESTS = [
     "and_or_read_asap7",
     "zero_word_asap7",
     "reset_asap7",
+    "reset_nangate45",
     "banks_asap7",
     "banked_read_ports_asap7",
     "register_read_address_asap7",
@@ -131,6 +132,11 @@ filegroup(
             "reset_asap7": [
                 "//test:asap7_data",
                 "//test:asap7_nldm_data",
+            ],
+            "reset_nangate45": [
+                "Nangate45/Nangate45.lef",
+                "Nangate45/Nangate45_tech.lef",
+                "Nangate45/Nangate45_typ.lib",
             ],
             "service_columns_asap7": [
                 "//test:asap7_data",

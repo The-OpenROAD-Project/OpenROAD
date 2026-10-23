@@ -1015,7 +1015,8 @@ dbMaster* RamGen::findMaster(
     const std::function<bool(sta::LibertyPort*)>& match,
     const char* name,
     const bool required,
-    dbMaster* given)
+    dbMaster* given,
+    const bool q_and_qn)
 {
   if (given) {
     auto liberty = network_->libertyCell(network_->dbToSta(given));
@@ -1047,7 +1048,6 @@ dbMaster* RamGen::findMaster(
       if (!liberty) {
         continue;
       }
-
       if (!match) {
         if (liberty->portCount() == 0) {
           best_area = liberty->area();
@@ -1060,17 +1060,21 @@ dbMaster* RamGen::findMaster(
           liberty->portIterator());
 
       sta::ConcretePort* out = nullptr;
+      int outputs = 0;
+      bool flop_outputs = true;  // every output a flop's Q or QN
       while (port_iter->hasNext()) {
         auto lib_port = port_iter->next();
         auto dir = lib_port->direction();
         if (dir->isAnyOutput()) {
-          if (!out) {
+          ++outputs;
+          flop_outputs &= lib_port->libertyPort()->isRegOutput();
+          if (!out || (q_and_qn && !match(out->libertyPort()))) {
             out = lib_port;
-          } else {
-            out = nullptr;  // no multi-output gates
-            break;
           }
         }
+      }
+      if (outputs > 1 && !(q_and_qn && outputs == 2 && flop_outputs)) {
+        continue;  // no multi-output gates
       }
 
       if (!out || !match(out->libertyPort())) {
@@ -1510,12 +1514,14 @@ void RamGen::findMasters()
             if (!port->isRegOutput()) {
               return false;
             }
-            // with a reset, a flop with both an asynchronous clear and
-            // preset, so any bit can take either value
+            // with a reset, a positive-edge flop with both an asynchronous
+            // clear and preset, so any bit can take either value
             if (reset) {
               bool clear_preset = false;
               for (const auto& seq : port->libertyCell()->sequentials()) {
-                clear_preset |= seq.isRegister() && seq.clear() && seq.preset();
+                clear_preset |= seq.isRegister() && seq.clear() && seq.preset()
+                                && seq.clock()
+                                && seq.clock()->op() == sta::FuncExpr::Op::port;
               }
               if (!clear_preset) {
                 return false;
@@ -1535,7 +1541,10 @@ void RamGen::findMasters()
             delete port_iter;
             return true;
           },
-          "storage");
+          "storage",
+          /*required=*/true,
+          /*given=*/nullptr,
+          /*q_and_qn=*/reset);
     }
     // the AND-OR read path takes a flop whose only output is QN; its
     // trees undo the inversion
@@ -2351,8 +2360,8 @@ void RamGen::generate(const int mask_size,
       }
       return false;
     };
-    // the storage cell where it is one (findMaster passes over cells with
-    // two outputs, as Nangate45's flops all are), else the smallest
+    // the storage cell where it is one, else the smallest (Nangate45's
+    // flops all have Q and QN)
     auto flop = [plain](sta::LibertyPort* port) {
       return port->isRegOutput() && plain(port->libertyCell());
     };
@@ -2364,7 +2373,11 @@ void RamGen::generate(const int mask_size,
                    network_->libertyCell(network_->dbToSta(storage_cell_)))) {
       addr_flop_cell_ = storage_cell_;
     } else {
-      addr_flop_cell_ = findMaster(flop, "address flop");
+      addr_flop_cell_ = findMaster(flop,
+                                   "address flop",
+                                   /*required=*/true,
+                                   /*given=*/nullptr,
+                                   /*q_and_qn=*/true);
     }
     auto ports = buildPortMap(addr_flop_cell_, &addr_flop_inverted_);
     auto liberty = network_->libertyCell(network_->dbToSta(addr_flop_cell_));
