@@ -2088,15 +2088,17 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
         if (box->isVia()) {
           continue;
         }
+        // the interval holds pin centres: a pin's half width and the
+        // layer's spacing from the strap on either side
         const odb::Rect r = box->getBox();
         if (box->getTechLayer() == hor_layer) {
-          const int s = hor_layer->getSpacing();
+          const int s = hor_layer->getSpacing() + hor_layer->getWidth() / 2;
           io_placer_->excludeInterval(
               ppl::Edge::right, r.yMin() - s, r.yMax() + s);
           io_placer_->excludeInterval(
               ppl::Edge::left, r.yMin() - s, r.yMax() + s);
         } else if (box->getTechLayer() == ver_layer) {
-          const int s = ver_layer->getSpacing();
+          const int s = ver_layer->getSpacing() + ver_layer->getWidth() / 2;
           io_placer_->excludeInterval(
               ppl::Edge::top, r.xMin() - s, r.xMax() + s);
           io_placer_->excludeInterval(
