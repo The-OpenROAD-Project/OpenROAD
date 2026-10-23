@@ -179,6 +179,9 @@ class extSpef
   uint32_t getNetMapId(uint32_t netId);
   const char* tinkerSpefName(const char* iname);
   const char* addEscChar(const char* iname, bool esc_bus_brkts);
+  // Hierarchical names for a hierarchical db (see extSpef.cpp)
+  std::string spefInstName(odb::dbInst* inst) const;
+  std::string spefNetName(odb::dbNet* net) const;
 
   bool isITermMarked(uint32_t node);
   void markITerm(uint32_t node);

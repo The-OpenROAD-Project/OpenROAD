@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "name.h"
@@ -346,7 +347,7 @@ void extSpef::writeITermNode(const uint32_t node)
     } else {
       sprintf(_msgBuf1,
               "%s%s%s ",
-              addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
+              addEscChar(tinkerSpefName(spefInstName(inst).c_str()), true),
               spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     }
@@ -361,7 +362,7 @@ void extSpef::writeITermNode(const uint32_t node)
     } else {
       fprintf(_outFP,
               "%s%s%s ",
-              addEscChar(tinkerSpefName((char*) inst->getConstName()), true),
+              addEscChar(tinkerSpefName(spefInstName(inst).c_str()), true),
               spef_header_.delimiter.c_str(),
               addEscChar(iterm->getMTerm()->getName(inst, &ttname[0]), false));
     }
@@ -425,7 +426,7 @@ void extSpef::writeNode(const uint32_t netId, const uint32_t node)
     } else {
       sprintf(_msgBuf1,
               "%s%s%d ",
-              addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+              addEscChar(tinkerSpefName(spefNetName(tnet).c_str()), false),
               spef_header_.delimiter.c_str(),
               node);
     }
@@ -436,7 +437,7 @@ void extSpef::writeNode(const uint32_t netId, const uint32_t node)
     } else {
       fprintf(_outFP,
               "%s%s%d ",
-              addEscChar(tinkerSpefName((char*) tnet->getConstName()), false),
+              addEscChar(tinkerSpefName(spefNetName(tnet).c_str()), false),
               spef_header_.delimiter.c_str(),
               node);
     }
@@ -568,7 +569,7 @@ void extSpef::writeDnet(uint32_t netId, const double* totCap)
   } else {
     fprintf(_outFP,
             "\n*D_NET %s ",
-            addEscChar(tinkerSpefName((char*) _d_net->getConstName()), false));
+            addEscChar(tinkerSpefName(spefNetName(_d_net).c_str()), false));
   }
   writeRCvalue(totCap, scale_factors_.capacitance);
   fprintf(_outFP, "\n");
@@ -1386,6 +1387,107 @@ const char* extSpef::addEscChar(const char* iname, const bool esc_bus_brkts)
   return _mMapName;
 }
 
+// Hierarchical names (hierarchical db).
+// A block SPEF names every object by its db name. In a db linked with
+// -hier, read_verilog builds those names from the full path ("u_sub/q0"),
+// so they match the hierarchical Verilog. Objects created later by a tool
+// with a plain name (e.g. CTS: clkbuf_0_x / clknet_0_x) keep no path in the
+// name although they live in a sub-module: the instance through
+// dbInst::getModule(), the net because all its pins are in that module.
+// write_verilog places them in that module, so the SPEF must use the same
+// path. Flat db: no sub-modules, names unchanged.
+static bool hasUnescapedDelimiter(const std::string& name, const char delim)
+{
+  bool escaped = false;
+  for (const char ch : name) {
+    if (escaped) {
+      escaped = false;
+    } else if (ch == '\\') {
+      escaped = true;
+    } else if (ch == delim) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Module instance path of "module" as a list, top first ({} for top).
+static std::vector<std::string> modulePath(odb::dbModule* module)
+{
+  std::vector<std::string> path;
+  while (module != nullptr) {
+    odb::dbModInst* mod_inst = module->getModInst();
+    if (mod_inst == nullptr) {
+      break;
+    }
+    path.emplace_back(mod_inst->getName());
+    module = mod_inst->getParent();
+  }
+  std::reverse(path.begin(), path.end());
+  return path;
+}
+
+std::string extSpef::spefInstName(dbInst* inst) const
+{
+  std::string name = inst->getName();
+  odb::dbModule* module = inst->getModule();
+  odb::dbModInst* mod_inst = module ? module->getModInst() : nullptr;
+  if (mod_inst == nullptr) {
+    return name;
+  }
+  const std::string prefix
+      = mod_inst->getHierarchicalName() + _block->getHierarchyDelimiter();
+  if (name.compare(0, prefix.size(), prefix) == 0) {
+    return name;  // already the full path (read_verilog -hier)
+  }
+  return prefix + name;
+}
+
+std::string extSpef::spefNetName(dbNet* net) const
+{
+  std::string name = net->getName();
+  const char delim = _block->getHierarchyDelimiter();
+  // already a hierarchical name, or a top-level port net
+  if (hasUnescapedDelimiter(name, delim) || !net->getBTerms().empty()) {
+    return name;
+  }
+  // crosses module boundaries: keep the db name, as before
+  odb::PtrSet<odb::dbModNet> mod_nets;
+  net->findRelatedModNets(mod_nets);
+  if (!mod_nets.empty()) {
+    return name;
+  }
+  // deepest module that holds every pin of the net
+  bool first = true;
+  std::vector<std::string> common;
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    const std::vector<std::string> path
+        = modulePath(iterm->getInst()->getModule());
+    if (first) {
+      common = path;
+      first = false;
+    } else {
+      size_t n = 0;
+      while (n < common.size() && n < path.size() && common[n] == path[n]) {
+        n++;
+      }
+      common.resize(n);
+    }
+    if (common.empty()) {
+      return name;
+    }
+  }
+  if (first || common.empty()) {
+    return name;
+  }
+  std::string prefix;
+  for (const std::string& part : common) {
+    prefix += part;
+    prefix += delim;
+  }
+  return prefix + name;
+}
+
 const char* extSpef::tinkerSpefName(const char* iname)
 {
   if (!_noBackSlash) {
@@ -1453,8 +1555,8 @@ void extSpef::writeNetMap(dbSet<dbNet>& nets)
     net->setMark_1(false);
     const uint32_t netMapId = getNetMapId(net->getId());
 
-    const char* nname = net->getConstName();
-    const char* nname1 = tinkerSpefName(nname);
+    const std::string nname = spefNetName(net);
+    const char* nname1 = tinkerSpefName(nname.c_str());
     nname1 = addEscChar(nname1, false);
     fprintf(_outFP, "*%d %s\n", netMapId, nname1);
   }
@@ -1486,8 +1588,8 @@ void extSpef::writeInstMap()
 
     const uint32_t instMapId = getInstMapId(inst->getId());
 
-    const char* nname = inst->getConstName();
-    const char* nname1 = tinkerSpefName(nname);
+    const std::string nname = spefInstName(inst);
+    const char* nname1 = tinkerSpefName(nname.c_str());
     nname1 = addEscChar(nname1, true);
     fprintf(_outFP, "*%d %s\n", instMapId, nname1);
   }
