@@ -376,8 +376,8 @@ psm::IRSolver* PDNSim::getIRSolver(odb::dbNet* net, bool floorplanning)
 {
   auto& solver = solvers_[net];
   if (solver == nullptr) {
-    auto network = std::make_unique<IRNetwork>(net, logger_, floorplanning);
-    solver = std::make_unique<IRSolver>(std::move(network),
+    solver = std::make_unique<IRSolver>(net,
+                                        floorplanning,
                                         sta_,
                                         estimate_parasitics_,
                                         logger_,
