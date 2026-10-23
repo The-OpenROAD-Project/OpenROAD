@@ -286,5 +286,59 @@ TEST_F(JournalFixture, RenameModNet)
   dbModule::destroy(module);
 }
 
+TEST_F(JournalFixture, NestedUndoThenEditIsUndoneByOuter)
+{
+  dbInst::create(block, and2, "a");
+
+  dbDatabase::beginEco(block);  // outer
+  dbDatabase::beginEco(block);  // inner
+  dbInst::destroy(block->findInst("a"));
+  dbDatabase::undoEco(block);  // inner undo recreates "a"
+  ASSERT_NE(block->findInst("a"), nullptr);
+
+  // The outer ECO must record edits made after the inner one ends.
+  dbInst::destroy(block->findInst("a"));
+  dbInst::create(block, or2, "b");
+  EXPECT_FALSE(dbDatabase::ecoEmpty(block));
+  dbDatabase::undoEco(block);  // outer undo
+
+  EXPECT_NE(block->findInst("a"), nullptr);
+  EXPECT_EQ(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
+}
+
+TEST_F(JournalFixture, NestedCommitThenEditIsUndoneByOuter)
+{
+  dbDatabase::beginEco(block);  // outer
+  dbDatabase::beginEco(block);  // inner
+  dbInst::create(block, and2, "a");
+  dbDatabase::commitEco(block);  // inner merges into outer
+
+  dbInst::create(block, or2, "b");
+  dbDatabase::undoEco(block);  // outer undo
+
+  EXPECT_EQ(block->findInst("a"), nullptr);
+  EXPECT_EQ(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
+}
+
+TEST_F(JournalFixture, EndedEcoStaysStoppedAfterNestedCommit)
+{
+  dbDatabase::beginEco(block);
+  dbDatabase::endEco(block);  // stop recording the first ECO
+  dbDatabase::beginEco(block);
+  dbInst::create(block, and2, "a");
+  dbDatabase::commitEco(block);  // merges into the stopped ECO
+
+  // The stopped ECO does not resume recording.
+  EXPECT_FALSE(dbDatabase::ecoStackEmpty(block));
+  dbInst::create(block, or2, "b");
+  dbDatabase::undoEco(block);
+
+  EXPECT_EQ(block->findInst("a"), nullptr);
+  EXPECT_NE(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
+}
+
 }  // namespace
 }  // namespace odb
