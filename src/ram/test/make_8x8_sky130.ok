@@ -70,8 +70,8 @@
 [INFO RAM-0044] RAM maximum path delay: 1.012 ns
 [INFO RAM-0045] RAM minimum path delay: 0.097 ns
 [INFO RAM-0047] Using maximum path delay of 1.012 ns as the clock period for power estimation
-[INFO RAM-0046] RAM estimated power at maximum frequency: 909346.625 nW
-[INFO RAM-0048] RAM estimated energy efficiency: 115.029 fJ/bit
+[INFO RAM-0046] RAM estimated power at maximum frequency: 805929.688 nW
+[INFO RAM-0048] RAM estimated energy efficiency: 101.947 fJ/bit
 No differences found.
 No differences found.
 No differences found.
