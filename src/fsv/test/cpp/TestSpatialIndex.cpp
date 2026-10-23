@@ -156,5 +156,21 @@ TEST(SpatialIndex, OverlapsMatchBruteForce)
   }
 }
 
+// A visitor that returns false stops the query.
+TEST(SpatialIndex, OverlapQueryStops)
+{
+  std::vector<Box> boxes;
+  for (int b = 0; b < 100; b++) {
+    boxes.push_back({{0.1 * b, 0, 0.5}, {0.1 * b + 0.05, 1, 1}});
+  }
+  const SpatialIndex<3> index(boxes);
+  int visits = 0;
+  index.forEachOverlapping({{-1, -1, 0}, {20, 2, 2}}, [&](int) {
+    visits++;
+    return visits < 7;
+  });
+  EXPECT_EQ(visits, 7);
+}
+
 }  // namespace
 }  // namespace fsv

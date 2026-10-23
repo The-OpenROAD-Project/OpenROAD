@@ -76,9 +76,10 @@ bool Dielectric<D>::listShells(const AlignedBox<D>& query,
   shell_index_.forEachOverlapping(query, [&](const int i) {
     if (list.size == ShellList::kCapacity) {
       full = true;
-      return;
+      return false;
     }
     list.index[list.size++] = i;
+    return true;
   });
   return !full;
 }

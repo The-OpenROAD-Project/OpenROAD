@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <type_traits>
 #include <vector>
 
 #include "fsv/Geometry.h"
@@ -33,7 +34,8 @@ class SpatialIndex
 
   // Calls visit(i) for every box i that intersects `query` (closed boxes,
   // so touching counts), in no particular order. The ground plane is not
-  // a box here.
+  // a box here. A visitor that returns bool stops the query by returning
+  // false.
   template <typename Visit>
   void forEachOverlapping(const AlignedBox<D>& query, Visit visit) const
   {
@@ -50,8 +52,13 @@ class SpatialIndex
       }
       if (node.count > 0) {
         for (int i = node.first; i < node.first + node.count; i++) {
-          if (intersects(boxes_[order_[i]], query)) {
+          if (!intersects(boxes_[order_[i]], query)) {
+            continue;
+          }
+          if constexpr (std::is_void_v<std::invoke_result_t<Visit, int>>) {
             visit(order_[i]);
+          } else if (!visit(order_[i])) {
+            return;
           }
         }
         continue;
