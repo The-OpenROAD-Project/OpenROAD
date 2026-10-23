@@ -22,6 +22,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "powerBase.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
@@ -37,6 +38,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
                              std::shared_ptr<ClockBase> cb,
+                             std::shared_ptr<PowerBase> pwb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : npVars_(npVars)
@@ -48,6 +50,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   rb_ = std::move(rb);
   tb_ = std::move(tb);
   cb_ = std::move(cb);
+  pwb_ = std::move(pwb);
   log_ = log;
 
   db_cbk_ = std::make_unique<nesterovDbCbk>(this);
@@ -473,6 +476,10 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
+    // Virtual iterations undo their netlist edits, so activity is unchanged.
+    if (pwb_ && !virtual_td_iter) {
+      pwb_->setPowerNetWeights();
+    }
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
