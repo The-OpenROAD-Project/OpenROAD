@@ -2451,6 +2451,14 @@ body.is-resizing-h * {
     flex-shrink: 0;
 }
 
+.timing-expand-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: var(--fs-12);
+    user-select: none;
+}
+
 .timing-path-count {
     color: var(--fg-muted);
     font-size: var(--fs-12);
