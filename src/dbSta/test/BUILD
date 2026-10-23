@@ -377,6 +377,20 @@ filegroup(
 ]
 
 cc_test(
+    name = "bterm_direction_unittest",
+    srcs = ["cpp/TestBTermDirection.cpp"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "dbsta_hconn_unittest",
     srcs = ["cpp/TestHconn.cpp"],
     data = [
