@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
@@ -188,6 +189,9 @@ class HierRTLMP
   void placeChildren(Cluster* parent);
   RectList findOffsetIntersections(const RectList& candidate_blockages,
                                    const odb::Rect& outline) const;
+  std::optional<odb::Rect> findOffsetIntersection(
+      const odb::Rect& candidate_blockage,
+      const odb::Rect& outline) const;
   void eliminateOverlaps(std::vector<odb::Rect>& blockages) const;
   void createSoftMacrosForBlockages(const std::vector<odb::Rect>& blockages,
                                     std::vector<SoftMacro>& macros);
