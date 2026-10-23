@@ -351,6 +351,23 @@ cc_test(
 )
 
 cc_test(
+    name = "TestResistanceMode",
+    size = "small",
+    srcs = ["cpp/TestResistanceMode.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestRoutingCongestion",
     size = "small",
     srcs = ["cpp/TestRoutingCongestion.cpp"],

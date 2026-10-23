@@ -335,6 +335,7 @@ class FastRouteCore
  private:
   friend class Maze3DTestPeer;
   friend class OverflowTestPeer;
+  friend class ResistanceModeTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
