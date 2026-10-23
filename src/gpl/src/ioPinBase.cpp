@@ -3,6 +3,7 @@
 
 #include "ioPinBase.h"
 
+#include <Kokkos_Core.hpp>
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -16,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "kokkosRuntime.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -129,11 +131,14 @@ void IoPinBase::refreshGPins()
 void IoPinBase::computeNext()
 {
   const size_t n = bterms_.size();
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (size_t i = 0; i < n; ++i) {
-    // Followers are reflected below.
-    next_[i] = isMirrorFollower(i) ? cur_[i] : optimum(i, cur_[i]);
-  }
+  const auto& kokkos_ctx = nbc_->getKokkosContext();
+  Kokkos::parallel_for(
+      "gpl::computeNextIoPins",
+      HostRange(kokkos_ctx.space, 0, n),
+      [&](size_t i) {
+        // Followers are reflected below.
+        next_[i] = isMirrorFollower(i) ? cur_[i] : optimum(i, cur_[i]);
+      });
   if (log_->debugCheck(GPL, "placeIos", 1)) {
     optimum_ = next_;
   }

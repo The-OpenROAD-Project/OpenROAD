@@ -33,6 +33,7 @@
 #include <climits>
 #include <cmath>
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -139,7 +140,7 @@ SyntheticNetlist makeNetlist()
 template <typename T>
 Kokkos::View<T*> toDevice(const char* label, const std::vector<T>& host)
 {
-  Kokkos::View<T*> dev(label, host.size());
+  Kokkos::View<T*> dev(std::string(label), host.size());
   Kokkos::View<const T*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> host_v(
       host.data(), host.size());
   Kokkos::deep_copy(dev, host_v);
