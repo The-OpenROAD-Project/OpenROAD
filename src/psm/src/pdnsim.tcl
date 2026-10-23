@@ -219,17 +219,24 @@ proc set_pdnsim_net_voltage { args } {
 
 sta::define_cmd_args "set_psm_interchip_resistance" {
   -resistance resistance
+  [-scene scene]
 }
 
 proc set_psm_interchip_resistance { args } {
   sta::parse_key_args "set_psm_interchip_resistance" args \
-    keys {-resistance} flags {}
+    keys {-resistance -scene} flags {}
   sta::check_argc_eq0 "set_psm_interchip_resistance" $args
   if { ![info exists keys(-resistance)] } {
     utl::error PSM 135 "Missing mandatory argument -resistance."
   }
   sta::check_positive_float "-resistance" $keys(-resistance)
-  psm::set_interchip_resistance_cmd $keys(-resistance)
+  set scenes [sta::parse_scene_or_null keys]
+  if { $scenes == "NULL" } {
+    set scenes [sta::scenes]
+  }
+  foreach scene $scenes {
+    psm::set_interchip_resistance_cmd $scene $keys(-resistance)
+  }
 }
 
 sta::define_cmd_args "set_pdnsim_inst_power" {

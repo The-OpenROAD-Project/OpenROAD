@@ -289,7 +289,9 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
 {
   Node* source = findBondEndpoint(rseg->getSourceCapNode());
   Node* target = findBondEndpoint(rseg->getTargetCapNode());
-  if (!std::isfinite(rseg->getResistance()) || rseg->getResistance() <= 0.0) {
+  const double resistance
+      = interchip_resistance_.value_or(rseg->getResistance());
+  if (!std::isfinite(resistance) || resistance <= 0.0) {
     logger_->error(utl::PSM,
                    96,
                    "dbChipRSeg on {} must have positive resistance.",
@@ -324,8 +326,8 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
                    target_net->getName(),
                    target_net->getSigType().getString());
   }
-  interdie_connections_.push_back(std::make_unique<FixedResistanceConnection>(
-      source, target, rseg->getResistance()));
+  interdie_connections_.push_back(
+      std::make_unique<FixedResistanceConnection>(source, target, resistance));
 }
 
 // OpenRCX integration is deferred until its extractor supports multiple bump

@@ -54,13 +54,13 @@ PDNSim::PDNSim(utl::Logger* logger,
 
 PDNSim::~PDNSim() = default;
 
-void PDNSim::setInterchipResistance(double resistance)
+void PDNSim::setInterchipResistance(sta::Scene* scene, double resistance)
 {
   if (!std::isfinite(resistance) || resistance <= 0.0) {
     logger_->error(
         utl::PSM, 171, "Inter-chip resistance must be positive and finite.");
   }
-  interchip_resistance_ = resistance;
+  interchip_resistances_[scene] = resistance;
   clearSolvers();
 }
 
@@ -133,9 +133,9 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
   auto* chip_net = findChipNet(net);
 
-  auto& solver = assembly_solvers_[chip_net];
+  auto& solver = assembly_solvers_[chip_net][corner];
   if (solver == nullptr) {
-    solver = makeAssemblySolver(chip_net);
+    solver = makeAssemblySolver(chip_net, corner);
     for (auto* local_net : solver->getNetwork()->getNets()) {
       addOwner(local_net->getBlock());
     }
@@ -175,7 +175,13 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
 {
   if (sta::dbNetwork::is3DicTopChip(db_->getChip())) {
     auto* chip_net = findChipNet(net);
-    IRNetwork network(chip_net, logger_, floorplanning, interchip_resistance_);
+    // Connectivity is scene-independent; any configured resistance can create
+    // missing inter-chip resistors.
+    const std::optional<double> resistance
+        = interchip_resistances_.empty()
+              ? std::nullopt
+              : std::optional<double>(interchip_resistances_.begin()->second);
+    IRNetwork network(chip_net, logger_, floorplanning, resistance);
     checkAssemblyConnectivity(
         network, floorplanning, require_bterm, error_file);
     logger_->info(utl::PSM,
@@ -251,10 +257,17 @@ odb::dbChipNet* PDNSim::findChipNet(odb::dbNet* local_net) const
   return nullptr;
 }
 
-std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net)
+std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
+                                                     sta::Scene* scene)
 {
-  auto network
-      = std::make_unique<IRNetwork>(net, logger_, false, interchip_resistance_);
+  const auto resistance = interchip_resistances_.find(scene);
+  auto network = std::make_unique<IRNetwork>(
+      net,
+      logger_,
+      false,
+      resistance == interchip_resistances_.end()
+          ? std::nullopt
+          : std::optional<double>(resistance->second));
   auto solver = std::make_unique<IRSolver>(std::move(network),
                                            sta_,
                                            estimate_parasitics_,

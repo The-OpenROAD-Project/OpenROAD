@@ -129,7 +129,7 @@ set_pdnsim_net_voltage
 Set the resistance value used for inter-chip bump pair.
 
 ```tcl
-set_psm_interchip_resistance -resistance resistance
+set_psm_interchip_resistance -resistance resistance [-scene scene]
 ```
 
 #### Options
@@ -137,6 +137,7 @@ set_psm_interchip_resistance -resistance resistance
 | Switch Name | Description |
 | ----- | ----- |
 | `-resistance` | Resistance in ohms for each aligned inter-chip bump pair. It must be positive. |
+| `-scene` | Scene to use this resistance. If omitted, the resistance applies to all defined scenes. |
 
 ### Set PDNSim Instance power
 
