@@ -5,6 +5,7 @@ include("openroad")
 
 add_library(dbSta_lib
   dbSta.cc
+  dbSdcInDb.cc
   dbNetwork.cc
   dbSdcNetwork.cc
   dbEditHierarchy.cc
