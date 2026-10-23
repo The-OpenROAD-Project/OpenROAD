@@ -41,10 +41,17 @@ variable nangate45 {
   -max_tap_dist 10
 }
 
-# Every signal net with two or more pins has a wire, and detailed routing
-# left no violations.
+# Every signal net with two or more pins has a wire, detailed routing
+# left no violations, and no cell has a signal input left open.
 proc check { } {
   set block [ord::get_db_block]
+  foreach inst [$block getInsts] {
+    foreach iterm [$inst getITerms] {
+      if { [$iterm getNet] == "NULL" && [$iterm isInputSignal] } {
+        error "[$inst getName]/[[$iterm getMTerm] getName] is not connected"
+      }
+    }
+  }
   set nets 0
   foreach net [$block getNets] {
     if { [$net getSigType] != "SIGNAL" } {

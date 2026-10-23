@@ -473,6 +473,11 @@ class RamGen
   odb::dbBTerm* reset_port_{nullptr};
   odb::dbMaster* tie_off_cell_{nullptr};  // drives the inactive level
   std::string tie_off_pin_;
+  // a clock gate's inputs besides its clock and enable (a test enable),
+  // each tied low by tie_low_cell_
+  std::vector<std::string> clock_gate_test_pins_;
+  odb::dbMaster* tie_low_cell_{nullptr};
+  std::string tie_low_pin_;
   std::string storage_data_pin_;
   std::string storage_clear_pin_;
   std::string storage_preset_pin_;

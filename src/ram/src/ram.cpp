@@ -635,13 +635,22 @@ void RamGen::makeSlice(const int slice_idx,
 
   // Make clock gate (with -write_style mux, none: the flops hold by mux)
   if (!write_mux_ && !shared) {
-    makeInst(sel_cell.get(),
-             prefix,
-             "cg",
-             clock_gate_cell_,
-             {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
-              {clock_gate_ports_[{PortRoleType::DataIn, 0}], we_net},
-              {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}});
+    std::vector<std::pair<std::string, dbNet*>> connections
+        = {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
+           {clock_gate_ports_[{PortRoleType::DataIn, 0}], we_net},
+           {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}};
+    if (!clock_gate_test_pins_.empty()) {
+      dbNet* test_off = makeNet(prefix, "cg_test_off");
+      makeInst(sel_cell.get(),
+               prefix,
+               "cg_tie",
+               tie_low_cell_,
+               {{tie_low_pin_, test_off}});
+      for (const std::string& pin : clock_gate_test_pins_) {
+        connections.emplace_back(pin, test_off);
+      }
+    }
+    makeInst(sel_cell.get(), prefix, "cg", clock_gate_cell_, connections);
   }
 
   // Write path: this net is row_select AND with word_select so clock gate only
@@ -1625,6 +1634,34 @@ void RamGen::findMasters()
         /*required=*/true,
         clock_gate_cell_);
     clock_gate_ports_ = buildPortMap(clock_gate_cell_);
+    // The enable by its liberty role: an integrated clock gate's enable
+    // and test enable (asap7's SE) are both inputs, in no set order. The
+    // test enable is tied low, so the gate opens on the enable alone.
+    clock_gate_test_pins_.clear();
+    auto liberty = network_->libertyCell(network_->dbToSta(clock_gate_cell_));
+    std::string enable;
+    std::vector<std::string> others;
+    std::unique_ptr<sta::ConcreteCellPortIterator> ports(
+        liberty->portIterator());
+    while (ports->hasNext()) {
+      auto port = ports->next()->libertyPort();
+      if (port == nullptr || port->isPwrGnd() || !port->direction()->isInput()
+          || port->isClockGateClock() || port->isClock()) {
+        continue;
+      }
+      if (port->isClockGateEnable()) {
+        enable = port->name();
+      } else {
+        others.emplace_back(port->name());
+      }
+    }
+    if (!enable.empty()) {
+      clock_gate_ports_[{PortRoleType::DataIn, 0}] = enable;
+      clock_gate_test_pins_ = others;
+    }
+    if (!clock_gate_test_pins_.empty()) {
+      tie_low_cell_ = findTie(/*one=*/false, nullptr, tie_low_pin_);
+    }
   }
 
   // for input buffers
