@@ -20,15 +20,19 @@ foreach {id options} {
   94 {-banks 2 -rb_ports -1}
   97 {-tracks no_such_tracks.tcl}
   98 {-periphery unplaced}
+  79 {-cells {and2 OR2x2_ASAP7_75t_R}}
+  79 {-cells {nand2 NOR2xp33_ASAP7_75t_R}}
+  99 {-cells {and2 AND2x2_ASAP7_75t_R inv}}
 } {
   set args [dict merge $base $options]
   if { ![catch { generate_ram {*}$args } message] } {
     error "generate_ram $options did not stop"
   }
-  if { ![string match "*RAM-00$id*" $message] } {
-    error "generate_ram $options stopped with: $message, not RAM-00$id"
+  set want [format "RAM-%04d" $id]
+  if { ![string match "*$want*" $message] } {
+    error "generate_ram $options stopped with: $message, not $want"
   }
-  puts "$options: RAM-00$id"
+  puts "$options: $want"
 }
 
 puts "pass"

@@ -199,10 +199,12 @@ class RamGen
   // holds the unused pin off
   void findResetPins();
   // The smallest cell `match` accepts; none is an error unless not
-  // `required`, then nullptr.
+  // `required`, then nullptr. A cell `given` is checked by `match`
+  // instead, on any of its outputs.
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name,
-                            bool required = true);
+                            bool required = true,
+                            odb::dbMaster* given = nullptr);
   // The smallest four-input cell whose function is `table` (bit k the
   // output for inputs k in binary, in the order of `inputs`): `inputs`
   // gets its input pins in that order, `output` its output pin.

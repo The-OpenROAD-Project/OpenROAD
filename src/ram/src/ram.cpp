@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -1015,8 +1016,26 @@ std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix,
 dbMaster* RamGen::findMaster(
     const std::function<bool(sta::LibertyPort*)>& match,
     const char* name,
-    const bool required)
+    const bool required,
+    dbMaster* given)
 {
+  if (given) {
+    auto liberty = network_->libertyCell(network_->dbToSta(given));
+    bool matched = false;
+    if (liberty && match) {
+      std::unique_ptr<sta::ConcreteCellPortIterator> ports(
+          liberty->portIterator());
+      while (ports->hasNext() && !matched) {
+        auto port = ports->next()->libertyPort();
+        matched = port && port->direction()->isAnyOutput() && match(port);
+      }
+    }
+    if (!matched) {
+      logger_->error(
+          RAM, 79, "Cell {} is not a {} cell.", given->getName(), name);
+    }
+    return given;
+  }
   dbMaster* best = nullptr;
   float best_area = std::numeric_limits<float>::max();
 
@@ -1345,17 +1364,17 @@ void RamGen::findResetPins()
 
   // the unused pin of each flop held at its inactive level
   const bool off_high = reset_active_low_;
-  if (!tie_off_cell_) {
-    tie_off_cell_ = findMaster(
-        [off_high](sta::LibertyPort* port) {
-          auto f = port->function();
-          return f && port->direction()->isOutput()
-                 && f->op()
-                        == (off_high ? sta::FuncExpr::Op::one
-                                     : sta::FuncExpr::Op::zero);
-        },
-        off_high ? "tie high" : "tie low");
-  }
+  tie_off_cell_ = findMaster(
+      [off_high](sta::LibertyPort* port) {
+        auto f = port->function();
+        return f && port->direction()->isOutput()
+               && f->op()
+                      == (off_high ? sta::FuncExpr::Op::one
+                                   : sta::FuncExpr::Op::zero);
+      },
+      off_high ? "tie high" : "tie low",
+      /*required=*/true,
+      tie_off_cell_);
   tie_off_pin_ = buildPortMap(tie_off_cell_)[{PortRoleType::DataOut, 0}];
 
   try {
@@ -1367,13 +1386,11 @@ void RamGen::findResetPins()
 
 void RamGen::findMasters()
 {
-  if (!inv_cell_) {
-    inv_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          return port->libertyCell()->isInverter();
-        },
-        "inverter");
-  }
+  inv_cell_ = findMaster(
+      [](sta::LibertyPort* port) { return port->libertyCell()->isInverter(); },
+      "inverter",
+      /*required=*/true,
+      inv_cell_);
   inv_ports_ = buildPortMap(inv_cell_);
 
   // The read path: tristate bitlines where the library has a tristate
@@ -1401,19 +1418,19 @@ void RamGen::findMasters()
     }
   }
 
-  if (!and2_cell_) {
-    and2_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          if (!port->direction()->isOutput()) {
-            return false;
-          }
-          auto function = port->function();
-          return function && function->op() == sta::FuncExpr::Op::and_
-                 && function->left()->op() == sta::FuncExpr::Op::port
-                 && function->right()->op() == sta::FuncExpr::Op::port;
-        },
-        "and2");
-  }
+  and2_cell_ = findMaster(
+      [](sta::LibertyPort* port) {
+        if (!port->direction()->isOutput()) {
+          return false;
+        }
+        auto function = port->function();
+        return function && function->op() == sta::FuncExpr::Op::and_
+               && function->left()->op() == sta::FuncExpr::Op::port
+               && function->right()->op() == sta::FuncExpr::Op::port;
+      },
+      "and2",
+      /*required=*/true,
+      and2_cell_);
   and2_ports_ = buildPortMap(and2_cell_);
 
   if (!use_latch_) {
@@ -1470,21 +1487,19 @@ void RamGen::findMasters()
     }
   }
 
-  if (!clock_gate_cell_) {
-    clock_gate_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
-          return port->libertyCell()->isClockGate();
-        },
-        "clock gate");
-  }
+  clock_gate_cell_ = findMaster(
+      [](sta::LibertyPort* port) { return port->libertyCell()->isClockGate(); },
+      "clock gate",
+      /*required=*/true,
+      clock_gate_cell_);
   clock_gate_ports_ = buildPortMap(clock_gate_cell_);
 
   // for input buffers
-  if (!buffer_cell_) {
-    buffer_cell_ = findMaster(
-        [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
-        "buffer");
-  }
+  buffer_cell_ = findMaster(
+      [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
+      "buffer",
+      /*required=*/true,
+      buffer_cell_);
   buffer_ports_ = buildPortMap(buffer_cell_);
 
   // latch cells for latch-based ram: find neg/pos latch cell
@@ -1540,17 +1555,17 @@ void RamGen::findMasters()
   // The AND-OR read path's tree: NAND2 and NOR2 levels over AOI22 leaves.
   if (and_or_read_) {
     // by truth table: asap7 writes its NAND2 as (!A) + (!B)
-    if (!nand2_cell_) {
-      nand2_cell_ = findMaster(
-          [](sta::LibertyPort* port) { return twoInputTable(port) == 0x7; },
-          "nand2");
-    }
+    nand2_cell_ = findMaster(
+        [](sta::LibertyPort* port) { return twoInputTable(port) == 0x7; },
+        "nand2",
+        /*required=*/true,
+        nand2_cell_);
     nand2_ports_ = buildPortMap(nand2_cell_);
-    if (!nor2_cell_) {
-      nor2_cell_ = findMaster(
-          [](sta::LibertyPort* port) { return twoInputTable(port) == 0x1; },
-          "nor2");
-    }
+    nor2_cell_ = findMaster(
+        [](sta::LibertyPort* port) { return twoInputTable(port) == 0x1; },
+        "nor2",
+        /*required=*/true,
+        nor2_cell_);
     nor2_ports_ = buildPortMap(nor2_cell_);
   }
 
@@ -1562,19 +1577,19 @@ void RamGen::findMasters()
         0xF888, "ao22", ao22_in_, ao22_out_, /*required=*/false, ao22_cell_);
   }
   if (num_write_ > 1) {
-    if (!or2_cell_) {
-      or2_cell_ = findMaster(
-          [](sta::LibertyPort* port) {
-            if (!port->direction()->isOutput()) {
-              return false;
-            }
-            auto function = port->function();
-            return function && function->op() == sta::FuncExpr::Op::or_
-                   && function->left()->op() == sta::FuncExpr::Op::port
-                   && function->right()->op() == sta::FuncExpr::Op::port;
-          },
-          "or2");
-    }
+    or2_cell_ = findMaster(
+        [](sta::LibertyPort* port) {
+          if (!port->direction()->isOutput()) {
+            return false;
+          }
+          auto function = port->function();
+          return function && function->op() == sta::FuncExpr::Op::or_
+                 && function->left()->op() == sta::FuncExpr::Op::port
+                 && function->right()->op() == sta::FuncExpr::Op::port;
+        },
+        "or2",
+        /*required=*/true,
+        or2_cell_);
     or2_ports_ = buildPortMap(or2_cell_);
   }
 }
@@ -2191,8 +2206,6 @@ void RamGen::generate(const int mask_size,
   // smallest the libraries have of its function
   {
     std::istringstream in(cells);
-    std::string role;
-    std::string master_name;
     const std::map<std::string, dbMaster**> roles
         = {{"inv", &inv_cell_},
            {"and2", &and2_cell_},
@@ -2205,7 +2218,17 @@ void RamGen::generate(const int mask_size,
            {"nor2", &nor2_cell_},
            {"tie", &tie_off_cell_},
            {"addr_flop", &addr_flop_cell_}};
-    while (in >> role >> master_name) {
+    std::vector<std::string> words{std::istream_iterator<std::string>(in),
+                                   std::istream_iterator<std::string>()};
+    if (words.size() % 2 != 0) {
+      logger_->error(RAM,
+                     99,
+                     "-cells takes pairs of a role and a cell; {} has no cell.",
+                     words.back());
+    }
+    for (size_t i = 0; i < words.size(); i += 2) {
+      const std::string& role = words[i];
+      const std::string& master_name = words[i + 1];
       auto slot = roles.find(role);
       if (slot == roles.end()) {
         logger_->error(RAM,
@@ -2263,18 +2286,18 @@ void RamGen::generate(const int mask_size,
     };
     // the storage cell where it is one (findMaster passes over cells with
     // two outputs, as Nangate45's flops all are), else the smallest
+    auto flop = [plain](sta::LibertyPort* port) {
+      return port->isRegOutput() && plain(port->libertyCell());
+    };
     if (addr_flop_cell_) {
       // given by -cells
+      findMaster(flop, "address flop", /*required=*/true, addr_flop_cell_);
     } else if (storage_cell_
                && plain(
                    network_->libertyCell(network_->dbToSta(storage_cell_)))) {
       addr_flop_cell_ = storage_cell_;
     } else {
-      addr_flop_cell_ = findMaster(
-          [plain](sta::LibertyPort* port) {
-            return port->isRegOutput() && plain(port->libertyCell());
-          },
-          "address flop");
+      addr_flop_cell_ = findMaster(flop, "address flop");
     }
     auto ports = buildPortMap(addr_flop_cell_, &addr_flop_inverted_);
     auto liberty = network_->libertyCell(network_->dbToSta(addr_flop_cell_));
