@@ -1530,6 +1530,13 @@ void RamGen::findMasters()
   // cell, AND-OR trees where it has none, or as -read_style says.
   if (read_style_ == "and_or") {
     and_or_read_ = true;
+    if (tristate_cell_) {
+      logger_->warn(RAM,
+                    104,
+                    "-tristate_cell {} is not used: -read_style and_or reads "
+                    "without tristates.",
+                    tristate_cell_->getName());
+    }
   } else {
     if (!tristate_cell_) {
       tristate_cell_ = findMaster(
@@ -2231,6 +2238,16 @@ void RamGen::generate(const int mask_size,
   if (periphery_verilog_ && wrapper_verilog_.empty()) {
     logger_->error(
         RAM, 85, "-periphery verilog needs -wrapper_verilog, its file.");
+  }
+  if (!periphery_verilog_ && !wrapper_verilog_.empty()) {
+    logger_->error(
+        RAM, 102, "-wrapper_verilog is written by -periphery verilog only.");
+  }
+  if (write_or_ && rw_ports + w_ports < 2) {
+    logger_->warn(RAM,
+                  103,
+                  "-write_priority or with one write port: no two writes "
+                  "collide, so it changes nothing.");
   }
   pin_layer_ = pin_layer;
   periphery_insts_.clear();
@@ -3725,6 +3742,7 @@ void RamGen::splitPeriphery()
 
 void RamGen::unplacePeriphery()
 {
+  const size_t periphery_count = periphery_insts_.size();
   if (periphery_verilog_) {
     splitPeriphery();
   }
@@ -3847,9 +3865,12 @@ void RamGen::unplacePeriphery()
   }
   logger_->info(RAM,
                 76,
-                "-periphery unplaced: {} periphery instances left unplaced; "
-                "the core is {:.3f} x {:.3f} um.",
-                periphery_insts_.size(),
+                "-periphery {}: {} periphery instances {}; the core is {:.3f} "
+                "x {:.3f} um.",
+                periphery_verilog_ ? "verilog" : "unplaced",
+                periphery_count,
+                periphery_verilog_ ? "written to " + wrapper_verilog_
+                                   : std::string("left unplaced"),
                 block_->dbuToMicrons(width),
                 block_->dbuToMicrons(height));
 }
