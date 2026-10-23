@@ -2196,9 +2196,14 @@ void RamGen::generate(const int mask_size,
   bank_columns_ = bank_columns;
   bank_interleaved_ = bank_order == "interleaved";
   if (banked_) {
+    // the option that asked for the banks' decoders, for the messages
+    const std::string asked
+        = banks > 1 || bank_columns > 1 ? "-banks" : "-decoder word";
     if (column_mux_ratio_arg != 1) {
-      logger_->error(
-          RAM, 66, "-banks is not supported with -column_mux_ratio above 1.");
+      logger_->error(RAM,
+                     66,
+                     "{} is not supported with -column_mux_ratio above 1.",
+                     asked);
     }
     if (num_words % banks_ != 0 || banks_ % bank_columns_ != 0) {
       logger_->error(RAM,
@@ -2210,7 +2215,7 @@ void RamGen::generate(const int mask_size,
                      bank_columns_);
     }
     if (use_latch) {
-      logger_->error(RAM, 68, "-banks is not supported with -use_latch.");
+      logger_->error(RAM, 68, "{} is not supported with -use_latch.", asked);
     }
   }
   words_per_bank_ = num_words / banks_;
@@ -2262,7 +2267,7 @@ void RamGen::generate(const int mask_size,
   }
   r_plain_ = rw_ports + r_ports;
   if (rb_ports_ > 0 && !banked_) {
-    logger_->error(RAM, 70, "-rb_ports needs -banks.");
+    logger_->error(RAM, 70, "-rb_ports needs -banks or -decoder word.");
   }
   // a banked read port is a read port per bank to the generator below
   const int r_ports_all = r_ports + rb_ports_ * banks_;
