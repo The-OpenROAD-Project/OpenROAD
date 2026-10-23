@@ -1048,6 +1048,12 @@ dbMaster* RamGen::findMaster(
       if (!liberty) {
         continue;
       }
+      // not a power domain's isolation cell or level shifter, whose
+      // functions look like logic
+      if (liberty->isIsolationCell() || liberty->isLevelShifter()) {
+        continue;
+      }
+
       if (!match) {
         if (liberty->portCount() == 0) {
           best_area = liberty->area();
@@ -1078,6 +1084,16 @@ dbMaster* RamGen::findMaster(
       }
 
       if (!out || !match(out->libertyPort())) {
+        continue;
+      }
+      // not a cell the library keeps from use, but for a tie cell, which
+      // libraries mark dont_use to keep it from synthesis (Nangate45's
+      // LOGIC0_X1 and LOGIC1_X1)
+      auto function = out->libertyPort()->function();
+      const bool tie = function
+                       && (function->op() == sta::FuncExpr::Op::zero
+                           || function->op() == sta::FuncExpr::Op::one);
+      if (liberty->dontUse() && !tie) {
         continue;
       }
 
