@@ -90,9 +90,9 @@ is_3d_design(odb::dbChip* chip)
 }
 
 void
-set_interchip_resistance_cmd(double resistance)
+set_interchip_resistance_cmd(Scene* scene, float resistance)
 {
-  getPDNSim()->setInterchipResistance(resistance);
+  getPDNSim()->setInterchipResistance(scene, resistance);
 }
 
 void

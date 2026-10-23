@@ -79,7 +79,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   ~PDNSim() override;
 
   void setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage);
-  void setInterchipResistance(double resistance);
+  void setInterchipResistance(sta::Scene* scene, double resistance);
   void setInstPower(odb::dbInst* inst, sta::Scene* corner, float power);
   void analyzePowerGrid(odb::dbNet* net,
                         sta::Scene* corner,
@@ -140,7 +140,8 @@ class PDNSim : public odb::dbBlockCallBackObj
   odb::dbNet* findPowerNet(const char* net_name);
   odb::dbChipNet* findChipNet(const std::string& chip_net_name) const;
   odb::dbChipNet* findChipNet(odb::dbNet* local_net) const;
-  std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net);
+  std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net,
+                                               sta::Scene* scene);
 
   void checkAssemblyConnectivity(IRNetwork& network,
                                  bool floorplanning,
@@ -160,9 +161,10 @@ class PDNSim : public odb::dbBlockCallBackObj
   bool debug_gui_enabled_ = false;
 
   GeneratedSourceSettings generated_source_settings_;
-  std::optional<double> interchip_resistance_;
+  std::map<sta::Scene*, double> interchip_resistances_;
   odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
-  odb::PtrMap<odb::dbChipNet, std::unique_ptr<IRSolver>> assembly_solvers_;
+  odb::PtrMap<odb::dbChipNet, std::map<sta::Scene*, std::unique_ptr<IRSolver>>>
+      assembly_solvers_;
   odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
   odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 

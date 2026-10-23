@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "3dic_check_power_grid_aes_gcd_nangate45",
     "3dic_external_power_source",
+    "3dic_interchip_resistance_scenes",
     "3dic_check_power_grid_bump_pad_disconnected_pdn_net",
     "3dic_check_power_grid_frontside",
     "3dic_check_power_grid_missing_bump_mapping",
