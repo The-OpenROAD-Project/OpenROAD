@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { applyArrowStep, boundsEqual, computeBoundsTransforms, computeScaleBar,
          cssColorToHex, fittedTileSizeCss, installWheelPanning, isValidHexColor,
          kArrowStepDefault, kZoomMargin, maxUsefulZoom, MAX_TILE_ZOOM,
-         niceRoundParts }
+         niceRoundParts, withBusyCursor }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -537,5 +537,47 @@ describe('applyArrowStep', () => {
         assert.doesNotThrow(() => applyArrowStep(undefined, 100));
         assert.doesNotThrow(() => applyArrowStep({}, 100));
         assert.doesNotThrow(() => applyArrowStep({ keyboard: {} }, 100));
+    });
+});
+
+// A stand-in for document.body: just the class list withBusyCursor touches.
+function fakeRoot() {
+    const classes = new Set();
+    return { classList: { add: (c) => classes.add(c),
+                          remove: (c) => classes.delete(c) },
+             has: (c) => classes.has(c) };
+}
+
+describe('withBusyCursor', () => {
+    it('is busy while the request runs and clears after it', async () => {
+        const root = fakeRoot();
+        let during;
+        const result = await withBusyCursor(async () => {
+            during = root.has('op-busy');
+            return 42;
+        }, root);
+        assert.equal(during, true);
+        assert.equal(result, 42);
+        assert.equal(root.has('op-busy'), false);
+    });
+
+    it('stays busy until the last overlapping request ends', async () => {
+        const root = fakeRoot();
+        let finishFirst;
+        const first = withBusyCursor(
+            () => new Promise((resolve) => { finishFirst = resolve; }), root);
+        await withBusyCursor(async () => {}, root);
+        assert.equal(root.has('op-busy'), true);
+        finishFirst();
+        await first;
+        assert.equal(root.has('op-busy'), false);
+    });
+
+    it('clears when the request fails', async () => {
+        const root = fakeRoot();
+        await assert.rejects(withBusyCursor(async () => {
+            throw new Error('timing report failed');
+        }, root));
+        assert.equal(root.has('op-busy'), false);
     });
 });

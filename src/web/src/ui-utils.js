@@ -197,6 +197,27 @@ export function onSelectionReset(app, fn) {
     app.selectionResetters.push(fn);
 }
 
+// A busy cursor over the whole page while `fn` runs, as the Qt GUI sets a
+// wait cursor while it builds a timing report: a click whose answer takes
+// seconds on a large design otherwise looks ignored.  Counted, so overlapping
+// requests keep it until the last one ends; cleared when `fn` throws.
+// `root` is the element that carries the class (document.body in the page).
+const busyCounts = new WeakMap();
+
+export async function withBusyCursor(fn, root = document.body) {
+    busyCounts.set(root, (busyCounts.get(root) || 0) + 1);
+    root.classList.add('op-busy');
+    try {
+        return await fn();
+    } finally {
+        const count = busyCounts.get(root) - 1;
+        busyCounts.set(root, count);
+        if (count === 0) {
+            root.classList.remove('op-busy');
+        }
+    }
+}
+
 // Leaflet map options for the 2D layout viewer.
 //
 // zoomSnap:1 + zoomDelta:1 force the map to rest only at INTEGER zoom levels,
