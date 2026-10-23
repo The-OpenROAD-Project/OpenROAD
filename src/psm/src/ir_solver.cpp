@@ -2195,7 +2195,14 @@ void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
   ValueNodeMap<Current> currents(assembly_->sta_currents.begin(),
                                  assembly_->sta_currents.end());
   const IRNetwork::Nodes network_nodes = network_->getAllNodes();
-  const std::vector<Node*> nodes(network_nodes.begin(), network_nodes.end());
+  std::vector<Node*> nodes(network_nodes.begin(), network_nodes.end());
+  const auto node_chiplets = network_->getNodeChiplets();
+  std::ranges::sort(nodes, [&node_chiplets](Node* lhs, Node* rhs) {
+    const auto lhs_chip_id = node_chiplets.at(lhs)->getId();
+    const auto rhs_chip_id = node_chiplets.at(rhs)->getId();
+    return lhs_chip_id == rhs_chip_id ? lhs->compare(rhs) < 0
+                                      : lhs_chip_id < rhs_chip_id;
+  });
   buildLinearSystem(nodes,
                     connections,
                     resistance_map,
@@ -2670,20 +2677,25 @@ void IRSolver::writeEMFile(const std::string& em_file, sta::Scene* corner) const
   report << "Node0 Layer,Node0 X location,Node0 Y location,Node1 Layer,Node1 X "
             "location,Node1 Y location,Current\n";
 
-  const double dbus = getBlock()->getDbUnitsPerMicron();
   for (const auto& [connection, current] : generateCurrentMap(corner)) {
     const Node* node0 = connection->getNode0();
     const Node* node1 = connection->getNode1();
+    // A 3D assembly has no single dbNet or block, so use each endpoint's
+    // technology units.
+    const double node0_dbus
+        = node0->getLayer()->getTech()->getDbUnitsPerMicron();
+    const double node1_dbus
+        = node1->getLayer()->getTech()->getDbUnitsPerMicron();
 
     const odb::Point& node0_pt = node0->getPoint();
     const odb::Point& node1_pt = node1->getPoint();
 
     report << node0->getLayer()->getName() << ",";
-    report << fmt::format("{:.4f}", node0_pt.getX() / dbus) << ",";
-    report << fmt::format("{:.4f}", node0_pt.getY() / dbus) << ",";
+    report << fmt::format("{:.4f}", node0_pt.getX() / node0_dbus) << ",";
+    report << fmt::format("{:.4f}", node0_pt.getY() / node0_dbus) << ",";
     report << node1->getLayer()->getName() << ",";
-    report << fmt::format("{:.4f}", node1_pt.getX() / dbus) << ",";
-    report << fmt::format("{:.4f}", node1_pt.getY() / dbus) << ",";
+    report << fmt::format("{:.4f}", node1_pt.getX() / node1_dbus) << ",";
+    report << fmt::format("{:.4f}", node1_pt.getY() / node1_dbus) << ",";
     report << fmt::format("{:.3e}", current) << '\n';
   }
 }

@@ -11,8 +11,13 @@ set_psm_interchip_resistance -resistance 0.1
 check_power_grid -net VDD
 
 set voltage_file [make_result_file 3dic_external_power_source.rpt]
+set em_file [make_result_file 3dic_external_power_source-em.rpt]
 
 analyze_power_grid -net VDD -vsrc 3dic_test_data/3dic_external_power_source.loc \
-  -voltage_file $voltage_file
+  -enable_em -em_outfile $em_file
+
+analyze_power_grid -net VDD -vsrc 3dic_test_data/3dic_external_power_source.loc \
+  -allow_reuse -voltage_file $voltage_file
 
 diff_files $voltage_file 3dic_external_power_source.rptok
+diff_files $em_file 3dic_external_power_source-em.rptok

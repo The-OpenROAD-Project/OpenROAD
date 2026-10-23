@@ -133,9 +133,19 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
   auto* chip_net = findChipNet(net);
 
-  auto solver = makeAssemblySolver(chip_net);
+  auto& solver = assembly_solvers_[chip_net];
+  if (solver == nullptr) {
+    solver = makeAssemblySolver(chip_net);
+    for (auto* local_net : solver->getNetwork()->getNets()) {
+      addOwner(local_net->getBlock());
+    }
+  }
   checkAssemblyConnectivity(*solver->getNetwork(), false, false, error_file);
-  solver->solve(corner, source_type, voltage_source_file);
+  if (!use_prev_solution || !solver->hasSolution(corner)) {
+    solver->solve(corner, source_type, voltage_source_file);
+  } else {
+    logger_->info(utl::PSM, 13, "Reusing previous solution");
+  }
   const auto& voltages = solver->getAssemblyVoltageVector();
   logger_->info(
       utl::PSM,
@@ -151,6 +161,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   solver->report(corner);
   if (enable_em) {
     solver->reportEM(corner);
+    solver->writeEMFile(em_file, corner);
   }
   if (!voltage_file.empty()) {
     solver->writeInstanceVoltageFile(voltage_file, corner);
@@ -421,6 +432,7 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
 void PDNSim::clearSolvers()
 {
   solvers_.clear();
+  assembly_solvers_.clear();
 }
 
 void PDNSim::inDbPostMoveInst(odb::dbInst*)
