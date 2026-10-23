@@ -44,18 +44,22 @@ ram_sim::check { [$die xMin] <= $x0 && [$die yMin] <= $y0
   "a placed cell is outside the outline"
 ram_sim::check { [$die dy] - ($y1 - $y0) <= $row_h } \
   "the outline is [$die dy] tall for a core of [expr { $y1 - $y0 }]: more than a row over"
+# M4 is horizontal: its tracks are rows, a pin's y on one of them and
+# its x on the manufacturing grid
 set m4 [[ord::get_db_tech] findLayer M4]
 set pitch [$m4 getPitch]
 set offset [$m4 getOffset]
+set grid [[ord::get_db_tech] getManufacturingGrid]
 foreach term [$block getBTerms] {
   foreach pin [$term getBPins] {
     foreach box [$pin getBoxes] {
       ram_sim::check { [[$box getTechLayer] getName] eq "M4" } "[$term getName] is not on M4"
-      foreach c [list [expr { ([$box xMin] + [$box xMax]) / 2 }] \
-        [expr { ([$box yMin] + [$box yMax]) / 2 }]] {
-        ram_sim::check { ($c - $offset) % $pitch == 0 } \
-          "[$term getName] is off M4's tracks"
-      }
+      set x [expr { ([$box xMin] + [$box xMax]) / 2 }]
+      set y [expr { ([$box yMin] + [$box yMax]) / 2 }]
+      ram_sim::check { ($y - $offset) % $pitch == 0 } \
+        "[$term getName] is off M4's tracks"
+      ram_sim::check { $x % $grid == 0 } \
+        "[$term getName] is off the manufacturing grid"
       ram_sim::check { [$box xMin] >= [$die xMin] && [$box xMax] <= [$die xMax] } \
         "[$term getName] is outside the outline"
     }

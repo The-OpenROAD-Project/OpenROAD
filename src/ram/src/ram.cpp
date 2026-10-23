@@ -3805,7 +3805,7 @@ void RamGen::unplacePeriphery()
   }
   block_->setDieArea(odb::Rect(0, 0, width, height));
   block_->setCoreArea(block_->computeCoreArea());
-  // each pin on the layer's track grid, inside the outline
+  // each pin on the layer's tracks, inside the outline
   const int pitch = std::max(1, static_cast<int>(layer->getPitch()));
   const int offset = layer->getOffset();
   const int half = std::max(1, static_cast<int>(layer->getWidth()) / 2);
@@ -3819,9 +3819,26 @@ void RamGen::unplacePeriphery()
     }
     return t;
   };
+  // the tracks run in the layer's preferred direction: across it a pin
+  // sits on a track, along it on the manufacturing grid
+  odb::dbTech* tech = db_->getTech();
+  const int grid
+      = tech->hasManufacturingGrid() ? tech->getManufacturingGrid() : 1;
+  auto on_grid = [&](int v, int hi) {
+    int t = std::clamp(v, half, std::max(half, hi - half));
+    t -= t % grid;
+    while (t < half) {
+      t += grid;
+    }
+    return t;
+  };
+  const bool horizontal
+      = layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
   for (auto& [term, at] : pins) {
-    const int x = on_track(at.x() - dx, width);
-    const int y = on_track(at.y() - dy, height);
+    const int x = horizontal ? on_grid(at.x() - dx, width)
+                             : on_track(at.x() - dx, width);
+    const int y = horizontal ? on_track(at.y() - dy, height)
+                             : on_grid(at.y() - dy, height);
     odb::dbBPin* pin = odb::dbBPin::create(term);
     odb::dbBox::create(pin, layer, x - half, y - half, x + half, y + half);
     pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
