@@ -156,8 +156,13 @@ bool Enclosure::isPreferredOver(const Enclosure* other, bool minimize_x) const
 
 void Enclosure::snap(odb::dbTech* tech)
 {
-  x_ = TechLayer::snapToManufacturingGrid(tech, x_);
-  y_ = TechLayer::snapToManufacturingGrid(tech, y_);
+  // Do not round an enclosure deficit up to an apparently legal zero.
+  auto snap = [tech](int value) {
+    return value < 0 ? -TechLayer::snapToManufacturingGrid(tech, -value, true)
+                     : TechLayer::snapToManufacturingGrid(tech, value);
+  };
+  x_ = snap(x_);
+  y_ = snap(y_);
 }
 
 void Enclosure::copy(const Enclosure* other)
@@ -2093,28 +2098,30 @@ void ViaGenerator::determineRowsAndColumns(
                 + (last_rows > 0 ? array_spacing_y_ : 0);
           const int double_enc_y = height - via_width_y;
 
-          bottom_enclosure_->setX(
-              determine_enclosure(use_bottom_min_enclosure,
-                                  true,
-                                  bottom_min_enclosure.getX(),
-                                  double_enc_x / 2,
-                                  lower_constraint_));
-          bottom_enclosure_->setY(
-              determine_enclosure(use_bottom_min_enclosure,
-                                  false,
-                                  bottom_min_enclosure.getY(),
-                                  double_enc_y / 2,
-                                  lower_constraint_));
-          top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
-                                                   true,
-                                                   top_min_enclosure.getX(),
-                                                   double_enc_x / 2,
-                                                   upper_constraint_));
-          top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
-                                                   false,
-                                                   top_min_enclosure.getY(),
-                                                   double_enc_y / 2,
-                                                   upper_constraint_));
+          bottom_enclosure_->setX(determine_enclosure(
+              use_bottom_min_enclosure,
+              true,
+              bottom_min_enclosure.getX(),
+              static_cast<int>(std::floor(double_enc_x / 2.0)),
+              lower_constraint_));
+          bottom_enclosure_->setY(determine_enclosure(
+              use_bottom_min_enclosure,
+              false,
+              bottom_min_enclosure.getY(),
+              static_cast<int>(std::floor(double_enc_y / 2.0)),
+              lower_constraint_));
+          top_enclosure_->setX(determine_enclosure(
+              use_top_min_enclosure,
+              true,
+              top_min_enclosure.getX(),
+              static_cast<int>(std::floor(double_enc_x / 2.0)),
+              upper_constraint_));
+          top_enclosure_->setY(determine_enclosure(
+              use_top_min_enclosure,
+              false,
+              top_min_enclosure.getY(),
+              static_cast<int>(std::floor(double_enc_y / 2.0)),
+              upper_constraint_));
 
           max_cut_area = total_cut_area;
         }
@@ -2145,26 +2152,30 @@ void ViaGenerator::determineRowsAndColumns(
       top_enclosure_->setX(top_min_enclosure.getX());
       top_enclosure_->setY(top_min_enclosure.getY());
     } else {
-      bottom_enclosure_->setX(determine_enclosure(use_bottom_min_enclosure,
-                                                  true,
-                                                  bottom_min_enclosure.getX(),
-                                                  double_enc_x / 2,
-                                                  lower_constraint_));
-      bottom_enclosure_->setY(determine_enclosure(use_bottom_min_enclosure,
-                                                  false,
-                                                  bottom_min_enclosure.getY(),
-                                                  double_enc_y / 2,
-                                                  lower_constraint_));
-      top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
-                                               true,
-                                               top_min_enclosure.getX(),
-                                               double_enc_x / 2,
-                                               upper_constraint_));
-      top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
-                                               false,
-                                               top_min_enclosure.getY(),
-                                               double_enc_y / 2,
-                                               upper_constraint_));
+      bottom_enclosure_->setX(
+          determine_enclosure(use_bottom_min_enclosure,
+                              true,
+                              bottom_min_enclosure.getX(),
+                              static_cast<int>(std::floor(double_enc_x / 2.0)),
+                              lower_constraint_));
+      bottom_enclosure_->setY(
+          determine_enclosure(use_bottom_min_enclosure,
+                              false,
+                              bottom_min_enclosure.getY(),
+                              static_cast<int>(std::floor(double_enc_y / 2.0)),
+                              lower_constraint_));
+      top_enclosure_->setX(
+          determine_enclosure(use_top_min_enclosure,
+                              true,
+                              top_min_enclosure.getX(),
+                              static_cast<int>(std::floor(double_enc_x / 2.0)),
+                              upper_constraint_));
+      top_enclosure_->setY(
+          determine_enclosure(use_top_min_enclosure,
+                              false,
+                              top_min_enclosure.getY(),
+                              static_cast<int>(std::floor(double_enc_y / 2.0)),
+                              upper_constraint_));
     }
 
     if (isSplitCutArray()) {
@@ -2691,12 +2702,15 @@ void GenerateViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
 {
   ViaGenerator::getMinimumEnclosures(bottom, top, true);
 
-  if (rules_only) {
-    return;
+  // Applicable cut-layer enclosure rules override VIARULE defaults.  When
+  // validating a generated via, retain the default for a side with no such
+  // rule; otherwise a forced single cut can pass with insufficient enclosure.
+  if (!rules_only || bottom.empty()) {
+    bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
   }
-
-  bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
-  top.emplace_back(getTopLayerRule(), getTopLayer());
+  if (!rules_only || top.empty()) {
+    top.emplace_back(getTopLayerRule(), getTopLayer());
+  }
 }
 
 /////////
