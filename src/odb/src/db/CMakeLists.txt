@@ -145,6 +145,7 @@ add_library(db
     dbTechLayerCornerSpacingRule.cpp
     dbTechLayerCutClassRule.cpp
     dbTechLayerCutEnclosureRule.cpp
+    dbTechLayerCutEnclosureTableDefRule.cpp
     dbTechLayerCutSpacingRule.cpp
     dbTechLayerCutSpacingTableDefRule.cpp
     dbTechLayerCutSpacingTableOrthRule.cpp

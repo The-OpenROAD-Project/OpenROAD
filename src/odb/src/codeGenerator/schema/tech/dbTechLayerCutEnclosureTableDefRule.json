@@ -1,0 +1,66 @@
+{
+  "name": "dbTechLayerCutEnclosureTableDefRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "bit",
+      "name": "cut_class_valid"
+    },
+    {
+      "type": "dbId<_dbTechLayerCutClassRule>",
+      "name": "cut_class_",
+      "parent": "dbTechLayer"
+    },
+    {
+      "name": "default_rows_",
+      "type": "dbVector<dbTechLayerCutEnclosureTableDefRule::DefaultRow>",
+      "flags": [
+        "no-get",
+        "no-set"
+      ]
+    },
+    {
+      "name": "width_rows_",
+      "type": "dbVector<dbTechLayerCutEnclosureTableDefRule::WidthRow>",
+      "flags": [
+        "no-get",
+        "no-set"
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "name": "DefaultRow",
+      "fields": [
+        { "name": "above_below", "type": "int" },
+        { "name": "overhang1", "type": "int" },
+        { "name": "overhang2", "type": "int" },
+        { "name": "overhang3", "type": "int" },
+        { "name": "overhang4", "type": "int" }
+      ],
+      "public": true
+    },
+    {
+      "name": "WidthRow",
+      "fields": [
+        { "name": "width", "type": "int" },
+        { "name": "above_below", "type": "int" },
+        { "name": "overhang1", "type": "int" },
+        { "name": "overhang2", "type": "int" },
+        { "name": "overhang3", "type": "int" },
+        { "name": "overhang4", "type": "int" }
+      ],
+      "public": true
+    }
+  ],
+  "h_includes": [
+    "dbVector.h"
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h",
+    "dbTechLayerCutClassRule.h"
+  ],
+  "cpp_sys_includes": [
+    "cassert"
+  ]
+}
