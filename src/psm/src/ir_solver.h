@@ -100,7 +100,9 @@ class IRSolver
   void enableGui(bool enable);
 
   void writeErrorFile(const std::string& error_file) const;
-  void writeErrorFile(std::ofstream& report) const;
+  void writeAssemblyErrorFile(std::ofstream& report,
+                              const odb::dbTransform& transform,
+                              double dbus) const;
   void writeInstanceVoltageFile(const std::string& voltage_file,
                                 sta::Scene* corner) const;
   void writeEMFile(const std::string& em_file, sta::Scene* corner) const;

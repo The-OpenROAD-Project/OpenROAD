@@ -9,6 +9,7 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "3dic_check_power_grid_aes_gcd_nangate45",
+    "3dic_error_file_assembly_coordinates",
     "3dic_external_power_source",
     "3dic_interchip_resistance_scenes",
     "3dic_check_power_grid_bump_pad_disconnected_pdn_net",
@@ -90,6 +91,9 @@ filegroup(
         "3dic_test_data/3dic_check_power_grid_require_bterms_fail.3dbv",
         "3dic_test_data/3dic_check_power_grid_require_bterms_fail.3dbx",
         "3dic_test_data/3dic_check_power_grid_require_bterms_fail_b.def",
+        "3dic_test_data/3dic_error_file_assembly_coordinates.3dbv",
+        "3dic_test_data/3dic_error_file_assembly_coordinates.3dbx",
+        "3dic_test_data/3dic_error_file_assembly_coordinates_disconnected.def",
         "3dic_test_data/3dic_external_power_source.loc",
         "3dic_test_data/3dic_fake.sdc",
         "3dic_test_data/3dic_frontside.3dbv",

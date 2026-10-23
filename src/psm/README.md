@@ -79,7 +79,7 @@ check_power_grid
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-floorplanning` | Ignore non-fixed instances in the power grid, this is useful during floorplanning analysis when instances may not be properly placed. |
-| `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates in local microns. |
+| `-error_file` | File to write power grid errors to. For 3D, errors are grouped by chiplet, with coordinates relative to the assembly origin. |
 | `-dont_require_terminals` | If specified, this will skip checking if there are terminals on the net. For 3D, this applies to each chiplet. |
 
 ### Write Spice Power Grid
