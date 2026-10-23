@@ -149,6 +149,8 @@ void TileGrid::initTiles(bool use_rudy)
   int idxX = 0, idxY = 0;
   tileStor_.resize(static_cast<uint64_t>(tileCntX_)
                    * static_cast<uint64_t>(tileCntY_));
+  tiles_.clear();
+  tiles_.reserve(tileStor_.size());
   for (auto& tile : tileStor_) {
     tile = Tile(
         idxX, idxY, x, y, x + tileSizeX_, y + tileSizeY_, numRoutingLayers_);
