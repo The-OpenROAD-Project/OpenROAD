@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -723,33 +724,42 @@ void FlexGCWorker::Impl::initNet_pins_polygonEdges(gcNet* net)
   }
 }
 namespace {
-bool isPolygonCorner(const frCoord x,
-                     const frCoord y,
-                     const gtl::polygon_90_set_data<frCoord>& poly_set)
+// Collect every (x, y) vertex (outer boundary + holes) of a fixed polygon set
+// into a hash set. This materializes the polygon set exactly once so that
+// repeated corner membership tests become O(1) hash lookups instead of
+// re-running poly_set.get() (a full boost::polygon scanline reconstruction)
+// for every corner. Behaviour is identical to calling isPolygonCorner() per
+// corner: a point is a polygon corner iff it equals some boundary/hole vertex.
+void collectPolygonCorners(const gtl::polygon_90_set_data<frCoord>& poly_set,
+                           std::unordered_set<odb::Point>& corners)
 {
+  // Called at most once per (net, layer) because the caller caches the result,
+  // so a plain local buffer is fine here.
   std::vector<gtl::polygon_90_with_holes_data<frCoord>> polygons;
   poly_set.get(polygons);
   for (const auto& polygon : polygons) {
     for (const auto& pt : polygon) {
-      if (pt.x() == x && pt.y() == y) {
-        return true;
-      }
+      corners.emplace(pt.x(), pt.y());
     }
     for (auto hole_itr = polygon.begin_holes(); hole_itr != polygon.end_holes();
          ++hole_itr) {
       for (const auto& pt : (*hole_itr)) {
-        if (pt.x() == x && pt.y() == y) {
-          return true;
-        }
+        corners.emplace(pt.x(), pt.y());
       }
     }
   }
-  return false;
 }
 }  // namespace
-void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
-                                                            gcPin* pin)
+void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(
+    gcNet* net,
+    gcPin* pin,
+    std::map<frLayerNum, std::unordered_set<odb::Point>>& fixed_corner_cache)
 {
+  // For metal layers, isPolygonCorner() membership is tested once per corner
+  // against the net's fixed polygon set on the corner's layer. Materializing
+  // that set (poly_set.get()) per corner is the dominant GC-init cost, so the
+  // caller keeps a per-layer cache of that vertex set, shared across the net's
+  // pins, and we populate it lazily here.
   for (auto& edges : pin->getPolygonEdges()) {
     std::vector<std::unique_ptr<gcCorner>> tmpCorners;
     auto prevEdge = edges.back().get();
@@ -822,9 +832,14 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
         }
 
       } else {
-        currCorner->setFixed(isPolygonCorner(currCorner->x(),
-                                             currCorner->y(),
-                                             net->getPolygons(true)[layerNum]));
+        auto it = fixed_corner_cache.find(layerNum);
+        if (it == fixed_corner_cache.end()) {
+          it = fixed_corner_cache.emplace(layerNum, std::unordered_set<odb::Point>())
+                   .first;
+          collectPolygonCorners(net->getPolygons(true)[layerNum], it->second);
+        }
+        currCorner->setFixed(
+            it->second.count({currCorner->x(), currCorner->y()}) != 0);
       }
       // currCorner->setFixed(prevEdge->isFixed() && nextEdge->isFixed());
 
@@ -846,10 +861,13 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(gcNet* net,
 
 void FlexGCWorker::Impl::initNet_pins_polygonCorners(gcNet* net)
 {
+  // Materialized fixed-polygon vertex set per layer, shared across this net's
+  // pins so poly_set.get() runs at most once per layer instead of per corner.
+  std::map<frLayerNum, std::unordered_set<odb::Point>> fixed_corner_cache;
   int numLayers = getTech()->getLayers().size();
   for (int i = 0; i < numLayers; i++) {
     for (auto& pin : net->getPins(i)) {
-      initNet_pins_polygonCorners_helper(net, pin.get());
+      initNet_pins_polygonCorners_helper(net, pin.get(), fixed_corner_cache);
     }
   }
 }
