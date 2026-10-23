@@ -509,6 +509,35 @@ TEST(Solver, RedundantBoxesChangeNothing)
   EXPECT_NEAR(a.cap[1], b.cap[1], 4 * std::hypot(a.sigma[1], b.sigma[1]));
 }
 
+// A wire drawn in pieces, abutting and overlapping, merges back into one
+// box before its surface is built, so its row is the single box's exactly,
+// not just within the statistics. (A small box inside the wire would also
+// merge away, but would shrink the scene's capture distance.)
+TEST(Solver, FragmentedWireMatchesSingleBox)
+{
+  Geometry whole;
+  whole.addNet("a");
+  whole.addNet("b");
+  whole.addBox(0, {{0, 0, 0.5}, {2, 0.25, 0.75}});
+  whole.addBox(1, {{0, 0.5, 0.5}, {2, 0.75, 0.75}});
+  Geometry pieces;
+  pieces.addNet("a");
+  pieces.addNet("b");
+  pieces.addBox(0, {{0, 0, 0.5}, {0.5, 0.25, 0.75}});
+  pieces.addBox(0, {{1.25, 0, 0.5}, {2, 0.25, 0.75}});
+  pieces.addBox(0, {{0.5, 0, 0.5}, {1.25, 0.25, 0.75}});
+  pieces.addBox(0, {{0.375, 0, 0.5}, {0.875, 0.25, 0.75}});
+  pieces.addBox(1, {{0, 0.5, 0.5}, {2, 0.75, 0.75}});
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(whole, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(pieces, 3.9), 0, options);
+  EXPECT_EQ(a.cap, b.cap);
+  EXPECT_EQ(a.sigma, b.sigma);
+  EXPECT_EQ(a.hops, b.hops);
+}
+
 // A via stack (M1 wire, via, M2 wire) with conformal dielectrics on both
 // layers, between an M1 and an M2 neighbour.
 TEST(Solver, ViaStackReciprocity)

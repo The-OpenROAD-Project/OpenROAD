@@ -42,8 +42,8 @@ constexpr double kEps0 = 8.8541878128e-3;
 
 // The closed surface around the master on which walks start; its charge is
 // the flux through it. It is the boundary of the union of the master's
-// boxes, each grown by its own offset. In 2D its edges carry the charge per
-// unit length.
+// boxes, merged (see mergeBoxes) and each grown by its own offset. In 2D
+// its edges carry the charge per unit length.
 template <int D>
 struct GaussianSurface
 {
@@ -54,7 +54,97 @@ struct GaussianSurface
   std::vector<double> cumulative;
   // Of every face, including the parts inside the union.
   double area = 0;
+  SpatialIndex<D> index{std::vector<AlignedBox<D>>{}};  // over the boxes
 };
+
+// Coordinates closer than this (µm) are equal when boxes merge. A merged box
+// only shapes the Gaussian surface, which stays valid as long as it
+// contains the master's boxes and clears other conductors, so the
+// tolerance cannot make the surface wrong; it lets pieces computed in
+// floating point merge.
+constexpr double kMergeTolerance = 1e-9;
+
+// Whether two boxes are equal on every axis but k.
+template <int D>
+bool equalExcept(const AlignedBox<D>& a, const AlignedBox<D>& b, const int k)
+{
+  for (int t = 0; t < D; t++) {
+    if (t != k
+        && (std::abs(a.lo[t] - b.lo[t]) > kMergeTolerance
+            || std::abs(a.hi[t] - b.hi[t]) > kMergeTolerance)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <int D>
+bool contains(const AlignedBox<D>& outer, const AlignedBox<D>& inner)
+{
+  for (int k = 0; k < D; k++) {
+    if (inner.lo[k] < outer.lo[k] || inner.hi[k] > outer.hi[k]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Fewer boxes with the same union: a box inside another is dropped, and two
+// boxes equal on every axis but one, overlapping or touching on it, become
+// their union. A wire drawn in pieces comes back as one box, so its offset
+// follows the wire's dimensions rather than a piece's length.
+template <int D>
+std::vector<AlignedBox<D>> mergeBoxes(std::vector<AlignedBox<D>> boxes)
+{
+  for (bool changed = true; changed;) {
+    changed = false;
+    for (int k = 0; k < D; k++) {
+      // Boxes equal on the other axes become adjacent, in order along k.
+      std::ranges::sort(boxes, {}, [k](const AlignedBox<D>& b) {
+        std::array<double, 2 * D> key;
+        int n = 0;
+        for (int t = 0; t < D; t++) {
+          if (t != k) {
+            key[n++] = b.lo[t];
+            key[n++] = b.hi[t];
+          }
+        }
+        key[n++] = b.lo[k];
+        key[n++] = b.hi[k];
+        return key;
+      });
+      std::vector<AlignedBox<D>> merged;
+      for (const AlignedBox<D>& b : boxes) {
+        AlignedBox<D>* last = merged.empty() ? nullptr : &merged.back();
+        if (last != nullptr && equalExcept(*last, b, k)
+            && b.lo[k] <= last->hi[k] + kMergeTolerance) {
+          // The hull, which contains both.
+          for (int t = 0; t < D; t++) {
+            last->lo[t] = std::min(last->lo[t], b.lo[t]);
+            last->hi[t] = std::max(last->hi[t], b.hi[t]);
+          }
+        } else {
+          merged.push_back(b);
+        }
+      }
+      changed = changed || merged.size() < boxes.size();
+      boxes = std::move(merged);
+    }
+    std::vector<AlignedBox<D>> kept;
+    for (size_t i = 0; i < boxes.size(); i++) {
+      bool inside = false;
+      for (size_t j = 0; j < boxes.size() && !inside; j++) {
+        inside = j != i && contains(boxes[j], boxes[i]);
+      }
+      if (!inside) {
+        kept.push_back(boxes[i]);
+      }
+    }
+    changed = changed || kept.size() < boxes.size();
+    boxes = std::move(kept);
+  }
+  return boxes;
+}
 
 // Sums over one batch of walks; one column per net plus the ground plane.
 // The all-walk sums feed the control variate (the weights average to zero).
@@ -189,9 +279,9 @@ double boxOffset(const AlignedBox<D>& box,
   return offset;
 }
 
-// The master's Gaussian surface: each of its boxes grown by its own offset
-// (see boxOffset). Tight spots get small offsets locally instead of
-// shrinking the whole surface.
+// The master's Gaussian surface: its boxes merged, then each grown by its
+// own offset (see boxOffset). Tight spots get small offsets locally instead
+// of shrinking the whole surface.
 template <int D>
 GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
                                        const std::function<int(int)>& box_net,
@@ -199,17 +289,20 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
                                        const int master,
                                        const double offset_frac)
 {
-  GaussianSurface<D> g;
+  std::vector<AlignedBox<D>> own;
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (box_net(b) != master) {
-      continue;
+    if (box_net(b) == master) {
+      own.push_back(boxes[b]);
     }
+  }
+  GaussianSurface<D> g;
+  for (const AlignedBox<D>& box : mergeBoxes(std::move(own))) {
     const double offset
-        = boxOffset(boxes[b], boxes, box_net, dielectric, master, offset_frac);
+        = boxOffset(box, boxes, box_net, dielectric, master, offset_frac);
     AlignedBox<D> grown;
     for (int k = 0; k < D; k++) {
-      grown.lo[k] = boxes[b].lo[k] - offset;
-      grown.hi[k] = boxes[b].hi[k] + offset;
+      grown.lo[k] = box.lo[k] - offset;
+      grown.hi[k] = box.hi[k] + offset;
     }
     // Each face's area (length, in 2D) is the product of its tangent
     // extents.
@@ -229,6 +322,7 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
   if (g.boxes.empty()) {
     throw std::invalid_argument("fsv: master net has no boxes");
   }
+  g.index = SpatialIndex<D>(g.boxes);
   return g;
 }
 
@@ -244,26 +338,24 @@ bool exposed(const GaussianSurface<D>& g,
              const bool high,
              const std::type_identity_t<Vec<D>>& q)
 {
-  for (int c = 0; c < static_cast<int>(g.boxes.size()); c++) {
+  bool result = true;
+  g.index.forEachOverlapping({q, q}, [&](const int c) {
     const AlignedBox<D>& e = g.boxes[c];
     bool across = c != b;  // q is strictly inside e's tangent extent
     for (int t = 0; across && t < D; t++) {
       across = t == axis || (q[t] > e.lo[t] && q[t] < e.hi[t]);
     }
     if (!across) {
-      continue;
+      return true;
     }
-    if (q[axis] > e.lo[axis] && q[axis] < e.hi[axis]) {
-      return false;  // inside e
-    }
-    if ((high ? e.lo[axis] : e.hi[axis]) == q[axis]) {
-      return false;  // e continues outward
-    }
-    if (c < b && (high ? e.hi[axis] : e.lo[axis]) == q[axis]) {
-      return false;  // a coplanar face of a lower-index box
-    }
-  }
-  return true;
+    const bool inside = q[axis] > e.lo[axis] && q[axis] < e.hi[axis];
+    const bool continues = (high ? e.lo[axis] : e.hi[axis]) == q[axis];
+    const bool lower_coplanar
+        = c < b && (high ? e.hi[axis] : e.lo[axis]) == q[axis];
+    result = !inside && !continues && !lower_coplanar;
+    return result;  // stops the query once q is covered
+  });
+  return result;
 }
 
 // Heights within this fraction of a cube's size count as on the interface.
@@ -490,7 +582,9 @@ class Walker
  private:
   // A point on a face of a grown box, drawn by area and then uniform on
   // the face. Returns false when the point is not on the surface (see
-  // exposed); rejecting it keeps the estimate unbiased.
+  // exposed); such a draw still counts as a walk, of weight 0, which keeps
+  // the estimate unbiased. Merging keeps these draws to the faces where
+  // distinct boxes meet.
   bool startPoint(Philox& rng, Point& p, Face& face) const
   {
     const double u = rng.uniform() * gauss_.area;
