@@ -536,9 +536,7 @@ void RamGen::makeSlice(const int slice_idx,
       storage = makeNet(name, "storage");
     }
     const int reset_bit
-        = reset_port_
-              ? (bit < 64 ? static_cast<int>((reset_bits_ >> bit) & 1) : 0)
-              : -1;
+        = reset_port_ ? static_cast<int>(reset_bits_.at(bit)) : -1;
     auto bit_cell = makeBit(name,
                             and_or_read_ ? 0 : r_total,
                             gclock_net,
@@ -1304,6 +1302,64 @@ static int twoInputTable(sta::LibertyPort* out)
   return table;
 }
 
+// `text` as a word of `width` bits, least significant first: decimal,
+// hexadecimal after 0x or octal after 0, as C writes them. Empty where
+// `text` is not such a number or needs more than `width` bits; `fits`
+// says which.
+static std::vector<bool> parseWord(const std::string& text,
+                                   const int width,
+                                   bool& fits)
+{
+  fits = true;
+  int base = 10;
+  size_t i = 0;
+  if (text.size() > 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) {
+    base = 16;
+    i = 2;
+  } else if (text.size() > 1 && text[0] == '0') {
+    base = 8;
+    i = 1;
+  }
+  if (i >= text.size()) {
+    return {};
+  }
+  std::vector<uint32_t> limbs{0};  // least significant first
+  for (; i < text.size(); ++i) {
+    const char c
+        = static_cast<char>(std::tolower(static_cast<unsigned char>(text[i])));
+    int digit = base;
+    if (c >= '0' && c <= '9') {
+      digit = c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+      digit = c - 'a' + 10;
+    }
+    if (digit >= base) {
+      return {};
+    }
+    uint64_t carry = digit;
+    for (uint32_t& limb : limbs) {
+      const uint64_t v = static_cast<uint64_t>(limb) * base + carry;
+      limb = static_cast<uint32_t>(v);
+      carry = v >> 32;
+    }
+    if (carry) {
+      limbs.push_back(static_cast<uint32_t>(carry));
+    }
+  }
+  std::vector<bool> bits(width);
+  for (size_t b = 0; b < limbs.size() * 32; ++b) {
+    const bool one = (limbs[b / 32] >> (b % 32)) & 1;
+    if (one && b >= static_cast<size_t>(width)) {
+      fits = false;
+      return {};
+    }
+    if (b < static_cast<size_t>(width)) {
+      bits[b] = one;
+    }
+  }
+  return bits;
+}
+
 void RamGen::findResetPins()
 {
   auto liberty = network_->libertyCell(network_->dbToSta(storage_cell_));
@@ -1377,10 +1433,21 @@ void RamGen::findResetPins()
       tie_off_cell_);
   tie_off_pin_ = buildPortMap(tie_off_cell_)[{PortRoleType::DataOut, 0}];
 
-  try {
-    reset_bits_ = std::stoull(reset_value_, nullptr, 0);
-  } catch (const std::exception&) {
-    logger_->error(RAM, 64, "-reset_value {} is not a number.", reset_value_);
+  bool fits = true;
+  reset_bits_ = parseWord(reset_value_, word_bits_, fits);
+  if (!fits) {
+    logger_->error(RAM,
+                   100,
+                   "-reset_value {} does not fit a word of {} bits.",
+                   reset_value_,
+                   word_bits_);
+  }
+  if (reset_bits_.empty()) {
+    logger_->error(RAM,
+                   64,
+                   "-reset_value {} is not a number: decimal, 0x hexadecimal "
+                   "or 0 octal.",
+                   reset_value_);
   }
 }
 
@@ -3865,12 +3932,16 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   std::string reset_declaration;
   std::string always_head = "  always @(posedge clk) begin\n";
   if (!reset_name.empty()) {
+    std::string reset_word;  // most significant bit first
+    for (int bit = word_size_bit - 1; bit >= 0; --bit) {
+      reset_word += reset_bits_.at(bit) ? '1' : '0';
+    }
     reset_declaration = fmt::format("  input {};\n", reset_name);
     always_head = fmt::format(
         "  always @(posedge clk or {}edge {}) begin\n"
         "    if ({}{}) begin\n"
         "      for (i = 0; i < {}; i = i + 1) begin\n"
-        "        mem[i] <= {}'d{};\n"
+        "        mem[i] <= {}'b{};\n"
         "      end\n"
         "    end else begin\n",
         reset_active_low_ ? "neg" : "pos",
@@ -3879,7 +3950,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         reset_name,
         num_words,
         word_size_bit,
-        reset_bits_);
+        reset_word);
     write_logic += "    end\n";
   }
 

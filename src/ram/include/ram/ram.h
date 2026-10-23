@@ -462,7 +462,7 @@ class RamGen
   // pin held off. The pins come from the flop's ff group; clear_reads_
   // is the data a cleared flop reads back, after any inversion.
   std::string reset_value_;
-  uint64_t reset_bits_{0};
+  std::vector<bool> reset_bits_;  // a word, least significant bit first
   odb::dbBTerm* reset_port_{nullptr};
   odb::dbMaster* tie_off_cell_{nullptr};  // drives the inactive level
   std::string tie_off_pin_;
