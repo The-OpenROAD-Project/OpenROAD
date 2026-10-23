@@ -569,6 +569,23 @@ TEST(Solver, RejectsConductorTouchingMaster)
   EXPECT_THROW(solver.solve(Scene(geometry, 3.9), 0), std::invalid_argument);
 }
 
+// A Gaussian surface on the conductors themselves would divide by a zero
+// cube size.
+TEST(Solver, RejectsNonPositiveGaussOffset)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addBox(0, {{0, 0, 0.5}, {1, 1, 1.5}});
+  const Scene scene(geometry);
+  Solver solver({.threads = 2});
+  for (const double offset : {0.0, -0.5, std::nan("")}) {
+    SolveOptions options;
+    options.gauss_offset = offset;
+    EXPECT_THROW(solver.solve(scene, 0, options), std::invalid_argument)
+        << offset;
+  }
+}
+
 // Conformal dielectrics in a stack without planar interfaces: the shells
 // meet only the background, whose permittivity the tables must still know.
 // A planar interface far above, with a negligible contrast, does not change

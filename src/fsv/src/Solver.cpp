@@ -672,6 +672,9 @@ void checkSolveArguments(const GeometryType& geometry,
   if (options.max_walks <= 0) {
     throw std::invalid_argument("fsv: max_walks must be positive");
   }
+  if (!(options.gauss_offset > 0) || !std::isfinite(options.gauss_offset)) {
+    throw std::invalid_argument("fsv: gauss_offset must be positive");
+  }
 }
 
 // The row's means and standard errors from the summed tallies.
