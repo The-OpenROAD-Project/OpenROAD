@@ -158,6 +158,12 @@ unplaced design, global routes that are congested and were not accepted with
 `global_route -allow_congestion`, and a placement estimate without wire RC
 are errors.
 
+Guides that `global_route` saved reload in a new session and estimate as
+usual, also once the design is detail-routed. Guides that
+`detailed_route -save_guide_updates` wrote reflect detailed routes and do not
+rebuild usable global routes: with them `-global_routing` is an error and the
+flagless form estimates from placement. Use `-placement` or `read_spef`.
+
 #### Options
 
 | Switch Name | Description |
