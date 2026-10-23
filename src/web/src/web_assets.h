@@ -28,6 +28,10 @@ struct EmbeddedAsset
 // or nullptr if not found.
 const EmbeddedAsset* findEmbeddedAsset(std::string_view path);
 
+// The saved report's script, kept out of the served table: saveReport()
+// inflates it into the file it writes.
+extern const EmbeddedAsset kReportJS;
+
 // The asset's bytes, inflated first if stored gzipped: for clients without
 // gzip and for the tests, since the server otherwise sends content() as is.
 std::string assetText(const EmbeddedAsset& asset);

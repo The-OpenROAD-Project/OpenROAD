@@ -148,6 +148,8 @@ export function createMenuBar(app) {
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },
             { label: 'Charts', action: () => app.focusComponent('ChartsWidget') },
             { label: 'Help', action: () => app.focusComponent('HelpWidget') },
+            { type: 'separator' },
+            { label: 'Reset to Default Layout', action: () => app.resetLayout() },
         ]},
         { label: 'Help', items: [
             { label: 'Keyboard Shortcuts', action: () => app.focusComponent('HelpWidget') },

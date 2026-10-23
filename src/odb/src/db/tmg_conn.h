@@ -189,9 +189,13 @@ class tmg_conn
 
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
+  void splitWireSection(int section_index, const Point& at);
+  void populateShapeSearch();
   void identifyShorts();
   void removeShortLoops();
   void removeWireLoops();
+  void identifyCandidateSections();
+  void identifyCandidateSections(int terminal_index);
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();

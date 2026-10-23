@@ -129,11 +129,11 @@ MoveResult SplitLoadMtCandidate::apply()
              resizer_.network()->pathName(buffer));
 
   // The new buffer takes the target slew of its load, and both nets drop
-  // their stale parasitics.
-  static_cast<void>(resizer_.resizeToTargetSlew(bufferOutputPin(buffer)));
+  // their stale parasitics.  The resize keeps the instance pins.
+  sta::Pin* buffer_output = bufferOutputPin(buffer);
+  static_cast<void>(resizer_.resizeToTargetSlew(buffer_output));
   resizer_.invalidateParasitics(input_->drvr_net);
-  resizer_.invalidateParasitics(
-      resizer_.network()->net(bufferOutputPin(buffer)));
+  resizer_.invalidateParasitics(resizer_.network()->net(buffer_output));
 
   return {
       .accepted = true,
