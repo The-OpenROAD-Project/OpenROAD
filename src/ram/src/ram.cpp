@@ -14,6 +14,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -3433,34 +3434,51 @@ void RamGen::generate(const int mask_size,
 // (those of the periphery too, while they are still placed), on the pin
 // layer's track grid inside the outline: these pins are for a macro
 // placer to orient the core by, never routed.
-// A liberty function as a Verilog expression, its pins by their nets.
-static std::string verilogExpr(const sta::FuncExpr* f,
-                               const std::map<std::string, std::string>& nets)
+// A liberty function as a Verilog expression, its pins by their nets;
+// none where a pin has no net or the function is incomplete.
+static std::optional<std::string> verilogExpr(
+    const sta::FuncExpr* f,
+    const std::map<std::string, std::string>& nets)
 {
   if (f == nullptr) {
-    return "1'b0";
+    return std::nullopt;
   }
+  auto both = [&nets](const sta::FuncExpr* f,
+                      const char* op) -> std::optional<std::string> {
+    auto left = verilogExpr(f->left(), nets);
+    auto right = verilogExpr(f->right(), nets);
+    if (!left || !right) {
+      return std::nullopt;
+    }
+    return "(" + *left + op + *right + ")";
+  };
   switch (f->op()) {
     case sta::FuncExpr::Op::port: {
       auto it = nets.find(f->port()->name());
-      return it == nets.end() ? "1'b0" : it->second;
+      if (it == nets.end()) {
+        return std::nullopt;
+      }
+      return it->second;
     }
-    case sta::FuncExpr::Op::not_:
-      return "~(" + verilogExpr(f->left(), nets) + ")";
+    case sta::FuncExpr::Op::not_: {
+      auto left = verilogExpr(f->left(), nets);
+      if (!left) {
+        return std::nullopt;
+      }
+      return "~(" + *left + ")";
+    }
     case sta::FuncExpr::Op::and_:
-      return "(" + verilogExpr(f->left(), nets) + " & "
-             + verilogExpr(f->right(), nets) + ")";
+      return both(f, " & ");
     case sta::FuncExpr::Op::or_:
-      return "(" + verilogExpr(f->left(), nets) + " | "
-             + verilogExpr(f->right(), nets) + ")";
+      return both(f, " | ");
     case sta::FuncExpr::Op::xor_:
-      return "(" + verilogExpr(f->left(), nets) + " ^ "
-             + verilogExpr(f->right(), nets) + ")";
+      return both(f, " ^ ");
     case sta::FuncExpr::Op::one:
       return "1'b1";
-    default:
+    case sta::FuncExpr::Op::zero:
       return "1'b0";
   }
+  return std::nullopt;
 }
 
 // Ports as Verilog declarations, `name[i]` grouped into buses.
@@ -3572,9 +3590,17 @@ void RamGen::splitPeriphery()
     }
     if (outputs == 1 && out->function() && !out->direction()->isTristate()
         && nets.count(out->name())) {
-      body << "  assign " << nets[out->name()] << " = "
-           << verilogExpr(out->function(), nets) << ";  // " << inst->getName()
-           << "\n";
+      auto expr = verilogExpr(out->function(), nets);
+      if (!expr) {
+        logger_->error(RAM,
+                       101,
+                       "-periphery verilog: {} ({}) has an input with no net, "
+                       "or a function that can't be written as Verilog.",
+                       inst->getName(),
+                       inst->getMaster()->getName());
+      }
+      body << "  assign " << nets[out->name()] << " = " << *expr << ";  // "
+           << inst->getName() << "\n";
       continue;
     }
     body << "  " << inst->getMaster()->getName() << " \\" << inst->getName()
