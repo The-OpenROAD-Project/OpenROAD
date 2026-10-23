@@ -36,6 +36,7 @@ ALL_TESTS = [
     "check_axioms",
     "clock_pin",
     "constant1",
+    "dont_touch_attr",
     "escape_slash",
     "escape_slash_hier",
     "find_clks1",

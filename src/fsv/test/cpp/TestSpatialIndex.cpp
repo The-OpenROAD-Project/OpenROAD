@@ -14,9 +14,9 @@ namespace {
 
 TEST(SpatialIndex, GroundOnly)
 {
-  const SpatialIndex index({});
-  const SpatialIndex::Nearest n = index.nearest({1, 2, 3});
-  EXPECT_EQ(n.box, SpatialIndex::kGround);
+  const SpatialIndex<3> index({});
+  const SpatialIndex<3>::Nearest n = index.nearest({1, 2, 3});
+  EXPECT_EQ(n.box, SpatialIndex<3>::kGround);
   EXPECT_DOUBLE_EQ(n.dist, 3);
   // Below the ground plane counts as touching it.
   EXPECT_DOUBLE_EQ(index.nearest({1, 2, -1e-12}).dist, 0);
@@ -36,7 +36,7 @@ TEST(SpatialIndex, MatchesBruteForce)
     }
     boxes.push_back(box);
   }
-  const SpatialIndex index(boxes);
+  const SpatialIndex<3> index(boxes);
   for (int q = 0; q < 20000; q++) {
     const double scale = q % 4 == 0 ? 400 : 24;
     const Vec3 p{rng.uniform() * scale - scale / 4,
@@ -46,9 +46,9 @@ TEST(SpatialIndex, MatchesBruteForce)
     for (const Box& b : boxes) {
       best = std::min(best, linfDistance(p, b));
     }
-    const SpatialIndex::Nearest n = index.nearest(p);
+    const SpatialIndex<3>::Nearest n = index.nearest(p);
     ASSERT_DOUBLE_EQ(n.dist, best);
-    if (n.box != SpatialIndex::kGround) {
+    if (n.box != SpatialIndex<3>::kGround) {
       ASSERT_DOUBLE_EQ(linfDistance(p, boxes[n.box]), best);
     }
   }
@@ -67,7 +67,7 @@ TEST(SpatialIndex, LayeredWiresMatchBruteForce)
     const double x = 1.4 * i;
     boxes.push_back({{x, 0, 0.8}, {x + 0.1, 14, 0.9}});
   }
-  const SpatialIndex index(boxes);
+  const SpatialIndex<3> index(boxes);
   Philox rng(5, 0);
   for (int q = 0; q < 20000; q++) {
     const Vec3 p{
@@ -77,6 +77,36 @@ TEST(SpatialIndex, LayeredWiresMatchBruteForce)
       best = std::min(best, linfDistance(p, b));
     }
     ASSERT_DOUBLE_EQ(index.nearest(p).dist, best);
+  }
+}
+
+// The 2D index (x-z): the ground is the last coordinate.
+TEST(SpatialIndex, RectsMatchBruteForce)
+{
+  Philox rng(9, 0);
+  std::vector<Rect> rects;
+  for (int r = 0; r < 300; r++) {
+    Rect rect;
+    for (int k = 0; k < 2; k++) {
+      rect.lo[k] = (k == 1 ? 0.1 : 0.0) + rng.uniform() * 20;
+      rect.hi[k] = rect.lo[k] + 0.05 + rng.uniform() * 2;
+    }
+    rects.push_back(rect);
+  }
+  const SpatialIndex<2> index(rects);
+  EXPECT_DOUBLE_EQ(SpatialIndex<2>({}).nearest({5, 3}).dist, 3);
+  for (int q = 0; q < 20000; q++) {
+    const double scale = q % 4 == 0 ? 400 : 24;
+    const Vec2 p{rng.uniform() * scale - scale / 4, rng.uniform() * scale};
+    double best = p[1];
+    for (const Rect& r : rects) {
+      best = std::min(best, linfDistance(p, r));
+    }
+    const SpatialIndex<2>::Nearest n = index.nearest(p);
+    ASSERT_DOUBLE_EQ(n.dist, best);
+    if (n.box != SpatialIndex<2>::kGround) {
+      ASSERT_DOUBLE_EQ(linfDistance(p, rects[n.box]), best);
+    }
   }
 }
 

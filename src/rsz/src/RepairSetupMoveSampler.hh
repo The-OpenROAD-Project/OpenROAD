@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "RepairSetupAnalysisData.hh"
+#include "RepairSetupMoveSnapshot.hh"
 
 namespace sta {
 class ClockEdge;
@@ -31,16 +31,16 @@ struct Target;
 // Captures timing and topology before and after one ECO move for analysis.
 // Construct it before apply() on the main thread; the caller refreshes RC and
 // STA before the second sample.
-class RepairSetupAnalysis
+class RepairSetupMoveSampler
 {
  public:
   // === Construction =========================================================
   // policy_endpoint is the endpoint the policy repairs; a path target that
   // does not carry its violated endpoint reports it.
-  RepairSetupAnalysis(Resizer& resizer,
-                      const Target& target,
-                      const sta::Pin* original_endpoint = nullptr,
-                      const sta::Pin* policy_endpoint = nullptr);
+  RepairSetupMoveSampler(Resizer& resizer,
+                         const Target& target,
+                         const sta::Pin* original_endpoint = nullptr,
+                         const sta::Pin* policy_endpoint = nullptr);
 
   // === Sampling =============================================================
   // Return numeric QoR and target-window measurements in seconds; omit

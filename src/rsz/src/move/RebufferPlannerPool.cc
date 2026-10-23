@@ -11,6 +11,7 @@
 
 #include "Rebuffer.hh"
 #include "rsz/Resizer.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -52,6 +53,12 @@ Rebuffer& RebufferPlannerPool::acquire()
   }
 
   const std::lock_guard<std::mutex> lock(mutex_);
+  // One planner per worker thread; a second lease on a thread, such as nested
+  // pool work inside planning, finds none.
+  if (idle_.empty()) {
+    resizer_.logger()->error(
+        utl::RSZ, 2036, "RebufferMt planner pool has no idle planner.");
+  }
   Rebuffer* planner = idle_.back();
   idle_.pop_back();
   return *planner;

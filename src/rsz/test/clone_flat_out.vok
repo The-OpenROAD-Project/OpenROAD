@@ -457,23 +457,23 @@ module hi_fanout (clk1,
  NAND2_X4 clone1 (.A1(net6),
     .A2(net2),
     .ZN(net1));
- NAND2_X4 clone10 (.A1(net16),
-    .A2(net11),
+ NAND2_X4 clone10 (.A1(net11),
+    .A2(net16),
     .ZN(net10));
  NAND2_X4 clone114 (.A1(net11),
     .A2(net16),
     .ZN(net114));
- NAND2_X4 clone21 (.A1(net29),
-    .A2(net23),
+ NAND2_X4 clone21 (.A1(net23),
+    .A2(net29),
     .ZN(net21));
- NAND2_X2 clone55 (.A1(net2),
-    .A2(net6),
+ NAND2_X2 clone55 (.A1(net6),
+    .A2(net2),
     .ZN(net55));
- NAND2_X2 clone56 (.A1(net2),
-    .A2(net6),
+ NAND2_X2 clone56 (.A1(net6),
+    .A2(net2),
     .ZN(net56));
- NAND2_X1 clone87 (.A1(net2),
-    .A2(net6),
+ NAND2_X1 clone87 (.A1(net6),
+    .A2(net2),
     .ZN(net87));
  DFF_X2 drvr_1 (.D(data),
     .CK(clk1),
@@ -1018,7 +1018,7 @@ module hi_fanout (clk1,
     .Z(net138));
  BUF_X4 rebuffer139 (.A(net21),
     .Z(net139));
- BUF_X4 rebuffer14 (.A(net15),
+ BUF_X2 rebuffer14 (.A(net15),
     .Z(net14));
  BUF_X1 rebuffer140 (.A(net142),
     .Z(net140));
@@ -1054,7 +1054,7 @@ module hi_fanout (clk1,
     .Z(net17));
  BUF_X4 rebuffer18 (.A(net19),
     .Z(net18));
- BUF_X2 rebuffer19 (.A(net20),
+ BUF_X4 rebuffer19 (.A(net20),
     .Z(net19));
  BUF_X8 rebuffer2 (.A(net3),
     .Z(net2));

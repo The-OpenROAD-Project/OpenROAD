@@ -14,14 +14,18 @@ target_sources(fsv
     src/AliasTable.cpp
     src/CubeGreens.cpp
     src/CubePanels.cpp
+    src/Dielectric.cpp
     src/FieldSolver.cpp
     src/Geometry.cpp
     src/Itf.cpp
+    src/LayerModes.cpp
     src/LayeredCubeGreens.cpp
+    src/LayeredSquareGreens.cpp
     src/MakeFieldSolver.cpp
     src/Scene.cpp
     src/Solver.cpp
     src/SpatialIndex.cpp
+    src/SquareGreens.cpp
     src/Stack.cpp
     src/WorkerPool.cpp
 )

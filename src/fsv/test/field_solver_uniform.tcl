@@ -8,7 +8,7 @@ set result [solve_capacitance -tol_total 0.01]
 
 check "every net is solved" { dict keys $result } {a b}
 check "a row's keys" { dict keys [dict get $result a] } \
-  {total total_sigma ground ground_sigma couplings coupling_sigmas walks hops seconds}
+  {total total_sigma ground ground_sigma couplings coupling_sigmas walks hops seconds cross_section}
 check "couplings name the other nets" { dict keys [dict get $result a couplings] } b
 
 # The matrix is symmetric within the statistical error.

@@ -4,7 +4,6 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
-#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -71,7 +70,8 @@ constexpr float kPositiveSlackLossBudget = 20.0e-12f;
 
 // Direct load or next-buffer stages are lumped loads; wires and branches are
 // distributed loads for buffer Liberty lookup.
-bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
+bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree,
+                                           utl::Logger* logger)
 {
   switch (tree->type()) {
     case BnetType::load:
@@ -81,9 +81,8 @@ bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree)
     case BnetType::via:
     case BnetType::junction:
       return true;
-    default:
-      return true;
   }
+  logger->critical(RSZ, 1013, "unhandled BufferedNet type");
 }
 
 }  // namespace
@@ -1546,9 +1545,9 @@ size_t Rebuffer::BufferDelayKeyHash::operator()(const BufferDelayKey& key) const
   size_t seed = 0;
   boost::hash_combine(seed, key.port);
   boost::hash_combine(seed, key.scene);
-  boost::hash_combine(seed, key.load_bits);
-  boost::hash_combine(seed, key.rise_slew_bits);
-  boost::hash_combine(seed, key.fall_slew_bits);
+  boost::hash_combine(seed, key.load_cap);
+  boost::hash_combine(seed, key.rise_slew);
+  boost::hash_combine(seed, key.fall_slew);
   return seed;
 }
 
@@ -1557,8 +1556,6 @@ Rebuffer::gateDelaysForLoad(sta::LibertyPort* output,
                             const sta::Scene* scene,
                             const float load_cap)
 {
-  auto float_bits
-      = [](const float value) { return std::bit_cast<uint32_t>(value); };
   sta::Slew slews[sta::RiseFall::index_count];
 
   // Annotated input slews make gateDelays() depend on the current instance.
@@ -1576,11 +1573,9 @@ Rebuffer::gateDelaysForLoad(sta::LibertyPort* output,
   const BufferDelayKey key{
       .port = output,
       .scene = scene,
-      .load_bits = float_bits(load_cap),
-      .rise_slew_bits
-      = float_bits(resizer_->tgt_slews_[sta::RiseFall::riseIndex()]),
-      .fall_slew_bits
-      = float_bits(resizer_->tgt_slews_[sta::RiseFall::fallIndex()])};
+      .load_cap = load_cap,
+      .rise_slew = resizer_->tgt_slews_[sta::RiseFall::riseIndex()],
+      .fall_slew = resizer_->tgt_slews_[sta::RiseFall::fallIndex()]};
   BufferDelayCache::iterator cached = buffer_delay_cache_.find(key);
   if (cached == buffer_delay_cache_.end()) {
     std::array<sta::ArcDelay, sta::RiseFall::index_count> gate_delays;
@@ -2320,8 +2315,9 @@ BufferedNetPtr Rebuffer::cloneBufferedNetTree(const BufferedNetPtr& tree)
                                         resizer_,
                                         estimate_parasitics_);
       break;
-    default:
-      logger_->critical(RSZ, 1009, "unhandled BufferedNet type");
+  }
+  if (cloned == nullptr) {
+    logger_->critical(RSZ, 1009, "unhandled BufferedNet type");
   }
 
   cloned->setSlackTransition(tree->slackTransition());
@@ -2377,7 +2373,7 @@ void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
       tree->bufferCell()->bufferPorts(input, output);
       const float output_cap = output != nullptr ? output->capacitance() : 0.0f;
       const bool drives_distributed_load
-          = drivesDistributedLoadBeforeNextBuffer(child);
+          = drivesDistributedLoadBeforeNextBuffer(child, logger_);
       prefix.push_back({.type = BufferTreeStageType::kBuffer,
                         .buffer_cell = tree->bufferCell(),
                         .wire_rc = {},
@@ -2391,9 +2387,8 @@ void Rebuffer::buildLoadPaths(const BufferedNetPtr& tree,
       buildLoadPaths(tree->ref(), prefix, load_paths);
       buildLoadPaths(tree->ref2(), prefix, load_paths);
       return;
-    default:
-      logger_->critical(RSZ, 1011, "unhandled BufferedNet type");
   }
+  logger_->critical(RSZ, 1011, "unhandled BufferedNet type");
 }
 
 Rebuffer::TreeSignature Rebuffer::treeSignature(const BufferedNetPtr& tree)
@@ -2449,9 +2444,8 @@ void Rebuffer::appendTreeSignature(const BufferedNetPtr& tree,
       appendTreeSignature(tree->ref(), signature);
       appendTreeSignature(tree->ref2(), signature);
       return;
-    default:
-      logger_->critical(RSZ, 1012, "unhandled BufferedNet type");
   }
+  logger_->critical(RSZ, 1012, "unhandled BufferedNet type");
 }
 
 bool BufferTreeLoadPath::hasBufferAfter(const size_t index) const
