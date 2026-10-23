@@ -1747,8 +1747,8 @@ void FlexDR::end(bool done)
   }
 }
 
-std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost,
-                                               const frUInt4 markerCost)
+std::vector<FlexDR::SearchRepairArgs> FlexDR::strategy(const frUInt4 shapeCost,
+                                                       const frUInt4 markerCost)
 {
   // clang-format off
   return {
@@ -1818,6 +1818,179 @@ std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost,
     {7, -5, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}, // 63
     {7, -6, 64, 64 * shapeCost, 16 * markerCost, 100 * shapeCost, 0.999, RipUpMode::DRC    , false}  // 64
   };
+  // clang-format on
+}
+
+// Closed-loop adaptive search-and-repair schedule.
+// Selects per-iteration SearchRepairArgs for it >= 1 from live DRV count and
+// previous iteration history rather than stepping through strategy() by iter_.
+std::optional<FlexDR::SearchRepairArgs> FlexDR::nextStepStrategy(
+    const int it,
+    const int drvs,
+    const bool has_unidir_layer,
+    const std::vector<FlexDR::SearchRepairArgs>& history_args,
+    const std::vector<int>& history_drvs,
+    const std::vector<FlexDR::SearchRepairArgs>& default_strategy,
+    const frUInt4 shapeCost,
+    const frUInt4 markerCost)
+{
+  if (drvs == 0 || it >= static_cast<int>(default_strategy.size())) {
+    return std::nullopt;
+  }
+
+  // Small designs with low initial DRV count (e.g. gcd, incremental repair
+  // passes, drt unit tests): follow baseline strategy() directly for bit-exact
+  // outputs across all PDKs.
+  if (!history_drvs.empty() && history_drvs[0] < kAdaptiveMinInitialDrvs) {
+    return default_strategy[it];
+  }
+
+  // Unidirectional / LEF58_RECTONLY layers (e.g. asap7 7nm): run the first
+  // shifted pass (strategy[1]: size=7, offset=-2, RipUpMode::ALL) to
+  // straighten it=0 tile seams across the chip, skip the redundant second
+  // RipUpMode::ALL pass (strategy[2]: offset=-5), and step directly into
+  // strategy[3..] (7x7 DRC).
+  if (has_unidir_layer) {
+    if (it == 1) {
+      return default_strategy[1];
+    }
+    const size_t idx = std::min<size_t>(default_strategy.size() - 1,
+                                        static_cast<size_t>(it + 1));
+    return default_strategy[idx];
+  }
+
+  // clang-format off
+  if (it == 1) {
+    return SearchRepairArgs{5, -5, 3, shapeCost, shapeCost, shapeCost, 0.950f, RipUpMode::DRC, true};
+  }
+
+  int stagnant_steps = 0;
+  for (int i = static_cast<int>(history_drvs.size()) - 1; i > 0; --i) {
+    if (history_drvs[i] >= history_drvs[i - 1]) {
+      ++stagnant_steps;
+    } else {
+      break;
+    }
+  }
+
+  const int prev_drvs = (history_drvs.size() >= 2)
+                            ? history_drvs[history_drvs.size() - 2]
+                            : drvs;
+  const double improvement_rate
+      = (history_drvs.size() >= 2)
+            ? static_cast<double>(prev_drvs - drvs) / std::max(1, prev_drvs)
+            : 0.0;
+  // Moderate post-it1 regime (500 <= history_drvs[1] < 600): skip the
+  // low-cost it=2..3 express lane and use steeper DRC costs (2x/4x
+  // shapeCost) with slower marker decay (0.990) and adaptive window sizing
+  // so guideTilesFlow resolves violations in fewer passes. Bounded below by
+  // 500 so designs that drop below 500 DRVs at it=1 stay on the gentler 1x
+  // shapeCost path.
+  const bool moderate_post_it1
+      = (history_drvs.size() >= 2 && history_drvs[1] >= 500
+         && history_drvs[1] < 600);
+
+  if (!moderate_post_it1) {
+    if (it == 2 && improvement_rate >= 0.50) {
+      if (drvs <= 80) {
+        return SearchRepairArgs{3, -2, 3, shapeCost, shapeCost, shapeCost, 0.950f, RipUpMode::DRC, true};
+      }
+      return SearchRepairArgs{5, -2, 4, shapeCost, shapeCost, shapeCost, 0.950f, RipUpMode::DRC, true};
+    }
+    if (it == 3 && drvs <= 30 && improvement_rate >= 0.50) {
+      return SearchRepairArgs{3, -2, 3, shapeCost, markerCost, 2 * shapeCost, 0.950f, RipUpMode::DRC, false};
+    }
+  }
+
+  int last_success_size = 5;
+  for (int i = static_cast<int>(
+                   std::min(history_drvs.size(), history_args.size()))
+               - 1;
+       i > 0;
+       --i) {
+    if (history_drvs[i] < history_drvs[i - 1]
+        && history_args[i].ripupMode != RipUpMode::ALL) {
+      last_success_size = history_args[i].size;
+      break;
+    }
+  }
+
+  const int adaptive_size
+      = (last_success_size > 11) ? 9 : std::max(5, last_success_size - 2);
+  const int low_progress_size = std::min(11, std::max(7, last_success_size));
+
+  // Endgame tail (drvs <= 10): NEARDRC -> 3x3 ALL pin-unboxing -> 7x7 DRC.
+  if (drvs <= 10) {
+    if (stagnant_steps == 2) {
+      return SearchRepairArgs{5, -(it % 5), 8, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
+    }
+    if (stagnant_steps == 3) {
+      return SearchRepairArgs{7, -(it % 7), 8, 16 * shapeCost, 4 * markerCost, 16 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
+    }
+    if (stagnant_steps >= 4 && stagnant_steps <= 6) {
+      const int phase = stagnant_steps - 4;
+      return SearchRepairArgs{3, -phase, 12, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.990f, RipUpMode::ALL, false};
+    }
+    if (stagnant_steps == 7) {
+      return SearchRepairArgs{7, -4, 8, 2 * shapeCost, markerCost, 3 * shapeCost, 0.950f, RipUpMode::DRC, false};
+    }
+    if (stagnant_steps >= 8) {
+      const size_t idx
+          = std::min<size_t>(default_strategy.size() - 1,
+                             static_cast<size_t>(30 + (stagnant_steps - 8)));
+      return default_strategy[idx];
+    }
+    if (moderate_post_it1) {
+      return SearchRepairArgs{adaptive_size, -(it % adaptive_size), 6, 4 * shapeCost, markerCost, 4 * shapeCost, 0.990f, RipUpMode::DRC, false};
+    }
+    return SearchRepairArgs{5, -(it % 5), 8, 4 * shapeCost, markerCost, 4 * shapeCost, 0.950f, RipUpMode::DRC, false};
+  }
+
+  // High/mid-DRV regimes (drvs > 10).
+  const bool is_very_high = (drvs > 100);
+  if (!moderate_post_it1 && is_very_high && !history_args.empty()
+      && drvs > prev_drvs
+      && history_args.back().ripupMode == RipUpMode::NEARDRC) {
+    const int settle_size = std::max(7, history_args.back().size);
+    return SearchRepairArgs{settle_size, -(it % settle_size), 8, 4 * shapeCost, 2 * markerCost, 4 * shapeCost, 0.950f, RipUpMode::DRC, false};
+  }
+
+  if (stagnant_steps >= 2) {
+    if (stagnant_steps == 2) {
+      return SearchRepairArgs{9, -(it % 9), 8, 32 * shapeCost, 8 * markerCost, 32 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
+    }
+    const float decay = is_very_high
+                            ? ((stagnant_steps == 3) ? 0.990f : 0.995f)
+                            : ((stagnant_steps == 3) ? 0.995f : 0.999f);
+    const frUInt4 drc_cost
+        = (stagnant_steps == 3) ? (64 * shapeCost) : (128 * shapeCost);
+    const frUInt4 mkr_cost
+        = (stagnant_steps == 3) ? (16 * markerCost) : (32 * markerCost);
+    return SearchRepairArgs{11, -(it % 11), 12, drc_cost, mkr_cost, drc_cost, decay, RipUpMode::NEARDRC, false};
+  }
+
+  if (!moderate_post_it1) {
+    if (!is_very_high) {
+      return SearchRepairArgs{5, -(it % 5), 8, 4 * shapeCost, markerCost, 4 * shapeCost, 0.950f, RipUpMode::DRC, false};
+    }
+    if (improvement_rate < 0.15) {
+      return SearchRepairArgs{low_progress_size, -(it % low_progress_size), 8, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.950f, RipUpMode::NEARDRC, false};
+    }
+    return SearchRepairArgs{5, -(it % 5), 6, shapeCost, shapeCost, 2 * shapeCost, 0.950f, RipUpMode::DRC, false};
+  }
+
+  if (is_very_high && stagnant_steps == 0 && improvement_rate < 0.15
+      && !history_args.empty()
+      && history_args.back().ripupMode != RipUpMode::NEARDRC) {
+    return SearchRepairArgs{low_progress_size, -(it % low_progress_size), 8, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.950f, RipUpMode::NEARDRC, false};
+  }
+
+  const bool follow_guide = is_very_high && (it <= 2);
+  const int maze_end = is_very_high ? 4 : 6;
+  const frUInt4 drc_cost = is_very_high ? (2 * shapeCost) : (4 * shapeCost);
+  const frUInt4 mkr_cost = is_very_high ? (2 * shapeCost) : markerCost;
+  const float decay = is_very_high ? 0.950f : 0.990f;
+  return SearchRepairArgs{adaptive_size, -(it % adaptive_size), maze_end, drc_cost, mkr_cost, drc_cost, decay, RipUpMode::DRC, follow_guide};
   // clang-format on
 }
 
@@ -2150,29 +2323,72 @@ int FlexDR::main()
       break;
     }
   }
-  for (auto& args :
-       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
-    if (iter_ > router_cfg_->END_ITERATION) {
-      break;
+  const bool has_unidir_layer = [this]() {
+    if (!router_cfg_->ADAPTIVE_STRATEGY) {
+      return false;
     }
-    int clipSize = args.size;
-    if (args.ripupMode != RipUpMode::ALL) {
+    for (const auto& layer : getTech()->getLayers()) {
+      if (layer->getType() == dbTechLayerType::ROUTING
+          && layer->isUnidirectional()) {
+        return true;
+      }
+    }
+    return false;
+  }();
+  const auto default_strategy
+      = strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST);
+  std::vector<SearchRepairArgs> history_args;
+  std::vector<int> history_drvs;
+  history_args.reserve(default_strategy.size());
+  history_drvs.reserve(default_strategy.size());
+
+  while (iter_ <= router_cfg_->END_ITERATION
+         && iter_ < static_cast<int>(default_strategy.size())) {
+    SearchRepairArgs args = default_strategy[iter_];
+    if (router_cfg_->ADAPTIVE_STRATEGY && iter_ > 0) {
+      const int drvs = getDesign()->getTopBlock()->getNumMarkers();
+      auto next_args = nextStepStrategy(iter_,
+                                        drvs,
+                                        has_unidir_layer,
+                                        history_args,
+                                        history_drvs,
+                                        default_strategy,
+                                        router_cfg_->ROUTESHAPECOST,
+                                        router_cfg_->MARKERCOST);
+      if (!next_args.has_value()) {
+        break;
+      }
+      args = *next_args;
+    }
+    const bool use_default_clipsize
+        = !router_cfg_->ADAPTIVE_STRATEGY
+          || (!history_drvs.empty()
+              && history_drvs[0] < kAdaptiveMinInitialDrvs)
+          || (has_unidir_layer && iter_ >= 2);
+    if (use_default_clipsize && args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {
         clipSizeInc_ += 2;
       } else {
         clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
       }
-      clipSize += std::min(router_cfg_->MAX_CLIPSIZE_INCREASE,
-                           (int) round(clipSizeInc_));
+      args.size += std::min(router_cfg_->MAX_CLIPSIZE_INCREASE,
+                            (int) round(clipSizeInc_));
     }
-    args.size = clipSize;
+    history_args.push_back(args);
     if (args.ripupMode == RipUpMode::ALL) {
       if (hasFixed || (incremental && iter_ <= 2)) {
         args.ripupMode = RipUpMode::INCR;
       }
     }
     searchRepair(args);
-    if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
+    const int post_drvs = getDesign()->getTopBlock()->getNumMarkers();
+    if (iter_ == 0 && router_cfg_->ADAPTIVE_STRATEGY && has_unidir_layer
+        && post_drvs >= kAdaptiveMinInitialDrvs) {
+      flow_state_machine_->setStubbornFlowViolationThreshold(
+          kAdaptiveUnidirStubbornThreshold);
+    }
+    history_drvs.push_back(post_drvs);
+    if (post_drvs == 0) {
       break;
     }
     if (logger_->debugCheck(DRT, "snapshot", 1)) {

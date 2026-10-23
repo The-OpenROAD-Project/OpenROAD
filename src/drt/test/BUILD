@@ -23,6 +23,7 @@ COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
     "ispd18_sample",
+    "ispd18_sample_adaptive",
     "ispd18_sample_incr",
     "ndr_vias1",
     "ndr_vias2",
@@ -120,6 +121,7 @@ filegroup(
         ) + ([
             "ispd18_sample.defok",
         ] if test_name in [
+            "ispd18_sample_adaptive",
             "ispd18_sample_incr",
             "single_step",
         ] else []) + ([
@@ -254,6 +256,22 @@ cc_test(
     srcs = ["WatermarkCostTest.cpp"],
     deps = [
         "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "AdaptiveStrategyTest",
+    srcs = ["AdaptiveStrategyTest.cpp"],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "//src/odb/src/db",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
