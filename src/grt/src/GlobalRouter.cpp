@@ -5107,6 +5107,18 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                     e.net->getName());
   }
 
+  // Mean ratio of the worst 1% of nets, rounded up so at least one net counts.
+  const size_t worst_count = (entries.size() + 99) / 100;
+  double worst_ratio_sum = 0.0;
+  for (size_t i = 0; i < worst_count; i++) {
+    worst_ratio_sum += entries[i].ratio;
+  }
+
+  logger_->metric("global_route__detour__ratio", total_ratio);
+  logger_->metric("global_route__detour__ratio__max", entries.front().ratio);
+  logger_->metric("global_route__detour__ratio__worst_1pct_mean",
+                  worst_ratio_sum / worst_count);
+
   std::ofstream out = openDetourFile(file_name);
   if (out.is_open()) {
     for (const DetourEntry& e : entries) {
