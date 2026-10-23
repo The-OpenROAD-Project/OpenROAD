@@ -40,8 +40,8 @@ struct Structure
 // <eps>" bottom-up from the ground plane, "box <net> x0 y0 z0 x1 y1 z1", and
 // "conformal <name> <bottom> <top> <SW_T> <TW_T> <eps>", a conformal
 // dielectric of the conductor layer [bottom, top] (nesting outward in
-// order). A positive `length` replaces every box's x extent with
-// [0, length].
+// order). Cross sections run along y, ignoring the boxes' y extents; a
+// positive `length` replaces every box's y extent with [0, length].
 Structure readStructure(const std::string& name, const double length = 0)
 {
   Structure s;
@@ -72,8 +72,8 @@ Structure readStructure(const std::string& name, const double length = 0)
       words >> net >> b.lo[0] >> b.lo[1] >> b.lo[2] >> b.hi[0] >> b.hi[1]
           >> b.hi[2];
       if (length > 0) {
-        b.lo[0] = 0;
-        b.hi[0] = length;
+        b.lo[1] = 0;
+        b.hi[1] = length;
       }
       if (!nets.contains(net)) {
         nets[net] = s.geometry.addNet(net);
@@ -192,9 +192,10 @@ TEST_P(TwoD, MatchesFiniteVolume)
 {
   const std::string& name = GetParam().structure;
   const Structure s = readStructure(name);
+  const Geometry2D section = crossSection(s.geometry);
   const Geometry& geometry = s.geometry;
   const Golden golden = readGolden("cross_section.txt");
-  const Scene scene(geometry, s.stack, CrossSection{});
+  const Scene2D scene(section, s.stack);
   Solver solver({.threads = 8});
   const SolveOptions options = solveOptions(1e-3);
   for (const std::string& m : GetParam().masters) {

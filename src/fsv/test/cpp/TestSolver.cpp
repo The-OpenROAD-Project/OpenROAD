@@ -480,56 +480,58 @@ TEST(Solver, ConformalWithoutPlanarInterfaces)
             uniform.total() + 4 * std::hypot(a.sigma[0], uniform.sigma[0]));
 }
 
-// The etch-stop wires drawn with the given length along x.
-Geometry wiresAcrossEtchStop(const double length)
+// The cross section of the etch-stop wires in the x-z plane.
+Geometry2D etchStopSection()
+{
+  Geometry2D section;
+  section.addNet("lower");
+  section.addNet("upper");
+  section.addRect(0, {{0, 0.5}, {0.2, 0.7}});
+  section.addRect(1, {{0.3, 1.1}, {0.5, 1.3}});
+  return section;
+}
+
+// The same wires in 3D, running along y for the given length.
+Geometry wiresAlongY(const double length)
 {
   Geometry geometry;
   geometry.addNet("lower");
   geometry.addNet("upper");
-  geometry.addBox(0, {{0, 0, 0.5}, {length, 0.2, 0.7}});
-  geometry.addBox(1, {{0, 0.3, 1.1}, {length, 0.5, 1.3}});
+  geometry.addBox(0, {{0, 0, 0.5}, {0.2, length, 0.7}});
+  geometry.addBox(1, {{0.3, 0, 1.1}, {0.5, length, 1.3}});
   return geometry;
 }
 
-// A cross section ignores the boxes' x extents: any extent gives the same
-// walks.
-TEST(Solver, CrossSectionIgnoresX)
+TEST(Solver, Geometry2DRejectsBadRects)
 {
-  const Stack stack = conformalStack({{"C", 0.05, 0.05, 7.0}});
-  SolveOptions options;
-  options.min_walks = options.max_walks = 32768;
-  Solver solver({.threads = 4});
-  const Geometry short_wires = wiresAcrossEtchStop(1.0);
-  const Geometry long_wires = wiresAcrossEtchStop(50.0);
-  const CapRow a
-      = solver.solve(Scene(short_wires, stack, CrossSection{}), 0, options);
-  const CapRow b
-      = solver.solve(Scene(long_wires, stack, CrossSection{}), 0, options);
-  EXPECT_EQ(a.cap, b.cap);
-  EXPECT_EQ(a.ground, b.ground);
+  Geometry2D section;
+  section.addNet("a");
+  EXPECT_THROW(section.addRect(1, {{0, 0.5}, {1, 0.7}}), std::invalid_argument);
+  EXPECT_THROW(section.addRect(0, {{1, 0.5}, {1, 0.7}}), std::invalid_argument);
+  EXPECT_THROW(section.addRect(0, {{0, 0}, {1, 0.7}}), std::invalid_argument);
 }
 
-// Nets apart along x overlap once a cross section ignores x: rejected.
-TEST(Solver, CrossSectionRejectsOverlapAlongX)
+// Rectangles of different nets may not overlap; those of one net may.
+TEST(Solver, CrossSectionRejectsOverlap)
 {
-  Geometry geometry;
-  geometry.addNet("a");
-  geometry.addNet("b");
-  geometry.addBox(0, {{0, 0, 0.5}, {1, 0.2, 0.7}});
-  geometry.addBox(1, {{5, 0, 0.5}, {6, 0.2, 0.7}});
-  EXPECT_NO_THROW(Scene(geometry, 3.9));
-  EXPECT_THROW(Scene(geometry, 3.9, CrossSection{}), std::invalid_argument);
+  Geometry2D section;
+  section.addNet("a");
+  section.addNet("b");
+  section.addRect(0, {{0, 0.5}, {0.2, 0.7}});
+  section.addRect(0, {{0.1, 0.5}, {0.3, 0.7}});
+  EXPECT_NO_THROW(Scene2D(section, 3.9));
+  section.addRect(1, {{0.25, 0.6}, {0.5, 0.8}});
+  EXPECT_THROW(Scene2D(section, 3.9), std::invalid_argument);
 }
 
 // A cross section's Maxwell matrix is symmetric, and its results do not
 // depend on the thread count.
 TEST(Solver, CrossSectionReciprocityAndDeterminism)
 {
-  const Geometry geometry = wiresAcrossEtchStop();
-  const Scene scene(
-      geometry,
-      conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}),
-      CrossSection{});
+  const Geometry2D section = etchStopSection();
+  const Scene2D scene(
+      section,
+      conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
   SolveOptions options;
   options.tol_total = 0.002;
   options.tol_coupling = 0.004;
@@ -552,15 +554,15 @@ TEST(Solver, CrossSectionReciprocityAndDeterminism)
 TEST(Solver, CrossSectionMatchesLongLine3D)
 {
   const Stack stack = conformalStack({{"C", 0.05, 0.05, 7.0}});
-  const Geometry ten = wiresAcrossEtchStop(10.0);
-  const Geometry thirty = wiresAcrossEtchStop(30.0);
+  const Geometry2D section = etchStopSection();
+  const Geometry ten = wiresAlongY(10.0);
+  const Geometry thirty = wiresAlongY(30.0);
   SolveOptions options;
   options.tol_total = 0.002;
   options.tol_coupling = 0.004;
   options.coupling_threshold = 0.05;
   Solver solver({.threads = 8});
-  const CapRow cross
-      = solver.solve(Scene(ten, stack, CrossSection{}), 0, options);
+  const CapRow cross = solver.solve(Scene2D(section, stack), 0, options);
   const CapRow a = solver.solve(Scene(ten, stack), 0, options);
   const CapRow b = solver.solve(Scene(thirty, stack), 0, options);
   const auto per_length

@@ -41,6 +41,11 @@ check_error "the solver rejects a panel count" {
 } FSV-0012
 set result [solve_capacitance -seed 3000000000 -tol_total 0.05]
 check "a seed beyond 32 bits is accepted" { dict exists $result a total } 1
+# Apart along y, but overlapping once projected onto the x-z plane.
+add_field_solver_box -net b -layer met1 -rect {0 0.5 1 0.64}
+check_error "a cross section of overlapping nets" {
+  solve_capacitance -cross_section -nets a
+} FSV-0015
 check_error "an unreadable ITF" { read_itf missing.itf } FSV-0001
 
 read_itf substrate_via.itf
