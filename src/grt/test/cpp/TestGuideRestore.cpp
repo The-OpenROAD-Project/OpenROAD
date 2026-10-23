@@ -91,7 +91,7 @@ class GuideRestoreTest : public tst::Fixture,
     const GRoute& merged = router_.getRoutes().at(preserved);
     // A connector may overlap one inherited segment, but not the entire route.
     // Duplicate callbacks append every inherited segment a second time.
-    int minimum_copies = merged.size();
+    int minimum_copies = static_cast<int>(merged.size());
     for (const GSegment& segment : distinct) {
       minimum_copies = std::min(
           minimum_copies,
