@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <memory>
 #include <ranges>
@@ -98,6 +99,17 @@ void ClusteringEngine::setChannel(const Channel min_channel,
 // initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
+  const size_t num_macros_to_place = checkFeasibility();
+  if (!tree_->has_unfixed_macros) {
+    return;
+  }
+
+  tree_->io_pads = getIOPads();
+  reportDesignData(num_macros_to_place);
+}
+
+size_t ClusteringEngine::checkFeasibility()
+{
   setDieArea();
   setFloorplanShape();
   createHardMacros();
@@ -109,7 +121,7 @@ void ClusteringEngine::init()
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
-    return;
+    return 0;
   }
 
   if (!movableCellsFitInMacroPlacementArea()) {
@@ -133,9 +145,7 @@ void ClusteringEngine::init()
         block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
   }
 
-  tree_->io_pads = getIOPads();
-
-  reportDesignData(unfixed_macros.size());
+  return unfixed_macros.size();
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
@@ -217,7 +227,8 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
 
 void ClusteringEngine::setFloorplanShape()
 {
-  tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
+  block_->getCoreArea().intersection(tree_->global_fence,
+                                     tree_->floorplan_shape);
 
   if (tree_->floorplan_shape.area() == 0) {
     logger_->error(
@@ -2038,19 +2049,22 @@ void ClusteringEngine::replaceByStdCellCluster(
 }
 
 std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
-    const HardMacro* hard_macro,
+    int64_t macro_width,
+    int64_t macro_height,
     const odb::Rect& core) const
 {
   std::string table;
 
   table += fmt::format("\n          |   Macro + Halos   |   Core   ");
   table += fmt::format("\n-----------------------------------------");
-  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
-                       block_->dbuToMicrons(hard_macro->getWidth()),
-                       block_->dbuToMicrons(core.dx()));
-  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
-                       block_->dbuToMicrons(hard_macro->getHeight()),
-                       block_->dbuToMicrons(core.dy()));
+  table += fmt::format(
+      "\n   Width  | {:>17.2f} | {:>8.2f}",
+      block_->dbuToMicrons(macro_width),
+      block_->dbuToMicrons(static_cast<int64_t>(core.xMax()) - core.xMin()));
+  table += fmt::format(
+      "\n  Height  | {:>17.2f} | {:>8.2f}\n",
+      block_->dbuToMicrons(macro_height),
+      block_->dbuToMicrons(static_cast<int64_t>(core.yMax()) - core.yMin()));
 
   return table;
 }
@@ -2059,6 +2073,8 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
+  const int64_t core_width = static_cast<int64_t>(core.xMax()) - core.xMin();
+  const int64_t core_height = static_cast<int64_t>(core.yMax()) - core.yMin();
   const int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -2080,19 +2096,25 @@ void ClusteringEngine::createHardMacros()
       }
 
       HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
+      odb::dbMaster* master = inst->getMaster();
+      const int64_t width
+          = static_cast<int64_t>(master->getWidth()) + halo.left + halo.right;
+      const int64_t height
+          = static_cast<int64_t>(master->getHeight()) + halo.bottom + halo.top;
 
-      auto macro = std::make_unique<HardMacro>(inst, halo);
-
-      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
+      // Validate the resolved halo before HardMacro sums its dimensions in int.
+      if (width < 0 || height < 0 || width > std::numeric_limits<int>::max()
+          || height > std::numeric_limits<int>::max() || width > core_width
+          || height > core_height) {
         logger_->error(
             MPL,
             6,
             "Found macro that does not fit in the core.\nName: {}\n{}",
             inst->getName(),
-            generateMacroAndCoreDimensionsTable(macro.get(), core));
+            generateMacroAndCoreDimensionsTable(width, height, core));
       }
 
-      tree_->maps.inst_to_hard[inst] = std::move(macro);
+      tree_->maps.inst_to_hard[inst] = std::make_unique<HardMacro>(inst, halo);
     }
   }
 }
