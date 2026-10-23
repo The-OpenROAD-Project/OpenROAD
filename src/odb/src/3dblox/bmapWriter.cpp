@@ -21,11 +21,13 @@ void BmapWriter::writeFile(const std::string& filename,
   const auto u = region->getDb()->getDbuPerMicron();
   std::ofstream bmap_file(filename);
   if (bmap_file.is_open()) {
-    for (auto bump : region->getChipBumps()) {
+    for (odb::dbInst* inst : region->getBumps()) {
       std::string line;
-      const auto inst_name = bump->getInst()->getName();
-      const auto cell_type = bump->getInst()->getMaster()->getName();
-      auto point = bump->getInst()->getOrigin();
+      const auto inst_name = inst->getName();
+      const auto cell_type = inst->getMaster()->getName();
+      auto point = inst->getOrigin();
+      odb::dbBTerm* bterm = inst->getBumpBTerm();
+      odb::dbNet* net = inst->getITerm(0U)->getNet();
       line.append(inst_name);
       line.append(" ");
       line.append(cell_type);
@@ -34,14 +36,14 @@ void BmapWriter::writeFile(const std::string& filename,
       line.append(" ");
       line.append(std::to_string(point.getY() / u));
       line.append(" ");
-      if (bump->getBTerm() != nullptr) {
-        line.append(bump->getBTerm()->getName());
+      if (bterm != nullptr) {
+        line.append(bterm->getName());
       } else {
         line.append("-");
       }
       line.append(" ");
-      if (bump->getNet() != nullptr) {
-        line.append(bump->getNet()->getName());
+      if (net != nullptr) {
+        line.append(net->getName());
       } else {
         line.append("-");
       }

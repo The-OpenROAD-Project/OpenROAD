@@ -167,11 +167,13 @@ add_library(db
     dbUnfoldedChipNet.cpp
     dbUnfoldedChipRegionInst.cpp
     dbChipBumpInstItr.cpp
+    dbChipBumpItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
     dbChipNetCapNodeItr.cpp
     dbChipNetItr.cpp
     dbChipNetRSegItr.cpp
+    dbChipRegionBumpItr.cpp
     dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp

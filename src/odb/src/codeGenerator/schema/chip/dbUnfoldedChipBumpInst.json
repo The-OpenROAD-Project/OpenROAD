@@ -20,16 +20,16 @@
       "flags": ["private"]
     },
     {
-      "name": "pad_for_pointer_tag_alignment_",
-      "type": "uint32_t",
-      "default": 0,
-      "flags": ["private", "no-serial", "no-cmp", "no-get"]
+      "name": "inst_",
+      "type": "dbId<_dbInst>",
+      "flags": ["private"]
     }
   ],
   "h_includes": [
     "odb/dbId.h"
   ],
   "cpp_includes": [
+    "dbBlock.h",
     "dbChipBumpInst.h",
     "dbChipBump.h",
     "dbInst.h",

@@ -823,6 +823,18 @@ void dbBTerm::destroy(dbBTerm* bterm_)
   if (auto bump = (_dbChipBump*) (bterm_->getChipBump())) {
     bump->bterm_ = 0;
   }
+  // Unbind the bumps of this port. Bumps live in the chip's top block.
+  // Costs O(regions + bumps) of the chip per destroyed bterm.
+  dbChip* chip = ((dbBlock*) block)->getChip();
+  if (chip->getBlock() == (dbBlock*) block) {
+    const uint32_t id = bterm->getOID();
+    for (dbInst* bump : chip->getBumps()) {
+      _dbInst* bump_impl = (_dbInst*) bump;
+      if (bump_impl->bump_bterm_ == id) {
+        bump_impl->bump_bterm_ = 0;
+      }
+    }
+  }
   for (auto callback : block->callbacks_) {
     callback->inDbBTermDestroy(bterm_);
   }

@@ -1350,7 +1350,7 @@ proc report_3dic_summary { args } {
       continue
     }
     foreach region [$master getChipRegions] {
-      incr bump_pad_count [llength [$region getChipBumps]]
+      incr bump_pad_count [llength [$region getBumps]]
     }
   }
   utl::report "3DIC summary for chip [$chip getName]:"

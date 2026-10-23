@@ -51,7 +51,9 @@ TEST_F(CheckerFixture, test_overlapping_chips)
 
   if (!markers.empty()) {
     auto sources = markers[0]->getSources();
-    EXPECT_EQ(sources.size(), 2);
+    // TODO: use unfolded objects as marker sources; the current folded
+    // sources do not identify the right occurrence.
+    EXPECT_TRUE(sources.empty());
   }
 }
 
@@ -81,7 +83,9 @@ TEST_F(CheckerFixture, test_single_floating_chip)
 
   if (!markers.empty()) {
     auto sources = markers[0]->getSources();
-    EXPECT_EQ(sources.size(), 1);
+    // TODO: use unfolded objects as marker sources; the current folded
+    // sources do not identify the right occurrence.
+    EXPECT_TRUE(sources.empty());
   }
 }
 
@@ -309,17 +313,11 @@ TEST_F(CheckerFixture, test_unused_internal_ext)
   EXPECT_EQ(markers.size(), 1);
   if (!markers.empty()) {
     auto sources = markers[0]->getSources();
-    EXPECT_EQ(sources.size(), 1);
-    // Source should be the region instance
-    if (!sources.empty()) {
-      auto* source = *sources.begin();
-      EXPECT_EQ(source->getObjectType(), dbChipRegionInstObj);
-      auto* region_inst = static_cast<dbChipRegionInst*>(source);
-      EXPECT_NE(region_inst, nullptr);
-      if (region_inst) {
-        EXPECT_EQ(region_inst->getChipRegion()->getName(), "r1_int");
-      }
-    }
+    // TODO: use unfolded objects as marker sources; the current folded
+    // sources do not identify the right occurrence.
+    EXPECT_TRUE(sources.empty());
+    // The flagged region is named in the marker comment.
+    EXPECT_NE(markers[0]->getComment().find("r1_int"), std::string::npos);
   }
 }
 
