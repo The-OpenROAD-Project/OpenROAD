@@ -174,6 +174,12 @@ bazelisk test //src/mpl/...
 
 ## Limitations
 
+- When annealing finds no tiling for a cluster, an exact check
+  (OR-tools CP-SAT) settles whether one exists, on a deterministic
+  budget. A problem it cannot decide within that budget gets the error
+  without a proof; this happens when the macros fill nearly all of the
+  outline.
+
 ## References
 1. A. B. Kahng, R. Varadarajan and Z. Wang, 
 "RTL-MP: Toward Practical, Human-Quality Chip Planning and Macro Placement",
