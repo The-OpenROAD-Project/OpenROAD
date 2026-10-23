@@ -107,11 +107,12 @@ class Interconnect3DTest : public tst::Nangate45Fixture
     }
     result["dbu_per_micron"] = getDb()->getDbuPerMicron();
     result["bootstrap_tech"] = serializeTechResponse(*gen_);
-    ASSERT_FALSE(result.at("bootstrap_tech")
-                     .as_object()
-                     .at("layers")
-                     .as_array()
-                     .empty());
+    const auto& tech = result.at("bootstrap_tech").as_object();
+    ASSERT_TRUE(tech.contains("dbu_per_micron"));
+    const auto dbu_per_micron = tech.at("dbu_per_micron").to_number<unsigned>();
+    ASSERT_GT(dbu_per_micron, 0u);
+    ASSERT_EQ(dbu_per_micron, getDb()->getDbuPerMicron());
+    ASSERT_FALSE(tech.at("layers").as_array().empty());
     std::ofstream file(std::filesystem::path(directory) / filename);
     ASSERT_TRUE(file.is_open());
     file << boost::json::serialize(result);
@@ -162,6 +163,81 @@ class Interconnect3DTest : public tst::Nangate45Fixture
   std::shared_ptr<TclEvaluator> evaluator_;
   std::unique_ptr<SelectHandler> handler_;
 };
+
+TEST_F(Interconnect3DTest, HierTechResponseUsesDatabaseUnits)
+{
+  ASSERT_EQ(getDb()->getDbuPerMicron(), 2000u);
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  ASSERT_EQ(gen_->getChip(), root_);
+  TileHandler handler(gen_);
+  SessionState state;
+  WebSocketRequest request;
+  request.id = 71;
+  request.type = WebSocketRequest::kTech;
+
+  for (const unsigned dbu_per_micron : {2000u, 4000u}) {
+    SCOPED_TRACE(dbu_per_micron);
+    getDb()->setDbuPerMicron(dbu_per_micron);
+    const auto response = handler.handleTile(request, state);
+    ASSERT_EQ(response.id, request.id);
+    ASSERT_EQ(response.type, WebSocketResponse::kJson);
+    const auto tech = boost::json::parse(std::string(response.payload.begin(),
+                                                     response.payload.end()))
+                          .as_object();
+    ASSERT_TRUE(tech.contains("dbu_per_micron"));
+    EXPECT_EQ(tech.at("dbu_per_micron").to_number<unsigned>(), dbu_per_micron);
+    EXPECT_EQ(tech.at("block_name").as_string(), root_->getName());
+  }
+}
+
+TEST_F(Interconnect3DTest, FlatTechResponseKeepsBlockUnitsAndName)
+{
+  getDb()->setTopChip(die_);
+  getDb()->constructUnfoldedModel();
+  ASSERT_EQ(gen_->getBlock(), block_);
+  TileHandler handler(gen_);
+  SessionState state;
+  WebSocketRequest request;
+  request.id = 72;
+  request.type = WebSocketRequest::kTech;
+
+  const auto response = handler.handleTile(request, state);
+  ASSERT_EQ(response.id, request.id);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson);
+  const auto tech = boost::json::parse(std::string(response.payload.begin(),
+                                                   response.payload.end()))
+                        .as_object();
+  ASSERT_TRUE(tech.contains("dbu_per_micron"));
+  EXPECT_EQ(tech.at("dbu_per_micron").to_number<unsigned>(),
+            block_->getDbUnitsPerMicron());
+  EXPECT_EQ(tech.at("block_name").as_string(), block_->getName());
+}
+
+TEST_F(Interconnect3DTest, EmptyTechResponseOmitsDatabaseUnits)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  db->setLogger(getLogger());
+  ASSERT_EQ(db->getDbuPerMicron(), 0u);
+  ASSERT_EQ(db->getChip(), nullptr);
+  auto gen = std::make_shared<TileGenerator>(db.get(), nullptr, getLogger());
+  ASSERT_EQ(gen->getBlock(), nullptr);
+  TileHandler handler(gen);
+  SessionState state;
+  WebSocketRequest request;
+  request.id = 73;
+  request.type = WebSocketRequest::kTech;
+
+  const auto response = handler.handleTile(request, state);
+  ASSERT_EQ(response.id, request.id);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson);
+  const auto tech = boost::json::parse(std::string(response.payload.begin(),
+                                                   response.payload.end()))
+                        .as_object();
+  EXPECT_FALSE(tech.contains("dbu_per_micron"));
+  EXPECT_EQ(tech.at("block_name").as_string(), "");
+  EXPECT_TRUE(tech.at("chiplets").as_array().empty());
+}
 
 TEST_F(Interconnect3DTest, MatchesODBGeometryAcrossRepeatedRotatedFlippedChips)
 {

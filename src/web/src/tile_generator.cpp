@@ -8420,6 +8420,11 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
     out["dbu_per_micron"] = gen.getBlock()->getDbUnitsPerMicron();
     out["block_name"] = gen.getBlock()->getName();
   } else {
+    // HIER roots have no block, but their geometry uses database units.
+    const auto dbu_per_micron = gen.getDb()->getDbuPerMicron();
+    if (dbu_per_micron > 0) {
+      out["dbu_per_micron"] = dbu_per_micron;
+    }
     odb::dbChip* top_chip = gen.getChip();
     out["block_name"] = top_chip ? top_chip->getName() : "";
   }
