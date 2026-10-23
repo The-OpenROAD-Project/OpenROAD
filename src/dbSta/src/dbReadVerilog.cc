@@ -26,6 +26,7 @@
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Property.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -587,7 +588,23 @@ void Verilog2db::makeChildInsts(Instance* inst,
       const auto dont_touch
           = network_->properties()->stringProperty(child, "dont_touch");
       if (!dont_touch.empty()) {
-        if (std::stoi(dont_touch)) {
+        bool set = sta::stringEqual(dont_touch, "true")
+                   || sta::stringEqual(dont_touch, "yes");
+        if (!set && !sta::stringEqual(dont_touch, "false")
+            && !sta::stringEqual(dont_touch, "no")) {
+          const auto [value, valid] = sta::stringLong(dont_touch);
+          if (valid) {
+            set = value != 0;
+          } else {
+            logger_->warn(ORD,
+                          2059,
+                          "Ignoring unrecognized dont_touch value \"{}\" on "
+                          "instance {}.",
+                          dont_touch,
+                          network_->pathName(child));
+          }
+        }
+        if (set) {
           dont_touch_insts_.push_back(db_inst);
         }
       }
