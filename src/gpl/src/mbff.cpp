@@ -521,6 +521,19 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         } else {
           odb::dbStringProperty::create(tray_iterm, kOrigNameProp, val.c_str());
         }
+
+        // Tray pins come from different flops, so record the originating
+        // flop's src attribute on the tray pin.
+        if (odb::dbStringProperty* inst_src_prop
+            = odb::dbStringProperty::find(insts_[flops[i].idx], "src")) {
+          const std::string src_val = inst_src_prop->getValue();
+          if (odb::dbStringProperty* src_prop
+              = odb::dbStringProperty::find(tray_iterm, "src")) {
+            src_prop->setValue(src_val.c_str());
+          } else {
+            odb::dbStringProperty::create(tray_iterm, "src", src_val.c_str());
+          }
+        }
       }
     }
   }
