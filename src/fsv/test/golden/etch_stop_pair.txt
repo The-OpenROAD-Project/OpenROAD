@@ -1,0 +1,9 @@
+# Cross section of two wires on either side of a thin high-k etch stop.
+# Units: µm. Layers are listed bottom-up from the ground plane at z = 0:
+# "layer <top> <eps>"; "background <eps>" fills everything above them.
+# Wires run along x; their x extents are ignored (infinitely long).
+background 3.9
+layer 0.8 2.7
+layer 1.0 7.0
+box lower 0 0 0.5 1 0.2 0.7
+box upper 0 0.3 1.1 1 0.5 1.3

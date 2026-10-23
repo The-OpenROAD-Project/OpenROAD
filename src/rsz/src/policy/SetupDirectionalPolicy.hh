@@ -25,8 +25,6 @@ class SetupDirectionalPolicy : public SetupLegacyBase
 
   const char* name() const override { return "SetupDirectionalPolicy"; }
   void iterate() override;
-
- protected:
   bool showStartpointMetrics() const override { return use_startpoints_; }
 
  private:

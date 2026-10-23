@@ -43,6 +43,18 @@ have_routes()
 }
 
 bool
+design_is_placed()
+{
+  return getGlobalRouter()->designIsPlaced();
+}
+
+bool
+have_congested_routes()
+{
+  return getGlobalRouter()->haveCongestedRoutes();
+}
+
+bool
 have_detailed_routes()
 {
   return getGlobalRouter()->haveDetailedRoutes();
@@ -317,6 +329,21 @@ void report_net_wire_length(odb::dbNet* net,
 {
   getGlobalRouter()->reportNetWireLength(
       net, global_route, detailed_route, verbose, file_name);
+}
+
+bool have_initial_steiner_wirelengths()
+{
+  return getGlobalRouter()->hasInitialSteinerWirelengths();
+}
+
+void report_net_detour(odb::dbNet* net, const char* file_name)
+{
+  getGlobalRouter()->reportNetDetour(net, file_name);
+}
+
+void report_net_detours(int top_n, const char* file_name)
+{
+  getGlobalRouter()->reportNetDetours(top_n, file_name);
 }
 
 void
