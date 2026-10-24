@@ -2,6 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -64,6 +65,19 @@ cc_test(
     ],
 )
 
+# The golden structures, for TestGolden and BenchSuite.
+cc_library(
+    name = "structures",
+    testonly = True,
+    srcs = ["cpp/Structures.cpp"],
+    hdrs = ["cpp/Structures.h"],
+    includes = ["cpp"],
+    deps = [
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+    ],
+)
+
 cc_test(
     name = "TestGolden",
     size = "large",
@@ -71,6 +85,7 @@ cc_test(
     data = glob(["golden/*.txt"]),
     shard_count = 4,
     deps = [
+        ":structures",
         "//src/fsv",
         "//src/fsv:geometry",
         "//src/fsv:stack",
@@ -110,6 +125,55 @@ cc_binary(
     deps = [
         "//src/fsv",
         "//src/fsv:geometry",
+    ],
+)
+
+# The performance baseline; see README.md.
+cc_binary(
+    name = "BenchSuite",
+    testonly = True,
+    srcs = ["cpp/BenchSuite.cpp"],
+    data = glob(["golden/*.txt"]) + [
+        "field_solver_gcd.def",
+        "sky130.itf",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+    ],
+    deps = [
+        ":structures",
+        "//src/fsv",
+        "//src/fsv:geometry",
+        "//src/fsv:net_window",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/utl",
+    ],
+)
+
+# BenchSuite's cross sections on two threads, to keep it running.
+cc_test(
+    name = "BenchSuite_smoke",
+    size = "small",
+    srcs = ["cpp/BenchSuite.cpp"],
+    args = [
+        "--groups",
+        "2d",
+        "--threads",
+        "2",
+    ],
+    data = glob(["golden/*.txt"]),
+    deps = [
+        ":structures",
+        "//src/fsv",
+        "//src/fsv:geometry",
+        "//src/fsv:net_window",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/utl",
     ],
 )
 

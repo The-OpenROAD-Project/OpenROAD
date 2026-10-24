@@ -85,6 +85,70 @@ meet wires.
 | `net155` | 9 | 0.17 / 0.10 / 0.07% | < 0.001% | 1.7 |
 | `net188` | 17 | 0 (the window covers the die) | 0 | 1.0 |
 
+## Benchmark
+
+`BenchSuite` times the solver at its default tolerances (1% on the total,
+5% on couplings of at least 1% of it) on three groups, solving every net of
+each case: `3d` (the 3D golden structures, and `etch_stop_pair` and
+`conformal_pair` extruded to 10 µm lines), `2d` (the six golden cross
+sections) and `nets` (the three nets of `field_solver_gcd.def` with a 4 µm
+halo, or any design's nets with `--lef`, `--def`, `--itf`, `--nets`,
+`--halo`). Each solve reports its seconds, walks, hops per walk, the
+relative standard error of one walk (`sigma1`, σ / total × √walks: the walk
+count scales with its square), rejected start points, the window's leakage,
+the scene's box count and its smallest box dimension. A short solve of
+every net first builds the tables it needs, so the times are warm.
+`BenchSuite_smoke`, a test, runs the cross sections on two threads.
+
+```shell
+bazelisk run //src/fsv/test:BenchSuite -- --threads 64 [--groups 3d,2d,nets] [--csv FILE]
+```
+
+`bench_split.py` groups a perf profile into the stages of a walk:
+
+```shell
+cd bazel-bin/src/fsv/test/BenchSuite.runfiles/_main
+perf record -o perf.data ../../BenchSuite --threads 64 --groups nets
+perf report -i perf.data --no-children --sort symbol --stdio \
+  | python3 <workspace>/src/fsv/test/bench_split.py
+```
+
+### Baseline
+
+64 threads on an AMD EPYC 9B45 (32 cores, 2 threads each), 2026-10-24.
+The warm-up (tables and a short solve of each net) took 2.7 s more.
+
+| Group | Solves | Seconds per solve (geometric mean, range) | Hops per walk | `sigma1` | Rejected |
+| ----- | ----- | ----- | ----- | ----- | ----- |
+| `3d` | 10 | 0.082 (0.013–0.349) | 31–151 | 2.8–7.4 | 0 |
+| `2d` | 14 | 0.020 (0.005–0.068) | 20–77 | 1.6–4.8 | 0 |
+| `nets` | 3 | 0.70 (0.37–1.59) | 49–87 | 5.7–7.3 | 24–39% |
+
+- **Targets.** 3D patterns are under 1 s and the nets within 1–5 s, but
+  a conformal cross section takes 68 ms (`nested_conformal`) against
+  50 ms.
+- **Variance.** `sigma1` is 1.6–3.9 on most cases, planar or conformal,
+  but 6.9–7.4 for the conformal line ends and the upper wire of the
+  conformal crossing, and 5.7–7.3 for the routed nets, which need 3–5
+  times the walks of the others: the first hop near line ends and the
+  target's own shells is the largest cost.
+- **Rejected start points.** 24–39% of the walks of routed nets, where
+  vias and pins meet wires.
+- **Capture distance.** Routed windows hold 0.01 µm boxes against
+  0.14–0.2 µm in the patterns, which shrinks the capture distance 14–20
+  times, but their hops per walk are in line with the patterns'.
+
+Where the time goes, from `bench_split.py`:
+
+| Stage | `3d` | `2d` | `nets` |
+| ----- | ----- | ----- | ----- |
+| Dielectric planes (the cube's interface query) | 45% | 47% | 23% |
+| Shell candidates (the shell index) | 0% | 0% | 16% |
+| Nearest conductor | 9% | 11% | 42% |
+| Table sampling | 25% | 24% | 10% |
+| Walk loop | 12% | 10% | 5% |
+| Random numbers | 6% | 6% | 3% |
+
 ### Adding or changing a structure
 
 1. Add or edit `golden/<name>.txt`.
