@@ -5,7 +5,25 @@ OpenDB cut and landing rectangles. They require no external design, netlist,
 checkpoint, or input database. They reference the existing
 `test/Nangate45/Nangate45.lef`; that file and its notices are unchanged.
 
-The affected baseline is
+## Native enclosure tests
+
+`src/pdn/test/cpp/TestPDNVia.cpp` uses the in-memory PDN fixture to check
+defaults on both landings, one-sided overrides, width applicability, valid
+enclosure alternatives, signed rounding, and rejection of cuts with inadequate
+enclosure. Run the existing target with:
+
+```bash
+bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
+  //src/pdn/test:pdn_via_unittest
+```
+
+On upstream `6f3f28cc85407d71ba64a550cca194d8a6a01c1c`, six new defect tests
+fail in each of three executions. The valid-override control and all 204
+pre-existing via tests pass. These tests do not depend on Tcl or external
+technology files. The integration fixtures below additionally inspect emitted
+OpenDB geometry, fallback behavior, and supply connectivity.
+
+The original integration reproducer's affected baseline is
 `80c6be93c28244f9f72840852a667daef764a4ff`.
 Build the baseline and the proposed revision with the same dependencies using
 the repository's [build instructions](../../../../docs/user/Build.md).
@@ -75,11 +93,13 @@ rectangles and margins, and `via_enclosures.tsv` for instantiated arrays.
 A successful corrected test can mean an illegal via was rejected; it does
 not mean a replacement connection was constructed.
 
-The three tests are also registered in both `src/pdn/test/BUILD` and
-`CMakeLists.txt`. With a configured CMake build, run:
+The three integration tests are registered in `src/pdn/test/BUILD`:
 
 ```bash
-ctest --test-dir build -R '^pdn\.' -j 1 --output-on-failure
+bazelisk test --test_output=errors \
+  //src/pdn/test:generated_via_default_edge-tcl_test \
+  //src/pdn/test:generated_via_default_positive-tcl_test \
+  //src/pdn/test:generated_via_default_valid-tcl_test
 ```
 
 ## Effective rules and signed rounding
