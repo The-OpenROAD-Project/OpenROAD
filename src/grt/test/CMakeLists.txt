@@ -22,6 +22,9 @@ or_integration_tests(
     cugr_adjustment1
     cugr_adjustment2
     cugr_adjustment3
+    cugr_colocated_pins
+    cugr_detour_limit
+    cugr_via_demand_disabled
     est_rc1
     est_rc2
     est_rc3
@@ -84,6 +87,9 @@ or_integration_tests(
     remove_buffers1_cugr
     remove_buffers2_cugr
     remove_buffers3_cugr
+    remove_buffers4_cugr
+    remove_buffers5_cugr
+    remove_buffers6_cugr
     remove_buffers3
     repair_antennas1
     repair_antennas2
@@ -115,6 +121,7 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    report_net_detours1
     resistance_aware_asap7_cong_cugr
     resistance_aware_asap7_cugr
     resistance_aware_asap7_fr
@@ -142,6 +149,7 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    congested_routes_are_reported
     congestion_markers_cugr
     congestion_acceptance_is_recorded
     congestion_report_file_cugr

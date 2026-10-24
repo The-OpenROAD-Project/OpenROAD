@@ -28,6 +28,7 @@ or_integration_tests(
     simple01-td-net-percentage
     simple01-td-tune
     simple01-td-repair
+    simple01-td-restart
     simple01-uniform
     simple01-vcts
     simple01-vcts-clamp
@@ -48,9 +49,9 @@ or_integration_tests(
     region01
   PASSFAIL_TESTS
     incremental02
-    place_ios01
-    place_ios_few_cells
-    place_ios_top_layer
+    incremental03
+    place_ios_rd
+    place_ios_td
 )
 
 # On an ENABLE_GPU=ON build the gpl FFT defaults to the GPU PoissonSolver,
@@ -169,6 +170,32 @@ target_sources(mbff_test
   mbff_test.cpp
 )
 
+add_executable(place_ios_test place_ios_test.cc)
+
+target_include_directories(place_ios_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(place_ios_test
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  ifp
+  ppl
+  tst
+  defin
+)
+
+gtest_discover_tests(place_ios_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME place_ios_test_load_sentinel
+           COMMAND $<TARGET_FILE:place_ios_test> --gtest_list_tests)
+endif()
+
 add_executable(placer_base_test
   placer_base_test.cpp
 )
@@ -192,6 +219,30 @@ gtest_discover_tests(placer_base_test
 if(ENABLE_GPU)
   add_test(NAME placer_base_test_load_sentinel
            COMMAND $<TARGET_FILE:placer_base_test> --gtest_list_tests)
+endif()
+
+add_executable(timing_base_test
+  timing_base_test.cpp
+)
+
+target_include_directories(timing_base_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(timing_base_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+)
+
+gtest_discover_tests(timing_base_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME timing_base_test_load_sentinel
+           COMMAND $<TARGET_FILE:timing_base_test> --gtest_list_tests)
 endif()
 
 add_executable(estimate_target_density_test
@@ -218,8 +269,33 @@ if(ENABLE_GPU)
            COMMAND $<TARGET_FILE:estimate_target_density_test> --gtest_list_tests)
 endif()
 
+add_executable(nesterov_divergence_test
+  nesterov_divergence_test.cpp
+)
+
+target_include_directories(nesterov_divergence_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(nesterov_divergence_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+)
+
+gtest_discover_tests(nesterov_divergence_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME nesterov_divergence_test_load_sentinel
+           COMMAND $<TARGET_FILE:nesterov_divergence_test> --gtest_list_tests)
+endif()
+
 add_dependencies(build_and_test fft_test mbff_test placer_base_test
-  estimate_target_density_test)
+  timing_base_test estimate_target_density_test nesterov_divergence_test
+  place_ios_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default

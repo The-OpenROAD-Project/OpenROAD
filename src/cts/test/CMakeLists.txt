@@ -40,6 +40,7 @@ or_integration_tests(
     lvt_lib
     max_cap
     max_wl_two_sinks
+    multi_mode
     no_clocks
     no_sinks
     post_cts_opt
@@ -57,6 +58,7 @@ or_integration_tests(
     dont_touch_sink
     dont_touch_skipped_net
     dont_touch_timing_buffer
+    hier_dummy_load
 )
 
 add_executable(cts_unittest cts_unittest.cc)

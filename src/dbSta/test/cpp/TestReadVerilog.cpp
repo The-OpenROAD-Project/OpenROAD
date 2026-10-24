@@ -35,6 +35,40 @@ class TestReadVerilog : public tst::IntegratedFixture
   }
 };
 
+// A child feedthrough shares a physical dbNet across its boundary, while
+// the parent input and output still belong to distinct local module nets.
+TEST_F(TestReadVerilog, TopPortsStayOnLocalNetsThroughFeedthrough)
+{
+  readVerilogAndSetup(
+      "TestReadVerilog_TopPortsStayOnLocalNetsThroughFeedthrough.v",
+      /*init_default_sdc=*/false);
+
+  odb::dbModule* top = block_->getTopModule();
+  for (int bit = 0; bit < 2; ++bit) {
+    const std::string suffix = "[" + std::to_string(bit) + "]";
+    odb::dbBTerm* input = block_->findBTerm(("ti" + suffix).c_str());
+    odb::dbBTerm* output = block_->findBTerm(("to" + suffix).c_str());
+    odb::dbModITerm* child_input
+        = findChildModITerm(top, "u_top", ("wi" + suffix).c_str());
+    odb::dbModITerm* child_output
+        = findChildModITerm(top, "u_top", ("wo" + suffix).c_str());
+    ASSERT_NE(input, nullptr);
+    ASSERT_NE(output, nullptr);
+    ASSERT_NE(child_input, nullptr);
+    ASSERT_NE(child_output, nullptr);
+    ASSERT_NE(input->getModNet(), nullptr);
+    ASSERT_NE(output->getModNet(), nullptr);
+    EXPECT_EQ(input->getModNet(), child_input->getModNet());
+    EXPECT_EQ(output->getModNet(), child_output->getModNet());
+    EXPECT_NE(input->getModNet(), output->getModNet());
+    EXPECT_EQ(input->getNet(), output->getNet());
+  }
+
+  odb::dbBTerm* direct = block_->findBTerm("direct");
+  ASSERT_NE(direct, nullptr);
+  EXPECT_EQ(direct->getModNet(), block_->findBTerm("ti[0]")->getModNet());
+}
+
 TEST_F(TestReadVerilog, FeedThrough)
 {
   // FeedThrough test:

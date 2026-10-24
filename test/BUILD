@@ -15,7 +15,7 @@ py_test(
     srcs = ["check_visibility.py"],
     args = [
         "--build-file=$(location //:BUILD.bazel)",
-        "--rule-type=cc_binary",
+        "--rule-type=stamped_binary",
         "--target=openroad",
         "--expect=public",
     ],
@@ -130,6 +130,7 @@ PASSFAIL_TESTS = [
     "db_option_quoting",
     "init_file_error",
     "upf_aes",
+    "est_placement_threads",
 ]
 
 COMPULSORY_TESTS = [

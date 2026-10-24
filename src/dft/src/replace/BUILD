@@ -25,6 +25,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/dft/src/utils",
         "//src/odb/src/db",
+        "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
     ],

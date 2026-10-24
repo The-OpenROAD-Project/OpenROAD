@@ -1291,11 +1291,6 @@ class dbBlock : public dbObject
   void clear();
 
   ///
-  /// get wire_updated nets
-  ///
-  void getWireUpdatedNets(std::vector<dbNet*>& nets);
-
-  ///
   /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
@@ -1938,39 +1933,6 @@ class dbNet : public dbObject
   /// Set the select flag to the specified value.
   ///
   void setSelect(bool value);
-
-  ///
-  /// Returns the wire-ordered flag value. This flag specified that the
-  /// wires of this net have been ordered into a single dbWire.
-  ///
-  bool isWireOrdered();
-
-  ///
-  /// Set the wire-ordered flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setWireOrdered(bool value);
-
-  ///
-  /// Returns the disconnected flag value. This flag specified that the
-  /// wire are connected to all the iterms of this net.
-  ///
-  bool isDisconnected();
-
-  ///
-  /// Set the disconnected flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setDisconnected(bool value);
-
-  ///
-  /// wire_update flag to be used at when the wire is replaced with a new wire
-  /// NOTE: rcgraph, extracted, ordered, reduced all have to be reset
-  ///
-  void setWireAltered(bool value);
-  bool isWireAltered();
 
   ///
   /// rc_graph flag set when Rseg and CapNodes were created
@@ -3748,6 +3710,16 @@ class dbWire : public dbObject
   /// Returns true if this wire is a global-wire
   ///
   bool isGlobalWire();
+
+  ///
+  /// Returns true if this wire has been ordered.
+  ///
+  bool isOrdered();
+
+  ///
+  /// Set the ordered flag.
+  ///
+  void setOrdered(bool ordered);
 
   ///
   /// Get the bounding box of this wire

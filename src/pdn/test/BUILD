@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -44,6 +45,7 @@ COMPULSORY_TESTS = [
     "core_grid_dual_followpins",
     "core_grid_dual_followpins_error",
     "core_grid_existing_ports",
+    "core_grid_extend_by",
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
@@ -55,6 +57,7 @@ COMPULSORY_TESTS = [
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
+    "core_grid_offset_type",
     "core_grid_ring_on_pin_layer",
     "core_grid_single_pin",
     "core_grid_snap",
@@ -95,6 +98,10 @@ COMPULSORY_TESTS = [
     "gf180_hybrid_followpins_rowpattern",
     "global_connect_with_dont_touch",
     "global_connect_with_dont_touch_warning",
+    "macro_edge_connect",
+    "macro_edge_connect_blocked",
+    "macro_edge_connect_m5_m6",
+    "macro_edge_connect_no_via",
     "macros",
     "macros_add_twice",
     "macro_channel_with_secondary_repair",
@@ -114,6 +121,7 @@ COMPULSORY_TESTS = [
     "macros_flipped_halo_rings",
     "macros_flipped_narrow_channel",
     "macros_flipped_number_of_straps",
+    "macros_flipped_offset_type",
     "macros_flipped_right_angle",
     "macros_flipped_right_angle_180",
     "macros_flipped_right_angle_halo",
@@ -135,6 +143,7 @@ COMPULSORY_TESTS = [
     "names",
     "offgrid",
     "pads_black_parrot",
+    "pads_black_parrot_extend_to_pad_ring",
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
@@ -145,6 +154,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
     "pads_black_parrot_straps",
+    "pads_connect_blanket_obstruction",
     "pads_connect_from_non_pref_edge",
     "pads_ihp_sg13g2_balance",
     "pads_placed_not_fixed",
@@ -285,9 +295,12 @@ filegroup(
         "nangate_macros/floorplan_very_narrow.def",
         "nangate_macros/floorplan_with_jog.def",
         "nangate_mirrored_rows/floorplan.def",
+        "nangate_polygon/edge_pin_macros.lef",
         "nangate_polygon/floorplan.def",
+        "nangate_polygon/floorplan_blocked_macro.def",
         "nangate_polygon/floorplan_cut_corner_die.def",
         "nangate_polygon/floorplan_cut_corners_pads.def",
+        "nangate_polygon/floorplan_edge_macros.def",
         "nangate_polygon/floorplan_macro.def",
         "nangate_polygon/floorplan_macro_halo.def",
         "nangate_polygon/floorplan_macro_r180.def",
@@ -392,6 +405,9 @@ filegroup(
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
             ],
+            "pads_connect_blanket_obstruction": [
+                "nangate_bsg_black_parrot/dummy_pads_blanket_obs.lef",
+            ],
             "pads_ihp_sg13g2_balance": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
@@ -443,4 +459,153 @@ doc_check_test(
         "//src/pdn:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "pdn_via_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNVia.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # via.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_connect_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNConnect.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # connect.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "pdn_techlayer_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNTechLayer.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # techlayer.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_shape_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNShape.cpp",
+        "cpp/stubs.cpp",
+    ],
+    data = ["cpp/wrong_direction_spacing.lef"],
+    # shape.h, grid.h, domain.h, grid_component.h are internal headers.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_domain_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNDomain.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # domain.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_polygon_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNPolygon.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # polygon.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_grid_component_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNGridComponent.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # grid_component.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

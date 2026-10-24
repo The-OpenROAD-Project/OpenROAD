@@ -36,6 +36,7 @@ ALL_TESTS = [
     "check_axioms",
     "clock_pin",
     "constant1",
+    "dont_touch_attr",
     "escape_slash",
     "escape_slash_hier",
     "find_clks1",
@@ -93,9 +94,11 @@ ALL_TESTS = [
     "sta5",
     "sta_to_db1",
     "sta_to_db1_hier",
+    "supply_port_graph",
     "tcl_unknown_handler",
     "write_sdc1",
     "write_verilog1",
+    "write_verilog10",
     "write_verilog2",
     "write_verilog3",
     "write_verilog4",
@@ -109,6 +112,8 @@ ALL_TESTS = [
 
 PASSFAIL_TESTS = [
     "check_ip_liberty_pins",
+    "write_verilog_def_alias",
+    "write_verilog_def_shared_inputs",
 ]
 
 filegroup(
@@ -346,6 +351,14 @@ filegroup(
             ],
             "write_verilog9_hier": [
                 "write_verilog9.v",
+            ],
+            "write_verilog_def_alias": [
+                "//src/grt/test:upper_layer_net.def",
+            ],
+            "write_verilog_def_shared_inputs": [
+                "//src/drt/test:sky130hs/sky130hs.tlef",
+                "//src/drt/test:sky130hs/sky130hs_std_cell.lef",
+                "//src/drt/test:top_level_term2.def",
             ],
         }.get(test_name, []),
     )

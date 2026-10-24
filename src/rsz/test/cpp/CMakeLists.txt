@@ -108,6 +108,7 @@ target_link_libraries(TestResizer
 target_include_directories(TestResizer
     PRIVATE
       ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
 )
 
 gtest_discover_tests(TestResizer
@@ -174,7 +175,17 @@ gtest_discover_tests(TestNestedJournal
 add_dependencies(build_and_test TestNestedJournal
 )
 
-add_executable(TestResizerMt TestResizerMt.cc)
+add_executable(TestResizerMt
+    TestCellSwapMt.cc
+    TestDelayEstimatorMt.cc
+    TestParallelEvalPolicy.cc
+    TestRepairSetupAnalysis.cc
+    TestRepairSetupProfiler.cc
+    TestRepairTargetCollector.cc
+    TestResizerMt.cc
+    TestSplitLoadMt.cc
+    TestUnbufferMt.cc
+)
 target_link_libraries(TestResizerMt
         OpenSTA
         GTest::gtest
@@ -258,4 +269,25 @@ gtest_discover_tests(TestRepairHold
 )
 
 add_dependencies(build_and_test TestRepairHold
+)
+
+add_executable(TestSkewBudget TestSkewBudget.cc)
+target_link_libraries(TestSkewBudget
+        GTest::gtest
+        GTest::gtest_main
+        rsz_lib
+        utl_lib
+        Threads::Threads
+)
+
+target_include_directories(TestSkewBudget
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestSkewBudget
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestSkewBudget
 )

@@ -6,17 +6,24 @@ to be stable enough that an alternate client (custom browser app,
 headless test driver, third-party visualization) can be implemented
 against it without reading the JavaScript reference frontend.
 
-The server exposes one HTTP route for static assets and one WebSocket
-endpoint for all dynamic operations. The WebSocket carries a small
-binary framing with JSON or PNG payloads.
+The server exposes HTTP routes for its embedded assets and a layout
+image, and one WebSocket endpoint for all dynamic operations. The
+WebSocket carries a small binary framing with JSON or PNG payloads.
 
 ## Connecting
 
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
-- HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+- HTTP `GET` serves the three assets embedded in the binary: `/` (or
+  `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
+  string or fragment is ignored. `GET /download/image` renders a PNG of
+  the layout from its query parameters. Anything else is 404, and no
+  method other than GET is supported.
+- The assets are stored gzipped. When `Accept-Encoding` allows
+  gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
+  wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
@@ -220,11 +227,30 @@ extent of what that flag alone draws on each layer it reaches — master pins,
 master obstructions, routing obstructions and fills; a layer that source
 does not reach is absent. A tile can be skipped when it misses the layer's
 `layers` rect and every `gated` rect whose flag is not off. A layer missing
-from `layers` (the `_`-prefixed pseudo layers) must always be requested.
+from `layers` (the `_`-prefixed pseudo layers) must always be requested,
+unless it is in `sized` below.
 Only design geometry is covered: tracks and the debug overlays also draw on
 layer tiles, so tiles are requested regardless while those are on.
 `supported` is false for multi-chiplet designs, and the client then
 requests every tile.
+
+A layer in `sized` draws only on features long enough on screen — the
+instance and pin names of `_inst_labels` need an instance at least
+`min_css_px` CSS pixels at its longest side:
+```json
+"sized": {
+  "_inst_labels": {
+    "min_css_px": 14,
+    "by_size": [[0.0001, [x0, y0, x1, y1]], [0.0002, [x0, y0, x1, y1]],
+                [0.0004, null]]
+  }
+}
+```
+Each `by_size` entry is a size, as a fraction of the zoom-0 tile, and the
+extent of every feature at least that large, in ascending size; the last is
+past the largest feature and `null`. At zoom `z` on tiles `T` CSS pixels wide
+a feature needs `min_css_px / (T · 2^z)`; the tile can be skipped when it
+misses the extent of the last entry no larger than that (or of the first).
 
 The extents describe the design when the request was served; after a
 `refresh` push they must be discarded and fetched again.
@@ -242,6 +268,11 @@ No request fields.
   "layer_colors": [[r, g, b], ...],
   "sites": ["FreePDK45_38x28_10R_NP_162NW_34O", "..."],
   "has_liberty": true,
+  "overlays": [
+    {"name": "_inst_labels", "z_index": 999,
+     "shown_by": [["inst_names"], ["inst_pins", "inst_pin_names"]],
+     "layers_by": [["inst_pins", "inst_pin_names"]]}
+  ],
   "dbu_per_micron": 1000,
   "block_name": "top"
 }
@@ -249,6 +280,15 @@ No request fields.
 
 `layer_colors` is parallel to `layers`; each entry is RGB in `0..255`.
 `block_name` is the empty string when no block is loaded.
+
+`overlays` lists the self-painting pseudo layers this design can draw (an
+overlay with nothing to draw, such as `_regions` in a design without regions,
+is left out), each a `tile` layer of its own: `z_index` is its pane order
+against the tech layers (`3` upwards), `_instances` (`0`) and `_pins` (`1`).
+`shown_by` and `layers_by` are groups of `tile` visibility keys, on when every
+key of any one group is on: the overlay draws anything when `shown_by` is on,
+and what it draws depends on `visible_layers` when `layers_by` is on (an
+empty group always is), so its tiles must be fetched again when those change.
 
 ---
 

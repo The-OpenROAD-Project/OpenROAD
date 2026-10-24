@@ -127,6 +127,9 @@ struct Terminal
   Terminal(dbITerm* iterm) : iterm(iterm) {}
   Terminal(dbBTerm* bterm) : bterm(bterm) {}
 
+  void addPoint(WirePoint* point);
+  void removePoint(WirePoint* point);
+
   dbITerm* const iterm{nullptr};
   dbBTerm* const bterm{nullptr};
 
@@ -186,13 +189,16 @@ class tmg_conn
 
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
+  void splitWireSection(int section_index, const Point& at);
+  void populateShapeSearch();
   void identifyShorts();
   void removeShortLoops();
   void removeWireLoops();
+  void identifyCandidateSections();
+  void identifyCandidateSections(int terminal_index);
   void identifyTerminalWirePoints();
   void treeReorder(bool no_convert);
   bool checkConnected();
-  void checkVisited();
   WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
   void addWireSection(const dbShape& s,
                       int from_idx,
@@ -256,9 +262,6 @@ class tmg_conn
   bool first_segment_after_via_{false};
   dbWireEncoder encoder_;
   dbWire* new_wire_{nullptr};
-
-  // Post-process connectivity check.
-  bool connected_{false};
 };
 
 }  // namespace odb

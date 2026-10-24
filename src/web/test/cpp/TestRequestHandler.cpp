@@ -11,12 +11,17 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -30,6 +35,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -330,6 +336,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -513,6 +596,122 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
 }
 
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
+}
+
 // The cache stores blank tiles as an empty entry, so a hit has to come back as
 // kEmpty too rather than as a zero-byte image the client would fail to decode.
 TEST_F(TileHandlerTest, BlankTileStaysEmptyThroughTheCache)
@@ -674,6 +873,317 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
 {
   EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
+// A local session: nothing says the browser lives elsewhere.
+static BrowserEnv localEnv()
+{
+  BrowserEnv env;
+  env.display = ":0";
+  env.host_name = "workstation";
+  return env;
+}
+
+TEST(DisplayIsRemote, LocalSpellingsStayLocal)
+{
+  EXPECT_FALSE(displayIsRemote(":0", "workstation"));
+  EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, ThisMachineByEitherName)
+{
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation.example.com"));
+  EXPECT_FALSE(displayIsRemote("workstation.example.com:0", "workstation"));
+}
+
+TEST(DisplayIsRemote, AnotherMachineIsRemote)
+{
+  // The farm case (issue #11389): a scheduler copied the submitting shell's
+  // $DISPLAY onto a compute host.
+  EXPECT_TRUE(displayIsRemote("workstation:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, HostNamesIgnoreCase)
+{
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
+}
+
+TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
+{
+  const std::vector<boost::asio::ip::address> mine
+      = {boost::asio::ip::make_address("10.0.0.5")};
+  EXPECT_FALSE(displayIsRemote("10.0.0.5:0", "farm-42", mine));
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
+  // Never cut at the first dot as a name would be.
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
+}
+
+TEST(DisplayIsRemote, BracketedIpv6)
+{
+  EXPECT_FALSE(displayIsRemote("[::1]:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("[fd00::5]:0", "farm-42"));
+}
+
+TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
+{
+  EXPECT_EQ(localDisplaySocket(":1"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket(":1.0"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket("unix:12"), "/tmp/.X11-unix/X12");
+  EXPECT_EQ(localDisplaySocket("localhost:10.0"), "");
+  EXPECT_EQ(localDisplaySocket("workstation:0"), "");
+  EXPECT_EQ(localDisplaySocket(":-1"), "");
+  EXPECT_EQ(localDisplaySocket(":"), "");
+  EXPECT_EQ(localDisplaySocket(""), "");
+}
+
+// A plain ssh session: no display forwarded.
+static BrowserEnv sshEnv()
+{
+  BrowserEnv env;
+  env.ssh_session = true;
+  env.host_name = "farm-42";
+  env.has_display = false;
+  return env;
+}
+
+// A VS Code terminal over ssh: the editor's IPC socket and $BROWSER helper.
+static BrowserEnv vsCodeEnv()
+{
+  BrowserEnv env = sshEnv();
+  env.vscode_ipc_hook = "/run/user/1000/vscode-ipc-1.sock";
+  env.browser = "/home/u/.vscode-server/bin/abc/bin/helpers/browser.sh";
+  return env;
+}
+
+static LaunchSkip autoSkip(const BrowserEnv& env)
+{
+  return browserLaunchSkipReason(BrowserLaunch::kAuto, env);
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeTerminalOverSshLaunches)
+{
+  const BrowserEnv env = vsCodeEnv();
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+  EXPECT_TRUE(launchesThroughBrowserEnv(env));
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
+{
+  BrowserEnv hook_only = vsCodeEnv();
+  hook_only.browser.clear();
+  EXPECT_EQ(autoSkip(hook_only), LaunchSkip::kSshSession);
+
+  // A $BROWSER from a shell profile is a browser on this host, not the
+  // editor's helper; with a shared home it is the one #11389 is about.
+  BrowserEnv browser_only = sshEnv();
+  browser_only.browser = "firefox";
+  EXPECT_EQ(autoSkip(browser_only), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(browser_only));
+
+  // Even in a VS Code terminal, a profile's $BROWSER is not the helper.
+  BrowserEnv profile_browser = vsCodeEnv();
+  profile_browser.browser = "firefox";
+  EXPECT_EQ(autoSkip(profile_browser), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
+}
+
+TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
+{
+  // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.
+  BrowserEnv env = localEnv();
+  env.display = "172.20.0.1:0.0";
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
+{
+  BrowserEnv env = vsCodeEnv();
+  env.batch_job = true;
+  env.display = ":1";
+  env.own_local_display = true;
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kBatchJob);
+}
+
+TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
+{
+  // A VNC or x2go desktop started from an ssh shell: its X server is ours.
+  BrowserEnv env = sshEnv();
+  env.display = ":1";
+  env.has_display = true;
+  env.own_local_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
+{
+  // Another user's X server would get our browser.
+  BrowserEnv foreign = sshEnv();
+  foreign.display = ":0";
+  foreign.has_display = true;
+  EXPECT_EQ(autoSkip(foreign), LaunchSkip::kSshSession);
+
+  BrowserEnv forwarded = sshEnv();
+  forwarded.display = "localhost:10.0";
+  forwarded.has_display = true;
+  EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
+}
+
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
+TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
+{
+  EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
+{
+  BrowserEnv ssh = localEnv();
+  ssh.ssh_session = true;
+  EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
+
+  // A batch job runs wherever the scheduler put it, and inherits the
+  // submitting shell's $DISPLAY.
+  BrowserEnv batch = localEnv();
+  batch.batch_job = true;
+  EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
+
+  BrowserEnv remote_display = localEnv();
+  remote_display.display = "workstation:0";
+  remote_display.host_name = "farm-42";
+  EXPECT_EQ(autoSkip(remote_display), LaunchSkip::kRemoteDisplay);
+
+  BrowserEnv headless = localEnv();
+  headless.has_display = false;
+  headless.display = "";
+  EXPECT_EQ(autoSkip(headless), LaunchSkip::kNoDisplay);
+
+  BrowserEnv opted_out = localEnv();
+  opted_out.no_browser = true;
+  EXPECT_EQ(autoSkip(opted_out), LaunchSkip::kOptOut);
+
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kNever, localEnv()),
+            LaunchSkip::kFlag);
+}
+
+TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
+{
+  BrowserEnv hostile = localEnv();
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
+  hostile.display = "workstation:0";
+  hostile.host_name = "farm-42";
+  hostile.no_browser = true;
+  hostile.has_display = false;
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kAlways, hostile),
+            LaunchSkip::kNone);
+}
+
+TEST(BrowserSkipReasonText, EveryReasonReadsInsideTheMessage)
+{
+  EXPECT_TRUE(browserSkipReasonText(LaunchSkip::kNone).empty());
+  for (const LaunchSkip reason : {LaunchSkip::kFlag,
+                                  LaunchSkip::kOptOut,
+                                  LaunchSkip::kSshSession,
+                                  LaunchSkip::kBatchJob,
+                                  LaunchSkip::kRemoteDisplay,
+                                  LaunchSkip::kNoDisplay}) {
+    EXPECT_FALSE(browserSkipReasonText(reason).empty());
+  }
+}
+
+TEST(BrowserLaunchFromString, KnownModesAndFallback)
+{
+  EXPECT_EQ(browserLaunchFromString("never"), BrowserLaunch::kNever);
+  EXPECT_EQ(browserLaunchFromString("always"), BrowserLaunch::kAlways);
+  EXPECT_EQ(browserLaunchFromString("auto"), BrowserLaunch::kAuto);
+  // Never a reason to fail starting the server.
+  EXPECT_EQ(browserLaunchFromString(""), BrowserLaunch::kAuto);
+  EXPECT_EQ(browserLaunchFromString("maybe"), BrowserLaunch::kAuto);
+}
+
+TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
+{
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.1"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:localhost:8080 farm-42");
+}
+
+TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
+{
+  // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.2"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:127.0.0.2:8080 farm-42, then open http://localhost:8080");
+}
+
+TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
+{
+  // With -bind 0.0.0.0 the port is open to the network, but the reported url
+  // says "localhost", and a tunnel to it would be pointless.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("0.0.0.0"),
+                         "farm-42",
+                         8080);
+  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+}
+
+TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
+{
+  // -bind 10.0.0.5: the address is already in the url the user was given.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("10.0.0.5"),
+                         "farm-42",
+                         8080);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+  EXPECT_EQ(hint.find("farm-42"), std::string::npos);
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -1780,6 +2290,53 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
     ASSERT_TRUE(state_.heatmaps.count("Pin"));
     EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
   }
+}
+
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
 }
 
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources

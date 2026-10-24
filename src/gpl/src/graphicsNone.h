@@ -39,7 +39,8 @@ class GraphicsNone : public AbstractGraphics
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
-                             odb::dbInst* inst) override {};
+                             odb::dbInst* inst,
+                             odb::dbBTerm* pin) override {};
 
   void addIter(int iter, double overflow) override {}
   void addTimingDrivenIter(int iter) override {}

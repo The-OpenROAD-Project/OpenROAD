@@ -105,6 +105,7 @@ static bool minimize = false;
 static bool web_enabled = false;
 static const char* web_port_arg = nullptr;
 static const char* web_bind_arg = nullptr;
+static web::BrowserLaunch web_launch = web::BrowserLaunch::kAuto;
 
 static const char* init_filename = ".openroad";
 
@@ -283,6 +284,27 @@ int main(int argc, char* argv[])
   web_enabled = findCmdLineFlag(argc, argv, "-web");
   web_port_arg = findCmdLineKey(argc, argv, "-web_port");
   web_bind_arg = findCmdLineKey(argc, argv, "-web_bind");
+  const bool web_browser_flag = findCmdLineFlag(argc, argv, "-web_browser");
+  const bool web_no_browser_flag
+      = findCmdLineFlag(argc, argv, "-web_no_browser");
+  if (web_browser_flag && web_no_browser_flag) {
+    fprintf(stderr,
+            "Error: -web_browser and -web_no_browser cannot be used "
+            "together\n");
+    exit(EXIT_FAILURE);
+  }
+  if (web_browser_flag) {
+    web_launch = web::BrowserLaunch::kAlways;
+  } else if (web_no_browser_flag) {
+    web_launch = web::BrowserLaunch::kNever;
+  }
+  if (!web_enabled
+      && (web_port_arg || web_bind_arg
+          || web_launch != web::BrowserLaunch::kAuto)) {
+    fprintf(stderr,
+            "Warning: the -web_* options only apply with -web; a script's "
+            "web_server takes -port, -bind, -browser and -no_browser\n");
+  }
 
   cmd_argc = argc;
   cmd_argv = argv;
@@ -429,12 +451,8 @@ static int tclAppInit(int& argc,
 
     // Register the web server's log sink early (before splash/thread output
     // and read_db) so the WebLogSink captures all startup messages for the
-    // browser console.  The network and browser are NOT opened here — that
-    // happens later in serve(), just before waitForStop(), once the database
-    // is fully loaded.  Opening them here would let a connecting client run
-    // Search::eagerInit on the I/O worker threads while read_db is still
-    // mutating the db on this thread — a coredump in
-    // odb::dbBPinItr::getObject().  See issue #10576.
+    // browser console.  The network and browser open later, in
+    // serveDuringStartupScripts(), once the thread count is known.
     int web_port = 0;
     if (web_enabled) {
       if (web_port_arg) {
@@ -474,12 +492,23 @@ static int tclAppInit(int& argc,
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
     }
 
-    // The web server now installs its HeadlessViewer late, in serve() (just
-    // before waitForStop), so web::Gui::enabled() is still false here in the
-    // web path.  The `&& !web_enabled` is kept defensively: even with a
-    // viewer installed, the web server executes scripts directly on the main
-    // thread (like the non-GUI path), and addRestoreStateCommand() only
-    // works with the Qt event loop.
+    // Open the network and browser before read_db and the startup scripts,
+    // after the thread count that sizes the server's io pool.  Until
+    // endStartupScripts(), browser requests touch the db only while a script
+    // is paused (see ScriptGate): a connecting client's Search::eagerInit
+    // must not race read_db (the issue #10576 coredump).  The headless viewer
+    // is installed now too, so debug commands (global_placement_debug, ...)
+    // engage as they do under -gui.
+    if (web_enabled) {
+      // Empty means web::kDefaultBindAddress; see BindAddressKind.
+      ord::OpenRoad::openRoad()->getWebServer()->serveDuringStartupScripts(
+          web_port, web_bind_arg ? web_bind_arg : "", web_launch);
+    }
+
+    // web::Gui::enabled() is true here in the web path (serve() installed
+    // the headless viewer), but the web server executes scripts
+    // directly on the main thread (like the non-GUI path), and
+    // addRestoreStateCommand() only works with the Qt event loop.
     const bool gui_enabled = web::Gui::enabled() && !web_enabled;
 
     if (read_odb_filename) {
@@ -522,6 +551,10 @@ static int tclAppInit(int& argc,
         if (cmd_file) {
           if (!gui_enabled) {
             int result = evalTclFile(interp, cmd_file);
+            if (web_enabled) {
+              ord::OpenRoad::openRoad()->getWebServer()->endStartupScripts(
+                  /*exiting=*/exit_after_cmd_file);
+            }
             if (exit_after_cmd_file) {
               int exit_code = (result == TCL_OK) ? EXIT_SUCCESS : EXIT_FAILURE;
               Tcl_Exit(exit_code);
@@ -540,15 +573,17 @@ static int tclAppInit(int& argc,
     }
 
     // read_db and any startup scripts have now run to completion on this
-    // thread, so the database is fully loaded and stable.  Open the network
-    // and browser now: a connecting client's Search::eagerInit will index a
-    // settled db instead of racing read_db (the issue #10576 coredump).
-    // Then block until the web server is stopped (like QApplication::exec()
-    // for the GUI).  After this returns, fall through to readline.
+    // thread, so the database is fully loaded and stable: let browser
+    // requests in.  Reopen the network if a script stopped it (web_server
+    // -stop).  Then block until the web server is stopped (like
+    // QApplication::exec() for the GUI).  After this returns, fall through
+    // to readline.
     if (web_enabled) {
       auto* server = ord::OpenRoad::openRoad()->getWebServer();
-      // Empty means web::kDefaultBindAddress; see BindAddressKind.
-      server->serve(web_port, web_bind_arg ? web_bind_arg : "");
+      server->endStartupScripts();
+      if (!server->isRunning()) {
+        server->serve(web_port, web_bind_arg ? web_bind_arg : "", web_launch);
+      }
       server->waitForStop();
       // `exit` typed in the browser Tcl widget signalled stop; do the
       // real process exit now from the main thread (worker threads are
@@ -619,6 +654,10 @@ static void showUsage(const char* prog, const char* init_filename)
       "  -web_bind address     web server bind address (default 127.0.0.1;\n"
       "                        a wider bind exposes a Tcl shell to the "
       "network)\n");
+  printf(
+      "  -web_no_browser       do not launch a browser; print the viewer "
+      "url\n");
+  printf("  -web_browser          launch a browser even in an ssh session\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
 #ifdef ENABLE_PYTHON3

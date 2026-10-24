@@ -45,6 +45,7 @@ COMPULSORY_TESTS = [
     "lvt_lib",
     "max_cap",
     "max_wl_two_sinks",
+    "multi_mode",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -65,6 +66,7 @@ PASSFAIL_TESTS = [
     "dont_touch_sink",
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
+    "hier_dummy_load",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -202,6 +204,10 @@ filegroup(
             "gated_clock_ndr_root": [
                 "cts-helpers.tcl",
                 "gated_clock2.def",
+            ],
+            "hier_dummy_load": [
+                "simple_test_hier.def",
+                "simple_test_hier.v",
             ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
