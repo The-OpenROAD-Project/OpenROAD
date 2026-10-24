@@ -16,6 +16,10 @@
 #include "fsv/Solver.h"
 #include "fsv/Stack.h"
 
+namespace odb {
+class dbDatabase;
+}
+
 namespace utl {
 class Logger;
 }
@@ -25,7 +29,7 @@ namespace fsv {
 class Scene;
 class Scene2D;
 
-// One master's row of the capacitance matrix, in fF, or fF/µm for a cross
+// One net's row of the capacitance matrix, in fF, or fF/µm for a cross
 // section.
 struct NetCapacitance
 {
@@ -34,6 +38,10 @@ struct NetCapacitance
   bool cross_section = false;
   // Net names by column index; the ground plane is reported separately.
   std::vector<std::string> nets;
+  // By column index: grounded nets, whose couplings count toward ground.
+  std::vector<bool> grounded;
+  // The geometry came from a window, so row.window_leakage applies.
+  bool windowed = false;
   double seconds = 0;
 };
 
@@ -46,7 +54,7 @@ struct NetCapacitance
 class FieldSolver
 {
  public:
-  explicit FieldSolver(utl::Logger* logger);
+  FieldSolver(odb::dbDatabase* db, utl::Logger* logger);
   ~FieldSolver();
 
   // Replaces the dielectric with the stack of an ITF file: its planar
@@ -74,8 +82,21 @@ class FieldSolver
   // Removes every net and shape; the dielectric is kept.
   void clearGeometry();
 
+  // Replaces the geometry with nets of the design and their neighbours
+  // within a halo (see readNetWindow; a negative halo or margin takes the
+  // default), and makes the nets the default targets. Design layers map to
+  // stack layers by name, after `layer_map`.
+  void addNets(
+      const std::vector<std::string>& nets,
+      double halo,
+      double margin,
+      const std::map<std::string, std::string, std::less<>>& layer_map);
+
   std::vector<std::string> netNames() const;
-  // Solves one master net and reports its row, per unit length for a cross
+  // The nets to solve when none are named: those given to addNets, else
+  // every net that is not grounded.
+  std::vector<std::string> defaultTargets() const;
+  // Solves one net and reports its row, per unit length for a cross
   // section. The Solver is rebuilt only when solver_options change.
   NetCapacitance solve(std::string_view net,
                        const SolverOptions& solver_options,
@@ -98,6 +119,7 @@ class FieldSolver
   int findNet(std::string_view net) const;
   void report(const NetCapacitance& result) const;
 
+  odb::dbDatabase* db_;
   utl::Logger* logger_;
   Stack stack_;
   bool has_stack_ = false;
@@ -108,6 +130,7 @@ class FieldSolver
   Geometry2D section_;
   bool cross_section_ = false;
   std::map<std::string, int, std::less<>> net_index_;
+  std::vector<std::string> targets_;  // from addNets
   // Built on demand from the dielectric and geometry; reset when either
   // changes.
   std::unique_ptr<Scene> scene_;

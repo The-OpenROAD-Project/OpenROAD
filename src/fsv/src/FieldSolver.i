@@ -2,6 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 %{
+#include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -22,6 +24,19 @@ fsv::FieldSolver* getFieldSolver()
 
 %include "../../Exception.i"
 
+// A Tcl list of strings in, as a vector held for the call.
+%typemap(in) const std::vector<std::string>& (std::vector<std::string> list) {
+  Tcl_Size argc;
+  Tcl_Obj** argv;
+  if (Tcl_ListObjGetElements(interp, $input, &argc, &argv) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  for (Tcl_Size i = 0; i < argc; i++) {
+    list.emplace_back(Tcl_GetString(argv[i]));
+  }
+  $1 = &list;
+}
+
 // A Tcl list of net names.
 %typemap(out) std::vector<std::string> {
   Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
@@ -32,7 +47,7 @@ fsv::FieldSolver* getFieldSolver()
   Tcl_SetObjResult(interp, list);
 }
 
-// One master's row as a Tcl dict. Couplings are positive capacitances in fF,
+// One net's row as a Tcl dict. Couplings are positive capacitances in fF,
 // keyed by net name.
 %typemap(out) fsv::NetCapacitance {
   const fsv::CapRow& row = $1.row;
@@ -44,7 +59,7 @@ fsv::FieldSolver* getFieldSolver()
   Tcl_Obj* couplings = Tcl_NewDictObj();
   Tcl_Obj* sigmas = Tcl_NewDictObj();
   for (int net = 0; net < static_cast<int>(row.cap.size()); net++) {
-    if (net != row.master) {
+    if (net != row.master && !$1.grounded[net]) {
       put(couplings, $1.nets[net], Tcl_NewDoubleObj(row.coupling(net)));
       put(sigmas, $1.nets[net], Tcl_NewDoubleObj(row.sigma[net]));
     }
@@ -59,6 +74,7 @@ fsv::FieldSolver* getFieldSolver()
   put(dict, "hops", Tcl_NewWideIntObj(row.hops));
   put(dict, "seconds", Tcl_NewDoubleObj($1.seconds));
   put(dict, "cross_section", Tcl_NewBooleanObj($1.cross_section));
+  put(dict, "window_leakage", Tcl_NewDoubleObj(row.window_leakage));
   Tcl_SetObjResult(interp, dict);
 }
 
@@ -115,9 +131,22 @@ void clear_cmd()
   getFieldSolver()->clearGeometry();
 }
 
-std::vector<std::string> net_names_cmd()
+std::vector<std::string> default_targets_cmd()
 {
-  return getFieldSolver()->netNames();
+  return getFieldSolver()->defaultTargets();
+}
+
+// layer_map alternates design and stack layer names.
+void add_nets_cmd(const std::vector<std::string>& nets,
+                  double halo,
+                  double margin,
+                  const std::vector<std::string>& layer_map)
+{
+  std::map<std::string, std::string, std::less<>> map;
+  for (size_t i = 0; i + 1 < layer_map.size(); i += 2) {
+    map[layer_map[i]] = layer_map[i + 1];
+  }
+  getFieldSolver()->addNets(nets, halo, margin, map);
 }
 
 fsv::NetCapacitance solve_net_cmd(const char* net,

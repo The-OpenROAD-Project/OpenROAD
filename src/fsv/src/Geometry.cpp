@@ -12,7 +12,24 @@ namespace fsv {
 int Geometry::addNet(const std::string_view name)
 {
   net_names_.emplace_back(name);
+  grounded_.push_back(false);
   return netCount() - 1;
+}
+
+void Geometry::setGrounded(const int net)
+{
+  if (net < 0 || net >= netCount()) {
+    throw std::invalid_argument("fsv: unknown net " + std::to_string(net));
+  }
+  grounded_[net] = true;
+}
+
+void Geometry::setWindow(const AlignedBox<2>& xy)
+{
+  if (!(xy.lo[0] < xy.hi[0] && xy.lo[1] < xy.hi[1])) {
+    throw std::invalid_argument("fsv: empty window");
+  }
+  window_ = xy;
 }
 
 void Geometry::addBox(const int net, const Box& box)

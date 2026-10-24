@@ -62,7 +62,8 @@ struct SolveOptions
 
 // One row of the Maxwell capacitance matrix, in fF (fF/µm for a Scene2D).
 // cap[master] is the total capacitance; cap[j] for j != master is minus the
-// coupling to net j.
+// coupling to net j. A grounded net's coupling counts toward ground, and its
+// own entry is 0.
 struct CapRow
 {
   int master = -1;
@@ -70,6 +71,14 @@ struct CapRow
   std::vector<double> sigma;
   double ground = 0;  // minus the coupling to the ground plane
   double ground_sigma = 0;
+  // For a geometry with a window: the summed |weight| per walk of the walks
+  // whose cubes reached outside it and that then ended on a net rather than
+  // the ground plane. It estimates, conservatively, how much the total and
+  // the couplings to nets in the window could change if the conductors
+  // outside it were present (on parallel wires, 20-70 times the change),
+  // and falls about as the square of the window's margin. The ground entry
+  // stands in for the conductors outside and is not covered.
+  double window_leakage = 0;
   int64_t walks = 0;
   int64_t hops = 0;
 

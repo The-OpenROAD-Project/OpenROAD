@@ -615,6 +615,68 @@ TEST(Solver, RejectsNonPositiveGaussOffset)
   }
 }
 
+// Three parallel wires; `with_far` adds a fourth just outside the window
+// WindowLeakageBoundsOutsideConductors uses, as a conductor it leaves out.
+Geometry threeWires(const bool with_far)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addNet("b");
+  geometry.addNet("c");
+  geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  geometry.addBox(1, {{0, 0.4, 0.5}, {2, 0.6, 0.7}});
+  geometry.addBox(2, {{0, -0.4, 0.5}, {2, -0.2, 0.7}});
+  if (with_far) {
+    geometry.addNet("far");
+    geometry.addBox(3, {{0, 1.65, 0.5}, {2, 1.85, 0.7}});
+  }
+  return geometry;
+}
+
+// A grounded net's coupling joins the ground entry; nothing else changes.
+TEST(Solver, GroundedNetJoinsGround)
+{
+  const Geometry plain = threeWires(false);
+  Geometry tied = threeWires(false);
+  tied.setGrounded(1);
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(plain, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(tied, 3.9), 0, options);
+  EXPECT_EQ(b.cap[0], a.cap[0]);
+  EXPECT_EQ(b.cap[2], a.cap[2]);
+  EXPECT_EQ(b.cap[1], 0);
+  EXPECT_NEAR(b.ground, a.ground + a.cap[1], 1e-12);
+  EXPECT_THROW(solver.solve(Scene(tied, 3.9), 1, options),
+               std::invalid_argument);
+}
+
+// Adding a conductor just outside the window changes the total and the
+// couplings to nets inside it by less than the leakage estimate.
+TEST(Solver, WindowLeakageBoundsOutsideConductors)
+{
+  Geometry inside = threeWires(false);
+  Geometry all = threeWires(true);
+  const AlignedBox<2> window{{-1, -1}, {3, 1.6}};
+  inside.setWindow(window);
+  all.setWindow(window);
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(inside, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(all, 3.9), 0, options);
+  EXPECT_GT(a.window_leakage, 0);
+  EXPECT_LT(a.window_leakage, 0.5 * a.total());
+  for (int net = 0; net < 3; net++) {
+    EXPECT_LE(std::abs(b.cap[net] - a.cap[net]), a.window_leakage) << net;
+  }
+  // Without a window there is nothing to leak.
+  EXPECT_EQ(
+      solver.solve(Scene(threeWires(false), 3.9), 0, options).window_leakage,
+      0);
+}
+
 // Conformal dielectrics in a stack without planar interfaces: the shells
 // meet only the background, whose permittivity the tables must still know.
 // A planar interface far above, with a negligible contrast, does not change

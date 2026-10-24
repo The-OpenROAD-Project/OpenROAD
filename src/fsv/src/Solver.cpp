@@ -154,6 +154,8 @@ struct Tally
   std::vector<double> sum2;
   double sum_all = 0;
   double sum2_all = 0;
+  // |weight| of walks that reached outside the window and ended on a net.
+  double left_sum = 0;
   int64_t hops = 0;
   int64_t guard_hits = 0;
 
@@ -174,6 +176,7 @@ struct Tally
     }
     sum_all += other.sum_all;
     sum2_all += other.sum2_all;
+    left_sum += other.left_sum;
     hops += other.hops;
     guard_hits += other.guard_hits;
   }
@@ -374,6 +377,10 @@ struct Space
 
   static const std::vector<Box>& shapes(const Geometry& g) { return g.boxes(); }
   static int shapeNet(const Geometry& g, const int i) { return g.boxNet(i); }
+  static const AlignedBox<2>* window(const Geometry& g)
+  {
+    return g.window() ? &*g.window() : nullptr;
+  }
 
   // The uniform tables' axis for a world axis.
   static Axis uniformAxis(const int world) { return static_cast<Axis>(world); }
@@ -410,6 +417,7 @@ struct Plane
     return g.rects();
   }
   static int shapeNet(const Geometry2D& g, const int i) { return g.rectNet(i); }
+  static const AlignedBox<2>* window(const Geometry2D&) { return nullptr; }
 
   static int uniformAxis(const int world) { return world; }
 
@@ -533,6 +541,7 @@ class Walker
          const int64_t hop_guard,
          const uint64_t key)
       : geometry_(geometry),
+        window_(Frame::window(geometry)),
         index_(index),
         dielectric_(dielectric),
         gauss_(gauss),
@@ -546,26 +555,37 @@ class Walker
   }
 
   // One walk: returns the column it ends in (the last is the ground
-  // plane), or -1 if it hit the hop guard.
-  int walk(const int64_t walk_id, double& weight, int64_t& hops) const
+  // plane, which grounded nets join), or -1 if it hit the hop guard. `left`
+  // tells whether a cube could have reached outside the geometry's window.
+  int walk(const int64_t walk_id,
+           double& weight,
+           int64_t& hops,
+           bool& left) const
   {
     Philox rng(key_, static_cast<uint64_t>(walk_id));
     Face face{};
     Point p;
+    left = false;
     if (!startPoint(rng, p, face)) {
       // Inside the surface: a sample of weight 0.
       weight = 0;
       hops = 0;
       return geometry_.netCount();
     }
-    weight = firstHop(p, face, rng);
+    const double first_size = index_.nearest(p).dist;
+    left = reaches(p, first_size);
+    weight = firstHop(p, first_size, face, rng);
     // Transition hops until the walk is captured by a conductor.
     for (hops = 0; hops < hop_guard_; hops++) {
       const typename SpatialIndex<D>::Nearest n = index_.nearest(p);
+      // A conductor outside the window could only matter within n.dist.
+      left = left || reaches(p, n.dist);
       if (n.dist <= capture_) {
-        return n.box == SpatialIndex<D>::kGround
-                   ? geometry_.netCount()
-                   : Frame::shapeNet(geometry_, n.box);
+        if (n.box == SpatialIndex<D>::kGround) {
+          return geometry_.netCount();
+        }
+        const int net = Frame::shapeNet(geometry_, n.box);
+        return geometry_.grounded(net) ? geometry_.netCount() : net;
       }
       const Cube<Layered> cube = transition(p, n.dist, rng);
       const Point offset
@@ -580,6 +600,14 @@ class Walker
   }
 
  private:
+  // Whether the cube of half-size r at p reaches outside the window.
+  bool reaches(const Point& p, const double r) const
+  {
+    return window_ != nullptr
+           && (p[0] - r < window_->lo[0] || p[0] + r > window_->hi[0]
+               || p[1] - r < window_->lo[1] || p[1] + r > window_->hi[1]);
+  }
+
   // A point on a face of a grown box, drawn by area and then uniform on
   // the face. Returns false when the point is not on the surface (see
   // exposed); such a draw still counts as a walk, of weight 0, which keeps
@@ -611,9 +639,12 @@ class Walker
   // scales as 1 / size, and shrinking near interfaces gives it infinite
   // variance. Instead, an interface at an untabulated position is handled
   // by the mixture of the two nearest tabulated positions.
-  double firstHop(Point& p, const Face face, Philox& rng) const
+  double firstHop(Point& p,
+                  const double max_half_size,
+                  const Face face,
+                  Philox& rng) const
   {
-    const DielectricCube first = dielectric_.cube(p, index_.nearest(p).dist);
+    const DielectricCube first = dielectric_.cube(p, max_half_size);
     const double eps_here = dielectric_.eps(p);
     BasicFirstHop<D> hop;
     double norm;
@@ -688,6 +719,7 @@ class Walker
   }
 
   const typename Frame::GeometryType& geometry_;
+  const AlignedBox<2>* window_;  // x-y; null when there is none
   const SpatialIndex<D>& index_;
   const Dielectric<D>& dielectric_;
   const GaussianSurface<D>& gauss_;
@@ -718,11 +750,18 @@ void runRound(WorkerPool& pool,
     for (int64_t w = first_walk; w < first_walk + batch_size; w++) {
       double weight = 0;
       int64_t hops = 0;
-      const int column = walker.walk(w, weight, hops);
+      bool left = false;
+      const int column = walker.walk(w, weight, hops, left);
       tally.hops += hops;
       if (column < 0) {
         tally.guard_hits++;
         continue;
+      }
+      // Walks that reached outside the window and came back to a conductor;
+      // those that went on to the ground plane would at most end on a
+      // conductor outside instead, which ground stands in for.
+      if (left && column != columns - 1) {
+        tally.left_sum += std::abs(weight);
       }
       tally.sum[column] += weight;
       tally.sum2[column] += weight * weight;
@@ -760,6 +799,10 @@ void checkSolveArguments(const GeometryType& geometry,
     throw std::invalid_argument("fsv: master net " + std::to_string(master)
                                 + " is out of range");
   }
+  if (geometry.grounded(master)) {
+    throw std::invalid_argument("fsv: master net " + geometry.netName(master)
+                                + " is grounded");
+  }
   if (options.hop_guard <= 0) {
     throw std::invalid_argument("fsv: hop_guard must be positive");
   }
@@ -782,6 +825,7 @@ void estimateRow(const Tally& total, const int nets, CapRow& row)
   }
   std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
   row.hops = total.hops;
+  row.window_leakage = total.left_sum / n;
 }
 
 // Whether the total and every coupling of at least coupling_threshold of

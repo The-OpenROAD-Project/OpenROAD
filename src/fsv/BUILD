@@ -89,6 +89,18 @@ cc_library(
 
 # The state behind the Tcl commands.
 cc_library(
+    name = "net_window",
+    srcs = ["src/NetWindow.cpp"],
+    hdrs = ["include/fsv/NetWindow.h"],
+    includes = ["include"],
+    deps = [
+        ":core",
+        ":geometry",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
     name = "field_solver",
     srcs = ["src/FieldSolver.cpp"],
     hdrs = ["include/fsv/FieldSolver.h"],
@@ -96,7 +108,9 @@ cc_library(
     deps = [
         ":fsv",
         ":geometry",
+        ":net_window",
         ":stack",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )

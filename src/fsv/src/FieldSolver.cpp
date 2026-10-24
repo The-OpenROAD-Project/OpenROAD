@@ -3,11 +3,13 @@
 
 #include "fsv/FieldSolver.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
 #include <exception>
 #include <functional>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -17,9 +19,11 @@
 
 #include "fsv/Geometry.h"
 #include "fsv/Itf.h"
+#include "fsv/NetWindow.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
 #include "fsv/Stack.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace fsv {
@@ -39,7 +43,8 @@ std::string_view coreMessage(const std::exception& e)
 
 }  // namespace
 
-FieldSolver::FieldSolver(utl::Logger* logger) : logger_(logger)
+FieldSolver::FieldSolver(odb::dbDatabase* db, utl::Logger* logger)
+    : db_(db), logger_(logger)
 {
 }
 
@@ -216,6 +221,59 @@ void FieldSolver::clearGeometry()
   section_ = Geometry2D();
   cross_section_ = false;
   net_index_.clear();
+  targets_.clear();
+}
+
+void FieldSolver::addNets(
+    const std::vector<std::string>& nets,
+    const double halo,
+    const double margin,
+    const std::map<std::string, std::string, std::less<>>& layer_map)
+{
+  odb::dbBlock* block = db_->getChip() ? db_->getChip()->getBlock() : nullptr;
+  if (block == nullptr) {
+    logger_->error(utl::FSV, 29, "No design is loaded.");
+  }
+  std::vector<odb::dbNet*> targets;
+  std::vector<std::string> names;
+  for (const std::string& name : nets) {
+    odb::dbNet* net = block->findNet(name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::FSV, 30, "Net {} is not in the design.", name);
+    }
+    if (std::ranges::find(names, name) == names.end()) {
+      targets.push_back(net);
+      names.push_back(name);
+    }
+  }
+  const LayerExtent extent = [&](const std::string_view layer) {
+    const auto it = layer_map.find(layer);
+    return layerExtent(it == layer_map.end() ? layer : it->second);
+  };
+  NetWindow window;
+  try {
+    window = readNetWindow(block, targets, extent, {halo, margin});
+  } catch (const std::invalid_argument& e) {
+    logger_->error(utl::FSV, 31, "{}", coreMessage(e));
+  }
+  clearGeometry();
+  geometry_ = std::move(window.geometry);
+  for (int net = 0; net < geometry_.netCount(); net++) {
+    net_index_.emplace(geometry_.netName(net), net);
+  }
+  targets_ = std::move(names);
+  logger_->info(utl::FSV,
+                18,
+                "Read {} target and {} neighbour nets: {} boxes, {} of them "
+                "clipped and {} obstructions trimmed, within a halo of {:.3g} "
+                "um and a margin of {:.3g} um.",
+                targets.size(),
+                window.neighbours,
+                geometry_.boxes().size(),
+                window.clipped,
+                window.trimmed,
+                window.halo,
+                window.margin);
 }
 
 std::vector<std::string> FieldSolver::netNames() const
@@ -224,6 +282,21 @@ std::vector<std::string> FieldSolver::netNames() const
   for (int net = 0; net < netCount(); net++) {
     names.emplace_back(cross_section_ ? section_.netName(net)
                                       : geometry_.netName(net));
+  }
+  return names;
+}
+
+std::vector<std::string> FieldSolver::defaultTargets() const
+{
+  if (!targets_.empty()) {
+    return targets_;
+  }
+  std::vector<std::string> names;
+  for (int net = 0; net < netCount(); net++) {
+    if (cross_section_ || !geometry_.grounded(net)) {
+      names.push_back(cross_section_ ? section_.netName(net)
+                                     : geometry_.netName(net));
+    }
   }
   return names;
 }
@@ -281,6 +354,10 @@ NetCapacitance FieldSolver::solve(const std::string_view net,
   result.net = std::string(net);
   result.cross_section = cross_section_;
   result.nets = netNames();
+  for (int net = 0; net < netCount(); net++) {
+    result.grounded.push_back(!cross_section_ && geometry_.grounded(net));
+  }
+  result.windowed = !cross_section_ && geometry_.window().has_value();
   try {
     const auto start = std::chrono::steady_clock::now();
     result.row = cross_section_
@@ -318,13 +395,19 @@ void FieldSolver::report(const NetCapacitance& result) const
                   row.ground_sigma,
                   unit);
   for (int net = 0; net < static_cast<int>(row.cap.size()); net++) {
-    if (net != row.master) {
+    if (net != row.master && !result.grounded[net]) {
       logger_->report("  {:<20} {:>12.5g} +- {:.2g} {}",
                       result.nets[net],
                       row.coupling(net),
                       row.sigma[net],
                       unit);
     }
+  }
+  if (result.windowed) {
+    logger_->report("  window leakage {:.2g} {} ({:.2g}% of the total)",
+                    row.window_leakage,
+                    unit,
+                    100 * row.window_leakage / row.total());
   }
 }
 
