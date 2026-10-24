@@ -16,19 +16,19 @@ ChipletDef:
         side: front
         layer: metal5  # based on the bump lef
         coords:
-          - [0, 0]
-          - [0, 130]
-          - [130, 130]
-          - [130, 0]
+          - [0, 0]       # x_min, y_min
+          - [130, 0]     # x_max, y_min
+          - [130, 130]   # x_max, y_max
+          - [0, 130]     # x_min, y_max
         bmap: 3dic_frontside_a.bmap
 
       back_reg:  # back region
         side: back
         coords:
-          - [0, 0]
-          - [0, 130]
-          - [130, 130]
-          - [130, 0]
+          - [0, 0]       # x_min, y_min
+          - [130, 0]     # x_max, y_min
+          - [130, 130]   # x_max, y_max
+          - [0, 130]     # x_min, y_max
 
     external:
         APR_tech_file: [../Nangate45/Nangate45_tech.lef]
@@ -49,10 +49,10 @@ ChipletDef:
         side: front
         layer: metal5
         coords:
-          - [0, 0]
-          - [0, 130]
-          - [130, 130]
-          - [130, 0]
+          - [0, 0]       # x_min, y_min
+          - [130, 0]     # x_max, y_min
+          - [130, 130]   # x_max, y_max
+          - [0, 130]     # x_min, y_max
         bmap: 3dic_frontside_b.bmap
 
     external:
