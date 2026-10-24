@@ -5,10 +5,12 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/gcObj/gcNet.h"
 #include "db/obj/frBoundary.h"
 #include "db/obj/frGCellPattern.h"
 #include "db/obj/frMarker.h"
@@ -25,8 +27,11 @@
 #include "frDesign.h"
 #include "gc/FlexGC.h"
 #include "gtest/gtest.h"
+#include "io/io.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "odb/dbWireCodec.h"
 #include "odb/geom.h"
 #include "utl/ServiceRegistry.h"
 
@@ -81,6 +86,18 @@ struct GCFixture : public Fixture
     return markers;
   }
 
+  void runPdnRepair(odb::dbDatabase* db, const char* layer, int threads)
+  {
+    utl::ServiceRegistry services(logger.get());
+    dst::Distributed distributed(logger.get());
+    TritonRoute router(db, logger.get(), &services, &distributed, nullptr);
+    router.design_.swap(design);
+    router.getRouterConfiguration()->MAX_THREADS = threads;
+    router.getRouterConfiguration()->REPAIR_PDN_LAYER_NAME = layer;
+    router.repairPDNVias();
+    router.design_.swap(design);
+  }
+
   FlexGCWorker worker;
 };
 
@@ -96,8 +113,13 @@ class GCWorkerBoundaryFixture : public FixtureWithParam<int>
   void makeBoundaryDesign(bool connected,
                           int wire_y = 3300,
                           int x = 27290,
-                          int grid_spacing = 4200)
+                          int grid_spacing = 4200,
+                          bool transpose = false,
+                          bool upper_layer = false)
   {
+    const auto point = [transpose](int px, int py) {
+      return transpose ? odb::Point(py, px) : odb::Point(px, py);
+    };
     auto* tech = design->getTech();
     tech->setDBUPerUU(2000);
     addLayer(tech, "v1", dbTechLayerType::CUT);
@@ -107,27 +129,36 @@ class GCWorkerBoundaryFixture : public FixtureWithParam<int>
     fr2DLookupTbl<frCoord, frCoord, frCoord> spacing_table(
         "WIDTH", {0}, "PARALLELRUNLENGTH", {0}, {{140}});
     auto spacing = std::make_unique<frSpacingTablePrlConstraint>(spacing_table);
-    tech->getLayer(4)->setMinSpacing(spacing.get());
+    const int metal_layer = upper_layer ? 6 : 4;
+    tech->getLayer(metal_layer)->setMinSpacing(spacing.get());
     tech->addUConstraint(std::move(spacing));
 
-    auto* via = makeViaDef("v2", 5, {-70, -140}, {70, 140});
+    auto* via = makeViaDef("v2", 5, point(-70, -140), point(70, 140));
     static_cast<frRect*>(via->getCutFigs()[0].get())
         ->setBBox(odb::Rect(-70, -70, 70, 70));
     static_cast<frRect*>(via->getLayer2Figs()[0].get())
-        ->setBBox(odb::Rect(-140, -70, 140, 70));
+        ->setBBox(odb::Rect(point(-140, -70), point(140, 70)));
+    if (upper_layer) {
+      static_cast<frRect*>(via->getLayer1Figs()[0].get())
+          ->setBBox(odb::Rect(point(-140, -70), point(140, 70)));
+      static_cast<frRect*>(via->getLayer2Figs()[0].get())
+          ->setBBox(odb::Rect(point(-70, -140), point(70, 140)));
+    }
     auto* net = makeNet("n1");
-    makeVia(via, net, {x, 3020});
-    makePathsegExt(net, 4, {x, wire_y}, {x + 380, wire_y}, 140);
+    makeVia(via, net, point(x, 3020));
+    makePathsegExt(
+        net, metal_layer, point(x, wire_y), point(x + 380, wire_y), 140);
     if (connected) {
-      makePathsegExt(net, 4, {x, 2740}, {x, wire_y}, 140);
+      makePathsegExt(net, metal_layer, point(x, 2740), point(x, wire_y), 140);
     }
 
     frBoundary boundary;
-    boundary.setPoints({{0, 0}, {50000, 0}, {50000, 24000}, {0, 24000}});
+    boundary.setPoints(
+        {point(0, 0), point(50000, 0), point(50000, 24000), point(0, 24000)});
     design->getTopBlock()->setBoundaries({boundary});
     design->getTopBlock()->setGCellPatterns(
-        {{false, 0, static_cast<frUInt4>(grid_spacing), 13},
-         {true, 0, static_cast<frUInt4>(grid_spacing), 7}});
+        {{false, 0, static_cast<frUInt4>(grid_spacing), transpose ? 7u : 13u},
+         {true, 0, static_cast<frUInt4>(grid_spacing), transpose ? 13u : 7u}});
     initRegionQuery();
   }
 
@@ -153,19 +184,13 @@ class GCWorkerBoundaryFixture : public FixtureWithParam<int>
 TEST_P(GCWorkerBoundaryFixture, connected_metal)
 {
   makeBoundaryDesign(true);
-  // The right worker imports the via's M3 landing and the horizontal M2
-  // wire, but omits the connecting vertical M2 wire outside its extBox.
+  // The M3 landing intersects extBox, but the M2 landing and its connector
+  // do not. Importing that M2 landing alone creates a false gap.
   worker.setExtBox(odb::Rect(27400, -2000, 52000, 26000));
   worker.setDrcBox(odb::Rect(28900, -500, 50500, 24500));
   worker.init(design.get());
   worker.main();
-  ASSERT_EQ(worker.getMarkers().size(), 1);
-  testMarker(worker.getMarkers()[0].get(),
-             4,
-             frConstraintTypeEnum::frcSpacingTablePrlConstraint,
-             odb::Rect(27220, 3160, 27360, 3230));
-  EXPECT_FALSE(
-      worker.getDrcBox().intersects(worker.getMarkers()[0]->getBBox()));
+  EXPECT_TRUE(worker.getMarkers().empty());
   checkRegions(false);
 }
 
@@ -198,6 +223,284 @@ TEST_P(GCWorkerBoundaryFixture, straddling_marker)
 INSTANTIATE_TEST_SUITE_P(Threads,
                          GCWorkerBoundaryFixture,
                          ::testing::Values(1, 4));
+
+class GCWindowFixture : public GCWorkerBoundaryFixture
+{
+};
+
+TEST_P(GCWindowFixture, full_context_reference)
+{
+  const int index = GetParam();
+  const int threads = index % 2 == 0 ? 1 : 4;
+  const bool connected = (index / 2) % 2 != 0;
+  const int offsets[] = {-120, -80, 0, 80, 120, 1610};
+  const int spacings[] = {4000, 4200, 4400};
+  const int spacing = spacings[(index / 24) % 3];
+  const int x = 7 * spacing - 2110 + offsets[(index / 4) % 6];
+  const bool transpose = (index / 72) % 2 != 0;
+  const bool upper_layer = index >= 144;
+  const int metal_layer = upper_layer ? 6 : 4;
+  makeBoundaryDesign(connected, 3300, x, spacing, transpose, upper_layer);
+  const odb::Rect full = design->getTopBlock()->getBBox();
+  odb::Rect ext;
+  full.bloat(2000, ext);
+  worker.setExtBox(ext);
+  worker.setDrcBox(full);
+  worker.init(design.get());
+  worker.main();
+  const auto& reference = worker.getMarkers();
+  ASSERT_EQ(reference.size(), connected ? 0 : 1);
+  const odb::Rect gap = transpose ? odb::Rect(3160, x - 70, 3230, x + 70)
+                                  : odb::Rect(x - 70, 3160, x + 70, 3230);
+  if (!connected) {
+    testMarker(reference.front().get(),
+               metal_layer,
+               frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+               gap);
+  }
+  odb::Rect local;
+  gap.bloat(20, local);
+  for (const auto& query : {full, local, odb::Rect(100, 100, 200, 200)}) {
+    const auto markers = collectMarkers(query, threads);
+    const bool expected = !connected && query.intersects(gap);
+    ASSERT_EQ(markers.size(), expected ? 1 : 0)
+        << "case=" << index << " connected=" << connected << " x=" << x
+        << " spacing=" << spacing << " transpose=" << transpose;
+    if (expected) {
+      testMarker(markers.front().get(),
+                 metal_layer,
+                 frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+                 gap);
+      EXPECT_EQ(markers.front()->getSrcs(), reference.front()->getSrcs());
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(Window, GCWindowFixture, ::testing::Range(0, 288));
+
+class GCViaContextFixture : public FixtureWithParam<int>
+{
+};
+
+TEST_P(GCViaContextFixture, imports_intersecting_figures)
+{
+  const int index = GetParam();
+  const int layer = 2 + index % 3;
+  const int offsets[] = {-201, -100, -50, 100, 1101};
+  const int offset = offsets[(index / 3) % 5];
+  const bool transpose = index >= 15;
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING);
+  auto* via = makeViaDef("V1", 3, {100, 100}, {200, 200});
+  odb::Rect local(offset, 100, offset + 100, 200);
+  if (transpose) {
+    local = odb::Rect(100, offset, 200, offset + 100);
+  }
+  auto* figure = layer == 2   ? via->getLayer1Figs()[0].get()
+                 : layer == 3 ? via->getCutFigs()[0].get()
+                              : via->getLayer2Figs()[0].get();
+  static_cast<frRect*>(figure)->setBBox(local);
+  auto outside = std::make_unique<frRect>();
+  outside->setLayerNum(layer);
+  outside->setBBox(odb::Rect(3000, 3000, 3100, 3100));
+  if (layer == 2) {
+    via->addLayer1Fig(std::move(outside));
+  } else if (layer == 3) {
+    via->addCutFig(std::move(outside));
+  } else {
+    via->addLayer2Fig(std::move(outside));
+  }
+  auto* net = makeNet("signal");
+  makeVia(via, net, {10000, 10000});
+  initRegionQuery();
+  worker.setExtBox(odb::Rect(10000, 10000, 11000, 11000));
+  worker.setDrcBox(odb::Rect(10200, 10200, 10800, 10800));
+  worker.init(design.get());
+  const auto* imported = worker.getNet(net);
+  ASSERT_NE(imported, nullptr);
+  const bool included = offset == -100 || offset == -50 || offset == 100;
+  odb::Rect translated = local;
+  odb::dbTransform(odb::Point(10000, 10000)).apply(translated);
+  const gtl::rectangle_data<frCoord> expected(translated.xMin(),
+                                              translated.yMin(),
+                                              translated.xMax(),
+                                              translated.yMax());
+  if (layer == 3) {
+    const auto& rectangles = imported->getRectangles(layer);
+    ASSERT_EQ(rectangles.size(), included ? 1 : 0);
+    if (included) {
+      EXPECT_EQ(rectangles.front(), expected);
+    }
+  } else {
+    using gtl::operators::operator+=;
+    using gtl::operators::operator^=;
+    auto difference = imported->getPolygons(layer);
+    gtl::polygon_90_set_data<frCoord> expected_set;
+    if (included) {
+      expected_set += expected;
+    }
+    difference ^= expected_set;
+    EXPECT_TRUE(difference.empty());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(ViaContext,
+                         GCViaContextFixture,
+                         ::testing::Range(0, 30));
+
+class GCNativePdnFixture : public FixtureWithParam<int>
+{
+};
+
+TEST_P(GCNativePdnFixture, repairs_imported_supply_vias)
+{
+  const int index = GetParam();
+  const int threads = index % 2 == 0 ? 1 : 4;
+  const int distances[] = {100, 210, 400};
+  const int distance = distances[(index / 2) % 3];
+  const int kind = (index / 6) % 3;
+  const int x = index < 18 ? 27290 : 28900;
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING);
+  db_tech->setManufacturingGrid(10);
+  for (const char* name : {"m1", "m2"}) {
+    auto* layer = db_tech->findLayer(name);
+    layer->setWidth(140);
+    layer->setMinWidth(140);
+    layer->setSpacing(140);
+  }
+  odb::dbTechLayerSpacingRule::create(db_tech->findLayer("v1"))
+      ->setSpacing(140);
+  auto* db = db_tech->getDb();
+  db->setLogger(logger.get());
+  db->setDbuPerMicron(1000);
+  auto* block = odb::dbBlock::create(odb::dbChip::create(db, db_tech), "pdn");
+  block->setDieArea(odb::Rect(0, 0, 50000, 24000));
+  auto* vdd = odb::dbNet::create(block, "VDD");
+  vdd->setSigType(odb::dbSigType::POWER);
+  vdd->setSpecial();
+  auto* vss = odb::dbNet::create(block, "VSS");
+  vss->setSigType(odb::dbSigType::GROUND);
+  vss->setSpecial();
+  auto* supply = odb::dbSWire::create(vdd, odb::dbWireType::ROUTED);
+  auto* safe = odb::dbSWire::create(vss, odb::dbWireType::ROUTED);
+  const auto add_shapes = [&](auto* via) {
+    for (const char* name : {"m1", "v1", "m2"}) {
+      odb::dbBox::create(via, db_tech->findLayer(name), -70, -70, 70, 70);
+    }
+  };
+  auto* tech_via = odb::dbTechVia::create(db_tech, "V1");
+  add_shapes(tech_via);
+  auto* safe_box = odb::dbSBox::create(
+      safe, tech_via, 5000, 10000, odb::dbWireShapeType::STRIPE);
+  const auto safe_id = safe_box->getId();
+  odb::dbSBox* candidate = nullptr;
+  if (kind == 0) {
+    candidate = odb::dbSBox::create(
+        supply, tech_via, x, 3020, odb::dbWireShapeType::STRIPE);
+  } else {
+    auto* block_via = odb::dbVia::create(block, "block_via");
+    if (kind == 1) {
+      add_shapes(block_via);
+    } else {
+      odb::dbViaParams params;
+      params.setBottomLayer(db_tech->findLayer("m1"));
+      params.setCutLayer(db_tech->findLayer("v1"));
+      params.setTopLayer(db_tech->findLayer("m2"));
+      params.setXCutSize(140);
+      params.setYCutSize(140);
+      params.setXCutSpacing(260);
+      params.setYCutSpacing(260);
+      params.setNumCutRows(1);
+      params.setNumCutCols(2);
+      block_via->setViaParams(params);
+    }
+    candidate = odb::dbSBox::create(
+        supply, block_via, x, 3020, odb::dbWireShapeType::STRIPE);
+  }
+  ASSERT_NE(candidate, nullptr);
+  const auto candidate_id = candidate->getId();
+  auto* signal = odb::dbNet::create(block, "signal");
+  auto* signal_wire = odb::dbWire::create(signal);
+  odb::dbWireEncoder encoder;
+  encoder.begin(signal_wire);
+  encoder.newPath(db_tech->findLayer("m1"), odb::dbWireType::ROUTED);
+  encoder.addPoint(x + distance + (kind == 2 ? 200 : 0), 3020);
+  encoder.addTechVia(tech_via);
+  encoder.end();
+
+  auto parsed = std::make_unique<frDesign>(logger.get(), router_cfg.get());
+  io::Parser parser(db, parsed.get(), logger.get(), router_cfg.get());
+  parser.readTechAndLibs(db);
+  parser.readDesign(db);
+  parser.postProcess();
+  parsed->getTopBlock()->setGCellPatterns(
+      {{false, 0, 4200, 13}, {true, 0, 4200, 7}});
+  design.swap(parsed);
+  router_cfg->REPAIR_PDN_LAYER_NUM = 3;
+  FlexGCWorker reference(design->getTech(), logger.get(), router_cfg.get());
+  reference.setExtBox(odb::Rect(-2000, -2000, 52000, 26000));
+  reference.setDrcBox(odb::Rect(0, 0, 50000, 24000));
+  reference.init(design.get());
+  reference.main();
+  int cut_markers = 0;
+  for (const auto& marker : reference.getMarkers()) {
+    cut_markers += marker->getLayerNum() == 3;
+  }
+  ASSERT_EQ(cut_markers, distance < 280 ? 1 : 0);
+  runPdnRepair(db, "v1", threads);
+  ASSERT_EQ(safe->getWires().size(), 1);
+  EXPECT_EQ((*safe->getWires().begin())->getId(), safe_id);
+  const bool removed = distance < 280 && kind != 2;
+  ASSERT_EQ(supply->getWires().size(), removed ? 0 : 1);
+  if (!removed) {
+    auto* survivor = *supply->getWires().begin();
+    std::vector<odb::dbShape> boxes;
+    survivor->getViaBoxes(boxes);
+    std::vector<odb::Rect> cuts;
+    for (const auto& box : boxes) {
+      if (box.getTechLayer()->getName() == std::string("v1")) {
+        cuts.push_back(box.getBox());
+      }
+    }
+    if (kind == 2 && distance < 280) {
+      ASSERT_EQ(cuts.size(), 1);
+      EXPECT_EQ(cuts.front(), odb::Rect(x - 270, 2950, x - 130, 3090));
+    } else {
+      EXPECT_EQ(survivor->getId(), candidate_id);
+      EXPECT_EQ(cuts.size(), kind == 2 ? 2 : 1);
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(NativePdn,
+                         GCNativePdnFixture,
+                         ::testing::Values(0,
+                                           1,
+                                           2,
+                                           3,
+                                           4,
+                                           5,
+                                           12,
+                                           13,
+                                           14,
+                                           15,
+                                           16,
+                                           17,
+                                           18,
+                                           19,
+                                           20,
+                                           21,
+                                           22,
+                                           23,
+                                           30,
+                                           31,
+                                           32,
+                                           33,
+                                           34,
+                                           35));
 
 // Two touching metal shape from different nets generate a short
 TEST_F(GCFixture, metal_short)
