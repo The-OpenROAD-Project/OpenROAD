@@ -358,11 +358,16 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     }
   } else if (obj->typeId() == frcVia) {
     auto via = static_cast<frVia*>(obj);
+    // The region query returns whole vias. Import only figures that intersect
+    // this worker's context, as for the other shapes in the query.
     layerNum = via->getViaDef()->getLayer1Num();
     odb::dbTransform xform = via->getTransform();
     for (auto& fig : via->getViaDef()->getLayer1Figs()) {
       odb::Rect box = fig->getBBox();
       xform.apply(box);
+      if (!box.intersects(getExtBox())) {
+        continue;
+      }
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
@@ -376,6 +381,9 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getCutFigs()) {
       odb::Rect box = fig->getBBox();
       xform.apply(box);
+      if (!box.intersects(getExtBox())) {
+        continue;
+      }
       currNet->addRectangle(box, layerNum);
     }
     // push layer2 rect
@@ -383,6 +391,9 @@ gcNet* FlexGCWorker::Impl::initRouteObj(frBlockObject* obj, gcNet* currNet)
     for (auto& fig : via->getViaDef()->getLayer2Figs()) {
       odb::Rect box = fig->getBBox();
       xform.apply(box);
+      if (!box.intersects(getExtBox())) {
+        continue;
+      }
       if (via->isTapered()) {
         currNet->addTaperedRect(box, layerNum / 2 - 1);
       } else if (via->hasNet() && via->getNet()->hasNDR()
