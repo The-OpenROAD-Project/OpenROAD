@@ -11,7 +11,7 @@ bazelisk test //src/fsv/test/...
 | Unit | `TestCubeGreens`, `TestLayeredCubeGreens`, `TestSquareGreens`, `TestDielectric`, `TestSpatialIndex`, `TestItf` | The Green's-function tables, the cube query, the nearest-conductor index and the ITF reader, against exact results. |
 | Solver | `TestSolver` | Analytic and self-consistency checks: a cube over ground, reciprocity, permittivity scaling, identical results for any thread count, panel convergence, and conformal invariants. |
 | Golden | `TestGolden` | fsv against reference solutions computed by other solvers; see below. |
-| Tcl | `field_solver_*` | The Tcl commands, including a cross section against its 2D reference; each compares its log with the `.ok` file of the same name. |
+| Tcl | `field_solver_*` | The Tcl commands, including a cross section against its 2D reference and nets of a routed design (`field_solver_gcd`, see below); each compares its log with the `.ok` file of the same name. |
 | Docs | `fsv_man_tcl_check`, `fsv_readme_msgs_check` | The module README against the command definitions and messages. |
 
 ## Golden tests
@@ -40,6 +40,50 @@ Each comparison has three parts in `golden/`:
 | `TwoD.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `nested_conformal`, `merged_conformal`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py`: 2D finite volumes, extrapolated in grid spacing (numpy, scipy) | Per unit length, in fsv's 2D mode (cross-section scenes). Totals within 0.3%, couplings of at least 5% of the total within 0.5%, each plus 3σ. |
 | `LongLine.MatchesFiniteVolume` | `etch_stop_pair`, `three_wires`, `conformal_pair`, `sky130_met1_pair` | `cross_section.txt` (fF/µm) | `fv2d_golden.py` | The 3D solver per unit length: the test extrudes the cross sections to wires 10 and 30 µm long, solves both in 3D, and compares (C(30) − C(10)) / 20, which cancels the end effects. The same tolerances. |
 | `ThreeD.MatchesFiniteVolume` | `crossing`, `conformal_line_ends`, `conformal_crossing` | `box_3d.txt` (fF) | `fv3d_golden.py`: 3D finite volumes, extrapolated in grid spacing (numpy, scipy, pyamg) | The 3D structure as given: crossings and line ends, which cross sections cannot show. Totals within 0.5%, couplings of at least 5% within 1%, each plus 3σ. |
+
+## Routed design: sky130hd gcd
+
+`field_solver_gcd` reads nets of gcd routed for sky130hd by
+OpenROAD-flow-scripts, trimmed to the conductors near three nets:
+`_042_` (a short met1 net), `_119_/_067_` (jogs and 19 vias up to met3)
+and `req_msg[10]` (an input ending at a block pin on the die's edge). It
+solves them with a 4 µm halo and a fixed walk count.
+
+`field_solver_gcd.def` comes from the flow's `6_final.def`, trimmed by
+`gcd/trim_def.py` to a region 9 µm around each of the three nets' routing:
+the cells touching it, the block pins in it, every net with routing or a
+pin there, and of each net the routing statements that come within it. It
+covers windows of up to a 6 µm halo and a 1 µm margin: nets read from it
+give the same rows as in the full design, up to the order of the nets.
+Routing gcd with another OpenROAD version changes the design, so
+regenerate `field_solver_gcd.ok` with it. To regenerate the design:
+
+```shell
+cd flow
+make DESIGN_CONFIG=./designs/sky130hd/gcd/config.mk
+python3 ../tools/OpenROAD/src/fsv/test/gcd/trim_def.py \
+  results/sky130hd/gcd/base/6_final.def \
+  ../tools/OpenROAD/test/sky130hd/sky130_fd_sc_hd_merged.lef \
+  ../tools/OpenROAD/src/fsv/test/field_solver_gcd.def 9 \
+  _042_ _119_/_067_ "req_msg[10]"
+```
+
+Measured on the full design (64 threads, the default tolerances of 1% on
+the total and 5% on couplings), the window hardly matters: against a halo of
+6h (h the net's height), totals at 2h moved by at most 0.003% and couplings
+by at most 0.3% of the total (0.07% at 3h), while the window's leakage was
+up to 2.7% at 2h and 1% at 3h. A net took 0.6–2.8 s to solve and 2–60 ms to
+read; 16–24% of start points fell inside the surfaces, where vias and pins
+meet wires.
+
+| Net | Pins | Halo 2h / 3h / 4h: leakage | Total change at 3h | Seconds |
+| ----- | ----- | ----- | ----- | ----- |
+| `_042_` | 2 | 0.99 / 0.64 / 0.34% | < 0.001% | 0.6–1.7 |
+| `_118_` | 2 | 2.73 / 0.95 / 0.50% | < 0.001% | 2.0 |
+| `_119_/_002_` | 2 | 1.12 / 0.56 / 0.19% | < 0.001% | 1.4–1.6 |
+| `_119_/_037_` | 4 | 0.56 / 0.26 / 0.16% | < 0.001% | 2.3–2.8 |
+| `net155` | 9 | 0.17 / 0.10 / 0.07% | < 0.001% | 1.7 |
+| `net188` | 17 | 0 (the window covers the die) | 0 | 1.0 |
 
 ### Adding or changing a structure
 

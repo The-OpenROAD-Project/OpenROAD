@@ -80,6 +80,9 @@ struct CapRow
   // stands in for the conductors outside and is not covered.
   double window_leakage = 0;
   int64_t walks = 0;
+  // Walks whose start point was not on the Gaussian surface (inside the
+  // union of the target's grown boxes); they count as walks of weight 0.
+  int64_t rejected = 0;
   int64_t hops = 0;
 
   double total() const { return cap[master]; }

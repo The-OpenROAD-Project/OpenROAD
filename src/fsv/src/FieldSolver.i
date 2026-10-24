@@ -75,6 +75,7 @@ fsv::FieldSolver* getFieldSolver()
   put(dict, "seconds", Tcl_NewDoubleObj($1.seconds));
   put(dict, "cross_section", Tcl_NewBooleanObj($1.cross_section));
   put(dict, "window_leakage", Tcl_NewDoubleObj(row.window_leakage));
+  put(dict, "rejected", Tcl_NewWideIntObj(row.rejected));
   Tcl_SetObjResult(interp, dict);
 }
 
