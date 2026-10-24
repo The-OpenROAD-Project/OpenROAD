@@ -2808,12 +2808,9 @@ int TritonCTS::runLatencyBalancers(double capPerDBU, double resPerDBU)
   return totalDelayBuff;
 }
 
-std::pair<double, double> TritonCTS::getMinMaxDelayBufferDelay(
-    double extra_out_cap)
+double TritonCTS::getMaxDelayBufferDelay(double extra_out_cap)
 {
-  double min_delay = std::numeric_limits<double>::max();
-  double max_delay = -std::numeric_limits<double>::max();
-  bool found = false;
+  double max_delay = 0.0;
   for (const std::string& buffer : options_->getDlyBufferList()) {
     if (db_->findMaster(buffer.c_str()) == nullptr) {
       continue;  // liberty-only cell, cannot be instantiated
@@ -2823,12 +2820,9 @@ std::pair<double, double> TritonCTS::getMinMaxDelayBufferDelay(
     if (delay <= 0.0) {
       continue;  // skip cells with no usable delay
     }
-    min_delay = std::min(min_delay, delay);
     max_delay = std::max(max_delay, delay);
-    found = true;
   }
-  return found ? std::make_pair(min_delay, max_delay)
-               : std::make_pair(0.0, 0.0);
+  return max_delay;
 }
 
 void TritonCTS::balanceMacroRegisterLatencies()
@@ -2857,14 +2851,13 @@ void TritonCTS::balanceMacroRegisterLatencies()
   if (useful_skew) {
     options_->setUsefulSkew(true);
     // Calculate useful skew for all registers on RSZ
-    const auto [min_buf_delay, max_buf_delay] = getMinMaxDelayBufferDelay(0.0);
+    const double max_buf_delay = getMaxDelayBufferDelay(0.0);
     if (max_buf_delay <= 0.0) {
       logger_->warn(CTS, 300, "No usable delay buffer; skipping useful skew.");
     } else {
       rsz::Resizer::SkewBudgetOptions budget_opts;
       budget_opts.one_sided = true;
       budget_opts.paths_per_endpoint = 200;
-      budget_opts.emit_threshold = min_buf_delay;
       budget_opts.quantum = 0;
       budget_opts.max_skew = 8.0f * max_buf_delay;
       resizer_->computeSkewBudget(budget_opts);
