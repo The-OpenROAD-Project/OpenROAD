@@ -48,3 +48,26 @@ target_link_libraries(fsv
 messages(
   TARGET fsv
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          fsv_py
+           NAMESPACE     fsv
+           LANGUAGE      python
+           I_FILE        src/FieldSolver-py.i
+           SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/fsv_py.py
+  )
+
+  target_include_directories(fsv_py
+    PRIVATE
+      src
+  )
+
+  target_link_libraries(fsv_py
+    PUBLIC
+      fsv
+      odb
+  )
+
+endif()
