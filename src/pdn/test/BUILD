@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -464,4 +465,153 @@ doc_check_test(
         "//src/pdn:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "pdn_via_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNVia.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # via.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_connect_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNConnect.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # connect.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "pdn_techlayer_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNTechLayer.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # techlayer.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_shape_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNShape.cpp",
+        "cpp/stubs.cpp",
+    ],
+    data = ["cpp/wrong_direction_spacing.lef"],
+    # shape.h, grid.h, domain.h, grid_component.h are internal headers.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_domain_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNDomain.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # domain.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_polygon_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNPolygon.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # polygon.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_grid_component_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNGridComponent.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # grid_component.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

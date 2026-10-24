@@ -35,13 +35,12 @@ struct RatioCheck
 };
 
 // The ratios checked for one gate on one layer that has an antenna rule.
-// Side area ratios (psr, csr) apply to routing layers only.  car is unset
-// when par already violated, as the check stops there.
+// Side area ratios (psr, csr) apply to routing layers only.
 struct LayerCheck
 {
   odb::dbTechLayer* layer{nullptr};
   RatioCheck par;
-  std::optional<RatioCheck> car;
+  RatioCheck car;
   std::optional<RatioCheck> psr;
   std::optional<RatioCheck> csr;
   bool violated{false};
@@ -63,13 +62,29 @@ struct NetCheck
   bool violated{false};
 };
 
+// The checks for the routed nets of a design, in net id order.
+struct DesignCheck
+{
+  std::vector<NetCheck> nets;
+
+  int violatingNets() const;
+  int violatingPins() const;
+};
+
 class AntennaChecker
 {
  public:
   AntennaChecker(odb::dbDatabase* db, utl::Logger* logger);
   ~AntennaChecker();
 
-  // net nullptr -> check all nets
+  // Checks the routing of net, or of every signal net when net is nullptr,
+  // and returns the result without printing anything.  Uses the detailed
+  // routes, or temporary wires built from the global route guides when
+  // there are none.
+  DesignCheck check(odb::dbNet* net = nullptr, int num_threads = 1);
+  // check_antennas: runs check() and reports the result -- the counts and
+  // metrics, the violating nets (or the one net) when verbose, and the
+  // report file if one is set.  Returns the number of violating nets.
   int checkAntennas(odb::dbNet* net = nullptr,
                     int num_threads = 1,
                     bool verbose = false);

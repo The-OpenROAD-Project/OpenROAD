@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <charconv>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -12,11 +13,16 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
@@ -28,6 +34,10 @@
 #include "utl/Logger.h"
 #include "web/core.h"
 
+namespace boost::asio {
+class io_context;
+}
+
 namespace web {
 
 class HeatMapDataSource;
@@ -35,6 +45,7 @@ class HeatMapSourceRegistration;
 class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
+struct EmbeddedAsset;
 
 // Sentinel string set as the Tcl result by WebServer::tclExitHandler
 // when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
@@ -175,6 +186,20 @@ struct TclEvaluator
   ScriptGate script_gate;
   std::function<void()> drain_output;
 
+  // Debug renderers are drawn between commands and while one is paused, when
+  // the tools' state is stable (see the renderer hooks in web_serve.cpp).
+  // Such a draw holds renderer_mutex shared, so draws run side by side, and
+  // `running` and `paused_command` only change under it held exclusively, so
+  // a command cannot start, or resume from a pause, while one is in progress.
+  // After every command, command_done is told whether a draw was skipped
+  // because it was running, so the clients can be sent to pick the renderers
+  // up.
+  std::shared_mutex renderer_mutex;
+  bool running = false;
+  bool paused_command = false;
+  std::atomic<bool> draw_skipped{false};
+  std::function<void(bool draw_skipped)> command_done;
+
   struct Result
   {
     std::string result;
@@ -189,7 +214,15 @@ struct TclEvaluator
   Result eval(const std::string& cmd)
   {
     std::lock_guard<std::mutex> lock(mutex);
-    const int rc = Tcl_Eval(interp, cmd.c_str());
+    setRunning(true);
+    int rc;
+    try {
+      rc = Tcl_Eval(interp, cmd.c_str());
+    } catch (...) {
+      setRunning(false);
+      throw;
+    }
+    const bool skipped = setRunning(false);
     Result r;
     r.result = Tcl_GetStringResult(interp);
     r.is_error = (rc != TCL_OK);
@@ -206,7 +239,44 @@ struct TclEvaluator
     if (drain_output) {
       drain_output();
     }
+    if (command_done) {
+      command_done(skipped);
+    }
     return r;
+  }
+
+  // Returns whether a renderer draw was skipped since the last call.
+  bool setRunning(const bool value)
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    running = value;
+    return draw_skipped.exchange(false);
+  }
+
+  // Run on the pausing thread as a debugger pause begins and ends.  A paused
+  // command is stopped where its state is stable, so it does not count as
+  // running until it resumes.  Whatever is running when a pause begins is
+  // the command pausing: a startup script does not run through eval(), and
+  // the script gate keeps every eval out until the script pauses.  A command
+  // typed in the browser during a script's pause does count, so the paused
+  // draws stand aside until it is done.
+  void pauseBegin()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (running) {
+      running = false;
+      paused_command = true;
+    }
+  }
+
+  // Taking the lock also waits out a draw in progress, so the command does
+  // not resume under it.
+  void pauseEnd()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (std::exchange(paused_command, false)) {
+      running = true;
+    }
   }
 };
 
@@ -455,6 +525,38 @@ struct SessionState
 // friends), and matching "/?mergetiles=0" against the asset table simply fails,
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
+
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.  A
+// q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
+bool acceptsGzip(std::string_view accept_encoding);
+
+// Fills in res for an embedded asset: the stored gzip bytes with
+// Content-Encoding: gzip when accept_encoding allows them, else the inflated
+// bytes (or a 500 if the asset cannot be inflated).
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res);
 
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.
 // Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the

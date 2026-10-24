@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -179,6 +181,20 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// A file that cannot be written is an error, not a "Saved" message.
+TEST_F(SaveImageTest, UnwritableFileIsAnError)
+{
+  const std::filesystem::path missing
+      = std::filesystem::temp_directory_path()
+        / ("web_test_missing_" + std::to_string(::getpid()));
+  const std::string path = (missing / "image.png").string();
+  ASSERT_FALSE(std::filesystem::exists(missing));
+
+  EXPECT_THROW(tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}),
+               std::exception);
+  EXPECT_FALSE(std::filesystem::exists(path));
 }
 
 // Tiles are rasterized on transparency, so the pixels no layer covers come out
@@ -504,6 +520,45 @@ TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
     EXPECT_GE(lit, 2) << "at width " << width
                       << " the die outline lost an edge";
   }
+}
+
+TEST_F(SaveImageTest, NothingToFrameRaisesAnError)
+{
+  // Neither a die area nor a shape to fall back on.
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "bare");
+  makeTileGen();
+
+  EXPECT_ANY_THROW(
+      tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, {}));
+}
+
+TEST_F(SaveImageTest, InfiniteResolutionRaisesAnError)
+{
+  // save_image -resolution Inf: the scale underflows to zero.
+  EXPECT_ANY_THROW(tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 0, 0), 0, std::numeric_limits<double>::infinity(), {}));
+}
+
+TEST_F(SaveImageTest, ThinRegionAtHighScaleIsClamped)
+{
+  // 1 DBU wide at the default 1024 px: the height alone would overflow an int.
+  int w = 0;
+  int h = 0;
+  const std::vector<unsigned char> rgba = tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 1, 3000000), 0, 0, {}, {}, &w, &h);
+  EXPECT_GE(w, 1);
+  EXPECT_LE(h, 16384);
+  EXPECT_EQ(rgba.size(), static_cast<std::size_t>(w) * h * 4);
+}
+
+TEST_F(SaveImageTest, UnwritablePathRaisesAnError)
+{
+  const std::string path = tempPng("no_dir") + "/out.png";
+  EXPECT_ANY_THROW(
+      tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {}));
+  EXPECT_FALSE(std::filesystem::exists(path));
 }
 
 TEST_F(SaveImageTest, LargeWidthClamped)

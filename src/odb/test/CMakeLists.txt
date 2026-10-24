@@ -42,6 +42,7 @@ or_integration_tests(
     read_3dbx
     read_db
     read_def
+    read_def_units_not_divisor
     read_def_virtual
     read_def58
     read_lef
@@ -57,6 +58,7 @@ or_integration_tests(
     replace_hier_mod6
     replace_hier_mod_report_checks
     rounding
+    row_no_step
     row_settings
     set_halo
     sky130hd_multi_patterned

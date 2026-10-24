@@ -11,12 +11,12 @@
 #include <cstdlib>
 #include <deque>
 #include <fstream>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -61,6 +61,7 @@ class RegionDensityField;  // gpu/regionDensityField.h (GPU-only)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h
 class DensityGradientBackend;     // densityGradientBackend.h
 class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
+class IoPinBase;                  // ioPinBase.h
 enum class SlpSlot : int;         // gpu/nesterovDeviceContext.h
 enum class SumGradSlot : int;     // gpu/nesterovDeviceContext.h
 
@@ -84,9 +85,6 @@ class GCell
 
   // filler cells
   GCell(int cx, int cy, int dx, int dy);
-
-  // IO pin virtual cells (concurrent IO placement).
-  GCell(odb::dbBTerm* bterm, int cx, int cy, int dx, int dy);
 
   const std::vector<Instance*>& insts() const { return insts_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
@@ -142,8 +140,6 @@ class GCell
 
   bool isInstance() const;
   bool isFiller() const;
-  bool isIOPin() const { return bterm_ != nullptr; }
-  odb::dbBTerm* getBTerm() const { return bterm_; }
   bool isMacroInstance() const;
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
@@ -153,7 +149,6 @@ class GCell
 
  private:
   std::vector<Instance*> insts_;
-  odb::dbBTerm* bterm_ = nullptr;
   std::vector<GPin*> gPins_;
   int lx_ = 0;
   int ly_ = 0;
@@ -866,6 +861,7 @@ struct NesterovPlaceVars
   int debug_update_iterations = 10;
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
+  odb::dbBTerm* debug_pin = nullptr;
   int debug_start_iter = 0;
   int debug_rudy_start = 5000;
   int debug_rudy_stride = 1;
@@ -931,11 +927,6 @@ class NesterovBaseCommon
   // into nbc gCellStor_). Defined in wirelengthGradient.cpp.
   void getAllWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
                                    std::vector<FloatPoint>& out);
-
-  // Single-cell wirelength gradient (cold path — NesterovBase::
-  // updateSingleGradient via the db callback). Defined in
-  // wirelengthGradient.cpp.
-  FloatPoint getSingleWireLengthGradientWA(const GCell* gCell);
 
   // GPU path: run the per-inst gradient gather on device only (no host
   // copy) so the NB-level device scatter can consume it. No-op on the CPU
@@ -1086,7 +1077,6 @@ class NesterovBase
   ~NesterovBase();
 
   GCell& getFillerGCell(size_t index);
-  GCell& getIoPinGCell(size_t index);
 
   NesterovBaseCommon* getNbc() { return nbc_.get(); }
 
@@ -1216,21 +1206,6 @@ class NesterovBase
   void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
   void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
-  // Used for updates based on callbacks
-  void updateSingleGradient(size_t gCellIndex,
-                            std::vector<FloatPoint>& sumGrads,
-                            std::vector<FloatPoint>& wireLengthGrads,
-                            std::vector<FloatPoint>& densityGrads,
-                            float wlCoeffX,
-                            float wlCoeffY);
-
-  void updateSinglePrevGradient(size_t gCellIndex,
-                                float wlCoeffX,
-                                float wlCoeffY);
-  void updateSingleCurGradient(size_t gCellIndex,
-                               float wlCoeffX,
-                               float wlCoeffY);
-
   void updateInitialPrevSLPCoordi();
 
   float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
@@ -1254,6 +1229,9 @@ class NesterovBase
   // overflow can sit at very different displacements depending on how fast
   // the penalty schedule happens to be ramping.
   bool isSettled() const;
+  float getSettleRatio() const;
+  static constexpr float getSettleFraction() { return kSettleFraction; }
+
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1272,6 +1250,9 @@ class NesterovBase
   // No-op on the CPU path or when host state is already fresh. (TD and
   // routability runs never hold a device context, so they need no call.)
   void pullCoordsFromDevice();
+  // pullCoordsFromDevice() plus the cur/prev SLP sum-grads, which the GPU
+  // path keeps only on device. No-op on the CPU path.
+  void pullSlpFromDevice();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1296,7 +1277,20 @@ class NesterovBase
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
-  void updateGCellState(float wlCoeffX, float wlCoeffY);
+  void updateGCellState();
+
+  // Previous and current position and stored gradient of the instance's GCell
+  // (the current gradient is the one the next Nesterov step uses).
+  struct SlpState
+  {
+    FloatPoint prev_pos;
+    FloatPoint prev_grad;
+    FloatPoint cur_pos;
+    FloatPoint cur_grad;
+  };
+  // std::nullopt when the instance is not in this region. Pulls from the
+  // device first on the GPU path.
+  std::optional<SlpState> getSlpState(odb::dbInst* db_inst);
 
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
@@ -1328,6 +1322,10 @@ class NesterovBase
       int dbu_per_micron) const;
 
   void updateDbIoPins();
+  void refreshIoPins();
+  // Null unless this region places the IO pins (-place_ios).
+  IoPinBase* getIoPins() const { return io_.get(); }
+  void setIoPins(std::unique_ptr<IoPinBase> io_pins);
 
  private:
   NesterovBaseVars nbVars_;
@@ -1394,8 +1392,10 @@ class NesterovBase
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
   std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
-  // used to update gcell states after fixPointers() is called
-  std::vector<odb::dbInst*> new_instances_;
+  // used to update gcell states after fixPointers() is called. Holds only
+  // instances that are still alive: destroyCbkGCell() drops its entry, so a
+  // deleted dbInst whose memory odb reuses cannot appear twice.
+  std::unordered_set<odb::dbInst*> new_instances_;
 
   struct RemovedFillerState
   {
@@ -1519,88 +1519,7 @@ class NesterovBase
 
   void initFillerGCells();
 
-  // concurrent IO pin placement (-place_ios)
-  std::vector<GCell> ioPinStor_;
-  std::vector<odb::Point> io_last_written_pos_;
-  odb::dbTechLayer* io_hor_layer_ = nullptr;
-  odb::dbTechLayer* io_ver_layer_ = nullptr;
-  // define_pin_shape_pattern grid, used by pins with a 2D up: region.
-  odb::dbTechLayer* io_top_layer_ = nullptr;
-  int io_top_pin_width_ = 0;
-  int io_top_pin_height_ = 0;
-
-  // ioPinStor_ index -> nb_gcells_ index, kept up to date by
-  // rebindHandleIndex so callbacks may reorder nb_gcells_ freely.
-  std::vector<size_t> io_stor_index_to_nb_index_;
-  size_t ioNbPos(size_t io_index) const
-  {
-    return io_stor_index_to_nb_index_[io_index];
-  }
-
-  static constexpr size_t kNoMirrorPartner = std::numeric_limits<size_t>::max();
-  std::vector<std::pair<uint32_t, uint32_t>> io_mirror_pairs_;
-  std::vector<size_t> io_master_to_follower_;
-  std::vector<char> io_is_follower_;
-  std::vector<FloatPoint> io_follower_wl_grad_;
-
-  enum class DieEdge : uint8_t
-  {
-    kLeft,
-    kRight,
-    kBottom,
-    kTop
-  };
-  static bool isHorizontalEdge(DieEdge edge)
-  {
-    return edge == DieEdge::kBottom || edge == DieEdge::kTop;
-  }
-
-  struct PerimSegment
-  {
-    DieEdge edge;
-    float lo;
-    float hi;
-  };
-  std::vector<PerimSegment> io_free_segments_;
-  std::vector<std::vector<PerimSegment>> io_constraint_segments_;
-  // A 2D up: region is an area on the top-layer grid, not a perimeter
-  // interval, so these pins are clamped to the box instead of projected.
-  std::vector<std::optional<odb::Rect>> io_box_constraints_;
-
-  void initIoPinGCells();
-  void pickIoPinDummyLayers();
-  void pickIoPinTopLayerGrid();
-  void initIoConstraints();
-  static std::vector<PerimSegment> mirrorSegments(
-      const std::vector<PerimSegment>& segs);
-  static std::vector<PerimSegment> intersectSegments(
-      const std::vector<PerimSegment>& a,
-      const std::vector<PerimSegment>& b);
-  bool rectToPerimSegment(const odb::Rect& r, PerimSegment& seg) const;
-  void seedIoPinGCell(size_t io_index);
-  size_t ioIndexOf(const GCellHandle& handle) const;
-  FloatPoint projectOntoSegment(const PerimSegment& seg,
-                                float x,
-                                float y) const;
-  const PerimSegment* nearestSegment(const std::vector<PerimSegment>& segs,
-                                     float x,
-                                     float y,
-                                     FloatPoint* projection) const;
-  const std::vector<PerimSegment>& ioLocus(size_t io_index) const;
-  FloatPoint projectIoPin(size_t io_index, float x, float y) const;
-  DieEdge ioEdgeOnLocus(size_t io_index, int cx, int cy) const;
-
-  FloatPoint mirrorOfIoPin(size_t master_io, const FloatPoint& p) const;
-  void applyMirrorConstraints(std::vector<FloatPoint>& coordi) const;
-  bool isMirrorFollower(size_t io_index) const
-  {
-    return io_index < io_is_follower_.size() && io_is_follower_[io_index];
-  }
-  bool isIoBoxConstrained(size_t io_index) const
-  {
-    return io_index < io_box_constraints_.size()
-           && io_box_constraints_[io_index].has_value();
-  }
+  std::unique_ptr<IoPinBase> io_;
 };
 
 inline std::vector<Bin>& NesterovBase::getBins()
@@ -1624,22 +1543,12 @@ class biNormalParameters
 class GCellHandle
 {
  public:
-  // Tags the ioPinStor_ index space, which is independent of fillerStor_.
-  struct IoPinStorage
-  {
-    NesterovBase* nb;
-  };
-
   GCellHandle(NesterovBaseCommon* nbc, size_t idx)
       : storage_(nbc), storage_index_(idx)
   {
   }
 
   GCellHandle(NesterovBase* nb, size_t idx) : storage_(nb), storage_index_(idx)
-  {
-  }
-
-  GCellHandle(IoPinStorage io, size_t idx) : storage_(io), storage_index_(idx)
   {
   }
 
@@ -1658,11 +1567,6 @@ class GCellHandle
     return std::holds_alternative<NesterovBaseCommon*>(storage_);
   }
 
-  bool isIoPinStorage() const
-  {
-    return std::holds_alternative<IoPinStorage>(storage_);
-  }
-
   void updateHandle(NesterovBaseCommon* nbc, size_t new_index)
   {
     storage_ = nbc;
@@ -1678,16 +1582,12 @@ class GCellHandle
   size_t getStorageIndex() const { return storage_index_; }
 
  private:
-  using StorageVariant
-      = std::variant<NesterovBaseCommon*, NesterovBase*, IoPinStorage>;
+  using StorageVariant = std::variant<NesterovBaseCommon*, NesterovBase*>;
 
   GCell& getGCell() const
   {
     if (std::holds_alternative<NesterovBaseCommon*>(storage_)) {
       return std::get<NesterovBaseCommon*>(storage_)->getGCell(storage_index_);
-    }
-    if (std::holds_alternative<IoPinStorage>(storage_)) {
-      return std::get<IoPinStorage>(storage_).nb->getIoPinGCell(storage_index_);
     }
     return std::get<NesterovBase*>(storage_)->getFillerGCell(storage_index_);
   }
