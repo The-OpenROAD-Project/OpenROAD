@@ -125,6 +125,7 @@ cc_binary(
 TESTS = [
     "field_solver_cross_section",
     "field_solver_errors",
+    "field_solver_gcd",
     "field_solver_itf",
     "field_solver_nets",
     "field_solver_uniform",

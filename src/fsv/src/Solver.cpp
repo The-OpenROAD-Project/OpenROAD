@@ -146,6 +146,10 @@ std::vector<AlignedBox<D>> mergeBoxes(std::vector<AlignedBox<D>> boxes)
   return boxes;
 }
 
+// Walk results that are not columns.
+constexpr int kHopGuardHit = -1;
+constexpr int kRejectedStart = -2;  // a start point inside the surface
+
 // Sums over one batch of walks; one column per net plus the ground plane.
 // The all-walk sums feed the control variate (the weights average to zero).
 struct Tally
@@ -158,6 +162,7 @@ struct Tally
   double left_sum = 0;
   int64_t hops = 0;
   int64_t guard_hits = 0;
+  int64_t rejected = 0;
 
   // The arrays are padded by a cache line: they are written on every walk,
   // and threads sharing a malloc arena could otherwise share a line.
@@ -179,6 +184,7 @@ struct Tally
     left_sum += other.left_sum;
     hops += other.hops;
     guard_hits += other.guard_hits;
+    rejected += other.rejected;
   }
 };
 
@@ -555,8 +561,9 @@ class Walker
   }
 
   // One walk: returns the column it ends in (the last is the ground
-  // plane, which grounded nets join), or -1 if it hit the hop guard. `left`
-  // tells whether a cube could have reached outside the geometry's window.
+  // plane, which grounded nets join), kHopGuardHit, or kRejectedStart for a
+  // start point off the surface (weight 0). `left` tells whether a cube
+  // could have reached outside the geometry's window.
   int walk(const int64_t walk_id,
            double& weight,
            int64_t& hops,
@@ -570,7 +577,7 @@ class Walker
       // Inside the surface: a sample of weight 0.
       weight = 0;
       hops = 0;
-      return geometry_.netCount();
+      return kRejectedStart;
     }
     const double first_size = index_.nearest(p).dist;
     left = reaches(p, first_size);
@@ -596,7 +603,7 @@ class Walker
         p[k] += cube.half_size * offset[k];
       }
     }
-    return -1;
+    return kHopGuardHit;
   }
 
  private:
@@ -753,7 +760,11 @@ void runRound(WorkerPool& pool,
       bool left = false;
       const int column = walker.walk(w, weight, hops, left);
       tally.hops += hops;
-      if (column < 0) {
+      if (column == kRejectedStart) {
+        tally.rejected++;
+        continue;
+      }
+      if (column == kHopGuardHit) {
         tally.guard_hits++;
         continue;
       }
@@ -826,6 +837,7 @@ void estimateRow(const Tally& total, const int nets, CapRow& row)
   std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
   row.hops = total.hops;
   row.window_leakage = total.left_sum / n;
+  row.rejected = total.rejected;
 }
 
 // Whether the total and every coupling of at least coupling_threshold of
