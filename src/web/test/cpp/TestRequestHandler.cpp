@@ -7,17 +7,22 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/post.hpp"
 #include "boost/beast/http/field.hpp"
 #include "boost/beast/http/message.hpp"
 #include "boost/beast/http/status.hpp"
@@ -873,6 +878,54 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
 {
   EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
 }
 
 // A local session: nothing says the browser lives elsewhere.
@@ -2219,9 +2272,17 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
+// The heat map registry keeps the first registration for the whole process,
+// so the logger its factories capture has to live as long.
+utl::Logger* processLogger()
+{
+  static utl::Logger logger;
+  return &logger;
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -2238,7 +2299,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -2274,7 +2335,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2344,7 +2405,7 @@ TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -2380,7 +2441,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2403,7 +2464,7 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 // types 90.  The handler must accept it rather than failing as_double().
 TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2426,8 +2487,8 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   populate_calls = 0;
 
   web::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
-        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
+        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
                                                      &populate_calls);
       });
 

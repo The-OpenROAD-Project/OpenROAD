@@ -71,11 +71,13 @@ bool GifEncoder::addFrame(const std::vector<unsigned char>& rgba,
   if (rgba.size() < static_cast<size_t>(width) * height * 4) {
     return false;
   }
+  // gif.h ignores write errors, so ask the stream.
   return GifWriteFrame(&impl_->writer,
                        rgba.data(),
                        static_cast<uint32_t>(width),
                        static_cast<uint32_t>(height),
-                       static_cast<uint32_t>(delay_centis));
+                       static_cast<uint32_t>(delay_centis))
+         && std::ferror(impl_->writer.f) == 0;
 }
 
 bool GifEncoder::end()
@@ -83,9 +85,12 @@ bool GifEncoder::end()
   if (!open_) {
     return false;
   }
+  // Flush first: GifEnd discards what fclose reports.
+  const bool written
+      = std::fflush(impl_->writer.f) == 0 && std::ferror(impl_->writer.f) == 0;
   const bool ok = GifEnd(&impl_->writer);
   open_ = false;
-  return ok;
+  return ok && written;
 }
 
 }  // namespace web

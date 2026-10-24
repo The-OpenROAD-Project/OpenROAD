@@ -201,7 +201,8 @@ class WebServer
   // Start the web server on the given port, listening on `bind_address` — an
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
-  // a no-op if the server is already running.
+  // a no-op if the server is already running.  Logs the reason and throws if
+  // the server cannot start.
   void serve(int port, const std::string& bind_address, BrowserLaunch launch);
 
   // For -web startup scripts, called on the main thread before they run.

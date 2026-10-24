@@ -647,7 +647,7 @@ void WebServer::serve(int port,
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
-      threads_.emplace_back([this] { ioc_->run(); });
+      threads_.emplace_back([this] { runIoContext(*ioc_, logger_); });
     }
 
     const std::string host_name = thisHostName();

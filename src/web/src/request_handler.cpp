@@ -22,10 +22,12 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/beast/core/string.hpp"
 #include "boost/beast/http/field.hpp"
@@ -475,6 +477,30 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+void joinUnlessSelf(std::thread& t)
+{
+  if (!t.joinable()) {
+    return;
+  }
+  if (t.get_id() == std::this_thread::get_id()) {
+    t.detach();
+    return;
+  }
+  t.join();
+}
+
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger)
+{
+  for (;;) {
+    try {
+      ioc.run();
+      return;
+    } catch (const std::exception& e) {
+      logger->warn(utl::WEB, 119, "Web server thread error: {}", e.what());
+    }
+  }
 }
 
 namespace {
