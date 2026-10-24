@@ -33,6 +33,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "staGuiInterface.h"
+#include "web/timing_path_style.h"
 
 namespace sta {
 class dbSta;
@@ -205,7 +206,10 @@ class TimingPathRenderer : public web::Renderer
   void clearHighlightNodes();
 
   void drawObjects(web::Painter& /* painter */) override;
-  const char* getDisplayControlGroupName() override { return "Timing Path"; }
+  const char* getDisplayControlGroupName() override
+  {
+    return web::kTimingPathGroup;
+  }
 
   TimingPath* getPathToRender() { return path_; }
 
@@ -236,16 +240,13 @@ class TimingPathRenderer : public web::Renderer
   absl::Mutex rendering_;
 
   static const web::Painter::Color kInstHighlightColor;
-  static const web::Painter::Color kPathInstColor;
-  static const web::Painter::Color kTermColor;
-  static const web::Painter::Color kSignalColor;
-  static const web::Painter::Color kClockColor;
-  static const web::Painter::Color kCaptureClockColor;
 
-  static constexpr const char* kDataPathLabel = "Data path";
-  static constexpr const char* kLaunchClockLabel = "Launch clock";
-  static constexpr const char* kCaptureClockLabel = "Capture clock";
-  static constexpr const char* kLegendLabel = "Legend";
+  static constexpr const char* kDataPathLabel = web::kTimingPathDataRow;
+  static constexpr const char* kLaunchClockLabel
+      = web::kTimingPathLaunchClockRow;
+  static constexpr const char* kCaptureClockLabel
+      = web::kTimingPathCaptureClockRow;
+  static constexpr const char* kLegendLabel = web::kTimingPathLegendRow;
 };
 
 class TimingConeRenderer : public web::Renderer

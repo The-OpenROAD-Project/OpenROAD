@@ -38,6 +38,9 @@ class Logger;
 }  // namespace utl
 
 namespace web {
+
+// The display-control group of every heat map's renderer.
+inline constexpr const char* kHeatMapGroup = "Heat Maps";
 class HeatMapSourceRegistration;
 
 class HeatMapDataSource
@@ -189,6 +192,10 @@ class HeatMapDataSource
 
   virtual void onShow();
   virtual void onHide();
+  // For each viewer that draws the map: the first show runs onShow, and the
+  // hide of the last one onHide.
+  void show();
+  void hide();
 
   void redraw();
   void setRedrawCallback(std::function<void()> callback);
@@ -287,6 +294,9 @@ class HeatMapDataSource
   std::function<void(HeatMapDataSource*)> unregister_callback_;
 
   absl::Mutex ensure_mutex_;
+
+  std::mutex viewers_mutex_;
+  int viewers_ = 0;
 };
 
 class RealValueHeatMapDataSource : public HeatMapDataSource
@@ -458,5 +468,10 @@ HeatMapSourceHandle registerHeatMapSource(
 std::vector<HeatMapSourceHandle> getRegisteredHeatMapSources();
 HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
+
+// HeatMapRenderer's drawing of `source`: the bins (and values) over the
+// painter's bounds, and the legend apart, so a saved image can draw it last.
+void paintHeatMap(HeatMapDataSource& source, Painter& painter);
+void paintHeatMapLegend(HeatMapDataSource& source, Painter& painter);
 
 }  // namespace web

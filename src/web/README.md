@@ -65,6 +65,7 @@ openroad -web -web_port 8080 -web_bind 0.0.0.0
 Save the layout to a PNG file. By default, the command uses the GUI (Qt)
 renderer. Pass `-web` to use the web tile renderer instead, which runs
 entirely server-side without a display and is suitable for headless CI.
+OpenROAD built without Qt always uses the web tile renderer.
 
 ```tcl
 save_image
@@ -80,31 +81,46 @@ save_image
 
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
-| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
+| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. Implied when OpenROAD is built without Qt. |
 | `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
 | `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
-| `path` | Output PNG file path. |
+| `path` | Output PNG file path. With `-web`, a path that does not end in `.png` gets `.png` added. |
 
 When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
+With no Qt window open, `-web` draws what the `gui::set_display_controls`
+calls have chosen, with the same paths and defaults as the Qt display controls,
+and over it the heat map whose `Heat Maps/*` control is on (with its legend
+when `gui::set_heatmap <map> ShowLegend 1`), the DRC markers of
+`gui::select_marker_category`, the path of `gui::show_worst_path` with the
+`Timing Path/*` controls, the tree of `gui::select_clockviewer_clock` while
+the "Clock Tree Viewer" is shown, and the selection and highlight groups from
+`select`, as the Qt GUI does. That is how one script, such as ORFS's
+`save_images.tcl`, can save the same views with either renderer.
+
 #### Display option keys (web mode)
 
-Display options control which elements are rendered when using `-web`.
-Each option is a `{key value}` pair where the key matches a visibility
-field and the value is `true` or `false`.
+Display options control which elements are rendered when using `-web`, for
+that image only. Each option is a `{key value}` pair where the value is `true`
+or `false`. The key is either one of the visibility fields below or a display
+control path such as `Nets/Power` or `Instances/*`, matched the way
+`gui::set_display_controls` matches it. Any other key is an error.
 
 | Key | Default | Description |
 | --- | ------- | ----------- |
 | `stdcells` | true | Standard cells |
+| `std_physical` | `stdcells` | Liberty cells with no ports, such as decaps |
+| `std_other` | `stdcells` | Cells with no Liberty cell that are not core masters |
 | `macros` | true | Macros |
 | `routing` | true | Signal routing |
 | `special_nets` | true | Power/ground straps |
-| `pins` | true | Instance pins |
+| `pins` | true | IO pin shapes |
 | `pin_markers` | true | IO pin direction markers |
+| `inst_pins` | true | Instance pins |
 | `blockages` | true | Blockages |
 | `net_signal` | true | Signal nets |
 | `net_power` | true | Power nets |
@@ -134,6 +150,11 @@ save_image -web -area {0 0 100 100} -width 2048 region.png
 # Hide routing and power nets
 save_image -web -display_option {routing false} \
                 -display_option {net_power false} \
+                layout.png
+
+# The same, by display-control paths
+save_image -web -display_option {{Shape Types/Routing/*} false} \
+                -display_option {Nets/Power false} \
                 layout.png
 
 # Save with RUDY congestion heatmap overlay
@@ -324,6 +345,18 @@ whichever one synced last.
 
 Because Tcl commands typed into the browser console run on the server, this is
 normally invoked from the viewer's own console after arranging the panel.
+
+This command is not `gui::save_display_controls`. With no Qt window open,
+`gui::set_display_controls`, `gui::check_display_controls`,
+`gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
+act on a copy of the Qt display-control tree kept on the server, with the
+same paths and defaults; `select`, `gui::clear_selections`,
+`gui::clear_highlights`, `gui::select_marker_category`, `gui::show_worst_path`,
+`gui::clear_timing_path`, `gui::select_clockviewer_clock`, and
+`gui::show_widget`/`gui::hide_widget` for the "Clock Tree Viewer" act on a
+selection kept there too. That copy works in a build without Qt and needs no
+running server, but it is separate from what a browser shows. Of the colors,
+only `Misc/Background` is kept there.
 
 ### Restore Display Controls
 

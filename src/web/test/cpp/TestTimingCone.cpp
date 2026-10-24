@@ -2,7 +2,9 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "color.h"
@@ -11,7 +13,10 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Units.hh"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 
@@ -96,7 +101,13 @@ class TimingConeGraphTest : public tst::Nangate45Fixture
       tst::InstOptions opts;
       opts.location = odb::Point(1000 * (i + 1), 1000);
       opts.status = odb::dbPlacementStatus::PLACED;
-      opts.iterms = {{netName(i).c_str(), "A"}, {netName(i + 1).c_str(), "Z"}};
+      // ITermInfo keeps the pointers, so the names must outlive makeInst.
+      const std::string in = netName(i);
+      const std::string out = netName(i + 1);
+      opts.iterms = {
+          {.net_name = in.c_str(), .term_name = "A"},
+          {.net_name = out.c_str(), .term_name = "Z"},
+      };
       makeInst(block_, buf, instName(i).c_str(), opts);
     }
 
@@ -178,6 +189,103 @@ TEST_F(TimingConeGraphTest, ConeLevelsFormAnUnbrokenChain)
   // A linear chain: every node but the far end is driven by exactly one other.
   EXPECT_EQ(links, result.nodes.size() - 1);
   EXPECT_EQ(sourceless, 1u);
+}
+
+//------------------------------------------------------------------------------
+// TimingReport::getWorstPath: the path show_worst_path draws.  ff0 launches a
+// long path through two buffers to ff1 and a short one straight to ff2.
+//------------------------------------------------------------------------------
+
+class WorstPathTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+
+    odb::dbMaster* dff = lib_->findMaster("DFF_X1");
+    odb::dbMaster* buf = lib_->findMaster("BUF_X1");
+    ASSERT_NE(dff, nullptr);
+    ASSERT_NE(buf, nullptr);
+    place(dff, "ff0", {{"clk", "CK"}, {"q0", "Q"}});
+    place(buf, "b0", {{"q0", "A"}, {"n0", "Z"}});
+    place(buf, "b1", {{"n0", "A"}, {"n1", "Z"}});
+    place(dff, "ff1", {{"clk", "CK"}, {"n1", "D"}});
+    place(dff, "ff2", {{"clk", "CK"}, {"q0", "D"}});
+    odb::dbBTerm* clk = odb::dbBTerm::create(block_->findNet("clk"), "clk");
+    clk->setIoType(odb::dbIoType::INPUT);
+
+    sta_->postReadDef(block_);
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    network->setBlock(block_);
+
+    sta::PinSet pins(network);
+    pins.insert(network->dbToSta(clk));
+    const float period = sta_->units()->timeUnit()->userToSta(1.0);
+    sta_->makeClock("clk",
+                    pins,
+                    false,
+                    period,
+                    sta::FloatSeq{0.0, period / 2},
+                    "",
+                    sta_->cmdMode());
+  }
+
+  // Each pair is {net, term}, as in InstOptions::ITermInfo.
+  void place(odb::dbMaster* master,
+             const char* name,
+             const std::vector<std::pair<const char*, const char*>>& pins)
+  {
+    tst::InstOptions opts;
+    opts.location = odb::Point(1000 * (++placed_), 1000);
+    opts.status = odb::dbPlacementStatus::PLACED;
+    for (const auto& [net, term] : pins) {
+      opts.iterms.push_back({.net_name = net, .term_name = term});
+    }
+    makeInst(block_, master, name, opts);
+  }
+
+  int placed_ = 0;
+};
+
+TEST_F(WorstPathTest, IsTheReportsFirstPath)
+{
+  TimingReport report(getSta());
+  for (const bool setup : {true, false}) {
+    const std::optional<TimingPathSummary> worst = report.getWorstPath(setup);
+    const std::vector<TimingPathSummary> paths = report.getReport(setup);
+    ASSERT_TRUE(worst.has_value()) << "setup=" << setup;
+    ASSERT_FALSE(paths.empty()) << "setup=" << setup;
+    EXPECT_EQ(worst->end_pin, paths.front().end_pin) << "setup=" << setup;
+    EXPECT_FLOAT_EQ(worst->slack, paths.front().slack) << "setup=" << setup;
+  }
+  const std::optional<TimingPathSummary> setup = report.getWorstPath(true);
+  const std::optional<TimingPathSummary> hold = report.getWorstPath(false);
+  ASSERT_TRUE(setup.has_value());
+  ASSERT_TRUE(hold.has_value());
+  EXPECT_EQ(setup->end_pin, "ff1/D");
+  EXPECT_EQ(hold->end_pin, "ff2/D");
+}
+
+// The painter finds each node's pin and net from these, not from its name.
+TEST_F(WorstPathTest, NodesCarryTheirTermsAndDrivers)
+{
+  const std::optional<TimingPathSummary> worst
+      = TimingReport(getSta()).getWorstPath(true);
+  ASSERT_TRUE(worst.has_value());
+
+  std::vector<std::string> drivers;
+  for (const TimingNode& node : worst->data_nodes) {
+    EXPECT_NE(node.iterm != nullptr, node.bterm != nullptr) << node.pin_name;
+    if (node.is_driver && !node.is_clock) {
+      drivers.push_back(node.pin_name);
+    }
+  }
+  EXPECT_EQ(drivers, (std::vector<std::string>{"ff0/Q", "b0/Z", "b1/Z"}));
+  EXPECT_EQ(worst->data_nodes.front().bterm, block_->findBTerm("clk"));
+  ASSERT_FALSE(worst->capture_nodes.empty());
+  EXPECT_EQ(worst->capture_nodes.back().iterm, block_->findITerm("ff1/CK"));
 }
 
 }  // namespace

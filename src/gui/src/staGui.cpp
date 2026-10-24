@@ -53,6 +53,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
+#include "web/timing_path_style.h"
 
 Q_DECLARE_METATYPE(sta::Scene*);
 
@@ -60,16 +61,6 @@ namespace gui {
 
 const web::Painter::Color TimingPathRenderer::kInstHighlightColor
     = web::Painter::Color(web::Painter::kHighlight, 100);
-const web::Painter::Color TimingPathRenderer::kPathInstColor
-    = web::Painter::Color(web::Painter::kMagenta, 100);
-const web::Painter::Color TimingPathRenderer::kTermColor
-    = web::Painter::Color(web::Painter::kBlue, 100);
-const web::Painter::Color TimingPathRenderer::kSignalColor
-    = web::Painter::Color(web::Painter::kRed, 100);
-const web::Painter::Color TimingPathRenderer::kClockColor
-    = web::Painter::Color(web::Painter::kCyan, 100);
-const web::Painter::Color TimingPathRenderer::kCaptureClockColor
-    = web::Painter::Color(web::Painter::kGreen, 100);
 
 static QString convertDelay(float time,
                             sta::Unit* convert,
@@ -604,12 +595,12 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
     odb::dbInst* db_inst = node->getInstance();
     if (db_inst != nullptr) {
-      painter.setPenAndBrush(TimingPathRenderer::kPathInstColor, true);
+      painter.setPenAndBrush(web::kTimingPathInstColor, true);
       inst_descriptor->highlight(db_inst, painter);
     }
 
     if (node->isPinBTerm()) {
-      painter.setPenAndBrush(TimingPathRenderer::kTermColor, true);
+      painter.setPenAndBrush(web::kTimingPathTermColor, true);
       bterm_descriptor->highlight(node->getPinAsBTerm(), painter);
     }
 
@@ -617,8 +608,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
       for (auto* sink_node : node->getPairedNodes()) {
         if (sink_node != nullptr) {
           web::Painter::Color wire_color
-              = node->isClock() ? clock_color
-                                : TimingPathRenderer::kSignalColor;
+              = node->isClock() ? clock_color : web::kTimingPathSignalColor;
           painter.setPenAndBrush(wire_color, true);
           net_descriptor->highlight(
               web::DbNetDescriptor::NetWithSink{node->getNet(),
@@ -647,7 +637,7 @@ void TimingPathRenderer::drawObjects(web::Painter& painter)
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                kCaptureClockColor,
+                web::kTimingPathCaptureClockColor,
                 capture_path,
                 capture_path);
   drawNodesList(&path_->getPathNodes(),
@@ -655,20 +645,14 @@ void TimingPathRenderer::drawObjects(web::Painter& painter)
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                kClockColor,
+                web::kTimingPathClockColor,
                 checkDisplayControl(kLaunchClockLabel),
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
 
   if (checkDisplayControl(kLegendLabel)) {
-    web::DiscreteLegend legend;
-    legend.addLegendKey(kCaptureClockColor, "Capture");
-    legend.addLegendKey(kClockColor, "Launch");
-    legend.addLegendKey(kSignalColor, "Signal");
-    legend.addLegendKey(kPathInstColor, "Inst");
-    legend.addLegendKey(kTermColor, "Term");
-    legend.draw(painter);
+    web::paintTimingPathLegend(painter);
   }
 }
 
