@@ -154,7 +154,11 @@ uint32_t extSpef::getITermId(const uint32_t id, const char* name)
   if (!inst) {
     return 0;
   }
-  inst->setUserFlag1();
+  if (isPureDiff()) {
+    _diffReadInsts.insert(inst->getId());
+  } else {
+    inst->setUserFlag1();
+  }
   dbITerm* iterm = inst->findITerm(name);
   return iterm->getId();
 }
@@ -458,6 +462,17 @@ void extSpef::checkCCterm()
       tnet2->getConstName());
 }
 
+uint32_t extSpef::getDiffCapNodeId(dbNet* net,
+                                   const char kind,
+                                   const uint32_t node) const
+{
+  if (net == nullptr) {
+    return 0;
+  }
+  const auto it = _diffCapNodeIds.find({net->getId(), kind, node});
+  return it == _diffCapNodeIds.end() ? 0 : it->second;
+}
+
 uint32_t extSpef::getCapNodeId(const char* nodeWord,
                                const char* capWord,
                                uint32_t* netId)
@@ -496,6 +511,9 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
 
     if (_nodeParser->isDigit(1, 0)) {  // internal node
       net = getDbNet(netId, id1);
+      if (isPureDiff() && net == nullptr) {
+        return 0;
+      }
       if (_cornerBlock != _block) {
         cornerNet = dbNet::getNet(_cornerBlock, net->getId());
       } else {
@@ -504,6 +522,9 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
 
       uint32_t nodeId = _nodeParser->getInt(1, 0);
 
+      if (isPureDiff()) {
+        capId = getDiffCapNodeId(cornerNet, 'N', nodeId);
+      }
       if (!_testParsing && !_diff) {
         capId = getCapIdFromCapTable(nodeWord);
         if (capId == 0 && cornerNet == nullptr) {
@@ -560,7 +581,8 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
         }
       }
       if (!_testParsing) {
-        capId = iterm->getExtId();
+        capId = isPureDiff() ? getDiffCapNodeId(cornerNet, 'I', termId)
+                             : iterm->getExtId();
         if ((capId == 0) && !_diff) {
           cap = dbCapNode::create(cornerNet, 0, true);  // "foreign" mode
           capId = cap->getId();
@@ -614,7 +636,8 @@ uint32_t extSpef::getCapNodeId(const char* nodeWord,
         _ccbterm2 = bterm;
       }
 
-      capId = bterm->getExtId();
+      capId = isPureDiff() ? getDiffCapNodeId(cornerNet, 'B', btermId)
+                           : bterm->getExtId();
       if ((capId == 0) && !_diff) {
         cap = dbCapNode::create(cornerNet, 0, true);  // "foreign" mode
         capId = cap->getId();
@@ -896,6 +919,9 @@ dbNet* extSpef::getDbNet(uint32_t* id, const uint32_t spefId)
 
 bool extSpef::isNetExcluded()
 {
+  if (isPureDiff() && !_inputNet) {
+    return true;
+  }
   if ((_netSubWord != nullptr)
       && (strstr(_tmpNetName, _netSubWord) == nullptr)) {
     return true;
@@ -1394,6 +1420,9 @@ bool extSpef::mkCapStats(dbNet* net)
 
 uint32_t extSpef::endNet(dbNet* net, const uint32_t resCnt)
 {
+  if (isPureDiff() && !_inputNet) {
+    return resCnt;
+  }
   if (_match
       && ((_netSubWord == nullptr)
           || (strstr(_tmpNetName, _netSubWord) != nullptr))) {
@@ -1422,6 +1451,9 @@ uint32_t extSpef::endNet(dbNet* net, const uint32_t resCnt)
     diffNetRes(net);
   }
 
+  if (isPureDiff()) {
+    return resCnt;
+  }
   if (!_noCapNumCollapse) {
     net->collapseInternalCapNum(_capNodeFile);
   }
@@ -1838,9 +1870,15 @@ uint32_t extSpef::readDNet(const uint32_t debug)
   } else {
     _d_corner_net = dbNet::getNet(_cornerBlock, _d_net->getId());
   }
-  _tmpNetName = _nameMapTable->geti(_tmpNetSpefId);
+  _tmpNetName = isPureDiff() && !_maxMapId ? _d_net->getConstName()
+                                           : _nameMapTable->geti(_tmpNetSpefId);
 
-  _inputNet = _tnetCnt == 0 || _d_net->isMarked();
+  if (isPureDiff()) {
+    _diffReadNets.insert(_d_net->getId());
+  }
+  _inputNet = _tnetCnt == 0
+              || (isPureDiff() ? _diffInputNets.contains(_d_net->getId())
+                               : _d_net->isMarked());
 
   if (_diff) {
     diffNetCap(_d_corner_net);
@@ -2027,10 +2065,11 @@ uint32_t extSpef::readDNet(const uint32_t debug)
         }
       }
     }
-    if (!(_testParsing || _statsOnly) && _rRun == 1 && !_extracted) {
+    if (!isPureDiff() && !(_testParsing || _statsOnly) && _rRun == 1
+        && !_extracted) {
       _d_corner_net->getCapNodes().reverse();
     }
-    if ((!_testParsing) && (!_statsOnly) && _rRun == 1) {
+    if (!isPureDiff() && (!_testParsing) && (!_statsOnly) && _rRun == 1) {
       _d_corner_net->reverseCCSegs();
     }
 
@@ -2039,7 +2078,7 @@ uint32_t extSpef::readDNet(const uint32_t debug)
         diffNetGndCap(_d_corner_net);
       }
 
-      if (!_testParsing && !_statsOnly) {
+      if (!isPureDiff() && !_testParsing && !_statsOnly) {
         _d_corner_net->setSpef(true);
       }
 
@@ -2259,10 +2298,7 @@ uint32_t extSpef::readBlockIncr(const uint32_t debug)
 
   deleteNodeCoordTables();
 
-  if (_diff && (_diffLogFP != nullptr)) {
-    fclose(_diffLogFP);
-    fclose(_diffOutFP);
-  }
+  closeDiffFiles();
   logger_->info(
       RCX,
       444,
@@ -2366,7 +2402,11 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     _rConn = _rCap = _rRes = true;
   }
   for (uint32_t j = 0; j < _tnetCnt; j++) {
-    tnets[j]->setMark(true);
+    if (isPureDiff()) {
+      _diffInputNets.insert(tnets[j]->getId());
+    } else {
+      tnets[j]->setMark(true);
+    }
   }
 
   if (testParsing == 1) {
@@ -2480,7 +2520,16 @@ uint32_t extSpef::readBlock(const uint32_t debug,
 
   _cornerBlock = _block;
 
-  if (_db_calibbase_corner >= 0) {
+  if (isPureDiff()) {
+    // Resolve SPEF nodes without overwriting terminal extIds in the DB.
+    for (dbCapNode* node : _cornerBlock->getCapNodes()) {
+      const char kind = node->isBTerm() ? 'B' : node->isITerm() ? 'I' : 'N';
+      _diffCapNodeIds[{node->getNet()->getId(), kind, node->getNode()}]
+          = node->getId();
+    }
+  }
+
+  if (!isPureDiff() && _db_calibbase_corner >= 0) {
     _block->copyExtDb(_db_calibbase_corner,
                       _db_ext_corner,
                       _cornerCnt,
@@ -2511,7 +2560,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
   if (_notFoundInst == nullptr) {
     _notFoundInst = new NameTable(800);
   }
-  if (_rRun == 1 && _extracted && _rOnlyCCcap) {
+  if (!isPureDiff() && _rRun == 1 && _extracted && _rOnlyCCcap) {
     buildNodeHashTable();
   }
 
@@ -2541,7 +2590,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
 
     _nodeParser->resetSeparator(spef_header_.delimiter.c_str());
 
-    if (_rRun == 1) {
+    if (!isPureDiff() && _rRun == 1) {
       setSpefFlag(false);
     }
 
@@ -2550,7 +2599,9 @@ uint32_t extSpef::readBlock(const uint32_t debug,
       _nodeCoordParser->resetSeparator("[,=");
     }
 
-    setExtIds();
+    if (!isPureDiff()) {
+      setExtIds();
+    }
 
     _unmatchedSpefNet = 0;
     _unmatchedSpefInst = 0;
@@ -2574,7 +2625,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
             _gndCapCnt,
             _ccCapCnt);
       }
-      const bool sortingRSeg = _d_net && !_keep_loaded_corner
+      const bool sortingRSeg = !isPureDiff() && _d_net && !_keep_loaded_corner
                                && (_doSortRSeg || _readingNodeCoords != C_NONE);
       doSortingRSeg |= sortingRSeg;
       if (sortingRSeg) {
@@ -2587,7 +2638,7 @@ uint32_t extSpef::readBlock(const uint32_t debug,
     if (doSortingRSeg) {
       _cornerBlock->preExttreeMergeRC(0.0, 0);
     }
-    if (_stampWire) {
+    if (!isPureDiff() && _stampWire) {
       _block->getExtControl()->_wireStamped = true;
     }
     if (_loopNet) {
@@ -2597,24 +2648,24 @@ uint32_t extSpef::readBlock(const uint32_t debug,
       logger_->warn(RCX, 285, "Break simple loop of {} nets", _breakLoopNet);
     }
 
-    if (!(_testParsing || _statsOnly)) {
+    if (!isPureDiff() && !(_testParsing || _statsOnly)) {
       resetExtIds(0);
     }
     return true;
   }();
   deleteNodeCoordTables();
 
-  if (_diff && (_diffLogFP != nullptr)) {
-    fclose(_diffLogFP);
-    fclose(_diffOutFP);
-  }
+  closeDiffFiles();
 
   if (_capStatsFP != nullptr) {
     fclose(_capStatsFP);
+    _capStatsFP = nullptr;
   }
 
   for (uint32_t j = 0; j < _tnetCnt; j++) {
-    tnets[j]->setMark(false);
+    if (!isPureDiff()) {
+      tnets[j]->setMark(false);
+    }
   }
   if (!rc) {
     return 0;
@@ -2656,7 +2707,8 @@ uint32_t extSpef::readBlock(const uint32_t debug,
         continue;
       }
       dbNet* cornerNet = dbNet::getNet(_cornerBlock, net->getId());
-      if (!cornerNet->isSpef()) {
+      if (isPureDiff() ? !_diffReadNets.contains(net->getId())
+                       : !cornerNet->isSpef()) {
         unmatchedDbNet++;
         if (unmatchedDbNet < 20) {
           logger_->warn(RCX,
@@ -2668,7 +2720,8 @@ uint32_t extSpef::readBlock(const uint32_t debug,
       }
     }
     for (dbInst* inst : _block->getInsts()) {
-      if (!inst->getUserFlag1()) {
+      if (isPureDiff() ? !_diffReadInsts.contains(inst->getId())
+                       : !inst->getUserFlag1()) {
         unmatchedDbInst++;
         if (unmatchedDbInst < 20) {
           logger_->warn(RCX,
@@ -2678,7 +2731,9 @@ uint32_t extSpef::readBlock(const uint32_t debug,
                         (char*) inst->getConstName());
         }
       }
-      inst->clearUserFlag1();
+      if (!isPureDiff()) {
+        inst->clearUserFlag1();
+      }
     }
   }
 
