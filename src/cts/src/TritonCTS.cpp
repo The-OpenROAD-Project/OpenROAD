@@ -54,6 +54,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
@@ -150,12 +151,14 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   float tempFanout;
   bool existMaxFanout;
 
-  // Check if top instance has fanout limit
+  // Get the tightest limit for the design across all modes.
   sta::Cell* top_cell = network_->cell(network_->topInstance());
-  openSta_->cmdMode()->sdc()->fanoutLimit(
-      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+  for (sta::Mode* mode : openSta_->modes()) {
+    mode->sdc()->fanoutLimit(
+        top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
@@ -174,28 +177,34 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return (existMaxFanout) ? fanout : 0;
+    return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
   }
 
-  auto sdc = openSta_->cmdMode()->sdc();
+  // Get the tightest limit for the buffer across all modes.
+  for (sta::Mode* mode : openSta_->modes()) {
+    sta::Sdc* sdc = mode->sdc();
 
-  sdc->fanoutLimit(buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+    sdc->fanoutLimit(
+        buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+
+    sdc->fanoutLimit(
+        bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
-  sdc->fanoutLimit(bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
-  }
-
+  // Get the tightest limit from liberty, falling back to the library default.
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
   port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   } else {
     port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
-    if ((existMaxFanout)) {
+    if (existMaxFanout) {
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
@@ -252,8 +261,13 @@ void TritonCTS::setupCharacterization()
   }
 
   // A new characteriztion is always created.
-  techChar_ = std::make_unique<TechChar>(
-      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
+  techChar_ = std::make_unique<TechChar>(options_,
+                                         db_,
+                                         openSta_,
+                                         resizer_,
+                                         estimate_parasitics_,
+                                         network_,
+                                         logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -333,15 +347,24 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
-  auto sdc = openSta_->cmdMode()->sdc();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
-          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
-              && !sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
+          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
+            bool isLeafPin = false;
+            sta::Pin* staPin = network_->dbToSta(outputPin);
+            for (sta::Mode* mode : openSta_->modes()) {
+              if (mode->sdc()->isLeafPinClock(staPin)) {
+                isLeafPin = true;
+                break;
+              }
+            }
+            if (isLeafPin) {
+              continue;
+            }
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
@@ -1242,20 +1265,36 @@ void TritonCTS::populateTritonCTS()
     allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    staClockNets_ = openSta_->findClkNets();
-    sta::Sdc* sdc = openSta_->cmdMode()->sdc();
-    for (auto clk : sdc->clocks()) {
-      std::string clkName = clk->name();
-      odb::PtrSet<odb::dbNet> clkNets;
-      findClockRoots(clk, clkNets);
-      for (auto net : clkNets) {
-        if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(
-              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+    staClockNets_.clear();
+    for (sta::Mode* mode : openSta_->modes()) {
+      odb::PtrSet<odb::dbNet> modeStaClkNets = openSta_->findClkNets(mode);
+      staClockNets_.insert(modeStaClkNets.begin(), modeStaClkNets.end());
+    }
+    for (sta::Mode* mode : openSta_->modes()) {
+      sta::Sdc* sdc = mode->sdc();
+      // Modes share clock roots, so overlap is an error only within a mode.
+      odb::PtrSet<odb::dbNet> modeClkNets;
+      for (auto clk : sdc->clocks()) {
+        std::string clkName = clk->name();
+        odb::PtrSet<odb::dbNet> clkNets;
+        findClockRoots(clk, clkNets);
+        odb::PtrSet<odb::dbNet> newClkNets;
+        for (auto net : clkNets) {
+          if (modeClkNets.find(net) != modeClkNets.end()) {
+            logger_->error(
+                CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          }
+          if (allClkNets.find(net) == allClkNets.end()) {
+            newClkNets.insert(net);
+          }
         }
+        modeClkNets.insert(clkNets.begin(), clkNets.end());
+        if (newClkNets.empty()) {
+          continue;
+        }
+        clockNetsInfo.emplace_back(newClkNets, clkName);
+        allClkNets.insert(newClkNets.begin(), newClkNets.end());
       }
-      clockNetsInfo.emplace_back(clkNets, clkName);
-      allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
   // Seed with all existing instance positions to prevent clones from
@@ -1425,6 +1464,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
                     clockNet.getNumSinks());
       return nullptr;
     }
+    checkDontTouchSinks(firstNet, clockNet);
     logger_->info(CTS,
                   10,
                   " Clock net \"{}\" has {} sinks.",
@@ -1437,6 +1477,8 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
     return addBuilder(
         options_, clockNet, clkInputNet, parentBuilder, logger_, db_);
   }
+
+  checkDontTouchSinks(firstNet, clockNet);
 
   // add macro sinks to existing firstNet
   TreeBuilder* firstBuilder = addClockSinks(
@@ -1510,9 +1552,20 @@ bool TritonCTS::separateMacroRegSinks(
       sta::Cell* masterCell = network_->dbToSta(mterm->getMaster());
       sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
       if (libertyCell && libertyCell->isInverter()) {
+        odb::dbITerm* invertedOutput = inst->getFirstOutput();
+        odb::dbNet* invertedNet
+            = invertedOutput ? invertedOutput->getNet() : nullptr;
         odb::dbITerm* invertedTerm
-            = inst->getFirstOutput()->getNet()->get1stSignalInput(false);
-        nonSinkMacro &= invertedTerm->getInst()->isBlock();
+            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
+        if (invertedTerm) {
+          nonSinkMacro &= invertedTerm->getInst()->isBlock();
+        } else {
+          logger_->warn(CTS,
+                        136,
+                        "Inverter {} output net has no signal input; "
+                        "treating as a dangling clock inverter.",
+                        inst->getName());
+        }
       }
 
       if (hasInsertionDelay(inst, mterm) || nonSinkMacro || inst->isBlock()) {
@@ -2130,6 +2183,33 @@ std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
   return results;
 }
 
+// Called once CTS has decided to build a tree on the net and before it
+// changes it. Every input pin on the net is disconnected when the tree is
+// written (disconnectAllSinksFromNet), and odb refuses to disconnect a pin
+// of a dont_touch instance (ODB-0370). Say so here rather than fail in odb
+// with the tree half built.
+void TritonCTS::checkDontTouchSinks(odb::dbNet* net, const Clock& clockNet)
+{
+  std::vector<odb::dbITerm*> dont_touch_pins;
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT
+        && iterm->getInst()->isDoNotTouch()) {
+      dont_touch_pins.push_back(iterm);
+    }
+  }
+  if (!dont_touch_pins.empty()) {
+    logger_->error(CTS,
+                   137,
+                   "Clock net {} has {} input pin(s) of dont_touch instances, "
+                   "which clock tree synthesis would have to reconnect; the "
+                   "first is {}. Remove dont_touch from them, or skip the net "
+                   "with -skip_nets.",
+                   clockNet.getName(),
+                   dont_touch_pins.size(),
+                   dont_touch_pins.front()->getName());
+  }
+}
+
 void TritonCTS::disconnectAllSinksFromNet(odb::dbNet* net)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
@@ -2627,7 +2707,10 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
   }
   std::string cellName
       = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
-  dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
+  // In the module of the buffer it loads, so that it joins the buffer's
+  // output net there instead of across a module boundary.
+  dummyInst = odb::dbInst::create(
+      block_, master, cellName.c_str(), false, inst->getDbInst()->getModule());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
   dummyInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -2654,6 +2737,13 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
   odb::dbNet* sinkNet = iTerm->getNet();
   odb::dbITerm* dummyInputPin = getFirstInput(dummyInst);
   dummyInputPin->connect(sinkNet);
+  // As for a sink: without it the hierarchical view leaves the dummy
+  // load off the net, and its capacitance is not seen once the database
+  // is read back.
+  if (network_->hasHierarchy()) {
+    network_->hierarchicalConnect(
+        iTerm, dummyInputPin, sinkNet->getConstName());
+  }
   dummyClock.setInputPinObj(dummyInputPin);
   subNet.addInst(dummyClock);
 }
@@ -2711,6 +2801,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // convert from per meter to per dbu
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
+  double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
+                     / block_->getDbUnitsPerMicron();
 
   for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
@@ -2721,8 +2813,9 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  db_,
                                                  network_,
                                                  openSta_,
-                                                 techChar_->getLengthUnit(),
-                                                 capPerDBU);
+                                                 techChar_.get(),
+                                                 capPerDBU,
+                                                 resPerDBU);
       totalDelayBuff += balancer.run();
     }
   }

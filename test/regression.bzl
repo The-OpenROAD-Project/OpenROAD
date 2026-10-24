@@ -8,6 +8,8 @@ Also provides doc_check_test for lightweight Python-only
 documentation tests that do not require the OpenROAD binary,
 and messages_txt for generating messages.txt from source files."""
 
+load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF")
+
 def _regression_test_impl(ctx):
     # Declare the test script output
     test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
@@ -21,8 +23,7 @@ def _regression_test_impl(ctx):
     # Generate the test script
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/usr/bin/env bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
@@ -67,12 +68,15 @@ exec "{bazel_test_sh}" "$@"
     if ctx.file.golden_file:
         runfiles_files.append(ctx.file.golden_file)
 
-    return DefaultInfo(
-        executable = test_script,
-        runfiles = ctx.runfiles(
-            files = runfiles_files,
-        ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
-    )
+    return [
+        DefaultInfo(
+            executable = test_script,
+            runfiles = ctx.runfiles(
+                files = runfiles_files,
+            ).merge_all(data_runfiles + [ctx.attr.openroad[DefaultInfo].default_runfiles]),
+        ),
+        RunEnvironmentInfo(environment = ctx.attr.env),
+    ]
 
 regression_rule_test = rule(
     implementation = _regression_test_impl,
@@ -97,6 +101,12 @@ regression_rule_test = rule(
             doc = "Additional test files required for the test.",
             allow_files = True,
         ),
+        "env": attr.string_dict(
+            doc = "Static environment variables for the test action " +
+                  "(RunEnvironmentInfo). --test_env on the command line " +
+                  "takes precedence.",
+            default = {},
+        ),
         "expected_exit_code": attr.int(
             doc = "Expected command exit code for the regression.",
             default = 0,
@@ -108,11 +118,8 @@ regression_rule_test = rule(
         "openroad": attr.label(
             doc = "The OpenROAD executable.",
             executable = True,
-            # Avoid building OpenROAD twice with "bazelisk test -c opt ..."
-            #
-            # OpenROAD is used to build more stuff in bazel-orfs,
-            # hence we want the "exec" (host) configuration.
-            cfg = "exec",
+            cfg = "target",
+            mandatory = True,
         ),
         "regression_test": attr.label(
             doc = "The regression test script.",
@@ -141,8 +148,7 @@ def _doc_check_test_impl(ctx):
 
     ctx.actions.write(
         output = test_script,
-        content = """
-#!/bin/bash
+        content = """#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
@@ -364,6 +370,15 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
+
+    # Default every regression test to the GPU_ENV_OFF pin: on a GPU build
+    # (--config=gpu) the runtime gate defaults on, and any test that runs
+    # the placer against CPU golden logs would otherwise diverge. On the
+    # default CPU build the select is empty, so nothing changes. GPU-only
+    # tests override with env = {"ENABLE_GPU": "1"}.
+    env = _pop(kwargs, "env", None)
+    if env == None:
+        env = GPU_ENV_OFF
     for test_file in test_files:
         ext = test_file.split(".")[-1]
 
@@ -391,6 +406,10 @@ def regression_test(
             #
             # https://bazel.build/reference/be/common-definitions#test.size
             size = size,
-            tags = tags,
+            # Tag with the test language so a run can select or skip one of
+            # them, e.g. --test_tag_filters=-py for the sanitizer configs,
+            # which cannot load the instrumented Python extension modules.
+            tags = tags + [ext],
+            env = env,
             **kwargs
         )

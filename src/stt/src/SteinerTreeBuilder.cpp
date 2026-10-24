@@ -33,6 +33,11 @@ SteinerTreeBuilder::SteinerTreeBuilder(utl::Logger* logger)
 
 SteinerTreeBuilder::~SteinerTreeBuilder() = default;
 
+void SteinerTreeBuilder::prepareForThreads()
+{
+  flute_->completeLUT();
+}
+
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,
                                          const int drvr_index)

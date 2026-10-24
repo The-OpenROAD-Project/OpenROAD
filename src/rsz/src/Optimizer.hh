@@ -25,10 +25,11 @@ struct RepairSetupContext;
 //      setup-repair context, then dispatches each token through
 //      makePolicyForPhase. Every policy sees the same target collector and
 //      tracker-report context.
+//   3. reportRunResult() prints the final report after the last phase.
 //
 // The Optimizer owns `committer_` for the full run; the shared setup context
-// and each phase/top-level OptimizationPolicy live for the duration of the
-// dispatch loop only.
+// lives for one run() call and each OptimizationPolicy for its own phase
+// only.
 class Optimizer
 {
  public:
@@ -52,6 +53,16 @@ class Optimizer
   std::unique_ptr<OptimizationPolicy> makePolicyForPhase(
       std::string_view phase_name,
       RepairSetupContext& setup_context);
+
+  // === Final report =========================================================
+  // The report of the run, once after the last phase: the closing progress
+  // row, the tracker reports and the move summary.  show_startpoint_metrics
+  // picks the row layout when no progress header was printed.
+  bool reportRunResult(RepairSetupContext& setup_context,
+                       bool show_startpoint_metrics);
+  // The committed moves and the RSZ-62 verdict.  Returns true when the run
+  // committed a move or left a setup violation.
+  bool reportRepairSummary(const RepairSetupContext& setup_context) const;
 
   // === Run state ============================================================
   OptimizerRunConfig config_;

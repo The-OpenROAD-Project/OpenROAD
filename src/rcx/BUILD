@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -66,6 +66,7 @@ cc_library(
         "src/grids.cpp",
         "src/gs.cpp",
         "src/gseq.h",
+        "src/interChipModel.cpp",
         "src/multiChipExtractor.cpp",
         "src/multiChipSpefWriter.cpp",
         "src/name.cpp",
@@ -94,6 +95,7 @@ cc_library(
         "include/rcx/ext_options.h",
         "include/rcx/extprocess.h",
         "include/rcx/grids.h",
+        "include/rcx/interChipModel.h",
         "include/rcx/multiChipExtractor.h",
         "include/rcx/multiChipSpefWriter.h",
         "include/rcx/rcx.h",
@@ -104,6 +106,7 @@ cc_library(
     ],
     deps = [
         "//src/odb/src/db",
+        "//src/odb/src/wireNormalizer",
         "//src/utl",
     ],
 )
@@ -190,4 +193,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/rcx/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":rcx"],
 )

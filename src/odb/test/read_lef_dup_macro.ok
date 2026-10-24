@@ -1,0 +1,4 @@
+[WARNING ODB-0406] duplicate MACRO (DUP) ignoring...
+[INFO ODB-0227] LEF file: data/lef_dup_macro.lef, created 1 layers, 2 library cells
+Summary 10 / 10 (100% pass)
+pass

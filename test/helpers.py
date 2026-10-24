@@ -3,13 +3,7 @@ import os
 import utl
 import re
 from openroad import Design
-
-if os.environ.get("BAZEL_TEST") == "1":
-    from openroad import PlaceOptions
-else:
-    import gpl
-
-    PlaceOptions = gpl.PlaceOptions
+from gpl import PlaceOptions
 
 
 def get_runfiles_path_to(path):

@@ -1,5 +1,26 @@
 {
+  "name": "openroad-web",
+  "private": true,
+  "type": "module",
+  "description": "Browser libraries for the web viewer, bundled by esbuild into the assets embedded in the OpenROAD binary (issue #11065).",
   "dependencies": {
-    "jsdom": "^29.0.2"
+    "golden-layout": "2.6.0",
+    "leaflet": "1.9.4",
+    "lit": "^3.3.3",
+    "netlistsvg": "1.0.2",
+    "three": "0.160.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [],
+    "overrides": {
+      "netlistsvg>@types/clone": "-",
+      "netlistsvg>@types/json5": "-",
+      "netlistsvg>@types/lodash": "-",
+      "netlistsvg>ajv": "-",
+      "netlistsvg>ajv-errors": "-",
+      "netlistsvg>fs-extra": "-",
+      "netlistsvg>json5": "-",
+      "netlistsvg>yargs": "-"
+    }
   }
 }

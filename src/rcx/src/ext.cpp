@@ -11,7 +11,7 @@
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 #include "parse.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extModelGen.h"
@@ -33,7 +33,8 @@ Ext::Ext(odb::dbDatabase* db, Logger* logger, const char* spef_version)
       logger_(logger),
       spef_version_(spef_version),
       multi_chip_extractor_(std::make_unique<MultiChipExtractor>(db, logger)),
-      multi_chip_spef_writer_(std::make_unique<MultiChipSpefWriter>(db, logger))
+      multi_chip_spef_writer_(
+          std::make_unique<MultiChipSpefWriter>(db, logger, spef_version))
 {
   _ext->init(db, logger);
 }
@@ -253,7 +254,7 @@ void Ext::extract(ExtractOptions options)
   _ext->setBlockFromChip(_db->getChip());
   odb::dbBlock* block = _ext->getBlock();
 
-  odb::orderWires(logger_, block);
+  odb::normalizeWireConnectivity(logger_, block);
 
   if (options.ext_model_file != nullptr && options.ext_model_file[0] != '\0') {
     logger_->warn(RCX,

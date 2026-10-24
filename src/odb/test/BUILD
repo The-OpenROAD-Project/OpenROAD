@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -31,6 +32,7 @@ py_test(
     srcs = [
         "test_block.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -44,6 +46,7 @@ py_test(
     srcs = [
         "test_bterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -57,6 +60,7 @@ py_test(
     srcs = [
         "test_destroy.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -70,6 +74,7 @@ py_test(
     srcs = [
         "test_group.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -83,6 +88,7 @@ py_test(
     srcs = [
         "test_inst.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -96,6 +102,7 @@ py_test(
     srcs = [
         "test_iterm.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -109,6 +116,7 @@ py_test(
     srcs = [
         "test_module.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -122,6 +130,7 @@ py_test(
     srcs = [
         "test_net.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -135,6 +144,7 @@ py_test(
     srcs = [
         "test_wire_codec.py",
     ],
+    tags = ["py"],
     deps = [
         ":helper",
         ":odbUnitTest",
@@ -146,6 +156,8 @@ py_test(
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
+    "abstract_polygon",
+    "abstract_polygon_no_overlap",
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
@@ -184,10 +196,13 @@ COMPULSORY_TESTS = [
     "read_3dbx",
     "read_db",
     "read_def",
+    "read_def_units_not_divisor",
     "read_def_virtual",
     "read_def58",
     "read_lef",
+    "read_lef_dup_macro",
     "read_lef_minwidth_wrongdirection",
+    "read_lef_polygon_spacing",
     "read_zipped",
     "replace_hier_mod1",
     "replace_hier_mod2",
@@ -197,10 +212,11 @@ COMPULSORY_TESTS = [
     "replace_hier_mod6",
     "replace_hier_mod_report_checks",
     "rounding",
+    "row_no_step",
     "row_settings",
+    "set_halo",
     "sky130hd_multi_patterned",
     "smash_vias",
-    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
@@ -209,6 +225,7 @@ COMPULSORY_TESTS = [
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
+    "write_lef_obs_spacing",
     "write_lef_polygon",
     "write_macro_placement",
 ]
@@ -226,6 +243,7 @@ PASSFAIL_TESTS = [
     "test_iterm",
     "test_module",
     "test_net",
+    "test_tcl_handles",
     "test_wire_codec",
 ]
 
@@ -301,12 +319,15 @@ filegroup(
         "data/lef58_celledgespacing_numeric.lef",
         "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58_minwidth_wrongdirection.lef",
+        "data/lef58_mustjoinallports.lef",
         "data/lef58class_gscl45nm.lef",
+        "data/lef_dup_macro.lef",
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
         "data/path_assertions.3dbx",
         "data/rounding.def",
+        "data/row_no_step.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",
         "data/virtual_route.def",
@@ -369,6 +390,13 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "abstract_polygon": [
+                "abstract_polygon_bloat.lefok",
+            ],
+            "abstract_polygon_no_overlap": [
+                "abstract_polygon.def",
+                "abstract_polygon_no_overlap_bloat.lefok",
+            ],
             "all_pins_placed1": [
                 "floorplan_initialize3.def",
             ],
@@ -413,7 +441,10 @@ py_test(
     name = "odb_man_tcl_check",
     srcs = ["odb_man_tcl_check.py"],
     data = ["//src/odb:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -445,13 +476,40 @@ test_suite(
         "//src/odb/test/cpp:TestGuide",
         "//src/odb/test/cpp:TestJournal",
         "//src/odb/test/cpp:TestLef58Properties",
+        "//src/odb/test/cpp:TestLefIn",
         "//src/odb/test/cpp:TestMaster",
         "//src/odb/test/cpp:TestModule",
         "//src/odb/test/cpp:TestNetTrack",
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
+        "//src/odb/test/cpp:TestShapeDestroy",
         "//src/odb/test/cpp:TestSwapMaster",
+        "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
+    ],
+)
+
+# Standalone odbtcl shell (//src/odb/src/swig:odbtcl). Runs the scripts from
+# the old test/regression-tcl.sh that still pass; the others use an old
+# read_def signature or data that is no longer in the tree.
+ODBTCL_SCRIPTS = [
+    "tcl/01-import_package_test.tcl",
+    "tcl/02-read_lef_test.tcl",
+    "tcl/03-dump_via_rules_test.tcl",
+    "tcl/04-dump_vias_test.tcl",
+    "tcl/19-polygon_test.tcl",
+]
+
+sh_test(
+    name = "odbtcl_test",
+    size = "small",
+    srcs = ["odbtcl_test.sh"],
+    args = ["$(rootpath //src/odb/src/swig:odbtcl)"] +
+           ["$(rootpath %s)" % script for script in ODBTCL_SCRIPTS],
+    data = ODBTCL_SCRIPTS + [
+        "data/gscl45nm.lef",
+        "tcl/test_helpers.tcl",
+        "//src/odb/src/swig:odbtcl",
     ],
 )

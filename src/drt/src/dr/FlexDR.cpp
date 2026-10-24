@@ -482,43 +482,51 @@ void FlexDR::init()
     logger_->info(DRT, 194, "Start detail routing.");
   }
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
-    if (net->hasInitialRouting()) {
-      for (const auto& via : net->getVias()) {
-        auto bottomBox = via->getLayer1BBox();
-        auto topBox = via->getLayer2BBox();
-        for (auto term : net->getInstTerms()) {
-          if (term->getBBox().intersects(bottomBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes);
-            for (const auto& shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
-                continue;
-              }
-              if (!shape.intersects(bottomBox)) {
-                continue;
-              }
-              via->setBottomConnected(true);
-              break;
+    if (!net->hasInitialRouting()) {
+      continue;
+    }
+    for (const auto& via : net->getVias()) {
+      const odb::Rect bottomBox = via->getLayer1BBox();
+      const odb::Rect topBox = via->getLayer2BBox();
+      // A via can land on an instance pin or on an IO pin.
+      auto mark_via_connected = [&via, &bottomBox, &topBox](auto* term) {
+        if (term->getBBox().intersects(bottomBox)) {
+          std::vector<frRect> shapes;
+          term->getShapes(shapes);
+          for (const auto& shape : shapes) {
+            if (shape.getLayerNum() != via->getViaDef()->getLayer1Num()) {
+              continue;
             }
-          }
-          if (via->isBottomConnected()) {
-            continue;
-          }
-          if (term->getBBox().intersects(topBox)) {
-            std::vector<frRect> shapes;
-            term->getShapes(shapes);
-            for (const auto& shape : shapes) {
-              if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
-                continue;
-              }
-              if (!shape.intersects(topBox)) {
-                continue;
-              }
-              via->setTopConnected(true);
-              break;
+            if (!shape.intersects(bottomBox)) {
+              continue;
             }
+            via->setBottomConnected(true);
+            break;
           }
         }
+        if (via->isBottomConnected()) {
+          return;
+        }
+        if (term->getBBox().intersects(topBox)) {
+          std::vector<frRect> shapes;
+          term->getShapes(shapes);
+          for (const auto& shape : shapes) {
+            if (shape.getLayerNum() != via->getViaDef()->getLayer2Num()) {
+              continue;
+            }
+            if (!shape.intersects(topBox)) {
+              continue;
+            }
+            via->setTopConnected(true);
+            break;
+          }
+        }
+      };
+      for (auto term : net->getInstTerms()) {
+        mark_via_connected(term);
+      }
+      for (auto term : net->getBTerms()) {
+        mark_via_connected(term);
       }
     }
   }
@@ -2133,6 +2141,33 @@ int FlexDR::main()
 
   init();
   frTime t;
+  // If the loaded design already carries DRC markers (read from the database in
+  // io::Parser::setMarkers), resume from the configured iteration, skipping the
+  // initial full rip-up passes that are not useful when re-routing an existing
+  // solution's violations.
+  const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
+  if (num_db_markers > 0) {
+    // Never resume past the configured end iteration, otherwise no repair
+    // iteration would run at all.
+    iter_ = std::max(0,
+                     std::min(router_cfg_->REROUTE_VIOLATIONS_START_ITER,
+                              router_cfg_->END_ITERATION));
+    // gcell2BoundaryPin_ is only consumed by iteration 0 and is normally freed
+    // at the end of that iteration. When resuming past iteration 0 that cleanup
+    // never runs, so release it now to avoid holding the memory for the whole
+    // routing.
+    if (iter_ > 0) {
+      removeGCell2BoundaryPin();
+    }
+    if (router_cfg_->VERBOSE > 0) {
+      logger_->info(DRT,
+                    627,
+                    "Found {} DRC marker(s) in the database; resuming detailed "
+                    "routing from iteration {}.",
+                    num_db_markers,
+                    iter_);
+    }
+  }
   bool incremental = false;
   bool hasFixed = false;
   for (const auto& net : getDesign()->getTopBlock()->getNets()) {
@@ -2142,11 +2177,15 @@ int FlexDR::main()
       break;
     }
   }
-  for (auto& args :
-       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
+  const auto search_repair_args
+      = strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST);
+  // iter_ may start > 0 when resuming from imported DRC markers; index the
+  // strategy table by iter_ so the per-iteration parameters stay aligned.
+  while (iter_ >= 0 && iter_ < static_cast<int>(search_repair_args.size())) {
     if (iter_ > router_cfg_->END_ITERATION) {
       break;
     }
+    auto args = search_repair_args[iter_];
     int clipSize = args.size;
     if (args.ripupMode != RipUpMode::ALL) {
       if (increaseClipsize_) {

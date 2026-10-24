@@ -17,8 +17,8 @@
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
-#include "gui/gui.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 #include "web_chart.h"
 
 namespace web {
@@ -171,7 +171,7 @@ WebViewerHook::~WebViewerHook()
   released_ = true;
   client_wait_interrupted_.store(true);
   paused_ = false;
-  sessions_.notifyClientWaiters();
+  sessions_->notifyClientWaiters();
   pause_cv_.notify_all();
   // Wait for pause() to fully exit (including any unlocked broadcasts).
   // done_cv_.wait releases the lock, allowing the pause thread to proceed.
@@ -184,16 +184,31 @@ void WebViewerHook::redraw()
   // up-to-date even on non-pause iterations.
   //
   // Lock ordering: drain_logs_ acquires the spdlog base_sink mutex,
-  // then sessions_.broadcast() acquires SessionRegistry::mutex_.
+  // then sessions_->broadcast() acquires SessionRegistry::mutex_.
   // No code path acquires these in the reverse order, so no deadlock.
   if (drain_logs_) {
     drain_logs_();
   }
-  sessions_.broadcast(R"({"type":"debug_refresh"})");
+  sessions_->broadcast(R"({"type":"debug_refresh"})");
 }
 
 void WebViewerHook::pause(int timeout_ms)
 {
+  if (pause_hooks_.enter) {
+    pause_hooks_.enter();
+  }
+  // Declared before `lock` so leave runs after the lock is released.
+  struct LeaveGuard
+  {
+    const std::function<void()>& leave;
+    ~LeaveGuard()
+    {
+      if (leave) {
+        leave();
+      }
+    }
+  } leave_guard{pause_hooks_.leave};
+
   std::unique_lock<std::mutex> lock(pause_mutex_);
   in_pause_ = true;
 
@@ -210,9 +225,9 @@ void WebViewerHook::pause(int timeout_ms)
   // This handles the common case where the placer starts before the
   // browser has finished connecting.  If nobody connects in time,
   // skip the pause — there's nobody to click Continue.
-  if (!sessions_.hasClients()) {
+  if (!sessions_->hasClients()) {
     lock.unlock();
-    if (!sessions_.waitForClient(kClientConnectTimeoutSeconds, [this]() {
+    if (!sessions_->waitForClient(kClientConnectTimeoutSeconds, [this]() {
           return client_wait_interrupted_.load();
         })) {
       lock.lock();
@@ -243,7 +258,7 @@ void WebViewerHook::pause(int timeout_ms)
   if (drain_logs_) {
     drain_logs_();
   }
-  sessions_.broadcast(R"({"type":"debug_paused"})");
+  sessions_->broadcast(R"({"type":"debug_paused"})");
   lock.lock();
 
   if (timeout_ms > 0) {
@@ -258,18 +273,75 @@ void WebViewerHook::pause(int timeout_ms)
 
   paused_ = false;
   released_ = false;
+  const bool exit_requested = std::exchange(exit_requested_, false);
   lock.unlock();
 
-  sessions_.broadcast(R"({"type":"debug_resumed"})");
+  sessions_->broadcast(R"({"type":"debug_resumed"})");
 
   lock.lock();
   in_pause_ = false;
   done_cv_.notify_all();
+  lock.unlock();
+
+  if (exit_requested) {
+    pause_hooks_.exit();
+  }
 }
 
 bool WebViewerHook::isPaused() const
 {
   return paused_.load(std::memory_order_acquire);
+}
+
+void WebViewerHook::registerRenderer(Renderer* /* renderer */)
+{
+  renderers_changed_.store(true, std::memory_order_release);
+}
+
+void WebViewerHook::unregisterRenderer(Renderer* /* renderer */)
+{
+  renderers_changed_.store(true, std::memory_order_release);
+}
+
+bool WebViewerHook::takeRenderersChanged()
+{
+  return renderers_changed_.exchange(false, std::memory_order_acq_rel);
+}
+
+// ─── Per-renderer display controls ───────────────────────────────────────────
+//
+// An unknown path answers `true`, the base class's behaviour: a renderer that
+// asks about a control nobody registered should draw rather than vanish.  The
+// registry seeds every known path from its own default, so the honest defaults
+// are in place before a renderer's first paint.
+
+bool WebViewerHook::checkDisplayControlVisible(const std::string& name)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  const auto it = renderer_control_visible_.find(name);
+  return it == renderer_control_visible_.end() ? true : it->second;
+}
+
+void WebViewerHook::setDisplayControlVisible(const std::string& name,
+                                             const bool value)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  renderer_control_visible_[name] = value;
+}
+
+void WebViewerHook::seedDisplayControlVisible(const std::string& name,
+                                              const bool value)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  // insert(), not operator[]: a renderer re-registering (a second placement
+  // run) must not reset a control the user turned on.
+  renderer_control_visible_.insert({name, value});
+}
+
+bool WebViewerHook::markRendererSeeded(const void* renderer)
+{
+  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
+  return seeded_renderers_.insert(renderer).second;
 }
 
 void WebViewerHook::drainLogs()
@@ -284,6 +356,25 @@ void WebViewerHook::setDrainLogsFn(DrainLogsFn fn)
   drain_logs_ = std::move(fn);
 }
 
+void WebViewerHook::setPauseHooks(PauseHooks hooks)
+{
+  pause_hooks_ = std::move(hooks);
+}
+
+bool WebViewerHook::requestExit()
+{
+  {
+    std::lock_guard<std::mutex> lock(pause_mutex_);
+    if (!paused_ || !pause_hooks_.exit) {
+      return false;
+    }
+    exit_requested_ = true;
+    released_ = true;
+  }
+  pause_cv_.notify_all();
+  return true;
+}
+
 void WebViewerHook::continueExecution()
 {
   {
@@ -291,11 +382,11 @@ void WebViewerHook::continueExecution()
     released_ = true;
     client_wait_interrupted_.store(true);
   }
-  sessions_.notifyClientWaiters();
+  sessions_->notifyClientWaiters();
   pause_cv_.notify_all();
 }
 
-gui::Chart* WebViewerHook::createChart(const std::string& name,
+web::Chart* WebViewerHook::createChart(const std::string& name,
                                        const std::string& x_label,
                                        const std::vector<std::string>& y_labels)
 {
@@ -338,7 +429,7 @@ std::string WebViewerHook::registerCustom(std::vector<T>& vec,
                                           int& next_id,
                                           const char* prefix,
                                           const std::string& name,
-                                          T item,
+                                          T&& item,
                                           bool* is_duplicate)
 {
   *is_duplicate = false;
@@ -351,7 +442,7 @@ std::string WebViewerHook::registerCustom(std::vector<T>& vec,
           vec.begin(), vec.end(), [&k](const T& e) { return e.key == k; });
     };
     if (key.empty()) {
-      // Auto-generate a unique key, mirroring gui::MainWindow.
+      // Auto-generate a unique key, mirroring web::MainWindow.
       do {
         key = prefix + std::to_string(next_id++);
       } while (exists(key));
@@ -366,7 +457,7 @@ std::string WebViewerHook::registerCustom(std::vector<T>& vec,
   }
   // Broadcast outside the lock: it synchronously invokes session send
   // callbacks, which must not run under custom_ui_mutex_.
-  sessions_.broadcast(json);
+  sessions_->broadcast(json);
   return key;
 }
 
@@ -388,7 +479,7 @@ void WebViewerHook::removeCustom(std::vector<T>& vec, const std::string& name)
     }
   }
   if (changed) {
-    sessions_.broadcast(json);  // outside the lock (see registerCustom)
+    sessions_->broadcast(json);  // outside the lock (see registerCustom)
   }
 }
 
@@ -436,7 +527,7 @@ std::string WebViewerHook::addMenuItem(utl::Logger* logger,
                                        bool echo)
 {
   bool is_duplicate = false;
-  // Default menu path mirrors gui::MainWindow ("Custom Scripts").
+  // Default menu path mirrors web::MainWindow ("Custom Scripts").
   const std::string menu_path = path.empty() ? "Custom Scripts" : path;
   const std::string key = registerCustom(custom_menu_items_,
                                          next_menu_id_,

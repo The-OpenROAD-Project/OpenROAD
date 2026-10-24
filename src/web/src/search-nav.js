@@ -7,39 +7,11 @@
 // Both reuse the .modal-overlay/.modal-dialog pattern from menu-bar.js.
 
 import { dbuToLatLng, dbuRectToBounds, latLngToDbu } from './coordinates.js';
-import { applySelectionFlags } from './ui-utils.js';
+import { applySelectionFlags, buildModal } from './ui-utils.js';
 
-// Build a modal shell and return handles.  Closes on backdrop click / Escape.
-function buildModal(title, bodyHtml, okLabel) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-dialog search-nav-dialog">
-            <button class="modal-close" title="Close" aria-label="Close">&times;</button>
-            <h3>${title}</h3>
-            ${bodyHtml}
-            <div class="modal-error" style="display:none"></div>
-            <div class="modal-buttons">
-                <button class="cancel">Cancel</button>
-                <button class="primary ok">${okLabel}</button>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-
-    const close = () => overlay.remove();
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    overlay.querySelector('.cancel').addEventListener('click', close);
-    overlay.querySelector('.modal-close').addEventListener('click', close);
-
-    const errorDiv = overlay.querySelector('.modal-error');
-    const showError = (msg, isInfo) => {
-        errorDiv.textContent = msg;
-        errorDiv.style.display = msg ? 'block' : 'none';
-        errorDiv.classList.toggle('info', !!isInfo);
-    };
-    return { overlay, close, okBtn: overlay.querySelector('.ok'), showError };
-}
+// The .search-nav-dialog rules size these two dialogs' rows; every caller here
+// passes it so buildModal itself stays dialog-agnostic.
+const kDialogClass = 'search-nav-dialog';
 
 // ── Find ──────────────────────────────────────────────────────────────────
 
@@ -68,7 +40,7 @@ export function showFindDialog(app) {
         </div>
         <label class="sn-check">
             <input type="checkbox" class="sn-case"> Match case
-        </label>`, 'Find');
+        </label>`, 'Find', kDialogClass);
 
     const patternInput = overlay.querySelector('.sn-pattern');
     const typeSel = overlay.querySelector('.sn-type');
@@ -155,7 +127,7 @@ export function showGotoDialog(app) {
             <input type="text" class="fb-path-input sn-y" value="${fmt(centerDbu.dbuY)}"></div>
         <div class="sn-row"><label>Size (${unit})</label>
             <input type="text" class="fb-path-input sn-size" placeholder="optional zoom window"></div>`,
-        'Go to');
+        'Go to', kDialogClass);
 
     const xIn = overlay.querySelector('.sn-x');
     const yIn = overlay.querySelector('.sn-y');

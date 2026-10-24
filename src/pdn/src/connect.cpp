@@ -517,6 +517,13 @@ void Connect::report() const
     }
     logger->report("    Ongrid layers: {}", layers);
   }
+  if (!min_width_layers_.empty()) {
+    std::string layers;
+    for (auto* l : min_width_layers_) {
+      layers += l->getName() + " ";
+    }
+    logger->report("    Minimum width layers: {}", layers);
+  }
   if (!split_cuts_.empty()) {
     logger->report("    Split cuts:");
     for (const auto& [layer, cut_def] : split_cuts_) {

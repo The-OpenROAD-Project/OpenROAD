@@ -6,6 +6,7 @@
 #include "grt/GlobalRouter.h"
 #include "GrouteRenderer.h"
 #include "FastRouteRenderer.h"
+#include "CugrRenderer.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
@@ -23,6 +24,8 @@ using sta::LibertyPort;
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
 %ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::initDebugCugr;
+%ignore grt::GlobalRouter::getDebugCugr;
 %ignore grt::GlobalRouter::setRenderer;
 
 %import <stl.i>
@@ -37,6 +40,18 @@ bool
 have_routes()
 {
   return getGlobalRouter()->haveRoutes();
+}
+
+bool
+design_is_placed()
+{
+  return getGlobalRouter()->designIsPlaced();
+}
+
+bool
+have_congested_routes()
+{
+  return getGlobalRouter()->haveCongestedRoutes();
 }
 
 bool
@@ -108,6 +123,12 @@ void
 set_resistance_aware(bool resistance_aware)
 {
   getGlobalRouter()->setResistanceAware(resistance_aware);
+}
+
+void
+set_cugr_via_demand(bool enabled)
+{
+  getGlobalRouter()->setCUGRViaDemand(enabled);
 }
 
 void
@@ -231,7 +252,7 @@ add_net_to_route(odb::dbNet* net)
 void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
@@ -256,7 +277,7 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
                                 bool tree3D,
                                 bool edges3D)
 {
-  if (!gui::Gui::enabled()) {
+  if (!web::Gui::enabled()) {
     return;
   }
 
@@ -271,6 +292,23 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   getGlobalRouter()->setDebugTree2D(tree2D);
   getGlobalRouter()->setDebugTree3D(tree3D);
   getGlobalRouter()->setDebugEdges3D(edges3D);
+}
+
+void set_cugr_debug_cmd(odb::dbNet* net,
+                        bool patternRoute,
+                        bool resAware,
+                        bool detours,
+                        bool maze,
+                        bool rrr)
+{
+  const CugrDebugStages stages{patternRoute, resAware, detours, maze, rrr};
+  GlobalRouter* global_router = getGlobalRouter();
+  // No stages requested disarms; only the drawing needs a GUI and a renderer.
+  if (stages.any() && web::Gui::enabled()
+      && global_router->getDebugCugr() == nullptr) {
+    global_router->initDebugCugr(std::make_unique<CugrRenderer>());
+  }
+  global_router->setDebugCugrNet(net, stages);
 }
 
 void set_global_route_debug_stt_input_filename(const char* file_name)
@@ -291,6 +329,21 @@ void report_net_wire_length(odb::dbNet* net,
 {
   getGlobalRouter()->reportNetWireLength(
       net, global_route, detailed_route, verbose, file_name);
+}
+
+bool have_initial_steiner_wirelengths()
+{
+  return getGlobalRouter()->hasInitialSteinerWirelengths();
+}
+
+void report_net_detour(odb::dbNet* net, const char* file_name)
+{
+  getGlobalRouter()->reportNetDetour(net, file_name);
+}
+
+void report_net_detours(int top_n, const char* file_name)
+{
+  getGlobalRouter()->reportNetDetours(top_n, file_name);
 }
 
 void

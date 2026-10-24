@@ -20,6 +20,26 @@ proc parse_buffer_cell { keys_var } {
   return $buffer_cell
 }
 
+# The keys a command cannot do without.
+proc check_required_keys { keys_var required_keys } {
+  upvar 1 $keys_var keys
+  foreach required_key $required_keys {
+    if { ![info exists keys($required_key)] } {
+      utl::error RSZ 3203 "$required_key is required."
+    }
+  }
+}
+
+# -delay_levels of the delay estimator accuracy reports: 0, 1 or 2.
+proc check_delay_levels { delay_levels } {
+  if { ![string is integer -strict $delay_levels] } {
+    utl::error RSZ 3206 "-delay_levels must be an integer."
+  }
+  if { $delay_levels < 0 || $delay_levels > 2 } {
+    utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
+  }
+}
+
 # namespace eval rsz
 }
 
@@ -244,14 +264,20 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-allow_setup_violations]\
                                         [-sequence move_list]\
                                         [-phases phases]\
+                                        [-path_group path_group]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
                                         [-skip_buffering]\
                                         [-skip_buffer_removal]\
+                                        [-skip_buffer_to_inverters]\
                                         [-skip_last_gasp]\
                                         [-skip_vt_swap]\
                                         [-skip_crit_vt_swap]\
+                                        [-skip_crpr]\
+                                        [-effort low|medium|high]\
+                                        [-profile_mode mode]\
+                                        [-profile_dir dir]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_passes passes]\
                                         [-max_iterations iterations]\
@@ -268,11 +294,12 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
-            -phases -policy -policies \
+            -phases -policy -policies -path_group -effort -profile_mode -profile_dir \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
-             -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
-             -skip_vt_swap -skip_crit_vt_swap -match_cell_footprint -verbose}
+             -skip_size_down -skip_buffering -skip_buffer_removal -skip_buffer_to_inverters \
+             -skip_last_gasp -skip_vt_swap -skip_crit_vt_swap -skip_crpr \
+             -match_cell_footprint -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -318,15 +345,43 @@ proc repair_timing { args } {
       "specify at most one of -phases / -policy / -policies"
   }
 
+  # Unknown names warn and resolve to "", which repairs every path group.
+  set path_group ""
+  if { [info exists keys(-path_group)] } {
+    set path_group [rsz::resolve_path_group $keys(-path_group)]
+  }
+
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
   set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
   set skip_size_down_fanout [info exists flags(-skip_size_down)]
   set skip_buffering [info exists flags(-skip_buffering)]
   set skip_buffer_removal [info exists flags(-skip_buffer_removal)]
+  set skip_buffer_to_inverters [info exists flags(-skip_buffer_to_inverters)]
   set skip_last_gasp [info exists flags(-skip_last_gasp)]
   set skip_vt_swap [info exists flags(-skip_vt_swap)]
   set skip_crit_vt_swap [info exists flags(-skip_crit_vt_swap)]
+  set skip_crpr [info exists flags(-skip_crpr)]
+  set effort "high"
+  if { [info exists keys(-effort)] } {
+    set effort $keys(-effort)
+    if { [lsearch -exact [string toupper $phases] "PARALLEL_EVAL"] == -1 } {
+      utl::warn RSZ 3244 "-effort has no effect unless -phases lists PARALLEL_EVAL."
+    }
+  }
+  # Setup repair profiler level and output directory; 0 writes nothing.
+  set profile_mode 0
+  if { [info exists keys(-profile_mode)] } {
+    set profile_mode $keys(-profile_mode)
+    sta::check_integer "-profile_mode" $profile_mode
+  }
+  set profile_dir ""
+  if { [info exists keys(-profile_dir)] } {
+    set profile_dir $keys(-profile_dir)
+    if { $profile_mode == 0 } {
+      utl::warn RSZ 3245 "-profile_dir has no effect without -profile_mode."
+    }
+  }
   rsz::set_max_utilization [rsz::parse_max_util keys]
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
@@ -373,6 +428,14 @@ proc repair_timing { args } {
   if { [info exists keys(-max_repairs_per_pass)] } {
     set max_repairs_per_pass $keys(-max_repairs_per_pass)
   }
+  # The pass options drive the per-endpoint policies only.
+  if { [info exists keys(-max_passes)] || [info exists keys(-max_repairs_per_pass)] } {
+    set pass_phases [lsearch -all -inline -not -exact [string toupper $phases] "PARALLEL_EVAL"]
+    if { $phases ne "" && [llength $pass_phases] == 0 } {
+      utl::warn RSZ 3246 \
+        "-max_passes and -max_repairs_per_pass have no effect on the PARALLEL_EVAL policy."
+    }
+  }
 
   sta::check_argc_eq0 "repair_timing" $args
   est::check_parasitics
@@ -383,17 +446,39 @@ proc repair_timing { args } {
   if { $recover_power_percent >= 0 } {
     set recovered_power [rsz::recover_power $recover_power_percent $match_cell_footprint $verbose]
   } else {
-    if { $setup } {
-      set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
-        $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
-        $sequence $phases \
-        $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
-        $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
-    }
-    if { $hold } {
-      set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
-        $allow_setup_violations $max_buffer_percent $max_passes \
-        $max_iterations $match_cell_footprint $verbose]
+    # Restore the command-entry CRPR setting after setup and hold repair.
+    set entry_crpr_enabled [sta::crpr_enabled]
+    set repair_crpr_enabled [expr { $entry_crpr_enabled && !$skip_crpr }]
+    try {
+      if { $setup } {
+        if { $skip_crpr } {
+          utl::info RSZ 225 "CRPR disabled during setup repair."
+        }
+        if { [sta::crpr_enabled] != $repair_crpr_enabled } {
+          sta::set_crpr_enabled $repair_crpr_enabled
+        }
+        set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+          $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
+          $sequence $phases $path_group \
+          $skip_pin_swap $skip_gate_cloning $skip_size_down_fanout $skip_buffering \
+          $skip_buffer_removal $skip_buffer_to_inverters $skip_last_gasp $skip_vt_swap \
+          $skip_crit_vt_swap $effort $profile_mode $profile_dir]
+      }
+      if { $hold } {
+        if { $skip_crpr } {
+          utl::info RSZ 226 "CRPR disabled during hold repair."
+        }
+        if { [sta::crpr_enabled] != $repair_crpr_enabled } {
+          sta::set_crpr_enabled $repair_crpr_enabled
+        }
+        set repaired_hold [rsz::repair_hold $setup_margin $hold_margin \
+          $allow_setup_violations $max_buffer_percent $max_passes \
+          $max_iterations $match_cell_footprint $verbose $path_group]
+      }
+    } finally {
+      if { [sta::crpr_enabled] != $entry_crpr_enabled } {
+        sta::set_crpr_enabled $entry_crpr_enabled
+      }
     }
   }
 
@@ -438,8 +523,8 @@ sta::proc_redirect report_floating_nets {
     }
   }
 
-  utl::metric_int "timing__drv__floating__nets" $floating_net_count
-  utl::metric_int "timing__drv__floating__pins" $floating_pin_count
+  utl::metric_integer "timing__drv__floating__nets" $floating_net_count
+  utl::metric_integer "timing__drv__floating__pins" $floating_pin_count
 }
 
 sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] \
@@ -464,7 +549,7 @@ sta::proc_redirect report_overdriven_nets {
     }
   }
 
-  utl::metric_int "timing__drv__overdriven__nets" $overdriven_net_count
+  utl::metric_integer "timing__drv__overdriven__nets" $overdriven_net_count
 }
 
 sta::define_cmd_args "report_long_wires" {count [> filename] [>> filename]} ;# checker off
@@ -608,13 +693,15 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-sizing_leakage_limit] \
                                           [-set_early_sizing_cap_ratio] \
                                           [-set_early_buffer_sizing_cap_ratio] \
-                                          [-disable_buffer_pruning] }
+                                          [-disable_buffer_pruning] \
+                                          [-rebuffer_size_driver] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
       -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt -disable_buffer_pruning \
-      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
+      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
+      -rebuffer_size_driver} flags {}
 
   set area_limit "NULL"
   if { [info exists keys(-limit_sizing_area)] } {
@@ -681,6 +768,18 @@ proc set_opt_config { args } {
         "Buffer pruning will be enabled for repair_design and repair_timing"
     }
   }
+
+  if { [info exists keys(-rebuffer_size_driver)] } {
+    set value $keys(-rebuffer_size_driver)
+    rsz::set_boolean_prop $value "-rebuffer_size_driver" "rebuffer_size_driver"
+    if { $value } {
+      utl::info RSZ 173 \
+        "Rebuffering will size drivers together with buffer trees"
+    } else {
+      utl::info RSZ 174 \
+        "Rebuffering will not size drivers"
+    }
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -691,14 +790,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-sizing_leakage_limit] \
                                             [-set_early_sizing_cap_ratio] \
                                             [-set_early_buffer_sizing_cap_ratio] \
-                                            [-disable_buffer_pruning] }
+                                            [-disable_buffer_pruning] \
+                                            [-rebuffer_size_driver] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
                      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
-                     -disable_buffer_pruning}
+                     -disable_buffer_pruning -rebuffer_size_driver}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -734,6 +834,10 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-disable_buffer_pruning)] } {
     rsz::clear_bool_prop "disable_buffer_pruning"
     utl::info RSZ 166 "Buffer pruning has been enabled."
+  }
+  if { $reset_all || [info exists flags(-rebuffer_size_driver)] } {
+    rsz::clear_bool_prop "rebuffer_size_driver"
+    utl::info RSZ 175 "Driver sizing during rebuffering has been disabled."
   }
 }
 
@@ -1043,11 +1147,7 @@ proc report_delay_estimator_accuracy { args } {
     keys {-inst -lib_cell -estimator -delay_levels} flags {}
   sta::check_argc_eq0 "report_delay_estimator_accuracy" $args
 
-  foreach required_key {-inst -lib_cell -estimator} {
-    if { ![info exists keys($required_key)] } {
-      utl::error RSZ 3203 "$required_key is required."
-    }
-  }
+  rsz::check_required_keys keys {-inst -lib_cell -estimator}
 
   set inst [sta::get_instance_error "-inst" $keys(-inst)]
   set lib_cells [sta::get_lib_cells_arg \
@@ -1067,13 +1167,8 @@ proc report_delay_estimator_accuracy { args } {
 
   set delay_levels 0
   if { [info exists keys(-delay_levels)] } {
-    if { ![string is integer -strict $keys(-delay_levels)] } {
-      utl::error RSZ 3206 "-delay_levels must be an integer."
-    }
+    rsz::check_delay_levels $keys(-delay_levels)
     set delay_levels $keys(-delay_levels)
-    if { $delay_levels < 0 || $delay_levels > 2 } {
-      utl::error RSZ 3207 "-delay_levels must be 0, 1, or 2."
-    }
     if { $estimator eq "legacy" } {
       utl::error RSZ 3208 \
         "-delay_levels is only valid for non-legacy estimators."
@@ -1083,6 +1178,35 @@ proc report_delay_estimator_accuracy { args } {
   est::check_parasitics
   rsz::report_delay_estimator_accuracy_cmd \
     $inst $lib_cell $estimator $delay_levels
+}
+
+sta::define_cmd_args "report_delay_estimator_accuracy_for_rebuffering" {\
+  -inst instance \
+  [-driver_pin pin] \
+  [-delay_levels level] }
+
+proc report_delay_estimator_accuracy_for_rebuffering { args } {
+  sta::parse_key_args "report_delay_estimator_accuracy_for_rebuffering" args \
+    keys {-inst -driver_pin -delay_levels} flags {}
+  sta::check_argc_eq0 "report_delay_estimator_accuracy_for_rebuffering" $args
+
+  rsz::check_required_keys keys {-inst}
+  set inst [sta::get_instance_error "-inst" $keys(-inst)]
+
+  set driver_pin "NULL"
+  if { [info exists keys(-driver_pin)] } {
+    set driver_pin [sta::get_port_pin_error "-driver_pin" $keys(-driver_pin)]
+  }
+
+  set delay_levels 1
+  if { [info exists keys(-delay_levels)] } {
+    rsz::check_delay_levels $keys(-delay_levels)
+    set delay_levels $keys(-delay_levels)
+  }
+
+  est::check_parasitics
+  rsz::report_delay_estimator_accuracy_for_rebuffering_cmd \
+    $inst $driver_pin $delay_levels
 }
 
 sta::define_cmd_args "insert_buffer" { -buffer_cell lib_cell \

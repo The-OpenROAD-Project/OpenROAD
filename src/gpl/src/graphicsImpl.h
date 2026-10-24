@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "routeBase.h"
+#include "web/core.h"
+#include "web/heatMap.h"
 
 namespace utl {
 class Logger;
@@ -32,12 +32,13 @@ class NesterovPlace;
 class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
+class IoPinBase;
 class GCellHandle;
 
 // This class draws debugging graphics on the layout
 class GraphicsImpl : public gpl::AbstractGraphics,
-                     public gui::Renderer,
-                     public gui::HeatMapDataSource
+                     public web::Renderer,
+                     public web::HeatMapDataSource
 {
  public:
   using LineSeg = std::pair<odb::Point, odb::Point>;
@@ -59,7 +60,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
-                             odb::dbInst* inst) override;
+                             odb::dbInst* inst,
+                             odb::dbBTerm* pin) override;
 
   void addIter(int iter, double overflow) override;
   void addTimingDrivenIter(int iter) override;
@@ -81,6 +83,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
   void gifEnd(int key) override;
+  void instDestroyed(odb::dbInst* db_inst) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -101,8 +104,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
  private:
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
-  gui::SelectionSet select(odb::dbTechLayer* layer,
+  void drawObjects(web::Painter& painter) override;
+  web::SelectionSet select(odb::dbTechLayer* layer,
                            const odb::Rect& region) override;
 
   // From HeatMapDataSource
@@ -134,31 +137,35 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   };
 
   // These are used for coloring each instance based on its group
-  std::vector<gui::Painter::Color> instances_colors_ = {
-      gui::Painter::kDarkGreen,
-      gui::Painter::kDarkBlue,
-      gui::Painter::kBrown,
-      gui::Painter::kDarkYellow,
+  std::vector<web::Painter::Color> instances_colors_ = {
+      web::Painter::kDarkGreen,
+      web::Painter::kDarkBlue,
+      web::Painter::kBrown,
+      web::Painter::kDarkYellow,
   };
 
   // These are used for bin field, fillers, and dummies (lighter) for each
   // region.
-  std::vector<gui::Painter::Color> region_colors_ = {
-      gui::Painter::kDarkMagenta,
-      gui::Painter::kYellow,
-      gui::Painter::kBlue,
-      gui::Painter::kCyan,
+  std::vector<web::Painter::Color> region_colors_ = {
+      web::Painter::kDarkMagenta,
+      web::Painter::kYellow,
+      web::Painter::kBlue,
+      web::Painter::kCyan,
 
   };
 
-  void drawField(gui::Painter& painter);
-  void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
+  void drawField(web::Painter& painter);
+  void drawCells(const std::vector<GCell*>& cells, web::Painter& painter);
   void drawCells(const std::vector<GCellHandle>& cells,
-                 gui::Painter& painter,
+                 web::Painter& painter,
                  size_t nb_index);
   void drawSingleGCell(const GCell* gCell,
-                       gui::Painter& painter,
+                       web::Painter& painter,
                        size_t nb_index = 0);
+  void drawIoPins(web::Painter& painter);
+  void drawSelectedIoPin(web::Painter& painter);
+  const IoPinBase* ioPins() const;
+  std::optional<size_t> findSelectedPin() const;
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
@@ -169,27 +176,34 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
   static constexpr const char* kDrawInstances = "Draw GPL Cells";
   static constexpr const char* kDrawTimingNets = "Draw Timing Nets";
+  static constexpr const char* kDrawIoPins = "Draw IO Pins";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
+  odb::dbBTerm* selected_pin_ = nullptr;
+  // Selected instance by identity; selected_ indexes GCell storage, which
+  // timing-driven repairs reorder.
+  odb::dbInst* selected_inst_ = nullptr;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
-  static gui::Chart* main_chart_;
-  static gui::Chart* density_chart_;
-  static gui::Chart* stepLength_chart_;
-  static gui::Chart* routing_chart_;
+  static web::Chart* main_chart_;
+  static web::Chart* density_chart_;
+  static web::Chart* stepLength_chart_;
+  static web::Chart* routing_chart_;
   bool debug_on_{false};
 
+  void registerWithGui();
   void initCharts();
   void initDebugHeatmap();
-  void drawNesterov(gui::Painter& painter);
-  void drawTimingNets(gui::Painter& painter);
-  void drawInitial(gui::Painter& painter);
-  void drawMBFF(gui::Painter& painter);
-  void drawBounds(gui::Painter& painter);
+  void drawNesterov(web::Painter& painter);
+  void drawTimingNets(web::Painter& painter);
+  void drawInitial(web::Painter& painter);
+  void drawMBFF(web::Painter& painter);
+  void drawBounds(web::Painter& painter);
+  void resyncSelection();
   void reportSelected();
 };
 

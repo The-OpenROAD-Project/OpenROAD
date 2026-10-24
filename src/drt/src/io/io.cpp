@@ -29,6 +29,7 @@
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMPin.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
@@ -602,6 +603,11 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
 
 void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 {
+  // Mirror the watermark property for both imported and reused nets so the
+  // maze router sees tag changes made after pin access, including removals.
+  auto* wm_prop = odb::dbBoolProperty::find(net, "watermark");
+  netIn->setIsWatermark(wm_prop != nullptr && wm_prop->getValue());
+
   for (auto term : net->getBTerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
       logger_->error(DRT,
@@ -1345,6 +1351,61 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
   }
 }
 
+void io::Parser::setMarkers(odb::dbBlock* block)
+{
+  static constexpr const char* kDrcMarkerCategory = "DRC";
+  odb::dbMarkerCategory* drc_category
+      = block->findMarkerCategory(kDrcMarkerCategory);
+  if (drc_category == nullptr) {
+    return;
+  }
+  int num_markers = 0;
+  for (auto db_marker : drc_category->getAllMarkers()) {
+    odb::dbTechLayer* db_layer = db_marker->getTechLayer();
+    if (db_layer == nullptr) {
+      continue;
+    }
+    frLayer* layer = getTech()->getLayer(db_layer->getName());
+    if (layer == nullptr) {
+      continue;
+    }
+    // Use the layer recheck constraint so the detailed router re-runs its own
+    // DRC engine over the marked region and reroutes it, instead of trusting
+    // the imported violation geometry directly. Cut layers have no recheck
+    // constraint, so fall back to their short constraint.
+    frConstraint* constraint = layer->getRecheckConstraint();
+    if (constraint == nullptr) {
+      constraint = layer->getShortConstraint();
+    }
+    if (constraint == nullptr) {
+      continue;
+    }
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(db_marker->getBBox());
+    marker->setLayerNum(layer->getLayerNum());
+    marker->setConstraint(constraint);
+    for (auto src : db_marker->getSources()) {
+      if (src->getObjectType() != odb::dbNetObj) {
+        continue;
+      }
+      frNet* net
+          = getBlock()->findNet(static_cast<odb::dbNet*>(src)->getName());
+      if (net != nullptr) {
+        marker->addSrc(net);
+      }
+    }
+    getBlock()->addMarker(std::move(marker));
+    ++num_markers;
+  }
+  if (num_markers > 0 && router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT,
+                  628,
+                  "Read {} marker(s) from the '{}' category in the database.",
+                  num_markers,
+                  kDrcMarkerCategory);
+  }
+}
+
 void io::Parser::readDesign(odb::dbDatabase* db)
 {
   if (getBlock() != nullptr) {
@@ -1377,6 +1438,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setNets(block);
   getBlock()->setId(0);
   addFakeNets();
+  setMarkers(block);
 
   auto numLefVia = getTech()->vias_.size();
   if (router_cfg_->VERBOSE > 0) {
@@ -2619,6 +2681,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (!rule->getMinimumCuts(numCuts, width)) {
       continue;
     }
+    // Every via has at least one cut, so a single-cut rule can't be violated.
+    if (numCuts <= 1) {
+      continue;
+    }
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
@@ -3322,17 +3388,19 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   }
 
   const int max_routing_layer = block->getMaxRoutingLayer();
+  frLayer* top_layer = nullptr;
   if (max_routing_layer > 0) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(max_routing_layer);
-    frLayer* layer = fr_tech->getLayer(tech_layer->getName());
-    if (layer) {
-      router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
+    top_layer = fr_tech->getLayer(tech_layer->getName());
+    if (!top_layer) {
       logger_->warn(utl::DRT,
                     273,
                     "topRoutingLayer {} not found.",
                     tech_layer->getName());
     }
+  }
+  if (top_layer) {
+    router_cfg_->TOP_ROUTING_LAYER = top_layer->getLayerNum();
   } else {
     for (frLayerNum layer_num = fr_tech->getTopLayerNum();
          layer_num >= fr_tech->getBottomLayerNum();
@@ -3909,7 +3977,6 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
         }
       }
       _wire_encoder.end();
-      net->setWireOrdered(false);
     }
   }
 }

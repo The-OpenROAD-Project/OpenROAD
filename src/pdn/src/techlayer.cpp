@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -60,34 +59,38 @@ void TechLayer::populateGrid(odb::dbBlock* block, odb::dbTechLayerDir dir)
   }
 }
 
-int TechLayer::snapToGrid(int pos, int greater_than) const
+int TechLayer::snapToGrid(int pos, int greater_than, int less_than) const
 {
   if (grid_.empty()) {
     return pos;
   }
 
-  std::optional<int> delta_pos;
-  int delta = std::numeric_limits<int>::max();
-  for (const int grid_pos : grid_) {
-    if (grid_pos < greater_than) {
-      // ignore since it is lower than the minimum
-      continue;
-    }
-
-    // look for smallest delta
-    const int new_delta = std::abs(pos - grid_pos);
-    if (new_delta < delta) {
-      delta_pos = grid_pos;
-      delta = new_delta;
-    } else {
-      break;
-    }
+  // the grid is sorted, so the tracks inside [greater_than, less_than] form a
+  // contiguous range and the track closest to pos is one of the two that
+  // straddle pos in that range.
+  const auto range_begin
+      = std::lower_bound(grid_.begin(), grid_.end(), greater_than);
+  const auto range_end = std::upper_bound(range_begin, grid_.end(), less_than);
+  if (range_begin == range_end) {
+    // no track is within the limits
+    return pos;
   }
 
-  if (delta_pos.has_value()) {
-    return delta_pos.value();
+  const auto next = std::lower_bound(range_begin, range_end, pos);
+  if (next == range_end) {
+    // pos is above every track in range
+    return *std::prev(range_end);
   }
-  return pos;
+  if (next == range_begin) {
+    // pos is at or below every track in range
+    return *range_begin;
+  }
+
+  // look for the smallest delta, favoring the lower track when tied
+  const auto prev = std::prev(next);
+  const int64_t prev_delta = static_cast<int64_t>(pos) - *prev;
+  const int64_t next_delta = static_cast<int64_t>(*next) - pos;
+  return prev_delta <= next_delta ? *prev : *next;
 }
 
 int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
@@ -189,33 +192,55 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
 {
   std::vector<MinCutRule> rules;
 
+  // LEF names the side a via connects to this layer from, while MinCutRule
+  // names the side of the via this layer is on.  A via from below has this
+  // layer above it, so FROMBELOW (isBelowOnly in LEF 5.4) sets above and
+  // FROMABOVE (isAboveOnly) sets below.
+
   // get all the LEF55 rules
   for (auto* min_cut_rule : layer_->getMinCutRules()) {
     uint32_t numcuts;
     uint32_t rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
-    rules.push_back(MinCutRule{nullptr,
-                               min_cut_rule->isAboveOnly(),
-                               min_cut_rule->isBelowOnly(),
-                               static_cast<int>(rule_width),
-                               static_cast<int>(numcuts)});
+    rules.push_back(MinCutRule{.cut_class = nullptr,
+                               .above = min_cut_rule->isBelowOnly(),
+                               .below = min_cut_rule->isAboveOnly(),
+                               .width = static_cast<int>(rule_width),
+                               .cuts = static_cast<int>(numcuts)});
   }
 
   for (auto* rule : layer_->getTechLayerMinCutRules()) {
+    if (rule->getCutClassCutsMap().empty()) {
+      rules.push_back(MinCutRule{.cut_class = nullptr,
+                                 .above = rule->isFromBelow(),
+                                 .below = rule->isFromAbove(),
+                                 .width = rule->getWidth(),
+                                 .cuts = rule->getNumCuts()});
+    }
     for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
-      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(
-          cut_class_name.c_str());
-      if (cut_class == nullptr) {
-        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(
-            cut_class_name.c_str());
-      }
+      // a class name can be defined on the cut layers both below and above,
+      // but a FROMBELOW or FROMABOVE rule only covers the one on its side
+      odb::dbTechLayer* below
+          = rule->isFromAbove() ? nullptr : layer_->getLowerLayer();
+      odb::dbTechLayer* above
+          = rule->isFromBelow() ? nullptr : layer_->getUpperLayer();
+      for (auto* cut_layer : {below, above}) {
+        if (cut_layer == nullptr) {
+          continue;
+        }
+        auto* cut_class
+            = cut_layer->findTechLayerCutClassRule(cut_class_name.c_str());
+        if (cut_class == nullptr) {
+          continue;
+        }
 
-      rules.push_back(MinCutRule{cut_class,
-                                 rule->isFromBelow(),  // same as ABOVE
-                                 rule->isFromAbove(),  // same as BELOW
-                                 rule->getWidth(),
-                                 cuts});
+        rules.push_back(MinCutRule{.cut_class = cut_class,
+                                   .above = rule->isFromBelow(),
+                                   .below = rule->isFromAbove(),
+                                   .width = rule->getWidth(),
+                                   .cuts = cuts});
+      }
     }
   }
 
@@ -240,7 +265,8 @@ odb::Rect TechLayer::adjustToMinArea(
     return rect;
   }
 
-  int64_t min_area = 0;
+  // the LEF58 rules add to the layer's own AREA, they do not replace it
+  int64_t min_area = layer_->hasArea() ? layer_->getArea() : 0;
   if (has_rules) {
     for (auto* rule : layer_->getTechLayerAreaRules()) {
       const int64_t layer_min_area = rule->getArea();
@@ -252,11 +278,17 @@ odb::Rect TechLayer::adjustToMinArea(
       // TODO: Check except rules
       min_area = std::max(min_area, layer_min_area);
     }
-  } else {
-    min_area = layer_->getArea();
   }
 
   if (min_area == 0) {
+    return rect;
+  }
+
+  // Shape::getMinimumRect() returns the mergeInit() sentinel when a shape has
+  // no bterm, iterm or via to merge, and dx()/dy()/area() overflow on it. The
+  // caller already skips an inverted rect when correcting the adjusted shape,
+  // so there is nothing to adjust here either.
+  if (rect.isInverted()) {
     return rect;
   }
 

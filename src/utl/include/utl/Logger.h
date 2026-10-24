@@ -59,6 +59,7 @@ class Progress;
   X(EXA)                \
   X(FIN)                \
   X(FLW)                \
+  X(FSV)                \
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \
@@ -83,7 +84,8 @@ class Progress;
   X(UKN)                \
   X(UPF)                \
   X(UTL)                \
-  X(WEB)
+  X(WEB)                \
+  X(WMK)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -98,7 +100,7 @@ class Progress;
 enum ToolId
 {
   FOREACH_TOOL(GENERATE_ENUM)
-      SIZE  // the number of tools, do not put anything after this
+  SIZE  // the number of tools, do not put anything after this
 };
 
 class Logger
@@ -406,9 +408,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int) -> decltype(std::declval<std::ostream>()
-                                        << std::declval<T>(),
-                                    std::true_type());
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;

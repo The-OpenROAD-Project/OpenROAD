@@ -11,4 +11,4 @@ tapcell -distance "20" -tapcell_master "TAPCELL_X1" \
 
 write_def $def_file
 
-diff_file gcd_prefix.defok $def_file
+diff_files gcd_prefix.defok $def_file

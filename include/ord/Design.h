@@ -54,6 +54,10 @@ namespace exa {
 class Example;
 }
 
+namespace wmk {
+class Watermark;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -80,6 +84,10 @@ class TritonRoute;
 
 namespace fin {
 class Finale;
+}
+
+namespace fsv {
+class FieldSolver;
 }
 
 namespace par {
@@ -171,6 +179,7 @@ class Design
   exa::Example* getExample();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
+  fsv::FieldSolver* getFieldSolver();
   gpl::Replace* getReplace();
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();
@@ -186,6 +195,7 @@ class Design
   rsz::Resizer* getResizer();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   tap::Tapcell* getTapcell();
+  wmk::Watermark* getWatermark();
 
   // Needed by standalone startup, not for general use.
   ord::OpenRoad* getOpenRoad();

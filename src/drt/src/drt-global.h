@@ -67,6 +67,11 @@ struct RouterConfiguration
 
   int END_ITERATION = 80;
 
+  // When the loaded design already has DRC markers, detailed routing imports
+  // them and resumes from this iteration instead of iteration 0 (skipping the
+  // initial full rip-up passes that are not useful when re-routing violations).
+  int REROUTE_VIOLATIONS_START_ITER = 3;
+
   int NDR_NETS_RIPUP_HARDINESS = 3;  // max ripup avoids
   int CLOCK_NETS_TRUNK_RIPUP_HARDINESS = 100;
   int CLOCK_NETS_LEAF_RIPUP_HARDINESS = 10;
@@ -83,6 +88,15 @@ struct RouterConfiguration
   frUInt4 VIACOST = 4;
   // new cost used
   frUInt4 GRIDCOST = 2;
+  // Multiplier applied to GRIDCOST on non-preferred-direction edges when
+  // routing a watermark net.  Higher values more strongly suppress
+  // wrong-way jogs, tightening the "limit way" watermark constraint.  At the
+  // default a wrong-way edge costs 200 per unit length: above the shape and
+  // marker costs of the early search iterations, so the router avoids
+  // wrong-way jogs on tagged nets in the first place, and below the 256 to
+  // 512 per unit those costs reach in the last iterations, so any violation
+  // left on a tagged net is still repaired ahead of the mark.
+  float WATERMARK_WRONGWAY_MULT = 100.0f;
   frUInt4 ROUTESHAPECOST = 8;
   frUInt4 MARKERCOST = 32;
   frUInt4 MARKERBLOATWIDTH = 1;  // unused

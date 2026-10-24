@@ -5,12 +5,14 @@ or_integration_tests(
     drc_test
     ispd18_sample
     ispd18_sample_incr
+    ispd18_sample_reroute
     ndr_vias1
     ndr_vias2
     ndr_vias3
     ndr_no_auto_taper
     obstruction
     pa_single_pin
+    single_cut_minimumcut
     single_step
     ta_ap_aligned
     ta_pin_aligned
@@ -27,3 +29,10 @@ set_tests_properties(
   drt.ndr_no_auto_taper.tcl
   PROPERTIES TIMEOUT 900
 )
+
+include(GoogleTest)
+add_executable(WatermarkCostTest WatermarkCostTest.cpp)
+target_include_directories(WatermarkCostTest PRIVATE ../src)
+target_link_libraries(WatermarkCostTest PRIVATE drt_lib GTest::gtest_main)
+gtest_discover_tests(WatermarkCostTest)
+add_dependencies(build_and_test WatermarkCostTest)

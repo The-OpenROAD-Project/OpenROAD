@@ -7,27 +7,40 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
+#include "boost/asio/ip/address.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
 #include "gtest/gtest.h"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
+#include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -38,10 +51,10 @@ struct FakeInspectable
   std::string name;
   std::string type;
   odb::Rect bbox;
-  gui::Descriptor::Properties properties;
+  web::Descriptor::Properties properties;
 };
 
-class FakeDescriptor : public gui::Descriptor
+class FakeDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -63,7 +76,7 @@ class FakeDescriptor : public gui::Descriptor
   }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
@@ -72,9 +85,9 @@ class FakeDescriptor : public gui::Descriptor
     return std::any_cast<FakeInspectable*>(object)->properties;
   }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -83,7 +96,7 @@ class FakeDescriptor : public gui::Descriptor
            < std::any_cast<FakeInspectable*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
   }
@@ -94,7 +107,7 @@ class FakeDescriptor : public gui::Descriptor
 class LineFakeDescriptor : public FakeDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
     painter.drawLine(b.ll(), b.ur());
@@ -104,7 +117,7 @@ class LineFakeDescriptor : public FakeDescriptor
 // Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
 // real dbInst/dbNet objects inside the unit tests — the production set
 // lives in the full gui library, which the web test does not link.
-class TestInstDescriptor : public gui::Descriptor
+class TestInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -119,26 +132,26 @@ class TestInstDescriptor : public gui::Descriptor
   }
   bool isInst(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+    return web::Selected(std::any_cast<odb::dbInst*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbInst*>(l)->getId()
            < std::any_cast<odb::dbInst*>(r)->getId();
   }
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-class TestNetDescriptor : public gui::Descriptor
+class TestNetDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -149,26 +162,26 @@ class TestNetDescriptor : public gui::Descriptor
   bool getBBox(const std::any&, odb::Rect&) const override { return false; }
   bool isNet(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+    return web::Selected(std::any_cast<odb::dbNet*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbNet*>(l)->getId()
            < std::any_cast<odb::dbNet*>(r)->getId();
   }
-  void highlight(const std::any&, gui::Painter&) const override {}
+  void highlight(const std::any&, web::Painter&) const override {}
 };
 
-// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// Minimal dbNet descriptor so tests can build a web::Selected whose
 // isNet() is true; highlight() stands in for the wire-shape drawing of
 // the real NetDescriptor (a big rect the flywire mode must suppress).
-class FakeNetDescriptor : public gui::Descriptor
+class FakeNetDescriptor : public web::Descriptor
 {
  public:
   static constexpr int kWireRectSize = 90000;
@@ -191,15 +204,15 @@ class FakeNetDescriptor : public gui::Descriptor
   bool isNet(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -207,17 +220,17 @@ class FakeNetDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
   }
 
-  void highlight(const std::any&, gui::Painter& painter) const override
+  void highlight(const std::any&, web::Painter& painter) const override
   {
     painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
   }
 };
 
 // Minimal dbInst descriptor reporting the instance bbox in its OWN block's
-// coordinates, which is what every real gui::Descriptor does.  Registering it
+// coordinates, which is what every real web::Descriptor does.  Registering it
 // lets a select request reach writeInspectPayload without a dbSta (the real
 // DbInstDescriptor dereferences one in getProperties).
-class LocalBBoxInstDescriptor : public gui::Descriptor
+class LocalBBoxInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -238,15 +251,15 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
   bool isInst(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -254,17 +267,17 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-class LazyMetadataHeatMap : public gui::HeatMapDataSource
+class LazyMetadataHeatMap : public web::HeatMapDataSource
 {
  public:
   explicit LazyMetadataHeatMap(utl::Logger* logger, int* populate_calls)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Lazy Metadata Heat Map",
                                "LazyMeta",
                                "LazyMeta"),
@@ -328,6 +341,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -367,7 +457,7 @@ class TileHandlerTest : public tst::Nangate45Fixture
 
   // Prime the highlight state the way an inspect would, so an overlay request
   // can exercise a "Flywires only" flip against it.
-  void primeInspected(const gui::Selected& sel)
+  void primeInspected(const web::Selected& sel)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = sel;
@@ -406,6 +496,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
+}
+
 TEST_F(TileHandlerTest, TechReturnsJson)
 {
   WebSocketRequest req;
@@ -433,7 +539,7 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   auto root = parseObj(payloadStr(resp));
   ASSERT_TRUE(root.if_contains("highlight_colors"));
   const auto& colors = root.at("highlight_colors").as_array();
-  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  ASSERT_EQ(colors.size(), static_cast<size_t>(web::kNumHighlightSet));
   // Group 0 is kGreen with the Qt highlight alpha (100).
   const auto& first = colors[0].as_array();
   EXPECT_EQ(first[0].as_int64(), 0);
@@ -493,6 +599,644 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
 {
   EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
+}
+
+// The cache stores blank tiles as an empty entry, so a hit has to come back as
+// kEmpty too rather than as a zero-byte image the client would fail to decode.
+TEST_F(TileHandlerTest, BlankTileStaysEmptyThroughTheCache)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json
+      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+
+  ASSERT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kEmpty);
+  const auto hit = handler_->handleTile(req, state_);
+  EXPECT_EQ(hit.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(hit.payload.empty());
+}
+
+// The converse: a tile that did draw something must still arrive as an image.
+// The die outline puts content on every _instances tile.
+TEST_F(TileHandlerTest, DrawnTileIsStillAPngResponse)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
+
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  EXPECT_FALSE(resp.payload.empty());
+}
+
+// The highlight overlay is one of the panes that never merges, and it holds
+// nothing at all until something is selected -- so it is the single tile layer
+// most worth not sending an image for.
+TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
+{
+  const auto resp
+      = handler_->handleOverlayTile(overlayRequest(1, false), state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(resp.payload.empty());
+}
+
+// Origin validation for the WebSocket handshake (issue #11167, anti-CSWSH).
+TEST(WebSocketOriginAllowed, AbsentOriginIsAllowed)
+{
+  // Non-browser clients (local tooling, tests) send no Origin.
+  EXPECT_TRUE(webSocketOriginAllowed("", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginIsAllowed)
+{
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginComparisonIsCaseInsensitive)
+{
+  // A host is case-insensitive; a proxy or client may vary its casing.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://localhost:8080", "LocalHost:8080"));
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://LOCALHOST:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, DifferentLoopbackSpellingIsRejected)
+{
+  // Strict same-origin: a loopback Origin whose spelling differs from the Host
+  // the request targeted is rejected (closes the cross-port-localhost vector).
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "localhost:8080"));
+  EXPECT_FALSE(webSocketOriginAllowed("http://[::1]:8080", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, SameOriginWorksForAnyLoopbackSpelling)
+{
+  // Any spelling is fine as long as Origin authority and Host match exactly.
+  EXPECT_TRUE(
+      webSocketOriginAllowed("http://127.0.0.1:8080", "127.0.0.1:8080"));
+}
+
+TEST(WebSocketOriginAllowed, CrossOriginIsRejected)
+{
+  // The F-01 vector: a foreign page opening the loopback socket.
+  EXPECT_FALSE(
+      webSocketOriginAllowed("https://evil.example", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, LoopbackSuffixIsNotConfusedForLoopback)
+{
+  EXPECT_FALSE(
+      webSocketOriginAllowed("http://localhost.evil.com", "localhost:8080"));
+}
+
+TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
+{
+  // A sandboxed iframe / file:// page serializes its Origin as "null".
+  EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
+}
+
+// Bind-address classification for web_server -bind (issue #11167).
+TEST(ClassifyBindAddress, LoopbackIsRecognised)
+{
+  EXPECT_EQ(classifyBindAddress("127.0.0.1"), BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::1"), BindAddressKind::kLoopback);
+}
+
+TEST(ClassifyBindAddress, NonLoopbackIsExposed)
+{
+  // 0.0.0.0 was the old hard-coded default: listens on every interface.
+  EXPECT_EQ(classifyBindAddress("0.0.0.0"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("::"), BindAddressKind::kExposed);
+  EXPECT_EQ(classifyBindAddress("192.168.1.5"), BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, IPv4MappedIsClassifiedByItsIPv4Part)
+{
+  // ::ffff:a.b.c.d is an IPv4 bind in v6 clothing; is_loopback() alone would
+  // call the loopback one exposed and raise a spurious warning.
+  EXPECT_EQ(classifyBindAddress("::ffff:127.0.0.1"),
+            BindAddressKind::kLoopback);
+  EXPECT_EQ(classifyBindAddress("::ffff:192.168.1.5"),
+            BindAddressKind::kExposed);
+}
+
+TEST(ClassifyBindAddress, NonLiteralsAreInvalid)
+{
+  // IP literals only, never resolved — pins the documented contract.
+  EXPECT_EQ(classifyBindAddress("localhost"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress(""), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("not-an-ip"), BindAddressKind::kInvalid);
+  EXPECT_EQ(classifyBindAddress("999.999.999.999"), BindAddressKind::kInvalid);
+}
+
+// The URL the browser is pointed at has to name where the listener actually is.
+static std::string browserHost(const std::string& literal)
+{
+  return browserHostForBind(boost::asio::ip::make_address(literal));
+}
+
+TEST(BrowserHostForBind, CanonicalLoopbackAndWildcardBecomeLocalhost)
+{
+  // localhost resolves to these, and it is inside the wildcard, which is not
+  // an address a browser can connect to.
+  EXPECT_EQ(browserHost("127.0.0.1"), "localhost");
+  EXPECT_EQ(browserHost("::1"), "localhost");
+  EXPECT_EQ(browserHost("0.0.0.0"), "localhost");
+  EXPECT_EQ(browserHost("::"), "localhost");
+}
+
+TEST(BrowserHostForBind, OtherLoopbackAddressesKeepTheirLiteral)
+{
+  // The bug this pins: localhost resolves to 127.0.0.1, so naming it for the
+  // rest of 127.0.0.0/8 sends the browser to a port nobody is listening on.
+  EXPECT_EQ(browserHost("127.0.0.2"), "127.0.0.2");
+  EXPECT_EQ(browserHost("::ffff:127.0.0.1"), "[::ffff:127.0.0.1]");
+}
+
+TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
+{
+  EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
+  EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
+}
+
+// A local session: nothing says the browser lives elsewhere.
+static BrowserEnv localEnv()
+{
+  BrowserEnv env;
+  env.display = ":0";
+  env.host_name = "workstation";
+  return env;
+}
+
+TEST(DisplayIsRemote, LocalSpellingsStayLocal)
+{
+  EXPECT_FALSE(displayIsRemote(":0", "workstation"));
+  EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, ThisMachineByEitherName)
+{
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation.example.com"));
+  EXPECT_FALSE(displayIsRemote("workstation.example.com:0", "workstation"));
+}
+
+TEST(DisplayIsRemote, AnotherMachineIsRemote)
+{
+  // The farm case (issue #11389): a scheduler copied the submitting shell's
+  // $DISPLAY onto a compute host.
+  EXPECT_TRUE(displayIsRemote("workstation:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, HostNamesIgnoreCase)
+{
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
+}
+
+TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
+{
+  const std::vector<boost::asio::ip::address> mine
+      = {boost::asio::ip::make_address("10.0.0.5")};
+  EXPECT_FALSE(displayIsRemote("10.0.0.5:0", "farm-42", mine));
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
+  // Never cut at the first dot as a name would be.
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
+}
+
+TEST(DisplayIsRemote, BracketedIpv6)
+{
+  EXPECT_FALSE(displayIsRemote("[::1]:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("[fd00::5]:0", "farm-42"));
+}
+
+TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
+{
+  EXPECT_EQ(localDisplaySocket(":1"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket(":1.0"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket("unix:12"), "/tmp/.X11-unix/X12");
+  EXPECT_EQ(localDisplaySocket("localhost:10.0"), "");
+  EXPECT_EQ(localDisplaySocket("workstation:0"), "");
+  EXPECT_EQ(localDisplaySocket(":-1"), "");
+  EXPECT_EQ(localDisplaySocket(":"), "");
+  EXPECT_EQ(localDisplaySocket(""), "");
+}
+
+// A plain ssh session: no display forwarded.
+static BrowserEnv sshEnv()
+{
+  BrowserEnv env;
+  env.ssh_session = true;
+  env.host_name = "farm-42";
+  env.has_display = false;
+  return env;
+}
+
+// A VS Code terminal over ssh: the editor's IPC socket and $BROWSER helper.
+static BrowserEnv vsCodeEnv()
+{
+  BrowserEnv env = sshEnv();
+  env.vscode_ipc_hook = "/run/user/1000/vscode-ipc-1.sock";
+  env.browser = "/home/u/.vscode-server/bin/abc/bin/helpers/browser.sh";
+  return env;
+}
+
+static LaunchSkip autoSkip(const BrowserEnv& env)
+{
+  return browserLaunchSkipReason(BrowserLaunch::kAuto, env);
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeTerminalOverSshLaunches)
+{
+  const BrowserEnv env = vsCodeEnv();
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+  EXPECT_TRUE(launchesThroughBrowserEnv(env));
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
+{
+  BrowserEnv hook_only = vsCodeEnv();
+  hook_only.browser.clear();
+  EXPECT_EQ(autoSkip(hook_only), LaunchSkip::kSshSession);
+
+  // A $BROWSER from a shell profile is a browser on this host, not the
+  // editor's helper; with a shared home it is the one #11389 is about.
+  BrowserEnv browser_only = sshEnv();
+  browser_only.browser = "firefox";
+  EXPECT_EQ(autoSkip(browser_only), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(browser_only));
+
+  // Even in a VS Code terminal, a profile's $BROWSER is not the helper.
+  BrowserEnv profile_browser = vsCodeEnv();
+  profile_browser.browser = "firefox";
+  EXPECT_EQ(autoSkip(profile_browser), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
+}
+
+TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
+{
+  // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.
+  BrowserEnv env = localEnv();
+  env.display = "172.20.0.1:0.0";
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
+{
+  BrowserEnv env = vsCodeEnv();
+  env.batch_job = true;
+  env.display = ":1";
+  env.own_local_display = true;
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kBatchJob);
+}
+
+TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
+{
+  // A VNC or x2go desktop started from an ssh shell: its X server is ours.
+  BrowserEnv env = sshEnv();
+  env.display = ":1";
+  env.has_display = true;
+  env.own_local_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
+{
+  // Another user's X server would get our browser.
+  BrowserEnv foreign = sshEnv();
+  foreign.display = ":0";
+  foreign.has_display = true;
+  EXPECT_EQ(autoSkip(foreign), LaunchSkip::kSshSession);
+
+  BrowserEnv forwarded = sshEnv();
+  forwarded.display = "localhost:10.0";
+  forwarded.has_display = true;
+  EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
+}
+
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
+TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
+{
+  EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
+{
+  BrowserEnv ssh = localEnv();
+  ssh.ssh_session = true;
+  EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
+
+  // A batch job runs wherever the scheduler put it, and inherits the
+  // submitting shell's $DISPLAY.
+  BrowserEnv batch = localEnv();
+  batch.batch_job = true;
+  EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
+
+  BrowserEnv remote_display = localEnv();
+  remote_display.display = "workstation:0";
+  remote_display.host_name = "farm-42";
+  EXPECT_EQ(autoSkip(remote_display), LaunchSkip::kRemoteDisplay);
+
+  BrowserEnv headless = localEnv();
+  headless.has_display = false;
+  headless.display = "";
+  EXPECT_EQ(autoSkip(headless), LaunchSkip::kNoDisplay);
+
+  BrowserEnv opted_out = localEnv();
+  opted_out.no_browser = true;
+  EXPECT_EQ(autoSkip(opted_out), LaunchSkip::kOptOut);
+
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kNever, localEnv()),
+            LaunchSkip::kFlag);
+}
+
+TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
+{
+  BrowserEnv hostile = localEnv();
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
+  hostile.display = "workstation:0";
+  hostile.host_name = "farm-42";
+  hostile.no_browser = true;
+  hostile.has_display = false;
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kAlways, hostile),
+            LaunchSkip::kNone);
+}
+
+TEST(BrowserSkipReasonText, EveryReasonReadsInsideTheMessage)
+{
+  EXPECT_TRUE(browserSkipReasonText(LaunchSkip::kNone).empty());
+  for (const LaunchSkip reason : {LaunchSkip::kFlag,
+                                  LaunchSkip::kOptOut,
+                                  LaunchSkip::kSshSession,
+                                  LaunchSkip::kBatchJob,
+                                  LaunchSkip::kRemoteDisplay,
+                                  LaunchSkip::kNoDisplay}) {
+    EXPECT_FALSE(browserSkipReasonText(reason).empty());
+  }
+}
+
+TEST(BrowserLaunchFromString, KnownModesAndFallback)
+{
+  EXPECT_EQ(browserLaunchFromString("never"), BrowserLaunch::kNever);
+  EXPECT_EQ(browserLaunchFromString("always"), BrowserLaunch::kAlways);
+  EXPECT_EQ(browserLaunchFromString("auto"), BrowserLaunch::kAuto);
+  // Never a reason to fail starting the server.
+  EXPECT_EQ(browserLaunchFromString(""), BrowserLaunch::kAuto);
+  EXPECT_EQ(browserLaunchFromString("maybe"), BrowserLaunch::kAuto);
+}
+
+TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
+{
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.1"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:localhost:8080 farm-42");
+}
+
+TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
+{
+  // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.2"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:127.0.0.2:8080 farm-42, then open http://localhost:8080");
+}
+
+TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
+{
+  // With -bind 0.0.0.0 the port is open to the network, but the reported url
+  // says "localhost", and a tunnel to it would be pointless.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("0.0.0.0"),
+                         "farm-42",
+                         8080);
+  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+}
+
+TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
+{
+  // -bind 10.0.0.5: the address is already in the url the user was given.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("10.0.0.5"),
+                         "farm-42",
+                         8080);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+  EXPECT_EQ(hint.find("farm-42"), std::string::npos);
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -600,7 +1344,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {
@@ -649,11 +1393,14 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
 
 TEST_F(TileHandlerTest, TileReturnsPng)
 {
+  // _instances rather than a tech layer: the die outline puts content on it, so
+  // there is an image to check the framing of.  A layer with nothing in it
+  // comes back as kEmpty instead (see EmptyTile).
   WebSocketRequest req;
   req.id = 99;
   req.type = WebSocketRequest::kTile;
-  req.json
-      = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
+  req.json = parseObj(
+      R"({"layer":"_instances","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.id, 99u);
@@ -667,6 +1414,10 @@ TEST_F(TileHandlerTest, TileReturnsPng)
   EXPECT_EQ(resp.payload[3], 'G');
 }
 
+// A layer with nothing in the tile comes back carrying nothing.  Sending the
+// transparent PNG instead would make the client decode it and hold a full-size
+// bitmap for an image with nothing in it, and most of the tiles in a viewport
+// are exactly this one.
 TEST_F(TileHandlerTest, EmptyTile)
 {
   WebSocketRequest req;
@@ -676,8 +1427,8 @@ TEST_F(TileHandlerTest, EmptyTile)
       = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
 
   auto resp = handler_->handleTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);  // PNG
-  EXPECT_FALSE(resp.payload.empty());
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
+  EXPECT_TRUE(resp.payload.empty());
 }
 
 TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
@@ -702,6 +1453,13 @@ TEST_F(TileHandlerTest, BaseTileExcludesHighlights)
 
 TEST_F(TileHandlerTest, OverlayTileReturnsPng)
 {
+  // The overlay draws nothing until something is highlighted, and then comes
+  // back as kEmpty (see OverlayTileWithNothingSelectedIsEmpty).  Give it a
+  // highlight so there is an image to check the framing of.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
   WebSocketRequest req;
   req.id = 10;
   req.type = WebSocketRequest::kOverlayTile;
@@ -742,6 +1500,12 @@ TEST_F(TileHandlerTest, OverlayTileHonoursTheRequestedPixelCount)
 
 TEST_F(TileHandlerTest, OverlayTileClampsAndFallsBack)
 {
+  // Sizing is read off the returned PNG, so the overlay has to have something
+  // to draw; with nothing highlighted it comes back empty and carries no image.
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
+  }
   const std::vector<std::pair<std::string, uint32_t>> cases = {
       {R"("dpr":1)", 256},                    // unspecified -> 256 * dpr
       {R"("dpr":2)", 512},                    // ...which follows dpr
@@ -831,7 +1595,7 @@ TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
 class FlywireDrawingNetDescriptor : public FakeNetDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     FakeNetDescriptor::highlight(object, painter);
     painter.drawLine(odb::Point(0, 0), odb::Point(1000, 1000));
@@ -940,6 +1704,81 @@ TEST_F(TileHandlerTest, GeometryChangeRebuildsHighlightGroupShapes)
       << "the flag is consumed so the next overlay does not rebuild again";
 }
 
+//------------------------------------------------------------------------------
+// Options > "Show polygon decomposition" (2.15) — a server-global setting that
+// travels on the request, so a session has to notice the value moved and
+// re-derive its highlight shapes.
+//------------------------------------------------------------------------------
+
+// An overlay-tile request carrying the polygon-decomposition setting, with
+// "Flywires only" held off so only this toggle can trigger a re-derivation.
+WebSocketRequest polyDecompRequest(uint32_t id, bool poly_decomp)
+{
+  WebSocketRequest req;
+  req.id = id;
+  req.type = WebSocketRequest::kOverlayTile;
+  req.json
+      = parseObj(poly_decomp ? R"({"z":0,"x":0,"y":0,"poly_decomp":true})"
+                             : R"({"z":0,"x":0,"y":0,"poly_decomp":false})");
+  return req;
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipRederivesHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  primeInspected(net_descriptor.makeSelected(std::any(net)));
+
+  // Nothing moved yet, so this request must not derive anything: it is the
+  // control for the assertion below.  Nothing derived means nothing drawn,
+  // which markEmptyIfBlank reports as an empty response rather than a PNG.
+  WebSocketRequest req = polyDecompRequest(40, /*poly_decomp=*/false);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kEmpty);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.highlight_rects.empty())
+        << "an unchanged setting must not re-derive on every tile";
+    EXPECT_FALSE(state_.poly_decomp);
+  }
+
+  // Flip it the way another client's toggle would, then ask for the same
+  // tile: the handler has to spot the change on its own.
+  req = polyDecompRequest(41, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kPng);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.highlight_rects.empty())
+      << "the highlight shapes must be re-derived under the new setting";
+  EXPECT_TRUE(state_.poly_decomp)
+      << "the session records what it derived under, so the next tile is a "
+         "no-op";
+}
+
+TEST_F(TileHandlerTest, PolyDecompFlipDoesNotResurrectClearedHighlights)
+{
+  odb::dbNet* net = makeConnectedNet("poly2");
+  ASSERT_NE(net, nullptr);
+  static FakeNetDescriptor net_descriptor;
+  {
+    // An explicit "clear highlights" keeps the inspected object but leaves
+    // the source at kNone.
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = net_descriptor.makeSelected(std::any(net));
+  }
+
+  // Nothing to draw, so the response is empty rather than a blank PNG.
+  WebSocketRequest req = polyDecompRequest(42, /*poly_decomp=*/true);
+  ASSERT_EQ(handler_->handleOverlayTile(req, state_).type,
+            WebSocketResponse::kEmpty);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty())
+      << "a toggle must not bring back highlights the user cleared";
+}
+
 TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
 {
   odb::dbNet* net = makeConnectedNet("sig2");
@@ -955,7 +1794,8 @@ TEST_F(TileHandlerTest, FlywiresToggleDoesNotResurrectClearedHighlights)
 
   WebSocketRequest req = overlayRequest(23, /*flywires_only=*/true);
   auto resp = handler_->handleOverlayTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  // Nothing was resurrected, so the overlay drew nothing and carries no image.
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.highlight_lines.empty())
@@ -973,7 +1813,7 @@ TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
   {
    public:
     std::string getName(const std::any&) const override { return "nws"; }
-    void highlight(const std::any&, gui::Painter& painter) const override
+    void highlight(const std::any&, web::Painter& painter) const override
     {
       painter.drawRect(odb::Rect(0, 0, 1000, 1000));
     }
@@ -1008,7 +1848,8 @@ TEST_F(TileHandlerTest, FlywiresSkipSupplyNets)
 
   WebSocketRequest req = overlayRequest(22, /*flywires_only=*/true);
   auto resp = handler_->handleOverlayTile(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kPng);
+  // A supply net gets no flywires, so the overlay drew nothing.
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
 
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.highlight_lines.empty())
@@ -1396,8 +2237,8 @@ TEST_F(TileHandlerTest, TileStillServesOffGridCoordinates)
 
     WebSocketResponse resp;
     EXPECT_NO_THROW(resp = handler_->handleTile(req, state_)) << json;
-    EXPECT_EQ(resp.type, WebSocketResponse::kPng)
-        << "off-grid tiles are transparent, not errors: " << json;
+    EXPECT_EQ(resp.type, WebSocketResponse::kEmpty)
+        << "off-grid tiles are empty, not errors: " << json;
   }
 }
 
@@ -1431,9 +2272,17 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
+// The heat map registry keeps the first registration for the whole process,
+// so the logger its factories capture has to live as long.
+utl::Logger* processLogger()
+{
+  static utl::Logger logger;
+  return &logger;
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -1450,7 +2299,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -1486,7 +2335,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1504,13 +2353,95 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
   }
 }
 
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
+}
+
+// Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
+// that name one.  It is not one of getSettings()' entries, so the handler has
+// to special-case it the way Qt's dialog wires the setter directly.
+TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest meta_req;
+  meta_req.id = 20;
+  meta_req.type = WebSocketRequest::kHeatmaps;
+  const std::string before
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(before.find("\"selection_filter_label\""), std::string::npos)
+      << "the client needs the label to know whether to offer the control";
+  EXPECT_NE(before.find("\"use_selected_only\":false"), std::string::npos);
+
+  WebSocketRequest set_req;
+  set_req.id = 21;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json
+      = parseObj(R"({"name":"Pin","option":"use_selected_only","value":true})");
+  EXPECT_EQ(handler_->handleSetHeatMap(set_req, state_).type,
+            WebSocketResponse::kJson);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_TRUE(state_.heatmaps.at("Pin")->useSelectedOnly());
+  }
+  const std::string after
+      = payloadStr(handler_->handleHeatMaps(meta_req, state_));
+  EXPECT_NE(after.find("\"use_selected_only\":true"), std::string::npos);
+}
+
 // The browser's number input runs every value through parseFloat, so an
 // int-typed setting like Alpha can arrive as a JSON double (e.g. user typed
 // 150.5).  The handler must round to int rather than rejecting the request.
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1528,14 +2459,36 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
   }
 }
 
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
+  }
+}
+
 TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 {
   static int populate_calls = 0;
   populate_calls = 0;
 
-  gui::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
-        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+  web::registerHeatMapSource(
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
+        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
                                                      &populate_calls);
       });
 
@@ -1584,22 +2537,22 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
     // The registry owns registered descriptors (unique_ptr) — heap-only.
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
     registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
   }
 
   void TearDown() override
   {
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->unregisterDescriptor<odb::dbInst*>();
     registry->unregisterDescriptor<odb::dbNet*>();
     tst::Nangate45Fixture::TearDown();
   }
 
-  gui::Selected makeFakeSelected(FakeInspectable* object)
+  web::Selected makeFakeSelected(FakeInspectable* object)
   {
-    return gui::Selected(object, &fake_descriptor_);
+    return web::Selected(object, &fake_descriptor_);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -1769,7 +2722,7 @@ TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
-    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+    state_.selectables = {web::Selected(&fake_current_, &line_descriptor)};
   }
 
   WebSocketRequest req;
@@ -1896,8 +2849,8 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
 
 TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
-  const gui::Selected block_selected = makeFakeSelected(&fake_previous_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_previous_);
   ASSERT_TRUE(initial_selected);
   ASSERT_TRUE(block_selected);
 
@@ -1948,7 +2901,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
 TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
   ASSERT_TRUE(initial_selected);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -1976,7 +2929,7 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
 {
   fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
-  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_current_);
 
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
@@ -2044,7 +2997,7 @@ TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
 // "<unknown>".
 TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
 {
-  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  web::PropertyTable table(/*rows=*/2, /*columns=*/2);
   table.setColumnHeader(0, "0 \xC2\xB5m");
   table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
   table.setRowHeader(0, "0 \xC2\xB5m");
@@ -2272,8 +3225,8 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
 // Because SelectionSet is std::set, iteration order is by operator<
 // (FakeDescriptor::lessThan compares pointer addresses).
 void populateSelectionSet(SessionState& st,
-                          const gui::Selected& a,
-                          const gui::Selected& b,
+                          const web::Selected& a,
+                          const web::Selected& b,
                           int itr_pos)
 {
   std::lock_guard<std::mutex> lock(st.selection_mutex);
@@ -2560,7 +3513,7 @@ TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
   WebSocketRequest req;
   req.id = 53;
   req.type = WebSocketRequest::kSelectLayer;
-  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top/nonexistent"})");
 
   auto resp = handler_->handleSelectLayer(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
@@ -2762,9 +3715,9 @@ class FindHandlerTest : public tst::Nangate45Fixture
     return parseObj(payloadStr(last_resp_)).at("count").as_int64();
   }
 
-  gui::Selected makeFakeSelected(FakeInspectable* object)
+  web::Selected makeFakeSelected(FakeInspectable* object)
   {
-    return gui::Selected(object, &fake_descriptor_);
+    return web::Selected(object, &fake_descriptor_);
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -2885,22 +3838,22 @@ class EditableFakeDescriptor : public FakeDescriptor
   Actions getActions(const std::any& object) const override
   {
     Actions actions;
-    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
-                       [this]() -> gui::Selected {
+    actions.push_back({std::string(web::Descriptor::kDeselectAction),
+                       [this]() -> web::Selected {
                          ++deselect_calls;
                          return {};
                        }});
-    actions.push_back({"Jump", [this]() -> gui::Selected {
-                         return gui::Selected(jump_target, this);
+    actions.push_back({"Jump", [this]() -> web::Selected {
+                         return web::Selected(jump_target, this);
                        }});
-    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
-                         return gui::Selected(object, this);
+    actions.push_back({"Refresh", [this, object]() -> web::Selected {
+                         return web::Selected(object, this);
                        }});
-    actions.push_back({"Explode", []() -> gui::Selected {
+    actions.push_back({"Explode", []() -> web::Selected {
                          throw std::runtime_error("action exploded");
                        }});
-    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
-    actions.push_back({"Delete", [this]() -> gui::Selected {
+    actions.push_back({"Insert Buffer", []() -> web::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> web::Selected {
                          if (stale_flag != nullptr) {
                            *stale_flag = true;
                          }
@@ -2931,7 +3884,7 @@ class EditableFakeDescriptor : public FakeDescriptor
     editors.emplace(
         "Location", makeEditor([this](const std::any& value) {
           return commit(value, [&] {
-            location_dbu = gui::Descriptor::Property::convert_string(
+            location_dbu = web::Descriptor::Property::convert_string(
                 std::any_cast<std::string>(value), &location_ok);
           });
         }));
@@ -2969,7 +3922,7 @@ class SetPropertyTest : public SelectHandlerTest
     editable_descriptor_.stale_flag = &state_.selection_stale;
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected
-        = gui::Selected(&fake_current_, &editable_descriptor_);
+        = web::Selected(&fake_current_, &editable_descriptor_);
   }
 
   boost::json::object setProperty(const std::string& request_json)
@@ -3033,6 +3986,30 @@ TEST_F(SetPropertyTest, StringEditAcceptedAndBroadcast)
   const auto expected = serializeBoundsResponse(*gen_, gen_->shapesReady());
   EXPECT_EQ(boost::json::serialize(push.at("bounds")),
             boost::json::serialize(expected.at("bounds")));
+  // The framing rect travels with it: an edit moves both.
+  ASSERT_TRUE(push.if_contains("fit_bounds"));
+  EXPECT_EQ(boost::json::serialize(push.at("fit_bounds")),
+            boost::json::serialize(expected.at("fit_bounds")));
+}
+
+// The bounds response carries two rects: `bounds` georeferences the tile grid
+// and `fit_bounds` is what the client frames.  They differ by the pin-label
+// margin, so the framing rect is always inside the georeference one.
+TEST_F(SetPropertyTest, BoundsResponseCarriesTheFramingRect)
+{
+  const auto resp = serializeBoundsResponse(*gen_, true);
+  ASSERT_TRUE(resp.if_contains("fit_bounds"));
+  const auto& geo = resp.at("bounds").as_array();
+  const auto& fit = resp.at("fit_bounds").as_array();
+  // Wire order is [[yMin, xMin], [yMax, xMax]].
+  EXPECT_GE(fit.at(0).as_array().at(0).as_int64(),
+            geo.at(0).as_array().at(0).as_int64());
+  EXPECT_GE(fit.at(0).as_array().at(1).as_int64(),
+            geo.at(0).as_array().at(1).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(0).as_int64(),
+            geo.at(1).as_array().at(0).as_int64());
+  EXPECT_LE(fit.at(1).as_array().at(1).as_int64(),
+            geo.at(1).as_array().at(1).as_int64());
 }
 
 // Documents the dynamic-bounds behavior the client resync exists for:
@@ -3117,7 +4094,7 @@ TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
 
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   root = setProperty(R"({"name":"Name","value":"x"})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -3150,7 +4127,7 @@ TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
 
   // Restored default after the handler: returns 0, never touches ok.
   bool ok = false;
-  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_EQ(web::Descriptor::Property::convert_string("5", &ok), 0);
   EXPECT_FALSE(ok);
 }
 
@@ -3204,7 +4181,7 @@ TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     EXPECT_TRUE(state_.current_inspected
-                == gui::Selected(&fake_previous_, &editable_descriptor_));
+                == web::Selected(&fake_previous_, &editable_descriptor_));
     ASSERT_EQ(state_.navigation_history.size(), 1u);
   }
   ASSERT_EQ(broadcasts_.size(), 1u);
@@ -3219,7 +4196,7 @@ TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
   EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.current_inspected
-              == gui::Selected(&fake_current_, &editable_descriptor_));
+              == web::Selected(&fake_current_, &editable_descriptor_));
 }
 
 TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
@@ -3372,7 +4349,7 @@ TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
+    state_.current_inspected = web::Selected(&fake_current_, &line_descriptor);
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
   EXPECT_EQ(root.at("ok").as_int64(), 1);
@@ -3426,7 +4403,7 @@ TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -3522,13 +4499,13 @@ TEST_F(SelectionBrowserTest, ListEmptyState)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = listSelection();
   EXPECT_EQ(root.at("ok").as_int64(), 1);
   EXPECT_EQ(root.at("selection").as_array().size(), 0u);
   ASSERT_EQ(root.at("groups").as_array().size(),
-            static_cast<size_t>(gui::kNumHighlightSet));
+            static_cast<size_t>(web::kNumHighlightSet));
   EXPECT_FALSE(root.at("truncated").as_bool());
 }
 
@@ -3726,6 +4703,26 @@ TEST_F(DRCHandlerTest, CategoriesEmpty)
   EXPECT_NE(json.find("\"categories\""), std::string::npos);
   // Should be an empty array
   EXPECT_NE(json.find("\"categories\":[]"), std::string::npos);
+}
+
+// The viewer requests categories on connect, before any design exists; that
+// must answer with an empty list rather than an error the server logs.
+TEST(DRCHandlerNoDesignTest, CategoriesWithoutChipIsNotAnError)
+{
+  std::unique_ptr<odb::dbDatabase, void (*)(odb::dbDatabase*)> db(
+      odb::dbDatabase::create(), odb::dbDatabase::destroy);
+  auto gen = std::make_shared<TileGenerator>(
+      db.get(), /*sta=*/nullptr, /*logger=*/nullptr);
+  DRCHandler handler(gen);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kDrcCategories;
+
+  auto resp = handler.handleDRCCategories(req);
+  EXPECT_EQ(resp.id, 1u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_NE(payloadStr(resp).find("\"categories\":[]"), std::string::npos);
 }
 
 TEST_F(DRCHandlerTest, CategoriesWithMarkers)
@@ -4040,6 +5037,69 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
   }
 }
 
+// check_power_grid builds PSM/<net>/<check>, so the same subcategory name
+// appears under every net. Toggling one must address it by its full path.
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityByPath)
+{
+  auto* psm = odb::dbMarkerCategory::create(chip_, "PSM");
+  auto* vdd = odb::dbMarkerCategory::create(psm, "VDD");
+  auto* vdd_check = odb::dbMarkerCategory::create(vdd, "Unconnected shape");
+  auto* vss = odb::dbMarkerCategory::create(psm, "VSS");
+  auto* vss_check = odb::dbMarkerCategory::create(vss, "Unconnected shape");
+  for (int i = 0; i < 2; ++i) {
+    odb::dbMarker::create(vdd_check)->addShape(odb::Rect(0, i, 500, i + 500));
+    odb::dbMarker::create(vss_check)->addShape(odb::Rect(0, i, 500, i + 500));
+  }
+
+  // Selecting the top-level category starts every marker invisible.
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.json = parseObj(R"({"category":"PSM"})");
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 202;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(
+      R"({"path":["PSM","VDD","Unconnected shape"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"category\":\"Unconnected shape\""), std::string::npos);
+
+  // Only the VDD markers flipped; the same-named VSS subcategory is untouched.
+  for (odb::dbMarker* m : vdd_check->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+  for (odb::dbMarker* m : vss_check->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 2u);
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityUnknownPathErrors)
+{
+  createTestCategory("DRC", 1);
+
+  WebSocketRequest req;
+  req.id = 203;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(R"({"path":["DRC","NoSuchSubcat"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Category not found: DRC/NoSuchSubcat"),
+            std::string::npos);
+}
+
 //------------------------------------------------------------------------------
 // Schematic handler tests — verify leaf cells are classified into standard
 // logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
@@ -4336,9 +5396,11 @@ TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
   auto resp = handler_->handleTile(tile, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
 
-  // The cancellation is consumed: re-issuing the same id now renders.
+  // The cancellation is consumed: re-issuing the same id now renders.  metal1
+  // holds nothing in this fixture, so a completed render is an empty tile --
+  // the point is that it is no longer refused.
   auto resp2 = handler_->handleTile(tile, state_);
-  EXPECT_EQ(resp2.type, WebSocketResponse::kPng);
+  EXPECT_EQ(resp2.type, WebSocketResponse::kEmpty);
 }
 
 TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
@@ -4355,7 +5417,7 @@ TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
 
 // Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
 //
-// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// A web::Descriptor reports a bbox in the object's own block coordinates, while
 // selectAt already transforms SelectionResult::bbox into world space.  The
 // client draws its selection outline from the payload's `bbox`, so if that one
 // stays block-local, every object inside a translated dbChipInst is outlined at
@@ -4368,12 +5430,12 @@ TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
   // registry holds descriptors by unique_ptr, so this must be heap-allocated.
   struct ScopedInstDescriptor
   {
-    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    ScopedInstDescriptor() : registry(web::DescriptorRegistry::instance())
     {
       registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
     }
     ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
-    gui::DescriptorRegistry* registry;
+    web::DescriptorRegistry* registry;
   } scoped_inst_descriptor;
 
   // Re-root the design under a HIER chip holding one instance of the fixture's

@@ -5,42 +5,36 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QGuiApplication>
+#include <QImage>
 #include <QPushButton>
 #include <QString>
 #include <QWidget>
 #include <algorithm>
 #include <any>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <map>
 #include <memory>
-#include <typeindex>
-#include <typeinfo>
-#include <utility>
-#include <variant>
-
-#include "gui/descriptor_registry.h"
-#include "gui/heatMap.h"
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <QRegularExpression>
-#else
-#include <QRegExp>
-#endif
-#include <cmath>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <typeindex>
+#include <typeinfo>
+#include <utility>
+#include <variant>
 #include <vector>
 
 #include "boost/algorithm/string/predicate.hpp"
-#include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
 #include "clockWidget.h"
 #include "displayControls.h"
 #include "drcWidget.h"
+#include "gui_utils.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -51,101 +45,20 @@
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "ord/OpenRoad.hh"
+#include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
-#include "third-party/gif-h/gif.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
 #include "utl/exception.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 
 extern int cmd_argc;
 extern char** cmd_argv;
 
-namespace gui {
-
-// Default Options implementation for Painters without a real Options
-// (e.g. the web viewer's ShapeCollector).  Returns sensible defaults:
-// everything visible, no exclusive modes.
-class DefaultOptions : public Options
-{
- public:
-  QColor background() override { return Qt::black; }
-  QColor color(const odb::dbTechLayer*) override { return Qt::white; }
-  Qt::BrushStyle pattern(const odb::dbTechLayer*) override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor placementBlockageColor() override { return Qt::darkGray; }
-  Qt::BrushStyle placementBlockagePattern() override
-  {
-    return Qt::SolidPattern;
-  }
-  QColor regionColor() override { return Qt::darkGray; }
-  Qt::BrushStyle regionPattern() override { return Qt::SolidPattern; }
-  QColor instanceNameColor() override { return Qt::white; }
-  QFont instanceNameFont() override { return {}; }
-  QColor itermLabelColor() override { return Qt::white; }
-  QFont itermLabelFont() override { return {}; }
-  QColor siteColor(odb::dbSite*) override { return Qt::darkGray; }
-  bool isVisible(const odb::dbTechLayer*) override { return true; }
-  bool isSelectable(const odb::dbTechLayer*) override { return true; }
-  bool isNetVisible(odb::dbNet*) override { return true; }
-  bool isNetSelectable(odb::dbNet*) override { return true; }
-  bool isInstanceVisible(odb::dbInst*) override { return true; }
-  bool isInstanceSelectable(odb::dbInst*) override { return true; }
-  bool areInstanceNamesVisible() override { return true; }
-  bool areInstancePinsVisible() override { return true; }
-  bool areInstancePinsSelectable() override { return true; }
-  bool areInstancePinNamesVisible() override { return true; }
-  bool areInstanceBlockagesVisible() override { return true; }
-  bool areBlockagesVisible() override { return true; }
-  bool areBlockagesSelectable() override { return true; }
-  bool areObstructionsVisible() override { return true; }
-  bool areObstructionsSelectable() override { return true; }
-  bool areSitesVisible() override { return false; }
-  bool areSitesSelectable() override { return false; }
-  bool isSiteSelectable(odb::dbSite*) override { return false; }
-  bool isSiteVisible(odb::dbSite*) override { return false; }
-  bool arePrefTracksVisible() override { return false; }
-  bool areNonPrefTracksVisible() override { return false; }
-  bool areIOPinsVisible() const override { return true; }
-  bool areIOPinsSelectable() const override { return true; }
-  bool areIOPinNamesVisible() const override { return true; }
-  QFont ioPinMarkersFont() const override { return {}; }
-  bool areRoutingSegmentsVisible() const override { return true; }
-  bool areRoutingViasVisible() const override { return true; }
-  bool areSpecialRoutingSegmentsVisible() const override { return true; }
-  bool areSpecialRoutingViasVisible() const override { return true; }
-  bool areFillsVisible() const override { return true; }
-  QColor rulerColor() override { return Qt::cyan; }
-  QFont rulerFont() override { return {}; }
-  bool areRulersVisible() override { return true; }
-  bool areRulersSelectable() override { return true; }
-  QFont labelFont() override { return {}; }
-  bool areLabelsVisible() override { return true; }
-  bool areLabelsSelectable() override { return true; }
-  bool isDetailedVisibility() override { return false; }
-  bool areSelectedVisible() override { return true; }
-  bool isScaleBarVisible() const override { return false; }
-  bool areAccessPointsVisible() const override { return false; }
-  bool areRegionsVisible() const override { return true; }
-  bool areRegionsSelectable() const override { return true; }
-  bool isManufacturingGridVisible() const override { return false; }
-  bool isModuleView() const override { return false; }
-  bool isGCellGridVisible() const override { return false; }
-  bool isFlywireHighlightOnly() const override { return false; }
-  bool areFocusedNetsGuidesVisible() const override { return false; }
-};
-
-Options* Painter::getOptions()
-{
-  if (!options_) {
-    static DefaultOptions defaults;
-    return &defaults;
-  }
-  return options_;
-}
+namespace web {
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -163,6 +76,14 @@ static void message_handler(QtMsgType type,
         && msg.contains("This plugin does not support")) {
       suppress = true;
     }
+  }
+
+  // A Bazel-installed binary has no reachable ICU data directory (see
+  // bazel/icu-patches), so QCollator legitimately cannot open a collator.
+  // Qt already falls back to a plain, non-locale-aware string compare in
+  // that case (qcollator_icu.cpp), so this is harmless -- just noisy.
+  if (msg.contains("Could not create collator")) {
+    suppress = true;
   }
 #endif
 
@@ -197,528 +118,445 @@ static void message_handler(QtMsgType type,
   }
 }
 
-static odb::dbBlock* getBlock(odb::dbDatabase* db)
-{
-  if (!db) {
-    return nullptr;
-  }
-
-  auto chip = db->getChip();
-  if (!chip) {
-    return nullptr;
-  }
-
-  return chip->getBlock();
-}
-
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
 
-static void resetConversions()
+static QWidget* findWidget(const std::string& name)
 {
-  Descriptor::Property::convert_dbu
-      = [](int value, bool) { return std::to_string(value); };
-  Descriptor::Property::convert_string
-      = [](const std::string& value, bool*) { return 0; };
+  if (name == "main_window" || name == "OpenROAD") {
+    return main_window;
+  }
+
+  if (main_window == nullptr) {
+    return nullptr;
+  }
+
+  const QString find_name = QString::fromStdString(name);
+  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
+    if (widget->objectName() == find_name
+        || widget->windowTitle() == find_name) {
+      return widget;
+    }
+  }
+  return nullptr;
 }
 
-Gui* Gui::get()
+// Bridges Gui to the Qt main window.  Installed once the window is built and
+// uninstalled before it is destroyed, so main_window is non-null and fully
+// alive for every call below -- which is why none of them check it.
+class QtGuiBackend : public GuiBackend
 {
-  static Gui* singleton = new Gui();
+ public:
+  bool hasWindow() const override { return true; }
 
-  return singleton;
-}
+  void redraw() override { main_window->redraw(); }
 
-Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
-{
-  resetConversions();
-}
+  void pause(int timeout_ms) override { main_window->pause(timeout_ms); }
 
-bool Gui::enabled()
-{
-  Gui* self = Gui::get();
-  return main_window != nullptr || self->headless_viewer_ != nullptr;
-}
+  bool isPaused() const override
+  {
+    return main_window->getScriptWidget()->isPaused();
+  }
 
-bool Gui::hasUI()
-{
-  return main_window != nullptr;
-}
+  void status(const std::string& message) override
+  {
+    main_window->status(message);
+  }
 
-void Gui::registerRenderer(Renderer* renderer)
-{
-  if (main_window != nullptr) {
+  void registerRenderer(Renderer* renderer) override
+  {
     main_window->getControls()->registerRenderer(renderer);
   }
 
-  renderers_.insert(renderer);
-  redraw();
-}
-
-void Gui::unregisterRenderer(Renderer* renderer)
-{
-  if (!renderers_.contains(renderer)) {
-    return;
-  }
-
-  if (main_window != nullptr) {
+  void unregisterRenderer(Renderer* renderer) override
+  {
     main_window->getControls()->unregisterRenderer(renderer);
   }
 
-  renderers_.erase(renderer);
-  redraw();
-}
-
-void Gui::redraw()
-{
-  if (main_window != nullptr) {
-    main_window->redraw();
-    return;
-  }
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->redraw();
-  }
-}
-
-void Gui::status(const std::string& message)
-{
-  if (main_window != nullptr) {
-    main_window->status(message);
-  }
-  // No status surface in headless mode; silently drop.
-}
-
-void Gui::pause(int timeout)
-{
-  if (main_window != nullptr) {
-    main_window->pause(timeout);
-    return;
-  }
-  if (headless_viewer_ != nullptr) {
-    headless_viewer_->pause(timeout);
-  }
-}
-
-void Gui::setHeadlessViewer(HeadlessViewer* viewer)
-{
-  headless_viewer_ = viewer;
-}
-
-void Gui::setChartFactory(ChartFactory factory)
-{
-  chart_factory_ = std::move(factory);
-}
-
-Selected Gui::makeSelected(const std::any& object)
-{
-  return DescriptorRegistry::instance()->makeSelected(object);
-}
-
-void Gui::setSelected(const Selected& selection)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->setSelected(selection);
-}
-
-void Gui::removeSelectedByType(const std::string& type)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->removeSelectedByType(type);
-}
-
-void Gui::addSelectedNet(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
+  void setSelected(const Selected& selection) override
+  {
+    main_window->setSelected(selection);
   }
 
-  auto net = block->findNet(name);
-  if (!net) {
-    return;
+  void addSelected(const Selected& selection) override
+  {
+    main_window->addSelected(selection);
   }
 
-  main_window->addSelected(makeSelected(net));
-}
-
-void Gui::addSelectedInst(const char* name)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
+  void addSelected(const SelectionSet& selection, bool find_in_cts) override
+  {
+    main_window->addSelected(selection, find_in_cts);
   }
 
-  auto inst = block->findInst(name);
-  if (!inst) {
-    return;
+  void removeSelectedByType(const std::string& type) override
+  {
+    main_window->removeSelectedByType(type);
   }
 
-  main_window->addSelected(makeSelected(inst));
-}
+  const SelectionSet& selection() override { return main_window->selection(); }
 
-const SelectionSet& Gui::selection()
-{
-  if (!hasUI()) {
-    static const SelectionSet empty_selection;
-    return empty_selection;
-  }
-  return main_window->selection();
-}
-
-bool Gui::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const
-{
-  if (!hasUI()) {
-    return false;
-  }
-  return main_window->anyObjectInSet(selection_set, obj_type);
-}
-
-void Gui::selectHighlightConnectedInsts(bool select_flag, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
-}
-void Gui::selectHighlightConnectedNets(bool select_flag,
-                                       bool output,
-                                       bool input,
-                                       int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedNets(
-      select_flag, output, input, highlight_group);
-}
-
-void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
-                                              int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->selectHighlightConnectedBufferTrees(select_flag,
-                                                   highlight_group);
-}
-
-void Gui::addInstToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
+  const Selected& inspectorSelection() override
+  {
+    return main_window->getInspector()->getSelection();
   }
 
-  auto inst = block->findInst(name);
-  if (!inst) {
-    logger_->error(utl::GUI, 100, "No instance named {} found.", name);
-    return;
-  }
-  SelectionSet sel_inst_set;
-  sel_inst_set.insert(makeSelected(inst));
-  main_window->addHighlighted(sel_inst_set, highlight_group);
-}
-
-void Gui::addNetToHighlightSet(const char* name, int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  auto block = getBlock(main_window->getDb());
-  if (!block) {
-    return;
+  bool anyObjectInSet(bool selection_set,
+                      odb::dbObjectType obj_type) const override
+  {
+    return main_window->anyObjectInSet(selection_set, obj_type);
   }
 
-  auto net = block->findNet(name);
-  if (!net) {
-    logger_->error(utl::GUI, 101, "No net named {} found.", name);
-    return;
+  void addHighlighted(const SelectionSet& selection,
+                      int highlight_group) override
+  {
+    main_window->addHighlighted(selection, highlight_group);
   }
-  SelectionSet selection_set;
-  selection_set.insert(makeSelected(net));
-  main_window->addHighlighted(selection_set, highlight_group);
-}
 
-int Gui::selectAt(const odb::Rect& area, bool append)
-{
-  if (!hasUI()) {
-    return 0;
+  void clearHighlighted(int highlight_group) override
+  {
+    main_window->clearHighlighted(highlight_group);
   }
-  return main_window->getLayoutViewer()->selectArea(area, append);
-}
 
-int Gui::selectNext()
-{
-  if (!hasUI()) {
-    return 0;
+  void selectHighlightConnectedInsts(bool select_flag,
+                                     int highlight_group) override
+  {
+    main_window->selectHighlightConnectedInsts(select_flag, highlight_group);
   }
-  return main_window->getInspector()->selectNext();
-}
 
-int Gui::selectPrevious()
-{
-  if (!hasUI()) {
-    return 0;
+  void selectHighlightConnectedNets(bool select_flag,
+                                    bool output,
+                                    bool input,
+                                    int highlight_group) override
+  {
+    main_window->selectHighlightConnectedNets(
+        select_flag, output, input, highlight_group);
   }
-  return main_window->getInspector()->selectPrevious();
-}
 
-void Gui::animateSelection(int repeat)
-{
-  if (!hasUI()) {
-    return;
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group) override
+  {
+    main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                     highlight_group);
   }
-  main_window->getLayoutViewer()->selectionAnimation(repeat);
-}
 
-std::string Gui::addLabel(int x,
-                          int y,
-                          const std::string& text,
-                          std::optional<Painter::Color> color,
-                          std::optional<int> size,
-                          std::optional<Painter::Anchor> anchor,
-                          const std::optional<std::string>& name)
-{
-  if (!hasUI()) {
-    return "";
+  int selectArea(const odb::Rect& area, bool append) override
+  {
+    return main_window->getLayoutViewer()->selectArea(area, append);
   }
-  return main_window->addLabel(x, y, text, color, size, anchor, name);
-}
 
-void Gui::deleteLabel(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
+  int selectNext() override
+  {
+    return main_window->getInspector()->selectNext();
   }
-  main_window->deleteLabel(name);
-}
 
-std::string Gui::addRuler(int x0,
-                          int y0,
-                          int x1,
-                          int y1,
-                          const std::string& label,
-                          const std::string& name,
-                          bool euclidian)
-{
-  if (!hasUI()) {
-    return "";
+  int selectPrevious() override
+  {
+    return main_window->getInspector()->selectPrevious();
   }
-  return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
-}
 
-void Gui::deleteRuler(const std::string& name)
-{
-  if (!hasUI()) {
-    return;
+  void selectionAnimation(int repeat) override
+  {
+    main_window->getLayoutViewer()->selectionAnimation(repeat);
   }
-  main_window->deleteRuler(name);
-}
 
-/**
- * @brief Checks if a Qt wildcard pattern is a simple literal string.
- *
- * This function determines if a string intended for use with
- * QRegExp::WildcardUnix contains any active (i.e., unescaped) wildcard
- * characters ('*', '?', '[').
- *
- * @param pattern The wildcard pattern string to check.
- * @return True if the pattern has no active wildcards; false otherwise.
- */
-static bool isSimpleStringPattern(const std::string& pattern)
-{
-  bool previous_was_escape = false;
-  for (const char ch : pattern) {
-    if (previous_was_escape) {
-      // The previous character was '\', so this character is just a literal.
-      previous_was_escape = false;
-      continue;
+  void zoomTo(const odb::Rect& rect_dbu) override
+  {
+    main_window->zoomTo(rect_dbu);
+  }
+
+  void zoomTo(const odb::Point& focus, int diameter) override
+  {
+    main_window->zoomTo(focus, diameter);
+  }
+
+  void zoomIn() override { main_window->getLayoutViewer()->zoomIn(); }
+
+  void zoomIn(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomIn(focus_dbu);
+  }
+
+  void zoomOut() override { main_window->getLayoutViewer()->zoomOut(); }
+
+  void zoomOut(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->zoomOut(focus_dbu);
+  }
+
+  void centerAt(const odb::Point& focus_dbu) override
+  {
+    main_window->getLayoutViewer()->centerAt(focus_dbu);
+  }
+
+  void setResolution(double pixels_per_dbu) override
+  {
+    main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
+  }
+
+  void fit() override { main_window->fit(); }
+
+  std::string addLabel(int x,
+                       int y,
+                       const std::string& text,
+                       std::optional<Painter::Color> color,
+                       std::optional<int> size,
+                       std::optional<Painter::Anchor> anchor,
+                       const std::optional<std::string>& name) override
+  {
+    return main_window->addLabel(x, y, text, color, size, anchor, name);
+  }
+
+  void deleteLabel(const std::string& name) override
+  {
+    main_window->deleteLabel(name);
+  }
+
+  void clearLabels() override { main_window->clearLabels(); }
+
+  std::string addRuler(int x0,
+                       int y0,
+                       int x1,
+                       int y1,
+                       const std::string& label,
+                       const std::string& name,
+                       bool euclidian) override
+  {
+    return main_window->addRuler(x0, y0, x1, y1, label, name, euclidian);
+  }
+
+  void deleteRuler(const std::string& name) override
+  {
+    main_window->deleteRuler(name);
+  }
+
+  void clearRulers() override { main_window->clearRulers(); }
+
+  bool checkDisplayControlVisible(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, true);
+  }
+
+  bool checkDisplayControlSelectable(const std::string& name) override
+  {
+    return main_window->getControls()->checkControlByPath(name, false);
+  }
+
+  void setDisplayControlVisible(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, true, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlSelectable(const std::string& name, bool value) override
+  {
+    main_window->getControls()->setControlByPath(
+        name, false, value ? Qt::Checked : Qt::Unchecked);
+  }
+
+  void setDisplayControlColor(const std::string& name,
+                              const Painter::Color& color) override
+  {
+    main_window->getControls()->setControlByPath(name, gui::toQColor(color));
+  }
+
+  void saveDisplayControls() override { main_window->getControls()->save(); }
+
+  void restoreDisplayControls() override
+  {
+    main_window->getControls()->restore();
+  }
+
+  void addFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addFocusNet(net);
+  }
+
+  void removeFocusNet(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeFocusNet(net);
+  }
+
+  void clearFocusNets() override
+  {
+    main_window->getLayoutTabs()->clearFocusNets();
+  }
+
+  void addRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addRouteGuides(net);
+  }
+
+  void removeRouteGuides(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeRouteGuides(net);
+  }
+
+  void clearRouteGuides() override
+  {
+    main_window->getLayoutTabs()->clearRouteGuides();
+  }
+
+  void addNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->addNetTracks(net);
+  }
+
+  void removeNetTracks(odb::dbNet* net) override
+  {
+    main_window->getLayoutTabs()->removeNetTracks(net);
+  }
+
+  void clearNetTracks() override
+  {
+    main_window->getLayoutTabs()->clearNetTracks();
+  }
+
+  void saveClockTreeImage(const std::string& clock_name,
+                          const std::string& filename,
+                          const std::string& scene,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    main_window->getClockViewer()->saveImage(
+        clock_name, filename, scene, width_px, height_px);
+  }
+
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel) override
+  {
+    main_window->getLayoutViewer()->saveImage(
+        filename.c_str(), region, width_px, dbu_per_pixel);
+  }
+
+  void saveHistogramImage(const std::string& filename,
+                          const std::string& mode,
+                          std::optional<int> width_px,
+                          std::optional<int> height_px) override
+  {
+    auto* charts = main_window->getChartsWidget();
+    charts->saveImage(
+        filename, charts->modeFromString(mode), width_px, height_px);
+  }
+
+  bool isOffscreen() const override
+  {
+    if (main_window->testAttribute(Qt::WA_DontShowOnScreen)) {
+      // Set when the gui was started non-interactively.
+      return true;
+    }
+    // The platform plugin decides this too: "offscreen" and "minimal" never
+    // map a window, so the layout viewer is never laid out and its viewport
+    // is meaningless even when the window was asked for interactively
+    // (openroad -gui under QT_QPA_PLATFORM=offscreen).
+    const QString platform = QGuiApplication::platformName();
+    return platform == QLatin1String("offscreen")
+           || platform == QLatin1String("minimal");
+  }
+
+  RenderedImage renderImage(
+      const odb::Rect& region,
+      int width_px,
+      double dbu_per_pixel,
+      std::optional<std::pair<int, int>> scale_to) override
+  {
+    QImage img = main_window->getLayoutViewer()->createImage(
+        region, width_px, dbu_per_pixel);
+    if (scale_to.has_value()) {
+      img = img.scaled(scale_to->first, scale_to->second, Qt::KeepAspectRatio);
     }
 
-    if (ch == '\\') {
-      // This is an escape character for the next character in the loop.
-      previous_was_escape = true;
-    } else if (ch == '*' || ch == '?' || ch == '[') {
-      // Found an unescaped wildcard, so it's not a simple string.
-      return false;
+    // Format_RGBA8888 is byte-ordered, so its memory layout is already the
+    // R,G,B,A this hands back and the rows can be copied whole.  Going
+    // through pixel() instead costs a bounds check, a format check and a
+    // coordinate mapping for each of the hundreds of thousands of pixels in
+    // a frame.  Copying per row rather than in one block avoids assuming
+    // bytesPerLine() has no padding.
+    const QImage rgba = img.convertToFormat(QImage::Format_RGBA8888);
+
+    RenderedImage out;
+    out.width = rgba.width();
+    out.height = rgba.height();
+    const size_t row_bytes = static_cast<size_t>(out.width) * 4;
+    out.rgba.resize(row_bytes * out.height);
+    for (int y = 0; y < out.height; y++) {
+      std::copy_n(rgba.constScanLine(y), row_bytes, &out.rgba[row_bytes * y]);
     }
+    return out;
   }
-  // If the loop completes, no unescaped wildcards were found.
-  return true;
-}
 
-int Gui::select(const std::string& type,
-                const std::string& name_filter,
-                const std::string& attribute,
-                const std::any& value,
-                bool filter_case_sensitive,
-                int highlight_group)
-{
-  if (!hasUI()) {
-    return 0;
+  Chart* addChart(const std::string& name,
+                  const std::string& x_label,
+                  const std::vector<std::string>& y_labels) override
+  {
+    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
   }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  // Define case sensitivity options for QRegularExpression
-  const QRegularExpression::PatternOptions options
-      = filter_case_sensitive ? QRegularExpression::NoPatternOption
-                              : QRegularExpression::CaseInsensitiveOption;
 
-  // Convert the wildcard string to a regex pattern and create the
-  // object
-  const QRegularExpression reg_filter(
-      QRegularExpression::wildcardToRegularExpression(
-          QString::fromStdString(name_filter)),
-      options);
-#else
-  const QRegExp reg_filter(
-      QString::fromStdString(name_filter),
-      filter_case_sensitive ? Qt::CaseSensitive : Qt::CaseInsensitive,
-      QRegExp::WildcardUnix);
-#endif
-  const bool is_simple = isSimpleStringPattern(name_filter);
-  bool found = false;
-  int result = 0;
-  auto* registry = DescriptorRegistry::instance();
-  registry->forEachDescriptor([&](const Descriptor* descriptor) {
-    if (found || descriptor->getTypeName() != type) {
+  void timingCone(Term term, bool fanin, bool fanout) override
+  {
+    main_window->timingCone(term, fanin, fanout);
+  }
+
+  void timingPathsThrough(const std::set<Term>& terms) override
+  {
+    main_window->timingPathsThrough(terms);
+  }
+
+  void triggerAction(const std::string& name) override
+  {
+    // name is widget.action: up to the last dot picks the widget, the rest
+    // names the action in it.  With no dot there is no action to look for --
+    // the whole string would stand in for both halves, and the widget would
+    // be searched for an action named after itself.
+    const size_t dot_idx = name.find_last_of('.');
+    if (dot_idx == std::string::npos) {
       return;
     }
-    found = true;
-    SelectionSet selected_set;
-    descriptor->visitAllObjects([&](const Selected& sel) {
-      if (!name_filter.empty()) {
-        const std::string sel_name = sel.getName();
-        if (is_simple) {
-          if (sel_name != name_filter) {
-            return;
-          }
-        } else {
-          if (
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-              !reg_filter.match(QString::fromStdString(sel_name)).hasMatch()
-#else
-              !reg_filter.exactMatch(QString::fromStdString(sel_name))
-#endif
-          ) {
-            return;
-          }
-        }
-      }
 
-      if (!attribute.empty()) {
-        bool is_valid_attribute = false;
-        Descriptor::Properties properties
-            = descriptor->getProperties(sel.getObject());
-        if (!filterSelectionProperties(
-                properties, attribute, value, is_valid_attribute)) {
-          return;  // doesn't match the attribute filter
-        }
-
-        if (!is_valid_attribute) {
-          logger_->error(
-              utl::GUI, 59, "Entered attribute {} is not valid.", attribute);
-        }
-      }
-      selected_set.insert(sel);
-    });
-
-    main_window->addSelected(selected_set, true);
-    if (highlight_group != -1) {
-      main_window->addHighlighted(selected_set, highlight_group);
+    auto* widget = findWidget(name.substr(0, dot_idx));
+    if (widget == nullptr) {
+      return;
     }
 
-    result = selected_set.size();
-  });
+    const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
 
-  if (!found) {
-    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
-  }
-  return result;
-}
+    // Find QAction
+    for (QAction* action : widget->findChildren<QAction*>()) {
+      ord::OpenRoad::openRoad()->getLogger()->report(
+          "{} {}",
+          action->objectName().toStdString(),
+          action->text().toStdString());
+      if (action->objectName() == find_name || action->text() == find_name) {
+        action->trigger();
+        return;
+      }
+    }
 
-bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
-                                    const std::string& attribute,
-                                    const std::any& value,
-                                    bool& is_valid_attribute)
-{
-  for (const Descriptor::Property& property : properties) {
-    if (attribute == property.name) {
-      is_valid_attribute = true;
-      if (auto props_selected_set
-          = std::any_cast<SelectionSet>(&property.value)) {
-        if (Descriptor::Property::toString(value) == "CONNECTED"
-            && !props_selected_set->empty()) {
-          return true;
-        }
-        for (const auto& selected : *props_selected_set) {
-          if (Descriptor::Property::toString(value) == selected.getName()) {
-            return true;
-          }
-        }
-      } else if (auto props_list
-                 = std::any_cast<Descriptor::PropertyList>(&property.value)) {
-        for (const auto& prop : *props_list) {
-          if (Descriptor::Property::toString(prop.first)
-                  == Descriptor::Property::toString(value)
-              || Descriptor::Property::toString(prop.second)
-                     == Descriptor::Property::toString(value)) {
-            return true;
-          }
-        }
-      } else if (Descriptor::Property::toString(value)
-                 == Descriptor::Property::toString(property.value)) {
-        return true;
+    // Find QPushButton
+    for (QPushButton* button : widget->findChildren<QPushButton*>()) {
+      if (button->objectName() == find_name || button->text() == find_name) {
+        button->click();
+        return;
       }
     }
   }
+};
 
-  return false;
-}
+static QtGuiBackend qt_backend;
 
-void Gui::clearSelections()
+// Opens a gui to run a script in, for the callers that need one rendering
+// and have none -- see GuiLauncher.
+class QtGuiLauncher : public GuiLauncher
 {
-  if (!hasUI()) {
-    return;
+ public:
+  void openAndRun(const std::string& cmds) override
+  {
+    Gui::get()->showGui(cmds, false);
   }
-  main_window->setSelected(Selected());
-}
+};
 
-void Gui::clearHighlights(int highlight_group)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearHighlighted(highlight_group);
-}
-
-void Gui::clearLabels()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearLabels();
-}
-
-void Gui::clearRulers()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->clearRulers();
-}
+static QtGuiLauncher qt_launcher;
 
 std::string Gui::addToolbarButton(const std::string& name,
                                   const std::string& text,
@@ -784,266 +622,6 @@ void Gui::selectMarkers(odb::dbMarkerCategory* markers)
   main_window->getDRCViewer()->selectCategory(markers);
 }
 
-void Gui::setDisplayControlsColor(const std::string& name,
-                                  const Painter::Color& color)
-{
-  if (!hasUI()) {
-    // No Qt DisplayControls in headless mode; color is a GUI-only concept.
-    return;
-  }
-  const QColor qcolor(color.r, color.g, color.b, color.a);
-  main_window->getControls()->setControlByPath(name, qcolor);
-}
-
-void Gui::setDisplayControlsVisible(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlVisible(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, true, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsVisible(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlVisible(name);
-    }
-    return true;
-  }
-  return main_window->getControls()->checkControlByPath(name, true);
-}
-
-void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      headless_viewer_->setDisplayControlSelectable(name, value);
-    }
-    return;
-  }
-  main_window->getControls()->setControlByPath(
-      name, false, value ? Qt::Checked : Qt::Unchecked);
-}
-
-bool Gui::checkDisplayControlsSelectable(const std::string& name)
-{
-  if (!hasUI()) {
-    if (headless_viewer_ != nullptr) {
-      return headless_viewer_->checkDisplayControlSelectable(name);
-    }
-    return false;
-  }
-  return main_window->getControls()->checkControlByPath(name, false);
-}
-
-void Gui::saveDisplayControls()
-{
-  if (!hasUI()) {
-    // Nothing to persist without the Qt DisplayControls widget.
-    return;
-  }
-  main_window->getControls()->save();
-}
-
-void Gui::restoreDisplayControls()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getControls()->restore();
-}
-
-void Gui::zoomTo(const odb::Rect& rect_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(rect_dbu);
-}
-
-void Gui::zoomTo(const odb::Point& focus, int diameter)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->zoomTo(focus, diameter);
-}
-
-void Gui::zoomIn()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn();
-}
-
-void Gui::zoomIn(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomIn(focus_dbu);
-}
-
-void Gui::zoomOut()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut();
-}
-
-void Gui::zoomOut(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->zoomOut(focus_dbu);
-}
-
-void Gui::centerAt(const odb::Point& focus_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->centerAt(focus_dbu);
-}
-
-void Gui::setResolution(double pixels_per_dbu)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutViewer()->setResolution(pixels_per_dbu);
-}
-
-void Gui::saveImage(const std::string& filename,
-                    const odb::Rect& region,
-                    int width_px,
-                    double dbu_per_pixel,
-                    const std::map<std::string, bool>& display_settings)
-{
-  if (db_ == nullptr) {
-    logger_->error(utl::GUI, 15, "No design loaded.");
-  }
-  odb::Rect save_region = region;
-  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen
-      = main_window == nullptr
-        || main_window->testAttribute(
-            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
-  if (is_offscreen
-      && use_die_area) {  // if gui is active and interactive the visible are of
-                          // the layout viewer will be used.
-    auto* chip = db_->getChip();
-    if (chip == nullptr) {
-      logger_->error(utl::GUI, 64, "No design loaded.");
-    }
-    save_region = chip->getBBox();
-    auto* block = chip->getBlock();
-
-    if (block != nullptr) {
-      save_region = block->getBBox()->getBox();
-    }
-
-    // get die area since screen area is not reliable
-    const double bloat_by = 0.05;  // 5%
-    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
-
-    save_region.bloat(bloat, save_region);
-  }
-
-  if (!hasUI()) {
-    const double dbu_per_micron = db_->getDbuPerMicron();
-
-    std::string save_cmds;
-
-    // build display control commands
-    save_cmds = "set ::gui::display_settings [gui::DisplayControlMap]\n";
-    for (const auto& [control, value] : display_settings) {
-      // first save current setting
-      save_cmds += fmt::format(
-                       "$::gui::display_settings set \"{}\" {}", control, value)
-                   + "\n";
-    }
-    // save command
-    save_cmds += "gui::save_image ";
-    save_cmds += "\"" + filename + "\" ";
-    save_cmds += std::to_string(save_region.xMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMin() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.xMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(save_region.yMax() / dbu_per_micron) + " ";
-    save_cmds += std::to_string(width_px) + " ";
-    save_cmds += std::to_string(dbu_per_pixel) + " ";
-    save_cmds += "$::gui::display_settings\n";
-    // delete display settings map
-    save_cmds += "rename $::gui::display_settings \"\"\n";
-    save_cmds += "unset ::gui::display_settings\n";
-    // end with hide to return
-    save_cmds += "gui::hide";
-    showGui(save_cmds, false);
-  } else {
-    // save current display settings and apply new
-    main_window->getControls()->save();
-    for (const auto& [control, value] : display_settings) {
-      setDisplayControlsVisible(control, value);
-    }
-
-    main_window->getLayoutViewer()->saveImage(
-        filename.c_str(), save_region, width_px, dbu_per_pixel);
-    // restore settings
-    main_window->getControls()->restore();
-  }
-}
-
-void Gui::saveClockTreeImage(const std::string& clock_name,
-                             const std::string& filename,
-                             const std::string& scene,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  main_window->getClockViewer()->saveImage(
-      clock_name, filename, scene, width, height);
-}
-
-void Gui::saveHistogramImage(const std::string& filename,
-                             const std::string& mode,
-                             int width_px,
-                             int height_px)
-{
-  if (!hasUI()) {
-    return;
-  }
-  std::optional<int> width;
-  std::optional<int> height;
-  if (width_px > 0) {
-    width = width_px;
-  }
-  if (height_px > 0) {
-    height = height_px;
-  }
-  const ChartsWidget::Mode chart_mode
-      = main_window->getChartsWidget()->modeFromString(mode);
-  main_window->getChartsWidget()->saveImage(
-      filename, chart_mode, width, height);
-}
-
 void Gui::showWorstTimingPath(bool setup)
 {
   if (!hasUI()) {
@@ -1069,26 +647,6 @@ void Gui::selectClockviewerClock(const std::string& clock_name,
   main_window->getClockViewer()->selectClock(clock_name, depth);
 }
 
-static QWidget* findWidget(const std::string& name)
-{
-  if (name == "main_window" || name == "OpenROAD") {
-    return main_window;
-  }
-
-  if (main_window == nullptr) {
-    return nullptr;
-  }
-
-  const QString find_name = QString::fromStdString(name);
-  for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
-    if (widget->objectName() == find_name
-        || widget->windowTitle() == find_name) {
-      return widget;
-    }
-  }
-  return nullptr;
-}
-
 void Gui::showWidget(const std::string& name, bool show)
 {
   auto* widget = findWidget(name);
@@ -1104,230 +662,6 @@ void Gui::showWidget(const std::string& name, bool show)
   }
 }
 
-void Gui::triggerAction(const std::string& name)
-{
-  const size_t dot_idx = name.find_last_of('.');
-  auto* widget = findWidget(name.substr(0, dot_idx));
-  if (widget == nullptr) {
-    return;
-  }
-
-  const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
-
-  // Find QAction
-  for (QAction* action : widget->findChildren<QAction*>()) {
-    logger_->report("{} {}",
-                    action->objectName().toStdString(),
-                    action->text().toStdString());
-    if (action->objectName() == find_name || action->text() == find_name) {
-      action->trigger();
-      return;
-    }
-  }
-
-  // Find QPushButton
-  for (QPushButton* button : widget->findChildren<QPushButton*>()) {
-    if (button->objectName() == find_name || button->text() == find_name) {
-      button->click();
-      return;
-    }
-  }
-}
-
-void Gui::registerHeatMap(HeatMapDataSource* heatmap)
-{
-  if (heat_maps_.contains(heatmap)) {
-    return;
-  }
-  heat_maps_.insert(heatmap);
-  auto renderer = makeHeatMapRenderer(*heatmap);
-  heatmap->setRedrawCallback(
-      [renderer_ptr = renderer.get()]() { renderer_ptr->redraw(); });
-  heatmap->setSetupCallback([heatmap]() { showHeatMapSetupDialog(heatmap); });
-  heatmap->setUnregisterCallback(
-      [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
-  registerRenderer(renderer.get());
-  heat_map_renderers_[heatmap] = std::move(renderer);
-  if (main_window != nullptr) {
-    main_window->registerHeatMap(heatmap);
-  }
-}
-
-void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
-{
-  if (!heat_maps_.contains(heatmap)) {
-    return;
-  }
-
-  heatmap->setRedrawCallback({});
-  heatmap->setSetupCallback({});
-  heatmap->setUnregisterCallback({});
-  auto renderer_itr = heat_map_renderers_.find(heatmap);
-  if (renderer_itr != heat_map_renderers_.end()) {
-    unregisterRenderer(renderer_itr->second.get());
-    heat_map_renderers_.erase(renderer_itr);
-  }
-  if (main_window != nullptr) {
-    main_window->unregisterHeatMap(heatmap);
-  }
-  heat_maps_.erase(heatmap);
-}
-
-void Gui::syncHeatMapChips()
-{
-  if (hasUI() || db_ == nullptr) {
-    return;
-  }
-
-  // Console and headless sessions do not receive MainWindow::setBlock().
-  auto* chip = db_->getChip();
-  for (auto* heat_map : heat_maps_) {
-    if (heat_map->getChip() != chip) {
-      heat_map->setChip(chip);
-      heat_map->destroyMap();
-    }
-  }
-}
-
-const std::set<HeatMapDataSource*>& Gui::getHeatMaps()
-{
-  syncHeatMapChips();
-  return heat_maps_;
-}
-
-HeatMapDataSource* Gui::getHeatMap(const std::string& name)
-{
-  syncHeatMapChips();
-
-  HeatMapDataSource* source = nullptr;
-
-  for (auto* heat_map : heat_maps_) {
-    if (heat_map->getShortName() == name) {
-      source = heat_map;
-      break;
-    }
-  }
-
-  if (source == nullptr) {
-    QStringList options;
-    for (auto* heat_map : heat_maps_) {
-      options.append(QString::fromStdString(heat_map->getShortName()));
-    }
-    logger_->error(utl::GUI,
-                   28,
-                   "{} is not a known map. Valid options are: {}",
-                   name,
-                   options.join(", ").toStdString());
-  }
-
-  return source;
-}
-
-void Gui::setHeatMapSetting(const std::string& name,
-                            const std::string& option,
-                            const Renderer::Setting& value)
-{
-  HeatMapDataSource* source = getHeatMap(name);
-
-  const std::string rebuild_map_option = "rebuild";
-  if (option == rebuild_map_option) {
-    source->destroyMap();
-    source->ensureMap();
-  } else {
-    auto settings = source->getSettings();
-
-    if (!settings.contains(option)) {
-      QStringList options;
-      options.append(QString::fromStdString(rebuild_map_option));
-      for (const auto& [key, kv] : settings) {
-        options.append(QString::fromStdString(key));
-      }
-      logger_->error(utl::GUI,
-                     29,
-                     "{} is not a valid option. Valid options are: {}",
-                     option,
-                     options.join(", ").toStdString());
-    }
-
-    auto& current_value = settings[option];
-    if (std::holds_alternative<bool>(current_value)) {
-      // is bool
-      if (auto* s = std::get_if<bool>(&value)) {
-        settings[option] = *s;
-      }
-      if (auto* s = std::get_if<int>(&value)) {
-        settings[option] = *s != 0;
-      }
-      if (auto* s = std::get_if<double>(&value)) {
-        settings[option] = *s != 0.0;
-      } else {
-        logger_->error(utl::GUI, 60, "{} must be a boolean", option);
-      }
-    } else if (std::holds_alternative<int>(current_value)) {
-      // is int
-      if (auto* s = std::get_if<int>(&value)) {
-        settings[option] = *s;
-      } else if (auto* s = std::get_if<double>(&value)) {
-        settings[option] = static_cast<int>(*s);
-      } else {
-        logger_->error(utl::GUI, 61, "{} must be an integer or double", option);
-      }
-    } else if (std::holds_alternative<double>(current_value)) {
-      // is double
-      if (auto* s = std::get_if<int>(&value)) {
-        settings[option] = static_cast<double>(*s);
-      } else if (auto* s = std::get_if<double>(&value)) {
-        settings[option] = *s;
-      } else {
-        logger_->error(utl::GUI, 62, "{} must be an integer or double", option);
-      }
-    } else {
-      // is string
-      if (auto* s = std::get_if<std::string>(&value)) {
-        settings[option] = *s;
-      } else {
-        logger_->error(utl::GUI, 63, "{} must be a string", option);
-      }
-    }
-    source->setSettings(settings);
-  }
-
-  source->redraw();
-}
-
-Renderer::Setting Gui::getHeatMapSetting(const std::string& name,
-                                         const std::string& option)
-{
-  HeatMapDataSource* source = getHeatMap(name);
-
-  const std::string map_has_option = "has_data";
-  if (option == map_has_option) {
-    return source->hasData();
-  }
-
-  auto settings = source->getSettings();
-
-  if (!settings.contains(option)) {
-    QStringList options;
-    for (const auto& [key, kv] : settings) {
-      options.append(QString::fromStdString(key));
-    }
-    logger_->error(utl::GUI,
-                   95,
-                   "{} is not a valid option. Valid options are: {}",
-                   option,
-                   options.join(", ").toStdString());
-  }
-
-  return settings[option];
-}
-
-void Gui::dumpHeatMap(const std::string& name, const std::string& file)
-{
-  HeatMapDataSource* source = getHeatMap(name);
-  source->dumpToFile(file);
-}
-
 void Gui::setMainWindowTitle(const std::string& title)
 {
   main_window_title_ = title;
@@ -1339,366 +673,6 @@ void Gui::setMainWindowTitle(const std::string& title)
 std::string Gui::getMainWindowTitle()
 {
   return main_window_title_;
-}
-
-Renderer::~Renderer()
-{
-  gui::Gui::get()->unregisterRenderer(this);
-}
-
-void Renderer::redraw()
-{
-  Gui::get()->redraw();
-}
-
-bool Renderer::checkDisplayControl(const std::string& name)
-{
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    return Gui::get()->checkDisplayControlsVisible(name);
-  }
-  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
-}
-
-void Renderer::setDisplayControl(const std::string& name, bool value)
-{
-  const std::string& group_name = getDisplayControlGroupName();
-
-  if (group_name.empty()) {
-    Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
-  }
-}
-
-void Renderer::addDisplayControl(
-    const std::string& name,
-    bool initial_visible,
-    const DisplayControlCallback& setup,
-    const std::vector<std::string>& mutual_exclusivity)
-{
-  auto& control = controls_[name];
-
-  control.visibility = initial_visible;
-  control.interactive_setup = setup;
-  control.mutual_exclusivity.insert(mutual_exclusivity.begin(),
-                                    mutual_exclusivity.end());
-}
-
-Renderer::Settings Renderer::getSettings()
-{
-  Settings settings;
-  for (const auto& [key, init_value] : controls_) {
-    settings[key] = checkDisplayControl(key);
-  }
-  return settings;
-}
-
-void Renderer::setSettings(const Renderer::Settings& settings)
-{
-  for (auto& [key, control] : controls_) {
-    setSetting<bool>(settings, key, control.visibility);
-    setDisplayControl(key, control.visibility);
-  }
-}
-
-//////////////////////////////////////////////////////////////////
-
-void SpectrumGenerator::drawLegend(
-    Painter& painter,
-    const std::vector<std::pair<int, std::string>>& legend_key) const
-{
-  const int color_count = getColorCount();
-  std::vector<Painter::Color> colors;
-  colors.reserve(color_count);
-  for (int i = 0; i < color_count; i += kLegendColorIncrement) {
-    const double color_idx = (color_count - 1 - i) / scale_;
-    colors.push_back(getColor(color_idx / color_count));
-  }
-  std::vector<std::pair<Painter::Color, std::string>> legend_key_colors;
-  for (const auto& [legend_value, legend_text] : legend_key) {
-    const int idx = std::clamp(legend_value / kLegendColorIncrement,
-                               0,
-                               static_cast<int>(colors.size()) - 1);
-    legend_key_colors.push_back({colors[idx], legend_text});
-  }
-  LinearLegend legend(colors);
-  legend.setLegendKey(legend_key_colors);
-  legend.draw(painter);
-}
-
-/////////////////////////////////////////////////
-
-LinearLegend::LinearLegend(const std::vector<Painter::Color>& colors)
-    : colors_(colors)
-{
-}
-
-void LinearLegend::setLegendKey(
-    const std::vector<std::pair<Painter::Color, std::string>>& legend_key)
-{
-  legend_key_ = legend_key;
-}
-
-void LinearLegend::draw(Painter& painter) const
-{
-  const odb::Rect& bounds = painter.getBounds();
-  const double pixel_per_dbu = painter.getPixelsPerDBU();
-  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
-  const double box_height = 1 / pixel_per_dbu;   // 1 pixels
-  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
-  const int text_offset = 2 / pixel_per_dbu;
-  const int legend_top = bounds.yMax() - legend_offset;
-  const int legend_right = bounds.xMax() - legend_offset;
-  const int legend_left = legend_right - legend_width;
-  const Painter::Anchor key_anchor = Painter::Anchor::kRightCenter;
-
-  odb::Rect legend_bounds(
-      legend_left, legend_top, legend_right + text_offset, legend_top);
-
-  const int color_count = colors_.size();
-
-  std::vector<std::pair<odb::Point, std::string>> legend_key_points;
-  for (const auto& [legend_color, legend_text] : legend_key_) {
-    const auto find_color = std::ranges::find(colors_, legend_color);
-    if (find_color == colors_.end()) {
-      continue;
-    }
-    const int legend_value
-        = std::distance(colors_.begin(), find_color);  // index in colors_
-
-    const int text_right = legend_left - text_offset;
-    const int box_top
-        = legend_top - ((color_count - legend_value) * box_height);
-
-    legend_key_points.push_back({{text_right, box_top}, legend_text});
-    const odb::Rect text_bounds = painter.stringBoundaries(
-        text_right, box_top, key_anchor, legend_text);
-
-    legend_bounds.merge(text_bounds);
-  }
-
-  // draw background
-  painter.setPen(Painter::kDarkGray, true);
-  painter.setBrush(Painter::kDarkGray);
-  painter.drawRect(legend_bounds, 10, 10);
-
-  // draw color map
-  double box_top = legend_top;
-  for (int i = 0; i < color_count; i++) {
-    painter.setPen(colors_[i], true);
-    painter.drawLine(odb::Point(legend_left, box_top),
-                     odb::Point(legend_right, box_top));
-    box_top -= box_height;
-  }
-
-  // draw key values
-  painter.setPen(Painter::kBlack, true);
-  painter.setBrush(Painter::kTransparent);
-  for (const auto& [pt, text] : legend_key_points) {
-    painter.drawString(pt.x(), pt.y(), key_anchor, text);
-  }
-  painter.drawRect(odb::Rect(legend_left, box_top, legend_right, legend_top));
-}
-
-/////////////////////////////////////////////////
-
-void DiscreteLegend::addLegendKey(const Painter::Color& color,
-                                  const std::string& text)
-{
-  color_key_.emplace_back(color, text);
-}
-
-void DiscreteLegend::draw(Painter& painter) const
-{
-  const odb::Rect& bounds = painter.getBounds();
-  const double pixel_per_dbu = painter.getPixelsPerDBU();
-  const int legend_offset = 20 / pixel_per_dbu;  // 20 pixels
-  const int legend_width = 20 / pixel_per_dbu;   // 20 pixels
-  const int text_offset = 2 / pixel_per_dbu;
-  const int color_offset = 2 * text_offset;
-  const int legend_top = bounds.yMax() - legend_offset;
-  const int legend_right = bounds.xMax() - legend_offset;
-  const int legend_left = legend_right - legend_width;
-
-  odb::Rect legend_bounds(
-      legend_left, legend_top, legend_right + text_offset, legend_top);
-
-  std::vector<std::pair<odb::Rect, std::string>> legend_key_rects;
-  std::vector<std::pair<odb::Rect, Painter::Color>> legend_color_rects;
-  int last_text_top = legend_top;
-  for (const auto& [legend_color, legend_text] : color_key_) {
-    const int text_right = legend_left - text_offset;
-
-    const odb::Rect key_rect = painter.stringBoundaries(
-        text_right, last_text_top, Painter::Anchor::kTopRight, legend_text);
-
-    last_text_top = key_rect.yMin();
-
-    legend_key_rects.push_back({key_rect, legend_text});
-    legend_color_rects.push_back({{legend_left + color_offset,
-                                   key_rect.yMin() + color_offset,
-                                   legend_right - color_offset,
-                                   key_rect.yMax() - color_offset},
-                                  legend_color});
-    legend_bounds.merge(key_rect);
-  }
-
-  // draw background
-  painter.setPen(Painter::kDarkGray, true);
-  painter.setBrush(Painter::kDarkGray);
-  painter.drawRect(legend_bounds, 10, 10);
-
-  // draw color map
-  painter.setPen(Painter::kBlack, true);
-  for (const auto& [rect, color] : legend_color_rects) {
-    painter.setBrush(color);
-    painter.drawRect(rect);
-  }
-
-  // draw key values
-  painter.setBrush(Painter::kTransparent);
-  for (const auto& [rect, text] : legend_key_rects) {
-    painter.drawString(
-        rect.xMax(), rect.yCenter(), Painter::Anchor::kRightCenter, text);
-  }
-}
-
-/////////////////////////////////////////////////
-
-void Gui::fit()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->fit();
-}
-
-void Gui::registerDescriptor(const std::type_info& type,
-                             const Descriptor* descriptor)
-{
-  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
-}
-
-const Descriptor* Gui::getDescriptor(const std::type_info& type) const
-{
-  return DescriptorRegistry::instance()->getDescriptor(type);
-}
-
-void Gui::unregisterDescriptor(const std::type_info& type)
-{
-  DescriptorRegistry::instance()->unregisterDescriptor(type);
-}
-
-const Selected& Gui::getInspectorSelection()
-{
-  if (!hasUI()) {
-    static const Selected empty_selection;
-    return empty_selection;
-  }
-  return main_window->getInspector()->getSelection();
-}
-
-void Gui::timingCone(Term term, bool fanin, bool fanout)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->timingCone(term, fanin, fanout);
-}
-
-void Gui::timingPathsThrough(const std::set<Term>& terms)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->timingPathsThrough(terms);
-}
-
-void Gui::addFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addFocusNet(net);
-}
-
-void Gui::addRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addRouteGuides(net);
-}
-
-Chart* Gui::addChart(const std::string& name,
-                     const std::string& x_label,
-                     const std::vector<std::string>& y_labels)
-{
-  if (main_window != nullptr) {
-    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
-  }
-  if (chart_factory_) {
-    return chart_factory_(name, x_label, y_labels);
-  }
-  return nullptr;
-}
-
-void Gui::removeRouteGuides(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeRouteGuides(net);
-}
-
-void Gui::addNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->addNetTracks(net);
-}
-
-void Gui::removeNetTracks(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeNetTracks(net);
-}
-
-void Gui::removeFocusNet(odb::dbNet* net)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->removeFocusNet(net);
-}
-
-void Gui::clearFocusNets()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearFocusNets();
-}
-
-void Gui::clearRouteGuides()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearRouteGuides();
-}
-
-void Gui::clearNetTracks()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getLayoutTabs()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -1737,7 +711,7 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
+  gui::startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
 }
 
 void Gui::minimize()
@@ -1758,28 +732,16 @@ void Gui::unminimize()
 
 void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
-  db_ = db;
+  initCommon(db, sta, logger);
   setLogger(logger);
 
-  auto* registry = DescriptorRegistry::instance();
-  registry->setLogger(logger);
-  registry->initDescriptors(db, sta);
+  // Lets the descriptors offer the actions that need a modal dialog, and
+  // saveImage reopen the gui when no window is up.  Only this file is
+  // Qt-only, so a build without Qt leaves both hooks null.
+  static gui::QtDialogs dialogs;
+  setDialogs(&dialogs);
+  setLauncher(&qt_launcher);
 
-  // BufferTreeDescriptor cannot go in initDescriptors(): that is compiled
-  // into the CLI-only gui library too, where bufferTreeDescriptor.cpp is
-  // absent (it needs QColor) and stub.cpp answers isAggregate() with false.
-  // Registering it here instead of only in MainWindow::init() covers a Qt
-  // binary that never opens a window -- serving the web viewer, say -- where
-  // isAggregate() is the real one, so DbNetDescriptor offers a "Buffer tree"
-  // property on any buffered net and makeSelected() had nothing to build it
-  // with (GUI-33).  The empty sets are the same compromise initDescriptors()
-  // makes for DbNetDescriptor; MainWindow::init() re-registers both with the
-  // real widget-owned sets when a window does open.
-  static const odb::PtrSet<odb::dbNet> empty_net_set;
-  registry->registerDescriptor<BufferTree>(new BufferTreeDescriptor(
-      db, sta, empty_net_set, empty_net_set, empty_net_set));
-
-  registerBuiltinHeatMapSources(sta, logger);
   for (const auto& source : getRegisteredHeatMapSources()) {
     const bool already_registered = std::ranges::any_of(
         heat_maps_, [&source](HeatMapDataSource* heatmap) {
@@ -1810,7 +772,7 @@ void Gui::selectChart(const std::string& name)
     return;
   }
 
-  const ChartsWidget::Mode mode
+  const gui::ChartsWidget::Mode mode
       = main_window->getChartsWidget()->modeFromString(name);
   main_window->getChartsWidget()->setMode(mode);
 }
@@ -1821,138 +783,6 @@ void Gui::updateTimingReport()
     return;
   }
   main_window->getTimingWidget()->populatePaths();
-}
-
-int Gui::gifStart(const std::string& filename)
-{
-  if (!hasUI()) {
-    logger_->error(utl::GUI, 49, "Cannot generate GIF without GUI enabled");
-  }
-
-  if (filename.empty()) {
-    logger_->error(utl::GUI, 81, "Filename is required to save a GIF.");
-  }
-
-  auto gif = std::make_unique<GIF>();
-  gif->filename = filename;
-  gifs_.emplace_back(std::move(gif));
-  return gifs_.size() - 1;
-}
-
-void Gui::gifAddFrame(std::optional<int> key,
-                      const odb::Rect& region,
-                      int width_px,
-                      double dbu_per_pixel,
-                      std::optional<int> delay)
-{
-  if (!hasUI()) {
-    return;
-  }
-  if (!key.has_value()) {
-    key = gifs_.size() - 1;
-  }
-  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 51, "GIF not active");
-    return;
-  }
-
-  if (db_ == nullptr) {
-    logger_->error(utl::GUI, 50, "No design loaded.");
-  }
-
-  auto& gif = gifs_[*key];
-
-  odb::Rect save_region = region;
-  const bool use_die_area = region.dx() == 0 || region.dy() == 0;
-  const bool is_offscreen = main_window->testAttribute(
-      Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
-  if (is_offscreen
-      && use_die_area) {  // if gui is active and interactive the visible are of
-                          // the layout viewer will be used.
-    auto* chip = db_->getChip();
-    if (chip == nullptr) {
-      logger_->error(utl::GUI, 79, "No design loaded.");
-    }
-
-    auto* block = chip->getBlock();
-    if (block == nullptr) {
-      logger_->error(utl::GUI, 80, "No design loaded.");
-    }
-
-    save_region
-        = block->getBBox()
-              ->getBox();  // get die area since screen area is not reliable
-    const double bloat_by = 0.05;  // 5%
-    const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
-
-    save_region.bloat(bloat, save_region);
-  }
-
-  QImage img = main_window->getLayoutViewer()->createImage(
-      save_region, width_px, dbu_per_pixel);
-
-  if (gif->writer == nullptr) {
-    gif->writer = std::make_unique<GifWriter>();
-    gif->width = img.width();
-    gif->height = img.height();
-    GifBegin(gif->writer.get(),
-             gif->filename.c_str(),
-             gif->width,
-             gif->height,
-             delay.value_or(kDefaultGifDelay));
-  } else {
-    // scale IMG if not matched
-    img = img.scaled(gif->width, gif->height, Qt::KeepAspectRatio);
-  }
-
-  std::vector<uint8_t> frame(gif->width * gif->height * 4, 0);
-  for (int x = 0; x < img.width(); x++) {
-    if (x >= gif->width) {
-      continue;
-    }
-    for (int y = 0; y < img.height(); y++) {
-      if (y >= gif->height) {
-        continue;
-      }
-
-      const QRgb pixel = img.pixel(x, y);
-      const int frame_offset = (y * gif->width + x) * 4;
-      frame[frame_offset + 0] = qRed(pixel);
-      frame[frame_offset + 1] = qGreen(pixel);
-      frame[frame_offset + 2] = qBlue(pixel);
-      frame[frame_offset + 3] = qAlpha(pixel);
-    }
-  }
-
-  GifWriteFrame(gif->writer.get(),
-                frame.data(),
-                gif->width,
-                gif->height,
-                delay.value_or(kDefaultGifDelay));
-}
-
-void Gui::gifEnd(std::optional<int> key)
-{
-  if (!key.has_value()) {
-    key = gifs_.size() - 1;
-  }
-  if (*key < 0 || *key >= gifs_.size() || gifs_[*key] == nullptr) {
-    logger_->warn(utl::GUI, 58, "GIF not active");
-    return;
-  }
-
-  auto& gif = gifs_[*key];
-  if (gif->writer == nullptr) {
-    logger_->warn(utl::GUI,
-                  107,
-                  "Nothing to save to {}. No frames added to gif.",
-                  gif->filename);
-    gif = nullptr;
-    return;
-  }
-
-  GifEnd(gif->writer.get());
-  gifs_[*key] = nullptr;
 }
 
 class SafeApplication : public QApplication
@@ -1982,6 +812,15 @@ class SafeApplication : public QApplication
 
 // This is the main entry point to start the GUI.  It only
 // returns when the GUI is done.
+}  // namespace web
+
+namespace gui {
+
+// The entry points keep their own namespace: gui/gui.h and gui/MakeGui.h
+// declare them there, and OpenRoad calls them by that name.  Everything they
+// reach for -- the window, the backend, web::Gui itself -- is web's now.
+using namespace web;  // NOLINT(build/namespaces)
+
 int startGui(int& argc,
              char* argv[],
              Tcl_Interp* interp,
@@ -2004,7 +843,7 @@ int startGui(int& argc,
     }
   }
 #endif
-  auto gui = gui::Gui::get();
+  auto gui = web::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
 
@@ -2020,6 +859,7 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
+  gui->setBackend(&qt_backend);
   if (minimize) {
     main_window->showMinimized();
   }
@@ -2059,7 +899,7 @@ int startGui(int& argc,
   QObject::connect(
       main_window, &MainWindow::exit, [&]() { exit_requested = true; });
 
-  // Hide the Gui if someone chooses hide from the menu in the window
+  // Hide the web::Gui if someone chooses hide from the menu in the window
   QObject::connect(main_window, &MainWindow::hide, [gui]() { gui->hideGui(); });
 
   // Save the window's status into the settings when quitting.
@@ -2134,12 +974,20 @@ int startGui(int& argc,
 
   main_window->exit();
 
+  // Uninstall before destroying the window, not after.  ~MainWindow destroys
+  // its children in construction order, so DisplayControls (the first one)
+  // is already gone when DRCWidget and the clock viewer destroy the
+  // Renderers they own.  Each ~web::Renderer calls
+  // web::Gui::unregisterRenderer, and with the backend still installed that
+  // would reach main_window->getControls() on a freed DisplayControls.
+  web::Gui::get()->setBackend(nullptr);
+
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
   application = nullptr;
 
-  resetConversions();
+  web::Gui::resetDbuConversions();
 
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
@@ -2181,7 +1029,7 @@ void initGui(Tcl_Interp* interp,
   utl::evalTclInit(interp, gui::gui_tcl_inits);
 
   // ensure gui is made
-  auto* gui = gui::Gui::get();
+  auto* gui = web::Gui::get();
   gui->init(db, sta, logger);
 }
 

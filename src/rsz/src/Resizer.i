@@ -141,7 +141,6 @@ remove_buffers_cmd(InstanceSeq *insts)
   Resizer *resizer = getResizer();
   if (insts) {
     resizer->removeBuffers(*insts);
-    delete insts;
   } else {
     resizer->removeBuffers({});
   }
@@ -367,25 +366,39 @@ repair_setup(double setup_margin,
              bool verbose,
              std::vector<rsz::MoveType> sequence,
              const char* phases,
+             const char* path_group,
              bool skip_pin_swap,
              bool skip_gate_cloning,
              bool skip_size_down_fanout,
              bool skip_buffering,
              bool skip_buffer_removal,
+             bool skip_buffer_to_inverters,
              bool skip_last_gasp,
              bool skip_vt_swap,
-             bool skip_crit_vt_swap)
+             bool skip_crit_vt_swap,
+             const char* effort,
+             int profile_mode,
+             const char* profile_dir)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence, phases,
+                       verbose, sequence, phases, path_group,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down_fanout,
-                       skip_buffering, skip_buffer_removal,
-                       skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
+                       skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
+                       skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
+                       resizer->repairEffortFromString(effort),
+                       profile_mode, profile_dir);
+}
+
+std::string
+resolve_path_group(const char* path_group)
+{
+  ensureLinked();
+  return getResizer()->resolvePathGroup(path_group);
 }
 
 void
@@ -412,7 +425,8 @@ repair_hold(double setup_margin,
             int max_passes,
             int max_iterations,
             bool match_cell_footprint,
-            bool verbose)
+            bool verbose,
+            const char* path_group)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -420,7 +434,7 @@ repair_hold(double setup_margin,
                       allow_setup_violations,
                       max_buffer_percent, max_passes,
                       max_iterations, match_cell_footprint,
-                      verbose);
+                      verbose, path_group);
 }
 
 void
@@ -628,6 +642,16 @@ void report_delay_estimator_accuracy_cmd(Instance* inst,
   Resizer* resizer = getResizer();
   resizer->reportDelayEstimatorAccuracy(
       inst, replacement, std::string(estimator), delay_levels);
+}
+
+void report_delay_estimator_accuracy_for_rebuffering_cmd(Instance* inst,
+                                                         Pin* driver_pin,
+                                                         int delay_levels)
+{
+  ensureLinked();
+  Resizer* resizer = getResizer();
+  resizer->reportDelayEstimatorAccuracyForRebufferTree(
+      inst, driver_pin, delay_levels);
 }
 
 bool is_valid_accuracy_estimator_cmd(const char* name)
