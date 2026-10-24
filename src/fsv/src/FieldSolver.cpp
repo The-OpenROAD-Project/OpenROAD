@@ -159,42 +159,30 @@ std::pair<double, double> FieldSolver::layerExtent(
     logger_->error(
         utl::FSV, 6, "Read an ITF file before adding shapes by layer.");
   }
-  if (const Stack::Conductor* c = stack_.findConductor(layer)) {
-    return {c->bottom, c->top};
+  const Stack::ZExtent extent = stack_.zExtent(layer);
+  switch (extent.status) {
+    case Stack::ZExtent::kFound:
+      break;
+    case Stack::ZExtent::kUnknownLayer:
+      logger_->error(utl::FSV,
+                     7,
+                     "Layer {} is not a conductor or via of the ITF stack.",
+                     layer);
+    case Stack::ZExtent::kViaToGround:
+      // Its net would be grounded, with no capacitance to solve.
+      logger_->error(utl::FSV,
+                     14,
+                     "Via {} lands on the ground plane, which would ground "
+                     "its net.",
+                     layer);
+    case Stack::ZExtent::kViaWithoutUpper:
+      logger_->error(utl::FSV,
+                     13,
+                     "Via {} has no upper conductor {} in the ITF stack.",
+                     layer,
+                     extent.via->upper);
   }
-  // A via spans from the top of its lower conductor to the bottom of its
-  // upper one.
-  const Stack::Via* via = nullptr;
-  for (const Stack::Via& v : stack_.vias) {
-    if (v.name == layer) {
-      via = &v;
-    }
-  }
-  if (via == nullptr) {
-    logger_->error(utl::FSV,
-                   7,
-                   "Layer {} is not a conductor or via of the ITF stack.",
-                   layer);
-  }
-  const Stack::Conductor* lower = stack_.findConductor(via->lower);
-  const Stack::Conductor* upper = stack_.findConductor(via->upper);
-  if (lower == nullptr) {
-    // A SUBSTRATE via lands on the ground plane: its net is grounded and
-    // has no capacitance to solve.
-    logger_->error(utl::FSV,
-                   14,
-                   "Via {} lands on the ground plane, which would ground "
-                   "its net.",
-                   layer);
-  }
-  if (upper == nullptr) {
-    logger_->error(utl::FSV,
-                   13,
-                   "Via {} has no upper conductor {} in the ITF stack.",
-                   layer,
-                   via->upper);
-  }
-  return {lower->top, upper->bottom};
+  return {extent.bottom, extent.top};
 }
 
 void FieldSolver::addLayerRect(const std::string_view net,

@@ -19,6 +19,7 @@
 #include <tuple>
 #include <vector>
 
+#include "Structures.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
@@ -28,82 +29,6 @@
 namespace fsv {
 namespace {
 
-const std::string kDir = "src/fsv/test/golden/";
-
-struct Structure
-{
-  Geometry geometry;
-  Stack stack;
-};
-
-// Reads the golden structure format: "background <eps>", "layer <top>
-// <eps>" bottom-up from the ground plane, "box <net> x0 y0 z0 x1 y1 z1", and
-// "conformal <name> <bottom> <top> <SW_T> <TW_T> <eps>", a conformal
-// dielectric of the conductor layer [bottom, top] (nesting outward in
-// order). Cross sections run along y, ignoring the boxes' y extents; a
-// positive `length` replaces every box's y extent with [0, length].
-Structure readStructure(const std::string& name, const double length = 0)
-{
-  Structure s;
-  s.stack.technology = name;
-  std::map<std::string, int> nets;
-  std::ifstream in(kDir + name + ".txt");
-  EXPECT_TRUE(in.good()) << name;
-  std::string line;
-  double bottom = 0;
-  while (std::getline(in, line)) {
-    std::istringstream words(line.substr(0, line.find('#')));
-    std::string kind;
-    if (!(words >> kind)) {
-      continue;
-    }
-    if (kind == "background") {
-      words >> s.stack.background_eps;
-    } else if (kind == "layer") {
-      double top = 0;
-      double eps = 0;
-      words >> top >> eps;
-      s.stack.dielectrics.push_back(
-          {.name = "layer", .bottom = bottom, .top = top, .eps = eps});
-      bottom = top;
-    } else if (kind == "box") {
-      std::string net;
-      Box b;
-      words >> net >> b.lo[0] >> b.lo[1] >> b.lo[2] >> b.hi[0] >> b.hi[1]
-          >> b.hi[2];
-      if (length > 0) {
-        b.lo[1] = 0;
-        b.hi[1] = length;
-      }
-      if (!nets.contains(net)) {
-        nets[net] = s.geometry.addNet(net);
-      }
-      s.geometry.addBox(nets[net], b);
-    } else if (kind == "conformal") {
-      Stack::ConformalDielectric c;
-      double layer_bottom = 0;
-      double layer_top = 0;
-      words >> c.name >> layer_bottom >> layer_top >> c.side_thickness
-          >> c.top_thickness >> c.eps;
-      Stack::Conductor* layer = nullptr;
-      for (Stack::Conductor& existing : s.stack.conductors) {
-        if (existing.bottom == layer_bottom && existing.top == layer_top) {
-          layer = &existing;
-        }
-      }
-      if (layer == nullptr) {
-        layer = &s.stack.conductors.emplace_back(Stack::Conductor{
-            .name = "layer" + std::to_string(s.stack.conductors.size()),
-            .bottom = layer_bottom,
-            .top = layer_top,
-            .conformals = {}});
-      }
-      layer->conformals.push_back(c);
-    }
-  }
-  return s;
-}
-
 using Golden
     = std::map<std::tuple<std::string, std::string, std::string>, double>;
 
@@ -112,7 +37,7 @@ using Golden
 Golden readGolden(const std::string& file)
 {
   Golden golden;
-  std::ifstream in(kDir + file);
+  std::ifstream in(std::string(kGoldenDir) + file);
   EXPECT_TRUE(in.good()) << file;
   std::string line;
   while (std::getline(in, line)) {
@@ -168,21 +93,6 @@ SolveOptions solveOptions(const double tol_total)
   options.tol_coupling = 2 * tol_total;
   options.coupling_threshold = 0.05;
   return options;
-}
-
-// A cross-section structure's rectangles: its boxes' x and z extents.
-Geometry2D crossSection(const Geometry& geometry)
-{
-  Geometry2D section;
-  for (int net = 0; net < geometry.netCount(); net++) {
-    section.addNet(geometry.netName(net));
-  }
-  for (int b = 0; b < static_cast<int>(geometry.boxes().size()); b++) {
-    const Box& box = geometry.boxes()[b];
-    section.addRect(geometry.boxNet(b),
-                    {{box.lo[0], box.lo[2]}, {box.hi[0], box.hi[2]}});
-  }
-  return section;
 }
 
 struct CrossSectionCase
