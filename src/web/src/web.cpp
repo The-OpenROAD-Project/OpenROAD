@@ -15,6 +15,7 @@
 #include <cstring>
 #include <deque>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <ios>
@@ -48,9 +49,11 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "renderer_controls.h"
 #include "report_html.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
+#include "script_view.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -516,23 +519,27 @@ bool isRegisteredHeatMapName(const std::string& name)
   return false;
 }
 
+void seedRendererControls(RendererControls& controls)
+{
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+    // The controls a renderer declares are fixed once it has registered, so
+    // one pass per renderer is enough — the render path calls this on every
+    // tile and must not pay for the walk each time.
+    if (!controls.markSeeded(renderer)) {
+      continue;
+    }
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      controls.seed(renderer->displayControlPath(name), control.visibility);
+    }
+  }
+}
+
 void seedRendererControls(WebViewerHook* hook)
 {
   if (hook == nullptr) {
     return;
   }
-  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
-    // The controls a renderer declares are fixed once it has registered, so
-    // one pass per renderer is enough — the render path calls this on every
-    // tile and must not pay for the walk each time.
-    if (!hook->markRendererSeeded(renderer)) {
-      continue;
-    }
-    for (const auto& [name, control] : renderer->getDisplayControls()) {
-      hook->seedDisplayControlVisible(renderer->displayControlPath(name),
-                                      control.visibility);
-    }
-  }
+  seedRendererControls(hook->rendererControls());
 }
 
 // Serializes the per-renderer display controls for the `renderer_controls`
@@ -560,7 +567,6 @@ std::string rendererControlsJson(WebViewerHook* hook)
   // Matching the name alone would silently drop an unrelated renderer's
   // control that happened to be called "Pin Density"; matching the group
   // alone would drop a real renderer that picked the same group name.
-  static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
   for (web::Renderer* renderer : web::Gui::get()->renderers()) {
@@ -595,12 +601,22 @@ std::string rendererControlsJson(WebViewerHook* hook)
   return boost::json::serialize(root);
 }
 
+void setRendererControl(RendererControls& controls,
+                        const std::string& path,
+                        const bool value)
+{
+  controls.set(path, value);
+  if (value) {
+    applyRendererControlExclusivity(controls, path);
+  }
+}
+
 // The per-renderer control just switched on at `path` turns off the siblings
 // it declares mutually exclusive with, mirroring
 // DisplayControls::itemChanged: exclusivity is scoped to the parent group, an
 // empty name means "every sibling", and renderers that share a group name
 // share the parent, so a sibling can belong to another renderer.
-void applyRendererControlExclusivity(WebViewerHook* hook,
+void applyRendererControlExclusivity(RendererControls& controls,
                                      const std::string& path)
 {
   std::string group;
@@ -638,7 +654,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
       if (control_path == path) {
         continue;
       }
-      hook->setDisplayControlVisible(control_path, false);
+      controls.set(control_path, false);
     }
   }
 }
@@ -858,10 +874,7 @@ WebSocketSession::WebSocketSession(
         try {
           const std::string path = std::string(req.json.at("path").as_string());
           const bool value = req.json.at("value").as_bool();
-          viewer_hook_->setDisplayControlVisible(path, value);
-          if (value) {
-            applyRendererControlExclusivity(viewer_hook_, path);
-          }
+          setRendererControl(viewer_hook_->rendererControls(), path, value);
           // Every client shows the same server-side state, so tell them all;
           // the renderers redraw from the new values on the next tile.
           viewer_hook_->sessions().broadcast(
@@ -1680,8 +1693,10 @@ WebServer::WebServer(odb::dbDatabase* db,
       logger_(logger),
       interp_(interp),
       num_threads_(1),
-      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger))
+      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
+      script_view_(std::make_unique<ScriptView>(db, logger))
 {
+  web::Gui::get()->setScriptView(script_view_.get());
 }
 
 void WebServer::setThreadCount(int num_threads)
@@ -1761,6 +1776,13 @@ WebServer::~WebServer()
   if (log_sink_) {
     logger_->removeSink(log_sink_);
     log_sink_.reset();
+  }
+  // The script view goes with us, so nothing may reach it afterwards.
+  if (web::Gui::get()->getScriptView() == script_view_.get()) {
+    web::Gui::get()->setScriptView(nullptr);
+  }
+  if (viewer_hook_) {
+    viewer_hook_->setRendererControls(nullptr);
   }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
@@ -2126,23 +2148,44 @@ std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
   return dst;
 }
 
-// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
-// and gifAddFrame).
-TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+// The -display_option pairs the Tcl layer sends as a JSON object (shared by
+// saveImage and gifAddFrame).
+std::map<std::string, bool> parseOverrides(const std::string& vis_json,
+                                           utl::Logger* logger)
 {
-  TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
-      }
-    } catch (const std::exception& e) {
-      logger->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
-    }
+  std::map<std::string, bool> overrides;
+  if (vis_json.empty()) {
+    return overrides;
   }
-  return vis;
+  try {
+    const boost::json::value v = boost::json::parse(vis_json);
+    for (const auto& [key, value] : v.as_object()) {
+      overrides[std::string(key)] = value.as_bool();
+    }
+  } catch (const std::exception& e) {
+    logger->warn(
+        utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+    overrides.clear();
+  }
+  return overrides;
+}
+
+// The web renderer writes only PNG.  Like Qt's Utils::fixImagePath, a path
+// with another extension gets ".png" added rather than PNG bytes under it.
+std::string pngPath(const std::string& filename, utl::Logger* logger)
+{
+  std::string ext = std::filesystem::path(filename).extension().string();
+  std::ranges::transform(
+      ext, ext.begin(), [](unsigned char c) { return std::tolower(c); });
+  if (ext == ".png") {
+    return filename;
+  }
+  const std::string fixed = filename + ".png";
+  logger->warn(utl::WEB,
+               132,
+               "File path does not end with .png, new path is: {}",
+               fixed);
+  return fixed;
 }
 
 // The background a saved image or GIF frame carries behind the layers.  Tiles
@@ -2195,6 +2238,31 @@ Color viewerBackground(const WebViewerHook* hook)
                .b = static_cast<unsigned char>(rgb & 0xFF),
                .a = 255};
 }
+
+// A background a script chose wins over the one a browser synced.
+Color imageBackground(const ScriptView::Frame& frame, const WebViewerHook* hook)
+{
+  if (frame.background) {
+    return toTileColor(*frame.background);
+  }
+  return viewerBackground(hook);
+}
+
+// What save_image -web draws: the script view with `vis_json` on top.
+struct ScriptImage
+{
+  TileVisibility vis;
+  Color background;
+};
+
+ScriptImage scriptImage(ScriptView& view,
+                        const WebViewerHook* hook,
+                        const std::string& vis_json,
+                        utl::Logger* logger)
+{
+  const ScriptView::Frame frame = view.frame(parseOverrides(vis_json, logger));
+  return {.vis = frame.vis, .background = imageBackground(frame, hook)};
+}
 }  // namespace
 
 void WebServer::saveImage(const std::string& filename,
@@ -2210,13 +2278,14 @@ void WebServer::saveImage(const std::string& filename,
   ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  const TileVisibility vis = parseVis(vis_json, logger_);
-  generator_->saveImage(filename,
+  const ScriptImage image
+      = scriptImage(*script_view_, viewer_hook_.get(), vis_json, logger_);
+  generator_->saveImage(pngPath(filename, logger_),
                         region,
                         width_px,
                         dbu_per_pixel,
-                        vis,
-                        viewerBackground(viewer_hook_.get()));
+                        image.vis,
+                        image.background);
 }
 
 namespace {
@@ -2634,17 +2703,12 @@ void WebServer::gifAddFrame(std::optional<int> key,
     generator_->eagerInit();
   }
 
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const ScriptImage image
+      = scriptImage(*script_view_, viewer_hook_.get(), vis_json, logger_);
   int w = 0;
   int h = 0;
-  std::vector<unsigned char> rgba
-      = generator_->renderImageBuffer(region,
-                                      width_px,
-                                      dbu_per_pixel,
-                                      vis,
-                                      viewerBackground(viewer_hook_.get()),
-                                      &w,
-                                      &h);
+  std::vector<unsigned char> rgba = generator_->renderImageBuffer(
+      region, width_px, dbu_per_pixel, image.vis, image.background, &w, &h);
   if (rgba.empty()) {
     return;  // renderImageBuffer already logged the error.
   }

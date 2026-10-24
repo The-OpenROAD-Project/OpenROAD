@@ -317,31 +317,18 @@ bool WebViewerHook::takeRenderersChanged()
 
 bool WebViewerHook::checkDisplayControlVisible(const std::string& name)
 {
-  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
-  const auto it = renderer_control_visible_.find(name);
-  return it == renderer_control_visible_.end() ? true : it->second;
+  return renderer_controls_->check(name);
 }
 
 void WebViewerHook::setDisplayControlVisible(const std::string& name,
                                              const bool value)
 {
-  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
-  renderer_control_visible_[name] = value;
+  renderer_controls_->set(name, value);
 }
 
-void WebViewerHook::seedDisplayControlVisible(const std::string& name,
-                                              const bool value)
+void WebViewerHook::setRendererControls(RendererControls* controls)
 {
-  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
-  // insert(), not operator[]: a renderer re-registering (a second placement
-  // run) must not reset a control the user turned on.
-  renderer_control_visible_.insert({name, value});
-}
-
-bool WebViewerHook::markRendererSeeded(const void* renderer)
-{
-  const std::lock_guard<std::mutex> lock(renderer_controls_mutex_);
-  return seeded_renderers_.insert(renderer).second;
+  renderer_controls_ = controls != nullptr ? controls : &own_renderer_controls_;
 }
 
 void WebViewerHook::drainLogs()

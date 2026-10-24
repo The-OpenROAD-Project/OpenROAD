@@ -5,10 +5,15 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -21,7 +26,10 @@
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
 #include "web/heatMap.h"
+#include "web/web.h"
 
 namespace web {
 namespace {
@@ -917,6 +925,133 @@ TEST_F(SaveImageTest, DebugRendererPassIsSkippedWhenToggledOff)
   TileGenerator::setRendererHooks({});
 
   EXPECT_EQ(calls, 0);
+}
+
+// A size from -resolution is truncated, as Qt's QRegion of the screen rect is,
+// so the two renderers give the same dimensions; an exact -width is kept.
+TEST_F(SaveImageTest, SizeIsTruncatedLikeQt)
+{
+  // The default frame is the 100000 dbu die plus 5% each side: 110000 dbu,
+  // which at this resolution is 1099.98 pixels.
+  int w = 0;
+  int h = 0;
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0),
+                            0,
+                            110000 / 1099.98,
+                            TileVisibility(),
+                            Color(),
+                            &w,
+                            &h);
+  EXPECT_EQ(w, 1099);
+  EXPECT_EQ(h, 1099);
+
+  tile_gen_->renderImagePng(
+      odb::Rect(0, 0, 0, 0), 1000, 0, TileVisibility(), Color(), &w, &h);
+  EXPECT_EQ(w, 1000);
+}
+
+// Qt draws the IO pin names only when the longest fits in the margin around
+// the die.  The default 5% margin is too narrow for them here; a region with
+// room around the die has space for them.
+TEST_F(SaveImageTest, PinNamesOnlyWhereTheyFit)
+{
+  makeBTermAtEdge(
+      "a_long_pin_name", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeTileGen();
+
+  TileVisibility with_names;
+  with_names.stdcells = false;
+  TileVisibility without_names = with_names;
+  without_names.pin_names = false;
+
+  const odb::Rect fit(0, 0, 0, 0);
+  EXPECT_EQ(tile_gen_->renderImagePng(fit, 512, 0, with_names),
+            tile_gen_->renderImagePng(fit, 512, 0, without_names));
+
+  // Wide enough that the markers reach the size names need, too.
+  const odb::Rect roomy(-50000, -50000, 150000, 150000);
+  EXPECT_NE(tile_gen_->renderImagePng(roomy, 2048, 0, with_names),
+            tile_gen_->renderImagePng(roomy, 2048, 0, without_names));
+}
+
+// ─── save_image -web through the server, from the script view ──────────────
+
+class SaveImageViewTest : public SaveImageTest
+{
+ protected:
+  std::string save(const std::string& label, const std::string& options = "")
+  {
+    const std::string path = tempPng(label);
+    server_.saveImage(path, 0, 0, 0, 0, 256, 0, options);
+    return path;
+  }
+
+  static std::string readBytes(const std::string& path)
+  {
+    std::ifstream f(path, std::ios::binary);
+    return {std::istreambuf_iterator<char>(f),
+            std::istreambuf_iterator<char>()};
+  }
+
+  WebServer server_{getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr};
+};
+
+TEST_F(SaveImageViewTest, DrawsByTheDisplayControls)
+{
+  const std::string shown = save("controls_shown");
+  Gui::get()->setDisplayControlsVisible("Instances/*", false);
+  const std::string hidden = save("controls_hidden");
+  EXPECT_NE(readBytes(shown), readBytes(hidden));
+}
+
+// A -display_option pattern applies to its image only, and gives the image the
+// same control would.
+TEST_F(SaveImageViewTest, DisplayOptionsTakeControlPaths)
+{
+  const std::string option = save("option", R"({"Instances/*":false})");
+  EXPECT_TRUE(Gui::get()->checkDisplayControlsVisible("Instances/Macro"))
+      << "the option must not stick";
+
+  Gui::get()->setDisplayControlsVisible("Instances/*", false);
+  const std::string control = save("control");
+  EXPECT_EQ(readBytes(option), readBytes(control));
+}
+
+TEST_F(SaveImageViewTest, DisplayOptionsStillTakeTheirOwnKeys)
+{
+  EXPECT_EQ(readBytes(save("key", R"({"stdcells":false})")),
+            readBytes(save("path", R"({"Instances/StdCells/*":false})")));
+  EXPECT_THROW(save("bogus", R"({"Bogus":true})"), std::runtime_error);
+}
+
+// Only PNG is written, so another extension gets ".png" added, as Qt does when
+// it has no writer for the one asked for.
+TEST_F(SaveImageViewTest, OtherExtensionsGetPngAdded)
+{
+  const std::string webp = tempPng("ext") + ".webp";
+  output_files_.push_back(webp + ".png");
+  server_.saveImage(webp, 0, 0, 0, 0, 64, 0, "");
+  EXPECT_FALSE(std::filesystem::exists(webp));
+  unsigned w = 0, h = 0;
+  decodePngFile(webp + ".png", w, h);
+  EXPECT_EQ(w, 64u);
+
+  const std::string upper = tempPng("upper") + ".PNG";
+  output_files_.push_back(upper);
+  server_.saveImage(upper, 0, 0, 0, 0, 64, 0, "");
+  EXPECT_TRUE(std::filesystem::exists(upper));
+}
+
+TEST_F(SaveImageViewTest, ScriptBackgroundIsUsed)
+{
+  Gui::get()->setDisplayControlsColor("Misc/Background",
+                                      Painter::Color(255, 0, 255));
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(save("background"), w, h);
+  ASSERT_GE(pixels.size(), 4u);
+  EXPECT_EQ(pixels[0], 255);
+  EXPECT_EQ(pixels[1], 0);
+  EXPECT_EQ(pixels[2], 255);
 }
 
 }  // namespace

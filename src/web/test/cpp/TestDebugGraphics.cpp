@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "renderer_controls.h"
 #include "tile_generator.h"
 #include "web/core.h"
 #include "web_chart.h"
@@ -468,8 +469,8 @@ TEST(WebViewerHookTest, DisplayControlVisibilityRoundTrips)
 TEST(WebViewerHookTest, SeedInstallsTheRenderersOwnDefault)
 {
   WebViewerHook hook;
-  hook.seedDisplayControlVisible("Detailed Router/Graph edges", false);
-  hook.seedDisplayControlVisible("Detailed Router/Route guides", true);
+  hook.rendererControls().seed("Detailed Router/Graph edges", false);
+  hook.rendererControls().seed("Detailed Router/Route guides", true);
   EXPECT_FALSE(hook.checkDisplayControlVisible("Detailed Router/Graph edges"));
   EXPECT_TRUE(hook.checkDisplayControlVisible("Detailed Router/Route guides"));
 }
@@ -482,19 +483,19 @@ TEST(WebViewerHookTest, ARendererIsOfferedForSeedingOnlyOnce)
 {
   WebViewerHook hook;
   int marker = 0;
-  EXPECT_TRUE(hook.markRendererSeeded(&marker));
-  EXPECT_FALSE(hook.markRendererSeeded(&marker));
+  EXPECT_TRUE(hook.rendererControls().markSeeded(&marker));
+  EXPECT_FALSE(hook.rendererControls().markSeeded(&marker));
   int other = 0;
-  EXPECT_TRUE(hook.markRendererSeeded(&other))
+  EXPECT_TRUE(hook.rendererControls().markSeeded(&other))
       << "a second renderer is still seeded";
 }
 
 TEST(WebViewerHookTest, SeedDoesNotClobberAUserChoice)
 {
   WebViewerHook hook;
-  hook.seedDisplayControlVisible("PDN/Vias", false);
+  hook.rendererControls().seed("PDN/Vias", false);
   hook.setDisplayControlVisible("PDN/Vias", true);
-  hook.seedDisplayControlVisible("PDN/Vias", false);
+  hook.rendererControls().seed("PDN/Vias", false);
   EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Vias"))
       << "the second seed must not reset the control";
 }

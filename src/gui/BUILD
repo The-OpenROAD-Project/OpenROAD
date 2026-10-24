@@ -17,14 +17,17 @@ package(
     features = ["layering_check"],
 )
 
-# The gui as a binary with no Qt has it: the Qt-free core, plus the entry
-# points answering that there is no gui to open.  A Qt build links :gui_qt
-# instead, which carries Qt's own versions of those, so nothing reachable
-# from :openroad-qt depends on this target.
+# The gui as a binary with no Qt has it: the Qt-free core, the same gui::
+# Tcl commands as a Qt build, and the entry points answering that there is
+# no gui to open.  A Qt build links :gui_qt instead, which carries Qt's own
+# versions of those, so nothing reachable from :openroad-qt depends on this
+# target.
 cc_library(
     name = "gui",
     srcs = [
         "src/makeGui.cpp",
+        ":gui_swig",
+        ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
@@ -35,10 +38,12 @@ cc_library(
         "src",
     ],
     deps = [
+        "//:ord",
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/utl",
         "//src/web:core",
+        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
