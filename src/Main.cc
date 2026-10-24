@@ -75,6 +75,7 @@ using std::string;
   X(cts)                                 \
   X(drt)                                 \
   X(fin)                                 \
+  X(fsv)                                 \
   X(par)                                 \
   X(rcx)                                 \
   X(rmp)                                 \

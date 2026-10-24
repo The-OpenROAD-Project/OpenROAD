@@ -128,6 +128,7 @@ TESTS = [
     "field_solver_gcd",
     "field_solver_itf",
     "field_solver_nets",
+    "field_solver_python",
     "field_solver_uniform",
 ]
 

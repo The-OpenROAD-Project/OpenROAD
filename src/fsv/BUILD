@@ -2,6 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -152,6 +153,29 @@ tcl_wrap_cc(
     namespace_prefix = "fsv",
     root_swig_src = "src/FieldSolver.i",
     swig_includes = ["src/fsv/src"],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "src/FieldSolver-py.i",
+        "//:error_swig-py",
+    ],
+    module = "fsv_py",
+    root_swig_src = "src/FieldSolver-py.i",
+    swig_includes = ["src/fsv/src"],
+)
+
+# Compiled into //:_openroad.so with the other Python modules, so that it
+# shares the session the Tcl commands use.
+python_wrap_library(
+    name = "py_wrap",
+    deps = [
+        ":field_solver",
+        ":fsv",
+        ":geometry",
+        ":net_window",
+    ],
 )
 
 filegroup(
