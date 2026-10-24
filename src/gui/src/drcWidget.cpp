@@ -485,19 +485,7 @@ void DRCRenderer::drawObjects(web::Painter& painter)
 
   web::DbMarkerDescriptor* desc = (web::DbMarkerDescriptor*) web::Gui::get()
                                       ->getDescriptor<odb::dbMarker*>();
-
-  web::Painter::Color pen_color = web::Painter::kWhite;
-  web::Painter::Color brush_color = pen_color;
-  brush_color.a = 50;
-
-  painter.setPen(pen_color, true, 0);
-  painter.setBrush(brush_color, web::Painter::Brush::kDiagonal);
-  for (odb::dbMarker* marker : category_->getAllMarkers()) {
-    if (!marker->isVisible()) {
-      continue;
-    }
-    desc->paintMarker(marker, painter);
-  }
+  desc->paintMarkers(category_, painter);
 }
 
 web::SelectionSet DRCRenderer::select(odb::dbTechLayer* layer,

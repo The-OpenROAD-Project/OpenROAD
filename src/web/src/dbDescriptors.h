@@ -883,6 +883,9 @@ class DbMarkerDescriptor : public BaseDbDescriptor<odb::dbMarker>
       const std::function<void(const Selected&)>& func) const override;
 
   void paintMarker(odb::dbMarker* marker, Painter& painter) const;
+  // The DRC viewer's drawing of `category`: its visible markers, white over a
+  // diagonal hatch.
+  void paintMarkers(odb::dbMarkerCategory* category, Painter& painter) const;
 
  protected:
   Properties getDBProperties(odb::dbMarker* marker) const override;
