@@ -20,18 +20,18 @@ check "signal-pin same-net location" {
 # A later manual move beneath the via must be reported as a supply-via failure,
 # independently from the blocked-layer category.
 [$block findInst blocked] setLocation 3800 5600
-set check_failed [catch {check_placement} check_message]
+set check_failed [catch { check_placement } check_message]
 check "manual supply-via conflict rejected" {
   expr {$check_failed && [string match "*DPL-0033*" $check_message]}
 } 1
 
 set supply_via_markers 0
 foreach category [$block getMarkerCategories] {
-  if {[$category getName] != "DPL"} {
+  if { [$category getName] != "DPL" } {
     continue
   }
   foreach subcategory [$category getMarkerCategories] {
-    if {[$subcategory getName] == "Fixed_supply_via_failures"} {
+    if { [$subcategory getName] == "Fixed_supply_via_failures" } {
       set supply_via_markers [llength [$subcategory getMarkers]]
     }
   }
