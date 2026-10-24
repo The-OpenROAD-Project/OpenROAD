@@ -35,6 +35,13 @@ PASSFAIL_TESTS = [
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
+# Local tests, too slow to run in CI (minutes each); run them by name.
+MANUAL_TESTS = [
+    "banks_asap7",
+    "bank_column_layout_asap7",
+    "write_priority_or_asap7",
+]
+
 filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
@@ -171,6 +178,7 @@ filegroup(
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
+        tags = ["manual"] if test_name in MANUAL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
