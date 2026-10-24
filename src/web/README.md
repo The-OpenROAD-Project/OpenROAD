@@ -40,12 +40,30 @@ web_server
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
 
-```{warning}
-The browser console evaluates Tcl on the server, so anyone who can reach the
-port can run commands as the user who started `openroad`. The default loopback
-bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
-network you trust; the server has no authentication.
+#### Access token
+
+You never type the token. The browser `openroad` launches opens the viewer
+directly; when none is launched (ssh, batch jobs), open the url `WEB-0001`
+prints, which already carries it:
+
 ```
+[INFO WEB-0001] Server started on http://localhost:39217/?token=2f1c...
+To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+```
+
+The token keeps other users of the machine out: they can all reach
+`127.0.0.1`, and the viewer's console runs Tcl as you. Without it the page, the
+image download and the WebSocket are refused, so a bookmark from an earlier
+session will not connect; every session mints a new one.
+
+- The launched browser gets a single-use *ticket* instead, so the token never
+  appears on a command line (`ps`). The ticket stops working once used, when
+  the launch fails or is skipped, or after five minutes.
+- If the viewer opens on `Unauthorized` right after a launch that `WEB-0003` did
+  not report as failed, someone else may have used the ticket first: restart
+  the server, which mints a new token.
+- The url goes through the logger, so a `-log` file holds the token. It travels
+  in clear text over HTTP, so it does not replace the loopback bind.
 
 #### Running on a remote machine
 
@@ -57,7 +75,7 @@ to reach it:
 
 ```shell
 $ ssh farm-42 "openroad -web design.tcl"
-[INFO WEB-0001] Server started on http://localhost:39217
+[INFO WEB-0001] Server started on http://localhost:39217/?token=2f1c...
 To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
 [INFO WEB-0120] Not launching a browser here (this is an ssh session); open the url above.
 Pass -browser (-web_browser) to launch one anyway.
@@ -101,17 +119,23 @@ with a stale local one it is attempted and usually fails: `WEB-0003` reports tha
 tunnel are in `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
 the shell profile used on those hosts, or pass `-no_browser`.
 
+A tab left open across a restart on the same port says so and stops retrying,
+because the new server minted a new token. With the default `-port 0` the
+restarted server listens elsewhere, and the tab only sees a server that is
+gone.
+
 With `-bind` on a routable address the viewer is reachable without a tunnel,
 and `WEB-0001` says so instead of printing an `ssh -L` line that would point
 at a loopback port nobody is listening on.
 
 Binding past loopback is the other way to be reachable, and the one to avoid
-unless the network is trusted — the server has no authentication. With
-`--network host`, as ORFS's `docker_shell` runs, a container needs none of
-this: the default bind is reachable from the host. On its own network
-(Docker's default bridge) the loopback bind cannot be reached from the host —
-the connection is refused with no message from the server — and an ssh tunnel
-does not reach inside. Bind past loopback and publish the port:
+unless the network is trusted — the token is then the only thing between the
+port and a shell. With `--network host`, as ORFS's `docker_shell` runs, a
+container needs none of this: the default bind is reachable from the host. On
+its own network (Docker's default bridge) the loopback bind cannot be reached
+from the host — the connection is refused with no message from the server —
+and an ssh tunnel does not reach inside. Bind past loopback and publish the
+port:
 
 ```tcl
 web_server -port 8080 -bind 0.0.0.0

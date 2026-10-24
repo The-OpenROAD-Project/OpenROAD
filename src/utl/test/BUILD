@@ -90,6 +90,7 @@ test_suite(
         ":TestCpuTopology",
         ":TestCsvParser",
         ":TestMetrics",
+        ":TestRandomBytes",
         ":TestSuppressStdout",
     ],
 )
@@ -195,6 +196,16 @@ doc_check_test(
 cc_test(
     name = "TestCpuTopology",
     srcs = ["cpp/TestCpuTopology.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRandomBytes",
+    srcs = ["cpp/TestRandomBytes.cpp"],
     deps = [
         "//src/utl",
         "@googletest//:gtest",

@@ -8,6 +8,10 @@
          loads. -->
     <link rel="license" href="THIRD_PARTY_LICENSES.txt">
 
+    <!-- The access token is in this page's query string; never send it in a
+         Referer. -->
+    <meta name="referrer" content="no-referrer">
+
     <!-- Filled in at build time from esbuild's bundles; theme.js switches the
          two golden-layout themes through their `disabled` property, by id. -->
     <!-- saved-report:begin -->

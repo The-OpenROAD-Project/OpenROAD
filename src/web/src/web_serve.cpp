@@ -166,8 +166,8 @@ std::string thisHostName()
   return ec || name.empty() ? "<this-host>" : name;
 }
 
-// Hand `launch_url` to a browser, and say so when the launcher fails.
-void launchBrowser(utl::Logger* logger,
+// Hand `launch_url` to a browser; false when the launcher reports failure.
+bool launchBrowser(utl::Logger* logger,
                    const std::string& launch_url,
                    const std::string& errfile,
                    const bool through_browser_env)
@@ -198,7 +198,7 @@ void launchBrowser(utl::Logger* logger,
   }
   const int ret = std::system(open_cmd.c_str());
   if (ret == 0) {
-    return;
+    return true;
   }
   std::string errout;
   std::ifstream err(errfile);
@@ -216,6 +216,7 @@ void launchBrowser(utl::Logger* logger,
                "Open the url above.",
                ret,
                errout);
+  return false;
 }
 
 }  // namespace
@@ -589,8 +590,10 @@ void WebServer::serve(int port,
       logger_->warn(utl::WEB,
                     80,
                     "Web server bound to {}, reachable beyond this machine. "
-                    "The viewer runs Tcl commands, so anyone who can reach "
-                    "this port can run commands as this user.",
+                    "The viewer runs Tcl commands as this user; the access "
+                    "token in the URL is all that stands in the way, and it "
+                    "travels in clear text over HTTP. Prefer the default "
+                    "loopback bind with an SSH tunnel.",
                     bind_to);
     }
     auto const address = net::ip::make_address(bind_to);  // validated above
@@ -606,6 +609,19 @@ void WebServer::serve(int port,
 
     ioc_ = std::make_unique<net::io_context>(num_threads);
 
+    // No token, no server: without the gate, whoever reaches the port gets the
+    // interpreter.
+    std::string token = generateAuthToken();
+    std::string ticket = generateAuthToken();
+    if (token.empty() || ticket.empty()) {
+      // noreturn: the catch below tears the half-built server down.
+      logger_->error(utl::WEB,
+                     124,
+                     "Could not read /dev/urandom to mint an access token.");
+    }
+    const auto auth = std::make_shared<SessionAuth>(
+        std::move(token), std::move(ticket), kTicketTtl);
+
     auto handle = createAndRunListener(*ioc_,
                                        Tcp::endpoint{address, u_port},
                                        generator_,
@@ -614,12 +630,17 @@ void WebServer::serve(int port,
                                        clock_report,
                                        logger_,
                                        viewer_hook_.get(),
-                                       max_in_flight);
+                                       max_in_flight,
+                                       auth);
     shutdown_listener_ = std::move(handle.shutdown);
 
-    // Point the browser at something it can actually reach.
-    const std::string url = "http://" + browserHostForBind(address) + ":"
-                            + std::to_string(handle.port);
+    // Point the browser at something it can actually reach.  The launch uses
+    // the ticket url, so the token never reaches a command line.
+    const std::string origin = "http://" + browserHostForBind(address) + ":"
+                               + std::to_string(handle.port);
+    const std::string target = "/?token=" + auth->token();
+    const std::string url = origin + target;
+    const std::string launch_url = origin + "/?ticket=" + auth->ticket();
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without
@@ -647,16 +668,17 @@ void WebServer::serve(int port,
 
     threads_.reserve(num_threads);
     for (int i = 0; i < num_threads; ++i) {
-      threads_.emplace_back([this] { ioc_->run(); });
+      threads_.emplace_back([this] { runIoContext(*ioc_, logger_); });
     }
 
     const std::string host_name = thisHostName();
     const std::string reach_hint
-        = reachabilityHint(bind_kind, address, host_name, handle.port);
+        = reachabilityHint(bind_kind, address, host_name, handle.port, target);
     logger_->info(utl::WEB, 1, "Server started on {}\n{}", url, reach_hint);
 
     const BrowserEnv env = currentBrowserEnv(logger_, host_name, launch);
     const LaunchSkip skip = browserLaunchSkipReason(launch, env);
+    // A ticket stays live only while a browser we launched may redeem it.
     if (skip != LaunchSkip::kNone) {
       const bool overridable
           = skip != LaunchSkip::kFlag && skip != LaunchSkip::kOptOut;
@@ -667,8 +689,12 @@ void WebServer::serve(int port,
                     overridable
                         ? "\nPass -browser (-web_browser) to launch one anyway."
                         : "");
-    } else {
-      launchBrowser(logger_, url, errfile, launchesThroughBrowserEnv(env));
+      auth->revokeTicket();
+    } else if (!launchBrowser(logger_,
+                              launch_url,
+                              errfile,
+                              launchesThroughBrowserEnv(env))) {
+      auth->revokeTicket();
     }
     if (fd != -1) {
       std::error_code err_ignored;
