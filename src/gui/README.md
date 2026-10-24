@@ -115,6 +115,10 @@ save_clocktree_image
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 
+With no Qt window open, the web viewer draws the same diagram, as a PNG
+file (a path with another extension gets `.png` added). A size not given is
+1024 pixels.
+
 ### Save Timing Histogram Image
 
 This command saves the screenshot of timing histogram given options
@@ -782,6 +786,9 @@ gui::select_clockviewer_clock
 | ---- | ---- |
 | `name` |  name of clock to select |
 
+With no Qt window open, `save_image -web` draws that clock's tree on the
+layout while the "Clock Tree Viewer" is shown.
+
 ### GUI Display Controls
 
 Control the visible and selected elements in the layout:
@@ -883,6 +890,9 @@ gui::show_widget
 | ---- | ---- |
 | `name` | of the widget. For example, the display controls would be "Display Control". |
 
+With no Qt window open, only the "Clock Tree Viewer" can be shown or hidden;
+the other names are ignored.
+
 ### Hide widget
 
 To close a specific layout widget:
@@ -930,6 +940,8 @@ gui::show_worst_path
     [-setup|-hold]
 ```
 
+With no Qt window open, the path is kept for `save_image -web` to draw.
+
 #### Options
 
 | Switch Name | Description |
@@ -939,7 +951,8 @@ gui::show_worst_path
 
 ### Clear Timing Path
 
-Clear the selected timing path in the Timing Report widget:
+Clear the selected timing path in the Timing Report widget, or with no Qt
+window open, the one kept for `save_image -web`:
 
 ```tcl
 gui::clear_timing_path

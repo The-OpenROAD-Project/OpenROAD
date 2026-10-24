@@ -13,6 +13,11 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "save_images_web",
+]
+
+PASSFAIL_TESTS = [
+    "save_images_web",
 ]
 
 filegroup(
@@ -35,6 +40,8 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    check_log = test_name not in PASSFAIL_TESTS,
+    check_passfail = test_name in PASSFAIL_TESTS,
     data = [":test_resources"],
 ) for test_name in TESTS]
 
@@ -74,6 +81,7 @@ test_suite(
         ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":script_view_test",
         ":tile_generator_test",
         ":web_assets_test",
     ],
@@ -494,6 +502,69 @@ cc_test(
         "//src/web:core",
         "//third-party/lodepng",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "clock_tree_overlay_test",
+    srcs = [
+        "cpp/TestClockTreeOverlay.cpp",
+        "cpp/clock_tree_fixture.h",
+    ],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "clock_tree_diagram_test",
+    srcs = [
+        "cpp/TestClockTreeDiagram.cpp",
+        "cpp/clock_tree_fixture.h",
+    ],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:color",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "script_view_test",
+    srcs = ["cpp/TestScriptView.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -149,14 +150,19 @@ void TimingReport::expandPath(sta::Path* path,
       total_fanout += node_fanout;
     }
 
-    nodes.push_back(TimingNode{.pin_name = std::move(pin_name),
-                               .fanout = node_fanout,
-                               .is_rising = is_rising,
-                               .is_clock = pin_is_clock,
-                               .time = (arrival_cur + offset) / time_scale,
-                               .delay = pin_delay / time_scale,
-                               .slew = slew / time_scale,
-                               .load = cap / cap_scale});
+    nodes.push_back(TimingNode{
+        .pin_name = std::move(pin_name),
+        .fanout = node_fanout,
+        .is_rising = is_rising,
+        .is_clock = pin_is_clock,
+        .time = (arrival_cur + offset) / time_scale,
+        .delay = pin_delay / time_scale,
+        .slew = slew / time_scale,
+        .load = cap / cap_scale,
+        .iterm = term,
+        .bterm = port,
+        .is_driver = is_driver,
+    });
 
     arrival_prev = arrival_cur;
   }
@@ -210,72 +216,115 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       /*clk_gating_hold*/ false);
 
   for (auto& path_end : path_ends) {
-    TimingPathSummary summary;
-
-    sta::Path* path = path_end->path();
-
-    // Clocks
-    auto* src_edge = path_end->sourceClkEdge(sta_);
-    summary.start_clk = src_edge ? src_edge->clock()->name() : "<No clock>";
-    auto* end_clk = path_end->targetClk(sta_);
-    summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
-
-    // Path-level metrics (convert from internal units to user units)
-    const float time_scale = sta_->units()->timeUnit()->scale();
-    summary.slack = path_end->slack(sta_) / time_scale;
-    summary.arrival = path_end->dataArrivalTime(sta_) / time_scale;
-    summary.required = path_end->requiredTime(sta_) / time_scale;
-    summary.skew = path_end->clkSkew(sta_) / time_scale;
-    auto* pd = path_end->pathDelay();
-    summary.path_delay = pd ? pd->delay() / time_scale : 0.0f;
-
-    bool clock_propagated = src_edge && src_edge->clock()->isPropagated();
-
-    // Expand data path
-    expandPath(path,
-               0.0f,
-               clock_propagated,
-               summary.data_nodes,
-               summary.logic_depth,
-               summary.fanout);
-
-    // Expand capture path
-    int capture_depth = 0;
-    int capture_fanout = 0;
-    expandPath(path_end->targetClkPath(),
-               path_end->targetClkOffset(sta_),
-               clock_propagated,
-               summary.capture_nodes,
-               capture_depth,
-               capture_fanout);
-
-    // Start/end pin names
-    // Find first non-clock node in data path
-    int clk_end = -1;
-    for (int i = 0; i < static_cast<int>(summary.data_nodes.size()); i++) {
-      if (!summary.data_nodes[i].is_clock) {
-        clk_end = i - 1;
-        break;
-      }
-    }
-    if (clk_end < 0) {
-      clk_end = static_cast<int>(summary.data_nodes.size()) - 1;
-    }
-
-    if (!summary.data_nodes.empty()) {
-      int start_idx = clk_end + 1;
-      if (start_idx >= static_cast<int>(summary.data_nodes.size())) {
-        start_idx = 0;
-      }
-      summary.start_pin = summary.data_nodes[start_idx].pin_name;
-      if (!summary.data_nodes.empty()) {
-        summary.end_pin = summary.data_nodes.back().pin_name;
-      }
-    }
-    result.push_back(std::move(summary));
+    result.push_back(summarize(path_end));
   }
 
   return result;
+}
+
+std::optional<TimingPathSummary> TimingReport::getWorstPath(
+    const bool is_setup) const
+{
+  if (!sta_) {
+    return std::nullopt;
+  }
+  sta_->ensureGraph();
+  sta_->searchPreamble();
+
+  // TimingWidget's first row, as STAGuiInterface::getTimingPaths finds it.
+  sta::StringSeq group_names;
+  sta::PathEndSeq path_ends = sta_->search()->findPathEnds(
+      /*from*/ nullptr,
+      /*thrus*/ nullptr,
+      /*to*/ nullptr,
+      /*unconstrained*/ false,
+      sta::SceneSeq{sta_->cmdScene()},
+      is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+      /*group_count*/ 1,
+      /*endpoint_count*/ 1,
+      /*unique_pins*/ true,
+      /*unique_edges*/ true,
+      -sta::INF,
+      sta::INF,
+      /*sort_by_slack*/ true,
+      group_names,
+      /*setup*/ is_setup,
+      /*hold*/ !is_setup,
+      /*recovery*/ false,
+      /*removal*/ false,
+      /*clk_gating_setup*/ is_setup,
+      /*clk_gating_hold*/ !is_setup);
+  if (path_ends.empty()) {
+    return std::nullopt;
+  }
+  return summarize(path_ends.front());
+}
+
+TimingPathSummary TimingReport::summarize(sta::PathEnd* path_end) const
+{
+  TimingPathSummary summary;
+
+  sta::Path* path = path_end->path();
+
+  // Clocks
+  auto* src_edge = path_end->sourceClkEdge(sta_);
+  summary.start_clk = src_edge ? src_edge->clock()->name() : "<No clock>";
+  auto* end_clk = path_end->targetClk(sta_);
+  summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
+
+  // Path-level metrics (convert from internal units to user units)
+  const float time_scale = sta_->units()->timeUnit()->scale();
+  summary.slack = path_end->slack(sta_) / time_scale;
+  summary.arrival = path_end->dataArrivalTime(sta_) / time_scale;
+  summary.required = path_end->requiredTime(sta_) / time_scale;
+  summary.skew = path_end->clkSkew(sta_) / time_scale;
+  auto* pd = path_end->pathDelay();
+  summary.path_delay = pd ? pd->delay() / time_scale : 0.0f;
+
+  bool clock_propagated = src_edge && src_edge->clock()->isPropagated();
+
+  // Expand data path
+  expandPath(path,
+             0.0f,
+             clock_propagated,
+             summary.data_nodes,
+             summary.logic_depth,
+             summary.fanout);
+
+  // Expand capture path
+  int capture_depth = 0;
+  int capture_fanout = 0;
+  expandPath(path_end->targetClkPath(),
+             path_end->targetClkOffset(sta_),
+             clock_propagated,
+             summary.capture_nodes,
+             capture_depth,
+             capture_fanout);
+
+  // Start/end pin names
+  // Find first non-clock node in data path
+  int clk_end = -1;
+  for (int i = 0; std::cmp_less(i, summary.data_nodes.size()); i++) {
+    if (!summary.data_nodes[i].is_clock) {
+      clk_end = i - 1;
+      break;
+    }
+  }
+  if (clk_end < 0) {
+    clk_end = static_cast<int>(summary.data_nodes.size()) - 1;
+  }
+
+  if (!summary.data_nodes.empty()) {
+    int start_idx = clk_end + 1;
+    if (std::cmp_greater_equal(start_idx, summary.data_nodes.size())) {
+      start_idx = 0;
+    }
+    summary.start_pin = summary.data_nodes[start_idx].pin_name;
+    if (!summary.data_nodes.empty()) {
+      summary.end_pin = summary.data_nodes.back().pin_name;
+    }
+  }
+  return summary;
 }
 
 // Snap an exact bin interval to a "nice" value (1, 2, 5, or 10 × 10^n).

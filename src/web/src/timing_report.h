@@ -4,6 +4,7 @@
 #pragma once
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@ class dbInst;
 namespace sta {
 class dbSta;
 class Path;
+class PathEnd;
 }  // namespace sta
 
 namespace web {
@@ -34,6 +36,10 @@ struct TimingNode
   float delay = 0.0f;  // incremental
   float slew = 0.0f;
   float load = 0.0f;
+  // Not serialized: what a saved image draws the node by.
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  bool is_driver = false;
 };
 
 struct TimingPathSummary
@@ -166,6 +172,10 @@ class TimingReport
 
   ChartFilters getChartFilters() const;
 
+  // The path the Qt timing report puts first: the worst over the command
+  // scene, clock-gating checks included and unconstrained paths not.
+  std::optional<TimingPathSummary> getWorstPath(bool is_setup) const;
+
   // Compute the timing (logic) cone through `pin_name` (an ITerm "inst/pin" or
   // a BTerm port name).  Mirrors the Qt GUI's TimingConeRenderer: walks the STA
   // timing graph for fanin and/or fanout, assigns a signed logic depth per pin
@@ -185,6 +195,7 @@ class TimingReport
                   std::vector<TimingNode>& nodes,
                   int& logic_depth,
                   int& total_fanout) const;
+  TimingPathSummary summarize(sta::PathEnd* path_end) const;
 
   sta::dbSta* sta_;
 };

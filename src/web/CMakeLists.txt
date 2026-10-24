@@ -26,6 +26,7 @@ find_package(ZLIB REQUIRED)
 # replaces, and they are on the web tile renderer's hot path.
 add_library(gui_core
   src/bufferTreeDescriptor.cpp
+  src/clockTree.cpp
   src/colorGenerator.cpp
   src/dbDescriptors.cpp
   src/descriptor_registry.cpp
@@ -95,15 +96,21 @@ add_custom_command(
 
 target_sources(web
   PRIVATE
+    src/clock_tree_diagram.cpp
     src/clock_tree_report.cpp
     src/color.cpp
+    src/display_control_tree.cpp
     src/hierarchy_report.cpp
+    src/image_overlays.cpp
+    src/renderer_controls.cpp
     src/report_html.cpp
     src/request_handler.cpp
+    src/script_view.cpp
     src/search.cpp
     src/font_data.cpp
     src/glyph_cache.cpp
     src/tile_generator.cpp
+    src/timing_path_painter.cpp
     src/timing_report.cpp
     src/asset_gzip.cpp
     src/web.cpp

@@ -29,6 +29,9 @@ set(WEB_TESTS
   TestCharts
   TestLabels
   TestSaveDisplayControls
+  TestScriptView
+  TestClockTreeOverlay
+  TestClockTreeDiagram
   TestGif
   TestWebAssets
   TestHeatMap
