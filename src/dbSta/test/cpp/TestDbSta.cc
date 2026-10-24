@@ -73,7 +73,7 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(dbnet_out2, nullptr);
   Net* sta_dbnet_out2 = db_network_->dbToSta(dbnet_out2);
   ASSERT_NE(sta_dbnet_out2, nullptr);
-  Net* sta_highest_net = db_network_->highestNetAbove(sta_dbnet_out2);
+  const Net* sta_highest_net = db_network_->highestNetAbove(sta_dbnet_out2);
   ASSERT_EQ(sta_highest_net, sta_dbnet_out2);
 
   odb::dbModNet* modnet_mod_out = block_->findModNet("sub_inst/mod_out");
@@ -86,7 +86,7 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(sta_modnet_out2, nullptr);
   // highestNetAbove on a mod net now returns the associated flat dbNet, not the
   // highest mod net, so that parasitic externality checks work correctly.
-  Net* sta_highest_modnet_out
+  const Net* sta_highest_modnet_out
       = db_network_->highestNetAbove(sta_modnet_mod_out);
   ASSERT_EQ(sta_highest_modnet_out, sta_dbnet_out2);
 

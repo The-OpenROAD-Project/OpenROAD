@@ -45,9 +45,11 @@ cc_library(
     testonly = 1,
     srcs = [
         "src/db_fixture.cpp",
+        "src/logger_checks.cpp",
     ],
     hdrs = [
         "include/tst/db_fixture.h",
+        "include/tst/logger_checks.h",
     ],
     defines = [
         "BAZEL_BUILD",
@@ -243,6 +245,7 @@ cc_test(
         ":db_fixture",
         ":physical_builder",
         "//src/odb/src/db",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

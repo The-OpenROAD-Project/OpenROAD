@@ -39,11 +39,26 @@ cc_library(
     deps = [
         "//src/odb/src/db",
         "//src/utl",
-        "@abseil-cpp//absl/synchronization",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
         "@openmp",
+    ],
+)
+
+# The private rule and report helpers, for the unit tests in test/cpp.
+cc_library(
+    name = "ant_internal",
+    testonly = True,
+    hdrs = [
+        "src/AntennaReport.hh",
+        "src/AntennaRules.hh",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//src/ant/test:__pkg__"],
+    deps = [
+        ":ant",
+        "//src/odb/src/db",
     ],
 )
 

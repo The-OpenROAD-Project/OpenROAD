@@ -161,6 +161,8 @@ proc remove_fillers { args } {
 
 sta::define_cmd_args "check_placement" {[-verbose] \
                                         [-disallow_one_site_gaps] \
+                                        [-fixed] \
+                                        [-placeable] \
                                         [-report_file_name file_name]}
 
 proc check_placement { args } {
@@ -169,8 +171,15 @@ proc check_placement { args } {
   }
 
   sta::parse_key_args "check_placement" args \
-    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps}
+    keys {-report_file_name} flags {-verbose -disallow_one_site_gaps -fixed -placeable}
   set verbose [info exists flags(-verbose)]
+  set check_fixed [info exists flags(-fixed)]
+  set check_placeable [info exists flags(-placeable)]
+  # Without either flag, check both.
+  if { !$check_fixed && !$check_placeable } {
+    set check_fixed 1
+    set check_placeable 1
+  }
   sta::check_argc_eq0 "check_placement" $args
   set file_name ""
   if { [info exists keys(-report_file_name)] } {
@@ -179,7 +188,7 @@ proc check_placement { args } {
   if { [info exists flags(-disallow_one_site_gaps)] } {
     utl::warn DPL 4 "-disallow_one_site_gaps is deprecated"
   }
-  dpl::check_placement_cmd $verbose $file_name
+  dpl::check_placement_cmd $verbose $file_name $check_fixed $check_placeable
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
