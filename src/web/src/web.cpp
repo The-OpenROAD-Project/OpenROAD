@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -125,17 +124,6 @@ std::string sanitizeFilename(std::string name)
     name = "layout.png";
   }
   return name;
-}
-
-// Parse an integer that must span the whole string_view (no trailing garbage),
-// exception-free.  Returns false on any malformed/partial input.
-template <typename T>
-bool parseIntExact(std::string_view s, T& out, int base = 10)
-{
-  const char* const first = s.data();
-  const char* const last = first + s.size();
-  const auto res = std::from_chars(first, last, out, base);
-  return res.ec == std::errc{} && res.ptr == last;
 }
 
 // Percent-decode a URL query value (e.g. the JSON `vis` payload).

@@ -68,6 +68,82 @@ BindAddressKind classifyBindAddress(std::string_view address);
 // nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
 std::string browserHostForBind(const boost::asio::ip::address& address);
 
+// Whether serve() launches a browser on the machine it runs on.  kAuto skips it
+// where that browser would not be the user's (issue #11389).
+enum class BrowserLaunch
+{
+  kAuto,
+  kAlways,
+  kNever
+};
+
+// What the launch policy looks at, read by serve() and passed in so the policy
+// stays testable.  Owned strings: a later getenv() may invalidate earlier ones.
+struct BrowserEnv
+{
+  bool ssh_session = false;     // $SSH_CONNECTION or $SSH_CLIENT set
+  bool batch_job = false;       // a scheduler's job id ($LSB_JOBID, ...) set
+  std::string display;          // $DISPLAY, X11 platforms only
+  std::string host_name;        // this machine, to read $DISPLAY against
+  std::string vscode_ipc_hook;  // $VSCODE_IPC_HOOK_CLI
+  std::string browser;          // $BROWSER
+  bool no_browser = false;      // $OPENROAD_NO_BROWSER
+  // $DISPLAY is a bare ":N" whose X socket this user owns (VNC, x2go).
+  bool own_local_display = false;
+  // $DISPLAY or $WAYLAND_DISPLAY set; always true off X11 platforms.
+  bool has_display = true;
+  // This machine's interface addresses, to read an IP in $DISPLAY against.
+  std::vector<boost::asio::ip::address> local_addresses;
+  bool wsl = false;  // $WSL_DISTRO_NAME: the browser is the Windows one
+};
+
+// True when $DISPLAY names an X server on another machine, or one ssh -X
+// forwards here (TCP, numbered from 10).  Otherwise socket displays (":N",
+// "unix:N"), loopback, and this machine's name or addresses are local.
+bool displayIsRemote(
+    std::string_view display,
+    std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses = {});
+
+// The X socket of a bare ":N" or "unix:N" display, or "" for any other form.
+std::string localDisplaySocket(std::string_view display);
+
+// True when $BROWSER is VS Code's helpers/browser.sh, which opens a URL where
+// the editor runs.
+bool launchesThroughBrowserEnv(const BrowserEnv& env);
+
+// Why serve() is not launching a browser, so the message can say it without
+// restating the policy.
+enum class LaunchSkip
+{
+  kNone,
+  kFlag,           // -no_browser / -web_no_browser
+  kOptOut,         // OPENROAD_NO_BROWSER
+  kSshSession,     // driven from another machine over ssh
+  kBatchJob,       // a scheduler put this process on a farm host
+  kRemoteDisplay,  // $DISPLAY belongs to another machine (issue #11389)
+  kNoDisplay       // nowhere to draw at all
+};
+
+// Apply the kAuto policy, and say which clause decided.  kNone means launch.
+LaunchSkip browserLaunchSkipReason(BrowserLaunch mode, const BrowserEnv& env);
+
+// The reason, as a clause that reads inside "Not launching a browser here
+// (...)".  Empty for kNone.
+std::string_view browserSkipReasonText(LaunchSkip reason);
+
+// Parse the mode name web_server_cmd passes.  Anything unrecognized is kAuto:
+// the mode never keeps the server from starting.
+BrowserLaunch browserLaunchFromString(std::string_view mode);
+
+// How to reach the viewer from another machine, printed with WEB-0001: a tunnel
+// for a loopback bind, and the url to open through it when it differs; this
+// host's url for a wildcard one.
+std::string reachabilityHint(BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             std::string_view host,
+                             uint16_t port);
+
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.
 inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
@@ -126,15 +202,17 @@ class WebServer
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
   // a no-op if the server is already running.
-  void serve(int port, const std::string& bind_address);
+  void serve(int port, const std::string& bind_address, BrowserLaunch launch);
 
   // For -web startup scripts, called on the main thread before they run.
-  // Calls serve(port, bind_address), so the browser follows the scripts'
-  // log and the scripts see web::Gui::enabled() (e.g. global_placement_debug
-  // engages, as under -gui).  Until endStartupScripts(), browser requests
-  // (Tcl, tiles, selection, search indexing) run only while a script is
-  // paused, and are answered "busy" otherwise; see ScriptGate.
-  void serveDuringStartupScripts(int port, const std::string& bind_address);
+  // Calls serve(port, bind_address, launch), so the browser follows the
+  // scripts' log and the scripts see web::Gui::enabled() (e.g.
+  // global_placement_debug engages, as under -gui).  Until endStartupScripts(),
+  // browser requests (Tcl, tiles, selection, search indexing) run only while a
+  // script is paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port,
+                                 const std::string& bind_address,
+                                 BrowserLaunch launch);
 
   // Call on the main thread once the startup scripts are done: lets browser
   // requests in, or, when `exiting`, turns them away so the exit can join
