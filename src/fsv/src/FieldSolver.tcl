@@ -143,7 +143,7 @@ proc solve_capacitance { args } {
   if { [info exists keys(-nets)] } {
     set nets $keys(-nets)
   } else {
-    set nets [fsv::default_masters_cmd]
+    set nets [fsv::default_targets_cmd]
   }
   if { [llength $nets] == 0 } {
     utl::error FSV 23 "No nets to solve; add boxes or rectangles first."

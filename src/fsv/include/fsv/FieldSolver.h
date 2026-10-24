@@ -29,7 +29,7 @@ namespace fsv {
 class Scene;
 class Scene2D;
 
-// One master's row of the capacitance matrix, in fF, or fF/µm for a cross
+// One net's row of the capacitance matrix, in fF, or fF/µm for a cross
 // section.
 struct NetCapacitance
 {
@@ -84,7 +84,7 @@ class FieldSolver
 
   // Replaces the geometry with nets of the design and their neighbours
   // within a halo (see readNetWindow; a negative halo or margin takes the
-  // default), and makes the nets the default masters. Design layers map to
+  // default), and makes the nets the default targets. Design layers map to
   // stack layers by name, after `layer_map`.
   void addNets(
       const std::vector<std::string>& nets,
@@ -95,8 +95,8 @@ class FieldSolver
   std::vector<std::string> netNames() const;
   // The nets to solve when none are named: those given to addNets, else
   // every net that is not grounded.
-  std::vector<std::string> defaultMasters() const;
-  // Solves one master net and reports its row, per unit length for a cross
+  std::vector<std::string> defaultTargets() const;
+  // Solves one net and reports its row, per unit length for a cross
   // section. The Solver is rebuilt only when solver_options change.
   NetCapacitance solve(std::string_view net,
                        const SolverOptions& solver_options,
@@ -130,7 +130,7 @@ class FieldSolver
   Geometry2D section_;
   bool cross_section_ = false;
   std::map<std::string, int, std::less<>> net_index_;
-  std::vector<std::string> masters_;  // from addNets
+  std::vector<std::string> targets_;  // from addNets
   // Built on demand from the dielectric and geometry; reset when either
   // changes.
   std::unique_ptr<Scene> scene_;

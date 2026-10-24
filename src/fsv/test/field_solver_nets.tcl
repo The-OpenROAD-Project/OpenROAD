@@ -35,7 +35,7 @@ check "the default halo includes d" {
 } 1
 
 add_field_solver_nets -nets {a a} -halo 1
-check "a net named twice is read once" { fsv::default_masters_cmd } a
+check "a net named twice is read once" { fsv::default_targets_cmd } a
 
 check_error "an unknown net" { add_field_solver_nets -nets nope } FSV-0030
 check_error "a layer map needs pairs" {

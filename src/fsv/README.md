@@ -5,7 +5,7 @@ capacitance. It is intended to drive extraction model generation and to
 validate extracted capacitance on layout.
 
 The solver is mesh-free. Each walk starts on a Gaussian surface around the
-master net. It then hops through the largest cube that touches no conductor,
+target net, the net whose row is solved. It then hops through the largest cube that touches no conductor,
 landing according to the cube's surface Green's function, until it reaches a
 conductor. The average walk weight per conductor gives one row of the Maxwell
 capacitance matrix, together with a standard error.
@@ -65,9 +65,9 @@ overlap, and a scene where they do is rejected.
 Coordinates are in µm and capacitances in fF. The commands keep one
 dielectric (a uniform permittivity, 1.0 until set, or an ITF stack) and one
 set of conductors, which each solve uses. A net is a set of boxes, which
-may overlap. A master net's Gaussian surface is the boundary of its boxes,
+may overlap. A target net's Gaussian surface is the boundary of its boxes,
 each grown by its own offset (at most half its gap to other conductors), so
-nets may wrap around each other; no other conductor may touch a master's
+nets may wrap around each other; no other conductor may touch a target's
 box.
 
 ### Read ITF
@@ -165,7 +165,7 @@ add_field_solver_rect
 ### Add Field Solver Nets
 
 The `add_field_solver_nets` command replaces the conductors with nets of the
-loaded design and their neighbours, and makes those nets the default masters
+loaded design and their neighbours, and makes those nets the default targets
 of `solve_capacitance`. A net's shapes are its routed wires and vias,
 special wires, and the pins of its instance and block terminals, on routing
 and cut layers; the ITF stack gives each layer's z extent.
@@ -190,7 +190,7 @@ wires), and it falls about as the square of the halo. Sides of the halo
 past the die area leak nothing.
 
 Every net and cell of the design is visited, so reading takes time in
-proportion to the design. Master nets are never clipped: a net that spans
+proportion to the design. Target nets are never clipped: a net that spans
 the die, such as a clock or power net, brings most of the design into the
 window.
 
@@ -206,7 +206,7 @@ add_field_solver_nets
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-nets` | Master nets. The type is a list of net names. Required. |
+| `-nets` | Target nets. The type is a list of net names. Required. |
 | `-halo` | Distance in µm from the nets' bounding box within which neighbours are included. The type is `float`, at least 0. The default is three times the nets' height. |
 | `-margin` | Distance in µm beyond the halo at which neighbour shapes are clipped. The type is `float`, at least 0. The default is half the nets' height. |
 | `-layer_map` | Design layers that map to differently named ITF layers, as pairs of names: design layer, then ITF layer. The type is a list of names. The default maps layers by name. |
@@ -223,7 +223,7 @@ clear_field_solver
 ### Solve Capacitance
 
 The `solve_capacitance` command solves one row of the capacitance matrix
-for each master net, reports it, and returns a Tcl dict keyed by master net.
+for each target net, reports it, and returns a Tcl dict keyed by target net.
 Each value is a dict with these keys:
 
 - `total`, `total_sigma`: the total capacitance and its standard error.
@@ -261,7 +261,7 @@ solve_capacitance
 | `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float` in the range `[0, 1]`. The default is `0.01`. |
 | `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`, at least 1. The default is `100000000`. |
 | `-min_walks` | Walks before the tolerances are first checked. The type is `int`. The default is `16384`. |
-| `-nets` | Master nets to solve. The type is a list of net names. The default is every net. |
+| `-nets` | Target nets to solve. The type is a list of net names. The default is the nets of `add_field_solver_nets`, else every net. |
 | `-panels` | Panels per cube-face edge in the Green's-function tables. The type is `int`, a positive multiple of 16. The default is `32`. |
 | `-seed` | Random seed. The type is `int`, from 0 to 2^63 - 1. The default is `1`. |
 | `-tol_coupling` | Target standard error of each coupling, relative to the coupling. The type is `float`, greater than 0. The default is `0.05`. |

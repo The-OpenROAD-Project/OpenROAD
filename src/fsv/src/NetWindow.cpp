@@ -90,7 +90,7 @@ void checkPlaced(odb::dbInst* inst)
   }
 }
 
-// The shapes of an instance pin: its master pins' boxes, placed.
+// The shapes of an instance pin: the boxes of its cell's pin, placed.
 void addPin(std::vector<Shape>& shapes, odb::dbITerm* iterm)
 {
   checkPlaced(iterm->getInst());
@@ -314,12 +314,12 @@ void checkShorts(const Geometry& geometry)
 }  // namespace
 
 NetWindow readNetWindow(odb::dbBlock* block,
-                        const std::vector<odb::dbNet*>& masters,
+                        const std::vector<odb::dbNet*>& targets,
                         const LayerExtent& layer_extent,
                         const NetWindowOptions& options)
 {
-  if (masters.empty()) {
-    throw std::invalid_argument("fsv: no master nets");
+  if (targets.empty()) {
+    throw std::invalid_argument("fsv: no target nets");
   }
   const double dbu = block->getDbUnitsPerMicron();
   // By layer name: odb objects have no ordering.
@@ -337,14 +337,14 @@ NetWindow readNetWindow(odb::dbBlock* block,
 
   NetWindow result;
   Geometry& geometry = result.geometry;
-  // The masters, whole.
+  // The targets, whole.
   AlignedBox<2> bounds{
       {std::numeric_limits<double>::max(), std::numeric_limits<double>::max()},
       {std::numeric_limits<double>::lowest(),
        std::numeric_limits<double>::lowest()}};
-  std::set<int> master_ids;
-  for (odb::dbNet* net : masters) {
-    if (!master_ids.insert(net->getId()).second) {
+  std::set<int> target_ids;
+  for (odb::dbNet* net : targets) {
+    if (!target_ids.insert(net->getId()).second) {
       continue;  // named twice
     }
     const std::vector<Shape> shapes = netShapes(net);
@@ -353,7 +353,7 @@ NetWindow readNetWindow(odb::dbBlock* block,
                                   + " has no shapes on conductor layers");
     }
     const int index = geometry.addNet(net->getName());
-    result.masters.push_back(index);
+    result.targets.push_back(index);
     for (const Shape& shape : shapes) {
       const Box box = toBox(shape);
       geometry.addBox(index, box);
@@ -402,7 +402,7 @@ NetWindow readNetWindow(odb::dbBlock* block,
     return true;
   };
   for (odb::dbNet* net : block->getNets()) {
-    if (master_ids.contains(net->getId())) {
+    if (target_ids.contains(net->getId())) {
       continue;
     }
     int index = -1;

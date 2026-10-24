@@ -221,7 +221,7 @@ void FieldSolver::clearGeometry()
   section_ = Geometry2D();
   cross_section_ = false;
   net_index_.clear();
-  masters_.clear();
+  targets_.clear();
 }
 
 void FieldSolver::addNets(
@@ -234,7 +234,7 @@ void FieldSolver::addNets(
   if (block == nullptr) {
     logger_->error(utl::FSV, 29, "No design is loaded.");
   }
-  std::vector<odb::dbNet*> masters;
+  std::vector<odb::dbNet*> targets;
   std::vector<std::string> names;
   for (const std::string& name : nets) {
     odb::dbNet* net = block->findNet(name.c_str());
@@ -242,7 +242,7 @@ void FieldSolver::addNets(
       logger_->error(utl::FSV, 30, "Net {} is not in the design.", name);
     }
     if (std::ranges::find(names, name) == names.end()) {
-      masters.push_back(net);
+      targets.push_back(net);
       names.push_back(name);
     }
   }
@@ -252,7 +252,7 @@ void FieldSolver::addNets(
   };
   NetWindow window;
   try {
-    window = readNetWindow(block, masters, extent, {halo, margin});
+    window = readNetWindow(block, targets, extent, {halo, margin});
   } catch (const std::invalid_argument& e) {
     logger_->error(utl::FSV, 31, "{}", coreMessage(e));
   }
@@ -261,13 +261,13 @@ void FieldSolver::addNets(
   for (int net = 0; net < geometry_.netCount(); net++) {
     net_index_.emplace(geometry_.netName(net), net);
   }
-  masters_ = std::move(names);
+  targets_ = std::move(names);
   logger_->info(utl::FSV,
                 18,
-                "Read {} master and {} neighbour nets: {} boxes, {} of them "
+                "Read {} target and {} neighbour nets: {} boxes, {} of them "
                 "clipped and {} obstructions trimmed, within a halo of {:.3g} "
                 "um and a margin of {:.3g} um.",
-                masters.size(),
+                targets.size(),
                 window.neighbours,
                 geometry_.boxes().size(),
                 window.clipped,
@@ -286,10 +286,10 @@ std::vector<std::string> FieldSolver::netNames() const
   return names;
 }
 
-std::vector<std::string> FieldSolver::defaultMasters() const
+std::vector<std::string> FieldSolver::defaultTargets() const
 {
-  if (!masters_.empty()) {
-    return masters_;
+  if (!targets_.empty()) {
+    return targets_;
   }
   std::vector<std::string> names;
   for (int net = 0; net < netCount(); net++) {

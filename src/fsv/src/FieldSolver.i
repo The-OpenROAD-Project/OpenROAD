@@ -47,7 +47,7 @@ fsv::FieldSolver* getFieldSolver()
   Tcl_SetObjResult(interp, list);
 }
 
-// One master's row as a Tcl dict. Couplings are positive capacitances in fF,
+// One net's row as a Tcl dict. Couplings are positive capacitances in fF,
 // keyed by net name.
 %typemap(out) fsv::NetCapacitance {
   const fsv::CapRow& row = $1.row;
@@ -131,9 +131,9 @@ void clear_cmd()
   getFieldSolver()->clearGeometry();
 }
 
-std::vector<std::string> default_masters_cmd()
+std::vector<std::string> default_targets_cmd()
 {
-  return getFieldSolver()->defaultMasters();
+  return getFieldSolver()->defaultTargets();
 }
 
 // layer_map alternates design and stack layer names.
