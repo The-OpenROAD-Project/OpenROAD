@@ -30,6 +30,9 @@ enum class FillPattern
   kDiagonal = 2,  // diagonal hatch
   kCross = 3,     // crosshatch grid
   kDots = 4,      // dotted
+  // Not in the protocol: a Painter's kDiagonal, which Qt draws with both
+  // diagonals (Qt::DiagCrossPattern).
+  kDiagonalCross = 5,
 };
 
 // Selection-highlight yellow shared by the tile highlight border

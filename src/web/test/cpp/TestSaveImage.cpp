@@ -4,12 +4,19 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <any>
 #include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/json/parse.hpp"
@@ -21,7 +28,10 @@
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
 #include "web/heatMap.h"
+#include "web/web.h"
 
 namespace web {
 namespace {
@@ -917,6 +927,436 @@ TEST_F(SaveImageTest, DebugRendererPassIsSkippedWhenToggledOff)
   TileGenerator::setRendererHooks({});
 
   EXPECT_EQ(calls, 0);
+}
+
+// A size from -resolution is truncated, as Qt's QRegion of the screen rect is,
+// so the two renderers give the same dimensions; an exact -width is kept.
+TEST_F(SaveImageTest, SizeIsTruncatedLikeQt)
+{
+  // The default frame is the 100000 dbu die plus 5% each side: 110000 dbu,
+  // which at this resolution is 1099.98 pixels.
+  int w = 0;
+  int h = 0;
+  tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0),
+                            0,
+                            110000 / 1099.98,
+                            TileVisibility(),
+                            Color(),
+                            &w,
+                            &h);
+  EXPECT_EQ(w, 1099);
+  EXPECT_EQ(h, 1099);
+
+  tile_gen_->renderImagePng(
+      odb::Rect(0, 0, 0, 0), 1000, 0, TileVisibility(), Color(), &w, &h);
+  EXPECT_EQ(w, 1000);
+}
+
+// Qt draws the IO pin names only when the longest fits in the margin around
+// the die.  The default 5% margin is too narrow for them here; a region with
+// room around the die has space for them.
+TEST_F(SaveImageTest, PinNamesOnlyWhereTheyFit)
+{
+  makeBTermAtEdge(
+      "a_long_pin_name", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeTileGen();
+
+  TileVisibility with_names;
+  with_names.stdcells = false;
+  TileVisibility without_names = with_names;
+  without_names.pin_names = false;
+
+  const odb::Rect fit(0, 0, 0, 0);
+  EXPECT_EQ(tile_gen_->renderImagePng(fit, 512, 0, with_names),
+            tile_gen_->renderImagePng(fit, 512, 0, without_names));
+
+  // Wide enough that the markers reach the size names need, too.
+  const odb::Rect roomy(-50000, -50000, 150000, 150000);
+  EXPECT_NE(tile_gen_->renderImagePng(roomy, 2048, 0, with_names),
+            tile_gen_->renderImagePng(roomy, 2048, 0, without_names));
+}
+
+// ─── save_image -web through the server, from the script view ──────────────
+
+class SaveImageViewTest : public SaveImageTest
+{
+ protected:
+  std::string save(const std::string& label, const std::string& options = "")
+  {
+    const std::string path = tempPng(label);
+    server_.saveImage(path, 0, 0, 0, 0, 256, 0, options);
+    return path;
+  }
+
+  static std::string readBytes(const std::string& path)
+  {
+    std::ifstream f(path, std::ios::binary);
+    return {std::istreambuf_iterator<char>(f),
+            std::istreambuf_iterator<char>()};
+  }
+
+  WebServer server_{getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr};
+};
+
+TEST_F(SaveImageViewTest, DrawsByTheDisplayControls)
+{
+  const std::string shown = save("controls_shown");
+  Gui::get()->setDisplayControlsVisible("Instances/*", false);
+  const std::string hidden = save("controls_hidden");
+  EXPECT_NE(readBytes(shown), readBytes(hidden));
+}
+
+// A -display_option pattern applies to its image only, and gives the image the
+// same control would.
+TEST_F(SaveImageViewTest, DisplayOptionsTakeControlPaths)
+{
+  const std::string option = save("option", R"({"Instances/*":false})");
+  EXPECT_TRUE(Gui::get()->checkDisplayControlsVisible("Instances/Macro"))
+      << "the option must not stick";
+
+  Gui::get()->setDisplayControlsVisible("Instances/*", false);
+  const std::string control = save("control");
+  EXPECT_EQ(readBytes(option), readBytes(control));
+}
+
+TEST_F(SaveImageViewTest, DisplayOptionsStillTakeTheirOwnKeys)
+{
+  EXPECT_EQ(readBytes(save("key", R"({"stdcells":false})")),
+            readBytes(save("path", R"({"Instances/StdCells/*":false})")));
+  EXPECT_THROW(save("bogus", R"({"Bogus":true})"), std::runtime_error);
+}
+
+// Only PNG is written, so another extension gets ".png" added, as Qt does when
+// it has no writer for the one asked for.
+TEST_F(SaveImageViewTest, OtherExtensionsGetPngAdded)
+{
+  const std::string webp = tempPng("ext") + ".webp";
+  output_files_.push_back(webp + ".png");
+  server_.saveImage(webp, 0, 0, 0, 0, 64, 0, "");
+  EXPECT_FALSE(std::filesystem::exists(webp));
+  unsigned w = 0, h = 0;
+  decodePngFile(webp + ".png", w, h);
+  EXPECT_EQ(w, 64u);
+
+  const std::string upper = tempPng("upper") + ".PNG";
+  output_files_.push_back(upper);
+  server_.saveImage(upper, 0, 0, 0, 0, 64, 0, "");
+  EXPECT_TRUE(std::filesystem::exists(upper));
+}
+
+TEST_F(SaveImageViewTest, ScriptBackgroundIsUsed)
+{
+  Gui::get()->setDisplayControlsColor("Misc/Background",
+                                      Painter::Color(255, 0, 255));
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(save("background"), w, h);
+  ASSERT_GE(pixels.size(), 4u);
+  EXPECT_EQ(pixels[0], 255);
+  EXPECT_EQ(pixels[1], 0);
+  EXPECT_EQ(pixels[2], 255);
+}
+
+// ─── Overlays drawn once over the image ─────────────────────────────────────
+
+namespace {
+
+// The pixels of an RGBA buffer that are (close to) `c`.
+std::vector<std::pair<int, int>> pixelsOf(
+    const std::vector<unsigned char>& rgba,
+    const int width,
+    const Painter::Color& c)
+{
+  std::vector<std::pair<int, int>> found;
+  for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+    if (std::abs(rgba[i] - c.r) < 8 && std::abs(rgba[i + 1] - c.g) < 8
+        && std::abs(rgba[i + 2] - c.b) < 8 && rgba[i + 3] > 0) {
+      const int p = static_cast<int>(i / 4);
+      found.emplace_back(p % width, p / width);
+    }
+  }
+  return found;
+}
+
+}  // namespace
+
+// The pass is drawn at the image's own scale from the same crop as the layout,
+// so a rect lands on the pixels its DBU map to, at any width.
+TEST_F(SaveImageTest, OverlaysLineUpWithTheImage)
+{
+  const Painter::Color kMarker(255, 0, 255);
+  const odb::Rect box(20000, 30000, 60000, 70000);
+  ImageOverlays overlays;
+  overlays.passes.emplace_back([&box, &kMarker](Painter& painter) {
+    painter.setPen(kMarker, true, 1);
+    painter.setBrush(Painter::kTransparent);
+    painter.drawRect(box);
+  });
+  // The default frame: the die plus 5% of it on each side.
+  const odb::Rect area(-5000, -5000, 105000, 105000);
+  for (const int width : {300, 511, 1024, 1500}) {
+    int w = 0;
+    int h = 0;
+    const auto rgba = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                   width,
+                                                   0,
+                                                   TileVisibility(),
+                                                   Color(),
+                                                   &w,
+                                                   &h,
+                                                   &overlays);
+    const auto marker = pixelsOf(rgba, w, kMarker);
+    ASSERT_FALSE(marker.empty()) << width;
+    int min_x = w;
+    int min_y = h;
+    for (const auto& [x, y] : marker) {
+      min_x = std::min(min_x, x);
+      min_y = std::min(min_y, y);
+    }
+    const double scale = static_cast<double>(w) / area.dx();
+    EXPECT_NEAR(min_x, (box.xMin() - area.xMin()) * scale, 1.0) << width;
+    EXPECT_NEAR(min_y, (area.yMax() - box.yMax()) * scale, 1.0) << width;
+  }
+}
+
+// Labels are drawn at the image's scale, so they are the size asked for
+// whatever the width of the image.
+TEST_F(SaveImageTest, LabelsKeepTheirSizeAtAnyWidth)
+{
+  constexpr Color kWhite{.r = 255, .g = 255, .b = 255, .a = 255};
+  tile_gen_->addLabel(
+      odb::Point(50000, 50000), "LABEL", kWhite, 20, "center", "size");
+  TileVisibility vis = noOverlaysVis();
+  vis.stdcells = false;
+  auto label_height = [&](const int width) {
+    int w = 0;
+    int h = 0;
+    const auto rgba = tile_gen_->renderImageBuffer(
+        odb::Rect(0, 0, 0, 0), width, 0, vis, Color(), &w, &h);
+    int top = h;
+    int bottom = -1;
+    for (const auto& [x, y] :
+         pixelsOf(rgba, w, Painter::Color(255, 255, 255))) {
+      if (std::abs(x - w / 2) < w / 4) {
+        top = std::min(top, y);
+        bottom = std::max(bottom, y);
+      }
+    }
+    return bottom - top;
+  };
+  const int small = label_height(512);
+  EXPECT_GT(small, 5);
+  EXPECT_NEAR(label_height(2048), small, 1);
+}
+
+TEST_F(SaveImageTest, OverlaysDoNotDependOnTheThreadCount)
+{
+  for (int i = 0; i < 20; ++i) {
+    placeInst("BUF_X16", ("b" + std::to_string(i)).c_str(), 4000 * i, 4000 * i);
+  }
+  makeTileGen();
+  ImageOverlays overlays;
+  overlays.passes.emplace_back([](Painter& painter) {
+    painter.setPen(Painter::kYellow, true, 1);
+    painter.setBrush(Painter::Color(Painter::kRed, 100));
+    for (int i = 0; i < 20; ++i) {
+      painter.drawRect(
+          odb::Rect(4000 * i, 4000 * i, 4000 * i + 3000, 4000 * i + 3000));
+    }
+  });
+  tile_gen_->setThreadCount(1);
+  const auto one = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                1024,
+                                                0,
+                                                TileVisibility(),
+                                                Color(),
+                                                nullptr,
+                                                nullptr,
+                                                &overlays);
+  tile_gen_->setThreadCount(8);
+  const auto eight = tile_gen_->renderImageBuffer(odb::Rect(0, 0, 0, 0),
+                                                  1024,
+                                                  0,
+                                                  TileVisibility(),
+                                                  Color(),
+                                                  nullptr,
+                                                  nullptr,
+                                                  &overlays);
+  ASSERT_FALSE(one.empty());
+  EXPECT_EQ(one, eight);
+}
+
+// select draws as Qt's drawSelected and drawHighlighted do: the selection in
+// a yellow outline unless Misc/Highlight selected is off, and each highlight
+// group filled in its color.
+TEST_F(SaveImageViewTest, SelectionAndHighlightGroupsAreDrawn)
+{
+  placeInst("BUF_X16", "buf2", 60000, 60000);
+  DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+  Gui* gui = Gui::get();
+  const std::string plain = save("plain");
+
+  // A highlight is drawn over the selection, so the outline is checked on an
+  // instance that is only selected.
+  EXPECT_EQ(gui->select("Inst", "buf2", "", std::any(), true, -1), 1);
+  EXPECT_EQ(gui->select("Inst", "buf1", "", std::any(), true, 4), 1);
+  unsigned w = 0, h = 0;
+  const auto plain_pixels = decodePngFile(plain, w, h);
+  // Pixels the red group's fill made redder than in the plain image.
+  auto reddened = [&plain_pixels](const std::vector<unsigned char>& rgba) {
+    int count = 0;
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i] > plain_pixels[i] + 30
+          && rgba[i + 1] <= plain_pixels[i + 1] + 8) {
+        ++count;
+      }
+    }
+    return count;
+  };
+  auto pixels = decodePngFile(save("highlighted"), w, h);
+  EXPECT_FALSE(pixelsOf(pixels, w, Painter::kHighlight).empty());
+  EXPECT_GT(reddened(pixels), 0);
+
+  gui->setDisplayControlsVisible("Misc/Highlight selected", false);
+  pixels = decodePngFile(save("unselected"), w, h);
+  EXPECT_TRUE(pixelsOf(pixels, w, Painter::kHighlight).empty());
+  EXPECT_GT(reddened(pixels), 0);
+
+  gui->setDisplayControlsVisible("Misc/Highlight selected", true);
+  gui->clearHighlights(-1);
+  gui->clearSelections();
+  EXPECT_EQ(readBytes(save("cleared")), readBytes(plain));
+}
+
+// The DRC viewer's markers, as DRCRenderer draws them: a white outline and a
+// cross hatch, and an X for a marker too small to see.
+TEST_F(SaveImageViewTest, DrcMarkersAreDrawn)
+{
+  DescriptorRegistry::instance()->initDescriptors(getDb(), getSta());
+  const std::string plain = save("no_markers");
+
+  odb::dbMarkerCategory* drc = odb::dbMarkerCategory::create(block_, "DRC");
+  odb::dbMarkerCategory* shorts = odb::dbMarkerCategory::create(drc, "Short");
+  odb::dbMarker::create(shorts)->addShape(
+      odb::Rect(30000, 30000, 70000, 70000));
+  odb::dbMarker::create(shorts)->addShape(
+      odb::Rect(85000, 85000, 85100, 85100));
+  Gui::get()->selectMarkers(shorts);
+
+  unsigned w = 0, h = 0;
+  const auto before = decodePngFile(plain, w, h);
+  const auto pixels = decodePngFile(save("markers"), w, h);
+  // Inside the large marker, away from its outline: hatched, not filled.
+  int hatched = 0;
+  int untouched = 0;
+  const double scale = static_cast<double>(w) / 110000;
+  for (int y = static_cast<int>((105000 - 65000) * scale);
+       y < static_cast<int>((105000 - 35000) * scale);
+       ++y) {
+    for (int x = static_cast<int>(35000 * scale) + 5;
+         x < static_cast<int>(65000 * scale) + 5;
+         ++x) {
+      const size_t i = (static_cast<size_t>(y) * w + x) * 4;
+      if (pixels[i] > before[i] + 20) {
+        ++hatched;
+      } else if (pixels[i] == before[i]) {
+        ++untouched;
+      }
+    }
+  }
+  EXPECT_GT(hatched, 0);
+  EXPECT_GT(untouched, hatched) << "a hatch leaves most pixels alone";
+  // The small marker's X, around its center.
+  int near_x = 0;
+  for (const auto& [x, y] : pixelsOf(pixels, w, Painter::kWhite)) {
+    if (std::abs(x - (85050 + 5000) * scale) < 12
+        && std::abs(y - (105000 - 85050) * scale) < 12) {
+      ++near_x;
+    }
+  }
+  EXPECT_GT(near_x, 0);
+
+  Gui::get()->selectMarkers(nullptr);
+  EXPECT_EQ(readBytes(save("markers_cleared")), readBytes(plain));
+}
+
+namespace {
+
+// Every bin the same value, so the map covers the whole design.
+class UniformHeatMap : public HeatMapDataSource
+{
+ public:
+  explicit UniformHeatMap(utl::Logger* logger)
+      : HeatMapDataSource(logger, "Uniform", "Uniform")
+  {
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(getBounds(), 1.0);
+    return true;
+  }
+
+  void combineMapData(bool /* base_has_value */,
+                      double& base,
+                      double new_data,
+                      double /* data_area */,
+                      double /* intersection_area */,
+                      double /* rect_area */) override
+  {
+    base = new_data;
+  }
+};
+
+}  // namespace
+
+// The heat map whose control is on is drawn as HeatMapRenderer draws it, and
+// its legend once, in the image's top right corner.
+TEST_F(SaveImageViewTest, HeatMapAndLegendAreDrawn)
+{
+  UniformHeatMap heat_map(getLogger());
+  heat_map.setChip(chip_);
+  Gui* gui = Gui::get();
+  gui->registerHeatMap(&heat_map);
+
+  const std::string plain = save("no_heat_map");
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
+  const std::string shown = save("heat_map");
+  EXPECT_NE(readBytes(shown), readBytes(plain));
+
+  gui->setHeatMapSetting("Uniform", "ShowLegend", true);
+  unsigned w = 0, h = 0;
+  const auto without_legend = decodePngFile(shown, w, h);
+  const auto with_legend = decodePngFile(save("legend"), w, h);
+  int in_corner = 0;
+  int elsewhere = 0;
+  for (size_t i = 0; i + 3 < with_legend.size(); i += 4) {
+    const auto at = static_cast<std::ptrdiff_t>(i);
+    if (std::equal(with_legend.begin() + at,
+                   with_legend.begin() + at + 4,
+                   without_legend.begin() + at)) {
+      continue;
+    }
+    const int p = static_cast<int>(i / 4);
+    const int x = p % static_cast<int>(w);
+    const int y = p / static_cast<int>(w);
+    (x > static_cast<int>(w) / 2 && y < static_cast<int>(h) * 3 / 4 ? in_corner
+                                                                    : elsewhere)
+        += 1;
+  }
+  EXPECT_GT(in_corner, 0);
+  EXPECT_EQ(elsewhere, 0);
+
+  // A -display_option naming the control turns it on for that image.
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", false);
+  getLogger()->redirectStringBegin();
+  const std::string via_option
+      = save("option", R"({"Heat Maps/Uniform":true})");
+  EXPECT_EQ(getLogger()->redirectStringEnd().find("WEB-0135"),
+            std::string::npos);
+  gui->setDisplayControlsVisible("Heat Maps/Uniform", true);
+  EXPECT_EQ(readBytes(via_option), readBytes(save("legend_again")));
+  gui->unregisterHeatMap(&heat_map);
 }
 
 }  // namespace

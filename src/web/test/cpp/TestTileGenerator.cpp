@@ -922,6 +922,18 @@ class TileGeneratorTest : public tst::Nangate45Fixture
   std::unique_ptr<BoundaryHeatMap> heatmap_;
 };
 
+// The overlay PNG goes over the browser's tiles, so no kind of cell may show
+// through it.
+TEST(OverlayVisibilityTest, HidesEveryInstanceCategory)
+{
+  const TileVisibility vis = overlayOnlyVisibility();
+  for (int cat = static_cast<int>(InstCategory::kStdCells);
+       cat <= static_cast<int>(InstCategory::kStdOther);
+       ++cat) {
+    EXPECT_FALSE(vis.isCategoryVisible(static_cast<InstCategory>(cat))) << cat;
+  }
+}
+
 TEST_F(TileGeneratorTest, HasStaFalseWhenNull)
 {
   makeTileGen();

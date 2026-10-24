@@ -14,20 +14,34 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
+  set(GUI_WITH_QT ON)
+  # Set before swig_lib creates the target, which picks these up.
   set(CMAKE_AUTOMOC ON)
   set(CMAKE_AUTORCC ON)
   set(CMAKE_AUTOUIC ON)
   set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
+else()
+  set(GUI_WITH_QT OFF)
+  if(BUILD_GUI)
+    message(STATUS "QT5 not found. GUI is disabled")
+    set(BUILD_GUI OFF CACHE BOOL "Build the GUI" FORCE)
+  else()
+    message(STATUS "GUI is not enabled")
+  endif()
+endif()
 
-  set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
+# Both builds have the gui:: Tcl commands; without Qt, makeGui.cpp answers
+# the ones that need a window.
+set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
-  swig_lib(NAME      gui
-           NAMESPACE gui
-           I_FILE    src/gui.i
-           SCRIPTS   src/gui.tcl
-           RUNTIME_HEADER tclSwig.h
-  )
+swig_lib(NAME      gui
+         NAMESPACE gui
+         I_FILE    src/gui.i
+         SCRIPTS   src/gui.tcl
+         RUNTIME_HEADER tclSwig.h
+)
 
+if (GUI_WITH_QT)
   set_property(SOURCE ${GUI_WRAP} PROPERTY SKIP_AUTOMOC ON)
 
   target_sources(gui
@@ -93,19 +107,9 @@ if (Qt5_FOUND AND BUILD_GUI)
   )
   target_compile_options(gui PRIVATE "-fno-lto")
   target_link_options(gui PRIVATE "-fno-lto")
-
-messages(
-  TARGET gui
-)
-
 else()
-  if(BUILD_GUI)
-    message(STATUS "QT5 not found. GUI is disabled")
-    set(BUILD_GUI OFF CACHE BOOL "Build the GUI" FORCE)
-  else()
-    message(STATUS "GUI is not enabled")
-  endif()
-  add_library(gui
+  target_sources(gui
+   PRIVATE
     src/makeGui.cpp
   )
   target_link_libraries(gui
@@ -115,13 +119,14 @@ else()
       gui_core
       dbSta
       utl_lib
+      Boost::boost
       OpenSTA
   )
-  target_include_directories(gui
-    PRIVATE
-      ${OPENROAD_HOME}
-  )
 endif()
+
+messages(
+  TARGET gui
+)
 
 target_include_directories(gui
   PUBLIC

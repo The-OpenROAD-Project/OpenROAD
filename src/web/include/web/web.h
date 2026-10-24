@@ -40,6 +40,7 @@ struct Color;
 class Search;
 
 class ClockTreeReport;
+class ScriptView;
 class TileGenerator;
 struct TclEvaluator;
 class TimingReport;
@@ -292,6 +293,9 @@ class WebServer
 
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
+  // What the gui:: commands act on with no Qt window; there whether or not
+  // the server runs.
+  std::unique_ptr<ScriptView> script_view_;
 
   // Open animated-GIF streams, indexed by the key returned from gifStart.
   // Kept as a vector (like gui's gifs_) so multiple GIFs can record at once;
