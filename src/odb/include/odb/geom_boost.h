@@ -457,9 +457,7 @@ BoostPolygonSet toPolygonSet(const std::vector<T>& shapes)
     boost_polys.emplace_back(points.begin(), points.end());
   }
 
-  BoostPolygonSet polygon_set;
-  polygon_set.insert(boost_polys.begin(), boost_polys.end());
-  return polygon_set;
+  return BoostPolygonSet(boost_polys.begin(), boost_polys.end());
 }
 
 // Collect the Manhattan shape into a polygon set
@@ -485,9 +483,8 @@ BoostPolygon90Set toPolygonSet90(const std::vector<T>& shapes)
     boost_polys.push_back(toPolygon90(shape));
   }
 
-  BoostPolygon90Set polygon_set;
-  polygon_set.insert(boost_polys.begin(), boost_polys.end());
-  return polygon_set;
+  return BoostPolygon90Set(
+      boost::polygon::HORIZONTAL, boost_polys.begin(), boost_polys.end());
 }
 
 //
