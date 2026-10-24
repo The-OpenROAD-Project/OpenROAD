@@ -146,25 +146,34 @@ Standard Parasitic Exchange Format.
 
 ```tcl
 estimate_parasitics
-    -placement|-global_routing
+    [-placement|-global_routing]
     [-spef_file spef_file]
 ```
+
+Without `-placement` or `-global_routing`, `estimate_parasitics` estimates
+from what the design has: from the global routes when there are any, else
+from placement. It does nothing once `read_spef` has read parasitics, until
+`estimate_parasitics -placement` or `-global_routing` replaces them. An
+unplaced design, global routes that are congested and were not accepted with
+`global_route -allow_congestion`, and a placement estimate without wire RC
+are errors.
 
 #### Options
 
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
-| `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| `-placement` or `-global_routing` | Optional. Parasitics are estimated from placement or from global routing. Without either, the design decides. |
 | `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/EstimateParasitics.cpp) or the [swig file](./src/EstimateParasitics.i).
 
 | Command Name | Description |
 | ----- | ----- |
 | `check_parasitics` | Check if the `estimate_parasitics` command has been called. |
+| `parasitics_source` | Where the parasitics came from: `spef`, `placement`, `global_routing` or `none`. |
 | `check_corner_wire_caps` | Check wire capacitance for corner. |
 | `dblayer_wire_rc` | Get layer RC values. |
 | `set_dblayer_wire_rc` | Set layer RC values. |
@@ -181,10 +190,10 @@ Examples scripts demonstrating how to run parasitics estimation on a sample desi
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/est/...
 ```
 
 ## Limitations

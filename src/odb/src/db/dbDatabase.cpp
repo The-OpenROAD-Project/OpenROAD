@@ -599,7 +599,7 @@ _dbDatabase::~_dbDatabase()
 
 // User Code Begin PrivateMethods
 //
-// This constructor is use by dbDatabase::clear(), so the the unique-id is
+// This constructor is used by dbDatabase::clear(), so the unique-id is
 // reset.
 //
 _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
@@ -833,7 +833,7 @@ int dbDatabase::removeUnusedMasters()
 
   for (auto lib : libs) {
     dbSet<dbMaster> masters = lib->getMasters();
-    // Collect all dbMasters for later comparision
+    // Collect all dbMasters for later comparison
     for (auto master : masters) {
       unused_masters.push_back(master);
     }
@@ -936,6 +936,7 @@ void dbDatabase::write(std::ostream& file)
   _dbDatabase* db = (_dbDatabase*) this;
   dbOStream stream(db, file);
   stream << *db;
+  stream.flush();
   file.flush();
 }
 
@@ -1080,9 +1081,11 @@ void dbDatabase::writeEco(dbBlock* block_, const char* filename)
   if (block->journal_) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_;
+    stream.flush();
   } else if (!block->journal_stack_.empty()) {
     dbOStream stream(block->getDatabase(), file);
     stream << *block->journal_stack_.top();
+    stream.flush();
   }
 }
 

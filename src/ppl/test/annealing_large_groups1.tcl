@@ -23,4 +23,4 @@ set def_file [make_result_file annealing_large_groups1.def]
 
 write_def $def_file
 
-diff_file annealing_large_groups1.defok $def_file
+diff_files annealing_large_groups1.defok $def_file

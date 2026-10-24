@@ -1,6 +1,69 @@
 version: 2
+
+# MODULE.bazel is not covered: Dependabot has no Bazel ecosystem.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    # v3 greets returning contributors as first-timers (actions/first-interaction#369).
+    ignore:
+      - dependency-name: "actions/first-interaction"
+        update-types: ["version-update:semver-major"]
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/bazel"
+      - "/docs"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    # A /src/web bump fails the bundle check until src/web/dist is rebuilt, by
+    # the steps in src/web/dist/README.md.
+    directories:
+      - "/src/web"
+      - "/src/web/test"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/bazel"
+      - "/etc"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    # Skip the Ubuntu interim releases (24.10, 25.x, 26.10, 27.x). Without
+    # 24.10 here, Dependabot falls back to it while 26.04 is in cooldown.
+    ignore:
+      - dependency-name: "ubuntu"
+        versions: [">= 24.10, < 26", ">= 26.10, < 28"]
+    groups:
+      images:
+        patterns:
+          - "*"

@@ -33,10 +33,10 @@ set_global_routing_layer_adjustment * 0.7
 
 set_routing_layers -signal met1-met5 -clock met3-met5
 
-set_debug GRT "ndrInfo" 1
+set_debug_level GRT "ndrInfo" 1
 
 global_route -verbose
 
 write_guides $guide_file
 
-diff_file soft_ndr_4w_6s.guideok $guide_file
+diff_files soft_ndr_4w_6s.guideok $guide_file

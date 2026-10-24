@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -58,6 +59,8 @@ COMPULSORY_TESTS = [
     "annealing_mirrored4",
     "annealing_mirrored5",
     "annealing_mirrored_hang",
+    "annealing_pdn_boundary",
+    "annealing_polygon",
     "blocked_region",
     "cells_not_placed",
     "exclude1",
@@ -97,13 +100,26 @@ COMPULSORY_TESTS = [
     "no_instance_pins",
     "no_pins",
     "no_tracks",
+    "obstruction_boundary",
     "on_grid",
     "partial_tracks",
     "partial_tracks_error",
+    "pdn_boundary_mirrored_pins",
+    "pdn_boundary_pg_pins",
+    "pdn_boundary_place_pin",
+    "pdn_boundary_place_pin_rules",
+    "pdn_boundary_stripes",
+    "pdn_boundary_stripes_length",
+    "pdn_boundary_stripes_no_pins",
+    "pdn_boundary_stripes_polygon",
+    "pdn_boundary_vias",
+    "pdn_near_boundary_stripes",
+    "pdn_near_boundary_stripes_length",
     "pin_extension",
     "pin_length",
     "pin_length_error",
     "pin_thick_multiplier",
+    "place_config",
     "place_pin1",
     "place_pin2",
     "place_pin3",
@@ -111,6 +127,7 @@ COMPULSORY_TESTS = [
     "place_pin5",
     "place_pin6",
     "place_pin7",
+    "place_pin_blocked_edge",
     "place_pin_error1",
     "place_pin_error2",
     "place_pin_error3",
@@ -125,6 +142,7 @@ COMPULSORY_TESTS = [
     "top_layer7",
     "top_layer_error",
     "top_layer_error2",
+    "top_layer_pdn_spacing",
     "write_pin_placement1",
     "write_pin_placement2",
     "write_pin_placement3",
@@ -188,11 +206,32 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+cc_test(
+    name = "TestMinimizeDisplacement",
+    size = "small",
+    srcs = ["cpp/TestMinimizeDisplacement.cpp"],
+    data = [
+        "gcd.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/ppl",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "ppl_man_tcl_check",
     srcs = ["ppl_man_tcl_check.py"],
     data = ["//src/ppl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

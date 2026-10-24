@@ -214,7 +214,9 @@ export class RulerManager {
         // Point snap threshold: max(10 pixels in DBU, 10 DBU)
         const zoom = app.map.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
-        const dbuPerPixel = app.designMaxDXDY / (256 * numTiles);
+        // designScale is CSS px per DBU at zoom 0, so it already carries the
+        // tile size the map was built with -- which is not a constant.
+        const dbuPerPixel = 1 / (app.designScale * numTiles);
         const pointThreshold = Math.max(Math.round(10 * dbuPerPixel), 10);
 
         // Direction constraint when measuring
@@ -389,7 +391,8 @@ export class RulerManager {
             pt1: { ...pt1 },
             name: `ruler${id}`,
             label: '',
-            euclidian: true,
+            // Global default style for new rulers (2.12); per-ruler editable.
+            euclidian: this._app.rulerStyle !== 'manhattan',
         };
         this._rulers.push(ruler);
         this._renderRuler(ruler);
@@ -434,7 +437,7 @@ export class RulerManager {
         // Endcap ticks — perpendicular to each segment direction
         const zoom = this._app.map.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
-        const dbuPerPixel = maxDXDY / (256 * numTiles);
+        const dbuPerPixel = 1 / (scale * numTiles);
         const tickLen = 8 * dbuPerPixel;
 
         const addTick = (pt, segDx, segDy) => {
@@ -500,7 +503,6 @@ export class RulerManager {
         // any of their responses still in flight must not overwrite it.
         beginSelection(this._app);
 
-        const dbuPerUm = this._app.techData?.dbu_per_micron || 1000;
         const dx = Math.abs(ruler.pt1.x - ruler.pt0.x);
         const dy = Math.abs(ruler.pt1.y - ruler.pt0.y);
         const length = ruler.euclidian
@@ -508,13 +510,7 @@ export class RulerManager {
             : dx + dy;
 
         const fmt = (dbu) => this._app.formatDbu(dbu, true);
-
-        const parseDbu = (str) => {
-            const num = parseFloat(str);
-            if (isNaN(num)) return null;
-            if (this._app.showDbu) return Math.round(num);
-            return Math.round(num * dbuPerUm);
-        };
+        const parseDbu = (str) => this._app.parseDbu(str);
 
         const data = {
             type: 'Ruler',
@@ -535,7 +531,11 @@ export class RulerManager {
                 { name: 'Delta x', value: fmt(dx) },
                 { name: 'Delta y', value: fmt(dy) },
                 { name: 'Length', value: fmt(length) },
-                { name: 'Euclidian', value: ruler.euclidian ? 'true' : 'false', editable: true },
+                // 'True'/'False' to match the bool editor's option labels, so
+                // the select opens on the current value instead of showing it
+                // as an unrecognized placeholder.
+                { name: 'Euclidian', value: ruler.euclidian ? 'True' : 'False',
+                  editable: true, editor: { type: 'bool' } },
             ],
             onPropertyChange: (propName, newValue) => {
                 switch (propName) {
@@ -579,7 +579,7 @@ export class RulerManager {
             if (!toolbar) return;
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'inspector-btn';
+            deleteBtn.className = 'or-btn or-btn-icon';
             deleteBtn.title = 'Delete ruler';
             deleteBtn.innerHTML =
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +

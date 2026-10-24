@@ -3,6 +3,8 @@
 
 #include "est/EstimateParasitics.h"
 
+#include <omp.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -32,8 +34,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
@@ -86,12 +90,93 @@ EstimateParasitics::~EstimateParasitics()
   service_registry_->withdraw<ParasiticsService>(this);
 }
 
-void EstimateParasitics::estimateAllGlobalRouteParasitics()
+void EstimateParasitics::estimateAllGlobalRouteParasitics(const int threads)
 {
   clearParasitics();
-  for (auto& [db_net, route] : global_router_->getPartialRoutes()) {
-    estimateGlobalRouteParasitics(db_net, route);
+  auto routes = global_router_->getPartialRoutes();
+  // The est_rc debug report prints per net: keep it in net order.
+  if (threads <= 1 || logger_->debugCheck(EST, "est_rc", 1)) {
+    for (auto& [db_net, route] : routes) {
+      estimateGlobalRouteParasitics(db_net, route);
+    }
+    return;
   }
+
+  initBlock();
+  std::vector<std::pair<odb::dbNet*, grt::GRoute*>> work;
+  work.reserve(routes.size());
+  for (auto& [db_net, route] : routes) {
+    if (!route.empty()) {
+      work.emplace_back(db_net, &route);
+    }
+  }
+  estimateRoutesInParallel(work, threads, true);
+}
+
+void EstimateParasitics::estimateRoutesInParallel(
+    const std::vector<std::pair<odb::dbNet*, grt::GRoute*>>& work,
+    int threads,
+    const bool partial)
+{
+  if (work.empty()) {
+    return;
+  }
+  // No more threads, and arc delay calculator copies, than nets.
+  threads = std::min(threads, static_cast<int>(work.size()));
+  // Each net is estimated and reduced on its own and stored by net and
+  // driver pin, so the result does not depend on the thread count or the
+  // order the threads run in. The parasitics store is not locked, so its
+  // entries are made before the threads; the reduction goes through one arc
+  // delay calculator per thread, as sta::GraphDelayCalc does for its threads.
+  std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+  calcs.reserve(threads);
+  for (int i = 0; i < threads; ++i) {
+    calcs.emplace_back(sta_->arcDelayCalc()->copy());
+  }
+  ensureParasiticsForThreads();
+  odb::dbTech* tech = block_->getTech();
+#pragma omp parallel for num_threads(threads) schedule(dynamic, 64)
+  for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+    auto [db_net, route] = work[i];
+    MakeWireParasitics builder(logger_,
+                               this,
+                               sta_,
+                               tech,
+                               block_,
+                               global_router_,
+                               calcs[omp_get_thread_num()].get());
+    // A partial route before layer assignment is 2D; a full route is
+    // always estimated as a 3D one, as the serial loops do.
+    if (!partial || route->at(0).is3DRoute()) {
+      builder.estimateParasitics(db_net, *route, nullptr);
+    } else {
+      builder.estimateParasitics(db_net, *route);
+    }
+  }
+}
+
+void EstimateParasitics::ensureParasiticsForThreads()
+{
+  std::set<sta::Parasitics*> done;
+  for (Scene* scene : sta_->scenes()) {
+    for (const sta::MinMax* min_max : sta::MinMax::range()) {
+      sta::Parasitics* parasitics = scene->parasitics(min_max);
+      if (parasitics && done.insert(parasitics).second) {
+        parasitics->ensureParasitics();
+      }
+    }
+  }
+}
+
+void EstimateParasitics::updateGlobalRouteParasitics(odb::dbNet* db_net,
+                                                     grt::GRoute& route)
+{
+  if (db_net == nullptr || route.empty()) {
+    return;
+  }
+  estimateGlobalRouteParasitics(db_net, route);
+  // Annotating parasitics alone leaves stale cached delays in the timer.
+  sta_->delaysInvalidFromFanin(db_network_->dbToSta(db_net));
 }
 
 void EstimateParasitics::initSteinerRenderer(
@@ -216,7 +301,7 @@ void EstimateParasitics::setVWireSignalRC(odb::dbTech* tech,
 // Defined outside the header; all instantiations live in this file.
 template <typename T>
 const std::vector<T>& EstimateParasitics::resolveWireRC(
-    std::vector<T> WireRC::*category) const
+    std::vector<T> WireRC::* category) const
 {
   static const std::vector<T> empty;
   odb::dbTech* tech = currentTech();
@@ -432,11 +517,58 @@ void EstimateParasitics::initChip(odb::dbChip* chip)
   initBlock();
 }
 
-void EstimateParasitics::ensureParasitics()
+ParasiticsSrc EstimateParasitics::designParasiticsSrc()
 {
-  estimateParasitics(global_router_->haveRoutes()
-                         ? ParasiticsSrc::kGlobalRouting
-                         : ParasiticsSrc::kPlacement);
+  if (spef_read_) {
+    debugPrint(logger_,
+               EST,
+               "estimate_parasitics",
+               1,
+               "parasitics were read from SPEF, not estimated");
+    return ParasiticsSrc::kNone;
+  }
+  if (!global_router_->designIsPlaced()) {
+    logger_->error(
+        EST, 9, "The design is not placed: no parasitics to estimate.");
+  }
+  if (global_router_->haveRoutes()) {
+    return ParasiticsSrc::kGlobalRouting;
+  }
+  if (global_router_->haveCongestedRoutes()) {
+    logger_->error(EST,
+                   20,
+                   "The global routes are congested. Use global_route "
+                   "-allow_congestion to estimate parasitics from them.");
+  }
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (wireSignalCapacitance(scene) == 0.0) {
+      logger_->error(EST,
+                     14,
+                     "wire capacitance for corner {} is zero. Use the "
+                     "set_wire_rc command to set wire resistance and "
+                     "capacitance.",
+                     scene->name());
+    }
+  }
+  return ParasiticsSrc::kPlacement;
+}
+
+const char* EstimateParasitics::parasiticsSource() const
+{
+  if (spef_read_) {
+    return "spef";
+  }
+  switch (parasitics_src_) {
+    case ParasiticsSrc::kPlacement:
+      return "placement";
+    case ParasiticsSrc::kGlobalRouting:
+      return "global_routing";
+    case ParasiticsSrc::kDetailedRouting:
+      return "detailed_routing";
+    case ParasiticsSrc::kNone:
+      break;
+  }
+  return "none";
 }
 
 void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
@@ -450,6 +582,7 @@ void EstimateParasitics::estimateParasitics(
     std::map<sta::Scene*, std::ostream*>& spef_streams)
 {
   initBlock();
+  spef_read_ = false;
   std::unique_ptr<sta::SpefWriter> spef_writer;
   if (!spef_streams.empty()) {
     spef_writer
@@ -497,7 +630,7 @@ void EstimateParasitics::updateParasitics()
   switch (parasitics_src_) {
     case ParasiticsSrc::kPlacement:
       for (const sta::Net* net : parasitics_invalid_) {
-        if (isIdealClockNet(net)) {
+        if (isSkipNet(net)) {
           continue;
         }
         //
@@ -524,9 +657,12 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::kGlobalRouting:
     case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
-      incr_groute_->updateRoutes();
+      // Also re-estimate the nets the router moved beyond the edited ones.
+      for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+        parasiticsInvalid(db_net);
+      }
       for (const sta::Net* net : parasitics_invalid_) {
-        if (isIdealClockNet(net)) {
+        if (isSkipNet(net)) {
           continue;
         }
         debugPrint(logger_,
@@ -550,7 +686,7 @@ void EstimateParasitics::updateParasitics()
   // groute call.
   if (parasitics_src_ != ParasiticsSrc::kNone) {
     for (const sta::Net* net : parasitics_invalid_) {
-      if (isIdealClockNet(net)) {
+      if (isSkipNet(net)) {
         continue;
       }
       debugPrint(logger_,
@@ -563,11 +699,32 @@ void EstimateParasitics::updateParasitics()
     }
   }
   parasitics_invalid_.clear();
+  observer_estimated_nets_.clear();
+}
+
+void EstimateParasitics::updateParasiticsForObserver()
+{
+  std::unordered_set<const sta::Net*, NetHash> estimated
+      = std::move(observer_estimated_nets_);
+  estimated.insert(parasitics_invalid_.begin(), parasitics_invalid_.end());
+  updateParasitics();
+  observer_estimated_nets_ = std::move(estimated);
 }
 
 bool EstimateParasitics::parasiticsValid() const
 {
   return parasitics_invalid_.empty();
+}
+
+size_t EstimateParasitics::pendingNetCount() const
+{
+  size_t count = parasitics_invalid_.size();
+  for (const sta::Net* net : observer_estimated_nets_) {
+    if (!parasitics_invalid_.contains(net)) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin)
@@ -582,6 +739,13 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin)
 void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
                                              const sta::Net* net)
 {
+  // An incremental update would have estimated a net that an observer
+  // estimated early here, as the switch below does for an invalid net.
+  if (parasitics_src_ == ParasiticsSrc::kPlacement
+      || parasitics_src_ == ParasiticsSrc::kGlobalRouting) {
+    observer_estimated_nets_.erase(net);
+  }
+
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
   const Scene* corner = sta_->scenes().front();
@@ -595,7 +759,10 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
         parasitics_invalid_.erase(net);
         break;
       case ParasiticsSrc::kGlobalRouting: {
-        incr_groute_->updateRoutes();
+        // Other rerouted nets stay invalid until the next updateParasitics.
+        for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+          parasiticsInvalid(db_net);
+        }
         estimateGlobalRouteRC(db_network_->staToDb(net));
         parasitics_invalid_.erase(net);
         break;
@@ -617,14 +784,29 @@ void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
     scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
   }
 
-  MakeWireParasitics builder(
-      logger_, this, sta_, block_->getTech(), block_, global_router_);
+  auto& routes = global_router_->getRoutes();
+  const int threads = sta_->threadCount();
+  // A SPEF file and the est_rc debug report are written per net: keep
+  // them in net order.
+  if (spef_writer || threads <= 1 || logger_->debugCheck(EST, "est_rc", 1)) {
+    MakeWireParasitics builder(
+        logger_, this, sta_, block_->getTech(), block_, global_router_);
+    for (auto& [db_net, route] : routes) {
+      if (!route.empty()) {
+        builder.estimateParasitics(db_net, route, spef_writer);
+      }
+    }
+    return;
+  }
 
-  for (auto& [db_net, route] : global_router_->getRoutes()) {
+  std::vector<std::pair<odb::dbNet*, grt::GRoute*>> work;
+  work.reserve(routes.size());
+  for (auto& [db_net, route] : routes) {
     if (!route.empty()) {
-      builder.estimateParasitics(db_net, route, spef_writer);
+      work.emplace_back(db_net, &route);
     }
   }
+  estimateRoutesInParallel(work, threads, false);
 }
 
 void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
@@ -645,6 +827,9 @@ void EstimateParasitics::estimateGlobalRouteRC(odb::dbNet* db_net)
 void EstimateParasitics::estimateGlobalRouteParasitics(odb::dbNet* net,
                                                        grt::GRoute& route)
 {
+  if (route.empty()) {
+    return;
+  }
   initBlock();
   MakeWireParasitics builder(
       logger_, this, sta_, block_->getTech(), block_, global_router_);
@@ -698,13 +883,42 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 
     sortClkAndSignalLayers();
 
-    odb::dbSet<odb::dbNet> nets = block_->getNets();
-    for (auto db_net : nets) {
-      sta::Net* cur_net = db_network_->dbToSta(db_net);
-      estimateWireParasitic(cur_net, spef_writer);
+    // Network::drivers fills a cache and the first isConstant per mode
+    // propagates constants: do both before the threads.
+    std::vector<std::pair<const sta::Pin*, const sta::Net*>> work;
+    for (odb::dbNet* db_net : block_->getNets()) {
+      const sta::Net* net = db_network_->dbToSta(db_net);
+      PinSet* drivers = network_->drivers(net);
+      if (drivers && !drivers->empty()) {
+        work.emplace_back(*drivers->begin(), net);
+      }
+    }
+    if (!work.empty()) {
+      (void) isSkipPin(work.front().first);
+    }
+    // SPEF and the debug reports are written per net, in net order.
+    const int threads
+        = spef_writer || logger_->debugCheck(EST, "estimate_parasitics", 1)
+                  || logger_->debugCheck(EST, "steiner", 1)
+              ? 1
+              : sta_->threadCount();
+    stt_builder_->prepareForThreads();
+    std::vector<std::unique_ptr<sta::ArcDelayCalc>> calcs;
+    calcs.reserve(threads);
+    for (int i = 0; i < threads; ++i) {
+      calcs.emplace_back(arc_delay_calc_->copy());
+    }
+    ensureParasiticsForThreads();
+#pragma omp parallel for num_threads(threads) \
+    schedule(dynamic, 64) if (threads > 1)
+    for (int i = 0; i < static_cast<int>(work.size()); ++i) {
+      auto [drvr_pin, net] = work[i];
+      estimateWireParasitic(
+          drvr_pin, net, spef_writer, calcs[omp_get_thread_num()].get());
     }
     parasitics_src_ = ParasiticsSrc::kPlacement;
     parasitics_invalid_.clear();
+    observer_estimated_nets_.clear();
   }
 }
 
@@ -718,19 +932,24 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
   }
 }
 
-void EstimateParasitics::estimateWireParasitic(const sta::Pin* drvr_pin,
-                                               const sta::Net* net,
-                                               sta::SpefWriter* spef_writer)
+void EstimateParasitics::estimateWireParasitic(
+    const sta::Pin* drvr_pin,
+    const sta::Net* net,
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
 {
+  if (arc_delay_calc == nullptr) {
+    arc_delay_calc = arc_delay_calc_;
+  }
   if (!network_->isPower(net) && !network_->isGround(net)
       && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net)) {
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
       // wire capacitance to prevent wireload model parasitics from being used.
-      makePadParasitic(net, spef_writer);
+      makePadParasitic(net, spef_writer, arc_delay_calc);
     } else {
-      estimateWireParasiticSteiner(drvr_pin, net, spef_writer);
+      estimateWireParasiticSteiner(drvr_pin, net, spef_writer, arc_delay_calc);
     }
   }
 }
@@ -776,7 +995,8 @@ bool EstimateParasitics::isPadNet(const sta::Net* net) const
 }
 
 void EstimateParasitics::makePadParasitic(const sta::Net* net,
-                                          sta::SpefWriter* spef_writer)
+                                          sta::SpefWriter* spef_writer,
+                                          sta::ArcDelayCalc* arc_delay_calc)
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
@@ -794,8 +1014,8 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
       spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
 
-    if (arc_delay_calc_->reduceSupported()) {
-      arc_delay_calc_->reduceParasitic(
+    if (arc_delay_calc->reduceSupported()) {
+      arc_delay_calc->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());
       parasitics->deleteParasiticNetwork(net);
     }
@@ -805,132 +1025,135 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Pin* drvr_pin,
     const sta::Net* net,
-    sta::SpefWriter* spef_writer)
+    sta::SpefWriter* spef_writer,
+    sta::ArcDelayCalc* arc_delay_calc)
 {
-  if (!isIdealClockPin(drvr_pin)) {
-    SteinerTree* tree = makeSteinerTree(drvr_pin);
-    if (tree) {
-      debugPrint(logger_,
-                 EST,
-                 "estimate_parasitics",
-                 1,
-                 "estimate wire {}",
-                 sdc_network_->pathName(net));
-      for (sta::Scene* corner : sta_->scenes()) {
-        if (sta_->isIdealClock(drvr_pin, corner->mode())) {
-          continue;
-        }
-        std::set<const Pin*> connected_pins;
-        Parasitics* parasitics = corner->parasitics(max_);
-        Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
-        bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
-        double wire_cap = 0.0;
-        double wire_res = 0.0;
-        const int branch_count = tree->branchCount();
-        int max_node_index = tree->getMaxIndex();
-        size_t resistor_id = 1;
-        for (int i = 0; i < branch_count; i++) {
-          odb::Point pt1, pt2;
-          SteinerPt steiner_pt1, steiner_pt2;
-          int wire_length_dbu;
-          tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
-          if (wire_length_dbu) {
-            double dx = dbuToMeters(abs(pt1.x() - pt2.x()))
-                        / dbuToMeters(wire_length_dbu);
-            double dy = dbuToMeters(abs(pt1.y() - pt2.y()))
-                        / dbuToMeters(wire_length_dbu);
-
-            if (is_clk) {
-              wire_cap = dx * wireClkHCapacitance(corner)
-                         + dy * wireClkVCapacitance(corner);
-              wire_res = dx * wireClkHResistance(corner)
-                         + dy * wireClkVResistance(corner);
-            } else {
-              wire_cap = dx * wireSignalHCapacitance(corner)
-                         + dy * wireSignalVCapacitance(corner);
-              wire_res = dx * wireSignalHResistance(corner)
-                         + dy * wireSignalVResistance(corner);
-            }
-          } else {
-            wire_cap = is_clk ? wireClkCapacitance(corner)
-                              : wireSignalCapacitance(corner);
-            wire_res = is_clk ? wireClkResistance(corner)
-                              : wireSignalResistance(corner);
-          }
-          sta::ParasiticNode* n1 = parasitics->ensureParasiticNode(
-              parasitic, net, steiner_pt1, network_);
-          sta::ParasiticNode* n2 = parasitics->ensureParasiticNode(
-              parasitic, net, steiner_pt2, network_);
-          if (wire_length_dbu == 0) {
-            // Use a small resistor to keep the connectivity intact.
-            parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
-          } else {
-            double length = dbuToMeters(wire_length_dbu);
-            double cap = length * wire_cap;
-            double res = length * wire_res;
-
-            // Reduce resistance if the net has NDR with increased width
-            odb::dbTechNonDefaultRule* ndr
-                = db_network_->staToDb(net)->getNonDefaultRule();
-            if (ndr) {
-              std::vector<odb::dbTechLayerRule*> layer_rules;
-              ndr->getLayerRules(layer_rules);
-              float ratio = (float) layer_rules.at(0)->getWidth()
-                            / layer_rules.at(0)->getLayer()->getWidth();
-              res /= ratio;
-            }
-
-            // Make pi model for the wire.
-            debugPrint(logger_,
-                       EST,
-                       "estimate_parasitics",
-                       2,
-                       " pi {} l={} c2={} rpi={} c1={} {}",
-                       parasitics->name(n1),
-                       units_->distanceUnit()->asString(length),
-                       units_->capacitanceUnit()->asString(cap / 2.0),
-                       units_->resistanceUnit()->asString(res),
-                       units_->capacitanceUnit()->asString(cap / 2.0),
-                       parasitics->name(n2));
-            parasitics->incrCap(n1, cap / 2.0);
-            parasitics->makeResistor(parasitic, resistor_id++, res, n1, n2);
-            parasitics->incrCap(n2, cap / 2.0);
-          }
-          parasiticNodeConnectPins(parasitics,
-                                   parasitic,
-                                   n1,
-                                   tree,
-                                   steiner_pt1,
-                                   resistor_id,
-                                   corner,
-                                   connected_pins,
-                                   net,
-                                   max_node_index,
-                                   is_clk);
-          parasiticNodeConnectPins(parasitics,
-                                   parasitic,
-                                   n2,
-                                   tree,
-                                   steiner_pt2,
-                                   resistor_id,
-                                   corner,
-                                   connected_pins,
-                                   net,
-                                   max_node_index,
-                                   is_clk);
-        }
-        if (spef_writer) {
-          spef_writer->writeNet(corner, net, parasitic, parasitics);
-        }
-
-        if (arc_delay_calc_->reduceSupported()) {
-          arc_delay_calc_->reduceParasitic(
-              parasitic, net, corner, sta::MinMaxAll::all());
-          parasitics->deleteParasiticNetwork(net);
-        }
+  if (isSkipPin(drvr_pin)) {
+    return;
+  }
+  SteinerTree* tree = makeSteinerTree(drvr_pin);
+  if (tree) {
+    debugPrint(logger_,
+               EST,
+               "estimate_parasitics",
+               1,
+               "estimate wire {}",
+               sdc_network_->pathName(net));
+    for (sta::Scene* corner : sta_->scenes()) {
+      if (hasIdealClocks(corner->mode())
+          && sta_->isIdealClock(drvr_pin, corner->mode())) {
+        continue;
       }
-      delete tree;
+      std::set<const Pin*> connected_pins;
+      Parasitics* parasitics = corner->parasitics(max_);
+      Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
+      bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
+      double wire_cap = 0.0;
+      double wire_res = 0.0;
+      const int branch_count = tree->branchCount();
+      int max_node_index = tree->getMaxIndex();
+      size_t resistor_id = 1;
+      for (int i = 0; i < branch_count; i++) {
+        odb::Point pt1, pt2;
+        SteinerPt steiner_pt1, steiner_pt2;
+        int wire_length_dbu;
+        tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
+        if (wire_length_dbu) {
+          double dx = dbuToMeters(abs(pt1.x() - pt2.x()))
+                      / dbuToMeters(wire_length_dbu);
+          double dy = dbuToMeters(abs(pt1.y() - pt2.y()))
+                      / dbuToMeters(wire_length_dbu);
+
+          if (is_clk) {
+            wire_cap = dx * wireClkHCapacitance(corner)
+                       + dy * wireClkVCapacitance(corner);
+            wire_res = dx * wireClkHResistance(corner)
+                       + dy * wireClkVResistance(corner);
+          } else {
+            wire_cap = dx * wireSignalHCapacitance(corner)
+                       + dy * wireSignalVCapacitance(corner);
+            wire_res = dx * wireSignalHResistance(corner)
+                       + dy * wireSignalVResistance(corner);
+          }
+        } else {
+          wire_cap = is_clk ? wireClkCapacitance(corner)
+                            : wireSignalCapacitance(corner);
+          wire_res = is_clk ? wireClkResistance(corner)
+                            : wireSignalResistance(corner);
+        }
+        sta::ParasiticNode* n1 = parasitics->ensureParasiticNode(
+            parasitic, net, steiner_pt1, network_);
+        sta::ParasiticNode* n2 = parasitics->ensureParasiticNode(
+            parasitic, net, steiner_pt2, network_);
+        if (wire_length_dbu == 0) {
+          // Use a small resistor to keep the connectivity intact.
+          parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
+        } else {
+          double length = dbuToMeters(wire_length_dbu);
+          double cap = length * wire_cap;
+          double res = length * wire_res;
+
+          // Reduce resistance if the net has NDR with increased width
+          odb::dbTechNonDefaultRule* ndr
+              = db_network_->staToDb(net)->getNonDefaultRule();
+          if (ndr) {
+            std::vector<odb::dbTechLayerRule*> layer_rules;
+            ndr->getLayerRules(layer_rules);
+            float ratio = (float) layer_rules.at(0)->getWidth()
+                          / layer_rules.at(0)->getLayer()->getWidth();
+            res /= ratio;
+          }
+
+          // Make pi model for the wire.
+          debugPrint(logger_,
+                     EST,
+                     "estimate_parasitics",
+                     2,
+                     " pi {} l={} c2={} rpi={} c1={} {}",
+                     parasitics->name(n1),
+                     units_->distanceUnit()->asString(length),
+                     units_->capacitanceUnit()->asString(cap / 2.0),
+                     units_->resistanceUnit()->asString(res),
+                     units_->capacitanceUnit()->asString(cap / 2.0),
+                     parasitics->name(n2));
+          parasitics->incrCap(n1, cap / 2.0);
+          parasitics->makeResistor(parasitic, resistor_id++, res, n1, n2);
+          parasitics->incrCap(n2, cap / 2.0);
+        }
+        parasiticNodeConnectPins(parasitics,
+                                 parasitic,
+                                 n1,
+                                 tree,
+                                 steiner_pt1,
+                                 resistor_id,
+                                 corner,
+                                 connected_pins,
+                                 net,
+                                 max_node_index,
+                                 is_clk);
+        parasiticNodeConnectPins(parasitics,
+                                 parasitic,
+                                 n2,
+                                 tree,
+                                 steiner_pt2,
+                                 resistor_id,
+                                 corner,
+                                 connected_pins,
+                                 net,
+                                 max_node_index,
+                                 is_clk);
+      }
+      if (spef_writer) {
+        spef_writer->writeNet(corner, net, parasitic, parasitics);
+      }
+
+      if (arc_delay_calc->reduceSupported()) {
+        arc_delay_calc->reduceParasitic(
+            parasitic, net, corner, sta::MinMaxAll::all());
+        parasitics->deleteParasiticNetwork(net);
+      }
     }
+    delete tree;
   }
 }
 
@@ -995,14 +1218,13 @@ double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
     }
   }
 
-  odb::dbTechLayer* min_tech_layer = tech->findRoutingLayer(min_layer);
-  odb::dbTechLayer* max_tech_layer = tech->findRoutingLayer(max_layer);
+  const int min_number = tech->findRoutingLayer(min_layer)->getNumber();
+  const int max_number = tech->findRoutingLayer(max_layer)->getNumber();
 
-  for (int layer_idx = min_tech_layer->getNumber();
-       layer_idx <= max_tech_layer->getNumber();
-       layer_idx++) {
-    odb::dbTechLayer* layer = tech->findLayer(layer_idx);
-    if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    const int number = layer->getNumber();
+    if (number >= min_number && number <= max_number
+        && layer->getType() == odb::dbTechLayerType::CUT) {
       double res, cap;
       layerRC(layer, scene, res, cap);
       total_resistance += res;
@@ -1230,27 +1452,83 @@ bool EstimateParasitics::isPad(const sta::Instance* inst) const
   return false;
 }
 
-bool EstimateParasitics::isIdealClockPin(const sta::Pin* pin) const
+bool EstimateParasitics::isSkipPin(const sta::Pin* pin) const
 {
-  // An ideal clock pin carries fixed arrivals that do not depend on
-  // parasitics, so its parasitics never need re-estimation.
+  // A pin can be skipped when its parasitics never affect timing in any mode.
+  // The clock reason spans modes: a pin is an ideal clock if it is a clock in
+  // at least one mode and ideal in every mode where it is a clock (non-clock
+  // modes are ignored, e.g. a scan clock absent from function mode). The
+  // remaining reasons are combined per mode: a pin is skippable when it is
+  // timing-irrelevant in every mode, even if the reason differs across modes
+  // (e.g. constant in one mode and disabled in another).
   bool is_clock = false;
+  bool ideal_clock = true;
+  bool irrelevant_in_all_modes = true;
+  // With no ideal clock in any mode, no pin is an ideal clock. Asking
+  // whether the pin is a clock would then only rebuild the clock network,
+  // which repair_clock_nets invalidates with every repeater it inserts.
+  const bool ideal_clocks = hasIdealClocks();
   for (sta::Mode* mode : sta_->modes()) {
     // In multi-mode designs, a pin may be an ideal clock only in a subset of
     // modes. Ignore modes where the pin is not a clock at all.
     // e.g., scan clock pin may not be defined as clock in function mode.
-    if (!sta_->isClock(pin, mode)) {
-      continue;
+    if (ideal_clocks && sta_->isClock(pin, mode)) {
+      is_clock = true;
+      if (!sta_->isIdealClock(pin, mode)) {
+        ideal_clock = false;
+      }
     }
-    is_clock = true;
-    if (!sta_->isIdealClock(pin, mode)) {
-      return false;
+    // A constant or disabled pin carries no parasitic-dependent timing in this
+    // mode.
+    if (!sta_->isConstant(pin, mode)
+        && !mode->sdc()->isDisabledConstraint(pin)) {
+      irrelevant_in_all_modes = false;
     }
   }
-  return is_clock;
+
+  // An ideal clock pin carries fixed arrivals that do not depend on parasitics.
+  if (is_clock && ideal_clock) {
+    return true;
+  }
+
+  // The pin is constant or disabled in every mode.
+  if (irrelevant_in_all_modes) {
+    return true;
+  }
+
+  return false;
 }
 
-bool EstimateParasitics::isIdealClockNet(const sta::Net* net) const
+bool EstimateParasitics::hasIdealClocks(const sta::Mode* mode) const
+{
+  // Mirrors ClkNetwork::findClkPins: ideal clock pins start only from leaf
+  // pins of non-propagated clocks that are not propagated themselves. A
+  // virtual clock has no leaf pins.
+  const sta::Sdc* sdc = mode->sdc();
+  for (const sta::Clock* clk : sdc->clocks()) {
+    if (clk->isPropagated()) {
+      continue;
+    }
+    for (const sta::Pin* pin : clk->leafPins()) {
+      if (!sdc->isPropagatedClock(pin)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool EstimateParasitics::hasIdealClocks() const
+{
+  for (const sta::Mode* mode : sta_->modes()) {
+    if (hasIdealClocks(mode)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool EstimateParasitics::isSkipNet(const sta::Net* net) const
 {
   odb::dbNet* db_net = db_network_->staToDb(net);
   if (db_net == nullptr) {
@@ -1263,7 +1541,7 @@ bool EstimateParasitics::isIdealClockNet(const sta::Net* net) const
   }
 
   const Pin* drvr_pin = *drivers->begin();
-  return isIdealClockPin(drvr_pin);
+  return isSkipPin(drvr_pin);
 }
 
 void EstimateParasitics::parasiticsInvalid(const sta::Net* net)
@@ -1299,7 +1577,23 @@ void EstimateParasitics::setParasiticsSrc(ParasiticsSrc src)
 
 void EstimateParasitics::eraseParasitics(const sta::Net* net)
 {
+  // Deleting a dbNet only disconnects its parasitic network's pin nodes, and
+  // sta::Net* is the dbNet pointer, so once odb recycles the slot the next net
+  // inherits a driver-less network. Delete it, not just the invalid marker.
+  //
+  // deleteParasiticNetwork() and not deleteParasitics(): the latter resolves
+  // drivers(net), which by now has no driver and would cache an empty entry
+  // keyed on a dbNet about to be freed.
+  for (Scene* scene : scenes_) {
+    for (const sta::MinMax* mm : sta::MinMax::range()) {
+      Parasitics* parasitics = scene->parasitics(mm);
+      if (parasitics) {
+        parasitics->deleteParasiticNetwork(net);
+      }
+    }
+  }
   parasitics_invalid_.erase(net);
+  observer_estimated_nets_.erase(net);
 }
 
 static void connectedPins(const sta::Net* net,

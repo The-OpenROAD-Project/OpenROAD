@@ -118,8 +118,12 @@ class Opendp
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
                          bool disable_window_extension = false,
-                         bool pdn_aware = false);
+                         bool pdn_aware = false,
+                         bool quiet = false);
+  // C++ equivalent of `detailed_placement -quiet`.
+  void detailedPlacementQuiet();
   void reportLegalizationStats() const;
+  void reportLegalizationSummary(double runtime);
 
   void setPaddingGlobal(int left, int right);
   void setPadding(odb::dbMaster* master, int left, int right);
@@ -138,7 +142,10 @@ class Opendp
   int padLeft(odb::dbInst* inst) const;
   int padRight(odb::dbInst* inst) const;
 
-  void checkPlacement(bool verbose, const std::string& report_file_name = "");
+  void checkPlacement(bool verbose,
+                      const std::string& report_file_name = "",
+                      bool check_fixed = true,
+                      bool check_placeable = true);
   void fillerPlacement(const dbMasterSeq& filler_masters,
                        const char* prefix,
                        bool verbose);
@@ -215,10 +222,10 @@ class Opendp
   void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
                       const std::string& violation_type = "") const;
-  void importDb();
+  void importDb(bool fixed_only = false);
   void importClear();
   odb::Rect getBbox(odb::dbInst* inst);
-  void createNetwork();
+  void createNetwork(bool fixed_only);
   void createArchitecture();
   void setUpPlacementGroups();
   void adjustNodesOrient();
@@ -422,6 +429,19 @@ class Opendp
   bool use_diamond_legalizer_ = false;
   bool pdn_aware_ = false;
   odb::dbBlock* pdn_aware_block_ = nullptr;
+  bool quiet_ = false;
+  int total_moves_ = 0;
+  // Counters for reporting
+  int cumulative_moves_ = 0;
+  int64_t cumulative_displacement_ = 0;
+  int64_t cumulative_displacement_max_ = 0;
+  double cumulative_hpwl_delta_ = 0.0;
+  double cumulative_runtime_ = 0.0;
+  int negotiation_iters_phase1_ = 0;
+  int negotiation_iters_phase2_ = 0;
+  int negotiation_converge_phase_ = 0;
+  int negotiation_diamond_recoveries_ = 0;
+  std::string negotiation_finish_ = "not run";
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

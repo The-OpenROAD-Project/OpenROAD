@@ -11,7 +11,7 @@ link_design top
 add_global_connection -net {VDD} -pin_pattern {VPWR} -power
 add_global_connection -net {VSS} -pin_pattern {VGND} -ground
 
-set_dont_touch \q2[0]
+set_dont_touch {q2[0]}
 eliminate_dead_logic
 
 set verilog_file [make_result_file eliminate_dead_logic2.vg]

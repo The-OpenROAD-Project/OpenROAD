@@ -946,21 +946,54 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
 
 bool PlacementDRC::checkBlockedLayers(const Node* cell) const
 {
-  return checkBlockedLayers(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+  return checkBlockedLayers(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), cell->getOrient());
 }
 
 bool PlacementDRC::checkBlockedLayers(const Node* cell,
                                       const GridX x,
-                                      const GridY y) const
+                                      const GridY y,
+                                      const odb::dbOrientType& orient) const
 {
   const GridX x_begin = x;
   const GridY y_begin = y;
   const GridX x_end = x + grid_->gridWidth(cell);
   const GridY y_end = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+  // Pin layers whose power via/patch metal lies somewhere in the footprint
+  uint8_t pin_layers = 0;
   for (GridY y1 = y_begin; y1 < y_end; y1++) {
     for (GridX x1 = x_begin; x1 < x_end; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
-      if (pixel != nullptr && pixel->blocked_layers & cell->getUsedLayers()) {
+      if (pixel == nullptr) {
+        continue;
+      }
+      if (pixel->blocked_layers & cell->getUsedLayers()) {
+        return false;
+      }
+      pin_layers |= pixel->blocked_pin_layers & cell->getPinLayers();
+    }
+  }
+  if (pin_layers == 0) {
+    return true;
+  }
+
+  // The via/patch metal is much smaller than a pixel, so check the pin
+  // shapes on those layers against the actual metal.
+  const Master* master = cell->getMaster();
+  odb::dbInst* inst = cell->getDbInst();
+  const DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
+  const DbuY y_real = grid_->gridYToDbu(y);
+  for (int level = 1; level <= kMaxPinLevel; level++) {
+    if ((pin_layers & (1 << level)) == 0) {
+      continue;
+    }
+    for (const Master::PinShape& shape : master->getPinShapes(level)) {
+      const odb::Rect pin_rect = cell_edges::transformEdgeRect(
+          shape.rect, cell, x_real, y_real, orient);
+      // A pin may touch power metal of the net it is connected to
+      const odb::dbNet* pin_net
+          = inst ? inst->getITerm(shape.mterm)->getNet() : nullptr;
+      if (grid_->overlapsPinBlockage(level, pin_rect, pin_net)) {
         return false;
       }
     }
@@ -996,7 +1029,7 @@ bool PlacementDRC::checkDRC(const Node* cell,
 {
   if (!logger_->debugCheck(DPL, "checkDRC", 1)) {
     // Fast path: bail on the first failing check, cheapest first.
-    return checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y)
+    return checkBlockedLayers(cell, x, y, orient) && checkOneSiteGap(cell, x, y)
            && checkPadding(cell, x, y) && checkEdgeSpacing(cell, x, y, orient)
            && checkFixedSupplyVias(cell, x, y, orient);
   }
@@ -1004,7 +1037,7 @@ bool PlacementDRC::checkDRC(const Node* cell,
   // Debug path: evaluate every check so the report shows each one.
   const bool edge_ok = checkEdgeSpacing(cell, x, y, orient);
   const bool padding_ok = checkPadding(cell, x, y);
-  const bool blocked_ok = checkBlockedLayers(cell, x, y);
+  const bool blocked_ok = checkBlockedLayers(cell, x, y, orient);
   const bool supply_vias_ok = checkFixedSupplyVias(cell, x, y, orient);
   const bool gap_ok = checkOneSiteGap(cell, x, y);
 
@@ -1052,7 +1085,7 @@ int PlacementDRC::countDRCViolations(const Node* cell,
   if (!checkPadding(cell, x, y)) {
     ++count;
   }
-  if (!checkBlockedLayers(cell, x, y)) {
+  if (!checkBlockedLayers(cell, x, y, orient)) {
     ++count;
   }
   if (!checkOneSiteGap(cell, x, y)) {

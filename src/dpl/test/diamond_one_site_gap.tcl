@@ -8,4 +8,4 @@ check_placement
 
 set def_file [make_result_file diamond_one_site_gap.def]
 write_def $def_file
-diff_file diamond_one_site_gap.defok $def_file
+diff_files diamond_one_site_gap.defok $def_file

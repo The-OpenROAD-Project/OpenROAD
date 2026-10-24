@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -39,7 +40,12 @@ class TechLayer
 
   void populateGrid(odb::dbBlock* block,
                     odb::dbTechLayerDir dir = odb::dbTechLayerDir::NONE);
-  int snapToGrid(int pos, int greater_than = 0) const;
+  // snap pos onto the routing grid, ignoring tracks outside
+  // [greater_than, less_than]; the bounds keep successive straps in a group
+  // from landing on the same track, in either sweep direction
+  int snapToGrid(int pos,
+                 int greater_than = 0,
+                 int less_than = std::numeric_limits<int>::max()) const;
   int snapToGridInterval(odb::dbBlock* block, int dist) const;
   bool hasGrid() const { return !grid_.empty(); }
   const std::vector<int>& getGrid() const { return grid_; }
@@ -61,8 +67,8 @@ class TechLayer
   struct MinCutRule
   {
     odb::dbTechLayerCutClassRule* cut_class;
-    bool above;
-    bool below;
+    bool above;  // only when this layer is above the via (FROMBELOW)
+    bool below;  // only when this layer is below the via (FROMABOVE)
     int width;
     int cuts;
   };

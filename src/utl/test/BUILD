@@ -87,6 +87,8 @@ test_suite(
     tests = [
         ":TestAlgorithms",
         ":TestCFileUtils",
+        ":TestCpuTopology",
+        ":TestCsvParser",
         ":TestMetrics",
         ":TestSuppressStdout",
     ],
@@ -121,6 +123,16 @@ cc_test(
     srcs = [
         "cpp/TestMetrics.cpp",
     ],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestCsvParser",
+    srcs = ["cpp/TestCsvParser.cpp"],
     deps = [
         "//src/utl",
         "@googletest//:gtest",
@@ -164,7 +176,10 @@ py_test(
     name = "utl_man_tcl_check",
     srcs = ["utl_man_tcl_check.py"],
     data = ["//src/utl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -175,4 +190,14 @@ doc_check_test(
         "//src/utl:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestCpuTopology",
+    srcs = ["cpp/TestCpuTopology.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

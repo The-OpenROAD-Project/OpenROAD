@@ -5,11 +5,14 @@
 
 #include <deque>
 #include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
 
@@ -21,15 +24,6 @@ namespace tst {
 
 DbFixture::DbFixture()
 {
-#ifdef BAZEL_BUILD
-  std::string error;
-  runfiles_.reset(bazel::tools::cpp::runfiles::Runfiles::CreateForTest(&error));
-
-  if (runfiles_ == nullptr) {
-    throw std::runtime_error("Could not create Runfiles object: " + error);
-  }
-#endif
-
   db_ = utl::UniquePtrWithDeleter<odb::dbDatabase>(odb::dbDatabase::create(),
                                                    odb::dbDatabase::destroy);
   db_->setLogger(&logger_);
@@ -63,13 +57,32 @@ std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
   throw std::runtime_error("Could not find: " + relative_path.string());
 }
 
-std::string DbFixture::getFilePath(const std::string& file_path) const
+std::string getRunfilePath(const std::string& file_path)
 {
 #ifdef BAZEL_BUILD
-  return runfiles_->Rlocation(file_path);
+  // Created once per process. Runfiles resolution depends only on the
+  // environment bazel sets up for the test, so there is nothing per-fixture
+  // about it.
+  static const std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> runfiles
+      = []() {
+          std::string error;
+          std::unique_ptr<bazel::tools::cpp::runfiles::Runfiles> created(
+              bazel::tools::cpp::runfiles::Runfiles::CreateForTest(&error));
+          if (created == nullptr) {
+            throw std::runtime_error("Could not create Runfiles object: "
+                                     + error);
+          }
+          return created;
+        }();
+  return runfiles->Rlocation(file_path);
 #else
   return std::filesystem::canonical(findValidPath(file_path));
 #endif
+}
+
+std::string DbFixture::getFilePath(const std::string& file_path) const
+{
+  return getRunfilePath(file_path);
 }
 
 odb::dbTech* DbFixture::loadTechLef(const char* name,
@@ -79,6 +92,46 @@ odb::dbTech* DbFixture::loadTechLef(const char* name,
       db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
   auto path = getFilePath(lef_file);
   return lef_reader.createTech(name, path.c_str());
+}
+
+odb::dbLib* DbFixture::loadLibLef(odb::dbTech* tech,
+                                  const char* name,
+                                  const std::string& lef_file)
+{
+  odb::lefin lef_reader(
+      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  auto path = getFilePath(lef_file);
+  return lef_reader.createLib(tech, name, path.c_str());
+}
+
+odb::dbLib* DbFixture::loadTechAndLibLef(const char* tech_name,
+                                         const char* lib_name,
+                                         const std::string& lef_file)
+{
+  odb::lefin lef_reader(
+      db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  auto path = getFilePath(lef_file);
+  return lef_reader.createTechAndLib(tech_name, lib_name, path.c_str());
+}
+
+odb::dbBlock* DbFixture::readDef(const std::string& def_file,
+                                 std::vector<odb::dbLib*> libs)
+{
+  if (libs.empty()) {
+    for (odb::dbLib* lib : db_->getLibs()) {
+      libs.push_back(lib);
+    }
+  }
+  if (libs.empty()) {
+    throw std::runtime_error("No library LEF loaded before DEF: " + def_file);
+  }
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), libs.front()->getTech());
+  odb::defin def_reader(db_.get(), &logger_);
+  auto path = getFilePath(def_file);
+  if (!def_reader.readChip(libs, path.c_str(), chip)) {
+    throw std::runtime_error("Could not read DEF: " + def_file);
+  }
+  return chip->getBlock();
 }
 
 odb::dbInst* DbFixture::makeInst(odb::dbBlock* block,

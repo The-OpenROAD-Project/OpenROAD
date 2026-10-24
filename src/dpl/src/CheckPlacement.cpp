@@ -25,9 +25,12 @@ using utl::DPL;
 using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 void Opendp::checkPlacement(const bool verbose,
-                            const std::string& report_file_name)
+                            const std::string& report_file_name,
+                            const bool check_fixed,
+                            const bool check_placeable)
 {
-  importDb();
+  const bool fixed_only = check_fixed && !check_placeable;
+  importDb(fixed_only);
   adjustNodesOrient();
 
   std::vector<Node*> placed_failures;
@@ -43,9 +46,17 @@ void Opendp::checkPlacement(const bool verbose,
 
   initGrid(isPdnAwareForCurrentBlock());
   groupAssignCellRegions();
+  auto is_checked = [&](const Node* cell) {
+    return cell->getType() == Node::CELL
+           && (cell->isFixed() ? check_fixed : check_placeable);
+  };
+  // Paint unchecked fixed cells so placeable cells are checked against them.
+  if (!check_fixed) {
+    setFixedGridCells();
+  }
   const auto& row_coords = grid_->getRowCoordinates();
   for (auto& cell : network_->getNodes()) {
-    if (cell->getType() != Node::CELL) {
+    if (!is_checked(cell.get())) {
       continue;
     }
     if (cell->isStdCell()) {
@@ -95,7 +106,7 @@ void Opendp::checkPlacement(const bool verbose,
   if (disallow_one_site_gaps_) {
     for (auto& cell : network_->getNodes()) {
       // One site gap check
-      if (cell->getType() == Node::CELL && checkOneSiteGaps(*cell)) {
+      if (is_checked(cell.get()) && checkOneSiteGaps(*cell)) {
         one_site_gap_failures.push_back(cell.get());
       }
     }
@@ -128,11 +139,18 @@ void Opendp::checkPlacement(const bool verbose,
       edge_spacing_failures, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
   reportFailures(blocked_layers_failures, 10, "Blocked layers", verbose);
   reportFailures(fixed_supply_via_failures, 13, "Fixed supply vias", verbose);
-  logger_->metric("design__violations",
+  // A fixed-only run validates the floorplan, so it reports under its own
+  // metric instead of overwriting the detailed placement one.
+  logger_->metric(fixed_only ? "floorplan__violations" : "design__violations",
                   placed_failures.size() + in_rows_failures.size()
                       + overlap_failures.size() + padding_failures.size()
                       + site_align_failures.size()
                       + fixed_supply_via_failures.size());
+  if (fixed_only) {
+    // Filler and decap placement reuse a populated network without
+    // re-importing, so do not leave one without the movable cells behind.
+    importClear();
+  }
 
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + padding_failures.size() + site_align_failures.size()
@@ -140,8 +158,15 @@ void Opendp::checkPlacement(const bool verbose,
           + region_placement_failures.size() + edge_spacing_failures.size()
           + blocked_layers_failures.size() + fixed_supply_via_failures.size()
       > 0) {
-    logger_->error(
-        DPL, 33, "detailed placement checks failed during check placement.");
+    if (fixed_only) {
+      logger_->error(DPL,
+                     41,
+                     "placement checks failed for fixed instances during check "
+                     "placement.");
+    } else {
+      logger_->error(
+          DPL, 33, "detailed placement checks failed during check placement.");
+    }
   }
 }
 
@@ -423,8 +448,9 @@ Node* Opendp::checkOneSiteGaps(Node& cell) const
         }
         // check the abutting pixel
         const Pixel* abut_pixel = grid_->gridPixel(x + abut_x, y);
+        const bool site_exists = (abut_pixel && abut_pixel->is_valid);
         const bool abuttment_exists = (abut_pixel && abut_pixel->cell);
-        if (!abuttment_exists) {
+        if (site_exists && !abuttment_exists) {
           // check the 1 site gap pixel
           const Pixel* gap_pixel = grid_->gridPixel(x + GridX{2 * abut_x.v}, y);
           if (gap_pixel) {

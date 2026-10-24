@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 421 components and 1975 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 842 connections.
+[INFO ODB-0133]     Created 418 nets and 1133 connections.
+Found 0 macro blocks.
+[INFO PPL-0001] Number of available slots 1696
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0012] I/O nets HPWL: 626.71 um.
+placed pins: 54

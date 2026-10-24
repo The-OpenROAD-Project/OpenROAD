@@ -1,0 +1,52 @@
+#!define NG45_PATH ../../odb/test/Nangate45
+
+Header:
+  version: 2.5
+  unit: micron
+  precision: 2000
+
+ChipletDef:
+  flop_chip_a:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    tsv: false
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_cross_flop_a.bmap
+        layer: metal1
+    external:
+      APR_tech_file: [NG45_PATH/Nangate45_tech.lef]
+      liberty_file: [NG45_PATH/Nangate45_typ.lib]
+      LEF_file: [NG45_PATH/Nangate45_stdcell.lef, NG45_PATH/fake_bumps.lef]
+      DEF_file: 3dic_cross_flop_a.def
+  flop_chip_b:
+    type: die
+    design_area: [20, 20]
+    shrink: 1
+    tsv: false
+    thickness: 300
+    offset: [0, 0]
+    regions:
+      front_reg:
+        side: front
+        coords:
+          - [0, 0]
+          - [20, 0]
+          - [20, 20]
+          - [0, 20]
+        bmap: 3dic_cross_flop_b.bmap
+        layer: metal1
+    external:
+      APR_tech_file: [NG45_PATH/Nangate45_tech.lef]
+      liberty_file: [NG45_PATH/Nangate45_typ.lib]
+      LEF_file: [NG45_PATH/Nangate45_stdcell.lef, NG45_PATH/fake_bumps.lef]
+      DEF_file: 3dic_cross_flop_b.def

@@ -265,6 +265,7 @@ add_subdirectory(gpl)
 add_subdirectory(dpl)
 add_subdirectory(exa)
 add_subdirectory(fin)
+add_subdirectory(fsv)
 add_subdirectory(ram)
 add_subdirectory(ppl)
 add_subdirectory(rmp)
@@ -288,6 +289,7 @@ add_subdirectory(par)
 add_subdirectory(est)
 add_subdirectory(syn)
 add_subdirectory(web)
+add_subdirectory(wmk)
 
 ################################################################
 
@@ -331,6 +333,7 @@ target_link_libraries(openroad
   dpl
   exa
   fin
+  fsv
   ram
   rsz
   ppl
@@ -359,6 +362,7 @@ target_link_libraries(openroad
   est
   syn
   web
+  wmk
   gui
   cli_completer
   linenoise
@@ -436,6 +440,8 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dft_py
       par_py
       web_py
+      wmk_py
+      fsv_py
   )
   target_link_libraries(openroad ${OPENROAD_PYTHON_MODULES})
 

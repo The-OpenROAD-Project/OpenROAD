@@ -22,15 +22,21 @@ or_integration_tests(
     cugr_adjustment1
     cugr_adjustment2
     cugr_adjustment3
+    cugr_colocated_pins
+    cugr_detour_limit
+    cugr_via_demand_disabled
     est_rc1
     est_rc2
     est_rc3
     est_rc4
     est_rc_cugr1
+    est_rc_spef_pin_cap
     estimate_path_resistance
     gcd
     gcd_cugr
     gcd_flute
+    global_route_above_max_layer_cugr
+    global_route_rerun_cugr
     increase_capacity1
     incremental_deleted_net
     incremental_repair_cugr
@@ -81,6 +87,9 @@ or_integration_tests(
     remove_buffers1_cugr
     remove_buffers2_cugr
     remove_buffers3_cugr
+    remove_buffers4_cugr
+    remove_buffers5_cugr
+    remove_buffers6_cugr
     remove_buffers3
     repair_antennas1
     repair_antennas2
@@ -94,9 +103,16 @@ or_integration_tests(
     repair_antennas_error1
     repair_antennas_error2
     repair_antennas_from_odb
+    repair_antennas_from_odb_cugr
+    repair_antennas_jumper_capacity_cugr
+    repair_antennas_odb_roundtrip
     repair_antennas_only_diodes
     repair_antennas_only_diodes_cugr
     repair_antennas_only_jumpers
+    repair_antennas_only_jumpers_cugr
+    repair_antennas_post_drt_above_max_layer_cugr
+    repair_antennas_post_drt_below_min_cugr
+    repair_antennas_post_drt_cugr
     report_wire_length1
     report_wire_length2
     report_wire_length3
@@ -105,6 +121,7 @@ or_integration_tests(
     report_wire_length6
     report_wire_length7
     report_wire_length8
+    report_net_detours1
     resistance_aware_asap7_cong_cugr
     resistance_aware_asap7_cugr
     resistance_aware_asap7_fr
@@ -132,11 +149,18 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    congested_routes_are_reported
     congestion_markers_cugr
+    congestion_acceptance_is_recorded
     congestion_report_file_cugr
+    resistance_aware_asap7_fr_threads
     snapshot_batched_bus_route
     snapshot_batched_incremental_state
     snapshot_batched_single_thread_smoke
     snapshot_batched_smoke
     thread_count_reports
 )
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

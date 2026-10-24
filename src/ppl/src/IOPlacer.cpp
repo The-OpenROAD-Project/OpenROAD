@@ -8,11 +8,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -24,8 +27,10 @@
 #include "Slots.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "ppl/Parameters.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
@@ -69,7 +74,68 @@ void IOPlacer::clear()
   top_layer_slots_.clear();
   assignment_.clear();
   excluded_intervals_.clear();
+  layer_fixed_pins_keepouts_.clear();
+  layer_blocked_shapes_.clear();
+  pin_size_cache_.clear();
+  spacing_cache_.clear();
   *parms_ = Parameters();
+}
+
+PinPlacementSettings IOPlacer::getSettings() const
+{
+  PinPlacementSettings settings;
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return settings;
+  }
+  auto read_layers = [&](const char* name, std::set<int>& layers) {
+    odb::dbStringProperty* prop = odb::dbStringProperty::find(block, name);
+    if (prop == nullptr) {
+      return;
+    }
+    std::istringstream names(prop->getValue());
+    std::string layer_name;
+    while (names >> layer_name) {
+      odb::dbTechLayer* layer = getTech()->findLayer(layer_name.c_str());
+      if (layer != nullptr) {
+        layers.insert(layer->getRoutingLevel());
+      }
+    }
+  };
+  read_layers("place_config_io_pin_hor_layers", settings.hor_layers);
+  read_layers("place_config_io_pin_ver_layers", settings.ver_layers);
+  if (auto prop = odb::dbIntProperty::find(
+          block, "place_config_io_pin_corner_avoidance")) {
+    settings.corner_avoidance = prop->getValue();
+  }
+  if (auto prop
+      = odb::dbIntProperty::find(block, "place_config_io_pin_min_distance")) {
+    settings.min_distance = prop->getValue();
+  }
+  if (auto prop = odb::dbBoolProperty::find(
+          block, "place_config_io_pin_min_distance_in_tracks")) {
+    settings.min_distance_in_tracks = prop->getValue();
+  }
+  return settings;
+}
+
+// Fill the working values the caller did not set from set_place_config.
+void IOPlacer::applySettings()
+{
+  const PinPlacementSettings settings = getSettings();
+  if (hor_layers_.empty()) {
+    hor_layers_ = settings.hor_layers;
+  }
+  if (ver_layers_.empty()) {
+    ver_layers_ = settings.ver_layers;
+  }
+  if (parms_->getCornerAvoidance() < 0) {
+    parms_->setCornerAvoidance(settings.corner_avoidance);
+  }
+  if (parms_->getMinDistance() == 0) {
+    parms_->setMinDistance(settings.min_distance);
+    parms_->setMinDistanceInTracks(settings.min_distance_in_tracks);
+  }
 }
 
 void IOPlacer::clearConstraints()
@@ -172,9 +238,8 @@ std::string IOPlacer::getSlotsLocation(Edge edge, bool top_layer)
   return slots_location;
 }
 
-int IOPlacer::placeFallbackPins()
+void IOPlacer::placeFallbackGroupsFirstFit()
 {
-  int placed_pins_cnt = 0;
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
     bool constrained_group = false;
@@ -260,7 +325,17 @@ int IOPlacer::placeFallbackPins()
       placeFallbackGroup(group, place_slot);
     }
   }
+}
 
+int IOPlacer::placeFallbackPins()
+{
+  if (netlist_->getMinimizeDisplacement()) {
+    placeFallbackGroupsNearInitial();
+  } else {
+    placeFallbackGroupsFirstFit();
+  }
+
+  int placed_pins_cnt = 0;
   for (const auto& group : fallback_pins_.groups) {
     placed_pins_cnt += group.first.size();
   }
@@ -286,7 +361,7 @@ void IOPlacer::assignMirroredPins(IOPin& io_pin, std::vector<IOPin>& assignment)
   assignment.push_back(mirrored_pin);
   int slot_index
       = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer(), slots_);
-  if (slot_index < 0 || slots_[slot_index].used) {
+  if (slot_index < 0 || !slots_[slot_index].isAvailable()) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
     logger_->error(
@@ -381,6 +456,97 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
   return place_slot;
 }
 
+// Place each group where it moves least. If that leaves no room for a later
+// group, undo and fall back to first-fit.
+void IOPlacer::placeFallbackGroupsNearInitial()
+{
+  const std::vector<Slot> slots = slots_;
+  const size_t assigned = assignment_.size();
+  for (const auto& group : fallback_pins_.groups) {
+    const bool have_mirrored
+        = std::ranges::any_of(group.first, [&](const int pin_idx) {
+            return netlist_->getIoPin(pin_idx).isMirrored();
+          });
+    odb::dbBTerm* bterm = netlist_->getIoPin(group.first[0]).getBTerm();
+    int first_slot = 0;
+    int last_slot = slots_.size() - 1;
+    for (const Constraint& constraint : constraints_) {
+      if (constraint.pin_list.contains(bterm)) {
+        first_slot = constraint.first_slot;
+        last_slot = constraint.last_slot;
+        break;
+      }
+    }
+    const int place_slot = findGroupSlotNearInitial(
+        group.first, first_slot, last_slot, have_mirrored);
+    if (place_slot == -1) {
+      slots_ = slots;
+      assignment_.erase(assignment_.begin() + assigned, assignment_.end());
+      placeFallbackGroupsFirstFit();
+      return;
+    }
+    placeFallbackGroup(group, place_slot);
+  }
+}
+
+// Start of the free run where the group, mirrored pins included, moves least
+int IOPlacer::findGroupSlotNearInitial(const std::vector<int>& group,
+                                       const int first_slot,
+                                       const int last_slot,
+                                       const bool check_mirrored)
+{
+  // Not getSlotIdxByPosition: it scans linearly and errors on a missing slot.
+  std::map<std::tuple<int, int, int>, int> slot_at;
+  if (check_mirrored) {
+    for (int i = 0; i < slots_.size(); ++i) {
+      slot_at.try_emplace(
+          {slots_[i].layer, slots_[i].pos.x(), slots_[i].pos.y()}, i);
+    }
+  }
+  auto available = [&](const int s) {
+    if (!slots_[s].isAvailable()) {
+      return false;
+    }
+    if (!check_mirrored) {
+      return true;
+    }
+    const odb::Point mirrored = core_->getMirroredPosition(slots_[s].pos);
+    const auto it = slot_at.find({slots_[s].layer, mirrored.x(), mirrored.y()});
+    return it != slot_at.end() && slots_[it->second].isAvailable();
+  };
+
+  const int size = group.size();
+  int best = -1;
+  int64_t best_cost = std::numeric_limits<int64_t>::max();
+  int free_run = 0;
+  for (int s = first_slot; s <= last_slot; ++s) {
+    free_run = available(s) ? free_run + 1 : 0;
+    if (free_run < size) {
+      continue;
+    }
+    const int start = s - size + 1;
+    // Same pin order as placeFallbackGroup.
+    const Edge edge = slots_[start].edge;
+    const bool reverse = edge == Edge::top || edge == Edge::left;
+    int64_t cost = 0;
+    for (int i = 0; i < size && cost < best_cost; ++i) {
+      const IOPin& pin = netlist_->getIoPin(group[reverse ? size - 1 - i : i]);
+      const odb::Point& to = slots_[start + i].pos;
+      cost += odb::Point::manhattanDistance(to, pin.getInitialPosition());
+      if (pin.getBTerm()->hasMirroredBTerm()) {
+        cost += odb::Point::manhattanDistance(
+            core_->getMirroredPosition(to),
+            netlist_->getIoPin(pin.getMirrorPinIdx()).getInitialPosition());
+      }
+    }
+    if (cost < best_cost) {
+      best_cost = cost;
+      best = start;
+    }
+  }
+  return best;
+}
+
 void IOPlacer::placeFallbackGroup(
     const std::pair<std::vector<int>, bool>& group,
     int place_slot)
@@ -415,27 +581,49 @@ void IOPlacer::placeFallbackGroup(
                 group.first.size());
 }
 
+namespace {
+bool pointInLayerShapes(const std::map<int, std::vector<odb::Rect>>& shapes,
+                        const int layer,
+                        const odb::Point& pos)
+{
+  const auto layer_shapes = shapes.find(layer);
+  if (layer_shapes == shapes.end()) {
+    return false;
+  }
+  for (const odb::Rect& padded_shape : layer_shapes->second) {
+    if (padded_shape.intersects(pos)) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
 bool IOPlacer::checkBlocked(Edge edge,
                             odb::Line line,
                             const odb::Point& pos,
                             int layer)
 {
-  for (odb::Rect fixed_pin_shape : layer_fixed_pins_shapes_[layer]) {
-    if (fixed_pin_shape.intersects(pos)) {
-      return true;
-    }
+  if (pointInLayerShapes(layer_fixed_pins_keepouts_, layer, pos)
+      || (edge == Edge::polygonEdge
+          && pointInLayerShapes(layer_blocked_shapes_, layer, pos))) {
+    return true;
   }
   bool vertical_pin = (edge == Edge::polygonEdge)
                           ? line.pt0().getY() == line.pt1().getY()
-                          : (edge == Edge::top || edge == Edge::bottom);
+                          : hasVerticalPins(edge);
   int coord = vertical_pin ? pos.getX() : pos.getY();
-  for (Interval blocked_interval : excluded_intervals_) {
+  for (const Interval& blocked_interval : excluded_intervals_) {
     // check if the blocked interval blocks all layers (== -1) or if it blocks
     // the layer of the position
     if (blocked_interval.getLayer() == -1
         || blocked_interval.getLayer() == layer) {
-      if ((blocked_interval.getEdge() == edge || edge == Edge::polygonEdge)
-          // Polygons need to be dealt with properly later
+      // polygon slots match all-layer intervals of any edge with the same
+      // orientation, still over-blocking their parallel edges; layer shapes
+      // are point-tested via layer_blocked_shapes_ instead
+      if ((blocked_interval.getEdge() == edge
+           || (edge == Edge::polygonEdge && blocked_interval.getLayer() == -1
+               && hasVerticalPins(blocked_interval.getEdge()) == vertical_pin))
           && coord > blocked_interval.getBegin()
           && coord < blocked_interval.getEnd()) {
         return true;
@@ -471,6 +659,208 @@ std::vector<Interval> IOPlacer::findBlockedIntervals(const odb::Rect& die_area,
   return intervals;
 }
 
+int IOPlacer::roundUpToMfgGrid(const int dim)
+{
+  const int mfg_grid = getTech()->getManufacturingGrid();
+  if (mfg_grid > 0 && dim % mfg_grid != 0) {
+    return mfg_grid * std::ceil(static_cast<float>(dim) / mfg_grid);
+  }
+  return dim;
+}
+
+int IOPlacer::roundUpToEvenMfgGrid(const int dim)
+{
+  int rounded = roundUpToMfgGrid(dim);
+  // ensure the dimension is an even multiple of the manufacturing grid,
+  // since it is divided by 2 when the pin shape is created
+  if (rounded % 2 != 0) {
+    rounded += getTech()->getManufacturingGrid();
+  }
+  return rounded;
+}
+
+PinSize IOPlacer::computePinSize(const int layer)
+{
+  const auto cached = pin_size_cache_.find(layer);
+  if (cached != pin_size_cache_.end()) {
+    return cached->second;
+  }
+  odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+  const bool vertical_pin
+      = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  const std::map<int, int>& min_widths
+      = vertical_pin ? core_->getMinWidthX() : core_->getMinWidthY();
+  const std::map<int, int>& min_areas
+      = vertical_pin ? core_->getMinAreaX() : core_->getMinAreaY();
+  const float thickness_multiplier
+      = vertical_pin ? parms_->getVerticalThicknessMultiplier()
+                     : parms_->getHorizontalThicknessMultiplier();
+  // fall back to the tech layer values for layers not used by place_pins
+  const int min_width = min_widths.find(layer) != min_widths.end()
+                            ? min_widths.at(layer)
+                            : tech_layer->getWidth();
+  const int min_area = min_areas.find(layer) != min_areas.end()
+                           ? min_areas.at(layer)
+                           : tech_layer->getArea();
+  const int half_width = int(ceil(min_width / 2.0)) * thickness_multiplier;
+  int height
+      = int(std::max(2.0 * half_width, ceil(min_area / (2.0 * half_width))));
+  const int user_length = vertical_pin ? parms_->getVerticalLength()
+                                       : parms_->getHorizontalLength();
+  if (user_length != -1) {
+    height = user_length;
+  }
+  height = roundUpToMfgGrid(height);
+  const PinSize pin_size{half_width, height};
+  pin_size_cache_[layer] = pin_size;
+  return pin_size;
+}
+
+int IOPlacer::computeShapeSpacing(odb::dbTechLayer* tech_layer,
+                                  const BlockingShape& shape,
+                                  const int pin_width,
+                                  const int pin_length)
+{
+  // a DEF SPACING attribute replaces the layer rules entirely
+  if (shape.min_spacing >= 0) {
+    return shape.min_spacing;
+  }
+  // the spacing rules use the width of the widest shape and the parallel
+  // run length between the shapes; DESIGNRULEWIDTH replaces the shape width
+  const int shape_width = std::max(
+      shape.effective_width >= 0 ? shape.effective_width
+                                 : std::min(shape.rect.dx(), shape.rect.dy()),
+      pin_width);
+  const SpacingKey cache_key{
+      tech_layer->getRoutingLevel(), shape_width, pin_length};
+  const auto cached = spacing_cache_.find(cache_key);
+  if (cached != spacing_cache_.end()) {
+    return cached->second;
+  }
+  // width-dependent rules require larger clearance to wide PDN shapes
+  int spacing = tech_layer->getSpacing(shape_width, pin_length);
+  if (spacing == 0) {
+    spacing = tech_layer->getWidth();
+  }
+  spacing_cache_[cache_key] = spacing;
+  return spacing;
+}
+
+odb::Rect IOPlacer::computePinKeepout(const BlockingShape& shape,
+                                      odb::dbTechLayer* tech_layer)
+{
+  const PinSize pin_size = computePinSize(tech_layer->getRoutingLevel());
+  const int spacing = computeShapeSpacing(
+      tech_layer, shape, 2 * pin_size.half_width, pin_size.height);
+  // pad by the pin footprint plus spacing: half width along the edge, the pin
+  // extension into the die on the other axis
+  const odb::Orientation2D edge_dir
+      = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+            ? odb::Orientation2D::Horizontal
+            : odb::Orientation2D::Vertical;
+  return shape.rect.bloat(pin_size.half_width + spacing, edge_dir)
+      .bloat(pin_size.height + spacing, edge_dir.turn_90());
+}
+
+void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
+                                    odb::dbTechLayer* tech_layer,
+                                    const odb::Rect& die_area)
+{
+  const int layer = tech_layer->getRoutingLevel();
+  // cut and masterslice shapes never conflict with routing layer pins
+  if (layer == 0) {
+    return;
+  }
+
+  const bool vertical_pin
+      = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+  // empty layer sets mean standalone place_pin, where every layer
+  // participates and polygon slots are never tested
+  const bool standalone_place_pin = ver_layers_.empty() && hor_layers_.empty();
+  if (!standalone_place_pin) {
+    const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
+    if (layers.find(layer) == layers.end()) {
+      return;
+    }
+  }
+  const odb::Rect padded_box = computePinKeepout(shape, tech_layer);
+  if (!die_area.intersects(padded_box)) {
+    return;
+  }
+  // polygon dies have slots on edges the bounding box cannot represent, so
+  // also block their slots with the padded shape itself
+  const std::vector<odb::Line>& die_edges = core_->getDieAreaEdges();
+  if (die_edges.size() > 4 && !standalone_place_pin) {
+    for (const odb::Line& die_edge : die_edges) {
+      if (boost::geometry::intersects(padded_box, die_edge)) {
+        std::vector<odb::Rect>& shapes = layer_blocked_shapes_[layer];
+        // boundary via arrays produce near duplicate keepouts, keep the
+        // larger of consecutive nested shapes
+        if (shapes.empty()) {
+          shapes.push_back(padded_box);
+        } else if (padded_box.contains(shapes.back())) {
+          shapes.back() = padded_box;
+        } else if (!shapes.back().contains(padded_box)) {
+          shapes.push_back(padded_box);
+        }
+        break;
+      }
+    }
+  }
+  const odb::Rect intersect = die_area.intersect(padded_box);
+  for (const Interval& interval : findBlockedIntervals(die_area, intersect)) {
+    if (hasVerticalPins(interval.getEdge()) != vertical_pin) {
+      continue;
+    }
+    excludeInterval(Interval(
+        interval.getEdge(), interval.getBegin(), interval.getEnd(), layer));
+  }
+}
+
+void IOPlacer::getBlockedRegions()
+{
+  getBlockedRegionsFromMacros();
+  getBlockedRegionsFromDbObstructions();
+  getBlockedRegionsFromPDN();
+}
+
+void IOPlacer::forEachSpecialNetShape(
+    const std::function<void(odb::dbTechLayer*, const odb::Rect&)>& callback)
+{
+  // reused across all vias, getViaBoxes clears it on every call
+  std::vector<odb::dbShape> via_shapes;
+  for (odb::dbNet* net : getBlock()->getNets()) {
+    if (!net->isSpecial()) {
+      continue;
+    }
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* sbox : swire->getWires()) {
+        if (sbox->isVia()) {
+          // via landing pads can also block pins
+          sbox->getViaBoxes(via_shapes);
+          for (const odb::dbShape& via_shape : via_shapes) {
+            odb::dbTechLayer* tech_layer = via_shape.getTechLayer();
+            if (tech_layer != nullptr) {
+              callback(tech_layer, via_shape.getBox());
+            }
+          }
+        } else if (sbox->getTechLayer() != nullptr) {
+          callback(sbox->getTechLayer(), sbox->getBox());
+        }
+      }
+    }
+  }
+}
+
+void IOPlacer::getBlockedRegionsFromPDN()
+{
+  const odb::Rect die_area = getBlock()->getDieArea();
+  forEachSpecialNetShape(
+      [&](odb::dbTechLayer* tech_layer, const odb::Rect& rect) {
+        excludeBoundaryShape({rect}, tech_layer, die_area);
+      });
+}
+
 void IOPlacer::getBlockedRegionsFromMacros()
 {
   odb::Rect die_area = getBlock()->getDieArea();
@@ -492,17 +882,29 @@ void IOPlacer::getBlockedRegionsFromMacros()
 
 void IOPlacer::getBlockedRegionsFromDbObstructions()
 {
-  odb::Rect die_area = getBlock()->getDieArea();
+  const odb::Rect die_area = getBlock()->getDieArea();
 
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
-    odb::dbBox* obstructBox = obstruction->getBBox();
-    odb::Rect obstructArea = obstructBox->getBox();
-    odb::Rect intersect = die_area.intersect(obstructArea);
-
-    std::vector<Interval> intervals = findBlockedIntervals(die_area, intersect);
-    for (Interval interval : intervals) {
-      excludeInterval(interval);
+    // system reserved obstructions only mark the outside of polygon dies
+    if (obstruction->isSystemReserved()) {
+      continue;
     }
+    // fill and slot only blockages still allow routing metal over them
+    if (obstruction->isFillObstruction() || obstruction->isSlotObstruction()) {
+      continue;
+    }
+    odb::dbBox* obstruct_box = obstruction->getBBox();
+    odb::dbTechLayer* tech_layer = obstruct_box->getTechLayer();
+    if (tech_layer == nullptr) {
+      continue;
+    }
+    // obstructions can carry their own DEF spacing rules
+    const BlockingShape shape{
+        obstruct_box->getBox(),
+        obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : -1,
+        obstruction->hasEffectiveWidth() ? obstruction->getEffectiveWidth()
+                                         : -1};
+    excludeBoundaryShape(shape, tech_layer, die_area);
   }
 }
 
@@ -532,7 +934,7 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
           const odb::Rect pin_rect{io_pin.getLowerBound(),
                                    io_pin.getUpperBound()};
           const odb::Point pos = pin_rect.center();
-          out << "place_pin -pin_name " << io_pin.getName() << " -layer "
+          out << "place_pin -pin_name {" << io_pin.getName() << "} -layer "
               << tech_layer->getName() << " -location {"
               << getBlock()->dbuToMicrons(pos.x()) << " "
               << getBlock()->dbuToMicrons(pos.y())
@@ -558,7 +960,7 @@ void IOPlacer::writePinPlacement(const char* file_name, const bool placed)
       }
 
       if (tech_layer != nullptr) {
-        out << "place_pin -pin_name " << bterm->getName() << " -layer "
+        out << "place_pin -pin_name {" << bterm->getName() << "} -layer "
             << tech_layer->getName() << " -location {"
             << getBlock()->dbuToMicrons(x_pos) << " "
             << getBlock()->dbuToMicrons(y_pos) << "}";
@@ -600,8 +1002,7 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
                                      int& new_begin,
                                      int& new_end)
 {
-  const bool vertical_pin
-      = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
+  const bool vertical_pin = hasVerticalPins(interval.getEdge());
 
   int interval_length = std::abs(interval.getEnd() - interval.getBegin());
   int interval_begin = std::min(interval.getBegin(), interval.getEnd());
@@ -634,8 +1035,7 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
 
 int IOPlacer::getMinDistanceForInterval(const Interval& interval)
 {
-  const bool vertical_pin
-      = interval.getEdge() == Edge::top || interval.getEdge() == Edge::bottom;
+  const bool vertical_pin = hasVerticalPins(interval.getEdge());
   int min_dist = std::numeric_limits<int>::min();
 
   if (interval.getLayer() != -1) {
@@ -664,7 +1064,7 @@ int64_t IOPlacer::computeIncrease(int min_dist,
 {
   const bool dist_in_tracks = parms_->getMinDistanceInTracks();
   const int user_min_dist = parms_->getMinDistance();
-  if (dist_in_tracks) {
+  if (dist_in_tracks && user_min_dist != 0) {
     min_dist *= user_min_dist;
   } else if (user_min_dist != 0) {
     min_dist
@@ -701,7 +1101,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
     for (auto it = slots.begin(); it != slots.end();) {
       odb::Point pos = *it;
       bool valid_slot;
-      if (!min_dist_in_tracks) {
+      if (!min_dist_in_tracks || min_dst_pins == 0) {
         // If user-defined min distance is not in tracks, use this value to
         // determine if slots are valid between each other.
         valid_slot = pos == last
@@ -727,7 +1127,7 @@ void IOPlacer::findSlots(const std::set<int>& layers,
       }
 
       for (const odb::Point& pos : slots) {
-        bool blocked = checkBlocked(Edge::invalid, line, pos, layer);
+        bool blocked = checkBlocked(Edge::polygonEdge, line, pos, layer);
         slots_.push_back({blocked, false, pos, layer, Edge::polygonEdge, line});
       }
     }
@@ -772,7 +1172,7 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
     max = vertical_pin ? std::max(edge_start.getX(), edge_end.getX())
                        : std::max(edge_start.getY(), edge_end.getY());
   } else {
-    vertical_pin = (edge == Edge::top || edge == Edge::bottom);
+    vertical_pin = hasVerticalPins(edge);
     min = vertical_pin ? lb_x : lb_y;
     max = vertical_pin ? ub_x : ub_y;
   }
@@ -812,15 +1212,7 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
     int init_tracks = layer_init_tracks[l];
     int num_tracks = layer_num_tracks[l];
 
-    float thickness_multiplier
-        = vertical_pin ? parms_->getVerticalThicknessMultiplier()
-                       : parms_->getHorizontalThicknessMultiplier();
-
-    int half_width = vertical_pin
-                         ? int(ceil(core_->getMinWidthX()[layer] / 2.0))
-                         : int(ceil(core_->getMinWidthY()[layer] / 2.0));
-
-    half_width *= thickness_multiplier;
+    const int half_width = computePinSize(layer).half_width;
 
     int num_tracks_offset
         = std::ceil(static_cast<double>(corner_avoidance_) / min_dst_pins);
@@ -1376,6 +1768,45 @@ void IOPlacer::addGroupToFallback(const std::vector<int>& pin_group, bool order)
   }
 }
 
+// Place the mirrored pairs before the other pins, so no other pin is matched
+// to a follower's slot. One edge at a time, so a master does not take the
+// follower slot of a master on the opposite edge.
+int IOPlacer::placeMirroredPins()
+{
+  const bool has_mirrored = std::ranges::any_of(
+      netlist_->getIOPins(),
+      [](const IOPin& pin) { return pin.getBTerm()->hasMirroredBTerm(); });
+  if (!has_mirrored) {
+    return 0;
+  }
+  const bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+  isPolygon ? createSectionsPolygon() : createSections();
+
+  int placed_pins_cnt = 0;
+  int idx = 0;
+  for (IOPin& io_pin : netlist_->getIOPins()) {
+    if (io_pin.getBTerm()->hasMirroredBTerm()
+        && assignPinToSection(io_pin, idx, sections_)) {
+      placed_pins_cnt += 2;
+    }
+    idx++;
+  }
+  for (auto first = sections_.begin(); first != sections_.end();) {
+    const auto last
+        = std::find_if(first, sections_.end(), [&](const Section& s) {
+            return s.edge != first->edge;
+          });
+    std::vector<Section> edge_sections(first, last);
+    for (Section& section : edge_sections) {
+      updateSection(section, slots_);
+    }
+    findPinAssignment(edge_sections, false);
+    updateSlots();
+    first = last;
+  }
+  return placed_pins_cnt;
+}
+
 bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 {
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
@@ -1387,19 +1818,7 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
   int mirrored_pins_cnt = 0;
   int total_pins_assigned = assignGroupsToSections(mirrored_pins_cnt);
 
-  // Mirrored pins first
   int idx = 0;
-  for (IOPin& io_pin : net->getIOPins()) {
-    if (io_pin.getBTerm()->hasMirroredBTerm()) {
-      if (assignPinToSection(io_pin, idx, sections)) {
-        total_pins_assigned += 2;
-      }
-    }
-    idx++;
-  }
-
-  // Remaining pins
-  idx = 0;
   for (IOPin& io_pin : net->getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
       total_pins_assigned++;
@@ -1444,8 +1863,12 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
     std::vector<int> used_slots(sections.size());
 
     for (int i = 0; i < sections.size(); i++) {
-      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, sections[i].pos);
-      const int mirrored_pin_cost = getMirroredPinCost(io_pin, sections[i].pos);
+      const odb::Point pos
+          = netlist_->getMinimizeDisplacement()
+                ? nearestFreeSlot(sections[i], io_pin.getInitialPosition())
+                : sections[i].pos;
+      const int io_net_hpwl = netlist_->computeIONetHPWL(idx, pos);
+      const int mirrored_pin_cost = getMirroredPinCost(io_pin, pos);
       dst[i] = io_net_hpwl + mirrored_pin_cost;
 
       if (has_mirrored_pin) {
@@ -1469,6 +1892,30 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
   }
 
   return pin_assigned;
+}
+
+// Sections of several layers overlap along an edge, so a section's middle slot
+// says little about how far it is from a pin that is already placed.
+odb::Point IOPlacer::nearestFreeSlot(const Section& section,
+                                     const odb::Point& p) const
+{
+  if (section.edge == Edge::invalid) {
+    return section.pos;  // top-layer sections index top_layer_slots_
+  }
+  odb::Point best = section.pos;
+  int64_t best_dist = std::numeric_limits<int64_t>::max();
+  for (int i = section.begin_slot; i <= section.end_slot; ++i) {
+    const Slot& slot = slots_[i];
+    if (!slot.isAvailable()) {
+      continue;
+    }
+    const int64_t d = odb::Point::manhattanDistance(slot.pos, p);
+    if (d < best_dist) {
+      best_dist = d;
+      best = slot.pos;
+    }
+  }
+  return best;
 }
 
 void IOPlacer::assignMirroredPinToSection(IOPin& io_pin)
@@ -1516,6 +1963,9 @@ void IOPlacer::printConfig(bool annealing)
   }
   if (!annealing) {
     logger_->info(PPL, 5, "Slots per section         {}", slots_per_section_);
+  }
+  if (netlist_->getMinimizeDisplacement()) {
+    logger_->info(PPL, 7, "Displacement minimization enabled");
   }
 }
 
@@ -1663,25 +2113,14 @@ void IOPlacer::updatePinArea(IOPin& pin)
 
     if (pin.getOrientation() == Orientation::north
         || pin.getOrientation() == Orientation::south) {
-      float thickness_multiplier = parms_->getVerticalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthX()[pin.getLayer()] / 2.0))
-                       * thickness_multiplier;
-      int height = int(std::max(
-          2.0 * half_width,
-          ceil(core_->getMinAreaX()[pin.getLayer()] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaX()[pin.getLayer()];
+      const PinSize pin_size = computePinSize(pin.getLayer());
+      const int half_width = pin_size.half_width;
+      const int height = pin_size.height;
+      required_min_area = core_->getMinAreaX().at(pin.getLayer());
 
       int ext = 0;
-      if (parms_->getVerticalLength() != -1) {
-        height = parms_->getVerticalLength();
-      }
-
       if (parms_->getVerticalLengthExtend() != -1) {
         ext = parms_->getVerticalLengthExtend();
-      }
-
-      if (height % mfg_grid != 0) {
-        height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
       }
 
       if (pin.getOrientation() == Orientation::north) {
@@ -1695,24 +2134,14 @@ void IOPlacer::updatePinArea(IOPin& pin)
 
     if (pin.getOrientation() == Orientation::west
         || pin.getOrientation() == Orientation::east) {
-      float thickness_multiplier = parms_->getHorizontalThicknessMultiplier();
-      int half_width = int(ceil(core_->getMinWidthY()[pin.getLayer()] / 2.0))
-                       * thickness_multiplier;
-      int height = int(std::max(
-          2.0 * half_width,
-          ceil(core_->getMinAreaY()[pin.getLayer()] / (2.0 * half_width))));
-      required_min_area = core_->getMinAreaY()[pin.getLayer()];
+      const PinSize pin_size = computePinSize(pin.getLayer());
+      const int half_width = pin_size.half_width;
+      const int height = pin_size.height;
+      required_min_area = core_->getMinAreaY().at(pin.getLayer());
 
       int ext = 0;
       if (parms_->getHorizontalLengthExtend() != -1) {
         ext = parms_->getHorizontalLengthExtend();
-      }
-      if (parms_->getHorizontalLength() != -1) {
-        height = parms_->getHorizontalLength();
-      }
-
-      if (height % mfg_grid != 0) {
-        height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
       }
 
       if (pin.getOrientation() == Orientation::east) {
@@ -1734,28 +2163,8 @@ void IOPlacer::updatePinArea(IOPin& pin)
                      getBlock()->dbuAreaToMicrons(required_min_area));
     }
   } else {
-    int pin_width = top_grid_->pin_width;
-    int pin_height = top_grid_->pin_height;
-
-    if (pin_width % mfg_grid != 0) {
-      pin_width
-          = mfg_grid * std::ceil(static_cast<float>(pin_width) / mfg_grid);
-    }
-    if (pin_width % 2 != 0) {
-      // ensure pin_width is a even multiple of mfg_grid since its divided by 2
-      // later
-      pin_width += mfg_grid;
-    }
-
-    if (pin_height % mfg_grid != 0) {
-      pin_height
-          = mfg_grid * std::ceil(static_cast<float>(pin_height) / mfg_grid);
-    }
-    if (pin_height % 2 != 0) {
-      // ensure pin_height is a even multiple of mfg_grid since its divided by 2
-      // later
-      pin_height += mfg_grid;
-    }
+    const int pin_width = top_grid_->pin_width;
+    const int pin_height = top_grid_->pin_height;
 
     pin.setLowerBound(pin.getX() - pin_width / 2, pin.getY() - pin_height / 2);
     pin.setUpperBound(pin.getX() + pin_width / 2, pin.getY() + pin_height / 2);
@@ -1767,7 +2176,8 @@ int64 IOPlacer::computeIONetsHPWL(Netlist* netlist)
   int64 hpwl = 0;
   int idx = 0;
   for (IOPin& io_pin : netlist->getIOPins()) {
-    hpwl += netlist->computeIONetHPWL(idx, io_pin.getPosition());
+    const odb::Rect box = netlist->getBB(idx, io_pin.getPosition());
+    hpwl += box.dx() + box.dy();
     idx++;
   }
 
@@ -2261,14 +2671,47 @@ void IOPlacer::updateSlots()
   }
 }
 
-void IOPlacer::runHungarianMatching()
+// The free slots the next run would use, for gpl -place_ios.
+std::vector<SlotPosition> IOPlacer::buildSlotGrid()
 {
-  bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+  slots_.clear();
+  top_layer_slots_.clear();
+  excluded_intervals_.clear();
+
+  // Not a run: leave the caller's state as it was for the run that follows.
+  const Parameters parms = *parms_;
+  const std::set<int> hor_layers = hor_layers_;
+  const std::set<int> ver_layers = ver_layers_;
+  applySettings();
 
   slots_per_section_ = parms_->getSlotsPerSection();
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
-  getBlockedRegionsFromMacros();
+  getBlockedRegions();
+  defineSlots();
+
+  std::vector<SlotPosition> out;
+  out.reserve(slots_.size());
+  for (const Slot& slot : slots_) {
+    out.push_back({slot.pos, slot.layer, slot.edge, slot.blocked});
+  }
+  clear();
+  *parms_ = parms;
+  hor_layers_ = hor_layers;
+  ver_layers_ = ver_layers;
+  return out;
+}
+
+void IOPlacer::runHungarianMatching(bool minimize_displacement)
+{
+  bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+
+  applySettings();
+  slots_per_section_ = parms_->getSlotsPerSection();
+  netlist_->setMinimizeDisplacement(minimize_displacement);
+  initExcludedIntervals();
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegions();
 
   defineSlots();
 
@@ -2333,6 +2776,7 @@ void IOPlacer::runHungarianMatching()
     }
   }
   constrained_pins_cnt += placeFallbackPins();
+  constrained_pins_cnt += placeMirroredPins();
 
   assignPinsToSections(constrained_pins_cnt);
   findPinAssignment(sections_, false);
@@ -2352,6 +2796,31 @@ void IOPlacer::runHungarianMatching()
                    "Assigned {} pins out of {} IO pins.",
                    assignment_.size(),
                    netlist_->numIOPins());
+  }
+
+  if (netlist_->getMinimizeDisplacement()
+      && logger_->debugCheck(PPL, "displacement", 1)) {
+    int moved = 0;
+    int64_t total = 0;
+    int64_t worst = 0;
+    for (const IOPin& pin : assignment_) {
+      const odb::Point& from = pin.getInitialPosition();
+      const int64_t d = odb::Point::manhattanDistance(pin.getPosition(), from);
+      if (d > 0) {
+        ++moved;
+        total += d;
+        worst = std::max(worst, d);
+      }
+    }
+    debugPrint(logger_,
+               PPL,
+               "displacement",
+               1,
+               "Moved {} of {} pins, mean {:.2f} um, max {:.2f} um.",
+               moved,
+               assignment_.size(),
+               moved ? getBlock()->dbuToMicrons(total / moved) : 0.0,
+               getBlock()->dbuToMicrons(worst));
   }
 
   reportHPWL();
@@ -2404,13 +2873,15 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
   ioplacer_renderer_->setIsNoPauseMode(no_pause_mode);
 }
 
-void IOPlacer::runAnnealing()
+void IOPlacer::runAnnealing(bool minimize_displacement)
 {
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
+  applySettings();
   slots_per_section_ = parms_->getSlotsPerSection();
+  netlist_->setMinimizeDisplacement(minimize_displacement);
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
-  getBlockedRegionsFromMacros();
+  getBlockedRegions();
 
   defineSlots();
 
@@ -2501,11 +2972,9 @@ bool IOPlacer::checkPinConstraints()
       if (constraint_interval.getEdge() != Edge::invalid) {
         const int constraint_begin = constraint_interval.getBegin();
         const int constraint_end = constraint_interval.getEnd();
-        const int pin_coord
-            = constraint_interval.getEdge() == Edge::bottom
-                      || constraint_interval.getEdge() == Edge::top
-                  ? pin.getPosition().getX()
-                  : pin.getPosition().getY();
+        const int pin_coord = hasVerticalPins(constraint_interval.getEdge())
+                                  ? pin.getPosition().getX()
+                                  : pin.getPosition().getY();
         if (pin_coord < constraint_begin || pin_coord > constraint_end) {
           logger_->warn(PPL,
                         102,
@@ -2569,6 +3038,44 @@ void IOPlacer::reportHPWL()
                 static_cast<float>(getBlock()->dbuToMicrons(total_hpwl)));
 }
 
+// blocking state for one place_pin call, seeded with the requested pin size
+// and dropped on destruction so errors leave nothing stale behind
+struct IOPlacer::ManualPinBlocking
+{
+  ManualPinBlocking(IOPlacer* placer,
+                    odb::dbTechLayer* layer,
+                    const int width,
+                    const int height)
+      : placer_(placer), num_intervals_(placer->excluded_intervals_.size())
+  {
+    // an aborted place_pins run skips clear(), drop whatever it left
+    placer_->layer_fixed_pins_keepouts_.clear();
+    placer_->layer_blocked_shapes_.clear();
+    placer_->pin_size_cache_.clear();
+    const bool vertical_pin
+        = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
+    PinSize pin_size;
+    pin_size.half_width = (vertical_pin ? width : height) / 2;
+    pin_size.height = vertical_pin ? height : width;
+    placer_->pin_size_cache_[layer->getRoutingLevel()] = pin_size;
+  }
+
+  ~ManualPinBlocking()
+  {
+    // only the tail is erased, the head holds persistent user exclusions
+    placer_->excluded_intervals_.erase(
+        placer_->excluded_intervals_.begin() + num_intervals_,
+        placer_->excluded_intervals_.end());
+    // the run flows rebuild these in initNetlist, so they are safe to wipe
+    placer_->layer_fixed_pins_keepouts_.clear();
+    placer_->layer_blocked_shapes_.clear();
+    placer_->pin_size_cache_.clear();
+  }
+
+  IOPlacer* placer_;
+  size_t num_intervals_;
+};
+
 void IOPlacer::placePin(odb::dbBTerm* bterm,
                         odb::dbTechLayer* layer,
                         int x,
@@ -2590,22 +3097,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
           = int(std::max(static_cast<double>(height), ceil(min_area / height)));
     }
   }
-  const int mfg_grid = getTech()->getManufacturingGrid();
-  if (width % mfg_grid != 0) {
-    width = mfg_grid * std::ceil(static_cast<float>(width) / mfg_grid);
-  }
-  if (width % 2 != 0) {
-    // ensure width is a even multiple of mfg_grid since its divided by 2 later
-    width += mfg_grid;
-  }
-
-  if (height % mfg_grid != 0) {
-    height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
-  }
-  if (height % 2 != 0) {
-    // ensure height is a even multiple of mfg_grid since its divided by 2 later
-    height += mfg_grid;
-  }
+  width = roundUpToEvenMfgGrid(width);
+  height = roundUpToEvenMfgGrid(height);
 
   odb::Point pos = odb::Point(x, y);
 
@@ -2628,6 +3121,20 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   const int layer_level = layer->getRoutingLevel();
   if (force_to_die_bound) {
+    // the scope drops all the temporary blocking state, even on an error
+    ManualPinBlocking blocking(this, layer, width, height);
+    // block the fixed supply pins; fixed signal pin positions are explicit
+    // user requests, like the position being placed now
+    for (odb::dbBTerm* fixed_bterm : getBlock()->getBTerms()) {
+      if (fixed_bterm != bterm && fixed_bterm->getSigType().isSupply()) {
+        addFixedPinKeepouts(fixed_bterm);
+      }
+    }
+    // block boundary PDN shapes for the checks below. Macros are not
+    // included, since their intervals block all layers and the pin position
+    // is an explicit request
+    getBlockedRegionsFromDbObstructions();
+    getBlockedRegionsFromPDN();
     movePinToTrack(pos, layer_level, width, height, die_boundary);
     Edge edge;
     odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(layer);
@@ -2646,67 +3153,65 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
       edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
     }
 
-    // check the whole pin shape to make sure no overlaps will happen
-    // between pins
+    // check the center and the extremities of the pin shape, so wide pins do
+    // not straddle a blocked region
     // empty line created to comply with definition
     odb::Line empty_line;
-    bool placed_at_blocked
-        = horizontal
-              ? checkBlocked(edge,
-                             empty_line,
-                             odb::Point(pos.x(), pos.y() - height / 2),
-                             layer_level)
-                    || checkBlocked(edge,
-                                    empty_line,
-                                    odb::Point(pos.x(), pos.y() + height / 2),
-                                    layer_level)
-              : checkBlocked(edge,
-                             empty_line,
-                             odb::Point(pos.x() - width / 2, pos.y()),
-                             layer_level)
-                    || checkBlocked(edge,
-                                    empty_line,
-                                    odb::Point(pos.x() + width / 2, pos.y()),
-                                    layer_level);
+    const int half_span = (horizontal ? height : width) / 2;
+    auto is_blocked_at = [&](const int offset) {
+      for (const int delta : {offset - half_span, offset, offset + half_span}) {
+        const odb::Point probe = horizontal
+                                     ? odb::Point(pos.x(), pos.y() + delta)
+                                     : odb::Point(pos.x() + delta, pos.y());
+        if (checkBlocked(edge, empty_line, probe, layer_level)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    bool placed_at_blocked = is_blocked_at(0);
+    // keep the search inside the die area, so the pin is never pushed out of it
+    const int max_offset = horizontal
+                               ? die_boundary.yMax() - height / 2 - pos.y()
+                               : die_boundary.xMax() - width / 2 - pos.x();
+    const int min_offset = horizontal
+                               ? die_boundary.yMin() + height / 2 - pos.y()
+                               : die_boundary.xMin() + width / 2 - pos.x();
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
     int offset = 0;
     while (placed_at_blocked) {
-      if (sum) {
-        offset = offset_sum * min_spacing;
+      const int next_sum = offset_sum * min_spacing;
+      const int next_sub = -(offset_sub * min_spacing);
+      const bool sum_valid = next_sum <= max_offset;
+      const bool sub_valid = next_sub >= min_offset;
+      if (!sum_valid && !sub_valid) {
+        logger_->error(
+            PPL,
+            122,
+            "Pin {} cannot be placed at the {} edge. The edge does "
+            "not have space for the pin outside the blocked regions.",
+            bterm->getName(),
+            getEdgeString(edge));
+      }
+      if (sum && sum_valid) {
+        offset = next_sum;
         offset_sum++;
         sum = false;
-      } else {
-        offset = -(offset_sub * min_spacing);
+      } else if (!sum && sub_valid) {
+        offset = next_sub;
         offset_sub++;
         sum = true;
+      } else if (sum_valid) {
+        offset = next_sum;
+        offset_sum++;
+      } else {
+        offset = next_sub;
+        offset_sub++;
       }
 
-      // check the whole pin shape to make sure no overlaps will happen
-      // between pins
-      placed_at_blocked
-          = horizontal
-                ? checkBlocked(
-                      edge,
-                      empty_line,
-                      odb::Point(pos.x(), pos.y() - height / 2 + offset),
-                      layer_level)
-                      || checkBlocked(
-                          edge,
-                          empty_line,
-                          odb::Point(pos.x(), pos.y() + height / 2 + offset),
-                          layer_level)
-                : checkBlocked(
-                      edge,
-                      empty_line,
-                      odb::Point(pos.x() - width / 2 + offset, pos.y()),
-                      layer_level)
-                      || checkBlocked(
-                          edge,
-                          empty_line,
-                          odb::Point(pos.x() + width / 2 + offset, pos.y()),
-                          layer_level);
+      placed_at_blocked = is_blocked_at(offset);
     }
     pos.addX(horizontal ? 0 : offset);
     pos.addY(horizontal ? offset : 0);
@@ -2918,6 +3423,9 @@ void IOPlacer::initTopLayerGrid()
   if (top_layer_grid) {
     top_grid_ = std::make_unique<odb::dbBlock::dbBTermTopLayerGrid>(
         top_layer_grid.value());
+    // commit the rounded pin size, so every consumer sees the placed shape
+    top_grid_->pin_width = roundUpToEvenMfgGrid(top_grid_->pin_width);
+    top_grid_->pin_height = roundUpToEvenMfgGrid(top_grid_->pin_height);
   }
 }
 
@@ -2961,80 +3469,86 @@ void IOPlacer::findSlotsForTopLayer()
 
 void IOPlacer::filterObstructedSlotsForTopLayer()
 {
-  // Collect top_grid obstructions
-  std::vector<odb::Rect> obstructions;
+  if (top_grid_ == nullptr || top_grid_->layer == nullptr) {
+    return;
+  }
+  const int top_layer_level = top_grid_->layer->getRoutingLevel();
 
-  // Get routing obstructions
+  // Collect top_grid obstructions, with the spacing rules they carry
+  std::vector<BlockingShape> obstructions;
+
+  // Get routing obstructions. The system reserved ones are not skipped here,
+  // since they are the only filter for slots outside of polygon dies
   for (odb::dbObstruction* obstruction : getBlock()->getObstructions()) {
+    // fill and slot only blockages still allow routing metal over them
+    if (obstruction->isFillObstruction() || obstruction->isSlotObstruction()) {
+      continue;
+    }
     odb::dbBox* box = obstruction->getBBox();
-    if (top_grid_ != nullptr && top_grid_->layer != nullptr
-        && box->getTechLayer()->getRoutingLevel()
-               == top_grid_->layer->getRoutingLevel()) {
-      odb::Rect obstruction_rect = box->getBox();
-      obstructions.push_back(obstruction_rect);
+    if (box->getTechLayer()->getRoutingLevel() == top_layer_level) {
+      obstructions.push_back(
+          {box->getBox(),
+           obstruction->hasMinSpacing() ? obstruction->getMinSpacing() : -1,
+           obstruction->hasEffectiveWidth() ? obstruction->getEffectiveWidth()
+                                            : -1});
     }
   }
 
   // Get already routed special nets
-  for (odb::dbNet* net : getBlock()->getNets()) {
-    if (net->isSpecial()) {
-      for (odb::dbSWire* swire : net->getSWires()) {
-        for (odb::dbSBox* wire : swire->getWires()) {
-          if (!wire->isVia()) {
-            if (top_grid_ != nullptr && top_grid_->layer != nullptr
-                && wire->getTechLayer()->getRoutingLevel()
-                       == top_grid_->layer->getRoutingLevel()) {
-              odb::Rect obstruction_rect = wire->getBox();
-              obstructions.push_back(obstruction_rect);
-            }
-          }
+  forEachSpecialNetShape(
+      [&](odb::dbTechLayer* tech_layer, const odb::Rect& rect) {
+        if (tech_layer->getRoutingLevel() == top_layer_level) {
+          obstructions.push_back({rect});
         }
-      }
-    }
-  }
+      });
 
   // Get already placed pins
   for (odb::dbBTerm* term : getBlock()->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
       if (pin->getPlacementStatus().isFixed()) {
         for (odb::dbBox* box : pin->getBoxes()) {
-          if (top_grid_ != nullptr && top_grid_->layer != nullptr
-              && box->getTechLayer()->getRoutingLevel()
-                     == top_grid_->layer->getRoutingLevel()) {
-            odb::Rect obstruction_rect = box->getBox();
-            obstructions.push_back(obstruction_rect);
+          if (box->getTechLayer()->getRoutingLevel() == top_layer_level) {
+            obstructions.push_back(
+                {box->getBox(),
+                 pin->hasMinSpacing() ? pin->getMinSpacing() : -1,
+                 pin->hasEffectiveWidth() ? pin->getEffectiveWidth() : -1});
           }
         }
       }
     }
   }
 
+  const int pin_width = top_grid_->pin_width;
+  const int pin_height = top_grid_->pin_height;
+
   // check for slots that go beyond the die boundary
   odb::Rect die_area = getBlock()->getDieArea();
-  if (top_grid_ != nullptr) {
-    for (auto& slot : top_layer_slots_) {
-      odb::Point& point = slot.pos;
-      if (point.x() - top_grid_->pin_width / 2 < die_area.xMin()
-          || point.y() - top_grid_->pin_height / 2 < die_area.yMin()
-          || point.x() + top_grid_->pin_width / 2 > die_area.xMax()
-          || point.y() + top_grid_->pin_height / 2 > die_area.yMax()) {
-        // mark slot as blocked since it extends beyond the die area
-        slot.blocked = true;
-      }
+  for (auto& slot : top_layer_slots_) {
+    odb::Point& point = slot.pos;
+    if (point.x() - pin_width / 2 < die_area.xMin()
+        || point.y() - pin_height / 2 < die_area.yMin()
+        || point.x() + pin_width / 2 > die_area.xMax()
+        || point.y() + pin_height / 2 > die_area.yMax()) {
+      // mark slot as blocked since it extends beyond the die area
+      slot.blocked = true;
     }
   }
 
   // check for slots that overlap with obstructions
-  for (odb::Rect& rect : obstructions) {
+  const int pin_min_dim = std::min(pin_width, pin_height);
+  const int pin_max_dim = std::max(pin_width, pin_height);
+  for (const BlockingShape& shape : obstructions) {
+    // floor the keepout at the spacing required by the obstruction
+    const int spacing = computeShapeSpacing(
+        top_grid_->layer, shape, pin_min_dim, pin_max_dim);
+    const int keepout = std::max(top_grid_->keepout, spacing);
+    // pad the obstruction by the pin footprint instead of one rect per slot
+    const odb::Rect keepout_rect
+        = shape.rect
+              .bloat(pin_width / 2 + keepout, odb::Orientation2D::Horizontal)
+              .bloat(pin_height / 2 + keepout, odb::Orientation2D::Vertical);
     for (auto& slot : top_layer_slots_) {
-      odb::Point& point = slot.pos;
-      // mock slot with keepout
-      odb::Rect pin_rect(
-          point.x() - top_grid_->pin_width / 2 - top_grid_->keepout,
-          point.y() - top_grid_->pin_height / 2 - top_grid_->keepout,
-          point.x() + top_grid_->pin_width / 2 + top_grid_->keepout,
-          point.y() + top_grid_->pin_height / 2 + top_grid_->keepout);
-      if (rect.intersects(pin_rect)) {  // mark slot as blocked
+      if (keepout_rect.intersects(slot.pos)) {
         slot.blocked = true;
       }
     }
@@ -3099,9 +3613,38 @@ std::vector<Section> IOPlacer::findSectionsForTopLayer(const odb::Rect& region)
   return sections;
 }
 
+void IOPlacer::addFixedPinKeepouts(odb::dbBTerm* bterm)
+{
+  for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
+    // multi bpin terms can mix placement statuses
+    if (!bterm_pin->getPlacementStatus().isFixed()) {
+      continue;
+    }
+    for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
+      odb::dbTechLayer* tech_layer = bpin_box->getTechLayer();
+      if (tech_layer == nullptr || tech_layer->getRoutingLevel() == 0) {
+        continue;
+      }
+      // store the shapes padded, so the pins created near them keep the
+      // min spacing carried by their own DEF rules
+      layer_fixed_pins_keepouts_[tech_layer->getRoutingLevel()].push_back(
+          computePinKeepout(
+              {bpin_box->getBox(),
+               bterm_pin->hasMinSpacing() ? bterm_pin->getMinSpacing() : -1,
+               bterm_pin->hasEffectiveWidth() ? bterm_pin->getEffectiveWidth()
+                                              : -1},
+              tech_layer));
+    }
+  }
+}
+
 void IOPlacer::initNetlist()
 {
   netlist_->reset();
+  layer_fixed_pins_keepouts_.clear();
+  layer_blocked_shapes_.clear();
+  pin_size_cache_.clear();
+  spacing_cache_.clear();
   const odb::Rect& coreBoundary = core_->getBoundary();
   int x_center = (coreBoundary.xMin() + coreBoundary.xMax()) / 2;
   int y_center = (coreBoundary.yMin() + coreBoundary.yMax()) / 2;
@@ -3113,12 +3656,7 @@ void IOPlacer::initNetlist()
     int y_pos = 0;
     bterm->getFirstPinLocation(x_pos, y_pos);
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
-      for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
-        for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
-          int layer = bpin_box->getTechLayer()->getRoutingLevel();
-          layer_fixed_pins_shapes_[layer].push_back(bpin_box->getBox());
-        }
-      }
+      addFixedPinKeepouts(bterm);
       continue;
     }
     odb::dbNet* net = bterm->getNet();

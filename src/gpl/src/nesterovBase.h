@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -15,6 +16,7 @@
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -59,6 +61,7 @@ class RegionDensityField;  // gpu/regionDensityField.h (GPU-only)
 class WirelengthGradientBackend;  // wirelengthGradientBackend.h
 class DensityGradientBackend;     // densityGradientBackend.h
 class NesterovDeviceContext;      // gpu/nesterovDeviceContext.h
+class IoPinBase;                  // ioPinBase.h
 enum class SlpSlot : int;         // gpu/nesterovDeviceContext.h
 enum class SumGradSlot : int;     // gpu/nesterovDeviceContext.h
 
@@ -119,6 +122,7 @@ class GCell
   void setCenterLocation(int cx, int cy);
   // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
+  int64_t getInflationArea() const;
   void setAreaChangeType(GCellChange change) { change_ = change; }
   GCellChange changeType() const { return change_; }
   void setAllLocations(int lx, int ly, int ux, int uy);
@@ -581,9 +585,11 @@ class Bin
   void addNonPlaceArea(int64_t area);
   void addInstPlacedArea(int64_t area);
   void addFillerArea(int64_t area);
+  void atomicAddFillerArea(int64_t area);
 
   void addNonPlaceAreaUnscaled(int64_t area);
   void addInstPlacedAreaUnscaled(int64_t area);
+  void atomicAddInstPlacedAreaUnscaled(int64_t area);
 
   int64_t getBinArea() const;
   int64_t getNonPlaceArea() const { return nonPlaceArea_; }
@@ -688,6 +694,26 @@ inline void Bin::addFillerArea(int64_t area)
   fillerArea_ += area;
 }
 
+// For the threaded density scatter. The accumulators are integers and each
+// addend is truncated before it is added, so the sum is over a fixed multiset
+// of integers -- associative and commutative, hence independent of the order
+// threads reach it. Relaxed suffices: we need atomicity, not ordering, and the
+// result is consumed only after the parallel region's implicit barrier.
+// atomic_ref rather than an atomic member so the field stays a plain int64_t:
+// Bin remains trivially copyable for its vector, and the serial path keeps its
+// non-atomic add.
+inline void Bin::atomicAddInstPlacedAreaUnscaled(int64_t area)
+{
+  std::atomic_ref<int64_t> ref(instPlacedAreaUnscaled_);
+  ref.fetch_add(area, std::memory_order_relaxed);
+}
+
+inline void Bin::atomicAddFillerArea(int64_t area)
+{
+  std::atomic_ref<int64_t> ref(fillerArea_);
+  ref.fetch_add(area, std::memory_order_relaxed);
+}
+
 //
 // The bin can be non-uniform because of
 // "integer" coordinates
@@ -705,6 +731,8 @@ class BinGrid
   void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                   int parallel_threads = 1);
+  void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
+                                 int parallel_threads);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
 
   void initBins();
@@ -778,6 +806,7 @@ struct NesterovBaseVars
 
   const bool isSetBinCnt;
   const bool useUniformTargetDensity;
+  bool placeIosMode = false;
   bool isMaxPhiCoefChanged = false;  // not user config
   const float targetDensity;
   const int binCntX;
@@ -793,7 +822,8 @@ struct NesterovBaseVars
 
 struct NesterovPlaceVars
 {
-  NesterovPlaceVars(const PlaceOptions& options);
+  // design_hpwl resolves referenceHpwl when the option is left at 0.
+  NesterovPlaceVars(const PlaceOptions& options, int64_t design_hpwl = 0);
 
   int maxNesterovIter;
   static constexpr int maxBackTrack = 10;
@@ -803,6 +833,16 @@ struct NesterovPlaceVars
   static constexpr float minPreconditioner = 1.0;  // MIN_PRE
   float initialPrevCoordiUpdateCoef = 100;         // z_ref_alpha
   const float referenceHpwl;                       // refDeltaHpwl
+
+  // Floor for a derived referenceHpwl, the value this was hard-coded to
+  // before it was derived at all. Designs at or below this scale keep exactly
+  // the controller they had.
+  static constexpr float kReferenceHpwlFloor = 446000000.0f;
+
+  // Fraction of the design's HPWL a derived referenceHpwl spans. A wirelength
+  // change of this size is what pulls the penalty ramp from its maximum to its
+  // minimum, so it sets the controller's headroom before it saturates.
+  static constexpr float kReferenceHpwlFraction = 0.01f;
   const float routability_end_overflow;
   const float routability_snapshot_overflow;
   const float keepResizeBelowOverflow;
@@ -822,6 +862,7 @@ struct NesterovPlaceVars
   int debug_update_iterations = 10;
   bool debug_draw_bins = true;
   odb::dbInst* debug_inst = nullptr;
+  odb::dbBTerm* debug_pin = nullptr;
   int debug_start_iter = 0;
   int debug_rudy_start = 5000;
   int debug_rudy_stride = 1;
@@ -887,11 +928,6 @@ class NesterovBaseCommon
   // into nbc gCellStor_). Defined in wirelengthGradient.cpp.
   void getAllWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
                                    std::vector<FloatPoint>& out);
-
-  // Single-cell wirelength gradient (cold path — NesterovBase::
-  // updateSingleGradient via the db callback). Defined in
-  // wirelengthGradient.cpp.
-  FloatPoint getSingleWireLengthGradientWA(const GCell* gCell);
 
   // GPU path: run the per-inst gradient gather on device only (no host
   // copy) so the NB-level device scatter can consume it. No-op on the CPU
@@ -1047,10 +1083,20 @@ class NesterovBase
 
   const std::vector<GCellHandle>& getGCells() const { return nb_gcells_; }
 
+  // Live instances created since the last optimizer-state update. Their
+  // callbacks have already built GCells; some may since have been resized.
+  const std::unordered_set<odb::dbInst*>& getNewInstances() const
+  {
+    return new_instances_;
+  }
+
   float getSumOverflow() const { return sum_overflow_; }
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // Sets densityPenalty_ from the wirelength/density gradient ratio times
+  // factor
+  void updateDensityPenaltyFromRatio(float factor);
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
@@ -1090,9 +1136,13 @@ class NesterovBase
   // update density sizes with changed dx and dy
   void updateDensitySize();
 
+  // Account for retained timing repair and congestion inflation in this region.
+  void updateTimingDrivenDensity();
+
   // should be separately defined.
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
+  int64_t getInflationArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
@@ -1105,6 +1155,9 @@ class NesterovBase
   // LB of target density is required for massive runs.
   //
   float getUniformTargetDensity() const;
+
+  // estimate target density based on the current placement
+  float estimateTargetDensity(float overflow);
 
   // initTargetDensity is set by users
   // targetDensity is equal to initTargetDensity and
@@ -1165,21 +1218,6 @@ class NesterovBase
   void nbUpdateCurGradient(float wlCoeffX, float wlCoeffY);
   void nbUpdateNextGradient(float wlCoeffX, float wlCoeffY);
 
-  // Used for updates based on callbacks
-  void updateSingleGradient(size_t gCellIndex,
-                            std::vector<FloatPoint>& sumGrads,
-                            std::vector<FloatPoint>& wireLengthGrads,
-                            std::vector<FloatPoint>& densityGrads,
-                            float wlCoeffX,
-                            float wlCoeffY);
-
-  void updateSinglePrevGradient(size_t gCellIndex,
-                                float wlCoeffX,
-                                float wlCoeffY);
-  void updateSingleCurGradient(size_t gCellIndex,
-                               float wlCoeffX,
-                               float wlCoeffY);
-
   void updateInitialPrevSLPCoordi();
 
   float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
@@ -1193,6 +1231,19 @@ class NesterovBase
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
+
+  // True once the cells have stopped moving as fast as they were: the
+  // per-iteration displacement has come down from its peak.
+  //
+  // Routability measures where wire will be from where the cells are, so it
+  // needs a placement close to where it is going. That is a statement about
+  // motion, not about density, and overflow does not capture it: the same
+  // overflow can sit at very different displacements depending on how fast
+  // the penalty schedule happens to be ramping.
+  bool isSettled() const;
+  float getSettleRatio() const;
+  static constexpr float getSettleFraction() { return kSettleFraction; }
+
   float getStoredGradDistance() const { return gradDistance_; }
 
   bool checkConvergence(int gpl_iter_count,
@@ -1211,6 +1262,9 @@ class NesterovBase
   // No-op on the CPU path or when host state is already fresh. (TD and
   // routability runs never hold a device context, so they need no call.)
   void pullCoordsFromDevice();
+  // pullCoordsFromDevice() plus the cur/prev SLP sum-grads, which the GPU
+  // path keeps only on device. No-op on the CPU path.
+  void pullSlpFromDevice();
 
   void updateDensityCenterCur();
   void updateDensityCenterCurSLP();
@@ -1224,6 +1278,9 @@ class NesterovBase
   void resetMinSumOverflow();
 
   bool isDiverged() const { return isDiverged_; }
+  // Resets isDiverged_ when no snapshot exists to revert to instead (the only
+  // other place that clears it is revertToSnapshot()).
+  void clearDivergence() { isDiverged_ = false; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
   std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
@@ -1232,11 +1289,27 @@ class NesterovBase
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.
-  void updateGCellState(float wlCoeffX, float wlCoeffY);
+  void updateGCellState();
+
+  // Previous and current position and stored gradient of the instance's GCell
+  // (the current gradient is the one the next Nesterov step uses).
+  struct SlpState
+  {
+    FloatPoint prev_pos;
+    FloatPoint prev_grad;
+    FloatPoint cur_pos;
+    FloatPoint cur_grad;
+  };
+  // std::nullopt when the instance is not in this region. Pulls from the
+  // device first on the GPU path.
+  std::optional<SlpState> getSlpState(odb::dbInst* db_inst);
 
   void destroyFillerGCell(size_t index_remove);
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
+
+  // Directly redistributes the existing filler into the free space.
+  void redistributeFillerCells();
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
@@ -1260,7 +1333,15 @@ class NesterovBase
   std::pair<int, int> calculatePlacementPerturbationOffset(
       int dbu_per_micron) const;
 
+  void updateDbIoPins();
+  void refreshIoPins();
+  // Null unless this region places the IO pins (-place_ios).
+  IoPinBase* getIoPins() const { return io_.get(); }
+  void setIoPins(std::unique_ptr<IoPinBase> io_pins);
+
  private:
+  friend class TimingRepairIntegrationTest;
+
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
@@ -1325,8 +1406,10 @@ class NesterovBase
   std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
   std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
 
-  // used to update gcell states after fixPointers() is called
-  std::vector<odb::dbInst*> new_instances_;
+  // used to update gcell states after fixPointers() is called. Holds only
+  // instances that are still alive: destroyCbkGCell() drops its entry, so a
+  // deleted dbInst whose memory odb reuses cannot appear twice.
+  std::unordered_set<odb::dbInst*> new_instances_;
 
   struct RemovedFillerState
   {
@@ -1364,6 +1447,16 @@ class NesterovBase
   float stepLength_ = 0;
   float coordiDistance_ = 0;
   float gradDistance_ = 0;
+
+  // Largest per-iteration displacement seen so far, the yardstick isSettled()
+  // measures the current one against.
+  float peak_coordi_distance_ = 0;
+
+  // Fraction of its own peak the per-iteration displacement must fall to for
+  // the placement to count as settled. A ratio rather than a length, so it
+  // carries no bin size, no DBU constant, and no dependence on the penalty
+  // schedule's rate.
+  static constexpr float kSettleFraction = 0.6f;
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
@@ -1407,6 +1500,8 @@ class NesterovBase
                   size_t last_index);
   void swapAndPopParallelVectors(size_t remove_index, size_t last_index);
   void appendParallelVectors();
+  // Point whichever storage owns nb_gcells_[nb_index] back at nb_index.
+  void rebindHandleIndex(size_t nb_index);
 
   float wireLengthGradSum_ = 0;
   float densityGradSum_ = 0;
@@ -1437,6 +1532,8 @@ class NesterovBase
   bool reprint_iter_header_ = false;
 
   void initFillerGCells();
+
+  std::unique_ptr<IoPinBase> io_;
 };
 
 inline std::vector<Bin>& NesterovBase::getBins()

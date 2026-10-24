@@ -412,6 +412,7 @@ void DetailedGlobalSwap::stats()
       attempts_,
       swaps_,
       moves_);
+  mgr_->addAttempts(attempts_);
 }
 
 }  // namespace legacy

@@ -303,6 +303,26 @@ void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 }
 
 template <class Archive>
+void serialize(Archive& ar, odb::Point3D& p, const unsigned int version)
+{
+  if (drt::is_loading(ar)) {
+    drt::frCoord x = 0, y = 0, z = 0;
+    (ar) & x;
+    (ar) & y;
+    (ar) & z;
+    p = {x, y, z};
+  } else {
+    drt::frCoord x, y, z;
+    x = p.x();
+    y = p.y();
+    z = p.z();
+    (ar) & x;
+    (ar) & y;
+    (ar) & z;
+  }
+}
+
+template <class Archive>
 void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
   odb::dbSigType::Value v = odb::dbSigType::SIGNAL;
@@ -797,6 +817,7 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & MAX_CLIPSIZE_INCREASE;
 
   (ar) & END_ITERATION;
+  (ar) & REROUTE_VIOLATIONS_START_ITER;
 
   (ar) & NDR_NETS_RIPUP_HARDINESS;
   (ar) & CLOCK_NETS_TRUNK_RIPUP_HARDINESS;
@@ -825,6 +846,8 @@ void RouterConfiguration::serialize(Archive& ar, const unsigned int /*version*/)
   (ar) & GC_IGNORE_PDN_LAYER_NUM;
 
   (ar) & unidirectional_layer_names_;
+  // Appended last so the archive layout of existing members is unchanged.
+  (ar) & WATERMARK_WRONGWAY_MULT;
 }
 
 }  // namespace drt

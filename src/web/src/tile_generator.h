@@ -4,6 +4,7 @@
 #pragma once
 
 #include <any>
+#include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -12,13 +13,16 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "color.h"
 #include "glyph_cache.h"
@@ -32,7 +36,7 @@ namespace sta {
 class dbSta;
 }
 
-namespace gui {
+namespace web {
 class HeatMapDataSource;
 }
 
@@ -60,6 +64,68 @@ struct FlightLine
   Color color;
 };
 
+// The nine canonical anchor names, in web::Painter::anchors() order.  That
+// table (src/gui/src/painter.cpp) is the source of truth for the spelling and
+// is duplicated rather than shared because libweb has no link dependency on
+// the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
+// two in sync: add_label is one user-facing command, so -anchor has to mean
+// the same thing whichever GUI runs it.
+const std::vector<std::string>& anchorNames();
+
+// True when `anchor` is one of anchorNames().  The empty string is NOT valid;
+// callers that treat empty as "use the default" must substitute "center"
+// before asking.
+bool isValidAnchor(const std::string& anchor);
+
+// A short text label anchored at a DBU point, drawn on the overlay tile.
+// Used by the timing-cone overlay (depth annotations) and by user labels
+// (2.12).  `size` is the font pixel size (0 = default) and `anchor` names the
+// point of the text box that sits on `pos` — see anchorNames().
+struct TextLabel
+{
+  odb::Point pos;
+  std::string text;
+  Color color;
+  int size = 0;
+  std::string anchor = "center";
+};
+
+// A user-created text annotation stored on the design (mirrors the Qt GUI's
+// web::Label).  Global (not per-session) so it renders into every client's
+// tiles and into save_image, matching the Qt GUI.
+struct StoredLabel
+{
+  odb::Point pos;
+  std::string text;
+  Color color;
+  int size = 0;
+  std::string anchor = "center";
+  std::string name;
+};
+
+struct ColoredPolygon
+{
+  odb::Polygon poly;
+  Color color;
+};
+
+// Decimal places needed to print a DBU length in microns without collapsing two
+// adjacent DBU onto the same string.  That is the smallest p with 10^p >=
+// dbu_per_micron, hence ceil() and not round(): at 2000 DBU/µm (Nangate45)
+// round() yields 3, and 1 DBU (0.0005 µm) and 2 DBU (0.001 µm) both print as
+// "0.001".  Returns 0 for a scale of 0 or less, which callers treat as "no
+// scale known yet" and print raw DBU for.
+//
+// TODO: this and dbuToMicronString belong in utl alongside to_numeric_string;
+// they live here only because tile_generator.h is the web module's shared
+// header today.
+int dbuPrecision(double dbu_per_micron);
+
+// DBU -> micron string at dbuPrecision(), trailing zeros stripped.  Falls back
+// to the raw DBU count when the database has no scale yet, which is the case
+// before any LEF has been read.
+std::string dbuToMicronString(int dbu, double dbu_per_micron);
+
 // Where one tile sits in DBU space, and how DBU map to its pixels.
 //
 // The tile grid step is maxDXDY / 2^z — a FRACTIONAL number of DBU — so a
@@ -81,8 +147,7 @@ struct TileFrame
   odb::Rect cull;
   // Pixels of THIS frame per CSS pixel.  Sizes authored in CSS px — pen widths,
   // font heights — are multiplied by it so they come out the same size on every
-  // display instead of shrinking as the ratio rises.  The display's dpr for an
-  // output-resolution frame; dpr * the supersample factor for a super one.
+  // display instead of shrinking as the ratio rises: the display's dpr.
   double px_per_css = 1.0;
 
   // DBU → pixels within the tile.  Y counts up from the tile's bottom edge;
@@ -97,6 +162,11 @@ struct SelectionResult
   std::string name;
   std::string type_name;  // "Inst", "Net", etc. — sent to the JSON API
   odb::Rect bbox;
+  // Local-to-root transform of the chiplet the hit came from, so a consumer
+  // that re-derives a bbox from `object` (a web::Descriptor reports it in the
+  // object's own block coordinates) can lift it into the same world space
+  // `bbox` is already in.  Identity for single-die designs.
+  odb::dbTransform world_xfm;
   // Fast-path tag for sort/count.  type_name is a string so `selectAt`
   // can serialize it later, but the sort comparator runs on every
   // result pair — comparing two short strings ("Inst" / "Net") per
@@ -114,20 +184,50 @@ struct ChipletNode
   odb::dbBlock* block = nullptr;    // chip->getBlock()
   odb::dbChipInst* inst = nullptr;  // null for root
   odb::dbTransform world_xfm;       // local-to-root transform
-  std::string path;                 // "top.soc_inst.subip" — unique
+  std::string path;                 // "top/soc_inst/subip" — unique
   std::string parent_path;          // path of the parent ("" for the root)
   std::string name;                 // "top" or inst->getName()
   int depth = 0;
   int global_z = 0;
+
+  // Face-down: the accumulated transform mirrors Z, so the die's layer stack
+  // runs top-down in world space.  Derived, not stored — dbTransform::concat
+  // XORs mirror_z down the hierarchy, so the transform is already the answer.
+  // In the XY plane a mirror about Z is the identity, so this changes paint
+  // order rather than geometry.
+  bool isFlipped() const { return world_xfm.isMirrorZ(); }
+
+  // The full 3D orientation ("R0", "MX", "MZ", "MZ_R90", …).  Reporting only
+  // the 2D half would collapse a face-down chiplet onto "R0".
+  std::string orientString() const
+  {
+    return odb::dbOrientType3D(world_xfm.getOrient(), isFlipped()).getString();
+  }
 };
 
-// Walk the dbChip → dbChipInst → masterChip hierarchy depth-first and
-// return a flat list with each chiplet's accumulated world transform.
+// Walk the chiplet hierarchy and return a flat list with each chiplet's
+// accumulated world transform.
+//
+// Leaves come from ODB's unfolded model (dbUnfoldedChipInst), which already
+// composes the dbChipInst transforms top-down — the web does not redo that
+// arithmetic.  The unfolded model holds leaves only: dbUnfoldedBuilder skips
+// ChipType::HIER chips, which own no dbBlock and so have no geometry.  Those
+// intermediate nodes still group the UI trees, so they are synthesized here
+// from the prefixes of each leaf's getChipInstPath(), as is the root (the
+// unfolded model has no entry for the top chip).
+//
+// With use_unfolded_model=false, or when the model is empty (single-chip
+// designs, load paths that never build it), the hierarchy is walked instead
+// and the transforms composed here.  Both routes produce the same nodes; the
+// walk is what a caller uses when the model may be out of date, since ODB
+// does not refresh it on edits and refreshing it from a read path is not safe.
+//
 // Related Qt code: `LayoutViewer::getChips()` returns a flat
 // (dbChipInst → dbChip) PtrMap with no transform composition — this
-// function additionally accumulates `dbTransform`s top-down and assigns
+// function additionally carries `dbTransform`s and assigns
 // stable hierarchical paths so the web renderer can place each chiplet.
-std::vector<ChipletNode> collectChiplets(odb::dbChip* root);
+std::vector<ChipletNode> collectChiplets(odb::dbChip* root,
+                                         bool use_unfolded_model = true);
 
 // Coarse instance category, derived once per inst and reused by both
 // isInstVisible and isInstSelectable so the two stay in lock-step.
@@ -160,6 +260,9 @@ enum class InstCategory
 };
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
+
+// The pseudo layer instance and pin names are drawn on.
+inline constexpr char kInstLabelsLayer[] = "_inst_labels";
 
 struct TileVisibility
 {
@@ -214,6 +317,13 @@ struct TileVisibility
   bool pins = true;               // BTerm (IO pin) shapes on tech layers
   bool pin_markers = true;        // BTerm direction markers on _pins layer
   bool pin_names = true;          // BTerm name labels on _pins layer
+  bool access_points
+      = false;  // dbAccessPoint markers (X), off by default (Qt parity)
+  bool regions
+      = true;  // dbRegion boundaries overlay, on by default (Qt parity)
+  bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
+  bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
+  bool rudy = false;        // RUDY congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -225,9 +335,12 @@ struct TileVisibility
   FillPattern fill_pattern = FillPattern::kSolid;
 
   // Instance sub-shapes
-  bool inst_names = true;      // Instance name labels on _instances layer
-  bool inst_pins = true;       // ITerm (cell pin) shapes on tech layers
-  bool inst_pin_names = true;  // ITerm name labels
+  bool inst_names = true;  // Instance name labels on _inst_labels layer
+  bool inst_pins = true;   // ITerm (cell pin) shapes on tech layers
+  // ITerm name labels.  Off by default, like the Qt GUI's
+  // Misc/Instances/"Pin Names" (displayControls.cpp makes it the one unchecked
+  // leaf under Instances), so a default image carries the same labels there.
+  bool inst_pin_names = false;
 
   // Blockages (dbBlockage / dbObstruction)
   bool placement_blockages = true;
@@ -250,10 +363,27 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
+  // from the region it is drawing rather than from the design: the IO pin
+  // markers (RenderThread::setupIOPins takes min(die, bounds)).
+  //
+  // 0 means "one tile", which is the interactive answer: a client shows a
+  // handful of tiles, so a tile's span stands in for its viewport and the
+  // markers shrink as it zooms in.  save_image composites EVERY tile of the
+  // level into one image, where that stand-in is 2^z too small -- markers came
+  // out a 2 px nub against Qt's 20 px arrow -- so it passes the image's own
+  // extent instead.
+  int view_extent_dbu = 0;
+
+  // User text labels (2.12).  On by default like the Qt GUI's Misc/"Labels",
+  // which gates RenderThread::drawLabels — and so gates them in Qt's
+  // save_image too, since that renders through the same path.
+  bool labels = true;
+
   // Debug
   bool debug = false;
 
-  // When true the tile renderer iterates gui::Gui::renderers() and
+  // When true the tile renderer iterates web::Gui::renderers() and
   // rasterizes drawObjects() output.  Drives the gpl / cts / mpl debug
   // graphics overlay.  Off by default so tiles stay cheap.
   bool debug_renderers = false;
@@ -273,7 +403,7 @@ struct TileVisibility
   // Per-chiplet visibility: when has_visible_chiplets is true, the tile
   // renderer skips ChipletNodes whose `path` is not in this set.  Empty
   // set with the flag off renders every chiplet (default).  Paths match
-  // ChipletNode::path produced by collectChiplets() (e.g. "top.soc_inst").
+  // ChipletNode::path produced by collectChiplets() (e.g. "top/soc_inst").
   std::set<std::string> visible_chiplets;
   bool has_visible_chiplets = false;
   bool isChipletVisible(const std::string& path) const;
@@ -339,6 +469,10 @@ struct TileVisibility
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
+  // Pin names show only together with the pins they name.
+  bool pinNamesShown() const { return inst_pins && inst_pin_names; }
+  // The boolean field a JSON key sets, or none for a key it does not know.
+  std::optional<bool> flag(std::string_view key) const;
   // Visibility for an already-classified instance.  Lets callers that already
   // computed the category (e.g. the tile render loop) avoid reclassifying.
   bool isCategoryVisible(InstCategory cat) const;
@@ -359,15 +493,34 @@ class TileGenerator
   bool shapesReady() const;
 
   bool hasSta() const { return sta_ != nullptr; }
+  bool hasRegions() const;
   sta::dbSta* getSta() const { return sta_; }
+  utl::Logger* getLogger() const { return logger_; }
 
+  int getThreadCount() const { return num_threads_; }
+  void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
+
+  // The tile grid's georeference: getFitBounds() grown by the pin-label
+  // margin, so the labels hanging outward from the die edge fall inside tiles
+  // that exist.  Tile indices are clamped to it.
   odb::Rect getBounds() const;
+
+  // What the client zooms to fit: the design proper, with no room reserved for
+  // pin labels.  Mirrors LayoutViewer::getBounds() in the Qt GUI.
+  odb::Rect getFitBounds() const;
+
   int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
+
+  // getLayers(), reordered the way the client paints: per chiplet, and with a
+  // face-down die's own layers reversed.  What save_image composites with, so
+  // an exported PNG stacks the layers the way the screen does.
+  std::vector<std::string> paintOrderLayers() const;
+
   std::vector<std::string> getSites() const;
 
-  // Per-layer colors matching gui::DisplayControls layer palette.  Computed
+  // Per-layer colors matching web::DisplayControls layer palette.  Computed
   // lazily and cached; the cache is rebuilt only if the tech changes.
   const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
                                                                = nullptr) const;
@@ -377,7 +530,7 @@ class TileGenerator
   // by layer up front is what lets the per-instance pass draw a layer's shapes
   // directly instead of walking all of a master's geometry and calling
   // dbBox::getTechLayer() (a chain of dbTable lookups) on every box, once per
-  // layer per tile.  Mirrors gui::LayoutViewer::boxesByLayer.
+  // layer per tile.  Mirrors web::LayoutViewer::boxesByLayer.
   struct MasterLayerGeom
   {
     // Obstructions (LEF OBS), drawn before pins.  Polygons and boxes are kept
@@ -388,10 +541,7 @@ class TileGenerator
     std::vector<odb::Polygon> obs_polys;
     std::vector<odb::Rect> obs_boxes;
     std::vector<odb::Polygon> pin_polys;
-    // Pin boxes grouped by MTerm, preserving master MTerm order and geometry
-    // order within a pin: the fill pass draws them all, and the ITerm label
-    // pass walks each group for the first box big enough to label.
-    std::vector<std::pair<odb::dbMTerm*, std::vector<odb::Rect>>> pin_boxes;
+    std::vector<odb::Rect> pin_boxes;
   };
   using MasterGeomByLayer = odb::PtrMap<odb::dbMaster, MasterLayerGeom>;
 
@@ -406,12 +556,75 @@ class TileGenerator
   // shared_ptr copy once per tile and then read it without locking; a
   // concurrent invalidation swaps in a fresh snapshot and leaves the one
   // in-flight renders hold alive.
+  // One pin name of a master: its MTerm's name, the boxes Qt's drawITermLabels
+  // walks (getGeometry(), polygon pieces included) with their layers, in that
+  // order, and their bbox.
+  struct PinLabel
+  {
+    std::string name;
+    odb::Rect bbox;
+    std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> boxes;
+  };
+
   struct GeomCache
   {
     odb::PtrMap<odb::dbTechLayer, MasterGeomByLayer> master_geom;
     odb::PtrMap<odb::dbTechLayer, ViaBoxesByMaster> via_boxes;
+    // Each master's pin names, in master MTerm order.
+    odb::PtrMap<odb::dbMaster, std::vector<PinLabel>> pin_labels;
   };
   std::shared_ptr<const GeomCache> geomCache() const;
+
+  // Where each tech layer's tiles can have anything on them, so the client can
+  // skip requesting tiles that would come back empty.  Most layers of a
+  // technology hold nothing in any given view (implants and front-end layers
+  // absent from cell abstracts, upper metals unused by the block), and each
+  // such request costs the client as much as a drawn one.
+  //
+  // Each extent is a conservative bounding box of design sources the
+  // layer-tile pass draws on that layer; a layer with no entry in `layers` is
+  // not a tech layer here (a pseudo layer) and must always be requested.  Only
+  // design geometry is covered: tracks and the debug overlays also draw on
+  // layer tiles, so the client stops skipping while those are on.
+  //
+  // Rebuilt whenever Search::revision(), chipletsGeneration() or the bounds
+  // move, so an edit that adds shapes to an empty layer shows up in the next
+  // extents a client fetches.
+  struct LayerExtents
+  {
+    // False for multi-chiplet designs, which draw each die outline on every
+    // layer and place chiplets by transforms this does not model; the client
+    // then skips nothing.
+    bool supported = false;
+    // The getBounds() rect the extents were computed against, i.e. the tile
+    // grid they are expressed on.
+    odb::Rect bounds;
+    // One layer's extents, split by the visibility flag that gates each
+    // source, so a source that is switched off does not keep the layer's tiles
+    // requested: most implant and front-end layers carry only master
+    // obstructions.  `shapes` is the rest -- routing and special-net shapes and
+    // BTerm pins.  World DBU; nullopt means nothing anywhere.
+    struct Extent
+    {
+      std::optional<odb::Rect> shapes;
+      std::optional<odb::Rect> inst_pins;             // master pin shapes
+      std::optional<odb::Rect> blockages;             // master obstructions
+      std::optional<odb::Rect> routing_obstructions;  // dbObstruction
+      std::optional<odb::Rect> fills;                 // dbFill
+    };
+    std::map<std::string, Extent> layers;
+    // Where kInstLabelsLayer can draw: for each k, the bbox of the instances
+    // at least 2^k DBU at their longest side (World DBU), from the smallest
+    // instance's k to one past the largest, which is empty.  No instance takes
+    // a label until that side reaches `min_css_px` on screen.
+    struct SizedExtent
+    {
+      double min_css_px = 0;
+      std::vector<std::pair<int, std::optional<odb::Rect>>> by_size;
+    };
+    std::optional<SizedExtent> inst_labels;
+  };
+  std::shared_ptr<const LayerExtents> layerExtents() const;
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -441,6 +654,42 @@ class TileGenerator
   odb::dbTech* getTech() const;
   odb::dbDatabase* getDb() const { return db_; }
 
+  // ─── User text labels (2.12) ─────────────────────────────────────────
+  // Design-level annotations, global (not per-session), so they render into
+  // overlay tiles and save_image for every client — mirrors the Qt GUI.
+  // addLabel returns the label's name (auto-generated "label<N>" when `name`
+  // is empty; a clashing name is rejected and "" is returned).
+  //
+  // A label's font height in CSS px is clamped to [0, kMaxLabelSize] on the way
+  // in (0 = unspecified, take the renderer's default).  Every other font height
+  // is a constant scaled by the quantized device pixel ratio, so this is the
+  // one a caller can make large enough to matter — it reaches GlyphCache, which
+  // rasterizes 95 glyphs at that height and keeps them for the life of the
+  // process.
+  static constexpr int kMaxLabelSize = 256;
+
+  std::string addLabel(const odb::Point& pos,
+                       const std::string& text,
+                       const Color& color,
+                       int size,
+                       const std::string& anchor,
+                       const std::string& name);
+  bool deleteLabel(const std::string& name);
+  // Atomically mutate an existing label in place (used for move/edit so the
+  // label can never be lost by a delete+add race).  No-op returning false if
+  // no label has `name`.
+  bool updateLabel(const std::string& name,
+                   const odb::Point& pos,
+                   const std::string& text,
+                   const Color& color,
+                   int size,
+                   const std::string& anchor);
+  void clearLabels();
+  // Snapshot of all labels as drawable TextLabels (thread-safe).
+  std::vector<TextLabel> labelsForDraw() const;
+  // Labels serialized for the client (name/x/y/text/color/size/anchor).
+  boost::json::array labelsJson() const;
+
   // Cached, sorted list of chiplets reachable from db_->getChip().
   // The cache is invalidated by eagerInit() and rebuilt lazily on the
   // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
@@ -448,11 +697,34 @@ class TileGenerator
   // `collectChiplets` is kept for tests and one-shot callers.
   const std::vector<ChipletNode>& chiplets() const;
 
+  // The distinct blocks holding the design's geometry: every chiplet's block,
+  // deduplicated (one node per dbChipInst, so a master placed N times reports
+  // the same block N times) and never null.  Empty means nothing is loaded --
+  // a 3DBlox top chip owns no block of its own, so getBlock() alone is not a
+  // usable "is there a design" test.
+  std::vector<odb::dbBlock*> blocks() const;
+
+  // ─── Name-group mapping (flat designs) ──────────────────────────────
+  // Forwarders to Search, which owns the mapping and the invalidation; the
+  // hierarchy report produces it and the tile renderer reads it.  Callers
+  // read searchRevision() BEFORE building the mapping and hand that value
+  // back, so an edit landing mid-build invalidates rather than stamps clean.
+  uint64_t searchRevision() const;
+  void setInstGroups(odb::dbBlock* block,
+                     std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+                     uint64_t built_at_revision);
+
   // Monotonic counter, bumped every time chiplets() rebuilds its cache.
   // Caches derived from the chiplet list poll this to notice a hierarchy
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
   // the chiplet cache, so the value returned reflects the live hierarchy.
   uint64_t chipletsGeneration() const;
+
+  // True when `png` came back from generateTile (or any of the other tile
+  // entry points) carrying nothing: the layer had no geometry in that tile.
+  // Callers send those as an empty response instead of the image, so the
+  // client neither decodes them nor holds a bitmap for them.
+  static bool isBlankTilePng(const std::vector<unsigned char>& png);
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -480,6 +752,10 @@ class TileGenerator
   // route guides, flight lines) on a fully transparent background.  Used
   // by the overlay tile layer so base tiles can stay cached when only
   // highlights change.
+  //
+  // Also home to the layer-independent Renderer::drawObjects pass, which
+  // belongs on a tile that is rendered once rather than once per layer;
+  // see DebugOverlayCallback.
   std::vector<unsigned char> generateOverlayTile(
       int z,
       int x,
@@ -492,21 +768,109 @@ class TileGenerator
       bool has_visible_layers = false,
       const std::set<std::string>& visible_layers = {},
       double dpr = 1.0,
-      int tile_px = 0) const;
-  std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
+      int tile_px = 0,
+      const std::vector<ColoredPolygon>& colored_polys = {},
+      const std::vector<TextLabel>& labels = {},
+      bool debug_renderers = false,
+      bool debug_live = false) const;
+  std::vector<unsigned char> generateHeatMapTile(web::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
                                                  int y,
                                                  double dpr = 1.0,
                                                  int tile_px = 0) const;
 
+  // Composite the design (or region) into a top-down RGBA8 pixel buffer.
+  // Works without a running web server.  region in DBU; if zero-area,
+  // defaults to die + 5% margin.  Each pixel starts at `bg` and the
+  // (possibly semi-transparent) tiles are composited on top.  This is the
+  // shared core of renderImagePng (which then PNG-encodes) and animated-GIF
+  // frame capture (which feeds the buffer to the GIF encoder).  Raises
+  // (utl::Logger::error) with no design or nothing to frame; never returns
+  // empty.  `out_width`/`out_height` receive the buffer's pixel dimensions,
+  // which the caller cannot predict: they follow from the region and the 16k
+  // clamp, not from `width_px` alone.
+  std::vector<unsigned char> renderImageBuffer(const odb::Rect& region,
+                                               int width_px,
+                                               double dbu_per_pixel,
+                                               const TileVisibility& vis,
+                                               const Color& bg = {},
+                                               int* out_width = nullptr,
+                                               int* out_height = nullptr) const;
+
+  // Render full design (or region) to PNG bytes, as renderImageBuffer does
+  // to raw pixels.  Raises as it does, and on a failed encode.
+  std::vector<unsigned char> renderImagePng(const odb::Rect& region,
+                                            int width_px,
+                                            double dbu_per_pixel,
+                                            const TileVisibility& vis,
+                                            const Color& bg = {},
+                                            int* out_width = nullptr,
+                                            int* out_height = nullptr) const;
+
   // Render full design (or region) to a PNG file.  Works without a running
   // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  // `bg` fills the pixels the layers do not cover; it defaults to transparent,
+  // so a caller that saves what a viewer shows passes that viewer's background
+  // (WebServer::saveImage does, for Qt save_image parity).  Raises as
+  // renderImagePng does, and when the file cannot be written.
   void saveImage(const std::string& filename,
                  const odb::Rect& region,
                  int width_px,
                  double dbu_per_pixel,
-                 const TileVisibility& vis) const;
+                 const TileVisibility& vis,
+                 const Color& bg = {}) const;
+
+  // Where a label goes, decided by the caller.  A chiplet rendered in its own
+  // frame cannot draw text into that frame — the reverse mapping that places
+  // the frame would mirror the glyphs — so the caller routes the label
+  // elsewhere and only the position travels.  Arguments mirror
+  // drawLabelText(): top-left pixel, the text, its font, its color, whether it
+  // reads top-to-bottom, and the width of a black outline (0 for none).
+  using TextSink = std::function<void(int px,
+                                      int py,
+                                      std::string_view text,
+                                      const GlyphCache::FontSize& font,
+                                      const Color& color,
+                                      bool rotated,
+                                      int ring)>;
+
+  // Registry of the self-painting pseudo layers: layer name -> when it shows
+  // -> painter -> paint order.  Single source of truth for the
+  // renderTileBuffer dispatch, the pseudo-layer guard, saveImage's
+  // layers_to_render and the overlays the tech response publishes, from which
+  // the client builds its panes.
+  //
+  // `shown_by` and `layers_by` are TileVisibility JSON keys in groups, read by
+  // anyGroupOn(): on when every key of any one group is.  `z_index` is the
+  // client's pane order, which saveImageLayerOrder() composites in.
+  struct PseudoLayerDef
+  {
+    const char* name;
+    // When the overlay draws anything.
+    std::vector<std::vector<const char*>> shown_by;
+    // When what it draws depends on visible_layers; an empty group is always.
+    std::vector<std::vector<const char*>> layers_by;
+    void (TileGenerator::*painter)(std::vector<unsigned char>&,
+                                   odb::dbBlock*,
+                                   const TileFrame&,
+                                   const TileVisibility&,
+                                   const TextSink&) const;
+    int z_index;
+    // Whether this design gives the overlay anything to draw; null is always.
+    bool (TileGenerator::*present)() const = nullptr;
+  };
+  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
+                         const TileVisibility& vis);
+
+  // The layers saveImage composites, bottom to top, from `tech_layers` in
+  // paintOrderLayers() order.  Public so a test can pin the order down:
+  // it has to match the zIndex the client gives each layer in
+  // display-controls.js, or the saved PNG is not the view on screen.
+  static std::vector<std::string> saveImageLayerOrder(
+      const TileVisibility& vis,
+      const std::vector<std::string>& tech_layers);
 
   // Render timing path overlay (colored rects + flight lines) to PNG bytes.
   std::vector<unsigned char> renderOverlayPng(
@@ -514,23 +878,43 @@ class TileGenerator
       const std::vector<ColoredRect>& rects,
       const std::vector<FlightLine>& lines) const;
 
-  // ─── Debug-graphics overlay ──────────────────────────────────────────
+  // ─── Renderer bridge ─────────────────────────────────────────────────
   //
-  // When `vis.debug_renderers` is on, renderTileBuffer invokes the
-  // installed DebugOverlayCallback (if any).  The callback is
-  // responsible for iterating any registered gui::Renderer instances
-  // and drawing their output onto the image buffer.  Kept as a
-  // callback rather than a direct gui::Gui::get() call so that
-  // libweb.a has no undefined references to the gui/SWIG library —
-  // test executables that link libweb don't need to pull in ord.
-  using DebugOverlayCallback
-      = std::function<void(std::vector<unsigned char>& image,
-                           const TileFrame& frame,
-                           bool debug_live)>;
-  // Install (or clear with `{}`) the debug-overlay callback.  Global
-  // process state; installed by WebServer on serve() and cleared on
-  // shutdown.
-  static void setDebugOverlayCallback(DebugOverlayCallback callback);
+  // The registered web::Renderer instances are reached through one installed
+  // struct rather than a direct web::Gui::get() call, so that libweb.a has no
+  // undefined references to the gui/SWIG library — test binaries can link
+  // libweb without pulling in ord.  One struct with one setter, because the
+  // two halves are installed and torn down by the same owner: when they were
+  // two callbacks, stop() cleared one and left the other holding a stale hook.
+  struct RendererHooks
+  {
+    // Draw.  `layer` mirrors the Qt GUI's two call sites: renderTileBuffer
+    // passes the tile's tech layer, for which the hook runs
+    // Renderer::drawLayer (RenderThread::drawLayer), and generateOverlayTile
+    // passes nullptr for the single layer-independent Renderer::drawObjects
+    // pass.  Splitting them is what keeps drawObjects from being composited
+    // once per visible layer.  Only called when vis.debug_renderers is on.
+    std::function<void(std::vector<unsigned char>& image,
+                       const TileFrame& frame,
+                       bool debug_live,
+                       odb::dbTechLayer* layer)>
+        draw = nullptr;
+
+    // Renderer::select: a renderer can answer a click with objects of its own
+    // (the placer's gcells, the DRC markers, psm's nodes).  Same `layer`
+    // convention: selectAt calls it once per visible, selectable tech layer
+    // and then once with nullptr, the order Qt uses (LayoutViewer::selectAt)
+    // — psm::DebugGui resets its selection state on the nullptr pass, so it
+    // has to come last.
+    std::function<void(odb::dbTechLayer* layer,
+                       const odb::Rect& region,
+                       std::vector<SelectionResult>& out)>
+        select = nullptr;
+  };
+
+  // Install (or clear with `{}`) the renderer bridge.  Global process state;
+  // installed by WebServer on serve() and cleared on stop().
+  static void setRendererHooks(RendererHooks hooks);
 
   // Rasterize a WebPainter's recorded DrawOps into the tile's pixel
   // buffer.  Public so that the debug-overlay callback (living in
@@ -590,10 +974,14 @@ class TileGenerator
                 const Color& c,
                 int dim = -1) const;
 
+  // `px_per_css` is the display's device-pixel ratio: the overlay's inset and
+  // font height are authored in CSS px and scaled by it.  It is NOT derivable
+  // from the buffer, whose side is the client's own tile size times the ratio.
   void drawDebugOverlay(std::vector<unsigned char>& image,
                         int z,
                         int x,
-                        int y) const;
+                        int y,
+                        double px_per_css) const;
 
   // Anti-aliased text rendering.  All methods take a pre-resolved FontSize
   // handle so callers lock the glyph cache once per rendering context rather
@@ -614,6 +1002,27 @@ class TileGenerator
                               std::string_view text,
                               const GlyphCache::FontSize& font,
                               const Color& color);
+  // drawText, or drawTextRotated when `rotated`, over a ring of `outline`
+  // `radius` px wide around the glyphs: Qt's strokePath + fillPath.
+  static void drawTextOutlined(std::vector<unsigned char>& image,
+                               int x,
+                               int y,
+                               std::string_view text,
+                               const GlyphCache::FontSize& font,
+                               const Color& color,
+                               const Color& outline,
+                               int radius,
+                               bool rotated);
+  // drawText, or drawTextRotated when `rotated`, over drawTextOutlined's ring
+  // of kLabelOutline when `ring` > 0.
+  static void drawLabelText(std::vector<unsigned char>& image,
+                            int x,
+                            int y,
+                            std::string_view text,
+                            const GlyphCache::FontSize& font,
+                            const Color& color,
+                            bool rotated,
+                            int ring);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -629,12 +1038,50 @@ class TileGenerator
                        const std::vector<FlightLine>& lines,
                        const TileFrame& frame) const;
 
-  // Private counterpart of setDebugOverlayCallback: invokes the
-  // installed callback (if any) for this tile.  See the public API
-  // above for rationale.
+  void drawColoredPolygons(std::vector<unsigned char>& image,
+                           const std::vector<ColoredPolygon>& polys,
+                           const TileFrame& frame) const;
+
+  // Draw centered text labels (e.g. timing-cone logic depth) on the overlay.
+  void drawTextLabels(std::vector<unsigned char>& image,
+                      const std::vector<TextLabel>& labels,
+                      const TileFrame& frame) const;
+
+  // Raw (un-encoded) RGBA tile with only the user labels drawn on a
+  // transparent background, for the given Leaflet z/x/y.  Used to composite
+  // labels into save_image.  `labels` is passed in (snapshot once per image)
+  // so the mutex isn't locked and copied per tile.  Returns empty if `labels`
+  // is empty.
+  std::vector<unsigned char> renderLabelTile(
+      int z,
+      int x,
+      int y,
+      const std::vector<TextLabel>& labels,
+      double dpr = 1.0,
+      int tile_px = 0) const;
+
+  // Objects the registered renderers claim for a click, via the installed
+  // RendererSelectCallback.  Empty when no callback is installed.
+  std::vector<SelectionResult> selectFromRenderers(
+      const odb::Rect& region,
+      const TileVisibility& vis,
+      const std::set<std::string>& visible_layers) const;
+
+  // The same, for the layer-independent Renderer::drawObjects pass, so
+  // save_image composites it once per tile instead of once per layer.  The
+  // interactive path gets it from generateOverlayTile.
+  std::vector<unsigned char> renderDebugRendererTile(int z,
+                                                     int x,
+                                                     int y,
+                                                     bool debug_live) const;
+
+  // Private counterpart of setRendererHooks: invokes the installed draw hook
+  // (if any) for this tile.  See RendererHooks above for the `layer`
+  // convention.
   void drawRendererOverlay(std::vector<unsigned char>& image,
                            const TileFrame& frame,
-                           bool debug_live) const;
+                           bool debug_live,
+                           odb::dbTechLayer* layer) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,
@@ -674,19 +1121,28 @@ class TileGenerator
                          const Color& c,
                          int dim = -1);
 
+  // Endpoints are tile-pixel coordinates, in double so that a segment far
+  // outside the tile keeps its exact SLOPE: the clip below runs on the values
+  // as given and only its (in-bounds) result is rounded.  Converting an oblique
+  // DBU segment through the clamped toPxX/toPxY instead would saturate each
+  // axis on its own and rotate the segment — use toPxXd/toPxYd here.
+  // `dim` is the side of the buffer, as in setPixel/drawFilledRect; pass it on
+  // the hot paths so the clip bound and every step skip bufferDim()'s sqrt.
   static void drawLine(std::vector<unsigned char>& image,
-                       int x0,
-                       int y0,
-                       int x1,
-                       int y1,
+                       double x0,
+                       double y0,
+                       double x1,
+                       double y1,
                        const Color& c,
-                       int width = 3);
+                       int width = 3,
+                       int dim = -1);
 
   void computePinLabelMargin();
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
   utl::Logger* logger_;
+  int num_threads_ = 0;
   std::unique_ptr<Search> search_;
   int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
 
@@ -707,16 +1163,24 @@ class TileGenerator
   mutable uint64_t geom_cache_chiplet_generation_ = 0;
   std::shared_ptr<const GeomCache> buildGeomCache() const;
 
+  // See layerExtents(); keyed like geom_cache_, plus the bounds.
+  mutable std::mutex layer_extents_mutex_;
+  mutable std::shared_ptr<const LayerExtents> layer_extents_;
+  mutable uint64_t layer_extents_revision_ = 0;
+  mutable uint64_t layer_extents_chiplet_generation_ = 0;
+  std::shared_ptr<const LayerExtents> buildLayerExtents() const;
+
   // Cached chiplet traversal.  See chiplets().  Invalidated in
   // eagerInit() and also auto-invalidated when the chiplet hierarchy
-  // signature (root pointer + total dbChipInst count) changes — this
-  // catches Tcl-driven dbChipInst::create/destroy between eagerInit
-  // calls, which dbBlockCallBackObj does not surface.
+  // signature (root pointer + a hash over each dbChipInst's id, location
+  // and orientation) changes — this catches Tcl-driven create/destroy and
+  // setLoc/setOrient between eagerInit calls, which dbBlockCallBackObj
+  // does not surface.
   mutable std::mutex chiplets_mutex_;
   mutable std::vector<ChipletNode> chiplets_cache_;
   mutable bool chiplets_cache_valid_ = false;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
-  mutable size_t chiplets_cache_inst_count_ = 0;
+  mutable size_t chiplets_cache_inst_hash_ = 0;
   // See chipletsGeneration().
   mutable uint64_t chiplets_cache_generation_ = 0;
 
@@ -740,13 +1204,157 @@ class TileGenerator
   mutable std::mutex design_changed_cb_mutex_;
   std::atomic_bool suppress_design_changed_{false};
 
+  // Per-block caches for the grid/access-point overlay layers, so tiles
+  // don't rescan all BTerms / copy the full gcell vectors on every tile.
+  // Dropped by clearOverlayCaches() from eagerInit() (design reload), and by
+  // the accessors themselves when Search::revision() has moved: a gcell grid
+  // created mid-session by global_route would otherwise stay hidden behind the
+  // empty vector cached before it, and onDesignChanged() is debounced, so it
+  // cannot be relied on to notice (see dropOverlayCachesIfStale).
+  //
+  // The accessors hand out a shared_ptr, not a reference into the map: they
+  // release overlay_cache_mutex_ on return, and a concurrent
+  // clearOverlayCaches() would destroy a referenced vector under a renderer.
+  // Ownership costs nothing on the hot path (no data is copied).
+  struct BpinAp
+  {
+    odb::Point point;
+    odb::dbTechLayer* layer;
+    odb::dbNet* net;  // may be null (unconnected bterm)
+    bool has_access;
+  };
+  using BpinApList = std::shared_ptr<const std::vector<BpinAp>>;
+  using GridList = std::shared_ptr<const std::vector<int>>;
+  BpinApList bpinAccessPoints(odb::dbBlock* block) const;
+  GridList gcellGridX(odb::dbBlock* block) const;
+  GridList gcellGridY(odb::dbBlock* block) const;
+  GridList gcellGrid(odb::PtrMap<odb::dbBlock, GridList>& cache,
+                     odb::dbBlock* block,
+                     const std::function<void(odb::dbGCellGrid*,
+                                              std::vector<int>&)>& fill) const;
+  void clearOverlayCaches() const;
+  // Both require overlay_cache_mutex_; see the definitions.
+  void dropOverlayCaches() const;
+  void dropOverlayCachesIfStale(uint64_t rev) const;
+
+  // Pseudo-layer painters used by renderTileBuffer (one per overlay).
+  // Callers gate on the entry's `shown_by`; painters handle the rest.  All
+  // share one signature so pseudoLayerDefs() can dispatch by table; text goes
+  // through `emit`.
+  void drawAccessPointsLayer(std::vector<unsigned char>& image,
+                             odb::dbBlock* block,
+                             const TileFrame& frame,
+                             const TileVisibility& vis,
+                             const TextSink& emit) const;
+  void drawRegionsLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const TileFrame& frame,
+                        const TileVisibility& vis,
+                        const TextSink& emit) const;
+  void drawMfgGridLayer(std::vector<unsigned char>& image,
+                        odb::dbBlock* block,
+                        const TileFrame& frame,
+                        const TileVisibility& vis,
+                        const TextSink& emit) const;
+  void drawGcellGridLayer(std::vector<unsigned char>& image,
+                          odb::dbBlock* block,
+                          const TileFrame& frame,
+                          const TileVisibility& vis,
+                          const TextSink& emit) const;
+  void drawRudyLayer(std::vector<unsigned char>& image,
+                     odb::dbBlock* block,
+                     const TileFrame& frame,
+                     const TileVisibility& vis,
+                     const TextSink& emit) const;
+  void drawInstLabelsLayer(std::vector<unsigned char>& image,
+                           odb::dbBlock* block,
+                           const TileFrame& frame,
+                           const TileVisibility& vis,
+                           const TextSink& emit) const;
+  void drawHeatMap(std::vector<unsigned char>& image,
+                   web::HeatMapDataSource& source,
+                   const TileFrame& frame) const;
+  std::shared_ptr<web::HeatMapDataSource> getHeatMapSource(
+      const std::string& name) const;
+
+  // Draw a rect's edges clamped to the tile (die/core/region outlines).
+  void outlineRectInTile(std::vector<unsigned char>& image,
+                         const odb::Rect& r,
+                         const Color& c,
+                         const TileFrame& frame) const;
+  // Draw polygon edges clamped to the tile (die/core outlines).
+  void outlinePolygonInTile(std::vector<unsigned char>& image,
+                            const odb::Polygon& polygon,
+                            const Color& c,
+                            const TileFrame& frame) const;
+  // Diagonal across the master's origin corner, so a flipped or rotated
+  // instance reads as such.  Mirrors RenderThread::drawInstanceOutlines();
+  // callers gate on the master height, as Qt does.
+  static void drawOrientationTag(std::vector<unsigned char>& image,
+                                 odb::dbInst* inst,
+                                 const TileFrame& frame,
+                                 int dim,
+                                 int stroke);
+  // The instance's name, centred in its bbox and elided to fit, when the bbox
+  // is big enough to carry it.
+  static void drawInstanceName(const TextSink& emit,
+                               odb::dbInst* inst,
+                               const TileFrame& frame,
+                               int dim,
+                               const GlyphCache::FontSize& inst_font);
+  // The pin names of `inst`, a master with `labels`: one per pin, on its first
+  // box that sits on a shown layer and can carry the name (Qt's
+  // drawITermLabels).
+  static void drawItermLabels(const TextSink& emit,
+                              odb::dbInst* inst,
+                              const std::vector<PinLabel>& labels,
+                              const TileFrame& frame,
+                              int dim,
+                              const GlyphCache::FontSize& font,
+                              const TileVisibility& vis);
+  // `text` centred in `box` by Qt's drawTextInBBox rule: turned when a tall box
+  // cannot hold it level, elided to fit, outlined when `ring` > 0.  False when
+  // the box is too small for it.
+  static bool drawTextInBox(const TextSink& emit,
+                            const TileFrame& frame,
+                            int dim,
+                            const odb::Rect& box,
+                            const std::string& text,
+                            const GlyphCache::FontSize& font,
+                            int ring);
+  // `name`, whose width is `full_w`, elided from the left to fit `avail` px,
+  // down to "..." or nothing; `text_w` gets the result's width.
+  static std::string elideLeft(const std::string& name,
+                               int full_w,
+                               int avail,
+                               const GlyphCache::FontSize& font,
+                               int& text_w);
+  mutable std::mutex heatmap_mutex_;
+  mutable std::map<std::string, std::shared_ptr<web::HeatMapDataSource>>
+      heatmaps_;
+  mutable std::mutex overlay_cache_mutex_;
+  mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
+  mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
+  mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
+  // The Search::revision() the three caches above were built at; see
+  // dropOverlayCachesIfStale.
+  mutable uint64_t overlay_cache_revision_ = 0;
+
+  // User text labels (2.12).  Global design annotations; see addLabel().
+  mutable std::mutex labels_mutex_;
+  std::vector<StoredLabel> labels_;
+  int next_label_id_ = 0;
+
   static constexpr int kTileSizeInPixel = 256;
 };
 
 struct TimingPathSummary;
 
-std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
-                                                   const std::string& pin_name);
+// Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
+// returning the owning node so the caller can transform the pin's geometry.
+std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& pin_name);
 
 void collectNetShapes(odb::dbNet* net,
                       odb::dbITerm* drv_iterm,
@@ -755,17 +1363,34 @@ void collectNetShapes(odb::dbNet* net,
                       odb::dbBTerm* snk_bterm,
                       const Color& color,
                       std::vector<ColoredRect>& rects,
-                      std::vector<FlightLine>& lines);
+                      std::vector<FlightLine>& lines,
+                      const odb::dbTransform& xfm);
 
-void collectTimingPathShapes(odb::dbBlock* block,
+void collectTimingPathShapes(const std::vector<ChipletNode>& chiplets,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
 
+// Highlight the path stage at `pin_name`: its net, or on an unrouted net the
+// flight line between the pin and its neighbor on that net in `path`.
+void collectTimingStageShapes(const std::vector<ChipletNode>& chiplets,
+                              const TimingPathSummary& path,
+                              const std::string& pin_name,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines);
+
 // ── JSON serialization helpers for TileGenerator responses ──
+
+// A DBU rect in the wire order the client's coordinate transforms expect:
+// [[yMin, xMin], [yMax, xMax]].  Note this is NOT bboxArray()'s flat
+// [xMin, yMin, xMax, yMax] -- the two orders are not interchangeable.
+boost::json::array boundsArray(const odb::Rect& r);
 
 boost::json::object serializeTechResponse(const TileGenerator& gen);
 boost::json::object serializeBoundsResponse(const TileGenerator& gen,
                                             bool shapes_ready);
+// The layer_extents response: TileGenerator::layerExtents() on the tile grid.
+boost::json::object serializeLayerExtentsResponse(const TileGenerator& gen);
 
 }  // namespace web

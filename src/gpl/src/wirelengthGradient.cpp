@@ -76,7 +76,7 @@ std::unique_ptr<WirelengthGradientBackend> makeWirelengthGradientBackend(
     const BackendContext& ctx)
 {
 #ifdef ENABLE_GPU
-  if (gpuEnabled()) {
+  if (gpuEnabled() && !ctx.place_ios_mode) {
     ensureKokkosInitialized();
     return std::make_unique<GpuWirelengthGradientBackend>(ctx.nbc,
                                                           ctx.device_state);
@@ -115,11 +115,6 @@ void NesterovBaseCommon::getAllWireLengthGradientsWA(
 void NesterovBaseCommon::prepareDeviceWlGradients()
 {
   wl_grad_backend_->prepareDeviceGradients();
-}
-
-FloatPoint NesterovBaseCommon::getSingleWireLengthGradientWA(const GCell* gCell)
-{
-  return wl_grad_backend_->getCellGradient(gCell);
 }
 
 }  // namespace gpl

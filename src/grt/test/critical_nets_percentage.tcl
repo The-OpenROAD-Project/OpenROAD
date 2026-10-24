@@ -22,4 +22,4 @@ global_route -critical_nets_percentage 30 -verbose
 
 write_guides $guide_file
 
-diff_file critical_nets_percentage.guideok $guide_file
+diff_files critical_nets_percentage.guideok $guide_file

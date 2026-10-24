@@ -1,0 +1,1 @@
+../../../docs/src/scripts/man_tcl_check.py

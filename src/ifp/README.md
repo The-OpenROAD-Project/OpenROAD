@@ -177,7 +177,7 @@ insert_tiecells
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorPlan.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/InitFloorplan.cc) or the [swig file](./src/InitFloorplan.i).
 
 | Command Name | Description |
 | ----- | ----- |
@@ -195,10 +195,10 @@ Example scripts on running `ifp` for a sample design of `mpd_top` are as follows
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/ifp/...
 ```
 
 ## Limitations

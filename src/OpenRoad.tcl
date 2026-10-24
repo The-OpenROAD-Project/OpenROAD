@@ -46,8 +46,7 @@ sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental]\
 
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {-tech -chip} \
-    flags {-floorplan_initialize -incremental \
-           -order_wires -continue_on_errors}
+    flags {-floorplan_initialize -incremental -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -66,9 +65,6 @@ proc read_def { args } {
     utl::error "ORD" 5 "No technology has been read."
   } else {
     set tech [[ord::get_db] getTech]
-  }
-  if { [info exists flags(-order_wires)] } {
-    utl::warn "ORD" 33 "-order_wires is deprecated."
   }
   set continue_on_errors [info exists flags(-continue_on_errors)]
   set floorplan_init [info exists flags(-floorplan_initialize)]
@@ -257,12 +253,29 @@ proc read_db { args } {
   ord::read_db_cmd $filename $hierarchy
 }
 
-sta::define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {[-compression level] filename}
 
 proc write_db { args } {
+  sta::parse_key_args "write_db" args \
+    keys {-compression} \
+    flags {}
+
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
-  ord::write_db_cmd $filename
+
+  set compression_level -1
+  if { [info exists keys(-compression)] } {
+    set compression_level $keys(-compression)
+    sta::check_integer "write_db" $compression_level
+    if { $compression_level < 0 || $compression_level > 9 } {
+      utl::error "ORD" 77 "Compression level must be between 0 and 9."
+    }
+    if { ![string match "*.gz" $filename] } {
+      utl::warn "ORD" 78 "Compression level specified but output file is not a gzip file (.gz)."
+    }
+  }
+
+  ord::write_db_cmd $filename $compression_level
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }
@@ -531,7 +544,7 @@ proc ensure_units_initialized { } {
 proc clear { } {
   sta::clear_network
   sta::clear_sta
-  grt::clear
+  grt::clear_route_guides
   [get_db] clear
 }
 

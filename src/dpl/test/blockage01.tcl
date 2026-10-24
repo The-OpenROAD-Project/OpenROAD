@@ -7,4 +7,4 @@ check_placement
 
 set def_file [make_result_file blockage01.def]
 write_def $def_file
-diff_file blockage01.defok $def_file
+diff_files blockage01.defok $def_file

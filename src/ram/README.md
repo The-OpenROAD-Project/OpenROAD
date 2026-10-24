@@ -82,16 +82,16 @@ generate_ram [-mask_size bits]
 
 ## Example scripts
 
-See [test/make_8x8.tcl](test/make_8x8.tcl).
+See [test/make_8x8_sky130.tcl](test/make_8x8_sky130.tcl).
 
 ## Regression tests
 
 There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/ram/...
 ```
 
 ## Limitations

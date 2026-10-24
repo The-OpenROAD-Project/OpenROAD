@@ -10,11 +10,14 @@ or_integration_tests(
     make_parasitics5
     make_parasitics6
     make_parasitics7
+    prima_net_recycle
     set_wire_rc_tech
     set_wire_rc_tech_errors
     set_wire_rc_rdl_ignored
     set_wire_rc_selectors
     set_wire_rc_rdl_mixed_tech
+  PASSFAIL_TESTS
+    estimate_parasitics_source
 )
 
 add_executable(TestEstimateParasitics cpp/TestEstimateParasitics.cc)

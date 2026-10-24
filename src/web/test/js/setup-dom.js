@@ -9,8 +9,12 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
 globalThis.document = dom.window.document;
 globalThis.window = dom.window;
 globalThis.Event = dom.window.Event;
+globalThis.CustomEvent = dom.window.CustomEvent;
+globalThis.Node = dom.window.Node;
+globalThis.Element = dom.window.Element;
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.HTMLCanvasElement = dom.window.HTMLCanvasElement;
+globalThis.XMLSerializer = dom.window.XMLSerializer;
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 globalThis.localStorage = dom.window.localStorage;
 globalThis.matchMedia = globalThis.matchMedia || (() => ({
@@ -25,4 +29,13 @@ globalThis.ResizeObserver = globalThis.ResizeObserver || class {
     observe() {}
     disconnect() {}
 };
+globalThis.requestAnimationFrame = globalThis.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || ((id) => clearTimeout(id));
+if (dom.window.customElements) {
+    globalThis.customElements = dom.window.customElements;
+}
+if (dom.window.AbortController) {
+    globalThis.AbortController = dom.window.AbortController;
+    globalThis.AbortSignal = dom.window.AbortSignal;
+}
 export { dom };

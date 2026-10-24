@@ -14,6 +14,7 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/util.h"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
@@ -444,6 +445,10 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
     // 3.8. During the addition of new ports and new wiring we may
     // leave orphaned pins, clean them up.
     cleanUnusedHierPins(source_parent_tree, dest_parent_tree);
+  } else if (source_db_mod_net && dest_pin->getModNet() != source_db_mod_net) {
+    // Same module: the dest joins the source's hierarchical net, or the
+    // hierarchical view leaves it undriven.
+    dest_pin->connect(source_db_mod_net);
   }
 
   dlogHierConnDone();
@@ -618,6 +623,9 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
   } else {
     base_name = name;
   }
+
+  // Newly punched hierarchy ports and nets are scalar objects.
+  base_name = odb::replaceBracketsWithUnderscores(base_name);
 
   odb::dbBlock* block = db_network_->block();
   std::string full = block->makeNewNetName(

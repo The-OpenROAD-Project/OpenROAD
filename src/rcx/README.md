@@ -70,6 +70,13 @@ The `extract_parasitics` command performs parasitic extraction based on the
 routed design. If there are no information on routed design, no parasitics are
 returned. 
 
+For a 3D design, the command extracts each die using the extraction rules
+set for its technology and then extracts the inter-chip parasitics using the
+assembly design kit rules (see `set_extraction_rules_file`). Each bond
+between two dies is modeled as a resistor connecting the boundary terminals
+of the bonded bumps. 3D extraction supports only the v1 RC flow and a single
+process corner.
+
 ```tcl
 extract_parasitics
     [-ext_model_file filename]
@@ -111,6 +118,10 @@ extract_parasitics
 
 The `write_spef` command writes the `.spef` output of the parasitics stored
 in the database.
+
+For a 3D design, the command writes one file per die, appending the chip
+name to the given filename (e.g., `design.chip_name.spef`), and one
+additional file with the inter-chip parasitics (`design.bonds.spef`).
 
 ```tcl
 write_spef
@@ -520,12 +531,12 @@ Extraction Rules file generation can be found in this
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/rcx/...
 ```
 
 ## Extraction Rules File Generation

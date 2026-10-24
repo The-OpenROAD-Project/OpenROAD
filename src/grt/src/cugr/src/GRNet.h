@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -40,6 +41,9 @@ class GRNet
   void setRoutingTree(std::shared_ptr<GRTreeNode> tree)
   {
     routing_tree_ = std::move(tree);
+    // A newly installed tree is native (direction-legal) unless the
+    // caller marks it adopted afterwards.
+    adopted_ = false;
   }
   void setSlack(float slack) { slack_ = slack; }
   float getSlack() const { return slack_; }
@@ -140,6 +144,23 @@ class GRNet
   {
     return preferred_aps_;
   }
+  // The route and the access points it was routed to, for a rollback.
+  struct SavedRoute
+  {
+    std::shared_ptr<GRTreeNode> tree;
+    bool adopted;
+    std::map<int, AccessPoint> access_points;
+  };
+  SavedRoute saveRoute() const
+  {
+    return {routing_tree_, adopted_, preferred_aps_};
+  }
+  void restoreRoute(SavedRoute route)
+  {
+    routing_tree_ = std::move(route.tree);
+    adopted_ = route.adopted;
+    preferred_aps_ = std::move(route.access_points);
+  }
   // Terminals keyed by the pin index that also keys getPinAccessPoints().
   const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
   {
@@ -149,11 +170,21 @@ class GRNet
   {
     return pin_index_to_iterm_;
   }
+  // Grid point of the driver pin's selected access point, if any.
+  std::optional<PointT> getDriverAccessPoint() const;
   bool isLocal() const;
+  // Set when the routing tree was adopted from detailed routes, which may
+  // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
+  bool isAdopted() const { return adopted_; }
+  void setAdopted(bool adopted) { adopted_ = adopted; }
+  // Pins out of date (GlobalRouter kept the old route): the relief skips it.
+  bool isStale() const { return stale_; }
+  void setStale(bool stale) { stale_ = stale; }
 
  private:
   int index_;
   odb::dbNet* db_net_;
+  int driver_pin_index_ = -1;
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
@@ -164,6 +195,8 @@ class GRNet
   float slack_;
   bool is_critical_;
   bool is_res_aware_ = false;
+  bool adopted_ = false;
+  bool stale_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

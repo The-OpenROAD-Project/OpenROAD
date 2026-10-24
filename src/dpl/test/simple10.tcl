@@ -7,4 +7,4 @@ check_placement
 
 set def_file [make_result_file simple10.def]
 write_def $def_file
-diff_file simple10.defok $def_file
+diff_files simple10.defok $def_file

@@ -84,6 +84,7 @@ PY_TESTS = [
         name = test_name,
         srcs = [test_name + ".py"],
         data = [":" + test_name + "_resources"],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",

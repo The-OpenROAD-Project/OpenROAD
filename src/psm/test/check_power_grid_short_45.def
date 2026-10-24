@@ -1,0 +1,49 @@
+# VDD on metal3 holds two shapes with 45 degree edges, joined by a stripe:
+#
+#   the octagonal VDD pin of bump1 at (2000 2000) - (4000 4000)
+#     (2000 2600) (2600 2000) (3400 2000) (4000 2600)
+#     (4000 3400) (3400 4000) (2600 4000) (2000 3400)
+#   a 45 degree wire from (6000 3000) to (9000 6000), 340 wide
+#
+# odb holds the octagon as three boxes that cover its bottom left and top
+# right corners, which are not metal, and miss its top left and bottom
+# right corners, which are. The wire's box covers all of its bounding box.
+#
+# Signal shapes on metal3 that must be reported:
+#   inside_tl   in the top left corner of the octagon
+#   inside_br   in the bottom right corner of the octagon
+#   edge        across the left edge of the octagon
+#   wire_cross  across the 45 degree wire
+# and that must not, being clear of the metal:
+#   outside_bl  in the bottom left corner of the octagon's bounding box
+#   outside_tr  in the top right corner of the octagon's bounding box
+#   wire_box    in the bounding box of the 45 degree wire
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN short_45 ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 12000 8000 ) ;
+COMPONENTS 1 ;
+    - bump1 OCT_BUMP + PLACED ( 2000 2000 ) N ;
+END COMPONENTS
+SPECIALNETS 8 ;
+    - VDD ( bump1 VDD ) + USE POWER
+      + ROUTED metal3 200 + SHAPE STRIPE ( 3800 3000 ) ( 6000 3000 )
+      NEW metal3 340 + SHAPE STRIPE ( 6000 3000 ) ( 9000 6000 ) ;
+    - inside_tl + USE SIGNAL
+      + RECT metal3 ( 1600 3450 ) ( 2550 3650 ) ;
+    - inside_br + USE SIGNAL
+      + RECT metal3 ( 3450 2350 ) ( 4400 2550 ) ;
+    - edge + USE SIGNAL
+      + RECT metal3 ( 1800 2900 ) ( 2100 3100 ) ;
+    - wire_cross + USE SIGNAL
+      + RECT metal3 ( 7300 4000 ) ( 7700 4400 ) ;
+    - outside_bl + USE SIGNAL
+      + RECT metal3 ( 1800 1800 ) ( 2200 2200 ) ;
+    - outside_tr + USE SIGNAL
+      + RECT metal3 ( 3800 3800 ) ( 4200 4200 ) ;
+    - wire_box + USE SIGNAL
+      + RECT metal3 ( 6000 5000 ) ( 6400 5400 ) ;
+END SPECIALNETS
+END DESIGN
