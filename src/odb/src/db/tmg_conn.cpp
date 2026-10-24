@@ -1598,17 +1598,12 @@ int tmg_conn::getStartNode()
   // will NOT work if a die with such a net is loaded independently as a 2D
   // design. This will need to be revisited.
   if (bt_drv && bt_drv->getBPins().empty()) {
-    dbChipBump* chip_bump = bt_drv->getChipBump();
+    // Start at the bump bound to this port.
+    for (const Terminal& rc_term : terminals_) {
+      dbITerm* iterm = rc_term.iterm;
 
-    if (chip_bump) {
-      dbInst* bump = chip_bump->getInst();
-
-      for (const Terminal& rc_term : terminals_) {
-        dbITerm* iterm = rc_term.iterm;
-
-        if (iterm && (iterm->getInst() == bump) && rc_term.pt) {
-          return (rc_term.pt - wire_points_.data());
-        }
+      if (iterm && iterm->getInst()->getBumpBTerm() == bt_drv && rc_term.pt) {
+        return (rc_term.pt - wire_points_.data());
       }
     }
   }

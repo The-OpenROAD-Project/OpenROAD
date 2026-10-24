@@ -9,6 +9,7 @@
 #include "dbChipBump.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
+#include "dbInst.h"
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
@@ -16,9 +17,12 @@
 // User Code Begin Includes
 #include <cstdint>
 
+#include "dbBlock.h"
 #include "dbChip.h"
 #include "dbChipInst.h"
+#include "dbChipRegionBumpItr.h"
 #include "dbChipRegionInst.h"
+#include "dbNullIterator.h"
 #include "dbTech.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
@@ -46,6 +50,9 @@ bool _dbChipRegion::operator==(const _dbChipRegion& rhs) const
     return false;
   }
   if (z_max_ != rhs.z_max_) {
+    return false;
+  }
+  if (bumps_ != rhs.bumps_) {
     return false;
   }
   if (*chip_bump_tbl_ != *rhs.chip_bump_tbl_) {
@@ -78,6 +85,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.box_;
   stream >> obj.z_min_;
   stream >> obj.z_max_;
+  if (obj.getDatabase()->isSchema(kSchemaInstChipRegionList)) {
+    stream >> obj.bumps_;
+  }
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
@@ -92,6 +102,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj)
   stream << obj.box_;
   stream << obj.z_min_;
   stream << obj.z_max_;
+  stream << obj.bumps_;
   stream << *obj.chip_bump_tbl_;
   return stream;
 }
@@ -152,6 +163,16 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 }
 
 // User Code Begin dbChipRegionPublicMethods
+
+dbSet<dbInst> dbChipRegion::getBumps() const
+{
+  _dbChipRegion* obj = (_dbChipRegion*) this;
+  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
+  if (block == nullptr) {
+    return dbSet<dbInst>(obj, &dbNullIterator::null_iterator);
+  }
+  return dbSet<dbInst>(obj, block->chip_region_bump_itr_);
+}
 
 // Returns the region's cuboid in the master chip's coordinate system.
 // Note: This differs from dbChipRegionInst::getCuboid() which returns

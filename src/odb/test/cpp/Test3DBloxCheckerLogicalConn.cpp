@@ -157,7 +157,9 @@ TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_mismatching_nets)
   EXPECT_EQ(markers.size(), 1);
   if (!markers.empty()) {
     auto sources = markers[0]->getSources();
-    EXPECT_EQ(sources.size(), 2);
+    // TODO: use unfolded objects as marker sources; the current folded
+    // sources do not identify the right occurrence.
+    EXPECT_TRUE(sources.empty());
 
     // Check message correctness conceptually
     EXPECT_NE(markers[0]->getComment().find("logical connectivity mismatch"),

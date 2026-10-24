@@ -15,6 +15,18 @@
 namespace odb {
 namespace {
 
+// A bump master has exactly one pin.
+dbMaster* createBumpMaster(dbLib* lib, const char* name)
+{
+  dbMaster* master = dbMaster::create(lib, name);
+  master->setWidth(100);
+  master->setHeight(100);
+  master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm::create(master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  master->setFrozen();
+  return master;
+}
+
 struct ChipHierarchyFixture : public SimpleDbFixture
 {
   ChipHierarchyFixture()
@@ -63,12 +75,12 @@ struct ChipHierarchyFixture : public SimpleDbFixture
         io_chip, "R1", dbChipRegion::Side::FRONT, layer_M1);
     dbChipRegion::create(cache_chip, "R1", dbChipRegion::Side::BACK, nullptr);
     // create chip bumps
-    dbMaster* io_master
-        = createMaster1X1(lib2, "io_master", 100, 100, "in", "out");
-    dbInst* io_cell = dbInst::create(io_chip->getBlock(), io_master, "io_bump");
+    dbMaster* bump_master = createBumpMaster(lib2, "bump_master");
+    dbInst* io_cell
+        = dbInst::create(io_chip->getBlock(), bump_master, "io_bump");
     io_bump = dbChipBump::create(io_chip_region_r1, io_cell);
-    io_master = createMaster1X1(lib1, "io_master", 100, 100, "in", "out");
-    io_cell = dbInst::create(memory_chip->getBlock(), io_master, "io_bump");
+    bump_master = createBumpMaster(lib1, "bump_master");
+    io_cell = dbInst::create(memory_chip->getBlock(), bump_master, "io_bump");
     dbChipBump::create(memory_chip_region_r1, io_cell);
   }
   void createChipInsts()
@@ -411,6 +423,7 @@ TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
   dbLib* lib = db_->findLib("lib1");
   dbMaster* bump_master = dbMaster::create(lib, "BUMP_CELL");
   bump_master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm::create(bump_master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
   bump_master->setFrozen();
   dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
   dbChipBump* bump = dbChipBump::create(region, bump_inst);

@@ -582,6 +582,8 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
     for (const auto& entry : data.entries) {
       createBump(entry, chip_region);
     }
+    // Bumps are prepended to the region; restore bump map row order.
+    chip_region->getBumps().reverse();
   }
 }
 
@@ -666,6 +668,7 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     }
     if (bterm != nullptr) {
       bump->setBTerm(bterm);
+      inst->setBumpBTerm(bterm);
       if (bump->getNet()) {
         bterm->connect(bump->getNet());
       }

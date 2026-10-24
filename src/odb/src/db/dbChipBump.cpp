@@ -110,30 +110,29 @@ dbInst* dbChipBump::getInst() const
   return (dbInst*) block->inst_tbl_->getPtr(obj->inst_);
 }
 
+// The net and port of a bump live on its dbInst; the stored net_ and
+// bterm_ are still written but no longer read for answers. A bump's pin
+// is its inst's first iterm (bump masters have exactly one pin).
 dbNet* dbChipBump::getNet() const
 {
-  _dbChipBump* obj = (_dbChipBump*) this;
-  if (obj->net_ == 0) {
-    return nullptr;
-  }
-  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
-  return (dbNet*) block->net_tbl_->getPtr(obj->net_);
+  return getInst()->getITerm(0U)->getNet();
 }
 
 dbBTerm* dbChipBump::getBTerm() const
 {
-  _dbChipBump* obj = (_dbChipBump*) this;
-  if (obj->bterm_ == 0) {
-    return nullptr;
-  }
-  _dbBlock* block = (_dbBlock*) getChip()->getBlock();
-  return (dbBTerm*) block->bterm_tbl_->getPtr(obj->bterm_);
+  return getInst()->getBumpBTerm();
 }
 
 void dbChipBump::setNet(dbNet* net)
 {
   _dbChipBump* obj = (_dbChipBump*) this;
-  obj->net_ = net->getId();
+  dbITerm* pin = getInst()->getITerm(0U);
+  obj->net_ = net != nullptr ? net->getId() : 0;
+  if (net != nullptr) {
+    pin->connect(net);
+  } else {
+    pin->disconnect();
+  }
 }
 
 void dbChipBump::setBTerm(dbBTerm* bterm)
@@ -143,6 +142,7 @@ void dbChipBump::setBTerm(dbBTerm* bterm)
   _dbBTerm* _bterm = (_dbBTerm*) bterm;
   _bterm->chip_region_ = obj->chip_region_;
   _bterm->chip_bump_ = obj->getOID();
+  getInst()->setBumpBTerm(bterm);
 }
 
 dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
@@ -172,11 +172,16 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
         inst->getName());
   }
 
+  _dbInst::checkBumpMaster(_inst, _chip_region);
+
   _dbChipBump* obj = _chip_region->chip_bump_tbl_->create();
   obj->inst_ = _inst->getOID();
   obj->chip_ = _chip->getOID();
   obj->chip_region_ = _chip_region->getOID();
-  _inst->chip_region_ = _chip_region->getOID();
+  if (_inst->chip_region_ != _chip_region->getOID()) {
+    _dbInst::unlinkChipRegion(_inst);
+    _dbInst::linkChipRegion(_inst, _chip_region);
+  }
   _inst->bump_ = obj->getOID();
   return (dbChipBump*) obj;
 }

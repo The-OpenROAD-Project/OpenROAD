@@ -32,12 +32,39 @@ class TestOrderWires : public tst::Fixture
     block_ = dbBlock::create(chip, "top");
   }
 
+  // A bump master must have exactly one pin. Copy INV_X1's "A" pin so the
+  // bump pad keeps the same geometry.
+  dbMaster* createBumpMaster()
+  {
+    dbMaster* inv = db_->findMaster("INV_X1");
+    dbMaster* master = dbMaster::create(inv->getLib(), "BUMP_A");
+    master->setType(dbMasterType::COVER_BUMP);
+    master->setWidth(inv->getWidth());
+    master->setHeight(inv->getHeight());
+    dbMTerm* inv_pin = inv->findMTerm("A");
+    dbMTerm* pin
+        = dbMTerm::create(master, "A", dbIoType::INPUT, dbSigType::SIGNAL);
+    for (dbMPin* inv_mpin : inv_pin->getMPins()) {
+      dbMPin* mpin = dbMPin::create(pin);
+      for (dbBox* box : inv_mpin->getGeometry()) {
+        dbBox::create(mpin,
+                      box->getTechLayer(),
+                      box->xMin(),
+                      box->yMin(),
+                      box->xMax(),
+                      box->yMax());
+      }
+    }
+    master->setFrozen();
+    return master;
+  }
+
   InputBumpNet buildInputBumpNet()
   {
     InputBumpNet bump_net;
 
     dbInst* bump = makeInst(block_,
-                            db_->findMaster("INV_X1"),
+                            createBumpMaster(),
                             "bump",
                             {.location = {50000, 10000},
                              .status = dbPlacementStatus::PLACED,

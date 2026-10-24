@@ -27,6 +27,29 @@ class DbvFixture : public tst::DbFixture
   }
 };
 
+TEST_F(DbvFixture, test_bump_map_order)
+{
+  // Region bump lists follow bump map row order (bump1, bump2).
+  dbChip* chip = db_->findChip("SoC");
+  ASSERT_NE(chip, nullptr);
+  dbChipRegion* region = chip->findChipRegion("back_reg");
+  ASSERT_NE(region, nullptr);
+  std::vector<std::string> names;
+  for (dbInst* inst : region->getBumps()) {
+    names.push_back(inst->getName());
+  }
+  EXPECT_EQ(names, (std::vector<std::string>{"bump1", "bump2"}));
+  std::vector<std::string> chip_names;
+  for (dbInst* inst : chip->getBumps()) {
+    chip_names.push_back(inst->getName());
+  }
+  EXPECT_EQ(chip_names, names);
+  for (dbInst* inst : region->getBumps()) {
+    EXPECT_EQ(inst->getChipRegion(), region);
+    EXPECT_EQ(inst->getITerms().size(), 1);
+  }
+}
+
 TEST_F(DbvFixture, test_3dbv)
 {
   // Test that database precision was set correctly
@@ -407,6 +430,7 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   dbLib* lib = db_->findLib("lib1");
   dbMaster* bump_master = dbMaster::create(lib, "BUMP_CELL");
   bump_master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm::create(bump_master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
   bump_master->setFrozen();
   dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
   ASSERT_NE(bump_inst, nullptr);

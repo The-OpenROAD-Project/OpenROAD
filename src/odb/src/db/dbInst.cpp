@@ -111,6 +111,7 @@ _dbInst::_dbInst(_dbDatabase*)
 
 _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
     : flags_(i.flags_),
+      bump_bterm_(i.bump_bterm_),
       name_(nullptr),
       x_(i.x_),
       y_(i.y_),
@@ -129,6 +130,7 @@ _dbInst::_dbInst(_dbDatabase*, const _dbInst& i)
       hierarchy_(i.hierarchy_),
       chip_region_(i.chip_region_),
       bump_(i.bump_),
+      chip_region_next_(i.chip_region_next_),
       iterms_(i.iterms_),
       halo_(i.halo_),
       pin_access_idx_(i.pin_access_idx_)
@@ -167,6 +169,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbInst& inst)
   stream << inst.hierarchy_;
   stream << inst.chip_region_;
   stream << inst.bump_;
+  stream << inst.chip_region_next_;
+  stream << inst.bump_bterm_;
   stream << inst.iterms_;
   stream << inst.halo_;
   stream << inst.pin_access_idx_;
@@ -196,6 +200,10 @@ dbIStream& operator>>(dbIStream& stream, _dbInst& inst)
   if (inst.getDatabase()->isSchema(kSchemaInstBump)) {
     stream >> inst.chip_region_;
     stream >> inst.bump_;
+  }
+  if (inst.getDatabase()->isSchema(kSchemaInstChipRegionList)) {
+    stream >> inst.chip_region_next_;
+    stream >> inst.bump_bterm_;
   }
   stream >> inst.iterms_;
   stream >> inst.halo_;
@@ -315,6 +323,14 @@ bool _dbInst::operator==(const _dbInst& rhs) const
   }
 
   if (bump_ != rhs.bump_) {
+    return false;
+  }
+
+  if (chip_region_next_ != rhs.chip_region_next_) {
+    return false;
+  }
+
+  if (bump_bterm_ != rhs.bump_bterm_) {
     return false;
   }
 
@@ -1310,6 +1326,139 @@ uint32_t dbInst::getPinAccessIdx() const
   return inst->pin_access_idx_;
 }
 
+void _dbInst::checkBumpMaster(_dbInst* inst, _dbChipRegion* chip_region)
+{
+  dbMaster* master = ((dbInst*) inst)->getMaster();
+  const uint32_t num_pins = master->getMTerms().size();
+  if (num_pins != 1) {
+    inst->getLogger()->error(utl::ODB,
+                             1223,
+                             "Cannot add instance {} to chip region {}. Its "
+                             "master {} must have exactly one pin, found {}",
+                             inst->name_,
+                             chip_region->name_,
+                             master->getName(),
+                             num_pins);
+  }
+}
+
+void _dbInst::linkChipRegion(_dbInst* inst, _dbChipRegion* chip_region)
+{
+  inst->chip_region_ = chip_region->getOID();
+  inst->chip_region_next_ = chip_region->bumps_;
+  chip_region->bumps_ = inst->getOID();
+}
+
+void _dbInst::unlinkChipRegion(_dbInst* inst)
+{
+  if (!inst->chip_region_.isValid()) {
+    return;
+  }
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  _dbChip* chip = (_dbChip*) ((dbBlock*) block)->getChip();
+  _dbChipRegion* chip_region
+      = chip->chip_region_tbl_->getPtr(inst->chip_region_);
+  const uint32_t id = inst->getOID();
+  _dbInst* prev = nullptr;
+  uint32_t cur = chip_region->bumps_;
+  while (cur != 0 && cur != id) {
+    prev = block->inst_tbl_->getPtr(cur);
+    cur = prev->chip_region_next_;
+  }
+  if (cur == id) {
+    if (prev != nullptr) {
+      prev->chip_region_next_ = inst->chip_region_next_;
+    } else {
+      chip_region->bumps_ = inst->chip_region_next_;
+    }
+  }
+  inst->chip_region_ = 0;
+  inst->chip_region_next_ = 0;
+}
+
+dbChipRegion* dbInst::getChipRegion() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  if (!inst->chip_region_.isValid()) {
+    return nullptr;
+  }
+  _dbChip* chip = (_dbChip*) getBlock()->getChip();
+  return (dbChipRegion*) chip->chip_region_tbl_->getPtr(inst->chip_region_);
+}
+
+void dbInst::setChipRegion(dbChipRegion* chip_region)
+{
+  _dbInst* inst = (_dbInst*) this;
+  // Region bump lists are resolved in the top block of the region's chip,
+  // so the instance must live there.
+  if (chip_region != nullptr
+      && chip_region->getChip()->getBlock() != getBlock()) {
+    inst->getLogger()->error(utl::ODB,
+                             1221,
+                             "Cannot set chip region {} on instance {}. The "
+                             "instance is not in the top block of chip {}",
+                             chip_region->getName(),
+                             inst->name_,
+                             chip_region->getChip()->getName());
+  }
+  if (getChipRegion() == chip_region) {
+    return;
+  }
+  if (inst->bump_.isValid()) {
+    inst->getLogger()->error(utl::ODB,
+                             1222,
+                             "Cannot change the chip region of instance {} "
+                             "with an associated chip bump",
+                             inst->name_);
+  }
+  if (chip_region != nullptr) {
+    _dbInst::checkBumpMaster(inst, (_dbChipRegion*) chip_region);
+  }
+  _dbInst::unlinkChipRegion(inst);
+  if (chip_region != nullptr) {
+    _dbInst::linkChipRegion(inst, (_dbChipRegion*) chip_region);
+  } else {
+    // Leaving all regions drops the port binding; a move keeps it.
+    inst->bump_bterm_ = 0;
+  }
+}
+
+void dbInst::setBumpBTerm(dbBTerm* bterm)
+{
+  _dbInst* inst = (_dbInst*) this;
+  if (bterm == nullptr) {
+    inst->bump_bterm_ = 0;
+    return;
+  }
+  if (!inst->chip_region_.isValid()) {
+    inst->getLogger()->error(utl::ODB,
+                             1224,
+                             "Cannot bind port {} to instance {}. The "
+                             "instance has no chip region",
+                             bterm->getName(),
+                             inst->name_);
+  }
+  if (bterm->getBlock() != getBlock()) {
+    inst->getLogger()->error(utl::ODB,
+                             1225,
+                             "Cannot bind port {} to instance {}. The port "
+                             "is not in the instance's block",
+                             bterm->getName(),
+                             inst->name_);
+  }
+  inst->bump_bterm_ = bterm->getId();
+}
+
+dbBTerm* dbInst::getBumpBTerm() const
+{
+  _dbInst* inst = (_dbInst*) this;
+  if (!inst->bump_bterm_.isValid()) {
+    return nullptr;
+  }
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  return (dbBTerm*) block->bterm_tbl_->getPtr(inst->bump_bterm_);
+}
+
 dbChipBump* dbInst::getChipBump() const
 {
   _dbInst* inst = (_dbInst*) this;
@@ -1607,6 +1756,9 @@ void dbInst::destroy(dbInst* inst_)
   if (inst->group_) {
     inst_->getGroup()->removeInst(inst_);
   }
+
+  _dbInst::unlinkChipRegion(inst);
+  inst->bump_bterm_ = 0;
 
   for (auto cb : block->callbacks_) {
     cb->inDbInstDestroy(inst_);
