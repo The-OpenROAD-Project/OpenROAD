@@ -74,6 +74,7 @@ test_suite(
         ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":script_view_test",
         ":tile_generator_test",
         ":web_assets_test",
     ],
@@ -494,6 +495,22 @@ cc_test(
         "//src/web:core",
         "//third-party/lodepng",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "script_view_test",
+    srcs = ["cpp/TestScriptView.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

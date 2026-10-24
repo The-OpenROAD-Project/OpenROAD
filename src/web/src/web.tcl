@@ -52,7 +52,8 @@ proc save_image { args } {
   sta::parse_key_args "save_image" args \
     keys {-area -width -resolution} flags {-web}
 
-  set use_web [info exists flags(-web)]
+  # Without Qt the web renderer is the only one there is.
+  set use_web [expr { [info exists flags(-web)] || ![gui::supported] }]
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
@@ -195,8 +196,8 @@ proc web_load_chiplet_heatmap { args } {
 # is why a Qt build launched without -gui lands on the web viewer rather than
 # on the GUI command's "not usable in non-GUI mode".
 #
-# gui::has_ui is the predicate: gui.i exports it in a Qt build and stub.cpp
-# defines it in a build without Qt, so it always answers.
+# gui::has_ui is the predicate: gui.i exports it in every build, so it always
+# answers.
 
 namespace eval web {
 # Options the web viewer adds that the Qt path cannot honour: its toolbar
