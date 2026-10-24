@@ -5,6 +5,7 @@ or_integration_tests(
   "web"
   PASSFAIL_TESTS
     cpp_tests
+    save_image_cluster_view
 )
 
 add_subdirectory(cpp)

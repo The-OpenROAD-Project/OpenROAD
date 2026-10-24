@@ -278,6 +278,63 @@ class CallBack : public dbBlockCallBackObj
   }
   // dbObstruction End
 
+  // dbGroup Start
+  void inDbGroupCreate(dbGroup* group) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Create group ") + group->getName());
+    }
+  }
+  void inDbGroupDestroy(dbGroup* group) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Destroy group ") + group->getName());
+    }
+  }
+  void inDbGroupAddInst(dbGroup* group, dbInst* inst) override
+  {
+    if (!_pause) {
+      events.push_back("Add inst " + inst->getName() + " to group "
+                       + group->getName());
+    }
+  }
+  void inDbGroupRemoveInst(dbGroup* group, dbInst* inst) override
+  {
+    if (!_pause) {
+      events.push_back("Remove inst " + inst->getName() + " from group "
+                       + group->getName());
+    }
+  }
+  void inDbGroupAddModInst(dbGroup* group, dbModInst* modinst) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Add modinst ") + modinst->getName()
+                       + " to group " + group->getName());
+    }
+  }
+  void inDbGroupRemoveModInst(dbGroup* group, dbModInst* modinst) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Remove modinst ") + modinst->getName()
+                       + " from group " + group->getName());
+    }
+  }
+  void inDbGroupAddGroup(dbGroup* group, dbGroup* child) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Add group ") + child->getName()
+                       + " to group " + group->getName());
+    }
+  }
+  void inDbGroupRemoveGroup(dbGroup* group, dbGroup* child) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Remove group ") + child->getName()
+                       + " from group " + group->getName());
+    }
+  }
+  // dbGroup End
+
   // dbRegion Start
   void inDbRegionCreate(dbRegion* region) override
   {

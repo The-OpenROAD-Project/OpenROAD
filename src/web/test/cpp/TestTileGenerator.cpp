@@ -995,6 +995,7 @@ TEST_F(TileGeneratorTest, OutOfRangeDprIsClampedNotHonored)
                                    nullptr,
                                    nullptr,
                                    nullptr,
+                                   nullptr,
                                    dpr);
   };
 
@@ -1979,6 +1980,14 @@ static size_t countPixelsOfColor(const std::vector<unsigned char>& rgba,
   return count;
 }
 
+// The display option that turns the overlay on; without it the pseudo-layer
+// draws nothing, whatever colors it is handed.
+const TileVisibility kModuleView = [] {
+  TileVisibility vis;
+  vis.module_view = true;
+  return vis;
+}();
+
 TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
 {
   odb::dbInst* left = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
@@ -2004,7 +2013,7 @@ TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
   unsigned w = 0, h = 0;
   const auto pixels = decodePng(
       tile_gen_->generateTile(
-          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
       w,
       h);
 
@@ -2035,7 +2044,7 @@ TEST_F(TileGeneratorTest, TranslucentModuleColourIsNotQuantized)
   unsigned w = 0, h = 0;
   const auto pixels = decodePng(
       tile_gen_->generateTile(
-          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
       w,
       h);
   size_t exact = 0;
@@ -2067,7 +2076,7 @@ TEST_F(TileGeneratorTest, NameGroupMappingIsDroppedAfterAnEdit)
     return countPixelsOfColor(
         decodePng(
             tile_gen_->generateTile(
-                "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+                "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
             w,
             h),
         red);
@@ -3052,6 +3061,7 @@ TEST_F(TileGeneratorTest, TileContentRegistersWithIdealGrid)
                                               nullptr,
                                               nullptr,
                                               nullptr,
+                                              nullptr,
                                               dpr,
                                               dim),
                       w,
@@ -3131,6 +3141,7 @@ TEST_F(TileGeneratorTest, ExplicitTilePixelCountIsHonoured)
                                           {},
                                           {},
                                           {},
+                                          nullptr,
                                           nullptr,
                                           nullptr,
                                           nullptr,
@@ -3228,6 +3239,7 @@ TEST_F(TileGeneratorTest, ShapeCrossingTileSeamStaysWhole)
                                                         nullptr,
                                                         nullptr,
                                                         nullptr,
+                                                        nullptr,
                                                         dpr,
                                                         dim),
                                 w,
@@ -3278,6 +3290,7 @@ TEST_F(TileGeneratorTest, TilePixelCountIsExactAcrossDprMatrix)
                                             nullptr,
                                             nullptr,
                                             nullptr,
+                                            nullptr,
                                             dpr_case.dpr,
                                             expected_px),
                     w,
@@ -3308,6 +3321,7 @@ TEST_F(TileGeneratorTest, TilePixelCountFallsBackToDprWhenUnspecified)
                                       {},
                                       {},
                                       {},
+                                      nullptr,
                                       nullptr,
                                       nullptr,
                                       nullptr,
@@ -3343,6 +3357,7 @@ TEST_F(TileGeneratorTest, TilePixelCountAndDprAreIndependent)
                                       {},
                                       {},
                                       {},
+                                      nullptr,
                                       nullptr,
                                       nullptr,
                                       nullptr,
@@ -5109,6 +5124,7 @@ TEST_F(TileGeneratorTest, DebugBorderTracesFullHiDpiTile)
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
                                      /*module_colors=*/nullptr,
+                                     /*group_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -5153,7 +5169,7 @@ TEST_F(TileGeneratorTest, FocusNetEmptySetSameAsNull)
   // Empty focus_net_ids should behave the same as nullptr (all nets visible).
   std::set<uint32_t> empty_set;
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &empty_set);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &empty_set);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -5172,7 +5188,7 @@ TEST_F(TileGeneratorTest, FocusNetNonMatchingIdProducesValidTile)
   // filtered).
   std::set<uint32_t> focus_ids{99999};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -5191,7 +5207,7 @@ TEST_F(TileGeneratorTest, FocusNetWithRealNetId)
   // the tile should be generated without errors.
   std::set<uint32_t> focus_ids{net->getId()};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -6284,6 +6300,7 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
                                      /*module_colors=*/nullptr,
+                                     /*group_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -6291,6 +6308,382 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
   EXPECT_EQ(w, 512u);
   EXPECT_EQ(h, 512u);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// The `_clusters` layer colors each instance by the dbGroup it belongs to.
+// This is how MPL's clustering (rtl_macro_placer -keep_clustering_data, which
+// writes the cluster tree as nested dbGroups) becomes visible in the layout.
+TEST_F(TileGeneratorTest, ClustersLayerColorsInstancesByGroup)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  bool found_red = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i] == 255 && pixels[i + 1] == 0 && pixels[i + 2] == 0
+        && pixels[i + 3] > 0) {
+      found_red = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_red) << "instance was not painted in its cluster color";
+}
+
+// Only the clusters named in the color map are painted — what lets the Clusters
+// panel isolate one by narrowing the map to its subtree.
+TEST_F(TileGeneratorTest, ClustersLayerPaintsOnlyTheGroupsInTheColorMap)
+{
+  odb::dbInst* red_inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbInst* other_inst = placeInst("BUF_X16", "buf2", 30000, 10000);
+  odb::dbGroup* red_group = odb::dbGroup::create(block_, "cluster_1");
+  red_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  red_group->addInst(red_inst);
+  odb::dbGroup* other_group = odb::dbGroup::create(block_, "cluster_2");
+  other_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  other_group->addInst(other_inst);
+  makeTileGen();
+
+  // Only cluster_1 is in the map — cluster_2 is the "isolated away" one.
+  std::map<uint32_t, Color> group_colors;
+  group_colors[red_group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  // Every painted pixel is cluster_1's red: nothing was drawn for the cluster
+  // left out of the map.
+  size_t painted = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] == 0) {
+      continue;
+    }
+    ++painted;
+    EXPECT_EQ(pixels[i], 255);
+    EXPECT_EQ(pixels[i + 1], 0);
+    EXPECT_EQ(pixels[i + 2], 0);
+  }
+  EXPECT_GT(painted, 0u) << "the cluster in the map was not painted at all";
+}
+
+// The overlay is switched by its visibility flag, not by mounting/unmounting
+// the layer: with colors in hand but the flag off, the tile must come out
+// empty.
+TEST_F(TileGeneratorTest, ColorOverlaysAreGatedOnTheirVisibilityFlag)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &module_colors,
+                                       &group_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  // Flags off (the default): both overlays draw nothing.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", {})));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", {})));
+
+  TileVisibility clusters_on;
+  clusters_on.cluster_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", clusters_on)));
+  // One flag must not switch on the other overlay.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", clusters_on)));
+
+  TileVisibility modules_on;
+  modules_on.module_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_modules", modules_on)));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", modules_on)));
+}
+
+// Hiding a cell type in Display Controls hides its color as well: the overlay
+// fills the instance itself, so a colored cell the user switched off would
+// otherwise stay on screen with nothing under it.  Qt has the same behavior —
+// drawModuleView() iterates the list already filtered by isInstanceVisible().
+TEST_F(TileGeneratorTest, ColorOverlaysSkipHiddenInstances)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &module_colors,
+                                       &group_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  ASSERT_TRUE(hasNonTransparentPixel(render("_clusters", vis)));
+  ASSERT_TRUE(hasNonTransparentPixel(render("_modules", vis)));
+
+  // buf1 is a stdcell: unticking Std Cells must empty both overlays.
+  vis.stdcells = false;
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", vis)))
+      << "a hidden instance was still painted in its group color";
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", vis)))
+      << "a hidden instance was still painted in its module color";
+
+  // Per category, not "any flag off blanks the tile": another cell type's flag
+  // leaves the stdcell painted.
+  TileVisibility macros_off;
+  macros_off.cluster_view = true;
+  macros_off.macros = false;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", macros_off)));
+}
+
+// The map the tile path falls back to when a session has never sent one.
+// Walking the hierarchy per tile would be absurd, so it is computed once and
+// held until the design moves -- the same contract as the other design-derived
+// overlay caches.
+TEST_F(TileGeneratorTest, DefaultOwnerColorsAreCachedUntilTheDesignChanges)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const auto first = tile_gen_->defaultGroupColors();
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first->count(group->getId()), 1u)
+      << "the group the panel would color must be in the default map";
+  EXPECT_EQ(tile_gen_->defaultGroupColors(), first)
+      << "a second call must not rebuild the map";
+
+  tile_gen_->eagerInit();
+  EXPECT_NE(tile_gen_->defaultGroupColors(), first)
+      << "a design reload must drop it";
+}
+
+// A group created after the map was first built has to reach it.  ODB fires no
+// callback for a group edit unless dbGroup does (see dbBlockCallBackObj), and
+// without one the cache would hand back a palette that does not mention the new
+// cluster -- the overlay would leave it unpainted until a reload.
+//
+// Every instance is placed BEFORE the first read: placing one bumps
+// Search::revision() through inDbInstPlacementStatusBefore, which would drop
+// the cache for the wrong reason and hide the bug.
+TEST_F(TileGeneratorTest, DefaultGroupColorsFollowAGroupCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  placeInst("BUF_X16", "buf2", 30000, 30000);
+  odb::dbGroup* first_group = odb::dbGroup::create(block_, "cluster_1");
+  first_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  first_group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultGroupColors();
+  ASSERT_NE(before, nullptr);
+  ASSERT_EQ(before->count(first_group->getId()), 1u);
+
+  odb::dbGroup* late = odb::dbGroup::create(block_, "cluster_2");
+  late->setType(odb::dbGroupType::VISUAL_DEBUG);
+  late->addInst(block_->findInst("buf2"));
+
+  const auto after = tile_gen_->defaultGroupColors();
+  ASSERT_NE(after, nullptr);
+  EXPECT_NE(after, before) << "the group edit did not drop the cached map";
+  EXPECT_EQ(after->count(late->getId()), 1u)
+      << "the group created after the first build is missing from the map";
+}
+
+// The same for the module overlay: a module created after the first read has to
+// reach the map.  Search overrides inDbInstDestroy and inDbPostMoveInst but not
+// the module callbacks, so nothing told it the hierarchy grew.
+TEST_F(TileGeneratorTest, DefaultModuleColorsFollowAModuleCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultModuleColors();
+  ASSERT_NE(before, nullptr);
+
+  odb::dbModule* late = odb::dbModule::create(block_, "late_module");
+  ASSERT_NE(late, nullptr);
+
+  EXPECT_NE(tile_gen_->defaultModuleColors(), before)
+      << "the module edit did not drop the cached map";
+}
+
+// A group edit has to reach the clients, but `rtl_macro_placer
+// -keep_clustering_data` adds every instance to a cluster one call at a time --
+// 158k of them on ariane133.  Announcing each would clear the tile cache and
+// broadcast that many times, so the latch (Search::overlay_owners_init) lets
+// only the first edit after a palette was built through.
+TEST_F(TileGeneratorTest, ABatchOfGroupEditsNotifiesOnce)
+{
+  for (int i = 0; i < 8; ++i) {
+    placeInst("BUF_X16", ("buf" + std::to_string(i)).c_str(), 10000 * i, 10000);
+  }
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  // The overlay has to have been drawn for the edit to be worth announcing,
+  // the same valid→invalid transition the instance index relies on.
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const auto colors = tile_gen_->defaultGroupColors();
+  ASSERT_NE(colors, nullptr);
+  tile_gen_->generateTile("_clusters",
+                          0,
+                          0,
+                          0,
+                          vis,
+                          /*highlight_rects=*/{},
+                          /*highlight_polys=*/{},
+                          /*colored_rects=*/{},
+                          /*flight_lines=*/{},
+                          /*module_colors=*/nullptr,
+                          colors.get());
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  for (int i = 0; i < 8; ++i) {
+    group->addInst(block_->findInst(("buf" + std::to_string(i)).c_str()));
+  }
+
+  EXPECT_EQ(refresh_calls, 1) << "a batch of group edits announced itself "
+                              << refresh_calls << " times instead of once";
+  // Every one of them still moved the revision, so the next read rebuilds.
+  EXPECT_NE(tile_gen_->defaultGroupColors(), nullptr);
+}
+
+// Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
+// map must leave the tile empty.  Falling through to the generic instance
+// drawing would stack a second copy of the instances layer over the design.
+TEST_F(TileGeneratorTest, ColorOverlayLayersRenderEmptyWithoutColors)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  for (const char* layer : {"_clusters", "_modules"}) {
+    auto png = tile_gen_->generateTile(layer, 0, 0, 0, vis);
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels = decodePng(png, w, h);
+    EXPECT_FALSE(hasNonTransparentPixel(pixels))
+        << layer << " drew something without a color map";
+  }
+}
+
+// An instance outside every colored group must stay transparent, otherwise the
+// overlay would claim a cluster membership the database does not have.
+TEST_F(TileGeneratorTest, ClustersLayerSkipsUngroupedInstances)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "empty_cluster");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
 }
 
 TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
@@ -6681,8 +7074,20 @@ TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
   // the overlay size it filters at, whose blank encodings are 102 and 125
   // bytes.  A single threshold cannot separate content from blank across both.
   for (const double dpr : {1.0, 2.0}) {
-    const std::vector<unsigned char> blank = tile_gen_->generateTile(
-        "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, nullptr, dpr);
+    const std::vector<unsigned char> blank = tile_gen_->generateTile("metal1",
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     dpr);
     ASSERT_FALSE(blank.empty()) << "dpr=" << dpr;
     unsigned width = 0;
     unsigned height = 0;
@@ -6701,6 +7106,7 @@ TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
                                   {},
                                   {},
                                   {},
+                                  nullptr,
                                   nullptr,
                                   nullptr,
                                   nullptr,

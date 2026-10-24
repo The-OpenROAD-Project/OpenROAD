@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import './setup-dom.js';
+import { waitForMicrotasks } from './setup-dom.js';
+import { dbuRectToBounds } from '../../src/coordinates.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    createMenuBar,
     canonicalShortcut,
+    createMenuBar,
     eventShortcut,
 } from '../../src/menu-bar.js';
-
-function waitForMicrotasks() {
-    return new Promise(resolve => setTimeout(resolve, 0));
-}
 
 describe('MenuBar', () => {
     it('keeps the file dialog open when tcl_eval returns is_error', async () => {
@@ -133,6 +130,36 @@ describe('MenuBar', () => {
             .map(el => el.firstChild.textContent);
         assert.ok(labels.includes('Custom Scripts'), 'menu appears after rebuild');
     });
+
+    // One item per tab, like every other entry in Windows.  The Hierarchy tab
+    // once had two ("Verilog Modules" and "Instance Groups"), which duplicated
+    // the Source dropdown the tab carries in its own toolbar.
+    it('gives the Hierarchy tab a single Windows entry that only focuses it',
+       () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const focused = [];
+        const selected = [];
+        const app = {
+            designScale: 1,
+            websocketManager: { request: () => Promise.resolve({}) },
+            focusComponent(type) { focused.push(type); },
+            hierarchyPanel: { selectView(name) { selected.push(name); } },
+        };
+        createMenuBar(app);
+
+        const windowsLabel = [...document.querySelectorAll('.menu-label')]
+            .find(el => el.firstChild.textContent === 'Windows');
+        const items = [...windowsLabel.querySelectorAll('.menu-item')]
+            .filter(el => el.textContent.startsWith('Hierarchy'));
+        assert.deepEqual(items.map(el => el.textContent), ['Hierarchy']);
+
+        items[0].click();
+        assert.deepEqual(focused, ['Browser']);
+        // The source stays where the user left it: the menu focuses the tab
+        // and does not reach into the panel to reset its view.
+        assert.deepEqual(selected, []);
+    });
+
     it('binds a custom item\'s -shortcut to the key', () => {
         document.body.innerHTML = '<div id="menu-bar"></div>';
         const requests = [];
@@ -266,8 +293,9 @@ describe('MenuBar', () => {
     });
 });
 
-// ─── Options menu (2.15) ────────────────────────────────────────────────────
-
+// The Find dialog is the web counterpart of `select -type ... -name ...
+// -highlight`; `Group` is what makes highlighting a whole MPL cluster one
+// request instead of one per instance (issue #7959).
 function optionsApp(overrides = {}) {
     return {
         designScale: 1,

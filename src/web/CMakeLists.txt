@@ -97,6 +97,7 @@ target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
     src/color.cpp
+    src/group_report.cpp
     src/hierarchy_report.cpp
     src/report_html.cpp
     src/request_handler.cpp

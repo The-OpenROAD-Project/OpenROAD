@@ -27,6 +27,7 @@
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"
 #include "dbVector.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 // User Code End Includes
@@ -197,6 +198,14 @@ dbRegion* dbGroup::getRegion() const
 }
 
 // User Code Begin dbGroupPublicMethods
+namespace {
+// The block a group hangs off, for the callback loops below.
+_dbBlock* groupBlock(dbGroup* group)
+{
+  return (_dbBlock*) ((_dbGroup*) group)->getOwner();
+}
+}  // namespace
+
 void dbGroup::setType(dbGroupType type)
 {
   _dbGroup* obj = (_dbGroup*) this;
@@ -221,6 +230,9 @@ void dbGroup::addModInst(dbModInst* modinst)
   _modinst->group_ = _group->getOID();
   _modinst->group_next_ = _group->modinsts_;
   _group->modinsts_ = _modinst->getOID();
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupAddModInst(this, modinst);
+  }
 }
 
 void dbGroup::removeModInst(dbModInst* modinst)
@@ -249,6 +261,9 @@ void dbGroup::removeModInst(dbModInst* modinst)
   }
   _modinst->group_ = 0;
   _modinst->group_next_ = 0;
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupRemoveModInst(this, modinst);
+  }
 }
 
 dbSet<dbModInst> dbGroup::getModInsts()
@@ -268,6 +283,9 @@ void dbGroup::addInst(dbInst* inst)
   _inst->group_ = _group->getOID();
   _inst->group_next_ = _group->insts_;
   _group->insts_ = _inst->getOID();
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupAddInst(this, inst);
+  }
 }
 
 void dbGroup::removeInst(dbInst* inst)
@@ -296,6 +314,9 @@ void dbGroup::removeInst(dbInst* inst)
   }
   _inst->group_ = 0;
   _inst->group_next_ = 0;
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupRemoveInst(this, inst);
+  }
 }
 
 dbSet<dbInst> dbGroup::getInsts()
@@ -315,6 +336,9 @@ void dbGroup::addGroup(dbGroup* child)
   _child->parent_group_ = _group->getOID();
   _child->group_next_ = _group->groups_;
   _group->groups_ = _child->getOID();
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupAddGroup(this, child);
+  }
 }
 
 void dbGroup::removeGroup(dbGroup* child)
@@ -343,6 +367,9 @@ void dbGroup::removeGroup(dbGroup* child)
   }
   _child->parent_group_ = 0;
   _child->group_next_ = 0;
+  for (auto callback : groupBlock(this)->callbacks_) {
+    callback->inDbGroupRemoveGroup(this, child);
+  }
 }
 
 dbSet<dbGroup> dbGroup::getGroups()
@@ -460,6 +487,9 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
   _group->name_ = safe_strdup(name);
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
+  for (auto callback : _block->callbacks_) {
+    callback->inDbGroupCreate((dbGroup*) _group);
+  }
   return (dbGroup*) _group;
 }
 
@@ -474,6 +504,9 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
   _group->name_ = safe_strdup(name);
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
+  for (auto callback : _block->callbacks_) {
+    callback->inDbGroupCreate((dbGroup*) _group);
+  }
   parent->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;
 }
@@ -489,6 +522,9 @@ dbGroup* dbGroup::create(dbRegion* region, const char* name)
   _group->name_ = safe_strdup(name);
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
+  for (auto callback : _block->callbacks_) {
+    callback->inDbGroupCreate((dbGroup*) _group);
+  }
   region->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;
 }
@@ -497,6 +533,9 @@ void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
+  for (auto callback : block->callbacks_) {
+    callback->inDbGroupDestroy(group);
+  }
   while (!group->getInsts().empty()) {
     group->removeInst(*group->getInsts().begin());
   }

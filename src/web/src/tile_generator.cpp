@@ -38,6 +38,8 @@
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
 #include "glyph_cache.h"
+#include "group_report.h"
+#include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -1135,6 +1137,8 @@ const BoolField kBoolFields[] = {
   {"tracks_pref",            &TileVisibility::tracks_pref,            false},
   {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
   {"detailed",               &TileVisibility::detailed,               false},
+  {"module_view",            &TileVisibility::module_view,            false},
+  {"cluster_view",           &TileVisibility::cluster_view,           false},
   {"debug",                  &TileVisibility::debug,                  false},
   {"debug_renderers",        &TileVisibility::debug_renderers,        false},
   {"debug_live",             &TileVisibility::debug_live,             false},
@@ -1671,7 +1675,6 @@ void TileGenerator::eagerInit()
     std::lock_guard lock(geom_cache_mutex_);
     geom_cache_.reset();
   }
-
   // Tiles depend on the design geometry, so a reload invalidates every cached
   // PNG.  Clearing here ties cache lifetime to design loading.
   {
@@ -2475,7 +2478,7 @@ void TileGenerator::clearOverlayCaches() const
   dropOverlayCaches();
 }
 
-// Caller holds overlay_cache_mutex_.  All three caches are derived from the
+// Caller holds overlay_cache_mutex_.  All of these caches are derived from the
 // same design state and are invalidated as a unit, so one recorded revision
 // covers them.
 void TileGenerator::dropOverlayCaches() const
@@ -2483,6 +2486,8 @@ void TileGenerator::dropOverlayCaches() const
   bpin_ap_cache_.clear();
   gcell_x_cache_.clear();
   gcell_y_cache_.clear();
+  default_module_colors_ = nullptr;
+  default_group_colors_ = nullptr;
 }
 
 // Caller holds overlay_cache_mutex_.  `rev` must have been read BEFORE the lock
@@ -2495,6 +2500,38 @@ void TileGenerator::dropOverlayCachesIfStale(const uint64_t rev) const
     dropOverlayCaches();
     overlay_cache_revision_ = rev;
   }
+}
+
+TileGenerator::OwnerColorMap TileGenerator::defaultModuleColors() const
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return nullptr;
+  }
+  const uint64_t rev = search_->revision();
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCachesIfStale(rev);
+  if (!default_module_colors_) {
+    default_module_colors_ = std::make_shared<const std::map<uint32_t, Color>>(
+        computeDefaultModuleColors(HierarchyReport(block, sta_).getReport()));
+  }
+  return default_module_colors_;
+}
+
+TileGenerator::OwnerColorMap TileGenerator::defaultGroupColors() const
+{
+  odb::dbBlock* block = getBlock();
+  if (block == nullptr) {
+    return nullptr;
+  }
+  const uint64_t rev = search_->revision();
+  std::lock_guard lock(overlay_cache_mutex_);
+  dropOverlayCachesIfStale(rev);
+  if (!default_group_colors_) {
+    default_group_colors_ = std::make_shared<const std::map<uint32_t, Color>>(
+        computeDefaultGroupColors(GroupReport(block).getReport()));
+  }
+  return default_group_colors_;
 }
 
 TileGenerator::BpinApList TileGenerator::bpinAccessPoints(
@@ -3374,6 +3411,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
+    const std::map<uint32_t, Color>* group_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -3389,6 +3427,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
                                        colored_rects,
                                        flight_lines,
                                        module_colors,
+                                       group_colors,
                                        focus_net_ids,
                                        route_guide_net_ids,
                                        dpr,
@@ -4264,6 +4303,16 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
       ordered.emplace_back(def.z_index, def.name);
     }
   }
+  // The "color by owner" overlays stack by the same rule; saveImage() drops the
+  // ones whose color map comes out empty.  _modules goes under the routing,
+  // like the client's zIndex 2; _clusters over it, so metal does not cover the
+  // partition, but below the Misc overlays, which start at 1000.
+  if (vis.module_view) {
+    ordered.emplace_back(2, "_modules");
+  }
+  if (vis.cluster_view) {
+    ordered.emplace_back(999, "_clusters");
+  }
   std::ranges::stable_sort(ordered, {}, &std::pair<int, std::string>::first);
 
   std::vector<std::string> names;
@@ -4378,12 +4427,19 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
+    const std::map<uint32_t, Color>* group_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
     const int requested_tile_px) const
 {
   static_assert(sizeof(Color) == 4);
+
+  // Here rather than where the default palette is built: a session that sends
+  // its own colors never builds one, and would miss the push.
+  if (layer == "_modules" || layer == "_clusters") {
+    search_->noteOwnerColorsUsed();
+  }
   // Clamped BEFORE tile_px is derived from it: a dpr below the supported range
   // rounds 256*dpr down to zero, and a zero-sided buffer then trips the clamps
   // in the drawing primitives.  The other three tile entry points already
@@ -4869,8 +4925,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       };
 
       // Special "_modules" layer: draw filled module-colored rectangles
-      const bool modules_layer
-          = (layer == "_modules" && module_colors && !module_colors->empty());
+      const bool modules_layer = (layer == "_modules" && vis.module_view
+                                  && module_colors && !module_colors->empty());
       if (modules_layer) {
         // A flat design has no dbModule tree to color by, so the hierarchy
         // report synthesizes groups from instance names and parks the
@@ -4917,7 +4973,65 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           if (it == module_colors->end()) {
             continue;
           }
+          // A hidden cell type takes its color with it, like Qt's
+          // drawModuleView.  After the lookup: classifyInstance inside
+          // isInstVisible costs more than a map find.
+          if (!vis.isInstVisible(inst, sta_)) {
+            continue;
+          }
           const Color& c = it->second;
+          const int pxl
+              = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
+          const int pyl
+              = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+          const int pxh = std::min(
+              draw_px - 1,
+              (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+          const int pyh = std::min(
+              draw_px - 1,
+              (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+          for (int iy = pyl; iy < pyh; ++iy) {
+            for (int ix = pxl; ix < pxh; ++ix) {
+              blendPixel(image_buffer, ix, draw_px - 1 - iy, c);
+            }
+          }
+        }
+      }
+
+      // Special "_clusters" layer: the same, keyed by the instance's dbGroup.
+      // Its own block rather than a shared helper: the two differ only in the
+      // key, and the loop is hot enough that the indirection would show.
+      const bool clusters_layer = (layer == "_clusters" && vis.cluster_view
+                                   && group_colors && !group_colors->empty());
+      if (clusters_layer) {
+        for (odb::dbInst* inst : search_->searchInsts(block,
+                                                      dbu_tile.xMin(),
+                                                      dbu_tile.yMin(),
+                                                      dbu_tile.xMax(),
+                                                      dbu_tile.yMax(),
+                                                      /*min_height=*/0)) {
+          odb::Rect inst_bbox = inst->getBBox()->getBox();
+          if (!dbu_tile.overlaps(inst_bbox)) {
+            continue;
+          }
+          if (inst->getMaster()->isFiller()) {
+            continue;
+          }
+          odb::dbGroup* group = inst->getGroup();
+          if (group == nullptr) {
+            continue;
+          }
+          auto it = group_colors->find(group->getId());
+          if (it == group_colors->end()) {
+            continue;
+          }
+          // A hidden cell type takes its color with it, like Qt's
+          // drawModuleView.  After the lookup: classifyInstance inside
+          // isInstVisible costs more than a map find.
+          if (!vis.isInstVisible(inst, sta_)) {
+            continue;
+          }
+          const Color c = it->second;
           const int pxl
               = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
           const int pyl
@@ -5171,9 +5285,13 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           = instances_only || !tech_layer
             || ((vis.blockages || vis.inst_pins) && layer_master_geom);
 
-      // Pseudo layers ("_modules", "_pins" and the overlays above) handle
-      // their own drawing; skip all other drawing (instances, routing, etc.)
-      const bool pseudo_layer = modules_layer || pins_layer || overlay;
+      // Pseudo layers ("_modules", "_clusters", "_pins" and the overlays
+      // above) handle their own drawing; skip all other drawing (instances,
+      // routing, etc.).  By name, not by `modules_layer`: an overlay whose
+      // flag is off, or that has no colors, must draw nothing rather than
+      // fall through to the instances pass.
+      const bool pseudo_layer = layer == "_modules" || layer == "_clusters"
+                                || pins_layer || overlay;
       if (!pseudo_layer) {
         // Draw instances.  instance_size_limit_dbu culls sub-resolution
         // instances at the RTree level (Qt-parity), so dense bump arrays vanish
@@ -6303,8 +6421,44 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     image_vis.view_extent_dbu = area.maxDXDY();
   }
 
-  const std::vector<std::string> layers_to_render
+  std::vector<std::string> layers_to_render
       = saveImageLayerOrder(vis, paintOrderLayers());
+
+  // Owner coloring is opt-in, one display option per overlay
+  // (`-display_option {module_view true}`, `{cluster_view true}`), and paints
+  // the palette the panel starts from.
+  OwnerColorMap module_colors;
+  OwnerColorMap group_colors;
+  // `defaults` stays a callable: building the palette walks the whole
+  // hierarchy, and a flag that is off must not pay for it.
+  auto color_overlay = [&](const bool on,
+                           const char* flag,
+                           const char* layer,
+                           auto&& defaults) -> OwnerColorMap {
+    if (!on) {
+      return nullptr;
+    }
+    OwnerColorMap colors = defaults();
+    if (!colors || colors->empty()) {
+      // Nothing to color by: warn and drop the layer saveImageLayerOrder put
+      // in for the flag, rather than compositing an empty pass over the image.
+      logger_->warn(utl::WEB,
+                    119,
+                    "{} is on but the design has nothing to color it by.",
+                    flag);
+      std::erase(layers_to_render, layer);
+      return nullptr;
+    }
+    return colors;
+  };
+  module_colors
+      = color_overlay(vis.module_view, "module_view", "_modules", [&] {
+          return defaultModuleColors();
+        });
+  group_colors
+      = color_overlay(vis.cluster_view, "cluster_view", "_clusters", [&] {
+          return defaultGroupColors();
+        });
 
   // Snapshot the user labels once (locks labels_mutex_ + copies) instead of
   // per tile — the set is identical for every tile in the image.  Skipped
@@ -6333,8 +6487,17 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       const int leaflet_y = num_tiles - 1 - ty;
 
       for (const auto& layer : layers_to_render) {
-        const auto tile_buf
-            = renderTileBuffer(layer, z, tx, leaflet_y, image_vis);
+        const auto tile_buf = renderTileBuffer(layer,
+                                               z,
+                                               tx,
+                                               leaflet_y,
+                                               image_vis,
+                                               /*highlight_rects=*/{},
+                                               /*highlight_polys=*/{},
+                                               /*colored_rects=*/{},
+                                               /*flight_lines=*/{},
+                                               module_colors.get(),
+                                               group_colors.get());
         compositeTile(tile_buf,
                       kTileSizeInPixel,
                       output.data(),
