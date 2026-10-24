@@ -32,6 +32,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestSquareGreens",
+    srcs = ["cpp/TestSquareGreens.cpp"],
+    deps = [
+        "//src/fsv:core",
+        "//src/fsv:geometry",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestLayeredCubeGreens",
     srcs = ["cpp/TestLayeredCubeGreens.cpp"],
     deps = [
@@ -112,8 +123,10 @@ cc_binary(
 )
 
 TESTS = [
+    "field_solver_cross_section",
     "field_solver_errors",
     "field_solver_itf",
+    "field_solver_nets",
     "field_solver_uniform",
 ]
 
@@ -128,8 +141,11 @@ filegroup(
                 "tcl",
                 "py",
             ]
-        ],
-    ),
+        ] + ["sky130hd/**"],
+    ) + [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+    ],
 )
 
 [regression_test(

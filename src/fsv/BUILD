@@ -46,8 +46,11 @@ cc_library(
         "src/CubeGreens.cpp",
         "src/CubePanels.cpp",
         "src/Dielectric.cpp",
+        "src/LayerModes.cpp",
         "src/LayeredCubeGreens.cpp",
+        "src/LayeredSquareGreens.cpp",
         "src/SpatialIndex.cpp",
+        "src/SquareGreens.cpp",
     ],
     hdrs = [
         "src/AliasTable.h",
@@ -55,9 +58,12 @@ cc_library(
         "src/CubeGreens.h",
         "src/CubePanels.h",
         "src/Dielectric.h",
+        "src/LayerModes.h",
         "src/LayeredCubeGreens.h",
+        "src/LayeredSquareGreens.h",
         "src/Philox.h",
         "src/SpatialIndex.h",
+        "src/SquareGreens.h",
     ],
     includes = ["src"],
     visibility = ["//src/fsv:__subpackages__"],
@@ -83,6 +89,18 @@ cc_library(
 
 # The state behind the Tcl commands.
 cc_library(
+    name = "net_window",
+    srcs = ["src/NetWindow.cpp"],
+    hdrs = ["include/fsv/NetWindow.h"],
+    includes = ["include"],
+    deps = [
+        ":core",
+        ":geometry",
+        "//src/odb/src/db",
+    ],
+)
+
+cc_library(
     name = "field_solver",
     srcs = ["src/FieldSolver.cpp"],
     hdrs = ["include/fsv/FieldSolver.h"],
@@ -90,7 +108,9 @@ cc_library(
     deps = [
         ":fsv",
         ":geometry",
+        ":net_window",
         ":stack",
+        "//src/odb/src/db",
         "//src/utl",
     ],
 )

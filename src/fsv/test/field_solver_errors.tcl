@@ -41,6 +41,34 @@ check_error "the solver rejects a panel count" {
 } FSV-0012
 set result [solve_capacitance -seed 3000000000 -tol_total 0.05]
 check "a seed beyond 32 bits is accepted" { dict exists $result a total } 1
+check_error "rectangles after boxes" {
+  add_field_solver_rect -net b -rect {0 0.5 1 0.7}
+} FSV-0015
+clear_field_solver
+check_error "-rect excludes -layer" {
+  add_field_solver_rect -net a -rect {0 0.5 1 0.7} -layer met1
+} FSV-0016
+check_error "a rectangle needs -rect or -layer and -x" {
+  add_field_solver_rect -net a -layer met1
+} FSV-0017
+check_error "a span has two numbers" {
+  add_field_solver_rect -net a -layer met1 -x {0 1 2}
+} FSV-0024
+check_error "a rectangle below the ground plane" {
+  add_field_solver_rect -net a -rect {0 -1 1 0.5}
+} FSV-0005
+check_error "a rectangle needs a net" {
+  add_field_solver_rect -rect {0 0.5 1 0.7}
+} FSV-0020
+add_field_solver_rect -net a -rect {0 0.5 1 0.7}
+check_error "boxes after rectangles" {
+  add_field_solver_box -net b -box {0 0 0.5 1 1 0.7}
+} FSV-0015
+add_field_solver_rect -net b -rect {0.5 0.6 1.5 0.8}
+check_error "rectangles of different nets overlap" {
+  solve_capacitance -nets a
+} FSV-0008
+clear_field_solver
 check_error "an unreadable ITF" { read_itf missing.itf } FSV-0001
 
 read_itf substrate_via.itf

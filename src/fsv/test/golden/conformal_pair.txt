@@ -1,10 +1,10 @@
 # Cross section of two wires wrapped by a high-k conformal dielectric whose
-# shells cross a planar interface. Wires run along x; their x extents are
+# shells cross a planar interface. Wires run along y; their y extents are
 # ignored. "conformal <name> <bottom> <top> <SW_T> <TW_T> <eps>" wraps every
 # box whose z extent is [bottom, top]; see fv2d_golden.py.
 background 3.9
 layer 0.6 2.7
 layer 1.2 4.2
-box a 0 0 0.5 1 0.2 0.8
-box b 0 0.4 0.5 1 0.6 0.8
+box a 0 0 0.5 0.2 1 0.8
+box b 0.4 0 0.5 0.6 1 0.8
 conformal C 0.5 0.8 0.05 0.04 6.0

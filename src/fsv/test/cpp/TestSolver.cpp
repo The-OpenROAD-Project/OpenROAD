@@ -452,6 +452,231 @@ TEST(Solver, SplitWireMatchesSingleBox)
   EXPECT_NEAR(a.total(), b.total(), 4 * std::hypot(a.sigma[0], b.sigma[0]));
 }
 
+// Expects C_ij from master i to equal C_ji from master j within four
+// standard errors.
+void expectReciprocal(const CapRow& ri, const CapRow& rj)
+{
+  const int i = ri.master;
+  const int j = rj.master;
+  EXPECT_NEAR(ri.cap[j], rj.cap[i], 4 * std::hypot(ri.sigma[j], rj.sigma[i]))
+      << "between nets " << i << " and " << j;
+}
+
+// An L-shaped net around the end of a wire, which lies inside the L's
+// bounding box. The L's surface is the union of its two grown boxes; the
+// wire's is a single box, so reciprocity checks the union against it.
+Geometry wrappedWire(const bool redundant)
+{
+  Geometry geometry;
+  geometry.addNet("l");
+  geometry.addNet("wire");
+  geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  geometry.addBox(0, {{1.8, 0.2, 0.5}, {2, 1.5, 0.7}});
+  if (redundant) {
+    // The corner again, and a box inside the first: no new conductor.
+    geometry.addBox(0, {{1.7, 0, 0.5}, {2, 0.4, 0.7}});
+    geometry.addBox(0, {{0.5, 0.05, 0.55}, {1, 0.15, 0.65}});
+  }
+  geometry.addBox(1, {{0.5, 0.5, 0.5}, {1.5, 0.7, 0.7}});
+  return geometry;
+}
+
+TEST(Solver, MultiBoxReciprocity)
+{
+  const Geometry geometry = wrappedWire(false);
+  const Scene scene(geometry, 3.9);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  expectReciprocal(solver.solve(scene, 0, options),
+                   solver.solve(scene, 1, options));
+}
+
+// Boxes that add no conductor (overlapping or inside others) change the
+// surface but not the capacitance.
+TEST(Solver, RedundantBoxesChangeNothing)
+{
+  const Geometry plain = wrappedWire(false);
+  const Geometry redundant = wrappedWire(true);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  const CapRow a = solver.solve(Scene(plain, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(redundant, 3.9), 0, options);
+  EXPECT_NEAR(a.total(), b.total(), 4 * std::hypot(a.sigma[0], b.sigma[0]));
+  EXPECT_NEAR(a.cap[1], b.cap[1], 4 * std::hypot(a.sigma[1], b.sigma[1]));
+}
+
+// A wire drawn in pieces, abutting and overlapping, merges back into one
+// box before its surface is built, so its row is the single box's exactly,
+// not just within the statistics. (A small box inside the wire would also
+// merge away, but would shrink the scene's capture distance.)
+TEST(Solver, FragmentedWireMatchesSingleBox)
+{
+  Geometry whole;
+  whole.addNet("a");
+  whole.addNet("b");
+  whole.addBox(0, {{0, 0, 0.5}, {2, 0.25, 0.75}});
+  whole.addBox(1, {{0, 0.5, 0.5}, {2, 0.75, 0.75}});
+  Geometry pieces;
+  pieces.addNet("a");
+  pieces.addNet("b");
+  pieces.addBox(0, {{0, 0, 0.5}, {0.5, 0.25, 0.75}});
+  pieces.addBox(0, {{1.25, 0, 0.5}, {2, 0.25, 0.75}});
+  pieces.addBox(0, {{0.5, 0, 0.5}, {1.25, 0.25, 0.75}});
+  pieces.addBox(0, {{0.375, 0, 0.5}, {0.875, 0.25, 0.75}});
+  pieces.addBox(1, {{0, 0.5, 0.5}, {2, 0.75, 0.75}});
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(whole, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(pieces, 3.9), 0, options);
+  EXPECT_EQ(a.cap, b.cap);
+  EXPECT_EQ(a.sigma, b.sigma);
+  EXPECT_EQ(a.hops, b.hops);
+}
+
+// A via stack (M1 wire, via, M2 wire) with conformal dielectrics on both
+// layers, between an M1 and an M2 neighbour.
+TEST(Solver, ViaStackReciprocity)
+{
+  Geometry geometry;
+  geometry.addNet("stack");
+  geometry.addNet("m1");
+  geometry.addNet("m2");
+  geometry.addBox(0, {{0, 0, 0.5}, {1.5, 0.2, 0.7}});
+  geometry.addBox(0, {{1.3, 0, 0.7}, {1.5, 0.2, 1.1}});
+  geometry.addBox(0, {{1.3, 0, 1.1}, {3, 0.2, 1.3}});
+  geometry.addBox(1, {{0, 0.4, 0.5}, {3, 0.6, 0.7}});
+  geometry.addBox(2, {{0, -0.6, 1.1}, {3, -0.4, 1.3}});
+  const Scene scene(geometry, conformalStack({{"C", 0.03, 0.02, 7.0}}));
+  // The neighbours' small coupling to each other needs no tight tolerance.
+  SolveOptions options;
+  options.tol_total = 0.005;
+  options.tol_coupling = 0.01;
+  options.coupling_threshold = 0.05;
+  Solver solver({.threads = 8});
+  const CapRow stack = solver.solve(scene, 0, options);
+  expectReciprocal(stack, solver.solve(scene, 1, options));
+  expectReciprocal(stack, solver.solve(scene, 2, options));
+}
+
+// A ring of four rectangles closed around another net: the ring's surface
+// has an inner boundary, and every walk from the inner net ends on the ring.
+TEST(Solver, RingAroundNet)
+{
+  Geometry2D section;
+  section.addNet("ring");
+  section.addNet("inner");
+  section.addRect(0, {{0, 0.5}, {2, 0.7}});
+  section.addRect(0, {{0, 2.3}, {2, 2.5}});
+  section.addRect(0, {{0, 0.7}, {0.2, 2.3}});
+  section.addRect(0, {{1.8, 0.7}, {2, 2.3}});
+  section.addRect(1, {{0.8, 1.4}, {1.2, 1.6}});
+  const Scene2D scene(section, 3.9);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  const CapRow ring = solver.solve(scene, 0, options);
+  const CapRow inner = solver.solve(scene, 1, options);
+  EXPECT_EQ(inner.ground, 0);
+  expectReciprocal(ring, inner);
+}
+
+TEST(Solver, RejectsConductorTouchingMaster)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addNet("b");
+  geometry.addBox(0, {{0, 0, 0.5}, {1, 0.2, 0.7}});
+  geometry.addBox(0, {{0.8, 0.2, 0.5}, {1, 1, 0.7}});
+  geometry.addBox(1, {{0, 0.2, 0.5}, {0.5, 0.4, 0.7}});
+  Solver solver({.threads = 2});
+  EXPECT_THROW(solver.solve(Scene(geometry, 3.9), 0), std::invalid_argument);
+}
+
+// A Gaussian surface on the conductors themselves would divide by a zero
+// cube size.
+TEST(Solver, RejectsNonPositiveGaussOffset)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addBox(0, {{0, 0, 0.5}, {1, 1, 1.5}});
+  const Scene scene(geometry);
+  Solver solver({.threads = 2});
+  for (const double offset : {0.0, -0.5, std::nan("")}) {
+    SolveOptions options;
+    options.gauss_offset = offset;
+    EXPECT_THROW(solver.solve(scene, 0, options), std::invalid_argument)
+        << offset;
+  }
+}
+
+// Three parallel wires; `with_far` adds a fourth just outside the window
+// WindowLeakageBoundsOutsideConductors uses, as a conductor it leaves out.
+Geometry threeWires(const bool with_far)
+{
+  Geometry geometry;
+  geometry.addNet("a");
+  geometry.addNet("b");
+  geometry.addNet("c");
+  geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
+  geometry.addBox(1, {{0, 0.4, 0.5}, {2, 0.6, 0.7}});
+  geometry.addBox(2, {{0, -0.4, 0.5}, {2, -0.2, 0.7}});
+  if (with_far) {
+    geometry.addNet("far");
+    geometry.addBox(3, {{0, 1.65, 0.5}, {2, 1.85, 0.7}});
+  }
+  return geometry;
+}
+
+// A grounded net's coupling joins the ground entry; nothing else changes.
+TEST(Solver, GroundedNetJoinsGround)
+{
+  const Geometry plain = threeWires(false);
+  Geometry tied = threeWires(false);
+  tied.setGrounded(1);
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(plain, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(tied, 3.9), 0, options);
+  EXPECT_EQ(b.cap[0], a.cap[0]);
+  EXPECT_EQ(b.cap[2], a.cap[2]);
+  EXPECT_EQ(b.cap[1], 0);
+  EXPECT_NEAR(b.ground, a.ground + a.cap[1], 1e-12);
+  EXPECT_THROW(solver.solve(Scene(tied, 3.9), 1, options),
+               std::invalid_argument);
+}
+
+// Adding a conductor just outside the window changes the total and the
+// couplings to nets inside it by less than the leakage estimate.
+TEST(Solver, WindowLeakageBoundsOutsideConductors)
+{
+  Geometry inside = threeWires(false);
+  Geometry all = threeWires(true);
+  const AlignedBox<2> window{{-1, -1}, {3, 1.6}};
+  inside.setWindow(window);
+  all.setWindow(window);
+  SolveOptions options;
+  options.min_walks = options.max_walks = 65536;
+  Solver solver({.threads = 4});
+  const CapRow a = solver.solve(Scene(inside, 3.9), 0, options);
+  const CapRow b = solver.solve(Scene(all, 3.9), 0, options);
+  EXPECT_GT(a.window_leakage, 0);
+  EXPECT_LT(a.window_leakage, 0.5 * a.total());
+  for (int net = 0; net < 3; net++) {
+    EXPECT_LE(std::abs(b.cap[net] - a.cap[net]), a.window_leakage) << net;
+  }
+  // Without a window there is nothing to leak.
+  EXPECT_EQ(
+      solver.solve(Scene(threeWires(false), 3.9), 0, options).window_leakage,
+      0);
+}
+
 // Conformal dielectrics in a stack without planar interfaces: the shells
 // meet only the background, whose permittivity the tables must still know.
 // A planar interface far above, with a negligible contrast, does not change
@@ -478,6 +703,111 @@ TEST(Solver, ConformalWithoutPlanarInterfaces)
   const CapRow uniform = solver.solve(Scene(geometry, 3.9), 0, options);
   EXPECT_GT(a.total(),
             uniform.total() + 4 * std::hypot(a.sigma[0], uniform.sigma[0]));
+}
+
+// The cross section of the etch-stop wires in the x-z plane.
+Geometry2D etchStopSection()
+{
+  Geometry2D section;
+  section.addNet("lower");
+  section.addNet("upper");
+  section.addRect(0, {{0, 0.5}, {0.2, 0.7}});
+  section.addRect(1, {{0.3, 1.1}, {0.5, 1.3}});
+  return section;
+}
+
+// The same wires in 3D, running along y for the given length.
+Geometry wiresAlongY(const double length)
+{
+  Geometry geometry;
+  geometry.addNet("lower");
+  geometry.addNet("upper");
+  geometry.addBox(0, {{0, 0, 0.5}, {0.2, length, 0.7}});
+  geometry.addBox(1, {{0.3, 0, 1.1}, {0.5, length, 1.3}});
+  return geometry;
+}
+
+TEST(Solver, Geometry2DRejectsBadRects)
+{
+  Geometry2D section;
+  section.addNet("a");
+  EXPECT_THROW(section.addRect(1, {{0, 0.5}, {1, 0.7}}), std::invalid_argument);
+  EXPECT_THROW(section.addRect(0, {{1, 0.5}, {1, 0.7}}), std::invalid_argument);
+  EXPECT_THROW(section.addRect(0, {{0, 0}, {1, 0.7}}), std::invalid_argument);
+}
+
+// Rectangles of different nets may not overlap; those of one net may.
+TEST(Solver, CrossSectionRejectsOverlap)
+{
+  Geometry2D section;
+  section.addNet("a");
+  section.addNet("b");
+  section.addRect(0, {{0, 0.5}, {0.2, 0.7}});
+  section.addRect(0, {{0.1, 0.5}, {0.3, 0.7}});
+  EXPECT_NO_THROW(Scene2D(section, 3.9));
+  section.addRect(1, {{0.25, 0.6}, {0.5, 0.8}});
+  EXPECT_THROW(Scene2D(section, 3.9), std::invalid_argument);
+}
+
+// A cross section's Maxwell matrix is symmetric, and its results do not
+// depend on the thread count.
+TEST(Solver, CrossSectionReciprocityAndDeterminism)
+{
+  const Geometry2D section = etchStopSection();
+  const Scene2D scene(
+      section,
+      conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  Solver solver({.threads = 8});
+  const CapRow r0 = solver.solve(scene, 0, options);
+  const CapRow r1 = solver.solve(scene, 1, options);
+  EXPECT_NEAR(r0.cap[1], r1.cap[0], 4 * std::hypot(r0.sigma[1], r1.sigma[0]));
+
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 32768;
+  const CapRow one = Solver({.threads = 1}).solve(scene, 0, fixed);
+  const CapRow many = Solver({.threads = 6}).solve(scene, 0, fixed);
+  EXPECT_EQ(one.cap, many.cap);
+  EXPECT_EQ(one.hops, many.hops);
+}
+
+// The 2D mode agrees with long-line 3D per unit length: the difference of
+// 3D solves on 10 and 30 um wires cancels their end effects. Within 0.5%
+// plus three standard errors.
+TEST(Solver, CrossSectionMatchesLongLine3D)
+{
+  const Stack stack = conformalStack({{"C", 0.05, 0.05, 7.0}});
+  const Geometry2D section = etchStopSection();
+  const Geometry ten = wiresAlongY(10.0);
+  const Geometry thirty = wiresAlongY(30.0);
+  SolveOptions options;
+  options.tol_total = 0.002;
+  options.tol_coupling = 0.004;
+  options.coupling_threshold = 0.05;
+  Solver solver({.threads = 8});
+  const CapRow cross = solver.solve(Scene2D(section, stack), 0, options);
+  const CapRow a = solver.solve(Scene(ten, stack), 0, options);
+  const CapRow b = solver.solve(Scene(thirty, stack), 0, options);
+  const auto per_length
+      = [&](const double va, const double vb) { return (vb - va) / 20; };
+  const auto sigma = [&](const double sa, const double sb, const double s2) {
+    return std::hypot(std::hypot(sa, sb) / 20, s2);
+  };
+  EXPECT_NEAR(cross.total(),
+              per_length(a.total(), b.total()),
+              0.005 * cross.total()
+                  + 3 * sigma(a.sigma[0], b.sigma[0], cross.sigma[0]));
+  EXPECT_NEAR(cross.cap[1],
+              per_length(a.cap[1], b.cap[1]),
+              0.005 * std::abs(cross.cap[1])
+                  + 3 * sigma(a.sigma[1], b.sigma[1], cross.sigma[1]));
+  EXPECT_NEAR(
+      cross.ground,
+      per_length(a.ground, b.ground),
+      0.005 * std::abs(cross.ground)
+          + 3 * sigma(a.ground_sigma, b.ground_sigma, cross.ground_sigma));
 }
 
 // Shells of the same conformal dielectric merge; shells of different ones

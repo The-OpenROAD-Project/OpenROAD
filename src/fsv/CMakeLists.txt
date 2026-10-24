@@ -18,11 +18,15 @@ target_sources(fsv
     src/FieldSolver.cpp
     src/Geometry.cpp
     src/Itf.cpp
+    src/LayerModes.cpp
     src/LayeredCubeGreens.cpp
+    src/LayeredSquareGreens.cpp
     src/MakeFieldSolver.cpp
+    src/NetWindow.cpp
     src/Scene.cpp
     src/Solver.cpp
     src/SpatialIndex.cpp
+    src/SquareGreens.cpp
     src/Stack.cpp
     src/WorkerPool.cpp
 )
@@ -36,6 +40,7 @@ target_include_directories(fsv
 
 target_link_libraries(fsv
   PRIVATE
+    odb
     utl_lib
     ${TCL_LIBRARY}
 )
