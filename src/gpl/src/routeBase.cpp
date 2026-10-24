@@ -12,6 +12,7 @@
 #include <memory>
 #include <ranges>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -689,6 +690,127 @@ void RouteBase::calculateRudyTiles()
   debugInflatedTiles();
 }
 
+int64_t RouteBase::inflateCell(GCell* cell,
+                               float ratio,
+                               std::optional<int64_t> area_limit)
+{
+  const int old_width = cell->dx();
+  const int old_height = cell->dy();
+  const int64_t old_area = static_cast<int64_t>(old_width) * old_height;
+  int width;
+  int height;
+  if (area_limit) {
+    if (old_area <= 0 || *area_limit <= 0 || !std::isfinite(ratio)
+        || ratio <= 1.0f) {
+      return 0;
+    }
+    const double bounded_ratio = std::min<double>(
+        ratio, 1.0 + static_cast<double>(*area_limit) / old_area);
+    const double scale = std::sqrt(bounded_ratio);
+    // Late inflation must fit the hard allowance paid for by whole fillers.
+    width = 2 * static_cast<int>(old_width * scale / 2);
+    height = 2 * static_cast<int>(old_height * scale / 2);
+    const int64_t delta = static_cast<int64_t>(width) * height - old_area;
+    if (width < old_width || height < old_height || delta <= 0
+        || delta > *area_limit) {
+      return 0;
+    }
+  } else {
+    // Preserve ordinary routability's float arithmetic and rounding exactly.
+    width = static_cast<int>(std::round(old_width * std::sqrt(ratio)));
+    height = static_cast<int>(std::round(old_height * std::sqrt(ratio)));
+  }
+  cell->setSize(width, height, GCell::GCellChange::kRoutability);
+  return static_cast<int64_t>(cell->dx()) * cell->dy() - old_area;
+}
+
+int64_t RouteBase::inflateNewCells()
+{
+  std::unordered_set<odb::dbInst*> new_instances;
+  for (const auto& nb : nbVec_) {
+    new_instances.insert(nb->getNewInstances().begin(),
+                         nb->getNewInstances().end());
+  }
+  if (new_instances.empty() || db_->getChip()->getBlock()->getNets().empty()) {
+    return 0;
+  }
+
+  calculateRudyTiles();
+  int64_t total_added = 0;
+  // Ordinary routability is already finished. Its historical charges stay
+  // untouched; only this extension uses the current surviving geometry.
+  int64_t live_inflation = 0;
+  for (const auto& nb : nbVec_) {
+    live_inflation += nb->getInflationArea();
+  }
+  int64_t remaining_budget = std::max<int64_t>(
+      0,
+      static_cast<int64_t>(static_cast<double>(original_movable_area_)
+                           * rbVars_.maxInflationTotal)
+          - live_inflation);
+  for (size_t i = 0; i < nbVec_.size(); ++i) {
+    const auto& nb = nbVec_[i];
+    // The cached areas still describe the design before timing repair.
+    int64_t standard_cell_area = 0;
+    for (const auto& cell : nb->getGCells()) {
+      if (cell->isStdInstance()) {
+        standard_cell_area += static_cast<int64_t>(cell->dx()) * cell->dy();
+      }
+    }
+    const int64_t available_area
+        = nb->getWhiteSpaceArea() - nb->getPb()->macroInstsArea();
+    int64_t available = std::max<int64_t>(
+        0,
+        static_cast<int64_t>(static_cast<double>(rbVars_.maxDensity)
+                             * available_area)
+            - standard_cell_area - nb->getTotalFillerArea());
+    available = std::min(available, remaining_budget);
+    const int64_t filler_area = nb->getFillerCellArea();
+    const int64_t removable_area = filler_area * nb->getFillerCnt();
+    // Never buy virtual area by increasing the repaired design's density.
+    available = std::min(available, removable_area);
+    int64_t added = 0;
+    for (const auto& handle : nb->getGCells()) {
+      const GCell* cell = handle;
+      if (!cell->isStdInstance() || cell->insts().size() != 1
+          || !new_instances.contains(cell->insts().front()->dbInst())
+          || cell->changeType() == GCell::GCellChange::kRoutability) {
+        continue;
+      }
+      const Tile* tile = getTile(cell->dCx(), cell->dCy());
+      if (tile == nullptr || !tile->isActionable()
+          || !std::isfinite(tile->inflationRatio())
+          || tile->inflationRatio() <= 1.0f || available == 0) {
+        continue;
+      }
+      const int64_t delta
+          = inflateCell(nbc_->getGCellByIndex(handle.getStorageIndex()),
+                        tile->inflationRatio(),
+                        available);
+      available -= delta;
+      added += delta;
+    }
+    if (added > 0) {
+      // Rounding up pays for all added area; at most one filler cell of
+      // extra whitespace is created. No change to the resizer's cell sizes.
+      const int64_t fillers = (added + filler_area - 1) / filler_area;
+      nb->cutFillerCells(fillers * filler_area);
+    }
+    remaining_budget -= added;
+    total_added += added;
+    debugPrint(log_,
+               GPL,
+               "timing",
+               1,
+               "Timing-driven: new-cell congestion inflation: {:.3f} um^2{}.",
+               db_->getChip()->getBlock()->dbuAreaToMicrons(added),
+               nb->getGroup()
+                   ? " in group " + std::string(nb->getGroup()->getName())
+                   : "");
+  }
+  return total_added;
+}
+
 // Report mean/median/stddev and a 10-bucket histogram of the tiles'
 // inflation ratios.
 void RouteBase::debugInflationRatioStats() const
@@ -999,22 +1121,9 @@ std::pair<bool, bool> RouteBase::routability(
         continue;
       }
 
-      int64_t prev_cell_area = static_cast<int64_t>(gCell->dx())
-                               * static_cast<int64_t>(gCell->dy());
-
-      // bloat
-      gCell->setSize(static_cast<int>(std::round(
-                         gCell->dx() * std::sqrt(tile->inflatedRatio()))),
-                     static_cast<int>(std::round(
-                         gCell->dy() * std::sqrt(tile->inflatedRatio()))),
-                     GCell::GCellChange::kRoutability);
-
-      int64_t new_cell_area = static_cast<int64_t>(gCell->dx())
-                              * static_cast<int64_t>(gCell->dy());
-
       // deltaArea is equal to area * deltaRatio
       // both of original and density size will be changed
-      inflatedAreaDelta_[nb_index] += new_cell_area - prev_cell_area;
+      inflatedAreaDelta_[nb_index] += inflateCell(gCell, tile->inflatedRatio());
     }
 
     if (log_->debugCheck(GPL, "rudy", 1)) {
