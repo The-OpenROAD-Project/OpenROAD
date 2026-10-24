@@ -35,9 +35,12 @@ It provides:
   the square counterparts of the cube tables (`SquareGreens`,
   `LayeredSquareGreens`), giving capacitance per unit length. Wires run
   along y, infinitely long.
+- Nets read from the design with their neighbours within a halo
+  (`fsv/NetWindow.h`; `add_field_solver_nets`), with an estimate of how
+  much the conductors left outside could matter.
 - Tcl commands that read a stack, define conductors and solve.
 
-Later phases add odb input and Python commands.
+A later phase adds Python commands.
 
 ## Conformal dielectrics
 
@@ -159,6 +162,55 @@ add_field_solver_rect
 | `-layer` | Conductor or via layer name of the ITF stack. The type is `string`. Requires `-x` and a stack from `read_itf`. |
 | `-x` | The rectangle's x span in µm. The type is a list of 2 `float`s. Requires `-layer`. |
 
+### Add Field Solver Nets
+
+The `add_field_solver_nets` command replaces the conductors with nets of the
+loaded design and their neighbours, and makes those nets the default masters
+of `solve_capacitance`. A net's shapes are its routed wires and vias,
+special wires, and the pins of its instance and block terminals, on routing
+and cut layers; the ITF stack gives each layer's z extent.
+
+Neighbours are the shapes of other nets that reach within the halo of the
+nets' bounding box, clipped a margin beyond it, and the cells' obstructions
+and unconnected pins, which have no net and are grounded. An obstruction is
+often a routing blockage over a whole macro, its pins included, so each is
+trimmed clear of every net's shapes on its layer by the layer's minimum
+spacing (its width when the LEF gives none), as close as real metal could
+come; leftover pieces narrower than the layer's width are dropped. The defaults scale
+with the stack: the halo is three times the height of the nets' highest
+shape, and the margin half of it. Overlapping shapes of different nets,
+non-Manhattan special wires, and instances or block pins that are not
+placed are errors.
+
+Each row reports the window's leakage: the weight of walks that reached
+outside the halo, where conductors are missing, and came back to a net.
+It is a conservative estimate of how much the conductors left out could
+change the total and the couplings (20 to 70 times the change on parallel
+wires), and it falls about as the square of the halo. Sides of the halo
+past the die area leak nothing.
+
+Every net and cell of the design is visited, so reading takes time in
+proportion to the design. Master nets are never clipped: a net that spans
+the die, such as a clock or power net, brings most of the design into the
+window.
+
+```tcl
+add_field_solver_nets
+    -nets nets
+    [-halo halo]
+    [-margin margin]
+    [-layer_map layer_map]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-nets` | Master nets. The type is a list of net names. Required. |
+| `-halo` | Distance in µm from the nets' bounding box within which neighbours are included. The type is `float`, at least 0. The default is three times the nets' height. |
+| `-margin` | Distance in µm beyond the halo at which neighbour shapes are clipped. The type is `float`, at least 0. The default is half the nets' height. |
+| `-layer_map` | Design layers that map to differently named ITF layers, as pairs of names: design layer, then ITF layer. The type is a list of names. The default maps layers by name. |
+
 ### Clear Field Solver
 
 The `clear_field_solver` command removes every net, box and rectangle. The
@@ -182,6 +234,8 @@ Each value is a dict with these keys:
 - `seconds`: the solve's wall-clock time.
 - `cross_section`: 1 when the row is per unit length, for rectangles from
   `add_field_solver_rect`.
+- `window_leakage`: for nets from `add_field_solver_nets`, the window's
+  leakage in fF (0 otherwise).
 
 The solve stops when the standard error of the total, and of each coupling
 of at least `-coupling_threshold` of the total, falls below its tolerance.
@@ -235,8 +289,16 @@ add_field_solver_rect -net b -layer met1 -x {0.28 0.42}
 set result [solve_capacitance -nets a -tol_total 0.005]
 ```
 
-See also `./test/field_solver_uniform.tcl`, `./test/field_solver_itf.tcl`
-and `./test/field_solver_cross_section.tcl`.
+Two nets of a loaded design, with their neighbours:
+
+```text
+read_itf sky130.itf
+add_field_solver_nets -nets {net1 net2}
+set result [solve_capacitance]
+```
+
+See also `./test/field_solver_uniform.tcl`, `./test/field_solver_itf.tcl`,
+`./test/field_solver_cross_section.tcl` and `./test/field_solver_nets.tcl`.
 
 ## C++ API
 
@@ -284,5 +346,5 @@ reference files, and how to add or regenerate them.
 
 - Only conformal dielectrics with THICKNESS = 0 (shells around the wires,
   nothing deposited between them) and no BW_T are read.
-- Geometry is given box by box; reading it from the design database comes
-  later.
+- A net from the design is read as rectangles; non-Manhattan shapes are not
+  supported.

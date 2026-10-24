@@ -126,6 +126,7 @@ TESTS = [
     "field_solver_cross_section",
     "field_solver_errors",
     "field_solver_itf",
+    "field_solver_nets",
     "field_solver_uniform",
 ]
 
@@ -140,8 +141,11 @@ filegroup(
                 "tcl",
                 "py",
             ]
-        ],
-    ),
+        ] + ["sky130hd/**"],
+    ) + [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+    ],
 )
 
 [regression_test(
