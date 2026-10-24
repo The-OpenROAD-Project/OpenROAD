@@ -23,6 +23,19 @@ pre-existing via tests pass. These tests do not depend on Tcl or external
 technology files. The integration fixtures below additionally inspect emitted
 OpenDB geometry, fallback behavior, and supply connectivity.
 
+`TestPDNConnect.cpp` checks the caller as well. Containment, tapered-stack,
+landing-extension and ripup controls use landings that meet the declared
+enclosures. Their emitted rectangles are checked without calling the
+generator's enclosure predicate. The original undersized locked, pinned,
+outer-stack and nonpreferred-direction landings remain rejection cases.
+On the same upstream revision, the three rejection tests fail while all
+74 other connection tests pass, in each of three executions.
+
+```bash
+bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
+  //src/pdn/test:pdn_connect_unittest //src/pdn/test:pdn_via_unittest
+```
+
 The original integration reproducer's affected baseline is
 `80c6be93c28244f9f72840852a667daef764a4ff`.
 Build the baseline and the proposed revision with the same dependencies using
