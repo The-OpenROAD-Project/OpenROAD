@@ -2,7 +2,7 @@
 # Compiled into bazel/requirements_lock_3_13.txt via
 #   bazel run //bazel:requirements.update
 
-numpy==2.5.3
+numpy==2.5.4
 scipy==1.18.1
 pandas==3.0.6
 

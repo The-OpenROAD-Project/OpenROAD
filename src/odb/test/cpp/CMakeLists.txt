@@ -8,7 +8,7 @@ set(GTEST_LIBS
         GTest::gtest_main
 )
 
-add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestOrderWires.cpp)
+add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestWireNormalizer.cpp)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestShapeDestroy TestShapeDestroy.cpp)
 add_executable(TestGeom TestGeom.cpp)
@@ -38,6 +38,7 @@ add_executable(TestDbStream TestDbStream.cpp)
 
 target_link_libraries(OdbGTests
         db
+        wireNormalizer
         defin
         lefin
         lefout
