@@ -302,6 +302,37 @@ set result [solve_capacitance]
 See also `./test/field_solver_uniform.tcl`, `./test/field_solver_itf.tcl`,
 `./test/field_solver_cross_section.tcl` and `./test/field_solver_nets.tcl`.
 
+## Python
+
+`Design.getFieldSolver()` returns the session the Tcl commands use, with
+the same names in camel case. Boxes and rectangles take their coordinates
+as numbers, `addNets` takes a net or a list of nets, `halo`, `margin` and
+a `layer_map` dict, and `solve` takes the options of `solve_capacitance` as
+keywords and returns the rows as dicts keyed by net, with the keys of the
+Tcl results. With no nets, `solve` solves the default targets. An option
+left at `None` keeps its default; one out of range raises `ValueError`.
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLef("sky130hd.tlef")
+tech.readLef("sky130_fd_sc_hd_merged.lef")
+design = Design(tech)
+design.readDef("design.def")
+solver = design.getFieldSolver()
+solver.readItf("sky130.itf")
+solver.addNets(["net1", "net2"], halo=10)
+rows = solver.solve(tol_total=0.005)
+print(rows["net1"]["couplings"]["net2"])
+```
+
+The other methods are `setPermittivity`, `addBox(net, x0, y0, z0, x1, y1,
+z1)`, `addLayerRect(net, layer, x0, y0, x1, y1)`, `addRect(net, x0, z0, x1,
+z1)`, `addLayerSpan(net, layer, x0, x1)`, `clearGeometry`, `netNames`
+(without the grounded net of obstructions) and `defaultTargets`. See
+`./test/field_solver_python.py`.
+
 ## C++ API
 
 ```cpp
