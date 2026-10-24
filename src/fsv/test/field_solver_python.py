@@ -43,16 +43,17 @@ assert row["window_leakage"] > 0
 # The grounded net of obstructions is not one of the nets.
 assert "<obstructions>" not in solver.netNames() and "b" in solver.netNames()
 
-# A layer map, as -layer_map takes it.
-solver.addNets(["a"], halo=1, layer_map={"met2": "met2"})
+# A layer map, as -layer_map takes it; one net may be given by name.
+solver.addNets("a", halo=1, layer_map={"met2": "met2"})
+assert list(solver.defaultTargets()) == ["a"]
 
 # Shapes by layer: the stack gives their z extents. A met1 box over a
 # met2 one, and a cross section of the pair.
 solver.clearGeometry()
 solver.addLayerRect("m1", "met1", 0, 0, 4, 0.14)
 solver.addLayerRect("m2", "met2", 0, 0, 4, 0.14)
-rows = solver.solve(["m1"], tol_total=0.02)
-assert rows["m1"]["couplings"]["m2"] > 0
+rows = solver.solve("m1", tol_total=0.02)
+assert list(rows) == ["m1"] and rows["m1"]["couplings"]["m2"] > 0
 solver.clearGeometry()
 solver.addLayerSpan("m1", "met1", 0, 0.14)
 solver.addLayerSpan("m2", "met2", 0, 0.14)

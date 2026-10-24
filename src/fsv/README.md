@@ -306,8 +306,8 @@ See also `./test/field_solver_uniform.tcl`, `./test/field_solver_itf.tcl`,
 
 `Design.getFieldSolver()` returns the session the Tcl commands use, with
 the same names in camel case. Boxes and rectangles take their coordinates
-as numbers, `addNets` takes a list of nets, `halo`, `margin` and a
-`layer_map` dict, and `solve` takes the options of `solve_capacitance` as
+as numbers, `addNets` takes a net or a list of nets, `halo`, `margin` and
+a `layer_map` dict, and `solve` takes the options of `solve_capacitance` as
 keywords and returns the rows as dicts keyed by net, with the keys of the
 Tcl results. With no nets, `solve` solves the default targets. An option
 left at `None` keeps its default; one out of range raises `ValueError`.

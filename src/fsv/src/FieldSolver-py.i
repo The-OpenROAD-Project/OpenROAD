@@ -211,14 +211,14 @@ class FieldSolver
 
 %pythoncode %{
     def addNets(self, nets, halo=None, margin=None, layer_map=None):
-        """Replaces the conductors with nets of the loaded design and their
-        neighbours, as add_field_solver_nets. halo and margin are in um
+        """Replaces the conductors with nets of the loaded design (a name or
+        a list of names) and their neighbours, as add_field_solver_nets. halo and margin are in um
         (None: the defaults, multiples of the nets' height); layer_map
         maps design layers to differently named ITF layers."""
         _check_distance("halo", halo)
         _check_distance("margin", margin)
         self._addNets(
-            list(nets),
+            _net_list(nets),
             -1 if halo is None else halo,
             -1 if margin is None else margin,
             dict(layer_map or {}),
@@ -235,7 +235,8 @@ class FieldSolver
         seed=None,
         panels=None,
     ):
-        """Solves the nets (the default targets if none are given), as
+        """Solves the nets (a name or a list of names; the default targets if
+        none are given), as
         solve_capacitance, and returns their rows by net name. An option
         left at None keeps its default."""
         _check_number("tol_total", tol_total, "greater than 0", lambda v: v > 0)
@@ -269,7 +270,7 @@ class FieldSolver
                 panels,
             )
         ]
-        return self._solve(list(nets), *options)
+        return self._solve(_net_list(nets), *options)
 %}
 }
 
@@ -297,6 +298,11 @@ def _check_integer(name, value, what, ok):
         return
     if isinstance(value, bool) or not isinstance(value, int) or not ok(value):
         raise ValueError(f"{name} must be an integer {what}; got {value!r}")
+
+
+def _net_list(nets):
+    # One name or several; a str is iterable, but its characters are not nets.
+    return [nets] if isinstance(nets, str) else list(nets)
 
 
 def _check_distance(name, value):
