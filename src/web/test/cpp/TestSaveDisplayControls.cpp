@@ -11,6 +11,7 @@
 
 #include "boost/json.hpp"
 #include "gtest/gtest.h"
+#include "renderer_controls.h"
 #include "tst/nangate45_fixture.h"
 #include "web/core.h"
 #include "web/heatMap.h"
@@ -246,7 +247,8 @@ TEST(RendererControlExclusivity, TurningOneOnTurnsOffTheNamedSiblings)
   for (const char* name : {"Maze search", "Graph edges", "Route guides"}) {
     hook.setDisplayControlVisible(std::string("Detailed Router/") + name, true);
   }
-  applyRendererControlExclusivity(&hook, "Detailed Router/Maze search");
+  applyRendererControlExclusivity(hook.rendererControls(),
+                                  "Detailed Router/Maze search");
 
   EXPECT_TRUE(hook.checkDisplayControlVisible("Detailed Router/Maze search"))
       << "the control that was switched on stays on";
@@ -270,7 +272,7 @@ TEST(RendererControlExclusivity, EmptyNameExcludesEverySibling)
   for (const char* name : {"Shapes", "Nodes", "Sources"}) {
     hook.setDisplayControlVisible(std::string("IR Drop/") + name, true);
   }
-  applyRendererControlExclusivity(&hook, "IR Drop/Shapes");
+  applyRendererControlExclusivity(hook.rendererControls(), "IR Drop/Shapes");
 
   EXPECT_TRUE(hook.checkDisplayControlVisible("IR Drop/Shapes"));
   EXPECT_FALSE(hook.checkDisplayControlVisible("IR Drop/Nodes"));
@@ -291,7 +293,8 @@ TEST(RendererControlExclusivity, DoesNotReachIntoAnotherGroup)
   WebViewerHook hook;
   hook.setDisplayControlVisible("Detailed Router/Maze search", true);
   hook.setDisplayControlVisible("PDN/Vias", true);
-  applyRendererControlExclusivity(&hook, "Detailed Router/Maze search");
+  applyRendererControlExclusivity(hook.rendererControls(),
+                                  "Detailed Router/Maze search");
 
   EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Vias"))
       << "exclusivity is scoped to the parent group";
@@ -311,7 +314,7 @@ TEST(RendererControlExclusivity, NoExclusivityIsANoOp)
   WebViewerHook hook;
   hook.setDisplayControlVisible("PDN/Vias", true);
   hook.setDisplayControlVisible("PDN/Straps", true);
-  applyRendererControlExclusivity(&hook, "PDN/Vias");
+  applyRendererControlExclusivity(hook.rendererControls(), "PDN/Vias");
 
   EXPECT_TRUE(hook.checkDisplayControlVisible("PDN/Straps"));
 

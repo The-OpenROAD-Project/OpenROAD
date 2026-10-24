@@ -3,6 +3,8 @@
 
 %{
 #include <optional>
+#include <string>
+#include <vector>
 
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
@@ -10,10 +12,12 @@
 
 using utl::GUI;
 
-bool check_gui(const char* command)
+// With any_viewer, the script view serves the command when no Qt window is
+// up; otherwise it needs the window.
+bool check_gui(const char* command, bool any_viewer = false)
 {
   auto logger = ord::OpenRoad::openRoad()->getLogger(); 
-  if (!web::Gui::hasUI()) {
+  if (!(any_viewer ? web::Gui::hasViewer() : web::Gui::hasUI())) {
     logger->info(GUI, 1, "Command {} is not usable in non-GUI mode", command);
     return false;
   }
@@ -71,6 +75,14 @@ namespace std {
 
 %rename(pause) gui_pause;
 
+%typemap(out) std::vector<std::string> {
+  Tcl_Obj* list = Tcl_NewListObj(0, nullptr);
+  for (const std::string& item : *(&$1)) {
+    Tcl_ListObjAppendElement(interp, list, Tcl_NewStringObj(item.c_str(), item.size()));
+  }
+  Tcl_SetObjResult(interp, list);
+}
+
 %inline %{
 
 bool enabled()
@@ -79,8 +91,7 @@ bool enabled()
 }
 
 // True only while the Qt main window is running.  Tcl commands that a
-// non-Qt viewer also implements dispatch on this, so makeGui.cpp defines it
-// too and it is always callable.
+// non-Qt viewer also implements dispatch on this.
 bool has_ui()
 {
   return web::Gui::hasUI();
@@ -89,7 +100,7 @@ bool has_ui()
 void
 selection_add_net(const std::string& name)
 {
-  if (!check_gui("selection_add_net")) {
+  if (!check_gui("selection_add_net", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -99,7 +110,7 @@ selection_add_net(const std::string& name)
 void
 selection_add_nets(const char* name)
 {
-  if (!check_gui("selection_add_nets")) {
+  if (!check_gui("selection_add_nets", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -109,7 +120,7 @@ selection_add_nets(const char* name)
 void
 selection_add_inst(const std::string& name)
 {
-  if (!check_gui("selection_add_inst")) {
+  if (!check_gui("selection_add_inst", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -119,7 +130,7 @@ selection_add_inst(const std::string& name)
 void
 selection_add_insts(const char* name)
 {
-  if (!check_gui("selection_add_insts")) {
+  if (!check_gui("selection_add_insts", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -128,7 +139,7 @@ selection_add_insts(const char* name)
 
 void highlight_inst(const std::string& name, int highlight_group = 0)
 {
-  if (!check_gui("highlight_inst")) {
+  if (!check_gui("highlight_inst", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -137,7 +148,7 @@ void highlight_inst(const std::string& name, int highlight_group = 0)
 
 void highlight_net(const std::string& name, int highlight_group = 0)
 {
-  if (!check_gui("highlight_net")) {
+  if (!check_gui("highlight_net", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -296,7 +307,7 @@ void design_created()
 
 void fit()
 {
-  if (!check_gui("fit")) {
+  if (!check_gui("fit", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -306,6 +317,10 @@ void fit()
 void save_image(const char* filename, double xlo, double ylo, double xhi, double yhi, int width_px = 0, double dbu_per_pixel = 0, const std::map<std::string, bool>& display_settings = {})
 {
   auto gui = web::Gui::get();
+  if (!web::Gui::hasUI() && gui->getLauncher() == nullptr) {
+    auto logger = ord::OpenRoad::openRoad()->getLogger();
+    logger->error(GUI, 113, "Command gui::save_image is not available as OpenROAD was not compiled with QT support.");
+  }
   gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, display_settings);
 }
 
@@ -342,7 +357,7 @@ void save_histogram_image(const char* filename, const char* mode, int width_px =
 
 void show_worst_path_internal(bool setup = true)
 {
-  if (!check_gui("show_worst_path")) {
+  if (!check_gui("show_worst_path", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -351,7 +366,7 @@ void show_worst_path_internal(bool setup = true)
 
 void clear_timing_path_internal()
 {
-  if (!check_gui("clear_timing_path")) {
+  if (!check_gui("clear_timing_path", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -369,7 +384,7 @@ void clear_rulers()
 
 void clear_selections()
 {
-  if (!check_gui("clear_selections")) {
+  if (!check_gui("clear_selections", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -378,7 +393,7 @@ void clear_selections()
 
 void clear_highlights(int highlight_group = 0)
 {
-  if (!check_gui("clear_highlights")) {
+  if (!check_gui("clear_highlights", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -387,7 +402,7 @@ void clear_highlights(int highlight_group = 0)
 
 void set_display_controls(const char* name, const char* display_type, const char* value)
 {
-  if (!check_gui("set_display_controls")) {
+  if (!check_gui("set_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -418,7 +433,7 @@ void set_display_controls(const char* name, const char* display_type, const char
 
 bool check_display_controls(const char* name, const char* display_type)
 {
-  if (!check_gui("check_display_controls")) {
+  if (!check_gui("check_display_controls", true)) {
     return false;
   }
   auto gui = web::Gui::get();
@@ -443,7 +458,7 @@ bool check_display_controls(const char* name, const char* display_type)
 
 void save_display_controls()
 {
-  if (!check_gui("set_display_controls")) {
+  if (!check_gui("save_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -452,11 +467,20 @@ void save_display_controls()
 
 void restore_display_controls()
 {
-  if (!check_gui("restore_display_controls")) {
+  if (!check_gui("restore_display_controls", true)) {
     return;
   }
   auto gui = web::Gui::get();
   gui->restoreDisplayControls();
+}
+
+// The paths set_display_controls can name, as a Tcl list.
+std::vector<std::string> display_control_paths()
+{
+  if (!check_gui("display_control_paths", true)) {
+    return {};
+  }
+  return web::Gui::get()->displayControlPaths();
 }
 
 const std::string create_toolbar_button(const char* name, const char* text, const char* script, bool echo)
@@ -524,7 +548,7 @@ void gui_pause(int timeout = 0)
 
 void select_marker_category(odb::dbMarkerCategory* category)
 {
-  if (!check_gui("select_marker_category")) {
+  if (!check_gui("select_marker_category", true)) {
     return;
   }
   auto gui = web::Gui::get();
@@ -648,7 +672,7 @@ int select(const std::string& type,
            bool case_sensitive = true,
            int highlight_group = -1)
 {
-  if (!check_gui("select")) {
+  if (!check_gui("select", true)) {
     return 0;
   }
 
@@ -789,9 +813,10 @@ void trigger_action(const std::string& name)
   gui->triggerAction(name);
 }
 
+// Whether this build has the Qt gui: only gui.cpp installs a launcher.
 bool supported()
 {
-  return true;
+  return web::Gui::get()->getLauncher() != nullptr;
 }
 
 void minimize()

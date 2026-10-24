@@ -163,6 +163,7 @@ cc_library(
         "include/web/core.h",
         "include/web/descriptor_registry.h",
         "include/web/heatMap.h",
+        "include/web/timing_path_style.h",
         # The Qt gui's widgets build on these: its windows and views name
         # the descriptors, and its layout tabs take colours from the same
         # palette.  Private while this code and the gui shared a package;
@@ -203,18 +204,23 @@ cc_library(
     srcs = [
         "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
+        "src/display_control_tree.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
         "src/font_data.h",
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
+        "src/image_overlays.cpp",
         "src/module_color_palette.h",
+        "src/renderer_controls.cpp",
         "src/report_html.cpp",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
+        "src/script_view.cpp",
         "src/search.cpp",
         "src/search.h",
         "src/tile_generator.cpp",
+        "src/timing_path_painter.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
         "src/web_chart.cpp",
@@ -233,8 +239,13 @@ cc_library(
         # If these are meant to be used in tests with specific dependencies,
         # these should be put (together with their *.cpp files) into separate
         # libraries, with visibility for the //src/web/test path (see :color).
+        "src/display_control_tree.h",
         "src/glyph_cache.h",
+        "src/image_overlays.h",
+        "src/renderer_controls.h",
+        "src/script_view.h",
         "src/tile_generator.h",
+        "src/timing_path_painter.h",
         "src/timing_report.h",
         "src/web_chart.h",
         "src/web_painter.h",

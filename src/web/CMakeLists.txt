@@ -97,13 +97,18 @@ target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
     src/color.cpp
+    src/display_control_tree.cpp
     src/hierarchy_report.cpp
+    src/image_overlays.cpp
+    src/renderer_controls.cpp
     src/report_html.cpp
     src/request_handler.cpp
+    src/script_view.cpp
     src/search.cpp
     src/font_data.cpp
     src/glyph_cache.cpp
     src/tile_generator.cpp
+    src/timing_path_painter.cpp
     src/timing_report.cpp
     src/asset_gzip.cpp
     src/web.cpp

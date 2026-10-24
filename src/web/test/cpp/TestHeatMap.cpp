@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <set>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -11,6 +12,7 @@
 #include "sta/PowerClass.hh"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 #include "web/heatMap.h"
 
 namespace web {
@@ -43,6 +45,65 @@ class UniformHeatMap : public HeatMapDataSource
     base = new_data;
   }
 };
+
+// Counts the show and hide hooks the viewers' calls lead to.
+class CountingHeatMap : public UniformHeatMap
+{
+ public:
+  using UniformHeatMap::UniformHeatMap;
+
+  void onShow() override { ++shows; }
+  void onHide() override { ++hides; }
+
+  int shows = 0;
+  int hides = 0;
+};
+
+// The layout's renderer and the script view can both show a map: it is shown
+// once for the first and hidden once the last is done.
+TEST(HeatMapViewersTest, OnlyTheFirstShowAndTheLastHideCount)
+{
+  utl::Logger logger;
+  CountingHeatMap heat_map(&logger);
+  heat_map.show();
+  heat_map.show();
+  EXPECT_EQ(heat_map.shows, 1);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 0);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 1);
+  heat_map.hide();
+  EXPECT_EQ(heat_map.hides, 1) << "a hide with no viewer left";
+}
+
+// A renderer that only exists to carry a display control.
+class ControlsOnlyRenderer : public Renderer
+{
+ public:
+  const char* getDisplayControlGroupName() override { return kHeatMapGroup; }
+};
+
+// The web viewer leaves these out of its renderer pass: it draws heat maps
+// its own way.
+TEST(HeatMapRendererTest, OnlyTheRegisteredOnesAreHeatMapRenderers)
+{
+  utl::Logger logger;
+  UniformHeatMap heat_map(&logger);
+  Gui* gui = Gui::get();
+  const std::set<Renderer*> before = gui->renderers();
+  gui->registerHeatMap(&heat_map);
+  int added = 0;
+  for (Renderer* renderer : gui->renderers()) {
+    if (!before.contains(renderer)) {
+      ++added;
+      EXPECT_TRUE(gui->isHeatMapRenderer(renderer));
+    }
+  }
+  EXPECT_EQ(added, 1);
+  ControlsOnlyRenderer other;
+  EXPECT_FALSE(gui->isHeatMapRenderer(&other)) << "a group name is not enough";
+  gui->unregisterHeatMap(&heat_map);
+}
 
 class HeatMapTest : public tst::Nangate45Fixture
 {

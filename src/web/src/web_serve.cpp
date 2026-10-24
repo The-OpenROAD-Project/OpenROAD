@@ -40,6 +40,7 @@
 #include "clock_tree_report.h"
 #include "odb/geom.h"
 #include "request_handler.h"
+#include "script_view.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -146,6 +147,8 @@ void WebServer::initLogger()
   // chart factory are installed in serve() instead.
   if (!viewer_hook_) {
     viewer_hook_ = std::make_unique<WebViewerHook>();
+    // One set of renderer controls for the browser and the gui:: commands.
+    viewer_hook_->setRendererControls(&script_view_->rendererControls());
   }
 
   auto log_sink = std::make_shared<WebLogSink>(viewer_hook_.get());
@@ -338,6 +341,11 @@ void WebServer::serve(int port, const std::string& bind_address)
       }
       seedRendererControls(hook);
       for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+        // Heat maps have a tile layer of their own here, and their own pass
+        // in save_image -web.
+        if (web::Gui::get()->isHeatMapRenderer(renderer)) {
+          continue;
+        }
         // A Renderer sees the tile as a whole-DBU window (Painter's API is
         // integer DBU); only the rasterization below needs the exact
         // origin, which it takes from the frame.

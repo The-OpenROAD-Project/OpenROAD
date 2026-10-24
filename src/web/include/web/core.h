@@ -1079,11 +1079,22 @@ class GuiBackend
   virtual void registerHeatMap(HeatMapDataSource* /* heatmap */) {}
   virtual void unregisterHeatMap(HeatMapDataSource* /* heatmap */) {}
 
-  // Drive the timing views.  A backend with no timing widgets ignores both.
+  // Drive the timing views.  A backend with no timing widgets ignores these.
   virtual void timingCone(Term /* term */, bool /* fanin */, bool /* fanout */)
   {
   }
   virtual void timingPathsThrough(const std::set<Term>& /* terms */) {}
+  virtual void showWorstTimingPath(bool /* setup */) {}
+  virtual void clearTimingPath() {}
+
+  // The DRC viewer's marker category, the clock tree viewer's clock, and
+  // widgets by name.  A backend with no such widgets ignores these.
+  virtual void selectMarkers(odb::dbMarkerCategory* /* markers */) {}
+  virtual void selectClockviewerClock(const std::string& /* clock_name */,
+                                      std::optional<int> /* depth */)
+  {
+  }
+  virtual void showWidget(const std::string& /* name */, bool /* show */) {}
 
   // Activate a named control -- a menu action or a button -- by its widget
   // path.  Scripted UI driving, so a backend with no widgets does nothing.
@@ -1123,6 +1134,18 @@ class GuiBackend
   virtual void setDisplayControlSelectable(const std::string& /* name */,
                                            bool /* value */)
   {
+  }
+  // Every control with a visible box, by the path the calls above take.
+  virtual std::vector<std::string> displayControlPaths() { return {}; }
+  // A renderer's own control, asked from the render threads.  The script view
+  // and the web viewer draw a path they do not know rather than err.
+  virtual bool checkRendererControl(const std::string& path)
+  {
+    return checkDisplayControlVisible(path);
+  }
+  virtual void setRendererControl(const std::string& path, bool value)
+  {
+    setDisplayControlVisible(path, value);
   }
 };
 
@@ -1262,10 +1285,15 @@ class Gui
   // panel.
   bool checkDisplayControlsVisible(const std::string& name);
   bool checkDisplayControlsSelectable(const std::string& name);
+  // A renderer's control, from the Qt window or else the script view, whose
+  // store the web viewer shares.
+  bool checkRendererControl(const std::string& path);
+  void setRendererControl(const std::string& path, bool value);
 
   // Used to save and restore the display controls, useful for batch operations
   void saveDisplayControls();
   void restoreDisplayControls();
+  std::vector<std::string> displayControlPaths();
 
   // Used to add and remove focus nets from layout
   void addFocusNet(odb::dbNet* net);
@@ -1412,6 +1440,8 @@ class Gui
 
   void registerHeatMap(HeatMapDataSource* heatmap);
   void unregisterHeatMap(HeatMapDataSource* heatmap);
+  // Whether `renderer` is the one registerHeatMap made for a heat map.
+  bool isHeatMapRenderer(const Renderer* renderer) const;
   const std::set<HeatMapDataSource*>& getHeatMaps();
   HeatMapDataSource* getHeatMap(const std::string& name);
 
@@ -1433,6 +1463,10 @@ class Gui
   // should gate on this rather than enabled().
   static bool hasUI();
 
+  // True when there is a Qt window or a script view for the view commands
+  // (display controls, fit) to act on.
+  static bool hasViewer();
+
   // Install / inspect the Qt gui's backend.  MainWindow sets it when it
   // opens and clears it when it closes.
   void setBackend(GuiBackend* backend) { backend_ = backend; }
@@ -1442,6 +1476,11 @@ class Gui
   // viewer).  A window backend takes precedence over it.
   void setHeadlessViewer(GuiBackend* viewer);
   GuiBackend* getHeadlessViewer() const { return headless_viewer_; }
+
+  // Install / inspect what the view commands act on while no Qt window is up
+  // (the web viewer's ScriptView).  Never a backend, so enabled() ignores it.
+  void setScriptView(GuiBackend* view) { script_view_ = view; }
+  GuiBackend* getScriptView() const { return script_view_; }
 
   // Factory for web::Chart instances when the Qt GUI is not running.
   // The web viewer installs a factory that returns WebChart*.  When the
@@ -1499,6 +1538,13 @@ class Gui
     return backend_ != nullptr ? backend_ : headless_viewer_;
   }
 
+  // Where the view commands go: the Qt window when one is open, otherwise the
+  // script view.
+  GuiBackend* viewTarget() const
+  {
+    return hasUI() ? activeBackend() : script_view_;
+  }
+
   bool filterSelectionProperties(const Descriptor::Properties& properties,
                                  const std::string& attribute,
                                  const std::any& value,
@@ -1532,6 +1578,7 @@ class Gui
   GuiBackend* backend_ = nullptr;
   // Used when the Qt gui is not active.  Installed by the web viewer.
   GuiBackend* headless_viewer_ = nullptr;
+  GuiBackend* script_view_ = nullptr;
   ChartFactory chart_factory_;
   Dialogs* dialogs_ = nullptr;
   GuiLauncher* launcher_ = nullptr;
