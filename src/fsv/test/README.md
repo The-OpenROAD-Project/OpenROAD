@@ -50,11 +50,13 @@ and `req_msg[10]` (an input ending at a block pin on the die's edge). It
 solves them with a 4 µm halo and a fixed walk count.
 
 `field_solver_gcd.def` comes from the flow's `6_final.def`, trimmed by
-`gcd/trim_def.py` to every net with routing within 7 µm of the three nets
-(only the routing statements that come that close), the cells touching that
-region, and the special nets near it. It covers windows of up to a 6 µm halo
-and a 1 µm margin. Nets read from it give exactly the rows they give in the
-full design. To regenerate it:
+`gcd/trim_def.py` to a region 9 µm around each of the three nets' routing:
+the cells touching it, the block pins in it, every net with routing or a
+pin there, and of each net the routing statements that come within it. It
+covers windows of up to a 6 µm halo and a 1 µm margin: nets read from it
+give the same rows as in the full design, up to the order of the nets.
+Routing gcd with another OpenROAD version changes the design, so
+regenerate `field_solver_gcd.ok` with it. To regenerate the design:
 
 ```shell
 cd flow
@@ -62,7 +64,7 @@ make DESIGN_CONFIG=./designs/sky130hd/gcd/config.mk
 python3 ../tools/OpenROAD/src/fsv/test/gcd/trim_def.py \
   results/sky130hd/gcd/base/6_final.def \
   ../tools/OpenROAD/test/sky130hd/sky130_fd_sc_hd_merged.lef \
-  ../tools/OpenROAD/src/fsv/test/field_solver_gcd.def 7 \
+  ../tools/OpenROAD/src/fsv/test/field_solver_gcd.def 9 \
   _042_ _119_/_067_ "req_msg[10]"
 ```
 

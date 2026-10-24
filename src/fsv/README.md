@@ -236,6 +236,8 @@ Each value is a dict with these keys:
   `add_field_solver_rect`.
 - `window_leakage`: for nets from `add_field_solver_nets`, the window's
   leakage in fF (0 otherwise).
+- `rejected`: the walks whose start point fell inside the Gaussian surface,
+  where the target's grown boxes overlap; they count as walks of weight 0.
 
 The solve stops when the standard error of the total, and of each coupling
 of at least `-coupling_threshold` of the total, falls below its tolerance.

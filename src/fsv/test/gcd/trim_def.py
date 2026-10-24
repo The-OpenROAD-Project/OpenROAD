@@ -1,7 +1,10 @@
-"""Trims a routed DEF to the conductors near some nets: every net with routing
-in the region, whole; cells touching it; block pins of kept nets in it; the
-special nets, vias and die area unchanged. The region is each target net's
-routing bounding box grown by `reach` um."""
+"""Trims a routed DEF to the conductors near some nets, so that any window
+inside the region reads the same shapes as in the full design. It keeps the
+cells touching the region, the block pins in it (and the special nets'
+pins), every net with routing or a pin there, and of each net (special nets
+included) the routing statements that come within the region. Vias and the
+die area are unchanged. The region is each target net's routing bounding
+box grown by `reach` um."""
 
 import re
 import sys
@@ -86,14 +89,6 @@ def trim_routing(block):
     return head + "+ ROUTED " + "\n      NEW ".join(kept) + " " + tail
 
 
-# Nets with routing in the region.
-kept_nets = {}
-for block in nets:
-    name = block.split()[1]
-    trimmed = block if name in targets else trim_routing(block)
-    if trimmed is not None:
-        kept_nets[name] = trimmed
-
 # Cells touching the region.
 cs, ce = section("COMPONENTS")
 kept_cells = []
@@ -110,11 +105,11 @@ for block in entries(text[cs:ce]):
         kept_cells.append(block)
         cell_names.add(name)
 
-# Block pins: special nets' pins whole, others if their net is kept and
-# they lie in the region.
+# Block pins: special nets' pins whole, others if they lie in the region.
 ps, pe = section("PINS")
 kept_pins = []
 pin_names = set()
+pin_nets = set()
 for block in entries(text[ps:pe]):
     name = block.split()[1]
     net = re.search(r"\+ NET (\S+)", block).group(1)
@@ -123,9 +118,32 @@ for block in entries(text[ps:pe]):
     inside = m and touches(
         int(m.group(1)), int(m.group(2)), int(m.group(1)), int(m.group(2))
     )
-    if special or (net in kept_nets and inside):
+    if special or inside:
         kept_pins.append(block)
         pin_names.add(name)
+        pin_nets.add(net)
+
+
+def connects(block):
+    """Whether a net has a pin on a kept cell or a kept block pin."""
+    head = block.split("+")[0]
+    for a, b in re.findall(r"\(\s*(\S+)\s+(\S+)\s*\)", head):
+        if (a == "PIN" and b in pin_names) or a in cell_names:
+            return True
+    return False
+
+
+# Nets with routing in the region, or with a pin in it (on a kept cell or a
+# kept block pin): a pin whose net were dropped would read as unconnected,
+# and so grounded. A net may keep no routing at all.
+kept_nets = {}
+for block in nets:
+    name = block.split()[1]
+    trimmed = block if name in targets else trim_routing(block)
+    if trimmed is None and (connects(block) or name in pin_nets):
+        trimmed = block.split("+ ROUTED")[0].rstrip() + " ;"
+    if trimmed is not None:
+        kept_nets[name] = trimmed
 
 
 # Kept nets lose their connections to cells and pins that were dropped.
