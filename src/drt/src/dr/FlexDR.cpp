@@ -2147,7 +2147,11 @@ int FlexDR::main()
   // solution's violations.
   const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
   if (num_db_markers > 0) {
-    iter_ = std::max(0, router_cfg_->REROUTE_VIOLATIONS_START_ITER);
+    // Never resume past the configured end iteration, otherwise no repair
+    // iteration would run at all.
+    iter_ = std::max(0,
+                     std::min(router_cfg_->REROUTE_VIOLATIONS_START_ITER,
+                              router_cfg_->END_ITERATION));
     // gcell2BoundaryPin_ is only consumed by iteration 0 and is normally freed
     // at the end of that iteration. When resuming past iteration 0 that cleanup
     // never runs, so release it now to avoid holding the memory for the whole
