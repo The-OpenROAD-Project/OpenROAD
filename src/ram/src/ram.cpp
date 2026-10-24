@@ -1368,12 +1368,12 @@ dbMaster* RamGen::findTie(const bool one, dbMaster* given, std::string& pin)
   if (!best) {
     if (given) {
       logger_->error(
-          RAM, 79, "Cell {} is not a {} cell.", given->getName(), name);
+          RAM, 107, "Cell {} is not a {} cell.", given->getName(), name);
     }
-    logger_->error(RAM, 10, "Can't find {} cell", name);
+    logger_->error(RAM, 108, "Can't find {} cell", name);
   }
   if (!given) {
-    logger_->info(RAM, 16, "Selected {} cell {}", name, best->getName());
+    logger_->info(RAM, 109, "Selected {} cell {}", name, best->getName());
   }
   pin = best_port->name();
   return best;
@@ -1879,7 +1879,7 @@ dbMaster* RamGen::findMaster4(const uint16_t table,
     }
     if (!matched) {
       logger_->error(
-          RAM, 79, "Cell {} is not a {} cell.", best->getName(), name);
+          RAM, 110, "Cell {} is not a {} cell.", best->getName(), name);
     }
   }
   return best;
