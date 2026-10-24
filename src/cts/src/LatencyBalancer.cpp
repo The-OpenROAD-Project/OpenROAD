@@ -263,6 +263,15 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         }
 
         if (sink) {
+          if (full) {
+            // Useful-skew balancing only needs arrival.has_value() as a leaf
+            // gate; the value is unused and worseDelay_ is not maintained in
+            // this mode, so skip the STA path query (and its spurious CTS-179).
+            if (network_->dbToSta(sinkIterm)) {
+              graph_[sinkId].arrival = 0.0f;
+            }
+            continue;
+          }
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
@@ -289,9 +298,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                 }
               }
             }
-            if (!full) {
-              worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
-            }
+            worseDelay_ = std::max(worseDelay_, (arrival + insDelay));
             graph_[sinkId].arrival = arrival + insDelay;
             debugPrint(logger_,
                        CTS,
