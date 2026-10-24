@@ -38,7 +38,6 @@
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
