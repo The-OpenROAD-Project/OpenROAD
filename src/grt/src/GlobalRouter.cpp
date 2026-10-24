@@ -424,14 +424,19 @@ bool GlobalRouter::designIsPlaced()
   }
   block_ = db_->getChip()->getBlock();
 
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    odb::dbNet* net = bterm->getNet();
+    if (net == nullptr || net->isSpecial()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      return false;
+    }
+  }
+
   for (odb::dbNet* net : block_->getNets()) {
     if (net->isSpecial()) {
       continue;
-    }
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
-        return false;
-      }
     }
     for (odb::dbITerm* iterm : net->getITerms()) {
       odb::dbInst* inst = iterm->getInst();

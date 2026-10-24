@@ -74,6 +74,15 @@ TEST_F(GlobalRouterTest, DesignIsPlacedChecksSignalNetPins)
   power_net->setSigType(odb::dbSigType::POWER);
   odb::dbBTerm::create(power_net, "VDD_PORT");
   EXPECT_TRUE(grt_.designIsPlaced());
+
+  // Unconnected BTerms (not attached to any net, skipped by IO placement) are
+  // ignored.
+  odb::dbNet* temp_net = odb::dbNet::create(block_, "DISCONNECTED_PORT_NET");
+  odb::dbBTerm* disconnected_bterm
+      = odb::dbBTerm::create(temp_net, "DISCONNECTED_PORT");
+  disconnected_bterm->disconnect();
+  ASSERT_EQ(disconnected_bterm->getNet(), nullptr);
+  EXPECT_TRUE(grt_.designIsPlaced());
 }
 
 TEST_F(GlobalRouterTest, RudySkipsUnplacedPinsWhenPinPlacementCheckDisabled)
