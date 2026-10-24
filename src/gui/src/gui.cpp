@@ -53,7 +53,6 @@
 #include "utl/decode.h"
 #include "utl/exception.h"
 #include "web/descriptor_registry.h"
-#include "web/heatMap.h"
 
 extern int cmd_argc;
 extern char** cmd_argv;
@@ -366,6 +365,11 @@ class QtGuiBackend : public GuiBackend
     main_window->getControls()->restore();
   }
 
+  std::vector<std::string> displayControlPaths() override
+  {
+    return main_window->getControls()->controlPaths();
+  }
+
   void addFocusNet(odb::dbNet* net) override
   {
     main_window->getLayoutTabs()->addFocusNet(net);
@@ -503,6 +507,42 @@ class QtGuiBackend : public GuiBackend
     main_window->timingPathsThrough(terms);
   }
 
+  void showWorstTimingPath(bool setup) override
+  {
+    main_window->getTimingWidget()->showWorstTimingPath(setup);
+  }
+
+  void clearTimingPath() override
+  {
+    main_window->getTimingWidget()->clearSelection();
+  }
+
+  void selectMarkers(odb::dbMarkerCategory* markers) override
+  {
+    main_window->getDRCViewer()->selectCategory(markers);
+  }
+
+  void selectClockviewerClock(const std::string& clock_name,
+                              std::optional<int> depth) override
+  {
+    main_window->getClockViewer()->selectClock(clock_name, depth);
+  }
+
+  void showWidget(const std::string& name, bool show) override
+  {
+    auto* widget = findWidget(name);
+    if (widget == nullptr) {
+      return;
+    }
+
+    if (show) {
+      widget->show();
+      widget->raise();
+    } else {
+      widget->hide();
+    }
+  }
+
   void triggerAction(const std::string& name) override
   {
     // name is widget.action: up to the last dot picks the widget, the rest
@@ -614,54 +654,6 @@ std::string Gui::requestUserInput(const std::string& title,
                                        QString::fromStdString(question));
 }
 
-void Gui::selectMarkers(odb::dbMarkerCategory* markers)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getDRCViewer()->selectCategory(markers);
-}
-
-void Gui::showWorstTimingPath(bool setup)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getTimingWidget()->showWorstTimingPath(setup);
-}
-
-void Gui::clearTimingPath()
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getTimingWidget()->clearSelection();
-}
-
-void Gui::selectClockviewerClock(const std::string& clock_name,
-                                 std::optional<int> depth)
-{
-  if (!hasUI()) {
-    return;
-  }
-  main_window->getClockViewer()->selectClock(clock_name, depth);
-}
-
-void Gui::showWidget(const std::string& name, bool show)
-{
-  auto* widget = findWidget(name);
-  if (widget == nullptr) {
-    return;
-  }
-
-  if (show) {
-    widget->show();
-    widget->raise();
-  } else {
-    widget->hide();
-  }
-}
-
 void Gui::setMainWindowTitle(const std::string& title)
 {
   main_window_title_ = title;
@@ -741,20 +733,6 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   static gui::QtDialogs dialogs;
   setDialogs(&dialogs);
   setLauncher(&qt_launcher);
-
-  for (const auto& source : getRegisteredHeatMapSources()) {
-    const bool already_registered = std::ranges::any_of(
-        heat_maps_, [&source](HeatMapDataSource* heatmap) {
-          return heatmap->getShortName() == source->getShortName();
-        });
-    if (already_registered) {
-      continue;
-    }
-    auto instance = source->createInstance();
-    instance->setChip(db->getChip());
-    registerHeatMap(instance.get());
-    owned_heat_maps_.push_back(std::move(instance));
-  }
 }
 
 void Gui::selectHelp(const std::string& item)

@@ -29,6 +29,7 @@ set(WEB_TESTS
   TestCharts
   TestLabels
   TestSaveDisplayControls
+  TestScriptView
   TestGif
   TestWebAssets
   TestHeatMap
