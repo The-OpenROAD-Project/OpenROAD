@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <array>
-#include <deque>
-
 #include "shapeSearch.h"
+
+#include "odb/geom.h"
 
 namespace odb {
 
