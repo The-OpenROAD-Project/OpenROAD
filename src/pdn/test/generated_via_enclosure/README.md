@@ -79,17 +79,17 @@ cp "$repo_root/test/helpers.tcl" "$repro_dir/"
 mkdir "$repro_dir/Nangate45"
 cp "$repo_root/test/Nangate45/Nangate45.lef" "$repro_dir/Nangate45/"
 cd "$repro_dir"
-for arm in before after; do
-  if [ "$arm" = before ]; then exe=$OPENROAD_BEFORE; else exe=$OPENROAD_AFTER; fi
+for variant in before after; do
+  if [ "$variant" = before ]; then exe=$OPENROAD_BEFORE; else exe=$OPENROAD_AFTER; fi
   for case in edge positive valid; do
-    if RESULTS_DIR="$repro_dir/$arm" "$exe" -no_splash -no_init -exit \
-      "generated_via_default_${case}.tcl" >"${arm}_${case}.log" 2>&1; then
+    if RESULTS_DIR="$repro_dir/$variant" "$exe" -no_splash -no_init -exit \
+      "generated_via_default_${case}.tcl" >"${variant}_${case}.log" 2>&1; then
       status=0
     else
       status=$?
     fi
-    echo "$arm $case exit=$status"
-    cat "$arm/generated_via_default_$case/outcome.txt"
+    echo "$variant $case exit=$status"
+    cat "$variant/generated_via_default_$case/outcome.txt"
   done
 done
 for artifact in result.def via_geometry.tsv via_enclosures.tsv; do
