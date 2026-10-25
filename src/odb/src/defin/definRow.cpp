@@ -87,18 +87,20 @@ void definRow::begin(const char* name,
   }
 
   // Rows with a site spacing smaller than the site width declare
-  // overlapping sites.  Warn here so the issue is surfaced at read time;
-  // detailed placement rejects it with DPL-0052.
+  // overlapping sites.  Reject them here so the issue is surfaced at read
+  // time instead of later.
   if (num_sites > 1) {
     const int site_spacing = dbdist(spacing);
     if (site_spacing < site->getWidth()) {
       _logger->warn(utl::ODB,
                     478,
                     "Row {} has site spacing ({}) smaller than the site "
-                    "width ({}); the row's sites overlap.",
+                    "width ({}); the row's sites overlap.  Row ignored.",
                     name,
                     site_spacing,
                     site->getWidth());
+      ++_errors;
+      return;
     }
   }
 
