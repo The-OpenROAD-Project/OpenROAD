@@ -15,9 +15,6 @@ foreach net {_042_ _119_/_067_ req_msg[10]} {
   check "$net couples to its neighbours" {
     expr { [dict size [dict get $row couplings]] > 0 }
   } 1
-  check "$net has start points inside its surface" {
-    expr { [dict get $row rejected] > 0 }
-  } 1
 }
 
 # The leakage falls as the window grows: req_msg[10] reaches met3, so a

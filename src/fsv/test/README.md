@@ -68,8 +68,8 @@ python3 ../tools/OpenROAD/src/fsv/test/gcd/trim_def.py \
   _042_ _119_/_067_ "req_msg[10]"
 ```
 
-Measured on the full design (64 threads, the default tolerances of 1% on
-the total and 5% on couplings), the window hardly matters: against a halo of
+Measured on the full design (64 threads, tolerances of 1% on the total and
+5% on each coupling of at least 1% of it), the window hardly matters: against a halo of
 6h (h the net's height), totals at 2h moved by at most 0.003% and couplings
 by at most 0.3% of the total (0.07% at 3h), while the window's leakage was
 up to 2.7% at 2h and 1% at 3h. A net took 0.6–2.8 s to solve and 2–60 ms to
@@ -87,15 +87,15 @@ meet wires.
 
 ## Benchmark
 
-`BenchSuite` times the solver at its default tolerances (1% on the total,
-5% on couplings of at least 1% of it) on three groups, solving every net of
+`BenchSuite` times the solver at its default tolerances (standard errors of
+1% of the total, on the total and on every coupling) on three groups, solving every net of
 each case: `3d` (the 3D golden structures, and `etch_stop_pair` and
 `conformal_pair` extruded to 10 µm lines), `2d` (the six golden cross
 sections) and `nets` (the three nets of `field_solver_gcd.def` with a 4 µm
 halo, or any design's nets with `--lef`, `--def`, `--itf`, `--nets`,
 `--halo`). Each solve reports its seconds, walks, hops per walk, the
 relative standard error of one walk (`sigma1`, σ / total × √walks: the walk
-count scales with its square), rejected start points, the window's leakage,
+count scales with its square), the window's leakage,
 the scene's box count and its smallest box dimension. A short solve of
 every net first builds the tables it needs, so the times are warm.
 `BenchSuite_smoke`, a test, runs the cross sections on two threads.
@@ -148,6 +148,49 @@ Where the time goes, from `bench_split.py`:
 | Table sampling | 25% | 24% | 10% |
 | Walk loop | 12% | 10% | 5% |
 | Random numbers | 6% | 6% | 3% |
+
+### Comparing builds
+
+At 64 threads, repeated runs of one build differ by up to 8%, more than
+most changes to the cost of a hop. Compare two builds single-threaded, side
+by side, each pinned to its own physical core, and check their results
+against each other from the CSVs:
+
+```shell
+taskset -c 4 ./BenchSuite.base --threads 1 --csv base.csv &
+taskset -c 6 ./BenchSuite.new --threads 1 --csv new.csv &
+wait
+```
+
+Results are deterministic, so a change meant to leave them unchanged shows
+identical CSVs apart from the `seconds` column.
+
+### Sampling and stopping
+
+Three changes after the baseline, 2026-10-25, on the same machine:
+
+- Start points are drawn on the exposed parts of the Gaussian surface,
+  computed once per solve, so no draw is rejected.
+- A start piece is drawn in proportion to its area times the mean of 1 / h,
+  h the first cube's half-size, and its walks are weighted by its area over
+  that probability. A walk's weight scales as 1 / h, and small first cubes
+  (near shell edges, and on boxes with small offsets) carried most of the
+  variance of routed nets.
+- Each round is sized to the walks the tolerances still need, and couplings
+  are held to a fraction of the total (`tol_coupling`, the same as
+  `tol_total` by default) instead of 5% of each coupling of at least 1% of
+  it.
+
+| Group | Solves | Seconds per solve (geometric mean, range) | Hops per walk | `sigma1` |
+| ----- | ----- | ----- | ----- | ----- |
+| `3d` | 10 | 0.053–0.059 (0.010–0.246) | 31–158 | 2.8–6.9 |
+| `2d` | 14 | 0.014 (0.004–0.053) | 20–81 | 1.6–4.5 |
+| `nets` | 3 | 0.24 (0.19–0.28) | 100–120 | 4.4–4.5 |
+
+`nested_conformal` takes 46–53 ms against the 50 ms target. Solves now stop
+at 0.87–0.99% of the total against 1%, where whole rounds used to overshoot
+to 0.65–0.85%. Part of the nets' gain is the looser hold on their small
+couplings, which the old definition solved to 5% of their own value.
 
 ### Adding or changing a structure
 
