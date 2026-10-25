@@ -1699,6 +1699,11 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
 
 float Resizer::maxLoad(sta::Cell* cell)
 {
+  return maxLoad(cell, sta_->cmdScene());
+}
+
+float Resizer::maxLoad(sta::Cell* cell, const sta::Scene* scene)
+{
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   auto min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
@@ -1707,8 +1712,7 @@ float Resizer::maxLoad(sta::Cell* cell)
     if (port->direction()->isOutput()) {
       float limit, limit1;
       bool exists, exists1;
-      const sta::Scene* corner = sta_->cmdScene();
-      sta::Sdc* sdc = corner->sdc();
+      sta::Sdc* sdc = scene->sdc();
       // Default to top ("design") limit.
       sta::Cell* top_cell = network_->cell(network_->topInstance());
       sdc->capacitanceLimit(top_cell, min_max, limit, exists);
@@ -1718,7 +1722,7 @@ float Resizer::maxLoad(sta::Cell* cell)
         limit = limit1;
         exists = true;
       }
-      sta::LibertyPort* corner_port = port->scenePort(corner, min_max);
+      sta::LibertyPort* corner_port = port->scenePort(scene, min_max);
       corner_port->capacitanceLimit(min_max, limit1, exists1);
       if (!exists1 && port->direction()->isAnyOutput()) {
         corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);

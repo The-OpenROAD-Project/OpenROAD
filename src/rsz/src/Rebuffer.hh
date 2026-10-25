@@ -159,17 +159,23 @@ class Rebuffer : public sta::dbStaState
   // Drive resistance of a previous-stage driver pin, including a top-level
   // input's set_drive or set_driving_cell; 0 when unknown.
   float prevStageDriveResistance(const sta::Pin* prev_drvr_pin);
+  // Growth of the input capacitance `prev_drvr_pin` drives if the driver were
+  // resized to `cell`.
+  float inputCapGrowth(const sta::Pin* prev_drvr_pin, sta::LibertyCell* cell);
+  // Margined max slew of a driver output port; INF without a limit.
+  float drvrMaxSlew(const sta::LibertyPort* out_port);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
   // Empty when `cell` has no equivalent arc, violates its slew limits, or
   // (for a resize) its max capacitance.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when the paths through the driver's inputs other than the timing
-  // path's would miss `slack_limit` with the driver resized to `cell`.
-  bool otherInputsMeet(const BufferedNetPtr& bnet,
-                       sta::LibertyCell* cell,
-                       FixedDelay slack_limit);
+  // False when an arc into the driver output other than the timing path's
+  // would miss `slack_limit` or the slew limit with the driver resized to
+  // `cell`.
+  bool otherArcsMeet(const BufferedNetPtr& bnet,
+                     sta::LibertyCell* cell,
+                     FixedDelay slack_limit);
   // False when resizing the driver to `cell` would exceed the max capacitance
   // of a previous-stage driver, or slow it enough to push one of its other
   // loads below `slack_limit`.

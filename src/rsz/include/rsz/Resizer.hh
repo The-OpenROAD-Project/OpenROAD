@@ -699,6 +699,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::vector<sta::LibertyPort*> libraryOutputPins(
       sta::LibertyCell* cell) const;
   float maxLoad(sta::Cell* cell);
+  // Max load of `cell`'s output in `scene`; 0 when there is no limit.
+  float maxLoad(sta::Cell* cell, const sta::Scene* scene);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,

@@ -5,6 +5,7 @@
 #   side_crit: a weak top-level input slows its critical sibling load.
 #   cap:       the larger input exceeds the input port's max capacitance.
 #   nand_near: the other input, weakly driven, becomes critical.
+#   tied:      both inputs share one weak net, so both add to its delay.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -77,6 +78,8 @@ foreach name {nand_far nand_near} {
   make_circuit $name NAND2_X1 {A1 A2} 400
 }
 make_circuit aoi AOI221_X2 {A B1 B2 C1 C2} 100
+make_circuit tied NAND2_X1 {A1} 400
+[[$block findInst drv_tied] findITerm A2] connect [$block findNet in_tied_A1]
 foreach net $dont_touch {
   $net setDoNotTouch true
 }
@@ -94,6 +97,8 @@ set_input_delay -clock clk -0.3 [get_ports in_nand_far_A2]
 set_input_delay -clock clk -0.07 [get_ports in_nand_near_A2]
 set_input_delay -clock clk -0.3 [get_ports {in_aoi_B* in_aoi_C*}]
 set_input_delay -clock clk -0.05 [get_ports in_aoi_A]
+set_drive 5 [get_ports in_tied_A1]
+set_input_delay -clock clk -0.03 [get_ports in_tied_A1]
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
@@ -101,7 +106,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {base side_ok nand_far aoi side_crit cap nand_near} {
+foreach name {base side_ok nand_far aoi side_crit cap nand_near tied} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 
