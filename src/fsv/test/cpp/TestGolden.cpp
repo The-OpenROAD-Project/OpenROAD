@@ -90,8 +90,7 @@ SolveOptions solveOptions(const double tol_total)
 {
   SolveOptions options;
   options.tol_total = tol_total;
-  options.tol_coupling = 2 * tol_total;
-  options.coupling_threshold = 0.05;
+  options.tol_coupling = tol_total;
   return options;
 }
 

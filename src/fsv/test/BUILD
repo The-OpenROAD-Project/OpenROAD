@@ -55,6 +55,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGaussianSurface",
+    srcs = ["cpp/TestGaussianSurface.cpp"],
+    deps = [
+        "//src/fsv:core",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSpatialIndex",
     srcs = ["cpp/TestSpatialIndex.cpp"],
     deps = [

@@ -7,36 +7,36 @@
 [INFO ODB-0133]     Created 4 nets and 4 connections.
 [INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 conformal dielectrics, 7 vias.
 [INFO FSV-0018] Read 1 target and 4 neighbour nets: 63 boxes, 4 of them clipped and 0 obstructions trimmed, within a halo of 1 um and a margin of 0.2 um.
-[INFO FSV-0011] Net a: total 2.0609 fF +- 0.081 after 32768 walks (80.5 hops per walk).
-  ground                    0.83829 +- 0.061 fF
-  b                         0.65468 +- 0.036 fF
-  c                         0.03478 +- 0.0095 fF
-  VPWR                      0.34881 +- 0.042 fF
-  VGND                      0.18439 +- 0.037 fF
-  window leakage 1.1 fF (54% of the total)
+[INFO FSV-0011] Net a: total 2.026 fF +- 0.058 after 32768 walks (96.4 hops per walk).
+  ground                    0.81334 +- 0.043 fF
+  b                         0.59488 +- 0.03 fF
+  c                        0.049894 +- 0.0077 fF
+  VPWR                       0.4222 +- 0.031 fF
+  VGND                      0.14572 +- 0.024 fF
+  window leakage 1.1 fF (53% of the total)
 [INFO FSV-0018] Read 1 target and 5 neighbour nets: 66 boxes, 0 of them clipped and 0 obstructions trimmed, within a halo of 10.7 um and a margin of 1.78 um.
-[INFO FSV-0011] Net a: total 2.0691 fF +- 0.081 after 32768 walks (76.6 hops per walk).
-  ground                    0.77169 +- 0.06 fF
-  b                         0.67075 +- 0.037 fF
-  c                        0.055352 +- 0.011 fF
-  VPWR                      0.36369 +- 0.042 fF
-  VGND                      0.20165 +- 0.037 fF
-  d                       0.0059748 +- 0.0041 fF
+[INFO FSV-0011] Net a: total 2.0284 fF +- 0.058 after 32768 walks (93.4 hops per walk).
+  ground                    0.75454 +- 0.042 fF
+  b                         0.61589 +- 0.03 fF
+  c                        0.074489 +- 0.0098 fF
+  VPWR                      0.43507 +- 0.031 fF
+  VGND                      0.14815 +- 0.025 fF
+  d                      0.00025719 +- 0.0015 fF
 [INFO FSV-0018] Read 1 target and 4 neighbour nets: 63 boxes, 4 of them clipped and 0 obstructions trimmed, within a halo of 1 um and a margin of 1.78 um.
 [ERROR FSV-0030] Net nope is not in the design.
 [ERROR FSV-0032] -layer_map needs pairs of design and stack layers.
 [ERROR FSV-0033] -halo must be a distance of at least 0.
 [ERROR FSV-0007] Layer met9 is not a conductor or via of the ITF stack.
 [INFO FSV-0018] Read 1 target and 0 neighbour nets: 3 boxes, 0 of them clipped and 0 obstructions trimmed, within a halo of 0.5 um and a margin of 1.15 um.
-[INFO FSV-0011] Net e: total 0.16929 fF +- 0.01 after 8192 walks (202.7 hops per walk).
-  ground                    0.16929 +- 0.01 fF
-  window leakage 0.44 fF (2.6e+02% of the total)
+[INFO FSV-0011] Net e: total 0.17914 fF +- 0.0093 after 8192 walks (239.2 hops per walk).
+  ground                    0.17914 +- 0.0093 fF
+  window leakage 0.44 fF (2.4e+02% of the total)
 [INFO FSV-0018] Read 1 target and 2 neighbour nets: 9 boxes, 2 of them clipped and 1 obstructions trimmed, within a halo of 2 um and a margin of 1.15 um.
-[INFO FSV-0011] Net h: total 0.26967 fF +- 0.0091 after 8192 walks (68.4 hops per walk).
-  ground                    0.26545 +- 0.0091 fF
-  VGND                     0.004408 +- 0.0014 fF
-  d                     -0.00019488 +- 0.0005 fF
-  window leakage 0.0045 fF (1.7% of the total)
+[INFO FSV-0011] Net h: total 0.25929 fF +- 0.009 after 8192 walks (67.4 hops per walk).
+  ground                    0.25686 +- 0.009 fF
+  VGND                    0.0025065 +- 0.0014 fF
+  d                     -7.5832e-05 +- 0.00058 fF
+  window leakage 0.0032 fF (1.2% of the total)
 [INFO FSV-0018] Read 1 target and 0 neighbour nets: 1 boxes, 0 of them clipped and 0 obstructions trimmed, within a halo of 0 um and a margin of 0 um.
 [INFO FSV-0011] Net f: total 0.25254 fF +- 0.0094 after 8192 walks (285.1 hops per walk).
   ground                    0.25254 +- 0.0094 fF
