@@ -297,8 +297,8 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
           prev_port->scenePort(scene, max_)->driveResistance(rf, bound));
       continue;
     }
-    // A top-level input: set_drive, else the set_driving_cell output; ideal
-    // without either.
+    // A top-level input: the set_driving_cell output, else set_drive, as in
+    // delay calculation; ideal without either.
     const sta::InputDrive* drive
         = scene->sdc()->findInputDrive(network_->port(prev_drvr_pin));
     for (const sta::RiseFall* drive_rf : sta::RiseFall::range()) {
@@ -306,15 +306,18 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
         continue;
       }
       float res = 0.0;
-      bool exists = false;
       if (drive != nullptr) {
-        drive->driveResistance(drive_rf, max_, res, exists);
-        if (!exists) {
-          const sta::InputDriveCell* drive_cell
-              = drive->driveCell(drive_rf, max_);
-          res = drive_cell != nullptr && drive_cell->toPort() != nullptr
-                    ? drive_cell->toPort()->driveResistance(drive_rf, bound)
-                    : 0.0;
+        const sta::InputDriveCell* drive_cell
+            = drive->driveCell(drive_rf, max_);
+        if (drive_cell != nullptr && drive_cell->toPort() != nullptr) {
+          res = drive_cell->toPort()->driveResistance(drive_rf, bound);
+        } else {
+          float drive_resistance;
+          bool exists = false;
+          drive->driveResistance(drive_rf, max_, drive_resistance, exists);
+          if (exists) {
+            res = drive_resistance;
+          }
         }
       }
       drive_res = bound->minMax(drive_res, res);

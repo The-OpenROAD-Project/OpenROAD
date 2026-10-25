@@ -7,6 +7,7 @@
 #   nand_near: the other input, weakly driven, becomes critical.
 #   tied:      both inputs share one weak net, so both add to its delay.
 #   multi:     the input net's second, weak driver sets the extra delay.
+#   mixed:     like side_crit, with set_drive 0 under set_driving_cell.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -70,11 +71,12 @@ proc add_sibling { name } {
   make_inst side_$name INV_X1 5 [expr { $y - 10 }] [list A $in ZN $out]
 }
 
-foreach name {base cap side_ok side_crit} {
+foreach name {base cap side_ok side_crit mixed} {
   make_circuit $name INV_X1 {A} 400
 }
 add_sibling side_ok
 add_sibling side_crit
+add_sibling mixed
 foreach name {nand_far nand_near} {
   make_circuit $name NAND2_X1 {A1 A2} 400
 }
@@ -101,6 +103,9 @@ set_output_delay -clock clk 0 [all_outputs]
 set_driving_cell -lib_cell INV_X1 -pin ZN \
   [get_ports {in_side_ok_A in_side_crit_A}]
 set_output_delay -clock clk 0.08 [get_ports out_side_crit_side]
+set_driving_cell -lib_cell INV_X1 -pin ZN [get_ports in_mixed_A]
+set_drive 0 [get_ports in_mixed_A]
+set_output_delay -clock clk 0.08 [get_ports out_mixed_side]
 set_max_capacitance 0.003 [get_ports in_cap_A]
 set_drive 20 [get_ports {in_nand_far_A2 in_nand_near_A2}]
 set_input_delay -clock clk -0.3 [get_ports in_nand_far_A2]
@@ -118,7 +123,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {base side_ok nand_far aoi side_crit cap nand_near tied multi} {
+foreach name {base side_ok nand_far aoi side_crit mixed cap nand_near tied multi} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 
