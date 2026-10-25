@@ -163,6 +163,11 @@ class Rebuffer : public sta::dbStaState
   float prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
                                  const sta::RiseFall* rf,
                                  const sta::MinMax* bound);
+  // Drive resistance of a Liberty port for output transition `rf` (both when
+  // null), the largest or smallest (`bound`) over its arcs.
+  float portDriveResistance(const sta::LibertyPort* port,
+                            const sta::RiseFall* rf,
+                            const sta::MinMax* bound);
   // Growth of the input capacitance `prev_drvr_pin` drives if the driver were
   // resized to `cell`.
   float inputCapGrowth(const sta::Pin* prev_drvr_pin, sta::LibertyCell* cell);
@@ -478,6 +483,13 @@ class Rebuffer : public sta::dbStaState
       std::array<sta::ArcDelay, sta::RiseFall::index_count>,
       BufferDelayKeyHash>;
   BufferDelayCache buffer_delay_cache_;
+  // Memo for portDriveResistance(); Liberty data does not change.
+  absl::flat_hash_map<std::tuple<const sta::LibertyPort*, int, int>, float>
+      drive_res_cache_;
+  // Memo for inputCapGrowth() while one driver is planned.
+  absl::flat_hash_map<std::pair<const sta::Pin*, const sta::LibertyCell*>,
+                      float>
+      input_cap_growth_cache_;
   std::array<sta::ArcDelay, sta::RiseFall::index_count> uncached_gate_delays_;
 
   sta::Pin* pin_ = nullptr;

@@ -294,7 +294,7 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
     if (prev_port != nullptr) {
       drive_res = bound->minMax(
           drive_res,
-          prev_port->scenePort(scene, max_)->driveResistance(rf, bound));
+          portDriveResistance(prev_port->scenePort(scene, max_), rf, bound));
       continue;
     }
     // A top-level input: the set_driving_cell output, else set_drive, as in
@@ -310,7 +310,7 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
         const sta::InputDriveCell* drive_cell
             = drive->driveCell(drive_rf, max_);
         if (drive_cell != nullptr && drive_cell->toPort() != nullptr) {
-          res = drive_cell->toPort()->driveResistance(drive_rf, bound);
+          res = portDriveResistance(drive_cell->toPort(), drive_rf, bound);
         } else {
           float drive_resistance;
           bool exists = false;
@@ -326,9 +326,37 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
   return drive_res;
 }
 
+float Rebuffer::portDriveResistance(const sta::LibertyPort* port,
+                                    const sta::RiseFall* rf,
+                                    const sta::MinMax* bound)
+{
+  // LibertyPort::driveResistance walks every arc to the port, and the same
+  // ports are queried for each candidate cell and tree.
+  const std::tuple<const sta::LibertyPort*, int, int> key(
+      port,
+      rf != nullptr ? rf->index() : sta::RiseFall::index_count,
+      bound->index());
+  const auto it = drive_res_cache_.find(key);
+  if (it != drive_res_cache_.end()) {
+    return it->second;
+  }
+  const float res = port->driveResistance(rf, bound);
+  drive_res_cache_[key] = res;
+  return res;
+}
+
 float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
                                sta::LibertyCell* cell)
 {
+  // Memoized for the driver being planned: each candidate cell is evaluated
+  // with up to three trees and both transitions.
+  const std::pair<const sta::Pin*, const sta::LibertyCell*> key(prev_drvr_pin,
+                                                                cell);
+  const auto it = input_cap_growth_cache_.find(key);
+  if (it != input_cap_growth_cache_.end()) {
+    return it->second;
+  }
+
   // Summed over every input of the driver on the previous-stage net, as two
   // inputs can share it, with each input's largest growth over the scenes.
   float growth = 0.0;
@@ -358,6 +386,7 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
     }
     growth += input_growth;
   }
+  input_cap_growth_cache_[key] = growth;
   return growth;
 }
 
@@ -817,7 +846,7 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  float r_drvr = driver->driveResistance();
+  float r_drvr = portDriveResistance(driver, nullptr, sta::MinMax::max());
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
@@ -2389,6 +2418,7 @@ void Rebuffer::init(const bool find_max_wire_length)
 
   resizer_->findFastBuffers();
   buffer_sizes_.clear();
+  drive_res_cache_.clear();
 
   for (auto cell : resizer_->buffer_fast_sizes_) {
     sta::LibertyPort *in, *out;
@@ -3256,6 +3286,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
   drvr_load_high_water_mark_ = 0;
   // The gate-delay memo serves the planning of one driver.
   buffer_delay_cache_.clear();
+  input_cap_growth_cache_.clear();
 
   {
     float fanout, max_fanout, fanout_slack;
