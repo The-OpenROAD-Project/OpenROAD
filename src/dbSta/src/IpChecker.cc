@@ -796,9 +796,9 @@ void IpChecker::checkLibertyPins(odb::dbMaster* master)
   odb::dbTech* tech = db_->getTech();
   if (tech != nullptr) {
     const double dbu_per_micron = tech->getDbUnitsPerMicron();
-    const double lef_area
-        = static_cast<double>(master->getWidth()) * master->getHeight()
-          / (dbu_per_micron * dbu_per_micron);
+    const double lef_area = static_cast<double>(master->getWidth())
+                            * master->getHeight()
+                            / (dbu_per_micron * dbu_per_micron);
     const double liberty_area = liberty_cell->area();
     const double area_tolerance = std::max(1e-6, lef_area * 1e-3);
 
