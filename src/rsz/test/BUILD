@@ -51,6 +51,7 @@ TESTS = [
     "rebuffer_size_driver",
     "rebuffer_size_driver_checks",
     "rebuffer_size_driver_guards",
+    "rebuffer_size_driver_tiebreak",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",

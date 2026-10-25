@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         2
+        1 |     -7.1% |       0 |        0 |         1
+    final |    -14.3% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 2 drivers while rebuffering.
+drv_crit INVx1_ASAP7_75t_R
+drv_relaxed INVxp67_ASAP7_75t_R
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
