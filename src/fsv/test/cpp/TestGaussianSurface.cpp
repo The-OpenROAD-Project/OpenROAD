@@ -306,5 +306,94 @@ TEST(GaussianSurface, InterfacesCrossingAtAGridPoint)
   }
 }
 
+// Inside its own shells a box grows by 0.4 of the distance to the nearest
+// parallel face of them, so a first cube stays short of it; a neighbour's
+// shell does not move it, nor does a face so near the box that the offset
+// would be under 0.05 of the usual one. A lone box in one dielectric has first
+// cubes of exactly its offset.
+TEST(GaussianSurface, InsidePlacementStaysShortOfShellFaces)
+{
+  const std::vector<Box> boxes{{{0, 0, 1}, {4, 1, 2}}};
+  const SpatialIndex<3> conductors(boxes);
+  const auto own = [](int) { return 0; };
+  Shell<3> shell{};
+  shell.outer = {{-0.15, -0.15, 0.85}, {4.15, 1.15, 2.15}};
+  shell.inner = boxes[0];
+  shell.eps = 7;
+  shell.depth = 1;
+  const Dielectric<3> shelled(3.9, {}, {shell});
+  const GaussianSurface<3> inside = makeGaussianSurface<3>(
+      boxes, own, conductors, shelled, 0, 0.5, SurfacePlacement::kInsideShells);
+  EXPECT_TRUE(inside.inside_shells);
+  for (const auto& piece : inside.pieces) {
+    const double c = piece.high ? boxes[0].hi[piece.axis] + 0.06
+                                : boxes[0].lo[piece.axis] - 0.06;
+    EXPECT_NEAR(piece.rect.lo[piece.axis], c, 1e-12);
+  }
+  // A neighbour's shell alone leaves the box where it is.
+  const std::vector<Box> pair{boxes[0], {{0, 1.2, 1}, {4, 2.2, 2}}};
+  Shell<3> neighbour = shell;
+  neighbour.outer = {{-0.05, 1.15, 0.95}, {4.05, 2.25, 2.05}};
+  neighbour.inner = pair[1];
+  neighbour.box = 1;
+  const GaussianSurface<3> beside = makeGaussianSurface<3>(
+      pair,
+      [](const int b) { return b; },
+      SpatialIndex<3>(pair),
+      Dielectric<3>(3.9, {}, {neighbour}),
+      0,
+      0.5,
+      SurfacePlacement::kInsideShells);
+  EXPECT_FALSE(beside.inside_shells);
+
+  // A shell face a rounding error from the box leaves it where it is.
+  Shell<3> touching = shell;
+  touching.outer
+      = {{-1e-15, -1e-15, 1 - 1e-15}, {4 + 1e-15, 1 + 1e-15, 2 + 1e-15}};
+  const GaussianSurface<3> thin
+      = makeGaussianSurface<3>(boxes,
+                               own,
+                               conductors,
+                               Dielectric<3>(3.9, {}, {touching}),
+                               0,
+                               0.5,
+                               SurfacePlacement::kInsideShells);
+  EXPECT_FALSE(thin.inside_shells);
+
+  // Two fingers of the master: the second finger's shell comes nearer the
+  // first (0.15) than the first's own shell face (0.2), and only the own
+  // one places the first finger, at 0.4 * 0.2.
+  const std::vector<Box> fingers{boxes[0], {{0, 1.5, 1}, {4, 2.5, 2}}};
+  Shell<3> first = shell;
+  first.outer = {{-0.2, -0.2, 1}, {4.2, 1.2, 2.2}};
+  first.box = 0;
+  Shell<3> second = shell;
+  second.outer = {{-0.35, 1.15, 1}, {4.35, 2.85, 2.35}};
+  second.inner = fingers[1];
+  second.box = 1;
+  const GaussianSurface<3> pair_inside
+      = makeGaussianSurface<3>(fingers,
+                               own,
+                               SpatialIndex<3>(fingers),
+                               Dielectric<3>(3.9, {}, {first, second}),
+                               0,
+                               0.5,
+                               SurfacePlacement::kInsideShells);
+  bool found = false;
+  for (const auto& piece : pair_inside.pieces) {
+    if (piece.axis == 0 && !piece.high && piece.rect.hi[1] < 1.5) {
+      EXPECT_NEAR(piece.rect.lo[0], -0.08, 1e-12);
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+
+  const Dielectric<3> uniform(3.9, {}, {});
+  const GaussianSurface<3> lone = makeGaussianSurface<3>(
+      boxes, own, conductors, uniform, 0, 0.5, SurfacePlacement::kInsideShells);
+  EXPECT_FALSE(lone.inside_shells);
+  EXPECT_NEAR(lone.first_cube_shrink, 1, 1e-12);
+}
+
 }  // namespace
 }  // namespace fsv

@@ -13,6 +13,16 @@
 
 namespace fsv {
 
+// Where the surface sits around a box with conformal shells: clear of all
+// shell faces (kClearOfShells), or inside the box's own innermost shell
+// (kInsideShells), where a first cube meets no parallel face of it but is
+// smaller.
+enum class SurfacePlacement
+{
+  kClearOfShells,
+  kInsideShells,
+};
+
 // The closed surface around the master on which walks start; its charge is
 // the flux through it. It is the boundary of the union of the master's
 // boxes, merged (see mergeBoxes) and each grown by its own offset, cut into
@@ -55,6 +65,11 @@ struct GaussianSurface
   std::vector<Piece> pieces;
   // The running sum of the pieces' unnormalized start probabilities.
   std::vector<double> cumulative;
+  // Whether kInsideShells moved any box: one had its own shells nearby.
+  bool inside_shells = false;
+  // The area-weighted mean of offset / h: how much the first cubes shrink
+  // below the box's offset, near other interfaces (1 where none do).
+  double first_cube_shrink = 1;
 };
 
 // Fewer boxes with the same union: a box inside another is dropped, and two
@@ -79,8 +94,9 @@ std::vector<typename GaussianSurface<D>::Piece> exposedPieces(
 
 // The master's Gaussian surface: its boxes merged, then each grown by its
 // own offset, a fraction offset_frac of its smallest dimension that keeps
-// clear of other conductors and of the shells' faces. Tight spots get small
-// offsets locally instead of shrinking the whole surface. `conductors` is
+// clear of other conductors and is placed against the shells' faces by
+// `placement`. Tight spots get small offsets locally instead of shrinking
+// the whole surface. `conductors` is
 // the scene's index over `boxes`, for the first cubes. Throws
 // std::invalid_argument if the master has no boxes or another conductor
 // touches it.
@@ -90,7 +106,9 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
                                        const SpatialIndex<D>& conductors,
                                        const Dielectric<D>& dielectric,
                                        int master,
-                                       double offset_frac);
+                                       double offset_frac,
+                                       SurfacePlacement placement
+                                       = SurfacePlacement::kClearOfShells);
 
 // The half-size of the first cube of a walk starting at p: the largest cube
 // clear of conductors, shrunk to meet at most one dielectric interface.

@@ -342,7 +342,7 @@ void report(const std::vector<Row>& rows,
   if (out != nullptr) {
     std::fprintf(out,
                  "group,case,net,threads,seconds,walks,hops,total,sigma,"
-                 "window_leakage,boxes,min_dim\n");
+                 "window_leakage,boxes,min_dim,inside_surface,trial_walks\n");
   }
   std::string group;
   double log_sum = 0;
@@ -380,7 +380,7 @@ void report(const std::vector<Row>& rows,
     if (out != nullptr) {
       std::fprintf(out,
                    "%s,\"%s\",\"%s\",%d,%.6f,%lld,%lld,%.8g,%.8g,%.8g,%d,"
-                   "%.8g\n",
+                   "%.8g,%d,%lld\n",
                    r.group.c_str(),
                    r.name.c_str(),
                    r.net.c_str(),
@@ -392,7 +392,9 @@ void report(const std::vector<Row>& rows,
                    row.sigma[row.master],
                    row.window_leakage,
                    r.boxes,
-                   r.min_dim);
+                   r.min_dim,
+                   row.inside_surface ? 1 : 0,
+                   static_cast<long long>(row.trial_walks));
     }
     // A solve too fast for the clock would make the log -inf.
     log_sum += std::log(std::max(r.seconds, 1e-9));

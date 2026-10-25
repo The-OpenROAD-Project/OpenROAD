@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Dielectric.h"
+#include "Structures.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
@@ -101,6 +102,41 @@ TEST(Solver, CouplingToleranceFollowsTheTotal)
   EXPECT_LT(tight.sigma[b], 0.005 * tight.total());
   EXPECT_LT(tight.ground_sigma, 0.005 * tight.total());
   EXPECT_GT(tight.walks, loose.walks);
+}
+
+// Around shells whose first cubes shrink, a trial picks the surface inside
+// them where it is clearly cheaper: on the line ends, whose shells cross a
+// layer boundary. A planar structure, and a solve capped below the trial's
+// budget, run no trial.
+TEST(Solver, TrialPicksTheSurface)
+{
+  Solver solver({.threads = 8});
+  const Structure line_ends = readStructure("conformal_line_ends");
+  const Scene shelled(line_ends.geometry, line_ends.stack);
+  const CapRow chosen = solver.solve(shelled, 0, SolveOptions{});
+  EXPECT_TRUE(chosen.inside_surface);
+  EXPECT_GT(chosen.trial_walks, 0);
+
+  // With the walk count fixed only the hops per walk count, and the inside
+  // surface's walks are shorter here.
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 262144;
+  const CapRow fixed_row = solver.solve(shelled, 0, fixed);
+  EXPECT_TRUE(fixed_row.inside_surface);
+  EXPECT_EQ(fixed_row.walks, 262144);
+
+  SolveOptions capped;
+  capped.min_walks = capped.max_walks = 65536;
+  const CapRow quick = solver.solve(shelled, 0, capped);
+  EXPECT_FALSE(quick.inside_surface);
+  EXPECT_EQ(quick.trial_walks, 0);
+  EXPECT_EQ(quick.walks, 65536);
+
+  const Structure planar = readStructure("etch_stop_pair", 10);
+  const CapRow clear
+      = solver.solve(Scene(planar.geometry, planar.stack), 0, SolveOptions{});
+  EXPECT_FALSE(clear.inside_surface);
+  EXPECT_EQ(clear.trial_walks, 0);
 }
 
 // Capacitance scales with the dielectric constant and with size.

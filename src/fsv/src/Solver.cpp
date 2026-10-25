@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -642,6 +643,11 @@ CapRow runRounds(WorkerPool& pool,
     estimateRow(total, nets, row);
 
     // A dropped walk would bias every column without showing up in sigma.
+    if (!std::isfinite(row.cap[master])) {
+      throw std::runtime_error(
+          "fsv: walks of non-finite weight while solving net "
+          + geometry.netName(master));
+    }
     if (total.guard_hits > 0) {
       throw std::runtime_error(
           "fsv: " + std::to_string(total.guard_hits) + " walk(s) exceeded "
@@ -670,6 +676,63 @@ CapRow runRounds(WorkerPool& pool,
                    static_cast<double>(options.round_batches)));
   }
   return row;
+}
+
+// Each trial round in choosing a Gaussian surface: 8192 walks, in batches
+// small enough to occupy many threads.
+constexpr int kTrialBatches = 32;
+constexpr int kTrialBatchSize = 256;
+// The inside surface must cost at most this much of the other in its trial:
+// a close call is not worth the noise in either cost.
+constexpr double kInsideAdvantage = 0.8;
+// Below this first-cube shrink on the clear surface (see GaussianSurface),
+// the inside one has nothing to gain and is not tried.
+constexpr double kShrinkToTry = 1.1;
+// A solve allowed fewer than this many times the trial's walks (both
+// surfaces) skips the trial, which would be a large part of its budget.
+constexpr int64_t kTrialBudget = 8;
+// These constants were tuned on the benchmark; see test/README.md, Surface
+// placement.
+
+// The hops a walker's solve would take, from one trial round of walks on
+// stream `key`: the walks needed to meet the tolerances (see
+// worstErrorRatio), held within [min_walks, max_walks] as the solve's are,
+// times the hops per walk. With min_walks = max_walks only the hops per
+// walk differ. A walk past the hop guard, or a surface with no finite
+// estimate, makes it infinite.
+template <class W, class GeometryType>
+double trialCost(WorkerPool& pool,
+                 const W& walker,
+                 const SolveOptions& solve_options,
+                 const GeometryType& geometry,
+                 const int master)
+{
+  const int nets = geometry.netCount();
+  const int columns = nets + 1;
+  std::vector<Tally> tallies(kTrialBatches, Tally(columns));
+  runRound(pool, walker, kTrialBatchSize, 0, kTrialBatches, columns, tallies);
+  Tally total(columns);
+  for (const Tally& tally : tallies) {
+    total.add(tally);
+  }
+  if (total.guard_hits > 0) {
+    return std::numeric_limits<double>::infinity();
+  }
+  CapRow row;
+  row.master = master;
+  row.walks = static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  estimateRow(total, nets, row);
+  const double ratio = worstErrorRatio(row, solve_options);
+  if (!std::isfinite(ratio)) {
+    // No estimate (a non-positive or non-finite total): never the cheaper.
+    return std::numeric_limits<double>::infinity();
+  }
+  const double lo = static_cast<double>(solve_options.min_walks);
+  const double hi = static_cast<double>(solve_options.max_walks);
+  double walks = ratio * ratio * static_cast<double>(row.walks);
+  // An infinite or NaN ratio runs to max_walks.
+  walks = walks < hi ? std::max(walks, lo) : hi;
+  return walks * static_cast<double>(row.hops) / static_cast<double>(row.walks);
 }
 
 // The two-dielectric tables for one permittivity ratio, by interface
@@ -707,13 +770,17 @@ CapRow solveScene(const SceneType& scene,
   using Layered = typename Frame::Layered;
   const auto& geometry = scene.geometry();
   checkSolveArguments(geometry, master, solve_options);
-  const GaussianSurface<D> gauss = makeGaussianSurface<D>(
-      Frame::shapes(geometry),
-      [&](const int b) { return Frame::shapeNet(geometry, b); },
-      scene.index(),
-      scene.dielectric(),
-      master,
-      solve_options.gauss_offset);
+  auto surface = [&](const SurfacePlacement placement) {
+    return makeGaussianSurface<D>(
+        Frame::shapes(geometry),
+        [&](const int b) { return Frame::shapeNet(geometry, b); },
+        scene.index(),
+        scene.dielectric(),
+        master,
+        solve_options.gauss_offset,
+        placement);
+  };
+  const GaussianSurface<D> clear = surface(SurfacePlacement::kClearOfShells);
   LayeredTableCache<Layered, D> tables(
       scene.dielectric(),
       [&](const double ratio) -> const Tables<Layered>& {
@@ -723,16 +790,46 @@ CapRow solveScene(const SceneType& scene,
   const uint64_t key
       = options.seed
         ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
-  const Walker<Frame> walker(geometry,
-                             scene.index(),
-                             scene.dielectric(),
-                             gauss,
-                             greens,
-                             tables,
-                             solve_options.capture_rel * scene.minDimension(),
-                             solve_options.hop_guard,
-                             key);
-  return runRounds(pool, walker, options, solve_options, geometry, master);
+  auto walker = [&](const GaussianSurface<D>& gauss, const uint64_t k) {
+    return Walker<Frame>(geometry,
+                         scene.index(),
+                         scene.dielectric(),
+                         gauss,
+                         greens,
+                         tables,
+                         solve_options.capture_rel * scene.minDimension(),
+                         solve_options.hop_guard,
+                         k);
+  };
+  // Inside the shells the first cubes meet fewer interfaces but are
+  // smaller, which wins on some structures and loses on others; one trial
+  // round on each surface picks the cheaper. The trial walks use their own
+  // streams and are discarded, so the choice does not bias the solve.
+  const GaussianSurface<D>* gauss = &clear;
+  std::optional<GaussianSurface<D>> inside;
+  constexpr int64_t kTrialWalks
+      = 2 * static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  if (clear.first_cube_shrink > kShrinkToTry
+      && solve_options.max_walks >= kTrialBudget * kTrialWalks) {
+    inside = surface(SurfacePlacement::kInsideShells);
+  }
+  int64_t trial_walks = 0;
+  if (inside && inside->inside_shells) {
+    const uint64_t trial_key = key ^ 0xD1B54A32D192ED03ull;
+    const double clear_cost = trialCost(
+        pool, walker(clear, trial_key), solve_options, geometry, master);
+    const double inside_cost = trialCost(
+        pool, walker(*inside, ~trial_key), solve_options, geometry, master);
+    trial_walks = kTrialWalks;
+    if (inside_cost < kInsideAdvantage * clear_cost) {
+      gauss = &*inside;
+    }
+  }
+  CapRow row = runRounds(
+      pool, walker(*gauss, key), options, solve_options, geometry, master);
+  row.inside_surface = gauss != &clear;
+  row.trial_walks = trial_walks;
+  return row;
 }
 
 // The panel count, checked before any table is built: every tabulated

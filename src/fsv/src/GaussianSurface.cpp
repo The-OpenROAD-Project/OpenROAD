@@ -25,6 +25,15 @@ namespace {
 // probabilities count.
 constexpr double kMinCubeFraction = 1e-3;
 
+// Inside the shells, the offset as a fraction of the distance to the
+// nearest parallel face of the master's own shells. Tuned on the benchmark
+// (see test/README.md, Surface placement).
+constexpr double kInsideFraction = 0.4;
+// The least inside offset, as a share of the usual one. A shell of nearly
+// no thickness would otherwise leave no room for a first cube; its box
+// keeps the usual offset.
+constexpr double kMinInsideShare = 0.05;
+
 // Coordinates closer than this (µm) are equal when boxes merge. A merged box
 // only shapes the Gaussian surface, which stays valid as long as it
 // contains the master's boxes and clears other conductors, so the
@@ -66,7 +75,9 @@ double boxOffset(const AlignedBox<D>& box,
                  const std::function<int(int)>& box_net,
                  const Dielectric<D>& dielectric,
                  const int master,
-                 const double offset_frac)
+                 const double offset_frac,
+                 const SurfacePlacement placement,
+                 bool& inside)
 {
   double gap = box.lo[D - 1];
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
@@ -90,21 +101,38 @@ double boxOffset(const AlignedBox<D>& box,
   // move it to the nearest point clear of them all within (0, limit], or
   // into the middle of the widest gap between them.
   std::vector<double> faces;
+  // The nearest outer face of the shells wrapping this box: those around the
+  // master's boxes merged into it. Another master box's shell nearby (a via
+  // sitting in a wire's shell, a parallel finger) does not move it.
+  double own_face = std::numeric_limits<double>::infinity();
   for (const Shell<D>& shell : dielectric.shells()) {
     if (linfGap(box, shell.outer) >= limit) {
       continue;
     }
+    const bool own
+        = box_net(shell.box) == master && contains(box, boxes[shell.box]);
     for (int k = 0; k < D; k++) {
       for (const double c : {shell.outer.lo[k], shell.outer.hi[k]}) {
         for (const double d : {box.lo[k] - c, c - box.hi[k]}) {
           if (d > 0 && d < limit) {
             faces.push_back(d);
+            if (own) {
+              own_face = std::min(own_face, d);
+            }
           }
         }
       }
     }
   }
   std::ranges::sort(faces);
+  const double inside_offset = kInsideFraction * own_face;
+  if (placement == SurfacePlacement::kInsideShells && std::isfinite(own_face)
+      && inside_offset >= kMinInsideShare * offset) {
+    // The first cube reaches twice the offset from the box, so it stays
+    // short of the face.
+    inside = true;
+    return std::min(offset, inside_offset);
+  }
   // Moving the offset changes its clearance, so repeat until it holds.
   for (int attempt = 0; attempt < 4; attempt++) {
     const double clearance = 0.25 * offset;
@@ -307,7 +335,8 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
                                        const SpatialIndex<D>& conductors,
                                        const Dielectric<D>& dielectric,
                                        const int master,
-                                       const double offset_frac)
+                                       const double offset_frac,
+                                       const SurfacePlacement placement)
 {
   std::vector<AlignedBox<D>> own;
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
@@ -317,9 +346,16 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
   }
   std::vector<AlignedBox<D>> grown;
   std::vector<double> offsets;
+  bool inside_shells = false;
   for (const AlignedBox<D>& box : mergeBoxes(std::move(own))) {
-    const double offset
-        = boxOffset(box, boxes, box_net, dielectric, master, offset_frac);
+    const double offset = boxOffset(box,
+                                    boxes,
+                                    box_net,
+                                    dielectric,
+                                    master,
+                                    offset_frac,
+                                    placement,
+                                    inside_shells);
     offsets.push_back(offset);
     AlignedBox<D>& g = grown.emplace_back();
     for (int k = 0; k < D; k++) {
@@ -332,8 +368,10 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
   }
   const SpatialIndex<D> index(grown);
   GaussianSurface<D> g;
+  g.inside_shells = inside_shells;
   std::vector<double> areas;
   std::vector<double> draws;
+  double shrink_sum = 0;
   for (int b = 0; b < static_cast<int>(grown.size()); b++) {
     for (int axis = 0; axis < D; axis++) {
       for (const bool high : {false, true}) {
@@ -363,11 +401,17 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
           }
           areas.push_back(area);
           draws.push_back(area * inverse_sum / kCells);
+          shrink_sum += draws.back() * offsets[b];
           g.pieces.push_back(piece);
         }
       }
     }
   }
+  double area_sum = 0;
+  for (const double area : areas) {
+    area_sum += area;
+  }
+  g.first_cube_shrink = shrink_sum / area_sum;
   double total = 0;
   for (const double draw : draws) {
     total += draw;
@@ -393,7 +437,8 @@ GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
       const SpatialIndex<D>&,                                                 \
       const Dielectric<D>&,                                                   \
       int,                                                                    \
-      double);                                                                \
+      double,                                                                 \
+      SurfacePlacement);                                                      \
   template double firstCubeSize<D>(                                           \
       const Vec<D>&, const SpatialIndex<D>&, const Dielectric<D>&);
 FSV_INSTANTIATE(2)
