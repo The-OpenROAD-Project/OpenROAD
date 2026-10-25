@@ -17,12 +17,12 @@
   VGND                      0.14572 +- 0.024 fF
   window leakage 1.1 fF (53% of the total)
 [INFO FSV-0018] Read 1 target and 4 neighbour nets: 63 boxes, 4 of them clipped and 0 obstructions trimmed, within a halo of 1 um and a margin of 1.78 um.
-[INFO FSV-0011] Net m1: total 0.57019 fF +- 0.011 after 58368 walks (108.0 hops per walk).
-  ground                     0.2895 +- 0.0086 fF
-  m2                        0.28069 +- 0.0082 fF
-[INFO FSV-0011] Net m1: total 0.1226 fF/um +- 0.0023 after 50176 walks (60.9 hops per walk).
-  ground                   0.052685 +- 0.0016 fF/um
-  m2                       0.069918 +- 0.0019 fF/um
+[INFO FSV-0011] Net m1: total 0.56225 fF +- 0.011 after 122880 walks (34.6 hops per walk).
+  ground                    0.30002 +- 0.0077 fF
+  m2                        0.26223 +- 0.0075 fF
+[INFO FSV-0011] Net m1: total 0.12335 fF/um +- 0.0024 after 98304 walks (21.2 hops per walk).
+  ground                   0.055698 +- 0.0016 fF/um
+  m2                       0.067648 +- 0.0019 fF/um
 [INFO FSV-0011] Net p: total 0.70281 fF +- 0.0067 after 71680 walks (8.9 hops per walk).
   ground                    0.36827 +- 0.0059 fF
   q                         0.33454 +- 0.0056 fF

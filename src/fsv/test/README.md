@@ -192,6 +192,35 @@ at 0.87–0.99% of the total against 1%, where whole rounds used to overshoot
 to 0.65–0.85%. Part of the nets' gain is the looser hold on their small
 couplings, which the old definition solved to 5% of their own value.
 
+### Surface placement
+
+Around a box with conformal shells the Gaussian surface can sit clear of the
+shells' faces or inside the innermost shell, where a first cube meets no
+parallel shell face but is smaller. Which costs fewer hops depends on the
+structure: on an offset sweep the inside surface was 4 times cheaper on
+`conformal_line_ends` and the upper wire of `conformal_crossing`, and 1.5
+times dearer on its lower wire. Where the first cubes on the clear surface
+shrink (an area-weighted offset / h above 1.1), a solve runs a trial round
+of 8192 walks on each surface, on streams of its own that it then discards,
+and keeps the inside surface if it costs at most 0.8 of the other. Only the
+shells wrapping a box move it (not those of the target's other boxes, such
+as the wire a via sits in), and only when its inside offset is at least 0.05
+of the usual one. A solve allowed fewer than
+131072 walks (`max_walks`) skips the trial. The trial compares the walks each surface needs, held within
+`min_walks` and `max_walks`, times its hops per walk. `CapRow::inside_surface` and
+`trial_walks`, and the benchmark's CSV, report the choice.
+2026-10-25, 64 threads:
+
+| Group | Solves | Seconds per solve (geometric mean, range) | Hops per walk | `sigma1` |
+| ----- | ----- | ----- | ----- | ----- |
+| `3d` | 10 | 0.037–0.040 (0.010–0.068) | 31–98 | 2.8–6.9 |
+| `2d` | 14 | 0.013 (0.005–0.033) | 20–55 | 1.6–6.4 |
+| `nets` | 3 | 0.20 (0.15–0.25) | 46–106 | 4.5–5.7 |
+
+`nested_conformal` takes 34–35 ms. Inside surfaces raise `sigma1` (more
+walks) but shorten the walks more. Structures whose trial keeps the clear
+surface pay for the trial, 5–15% single-threaded.
+
 ### Adding or changing a structure
 
 1. Add or edit `golden/<name>.txt`.

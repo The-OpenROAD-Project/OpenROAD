@@ -68,7 +68,8 @@ set of conductors, which each solve uses. A net is a set of boxes, which
 may overlap. A target net's Gaussian surface is the boundary of its boxes,
 each grown by its own offset (at most half its gap to other conductors), so
 nets may wrap around each other; no other conductor may touch a target's
-box.
+box. Around conformal dielectrics a short trial picks whether the surface
+sits clear of their faces or inside the innermost one.
 
 ### Read ITF
 

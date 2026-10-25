@@ -121,7 +121,9 @@ cc_test(
     name = "TestSolver",
     size = "medium",
     srcs = ["cpp/TestSolver.cpp"],
+    data = glob(["golden/*.txt"]),
     deps = [
+        ":structures",
         "//src/fsv",
         "//src/fsv:core",
         "//src/fsv:geometry",

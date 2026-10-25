@@ -81,6 +81,11 @@ struct CapRow
   double window_leakage = 0;
   int64_t walks = 0;
   int64_t hops = 0;
+  // Around conformal shells a trial may choose a Gaussian surface inside
+  // the target's own shells: whether it did, and the walks the trial took
+  // (0 when none ran). Trial walks are not in `walks` or `hops`.
+  bool inside_surface = false;
+  int64_t trial_walks = 0;
 
   double total() const { return cap[master]; }
   double coupling(int net) const { return -cap[net]; }
