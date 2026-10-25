@@ -156,14 +156,17 @@ class Rebuffer : public sta::dbStaState
   std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  // Drive resistance of a previous-stage driver pin, including a top-level
+  // input's set_drive or set_driving_cell; 0 when unknown.
+  float prevStageDriveResistance(const sta::Pin* prev_drvr_pin);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
-  // Empty when `cell` has no equivalent arc or violates slew limits.
+  // Empty when `cell` has no equivalent arc, violates its slew limits, or
+  // (for a resize) its max capacitance.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would slow the previous stage
-  // enough to push one of its other loads below both its current slack and
-  // `slack_limit`.
+  // False when resizing the driver to `cell` would slow the previous stage of
+  // any input enough to push one of its other loads below `slack_limit`.
   bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver's swappable cells whose slack meets `slack_target`, the target the

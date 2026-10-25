@@ -40,6 +40,7 @@ or_integration_tests(
     rebuffer1
     rebuffer1_hier
     rebuffer_size_driver
+    rebuffer_size_driver_guards
     recover_power_verbose
     remove_buffers_hier1
     remove_buffers1
