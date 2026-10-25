@@ -162,6 +162,10 @@ class Rebuffer : public sta::dbStaState
   // Growth of the input capacitance `prev_drvr_pin` drives if the driver were
   // resized to `cell`.
   float inputCapGrowth(const sta::Pin* prev_drvr_pin, sta::LibertyCell* cell);
+  // Extra delay of the previous stage at the driver's `input` if the driver
+  // were resized to `cell`, for the slowest driver of the input's net;
+  // negative when the input capacitance shrinks.
+  sta::Delay upstreamDelay(const sta::Pin* input, sta::LibertyCell* cell);
   // Margined max slew of a driver output port; INF without a limit.
   float drvrMaxSlew(const sta::LibertyPort* out_port);
   // Slack at the driver pin if the driver were resized to `cell`, including

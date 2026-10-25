@@ -347,6 +347,24 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
   return growth;
 }
 
+sta::Delay Rebuffer::upstreamDelay(const sta::Pin* input,
+                                   sta::LibertyCell* cell)
+{
+  // The slowest previous-stage driver of the input's net.  A smaller input
+  // capacitance speeds it up, so the delay can be negative.
+  sta::PinSet* drivers = network_->drivers(input);
+  if (drivers == nullptr || drivers->empty()) {
+    return 0.0;
+  }
+  sta::Delay delay = -sta::INF;
+  for (const sta::Pin* prev_drvr_pin : *drivers) {
+    const sta::Delay prev_delay = prevStageDriveResistance(prev_drvr_pin)
+                                  * inputCapGrowth(prev_drvr_pin, cell);
+    delay = std::max(delay, prev_delay);
+  }
+  return delay;
+}
+
 float Rebuffer::drvrMaxSlew(const sta::LibertyPort* out_port)
 {
   float max_slew = sta::INF;
@@ -450,13 +468,7 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
     }
 
     // A larger input capacitance slows the previous stage.
-    sta::Delay upstream = 0.0;
-    const sta::Path* prev_drvr_path = driver_path->prevPath();
-    if (prev_drvr_path != nullptr) {
-      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
-      upstream = prevStageDriveResistance(prev_drvr_pin)
-                 * inputCapGrowth(prev_drvr_pin, cell);
-    }
+    const sta::Delay upstream = upstreamDelay(driver_path->pin(sta_), cell);
 
     const sta::Arrival prev_arrival = driver_path->isClock(sta_)
                                           ? search_->clkPathArrival(driver_path)
@@ -514,16 +526,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
       if (edge->isWire() || from == nullptr) {
         continue;
       }
-      // The slowest previous-stage driver of this input's net.
-      sta::Delay upstream = 0.0;
-      sta::PinSet* drivers = network_->drivers(input);
-      if (drivers != nullptr) {
-        for (const sta::Pin* prev_drvr_pin : *drivers) {
-          const sta::Delay prev_delay = prevStageDriveResistance(prev_drvr_pin)
-                                        * inputCapGrowth(prev_drvr_pin, cell);
-          upstream = std::max(upstream, prev_delay);
-        }
-      }
+      const sta::Delay upstream = upstreamDelay(input, cell);
       for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
         if (arc_set->role() != edge->role()) {
           continue;

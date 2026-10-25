@@ -6,6 +6,7 @@
 #   cap:       the larger input exceeds the input port's max capacitance.
 #   nand_near: the other input, weakly driven, becomes critical.
 #   tied:      both inputs share one weak net, so both add to its delay.
+#   multi:     the input net's second, weak driver sets the extra delay.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -80,6 +81,15 @@ foreach name {nand_far nand_near} {
 make_circuit aoi AOI221_X2 {A B1 B2 C1 C2} 100
 make_circuit tied NAND2_X1 {A1} 400
 [[$block findInst drv_tied] findITerm A2] connect [$block findNet in_tied_A1]
+make_circuit multi INV_X1 {A} 400
+set multi_b [odb::dbBTerm_create [$block findNet in_multi_A] in_multi_B]
+$multi_b setIoType INPUT
+set multi_b_pin [odb::dbBPin_create $multi_b]
+# Next to in_multi_A, on the row make_circuit just placed.
+set multi_y [expr { $y - 18 }]
+odb::dbBox_create $multi_b_pin $m1 0 [um $multi_y] 100 \
+  [expr { [um $multi_y] + 100 }]
+$multi_b_pin setPlacementStatus LOCKED
 foreach net $dont_touch {
   $net setDoNotTouch true
 }
@@ -99,6 +109,8 @@ set_input_delay -clock clk -0.3 [get_ports {in_aoi_B* in_aoi_C*}]
 set_input_delay -clock clk -0.05 [get_ports in_aoi_A]
 set_drive 5 [get_ports in_tied_A1]
 set_input_delay -clock clk -0.03 [get_ports in_tied_A1]
+set_drive 20 [get_ports in_multi_B]
+set_input_delay -clock clk -0.06 [get_ports in_multi_B]
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
@@ -106,7 +118,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {base side_ok nand_far aoi side_crit cap nand_near tied} {
+foreach name {base side_ok nand_far aoi side_crit cap nand_near tied multi} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 
