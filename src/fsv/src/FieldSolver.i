@@ -75,7 +75,6 @@ fsv::FieldSolver* getFieldSolver()
   put(dict, "seconds", Tcl_NewDoubleObj($1.seconds));
   put(dict, "cross_section", Tcl_NewBooleanObj($1.cross_section));
   put(dict, "window_leakage", Tcl_NewDoubleObj(row.window_leakage));
-  put(dict, "rejected", Tcl_NewWideIntObj(row.rejected));
   Tcl_SetObjResult(interp, dict);
 }
 
@@ -153,7 +152,6 @@ void add_nets_cmd(const std::vector<std::string>& nets,
 fsv::NetCapacitance solve_net_cmd(const char* net,
                                   double tol_total,
                                   double tol_coupling,
-                                  double coupling_threshold,
                                   long long min_walks,
                                   long long max_walks,
                                   long long seed,
@@ -167,9 +165,6 @@ fsv::NetCapacitance solve_net_cmd(const char* net,
   }
   if (tol_coupling >= 0) {
     options.tol_coupling = tol_coupling;
-  }
-  if (coupling_threshold >= 0) {
-    options.coupling_threshold = coupling_threshold;
   }
   if (min_walks >= 0) {
     options.min_walks = min_walks;
