@@ -74,6 +74,7 @@ struct CugrDebugStages;
 class AbstractRoutingCongestionDataSource;
 class GlobalRouter;
 class GRouteDbCbk;
+class RoutingCongestion;
 class Rudy;
 
 struct RegionAdjustment
@@ -267,6 +268,9 @@ class GlobalRouter
   odb::PtrSet<odb::dbNet> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  // Routes exist but are congested and the congestion was not accepted
+  // (-allow_congestion), so haveRoutes() is false.
+  bool haveCongestedRoutes();
   bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
@@ -347,6 +351,13 @@ class GlobalRouter
                            const char* file_name);
   void reportNetDetailedRouteWL(odb::dbWire* wire, std::ofstream& out);
   void createWLReportFile(const char* file_name, bool verbose);
+
+  // Detour reporting. The detour metric compares a net's final routed
+  // wirelength against its initial Steiner-tree wirelength captured before
+  // routing. ratio = final_wl / initial_steiner_wl; delta = final - initial.
+  void reportNetDetour(odb::dbNet* net, const char* file_name);
+  void reportNetDetours(int top_n, const char* file_name);
+  bool hasInitialSteinerWirelengths();
   std::vector<PinGridLocation> getPinGridPositions(odb::dbNet* db_net);
 
   // Report wire resistance
@@ -383,6 +394,9 @@ class GlobalRouter
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
+
+  // Shared routing congestion service; see grt/RoutingCongestion.h.
+  RoutingCongestion* getRoutingCongestion();
 
   void writePinLocations(const char* file_name);
 
@@ -450,6 +464,13 @@ class GlobalRouter
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
+  // Detour metric: capture the initial Steiner-tree wirelength (from the STT
+  // builder) for each net before overflow-removal routing runs.
+  void computeInitialSteinerWirelengths(const std::vector<Net*>& nets);
+  void updateInitialSteinerWirelength(Net* net);
+  int computeNetInitialSteinerWirelength(Net* net);
+  int computeNetPlanarWirelength(odb::dbNet* db_net);
+  std::ofstream openDetourFile(const char* file_name);
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
                                int8_t& track_consumption,
@@ -535,6 +556,7 @@ class GlobalRouter
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
   bool loadRoutingFromDBGuides(odb::dbNet* db_net);
   void shrinkNetRoute(odb::dbNet* db_net);
+  void pruneMergedNetRoute(Net* net);
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
   void removeWireUsage(odb::dbWire* wire);
@@ -542,6 +564,9 @@ class GlobalRouter
   void removeRectUsage(const odb::Rect& rect, odb::dbTechLayer* tech_layer);
   bool isDetailedRouted(odb::dbNet* db_net);
   void updateDbCongestion();
+  // Refresh odb's congestion only for the GCells the routing engine recorded
+  // as changed.  Clears the engine's list.
+  void updateDbCongestionTiles();
 
   // db functions
   void initGrid(int max_layer);
@@ -589,6 +614,9 @@ class GlobalRouter
   std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
   NetRouteMap partial_routes_;
+  // Initial Steiner-tree wirelength per net (dbu), captured before
+  // overflow-removal routing. Used for the detour metric.
+  odb::PtrMap<odb::dbNet, int64_t> initial_steiner_wl_;
 
   odb::PtrMap<odb::dbNet, Net*> db_net_map_;
   Grid* grid_;
@@ -650,6 +678,7 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
+  std::unique_ptr<RoutingCongestion> routing_congestion_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
   std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
 
@@ -701,8 +730,8 @@ class IncrementalGRoute
  public:
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
-  // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = true);
+  // Update global routes for dirty nets. Returns every net it rerouted.
+  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

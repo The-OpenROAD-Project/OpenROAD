@@ -153,12 +153,14 @@ cc_library(
         "src/Pin.cpp",
         "src/RepairAntennas.cpp",
         "src/RepairAntennas.h",
+        "src/RoutingCongestion.cpp",
         "src/RoutingTracks.h",
         "src/Rudy.cpp",
     ],
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
+        "include/grt/RoutingCongestion.h",
         "include/grt/Rudy.h",
         "src/AbstractGrouteRenderer.h",
         "src/AbstractRoutingCongestionDataSource.h",
@@ -204,6 +206,7 @@ cc_library(
     hdrs = [
         "include/grt/GlobalRouter.h",
         "include/grt/PinGridLocation.h",
+        "include/grt/RoutingCongestion.h",
         "include/grt/Rudy.h",
     ],
     includes = [
@@ -214,6 +217,7 @@ cc_library(
         ":grt_impl",
         ":route_pt",
         "//src/odb/src/db",
+        "//src/utl",
     ],
 )
 

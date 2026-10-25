@@ -111,6 +111,7 @@ or_integration_tests(
     pin_length
     pin_length_error
     pin_thick_multiplier
+    place_config
     place_pin1
     place_pin2
     place_pin3
@@ -142,3 +143,7 @@ or_integration_tests(
     write_pin_placement6
 )
 
+
+if(ENABLE_TESTS)
+  add_subdirectory(cpp)
+endif()

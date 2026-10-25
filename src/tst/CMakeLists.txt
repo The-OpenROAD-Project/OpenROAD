@@ -8,6 +8,7 @@ include("openroad")
 # libraries entirely.
 add_library(tst_base
     src/db_fixture.cpp
+    src/logger_checks.cpp
 )
 
 target_include_directories(tst_base
@@ -125,6 +126,7 @@ target_link_libraries(TestPhysicalBuilder
     tst_base
     tst_physical
     db
+    utl_lib
 )
 gtest_discover_tests(TestPhysicalBuilder)
 add_dependencies(build_and_test TestPhysicalBuilder)

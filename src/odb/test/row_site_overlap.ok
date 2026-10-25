@@ -1,5 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0128] Design: row_site_overlap
-[WARNING ODB-0478] Row CORE_ROW_0 has site spacing (140) smaller than the site width (380); the row's sites overlap.  Row ignored.
+[WARNING ODB-0478] Row CORE_ROW_0 has site spacing (140) smaller than the site extent along the row (380); the row's sites overlap.  Row ignored.
 [ERROR ODB-0421] DEF parser returns an error!
 ODB-0421
