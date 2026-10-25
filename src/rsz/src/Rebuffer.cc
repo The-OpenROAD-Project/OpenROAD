@@ -280,33 +280,44 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
   return {delay, correction, slew};
 }
 
-float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin)
+float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
+                                         const sta::RiseFall* rf,
+                                         const sta::MinMax* bound)
 {
   const sta::LibertyPort* prev_port = network_->libertyPort(prev_drvr_pin);
-  if (prev_port != nullptr) {
-    return prev_port->driveResistance();
-  }
-  if (!network_->isTopLevelPort(prev_drvr_pin)) {
+  if (prev_port == nullptr && !network_->isTopLevelPort(prev_drvr_pin)) {
     return 0.0;
   }
-  // A top-level input: use set_drive, else the set_driving_cell output.
-  const sta::InputDrive* drive
-      = corner_->sdc()->findInputDrive(network_->port(prev_drvr_pin));
-  if (drive == nullptr) {
-    return 0.0;
-  }
-  float drive_res = 0.0;
-  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-    float res;
-    bool exists;
-    drive->driveResistance(rf, max_, res, exists);
-    if (exists) {
-      drive_res = std::max(drive_res, res);
+  // Bounded over every scene, as the timed paths can come from any of them.
+  float drive_res = bound->initValue();
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (prev_port != nullptr) {
+      drive_res = bound->minMax(
+          drive_res,
+          prev_port->scenePort(scene, max_)->driveResistance(rf, bound));
       continue;
     }
-    const sta::InputDriveCell* drive_cell = drive->driveCell(rf, max_);
-    if (drive_cell != nullptr && drive_cell->toPort() != nullptr) {
-      drive_res = std::max(drive_res, drive_cell->toPort()->driveResistance());
+    // A top-level input: set_drive, else the set_driving_cell output; ideal
+    // without either.
+    const sta::InputDrive* drive
+        = scene->sdc()->findInputDrive(network_->port(prev_drvr_pin));
+    for (const sta::RiseFall* drive_rf : sta::RiseFall::range()) {
+      if (rf != nullptr && drive_rf != rf) {
+        continue;
+      }
+      float res = 0.0;
+      bool exists = false;
+      if (drive != nullptr) {
+        drive->driveResistance(drive_rf, max_, res, exists);
+        if (!exists) {
+          const sta::InputDriveCell* drive_cell
+              = drive->driveCell(drive_rf, max_);
+          res = drive_cell != nullptr && drive_cell->toPort() != nullptr
+                    ? drive_cell->toPort()->driveResistance(drive_rf, bound)
+                    : 0.0;
+        }
+      }
+      drive_res = bound->minMax(drive_res, res);
     }
   }
   return drive_res;
@@ -348,6 +359,7 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
 }
 
 sta::Delay Rebuffer::upstreamDelay(const sta::Pin* input,
+                                   const sta::RiseFall* rf,
                                    sta::LibertyCell* cell)
 {
   // The slowest previous-stage driver of the input's net.  A smaller input
@@ -358,8 +370,13 @@ sta::Delay Rebuffer::upstreamDelay(const sta::Pin* input,
   }
   sta::Delay delay = -sta::INF;
   for (const sta::Pin* prev_drvr_pin : *drivers) {
-    const sta::Delay prev_delay = prevStageDriveResistance(prev_drvr_pin)
-                                  * inputCapGrowth(prev_drvr_pin, cell);
+    // The resistance of the input transition: the largest over the scenes
+    // for a growth, the smallest for a shrink.
+    const float growth = inputCapGrowth(prev_drvr_pin, cell);
+    const sta::MinMax* bound
+        = growth > 0.0 ? sta::MinMax::max() : sta::MinMax::min();
+    const sta::Delay prev_delay
+        = prevStageDriveResistance(prev_drvr_pin, rf, bound) * growth;
     delay = std::max(delay, prev_delay);
   }
   return delay;
@@ -468,7 +485,8 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
     }
 
     // A larger input capacitance slows the previous stage.
-    const sta::Delay upstream = upstreamDelay(driver_path->pin(sta_), cell);
+    const sta::Delay upstream = upstreamDelay(
+        driver_path->pin(sta_), driver_arc->fromEdge()->asRiseFall(), cell);
 
     const sta::Arrival prev_arrival = driver_path->isClock(sta_)
                                           ? search_->clkPathArrival(driver_path)
@@ -526,7 +544,6 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
       if (edge->isWire() || from == nullptr) {
         continue;
       }
-      const sta::Delay upstream = upstreamDelay(input, cell);
       for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
         if (arc_set->role() != edge->role()) {
           continue;
@@ -541,6 +558,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           }
           // Latest arrival at this input in the scene of the timing path.
           const sta::RiseFall* from_rf = arc->fromEdge()->asRiseFall();
+          const sta::Delay upstream = upstreamDelay(input, from_rf, cell);
           sta::Arrival arrival = -sta::INF;
           sta::VertexPathIterator path_iter(
               from_vertex, scene, min_max, from_rf, sta_);
@@ -620,7 +638,9 @@ bool Rebuffer::upstreamStagesOk(sta::LibertyCell* cell,
     // The slower previous stage delays its other loads.  The driver's own
     // inputs are skipped: the candidate slack and otherArcsMeet() time the
     // paths through the resized cell.
-    const float delta = prevStageDriveResistance(prev_drvr_pin) * cap_delta;
+    const float delta
+        = prevStageDriveResistance(prev_drvr_pin, nullptr, sta::MinMax::max())
+          * cap_delta;
     sta::Net* prev_net = network_->isTopLevelPort(prev_drvr_pin)
                              ? network_->net(network_->term(prev_drvr_pin))
                              : network_->net(prev_drvr_pin);

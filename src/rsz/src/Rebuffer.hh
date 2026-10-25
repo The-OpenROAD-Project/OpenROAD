@@ -156,16 +156,22 @@ class Rebuffer : public sta::dbStaState
   std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
-  // Drive resistance of a previous-stage driver pin, including a top-level
-  // input's set_drive or set_driving_cell; 0 when unknown.
-  float prevStageDriveResistance(const sta::Pin* prev_drvr_pin);
+  // Largest or smallest (`bound`) drive resistance of a previous-stage driver
+  // pin for output transition `rf` (both when null) over the scenes,
+  // including a top-level input's set_drive or set_driving_cell; 0 when
+  // unknown.
+  float prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
+                                 const sta::RiseFall* rf,
+                                 const sta::MinMax* bound);
   // Growth of the input capacitance `prev_drvr_pin` drives if the driver were
   // resized to `cell`.
   float inputCapGrowth(const sta::Pin* prev_drvr_pin, sta::LibertyCell* cell);
-  // Extra delay of the previous stage at the driver's `input` if the driver
-  // were resized to `cell`, for the slowest driver of the input's net;
-  // negative when the input capacitance shrinks.
-  sta::Delay upstreamDelay(const sta::Pin* input, sta::LibertyCell* cell);
+  // Extra delay of the previous stage for transition `rf` at the driver's
+  // `input` if the driver were resized to `cell`, for the slowest driver of
+  // the input's net; negative when the input capacitance shrinks.
+  sta::Delay upstreamDelay(const sta::Pin* input,
+                           const sta::RiseFall* rf,
+                           sta::LibertyCell* cell);
   // Margined max slew of a driver output port; INF without a limit.
   float drvrMaxSlew(const sta::LibertyPort* out_port);
   // Slack at the driver pin if the driver were resized to `cell`, including
