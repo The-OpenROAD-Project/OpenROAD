@@ -34,6 +34,7 @@ COMPULSORY_TESTS = [
     "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
+    "ta_coarse_pitch",
     "ta_pin_aligned",
     "top_level_term",
     "top_level_term2",
