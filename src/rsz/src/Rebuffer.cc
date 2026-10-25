@@ -316,7 +316,7 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
                                sta::LibertyCell* cell)
 {
   // Summed over every input of the driver on the previous-stage net, as two
-  // inputs can share it.
+  // inputs can share it, with each input's largest growth over the scenes.
   float growth = 0.0;
   std::unique_ptr<sta::InstancePinIterator> pin_iter(
       network_->pinIterator(network_->instance(pin_)));
@@ -335,7 +335,14 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
         || !drivers->contains(prev_drvr_pin)) {
       continue;
     }
-    growth += new_port->capacitance() - old_port->capacitance();
+    float input_growth = -sta::INF;
+    for (const sta::Scene* scene : sta_->scenes()) {
+      input_growth
+          = std::max(input_growth,
+                     new_port->scenePort(scene, max_)->capacitance()
+                         - old_port->scenePort(scene, max_)->capacitance());
+    }
+    growth += input_growth;
   }
   return growth;
 }
@@ -366,12 +373,11 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   // the SDC, Liberty port or library default limit.
   const float drvr_max_slew = drvrMaxSlew(out_port);
   if (!is_current_cell) {
-    // The swap applies to every scene.
-    for (const sta::Scene* scene : sta_->scenes()) {
-      const float cap_limit = resizer_->maxLoad(network_->cell(cell), scene);
-      if (cap_limit > 0.0 && bnet->cap() > maxCapMargined(cap_limit)) {
-        return {};
-      }
+    // The tree's load is known in its own scene only, where its buffers'
+    // limits are checked too.
+    const float cap_limit = resizer_->maxLoad(network_->cell(cell), corner_);
+    if (cap_limit > 0.0 && bnet->cap() > maxCapMargined(cap_limit)) {
+      return {};
     }
   }
 
@@ -470,46 +476,32 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
                              const FixedDelay slack_limit)
 {
   // The candidate slack follows the timing path's arc only.  A resize also
-  // changes the other arcs into the driver output, of both transitions, and
-  // the input capacitance they start from.  Bound each with its input's
-  // latest stored arrival, the upstream R*dC, the candidate's arc into the
-  // same tree, and the tightest required time at the driver pin, as paths of
-  // other launch clocks or exceptions can have other required times.
-  //
-  // The new tree moves the driver pin's required times by bnet slack minus
-  // the stored slack of the timing path; the smallest shift is used for
-  // every transition.
-  sta::Delay tree_shift = sta::INF;
-  const sta::Path* timing_path = nullptr;
-  for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
-    const sta::Path* arrival_path = arrival_paths_[rf->index()];
-    const sta::Delay shift
-        = bnet->slack().toSeconds() - arrival_path->slack(sta_);
-    tree_shift = std::min(tree_shift, shift);
-    timing_path = arrival_path;
-  }
-  const sta::Scene* scene = timing_path->scene(sta_);
-  const sta::MinMax* min_max = timing_path->minMax(sta_);
+  // changes the other arcs into the driver output and the input capacitance
+  // they start from.  Bound each with its input's latest stored arrival, the
+  // upstream R*dC, the candidate's arc into the same tree, and the tightest
+  // required time at the driver pin, as paths of other launch clocks or
+  // exceptions can have other required times.  Like the tree itself, this is
+  // limited to the output transitions the loads recorded, each in the scene
+  // of its timing path.
   sta::LibertyPort* out_port = cell->findLibertyPort(drvr_port_->name());
   const float drvr_max_slew = drvrMaxSlew(out_port);
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(pin_);
-  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+  for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
+    const sta::Path* arrival_path = arrival_paths_[rf->index()];
+    const sta::Path* driver_path = arrival_path->prevPath();
+    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+    const sta::Scene* scene = arrival_path->scene(sta_);
+    const sta::MinMax* min_max = arrival_path->minMax(sta_);
+    // The new tree moves the driver pin's required time by its slack minus
+    // the timing path's stored slack.
+    const sta::Delay tree_shift
+        = bnet->slack().toSeconds() - arrival_path->slack(sta_);
     sta::Required required = sta::INF;
     sta::VertexPathIterator drvr_path_iter(
         drvr_vertex, scene, min_max, rf, sta_);
     while (drvr_path_iter.hasNext()) {
       required = std::min(required, drvr_path_iter.next()->required());
     }
-    if (required >= sta::INF) {
-      continue;  // unconstrained transition
-    }
-    // The timing path's arc of this transition, covered by
-    // slackWithDriverCell.
-    const sta::Path* arrival_path = arrival_paths_[rf->index()];
-    const sta::Path* driver_path
-        = arrival_path != nullptr ? arrival_path->prevPath() : nullptr;
-    const sta::TimingArc* driver_arc
-        = arrival_path != nullptr ? arrival_path->prevArc(resizer_) : nullptr;
     sta::VertexInEdgeIterator edge_iter(drvr_vertex, graph_);
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
@@ -522,18 +514,23 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
       if (edge->isWire() || from == nullptr) {
         continue;
       }
+      // The slowest previous-stage driver of this input's net.
       sta::Delay upstream = 0.0;
       sta::PinSet* drivers = network_->drivers(input);
-      if (drivers != nullptr && !drivers->empty()) {
-        const sta::Pin* prev_drvr_pin = *drivers->begin();
-        upstream = prevStageDriveResistance(prev_drvr_pin)
-                   * inputCapGrowth(prev_drvr_pin, cell);
+      if (drivers != nullptr) {
+        for (const sta::Pin* prev_drvr_pin : *drivers) {
+          const sta::Delay prev_delay = prevStageDriveResistance(prev_drvr_pin)
+                                        * inputCapGrowth(prev_drvr_pin, cell);
+          upstream = std::max(upstream, prev_delay);
+        }
       }
       for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
         if (arc_set->role() != edge->role()) {
           continue;
         }
         for (sta::TimingArc* arc : arc_set->arcs()) {
+          // slackWithDriverCell covers the path arc's pins and edges; the
+          // other sense of a non-unate input is timed here.
           if (arc->toEdge()->asRiseFall() != rf
               || (driver_arc != nullptr && input == driver_path->pin(sta_)
                   && arc->fromEdge() == driver_arc->fromEdge())) {
