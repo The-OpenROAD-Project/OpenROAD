@@ -165,9 +165,15 @@ class Rebuffer : public sta::dbStaState
   // (for a resize) its max capacitance.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would slow the previous stage of
-  // any input enough to push one of its other loads below `slack_limit`.
-  bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // False when the paths through the driver's inputs other than the timing
+  // path's would miss `slack_limit` with the driver resized to `cell`.
+  bool otherInputsMeet(const BufferedNetPtr& bnet,
+                       sta::LibertyCell* cell,
+                       FixedDelay slack_limit);
+  // False when resizing the driver to `cell` would exceed the max capacitance
+  // of a previous-stage driver, or slow it enough to push one of its other
+  // loads below `slack_limit`.
+  bool upstreamStagesOk(sta::LibertyCell* cell, FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver's swappable cells whose slack meets `slack_target`, the target the
   // tree search used with the current driver.  Returns the chosen tree and
