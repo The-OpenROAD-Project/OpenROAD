@@ -44,13 +44,13 @@ set clk_bpin [odb::dbBPin_create $clk_bterm]
 $clk_bpin setPlacementStatus PLACED
 odb::dbBox_create $clk_bpin [$tech findLayer "metal5"] 0 0 2000 2000
 
-proc place_inst {inst x_um y_um dbu} {
+proc place_inst { inst x_um y_um dbu } {
   $inst setLocation [expr int($x_um * $dbu)] [expr int($y_um * $dbu)]
   $inst setPlacementStatus PLACED
 }
 
 # Register pipelines with an asymmetric (tight r1->r2, loose r2->r3) slack.
-for {set c 0} {$c < $num_chains} {incr c} {
+for { set c 0 } { $c < $num_chains } { incr c } {
   set yy [expr 2 + $c * $row_pitch]
   set r1 [odb::dbInst_create $block $dff "r1_$c"]
   set r2 [odb::dbInst_create $block $dff "r2_$c"]
@@ -64,7 +64,7 @@ for {set c 0} {$c < $num_chains} {incr c} {
 
   # Tight stage: r1.Q -> chain of buffers -> r2.D
   set prev [$r1 findITerm "Q"]
-  for {set i 0} {$i < $chain_len} {incr i} {
+  for { set i 0 } { $i < $chain_len } { incr i } {
     set b [odb::dbInst_create $block $buf "u_${c}_$i"]
     place_inst $b [expr 20 + $i * 10] $yy $dbu
     set net [odb::dbNet_create $block "s1_${c}_$i"]
