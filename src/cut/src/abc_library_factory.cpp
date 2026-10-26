@@ -719,26 +719,6 @@ bool AbcLibrary::IsConst1Port(const std::string& cell_name,
   return false;
 }
 
-bool AbcLibrary::IsConst0Cell(const std::string& cell_name)
-{
-  if (!const_gates_initalized_) {
-    InitializeConstGates();
-  }
-  return const0_gates_.find(cell_name) != const0_gates_.end();
-}
-bool AbcLibrary::IsConst1Cell(const std::string& cell_name)
-{
-  if (!const_gates_initalized_) {
-    InitializeConstGates();
-  }
-  return const1_gates_.find(cell_name) != const1_gates_.end();
-}
-
-bool AbcLibrary::IsConstCell(const std::string& cell_name)
-{
-  return IsConst1Cell(cell_name) || IsConst0Cell(cell_name);
-}
-
 static bool abc_initialized = false;
 
 void abcInit()

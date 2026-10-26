@@ -37,9 +37,6 @@ class AbcLibrary
   bool IsSupportedCell(const std::string& cell_name);
   bool IsConst0Port(const std::string& cell_name, const std::string& port_name);
   bool IsConst1Port(const std::string& cell_name, const std::string& port_name);
-  bool IsConst0Cell(const std::string& cell_name);
-  bool IsConst1Cell(const std::string& cell_name);
-  bool IsConstCell(const std::string& cell_name);
   std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantZeroCell();
   std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantOneCell();
 
