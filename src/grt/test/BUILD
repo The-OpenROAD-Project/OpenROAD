@@ -371,6 +371,22 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestGlobalRouter",
+    size = "small",
+    srcs = ["cpp/TestGlobalRouter.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],

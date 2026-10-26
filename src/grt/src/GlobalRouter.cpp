@@ -182,8 +182,8 @@ GlobalRouter::~GlobalRouter()
 
 std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
 {
-  std::vector<Net*> nets = findNets(true);
   check_pin_placement_ = check_pin_placement;
+  std::vector<Net*> nets = findNets(true);
   if (check_pin_placement) {
     checkPinPlacement();
   }
@@ -424,9 +424,12 @@ bool GlobalRouter::designIsPlaced()
   }
   block_ = db_->getChip()->getBlock();
 
-  for (Pin* port : getAllPorts()) {
-    if (port->getBTerm()->getFirstPinPlacementStatus()
-        == odb::dbPlacementStatus::NONE) {
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    odb::dbNet* net = bterm->getNet();
+    if (net == nullptr || net->isSpecial()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
       return false;
     }
   }
@@ -5914,7 +5917,10 @@ void GlobalRouter::makeBtermPins(Net* net,
     for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
       int last_layer = -1;
       if (!bterm_pin->getPlacementStatus().isPlaced()) {
-        logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
+        if (check_pin_placement_) {
+          logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
+        }
+        continue;
       }
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {
