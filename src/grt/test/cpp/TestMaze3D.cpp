@@ -497,6 +497,26 @@ TEST_F(Maze3DTest, Get3DRouteAddsSinkPinViaOnce)
   EXPECT_EQ(route.size(), 4);
 }
 
+TEST_F(Maze3DTest, Get3DRouteAddsColocatedPinViaOnce)
+{
+  // Two sink pins share a gcell on different layers. The routed edge climbs
+  // to the upper pin, and the zero-length edge between the pins walks the
+  // same via back down.
+  addTreeNet("colocated_sinks",
+             {{0, 1, 0}, {2, 1, 1}, {2, 1, 0}},
+             {},
+             {{0, 1, {{0, 1, 0}, {1, 1, 0}, {2, 1, 0}}},
+              {1, 2, {{2, 1, 1}, {2, 1, 0}}}});
+
+  GRoute route;
+  router_->get3DRoute(block_->findNet("colocated_sinks"), route);
+
+  const std::map<std::tuple<int, int, int, int>, int> expected{
+      {{250, 150, 1, 2}, 1}};
+  EXPECT_EQ(countVias(route), expected);
+  EXPECT_EQ(route.size(), 3);
+}
+
 TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
 {
   // The edges cross at (1, 1) with opposite turns: the first turns from the

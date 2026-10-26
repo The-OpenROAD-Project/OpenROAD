@@ -34,7 +34,8 @@ using utl::GRT;
 namespace {
 
 // Append segment to route unless net_segs already has it. Vias match in
-// either layer order.
+// either layer order. Wires already match in either direction, because the
+// GSegment constructor orders their x and y.
 void addSegment(const GSegment& segment,
                 std::unordered_set<GSegment, GSegmentHash>& net_segs,
                 GRoute& route)
@@ -1474,22 +1475,7 @@ NetRouteMap FastRouteCore::getRoutes()
           lastX = xreal;
           lastY = yreal;
           lastL = grids[i].layer;
-          if (net_segs.find(segment) == net_segs.end()) {
-            if (segment.init_layer != segment.final_layer) {
-              GSegment invet_via = GSegment(segment.final_x,
-                                            segment.final_y,
-                                            segment.final_layer,
-                                            segment.init_x,
-                                            segment.init_y,
-                                            segment.init_layer);
-              if (net_segs.find(invet_via) != net_segs.end()) {
-                continue;
-              }
-            }
-
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
+          addSegment(segment, net_segs, route);
         }
       }
     }
