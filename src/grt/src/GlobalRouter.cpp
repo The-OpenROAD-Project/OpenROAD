@@ -579,7 +579,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (verbose_) {
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   }
-  
+
   if (!routes_.empty() && hasInitialSteinerWirelengths()) {
     computeDetourMetrics();
   }
