@@ -881,6 +881,54 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
 }
 
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
+}
+
 // A local session: nothing says the browser lives elsewhere.
 static BrowserEnv localEnv()
 {
@@ -1318,54 +1366,6 @@ TEST(SessionAuth, ReportsOnlyTheFirstRejection)
   EXPECT_TRUE(auth.firstRejection());
   EXPECT_FALSE(auth.firstRejection());
   EXPECT_FALSE(auth.firstRejection());
-}
-
-TEST(JoinUnlessSelf, JoinsFromAnotherThread)
-{
-  std::thread t([] {});
-  joinUnlessSelf(t);
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
-{
-  std::thread t;
-  joinUnlessSelf(t);
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
-{
-  // A session's init thread can drop the last reference, and so run the
-  // destructor, and this call, on itself.
-  std::thread t;
-  std::promise<void> assigned;
-  // Shared: the thread may still be inside set_value() when the test returns.
-  auto detached = std::make_shared<std::promise<void>>();
-  auto assigned_done = assigned.get_future();
-  auto detached_done = detached->get_future();
-
-  t = std::thread([&t, &assigned_done, detached] {
-    // Touching `t` before the assignment completes would race the constructor.
-    assigned_done.wait();
-    joinUnlessSelf(t);
-    detached->set_value();
-  });
-  assigned.set_value();
-
-  detached_done.wait();
-  EXPECT_FALSE(t.joinable());
-}
-
-TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
-{
-  boost::asio::io_context ioc;
-  utl::Logger logger;
-  bool ran_after = false;
-  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
-  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
-  runIoContext(ioc, &logger);
-  EXPECT_TRUE(ran_after);
 }
 
 TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)

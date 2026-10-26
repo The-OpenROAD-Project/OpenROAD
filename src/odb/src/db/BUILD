@@ -49,7 +49,6 @@ cc_library(
         "//src/odb:include/odb/odbDList.h",
         "//src/odb:include/odb/poly_decomp.h",
         "//src/odb:include/odb/util.h",
-        "//src/odb:include/odb/wOrder.h",
     ],
     includes = ["../../include"],
     deps = [

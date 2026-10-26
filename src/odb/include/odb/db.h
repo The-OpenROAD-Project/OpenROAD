@@ -3712,14 +3712,14 @@ class dbWire : public dbObject
   bool isGlobalWire();
 
   ///
-  /// Returns true if this wire has been ordered.
+  /// Returns true if this wire had its connectivity normalized.
   ///
-  bool isOrdered();
+  bool hasNormalizedConnectivity();
 
   ///
-  /// Set the ordered flag.
+  /// Set the normalized connectivity flag.
   ///
-  void setOrdered(bool ordered);
+  void setNormalizedConnectivity(bool normalized_connectivity);
 
   ///
   /// Get the bounding box of this wire

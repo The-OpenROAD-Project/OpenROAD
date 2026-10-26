@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tmg_conn_g.h"
+#include "connectionGraph.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <memory>
 #include <vector>
 
-#include "tmg_conn.h"
+#include "wireNormalizer.h"
 
 namespace odb {
 
@@ -25,23 +22,26 @@ void ConnectionGraph::init(const int ptN, const int shortN)
   edges_.clear();
 }
 
-ConnectionGraph::Edge* ConnectionGraph::newEdge(const tmg_conn* conn,
-                                                const int fr,
-                                                const int to)
+ConnectionGraph::Edge* ConnectionGraph::newEdge(
+    const WireNormalizer* wire_normalizer,
+    const int fr,
+    const int to)
 {
   ConnectionGraph::Edge* e = &edges_.emplace_back();
   e->wire_section_index = -1;
   e->skip = false;
-  const int ndx = conn->wirePoint(to).x;
-  const int ndy = conn->wirePoint(to).y;
+  const int ndx = wire_normalizer->wirePoint(to).x;
+  const int ndy = wire_normalizer->wirePoint(to).y;
   ConnectionGraph::Edge* prev_edge = nullptr;
   ConnectionGraph::Edge* edge = points_[fr].first_edge;
-  while (edge && !edge->wire_short && ndx > conn->wirePoint(edge->to).x) {
+  while (edge && !edge->wire_short
+         && ndx > wire_normalizer->wirePoint(edge->to).x) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && !edge->wire_short && ndx == conn->wirePoint(edge->to).x
-         && ndy > conn->wirePoint(edge->to).y) {
+  while (edge && !edge->wire_short
+         && ndx == wire_normalizer->wirePoint(edge->to).x
+         && ndy > wire_normalizer->wirePoint(edge->to).y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -54,30 +54,31 @@ ConnectionGraph::Edge* ConnectionGraph::newEdge(const tmg_conn* conn,
   return e;
 }
 
-ConnectionGraph::Edge* ConnectionGraph::newShortEdge(const tmg_conn* conn,
-                                                     const int fr,
-                                                     const int to)
+ConnectionGraph::Edge* ConnectionGraph::newShortEdge(
+    const WireNormalizer* wire_normalizer,
+    const int fr,
+    const int to)
 {
   ConnectionGraph::Edge* e = &edges_.emplace_back();
   e->wire_section_index = -1;
   e->skip = false;
-  const int ned = conn->distance(fr, to);
-  const int ndx = conn->wirePoint(to).x;
-  const int ndy = conn->wirePoint(to).y;
+  const int ned = wire_normalizer->distance(fr, to);
+  const int ndx = wire_normalizer->wirePoint(to).x;
+  const int ndy = wire_normalizer->wirePoint(to).y;
   ConnectionGraph::Edge* prev_edge = nullptr;
   ConnectionGraph::Edge* edge = points_[fr].first_edge;
-  while (edge && ned > conn->distance(edge->from, edge->to)) {
+  while (edge && ned > wire_normalizer->distance(edge->from, edge->to)) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && ned == conn->distance(edge->from, edge->to)
-         && ndx > conn->wirePoint(edge->to).x) {
+  while (edge && ned == wire_normalizer->distance(edge->from, edge->to)
+         && ndx > wire_normalizer->wirePoint(edge->to).x) {
     prev_edge = edge;
     edge = edge->next;
   }
-  while (edge && ned == conn->distance(edge->from, edge->to)
-         && ndx == conn->wirePoint(edge->to).x
-         && ndy > conn->wirePoint(edge->to).y) {
+  while (edge && ned == wire_normalizer->distance(edge->from, edge->to)
+         && ndx == wire_normalizer->wirePoint(edge->to).x
+         && ndy > wire_normalizer->wirePoint(edge->to).y) {
     prev_edge = edge;
     edge = edge->next;
   }
@@ -101,13 +102,13 @@ void ConnectionGraph::clearVisited()
   }
 }
 
-void ConnectionGraph::getEdgeRefCoord(const tmg_conn* conn,
+void ConnectionGraph::getEdgeRefCoord(const WireNormalizer* wire_normalizer,
                                       ConnectionGraph::Edge* pe,
                                       int& rx,
                                       int& ry)
 {
-  rx = conn->wirePoint(pe->to).x;
-  ry = conn->wirePoint(pe->to).y;
+  rx = wire_normalizer->wirePoint(pe->to).x;
+  ry = wire_normalizer->wirePoint(pe->to).y;
   if (pe->wire_short == nullptr) {
     return;
   }
@@ -118,22 +119,22 @@ void ConnectionGraph::getEdgeRefCoord(const tmg_conn* conn,
   if (se == nullptr) {
     return;
   }
-  rx = conn->wirePoint(se->to).x;
-  ry = conn->wirePoint(se->to).y;
+  rx = wire_normalizer->wirePoint(se->to).x;
+  ry = wire_normalizer->wirePoint(se->to).y;
 }
 
 bool ConnectionGraph::isBadShort(ConnectionGraph::Edge* pe,
-                                 const tmg_conn* conn)
+                                 const WireNormalizer* wire_normalizer)
 {
   if (pe->wire_short == nullptr) {
     return false;
   }
-  const WirePoint& from = conn->wirePoint(pe->from);
-  const WirePoint& to = conn->wirePoint(pe->to);
+  const WirePoint& from = wire_normalizer->wirePoint(pe->from);
+  const WirePoint& to = wire_normalizer->wirePoint(pe->to);
   return from.x != to.x || from.y != to.y;
 }
 
-void ConnectionGraph::relocateShorts(tmg_conn* conn)
+void ConnectionGraph::relocateShorts(WireNormalizer* wire_normalizer)
 {
   for (ConnectionGraph::Point& pt : points_) {
     ConnectionGraph::Edge* pe = pt.first_edge;
@@ -153,14 +154,15 @@ void ConnectionGraph::relocateShorts(tmg_conn* conn)
           continue;
         }
         if (firstCheck) {
-          getEdgeRefCoord(conn, ppe, r1x, r1y);
+          getEdgeRefCoord(wire_normalizer, ppe, r1x, r1y);
         }
         firstCheck = false;
         int r2x;
         int r2y;
-        getEdgeRefCoord(conn, pe, r2x, r2y);
+        getEdgeRefCoord(wire_normalizer, pe, r2x, r2y);
         if ((pe->wire_short == nullptr && ppe->wire_short == nullptr)
-            || isBadShort(pe, conn) || isBadShort(ppe, conn)) {
+            || isBadShort(pe, wire_normalizer)
+            || isBadShort(ppe, wire_normalizer)) {
           pppe = ppe;
           ppe = pe;
           r1x = r2x;
@@ -202,7 +204,7 @@ void ConnectionGraph::relocateShorts(tmg_conn* conn)
         continue;
       }
       shortn++;
-      if (isBadShort(pe, conn)) {
+      if (isBadShort(pe, wire_normalizer)) {
         continue;  // bad short
       }
       if (pe->skip) {
@@ -339,13 +341,13 @@ ConnectionGraph::Edge* ConnectionGraph::getNextEdge(const bool ok_to_descend)
   return nullptr;
 }
 
-void ConnectionGraph::addEdges(const tmg_conn* conn,
+void ConnectionGraph::addEdges(const WireNormalizer* wire_normalizer,
                                const int i0,
                                const int i1,
                                const int k)
 {
-  ConnectionGraph::Edge* e = newEdge(conn, i0, i1);
-  ConnectionGraph::Edge* e2 = newEdge(conn, i1, i0);
+  ConnectionGraph::Edge* e = newEdge(wire_normalizer, i0, i1);
+  ConnectionGraph::Edge* e2 = newEdge(wire_normalizer, i1, i0);
 
   e->wire_short = nullptr;
   e->reverse = e2;

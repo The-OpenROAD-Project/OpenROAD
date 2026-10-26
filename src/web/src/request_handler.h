@@ -526,6 +526,14 @@ struct SessionState
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
+
 // Parse an integer that must span the whole string_view (no trailing garbage),
 // exception-free.  Returns false on any malformed/partial input.
 template <typename T>
@@ -542,14 +550,6 @@ std::string urlDecode(std::string_view s);
 
 // Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
 std::map<std::string, std::string> parseQuery(std::string_view target);
-
-// Join `t`, or detach it when called from `t` itself, where a join throws
-// EDEADLK.  A non-joinable thread is left alone.
-void joinUnlessSelf(std::thread& t);
-
-// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
-// whatever it would have re-armed (a read, a timer) stays stopped.
-void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
 
 // True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
 // q=0, an explicit gzip deciding over *; an empty header does not count.  A

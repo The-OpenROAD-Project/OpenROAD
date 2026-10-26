@@ -11,6 +11,6 @@ namespace odb {
 
 class dbBlock;
 
-void orderWires(utl::Logger* logger, dbBlock* b);
+void normalizeWireConnectivity(utl::Logger* logger, dbBlock* block);
 
 }  // namespace odb
