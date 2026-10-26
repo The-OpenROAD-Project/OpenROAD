@@ -124,7 +124,7 @@ class CUGR
   void gcellCongestion(int layer, int x, int y, double& cap, double& use) const;
   // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
   // overflow split into wire vs via-stub shares (proportional attribution);
-  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  // sub-min layers shown as all-zero rows. The caller decides when to print.
   void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,

@@ -1951,10 +1951,6 @@ void CUGR::printStatistics() const
 
 void CUGR::reportCongestion() const
 {
-  if (!verbose_) {
-    return;
-  }
-
   const int num_layers = grid_graph_->getNumLayers();
   const int x_size = grid_graph_->getXSize();
   const int y_size = grid_graph_->getYSize();

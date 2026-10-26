@@ -5,12 +5,12 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 #include "tst/fixture.h"
 
 namespace odb {
 
-class TestOrderWires : public tst::Fixture
+class TestWireNormalizer : public tst::Fixture
 {
  protected:
   struct InputBumpNet
@@ -206,7 +206,7 @@ class TestOrderWires : public tst::Fixture
 
   void testNormalizedConnectivity()
   {
-    EXPECT_TRUE(wire_->isOrdered());
+    EXPECT_TRUE(wire_->hasNormalizedConnectivity());
 
     const PtrMap<dbITerm, int> markers = itermMarkersInWire(wire_);
     for (dbITerm* iterm : net_->getITerms()) {
@@ -219,7 +219,7 @@ class TestOrderWires : public tst::Fixture
   dbWire* wire_{nullptr};
 };
 
-TEST_F(TestOrderWires, InputBumpNetWithPatchAtTheBeginning)
+TEST_F(TestWireNormalizer, InputBumpNetWithPatchAtTheBeginning)
 {
   const InputBumpNet bump_net = buildInputBumpNet();
   dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
@@ -239,8 +239,8 @@ TEST_F(TestOrderWires, InputBumpNetWithPatchAtTheBeginning)
   encoder.addPoint(bump_net.bump_x, bump_net.bump_y);
   encoder.end();
 
-  orderWires(&logger_, block_);
-  EXPECT_TRUE(wire->isOrdered());
+  normalizeWireConnectivity(&logger_, block_);
+  EXPECT_TRUE(wire->hasNormalizedConnectivity());
 
   dbWireDecoder decoder;
   decoder.begin(bump_net.net->getWire());
@@ -269,38 +269,38 @@ TEST_F(TestOrderWires, InputBumpNetWithPatchAtTheBeginning)
 // One short at each pin; together with the path edges they close one loop.
 // Wire loop removal has to break it by dropping a short, and the wire must
 // still reach both pins.
-TEST_F(TestOrderWires, RingOfTwoPaths)
+TEST_F(TestWireNormalizer, RingOfTwoPaths)
 {
   buildDriverReceiverNet();
   createRingWire();
 
-  orderWires(&logger_, block_);
+  normalizeWireConnectivity(&logger_, block_);
   testNormalizedConnectivity();
 }
 
 // Three paths meet at one point, creating three shorts (one per pair) which
 // close a loop on their own before any path edge is in the graph. Short loop
 // removal should break it.
-TEST_F(TestOrderWires, ThreePathsMeetingAtOnePoint)
+TEST_F(TestWireNormalizer, ThreePathsMeetingAtOnePoint)
 {
   buildDriverReceiverNet();
   createThreePathsWire();
 
-  orderWires(&logger_, block_);
+  normalizeWireConnectivity(&logger_, block_);
   testNormalizedConnectivity();
 }
 
-TEST_F(TestOrderWires, ReencodedWireIsNotOrdered)
+TEST_F(TestWireNormalizer, ReencodedWireIsNotNormalized)
 {
   buildDriverReceiverNet();
   wire_ = dbWire::create(net_);
 
   createSimpleHorizontalWire();
-  orderWires(&logger_, block_);
-  ASSERT_TRUE(wire_->isOrdered());
+  normalizeWireConnectivity(&logger_, block_);
+  ASSERT_TRUE(wire_->hasNormalizedConnectivity());
 
   createSimpleHorizontalWire();
-  EXPECT_FALSE(wire_->isOrdered());
+  EXPECT_FALSE(wire_->hasNormalizedConnectivity());
 }
 
 }  // namespace odb

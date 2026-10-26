@@ -59,6 +59,24 @@ struct Stack
   std::vector<Via> vias;
 
   const Conductor* findConductor(std::string_view name) const;
+
+  // The z extent of a conductor or via layer: a conductor's own, or a via's
+  // from the top of its lower conductor to the bottom of its upper one.
+  struct ZExtent
+  {
+    enum Status
+    {
+      kFound,
+      kUnknownLayer,
+      kViaToGround,  // lands on the ground plane (a SUBSTRATE via)
+      kViaWithoutUpper,
+    };
+    Status status = kUnknownLayer;
+    double bottom = 0;
+    double top = 0;
+    const Via* via = nullptr;  // for a via layer
+  };
+  ZExtent zExtent(std::string_view layer) const;
   // Relative permittivity of the planar stack at height z (z >= 0).
   double epsAt(double z) const;
   // A horizontal boundary in the planar stack where the permittivity

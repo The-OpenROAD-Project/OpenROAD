@@ -302,7 +302,7 @@ archive_override(
 
 # JavaScript / web UI: //:openroad embeds the npm libraries esbuild bundles.
 bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
-bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "aspect_rules_js", version = "3.5.1")
 bazel_dep(name = "rules_nodejs", version = "6.7.3")
 
 # write_source_files keeps src/web/dist, the CMake build's copy of the bundle,

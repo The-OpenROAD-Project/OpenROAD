@@ -56,6 +56,7 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "congestion_inflation_default",
     "incremental02",
     "incremental03",
     "place_ios_rd",
@@ -323,6 +324,27 @@ cc_test(
 )
 
 cc_test(
+    name = "route_base_test",
+    srcs = ["route_base_test.cpp"],
+    data = ["ar02.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "timing_base_test",
     srcs = ["timing_base_test.cpp"],
     env = GPU_ENV_OFF,
@@ -351,6 +373,33 @@ cc_test(
     deps = [
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "congestion_buffers_test",
+    srcs = [
+        "congestion_buffers_test.cpp",
+        "congestion_buffers_timing_test.cpp",
+    ],
+    data = [
+        "simple01.def",
+        "simple01-td-repair.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

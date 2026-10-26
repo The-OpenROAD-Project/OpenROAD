@@ -204,6 +204,39 @@ TEST(Itf, ViaLayersOrderedByHeight)
   EXPECT_EQ(stack.vias[2].lower, "SUBSTRATE");
 }
 
+// A conductor spans its own thickness and a via the gap between its layers;
+// D1 is measured from the bottom of M1, so M2 starts at 0.5.
+TEST(Itf, ZExtent)
+{
+  Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "DIELECTRIC D2 { THICKNESS=1.0 ER=4.0 }\n"
+      "CONDUCTOR M2 { THICKNESS=0.2 }\n"
+      "DIELECTRIC D1 { THICKNESS=0.5 ER=4.0 }\n"
+      "CONDUCTOR M1 { THICKNESS=0.2 }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n"
+      "VIA V1 { FROM=M1 TO=M2 }\n"
+      "VIA tie { FROM=SUBSTRATE TO=M1 }\n");
+  stack.vias.push_back({.name = "V2", .upper = "M3", .lower = "M2"});
+
+  const Stack::ZExtent m1 = stack.zExtent("M1");
+  EXPECT_EQ(m1.status, Stack::ZExtent::kFound);
+  EXPECT_NEAR(m1.bottom, 0.0, kTol);
+  EXPECT_NEAR(m1.top, 0.2, kTol);
+  EXPECT_EQ(m1.via, nullptr);
+
+  const Stack::ZExtent v1 = stack.zExtent("V1");
+  EXPECT_EQ(v1.status, Stack::ZExtent::kFound);
+  EXPECT_NEAR(v1.bottom, 0.2, kTol);
+  EXPECT_NEAR(v1.top, 0.5, kTol);
+  ASSERT_NE(v1.via, nullptr);
+  EXPECT_EQ(v1.via->name, "V1");
+
+  EXPECT_EQ(stack.zExtent("tie").status, Stack::ZExtent::kViaToGround);
+  EXPECT_EQ(stack.zExtent("V2").status, Stack::ZExtent::kViaWithoutUpper);
+  EXPECT_EQ(stack.zExtent("M9").status, Stack::ZExtent::kUnknownLayer);
+}
+
 // Without ASSOCIATED_CONDUCTOR a conformal dielectric wraps only conductors
 // that rise above the planar top. M0 is flush with the top of D1 up to
 // rounding (0.1 + 0.2 vs (0.1 + 0.15) + 0.05) and must not be wrapped.

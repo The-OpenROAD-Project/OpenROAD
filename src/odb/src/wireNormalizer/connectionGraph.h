@@ -8,7 +8,7 @@
 
 namespace odb {
 
-class tmg_conn;
+class WireNormalizer;
 struct Short;
 
 class ConnectionGraph
@@ -54,14 +54,14 @@ class ConnectionGraph
   };
 
   void init(int ptN, int shortN);
-  Edge* newEdge(const tmg_conn* conn, int fr, int to);
-  Edge* newShortEdge(const tmg_conn* conn, int fr, int to);
+  Edge* newEdge(const WireNormalizer* wire_normalizer, int fr, int to);
+  Edge* newShortEdge(const WireNormalizer* wire_normalizer, int fr, int to);
   Edge* getNextEdge(bool ok_to_descend);
   Edge* getFirstEdge(int jstart);
   Edge* getFirstNonShortEdge(int& jstart);
-  void addEdges(const tmg_conn* conn, int i0, int i1, int k);
+  void addEdges(const WireNormalizer* wire_normalizer, int i0, int i1, int k);
   void clearVisited();
-  void relocateShorts(tmg_conn* conn);
+  void relocateShorts(WireNormalizer* wire_normalizer);
   bool dfsStart(int& j);
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   bool isVisited(int point_index) const;
@@ -72,8 +72,11 @@ class ConnectionGraph
   Edge* descentEdge(int edge_index) const;
 
  private:
-  void getEdgeRefCoord(const tmg_conn* conn, Edge* pe, int& rx, int& ry);
-  bool isBadShort(Edge* pe, const tmg_conn* conn);
+  void getEdgeRefCoord(const WireNormalizer* wire_normalizer,
+                       Edge* pe,
+                       int& rx,
+                       int& ry);
+  bool isBadShort(Edge* pe, const WireNormalizer* wire_normalizer);
 
   std::deque<Edge> edges_;
   std::vector<Point> points_;

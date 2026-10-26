@@ -141,6 +141,8 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_congestion1",
+    "report_congestion_cugr",
     "report_net_detours1",
     "report_net_detours2",
     "report_net_detours2_cugr",

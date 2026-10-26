@@ -103,6 +103,8 @@ class NesterovPlace
   void destroyCbkITerm(odb::dbITerm*);
 
  private:
+  friend class TimingRepairIntegrationTest;
+
   void updateIterGraphics(int iter,
                           const std::string& reports_dir,
                           const std::string& routability_driven_dir,

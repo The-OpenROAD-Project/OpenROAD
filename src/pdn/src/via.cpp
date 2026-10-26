@@ -72,7 +72,7 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
       break;
     case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
       if (cut.dx() < cut.dy()) {
-        // SIDE is first overhang, END is second
+        // END is first overhang, SIDE is second
         x_ = rule->getSecondOverhang();
         y_ = rule->getFirstOverhang();
       } else {
@@ -817,7 +817,7 @@ ViaReport DbArrayVia::getViaReport() const
   addToViaReport(core_via_.get(), report);
   addToViaReport(end_of_row_column_.get(), report);
   addToViaReport(end_of_row_.get(), report);
-  addToViaReport(end_of_row_column_.get(), report);
+  addToViaReport(end_of_column_.get(), report);
 
   return report;
 }
@@ -1089,6 +1089,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
   return report;
 }
 
+bool DbGenerateStackedVia::canCache() const
+{
+  return std::ranges::all_of(vias_,
+                             [](const auto& via) { return via->canCache(); });
+}
+
 /////////////
 
 DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
@@ -1164,7 +1170,7 @@ int ViaGenerator::getGeneratorWidth(bool bottom) const
   if (isCutArray()) {
     const int end_width = getCutsWidth(
         end_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
-    return array_core_y_ * core_width + (array_core_x_ - 1) * array_spacing_x_
+    return array_core_x_ * core_width + (array_core_x_ - 1) * array_spacing_x_
            + end_width;
   }
   return core_width;
@@ -1783,10 +1789,12 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
     }
 
     if (rule->getAdjacentCuts() <= adj_cuts) {
-      if (max_dim == rows) {
+      // every axis with more than one cut has adjacent cuts along it
+      if (rows > 1) {
         cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
         changed = true;
-      } else {
+      }
+      if (cols > 1) {
         cut_pitch_x_ = cut.dx() + rule->getCutSpacing();
         changed = true;
       }
@@ -2461,7 +2469,7 @@ void ViaGenerator::determineCutSpacing()
       int rule_pitch_y;
       if (cut.dx() == cut.dy()) {
         rule_pitch_x = rule->getMaxSpacing(
-            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MIN);
+            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MAX);
         rule_pitch_y = rule_pitch_x;
       } else {
         const bool x_is_side = cut.dx() > cut.dy();
@@ -2639,19 +2647,6 @@ bool GenerateViaGenerator::isLayerValidForWidth(odb::dbTechViaLayerRule* rule,
 
   // check if width is within rule
   return min <= width && width <= max;
-}
-
-bool GenerateViaGenerator::getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,
-                                                 int& dx,
-                                                 int& dy) const
-{
-  if (rule->hasEnclosure()) {
-    rule->getEnclosure(dx, dy);
-  } else {
-    return false;
-  }
-
-  return true;
 }
 
 DbBaseVia* GenerateViaGenerator::makeBaseVia(int rows,

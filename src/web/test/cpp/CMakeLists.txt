@@ -32,6 +32,7 @@ set(WEB_TESTS
   TestGif
   TestWebAssets
   TestHeatMap
+  TestSessionLifetime
 )
 
 foreach(test IN LISTS WEB_TESTS)

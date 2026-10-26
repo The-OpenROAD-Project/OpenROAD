@@ -1,0 +1,10 @@
+# A wire with a high-k shell crossed by a wire with a low-k shell above an
+# etch stop. 3D: the x extents count. See fv2d_golden.py for the conformal
+# line format.
+background 3.9
+layer 0.8 2.7
+layer 0.92 5.0
+box m1 0 0.9 0.4 2 1.1 0.6
+box m2 0.9 0 1.0 1.1 2 1.2
+conformal C1 0.4 0.6 0.04 0.04 7.0
+conformal C2 1.0 1.2 0.04 0.08 3.0

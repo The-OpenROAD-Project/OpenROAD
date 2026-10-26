@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "tmg_conn.h"
+#include "wireNormalizer.h"
 
 #include <algorithm>
-#include <cstdio>
 #include <cstdlib>
 #include <memory>
-#include <tuple>
 
+#include "connectionGraph.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
-#include "odb/dbWireCodec.h"
-#include "odb/isotropy.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "shapeSearch.h"
-#include "tmg_conn_g.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -65,7 +64,7 @@ void Terminal::removePoint(WirePoint* point)
   point->next_terminal_point = nullptr;
 }
 
-tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
+WireNormalizer::WireNormalizer(utl::Logger* logger) : logger_(logger)
 {
   shape_search_ = std::make_unique<ShapeSearch>();
   connection_graph_ = std::make_unique<ConnectionGraph>();
@@ -78,9 +77,9 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   shorts_.reserve(1024);
 }
 
-tmg_conn::~tmg_conn() = default;
+WireNormalizer::~WireNormalizer() = default;
 
-void tmg_conn::analyzeNet()
+void WireNormalizer::normalizeWireConnectivity()
 {
   loadWire();
 
@@ -104,45 +103,45 @@ void tmg_conn::analyzeNet()
     }
 
     connection_graph_->relocateShorts(this);
-    treeReorder(false);
+    writeNewEncoding(false);
 
     dbWire* wire = net_->getWire();
-    wire->setOrdered(true);
+    wire->setNormalizedConnectivity(true);
   }
 
   clear();
 }
 
-void tmg_conn::setNet(dbNet* net)
+void WireNormalizer::setNet(dbNet* net)
 {
   net_ = net;
 }
 
-const WirePoint& tmg_conn::wirePoint(const int point_index) const
+const WirePoint& WireNormalizer::wirePoint(const int point_index) const
 {
   return wire_points_[point_index];
 }
 
-int tmg_conn::distance(const int fr, const int to) const
+int WireNormalizer::distance(const int fr, const int to) const
 {
   return abs(wire_points_[fr].x - wire_points_[to].x)
          + abs(wire_points_[fr].y - wire_points_[to].y);
 }
 
-WirePoint& tmg_conn::wirePoint(const int point_index)
+WirePoint& WireNormalizer::wirePoint(const int point_index)
 {
   return wire_points_[point_index];
 }
 
-WirePoint* tmg_conn::addWirePoint(int x, int y, dbTechLayer* layer)
+WirePoint* WireNormalizer::addWirePoint(int x, int y, dbTechLayer* layer)
 {
   return &wire_points_.emplace_back(x, y, layer);
 }
 
-void tmg_conn::addWireSection(const dbShape& s,
-                              const int from_idx,
-                              const int to_idx,
-                              dbTechNonDefaultRule* rule)
+void WireNormalizer::addWireSection(const dbShape& s,
+                                    const int from_idx,
+                                    const int to_idx,
+                                    dbTechNonDefaultRule* rule)
 {
   bool is_vertical;
   int width;
@@ -175,14 +174,14 @@ void tmg_conn::addWireSection(const dbShape& s,
   wire_sections_.push_back(x);
 }
 
-void tmg_conn::addWireSection(const int k,
-                              const WireSection::Shape& s,
-                              const int from_idx,
-                              const int to_idx,
-                              const int xmin,
-                              const int ymin,
-                              const int xmax,
-                              const int ymax)
+void WireNormalizer::addWireSection(const int k,
+                                    const WireSection::Shape& s,
+                                    const int from_idx,
+                                    const int to_idx,
+                                    const int xmin,
+                                    const int ymin,
+                                    const int xmax,
+                                    const int ymax)
 {
   const int width = wire_sections_[k].width;
   WireSection x(from_idx,
@@ -198,7 +197,7 @@ void tmg_conn::addWireSection(const int k,
   wire_sections_.push_back(x);
 }
 
-void tmg_conn::addITerm(dbITerm* iterm)
+void WireNormalizer::addITerm(dbITerm* iterm)
 {
   candidate_sections_.emplace_back();
   candidate_section_count_.emplace_back();
@@ -208,7 +207,7 @@ void tmg_conn::addITerm(dbITerm* iterm)
   x.first_pt = nullptr;
 }
 
-void tmg_conn::addBTerm(dbBTerm* bterm)
+void WireNormalizer::addBTerm(dbBTerm* bterm)
 {
   candidate_sections_.emplace_back();
   candidate_section_count_.emplace_back();
@@ -218,12 +217,12 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
   x.first_pt = nullptr;
 }
 
-void tmg_conn::addShort(const int i0, const int i1)
+void WireNormalizer::addShort(const int i0, const int i1)
 {
   shorts_.emplace_back(i0, i1);
 }
 
-void tmg_conn::clear()
+void WireNormalizer::clear()
 {
   shape_search_->clear();
 
@@ -248,7 +247,7 @@ void tmg_conn::clear()
   new_wire_ = nullptr;
 }
 
-void tmg_conn::loadTerminals()
+void WireNormalizer::loadTerminals()
 {
   for (dbITerm* iterm : net_->getITerms()) {
     addITerm(iterm);
@@ -259,7 +258,7 @@ void tmg_conn::loadTerminals()
   }
 }
 
-void tmg_conn::loadSWire(dbNet* net)
+void WireNormalizer::loadSWire(dbNet* net)
 {
   dbSet<dbSWire> swires = net->getSWires();
   if (swires.empty()) {
@@ -317,7 +316,7 @@ void tmg_conn::loadSWire(dbNet* net)
   }
 }
 
-void tmg_conn::loadWire()
+void WireNormalizer::loadWire()
 {
   odb::dbWire* wire = net_->getWire();
 
@@ -348,12 +347,12 @@ void tmg_conn::loadWire()
   loadSWire(wire->getNet());
 }
 
-void tmg_conn::splitBySj(const int j,
-                         const int rt,
-                         const int sjxMin,
-                         const int sjyMin,
-                         const int sjxMax,
-                         const int sjyMax)
+void WireNormalizer::splitBySj(const int j,
+                               const int rt,
+                               const int sjxMin,
+                               const int sjyMin,
+                               const int sjxMax,
+                               const int sjyMax)
 {
   WireSection::Shape* sj = &(wire_sections_[j].shape);
   const ShapeSearch::Type type
@@ -407,7 +406,7 @@ void tmg_conn::splitBySj(const int j,
 
 // The target section keeps the part up to the new point and
 // a new section takes the rest.
-void tmg_conn::splitWireSection(const int section_index, const Point& at)
+void WireNormalizer::splitWireSection(const int section_index, const Point& at)
 {
   WireSection& wire_section = wire_sections_[section_index];
   const WirePoint& from = wire_points_[wire_section.from_idx];
@@ -458,7 +457,7 @@ void tmg_conn::splitWireSection(const int section_index, const Point& at)
 
 // Split the top of every T so that the junction becomes a wire point.
 // Without the split, the junction stays a short.
-void tmg_conn::splitTtop()
+void WireNormalizer::splitTtop()
 {
   for (size_t j = 0; j < wire_sections_.size(); j++) {
     WireSection::Shape* sj = &(wire_sections_[j].shape);
@@ -502,7 +501,7 @@ void tmg_conn::splitTtop()
   }
 }
 
-void tmg_conn::setSring()
+void WireNormalizer::setSring()
 {
   for (const Short& rcshort : shorts_) {
     if (rcshort.skip) {
@@ -561,7 +560,7 @@ void tmg_conn::setSring()
 // right, left, up, down. The first one that matches wins. Nothing looks at
 // where the wire enters the bterm, so, if it enters through the dropped part
 // of the shape, the candidate search for this bterm looks in the wrong place.
-void tmg_conn::sliceBPinsOverlappingITerms()
+void WireNormalizer::sliceBPinsOverlappingITerms()
 {
   for (Terminal& term : terminals_) {
     if (term.iterm) {
@@ -644,7 +643,7 @@ void tmg_conn::sliceBPinsOverlappingITerms()
   }
 }
 
-void tmg_conn::populateShapeSearch()
+void WireNormalizer::populateShapeSearch()
 {
   for (size_t j = 0; j < wire_sections_.size(); j++) {
     WireSection::Shape* s = &(wire_sections_[j].shape);
@@ -694,7 +693,7 @@ void tmg_conn::populateShapeSearch()
   }
 }
 
-void tmg_conn::identifyShorts()
+void WireNormalizer::identifyShorts()
 {
   for (int j = 0; j < (int) wire_sections_.size() - 1; j++) {
     const WireSection::Shape* s = &(wire_sections_[j].shape);
@@ -768,7 +767,7 @@ void tmg_conn::identifyShorts()
   }
 }
 
-void tmg_conn::removeShortLoops()
+void WireNormalizer::removeShortLoops()
 {
   connection_graph_->init(wire_points_.size(), shorts_.size());
 
@@ -875,7 +874,7 @@ void tmg_conn::removeShortLoops()
 }
 
 // Here we also build the connection graph.
-void tmg_conn::removeWireLoops()
+void WireNormalizer::removeWireLoops()
 {
   removeShortLoops();
 
@@ -984,14 +983,14 @@ void tmg_conn::removeWireLoops()
   }
 }
 
-void tmg_conn::identifyCandidateSections()
+void WireNormalizer::identifyCandidateSections()
 {
   for (int i = 0; i < terminals_.size(); i++) {
     identifyCandidateSections(i);
   }
 }
 
-void tmg_conn::identifyCandidateSections(const int terminal_index)
+void WireNormalizer::identifyCandidateSections(const int terminal_index)
 {
   CandidateSections& candidate_sections = candidate_sections_[terminal_index];
   int candidate_section_count = 0;
@@ -1150,7 +1149,7 @@ void tmg_conn::identifyCandidateSections(const int terminal_index)
   candidate_section_count_[terminal_index] = candidate_section_count;
 }
 
-void tmg_conn::identifyTerminalWirePoints()
+void WireNormalizer::identifyTerminalWirePoints()
 {
   identifyCandidateSections();
 
@@ -1201,7 +1200,7 @@ void tmg_conn::identifyTerminalWirePoints()
   }
 }
 
-void tmg_conn::connectShapes(const int j, const int k)
+void WireNormalizer::connectShapes(const int j, const int k)
 {
   const WireSection::Shape* sa = &(wire_sections_[j].shape);
   const WireSection::Shape* sb = &(wire_sections_[k].shape);
@@ -1270,7 +1269,7 @@ void tmg_conn::connectShapes(const int j, const int k)
   addShort(i0, i1);
 }
 
-void tmg_conn::connectTerm(const int terminal_index, const bool soft)
+void WireNormalizer::connectTerm(const int terminal_index, const bool soft)
 {
   const CandidateSections& candidate_sections
       = candidate_sections_[terminal_index];
@@ -1405,8 +1404,8 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0) {
         logger_->error(ODB,
                        390,
-                       "order_wires failed: net {}, shorts to another term at "
-                       "wire point ({} {})",
+                       "Could not normalize the connectivity of net {}. It "
+                       "shorts to another terminal at wire point ({} {}).",
                        net_->getName(),
                        pt->x,
                        pt->y);
@@ -1437,8 +1436,8 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0) {
         logger_->error(ODB,
                        391,
-                       "order_wires failed: net {}, shorts to another term at "
-                       "wire point ({} {})",
+                       "Could not normalize the connectivity of net {}. It "
+                       "shorts to another terminal at wire point ({} {}).",
                        net_->getName(),
                        pt->x,
                        pt->y);
@@ -1477,8 +1476,8 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
       if (pt->terminal_index >= 0) {
         logger_->error(ODB,
                        392,
-                       "order_wires failed: net {}, shorts to another term at "
-                       "wire point ({} {})",
+                       "Could not normalize the connectivity of net {}. It "
+                       "shorts to another terminal at wire point ({} {}).",
                        net_->getName(),
                        pt->x,
                        pt->y);
@@ -1495,10 +1494,10 @@ void tmg_conn::connectTerm(const int terminal_index, const bool soft)
   first_for_clear_ = nullptr;
 }
 
-void tmg_conn::connectTermSoft(const int terminal_index,
-                               const int rt,
-                               const Rect& rect,
-                               const int k)
+void WireNormalizer::connectTermSoft(const int terminal_index,
+                                     const int rt,
+                                     const Rect& rect,
+                                     const int k)
 {
   const WireSection::Shape* sb = &(wire_sections_[k].shape);
   const int bfr = wire_sections_[k].from_idx;
@@ -1577,7 +1576,7 @@ void tmg_conn::connectTermSoft(const int terminal_index,
 
 // find a driver iterm, or any bterm, or any iterm, or default to the first
 // point
-int tmg_conn::getStartNode()
+int WireNormalizer::getStartNode()
 {
   dbITerm* it_drv;
   dbBTerm* bt_drv;
@@ -1616,7 +1615,7 @@ int tmg_conn::getStartNode()
   return 0;
 }
 
-void tmg_conn::findDriver(dbITerm** iterm, dbBTerm** bterm)
+void WireNormalizer::findDriver(dbITerm** iterm, dbBTerm** bterm)
 {
   *iterm = nullptr;
   *bterm = nullptr;
@@ -1653,7 +1652,7 @@ void tmg_conn::findDriver(dbITerm** iterm, dbBTerm** bterm)
   }
 }
 
-bool tmg_conn::checkConnected()
+bool WireNormalizer::checkConnected()
 {
   for (const Terminal& x : terminals_) {
     if (x.pt == nullptr) {
@@ -1744,7 +1743,7 @@ bool tmg_conn::checkConnected()
 // 1) The driver.
 // 2) A terminal that owns more than one wire point
 // 3) A terminal that the walk never reached, if the net is disconnected.
-void tmg_conn::treeReorder(const bool no_convert)
+void WireNormalizer::writeNewEncoding(const bool no_convert)
 {
   if (wire_points_.empty()) {
     return;
@@ -1783,8 +1782,8 @@ void tmg_conn::treeReorder(const bool no_convert)
   if (!connection_graph_->dfsStart(jstart)) {
     logger_->error(ODB,
                    395,
-                   "Could not order wires of net {}. No wire segment is "
-                   "reachable from the start point ({} {}).",
+                   "Could not normalize the connectivity of net {}. No wire "
+                   "segment is reachable from the start point ({} {}).",
                    net_->getConstName(),
                    wire_points_[jstart].x,
                    wire_points_[jstart].y);
@@ -1869,13 +1868,14 @@ void tmg_conn::treeReorder(const bool no_convert)
     }
     jstart = pt - wire_points_.data();
     if (!connection_graph_->dfsStart(jstart)) {
-      logger_->error(ODB,
-                     396,
-                     "Could not order wires of net {}. No wire segment is "
-                     "reachable from the branch start point ({} {}).",
-                     net_->getConstName(),
-                     wire_points_[jstart].x,
-                     wire_points_[jstart].y);
+      logger_->error(
+          ODB,
+          396,
+          "Could not normalize the connectivity of net {}. No wire "
+          "segment is reachable from the branch start point ({} {}).",
+          net_->getConstName(),
+          wire_points_[jstart].x,
+          wire_points_[jstart].y);
     }
   }
 
@@ -1884,7 +1884,7 @@ void tmg_conn::treeReorder(const bool no_convert)
   }
 }
 
-int tmg_conn::getExtension(const int ipt, const WireSection* wire_section)
+int WireNormalizer::getExtension(const int ipt, const WireSection* wire_section)
 {
   const WirePoint* p = &wire_points_[ipt];
   WirePoint* pto;
@@ -1908,7 +1908,7 @@ int tmg_conn::getExtension(const int ipt, const WireSection* wire_section)
   return ext;
 }
 
-int tmg_conn::addPoint(const int ipt, const WireSection* wire_section)
+int WireNormalizer::addPoint(const int ipt, const WireSection* wire_section)
 {
   int wire_id;
   const WirePoint* p = &wire_points_[ipt];
@@ -1921,9 +1921,9 @@ int tmg_conn::addPoint(const int ipt, const WireSection* wire_section)
   return wire_id;
 }
 
-int tmg_conn::addPoint(const int from_idx,
-                       const int ipt,
-                       const WireSection* wire_section)
+int WireNormalizer::addPoint(const int from_idx,
+                             const int ipt,
+                             const WireSection* wire_section)
 {
   int wire_id;
   const WirePoint* p = &wire_points_[ipt];
@@ -1936,7 +1936,8 @@ int tmg_conn::addPoint(const int from_idx,
   return wire_id;
 }
 
-int tmg_conn::addPointIfExt(const int ipt, const WireSection* wire_section)
+int WireNormalizer::addPointIfExt(const int ipt,
+                                  const WireSection* wire_section)
 {
   // for first wire after a via, need to add a point
   // only if the extension is not the default ext
@@ -1949,7 +1950,7 @@ int tmg_conn::addPointIfExt(const int ipt, const WireSection* wire_section)
   return wire_id;
 }
 
-int tmg_conn::getDisconnectedStart()
+int WireNormalizer::getDisconnectedStart()
 {
   for (int j = 0; j < wire_points_.size(); j++) {
     if (!connection_graph_->pt(j).visited) {
@@ -1969,7 +1970,7 @@ int tmg_conn::getDisconnectedStart()
   return -1;
 }
 
-void tmg_conn::copyWireIdToVisitedShorts(const int j)
+void WireNormalizer::copyWireIdToVisitedShorts(const int j)
 {
   // copy wirePoint(j).id_on_new_encoding to visited points shorted to j
   const int wire_id = wirePoint(j).id_on_new_encoding;
@@ -1983,11 +1984,11 @@ void tmg_conn::copyWireIdToVisitedShorts(const int j)
   }
 }
 
-void tmg_conn::addToWire(const int fr,
-                         const int to,
-                         const int k,
-                         const bool is_short,
-                         const bool is_loop)
+void WireNormalizer::addToWire(const int fr,
+                               const int to,
+                               const int k,
+                               const bool is_short,
+                               const bool is_loop)
 {
   if (!new_wire_) {
     return;
@@ -2013,7 +2014,7 @@ void tmg_conn::addToWire(const int fr,
   }
   if (k < 0) {
     logger_->error(
-        ODB, 393, "tmg_conn::addToWire: value of k is negative: {}", k);
+        ODB, 393, "WireNormalizer::addToWire: value of k is negative: {}", k);
   }
 
   WireSection* wire_section = (k >= 0) ? &wire_sections_[k] : nullptr;

@@ -19,6 +19,37 @@ const Stack::Conductor* Stack::findConductor(const std::string_view name) const
   return nullptr;
 }
 
+Stack::ZExtent Stack::zExtent(const std::string_view layer) const
+{
+  ZExtent extent;
+  if (const Conductor* c = findConductor(layer)) {
+    extent.status = ZExtent::kFound;
+    extent.bottom = c->bottom;
+    extent.top = c->top;
+    return extent;
+  }
+  for (const Via& v : vias) {
+    if (v.name == layer) {
+      extent.via = &v;
+    }
+  }
+  if (extent.via == nullptr) {
+    return extent;
+  }
+  const Conductor* lower = findConductor(extent.via->lower);
+  const Conductor* upper = findConductor(extent.via->upper);
+  if (lower == nullptr) {
+    extent.status = ZExtent::kViaToGround;
+  } else if (upper == nullptr) {
+    extent.status = ZExtent::kViaWithoutUpper;
+  } else {
+    extent.status = ZExtent::kFound;
+    extent.bottom = lower->top;
+    extent.top = upper->bottom;
+  }
+  return extent;
+}
+
 double Stack::epsAt(const double z) const
 {
   for (const Dielectric& d : dielectrics) {
