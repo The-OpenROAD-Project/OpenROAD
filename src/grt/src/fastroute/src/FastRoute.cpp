@@ -1233,8 +1233,9 @@ double FastRouteCore::getUsageNDRAware(FrNet* net,
   // Price the edge as one the net would overflow by kNdrDeficitCost tracks
   // per missing track. The cost functions take the usage before the net is
   // added, hence the track less.
-  const int capacity
-      = direction == EdgeDirection::Horizontal ? h_capacity_ : v_capacity_;
+  const int capacity = direction == EdgeDirection::Horizontal
+                           ? graph2d_.getCapH(x, y)
+                           : graph2d_.getCapV(x, y);
   return std::max(usage, capacity - 1.0 + kNdrDeficitCost * deficit);
 }
 

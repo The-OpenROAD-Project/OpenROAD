@@ -975,9 +975,9 @@ void Graph2D::initNDRnets()
   // resize() keeps the records of a same-sized grid, but the nets of a
   // previous run are deleted by then: a new net allocated at the same
   // address would be taken for one already using the edge.
-  clearNDRnets();
   v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
   h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
+  clearNDRnets();
 }
 
 void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
