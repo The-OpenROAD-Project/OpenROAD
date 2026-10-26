@@ -70,16 +70,17 @@ char phaseMarkerForIndex(int phase_index)
   return '?';
 }
 
-OptimizationPolicy::OptimizationPolicy(Resizer& resizer,
-                                       MoveCommitter& committer,
-                                       RepairSetupContext& setup_context,
-                                       const OptimizerRunConfig& config,
-                                       OptimizationPolicyConfig policy_config)
+OptimizationPolicy::OptimizationPolicy(
+    Resizer& resizer,
+    MoveCommitter& committer,
+    RepairSetupContext& setup_context,
+    const OptimizerRunConfig& config,
+    const OptimizationPolicyConfig& policy_config)
     : resizer_(resizer),
       committer_(committer),
       setup_context_(setup_context),
       config_(config),
-      policy_config_(std::move(policy_config)),
+      policy_config_(policy_config),
       target_collector_(&setup_context_.target_collector),
       progress_(resizer, committer, setup_context)
 {

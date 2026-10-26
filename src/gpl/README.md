@@ -31,9 +31,11 @@ When using the `-timing_driven` flag, `gpl` does a virtual `repair_design`
 to find slacks and
 weight nets with low slack. It adjusts the worst slacks (modified with 
 `-timing_driven_nets_percentage`) using a multiplier (modified with 
-`-timing_driven_net_weight_max`). The multiplier
-is scaled from the full value for the worst slack, to 1.0 at the
-`timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
+`-timing_driven_net_weight_max`). The multiplier is at its full value for the
+worst 0.2% of the timing-constrained nets and is scaled down linearly to 1.0 at
+the `timing_driven_nets_percentage` point. That 0.2% is a fraction of the whole
+design, not of the selected set, so `timing_driven_nets_percentage` moves only
+the top of the ramp. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing. 
 
 Timing-driven iterations are triggered based on a list of overflow threshold 
@@ -54,6 +56,11 @@ long during routability-driven execution, consider raising the target RC value
 (`-routability_target_rc_metric`) to alleviate the constraints. The final RC 
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
+
+With timing-driven and routability-driven placement enabled, retained timing
+repairs also inflate new cells in congested areas after routability refinement
+finishes. This shares the inflation budget and removes fillers to pay for added
+area, without raising density or restarting routability.
 
 Initial-placement arguments
 - They begin with `-initial_place`.

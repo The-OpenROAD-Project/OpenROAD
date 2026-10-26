@@ -28,6 +28,7 @@ or_integration_tests(
     simple01-td-net-percentage
     simple01-td-tune
     simple01-td-repair
+    simple01-td-restart
     simple01-uniform
     simple01-vcts
     simple01-vcts-clamp
@@ -220,6 +221,30 @@ if(ENABLE_GPU)
            COMMAND $<TARGET_FILE:placer_base_test> --gtest_list_tests)
 endif()
 
+add_executable(timing_base_test
+  timing_base_test.cpp
+)
+
+target_include_directories(timing_base_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(timing_base_test PUBLIC
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+)
+
+gtest_discover_tests(timing_base_test
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME timing_base_test_load_sentinel
+           COMMAND $<TARGET_FILE:timing_base_test> --gtest_list_tests)
+endif()
+
 add_executable(estimate_target_density_test
   estimate_target_density_test.cpp
 )
@@ -269,7 +294,8 @@ if(ENABLE_GPU)
 endif()
 
 add_dependencies(build_and_test fft_test mbff_test placer_base_test
-  estimate_target_density_test nesterov_divergence_test place_ios_test)
+  timing_base_test estimate_target_density_test nesterov_divergence_test
+  place_ios_test)
 
 # GPU FFT correctness test. Built only on ENABLE_GPU=ON: it links the GPU FFT
 # backend (src/gpl/src/gpu/gpuFftBackend.cpp) via gpl_lib and, with the default
