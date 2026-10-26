@@ -1468,14 +1468,14 @@ NetRouteMap FastRouteCore::getRoutes()
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
           const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
-
-          GSegment segment = GSegment(
-              lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1);
-
+          addSegment(
+              GSegment(
+                  lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1),
+              net_segs,
+              route);
           lastX = xreal;
           lastY = yreal;
           lastL = grids[i].layer;
-          addSegment(segment, net_segs, route);
         }
       }
     }
@@ -1638,18 +1638,20 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
         if (lastX == xreal) {
           // if change direction add a via to change the layer
           if (lastL == layer_h) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
-            addSegment(segment, net_segs, route);
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1),
+                net_segs,
+                route);
           }
           lastL = layer_v;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
         } else {
           // if change direction add a via to change the layer
           if (lastL == layer_v) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
-            addSegment(segment, net_segs, route);
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1),
+                net_segs,
+                route);
           }
           lastL = layer_h;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);

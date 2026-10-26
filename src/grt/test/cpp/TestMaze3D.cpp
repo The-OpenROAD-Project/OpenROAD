@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -464,16 +464,19 @@ TEST_F(Maze3DTest, RecoversMultipleEdgesOfOneMultiPinNet)
   EXPECT_NE(output.find("edges of 1 nets"), std::string::npos);
 }
 
-// Counts the vias of a route by position and layer pair, whichever way each
-// via points. A count above one is a parallel resistor in the parasitics.
-std::map<std::tuple<int, int, int, int>, int> countVias(const GRoute& route)
+using Via = std::tuple<int, int, int, int>;
+
+// Lists the vias of a route by position and layer pair, whichever way each
+// via points. A via listed twice is a parallel resistor in the parasitics.
+std::multiset<Via> getVias(const GRoute& route)
 {
-  std::map<std::tuple<int, int, int, int>, int> vias;
+  std::multiset<Via> vias;
   for (const GSegment& segment : route) {
-    if (segment.isVia()) {
-      const auto [bottom, top]
-          = std::minmax(segment.init_layer, segment.final_layer);
-      vias[{segment.init_x, segment.init_y, bottom, top}]++;
+    if (segment.isVia() && segment.init_layer != segment.final_layer) {
+      vias.emplace(segment.init_x,
+                   segment.init_y,
+                   std::min(segment.init_layer, segment.final_layer),
+                   std::max(segment.init_layer, segment.final_layer));
     }
   }
   return vias;
@@ -491,9 +494,8 @@ TEST_F(Maze3DTest, Get3DRouteAddsSinkPinViaOnce)
   GRoute route;
   router_->get3DRoute(block_->findNet("sink_below_edge"), route);
 
-  const std::map<std::tuple<int, int, int, int>, int> expected{
-      {{150, 50, 1, 2}, 1}, {{150, 250, 1, 2}, 1}};
-  EXPECT_EQ(countVias(route), expected);
+  const std::multiset<Via> expected{{150, 50, 1, 2}, {150, 250, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
   EXPECT_EQ(route.size(), 4);
 }
 
@@ -511,9 +513,8 @@ TEST_F(Maze3DTest, Get3DRouteAddsColocatedPinViaOnce)
   GRoute route;
   router_->get3DRoute(block_->findNet("colocated_sinks"), route);
 
-  const std::map<std::tuple<int, int, int, int>, int> expected{
-      {{250, 150, 1, 2}, 1}};
-  EXPECT_EQ(countVias(route), expected);
+  const std::multiset<Via> expected{{250, 150, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
   EXPECT_EQ(route.size(), 3);
 }
 
@@ -531,9 +532,8 @@ TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
   GRoute route;
   router_->getPlanarRoute(block_->findNet("crossing_edges"), route);
 
-  const std::map<std::tuple<int, int, int, int>, int> expected{
-      {{150, 150, 1, 2}, 1}};
-  EXPECT_EQ(countVias(route), expected);
+  const std::multiset<Via> expected{{150, 150, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
   EXPECT_EQ(route.size(), 5);
 }
 
