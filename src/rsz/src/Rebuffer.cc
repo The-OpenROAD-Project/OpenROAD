@@ -338,7 +338,7 @@ float Rebuffer::portDriveResistance(const sta::LibertyPort* port,
       port,
       rf != nullptr ? rf->index() : sta::RiseFall::index_count,
       bound->index());
-  const auto it = drive_res_cache_.find(key);
+  const DriveResCache::const_iterator it = drive_res_cache_.find(key);
   if (it != drive_res_cache_.end()) {
     return it->second;
   }
@@ -354,7 +354,8 @@ float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
   // with up to three trees and both transitions.
   const std::pair<const sta::Pin*, const sta::LibertyCell*> key(prev_drvr_pin,
                                                                 cell);
-  const auto it = input_cap_growth_cache_.find(key);
+  const InputCapGrowthCache::const_iterator it
+      = input_cap_growth_cache_.find(key);
   if (it != input_cap_growth_cache_.end()) {
     return it->second;
   }
