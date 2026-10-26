@@ -4,12 +4,15 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "FastRoute.h"
+#include "grt/GRoute.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -459,6 +462,59 @@ TEST_F(Maze3DTest, RecoversMultipleEdgesOfOneMultiPinNet)
   EXPECT_EQ(logger_.getWarningCount(), 1);
   EXPECT_NE(output.find("[WARNING GRT-0183]"), std::string::npos);
   EXPECT_NE(output.find("edges of 1 nets"), std::string::npos);
+}
+
+// Counts the vias of a route by position and layer pair, whichever way each
+// via points. A count above one is a parallel resistor in the parasitics.
+std::map<std::tuple<int, int, int, int>, int> countVias(const GRoute& route)
+{
+  std::map<std::tuple<int, int, int, int>, int> vias;
+  for (const GSegment& segment : route) {
+    if (segment.isVia()) {
+      const auto [bottom, top]
+          = std::minmax(segment.init_layer, segment.final_layer);
+      vias[{segment.init_x, segment.init_y, bottom, top}]++;
+    }
+  }
+  return vias;
+}
+
+TEST_F(Maze3DTest, Get3DRouteAddsSinkPinViaOnce)
+{
+  // The sink pin is below the edge, so its via stack is walked down to the
+  // pin and back up.
+  addTreeNet("sink_below_edge",
+             {{1, 0, 0}, {1, 2, 0}},
+             {},
+             {{0, 1, {{1, 0, 1}, {1, 1, 1}, {1, 2, 1}}}});
+
+  GRoute route;
+  router_->get3DRoute(block_->findNet("sink_below_edge"), route);
+
+  const std::map<std::tuple<int, int, int, int>, int> expected{
+      {{150, 50, 1, 2}, 1}, {{150, 250, 1, 2}, 1}};
+  EXPECT_EQ(countVias(route), expected);
+  EXPECT_EQ(route.size(), 4);
+}
+
+TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
+{
+  // The edges cross at (1, 1) with opposite turns: the first turns from the
+  // vertical to the horizontal layer, the second arrives horizontally and is
+  // bridged up before it turns.
+  addTreeNet("crossing_edges",
+             {{1, 0, 1}, {2, 1, 0}, {0, 1, 0}, {1, 2, 1}},
+             {},
+             {{0, 1, {{1, 0, 1}, {1, 1, 1}, {2, 1, 0}}},
+              {2, 3, {{0, 1, 0}, {1, 1, 0}, {1, 2, 1}}}});
+
+  GRoute route;
+  router_->getPlanarRoute(block_->findNet("crossing_edges"), route);
+
+  const std::map<std::tuple<int, int, int, int>, int> expected{
+      {{150, 150, 1, 2}, 1}};
+  EXPECT_EQ(countVias(route), expected);
+  EXPECT_EQ(route.size(), 5);
 }
 
 }  // namespace
