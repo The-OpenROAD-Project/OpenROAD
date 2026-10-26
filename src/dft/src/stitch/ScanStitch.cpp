@@ -56,6 +56,11 @@ void ScanStitch::Stitch(odb::dbBlock* block,
                         ScanChain& scan_chain,
                         size_t ordinal)
 {
+  // An empty chain has no cells to connect, so it gets no scan ports either
+  if (scan_chain.empty()) {
+    return;
+  }
+
   auto scan_enable_name
       = fmt::format(FMT_RUNTIME(config_.getEnableNamePattern()), kEnableNumber);
   auto scan_enable_driver = FindOrCreateScanEnable(block, scan_enable_name);
