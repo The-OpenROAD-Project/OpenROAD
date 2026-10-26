@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -167,13 +166,13 @@ struct CandidateSection
   Rect terminal_box;
 };
 
-class tmg_conn
+class WireNormalizer
 {
  public:
-  tmg_conn(utl::Logger* logger);
-  ~tmg_conn();
+  WireNormalizer(utl::Logger* logger);
+  ~WireNormalizer();
 
-  void analyzeNet();
+  void normalizeWireConnectivity();
   void setNet(dbNet* net);
 
   const WirePoint& wirePoint(int point_index) const;
@@ -197,7 +196,7 @@ class tmg_conn
   void identifyCandidateSections();
   void identifyCandidateSections(int terminal_index);
   void identifyTerminalWirePoints();
-  void treeReorder(bool no_convert);
+  void writeNewEncoding(bool no_convert);
   bool checkConnected();
   WirePoint* addWirePoint(int x, int y, dbTechLayer* layer);
   void addWireSection(const dbShape& s,

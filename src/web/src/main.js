@@ -27,7 +27,7 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
-         rafCoalesce, showToast, unitLabel }
+         rafCoalesce, showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -1256,7 +1256,7 @@ if (staticCache) {
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    const websocketUrl = websocketUrlFrom(window.location);
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
