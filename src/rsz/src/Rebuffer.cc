@@ -768,7 +768,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   }
   if (chosen_cell != current_cell) {
     // The chosen tree was timed with the new cell; keep the option-off
-    // result if the swap is refused.
+    // result if replaceCell finds no master for it.
     if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
       return area_tree;
     }
