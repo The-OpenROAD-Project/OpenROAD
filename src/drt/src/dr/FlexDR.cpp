@@ -2146,7 +2146,27 @@ int FlexDR::main()
   // initial full rip-up passes that are not useful when re-routing an existing
   // solution's violations.
   const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
+  // Only the initial iterations route a net that has guides but no routing
+  // (an ECO: nets ripped up by repair_design or repair_antennas). Resume only
+  // when every such net is already routed, otherwise those nets would be left
+  // unrouted.
+  int num_unrouted_nets = 0;
   if (num_db_markers > 0) {
+    for (const auto& net : getDesign()->getTopBlock()->getNets()) {
+      if (!net->isSpecial() && net->hasGuides() && !net->hasInitialRouting()) {
+        ++num_unrouted_nets;
+      }
+    }
+    if (num_unrouted_nets > 0 && router_cfg_->VERBOSE > 0) {
+      logger_->info(DRT,
+                    629,
+                    "Found {} DRC marker(s) in the database but {} net(s) "
+                    "without routing; routing from iteration 0.",
+                    num_db_markers,
+                    num_unrouted_nets);
+    }
+  }
+  if (num_db_markers > 0 && num_unrouted_nets == 0) {
     // Never resume past the configured end iteration, otherwise no repair
     // iteration would run at all.
     iter_ = std::max(0,
