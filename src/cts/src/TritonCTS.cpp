@@ -2784,9 +2784,6 @@ void TritonCTS::repairClockNets()
   }
 }
 
-// Balance macro cell latencies with register latencies.
-// This is needed only if special insertion delay handling
-// is invoked.
 int TritonCTS::runLatencyBalancers(double capPerDBU, double resPerDBU)
 {
   int totalDelayBuff = 0;
@@ -2825,6 +2822,9 @@ double TritonCTS::getMaxDelayBufferDelay(double extra_out_cap)
   return max_delay;
 }
 
+// Balance macro cell latencies with register latencies.
+// This is needed only if special insertion delay handling
+// is invoked.
 void TritonCTS::balanceMacroRegisterLatencies()
 {
   if (!options_->insertionDelayEnabled()) {
