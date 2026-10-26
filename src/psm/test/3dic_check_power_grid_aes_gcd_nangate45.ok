@@ -11,6 +11,9 @@
 [INFO ODB-0131]     Created 624 components and 2752 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 1248 connections.
 [INFO ODB-0133]     Created 581 nets and 1504 connections.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0154] The power grid for VSS is connected.
+[INFO PSM-0154] The power grid for VDD is connected.
 [INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45_vdd.loc.
 ########## IR report #################
 Net              : VDD

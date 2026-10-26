@@ -135,7 +135,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
       || sta_->getDbNetwork()->topChip() != db_->getChip()) {
     logger_->error(utl::PSM,
                    151,
-                   "OpenSTA has no timing network for the loaded 3D assembly.");
+                   "OpenSTA has no timing network for the loaded assembly.");
   }
 
   auto* chip_net = findChipNet(net);
@@ -170,20 +170,14 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
 {
   if (sta::dbNetwork::is3DicTopChip(db_->getChip())) {
     auto* chip_net = findChipNet(net);
-    // Connectivity is scene-independent; any configured resistance can create
-    // missing inter-chip resistors.
-    const std::optional<double> resistance
-        = interchip_resistances_.empty()
-              ? std::nullopt
-              : std::optional<double>(interchip_resistances_.begin()->second);
-    IRNetwork network(chip_net, logger_, floorplanning, resistance);
+    IRNetwork network(chip_net, logger_, floorplanning, std::nullopt, true);
     checkAssemblyConnectivity(
         network, floorplanning, require_bterm, error_file);
     debugPrint(logger_,
                utl::PSM,
                "stats",
                1,
-               "Built 3D power grid {}: {} chiplet PDNs, {} nodes, and {} "
+               "Built power grid {}: {} chiplet PDNs, {} nodes, and {} "
                "connections ({} inter-die).",
                chip_net->getName(),
                network.getChipletNetworkCount(),
@@ -284,7 +278,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
     report.open(error_file);
     if (!report) {
       logger_->error(
-          utl::PSM, 152, "Unable to open 3D error file: {}", error_file);
+          utl::PSM, 152, "Unable to open error file: {}", error_file);
     }
   }
   const auto name = network.getChipNet()->getName();
@@ -298,7 +292,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
     logger_->error(
         utl::PSM,
         103,
-        "3D power grid {} has {} chiplet PDNs and {} inter-die connections.",
+        "Power grid {} has {} chiplet PDNs and {} inter-die connections.",
         name,
         network.getChipletNetworkCount(),
         network.getInterDieConnectionCount());
@@ -338,7 +332,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
   }
   const auto disconnected = network.getDisconnectedNodes();
   if (report.is_open() && !disconnected.empty()) {
-    report << "The 3D power grid for " << name << " is disconnected.\n";
+    report << "The power grid for " << name << " is disconnected.\n";
   }
   if (!local_ok) {
     logger_->error(utl::PSM,
@@ -348,8 +342,9 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
   }
   if (!disconnected.empty() || network.getNodeCount() == 0) {
     logger_->error(
-        utl::PSM, 140, "The 3D power grid for {} is disconnected.", name);
+        utl::PSM, 140, "The power grid for {} is disconnected.", name);
   }
+  logger_->info(utl::PSM, 154, "The power grid for {} is connected.", name);
 }
 
 void PDNSim::writeSpiceNetwork(odb::dbNet* net,

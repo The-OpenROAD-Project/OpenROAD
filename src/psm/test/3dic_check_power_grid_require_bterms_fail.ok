@@ -15,6 +15,7 @@
 [INFO ODB-0133]     Created 7 nets and 12 connections.
 
 Command - check_power_grid -net VDD -dont_require_terminals
+[INFO PSM-0154] The power grid for VDD is connected.
 
 Command - check_power_grid -net VDD
 [ERROR PSM-0025] VDD does not contain any terminals

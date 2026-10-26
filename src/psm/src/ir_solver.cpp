@@ -1993,7 +1993,7 @@ VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
     logger->error(
         utl::PSM,
         168,
-        "LU factorization of the 3D G Matrix failed. SparseLU solver message: "
+        "LU factorization of the G matrix failed. SparseLU solver message: "
         "{}.",
         eigen_solver.lastErrorMessage());
   }
@@ -2009,7 +2009,7 @@ VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
       dumpMatrix(g_matrix, "G", logger);
       dumpVector(j_vector, "J", logger);
     }
-    logger->error(utl::PSM, 169, "Solving the 3D V = inv(G)*J failed.");
+    logger->error(utl::PSM, 169, "Solving V = inv(G)*J failed.");
   }
   debugPrint(logger,
              utl::PSM,
@@ -2474,7 +2474,7 @@ IRSolver::Voltage IRSolver::getNominalVoltage(sta::Scene* corner,
 
   logger_->error(utl::PSM,
                  172,
-                 "Cannot determine the 3D supply voltage for {}.",
+                 "Cannot determine the supply voltage for {}.",
                  query_net->getName());
 
   return 0.0;
@@ -2541,7 +2541,7 @@ void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
   if (assembly_->voltage_sources.empty()) {
     logger_->error(utl::PSM,
                    138,
-                   "No voltage source is defined for 3D net {}.",
+                   "No voltage source is defined for net {}.",
                    network_->getChipNet()->getName());
   }
 
@@ -2550,7 +2550,7 @@ void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
     logger_->error(
         utl::PSM,
         139,
-        "The 3D grid for {} requires valid sources with identical voltages.",
+        "The grid for {} requires valid sources with identical voltages.",
         network_->getChipNet()->getName());
   }
   std::vector<FixedVoltageSource> fixed_sources;

@@ -14,5 +14,5 @@
 [INFO ODB-0253]     Updated 4 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
-[ERROR PSM-0103] 3D power grid VDD has 1 chiplet PDNs and 0 inter-die connections.
+[ERROR PSM-0103] Power grid VDD has 1 chiplet PDNs and 0 inter-die connections.
 PSM-0103

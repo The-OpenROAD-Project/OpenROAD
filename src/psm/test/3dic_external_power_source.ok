@@ -13,6 +13,8 @@
 [INFO ODB-0253]     Updated 5 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0154] The power grid for VDD is connected.
 [INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_external_power_source.loc.
 ########## IR report #################
 Net              : VDD
@@ -32,6 +34,7 @@ Maximum current    : 2.05e-06 A
 Average current    : 2.45e-07 A
 Number of resistors: 101
 ######################################
+[INFO PSM-0154] The power grid for VDD is connected.
 [INFO PSM-0013] Reusing previous solution
 ########## IR report #################
 Net              : VDD

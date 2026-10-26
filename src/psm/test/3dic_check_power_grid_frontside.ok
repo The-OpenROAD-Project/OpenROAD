@@ -13,3 +13,5 @@
 [INFO ODB-0253]     Updated 5 components.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0154] The power grid for VSS is connected.

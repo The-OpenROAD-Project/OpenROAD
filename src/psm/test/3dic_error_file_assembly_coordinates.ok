@@ -25,4 +25,4 @@ violation type: Unconnected instance
 	srcs: inst:bump_vdd
 	bbox = (170.0700, 221.0000) - (199.0700, 250.0000) on Layer -
 Chiplet chipA, net VDD (coordinates relative to the assembly origin in microns)
-The 3D power grid for VDD is disconnected.
+The power grid for VDD is disconnected.

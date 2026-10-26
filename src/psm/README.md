@@ -24,16 +24,6 @@ Features:
 
 This command analyzes power grid for 2D and 3D chips.
 
-The following 3D extensions are planned and are not included yet:
-
-- Export 3D IR and EM results in the JSON file.
-- EM CSV export through `-em_outfile`.
-- GUI IR-drop heatmaps.
-- Source generation through `-vsrc` and `-source_type FULL|BUMPS|STRAPS`.
-- Solution reuse through `-allow_reuse`.
-- SPICE export of the connected chiplet network through `write_pg_spice`.
-- Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
-
 ```tcl
 analyze_power_grid
     -net net_name
@@ -56,7 +46,7 @@ analyze_power_grid
 | `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). For 3D ICs see the example [here](doc/vsrc_desciption_3d.md). |
 | `-enable_em` | Reports maximum and average power-grid segment currents. |
-| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. Currently not supported for 3D ICs. |
+| `-em_outfile` | Write the per-segment current values into a file. This option is only available if used in combination with `-enable_em`. |
 | `-voltage_file` | Write per-instance voltage into the file. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
 | `-allow_reuse` | Allow the analysis to reuse a previous solution, if one exists. |
@@ -256,6 +246,14 @@ bazelisk test //src/psm/...
 ```
 
 ## Limitations
+
+The following 3D extensions are not currently supported:
+
+- Exporting 3D IR and EM results to JSON.
+- GUI IR-drop heatmaps.
+- Source generation through `-source_type FULL|BUMPS|STRAPS`.
+- SPICE export of the connected chiplet network through `write_pg_spice`.
+- Chiplet-aware instance lookup in `set_pdnsim_inst_power`.
 
 ## References
 
