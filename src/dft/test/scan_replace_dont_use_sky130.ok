@@ -15,9 +15,9 @@ Instance ff1
  Output pins:
   Q output output1
 Instance ff1
- Cell: sky130_fd_sc_hd__sdfstp_1
+ Cell: sky130_fd_sc_hd__sdfstp_2
  Library: sky130_fd_sc_hd_merged
- Path cells: sky130_fd_sc_hd__sdfstp_1
+ Path cells: sky130_fd_sc_hd__sdfstp_2
  Input pins:
   D input port1
   SCD input (unconnected)

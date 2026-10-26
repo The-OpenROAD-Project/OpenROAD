@@ -82,9 +82,13 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -93,9 +97,13 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
