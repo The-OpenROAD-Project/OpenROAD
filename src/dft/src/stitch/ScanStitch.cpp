@@ -3,11 +3,7 @@
 
 #include "ScanStitch.hh"
 
-#include <algorithm>
 #include <cstddef>
-#include <deque>
-#include <functional>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
@@ -71,14 +67,8 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   scan_chain.setScanIn(scan_in_driver);
   scan_chain.setScanEnable(scan_enable_driver);
 
-  // We need fast pop for front and back
-  std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
-      scan_cells;
-
-  const std::vector<std::unique_ptr<ScanCell>>& original_scan_cells
+  const std::vector<std::unique_ptr<ScanCell>>& scan_cells
       = scan_chain.getScanCells();
-
-  std::ranges::copy(original_scan_cells, std::back_inserter(scan_cells));
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
@@ -86,35 +76,22 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   }
 
   // Lets get the first and last cell
-  const std::unique_ptr<ScanCell>& first_scan_cell = *scan_cells.begin();
-  const std::unique_ptr<ScanCell>& last_scan_cell = *(scan_cells.end() - 1);
+  const std::unique_ptr<ScanCell>& first_scan_cell = scan_cells.front();
+  const std::unique_ptr<ScanCell>& last_scan_cell = scan_cells.back();
 
-  if (!scan_cells.empty()) {
-    scan_cells.pop_front();
-  }
-
-  if (!scan_cells.empty()) {
-    scan_cells.pop_back();
-  }
-
-  for (auto it = scan_cells.begin(); it != scan_cells.end(); ++it) {
-    const std::unique_ptr<ScanCell>& current = *it;
-    const std::unique_ptr<ScanCell>& next = *(it + 1);
-    // Connects current cell scan out to next cell scan in
-    next->connectScanIn(current->getScanOut());
+  // Connects current cell scan out to next cell scan in, starting with the
+  // third cell. The second cell is connected after the first cell below.
+  for (size_t i = 2; i < scan_cells.size(); ++i) {
+    scan_cells[i]->connectScanIn(scan_cells[i - 1]->getScanOut());
   }
 
   // Let's connect the first cell
   first_scan_cell->connectScanEnable(scan_enable_driver);
   first_scan_cell->connectScanIn(scan_in_driver);
 
-  if (!scan_cells.empty()) {
-    scan_cells.begin()->get()->connectScanIn(first_scan_cell->getScanOut());
-  } else {
-    // If last_scan_cell == first_scan_cell, then scan in was already connected
-    if (last_scan_cell != first_scan_cell) {
-      last_scan_cell->connectScanIn(first_scan_cell->getScanOut());
-    }
+  // If the chain has a single cell, then there is nothing else to connect
+  if (scan_cells.size() > 1) {
+    scan_cells[1]->connectScanIn(first_scan_cell->getScanOut());
   }
 
   // Let's connect the last cell
