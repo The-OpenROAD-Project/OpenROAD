@@ -87,11 +87,17 @@ class frBTerm : public frTerm
     isAboveTopLayer_ = isAboveTopLayer;
   }
   bool isAboveTopLayer() const { return isAboveTopLayer_; }
+  void setIsShapelessChipBumpPort(bool in)
+  {
+    is_shapeless_chip_bump_port_ = in;
+  }
+  bool isShapelessChipBumpPort() const { return is_shapeless_chip_bump_port_; }
 
  protected:
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   frNet* net_{nullptr};
   bool isAboveTopLayer_{false};
+  bool is_shapeless_chip_bump_port_{false};
   bool has_pin_access_update_{true};
 };
 

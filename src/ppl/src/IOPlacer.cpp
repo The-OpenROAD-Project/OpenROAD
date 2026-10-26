@@ -3659,6 +3659,9 @@ void IOPlacer::initNetlist()
       addFixedPinKeepouts(bterm);
       continue;
     }
+    if (bterm->isShapelessChipBumpPort()) {
+      continue;
+    }
     odb::dbNet* net = bterm->getNet();
     if (net == nullptr) {
       logger_->warn(PPL, 38, "Pin {} without net.", bterm->getConstName());

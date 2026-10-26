@@ -1160,6 +1160,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     auto uTermIn = std::make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setType(term->getSigType());
+    termIn->setIsShapelessChipBumpPort(term->isShapelessChipBumpPort());
     auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
 
@@ -4149,6 +4150,9 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
     if (db_term->getSigType().isSupply() || (db_net && db_net->isSpecial())) {
       continue;
     }
+    if (db_term->isShapelessChipBumpPort()) {
+      continue;
+    }
     auto db_pins = db_term->getBPins();
     auto& pins = term->getPins();
     if (db_pins.size() != pins.size()) {
@@ -4404,7 +4408,7 @@ void io::TopLayerBTermHandler::processBTermsAboveTopLayer(bool has_routing)
   if (top_tech_layer != nullptr) {
     int top_layer_idx = top_tech_layer->getRoutingLevel();
     for (auto bterm : block->getBTerms()) {
-      if (bterm->getNet()->isSpecial()) {
+      if (bterm->getNet()->isSpecial() || bterm->getBPins().empty()) {
         continue;
       }
       int bterm_bottom_layer_idx = std::numeric_limits<int>::max();

@@ -538,6 +538,11 @@ dbChipBump* dbBTerm::getChipBump() const
   return (dbChipBump*) region->chip_bump_tbl_->getPtr(obj->chip_bump_);
 }
 
+bool dbBTerm::isShapelessChipBumpPort() const
+{
+  return getChipBump() != nullptr && getBPins().empty();
+}
+
 Rect dbBTerm::getBBox()
 {
   Rect bbox;
