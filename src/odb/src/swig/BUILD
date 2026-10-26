@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026-2026, Precision Innovations Inc.
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -98,6 +99,23 @@ cc_library(
         "//src/odb/src/db",
         "//src/utl",
         "@boost.stacktrace",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+# Standalone Tcl shell with only the odb module loaded (CMake: odbtcl-bin).
+# stub.cpp supplies a null ord::OpenRoad::openRoad() so the full OpenROAD
+# application is not linked.
+cc_binary(
+    name = "odbtcl",
+    srcs = [
+        "tcl/main.cpp",
+        "tcl/stub.cpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":ui",
+        "//:ord",
         "@tcl_lang//:tcl",
     ],
 )

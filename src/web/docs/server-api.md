@@ -24,13 +24,17 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
   wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
   otherwise the server inflates them first. Every asset response carries
   `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- `GET /download/image` answers 404 when no design is loaded, 400 for a
+  malformed `bbox`, and 500 when the render fails.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
 ## Wire frame format
 
-Every WebSocket message — both client→server and server→client — is a
-binary frame with the following layout:
+The two directions are not symmetric. A **request** is a plain UTF-8 JSON
+document sent as-is (the reference frontend uses `JSON.stringify`); it carries
+no header. A **response**, and every server push, is a binary frame with the
+following layout:
 
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |

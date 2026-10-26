@@ -12,7 +12,6 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -232,9 +231,10 @@ void SetupParallelEvalPolicy::resetRunState()
   batch_journal_open_ = false;
   batch_instances_.clear();
   batch_candidates_.clear();
+  batch_swaps_.clear();
   rebuffer_targets_in_batch_ = 0;
   tail_.reset();
-  tabu_.reset();
+  tabu_.reset(resizer_.dbNetwork());
 }
 
 void SetupParallelEvalPolicy::saveInitialCheckpoint()
@@ -310,6 +310,10 @@ void SetupParallelEvalPolicy::iterate()
 
   applyStopRules(batch_moves);
   printTrackerBatchSummary();
+
+  // The candidates belong to the pool, which ends here.
+  batch_candidates_.clear();
+  batch_swaps_.clear();
 }
 
 bool SetupParallelEvalPolicy::judgeBatch(BatchPool& pool,
@@ -359,10 +363,9 @@ bool SetupParallelEvalPolicy::finishIfNoSetupViolations()
 
 bool SetupParallelEvalPolicy::finishAtMaxArea()
 {
-  // Like LEGACY, nothing runs at the -max_utilization area.  The walked area of
-  // the verdict decides, because removeBuffer() leaves the tracked area of
-  // overMaxArea() unchanged.  The verdict keeps batches below the limit, so
-  // normally only a design that starts there stops here.
+  // Like LEGACY, nothing runs at the -max_utilization area.  The verdict keeps
+  // batches below the limit, so normally only a design that starts there stops
+  // here.
   if (withinMaxUtilization()) {
     return false;
   }
@@ -419,7 +422,7 @@ void SetupParallelEvalPolicy::analyzeBottlenecks(const BatchScope& scope)
   bottleneck_->analyze(target_collector_->getViolatingEndpoints(),
                        static_cast<float>(config_.setup_slack_margin),
                        static_cast<int>(endpoint_limit),
-                       priority.bottleneck_max_sources);
+                       priority.bottleneck_max_startpoints);
   RepairSetupProfiler::event("bottleneck_analyses");
   RepairSetupProfiler::event("bottleneck_cone_vertices",
                              bottleneck_->coneSize());
@@ -453,19 +456,20 @@ SetupParallelEvalPolicy::collectTargetEndpoints()
         showStartpointMetrics(),
         /*worst_by_startpoint=*/false);
   }
-  const size_t fep_count = target_collector_->getViolatingEndpoints().size();
+  const size_t failing_endpoint_count
+      = target_collector_->getViolatingEndpoints().size();
 
   // -repair_tns and the WNS tail visit only the worst endpoints, so the batch
   // and the evaluation chunks are sized on that subset.
-  size_t target_endpoints = std::min(fep_count, max_end_repairs_);
+  size_t target_endpoints = std::min(failing_endpoint_count, max_end_repairs_);
   if (tail_.active()) {
     target_endpoints
         = std::min(target_endpoints, static_cast<size_t>(tail_.endpoints()));
   }
 
   const int batch_cap = effectiveBatchCap(target_endpoints);
-  stall_.beginBatch(batch_cap, fep_count);
-  RepairSetupProfiler::event("batch_fep_at_collect", fep_count);
+  stall_.beginBatch(batch_cap, failing_endpoint_count);
+  RepairSetupProfiler::event("batch_fep_at_collect", failing_endpoint_count);
   RepairSetupProfiler::event("batch_effective_cap", batch_cap);
 
   return {.target_endpoints = target_endpoints, .batch_cap = batch_cap};
@@ -591,12 +595,8 @@ SetupParallelEvalPolicy::BatchQor SetupParallelEvalPolicy::measureQor() const
 bool SetupParallelEvalPolicy::withinMaxUtilization() const
 {
   // Only the -max_utilization area limit of repair_timing applies, as in
-  // LEGACY; without it any area is legal.  The area is walked once per
-  // netlist edit.
-  if (resizer_.maxArea() <= 0.0) {
-    return true;
-  }
-  return !sta::fuzzyGreaterEqual(progress_.designArea(), resizer_.maxArea());
+  // LEGACY; without it any area is legal.
+  return !resizer_.overMaxArea();
 }
 
 void SetupParallelEvalPolicy::noteMissedBatch(const bool utilization_legal)
@@ -648,17 +648,16 @@ void SetupParallelEvalPolicy::settleMissedBatch(const int batch_moves)
 
 void SetupParallelEvalPolicy::undoMissedBatch()
 {
+  std::vector<InstanceRecord> speculative;
   if (tail_.speculating()) {
     // Every batch of the failed run goes on the tabu list, or the first one
     // would be picked again at once.  Only the last batch counts toward the
     // undo limit.
     RepairSetupProfiler::event("wns_tail_speculation_failed");
-    for (sta::Instance* inst : tail_.endSpeculation()) {
-      tabu_.addTabu(inst, batch_index_);
-    }
+    speculative = tail_.endSpeculation();
   }
 
-  undoBatch();
+  undoBatch(speculative);
 }
 
 std::vector<Target> SetupParallelEvalPolicy::collectTargets(
@@ -812,9 +811,19 @@ bool SetupParallelEvalPolicy::generatorAllowed(
         return false;
       }
       return true;
-    default:
+    case MoveType::kClone:
+    case MoveType::kSizeUp:
+    case MoveType::kSizeUpMatch:
+    case MoveType::kSizeDownFanout:
+    case MoveType::kSwapPins:
+    case MoveType::kVtSwap:
+    case MoveType::kSplitLoad:
+    case MoveType::kReroute:
+    case MoveType::kBufferToInverters:
+    case MoveType::kCount:
       return true;
   }
+  logger_->critical(utl::RSZ, 2030, "unhandled MoveType in generatorAllowed");
 }
 
 TargetEvaluation SetupParallelEvalPolicy::collectGenerated(GenerationTask& task)
@@ -934,7 +943,7 @@ std::vector<BatchCandidate> SetupParallelEvalPolicy::makeBatchCandidates(
     candidates.push_back(
         {.evaluation_index = index,
          .local_score = local_score,
-         .priority_score = weighted ? bottleneck_->weightedScore(
+         .priority_score = weighted ? bottleneck_->bottleneckPriorityScore(
                                           local_score,
                                           best.target().vertex(resizer_),
                                           policy_config_.parallel_eval.priority)
@@ -964,6 +973,9 @@ int SetupParallelEvalPolicy::commitBatch(
 
     const Target& target = candidate.target();
     sta::Instance* inst = target.inst(resizer_);
+    // The name is read before the move, which may delete the instance.
+    InstanceRecord record{
+        .inst = inst, .name = resizer_.dbNetwork()->staToDb(inst)->getName()};
 
     std::optional<SwapRecord> swap = recordSwap(candidate, inst);
     const MoveResult result = committer_.commit(candidate);
@@ -971,7 +983,7 @@ int SetupParallelEvalPolicy::commitBatch(
       continue;
     }
 
-    batch_instances_.push_back(inst);
+    batch_instances_.push_back(std::move(record));
     batch_candidates_.push_back(&candidate);
     if (swap.has_value() && result.move_count == 1
         && result.touched_instances.size() == 1
@@ -1076,14 +1088,15 @@ sta::Slack SetupParallelEvalPolicy::checkpointWnsTolerance() const
          * policy_config_.parallel_eval.checkpoint_wns_tolerance_pct / 100.0f;
 }
 
-int SetupParallelEvalPolicy::adaptiveBatchSize(const size_t fep_count,
-                                               const int min_cap,
-                                               const int max_cap)
+int SetupParallelEvalPolicy::adaptiveBatchSize(
+    const size_t failing_endpoint_count,
+    const int min_cap,
+    const int max_cap)
 {
   // Each batch pays a full timing update, so the configured cap is a floor;
   // the failing endpoint count raises it up to the bound.
   return static_cast<int>(
-      std::min(std::max(fep_count, static_cast<size_t>(min_cap)),
+      std::min(std::max(failing_endpoint_count, static_cast<size_t>(min_cap)),
                static_cast<size_t>(max_cap)));
 }
 
@@ -1108,7 +1121,8 @@ void SetupParallelEvalPolicy::startSmallBatchRetry()
   batch_selector_ = std::make_unique<BatchSelector>(std::move(selector));
 }
 
-int SetupParallelEvalPolicy::effectiveBatchCap(const size_t fep_count) const
+int SetupParallelEvalPolicy::effectiveBatchCap(
+    const size_t failing_endpoint_count) const
 {
   if (tail_.active()) {
     return tail_.batchCap();
@@ -1119,7 +1133,7 @@ int SetupParallelEvalPolicy::effectiveBatchCap(const size_t fep_count) const
     return policy_config_.parallel_eval.retry_batch_cap;
   }
 
-  return adaptiveBatchSize(fep_count,
+  return adaptiveBatchSize(failing_endpoint_count,
                            policy_config_.parallel_eval.min_batch_cap,
                            policy_config_.parallel_eval.max_batch_cap);
 }
@@ -1385,9 +1399,10 @@ bool SetupParallelEvalPolicy::salvageMissedBatch(
         return false;
       }
 
-      // Once the batch is rolled back, later passes re-commit as well.  This
-      // restore is not counted as a timing update; the update below is.
+      // Once the batch is rolled back, later passes re-commit as well.  The
+      // restore updates timing, so it counts like an undo.
       in_place = false;
+      noteTimingUpdate();
       rollBackJournal();
       openBatchJournal();
       batch_moves = commitBatch(evaluations, selection, &skip);
@@ -1446,8 +1461,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
     // The inverse swap stays in the open batch journal, so a later restore of
     // the whole batch still lands on the pre-batch state.
     if (!resizer_.replaceCell(swap->inst, swap->before_cell)) {
-      throw std::logic_error(
-          "PARALLEL_EVAL salvage could not revert a cell swap");
+      logger_->error(
+          utl::RSZ, 2037, "PARALLEL_EVAL salvage could not revert a cell swap");
     }
 
     resizer_.dbNetwork()->staToDb(swap->inst)->setLocation(swap->x, swap->y);
@@ -1456,8 +1471,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
     // accept it and a later restore does not reject it twice.
     if (!committer_.rejectPendingCellMove(
             swap->result, swap->candidate->target().driver_pin)) {
-      throw std::logic_error(
-          "PARALLEL_EVAL salvage lost its pending cell move");
+      logger_->error(
+          utl::RSZ, 2038, "PARALLEL_EVAL salvage lost its pending cell move");
     }
 
     RepairSetupProfiler::endRevert("salvage");
@@ -1473,7 +1488,8 @@ bool SetupParallelEvalPolicy::revertInPlace(
   return true;
 }
 
-void SetupParallelEvalPolicy::undoBatch()
+void SetupParallelEvalPolicy::undoBatch(
+    const std::vector<InstanceRecord>& speculative)
 {
   if (!batch_journal_open_) {
     return;
@@ -1484,9 +1500,17 @@ void SetupParallelEvalPolicy::undoBatch()
   noteTimingUpdate();
   rollBackJournal();
 
+  // The rollback deleted the instances the open journal created, such as the
+  // buffers of a speculative run, so only the instances it kept go on the
+  // tabu.
+  const sta::dbNetwork* db_network = resizer_.dbNetwork();
+  for (sta::Instance* inst : keptInstances(db_network, speculative)) {
+    tabu_.addTabu(inst, batch_index_);
+  }
+
   // The same targets would win again from this state, so skip them for a
   // few batches.
-  for (sta::Instance* inst : batch_instances_) {
+  for (sta::Instance* inst : keptInstances(db_network, batch_instances_)) {
     if (tabu_.recordUndo(inst, batch_index_)) {
       RepairSetupProfiler::event("undo_blocked_instances");
     }

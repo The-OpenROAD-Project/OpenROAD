@@ -1,0 +1,15 @@
+VERSION 5.8 ;
+MACRO macro
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 20 BY 20 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met2 ;
+        RECT 9.93 0 10.07 0.5 ;
+    END
+  END A
+END macro
+END LIBRARY

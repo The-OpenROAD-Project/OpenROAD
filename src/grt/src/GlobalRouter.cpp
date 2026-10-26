@@ -22,6 +22,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -568,15 +569,15 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
-    if (use_cugr_) {
-      cugr_->reportCongestion();
-    } else {
-      reportCongestion();
-    }
+    reportCongestion();
   }
   computeWirelength();
   if (verbose_) {
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+  }
+
+  if (!routes_.empty() && hasInitialSteinerWirelengths()) {
+    computeDetourMetrics();
   }
   if (save_guides) {
     std::vector<odb::dbNet*> nets;
@@ -712,6 +713,8 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                  from_wires,
                  from_guides,
                  failed);
+      // The overflow relief only clears overflow above the adopted routing.
+      cugr_->captureOverflowBaseline();
     } else {
       initFastRoute(min_layer, max_layer);
       // Repopulate edge usage from routes_ using updateNetResources, which
@@ -778,6 +781,22 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                   "routing source is detailed routing.");
   }
 
+  // CUGR's overflow relief also moves clean nets; check them again later.
+  auto add_moved_nets = [&](const std::vector<odb::dbNet*>& moved) {
+    // Sized by the few moved nets, not by nets_to_repair (all nets at first).
+    std::unordered_set<odb::dbNet*> pending(moved.begin(), moved.end());
+    for (odb::dbNet* db_net : nets_to_repair) {
+      if (pending.empty()) {
+        break;
+      }
+      pending.erase(db_net);
+    }
+    for (odb::dbNet* db_net : moved) {
+      if (pending.erase(db_net) > 0) {
+        nets_to_repair.push_back(db_net);
+      }
+    }
+  };
   while (violations && itr < iterations) {
     if (verbose_) {
       logger_->info(GRT, 6, "Repairing antennas, iteration {}.", itr + 1);
@@ -804,7 +823,11 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       // Flush reroutes queued by failed re-adoptions; no IncrementalGRoute
       // scope exists here, so report congestion directly.
       if (use_cugr_ && !dirty_nets_.empty()) {
-        updateDirtyRoutes(/*save_guides=*/true);
+        std::vector<odb::dbNet*> moved;
+        for (Net* net : updateDirtyRoutes(/*save_guides=*/true)) {
+          moved.push_back(net->getDbNet());
+        }
+        add_moved_nets(moved);
         reportIncrementalCongestion();
       }
       // run again antenna checker
@@ -830,8 +853,11 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      incr_groute.updateRoutes();
+      const std::vector<odb::dbNet*> rerouted = incr_groute.updateRoutes();
       saveGuides(nets_to_repair);
+      if (use_cugr_) {
+        add_moved_nets(rerouted);
+      }
     }
     repair_antennas_->clearViolations();
     itr++;
@@ -1185,6 +1211,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
         logger_->error(
             GRT, 267, "Net {} has disconnected segments.", net->getName());
       }
+      pruneMergedNetRoute(net);
     }
     updateInitialSteinerWirelength(net);
     net->setIsMergedNet(false);
@@ -1192,6 +1219,186 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     net->clearLastPinPositions();
   }
   dirty_nets_.clear();
+}
+
+// Removes the parts of a merged net's route that no longer lead to any of its
+// pins, such as the branches to a removed buffer, and the edges duplicated by
+// merging the routes of the buffer's nets. Branches are trimmed back to the
+// gcells of the net's pins, so the pin access guides are kept.
+void GlobalRouter::pruneMergedNetRoute(Net* net)
+{
+  odb::dbNet* db_net = net->getDbNet();
+  GRoute& route = routes_[db_net];
+  if (route.empty()) {
+    return;
+  }
+
+  const int tile = grid_->getTileSize();
+  const int x_origin = grid_->getXMin() + tile / 2;
+  const int y_origin = grid_->getYMin() + tile / 2;
+  // Gcell index of a gcell center, or -1 for any other position.
+  auto toGcell = [tile](const int coord, const int origin) {
+    const int offset = coord - origin;
+    return (offset >= 0 && offset % tile == 0) ? offset / tile : -1;
+  };
+
+  // Unit edges between adjacent gcells or layers; duplicates collapse.
+  using Node = std::tuple<int, int, int>;  // gcell x, gcell y, layer
+  using Edge = std::pair<Node, Node>;
+  std::map<Edge, bool> edges;  // edge -> is jumper
+  int total_edges = 0;
+  auto addEdge = [&](Node a, Node b, const bool is_jumper) {
+    if (b < a) {
+      std::swap(a, b);
+    }
+    edges.emplace(Edge{a, b}, is_jumper);
+    total_edges++;
+  };
+  for (const GSegment& seg : route) {
+    const int x0 = toGcell(std::min(seg.init_x, seg.final_x), x_origin);
+    const int y0 = toGcell(std::min(seg.init_y, seg.final_y), y_origin);
+    const int x1 = toGcell(std::max(seg.init_x, seg.final_x), x_origin);
+    const int y1 = toGcell(std::max(seg.init_y, seg.final_y), y_origin);
+    if (x0 < 0 || y0 < 0 || x1 < 0 || y1 < 0) {
+      return;
+    }
+    if (seg.isVia()) {
+      const auto [bottom, top] = std::minmax(seg.init_layer, seg.final_layer);
+      for (int layer = bottom; layer < top; layer++) {
+        addEdge({x0, y0, layer}, {x0, y0, layer + 1}, seg.isJumper());
+      }
+    } else {
+      const int layer = seg.init_layer;
+      for (int x = x0; x < x1; x++) {
+        addEdge({x, y0, layer}, {x + 1, y0, layer}, seg.isJumper());
+      }
+      for (int y = y0; y < y1; y++) {
+        addEdge({x0, y, layer}, {x0, y + 1, layer}, seg.isJumper());
+      }
+    }
+  }
+
+  std::set<std::pair<int, int>> pin_gcells;
+  std::set<Node> pin_nodes;
+  for (const Pin& pin : net->getPins()) {
+    const int x = toGcell(pin.getOnGridPosition().getX(), x_origin);
+    const int y = toGcell(pin.getOnGridPosition().getY(), y_origin);
+    if (x < 0 || y < 0) {
+      return;
+    }
+    pin_gcells.emplace(x, y);
+    pin_nodes.emplace(x, y, pin.getConnectionLayer());
+  }
+  auto isPrunable = [&](const Node& node, const std::set<Node>& neighbors) {
+    return neighbors.size() == 1
+           && !pin_gcells.contains({std::get<0>(node), std::get<1>(node)});
+  };
+
+  // Trim dangling branches from their open ends.
+  std::map<Node, std::set<Node>> adjacency;
+  for (const auto& [edge, is_jumper] : edges) {
+    adjacency[edge.first].insert(edge.second);
+    adjacency[edge.second].insert(edge.first);
+  }
+  std::vector<Node> open_ends;
+  for (const auto& [node, neighbors] : adjacency) {
+    if (isPrunable(node, neighbors)) {
+      open_ends.push_back(node);
+    }
+  }
+  while (!open_ends.empty()) {
+    const Node node = open_ends.back();
+    open_ends.pop_back();
+    std::set<Node>& neighbors = adjacency[node];
+    if (!isPrunable(node, neighbors)) {
+      continue;
+    }
+    const Node next = *neighbors.begin();
+    neighbors.clear();
+    edges.erase(node < next ? Edge{node, next} : Edge{next, node});
+    std::set<Node>& next_neighbors = adjacency[next];
+    next_neighbors.erase(node);
+    if (isPrunable(next, next_neighbors)) {
+      open_ends.push_back(next);
+    }
+  }
+
+  if (static_cast<int>(edges.size()) == total_edges) {
+    return;
+  }
+
+  // Rebuild the route, joining the unit edges into straight segments that end
+  // at every branch, via and pin, as the route consumers expect.
+  auto toDbu = [tile](const int gcell, const int origin) {
+    return origin + gcell * tile;
+  };
+  const bool is_3d_route = route.front().is3DRoute();
+  GRoute pruned_route;
+  auto addSegment = [&](const int x0,
+                        const int y0,
+                        const int l0,
+                        const int x1,
+                        const int y1,
+                        const int l1,
+                        const bool is_jumper) {
+    pruned_route.emplace_back(toDbu(x0, x_origin),
+                              toDbu(y0, y_origin),
+                              l0,
+                              toDbu(x1, x_origin),
+                              toDbu(y1, y_origin),
+                              l1,
+                              is_jumper);
+    pruned_route.back().setIs3DRoute(is_3d_route);
+  };
+  // (layer, row or column, is jumper) -> start of each unit edge
+  std::map<std::tuple<int, int, bool>, std::vector<int>> horizontal;
+  std::map<std::tuple<int, int, bool>, std::vector<int>> vertical;
+  for (const auto& [edge, is_jumper] : edges) {
+    const auto& [x0, y0, l0] = edge.first;
+    const auto& [x1, y1, l1] = edge.second;
+    if (l0 != l1) {
+      addSegment(x0, y0, l0, x1, y1, l1, is_jumper);
+    } else if (y0 == y1) {
+      horizontal[{l0, y0, is_jumper}].push_back(x0);
+    } else {
+      vertical[{l0, x0, is_jumper}].push_back(y0);
+    }
+  }
+  auto addRuns = [&](const auto& runs, const bool is_horizontal) {
+    for (const auto& [key, starts] : runs) {
+      const auto& [layer, line, is_jumper] = key;
+      size_t first = 0;
+      for (size_t i = 1; i <= starts.size(); i++) {
+        if (i < starts.size() && starts[i] == starts[i - 1] + 1) {
+          const Node joint = is_horizontal ? Node{starts[i], line, layer}
+                                           : Node{line, starts[i], layer};
+          if (adjacency[joint].size() == 2 && !pin_nodes.contains(joint)) {
+            continue;
+          }
+        }
+        const int begin = starts[first];
+        const int end = starts[i - 1] + 1;
+        if (is_horizontal) {
+          addSegment(begin, line, layer, end, line, layer, is_jumper);
+        } else {
+          addSegment(line, begin, layer, line, end, layer, is_jumper);
+        }
+        first = i;
+      }
+    }
+  };
+  addRuns(horizontal, true);
+  addRuns(vertical, false);
+
+  // Install the pruned route the same way a route restored from guides is.
+  if (net->areSegmentsRestored()) {
+    updateNetResources(net, true);
+  }
+  route = std::move(pruned_route);
+  net->setAreSegmentsRestored(true);
+  makeFastrouteNet(net);
+  updateNetResources(net, false);
+  saveGuides({db_net});
 }
 
 bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
@@ -1778,7 +1985,18 @@ void GlobalRouter::updatePinAccessPoints()
 // is_incremental_ is unset on the IncrementalGRoute path.
 void GlobalRouter::findRoutingCugr(std::vector<Net*>& nets, bool incremental)
 {
-  cugr_->route(incremental);
+  // Nets CUGR moved to clear overflow need new routes and guides too.
+  const std::vector<odb::dbNet*> moved = cugr_->route(incremental);
+  if (incremental) {
+    for (odb::dbNet* db_net : moved) {
+      const auto it = db_net_map_.find(db_net);
+      if (it != db_net_map_.end() && it->second != nullptr) {
+        // Their detailed wires, if any, describe the old route.
+        destroyNetWire(it->second);
+        nets.push_back(it->second);
+      }
+    }
+  }
   for (Net* net : nets) {
     odb::dbNet* db_net = net->getDbNet();
     GRoute route = cugr_->getNetRoute(db_net);
@@ -4806,6 +5024,60 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
   }
 }
 
+// Detours of the routed multi-pin nets, worst ratio first.
+std::vector<GlobalRouter::NetDetour> GlobalRouter::collectNetDetours(
+    int64_t& total_initial,
+    int64_t& total_final)
+{
+  std::vector<NetDetour> detours;
+  total_initial = 0;
+  total_final = 0;
+  for (const auto& [net, initial_wl] : initial_steiner_wl_) {
+    // Skip local nets.
+    if (initial_wl == 0 || !routes_.contains(net)) {
+      continue;
+    }
+    const int64_t final_wl = computeNetPlanarWirelength(net);
+    const int64_t delta = final_wl - initial_wl;
+    const double ratio = detourRatio(initial_wl, final_wl);
+    detours.push_back({net, initial_wl, final_wl, delta, ratio});
+    total_initial += initial_wl;
+    total_final += final_wl;
+  }
+
+  std::ranges::sort(detours, [](const NetDetour& a, const NetDetour& b) {
+    if (a.ratio != b.ratio) {
+      return a.ratio > b.ratio;
+    }
+    return a.net->getId() < b.net->getId();
+  });
+  return detours;
+}
+
+void GlobalRouter::computeDetourMetrics()
+{
+  int64_t total_initial;
+  int64_t total_final;
+  const std::vector<NetDetour> detours
+      = collectNetDetours(total_initial, total_final);
+  if (detours.empty()) {
+    return;
+  }
+
+  // Mean ratio of the worst 1% of nets, rounded up so at least one net counts.
+  const size_t worst_count = (detours.size() + 99) / 100;
+  double worst_ratio_sum = 0.0;
+  for (size_t i = 0; i < worst_count; i++) {
+    worst_ratio_sum += detours[i].ratio;
+  }
+
+  logger_->metric("global_route__detour__ratio",
+                  detourRatio(total_initial, total_final));
+  logger_->metric("global_route__detour__ratio__max", detours.front().ratio);
+  logger_->metric("global_route__detour__ratio__worst_1pct_mean",
+                  worst_ratio_sum / worst_count);
+}
+
 void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
@@ -4818,61 +5090,29 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
     return;
   }
 
-  struct DetourEntry
-  {
-    odb::dbNet* net;
-    int64_t initial_wl;
-    int64_t final_wl;
-    int64_t delta;
-    double ratio;
-  };
-
-  std::vector<DetourEntry> entries;
-  int64_t total_initial = 0;
-  int64_t total_final = 0;
-  for (const auto& [net, initial_wl] : initial_steiner_wl_) {
-    // Skip local nets.
-    if (initial_wl == 0 || !routes_.contains(net)) {
-      continue;
-    }
-    const int64_t final_wl = computeNetPlanarWirelength(net);
-    const int64_t delta = final_wl - initial_wl;
-    const double ratio = detourRatio(initial_wl, final_wl);
-    entries.push_back({net, initial_wl, final_wl, delta, ratio});
-    total_initial += initial_wl;
-    total_final += final_wl;
-  }
-
-  if (entries.empty()) {
+  int64_t total_initial;
+  int64_t total_final;
+  const std::vector<NetDetour> detours
+      = collectNetDetours(total_initial, total_final);
+  if (detours.empty()) {
     logger_->warn(
         GRT, 334, "No routed multi-pin nets available for detour reporting.");
     return;
   }
 
-  std::ranges::sort(entries, [](const DetourEntry& a, const DetourEntry& b) {
-    if (a.ratio != b.ratio) {
-      return a.ratio > b.ratio;
-    }
-    return a.net->getId() < b.net->getId();
-  });
-
-  const double total_ratio
-      = (total_initial > 0) ? static_cast<double>(total_final) / total_initial
-                            : 1.0;
-
   logger_->report("Detour metric (final routed WL vs initial Steiner WL):");
-  logger_->report("  Nets analyzed: {}", entries.size());
+  logger_->report("  Nets analyzed: {}", detours.size());
   logger_->report("  Total initial Steiner WL: {:.2f}um",
                   block_->dbuToMicrons(total_initial));
   logger_->report("  Total final routed WL:    {:.2f}um",
                   block_->dbuToMicrons(total_final));
   logger_->report("  Total detour:             {:.2f}um (ratio {:.2f})",
                   block_->dbuToMicrons(total_final - total_initial),
-                  total_ratio);
+                  detourRatio(total_initial, total_final));
 
   const int n = (top_n <= 0)
-                    ? static_cast<int>(entries.size())
-                    : std::min(top_n, static_cast<int>(entries.size()));
+                    ? static_cast<int>(detours.size())
+                    : std::min(top_n, static_cast<int>(detours.size()));
   logger_->report("  Worst {} nets by detour ratio:", n);
   logger_->report("    {:>10}  {:>10}  {:>10}  {:>7}  net",
                   "initial_um",
@@ -4880,22 +5120,22 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                   "delta_um",
                   "ratio");
   for (int i = 0; i < n; i++) {
-    const DetourEntry& e = entries[i];
+    const NetDetour& d = detours[i];
     logger_->report("    {:>10.2f}  {:>10.2f}  {:>10.2f}  {:>7.2f}  {}",
-                    block_->dbuToMicrons(e.initial_wl),
-                    block_->dbuToMicrons(e.final_wl),
-                    block_->dbuToMicrons(e.delta),
-                    e.ratio,
-                    e.net->getName());
+                    block_->dbuToMicrons(d.initial_wl),
+                    block_->dbuToMicrons(d.final_wl),
+                    block_->dbuToMicrons(d.delta),
+                    d.ratio,
+                    d.net->getName());
   }
 
   std::ofstream out = openDetourFile(file_name);
   if (out.is_open()) {
-    for (const DetourEntry& e : entries) {
-      out << "grt_detour: " << e.net->getName() << " "
-          << block_->dbuToMicrons(e.initial_wl) << " "
-          << block_->dbuToMicrons(e.final_wl) << " "
-          << block_->dbuToMicrons(e.delta) << " " << e.ratio << "\n";
+    for (const NetDetour& d : detours) {
+      out << "grt_detour: " << d.net->getName() << " "
+          << block_->dbuToMicrons(d.initial_wl) << " "
+          << block_->dbuToMicrons(d.final_wl) << " "
+          << block_->dbuToMicrons(d.delta) << " " << d.ratio << "\n";
     }
   }
 }
@@ -6194,6 +6434,15 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
+  // FastRoute records the resources an NDR net takes per net, so they cannot
+  // move to another net: reroute the merged net instead. As in CUGR, the
+  // merged net keeps the NDR of the preserved net.
+  if (!use_cugr_
+      && (db_net1->getNonDefaultRule() != nullptr
+          || db_net2->getNonDefaultRule() != nullptr)) {
+    addDirtyNet(db_net1);
+    return;
+  }
   // Try to connect the routing of the two nets.
   // For CUGR, connectRouting also performs the CUGR-specific capacity check
   // and populates connection_segs so that the CUGR tree can be updated.
@@ -6599,7 +6848,30 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  // FastRoute only; the CUGR path prints its own report (GRT-0130).
+  if (!initialized_) {
+    logger_->error(GRT, 131, "Run global_route before reporting congestion.");
+  }
+  if (use_cugr_) {
+    cugr_->reportCongestion();
+  } else {
+    reportFastRouteCongestion();
+  }
+}
+
+bool GlobalRouter::hasCongestion()
+{
+  if (!initialized_) {
+    logger_->error(GRT, 132, "Run global_route before checking congestion.");
+  }
+  if (use_cugr_) {
+    return cugr_->totalOverflow() > 0;
+  }
+  return fastroute_->totalOverflow() > 0;
+}
+
+void GlobalRouter::reportFastRouteCongestion()
+{
+  // FastRoute's table (GRT-0096); CUGR prints its own (GRT-0130).
   fastroute_->computeCongestionInformation();
 
   const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
@@ -7163,6 +7435,9 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
     if (reroute) {
       cugr_->updateNet(db_net);
       dirty_nets.push_back(net);
+    } else if (!restored) {
+      // CUGR keeps the net's previous pins, so it must not reroute it.
+      cugr_->markNetStale(db_net);
     }
   }
 
@@ -7305,7 +7580,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
-        reportCongestion();
+        reportFastRouteCongestion();
         // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,

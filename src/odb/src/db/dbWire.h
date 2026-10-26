@@ -19,7 +19,7 @@ class _dbNet;
 struct _dbWireFlags
 {
   uint32_t is_global : 1;
-  uint32_t ordered : 1;
+  uint32_t normalized_connectivity : 1;
   uint32_t spare_bits : 30;
 };
 
@@ -29,7 +29,7 @@ class _dbWire : public _dbObject
   _dbWire(_dbDatabase*)
   {
     flags_.is_global = 0;
-    flags_.ordered = 0;
+    flags_.normalized_connectivity = 0;
     flags_.spare_bits = 0;
   }
 

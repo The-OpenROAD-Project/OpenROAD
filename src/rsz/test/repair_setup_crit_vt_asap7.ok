@@ -15,10 +15,9 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
-      20* |       0 |      13 |        6 |      0 |     2 |    +1.2% |  -30.599 |     -578.1 |     46 | resp_msg[13]
-    final |       0 |     121 |        6 |      0 |     2 |    +1.2% |  -19.418 |      -62.6 |     11 | resp_msg[13]
+      20* |       0 |      14 |        7 |      0 |     0 |    +1.4% |  -29.279 |     -554.1 |     46 | resp_msg[15]
+    final |       0 |     118 |        7 |      0 |     0 |    +1.4% |  -14.352 |      -32.4 |      7 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 6 buffers.
-[INFO RSZ-0051] Resized 121 instances: 0 up, 0 up match, 0 down, 121 VT
-[INFO RSZ-0043] Swapped pins on 2 instances.
+[INFO RSZ-0040] Inserted 7 buffers.
+[INFO RSZ-0051] Resized 118 instances: 0 up, 0 up match, 0 down, 118 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
