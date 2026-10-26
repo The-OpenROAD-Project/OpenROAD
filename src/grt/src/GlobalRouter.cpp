@@ -569,11 +569,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
-    if (use_cugr_) {
-      cugr_->reportCongestion();
-    } else {
-      reportCongestion();
-    }
+    reportCongestion();
   }
   computeWirelength();
   if (verbose_) {
@@ -6826,7 +6822,30 @@ void GlobalRouter::reportResources()
 
 void GlobalRouter::reportCongestion()
 {
-  // FastRoute only; the CUGR path prints its own report (GRT-0130).
+  if (!initialized_) {
+    logger_->error(GRT, 131, "Run global_route before reporting congestion.");
+  }
+  if (use_cugr_) {
+    cugr_->reportCongestion();
+  } else {
+    reportFastRouteCongestion();
+  }
+}
+
+bool GlobalRouter::hasCongestion()
+{
+  if (!initialized_) {
+    logger_->error(GRT, 132, "Run global_route before checking congestion.");
+  }
+  if (use_cugr_) {
+    return cugr_->totalOverflow() > 0;
+  }
+  return fastroute_->totalOverflow() > 0;
+}
+
+void GlobalRouter::reportFastRouteCongestion()
+{
+  // FastRoute's table (GRT-0096); CUGR prints its own (GRT-0130).
   fastroute_->computeCongestionInformation();
 
   const std::vector<int>& resources = fastroute_->getTotalCapacityPerLayer();
@@ -7535,7 +7554,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
-        reportCongestion();
+        reportFastRouteCongestion();
         // Suggest adjustment value
         suggestAdjustment();
         logger_->error(GRT,

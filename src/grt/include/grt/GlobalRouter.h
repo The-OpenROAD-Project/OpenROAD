@@ -386,6 +386,10 @@ class GlobalRouter
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
   bool isCongested() const { return is_congested_; }
+  // Per-layer congestion table of the current routing, FastRoute or CUGR.
+  void reportCongestion();
+  // True if the current routing has overflow.
+  bool hasCongestion();
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
@@ -522,7 +526,7 @@ class GlobalRouter
   void printSegment(const GSegment& segment);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
-  void reportCongestion();
+  void reportFastRouteCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
   void computeGCellGridPatternFromGuides(
