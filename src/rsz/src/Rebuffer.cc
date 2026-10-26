@@ -442,7 +442,8 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   if (!is_current_cell) {
     // The tree's load is known in its own scene only, where its buffers'
     // limits are checked too.
-    const float cap_limit = resizer_->maxLoad(network_->cell(cell), corner_);
+    const float cap_limit
+        = resizer_->outputMaxCap(network_->cell(cell), corner_);
     if (cap_limit > 0.0 && bnet->cap() > maxCapMargined(cap_limit)) {
       return {};
     }

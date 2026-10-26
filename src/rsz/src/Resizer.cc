@@ -885,7 +885,7 @@ bool Resizer::bufferSizeOutmatched(sta::LibertyCell* worse,
   float extra_input_cap
       = std::max(bin->capacitance() - win->capacitance(), 0.0f);
   float delay_penalty = max_drive_resist * extra_input_cap;
-  float wlimit = maxLoad(network_->cell(worse));
+  float wlimit = outputMaxCap(network_->cell(worse));
 
   std::vector<float> test_points;
   populateBufferCapTestPoints(worse, win, wout, test_points);
@@ -1678,13 +1678,13 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
     return nullptr;
   }
   const auto output_pin = libraryOutputPins(cell)[0];
-  const auto current_limit = scale * maxLoad(output_pin->cell());
+  const auto current_limit = scale * outputMaxCap(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : candidates) {
     if (dontUse(cand)) {
       continue;
     }
-    auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
+    auto limit = outputMaxCap(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
     }
@@ -1697,12 +1697,12 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
   return closest;
 }
 
-float Resizer::maxLoad(sta::Cell* cell)
+float Resizer::outputMaxCap(sta::Cell* cell)
 {
-  return maxLoad(cell, sta_->cmdScene());
+  return outputMaxCap(cell, sta_->cmdScene());
 }
 
-float Resizer::maxLoad(sta::Cell* cell, const sta::Scene* scene)
+float Resizer::outputMaxCap(sta::Cell* cell, const sta::Scene* scene)
 {
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
   auto min_max = sta::MinMax::max();
