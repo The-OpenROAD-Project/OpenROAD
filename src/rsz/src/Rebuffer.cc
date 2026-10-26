@@ -567,6 +567,10 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
     while (drvr_path_iter.hasNext()) {
       required = std::min(required, drvr_path_iter.next()->required());
     }
+    // An input has one graph edge per arc set of the current cell, while the
+    // candidate's arc sets are looked up by port and role: time each input
+    // vertex and role once.
+    std::vector<std::pair<const sta::Vertex*, const sta::TimingRole*>> timed;
     sta::VertexInEdgeIterator edge_iter(drvr_vertex, graph_);
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
@@ -579,6 +583,12 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
       if (edge->isWire() || from == nullptr) {
         continue;
       }
+      const std::pair<const sta::Vertex*, const sta::TimingRole*> vertex_role(
+          from_vertex, edge->role());
+      if (std::ranges::find(timed, vertex_role) != timed.end()) {
+        continue;
+      }
+      timed.push_back(vertex_role);
       for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
         if (arc_set->role() != edge->role()) {
           continue;
@@ -591,9 +601,25 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
                   && arc->fromEdge() == driver_arc->fromEdge())) {
             continue;
           }
-          // Latest arrival at this input in the scene of the timing path.
+          // The candidate arc into the same tree, from the stored input slew.
           const sta::RiseFall* from_rf = arc->fromEdge()->asRiseFall();
-          const sta::Delay upstream = upstreamDelay(input, from_rf, cell);
+          sta::LoadPinIndexMap load_pin_index_map(network_);
+          const sta::Slew in_slew = graph_delay_calc_->edgeFromSlew(
+              from_vertex, from_rf, edge, scene, min_max);
+          sta::ArcDcalcResult dcalc_result
+              = delayCalc()->gateDelay(nullptr,
+                                       arc,
+                                       in_slew,
+                                       bnet->cap() + out_port->capacitance(),
+                                       nullptr,
+                                       load_pin_index_map,
+                                       scene,
+                                       min_max);
+          // The slew limit holds whether or not the input has an arrival.
+          if (dcalc_result.drvrSlew() > drvr_max_slew) {
+            return false;
+          }
+          // Latest arrival at this input in the scene of the timing path.
           sta::Arrival arrival = -sta::INF;
           sta::VertexPathIterator path_iter(
               from_vertex, scene, min_max, from_rf, sta_);
@@ -607,21 +633,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           if (arrival <= -sta::INF) {
             continue;
           }
-          sta::LoadPinIndexMap load_pin_index_map(network_);
-          const sta::Slew in_slew = graph_delay_calc_->edgeFromSlew(
-              from_vertex, from_rf, edge, scene, min_max);
-          sta::ArcDcalcResult dcalc_result
-              = delayCalc()->gateDelay(nullptr,
-                                       arc,
-                                       in_slew,
-                                       bnet->cap() + out_port->capacitance(),
-                                       nullptr,
-                                       load_pin_index_map,
-                                       scene,
-                                       min_max);
-          if (dcalc_result.drvrSlew() > drvr_max_slew) {
-            return false;
-          }
+          const sta::Delay upstream = upstreamDelay(input, from_rf, cell);
           const sta::Slack slack
               = required + tree_shift
                 - (arrival + upstream + dcalc_result.gateDelay());
