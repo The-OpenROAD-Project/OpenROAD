@@ -1,0 +1,70 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.0005 ;
+
+PROPERTYDEFINITIONS
+  LAYER LEF58_CUTCLASS STRING ;
+  LAYER LEF58_SPACINGTABLE STRING ;
+END PROPERTYDEFINITIONS
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.1 ;
+  WIDTH 0.01 ;
+END metal1
+
+# Vx pairs need 0.1 (200 DBU) without parallel run length, measured between
+# centres (CENTERANDEDGE, largest entry), and 0.06 (120 DBU) edge to edge
+# with parallel run length.
+LAYER via1
+  TYPE CUT ;
+  PROPERTY LEF58_CUTCLASS "CUTCLASS Vx WIDTH 0.02 LENGTH 0.02 ;" ;
+  PROPERTY LEF58_SPACINGTABLE "
+    SPACINGTABLE
+      CENTERANDEDGE Vx TO Vx
+      CUTCLASS Vx
+      Vx 0.1 0.06 ;" ;
+END via1
+
+LAYER metal2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.1 ;
+  WIDTH 0.01 ;
+END metal2
+
+# A lone Vx cut; the metal boxes are tiny and the cell has no metal, so only
+# the cut can conflict.
+VIA class_via DEFAULT
+  LAYER via1 ;
+    RECT -0.01 -0.01 0.01 0.01 ;
+  LAYER metal1 ;
+    RECT -0.005 -0.005 0.005 0.005 ;
+  LAYER metal2 ;
+    RECT -0.005 -0.005 0.005 0.005 ;
+END class_via
+
+SITE CLASS_SITE
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+END CLASS_SITE
+
+# One Vx cut at (80 150) (120 190) DBU from the cell origin.
+MACRO CLASS_CELL
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+  SITE CLASS_SITE ;
+  OBS
+    LAYER via1 ;
+      RECT 0.04 0.075 0.06 0.095 ;
+  END
+END CLASS_CELL
+
+END LIBRARY

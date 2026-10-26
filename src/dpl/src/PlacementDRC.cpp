@@ -376,6 +376,21 @@ class PlacementDRC::FixedSupplyVias
     int space{0};
   };
 
+  // A cut pair DPL checks against the cut-class spacing tables exactly.
+  struct CutTable
+  {
+    std::string fixed_class;
+    std::string cell_class;
+    std::vector<odb::dbTechLayerCutSpacingTableDefRule*> rules;
+  };
+
+  // The spacing a cut pair violates and how it was measured.
+  struct CutViolation
+  {
+    int spacing{0};
+    bool center_to_center{false};
+  };
+
   struct PageRecipe
   {
     uint64_t unconditional_mask{0};
@@ -423,6 +438,17 @@ class PlacementDRC::FixedSupplyVias
           {0,
            static_cast<int64_t>(source.fixed_rect.yMin()) - placed.yMax(),
            static_cast<int64_t>(placed.yMin()) - source.fixed_rect.yMax()});
+      // Cut tables pick the rule per position, so name the one that fired.
+      int space = source.space;
+      bool center_to_center = false;
+      if (const std::optional<CutTable> cut_table
+          = exactCutTable(source.layer, source.fixed_rect, source.cell_rect)) {
+        if (const std::optional<CutViolation> violation = cutViolation(
+                source.layer, *cut_table, source.fixed_rect, placed)) {
+          space = violation->spacing;
+          center_to_center = violation->center_to_center;
+        }
+      }
       debugPrint(
           logger_,
           DPL,
@@ -430,7 +456,7 @@ class PlacementDRC::FixedSupplyVias
           2,
           "cell {} at ({:.3f}, {:.3f}) orient {}: {} {} on layer {} at "
           "({:.3f} {:.3f} {:.3f} {:.3f}) is {:.3f} from supply net {} via "
-          "shape at ({:.3f} {:.3f} {:.3f} {:.3f}); spacing rule is {:.3f} "
+          "shape at ({:.3f} {:.3f} {:.3f} {:.3f}); spacing rule is {:.3f} {} "
           "(gap dx={:.3f} dy={:.3f})",
           cell->name(),
           block_->dbuToMicrons(origin_x),
@@ -449,7 +475,8 @@ class PlacementDRC::FixedSupplyVias
           block_->dbuToMicrons(source.fixed_rect.yMin()),
           block_->dbuToMicrons(source.fixed_rect.xMax()),
           block_->dbuToMicrons(source.fixed_rect.yMax()),
-          block_->dbuToMicrons(source.space),
+          block_->dbuToMicrons(space),
+          center_to_center ? "center-to-center" : "edge-to-edge",
           block_->dbuToMicrons(dx),
           block_->dbuToMicrons(dy));
     }
@@ -907,8 +934,29 @@ class PlacementDRC::FixedSupplyVias
     if (clipped_begin > clipped_end) {
       return false;
     }
-    mask |= bitRange(clipped_begin - first_site, clipped_end - first_site);
-    return true;
+    const std::optional<CutTable> cut_table
+        = exactCutTable(cell_shape.layer, fixed.rect, cell_shape.rect);
+    if (!cut_table) {
+      mask |= bitRange(clipped_begin - first_site, clipped_end - first_site);
+      return true;
+    }
+    // Cut-class tables are no circle around the via: an aligned neighbour may
+    // sit closer than a diagonal one.  The range above bounds them, so test
+    // each site in it.
+    bool conflict = false;
+    for (int site = clipped_begin; site <= clipped_end; ++site) {
+      const int64_t origin_x = static_cast<int64_t>(core.xMin())
+                               + static_cast<int64_t>(site) * site_width;
+      const odb::Rect placed(clipToInt(origin_x + cell_shape.rect.xMin()),
+                             clipToInt(origin_y + cell_shape.rect.yMin()),
+                             clipToInt(origin_x + cell_shape.rect.xMax()),
+                             clipToInt(origin_y + cell_shape.rect.yMax()));
+      if (cutViolation(cell_shape.layer, *cut_table, fixed.rect, placed)) {
+        mask |= uint64_t{1} << (site - first_site);
+        conflict = true;
+      }
+    }
+    return conflict;
   }
 
   PageRecipe generatePage(odb::dbMaster* master,
@@ -1003,10 +1051,11 @@ class PlacementDRC::FixedSupplyVias
     return slash == std::string::npos ? key : key.substr(0, slash);
   }
 
-  // LEF58 cut spacing for one shape pair, resolved through the cut-class table
-  // when both shapes map to a declared class.  Taking the worst entry over
-  // every class pair instead would inflate the keepout well past the rule that
-  // actually governs these two shapes.
+  // Upper bound on the LEF58 cut spacing for one shape pair, resolved through
+  // the cut-class table when both shapes map to a declared class.  Taking the
+  // worst entry over every class pair instead would inflate the keepout well
+  // past the rule that actually governs these two shapes.  The bound sizes the
+  // query halo and the candidate sites; cutViolation() decides the conflict.
   int cutClassSpacing(odb::dbTechLayer* layer,
                       const odb::Rect& fixed,
                       const odb::Rect& cell) const
@@ -1027,20 +1076,29 @@ class PlacementDRC::FixedSupplyVias
       std::map<std::string, uint32_t> col_map;
       rule->getSpacingTable(table, row_map, col_map);
       for (const auto& [row_key, row_idx] : row_map) {
-        if (cutClassKeyBase(row_key) != fixed_class) {
-          continue;
-        }
+        const std::string row_class = cutClassKeyBase(row_key);
         for (const auto& [col_key, col_idx] : col_map) {
-          if (cutClassKeyBase(col_key) != cell_class) {
+          // drt checks each cut against its neighbour, so either shape can be
+          // the row.
+          const std::string col_class = cutClassKeyBase(col_key);
+          if (!(row_class == fixed_class && col_class == cell_class)
+              && !(row_class == cell_class && col_class == fixed_class)) {
             continue;
           }
           if (row_idx >= table.size() || col_idx >= table[row_idx].size()) {
             continue;
           }
-          const auto& [horizontal, vertical] = table[row_idx][col_idx];
-          max_spacing = std::max({max_spacing, horizontal, vertical});
+          // Spacing without and with parallel run length.
+          const auto& [no_prl, prl] = table[row_idx][col_idx];
+          max_spacing = std::max({max_spacing, no_prl, prl});
           resolved = true;
         }
+      }
+      max_spacing = std::max({max_spacing,
+                              rule->getExactAlignedSpacing(fixed_class),
+                              rule->getExactAlignedSpacing(cell_class)});
+      if (rule->isDefaultValid()) {
+        max_spacing = std::max(max_spacing, rule->getDefault());
       }
     }
     if (!resolved) {
@@ -1057,6 +1115,183 @@ class PlacementDRC::FixedSupplyVias
                cell_class,
                max_spacing);
     return max_spacing;
+  }
+
+  // The cut-class spacing tables that govern a cut pair on different nets,
+  // for evaluating them exactly as drt does.  Nothing when either cut has no
+  // class or a rule needs data DPL does not have (PRLFORALIGNEDCUT looks at the
+  // metal above), so the caller keeps the conservative bound.
+  static std::optional<CutTable> exactCutTable(odb::dbTechLayer* layer,
+                                               const odb::Rect& fixed,
+                                               const odb::Rect& cell)
+  {
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      return std::nullopt;
+    }
+    CutTable table{cutClassOf(layer, fixed), cutClassOf(layer, cell), {}};
+    if (table.fixed_class.empty() || table.cell_class.empty()) {
+      return std::nullopt;
+    }
+    for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
+      // SAMENET and SAMEMETAL tables only govern cuts on one net, which are
+      // exempt here; LAYER tables pair this layer with another cut layer.
+      if (rule->isLayerValid() || rule->isSameNet() || rule->isSameMetal()) {
+        continue;
+      }
+      if (rule->isPrlForAlignedCut()) {
+        return std::nullopt;
+      }
+      table.rules.push_back(rule);
+    }
+    if (table.rules.empty()) {
+      return std::nullopt;
+    }
+    return table;
+  }
+
+  static int64_t squaredGap(const odb::Rect& a, const odb::Rect& b)
+  {
+    const int64_t dx
+        = std::max<int64_t>({0,
+                             static_cast<int64_t>(b.xMin()) - a.xMax(),
+                             static_cast<int64_t>(a.xMin()) - b.xMax()});
+    const int64_t dy
+        = std::max<int64_t>({0,
+                             static_cast<int64_t>(b.yMin()) - a.yMax(),
+                             static_cast<int64_t>(a.yMin()) - b.yMax()});
+    return dx * dx + dy * dy;
+  }
+
+  // One direction of drt's LEF58_SPACINGTABLE cut check
+  // (FlexGCWorker::Impl::checkLef58CutSpacingTbl_main and _helper): |first| is
+  // the cut being checked and |second| its neighbour.  The pair spacing is
+  // picked by parallel run length (PRL), and CENTERTOCENTER/CENTERANDEDGE
+  // measure it between cut centres instead of edges.
+  // ponytail: duplicates drt's logic; share it through odb if a third user
+  // appears.
+  static std::optional<CutViolation> cutTableViolation(
+      odb::dbTechLayerCutSpacingTableDefRule* rule,
+      const odb::Rect& first,
+      const std::string& first_class,
+      const odb::Rect& second,
+      const std::string& second_class)
+  {
+    using Lookup = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;
+    const int64_t gap_x = std::max<int64_t>(
+        {0,
+         static_cast<int64_t>(second.xMin()) - first.xMax(),
+         static_cast<int64_t>(first.xMin()) - second.xMax()});
+    const int64_t gap_y = std::max<int64_t>(
+        {0,
+         static_cast<int64_t>(second.yMin()) - first.yMax(),
+         static_cast<int64_t>(first.yMin()) - second.yMax()});
+    const int64_t dist_squared = gap_x * gap_x + gap_y * gap_y;
+    // Doubled centre offsets keep the centre distance exact in integers.
+    const int64_t center_dx
+        = (static_cast<int64_t>(first.xMin()) + first.xMax())
+          - (static_cast<int64_t>(second.xMin()) + second.xMax());
+    const int64_t center_dy
+        = (static_cast<int64_t>(first.yMin()) + first.yMax())
+          - (static_cast<int64_t>(second.yMin()) + second.yMax());
+    const int64_t center_squared_x4
+        = center_dx * center_dx + center_dy * center_dy;
+    // PRL along an axis is the overlap of the two cuts, or minus their gap.
+    const int64_t prl_x
+        = gap_x > 0
+              ? -gap_x
+              : static_cast<int64_t>(std::min(first.xMax(), second.xMax()))
+                    - std::max(first.xMin(), second.xMin());
+    const int64_t prl_y
+        = gap_y > 0
+              ? -gap_y
+              : static_cast<int64_t>(std::min(first.yMax(), second.yMax()))
+                    - std::max(first.yMin(), second.yMin());
+    const int required_prl = rule->getPrlEntry(first_class, second_class);
+    const bool prl_valid = prl_x > required_prl || prl_y > required_prl;
+    const int64_t prl = prl_valid ? std::max(prl_x, prl_y) : -1;
+
+    auto check = [&](const bool vertical) -> std::optional<CutViolation> {
+      // A cut faces its neighbour with a SIDE when that is its long edge.
+      const bool first_side
+          = vertical ? first.dx() > first.dy() : first.dy() > first.dx();
+      const bool second_side
+          = vertical ? second.dx() > second.dy() : second.dy() > second.dx();
+      auto lookup = [&](const Lookup strategy) {
+        return rule->getSpacing(
+            first_class, first_side, second_class, second_side, strategy);
+      };
+      auto edge = [&](const int spacing) -> std::optional<CutViolation> {
+        if (dist_squared < static_cast<int64_t>(spacing) * spacing) {
+          return CutViolation{spacing, false};
+        }
+        return std::nullopt;
+      };
+      auto center = [&](const int spacing) -> std::optional<CutViolation> {
+        if (center_squared_x4 < 4 * static_cast<int64_t>(spacing) * spacing) {
+          return CutViolation{spacing, true};
+        }
+        return std::nullopt;
+      };
+      if (rule->isNoPrl() && rule->isCenterAndEdge(first_class, second_class)) {
+        if (auto violation = center(lookup(Lookup::MAX))) {
+          return violation;
+        }
+        return edge(lookup(Lookup::MIN));
+      }
+      if (first_class == second_class) {
+        const bool aligned = vertical
+                                 ? prl == first.dx() && !rule->isHorizontal()
+                                 : prl == first.dy() && !rule->isVertical();
+        const int aligned_spacing = rule->getExactAlignedSpacing(first_class);
+        if (aligned && aligned_spacing != -1) {
+          return edge(aligned_spacing);
+        }
+      }
+      const int spacing = lookup(prl_valid ? Lookup::SECOND : Lookup::FIRST);
+      const bool use_center
+          = rule->isCenterToCenter(first_class, second_class)
+            || (rule->isCenterAndEdge(first_class, second_class)
+                && spacing == lookup(Lookup::MAX));
+      return use_center ? center(spacing) : edge(spacing);
+    };
+    if (gap_y > 0) {
+      if (auto violation = check(true)) {
+        return violation;
+      }
+    }
+    if (gap_x > 0) {
+      return check(false);
+    }
+    return std::nullopt;
+  }
+
+  // The rule a placed cell cut violates against a fixed via cut, if any:
+  // touching, the legacy LEF SPACING, or a cut-class table checked from both
+  // cuts as drt does.
+  static std::optional<CutViolation> cutViolation(odb::dbTechLayer* layer,
+                                                  const CutTable& table,
+                                                  const odb::Rect& fixed,
+                                                  const odb::Rect& placed)
+  {
+    const int64_t dist_squared = squaredGap(fixed, placed);
+    if (dist_squared == 0) {
+      return CutViolation{0, false};
+    }
+    const int legacy = layer->getSpacing();
+    if (dist_squared < static_cast<int64_t>(legacy) * legacy) {
+      return CutViolation{legacy, false};
+    }
+    for (auto rule : table.rules) {
+      if (auto violation = cutTableViolation(
+              rule, fixed, table.fixed_class, placed, table.cell_class)) {
+        return violation;
+      }
+      if (auto violation = cutTableViolation(
+              rule, placed, table.cell_class, fixed, table.fixed_class)) {
+        return violation;
+      }
+    }
+    return std::nullopt;
   }
 
   int lef58MaxSpacing(odb::dbTechLayer* layer) const
@@ -1084,8 +1319,9 @@ class PlacementDRC::FixedSupplyVias
                      layer->getName(),
                      rule->getDefault());
         }
-        // The table is indexed by cut-class pair and holds {horizontal,
-        // vertical} spacings; the worst entry bounds every pairing.
+        // The table is indexed by cut-class pair and holds the spacing
+        // without and with parallel run length; the worst entry bounds every
+        // pairing.
         std::vector<std::vector<std::pair<int, int>>> table;
         std::map<std::string, uint32_t> row_map;
         std::map<std::string, uint32_t> col_map;
@@ -1095,19 +1331,19 @@ class PlacementDRC::FixedSupplyVias
             if (row_idx >= table.size() || col_idx >= table[row_idx].size()) {
               continue;
             }
-            const auto& [horizontal, vertical] = table[row_idx][col_idx];
-            max_spacing = std::max({max_spacing, horizontal, vertical});
+            const auto& [no_prl, prl] = table[row_idx][col_idx];
+            max_spacing = std::max({max_spacing, no_prl, prl});
             debugPrint(logger_,
                        DPL,
                        "fixed_supply_via",
                        2,
                        "  layer {}: LEF58_SPACINGTABLE CUTCLASS {} to {} "
-                       "horizontal={} vertical={}",
+                       "no_prl={} prl={}",
                        layer->getName(),
                        row_class,
                        col_class,
-                       horizontal,
-                       vertical);
+                       no_prl,
+                       prl);
           }
         }
       }
