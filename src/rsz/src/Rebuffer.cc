@@ -583,6 +583,12 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
       if (edge->isWire() || from == nullptr) {
         continue;
       }
+      // Constant inputs and disabled arcs do not drive the output in STA.
+      const sta::SearchPred* pred = search_->evalPred();
+      if (!pred->searchFrom(from_vertex, scene->mode())
+          || !pred->searchThru(edge, scene->mode())) {
+        continue;
+      }
       const std::pair<const sta::Vertex*, const sta::TimingRole*> vertex_role(
           from_vertex, edge->role());
       if (std::ranges::find(timed, vertex_role) != timed.end()) {
