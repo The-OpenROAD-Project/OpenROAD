@@ -10056,10 +10056,6 @@ class dbTechLayerCutEnclosureRule : public dbObject
 
   uint32_t getNumCorners() const;
 
-  void setCutClassValid(bool cut_class_valid);
-
-  bool isCutClassValid() const;
-
   void setAbove(bool above);
 
   bool isAbove() const;

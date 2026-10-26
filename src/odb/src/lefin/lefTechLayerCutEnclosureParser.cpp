@@ -45,7 +45,6 @@ void lefTechLayerCutEnclosureRuleParser::setCutClass(
         layer->getName());
   } else {
     rule->setCutClass(cutClass);
-    rule->setCutClassValid(true);
   }
 }
 void lefTechLayerCutEnclosureRuleParser::setInt(

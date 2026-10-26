@@ -24,9 +24,6 @@ bool _dbTechLayerCutEnclosureRule::operator==(
   if (flags_.type != rhs.flags_.type) {
     return false;
   }
-  if (flags_.cut_class_valid != rhs.flags_.cut_class_valid) {
-    return false;
-  }
   if (flags_.above != rhs.flags_.above) {
     return false;
   }
@@ -485,20 +482,6 @@ uint32_t dbTechLayerCutEnclosureRule::getNumCorners() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
   return obj->num_corners_;
-}
-
-void dbTechLayerCutEnclosureRule::setCutClassValid(bool cut_class_valid)
-{
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
-
-  obj->flags_.cut_class_valid = cut_class_valid;
-}
-
-bool dbTechLayerCutEnclosureRule::isCutClassValid() const
-{
-  _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
-
-  return obj->flags_.cut_class_valid;
 }
 
 void dbTechLayerCutEnclosureRule::setAbove(bool above)

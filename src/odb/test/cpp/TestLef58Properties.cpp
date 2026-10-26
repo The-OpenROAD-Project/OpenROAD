@@ -306,7 +306,7 @@ TEST_F(Fixture, test_default)
   EXPECT_TRUE(encRule->isWidthValid());
   EXPECT_TRUE(encRule->isIncludeAbutted());
   EXPECT_TRUE(encRule->isAbove());
-  EXPECT_TRUE(encRule->isCutClassValid());
+  EXPECT_NE(encRule->getCutClass(), nullptr);
   EXPECT_STREQ(encRule->getCutClass()->getName(), "cls1");
   EXPECT_TRUE(!encRule->isBelow());
   EXPECT_EQ(encRule->getMinWidth(), 0.2 * distFactor);
