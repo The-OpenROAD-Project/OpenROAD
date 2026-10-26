@@ -296,6 +296,52 @@ class PlacementDRC::FixedSupplyVias
 
   bool empty() const { return layers_.empty(); }
 
+  // Where check() can reject a cell shape around the fixed shapes on |layer|
+  // that reach |region|, against every master shape size used on the layer.
+  // Drawing runs while placement is paused, so the lazy index build keeps the
+  // single-thread contract of check().
+  std::vector<FixedSupplyViaKeepout> keepouts(odb::dbTechLayer* layer,
+                                              const odb::Rect& region)
+  {
+    std::vector<FixedSupplyViaKeepout> result;
+    const auto layer_it = layers_.find(layer);
+    if (layer_it == layers_.end()) {
+      return result;
+    }
+    buildIndexes();
+    const LayerData& data = layer_it->second;
+    const std::set<DimensionClass>& cells = master_dimensions_.at(layer);
+    // Vias come in a handful of sizes, so resolve each size once at the origin.
+    std::map<DimensionClass, FixedSupplyViaKeepout> by_size;
+    const odb::Rect query = bloatClipped(region, data.query_halo + 1);
+    for (auto it
+         = data.index->qbegin(boost::geometry::index::intersects(query));
+         it != data.index->qend();
+         ++it) {
+      const odb::Rect& via = data.shapes[it->second].rect;
+      auto [size_it, inserted] = by_size.try_emplace({via.dx(), via.dy()});
+      if (inserted) {
+        FixedSupplyViaKeepout& keepout = size_it->second;
+        keepout.via = odb::Rect(0, 0, via.dx(), via.dy());
+        for (const DimensionClass& cell : cells) {
+          keepout.spacing
+              = std::max(keepout.spacing,
+                         spacing(layer,
+                                 keepout.via,
+                                 odb::Rect(0, 0, cell.first, cell.second)));
+        }
+        keepout.eol_zones = eolZones(layer, keepout.via, cells);
+      }
+      FixedSupplyViaKeepout keepout = size_it->second;
+      keepout.via.moveDelta(via.xMin(), via.yMin());
+      for (odb::Rect& zone : keepout.eol_zones) {
+        zone.moveDelta(via.xMin(), via.yMin());
+      }
+      result.push_back(std::move(keepout));
+    }
+    return result;
+  }
+
  private:
   struct Shape
   {
@@ -1159,6 +1205,44 @@ class PlacementDRC::FixedSupplyVias
     return keepout;
   }
 
+  // The zones eolKeepout() rejects a cell shape in around |fixed|, against the
+  // worst of |cells|.
+  static std::vector<odb::Rect> eolZones(odb::dbTechLayer* layer,
+                                         const odb::Rect& fixed,
+                                         const std::set<DimensionClass>& cells)
+  {
+    std::vector<odb::Rect> zones;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      return zones;
+    }
+    auto add_zone = [&](const int x, const int y) {
+      zones.emplace_back(fixed.xMin() - x,
+                         fixed.yMin() - y,
+                         fixed.xMax() + x,
+                         fixed.yMax() + y);
+    };
+    for (auto rule : layer->getTechLayerSpacingEolRules()) {
+      const int width = rule->getEolWidth();
+      const int space = rule->getEolSpace();
+      const int within = rule->getEolWithin();
+      // Narrow top and bottom edges: space vertically, within sideways.
+      if (fixed.dx() < width
+          || std::ranges::any_of(cells, [&](const DimensionClass& cell) {
+               return cell.first < width;
+             })) {
+        add_zone(within, space);
+      }
+      // Narrow left and right edges: space sideways, within vertically.
+      if (fixed.dy() < width
+          || std::ranges::any_of(cells, [&](const DimensionClass& cell) {
+               return cell.second < width;
+             })) {
+        add_zone(space, within);
+      }
+    }
+    return zones;
+  }
+
   int spacing(odb::dbTechLayer* layer,
               const odb::Rect& fixed,
               const odb::Rect& cell) const
@@ -1438,6 +1522,16 @@ bool PlacementDRC::checkFixedSupplyVias(const Node* cell,
 {
   return fixed_supply_vias_ == nullptr
          || fixed_supply_vias_->check(cell, x, y, orient);
+}
+
+std::vector<FixedSupplyViaKeepout> PlacementDRC::fixedSupplyViaKeepouts(
+    odb::dbTechLayer* layer,
+    const odb::Rect& region) const
+{
+  if (fixed_supply_vias_ == nullptr) {
+    return {};
+  }
+  return fixed_supply_vias_->keepouts(layer, region);
 }
 
 bool PlacementDRC::checkDRC(const Node* cell) const

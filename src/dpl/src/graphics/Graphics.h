@@ -66,6 +66,7 @@ class Graphics : public web::Renderer, public DplObserver
   void clearCurrentIterMovers() override;
 
   // From Renderer API
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
   void drawObjects(web::Painter& painter) override;
 
   static bool guiActive();
@@ -125,10 +126,11 @@ class Graphics : public web::Renderer, public DplObserver
   // (called on every repaint) only reports it once per selection change.
   odb::dbInst* last_logged_search_window_inst_ = nullptr;
 
-  // Cells that moved during the most recent negotiation iteration.
-  // Empty means "no iteration info available" — all movers use directional
-  // colors.
+  // Cells that moved during the most recent negotiation iteration.  Only used
+  // while |track_iter_movers_|; otherwise all movers use directional colors.
+  // Empty while tracking means nothing moved, so all movers are greyed out.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
+  bool track_iter_movers_ = false;
 
   web::Chart* violations_chart_ = nullptr;
 };

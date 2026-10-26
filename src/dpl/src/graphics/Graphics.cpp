@@ -5,11 +5,16 @@
 
 #include <algorithm>
 #include <any>
+#include <array>
+#include <cmath>
+#include <cstddef>
 #include <cstdlib>
+#include <numbers>
 #include <set>
 #include <unordered_set>
 #include <vector>
 
+#include "PlacementDRC.h"
 #include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
@@ -30,6 +35,33 @@ namespace {
 using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
 using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 using BoostRect = boost::polygon::rectangle_data<int>;
+
+// |rect| grown by |radius| with round corners, as a polygon since the web
+// painter does not draw rounded rectangles.
+std::vector<odb::Point> roundedRect(const odb::Rect& rect, const int radius)
+{
+  constexpr int kCornerSegments = 8;
+  // Counterclockwise from the bottom right, whose arc starts at -90 degrees.
+  const std::array<odb::Point, 4> corners{{{rect.xMax(), rect.yMin()},
+                                           {rect.xMax(), rect.yMax()},
+                                           {rect.xMin(), rect.yMax()},
+                                           {rect.xMin(), rect.yMin()}}};
+  std::vector<odb::Point> points;
+  points.reserve(corners.size() * (kCornerSegments + 1));
+  for (size_t i = 0; i < corners.size(); ++i) {
+    for (int step = 0; step <= kCornerSegments; ++step) {
+      const double angle = std::numbers::pi / 2
+                           * (static_cast<double>(i) - 1
+                              + static_cast<double>(step) / kCornerSegments);
+      points.emplace_back(
+          corners[i].x()
+              + static_cast<int>(std::lround(radius * std::cos(angle))),
+          corners[i].y()
+              + static_cast<int>(std::lround(radius * std::sin(angle))));
+    }
+  }
+  return points;
+}
 
 }  // namespace
 
@@ -64,6 +96,7 @@ void Graphics::startPlacement(odb::dbBlock* block)
   // one. Cleared inline rather than via clearAllDiamondSearches(), which
   // relocks.
   searched_diamond_.clear();
+  track_iter_movers_ = false;
 }
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
@@ -160,6 +193,23 @@ void Graphics::redrawAndPause()
   gui->pause();
 }
 
+void Graphics::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
+{
+  if (!dp_->drc_engine_) {
+    return;
+  }
+  // Fixed supply via keepouts, to see which pins and obstructions they reach.
+  painter.setPen(web::Painter::kTurquoise, /* cosmetic */ true);
+  painter.setBrush(web::Painter::kTransparent);
+  for (const FixedSupplyViaKeepout& keepout :
+       dp_->drc_engine_->fixedSupplyViaKeepouts(layer, painter.getBounds())) {
+    painter.drawPolygon(roundedRect(keepout.via, keepout.spacing));
+    for (const odb::Rect& zone : keepout.eol_zones) {
+      painter.drawRect(zone);
+    }
+  }
+}
+
 void Graphics::drawObjects(web::Painter& painter)
 {
   // Held for the whole draw: placement runs concurrently on the main thread.
@@ -240,7 +290,7 @@ void Graphics::drawObjects(web::Painter& painter)
                        target_bbox.yMin(),
                        target_bbox.xMin(),
                        target_bbox.yMin() + tag_size * 2);
-    } else if (current_iter_movers_.empty()
+    } else if (!track_iter_movers_
                || current_iter_movers_.contains(cell->getDbInst())) {
       // Moved in the current iteration (or no iteration info yet).
       if (std::abs(dx) > std::abs(dy)) {
@@ -564,6 +614,7 @@ void Graphics::clearCurrentIterMovers()
 {
   const std::lock_guard<std::mutex> lock(state_mutex_);
   current_iter_movers_.clear();
+  track_iter_movers_ = true;
 }
 
 /* static */
