@@ -3,6 +3,15 @@ common --enable_bzlmod
 # abc is driven programmatically by OpenROAD, so skip the interactive
 # readline dependency exposed by abc@0.64-yosyshq.bcr.2.
 common --@abc//:use_readline=false
+
+# protoc from protobuf's release binaries (pinned by sha256 in protobuf's
+# MODULE.bazel), not compiled from source: or-tools generates its .pb.cc
+# with it, the generated code is the same, and a cold build skips
+# protoc's own 191 C++ compiles. Platforms without a release binary fall
+# back to building it. The canonical name is needed because protobuf
+# reaches OpenROAD through or-tools, not as a direct dependency.
+common --@@protobuf+//bazel/toolchains:prefer_prebuilt_protoc
+
 build --workspace_status_command=tools/workspace_status.sh
 
 # suppress distracting warning about newer module
