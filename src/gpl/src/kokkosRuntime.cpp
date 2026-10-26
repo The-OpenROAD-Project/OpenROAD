@@ -30,8 +30,7 @@ void ensureKokkosInitialized(std::optional<int> num_threads)
   });
 }
 
-Kokkos::DefaultHostExecutionSpace hostExecutionSpace(
-    int num_threads)
+Kokkos::DefaultHostExecutionSpace hostExecutionSpace(int num_threads)
 {
   ensureKokkosInitialized(num_threads);
 #ifdef KOKKOS_ENABLE_OPENMP
