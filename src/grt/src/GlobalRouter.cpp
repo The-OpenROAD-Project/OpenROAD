@@ -736,6 +736,12 @@ void GlobalRouter::initEngineWithExistingRouting()
         }
       }
     }
+    // Global routing read from odb: take back the capacities it was routed
+    // with, those of the odb congestion map, rather than recompute them for
+    // cells that moved after (e.g. legalized by the stage that routed it).
+    if (!haveDetailedRoutes()) {
+      fastroute_->restoreCapacitiesFromDb(min_layer, max_layer);
+    }
     // Disable the extra edge cost for NDR nets on congested 2D edges.
     // Uses routes_ segments directly since sttrees are not yet populated.
     disableCongestedNDRNetsFromRoutes(ndr_nets);
