@@ -16,6 +16,7 @@ target_sources(fsv
     src/CubePanels.cpp
     src/Dielectric.cpp
     src/FieldSolver.cpp
+    src/GaussianSurface.cpp
     src/Geometry.cpp
     src/Itf.cpp
     src/LayerModes.cpp

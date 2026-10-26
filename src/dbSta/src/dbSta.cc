@@ -1531,6 +1531,7 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
+  network_->setTopPortDirection(bterm, bterm->getIoType());
 }
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)

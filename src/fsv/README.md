@@ -68,7 +68,8 @@ set of conductors, which each solve uses. A net is a set of boxes, which
 may overlap. A target net's Gaussian surface is the boundary of its boxes,
 each grown by its own offset (at most half its gap to other conductors), so
 nets may wrap around each other; no other conductor may touch a target's
-box.
+box. Around conformal dielectrics a short trial picks whether the surface
+sits clear of their faces or inside the innermost one.
 
 ### Read ITF
 
@@ -236,17 +237,16 @@ Each value is a dict with these keys:
   `add_field_solver_rect`.
 - `window_leakage`: for nets from `add_field_solver_nets`, the window's
   leakage in fF (0 otherwise).
-- `rejected`: the walks whose start point fell inside the Gaussian surface,
-  where the target's grown boxes overlap; they count as walks of weight 0.
 
-The solve stops when the standard error of the total, and of each coupling
-of at least `-coupling_threshold` of the total, falls below its tolerance.
+The solve stops when the standard errors of the total and of every coupling,
+the ground's included, fall below their tolerances, both relative to the
+total. A coupling's relative error can therefore be large when the coupling
+is a small part of the total.
 It runs on the threads set by `set_thread_count`; the results do not depend
 on the thread count.
 
 ```tcl
 solve_capacitance
-    [-coupling_threshold fraction]
     [-max_walks walks]
     [-min_walks walks]
     [-nets nets]
@@ -260,13 +260,12 @@ solve_capacitance
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-coupling_threshold` | Couplings smaller than this fraction of the total do not need to meet `-tol_coupling`. The type is `float` in the range `[0, 1]`. The default is `0.01`. |
 | `-max_walks` | Walks after which the solve stops regardless of the tolerances. The type is `int`, at least 1. The default is `100000000`. |
 | `-min_walks` | Walks before the tolerances are first checked. The type is `int`. The default is `16384`. |
 | `-nets` | Target nets to solve. The type is a list of net names. The default is the nets of `add_field_solver_nets`, else every net. |
 | `-panels` | Panels per cube-face edge in the Green's-function tables. The type is `int`, a positive multiple of 16. The default is `32`. |
 | `-seed` | Random seed. The type is `int`, from 0 to 2^63 - 1. The default is `1`. |
-| `-tol_coupling` | Target standard error of each coupling, relative to the coupling. The type is `float`, greater than 0. The default is `0.05`. |
+| `-tol_coupling` | Target standard error of each coupling, relative to the total. The type is `float`, greater than 0. The default is `-tol_total`. |
 | `-tol_total` | Target standard error of the total, relative to the total. The type is `float`, greater than 0. The default is `0.01`. |
 
 ## Example scripts

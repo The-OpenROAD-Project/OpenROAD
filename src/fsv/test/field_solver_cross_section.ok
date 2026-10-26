@@ -1,10 +1,10 @@
 [INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 conformal dielectrics, 7 vias.
-[INFO FSV-0011] Net a: total 0.18853 fF/um +- 0.00091 after 507904 walks (62.7 hops per walk).
-  ground                   0.047195 +- 0.0005 fF/um
-  b                         0.14134 +- 0.00088 fF/um
-[INFO FSV-0011] Net a: total 0.1318 fF/um +- 0.0013 after 49152 walks (5.6 hops per walk).
-  ground                    0.06378 +- 0.0011 fF/um
-  b                        0.068017 +- 0.0011 fF/um
+[INFO FSV-0011] Net a: total 0.18876 fF/um +- 0.00092 after 961536 walks (20.9 hops per walk).
+  ground                   0.046535 +- 0.00049 fF/um
+  b                         0.14222 +- 0.0008 fF/um
+[INFO FSV-0011] Net a: total 0.13173 fF/um +- 0.0013 after 53248 walks (5.6 hops per walk).
+  ground                   0.063763 +- 0.0011 fF/um
+  b                        0.067966 +- 0.0011 fF/um
 [INFO FSV-0011] Net b: total 0.13167 fF/um +- 0.0013 after 49152 walks (5.5 hops per walk).
   ground                   0.063523 +- 0.0011 fF/um
   a                        0.068143 +- 0.0011 fF/um

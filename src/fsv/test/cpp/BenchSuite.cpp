@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// The performance baseline: times the solver at its default tolerances (1% on
-// the total, 5% on couplings of at least 1% of it) on three groups of cases,
+// The performance baseline: times the solver at its default tolerances
+// (standard errors of 1% of the total, on the total and on every coupling) on
+// three groups of cases,
 // solving every net of each case in turn:
 // - 3d: the golden 3D structures, and two golden cross sections extruded to
 //   10 um lines (planar and conformal);
@@ -11,11 +12,10 @@
 //   sky130hd gcd of field_solver_gcd.
 // Each solve reports its time, walks, hops per walk, the relative standard
 // error of one walk (sigma / total * sqrt(walks), which the walk count scales
-// with), the start points rejected inside the Gaussian surface, the window's
-// leakage, the scene's box count and its smallest box dimension (which sets
-// the capture distance). A short warm-up solve of every net first builds
-// the tables the case needs; its time is reported apart, and case times are
-// warm.
+// with), the window's leakage, the scene's box count and its smallest box
+// dimension (which sets the capture distance). A short warm-up solve of every
+// net first builds the tables the case needs; its time is reported apart, and
+// case times are warm.
 //
 // bazelisk run starts it in its runfiles, where the default files are; give
 // other files as absolute paths:
@@ -328,7 +328,7 @@ void report(const std::vector<Row>& rows,
             const int threads,
             FILE* out)
 {
-  std::printf("%-5s %-28s %-14s %9s %10s %9s %8s %8s %7s %6s %8s\n",
+  std::printf("%-5s %-28s %-14s %9s %10s %9s %8s %7s %6s %8s\n",
               "group",
               "case",
               "net",
@@ -336,14 +336,13 @@ void report(const std::vector<Row>& rows,
               "walks",
               "hops/walk",
               "sigma1",
-              "reject%",
               "leak%",
               "boxes",
               "min_dim");
   if (out != nullptr) {
     std::fprintf(out,
                  "group,case,net,threads,seconds,walks,hops,total,sigma,"
-                 "rejected,window_leakage,boxes,min_dim\n");
+                 "window_leakage,boxes,min_dim,inside_surface,trial_walks\n");
   }
   std::string group;
   double log_sum = 0;
@@ -367,23 +366,21 @@ void report(const std::vector<Row>& rows,
     const double total = row.total();
     const double sigma1 = row.sigma[row.master] / total
                           * std::sqrt(static_cast<double>(row.walks));
-    std::printf(
-        "%-5s %-28s %-14s %9.3f %10lld %9.1f %8.2f %8.1f %7.2f %6d %8.3g\n",
-        r.group.c_str(),
-        r.name.c_str(),
-        r.net.c_str(),
-        r.seconds,
-        static_cast<long long>(row.walks),
-        static_cast<double>(row.hops) / row.walks,
-        sigma1,
-        100.0 * row.rejected / row.walks,
-        100.0 * row.window_leakage / total,
-        r.boxes,
-        r.min_dim);
+    std::printf("%-5s %-28s %-14s %9.3f %10lld %9.1f %8.2f %7.2f %6d %8.3g\n",
+                r.group.c_str(),
+                r.name.c_str(),
+                r.net.c_str(),
+                r.seconds,
+                static_cast<long long>(row.walks),
+                static_cast<double>(row.hops) / row.walks,
+                sigma1,
+                100.0 * row.window_leakage / total,
+                r.boxes,
+                r.min_dim);
     if (out != nullptr) {
       std::fprintf(out,
-                   "%s,\"%s\",\"%s\",%d,%.6f,%lld,%lld,%.8g,%.8g,%lld,%.8g,%d,"
-                   "%.8g\n",
+                   "%s,\"%s\",\"%s\",%d,%.6f,%lld,%lld,%.8g,%.8g,%.8g,%d,"
+                   "%.8g,%d,%lld\n",
                    r.group.c_str(),
                    r.name.c_str(),
                    r.net.c_str(),
@@ -393,10 +390,11 @@ void report(const std::vector<Row>& rows,
                    static_cast<long long>(row.hops),
                    total,
                    row.sigma[row.master],
-                   static_cast<long long>(row.rejected),
                    row.window_leakage,
                    r.boxes,
-                   r.min_dim);
+                   r.min_dim,
+                   row.inside_surface ? 1 : 0,
+                   static_cast<long long>(row.trial_walks));
     }
     // A solve too fast for the clock would make the log -inf.
     log_sum += std::log(std::max(r.seconds, 1e-9));

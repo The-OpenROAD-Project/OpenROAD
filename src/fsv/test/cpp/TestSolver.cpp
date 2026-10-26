@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include "Dielectric.h"
+#include "Structures.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
@@ -53,6 +56,89 @@ TEST(Solver, CubeAboveGround)
       row.ground, -row.total(), 4 * (row.sigma[net] + row.ground_sigma));
 }
 
+// Rounds are sized to the walks the tolerance still needs, so a solve stops
+// just inside its target rather than up to a doubling past it: the error is
+// below the tolerance but close to it, at any tolerance.
+TEST(Solver, StopsNearTheTarget)
+{
+  Geometry geometry;
+  const int net = geometry.addNet("cube");
+  geometry.addBox(net, cube(0, 0, 2, 1));
+  const Scene scene(geometry);
+  Solver solver({.threads = 8});
+  for (const double tol : {0.01, 0.005, 0.002}) {
+    SolveOptions options;
+    options.tol_total = tol;
+    const CapRow row = solver.solve(scene, net, options);
+    const double error = row.sigma[net] / row.total();
+    EXPECT_LT(error, tol);
+    EXPECT_GT(error, 0.8 * tol) << "tolerance " << tol;
+  }
+}
+
+// Unset, tol_coupling follows tol_total, relative to the total: a looser
+// total loosens the couplings and the ground too, and a tighter tol_coupling
+// alone takes more walks.
+TEST(Solver, CouplingToleranceFollowsTheTotal)
+{
+  Geometry geometry;
+  const int a = geometry.addNet("a");
+  const int b = geometry.addNet("b");
+  geometry.addBox(a, cube(0, 0, 1, 1));
+  geometry.addBox(b, cube(1.6, 0, 1, 1));
+  const Scene scene(geometry);
+  Solver solver({.threads = 8});
+  auto worst = [&](const CapRow& row) {
+    return std::max({row.sigma[a], row.sigma[b], row.ground_sigma})
+           / row.total();
+  };
+  SolveOptions options;
+  options.tol_total = 0.02;
+  const CapRow loose = solver.solve(scene, a, options);
+  EXPECT_LT(worst(loose), 0.02);
+  EXPECT_GT(worst(loose), 0.8 * 0.02);
+  options.tol_coupling = 0.005;
+  const CapRow tight = solver.solve(scene, a, options);
+  EXPECT_LT(tight.sigma[b], 0.005 * tight.total());
+  EXPECT_LT(tight.ground_sigma, 0.005 * tight.total());
+  EXPECT_GT(tight.walks, loose.walks);
+}
+
+// Around shells whose first cubes shrink, a trial picks the surface inside
+// them where it is clearly cheaper: on the line ends, whose shells cross a
+// layer boundary. A planar structure, and a solve capped below the trial's
+// budget, run no trial.
+TEST(Solver, TrialPicksTheSurface)
+{
+  Solver solver({.threads = 8});
+  const Structure line_ends = readStructure("conformal_line_ends");
+  const Scene shelled(line_ends.geometry, line_ends.stack);
+  const CapRow chosen = solver.solve(shelled, 0, SolveOptions{});
+  EXPECT_TRUE(chosen.inside_surface);
+  EXPECT_GT(chosen.trial_walks, 0);
+
+  // With the walk count fixed only the hops per walk count, and the inside
+  // surface's walks are shorter here.
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 262144;
+  const CapRow fixed_row = solver.solve(shelled, 0, fixed);
+  EXPECT_TRUE(fixed_row.inside_surface);
+  EXPECT_EQ(fixed_row.walks, 262144);
+
+  SolveOptions capped;
+  capped.min_walks = capped.max_walks = 65536;
+  const CapRow quick = solver.solve(shelled, 0, capped);
+  EXPECT_FALSE(quick.inside_surface);
+  EXPECT_EQ(quick.trial_walks, 0);
+  EXPECT_EQ(quick.walks, 65536);
+
+  const Structure planar = readStructure("etch_stop_pair", 10);
+  const CapRow clear
+      = solver.solve(Scene(planar.geometry, planar.stack), 0, SolveOptions{});
+  EXPECT_FALSE(clear.inside_surface);
+  EXPECT_EQ(clear.trial_walks, 0);
+}
+
 // Capacitance scales with the dielectric constant and with size.
 TEST(Solver, Scaling)
 {
@@ -85,7 +171,7 @@ TEST(Solver, TwoCubesSymmetric)
 
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.005;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const Scene scene(geometry);
   const CapRow ra = solver.solve(scene, a, options);
@@ -171,6 +257,16 @@ TEST(Solver, HopGuardFailsSolve)
     EXPECT_THROW(solver.solve(scene, net, {.max_walks = max_walks}),
                  std::invalid_argument);
   }
+  // The stopping test divides by the tolerances.
+  for (const double tol : {0.0,
+                           -0.01,
+                           std::numeric_limits<double>::quiet_NaN(),
+                           std::numeric_limits<double>::infinity()}) {
+    EXPECT_THROW(solver.solve(scene, net, {.tol_total = tol}),
+                 std::invalid_argument);
+    EXPECT_THROW(solver.solve(scene, net, {.tol_coupling = tol}),
+                 std::invalid_argument);
+  }
   // The solver stays usable after a failed solve.
   EXPECT_GT(solver.solve(scene, net, SolveOptions{}).total(), 0);
 }
@@ -235,7 +331,7 @@ TEST(Solver, ReciprocityAcrossInterfaces)
   ASSERT_EQ(scene.interfaces().size(), 2u);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -400,7 +496,7 @@ TEST(Solver, ConformalReciprocityAndDeterminism)
       conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
   SolveOptions options;
   options.tol_total = 0.004;
-  options.tol_coupling = 0.01;
+  options.tol_coupling = 0.004;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -487,7 +583,7 @@ TEST(Solver, MultiBoxReciprocity)
   const Scene scene(geometry, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   expectReciprocal(solver.solve(scene, 0, options),
                    solver.solve(scene, 1, options));
@@ -501,7 +597,7 @@ TEST(Solver, RedundantBoxesChangeNothing)
   const Geometry redundant = wrappedWire(true);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow a = solver.solve(Scene(plain, 3.9), 0, options);
   const CapRow b = solver.solve(Scene(redundant, 3.9), 0, options);
@@ -552,11 +648,9 @@ TEST(Solver, ViaStackReciprocity)
   geometry.addBox(1, {{0, 0.4, 0.5}, {3, 0.6, 0.7}});
   geometry.addBox(2, {{0, -0.6, 1.1}, {3, -0.4, 1.3}});
   const Scene scene(geometry, conformalStack({{"C", 0.03, 0.02, 7.0}}));
-  // The neighbours' small coupling to each other needs no tight tolerance.
   SolveOptions options;
   options.tol_total = 0.005;
-  options.tol_coupling = 0.01;
-  options.coupling_threshold = 0.05;
+  options.tol_coupling = 0.005;
   Solver solver({.threads = 8});
   const CapRow stack = solver.solve(scene, 0, options);
   expectReciprocal(stack, solver.solve(scene, 1, options));
@@ -578,7 +672,7 @@ TEST(Solver, RingAroundNet)
   const Scene2D scene(section, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow ring = solver.solve(scene, 0, options);
   const CapRow inner = solver.solve(scene, 1, options);
@@ -759,7 +853,7 @@ TEST(Solver, CrossSectionReciprocityAndDeterminism)
       conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -784,8 +878,7 @@ TEST(Solver, CrossSectionMatchesLongLine3D)
   const Geometry thirty = wiresAlongY(30.0);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
-  options.coupling_threshold = 0.05;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow cross = solver.solve(Scene2D(section, stack), 0, options);
   const CapRow a = solver.solve(Scene(ten, stack), 0, options);

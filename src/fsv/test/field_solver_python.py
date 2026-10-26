@@ -34,7 +34,6 @@ assert list(row) == [
     "seconds",
     "cross_section",
     "window_leakage",
-    "rejected",
 ]
 assert row["walks"] == 32768 and not row["cross_section"]
 assert row["couplings"]["b"] > row["couplings"]["VPWR"]
@@ -87,7 +86,7 @@ assert rows["r"]["cross_section"]
 for options in (
     {"tol_total": 0},
     {"tol_total": -0.01},
-    {"coupling_threshold": 2},
+    {"tol_coupling": 0},
     {"min_walks": -5},
     {"max_walks": 0},
     {"seed": -1},
