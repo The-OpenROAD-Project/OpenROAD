@@ -851,10 +851,14 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
     if (cell == current_cell) {
       continue;
     }
-    // Cells are in increasing area, so once even the cheapest tree cannot
-    // match the best area, no later cell can either.  Equal area is still
-    // evaluated: a same-area cell with more slack wins the tie.
-    if (min_tree_area + cell->area() - current_cell->area() > best_area) {
+    // Cells are in increasing area, so once even the cheapest tree of a
+    // cell cannot win, no later cell can either.  The area is summed as in
+    // consider() to keep the bound exact.  A cell wins with a smaller area,
+    // or with the same area only on a net that misses timing.
+    const float min_area
+        = min_tree_area + (cell->area() - current_cell->area());
+    if (min_area > best_area
+        || (min_area == best_area && best_slack >= FixedDelay::ZERO)) {
       break;
     }
     consider(cell);
