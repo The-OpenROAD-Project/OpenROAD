@@ -343,6 +343,7 @@ cc_test(
     deps = [
         "//src/grt",
         "//src/grt:fastroute",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
