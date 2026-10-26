@@ -8,6 +8,7 @@
 #   tied:      both inputs share one weak net, so both add to its delay.
 #   multi:     the input net's second, weak driver sets the extra delay.
 #   mixed:     like side_crit, with set_drive 0 under set_driving_cell.
+#   dff:       a flip-flop with only Q connected keeps its cell.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -92,14 +93,24 @@ set multi_y [expr { $y - 18 }]
 odb::dbBox_create $multi_b_pin $m1 0 [um $multi_y] 100 \
   [expr { [um $multi_y] + 100 }]
 $multi_b_pin setPlacementStatus LOCKED
+# drv_dff (DFF_X1) drives a 350 um wire from Q, where DFF_X2 would replace
+# the buffer; QN is left open, so only the sequential guard keeps it.
+set dff_q [odb::dbNet_create $block n_dff]
+make_inst drv_dff DFF_X1 5 $y [list D [make_port in_dff_D INPUT 0 $y] \
+  CK [make_port in_dff_CK INPUT 0 [expr { $y + 4 }]] Q $dff_q]
+make_inst ld_dff INV_X1 350 $y \
+  [list A $dff_q ZN [make_port out_dff OUTPUT 370 $y]]
+set y [expr { $y + 20 }]
 foreach net $dont_touch {
   $net setDoNotTouch true
 }
 ord::design_created
 
 create_clock -period 0.1 -name clk
+create_clock -period 0.1 -name dff_clk [get_ports in_dff_CK]
 set_input_delay -clock clk 0 [all_inputs]
 set_output_delay -clock clk 0 [all_outputs]
+set_output_delay -clock clk -0.1 [get_ports out_dff]
 set_driving_cell -lib_cell INV_X1 -pin ZN \
   [get_ports {in_side_ok_A in_side_crit_A}]
 set_output_delay -clock clk 0.08 [get_ports out_side_crit_side]
@@ -123,7 +134,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {base side_ok nand_far aoi side_crit mixed cap nand_near tied multi} {
+foreach name {base side_ok nand_far aoi side_crit mixed cap nand_near tied multi dff} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 

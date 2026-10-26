@@ -1,11 +1,15 @@
 # fully_rebuffer with set_opt_config -rebuffer_size_driver: an equal-area
 # swap to a faster cell is taken only on a net that misses timing.  INVxp67
-# and INVx1 have the same area; drv_crit becomes INVx1, while drv_relaxed,
-# which meets timing, keeps INVxp67.
+# and INVx1 have the same area, and both drivers start as INVx2.  drv_crit
+# becomes INVx1, while drv_relaxed, which meets timing, becomes INVxp67
+# rather than the equal-area INVx1.  drv_ha, a critical half adder with
+# both outputs connected, keeps its cell although its L and SL variants have
+# the same area.
 source "helpers.tcl"
 source asap7/asap7.vars
 foreach vt {RVT LVT SLVT} {
   read_liberty asap7/asap7sc7p5t_INVBUF_${vt}_FF_nldm_220122.lib.gz
+  read_liberty asap7/asap7sc7p5t_SIMPLE_${vt}_FF_nldm_211120.lib.gz
 }
 read_lef asap7/asap7_tech_1x_201209.lef
 foreach vt {R L SL} {
@@ -58,6 +62,13 @@ foreach name {crit relaxed} {
   make_inst ld_$name INVx1_ASAP7_75t_R 10 $y [list A $net Y $out]
   set y [expr { $y + 5 }]
 }
+# in_ha_A/B -> drv_ha (HAxp5) -> SN: 10 um wire -> ld_ha -> out_ha; CON -> out_ha_co
+set ha_sn [odb::dbNet_create $block n_ha]
+make_inst drv_ha HAxp5_ASAP7_75t_R 1 $y [list A [make_port in_ha_A INPUT 0 $y] \
+  B [make_port in_ha_B INPUT 0 [expr { $y + 1 }]] SN $ha_sn \
+  CON [make_port out_ha_co OUTPUT 5 [expr { $y + 2 }]]]
+make_inst ld_ha INVx1_ASAP7_75t_R 10 $y \
+  [list A $ha_sn Y [make_port out_ha OUTPUT 15 $y]]
 foreach net $dont_touch {
   $net setDoNotTouch true
 }
@@ -65,7 +76,7 @@ ord::design_created
 
 create_clock -period 25 -name clk
 set_input_delay -clock clk 0 [all_inputs]
-set_output_delay -clock clk 0 [get_ports out_crit]
+set_output_delay -clock clk 0 [get_ports {out_crit out_ha out_ha_co}]
 set_output_delay -clock clk -30 [get_ports out_relaxed]
 source asap7/setRC.tcl
 estimate_parasitics -placement
@@ -73,7 +84,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {crit relaxed} {
+foreach name {crit relaxed ha} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 

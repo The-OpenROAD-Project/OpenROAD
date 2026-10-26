@@ -8,11 +8,13 @@
    Iter   |    Area   | Removed | Inserted |   Pins
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
-        0 |     +0.0% |       0 |        0 |         2
-        1 |     -7.1% |       0 |        0 |         1
-    final |    -14.3% |       0 |        0 |         0
+        0 |     +0.0% |       0 |        0 |         3
+        1 |    +23.1% |       0 |        1 |         2
+        2 |    +19.2% |       0 |        1 |         1
+    final |    +15.4% |       0 |        1 |         0
 -------------------------------------------------------
 [INFO RSZ-2023] Resized 2 drivers while rebuffering.
 drv_crit INVx1_ASAP7_75t_R
 drv_relaxed INVxp67_ASAP7_75t_R
+drv_ha HAxp5_ASAP7_75t_R
 [INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
