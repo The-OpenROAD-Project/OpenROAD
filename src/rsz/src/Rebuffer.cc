@@ -310,7 +310,9 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
         const sta::InputDriveCell* drive_cell
             = drive->driveCell(drive_rf, max_);
         if (drive_cell != nullptr && drive_cell->toPort() != nullptr) {
-          res = portDriveResistance(drive_cell->toPort(), drive_rf, bound);
+          // Delay calculation times the driving cell in the scene's view.
+          res = portDriveResistance(
+              drive_cell->toPort()->scenePort(scene, max_), drive_rf, bound);
         } else {
           float drive_resistance;
           bool exists = false;
