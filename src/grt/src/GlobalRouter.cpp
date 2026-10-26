@@ -579,6 +579,10 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
   if (verbose_) {
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   }
+  
+  if (!routes_.empty() && hasInitialSteinerWirelengths()) {
+    computeDetourMetrics();
+  }
   if (save_guides) {
     std::vector<odb::dbNet*> nets;
     nets.reserve(block_->getNets().size());
@@ -5024,6 +5028,60 @@ void GlobalRouter::reportNetDetour(odb::dbNet* net, const char* file_name)
   }
 }
 
+// Detours of the routed multi-pin nets, worst ratio first.
+std::vector<GlobalRouter::NetDetour> GlobalRouter::collectNetDetours(
+    int64_t& total_initial,
+    int64_t& total_final)
+{
+  std::vector<NetDetour> detours;
+  total_initial = 0;
+  total_final = 0;
+  for (const auto& [net, initial_wl] : initial_steiner_wl_) {
+    // Skip local nets.
+    if (initial_wl == 0 || !routes_.contains(net)) {
+      continue;
+    }
+    const int64_t final_wl = computeNetPlanarWirelength(net);
+    const int64_t delta = final_wl - initial_wl;
+    const double ratio = detourRatio(initial_wl, final_wl);
+    detours.push_back({net, initial_wl, final_wl, delta, ratio});
+    total_initial += initial_wl;
+    total_final += final_wl;
+  }
+
+  std::ranges::sort(detours, [](const NetDetour& a, const NetDetour& b) {
+    if (a.ratio != b.ratio) {
+      return a.ratio > b.ratio;
+    }
+    return a.net->getId() < b.net->getId();
+  });
+  return detours;
+}
+
+void GlobalRouter::computeDetourMetrics()
+{
+  int64_t total_initial;
+  int64_t total_final;
+  const std::vector<NetDetour> detours
+      = collectNetDetours(total_initial, total_final);
+  if (detours.empty()) {
+    return;
+  }
+
+  // Mean ratio of the worst 1% of nets, rounded up so at least one net counts.
+  const size_t worst_count = (detours.size() + 99) / 100;
+  double worst_ratio_sum = 0.0;
+  for (size_t i = 0; i < worst_count; i++) {
+    worst_ratio_sum += detours[i].ratio;
+  }
+
+  logger_->metric("global_route__detour__ratio",
+                  detourRatio(total_initial, total_final));
+  logger_->metric("global_route__detour__ratio__max", detours.front().ratio);
+  logger_->metric("global_route__detour__ratio__worst_1pct_mean",
+                  worst_ratio_sum / worst_count);
+}
+
 void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
 {
   block_ = db_->getChip()->getBlock();
@@ -5036,61 +5094,29 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
     return;
   }
 
-  struct DetourEntry
-  {
-    odb::dbNet* net;
-    int64_t initial_wl;
-    int64_t final_wl;
-    int64_t delta;
-    double ratio;
-  };
-
-  std::vector<DetourEntry> entries;
-  int64_t total_initial = 0;
-  int64_t total_final = 0;
-  for (const auto& [net, initial_wl] : initial_steiner_wl_) {
-    // Skip local nets.
-    if (initial_wl == 0 || !routes_.contains(net)) {
-      continue;
-    }
-    const int64_t final_wl = computeNetPlanarWirelength(net);
-    const int64_t delta = final_wl - initial_wl;
-    const double ratio = detourRatio(initial_wl, final_wl);
-    entries.push_back({net, initial_wl, final_wl, delta, ratio});
-    total_initial += initial_wl;
-    total_final += final_wl;
-  }
-
-  if (entries.empty()) {
+  int64_t total_initial;
+  int64_t total_final;
+  const std::vector<NetDetour> detours
+      = collectNetDetours(total_initial, total_final);
+  if (detours.empty()) {
     logger_->warn(
         GRT, 334, "No routed multi-pin nets available for detour reporting.");
     return;
   }
 
-  std::ranges::sort(entries, [](const DetourEntry& a, const DetourEntry& b) {
-    if (a.ratio != b.ratio) {
-      return a.ratio > b.ratio;
-    }
-    return a.net->getId() < b.net->getId();
-  });
-
-  const double total_ratio
-      = (total_initial > 0) ? static_cast<double>(total_final) / total_initial
-                            : 1.0;
-
   logger_->report("Detour metric (final routed WL vs initial Steiner WL):");
-  logger_->report("  Nets analyzed: {}", entries.size());
+  logger_->report("  Nets analyzed: {}", detours.size());
   logger_->report("  Total initial Steiner WL: {:.2f}um",
                   block_->dbuToMicrons(total_initial));
   logger_->report("  Total final routed WL:    {:.2f}um",
                   block_->dbuToMicrons(total_final));
   logger_->report("  Total detour:             {:.2f}um (ratio {:.2f})",
                   block_->dbuToMicrons(total_final - total_initial),
-                  total_ratio);
+                  detourRatio(total_initial, total_final));
 
   const int n = (top_n <= 0)
-                    ? static_cast<int>(entries.size())
-                    : std::min(top_n, static_cast<int>(entries.size()));
+                    ? static_cast<int>(detours.size())
+                    : std::min(top_n, static_cast<int>(detours.size()));
   logger_->report("  Worst {} nets by detour ratio:", n);
   logger_->report("    {:>10}  {:>10}  {:>10}  {:>7}  net",
                   "initial_um",
@@ -5098,34 +5124,22 @@ void GlobalRouter::reportNetDetours(int top_n, const char* file_name)
                   "delta_um",
                   "ratio");
   for (int i = 0; i < n; i++) {
-    const DetourEntry& e = entries[i];
+    const NetDetour& d = detours[i];
     logger_->report("    {:>10.2f}  {:>10.2f}  {:>10.2f}  {:>7.2f}  {}",
-                    block_->dbuToMicrons(e.initial_wl),
-                    block_->dbuToMicrons(e.final_wl),
-                    block_->dbuToMicrons(e.delta),
-                    e.ratio,
-                    e.net->getName());
+                    block_->dbuToMicrons(d.initial_wl),
+                    block_->dbuToMicrons(d.final_wl),
+                    block_->dbuToMicrons(d.delta),
+                    d.ratio,
+                    d.net->getName());
   }
-
-  // Mean ratio of the worst 1% of nets, rounded up so at least one net counts.
-  const size_t worst_count = (entries.size() + 99) / 100;
-  double worst_ratio_sum = 0.0;
-  for (size_t i = 0; i < worst_count; i++) {
-    worst_ratio_sum += entries[i].ratio;
-  }
-
-  logger_->metric("global_route__detour__ratio", total_ratio);
-  logger_->metric("global_route__detour__ratio__max", entries.front().ratio);
-  logger_->metric("global_route__detour__ratio__worst_1pct_mean",
-                  worst_ratio_sum / worst_count);
 
   std::ofstream out = openDetourFile(file_name);
   if (out.is_open()) {
-    for (const DetourEntry& e : entries) {
-      out << "grt_detour: " << e.net->getName() << " "
-          << block_->dbuToMicrons(e.initial_wl) << " "
-          << block_->dbuToMicrons(e.final_wl) << " "
-          << block_->dbuToMicrons(e.delta) << " " << e.ratio << "\n";
+    for (const NetDetour& d : detours) {
+      out << "grt_detour: " << d.net->getName() << " "
+          << block_->dbuToMicrons(d.initial_wl) << " "
+          << block_->dbuToMicrons(d.final_wl) << " "
+          << block_->dbuToMicrons(d.delta) << " " << d.ratio << "\n";
     }
   }
 }
