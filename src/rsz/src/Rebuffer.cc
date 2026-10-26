@@ -550,6 +550,15 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
   // of its timing path.
   sta::LibertyPort* out_port = cell->findLibertyPort(drvr_port_->name());
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(pin_);
+  // One input vertex and arc role, with the first of its edges and whether
+  // the arrival search passes through any of them.
+  struct InputRole
+  {
+    sta::Vertex* from_vertex;
+    sta::Edge* edge;
+    const sta::TimingRole* role;
+    bool search_thru;
+  };
   for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     const sta::Path* driver_path = arrival_path->prevPath();
@@ -573,13 +582,6 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
     // disabled pins and arcs, so their slews never reach the driver pin.
     // Arrivals also skip arcs that constants disable, such as a mux input
     // that a constant select deselects, but their slews still count.
-    struct InputRole
-    {
-      sta::Vertex* from_vertex;
-      sta::Edge* edge;
-      const sta::TimingRole* role;
-      bool search_thru;
-    };
     const sta::Mode* mode = scene->mode();
     std::vector<InputRole> input_roles;
     sta::VertexInEdgeIterator edge_iter(drvr_vertex, graph_);
