@@ -662,6 +662,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
+  if (jumper_only && diode_only) {
+    logger_->error(
+        GRT, 1254, "Only use either jumper_only or diode_only flag.");
+  }
   ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
