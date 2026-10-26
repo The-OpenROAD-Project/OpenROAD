@@ -1,7 +1,7 @@
 # fully_rebuffer with set_opt_config -rebuffer_size_driver: an equal-area
-# swap to a faster cell is taken only on a near-critical net.  INVxp67 and
-# INVx1 have the same area; drv_crit becomes INVx1, while drv_relaxed, with
-# ample slack, keeps INVxp67.
+# swap to a faster cell is taken only on a net that misses timing.  INVxp67
+# and INVx1 have the same area; drv_crit becomes INVx1, while drv_relaxed,
+# which meets timing, keeps INVxp67.
 source "helpers.tcl"
 source asap7/asap7.vars
 foreach vt {RVT LVT SLVT} {

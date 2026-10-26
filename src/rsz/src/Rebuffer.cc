@@ -764,9 +764,6 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
 
 // Minimum slack gain for picking an equal-area tree/driver combination.
 constexpr float kEqualAreaMinGain = 1e-12;
-// An equal-area swap to another cell is only taken while the incumbent's
-// slack is below this margin.
-constexpr float kEqualAreaSwapMaxSlack = 10e-12;
 
 BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
                                       sta::LibertyCell* current_cell,
@@ -804,13 +801,12 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
         continue;
       }
       // An equal-area swap must gain real slack to be worth a resize, which
-      // costs an upstream timing update.  A swap to another cell must also
-      // help a near-critical net: with ample slack a faster cell only adds
-      // leakage and input load on the previous stage.
+      // costs an upstream timing update.  A swap to another cell is only
+      // taken on a net that misses timing: once timing is met, a faster cell
+      // only adds leakage and input load on the previous stage.
       const bool equal_area_gain
           = *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)
-            && (cell == chosen_cell
-                || best_slack < FixedDelay(kEqualAreaSwapMaxSlack, resizer_));
+            && (cell == chosen_cell || best_slack < FixedDelay::ZERO);
       if (area < best_area || equal_area_gain) {
         if (!upstream_ok) {
           upstream_ok = upstreamStagesOk(cell, slack_target);
