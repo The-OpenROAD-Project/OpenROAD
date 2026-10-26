@@ -474,6 +474,18 @@ class GlobalRouter
   void updateInitialSteinerWirelength(Net* net);
   int computeNetInitialSteinerWirelength(Net* net);
   int computeNetPlanarWirelength(odb::dbNet* db_net);
+  struct NetDetour
+  {
+    odb::dbNet* net;
+    int64_t initial_wl;
+    int64_t final_wl;
+    int64_t delta;
+    double ratio;
+  };
+  std::vector<NetDetour> collectNetDetours(int64_t& total_initial,
+                                           int64_t& total_final);
+  // Emits the detour metrics; nothing is printed.
+  void computeDetourMetrics();
   std::ofstream openDetourFile(const char* file_name);
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
