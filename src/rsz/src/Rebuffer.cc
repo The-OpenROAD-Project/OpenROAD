@@ -569,34 +569,53 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
     }
     // An input has one graph edge per arc set of the current cell, while the
     // candidate's arc sets are looked up by port and role: time each input
-    // vertex and role once.
-    std::vector<std::pair<const sta::Vertex*, const sta::TimingRole*>> timed;
+    // vertex and role once.  Delay calculation skips constant inputs and
+    // disabled pins and arcs, so their slews never reach the driver pin.
+    // Arrivals also skip arcs that constants disable, such as a mux input
+    // that a constant select deselects, but their slews still count.
+    struct InputRole
+    {
+      sta::Vertex* from_vertex;
+      sta::Edge* edge;
+      const sta::TimingRole* role;
+      bool search_thru;
+    };
+    const sta::Mode* mode = scene->mode();
+    std::vector<InputRole> input_roles;
     sta::VertexInEdgeIterator edge_iter(drvr_vertex, graph_);
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
       sta::Vertex* from_vertex = edge->from(graph_);
       const sta::Pin* input = from_vertex->pin();
+      if (edge->isWire() || sta_->isConstant(input, mode)
+          || mode->sdc()->isDisabledConstraint(input)
+          || mode->sdc()->isDisabledConstraint(edge)) {
+        continue;
+      }
+      const bool search_thru = search_->evalPred()->searchThru(edge, mode);
+      std::vector<InputRole>::iterator input_role
+          = std::ranges::find_if(input_roles, [&](const InputRole& known) {
+              return known.from_vertex == from_vertex
+                     && known.role == edge->role();
+            });
+      if (input_role != input_roles.end()) {
+        input_role->search_thru = input_role->search_thru || search_thru;
+      } else {
+        input_roles.push_back({from_vertex, edge, edge->role(), search_thru});
+      }
+    }
+    for (const InputRole& input_role : input_roles) {
+      sta::Vertex* from_vertex = input_role.from_vertex;
+      const sta::Pin* input = from_vertex->pin();
       const sta::LibertyPort* old_from = network_->libertyPort(input);
       sta::LibertyPort* from = old_from != nullptr
                                    ? cell->findLibertyPort(old_from->name())
                                    : nullptr;
-      if (edge->isWire() || from == nullptr) {
+      if (from == nullptr) {
         continue;
       }
-      // Constant inputs and disabled arcs do not drive the output in STA.
-      const sta::SearchPred* pred = search_->evalPred();
-      if (!pred->searchFrom(from_vertex, scene->mode())
-          || !pred->searchThru(edge, scene->mode())) {
-        continue;
-      }
-      const std::pair<const sta::Vertex*, const sta::TimingRole*> vertex_role(
-          from_vertex, edge->role());
-      if (std::ranges::find(timed, vertex_role) != timed.end()) {
-        continue;
-      }
-      timed.push_back(vertex_role);
       for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
-        if (arc_set->role() != edge->role()) {
+        if (arc_set->role() != input_role.role) {
           continue;
         }
         for (sta::TimingArc* arc : arc_set->arcs()) {
@@ -611,7 +630,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           const sta::RiseFall* from_rf = arc->fromEdge()->asRiseFall();
           sta::LoadPinIndexMap load_pin_index_map(network_);
           const sta::Slew in_slew = graph_delay_calc_->edgeFromSlew(
-              from_vertex, from_rf, edge, scene, min_max);
+              from_vertex, from_rf, input_role.edge, scene, min_max);
           sta::ArcDcalcResult dcalc_result
               = delayCalc()->gateDelay(nullptr,
                                        arc,
@@ -624,6 +643,9 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           // The slew limit holds whether or not the input has an arrival.
           if (dcalc_result.drvrSlew() > drvr_max_slew) {
             return false;
+          }
+          if (!input_role.search_thru) {
+            continue;
           }
           // Latest arrival at this input in the scene of the timing path.
           sta::Arrival arrival = -sta::INF;
