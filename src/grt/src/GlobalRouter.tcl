@@ -582,6 +582,22 @@ proc report_net_detours { args } {
   }
 }
 
+sta::define_cmd_args "report_congestion" {}
+
+proc report_congestion { args } {
+  sta::parse_key_args "report_congestion" args keys {} flags {}
+  sta::check_argc_eq0 "report_congestion" $args
+  grt::report_congestion
+}
+
+sta::define_cmd_args "has_congestion" {}
+
+proc has_congestion { args } {
+  sta::parse_key_args "has_congestion" args keys {} flags {}
+  sta::check_argc_eq0 "has_congestion" $args
+  return [grt::has_congestion]
+}
+
 sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name \
                                                   [-layer1 layer1] \
                                                   [-layer2 layer2] \
