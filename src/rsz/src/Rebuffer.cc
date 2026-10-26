@@ -416,12 +416,13 @@ sta::Delay Rebuffer::upstreamDelay(const sta::Pin* input,
   return delay;
 }
 
-float Rebuffer::drvrMaxSlew(const sta::LibertyPort* out_port)
+float Rebuffer::drvrMaxSlew(const sta::LibertyPort* out_port,
+                            const sta::Scene* scene)
 {
   float max_slew = sta::INF;
   bool max_slew_exists = false;
   sta_->findSlewLimit(
-      out_port, corner_, sta::MinMax::max(), max_slew, max_slew_exists);
+      out_port, scene, sta::MinMax::max(), max_slew, max_slew_exists);
   return max_slew_exists ? maxSlewMargined(max_slew) : sta::INF;
 }
 
@@ -440,12 +441,10 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   // Limits of this cell's own output pin.  The current cell keeps what the
   // option-off flow would export; a resize must not add a cap violation of
   // the SDC, Liberty port or library default limit.
-  const float drvr_max_slew = drvrMaxSlew(out_port);
   if (!is_current_cell) {
     // The tree's load is known in its own scene only, where its buffers'
     // limits are checked too.
-    const float cap_limit
-        = resizer_->outputMaxCap(network_->cell(cell), corner_);
+    const float cap_limit = resizer_->outputMaxCap(out_port, corner_);
     if (cap_limit > 0.0 && bnet->cap() > maxCapMargined(cap_limit)) {
       return {};
     }
@@ -515,7 +514,8 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
       gate_delay = std::max(gate_delay, dcalc_result.gateDelay());
       drvr_slew = std::max(drvr_slew, dcalc_result.drvrSlew());
     }
-    if (drvr_slew > drvr_max_slew) {
+    // The slew limit of the scene the arcs are timed in.
+    if (drvr_slew > drvrMaxSlew(out_port, driver_path->scene(sta_))) {
       return {};
     }
 
@@ -549,7 +549,6 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
   // limited to the output transitions the loads recorded, each in the scene
   // of its timing path.
   sta::LibertyPort* out_port = cell->findLibertyPort(drvr_port_->name());
-  const float drvr_max_slew = drvrMaxSlew(out_port);
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(pin_);
   for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
@@ -557,6 +556,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
     const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
     const sta::Scene* scene = arrival_path->scene(sta_);
     const sta::MinMax* min_max = arrival_path->minMax(sta_);
+    const float drvr_max_slew = drvrMaxSlew(out_port, scene);
     // The new tree moves the driver pin's required time by its slack minus
     // the timing path's stored slack.
     const sta::Delay tree_shift

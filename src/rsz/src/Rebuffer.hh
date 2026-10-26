@@ -178,8 +178,9 @@ class Rebuffer : public sta::dbStaState
   sta::Delay upstreamDelay(const sta::Pin* input,
                            const sta::RiseFall* rf,
                            sta::LibertyCell* cell);
-  // Margined max slew of a driver output port; INF without a limit.
-  float drvrMaxSlew(const sta::LibertyPort* out_port);
+  // Margined max slew of a driver output port in `scene`; INF without a
+  // limit.
+  float drvrMaxSlew(const sta::LibertyPort* out_port, const sta::Scene* scene);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
   // Empty when `cell` has no equivalent arc, violates its slew limits, or

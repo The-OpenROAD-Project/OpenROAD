@@ -703,6 +703,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // 0 when there is no limit.
   float outputMaxCap(sta::Cell* cell);
   float outputMaxCap(sta::Cell* cell, const sta::Scene* scene);
+  // The same limit for the output `port` of a cell with several outputs.
+  float outputMaxCap(const sta::LibertyPort* port, const sta::Scene* scene);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
