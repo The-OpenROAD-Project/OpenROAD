@@ -489,7 +489,7 @@ set_opt_config
 | `-set_early_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of gates. |
 | `-set_early_buffer_sizing_cap_ratio` | Maintain the specified ratio between input pin capacitance and output pin load when performing initial sizing of buffers. |
 | `-disable_buffer_pruning` | Disable buffer pruning to improve hold fixing by not filtering out delay cells or slow buffers. |
-| `-rebuffer_size_driver` | In timing-driven global placement rebuffering, choose the driver cell together with the buffer tree: each candidate tree is evaluated with each cell the driver may be sized to, and the smallest total area that meets the slack target is used. This lets an upsized driver replace buffers. Candidate cells follow the other sizing options, e.g. `-keep_sizing_vt`. Fixed, sequential and multi-output drivers keep their cell. Off by default. |
+| `-rebuffer_size_driver` | In timing-driven global placement rebuffering, choose the driver cell together with the buffer tree: each candidate tree is evaluated with each cell the driver may be sized to, and the smallest total area that meets the slack target is used. This lets an upsized driver replace buffers. Candidate cells follow the other sizing options, e.g. `-keep_sizing_vt`. Fixed, sequential and multi-output drivers keep their cell. This can improve timing and area, but it can add significant runtime to timing-driven global placement, because each driver resize triggers an incremental timing update of the nets driving that driver's inputs. Off by default. |
 | `-sizing_area_limit` | Deprecated.   Use -limit_sizing_area instead. |
 | `-sizing_leakage_limit` | Deprecated.  Use -limit_sizing_leakage instead. |
 
