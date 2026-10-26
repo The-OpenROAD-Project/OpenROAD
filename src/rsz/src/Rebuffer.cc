@@ -348,7 +348,7 @@ float Rebuffer::portDriveResistance(const sta::LibertyPort* port,
 float Rebuffer::inputCapGrowth(const sta::Pin* prev_drvr_pin,
                                sta::LibertyCell* cell)
 {
-  // Memoized for the driver being planned: each candidate cell is evaluated
+  // Cached for the driver being planned: each candidate cell is evaluated
   // with up to three trees and both transitions.
   const std::pair<const sta::Pin*, const sta::LibertyCell*> key(prev_drvr_pin,
                                                                 cell);

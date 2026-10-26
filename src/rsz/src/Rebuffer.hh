@@ -483,10 +483,10 @@ class Rebuffer : public sta::dbStaState
       std::array<sta::ArcDelay, sta::RiseFall::index_count>,
       BufferDelayKeyHash>;
   BufferDelayCache buffer_delay_cache_;
-  // Memo for portDriveResistance(); Liberty data does not change.
+  // Cache for portDriveResistance(); Liberty data does not change.
   absl::flat_hash_map<std::tuple<const sta::LibertyPort*, int, int>, float>
       drive_res_cache_;
-  // Memo for inputCapGrowth() while one driver is planned.
+  // Cache for inputCapGrowth() while one driver is planned.
   absl::flat_hash_map<std::pair<const sta::Pin*, const sta::LibertyCell*>,
                       float>
       input_cap_growth_cache_;
