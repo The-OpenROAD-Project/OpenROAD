@@ -12,6 +12,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -302,6 +303,7 @@ void RamGen::makeWord(const int slices_per_word,
       slice_outputs.emplace_back(port_outputs.begin() + start_idx,
                                  port_outputs.begin() + start_idx + mask_size);
     }
+    // A column-muxed row shares read enables across words and mask slices.
     makeSlice(slice,
               mask_size,
               row_idx,
@@ -315,7 +317,7 @@ void RamGen::makeWord(const int slices_per_word,
               word_select,
               selects,
               shared_select_b_nets,
-              create_select_inv,
+              create_select_inv && (column_mux_ratio == 1 || slice == 0),
               slice_inputs,
               slice_outputs);
   }
@@ -917,6 +919,159 @@ void RamGen::findMasters()
   }
 }
 
+odb::dbSite* RamGen::checkStorageSite()
+{
+  auto storage = use_latch_ ? latch_cell_ : storage_cell_;
+  auto site = storage->getSite();
+  if (!site || site->getWidth() <= 0 || site->getHeight() <= 0
+      || storage->getWidth() == 0 || storage->getHeight() != site->getHeight()
+      || storage->getWidth() % site->getWidth() != 0) {
+    logger_->error(RAM,
+                   65,
+                   "Storage cell {} must have a placement site with positive "
+                   "dimensions and fit its single-height rows and site grid.",
+                   storage->getName());
+  }
+  return site;
+}
+
+void RamGen::findOutputBuffer(const std::string& name)
+{
+  output_buffer_cell_ = nullptr;
+  output_buffer_ports_.clear();
+  if (name == "none") {
+    return;
+  }
+
+  auto master = name.empty() ? buffer_cell_ : db_->findMaster(name.c_str());
+  if (!master) {
+    logger_->error(RAM, 60, "Output buffer cell {} can't be found", name);
+  }
+  auto sta_cell = network_->dbToSta(master);
+  auto liberty = sta_cell ? network_->libertyCell(sta_cell) : nullptr;
+  if (!liberty || !liberty->isBuffer()) {
+    logger_->error(RAM,
+                   61,
+                   "Output buffer cell {} must be a non-inverting buffer "
+                   "with Liberty data.",
+                   master->getName());
+  }
+
+  auto ports = buildPortMap(master);
+  int inputs = 0;
+  int outputs = 0;
+  bool extra_signal = false;
+  for (const auto& [role, pin] : ports) {
+    switch (role.type) {
+      case PortRoleType::DataIn:
+        ++inputs;
+        break;
+      case PortRoleType::DataOut:
+        ++outputs;
+        break;
+      case PortRoleType::Power:
+      case PortRoleType::Ground:
+        break;
+      default:
+        extra_signal = true;
+    }
+  }
+  if (inputs != 1 || outputs != 1 || extra_signal) {
+    logger_->error(RAM,
+                   62,
+                   "Output buffer cell {} must have exactly one signal input "
+                   "and one signal output.",
+                   master->getName());
+  }
+
+  checkOutputBufferPins(master, ports);
+
+  auto storage = use_latch_ ? latch_cell_ : storage_cell_;
+  auto site = storage->getSite();
+  if (master->getType() != odb::dbMasterType::CORE || !site
+      || master->getSite() != site || site->getWidth() <= 0
+      || master->getHeight() != site->getHeight()
+      || master->getHeight() != storage->getHeight() || master->getWidth() == 0
+      || master->getWidth() % site->getWidth() != 0) {
+    logger_->error(RAM,
+                   63,
+                   "Output buffer cell {} must be a CORE master on the "
+                   "storage cell's site and fit its single-height rows and "
+                   "site grid.",
+                   master->getName());
+  }
+  output_buffer_cell_ = master;
+  output_buffer_ports_ = std::move(ports);
+}
+
+void RamGen::checkOutputBufferPins(dbMaster* master,
+                                   const std::map<PortRole, std::string>& ports)
+{
+  // Liberty and LEF can disagree even when the Liberty function is a buffer.
+  std::set<std::string> signal_pins;
+  bool valid = true;
+  for (const auto& [role, name] : ports) {
+    auto term = master->findMTerm(name.c_str());
+    if (!term) {
+      valid = false;
+      continue;
+    }
+    switch (role.type) {
+      case PortRoleType::DataIn:
+      case PortRoleType::DataOut: {
+        const auto direction = role.type == PortRoleType::DataIn
+                                   ? odb::dbIoType::INPUT
+                                   : odb::dbIoType::OUTPUT;
+        valid &= term->getSigType() == odb::dbSigType::SIGNAL
+                 && term->getIoType() == direction;
+        signal_pins.insert(name);
+        break;
+      }
+      case PortRoleType::Power:
+        valid &= term->getSigType() == odb::dbSigType::POWER;
+        break;
+      case PortRoleType::Ground:
+        valid &= term->getSigType() == odb::dbSigType::GROUND;
+        break;
+      default:
+        valid = false;
+    }
+  }
+  for (auto term : master->getMTerms()) {
+    if (term->getSigType() != odb::dbSigType::POWER
+        && term->getSigType() != odb::dbSigType::GROUND) {
+      valid &= signal_pins.contains(term->getName());
+    }
+  }
+  if (!valid) {
+    logger_->error(RAM,
+                   64,
+                   "Output buffer cell {} has physical terminals that do "
+                   "not match its Liberty signal and supply roles.",
+                   master->getName());
+  }
+}
+
+void RamGen::makeOutputBuffers(
+    Cell* cell,
+    const int bit,
+    const std::vector<std::vector<dbNet*>>& read_nets)
+{
+  if (!output_buffer_cell_) {
+    return;
+  }
+  for (size_t port = 0; port < q_outputs_.size(); ++port) {
+    makeInst(cell,
+             "output_buffer",
+             fmt::format("p{}_b{}", port, bit),
+             output_buffer_cell_,
+             {{output_buffer_ports_.at({PortRoleType::DataIn, 0}),
+               read_nets[port][bit]},
+              {output_buffer_ports_.at({PortRoleType::DataOut, 0}),
+               q_outputs_[port][bit]->getNet()}});
+  }
+}
+
 void RamGen::ramPdngen(const char* power_net_name,
                        const char* ground_net_name,
                        const char* route_name,
@@ -1155,7 +1310,8 @@ void RamGen::generate(const int mask_size,
                       dbMaster* tristate_cell,
                       dbMaster* inv_cell,
                       dbMaster* tapcell,
-                      int max_tap_dist)
+                      int max_tap_dist,
+                      const std::string& output_buffer_cell)
 {
   if (num_words / column_mux_ratio == 1) {
     logger_->error(RAM, 42, "1-row RAMs are not supported.");
@@ -1236,6 +1392,8 @@ void RamGen::generate(const int mask_size,
   }
 
   findMasters();
+  auto row_site = checkStorageSite();
+  findOutputBuffer(output_buffer_cell);
 
   auto chip = db_->getChip();
   if (!chip) {
@@ -1388,10 +1546,21 @@ void RamGen::generate(const int mask_size,
     }
   }
 
-  // Intermediate nets between tristate outputs and Q BTerms
-  // When column_mux_ratio = 1: tristate drives Q directly, so reuse Q BTerm
-  // nets When column_mux_ratio > 1: tristate drives intermediate net, AOI mux
-  // selects correct net based on lower address bits (word_select net)
+  // Isolate the final read stage from the external load unless bypassed.
+  vector<vector<dbNet*>> read_nets(r_total, vector<dbNet*>(word_size));
+  for (int port = 0; port < r_total; ++port) {
+    for (int bit = 0; bit < word_size; ++bit) {
+      read_nets[port][bit]
+          = output_buffer_cell_
+                ? makeNet("read", fmt::format("p{}_b{}", port, bit))
+                : q_outputs_[port][bit]->getNet();
+    }
+  }
+
+  // Intermediate nets between tristate outputs and the final read stage.
+  // With column_mux_ratio = 1, tristates drive read_nets directly.
+  // With column_mux_ratio > 1, tristates drive intermediate nets and the AOI
+  // mux selects correct net based on lower address bits (word_select net)
   // word_q_nets[word_idx][bit] = intermed. net for that word and bit pair
   vector<vector<vector<dbNet*>>> word_q_nets(
       column_mux_ratio,
@@ -1399,7 +1568,7 @@ void RamGen::generate(const int mask_size,
   if (column_mux_ratio == 1) {
     for (int port = 0; port < r_total; ++port) {
       for (int bit = 0; bit < word_size; ++bit) {
-        word_q_nets[0][port][bit] = q_outputs_[port][bit]->getNet();
+        word_q_nets[0][port][bit] = read_nets[port][bit];
       }
     }
 
@@ -1536,7 +1705,7 @@ void RamGen::generate(const int mask_size,
                      inv_cell_,
                      {{inv_ports_[{PortRoleType::DataIn, 0}], aoi_out},
                       {inv_ports_[{PortRoleType::DataOut, 0}],
-                       q_outputs_[port][global_bit]->getNet()}});
+                       read_nets[port][global_bit]}});
 
           } else if (column_mux_ratio == 4) {
             // mux placement:
@@ -1581,7 +1750,7 @@ void RamGen::generate(const int mask_size,
                       {aoi22_in_a2_, s1_out_0},
                       {aoi22_in_b1_, addr_inputs_[addr_port][1]->getNet()},
                       {aoi22_in_b2_, s1_out_1},
-                      {aoi22_out_, q_outputs_[port][global_bit]->getNet()}});
+                      {aoi22_out_, read_nets[port][global_bit]}});
           }
         }
         if (column_mux_ratio == 2) {
@@ -1655,6 +1824,8 @@ void RamGen::generate(const int mask_size,
                {{buffer_ports_[{PortRoleType::DataIn, 0}],
                  data_inputs_[bit_idx]->getNet()},
                 {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[bit_idx]}});
+      // Keep the final read drivers in the I/O row beside the input buffer.
+      makeOutputBuffers(buffer_grid_cell.get(), bit_idx, read_nets);
       int buf_col = slice * (mask_size * column_mux_ratio + column_mux_ratio)
                     + bit * column_mux_ratio;
       ram_grid_.addCell(std::move(buffer_grid_cell), buf_col);
@@ -1869,8 +2040,7 @@ void RamGen::generate(const int mask_size,
 
   ram_grid_.gridInit();
 
-  auto db_libs = db_->getLibs().begin();
-  auto db_sites = *(db_libs->getSites().begin());
+  auto db_sites = row_site;
   auto sites_width = db_sites->getWidth();
 
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
