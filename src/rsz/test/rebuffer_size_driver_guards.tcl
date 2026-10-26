@@ -1,5 +1,7 @@
 # fully_rebuffer with set_opt_config -rebuffer_size_driver leaves fixed and
-# sequential drivers at their current cell.
+# sequential drivers at their current cell.  Every gcd flop drives Q and QN,
+# so the sequential and multi-output guards keep the flops together;
+# rebuffer_size_driver_checks and _tiebreak isolate each guard.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
