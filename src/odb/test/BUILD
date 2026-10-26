@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -213,6 +214,7 @@ COMPULSORY_TESTS = [
     "rounding",
     "row_no_step",
     "row_settings",
+    "row_site_overlap",
     "set_halo",
     "sky130hd_multi_patterned",
     "smash_vias",
@@ -486,5 +488,29 @@ test_suite(
         "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
+    ],
+)
+
+# Standalone odbtcl shell (//src/odb/src/swig:odbtcl). Runs the scripts from
+# the old test/regression-tcl.sh that still pass; the others use an old
+# read_def signature or data that is no longer in the tree.
+ODBTCL_SCRIPTS = [
+    "tcl/01-import_package_test.tcl",
+    "tcl/02-read_lef_test.tcl",
+    "tcl/03-dump_via_rules_test.tcl",
+    "tcl/04-dump_vias_test.tcl",
+    "tcl/19-polygon_test.tcl",
+]
+
+sh_test(
+    name = "odbtcl_test",
+    size = "small",
+    srcs = ["odbtcl_test.sh"],
+    args = ["$(rootpath //src/odb/src/swig:odbtcl)"] +
+           ["$(rootpath %s)" % script for script in ODBTCL_SCRIPTS],
+    data = ODBTCL_SCRIPTS + [
+        "data/gscl45nm.lef",
+        "tcl/test_helpers.tcl",
+        "//src/odb/src/swig:odbtcl",
     ],
 )

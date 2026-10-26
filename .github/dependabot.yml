@@ -58,11 +58,11 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
-    # Skip the Ubuntu 24.10 and 25.x interim releases. Without 24.10 here,
-    # Dependabot falls back to it while 26.04 is in cooldown.
+    # Skip the Ubuntu interim releases (24.10, 25.x, 26.10, 27.x). Without
+    # 24.10 here, Dependabot falls back to it while 26.04 is in cooldown.
     ignore:
       - dependency-name: "ubuntu"
-        versions: [">= 24.10, < 26"]
+        versions: [">= 24.10, < 26", ">= 26.10, < 28"]
     groups:
       images:
         patterns:
