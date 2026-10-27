@@ -297,16 +297,6 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
 {
   Node* source = findBondEndpoint(rseg->getSourceCapNode());
   Node* target = findBondEndpoint(rseg->getTargetCapNode());
-  const double resistance
-      = interchip_resistance_.value_or(rseg->getResistance());
-  if (!std::isfinite(resistance) || resistance <= 0.0) {
-    logger_->error(utl::PSM,
-                   96,
-                   "Inter-chip bond on net {} must have positive and finite "
-                   "resistance: {}.",
-                   chip_net_->getName(),
-                   resistance);
-  }
   odb::dbChipBumpInst* source_bump
       = rseg->getSourceCapNode()->getChipBumpInst();
   odb::dbChipBumpInst* target_bump
@@ -351,8 +341,23 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
                    target_net->getName(),
                    target_net->getSigType().getString());
   }
-  interdie_connections_.push_back(
-      std::make_unique<FixedResistanceConnection>(source, target, resistance));
+  if (connectivity_only_) {
+    interdie_connections_.push_back(
+        std::make_unique<TermConnection>(source, target));
+  } else {
+    const double resistance
+        = interchip_resistance_.value_or(rseg->getResistance());
+    if (!std::isfinite(resistance) || resistance <= 0.0) {
+      logger_->error(utl::PSM,
+                     96,
+                     "Inter-chip bond on net {} must have positive and finite "
+                     "resistance: {}.",
+                     chip_net_->getName(),
+                     resistance);
+    }
+    interdie_connections_.push_back(std::make_unique<FixedResistanceConnection>(
+        source, target, resistance));
+  }
 }
 
 // OpenRCX integration is deferred until its extractor supports multiple bump

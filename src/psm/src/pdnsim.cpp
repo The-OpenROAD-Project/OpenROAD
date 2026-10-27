@@ -303,7 +303,6 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
 
   // Reuse the existing 2D connectivity checks inside each chiplet.
   bool local_ok = true;
-  const double assembly_dbus = db_->getDbuPerMicron();
   for (const auto& [chiplet, net] : network.getChipletNets()) {
     auto local_network
         = std::make_unique<IRNetwork>(net, logger_, floorplanning);
@@ -319,7 +318,8 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
              << " (coordinates relative to the assembly origin in microns)\n";
     }
     try {
-      if (!local.check(require_bterm, !floorplanning)) {
+      if (!local.check(
+              require_bterm, !floorplanning, chiplet->getTransform())) {
         local_ok = false;
       }
     } catch (const std::runtime_error& error) {
@@ -329,8 +329,7 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
       }
     }
     if (report.is_open()) {
-      local.writeAssemblyErrorFile(
-          report, chiplet->getTransform(), assembly_dbus);
+      local.writeErrorFile(report);
     }
   }
   const auto disconnected = network.getDisconnectedNodes();

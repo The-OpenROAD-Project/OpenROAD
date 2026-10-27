@@ -22,6 +22,7 @@
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
@@ -91,7 +92,9 @@ class IRSolver
 
   odb::dbNet* getNet() const { return net_; };
 
-  bool check(bool check_bterms, bool check_placed);
+  bool check(bool check_bterms,
+             bool check_placed,
+             const odb::dbTransform& marker_transform = {});
 
   void solve(sta::Scene* corner,
              GeneratedSourceType source_type,
@@ -109,9 +112,7 @@ class IRSolver
   void enableGui(bool enable);
 
   void writeErrorFile(const std::string& error_file) const;
-  void writeAssemblyErrorFile(std::ofstream& report,
-                              const odb::dbTransform& transform,
-                              double dbus) const;
+  void writeErrorFile(std::ofstream& report) const;
   void writeInstanceVoltageFile(const std::string& voltage_file,
                                 sta::Scene* corner) const;
   void writeEMFile(const std::string& em_file, sta::Scene* corner) const;
@@ -217,9 +218,9 @@ class IRSolver
                                             sta::Scene* corner,
                                             SourceNodes& sources) const;
 
-  void reportUnconnectedNodes() const;
+  void reportUnconnectedNodes(const odb::dbTransform& marker_transform) const;
   void reportMissingBTerm() const;
-  void reportShortedNodes() const;
+  void reportShortedNodes(const odb::dbTransform& marker_transform) const;
 
   std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)

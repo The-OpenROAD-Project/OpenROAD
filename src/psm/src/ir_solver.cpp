@@ -254,7 +254,9 @@ PDNSim::IRDropByPoint IRSolver::getIRDrop(odb::dbTechLayer* layer,
   return ir_drop;
 }
 
-bool IRSolver::check(bool check_bterms, bool check_placed)
+bool IRSolver::check(bool check_bterms,
+                     bool check_placed,
+                     const odb::dbTransform& marker_transform)
 {
   const utl::DebugScopedTimer timer(logger_, utl::PSM, "timer", 1, "Check: {}");
   if (connected_.has_value()) {
@@ -282,11 +284,11 @@ bool IRSolver::check(bool check_bterms, bool check_placed)
       connected_ = false;
     }
     if (!checkOpen()) {
-      reportUnconnectedNodes();
+      reportUnconnectedNodes(marker_transform);
       connected_ = false;
     }
     if (!checkShort(check_placed)) {
-      reportShortedNodes();
+      reportShortedNodes(marker_transform);
       connected_ = false;
     }
   }
@@ -406,7 +408,8 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   return results;
 }
 
-void IRSolver::reportUnconnectedNodes() const
+void IRSolver::reportUnconnectedNodes(
+    const odb::dbTransform& marker_transform) const
 {
   // report unconnected nodes
   const double dbu = getBlock()->getDbUnitsPerMicron();
@@ -442,7 +445,9 @@ void IRSolver::reportUnconnectedNodes() const
         }
         marker->addSource(net_);
         marker->setTechLayer(node->getLayer());
-        marker->addShape(node->getPoint());
+        odb::Point point = node->getPoint();
+        marker_transform.apply(point);
+        marker->addShape(point);
       }
     }
     odb::PtrMap<odb::dbTechLayer, IRNetwork::ShapeTree> shapes;
@@ -467,7 +472,7 @@ void IRSolver::reportUnconnectedNodes() const
         }
         reported_shapes.insert(shape);
 
-        const odb::Rect rect = shape->getShape();
+        odb::Rect rect = shape->getShape();
         logger_->warn(utl::PSM,
                       38,
                       "Unconnected shape on net {} at ({:4.3f}um, "
@@ -485,6 +490,7 @@ void IRSolver::reportUnconnectedNodes() const
         }
         marker->addSource(net_);
         marker->setTechLayer(shape->getLayer());
+        marker_transform.apply(rect);
         marker->addShape(rect);
       }
     }
@@ -512,7 +518,9 @@ void IRSolver::reportUnconnectedNodes() const
       }
 
       marker->addSource(inst);
-      marker->addShape(inst->getBBox()->getBox());
+      odb::Rect bbox = inst->getBBox()->getBox();
+      marker_transform.apply(bbox);
+      marker->addShape(bbox);
     }
   }
 }
@@ -628,7 +636,8 @@ std::vector<odb::Polygon> IRSolver::determineShortShapes(
   return short_shapes;
 }
 
-void IRSolver::reportShortedNodes() const
+void IRSolver::reportShortedNodes(
+    const odb::dbTransform& marker_transform) const
 {
   if (shorts_.empty()) {
     return;
@@ -646,7 +655,7 @@ void IRSolver::reportShortedNodes() const
 
   for (const auto& shorted : shorts_) {
     shorted->report(net_, logger_, dbu);
-    shorted->commit(net_, category);
+    shorted->commit(net_, category, marker_transform);
   }
 }
 
@@ -2821,71 +2830,7 @@ void IRSolver::writeErrorFile(const std::string& error_file) const
   group->writeTR(error_file);
 }
 
-namespace {
-
-// writeTR() reports marker coordinates relative to the chiplet origin.
-// Apply the chiplet placement transform so this report uses coordinates
-// relative to the 3D assembly origin.
-void writeMarkerSources(std::ofstream& report, odb::dbMarker* marker)
-{
-  report << "\tsrcs:";
-  for (odb::dbObject* source : marker->getSources()) {
-    switch (source->getObjectType()) {
-      case odb::dbNetObj:
-        report << " net:" << static_cast<odb::dbNet*>(source)->getName();
-        break;
-      case odb::dbInstObj:
-        report << " inst:" << static_cast<odb::dbInst*>(source)->getName();
-        break;
-      case odb::dbITermObj:
-        report << " iterm:" << static_cast<odb::dbITerm*>(source)->getName();
-        break;
-      case odb::dbBTermObj:
-        report << " bterm:" << static_cast<odb::dbBTerm*>(source)->getName();
-        break;
-      case odb::dbObstructionObj:
-        report << " obstruction: ";
-        break;
-      default:
-        report << " " << source->getTypeName();
-        break;
-    }
-  }
-  report << '\n';
-}
-
-void writeMarker(std::ofstream& report,
-                 odb::dbMarker* marker,
-                 const odb::dbTransform& transform,
-                 double dbus)
-{
-  report << "violation type: " << marker->getCategory()->getName() << '\n';
-  writeMarkerSources(report, marker);
-  if (!marker->getComment().empty()) {
-    report << "\tcomment: " << marker->getComment() << '\n';
-  }
-
-  odb::Rect bbox = marker->getBBox();
-  transform.apply(bbox);
-  report << fmt::format(
-      "\tbbox = ({:.4f}, {:.4f}) - ({:.4f}, {:.4f}) on Layer ",
-      bbox.xMin() / dbus,
-      bbox.yMin() / dbus,
-      bbox.xMax() / dbus,
-      bbox.yMax() / dbus);
-  if (marker->getTechLayer() != nullptr) {
-    report << marker->getTechLayer()->getName();
-  } else {
-    report << '-';
-  }
-  report << '\n';
-}
-
-}  // namespace
-
-void IRSolver::writeAssemblyErrorFile(std::ofstream& report,
-                                      const odb::dbTransform& transform,
-                                      double dbus) const
+void IRSolver::writeErrorFile(std::ofstream& report) const
 {
   odb::dbMarkerCategory* group
       = getBlock()->findMarkerCategory(kMarkerCategory);
@@ -2898,9 +2843,7 @@ void IRSolver::writeAssemblyErrorFile(std::ofstream& report,
     return;
   }
 
-  for (odb::dbMarker* marker : group->getAllMarkers()) {
-    writeMarker(report, marker, transform, dbus);
-  }
+  group->writeTR(report);
 }
 
 void IRSolver::writeInstanceVoltageFile(const std::string& voltage_file,
