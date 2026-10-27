@@ -974,6 +974,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool replacementFitsInputCapBudgets(
       const std::vector<InputCapBudget>& budgets,
       const sta::LibertyCell* replacement) const;
+
+  // === Buffer removal timing checks =======================================
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,
@@ -989,9 +991,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Whether removeBuffer() keeps the output net of buffer and moves the pins
   // of its input net onto it, instead of the other way round.
   bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
+  // Check removal legality and optionally return the measured delay terms.
   bool estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
                                 float* upstream_delay_delta_out = nullptr,
                                 float* buffer_delay_saved_out = nullptr);
+
+  // === Buffered-net construction ==========================================
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,

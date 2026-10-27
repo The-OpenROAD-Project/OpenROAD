@@ -8693,6 +8693,7 @@ bool Resizer::estimateInputSlewImpact(
   return true;
 }
 
+// Check the buffer removal's electrical limits and affected setup slack.
 bool Resizer::estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
                                        float* upstream_delay_delta_out,
                                        float* buffer_delay_saved_out)
@@ -8729,6 +8730,7 @@ bool Resizer::estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
     return false;
   }
 
+  // Measure both delay terms while checking the proposed removal.
   const sta::RiseFall* upstream_rf = params.upstream_path->transition(sta_);
   const float upstream_delay_delta
       = new_delay[upstream_rf->index()] - old_delay[upstream_rf->index()];
@@ -8847,6 +8849,7 @@ bool Resizer::estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
              "buffer {} can be removed because direct fanouts and side fanouts "
              "can absorb delay/slew degradation",
              db_network_->name(params.buffer_instance));
+  // Reuse these terms for gain scoring only after the slack guard succeeds.
   if (upstream_delay_delta_out != nullptr) {
     *upstream_delay_delta_out = upstream_delay_delta;
   }

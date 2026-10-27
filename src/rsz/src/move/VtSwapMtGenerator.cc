@@ -31,8 +31,9 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  // The arc holds the cell of its scene.  The Resizer caches, warmed before
-  // the workers start, key on the link cell.
+  // Reuse the VT alternatives cached for this target's link cell.
+  // The timing arc holds a scene cell, while the cache key uses the link cell
+  // captured before workers start.
   sta::LibertyCell* current_cell
       = resizer_.network()->libertyCell(target.inst(resizer_));
   const std::vector<sta::LibertyCell*>& candidate_cells
@@ -92,6 +93,7 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
     return false;
   }
 
+  // Populate the candidate cache once for each current link cell.
   std::map<sta::LibertyCell*, CandidateCells>::iterator cached
       = candidate_cells_cache_.find(current_cell);
   if (cached == candidate_cells_cache_.end()) {
@@ -106,10 +108,10 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
         entry.cells.push_back(cell);
       }
     }
-    cached
-        = candidate_cells_cache_.emplace(current_cell, std::move(entry)).first;
+    cached = candidate_cells_cache_.emplace(current_cell, std::move(entry))
+                 .first;  // map iterator to the cached entry.
   }
-  return cached->second.applicable;
+  return cached->second.applicable;  // CandidateCells applicability flag.
 }
 
 }  // namespace rsz

@@ -40,6 +40,7 @@ class SizeDownFanoutMtGenerator : public MoveGenerator
   // Leaves target.size_down_fanout_loads empty when no load has a smaller cell.
   void prepareInputs(Target& target) const override;
 
+  // === Ranked-cell cache ===================================================
  private:
   // Cache ranked replacement cells for each load port and analysis point.
   // Key: the current load's input Liberty port and Liberty analysis-point

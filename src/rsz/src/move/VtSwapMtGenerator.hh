@@ -52,6 +52,8 @@ class VtSwapMtGenerator : public MoveGenerator
     std::vector<sta::LibertyCell*> cells;
   };
 
+  // Reuse VT replacement cells across targets with the same current cell.
+  // Key: current Liberty cell. Value: applicability and alternative cells.
   // Filled by isApplicable() on the main thread before generate() workers.
   mutable std::map<sta::LibertyCell*, CandidateCells> candidate_cells_cache_;
 };

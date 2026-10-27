@@ -303,6 +303,7 @@ bool checkMaxSlewViolation(const SizeDownFanoutContext& ctx,
   return false;
 }
 
+// Reuse the scene-specific ranking of replacement cells for this load port.
 const sta::LibertyCellSeq& rankSwappableCells(
     const SizeDownFanoutContext& ctx,
     const SizeDownFanoutMtLoad& load,
@@ -311,12 +312,13 @@ const sta::LibertyCellSeq& rankSwappableCells(
   const std::pair<const sta::LibertyPort*, int> key{load.load_port, ctx.lib_ap};
   const std::pair<RankedCellsCache::iterator, bool> cached
       = ranked_cells_cache.try_emplace(key);
-  if (!cached.second) {           // new cache entry was inserted.
-    return cached.first->second;  // the entry's ranked cell sequence.
+  if (!cached.second) {           // bool insertion flag: false means cache hit.
+    return cached.first->second;  // iterator's LibertyCellSeq value.
   }
 
   const std::string& load_port_name = load.load_port->name();
-  sta::LibertyCellSeq& swappable_cells = cached.first->second;
+  sta::LibertyCellSeq& swappable_cells
+      = cached.first->second;  // iterator's LibertyCellSeq value.
   swappable_cells = load.current_cell->isBuffer()
                         ? ctx.resizer.getFastBufferSizes(load.current_cell)
                         : ctx.resizer.getSwappableCells(load.current_cell);
@@ -395,6 +397,7 @@ std::vector<SizeDownOutput> measureOutputs(const SizeDownFanoutContext& ctx,
     output.delay = ctx.resizer.gateDelay(
         output_port, output.cap, ctx.scene, ctx.min_max);
 
+    // Query STA slew only when this debug message is enabled.
     debugPrint(ctx.resizer.logger(),
                RSZ,
                "size_down_fanout_move",

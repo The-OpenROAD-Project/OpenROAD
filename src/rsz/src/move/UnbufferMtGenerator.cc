@@ -65,7 +65,7 @@ struct UnbufferSelectionContext
   // the slack guard and the gain estimate.
   const sta::Scene* slack_scene{nullptr};
   const sta::MinMax* min_max{nullptr};
-  // Electrical terms measured by the successful slack guard.
+  // Reuse the successful slack guard's delay terms for gain scoring.
   float upstream_delay_delta{0.0f};
   float buffer_delay_saved{0.0f};
 };
@@ -198,6 +198,7 @@ bool passesCapGuard(const UnbufferSelectionContext& ctx,
   return false;
 }
 
+// Check removal legality and retain the delay terms for gain scoring.
 bool passesSlackGuard(UnbufferSelectionContext& ctx)
 {
   const UnbufferSlackParams params{

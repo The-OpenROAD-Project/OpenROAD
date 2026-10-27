@@ -225,6 +225,7 @@ bool passesCapGuard(UnbufferSelectionContext& ctx)
   return false;
 }
 
+// Apply the same unbuffer-specific setup check as the parallel generator.
 bool passesSlackGuard(const UnbufferSelectionContext& ctx)
 {
   const UnbufferSlackParams params{

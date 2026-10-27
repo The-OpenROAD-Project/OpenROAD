@@ -497,8 +497,8 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
 
 // === Estimation inputs and results =========================================
 
-// Inputs already resolved by an Unbuffer move for the setup slack check in
-// one analysis scene.  Both Unbuffer generators provide every member.
+// Carry an Unbuffer move's inputs for the setup slack check in one scene.
+// Both Unbuffer generators provide every member.
 struct UnbufferSlackParams
 {
   sta::Pin* buffer_output_pin;
