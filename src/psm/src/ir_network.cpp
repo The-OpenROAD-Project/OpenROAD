@@ -210,8 +210,10 @@ IRNetwork::ChipletNetwork* IRNetwork::findChipletNetwork(
     odb::dbChipBumpInst* bump_inst)
 {
   if (bump_inst == nullptr) {
-    logger_->error(
-        utl::PSM, 97, "dbChipCapNode on {} has no bump.", chip_net_->getName());
+    logger_->error(utl::PSM,
+                   97,
+                   "Inter-chip bond on net {} has no bump.",
+                   chip_net_->getName());
   }
 
   odb::dbChipInst* chip_inst = bump_inst->getChipRegionInst()->getChipInst();
@@ -223,8 +225,9 @@ IRNetwork::ChipletNetwork* IRNetwork::findChipletNetwork(
   if (network == chiplet_networks_.end()) {
     logger_->error(utl::PSM,
                    98,
-                   "Cannot find the chiplet PDN for an endpoint on {}.",
-                   chip_net_->getName());
+                   "Cannot find the power grid for net {} on chiplet {}.",
+                   net->getName(),
+                   chip_inst->getName());
   }
   return &*network;
 }
@@ -234,7 +237,7 @@ Node* IRNetwork::findBondEndpoint(odb::dbChipCapNode* cap_node)
   if (cap_node == nullptr) {
     logger_->error(utl::PSM,
                    170,
-                   "dbChipRSeg on {} has no cap node.",
+                   "Inter-chip bond on net {} is missing one of its bumps.",
                    chip_net_->getName());
   }
   return findBondEndpoint(cap_node->getChipBumpInst());
@@ -260,7 +263,7 @@ Node* IRNetwork::findBondEndpoint(odb::dbChipBumpInst* bump_inst)
   if (node == nullptr) {
     logger_->error(utl::PSM,
                    100,
-                   "Cannot map bump {} on chiplet {} into its PDN.",
+                   "Cannot map bump {} on chiplet {} into its power grid.",
                    bump->getName(),
                    chiplet->chip_inst->getName());
   }
@@ -274,7 +277,7 @@ void IRNetwork::addChipletNetwork(odb::dbChipBumpInst* bump_inst,
   if (net == nullptr) {
     logger_->error(utl::PSM,
                    95,
-                   "A bump on chiplet {} has no internal dbNet.",
+                   "A bump on chiplet {} is not connected to a net.",
                    chip_inst->getName());
   }
 
@@ -299,8 +302,10 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
   if (!std::isfinite(resistance) || resistance <= 0.0) {
     logger_->error(utl::PSM,
                    96,
-                   "dbChipRSeg on {} must have positive resistance.",
-                   chip_net_->getName());
+                   "Inter-chip bond on net {} must have positive and finite "
+                   "resistance: {}.",
+                   chip_net_->getName(),
+                   resistance);
   }
   odb::dbChipBumpInst* source_bump
       = rseg->getSourceCapNode()->getChipBumpInst();
@@ -311,10 +316,25 @@ void IRNetwork::addInterDieConnection(odb::dbChipRSeg* rseg)
   odb::dbChipInst* target_chip
       = target_bump->getChipRegionInst()->getChipInst();
   if (source_chip == target_chip) {
-    logger_->error(utl::PSM,
-                   106,
-                   "Inter-chip bond on {} does not cross between chiplets.",
-                   chip_net_->getName());
+    odb::Point source_position
+        = source_bump->getChipBump()->getInst()->getBBox()->getBox().center();
+    odb::Point target_position
+        = target_bump->getChipBump()->getInst()->getBBox()->getBox().center();
+    source_chip->getTransform().apply(source_position);
+    target_chip->getTransform().apply(target_position);
+    const double dbus = chip_net_->getDb()->getDbuPerMicron();
+    logger_->error(
+        utl::PSM,
+        106,
+        "Bumps at ({:.4f}, {:.4f}) and ({:.4f}, {:.4f}) um on chiplet {} "
+        "are bonded to each other on net {}. An inter-chip bond must connect "
+        "different chiplets.",
+        source_position.x() / dbus,
+        source_position.y() / dbus,
+        target_position.x() / dbus,
+        target_position.y() / dbus,
+        source_chip->getName(),
+        chip_net_->getName());
   }
 
   odb::dbNet* source_net = source_bump->getChipBump()->getNet();
@@ -401,11 +421,12 @@ void IRNetwork::constructAssembly()
     std::vector<odb::dbChipInst*> path;
     odb::dbChipBumpInst* bump_inst = chip_net_->getBumpInst(index, path);
     if (bump_inst == nullptr || path.size() != 1) {
-      logger_->error(utl::PSM,
-                     94,
-                     "dbChipNet {} requires a flat assembly with one chip "
-                     "instance per bump path.",
-                     chip_net_->getName());
+      logger_->error(
+          utl::PSM,
+          94,
+          "Net {} requires a flat assembly where each bump maps to one "
+          "chiplet.",
+          chip_net_->getName());
     }
     addChipletNetwork(bump_inst, path.back());
   }
@@ -1803,7 +1824,7 @@ void IRNetwork::reportStats() const
                       chiplet.net->getName());
       chiplet.network->reportStats();
     }
-    logger_->report("Inter-chip connections: {}", interdie_connections_.size());
+    logger_->report("Inter-chip bonds: {}", interdie_connections_.size());
     return;
   }
 

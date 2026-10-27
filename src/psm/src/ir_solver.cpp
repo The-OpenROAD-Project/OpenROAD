@@ -1191,6 +1191,15 @@ Connection::ResistanceMap IRSolver::getResistanceMap(sta::Scene* corner) const
         = getLayerResistanceMap(net, corner, estimate_parasitics_, logger_);
     resistance.insert(local.begin(), local.end());
   }
+  // Read the resolved value from each connection so this also works when the
+  // resistance comes from the PDK.
+  if (network_->isAssembly()
+      && logger_->debugCheck(utl::PSM, "resistance", 1)) {
+    logger_->report("Inter-chip resistance:");
+    for (const auto& connection : network_->getInterDieConnections()) {
+      logger_->report("  {} Ohm", connection->getResistance(resistance));
+    }
+  }
   return resistance;
 }
 
@@ -1817,10 +1826,12 @@ void IRSolver::addAssemblyLoads(odb::dbNet* net,
                                 Voltage power_voltage)
 {
   if (!std::isfinite(power_voltage) || power_voltage <= 0.0) {
-    logger_->error(utl::PSM,
-                   147,
-                   "OpenSTA loads on {} require a positive supply voltage.",
-                   net->getName());
+    logger_->error(
+        utl::PSM,
+        147,
+        "Loads on {} require a positive and finite supply voltage: {}.",
+        net->getName(),
+        power_voltage);
   }
   const double sign = net->getSigType() == odb::dbSigType::GROUND ? 1.0 : -1.0;
   const auto inst_nodes = network_->getInstanceNodeMapping(net);

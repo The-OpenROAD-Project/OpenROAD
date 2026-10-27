@@ -57,8 +57,10 @@ PDNSim::~PDNSim() = default;
 void PDNSim::setInterchipResistance(sta::Scene* scene, double resistance)
 {
   if (!std::isfinite(resistance) || resistance <= 0.0) {
-    logger_->error(
-        utl::PSM, 171, "Inter-chip resistance must be positive and finite.");
+    logger_->error(utl::PSM,
+                   171,
+                   "Inter-chip resistance must be positive and finite: {}.",
+                   resistance);
   }
   interchip_resistances_[scene] = resistance;
   clearSolvers();
@@ -133,9 +135,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
 
   if (!sta_->getDbNetwork()->has3DicChip()
       || sta_->getDbNetwork()->topChip() != db_->getChip()) {
-    logger_->error(utl::PSM,
-                   151,
-                   "OpenSTA has no timing network for the loaded assembly.");
+    logger_->error(utl::PSM, 151, "The loaded assembly has no timing network.");
   }
 
   auto* chip_net = findChipNet(net);
@@ -177,8 +177,8 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
                utl::PSM,
                "stats",
                1,
-               "Built power grid {}: {} chiplet PDNs, {} nodes, and {} "
-               "connections ({} inter-die).",
+               "Built power grid {}: {} chiplet power grids, {} nodes, and {} "
+               "connections ({} inter-chip bonds).",
                chip_net->getName(),
                network.getChipletNetworkCount(),
                network.getNodeCount(),
@@ -213,7 +213,7 @@ odb::dbChipNet* PDNSim::findChipNet(const std::string& chip_net_name) const
 {
   odb::dbChip* top_chip = db_->getChip();
   if (top_chip == nullptr) {
-    logger_->error(utl::PSM, 101, "No top-level dbChip is loaded.");
+    logger_->error(utl::PSM, 101, "No chip is loaded.");
   }
 
   odb::dbChipNet* chip_net = nullptr;
@@ -224,7 +224,10 @@ odb::dbChipNet* PDNSim::findChipNet(const std::string& chip_net_name) const
     }
   }
   if (chip_net == nullptr) {
-    logger_->error(utl::PSM, 102, "Cannot find dbChipNet {}.", chip_net_name);
+    logger_->error(utl::PSM,
+                   102,
+                   "The loaded assembly does not contain net {}.",
+                   chip_net_name);
   }
   return chip_net;
 }
@@ -286,13 +289,13 @@ void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
       || network.getInterDieConnectionCount() == 0) {
     if (report.is_open()) {
       report << "Net " << name << ": " << network.getChipletNetworkCount()
-             << " chiplet PDNs and " << network.getInterDieConnectionCount()
-             << " inter-die connections.\n";
+             << " chiplet power grids and "
+             << network.getInterDieConnectionCount() << " inter-chip bonds.\n";
     }
     logger_->error(
         utl::PSM,
         103,
-        "Power grid {} has {} chiplet PDNs and {} inter-die connections.",
+        "Power grid {} has {} chiplet power grids and {} inter-chip bonds.",
         name,
         network.getChipletNetworkCount(),
         network.getInterDieConnectionCount());
