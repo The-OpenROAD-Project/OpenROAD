@@ -59,6 +59,9 @@ constexpr int kReliefRounds = 5;
 constexpr int kReliefMargin = 5;
 // Float slack of the relief's overflow comparisons.
 constexpr double kReliefTolerance = 1e-9;
+// Longest route a relief move may leave, relative to the net's route before
+// the relief.
+constexpr double kMaxReliefStretch = 1.25;
 
 namespace {
 
@@ -858,8 +861,6 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   // A reroute that adds overflow beyond float noise is rolled back and
   // retried next pass.
   constexpr double kAcceptTolerance = 1e-9;
-  // Longest route a relief move may leave, relative to the net's old one.
-  constexpr double kMaxReliefStretch = 1.25;
   int rejected = 0;
   double overflow_change = 0.0;
   // Only accepted reroutes change a route, so only they need new parasitics.
@@ -934,10 +935,10 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     const bool strict
         = !options.strict_accept.empty() && options.strict_accept[net_index];
     bool keep = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
-    // Nor may a relief move stretch the route past kMaxReliefStretch.
-    if (keep && strict) {
+    // Nor may the new route exceed the net's length limit, if it has one.
+    if (keep && !options.max_route_length.empty()) {
       keep = grid_graph_->getTreeLength(net->getRoutingTree())
-             <= kMaxReliefStretch * grid_graph_->getTreeLength(old_route.tree);
+             <= options.max_route_length[net_index];
     }
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
@@ -1467,9 +1468,14 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
   for (const int index : incremental_candidates_) {
     is_candidate[index] = 1;
   }
-  // Neighbors move only if overflow drops; the passes keep the slacks.
-  RerouteOptions options{.strict_accept = std::vector<char>(gr_nets_.size(), 0),
-                         .refresh_critical = false};
+  // Neighbors move only if overflow drops and their route stays within
+  // kMaxReliefStretch of its length before the relief; the passes keep the
+  // slacks.
+  RerouteOptions options{
+      .strict_accept = std::vector<char>(gr_nets_.size(), 0),
+      .max_route_length = std::vector<double>(
+          gr_nets_.size(), std::numeric_limits<double>::infinity()),
+      .refresh_critical = false};
   // Each added net's tree before the relief; a rolled-back reroute keeps it.
   std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
   std::vector<int> net_indices;
@@ -1484,6 +1490,9 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     for (const int index : added) {
       is_candidate[index] = 1;
       options.strict_accept[index] = 1;
+      options.max_route_length[index]
+          = kMaxReliefStretch
+            * grid_graph_->getTreeLength(gr_nets_[index]->getRoutingTree());
       incremental_candidates_.push_back(index);
       added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
     }

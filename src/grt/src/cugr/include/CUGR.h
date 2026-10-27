@@ -277,6 +277,9 @@ class CUGR
   {
     // Per net index, nonzero: keep a reroute only if it lowers overflow.
     std::vector<char> strict_accept;
+    // Per net index, if not empty: the longest planar route a reroute may
+    // leave, in gcells.
+    std::vector<double> max_route_length;
     // Refresh slacks and the critical set before a maze pass.
     bool refresh_critical = true;
   };
