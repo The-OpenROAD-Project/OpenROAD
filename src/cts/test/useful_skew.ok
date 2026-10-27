@@ -106,4 +106,5 @@ Skew target distribution (annotated registers only):
 [INFO CTS-0544] Applying useful skew for clock clk
 [INFO CTS-0545] inserted 15 delay buffers for applying useful skew
 [INFO CTS-0037] Total number of delay buffers: 17
-Total delay buffers inserted: 17
+Useful skew improves WNS: 1
+Useful skew improves TNS: 1

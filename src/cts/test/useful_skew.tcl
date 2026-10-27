@@ -1,16 +1,23 @@
-# Verify clock_tree_synthesis -useful_skew realizes the resizer's
-# per-register skew targets by inserting delay buffers.
+# Verify clock_tree_synthesis -useful_skew improves timing by realizing the
+# resizer's per-register skew targets with delay buffers.
 #
 # The design is built programmatically: several register pipelines
 # r1 -> (long buffer chain) -> r2 -> r3 where the r1->r2 stage is
 # setup-critical and the r2->r3 stage is loose. Delaying r2's clock
-# borrows time from the loose stage to help the critical one, so
-# compute_skew_budget annotates r2 with a positive skew target that the
-# second latency-balancing pass realizes with delay buffers.
+# borrows time from the loose stage to help the critical one, so useful
+# skew produces a non-zero schedule that the second latency-balancing
+# pass realizes with delay buffers.
 #
 # An array_tile macro (with insertion delay) is added so CTS builds a
 # MacroTree/RegisterTree hierarchy; the useful-skew realization pass runs
 # only on such a hierarchical clock tree.
+#
+# All timing paths are register-to-register, so the clock's common
+# insertion delay cancels and only the useful skew changes reg-to-reg
+# slack. The test measures WNS/TNS before CTS (ideal clock) and after CTS
+# -useful_skew (propagated clock) and asserts both improve. The benefit is
+# reported as a boolean, not exact slack values, so the golden stays
+# stable across STA changes.
 source "helpers.tcl"
 source Nangate45/Nangate45.vars
 
@@ -103,6 +110,10 @@ set_wire_rc -signal -layer $wire_rc_layer
 set_wire_rc -clock -layer $wire_rc_layer_clk
 estimate_parasitics -placement
 
+# Baseline timing with the ideal clock (before the useful-skew tree).
+set wns_base [sta::worst_slack -max]
+set tns_base [sta::total_negative_slack -max]
+
 set_cts_config -root_buf CLKBUF_X3 \
   -buf_list CLKBUF_X3 \
   -sink_clustering_size 8 \
@@ -110,7 +121,13 @@ set_cts_config -root_buf CLKBUF_X3 \
 
 clock_tree_synthesis -sink_clustering_enable -useful_skew
 
-# Delay buffers from both the classic and useful-skew passes share the
-# delaybuf_ prefix; CTS-0545 above reports the useful-skew count alone.
-set num_delay_buffers [llength [get_cells -quiet delaybuf_*]]
-puts "Total delay buffers inserted: $num_delay_buffers"
+# Timing with the realized useful-skew clock tree.
+set_propagated_clock [all_clocks]
+estimate_parasitics -placement
+set wns_skew [sta::worst_slack -max]
+set tns_skew [sta::total_negative_slack -max]
+
+# WNS/TNS are negative; useful skew improves timing when the slack is less
+# negative, i.e. the value is greater.
+puts "Useful skew improves WNS: [expr { $wns_skew > $wns_base }]"
+puts "Useful skew improves TNS: [expr { $tns_skew > $tns_base }]"
