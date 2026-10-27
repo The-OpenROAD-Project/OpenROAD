@@ -12,7 +12,10 @@ link_design top -hier
 create_clock -name clk -period 0.01 [get_ports clk]
 
 set_debug_level ODB replace_design_check_sanity 1
-replace_arith_modules -path_count 10
+set swapped [replace_arith_modules -path_count 10]
+puts "swapped: $swapped"
+# u_alu is already swapped and u_alu_other is still refused: nothing to swap.
+puts "swapped again: [replace_arith_modules -path_count 10]"
 
 set block [ord::get_db_block]
 foreach name {dupbuf_a0 dupbuf_b1 otherbuf_c} {

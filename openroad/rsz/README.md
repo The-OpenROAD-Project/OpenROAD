@@ -694,6 +694,7 @@ report_delay_estimator_accuracy_for_rebuffering
 The `replace_arith_modules` command optimizes design performance by intelligently swapping hierarchical arithmetic modules based on realistic timing models.
 This command analyzes critical timing paths and replaces arithmetic modules with equivalent but architecturally different implementations to
 improve Quality of Results (QoR) for the specified target.
+It returns 1 if any module was swapped and 0 otherwise.
 
 #### Arithmetic Module Types
 
