@@ -1,6 +1,13 @@
 or_integration_tests(
   "psm"
   TESTS
+    3dic_check_power_grid_aes_gcd_nangate45
+    3dic_external_power_source
+    3dic_check_power_grid_bump_pad_disconnected_pdn_net
+    3dic_check_power_grid_frontside
+    3dic_check_power_grid_missing_bump_mapping
+    3dic_check_power_grid_require_bterms_fail
+    3dic_test_vdd
     aes_asap7_vdd
     aes_test_bterms_source_resistance
     aes_test_bterms
@@ -50,4 +57,3 @@ or_integration_tests(
     zerosoc_pads_check_only
     zerosoc_pads_check_only_disconnected
 )
-

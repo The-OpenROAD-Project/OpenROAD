@@ -114,7 +114,7 @@ def diff_spef(
     design, *, filename="", r_conn=False, r_res=False, r_cap=False, r_cc_cap=False
 ):
     opts = rcx.DiffOptions()
-    opts.file = file
+    opts.file = filename
     opts.r_res = r_res
     opts.r_cap = r_cap
     opts.r_cc_cap = r_cc_cap

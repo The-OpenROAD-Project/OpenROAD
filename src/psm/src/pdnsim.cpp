@@ -4,11 +4,16 @@
 #include "psm/pdnsim.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <fstream>
 #include <limits>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "dpl/Opendp.h"
@@ -49,6 +54,18 @@ PDNSim::PDNSim(utl::Logger* logger,
 
 PDNSim::~PDNSim() = default;
 
+void PDNSim::setInterchipResistance(sta::Scene* scene, double resistance)
+{
+  if (!std::isfinite(resistance) || resistance <= 0.0) {
+    logger_->error(utl::PSM,
+                   171,
+                   "Inter-chip resistance must be positive and finite: {}.",
+                   resistance);
+  }
+  interchip_resistances_[scene] = resistance;
+  clearSolvers();
+}
+
 void PDNSim::setDebugGui(bool enable)
 {
   debug_gui_enabled_ = enable;
@@ -88,30 +105,62 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               const std::string& error_file,
                               const std::string& voltage_source_file)
 {
-  if (!checkConnectivity(net, false, error_file, false)) {
+  if (!sta::dbNetwork::is3DicTopChip(db_->getChip())) {
+    if (!checkConnectivity(net, false, error_file, false)) {
+      return;
+    }
+
+    last_net_ = net;
+    last_corner_ = corner;
+    auto* solver = getIRSolver(net, false);
+    if (!use_prev_solution || !solver->hasSolution(corner)) {
+      solver->solve(corner, source_type, voltage_source_file);
+    } else {
+      logger_->info(utl::PSM, 11, "Reusing previous solution");
+    }
+    solver->report(corner);
+
+    if (heatmap_source_) {
+      heatmap_source_->invalidateInstances();
+    }
+
+    if (enable_em) {
+      solver->reportEM(corner);
+      solver->writeEMFile(em_file, corner);
+    }
+
+    solver->writeInstanceVoltageFile(voltage_file, corner);
     return;
   }
 
-  last_net_ = net;
-  last_corner_ = corner;
-  auto* solver = getIRSolver(net, false);
+  if (!sta_->getDbNetwork()->has3DicChip()
+      || sta_->getDbNetwork()->topChip() != db_->getChip()) {
+    logger_->error(utl::PSM, 151, "The loaded assembly has no timing network.");
+  }
+
+  auto* chip_net = findChipNet(net);
+
+  auto& solver = assembly_solvers_[chip_net][corner];
+  if (solver == nullptr) {
+    solver = makeAssemblySolver(chip_net, corner);
+    for (auto* local_net : solver->getNetwork()->getNets()) {
+      addOwner(local_net->getBlock());
+    }
+  }
+  checkAssemblyConnectivity(*solver->getNetwork(), false, false, error_file);
   if (!use_prev_solution || !solver->hasSolution(corner)) {
     solver->solve(corner, source_type, voltage_source_file);
   } else {
-    logger_->info(utl::PSM, 11, "Reusing previous solution");
+    logger_->info(utl::PSM, 13, "Reusing previous solution");
   }
   solver->report(corner);
-
-  if (heatmap_source_) {
-    heatmap_source_->invalidateInstances();
-  }
-
   if (enable_em) {
     solver->reportEM(corner);
     solver->writeEMFile(em_file, corner);
   }
-
-  solver->writeInstanceVoltageFile(voltage_file, corner);
+  if (!voltage_file.empty()) {
+    solver->writeInstanceVoltageFile(voltage_file, corner);
+  }
 }
 
 bool PDNSim::checkConnectivity(odb::dbNet* net,
@@ -119,6 +168,25 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
                                const std::string& error_file,
                                bool require_bterm)
 {
+  if (sta::dbNetwork::is3DicTopChip(db_->getChip())) {
+    auto* chip_net = findChipNet(net);
+    IRNetwork network(chip_net, logger_, floorplanning, std::nullopt, true);
+    checkAssemblyConnectivity(
+        network, floorplanning, require_bterm, error_file);
+    debugPrint(logger_,
+               utl::PSM,
+               "stats",
+               1,
+               "Built power grid {}: {} chiplet power grids, {} nodes, and {} "
+               "connections ({} inter-chip bonds).",
+               chip_net->getName(),
+               network.getChipletNetworkCount(),
+               network.getNodeCount(),
+               network.getConnectionCount(),
+               network.getInterDieConnectionCount());
+    return true;
+  }
+
   auto* solver = getIRSolver(net, floorplanning);
   const bool check = solver->check(require_bterm, !floorplanning);
   solver->writeErrorFile(error_file);
@@ -139,6 +207,146 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
         utl::PSM, 69, "Check connectivity failed on {}.", net->getName());
   }
   return check;
+}
+
+odb::dbChipNet* PDNSim::findChipNet(const std::string& chip_net_name) const
+{
+  odb::dbChip* top_chip = db_->getChip();
+  if (top_chip == nullptr) {
+    logger_->error(utl::PSM, 101, "No chip is loaded.");
+  }
+
+  odb::dbChipNet* chip_net = nullptr;
+  for (odb::dbChipNet* candidate : top_chip->getChipNets()) {
+    if (candidate->getName() == chip_net_name) {
+      chip_net = candidate;
+      break;
+    }
+  }
+  if (chip_net == nullptr) {
+    logger_->error(utl::PSM,
+                   102,
+                   "The loaded assembly does not contain net {}.",
+                   chip_net_name);
+  }
+  return chip_net;
+}
+
+odb::dbChipNet* PDNSim::findChipNet(odb::dbNet* local_net) const
+{
+  for (auto* candidate : db_->getChip()->getChipNets()) {
+    for (uint32_t index = 0; index < candidate->getNumBumpInsts(); ++index) {
+      std::vector<odb::dbChipInst*> path;
+      auto* bump = candidate->getBumpInst(index, path);
+      if (bump != nullptr && bump->getChipBump() != nullptr
+          && bump->getChipBump()->getNet() == local_net) {
+        return candidate;
+      }
+    }
+  }
+  logger_->error(utl::PSM,
+                 105,
+                 "Cannot find an assembly net containing local net {}.",
+                 local_net->getName());
+  return nullptr;
+}
+
+std::unique_ptr<IRSolver> PDNSim::makeAssemblySolver(odb::dbChipNet* net,
+                                                     sta::Scene* scene)
+{
+  const auto resistance = interchip_resistances_.find(scene);
+  auto network = std::make_unique<IRNetwork>(
+      net,
+      logger_,
+      false,
+      resistance == interchip_resistances_.end()
+          ? std::nullopt
+          : std::optional<double>(resistance->second));
+  return std::make_unique<IRSolver>(std::move(network),
+                                    sta_,
+                                    estimate_parasitics_,
+                                    logger_,
+                                    user_voltages_,
+                                    user_powers_,
+                                    generated_source_settings_);
+}
+
+void PDNSim::checkAssemblyConnectivity(IRNetwork& network,
+                                       bool floorplanning,
+                                       bool require_bterm,
+                                       const std::string& error_file)
+{
+  std::ofstream report;
+  if (!error_file.empty()) {
+    report.open(error_file);
+    if (!report) {
+      logger_->error(
+          utl::PSM, 152, "Unable to open error file: {}", error_file);
+    }
+  }
+  const auto name = network.getChipNet()->getName();
+  if (network.getChipletNetworkCount() < 2
+      || network.getInterDieConnectionCount() == 0) {
+    if (report.is_open()) {
+      report << "Net " << name << ": " << network.getChipletNetworkCount()
+             << " chiplet power grids and "
+             << network.getInterDieConnectionCount() << " inter-chip bonds.\n";
+    }
+    logger_->error(
+        utl::PSM,
+        103,
+        "Power grid {} has {} chiplet power grids and {} inter-chip bonds.",
+        name,
+        network.getChipletNetworkCount(),
+        network.getInterDieConnectionCount());
+  }
+
+  // Reuse the existing 2D connectivity checks inside each chiplet.
+  bool local_ok = true;
+  for (const auto& [chiplet, net] : network.getChipletNets()) {
+    auto local_network
+        = std::make_unique<IRNetwork>(net, logger_, floorplanning);
+    IRSolver local(std::move(local_network),
+                   sta_,
+                   estimate_parasitics_,
+                   logger_,
+                   user_voltages_,
+                   user_powers_,
+                   generated_source_settings_);
+    if (report.is_open()) {
+      report << "Chiplet " << chiplet->getName() << ", net " << net->getName()
+             << " (coordinates relative to the assembly origin in microns)\n";
+    }
+    try {
+      if (!local.check(
+              require_bterm, !floorplanning, chiplet->getTransform())) {
+        local_ok = false;
+      }
+    } catch (const std::runtime_error& error) {
+      local_ok = false;
+      if (report.is_open()) {
+        report << error.what() << '\n';
+      }
+    }
+    if (report.is_open()) {
+      local.writeErrorFile(report);
+    }
+  }
+  const auto disconnected = network.getDisconnectedNodes();
+  if (report.is_open() && !disconnected.empty()) {
+    report << "The power grid for " << name << " is disconnected.\n";
+  }
+  if (!local_ok) {
+    logger_->error(utl::PSM,
+                   153,
+                   "A chiplet power grid on {} failed the local checks.",
+                   name);
+  }
+  if (!disconnected.empty() || network.getNodeCount() == 0) {
+    logger_->error(
+        utl::PSM, 140, "The power grid for {} is disconnected.", name);
+  }
+  logger_->info(utl::PSM, 154, "The power grid for {} is connected.", name);
 }
 
 void PDNSim::writeSpiceNetwork(odb::dbNet* net,
@@ -217,6 +425,7 @@ void PDNSim::setGeneratedSourceSettings(const GeneratedSourceSettings& settings)
 void PDNSim::clearSolvers()
 {
   solvers_.clear();
+  assembly_solvers_.clear();
 }
 
 void PDNSim::inDbPostMoveInst(odb::dbInst*)

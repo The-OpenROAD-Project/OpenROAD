@@ -69,3 +69,6 @@ projectview.bazelproject
 tmp/
 
 .playwright-mcp
+
+.gemini/
+gha-creds-*.json

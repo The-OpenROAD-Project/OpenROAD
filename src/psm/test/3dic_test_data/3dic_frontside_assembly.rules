@@ -1,0 +1,5 @@
+# Fake bond resistance value
+# As there is no value mentioned in Nangate45 for the bond reistance
+VIA_RESISTANCE
+HBV 0.1
+END
