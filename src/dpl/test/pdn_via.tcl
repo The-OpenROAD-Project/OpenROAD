@@ -2,23 +2,16 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def pdn_via.def
 
-# Opt in to physical supply-via conflicts; the diamond legalizer is an
-# independent placement strategy and must preserve the same physical result.
+# Exercise physical supply-via conflicts with the diamond legalizer.
 detailed_placement -pdn_aware -use_diamond_legalizer
 check_placement
 
-set block [ord::get_db_block]
-check "blocked location" {[$block findInst blocked] getLocation} "4180 5600"
-check "same-net location" {[$block findInst same_net] getLocation} "7600 5600"
-check "signal-pin blocked location" {
-  [$block findInst signal_blocked] getLocation
-} "11780 5600"
-check "signal-pin same-net location" {
-  [$block findInst signal_same_net] getLocation
-} "15200 5600"
+set def_file [make_result_file pdn_via.def]
+write_def $def_file
+check "placement DEF" {diff_files pdn_via.defok $def_file} 0
 
-# A later manual move beneath the via must be reported as a supply-via failure,
-# independently from the blocked-layer category.
+# A later manual move beneath the via must report a supply-via failure.
+set block [ord::get_db_block]
 [$block findInst blocked] setLocation 3800 5600
 set check_failed [catch { check_placement } check_message]
 check "manual supply-via conflict rejected" {
