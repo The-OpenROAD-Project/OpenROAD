@@ -4,11 +4,13 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
@@ -47,6 +49,7 @@ struct PointIndexableGetter
 class IRNetwork
 {
  public:
+  using Nodes = std::vector<Node*>;
   template <typename T>
   using NodePtrMap = std::map<Node*, std::vector<T*>>;
 
@@ -69,8 +72,16 @@ class IRNetwork
                                       PointIndexableGetter<Node>>;
 
   IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning);
+  IRNetwork(odb::dbChipNet* chip_net,
+            utl::Logger* logger,
+            bool floorplanning = false,
+            std::optional<double> interchip_resistance = std::nullopt,
+            bool connectivity_only = false);
+  ~IRNetwork();
 
   odb::dbNet* getNet() const { return net_; };
+  odb::dbChipNet* getChipNet() const { return chip_net_; }
+  bool isAssembly() const { return chip_net_ != nullptr; }
 
   void construct();
 
@@ -107,13 +118,39 @@ class IRNetwork
   odb::PtrSet<odb::dbTechLayer> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
+  std::size_t getConnectionCount() const;
+  std::size_t getChipletNetworkCount() const
+  {
+    return chiplet_networks_.size();
+  }
+  std::size_t getInterDieConnectionCount() const
+  {
+    return interdie_connections_.size();
+  }
 
   void clearVisitedNodes();
 
   const Connections& getConnections() const { return connections_; }
+  Nodes getAllNodes() const;
+  std::vector<Connection*> getAllConnections() const;
+  const Connections& getInterDieConnections() const
+  {
+    return interdie_connections_;
+  }
   NodePtrMap<Connection> getConnectionMap() const;
 
   odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping(
+      odb::dbNet* net) const;
+  std::vector<odb::dbNet*> getNets() const;
+  std::vector<std::pair<odb::dbChipInst*, odb::dbNet*>> getChipletNets() const;
+  IRNetwork* getChipletNetwork(odb::dbChipInst* chip_inst) const;
+  std::vector<std::pair<odb::dbChipInst*, ITermNode*>> getChipletITermNodes()
+      const;
+  std::map<Node*, odb::dbChipInst*> getNodeChiplets() const;
+  bool hasSameBonds() const;
+  bool isConnected() const;
+  Nodes getDisconnectedNodes() const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
   bool hasNodes() const;
@@ -124,6 +161,25 @@ class IRNetwork
   void dumpNodes(const std::string& name = "nodes") const;
 
  private:
+  struct BondState
+  {
+    uint32_t id;
+    uint32_t source_id;
+    uint32_t target_id;
+    uint32_t source_bump_id;
+    uint32_t target_bump_id;
+    float resistance;
+
+    bool operator==(const BondState&) const = default;
+  };
+
+  struct ChipletNetwork
+  {
+    odb::dbChipInst* chip_inst;
+    odb::dbNet* net;
+    std::unique_ptr<IRNetwork> network;
+  };
+
   // Shapes with 45 degree edges, which the rectilinear (polygon_90) sets
   // the network is built from cannot hold
   using Polygon45 = boost::polygon::polygon_45_data<int>;
@@ -203,12 +259,22 @@ class IRNetwork
   NodeTree getNodeTree(odb::dbTechLayer* layer) const;
 
   void initMinimumNodePitch();
+  void constructAssembly();
+  void addChipletNetwork(odb::dbChipBumpInst* bump_inst,
+                         odb::dbChipInst* chip_inst);
+  void addInterDieConnection(odb::dbChipRSeg* rseg);
+  void createMatchedInterDieConnections(std::optional<double> resistance);
+  std::vector<BondState> getBondState() const;
+  ChipletNetwork* findChipletNetwork(odb::dbChipBumpInst* bump_inst);
+  Node* findBondEndpoint(odb::dbChipCapNode* cap_node);
+  Node* findBondEndpoint(odb::dbChipBumpInst* bump_inst);
 
   void recoverMemory();
 
   void reset();
 
   odb::dbNet* net_;
+  odb::dbChipNet* chip_net_ = nullptr;
 
   utl::Logger* logger_;
 
@@ -223,6 +289,12 @@ class IRNetwork
   std::vector<std::unique_ptr<BPinNode>> bpin_nodes_;
 
   odb::PtrMap<odb::dbTechLayer, int> min_node_pitch_;
+
+  std::vector<ChipletNetwork> chiplet_networks_;
+  Connections interdie_connections_;
+  std::vector<BondState> bond_state_;
+  std::optional<double> interchip_resistance_;
+  bool connectivity_only_ = false;
 
   static constexpr int kMinNodePitchMultiplier = 10;
   static constexpr double kMinNodePitchInUm = 10.0;
