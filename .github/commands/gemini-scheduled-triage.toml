@@ -87,7 +87,8 @@ Iterate through each issue object. For each issue:
 
 Assemble the results into a single JSON array, formatted as a string, according to the **Output Specification** below. Finally, execute the command to write this string to the output file, ensuring the JSON is enclosed in single quotes to prevent shell interpretation.
 
-- Use the shell command to write: `echo 'TRIAGED_ISSUES=...' > "$GITHUB_ENV"` (Replace `...` with the final, minified JSON array string).
+- Use the shell command to write: `echo 'TRIAGED_ISSUES=...' >> "$GITHUB_ENV"` (Replace `...` with the final, minified JSON array string).
+- The JSON string **MUST NOT** contain any single quote (`'`) characters, as they would terminate the shell quoting. Write explanations without apostrophes or single-quoted phrases.
 
 ## Output Specification
 
@@ -95,7 +96,7 @@ The output **MUST** be a JSON array of objects. Each object represents a triaged
 
 *   `issue_number` (Integer): The issue's unique identifier.
 *   `labels_to_set` (Array of Strings): The list of labels to be applied.
-*   `explanation` (String): A brief (1-2 sentence) justification for the chosen labels, **citing specific evidence or keywords from the issue's title or body.**
+*   `explanation` (String): A brief (1-2 sentence) justification for the chosen labels, **citing specific evidence or keywords from the issue's title or body.** It must not contain single quote (`'`) characters.
 
 **Example Output JSON:**
 
@@ -104,12 +105,12 @@ The output **MUST** be a JSON array of objects. Each object represents a triaged
     {
         "issue_number": 123,
         "labels_to_set": ["kind/bug", "priority/p1"],
-        "explanation": "The issue describes a 'critical error' and 'crash' in the login functionality, indicating a high-priority bug."
+        "explanation": "The issue describes a critical error and crash in the login functionality, indicating a high-priority bug."
     },
     {
         "issue_number": 456,
         "labels_to_set": ["kind/enhancement"],
-        "explanation": "The user is requesting a 'new export feature' and describes how it would improve their workflow, which constitutes an enhancement."
+        "explanation": "The user is requesting a new export feature and describes how it would improve their workflow, which constitutes an enhancement."
     }
 ]
 ```
