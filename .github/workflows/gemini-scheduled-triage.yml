@@ -2,12 +2,6 @@ name: 📋 Gemini Scheduled Issue Triage
 on:
   schedule:
     - cron: 0 * * * *  # Runs every hour
-  pull_request:
-    branches:
-      - master
-      - release/**/*
-    paths:
-      - .github/workflows/gemini-scheduled-triage.yml
   push:
     branches:
       - master
