@@ -7,6 +7,7 @@
 #include <string>
 
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
@@ -34,7 +35,9 @@ void IRShort::report(odb::dbNet* net, utl::Logger* logger, double dbu) const
                layer_->getName());
 }
 
-void IRShort::commit(odb::dbNet* net, odb::dbMarkerCategory* category) const
+void IRShort::commit(odb::dbNet* net,
+                     odb::dbMarkerCategory* category,
+                     const odb::dbTransform& marker_transform) const
 {
   if (category == nullptr) {
     return;
@@ -49,9 +52,13 @@ void IRShort::commit(odb::dbNet* net, odb::dbMarkerCategory* category) const
   addSources(marker);
   marker->setTechLayer(layer_);
   if (shape_.isRect()) {
-    marker->addShape(shape_.getEnclosingRect());
+    odb::Rect rect = shape_.getEnclosingRect();
+    marker_transform.apply(rect);
+    marker->addShape(rect);
   } else {
-    marker->addShape(shape_);
+    odb::Polygon polygon = shape_;
+    marker_transform.apply(polygon);
+    marker->addShape(polygon);
   }
 }
 
