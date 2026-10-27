@@ -2864,7 +2864,12 @@ void TritonCTS::balanceMacroRegisterLatencies()
       resizer_->computeSkewBudget(budget_opts);
 
       // Pass 2: realize the useful-skew schedule.
-      totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU, true);
+      const int useful_skew_buffers
+          = runLatencyBalancers(capPerDBU, resPerDBU, true);
+      totalDelayBuff += useful_skew_buffers;
+      if (useful_skew_buffers == 0) {
+        logger_->warn(CTS, 231, "No useful skew delay buffers were inserted.");
+      }
     }
   }
   if (totalDelayBuff) {
