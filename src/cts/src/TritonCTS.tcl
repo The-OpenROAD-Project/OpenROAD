@@ -587,7 +587,7 @@ proc clock_tree_synthesis { args } {
   if { [info exists flags(-useful_skew)] } {
     if { [info exists flags(-no_insertion_delay)] } {
       utl::warn CTS 230 "-useful_skew is ignored because -no_insertion_delay\
-        disables delay-buffer insertion."
+        disables delay buffer insertion."
       cts::set_useful_skew false
     } else {
       cts::set_useful_skew true
