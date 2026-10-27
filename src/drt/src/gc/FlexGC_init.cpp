@@ -834,7 +834,8 @@ void FlexGCWorker::Impl::initNet_pins_polygonCorners_helper(
       } else {
         auto it = fixed_corner_cache.find(layerNum);
         if (it == fixed_corner_cache.end()) {
-          it = fixed_corner_cache.emplace(layerNum, std::unordered_set<odb::Point>())
+          it = fixed_corner_cache
+                   .emplace(layerNum, std::unordered_set<odb::Point>())
                    .first;
           collectPolygonCorners(net->getPolygons(true)[layerNum], it->second);
         }
