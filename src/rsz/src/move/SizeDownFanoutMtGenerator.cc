@@ -35,6 +35,8 @@ namespace rsz {
 namespace {
 
 using utl::RSZ;
+using RankedCellsCache
+    = std::map<std::pair<const sta::LibertyPort*, int>, sta::LibertyCellSeq>;
 
 // The target driver and the scene the load checks of prepareInputs() read.
 struct SizeDownFanoutContext
@@ -301,14 +303,23 @@ bool checkMaxSlewViolation(const SizeDownFanoutContext& ctx,
   return false;
 }
 
-sta::LibertyCellSeq rankSwappableCells(const SizeDownFanoutContext& ctx,
-                                       const SizeDownFanoutMtLoad& load)
+const sta::LibertyCellSeq& rankSwappableCells(
+    const SizeDownFanoutContext& ctx,
+    const SizeDownFanoutMtLoad& load,
+    RankedCellsCache& ranked_cells_cache)
 {
+  const std::pair<const sta::LibertyPort*, int> key{load.load_port, ctx.lib_ap};
+  const std::pair<RankedCellsCache::iterator, bool> cached
+      = ranked_cells_cache.try_emplace(key);
+  if (!cached.second) {           // new cache entry was inserted.
+    return cached.first->second;  // the entry's ranked cell sequence.
+  }
+
   const std::string& load_port_name = load.load_port->name();
-  sta::LibertyCellSeq swappable_cells
-      = load.current_cell->isBuffer()
-            ? ctx.resizer.getFastBufferSizes(load.current_cell)
-            : ctx.resizer.getSwappableCells(load.current_cell);
+  sta::LibertyCellSeq& swappable_cells = cached.first->second;
+  swappable_cells = load.current_cell->isBuffer()
+                        ? ctx.resizer.getFastBufferSizes(load.current_cell)
+                        : ctx.resizer.getSwappableCells(load.current_cell);
 
   if (swappable_cells.size() > 1) {
     sort(&swappable_cells,
@@ -379,11 +390,6 @@ std::vector<SizeDownOutput> measureOutputs(const SizeDownFanoutContext& ctx,
     output.cap = ctx.resizer.sta()->graphDelayCalc()->loadCap(
         output_pin, ctx.scene, ctx.min_max);
 
-    const float output_slew = ctx.resizer.sta()->slew(
-        ctx.resizer.graph()->pinLoadVertex(output_pin),
-        sta::RiseFallBoth::riseFall(),
-        ctx.resizer.sta()->scenes(),
-        ctx.resizer.maxAnalysisMode());
     output.slew_factor
         = computeElmoreSlewFactor(ctx, output_pin, output_port, output.cap);
     output.delay = ctx.resizer.gateDelay(
@@ -399,7 +405,13 @@ std::vector<SizeDownOutput> measureOutputs(const SizeDownFanoutContext& ctx,
                load.current_cell->name(),
                delayAsString(output.delay, 3, ctx.resizer.staState()),
                output.cap,
-               delayAsString(output_slew, 3, ctx.resizer.staState()),
+               delayAsString(ctx.resizer.sta()->slew(
+                                 ctx.resizer.graph()->pinLoadVertex(output_pin),
+                                 sta::RiseFallBoth::riseFall(),
+                                 ctx.resizer.sta()->scenes(),
+                                 ctx.resizer.maxAnalysisMode()),
+                             3,
+                             ctx.resizer.staState()),
                delayAsString(load.load_slack, 3, ctx.resizer.staState()));
   }
 
@@ -555,7 +567,8 @@ std::shared_ptr<const SizeDownFanoutMtLoad> measureLoad(
     const SizeDownFanoutContext& ctx,
     const SelectedArc& arc,
     sta::Vertex* load_vertex,
-    const sta::Slack load_slack)
+    const sta::Slack load_slack,
+    RankedCellsCache& ranked_cells_cache)
 {
   SizeDownFanoutMtLoad load;
   if (!resolveLoad(ctx, load_vertex, load_slack, load)) {
@@ -563,7 +576,8 @@ std::shared_ptr<const SizeDownFanoutMtLoad> measureLoad(
   }
 
   load.delay_budget = computeDelayBudget(ctx, load);
-  const sta::LibertyCellSeq swappable_cells = rankSwappableCells(ctx, load);
+  const sta::LibertyCellSeq& swappable_cells
+      = rankSwappableCells(ctx, load, ranked_cells_cache);
   logSwappableCells(ctx, load, swappable_cells);
 
   // Step down one drive strength: of the cells with a smaller input pin at no
@@ -612,7 +626,8 @@ std::shared_ptr<const SizeDownFanoutMtLoad> measureLoad(
 
 std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>> measureLoads(
     const SizeDownFanoutContext& ctx,
-    const SelectedArc& arc)
+    const SelectedArc& arc,
+    RankedCellsCache& ranked_cells_cache)
 {
   debugPrint(ctx.resizer.logger(),
              RSZ,
@@ -627,7 +642,7 @@ std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>> measureLoads(
   std::vector<std::shared_ptr<const SizeDownFanoutMtLoad>> loads;
   for (const auto& [load_vertex, load_slack] : fanout_slacks) {
     std::shared_ptr<const SizeDownFanoutMtLoad> load
-        = measureLoad(ctx, arc, load_vertex, load_slack);
+        = measureLoad(ctx, arc, load_vertex, load_slack, ranked_cells_cache);
     if (load != nullptr) {
       loads.push_back(std::move(load));
     }
@@ -666,8 +681,8 @@ void SizeDownFanoutMtGenerator::prepareInputs(Target& target) const
     return;
   }
 
-  target.size_down_fanout_loads
-      = measureLoads(ctx, target.estimator_context->target().arc);
+  target.size_down_fanout_loads = measureLoads(
+      ctx, target.estimator_context->target().arc, ranked_cells_cache_);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SizeDownFanoutMtGenerator::generate(
