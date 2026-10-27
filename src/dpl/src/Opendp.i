@@ -41,7 +41,7 @@ detailed_placement_cmd(int max_displacment_x,
                             incremental, use_diamond_legalizer,
                             site_search_window, row_search_window,
                             drc_penalty, disable_window_extension,
-                            pdn_aware, quiet);
+                            quiet, pdn_aware);
 }
 
 void

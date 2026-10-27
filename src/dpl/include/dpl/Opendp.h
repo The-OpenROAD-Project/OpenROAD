@@ -28,6 +28,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+namespace odb {
+class dbBlockCallBackObj;
+}
+
 namespace dpl {
 
 class Node;
@@ -118,8 +122,8 @@ class Opendp
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
                          bool disable_window_extension = false,
-                         bool pdn_aware = false,
-                         bool quiet = false);
+                         bool quiet = false,
+                         bool pdn_aware = false);
   // C++ equivalent of `detailed_placement -quiet`.
   void detailedPlacementQuiet();
   void reportLegalizationStats() const;
@@ -429,6 +433,7 @@ class Opendp
   bool use_diamond_legalizer_ = false;
   bool pdn_aware_ = false;
   odb::dbBlock* pdn_aware_block_ = nullptr;
+  std::unique_ptr<odb::dbBlockCallBackObj> pdn_aware_block_observer_;
   bool quiet_ = false;
   int total_moves_ = 0;
   // Counters for reporting

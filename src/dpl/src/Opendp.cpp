@@ -26,6 +26,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
@@ -134,8 +135,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int row_search_window,
                                const double drc_penalty,
                                const bool disable_window_extension,
-                               const bool pdn_aware,
-                               const bool quiet)
+                               const bool quiet,
+                               const bool pdn_aware)
 {
   utl::Timer timer;
   incremental_ = incremental;
@@ -143,8 +144,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   quiet_ = quiet;
   importDb();
   adjustNodesOrient();
+  pdn_aware_block_observer_.reset();
   pdn_aware_ = pdn_aware;
   pdn_aware_block_ = block_;
+  if (pdn_aware_) {
+    pdn_aware_block_observer_ = std::make_unique<odb::dbBlockCallBackObj>();
+    pdn_aware_block_observer_->addOwner(block_);
+  }
   if (!incremental_) {
     for (const auto& node : network_->getNodes()) {
       if (node->getType() == Node::CELL && !node->isFixed()) {
@@ -575,9 +581,12 @@ bool Opendp::isPdnAwareForCurrentBlock()
 {
   odb::dbBlock* current_block
       = db_->getChip() == nullptr ? nullptr : db_->getChip()->getBlock();
-  if (pdn_aware_block_ != current_block) {
+  // ODB may reuse a destroyed block's address.
+  if (pdn_aware_block_ != current_block
+      || (pdn_aware_ && !pdn_aware_block_observer_->hasOwner())) {
     pdn_aware_ = false;
     pdn_aware_block_ = current_block;
+    pdn_aware_block_observer_.reset();
   }
   return pdn_aware_;
 }
