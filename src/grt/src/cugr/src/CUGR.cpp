@@ -967,8 +967,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
              GRT,
              "rrr",
              1,
-             "iteration {}: {} nets rerouted, {} of them rolled back (the new "
-             "route added overflow); overflow change {:.2f}.",
+             "iteration {}: {} nets rerouted, {} of them rolled back by the "
+             "accept test; overflow change {:.2f}.",
              iteration,
              accepted.size() + rejected,
              rejected,
@@ -1015,10 +1015,10 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
 
-  // Incremental re-optimizes every dirty net in stages 1-4: the congested-set
-  // narrowing between them is skipped, so net_indices stays the full dirty
-  // set. The RRR loop then reroutes only the congested ones, found among
-  // incremental_candidates_.
+  // Incremental re-optimizes every dirty net in stages 1, 3 and 4 (stage 2 is
+  // full route only): the congested-set narrowing between them is skipped, so
+  // net_indices stays the full dirty set. The RRR loop then reroutes only the
+  // congested ones, found among incremental_candidates_.
   incremental_routing_ = incremental;
   if (incremental) {
     incremental_candidates_ = net_indices;
