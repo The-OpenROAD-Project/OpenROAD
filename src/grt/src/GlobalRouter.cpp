@@ -182,8 +182,8 @@ GlobalRouter::~GlobalRouter()
 
 std::vector<Net*> GlobalRouter::initNets(bool check_pin_placement)
 {
-  std::vector<Net*> nets = findNets(true);
   check_pin_placement_ = check_pin_placement;
+  std::vector<Net*> nets = findNets(true);
   if (check_pin_placement) {
     checkPinPlacement();
   }
@@ -424,9 +424,12 @@ bool GlobalRouter::designIsPlaced()
   }
   block_ = db_->getChip()->getBlock();
 
-  for (Pin* port : getAllPorts()) {
-    if (port->getBTerm()->getFirstPinPlacementStatus()
-        == odb::dbPlacementStatus::NONE) {
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    odb::dbNet* net = bterm->getNet();
+    if (net == nullptr || net->isSpecial()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
       return false;
     }
   }
@@ -755,6 +758,10 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
                                  bool diode_only,
                                  const int num_threads)
 {
+  if (jumper_only && diode_only) {
+    logger_->error(
+        GRT, 1254, "jumper_only and diode_only are mutually exclusive.");
+  }
   ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
     initEngineWithExistingRouting();
@@ -764,21 +771,25 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
         = new RepairAntennas(this, antenna_checker_, opendp_, db_, logger_);
   }
 
-  if (diode_mterm == nullptr) {
-    diode_mterm = repair_antennas_->findDiodeMTerm();
+  // Jumper insertion does not need a diode, so only require one when
+  // diodes may actually be inserted.
+  if (!jumper_only) {
     if (diode_mterm == nullptr) {
-      logger_->metric("antenna_diodes_count", total_diodes_count_);
-      logger_->warn(
-          GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
-      return 0;
+      diode_mterm = repair_antennas_->findDiodeMTerm();
+      if (diode_mterm == nullptr) {
+        logger_->metric("antenna_diodes_count", total_diodes_count_);
+        logger_->warn(
+            GRT, 246, "No diode with LEF class CORE ANTENNACELL found.");
+        return 0;
+      }
     }
-  }
-  if (repair_antennas_->diffArea(diode_mterm) == 0.0) {
-    logger_->error(GRT,
-                   244,
-                   "Diode {}/{} ANTENNADIFFAREA is zero.",
-                   diode_mterm->getMaster()->getConstName(),
-                   diode_mterm->getConstName());
+    if (repair_antennas_->diffArea(diode_mterm) == 0.0) {
+      logger_->error(GRT,
+                     244,
+                     "Diode {}/{} ANTENNADIFFAREA is zero.",
+                     diode_mterm->getMaster()->getConstName(),
+                     diode_mterm->getConstName());
+    }
   }
 
   bool violations = true;
@@ -5928,7 +5939,10 @@ void GlobalRouter::makeBtermPins(Net* net,
     for (odb::dbBPin* bterm_pin : bterm->getBPins()) {
       int last_layer = -1;
       if (!bterm_pin->getPlacementStatus().isPlaced()) {
-        logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
+        if (check_pin_placement_) {
+          logger_->error(GRT, 11, "Pin {} is not placed.", pin_name);
+        }
+        continue;
       }
 
       for (odb::dbBox* bpin_box : bterm_pin->getBoxes()) {

@@ -344,6 +344,7 @@ cc_test(
     deps = [
         "//src/grt",
         "//src/grt:fastroute",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
@@ -366,6 +367,22 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGlobalRouter",
+    size = "small",
+    srcs = ["cpp/TestGlobalRouter.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
