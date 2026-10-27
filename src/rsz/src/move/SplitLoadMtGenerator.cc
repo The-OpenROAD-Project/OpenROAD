@@ -34,6 +34,8 @@ namespace rsz {
 
 namespace {
 
+// The fanout threshold of the LEGACY split-load move (SplitLoadGenerator), so
+// both policies consider the same drivers.
 constexpr int kSplitLoadMinFanout = 8;
 using FanoutSlack = std::pair<sta::Vertex*, sta::Slack>;
 

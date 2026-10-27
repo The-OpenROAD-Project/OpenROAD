@@ -8,20 +8,28 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
-#include "BoxFace.h"
 #include "CubeGreens.h"
+#include "Dielectric.h"
+#include "GaussianSurface.h"
 #include "LayeredCubeGreens.h"
+#include "LayeredSquareGreens.h"
 #include "Philox.h"
 #include "SpatialIndex.h"
+#include "SquareGreens.h"
 #include "WorkerPool.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
@@ -34,13 +42,8 @@ namespace {
 // Vacuum permittivity in fF/µm.
 constexpr double kEps0 = 8.8541878128e-3;
 
-// Box around the master on which walks start; charge is the flux through it.
-struct GaussianSurface
-{
-  Box box;
-  std::array<double, BoxFace::kCount> face_area;  // by BoxFace::index()
-  double area = 0;
-};
+// A walk result that is not a column.
+constexpr int kHopGuardHit = -1;
 
 // Sums over one batch of walks; one column per net plus the ground plane.
 // The all-walk sums feed the control variate (the weights average to zero).
@@ -50,6 +53,8 @@ struct Tally
   std::vector<double> sum2;
   double sum_all = 0;
   double sum2_all = 0;
+  // |weight| of walks that reached outside the window and ended on a net.
+  double left_sum = 0;
   int64_t hops = 0;
   int64_t guard_hits = 0;
 
@@ -70,6 +75,7 @@ struct Tally
     }
     sum_all += other.sum_all;
     sum2_all += other.sum2_all;
+    left_sum += other.left_sum;
     hops += other.hops;
     guard_hits += other.guard_hits;
   }
@@ -89,168 +95,742 @@ std::pair<double, double> estimate(const Tally& t, const int c, const double n)
   return {mean, std::sqrt(var / n)};
 }
 
-GaussianSurface makeGaussianSurface(const Geometry& geometry,
-                                    const int master,
-                                    const double offset_frac)
-{
-  const auto& boxes = geometry.boxes();
-  Box bbox{};
-  bool first = true;
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (geometry.boxNet(b) != master) {
-      continue;
-    }
-    if (first) {
-      bbox = boxes[b];
-      first = false;
-      continue;
-    }
-    for (int k = 0; k < 3; k++) {
-      bbox.lo[k] = std::min(bbox.lo[k], boxes[b].lo[k]);
-      bbox.hi[k] = std::max(bbox.hi[k], boxes[b].hi[k]);
-    }
-  }
-  if (first) {
-    throw std::invalid_argument("fsv: master net has no boxes");
-  }
-  // Offset: a fraction of the master's smallest dimension, at most half the
-  // gap to the nearest other conductor or the ground plane.
-  double gap = bbox.lo[2];
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (geometry.boxNet(b) != master) {
-      gap = std::min(gap, linfGap(bbox, boxes[b]));
-    }
-  }
-  if (gap <= 0) {
-    throw std::invalid_argument(
-        "fsv: another conductor touches the master's bounding box");
-  }
-  double min_dim = std::numeric_limits<double>::max();
-  for (int k = 0; k < 3; k++) {
-    min_dim = std::min(min_dim, bbox.hi[k] - bbox.lo[k]);
-  }
-  const double offset = std::min(0.5 * gap, offset_frac * min_dim);
-
-  GaussianSurface g;
-  for (int k = 0; k < 3; k++) {
-    g.box.lo[k] = bbox.lo[k] - offset;
-    g.box.hi[k] = bbox.hi[k] + offset;
-  }
-  for (const Axis axis : kAxes) {
-    const auto [t0, t1] = tangentAxes(axis);
-    const double a = (g.box.hi[index(t0)] - g.box.lo[index(t0)])
-                     * (g.box.hi[index(t1)] - g.box.lo[index(t1)]);
-    g.face_area[BoxFace{axis, false}.index()] = a;
-    g.face_area[BoxFace{axis, true}.index()] = a;
-    g.area += 2 * a;
-  }
-  return g;
-}
-
-// The cube one transition uses: its half-size and, when a planar interface
-// lies inside it, the two-dielectric tables (whose permittivities are in
-// units of eps_below).
-struct Cube
-{
-  double half_size;
-  const LayeredCubeGreens* layered = nullptr;
-};
-
-// The largest cube allowed at a point, and the interface it may contain.
-struct CubeLimit
-{
-  double half_size;     // at most the distance to the second-nearest interface
-  int interface = -1;   // nearest interface, if strictly inside the cube
-  double distance = 0;  // to that interface
-};
-
 // Heights within this fraction of a cube's size count as on the interface.
 constexpr double kOnInterface = 1e-9;
 
-// Sizes cubes against a scene's planar interfaces. A cube may contain at
-// most one interface, so its half-size is at most the distance to the
-// second-nearest one.
-class InterfaceSizer
+// The frame of a 3D solve: cubes. The two-dielectric tables put their
+// interface normal to z; a cube whose interface is normal to world axis
+// `normal` uses them through a cyclic relabelling: world `normal` is table
+// z, the next axis is table x and the one after it table y.
+struct Space
+{
+  static constexpr int kD = 3;
+  using GeometryType = Geometry;
+  using Uniform = CubeGreens;
+  using Layered = LayeredCubeGreens;
+
+  static const std::vector<Box>& shapes(const Geometry& g) { return g.boxes(); }
+  static int shapeNet(const Geometry& g, const int i) { return g.boxNet(i); }
+  static const AlignedBox<2>* window(const Geometry& g)
+  {
+    return g.window() ? &*g.window() : nullptr;
+  }
+
+  // The uniform tables' axis for a world axis.
+  static Axis uniformAxis(const int world) { return static_cast<Axis>(world); }
+
+  static Axis toTable(const int world, const int normal)
+  {
+    const int shift = (world - normal + 3) % 3;
+    return shift == 0 ? Axis::kZ : (shift == 1 ? Axis::kX : Axis::kY);
+  }
+  // Whether a table axis is the interface normal.
+  static bool isNormal(const Axis table) { return table == Axis::kZ; }
+
+  static Vec3 toWorld(const Vec3& table, const int normal)
+  {
+    Vec3 world;
+    world[normal] = table[2];
+    world[(normal + 1) % 3] = table[0];
+    world[(normal + 2) % 3] = table[1];
+    return world;
+  }
+};
+
+// The frame of a cross section: squares in the x-z plane. The square tables
+// put the interface normal to z; an x-normal interface swaps x and z.
+struct Plane
+{
+  static constexpr int kD = 2;
+  using GeometryType = Geometry2D;
+  using Uniform = SquareGreens;
+  using Layered = LayeredSquareGreens;
+
+  static const std::vector<Rect>& shapes(const Geometry2D& g)
+  {
+    return g.rects();
+  }
+  static int shapeNet(const Geometry2D& g, const int i) { return g.rectNet(i); }
+  static const AlignedBox<2>* window(const Geometry2D&) { return nullptr; }
+
+  static int uniformAxis(const int world) { return world; }
+
+  static int toTable(const int world, const int normal)
+  {
+    return normal == 1 ? world : 1 - world;
+  }
+  static bool isNormal(const int table) { return table == 1; }
+
+  static Vec2 toWorld(const Vec2& table, const int normal)
+  {
+    return normal == 1 ? table : Vec2{table[1], table[0]};
+  }
+};
+
+// The cube (or square) one transition uses: its half-size and, when an
+// interface plane lies inside it, the two-dielectric table and the plane's
+// normal.
+template <class Layered>
+struct Cube
+{
+  double half_size;
+  const Layered* layered = nullptr;
+  int normal = 0;  // component index
+};
+
+template <class Layered>
+using Tables = std::vector<std::shared_ptr<const Layered>>;
+
+// The two-dielectric tables of one solve, for each ordered pair of the
+// scene's permittivities, by interface position. A pair's tables are built
+// the first time a walk needs them; `build` makes them for one ratio and
+// must be called under `mutex`.
+template <class Layered, int D>
+class LayeredTableCache
 {
  public:
-  InterfaceSizer(
-      const Scene& scene,
-      const std::vector<
-          const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables)
-      : interfaces_(scene.interfaces()), tables_(tables)
+  LayeredTableCache(const Dielectric<D>& dielectric,
+                    std::function<const Tables<Layered>&(double ratio)> build,
+                    std::mutex& mutex)
+      : build_(std::move(build)), mutex_(mutex)
   {
+    eps_values_.push_back(dielectric.baseEps());
+    for (const Stack::PlanarInterface& i : dielectric.planar()) {
+      eps_values_.push_back(i.eps_below);
+      eps_values_.push_back(i.eps_above);
+    }
+    for (const Shell<D>& shell : dielectric.shells()) {
+      eps_values_.push_back(shell.eps);
+    }
+    std::ranges::sort(eps_values_);
+    eps_values_.erase(std::ranges::unique(eps_values_).begin(),
+                      eps_values_.end());
+    slots_ = std::vector<std::atomic<const Tables<Layered>*>>(
+        eps_values_.size() * eps_values_.size());
   }
 
-  CubeLimit limit(const double z, const double max_half_size) const
+  // The table for the cube's plane at a tabulated position.
+  const Layered* table(const typename Dielectric<D>::Cube& c,
+                       const int position)
   {
-    const int count = static_cast<int>(interfaces_.size());
-    if (count == 0) {
-      return {max_half_size};
-    }
-    // Nearest and second-nearest interfaces, walking out from z.
-    int up = static_cast<int>(
-        std::ranges::upper_bound(interfaces_, z, {}, &Stack::PlanarInterface::z)
-        - interfaces_.begin());
-    int down = up - 1;
-    double d[2];
-    int nearest = -1;
-    for (int pass = 0; pass < 2; pass++) {
-      const double da = up < count ? interfaces_[up].z - z
-                                   : std::numeric_limits<double>::infinity();
-      const double db = down >= 0 ? z - interfaces_[down].z
-                                  : std::numeric_limits<double>::infinity();
-      const int i = da <= db ? up++ : down--;
-      d[pass] = std::min(da, db);
-      if (pass == 0) {
-        nearest = i;
-      }
-    }
-    const double h = std::min(max_half_size, d[1]);
-    if (d[0] >= h) {
-      return {h};
-    }
-    return {h, nearest, d[0]};
-  }
-
-  // A transition cube. When the nearest interface falls inside, the cube is
-  // shrunk so that the interface lands exactly on a tabulated position k /
-  // kPositions (snapping), or, if that is impossible, stops at it.
-  Cube transition(const double z, const double max_half_size) const
-  {
-    const CubeLimit lim = limit(z, max_half_size);
-    if (lim.interface < 0) {
-      return {lim.half_size};
-    }
-    constexpr int kK = LayeredCubeGreens::kPositions;
-    int position = 0;
-    double h = lim.half_size;
-    if (lim.distance > kOnInterface * lim.half_size) {
-      const int k = static_cast<int>(std::ceil(lim.distance * kK / h));
-      if (k >= kK) {
-        return {lim.distance};
-      }
-      h = lim.distance * kK / k;
-      position = above(lim.interface, z) ? k : -k;
-    }
-    return {h, table(lim.interface, position)};
-  }
-
-  const Stack::PlanarInterface& interface(const int i) const
-  {
-    return interfaces_[i];
-  }
-  // The z of interface i is above height z.
-  bool above(const int i, const double z) const { return interfaces_[i].z > z; }
-  const LayeredCubeGreens* table(const int i, const int position) const
-  {
-    return (*tables_[i])[position + LayeredCubeGreens::kPositions - 1].get();
+    return (*tables(c.eps_minus,
+                    c.eps_plus))[position + Layered::kPositions - 1]
+        .get();
   }
 
  private:
-  const std::vector<Stack::PlanarInterface>& interfaces_;
-  const std::vector<
-      const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>& tables_;
+  const Tables<Layered>* tables(const double eps_minus, const double eps_plus)
+  {
+    std::atomic<const Tables<Layered>*>& entry
+        = slots_[slot(eps_minus) * eps_values_.size() + slot(eps_plus)];
+    const Tables<Layered>* t = entry.load(std::memory_order_acquire);
+    if (t == nullptr) {
+      const std::lock_guard lock(mutex_);
+      t = entry.load(std::memory_order_relaxed);
+      if (t == nullptr) {
+        t = &build_(eps_plus / eps_minus);
+        entry.store(t, std::memory_order_release);
+      }
+    }
+    return t;
+  }
+
+  size_t slot(const double eps) const
+  {
+    return static_cast<size_t>(std::ranges::lower_bound(eps_values_, eps)
+                               - eps_values_.begin());
+  }
+
+  std::function<const Tables<Layered>&(double)> build_;
+  std::mutex& mutex_;
+  std::vector<double> eps_values_;
+  std::vector<std::atomic<const Tables<Layered>*>> slots_;
 };
+
+// The walks of one solve, in a frame (Space or Plane).
+template <class Frame>
+class Walker
+{
+  static constexpr int D = Frame::kD;
+  using Layered = typename Frame::Layered;
+  using Point = Vec<D>;
+  using DielectricCube = typename Dielectric<D>::Cube;
+
+  // A face of the Gaussian surface: normal to `axis`, at its low or high
+  // coordinate.
+  struct Face
+  {
+    int axis;
+    bool high;
+  };
+
+ public:
+  Walker(const typename Frame::GeometryType& geometry,
+         const SpatialIndex<D>& index,
+         const Dielectric<D>& dielectric,
+         const GaussianSurface<D>& gauss,
+         const typename Frame::Uniform& greens,
+         LayeredTableCache<Layered, D>& tables,
+         const double capture,
+         const int64_t hop_guard,
+         const uint64_t key)
+      : geometry_(geometry),
+        window_(Frame::window(geometry)),
+        index_(index),
+        dielectric_(dielectric),
+        gauss_(gauss),
+        greens_(greens),
+        tables_(tables),
+        capture_(capture),
+        hop_guard_(hop_guard),
+        key_(key)
+  {
+  }
+
+  // One walk: returns the column it ends in (the last is the ground
+  // plane, which grounded nets join) or kHopGuardHit. `left` tells whether
+  // a cube could have reached outside the geometry's window.
+  int walk(const int64_t walk_id,
+           double& weight,
+           int64_t& hops,
+           bool& left) const
+  {
+    Philox rng(key_, static_cast<uint64_t>(walk_id));
+    Face face{};
+    Point p;
+    left = false;
+    const double charge_scale = kEps0 * startPoint(rng, p, face);
+    const double first_size = index_.nearest(p).dist;
+    left = reaches(p, first_size);
+    weight = charge_scale * firstHop(p, first_size, face, rng);
+    // Transition hops until the walk is captured by a conductor.
+    for (hops = 0; hops < hop_guard_; hops++) {
+      const typename SpatialIndex<D>::Nearest n = index_.nearest(p);
+      // A conductor outside the window could only matter within n.dist.
+      left = left || reaches(p, n.dist);
+      if (n.dist <= capture_) {
+        if (n.box == SpatialIndex<D>::kGround) {
+          return geometry_.netCount();
+        }
+        const int net = Frame::shapeNet(geometry_, n.box);
+        return geometry_.grounded(net) ? geometry_.netCount() : net;
+      }
+      const Cube<Layered> cube = transition(p, n.dist, rng);
+      const Point offset
+          = cube.layered ? Frame::toWorld(cube.layered->sampleTransition(rng),
+                                          cube.normal)
+                         : greens_.sampleTransition(rng);
+      for (int k = 0; k < D; k++) {
+        p[k] += cube.half_size * offset[k];
+      }
+    }
+    return kHopGuardHit;
+  }
+
+ private:
+  // Whether the cube of half-size r at p reaches outside the window.
+  bool reaches(const Point& p, const double r) const
+  {
+    return window_ != nullptr
+           && (p[0] - r < window_->lo[0] || p[0] + r > window_->hi[0]
+               || p[1] - r < window_->lo[1] || p[1] + r > window_->hi[1]);
+  }
+
+  // A point on the surface: a piece drawn by its start probability, then a
+  // uniform point on it. Returns the piece's scale.
+  double startPoint(Philox& rng, Point& p, Face& face) const
+  {
+    const double u = rng.uniform() * gauss_.cumulative.back();
+    const int last = static_cast<int>(gauss_.cumulative.size()) - 1;
+    const int i = std::min(
+        last,
+        static_cast<int>(std::ranges::upper_bound(gauss_.cumulative, u)
+                         - gauss_.cumulative.begin()));
+    const typename GaussianSurface<D>::Piece& piece = gauss_.pieces[i];
+    face = {piece.axis, piece.high};
+    const AlignedBox<D>& rect = piece.rect;
+    p[face.axis] = rect.lo[face.axis];
+    for (int t = 0; t < D; t++) {
+      if (t != face.axis) {
+        p[t] = rect.lo[t] + rng.uniform() * (rect.hi[t] - rect.lo[t]);
+      }
+    }
+    return piece.scale;
+  }
+
+  // First hop from p on the surface's face: sample by |eps dP/dn|, since
+  // Q = -flux of eps grad(phi) through the surface. Moves p and returns the
+  // walk's weight over eps0 and the start piece's scale. The cube is never
+  // shrunk for an interface: the weight scales as 1 / size, and shrinking near
+  // interfaces gives it infinite variance. Instead, an interface at an
+  // untabulated position is handled by the mixture of the two nearest tabulated
+  // positions.
+  double firstHop(Point& p,
+                  const double max_half_size,
+                  const Face face,
+                  Philox& rng) const
+  {
+    const DielectricCube first = dielectric_.cube(p, max_half_size);
+    const double eps_here = dielectric_.eps(p);
+    BasicFirstHop<D> hop;
+    double norm;
+    const Layered* layered = nullptr;
+    if (first.split) {
+      layered = mixture(p, first, rng);
+    }
+    if (layered) {
+      const auto axis = Frame::toTable(face.axis, first.axis);
+      hop = layered->sampleFirstHop(axis, rng);
+      hop.offset = Frame::toWorld(hop.offset, first.axis);
+      norm = layered->fluxNorm(axis)
+             * (Frame::isNormal(axis) ? first.eps_minus : eps_here);
+    } else {
+      hop = greens_.sampleFirstHop(Frame::uniformAxis(face.axis), rng);
+      norm = eps_here * greens_.gradientNorm();
+    }
+    for (int k = 0; k < D; k++) {
+      p[k] += first.half_size * hop.offset[k];
+    }
+    const double normal_sign = face.high ? 1.0 : -1.0;
+    return -norm * normal_sign * hop.sign / first.half_size;
+  }
+
+  // A transition cube. When an interface plane falls inside, the cube is
+  // shrunk so that the plane lands exactly on a tabulated position
+  // k / kPositions (snapping), or, if that is impossible, stops at it. A
+  // floored cube keeps its size and draws the position instead.
+  Cube<Layered> transition(const Point& p,
+                           const double max_half_size,
+                           Philox& rng) const
+  {
+    const DielectricCube c = dielectric_.cube(p, max_half_size, capture_);
+    if (!c.split) {
+      return {c.half_size};
+    }
+    if (c.floored) {
+      return {c.half_size, mixture(p, c, rng), c.axis};
+    }
+    constexpr int kK = Layered::kPositions;
+    int position = 0;
+    double h = c.half_size;
+    if (c.distance > kOnInterface * c.half_size) {
+      const int k = static_cast<int>(std::ceil(c.distance * kK / h));
+      if (k >= kK) {
+        return {c.distance};
+      }
+      h = c.distance * kK / k;
+      position = c.coordinate > p[c.axis] ? k : -k;
+    }
+    return {h, tables_.table(c, position), c.axis};
+  }
+
+  // The table for a plane at an untabulated position inside a cube: one of
+  // the two nearest tabulated positions, drawn with linear weights, which
+  // reproduces the kernel interpolated in the position. Null when the draw
+  // puts the plane on the cube's face, where the uniform table applies.
+  const Layered* mixture(const Point& p,
+                         const DielectricCube& c,
+                         Philox& rng) const
+  {
+    constexpr int kK = Layered::kPositions;
+    const double x = c.distance / c.half_size * kK;
+    int k = static_cast<int>(x);
+    if (rng.uniform() < x - k) {
+      k++;
+    }
+    if (k >= kK) {
+      return nullptr;
+    }
+    return tables_.table(c, c.coordinate > p[c.axis] ? k : -k);
+  }
+
+  const typename Frame::GeometryType& geometry_;
+  const AlignedBox<2>* window_;  // x-y; null when there is none
+  const SpatialIndex<D>& index_;
+  const Dielectric<D>& dielectric_;
+  const GaussianSurface<D>& gauss_;
+  const typename Frame::Uniform& greens_;
+  LayeredTableCache<Layered, D>& tables_;
+  const double capture_;
+  const int64_t hop_guard_;
+  const uint64_t key_;
+};
+
+// Runs batches [first, first + count) of `batch_size` walks on the pool,
+// one tally per batch. A worker cannot throw: the first failure (from
+// building a table, say) is rethrown here after the round.
+template <class W>
+void runRound(WorkerPool& pool,
+              const W& walker,
+              const int batch_size,
+              const int64_t first,
+              const int count,
+              const int columns,
+              std::vector<Tally>& tallies)
+{
+  // Accumulates locally so threads do not share cache lines while walking.
+  auto runBatch = [&](const int64_t batch, Tally& result) {
+    Tally tally(columns);
+    const int64_t first_walk = batch * batch_size;
+    for (int64_t w = first_walk; w < first_walk + batch_size; w++) {
+      double weight = 0;
+      int64_t hops = 0;
+      bool left = false;
+      const int column = walker.walk(w, weight, hops, left);
+      tally.hops += hops;
+      if (column == kHopGuardHit) {
+        tally.guard_hits++;
+        continue;
+      }
+      // Walks that reached outside the window and came back to a conductor;
+      // those that went on to the ground plane would at most end on a
+      // conductor outside instead, which ground stands in for.
+      if (left && column != columns - 1) {
+        tally.left_sum += std::abs(weight);
+      }
+      tally.sum[column] += weight;
+      tally.sum2[column] += weight * weight;
+      tally.sum_all += weight;
+      tally.sum2_all += weight * weight;
+    }
+    result = std::move(tally);
+  };
+  std::atomic<int> claim{0};
+  std::exception_ptr failure;
+  std::mutex failure_mutex;
+  pool.run([&]() {
+    try {
+      for (int b = claim++; b < count; b = claim++) {
+        runBatch(first + b, tallies[b]);
+      }
+    } catch (...) {
+      const std::lock_guard lock(failure_mutex);
+      if (!failure) {
+        failure = std::current_exception();
+      }
+    }
+  });
+  if (failure) {
+    std::rethrow_exception(failure);
+  }
+}
+
+template <class GeometryType>
+void checkSolveArguments(const GeometryType& geometry,
+                         const int master,
+                         const SolveOptions& options)
+{
+  if (master < 0 || master >= geometry.netCount()) {
+    throw std::invalid_argument("fsv: master net " + std::to_string(master)
+                                + " is out of range");
+  }
+  if (geometry.grounded(master)) {
+    throw std::invalid_argument("fsv: master net " + geometry.netName(master)
+                                + " is grounded");
+  }
+  if (options.hop_guard <= 0) {
+    throw std::invalid_argument("fsv: hop_guard must be positive");
+  }
+  if (options.max_walks <= 0) {
+    throw std::invalid_argument("fsv: max_walks must be positive");
+  }
+  if (!(options.gauss_offset > 0) || !std::isfinite(options.gauss_offset)) {
+    throw std::invalid_argument("fsv: gauss_offset must be positive");
+  }
+  // The stopping test divides by the tolerances.
+  if (!(options.tol_total > 0) || !std::isfinite(options.tol_total)) {
+    throw std::invalid_argument("fsv: tol_total must be positive");
+  }
+  if (options.tol_coupling
+      && (!(*options.tol_coupling > 0)
+          || !std::isfinite(*options.tol_coupling))) {
+    throw std::invalid_argument("fsv: tol_coupling must be positive");
+  }
+}
+
+// The row's means and standard errors from the summed tallies.
+void estimateRow(const Tally& total, const int nets, CapRow& row)
+{
+  const double n = static_cast<double>(row.walks);
+  row.cap.assign(nets, 0.0);
+  row.sigma.assign(nets, 0.0);
+  for (int c = 0; c < nets; c++) {
+    std::tie(row.cap[c], row.sigma[c]) = estimate(total, c, n);
+  }
+  std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
+  row.hops = total.hops;
+  row.window_leakage = total.left_sum / n;
+}
+
+// The largest ratio of a standard error to its target: the total's to
+// tol_total of the total, and each coupling's, the ground's included, to
+// tol_coupling of the total. The row has converged when it is below 1.
+double worstErrorRatio(const CapRow& row, const SolveOptions& options)
+{
+  const int nets = static_cast<int>(row.cap.size());
+  const double c_total = row.cap[row.master];
+  if (!(c_total > 0)) {
+    return std::numeric_limits<double>::infinity();
+  }
+  double worst = row.sigma[row.master] / (options.tol_total * c_total);
+  const double coupling_target
+      = options.tol_coupling.value_or(options.tol_total) * c_total;
+  for (int c = 0; c < nets; c++) {
+    if (c != row.master) {
+      worst = std::max(worst, row.sigma[c] / coupling_target);
+    }
+  }
+  return std::max(worst, row.ground_sigma / coupling_target);
+}
+
+// The walks the row needs to meet its tolerances, or min_walks if more:
+// standard errors fall as 1 / sqrt(walks).
+int64_t walksNeeded(const CapRow& row, const SolveOptions& options)
+{
+  const double ratio = worstErrorRatio(row, options);
+  const double walks
+      = std::ceil(ratio * ratio * static_cast<double>(row.walks));
+  // An infinite or NaN ratio (a non-positive total, or NaN weights) asks for
+  // as many walks as max_walks allows.
+  constexpr double kMost = 9.0e18;
+  return std::max(options.min_walks,
+                  static_cast<int64_t>(walks < kMost ? walks : kMost));
+}
+
+// Runs rounds of walks until the row meets its tolerances or max_walks.
+// The worker pool runs one round of batches at a time.
+template <class W, class GeometryType>
+CapRow runRounds(WorkerPool& pool,
+                 const W& walker,
+                 const SolverOptions& options,
+                 const SolveOptions& solve_options,
+                 const GeometryType& geometry,
+                 const int master)
+{
+  // The worker pool runs one round of batches at a time. Each batch has its
+  // own tally and the tallies are reduced in batch order, so the sums do not
+  // depend on the thread count. After a small first round, each round is
+  // sized to the walks still needed (see walksNeeded) plus a margin, within
+  // [first_round_batches, round_batches], so solves stop near their target
+  // and long ones still give every thread work.
+  const int nets = geometry.netCount();
+  const int columns = nets + 1;  // last column is the ground plane
+  CapRow row;
+  row.master = master;
+  Tally total(columns);
+  std::vector<Tally> tallies(options.round_batches, Tally(columns));
+  int64_t round_first = 0;
+  int round_size = std::min(options.first_round_batches, options.round_batches);
+  const int64_t max_batches
+      = (solve_options.max_walks + options.batch_size - 1) / options.batch_size;
+  while (true) {
+    // The last round is trimmed so the walk count stops at max_walks.
+    round_size = static_cast<int>(
+        std::min<int64_t>(round_size, max_batches - round_first));
+    std::fill(tallies.begin(), tallies.begin() + round_size, Tally(columns));
+    runRound(pool,
+             walker,
+             options.batch_size,
+             round_first,
+             round_size,
+             columns,
+             tallies);
+    for (int b = 0; b < round_size; b++) {
+      total.add(tallies[b]);
+    }
+    round_first += round_size;
+    row.walks = round_first * options.batch_size;
+    estimateRow(total, nets, row);
+
+    // A dropped walk would bias every column without showing up in sigma.
+    if (!std::isfinite(row.cap[master])) {
+      throw std::runtime_error(
+          "fsv: walks of non-finite weight while solving net "
+          + geometry.netName(master));
+    }
+    if (total.guard_hits > 0) {
+      throw std::runtime_error(
+          "fsv: " + std::to_string(total.guard_hits) + " walk(s) exceeded "
+          + std::to_string(solve_options.hop_guard) + " hops while solving net "
+          + geometry.netName(master)
+          + "; raise SolveOptions::hop_guard or check the geometry");
+    }
+    if (row.walks >= solve_options.max_walks) {
+      break;
+    }
+    if (row.walks >= solve_options.min_walks
+        && worstErrorRatio(row, solve_options) < 1) {
+      break;
+    }
+    // The estimate of the walks needed is itself noisy; the margin makes
+    // falling just short, which costs another round, less likely.
+    constexpr double kMargin = 1.05;
+    const double missing
+        = kMargin * static_cast<double>(walksNeeded(row, solve_options))
+          - static_cast<double>(row.walks);
+    const double batches = std::ceil(missing / options.batch_size);
+    round_size = static_cast<int>(
+        std::clamp(batches,
+                   static_cast<double>(std::min(options.first_round_batches,
+                                                options.round_batches)),
+                   static_cast<double>(options.round_batches)));
+  }
+  return row;
+}
+
+// Each trial round in choosing a Gaussian surface: 8192 walks, in batches
+// small enough to occupy many threads.
+constexpr int kTrialBatches = 32;
+constexpr int kTrialBatchSize = 256;
+// The inside surface must cost at most this much of the other in its trial:
+// a close call is not worth the noise in either cost.
+constexpr double kInsideAdvantage = 0.8;
+// Below this first-cube shrink on the clear surface (see GaussianSurface),
+// the inside one has nothing to gain and is not tried.
+constexpr double kShrinkToTry = 1.1;
+// A solve allowed fewer than this many times the trial's walks (both
+// surfaces) skips the trial, which would be a large part of its budget.
+constexpr int64_t kTrialBudget = 8;
+// These constants were tuned on the benchmark; see test/README.md, Surface
+// placement.
+
+// The hops a walker's solve would take, from one trial round of walks on
+// stream `key`: the walks needed to meet the tolerances (see
+// worstErrorRatio), held within [min_walks, max_walks] as the solve's are,
+// times the hops per walk. With min_walks = max_walks only the hops per
+// walk differ. A walk past the hop guard, or a surface with no finite
+// estimate, makes it infinite.
+template <class W, class GeometryType>
+double trialCost(WorkerPool& pool,
+                 const W& walker,
+                 const SolveOptions& solve_options,
+                 const GeometryType& geometry,
+                 const int master)
+{
+  const int nets = geometry.netCount();
+  const int columns = nets + 1;
+  std::vector<Tally> tallies(kTrialBatches, Tally(columns));
+  runRound(pool, walker, kTrialBatchSize, 0, kTrialBatches, columns, tallies);
+  Tally total(columns);
+  for (const Tally& tally : tallies) {
+    total.add(tally);
+  }
+  if (total.guard_hits > 0) {
+    return std::numeric_limits<double>::infinity();
+  }
+  CapRow row;
+  row.master = master;
+  row.walks = static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  estimateRow(total, nets, row);
+  const double ratio = worstErrorRatio(row, solve_options);
+  if (!std::isfinite(ratio)) {
+    // No estimate (a non-positive or non-finite total): never the cheaper.
+    return std::numeric_limits<double>::infinity();
+  }
+  const double lo = static_cast<double>(solve_options.min_walks);
+  const double hi = static_cast<double>(solve_options.max_walks);
+  double walks = ratio * ratio * static_cast<double>(row.walks);
+  // An infinite or NaN ratio runs to max_walks.
+  walks = walks < hi ? std::max(walks, lo) : hi;
+  return walks * static_cast<double>(row.hops) / static_cast<double>(row.walks);
+}
+
+// The two-dielectric tables for one permittivity ratio, by interface
+// position, from a solver's cache. Cached only once every position is
+// built, so a failure leaves no partial entry.
+template <class Layered>
+const Tables<Layered>& cachedTables(std::map<double, Tables<Layered>>& cache,
+                                    const int panels,
+                                    const double ratio)
+{
+  const auto cached = cache.find(ratio);
+  if (cached != cache.end()) {
+    return cached->second;
+  }
+  constexpr int kK = Layered::kPositions;
+  Tables<Layered> tables;
+  for (int position = 1 - kK; position < kK; position++) {
+    tables.push_back(Layered::shared(panels, position, ratio));
+  }
+  return cache.emplace(ratio, std::move(tables)).first->second;
+}
+
+// One solve in a frame: the Gaussian surface, the walks and the rounds.
+template <class Frame, class SceneType>
+CapRow solveScene(const SceneType& scene,
+                  const int master,
+                  const SolverOptions& options,
+                  const SolveOptions& solve_options,
+                  const typename Frame::Uniform& greens,
+                  std::map<double, Tables<typename Frame::Layered>>& cache,
+                  std::mutex& tables_mutex,
+                  WorkerPool& pool)
+{
+  constexpr int D = Frame::kD;
+  using Layered = typename Frame::Layered;
+  const auto& geometry = scene.geometry();
+  checkSolveArguments(geometry, master, solve_options);
+  auto surface = [&](const SurfacePlacement placement) {
+    return makeGaussianSurface<D>(
+        Frame::shapes(geometry),
+        [&](const int b) { return Frame::shapeNet(geometry, b); },
+        scene.index(),
+        scene.dielectric(),
+        master,
+        solve_options.gauss_offset,
+        placement);
+  };
+  const GaussianSurface<D> clear = surface(SurfacePlacement::kClearOfShells);
+  LayeredTableCache<Layered, D> tables(
+      scene.dielectric(),
+      [&](const double ratio) -> const Tables<Layered>& {
+        return cachedTables(cache, options.panels, ratio);
+      },
+      tables_mutex);
+  const uint64_t key
+      = options.seed
+        ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
+  auto walker = [&](const GaussianSurface<D>& gauss, const uint64_t k) {
+    return Walker<Frame>(geometry,
+                         scene.index(),
+                         scene.dielectric(),
+                         gauss,
+                         greens,
+                         tables,
+                         solve_options.capture_rel * scene.minDimension(),
+                         solve_options.hop_guard,
+                         k);
+  };
+  // Inside the shells the first cubes meet fewer interfaces but are
+  // smaller, which wins on some structures and loses on others; one trial
+  // round on each surface picks the cheaper. The trial walks use their own
+  // streams and are discarded, so the choice does not bias the solve.
+  const GaussianSurface<D>* gauss = &clear;
+  std::optional<GaussianSurface<D>> inside;
+  constexpr int64_t kTrialWalks
+      = 2 * static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  if (clear.first_cube_shrink > kShrinkToTry
+      && solve_options.max_walks >= kTrialBudget * kTrialWalks) {
+    inside = surface(SurfacePlacement::kInsideShells);
+  }
+  int64_t trial_walks = 0;
+  if (inside && inside->inside_shells) {
+    const uint64_t trial_key = key ^ 0xD1B54A32D192ED03ull;
+    const double clear_cost = trialCost(
+        pool, walker(clear, trial_key), solve_options, geometry, master);
+    const double inside_cost = trialCost(
+        pool, walker(*inside, ~trial_key), solve_options, geometry, master);
+    trial_walks = kTrialWalks;
+    if (inside_cost < kInsideAdvantage * clear_cost) {
+      gauss = &*inside;
+    }
+  }
+  CapRow row = runRounds(
+      pool, walker(*gauss, key), options, solve_options, geometry, master);
+  row.inside_surface = gauss != &clear;
+  row.trial_walks = trial_walks;
+  return row;
+}
 
 // The panel count, checked before any table is built: every tabulated
 // interface position must lie on a panel boundary.
@@ -267,239 +847,47 @@ int checkedPanels(const int panels)
 }  // namespace
 
 Solver::Solver(const SolverOptions& options)
-    : options_(options),
-      greens_(CubeGreens::shared(checkedPanels(options.panels))),
-      pool_(std::make_unique<WorkerPool>(options.threads))
+    : options_(options), pool_(std::make_unique<WorkerPool>(options.threads))
 {
+  checkedPanels(options.panels);
 }
 
 Solver::~Solver() = default;
-
-const std::vector<std::shared_ptr<const LayeredCubeGreens>>&
-Solver::layeredTables(const double ratio)
-{
-  const auto cached = layered_.find(ratio);
-  if (cached != layered_.end()) {
-    return cached->second;
-  }
-  // Cached only once every position is built, so a failure leaves no
-  // partial entry.
-  constexpr int kK = LayeredCubeGreens::kPositions;
-  std::vector<std::shared_ptr<const LayeredCubeGreens>> tables;
-  for (int position = 1 - kK; position < kK; position++) {
-    tables.push_back(
-        LayeredCubeGreens::shared(options_.panels, position, ratio));
-  }
-  return layered_.emplace(ratio, std::move(tables)).first->second;
-}
 
 CapRow Solver::solve(const Scene& scene,
                      const int master,
                      const SolveOptions& solve_options)
 {
   const std::lock_guard lock(solve_mutex_);
-  const Geometry& geometry = scene.geometry();
-  if (master < 0 || master >= geometry.netCount()) {
-    throw std::invalid_argument("fsv: master net " + std::to_string(master)
-                                + " is out of range");
+  if (!greens_) {
+    greens_ = CubeGreens::shared(options_.panels);
   }
-  if (solve_options.hop_guard <= 0) {
-    throw std::invalid_argument("fsv: hop_guard must be positive");
+  return solveScene<Space>(scene,
+                           master,
+                           options_,
+                           solve_options,
+                           *greens_,
+                           layered_,
+                           tables_mutex_,
+                           *pool_);
+}
+
+CapRow Solver::solve(const Scene2D& scene,
+                     const int master,
+                     const SolveOptions& solve_options)
+{
+  const std::lock_guard lock(solve_mutex_);
+  if (!square_greens_) {
+    square_greens_ = SquareGreens::shared(options_.panels);
   }
-  const SpatialIndex& spatial_index = scene.index();
-  const double capture = solve_options.capture_rel * scene.minDimension();
-  const GaussianSurface gauss
-      = makeGaussianSurface(geometry, master, solve_options.gauss_offset);
-  const int nets = geometry.netCount();
-  const int columns = nets + 1;  // last column is the ground plane
-  const double charge_scale = kEps0 * gauss.area;
-  // Two-dielectric tables for each planar interface, by position.
-  std::vector<const std::vector<std::shared_ptr<const LayeredCubeGreens>>*>
-      interface_tables;
-  for (const Stack::PlanarInterface& i : scene.interfaces()) {
-    interface_tables.push_back(&layeredTables(i.eps_above / i.eps_below));
-  }
-  const InterfaceSizer sizer(scene, interface_tables);
-  const uint64_t key
-      = options_.seed
-        ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
-
-  // One walk: returns the column it ends in, or -1 if it hit the hop guard.
-  auto walk = [&](const int64_t walk_id, double& weight, int64_t& hops) {
-    Philox rng(key, static_cast<uint64_t>(walk_id));
-    // Start point: a face by area, then uniform on the face.
-    double u = rng.uniform() * gauss.area;
-    int f = 0;
-    while (f < BoxFace::kCount - 1 && u >= gauss.face_area[f]) {
-      u -= gauss.face_area[f];
-      f++;
-    }
-    const BoxFace face = BoxFace::fromIndex(f);
-    const int normal = index(face.axis);
-    Vec3 p;
-    p[normal] = face.high ? gauss.box.hi[normal] : gauss.box.lo[normal];
-    const auto [t0, t1] = tangentAxes(face.axis);
-    for (const int t : {index(t0), index(t1)}) {
-      p[t] = gauss.box.lo[t]
-             + rng.uniform() * (gauss.box.hi[t] - gauss.box.lo[t]);
-    }
-
-    // First hop: sample by |eps dP/dn|; Q = -flux of eps grad(phi) through
-    // G. The cube is never shrunk for an interface: the weight scales as
-    // 1 / size, and shrinking near interfaces gives it infinite variance.
-    // Instead, an interface at an untabulated position t is handled by
-    // sampling the two nearest tabulated positions with linear weights,
-    // which reproduces the kernel interpolated in t.
-    const CubeLimit first = sizer.limit(p[2], spatial_index.nearest(p).dist);
-    const double eps_here = scene.epsAt(p[2]);
-    FirstHop hop;
-    double norm;
-    const LayeredCubeGreens* layered = nullptr;
-    if (first.interface >= 0) {
-      constexpr int kK = LayeredCubeGreens::kPositions;
-      const double x = first.distance / first.half_size * kK;
-      int k = static_cast<int>(x);
-      if (rng.uniform() < x - k) {
-        k++;
-      }
-      // Position kK puts the interface on the face: a uniform cube.
-      if (k < kK) {
-        const bool up = sizer.above(first.interface, p[2]);
-        layered = sizer.table(first.interface, up ? k : -k);
-      }
-    }
-    if (layered) {
-      hop = layered->sampleFirstHop(face.axis, rng);
-      norm = layered->fluxNorm(face.axis)
-             * (face.axis == Axis::kZ
-                    ? sizer.interface(first.interface).eps_below
-                    : eps_here);
-    } else {
-      hop = greens_->sampleFirstHop(face.axis, rng);
-      norm = eps_here * greens_->gradientNorm();
-    }
-    weight
-        = -charge_scale * norm * face.normalSign() * hop.sign / first.half_size;
-    for (int k = 0; k < 3; k++) {
-      p[k] += first.half_size * hop.offset[k];
-    }
-
-    // Transition hops until the walk is captured by a conductor.
-    for (hops = 0; hops < solve_options.hop_guard; hops++) {
-      const SpatialIndex::Nearest n = spatial_index.nearest(p);
-      if (n.dist <= capture) {
-        return n.box == SpatialIndex::kGround ? nets : geometry.boxNet(n.box);
-      }
-      const Cube cube = sizer.transition(p[2], n.dist);
-      const Vec3 offset = cube.layered ? cube.layered->sampleTransition(rng)
-                                       : greens_->sampleTransition(rng);
-      for (int k = 0; k < 3; k++) {
-        p[k] += cube.half_size * offset[k];
-      }
-    }
-    return -1;
-  };
-
-  // Accumulates locally so threads do not share cache lines while walking.
-  auto runBatch = [&](const int64_t batch, Tally& result) {
-    Tally tally(columns);
-    const int64_t first = batch * options_.batch_size;
-    for (int64_t w = first; w < first + options_.batch_size; w++) {
-      double weight = 0;
-      int64_t hops = 0;
-      const int column = walk(w, weight, hops);
-      tally.hops += hops;
-      if (column < 0) {
-        tally.guard_hits++;
-        continue;
-      }
-      tally.sum[column] += weight;
-      tally.sum2[column] += weight * weight;
-      tally.sum_all += weight;
-      tally.sum2_all += weight * weight;
-    }
-    result = std::move(tally);
-  };
-
-  CapRow row;
-  row.master = master;
-  Tally total(columns);
-
-  // The worker pool runs one round of batches at a time. Each batch has its
-  // own tally and the tallies are reduced in batch order, so the sums do not
-  // depend on the thread count. Rounds start small and double up to
-  // round_batches, so loose tolerances stop near their target and long solves
-  // still give every thread work.
-  std::vector<Tally> tallies(options_.round_batches, Tally(columns));
-  int64_t round_first = 0;
-  int round_size
-      = std::min(options_.first_round_batches, options_.round_batches);
-  std::atomic<int> claim{0};
-  const std::function<void()> work = [&]() {
-    for (int b = claim++; b < round_size; b = claim++) {
-      runBatch(round_first + b, tallies[b]);
-    }
-  };
-
-  const int64_t max_batches
-      = (solve_options.max_walks + options_.batch_size - 1)
-        / options_.batch_size;
-  while (true) {
-    // The last round is trimmed so the walk count stops at max_walks.
-    round_size = static_cast<int>(
-        std::min<int64_t>(round_size, max_batches - round_first));
-    std::fill(tallies.begin(), tallies.begin() + round_size, Tally(columns));
-    claim = 0;
-    pool_->run(work);
-    for (int b = 0; b < round_size; b++) {
-      total.add(tallies[b]);
-    }
-    round_first += round_size;
-    row.walks = round_first * options_.batch_size;
-    round_size = std::min(2 * round_size, options_.round_batches);
-
-    // Mean and standard error per column.
-    const double n = static_cast<double>(row.walks);
-    row.cap.assign(nets, 0.0);
-    row.sigma.assign(nets, 0.0);
-    for (int c = 0; c < nets; c++) {
-      std::tie(row.cap[c], row.sigma[c]) = estimate(total, c, n);
-    }
-    std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
-    row.hops = total.hops;
-
-    // A dropped walk would bias every column without showing up in sigma.
-    if (total.guard_hits > 0) {
-      throw std::runtime_error(
-          "fsv: " + std::to_string(total.guard_hits) + " walk(s) exceeded "
-          + std::to_string(solve_options.hop_guard) + " hops while solving net "
-          + geometry.netName(master)
-          + "; raise SolveOptions::hop_guard or check the geometry");
-    }
-
-    if (row.walks >= solve_options.max_walks) {
-      break;
-    }
-    if (row.walks < solve_options.min_walks) {
-      continue;
-    }
-    const double c_total = row.cap[master];
-    bool converged = row.sigma[master] < solve_options.tol_total * c_total;
-    for (int c = 0; c < columns && converged; c++) {
-      if (c == master) {
-        continue;
-      }
-      const double cap = c < nets ? row.cap[c] : row.ground;
-      const double sigma = c < nets ? row.sigma[c] : row.ground_sigma;
-      if (std::abs(cap) >= solve_options.coupling_threshold * c_total) {
-        converged = sigma < solve_options.tol_coupling * std::abs(cap);
-      }
-    }
-    if (converged) {
-      break;
-    }
-  }
-  return row;
+  return solveScene<Plane>(scene,
+                           master,
+                           options_,
+                           solve_options,
+                           *square_greens_,
+                           layered_squares_,
+                           tables_mutex_,
+                           *pool_);
 }
 
 }  // namespace fsv

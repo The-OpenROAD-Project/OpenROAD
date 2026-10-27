@@ -63,6 +63,26 @@ py_test(
     ],
 )
 
+config_setting(
+    name = "_macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+# pandoc for //docs:man_pages. man_pages.bzl takes it with cfg = "exec", so
+# this select() matches the platform that runs pandoc. The wheel's macOS
+# arm64 pandoc is an x86_64 binary; see pandoc_macos_arm64 in MODULE.bazel.
+filegroup(
+    name = "pandoc",
+    srcs = select({
+        ":_macos_aarch64": ["@pandoc_macos_arm64//:pandoc"],
+        "//conditions:default": ["@openroad-pip//pypandoc_binary:extracted_whl_files"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
 # Driver script that orchestrates man page generation inside Bazel's sandbox.
 py_binary(
     name = "manpages_impl",

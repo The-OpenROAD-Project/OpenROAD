@@ -32,7 +32,6 @@ TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "cugr_colocated_pins",
-    "cugr_congestion_sources",
     "cugr_detour_limit",
     "cugr_rrr_accept_stop",
     "cugr_via_demand_disabled",
@@ -142,6 +141,8 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_congestion1",
+    "report_congestion_cugr",
     "report_net_detours1",
     "report_net_detours2",
     "report_net_detours2_cugr",
@@ -342,6 +343,7 @@ cc_test(
     deps = [
         "//src/grt",
         "//src/grt:fastroute",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
@@ -364,6 +366,22 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGlobalRouter",
+    size = "small",
+    srcs = ["cpp/TestGlobalRouter.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

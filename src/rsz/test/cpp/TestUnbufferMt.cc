@@ -75,6 +75,26 @@ TEST_F(TestUnbufferMt, GenerateOffersARemovalThatGains)
   EXPECT_TRUE(generator.generate(target).empty());
 }
 
+// The impact reconnects the pins removeBuffer() moves: those of the output
+// net, or those of the input net when only the output net has a port.
+TEST_F(TestUnbufferMt, ImpactReconnectsThePinsOfTheDroppedNet)
+{
+  // path_pre1 keeps its input net, so the NAND2 input moves.
+  const UnbufferMtCandidate inner(resizer_,
+                                  makeTarget("path_out", "path_pre1", "Z"));
+  EXPECT_EQ(
+      inner.impact().reconnect_pins,
+      std::vector<const sta::Pin*>{db_network_->findPin("path_target/A1")});
+
+  // path_load drives the path_out port, so its output net stays and the NAND2
+  // output moves onto it.
+  const UnbufferMtCandidate outer(resizer_,
+                                  makeTarget("path_out", "path_load", "Z"));
+  EXPECT_EQ(
+      outer.impact().reconnect_pins,
+      std::vector<const sta::Pin*>{db_network_->findPin("path_target/ZN")});
+}
+
 TEST_F(TestUnbufferMt, ApplyRemovesTheBuffer)
 {
   MoveCommitter committer(resizer_);
