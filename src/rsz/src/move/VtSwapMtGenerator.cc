@@ -94,13 +94,12 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
   }
 
   // Populate the candidate cache once for each current link cell.
-  std::map<sta::LibertyCell*, CandidateCells>::iterator cached
-      = candidate_cells_cache_.find(current_cell);
-  if (cached == candidate_cells_cache_.end()) {
+  const std::pair<std::map<sta::LibertyCell*, CandidateCells>::iterator, bool>
+      cached = candidate_cells_cache_.try_emplace(current_cell);
+  if (cached.second) {  // New cache entry.
     const sta::LibertyCellSeq equiv_cells
         = resizer_.getVTEquivCells(current_cell);
-    CandidateCells entry;
-    entry.applicable = equiv_cells.size() > 1;
+    CandidateCells& entry = cached.first->second;  // Map iterator's value.
     entry.cells.reserve(equiv_cells.size());
     // Enumerate all VT-equivalent cells except the current implementation.
     for (sta::LibertyCell* cell : equiv_cells) {
@@ -108,10 +107,9 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
         entry.cells.push_back(cell);
       }
     }
-    cached = candidate_cells_cache_.emplace(current_cell, std::move(entry))
-                 .first;  // map iterator to the cached entry.
+    entry.applicable = !entry.cells.empty();
   }
-  return cached->second.applicable;  // CandidateCells applicability flag.
+  return cached.first->second.applicable;  // Cached CandidateCells flag.
 }
 
 }  // namespace rsz
