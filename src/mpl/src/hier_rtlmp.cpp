@@ -99,8 +99,12 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
   target_utilization_ = options.target_util;
   min_ar_ = options.min_ar;
 
+  // Empty means reporting is off: skip creating a directory for it, and the
+  // writeNetFile/writeFloorplanFile/writeCostFile call sites skip writing.
   report_directory_ = options.report_directory;
-  std::filesystem::create_directories(report_directory_);
+  if (!report_directory_.empty()) {
+    std::filesystem::create_directories(report_directory_);
+  }
 
   macro_placement_file_ = options.macro_placement_file;
   keep_clustering_data_ = options.keep_clustering_data;
@@ -1303,7 +1307,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
       = report_directory_ + "/"
         + std::regex_replace(
             parent->getName(), std::regex("[\":<>\\|\\*\\?/]"), "--");
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+  if (!report_directory_.empty()
+      && logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     writeNetFile(file_name_prefix, macros, nets);
   }
 
@@ -1453,8 +1458,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
     logger_->report("Cluster Placement Summary");
     printPlacementResult(parent, outline, best_sa.get());
 
-    writeFloorplanFile(file_name_prefix, placed_macros);
-    writeCostFile(file_name_prefix, best_sa.get());
+    if (!report_directory_.empty()) {
+      writeFloorplanFile(file_name_prefix, placed_macros);
+      writeCostFile(file_name_prefix, best_sa.get());
+    }
   }
 
   updateChildrenShapesAndLocations(parent, placed_macros, soft_macro_id_map);
