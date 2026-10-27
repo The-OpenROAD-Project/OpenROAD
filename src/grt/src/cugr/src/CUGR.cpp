@@ -931,14 +931,16 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     delta -= grid_graph_->sumOverflow(touched_edges);
     grid_graph_->addTreeUsage(*net);
     delta += grid_graph_->sumOverflow(touched_edges);
-    // Relief neighbors move only if overflow drops; others may move sideways.
-    const bool strict
-        = !options.strict_accept.empty() && options.strict_accept[net_index];
-    bool keep = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
-    // Nor may the new route exceed the net's length limit, if it has one.
-    if (keep && !options.max_route_length.empty()) {
-      keep = grid_graph_->getTreeLength(net->getRoutingTree())
-             <= options.max_route_length[net_index];
+    // Relief neighbors move only if overflow drops and the route stays within
+    // their length limit; others may move sideways.
+    const double max_length = options.relief_max_length.empty()
+                                  ? std::numeric_limits<double>::infinity()
+                                  : options.relief_max_length[net_index];
+    const bool relief_neighbor = std::isfinite(max_length);
+    bool keep = relief_neighbor ? delta < -kAcceptTolerance
+                                : delta <= kAcceptTolerance;
+    if (keep && relief_neighbor) {
+      keep = grid_graph_->getTreeLength(net->getRoutingTree()) <= max_length;
     }
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
@@ -1015,10 +1017,9 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
 
-  // Incremental re-optimizes every dirty net in stages 1, 3 and 4 (stage 2 is
-  // full route only): the congested-set narrowing between them is skipped, so
-  // net_indices stays the full dirty set. The RRR loop then reroutes only the
-  // congested ones, found among incremental_candidates_.
+  // Incremental re-optimizes every dirty net in stages 1, 3 and 4, skipping
+  // the congested-set narrowing; the RRR loop then reroutes only the congested
+  // ones among incremental_candidates_.
   incremental_routing_ = incremental;
   if (incremental) {
     incremental_candidates_ = net_indices;
@@ -1468,12 +1469,9 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
   for (const int index : incremental_candidates_) {
     is_candidate[index] = 1;
   }
-  // Neighbors move only if overflow drops and their route stays within
-  // kMaxReliefStretch of its length before the relief; the passes keep the
-  // slacks.
+  // Neighbors get a length limit (see mazeRoute); the passes keep the slacks.
   RerouteOptions options{
-      .strict_accept = std::vector<char>(gr_nets_.size(), 0),
-      .max_route_length = std::vector<double>(
+      .relief_max_length = std::vector<double>(
           gr_nets_.size(), std::numeric_limits<double>::infinity()),
       .refresh_critical = false};
   // Each added net's tree before the relief; a rolled-back reroute keeps it.
@@ -1486,11 +1484,11 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     if (added.empty()) {
       break;
     }
-    // Added nets join the candidates under strict acceptance.
+    // Added nets join the candidates, limited to kMaxReliefStretch of their
+    // length before the relief.
     for (const int index : added) {
       is_candidate[index] = 1;
-      options.strict_accept[index] = 1;
-      options.max_route_length[index]
+      options.relief_max_length[index]
           = kMaxReliefStretch
             * grid_graph_->getTreeLength(gr_nets_[index]->getRoutingTree());
       incremental_candidates_.push_back(index);
