@@ -101,9 +101,9 @@ void ScanStitch::Stitch(odb::dbBlock* block,
     const std::unique_ptr<ScanCell>& current = *it;
     // The last middle cell connects to the last cell, already popped off the
     // back, so it is never *end()
-    const std::unique_ptr<ScanCell>& next = std::next(it) != scan_cells.end()
-                                                ? std::next(it)->get()
-                                                : last_scan_cell;
+    const auto next_it = std::next(it);
+    const std::unique_ptr<ScanCell>& next
+        = next_it != scan_cells.end() ? next_it->get() : last_scan_cell;
     // Connects current cell scan out to next cell scan in
     next->connectScanIn(current->getScanOut());
   }
