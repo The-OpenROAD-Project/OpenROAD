@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 7
     outputs:
       available_labels: ${{ steps.get_labels.outputs.available_labels }}
-      selected_labels: ${{ env.SELECTED_LABELS }}
+      selected_labels: ${{ steps.gemini_analysis.outputs.summary }}
     permissions:
       contents: read
       id-token: write
@@ -132,7 +132,7 @@ jobs:
             // Parse the label as a CSV, reject invalid ones - we do this just
             // in case someone was able to prompt inject malicious labels.
             const selectedLabels = (process.env.SELECTED_LABELS || '').split(',')
-              .map((label) => label.trim())
+              .map((label) => label.replace(/`/g, '').trim())
               .filter((label) => availableLabels.includes(label))
               .sort()
             // Set the labels
