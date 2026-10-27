@@ -46,7 +46,8 @@ namespace {
 // of every stage of the planned tree next to the delay STA measures after the
 // tree is built.  The data set is the Nangate45 cases of that report, the
 // report_delay_estimator_rebuffer_* tests.  The target-path factor was then
-// checked on another platform; the other factors retain the original fit.
+// checked on another platform; its new value increases estimate error in
+// some Nangate45 cases, while the other factors retain the original fit.
 // The estimate only ranks candidate trees and STA times each batch before it
 // is kept, so an off factor costs QoR, not correctness.
 //
