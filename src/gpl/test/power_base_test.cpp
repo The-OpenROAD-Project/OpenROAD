@@ -406,7 +406,7 @@ TEST_F(PowerDrivenPlacement, WorksWithTimingAndRoutabilityDriven)
   const std::string log = logger_.redirectStringEnd();
 
   EXPECT_NE(log.find("Timing-driven iteration"), std::string::npos) << log;
-  EXPECT_NE(log.find("Routability iteration"), std::string::npos) << log;
+  EXPECT_NE(log.find("Routability pass"), std::string::npos) << log;
   int weighted_new_nets = 0;
   for (size_t at = log.find("net:"); at != std::string::npos;
        at = log.find("net:", at + 1)) {
