@@ -63,10 +63,10 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
         run: |-
-          echo '🔍 Finding unlabeled issues and issues marked for triage...'
+          echo '🔍 Finding unlabeled issues...'
           ISSUES="$(gh issue list \
             --state 'open' \
-            --search 'no:label label:"status/needs-triage"' \
+            --search 'no:label' \
             --json number,title,body \
             --limit '100' \
             --repo "${GITHUB_REPOSITORY}"
