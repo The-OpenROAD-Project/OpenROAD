@@ -1957,7 +1957,8 @@ void RepairDesign::repairNetLoad(
   wire_length = 0;
 
   // Check that the slew limit specified is within the bounds of reason.
-  pre_checks_->checkSlewLimit(bnet->cap(), bnet->maxLoadSlew());
+  pre_checks_->checkSlewLimit(
+      load_pin, bnet->cap(), bnet->maxLoadSlew(), bnet->corner());
 
   load_pins.push_back(load_pin);
 }

@@ -18,5 +18,7 @@ set_global_routing_layer_adjustment met1-met5 0.8
 
 # Per pass: nets rerouted, rollbacks, overflow change and total overflow.
 set_debug_level GRT rrr 1
+# The maze's cost view must match a full extraction after every refresh.
+set_debug_level GRT verify_view 1
 
 global_route -use_cugr -critical_nets_percentage 30 -verbose

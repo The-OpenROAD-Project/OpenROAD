@@ -24,10 +24,10 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          buildMapOptions, buildVisibilityFlags, clampArrowStep,
-         computeBoundsTransforms, computeScaleBar, decorateTabIcons,
+         computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
-         rafCoalesce, showToast, unitLabel }
+         rafCoalesce, showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -1256,7 +1256,7 @@ if (staticCache) {
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    const websocketUrl = websocketUrlFrom(window.location);
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
@@ -1276,19 +1276,6 @@ updateStatus();
 
 // Mount layout components
 app.goldenLayout.loadLayout(defaultLayoutConfig);
-addTabIcons();
-
-// Add the per-panel tab icons and make sure headers update
-function addTabIcons() {
-    if (decorateTabIcons(document.getElementById('gl-container')) > 0) {
-        app.goldenLayout.updateSize();
-    }
-}
-
-// Persist layout on changes
-app.goldenLayout.on('stateChanged', () => {
-    addTabIcons();
-});
 
 // Sync layout size on window resize
 function syncLayoutSize() {

@@ -4,14 +4,12 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "boost/functional/hash.hpp"
 
 namespace sta {
 class Instance;
@@ -129,10 +127,10 @@ class DelayEstimatorCache
     {
       // Liberty arc contributing to the merged output slew.
       const sta::TimingArc* ref_arc{nullptr};
-      // Bitwise input slew used for this arc.
-      uint32_t input_slew_bits{0};
+      // Input slew used for this arc.
+      float input_slew{0.0f};
 
-      // Compares the arc and its exact input-slew bits.
+      // Compares the arc and its input slew.
       bool operator==(const MergeArc&) const = default;
     };
 
@@ -146,46 +144,29 @@ class DelayEstimatorCache
     const sta::MinMax* min_max{nullptr};
     // Current Liberty cell of the fanin driver in this scene.
     const sta::LibertyCell* current_cell{nullptr};
-    // Bitwise input slew at the fanin driver.
-    uint32_t input_slew_bits{0};
-    // Bitwise current load capacitance at the fanin driver.
-    uint32_t load_cap_bits{0};
-    // Bitwise maximum load increase covered by the sample.
-    uint32_t max_load_delta_bits{0};
-    // Bitwise c2 capacitance of the reduced Pi parasitic.
-    uint32_t pi_c2_bits{0};
-    // Bitwise resistance of the reduced Pi parasitic.
-    uint32_t pi_r_bits{0};
-    // Bitwise c1 capacitance of the reduced Pi parasitic.
-    uint32_t pi_c1_bits{0};
+    // Input slew at the fanin driver.
+    float input_slew{0.0f};
+    // Current load capacitance at the fanin driver.
+    float load_cap{0.0f};
+    // Maximum load increase covered by the sample.
+    float max_load_delta{0.0f};
+    // c2 capacitance of the reduced Pi parasitic.
+    float pi_c2{0.0f};
+    // Resistance of the reduced Pi parasitic.
+    float pi_r{0.0f};
+    // c1 capacitance of the reduced Pi parasitic.
+    float pi_c1{0.0f};
     // Additional arcs that affect the driver's merged output slew.
     std::vector<MergeArc> merge_arcs;
 
     // Compares every fixed field and the merge-arc sequence.
     bool operator==(const SlewBiasModelKey&) const = default;
 
-    // Hashes the same fields used by equality for Boost's cache lookup.
-    friend size_t hash_value(const SlewBiasModelKey& key)
+    // Hashes the same fields as operator== for the cache lookup.
+    struct Hash
     {
-      size_t seed = 0;
-      boost::hash_combine(seed, key.driver_pin);
-      boost::hash_combine(seed, key.ref_arc);
-      boost::hash_combine(seed, key.scene);
-      boost::hash_combine(seed, key.min_max);
-      boost::hash_combine(seed, key.current_cell);
-      boost::hash_combine(seed, key.input_slew_bits);
-      boost::hash_combine(seed, key.load_cap_bits);
-      boost::hash_combine(seed, key.max_load_delta_bits);
-      boost::hash_combine(seed, key.pi_c2_bits);
-      boost::hash_combine(seed, key.pi_r_bits);
-      boost::hash_combine(seed, key.pi_c1_bits);
-      boost::hash_combine(seed, key.merge_arcs.size());
-      for (const MergeArc& arc : key.merge_arcs) {
-        boost::hash_combine(seed, arc.ref_arc);
-        boost::hash_combine(seed, arc.input_slew_bits);
-      }
-      return seed;
-    }
+      size_t operator()(const SlewBiasModelKey& key) const;
+    };
   };
 
   // Captures the driver and parasitic state read by the slew-bias sampler.
@@ -198,9 +179,8 @@ class DelayEstimatorCache
   std::unordered_map<const sta::LibertyPort*, float>
       max_equiv_input_cap_increase_by_port;
   // Reuses sampled slew-bias models for identical driver states.
-  using SlewBiasModelMap = std::unordered_map<SlewBiasModelKey,
-                                              SlewBiasModel,
-                                              boost::hash<SlewBiasModelKey>>;
+  using SlewBiasModelMap = std::
+      unordered_map<SlewBiasModelKey, SlewBiasModel, SlewBiasModelKey::Hash>;
   SlewBiasModelMap slew_bias_models;
 };
 

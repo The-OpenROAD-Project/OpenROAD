@@ -57,6 +57,11 @@ long during routability-driven execution, consider raising the target RC value
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
 
+With timing-driven and routability-driven placement enabled, retained timing
+repairs also inflate new cells in congested areas after routability refinement
+finishes. This shares the inflation budget and removes fillers to pay for added
+area, without raising density or restarting routability.
+
 Initial-placement arguments
 - They begin with `-initial_place`.
 - `-initial_place_max_iter`, `-initial_place_max_fanout`

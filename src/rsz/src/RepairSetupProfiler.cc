@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "MoveCandidate.hh"
-#include "RepairSetupAnalysis.hh"
 #include "RepairSetupAnalysisReport.hh"
+#include "RepairSetupMoveSampler.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -81,24 +81,31 @@ RepairSetupProfiler::RepairSetupProfiler(Resizer& resizer,
     }
   }
 
+  // The event trace, events.csv, starts at mode 2.
+  const bool trace_events = mode_ >= Mode::kEvents;
   if (!error) {
     stats_.open(directory_ + "/stats.csv");
-    events_.open(directory_ + "/events.csv");
+    if (trace_events) {
+      events_.open(directory_ + "/events.csv");
+    }
     timing_.open(directory_ + "/timing.csv");
     metadata_.open(directory_ + "/metadata.csv");
   }
-  if (error || !stats_ || !events_ || !timing_ || !metadata_) {
+  if (error || !stats_ || (trace_events && !events_) || !timing_
+      || !metadata_) {
     errorCannotOpen(directory_.empty() ? root.string() : directory_);
   }
 
   stats_ << "phase_id,phase,iteration,iteration_kind,category,metric,move,"
             "delta,phase_total,run_total\n";
-  events_ << "event_id,elapsed_s,phase,iteration,move_id,candidate_id,journal_"
-             "id,event,move,object,before,after,detail\n";
+  if (trace_events) {
+    events_ << "event_id,elapsed_s,phase,iteration,move_id,candidate_id,"
+               "journal_id,event,move,object,before,after,detail\n";
+    events_ << std::setprecision(17);
+  }
   timing_ << "event_id,elapsed_s,phase,iteration,move_id,point,metric,value\n";
   metadata_ << "key,value\n";
   stats_ << std::setprecision(17);
-  events_ << std::setprecision(17);
   timing_ << std::setprecision(17);
   start_ = Clock::now();
   if (mode_ == Mode::kAnalysis) {
@@ -436,10 +443,10 @@ void RepairSetupProfiler::moveSelected(MoveCandidate& candidate,
     } else if (analysis()) {
       const ProfileScope scope("analysis_observation");
       info.observer
-          = std::make_shared<RepairSetupAnalysis>(current_->resizer_,
-                                                  *observed_target,
-                                                  original_endpoint,
-                                                  current_->endpoint_);
+          = std::make_shared<RepairSetupMoveSampler>(current_->resizer_,
+                                                     *observed_target,
+                                                     original_endpoint,
+                                                     current_->endpoint_);
 
       event("analysis_selected_snapshots");
     }
@@ -628,7 +635,7 @@ void RepairSetupProfiler::beginApply(MoveCandidate& candidate)
   profiler.active_observer_ = info.observer;
   if (analysis() && info.observed) {
     if (profiler.active_observer_ == nullptr) {
-      profiler.active_observer_ = std::make_shared<RepairSetupAnalysis>(
+      profiler.active_observer_ = std::make_shared<RepairSetupMoveSampler>(
           profiler.resizer_, candidate.target(), nullptr, profiler.endpoint_);
     }
 

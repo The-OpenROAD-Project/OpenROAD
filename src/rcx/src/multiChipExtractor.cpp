@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "odb/wOrder.h"
+#include "odb/normalizeWireConnectivity.h"
 
 namespace rcx {
 
@@ -24,7 +24,7 @@ void MultiChipExtractor::run(const ExtractOptions& options)
 
   for (odb::dbChip* chip : db_->getChips()) {
     if (chip->getChipType() == odb::dbChip::ChipType::DIE) {
-      odb::orderWires(logger_, chip->getBlock());
+      odb::normalizeWireConnectivity(logger_, chip->getBlock());
       extractChipParasitics(chip, options);
     }
   }
