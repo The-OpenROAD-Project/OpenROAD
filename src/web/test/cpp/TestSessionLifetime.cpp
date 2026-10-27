@@ -199,9 +199,30 @@ class ListenerFixture : public ::testing::Test
 
   std::string httpGet(const std::string& target)
   {
-    return requestHead("GET " + target + " HTTP/1.1\r\nHost: localhost:"
-                       + std::to_string(port())
-                       + "\r\nConnection: close\r\n\r\n");
+    return requestHead(getRequest(target));
+  }
+
+  // The head and the body: the server closes after one response.
+  std::string httpGetWhole(const std::string& target)
+  {
+    Tcp::socket socket = connectAndSend(getRequest(target));
+    std::string received;
+    while (waitReadable(socket)) {
+      char chunk[1024];
+      boost::system::error_code ec;
+      const std::size_t n = socket.read_some(net::buffer(chunk), ec);
+      received.append(chunk, n);
+      if (ec) {
+        break;
+      }
+    }
+    return received;
+  }
+
+  std::string getRequest(const std::string& target) const
+  {
+    return "GET " + target + " HTTP/1.1\r\nHost: localhost:"
+           + std::to_string(port()) + "\r\nConnection: close\r\n\r\n";
   }
 
   uint16_t port() const { return handle_.port; }
@@ -293,8 +314,11 @@ TEST_F(ListenerFixture, TicketRedirectsToTheTokenExactlyOnce)
             std::string::npos)
       << head;
 
-  // What `ps` saw is spent: presenting it again gets nothing.
-  EXPECT_EQ(statusOf(httpGet(std::string("/?ticket=") + kTicket)), 401);
+  // What `ps` saw is spent: presenting it again gets nothing, and the browser
+  // that lost the race is told why.
+  const std::string again = httpGetWhole(std::string("/?ticket=") + kTicket);
+  EXPECT_EQ(statusOf(again), 401) << again;
+  EXPECT_NE(again.find("already used"), std::string::npos) << again;
   // And the token it handed out works.
   EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
 }

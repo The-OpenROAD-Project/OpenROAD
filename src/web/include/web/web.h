@@ -140,13 +140,21 @@ std::string_view browserSkipReasonText(LaunchSkip reason);
 BrowserLaunch browserLaunchFromString(std::string_view mode);
 
 // How to reach the viewer from another machine, printed with WEB-0001: a tunnel
-// for a loopback bind, and the url to open through it when it differs; this
-// host's url for a wildcard one.  Both urls end in `target`.
+// for a loopback bind, and otherMachineUrl() when there is one.
 std::string reachabilityHint(BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              std::string_view host,
                              uint16_t port,
                              std::string_view target);
+
+// The url another machine opens when it is not the one WEB-0001 prints: the
+// tunnel's end for a loopback bind other than localhost, this host for a
+// wildcard bind.  Ends in `target`; empty when there is none.
+std::string otherMachineUrl(BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            std::string_view host,
+                            uint16_t port,
+                            std::string_view target);
 
 // A fresh 128-bit hex token, gating every request that can reach the Tcl
 // interpreter (issue #11389).  Empty when the entropy source cannot be read.
@@ -165,6 +173,15 @@ bool requestTokenAllowed(std::string_view target, std::string_view expected);
 // swapped for `token`, so viewer options like ?mergetiles=0 survive.
 std::string authRedirectTarget(std::string_view target, std::string_view token);
 
+// What presenting a launch ticket got.  kReused is the right ticket after it
+// was redeemed: another client may have beaten the launched browser to it.
+enum class TicketUse
+{
+  kRedeemed,
+  kReused,
+  kRefused
+};
+
 // One server session's credentials: the token every gated request carries, and
 // a one-shot ticket that keeps the token off the browser's command line.
 class SessionAuth
@@ -177,22 +194,33 @@ class SessionAuth
   const std::string& token() const { return token_; }
   const std::string& ticket() const { return ticket_; }
 
-  // True for the first caller that presents the live ticket, and only then:
-  // redeeming spends it, and an expired ticket is already spent.
-  bool redeemTicket(std::string_view candidate);
+  // kRedeemed for the first caller that presents the live ticket, and only
+  // then.  A ticket that expired or was revoked unredeemed is kRefused.
+  TicketUse redeemTicket(std::string_view candidate);
 
   // Spend the ticket unredeemed: once its launch failed or was skipped, no
-  // browser of ours will ever present it.
+  // browser of ours will ever present it.  A redeemed ticket stays redeemed.
   void revokeTicket();
 
   // True for the first refused WebSocket upgrade of this session only.
   bool firstRejection() { return !rejected_.exchange(true); }
 
+  // True for the first kReused of this session only.
+  bool firstReuse() { return !reused_.exchange(true); }
+
  private:
+  enum class TicketState
+  {
+    kLive,
+    kRedeemed,
+    kRevoked
+  };
+
   const std::string token_;
   const std::string ticket_;
-  std::atomic<bool> spent_{false};
+  std::atomic<TicketState> ticket_state_{TicketState::kLive};
   std::atomic<bool> rejected_{false};
+  std::atomic<bool> reused_{false};
   const std::chrono::steady_clock::time_point expiry_;
 };
 
@@ -259,8 +287,12 @@ class WebServer
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
   // a no-op if the server is already running.  Logs the reason and throws if
-  // the server cannot start.
-  void serve(int port, const std::string& bind_address, BrowserLaunch launch);
+  // the server cannot start.  An empty `token` has the server mint one and
+  // print the url carrying it; a caller's token is never printed.
+  void serve(int port,
+             const std::string& bind_address,
+             BrowserLaunch launch,
+             const std::string& token = {});
 
   // For -web startup scripts, called on the main thread before they run.
   // Calls serve(port, bind_address, launch), so the browser follows the

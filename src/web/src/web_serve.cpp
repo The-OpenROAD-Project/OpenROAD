@@ -17,6 +17,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -379,7 +380,8 @@ void WebServer::endStartupScripts(const bool exiting)
 
 void WebServer::serve(int port,
                       const std::string& bind_address,
-                      const BrowserLaunch launch)
+                      const BrowserLaunch launch,
+                      const std::string& token)
 {
   if (ioc_) {
     logger_->warn(utl::WEB, 6, "Web server is already running.");
@@ -611,16 +613,17 @@ void WebServer::serve(int port,
 
     // No token, no server: without the gate, whoever reaches the port gets the
     // interpreter.
-    std::string token = generateAuthToken();
+    const bool own_token = token.empty();
+    std::string session_token = own_token ? generateAuthToken() : token;
     std::string ticket = generateAuthToken();
-    if (token.empty() || ticket.empty()) {
+    if (session_token.empty() || ticket.empty()) {
       // noreturn: the catch below tears the half-built server down.
       logger_->error(utl::WEB,
                      124,
                      "Could not read /dev/urandom to mint an access token.");
     }
     const auto auth = std::make_shared<SessionAuth>(
-        std::move(token), std::move(ticket), kTicketTtl);
+        std::move(session_token), std::move(ticket), kTicketTtl);
 
     auto handle = createAndRunListener(*ioc_,
                                        Tcp::endpoint{address, u_port},
@@ -639,8 +642,9 @@ void WebServer::serve(int port,
     const std::string origin = "http://" + browserHostForBind(address) + ":"
                                + std::to_string(handle.port);
     const std::string target = "/?token=" + auth->token();
-    const std::string url = origin + target;
     const std::string launch_url = origin + "/?ticket=" + auth->ticket();
+    // The logger reaches -log files, which others can usually read.
+    const std::string logged_target = "/?token=<redacted>";
 
     // Bind the timer to a strand so all timer operations (expires_after,
     // async_wait, cancel) run serialized on a single io thread.  Without
@@ -672,9 +676,25 @@ void WebServer::serve(int port,
     }
 
     const std::string host_name = thisHostName();
-    const std::string reach_hint
-        = reachabilityHint(bind_kind, address, host_name, handle.port, target);
-    logger_->info(utl::WEB, 1, "Server started on {}\n{}", url, reach_hint);
+    const std::string reach_hint = reachabilityHint(
+        bind_kind, address, host_name, handle.port, logged_target);
+    logger_->info(utl::WEB,
+                  1,
+                  "Server started on {}{}\n{}",
+                  origin,
+                  logged_target,
+                  reach_hint);
+    // A caller's token is the caller's to hand out.
+    if (own_token) {
+      std::string urls = "Viewer url, not logged: " + origin + target + "\n";
+      const std::string other_url
+          = otherMachineUrl(bind_kind, address, host_name, handle.port, target);
+      if (!other_url.empty()) {
+        urls += "From another machine, not logged: " + other_url + "\n";
+      }
+      std::fputs(urls.c_str(), stdout);
+      std::fflush(stdout);
+    }
 
     const BrowserEnv env = currentBrowserEnv(logger_, host_name, launch);
     const LaunchSkip skip = browserLaunchSkipReason(launch, env);

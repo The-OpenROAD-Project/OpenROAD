@@ -1247,6 +1247,40 @@ TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
   EXPECT_EQ(hint.find("farm-42"), std::string::npos);
 }
 
+TEST(OtherMachineUrl, IsTheUrlTheHintNames)
+{
+  // serve() prints these with the token, and the hint only with it redacted.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.2"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://localhost:8080/?token=abc");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("0.0.0.0"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://farm-42:8080/?token=abc");
+}
+
+TEST(OtherMachineUrl, IsEmptyWhenTheReportedUrlServes)
+{
+  // Through a tunnel to localhost, or at an address already in the url.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.1"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("10.0.0.5"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+}
+
 TEST(GenerateAuthToken, IsHexAndUnpredictable)
 {
   const std::string token = generateAuthToken();
@@ -1329,35 +1363,58 @@ TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
   EXPECT_EQ(auth.token(), "tok");
   EXPECT_EQ(auth.ticket(), "tik");
 
-  EXPECT_TRUE(auth.redeemTicket("tik"));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
   // The whole point: what `ps` saw on the browser's command line stops
-  // working as soon as the browser has used it.
-  EXPECT_FALSE(auth.redeemTicket("tik"));
+  // working as soon as the browser has used it, and says it was used.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
   EXPECT_EQ(auth.token(), "tok");
 }
 
 TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
 {
   SessionAuth auth("tok", "tik", std::chrono::seconds(300));
-  EXPECT_FALSE(auth.redeemTicket("nope"));
-  EXPECT_FALSE(auth.redeemTicket(""));
-  EXPECT_FALSE(auth.redeemTicket("ti"));
-  EXPECT_FALSE(auth.redeemTicket("tikk"));
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket(""), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("ti"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("tikk"), TicketUse::kRefused);
   // None of those consumed it.
-  EXPECT_TRUE(auth.redeemTicket("tik"));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // Nor does a wrong one pass for a reuse afterwards.
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
 }
 
 TEST(SessionAuth, RejectsAnExpiredTicket)
 {
   SessionAuth auth("tok", "tik", std::chrono::seconds(0));
-  EXPECT_FALSE(auth.redeemTicket("tik"));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
 }
 
 TEST(SessionAuth, RevokedTicketIsRefused)
 {
+  // Not kReused: a launch reported as failed may still have opened a browser,
+  // and that one is not someone else.
   SessionAuth auth("tok", "tik", std::chrono::seconds(300));
   auth.revokeTicket();
-  EXPECT_FALSE(auth.redeemTicket("tik"));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokingARedeemedTicketKeepsItRedeemed)
+{
+  // The browser can redeem it before launchBrowser() reports a failure.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstReuse)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstReuse());
+  EXPECT_FALSE(auth.firstReuse());
+  // Independent of the WebSocket rejections.
+  EXPECT_TRUE(auth.firstRejection());
 }
 
 TEST(SessionAuth, ReportsOnlyTheFirstRejection)

@@ -24,6 +24,7 @@ commands typed in the browser console run on the server.
 web_server
     [-port port]
     [-bind address]
+    [-token hex]
     [-browser]
     [-no_browser]
     [-stop]
@@ -35,6 +36,7 @@ web_server
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
 | `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
+| `-token` | Access token to use instead of minting one: 32 to 128 hexadecimal digits. For a caller that hands out the url itself, such as a proxy; no url carrying it is printed. |
 | `-no_browser` | Do not launch a browser; just report the viewer url. |
 | `-browser` | Launch a browser even where it is skipped by default (see below). |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
@@ -43,12 +45,13 @@ web_server
 #### Access token
 
 You never type the token. The browser `openroad` launches opens the viewer
-directly; when none is launched (ssh, batch jobs), open the url `WEB-0001`
-prints, which already carries it:
+directly; when none is launched (ssh, batch jobs), open the url printed after
+`WEB-0001`, which already carries it:
 
 ```
-[INFO WEB-0001] Server started on http://localhost:39217/?token=2f1c...
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
 To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
 ```
 
 The token keeps other users of the machine out: they can all reach
@@ -59,11 +62,13 @@ session will not connect; every session mints a new one.
 - The launched browser gets a single-use *ticket* instead, so the token never
   appears on a command line (`ps`). The ticket stops working once used, when
   the launch fails or is skipped, or after five minutes.
-- If the viewer opens on `Unauthorized` right after a launch that `WEB-0003` did
-  not report as failed, someone else may have used the ticket first: restart
-  the server, which mints a new token.
-- The url goes through the logger, so a `-log` file holds the token. It travels
-  in clear text over HTTP, so it does not replace the loopback bind.
+- If the viewer opens on `Unauthorized` right after a launch and `WEB-0129`
+  reports the ticket already used, someone else used it first: restart the
+  server, which mints a new token.
+- The url with the token goes to stdout only. The logger, and with it a `-log`
+  file and the browser console, gets it `<redacted>`; redirecting stdout to a
+  file others can read takes the token along. It travels in clear text over
+  HTTP, so it does not replace the loopback bind.
 
 #### Running on a remote machine
 
@@ -75,8 +80,9 @@ to reach it:
 
 ```shell
 $ ssh farm-42 "openroad -web design.tcl"
-[INFO WEB-0001] Server started on http://localhost:39217/?token=2f1c...
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
 To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
 [INFO WEB-0120] Not launching a browser here (this is an ssh session); open the url above.
 Pass -browser (-web_browser) to launch one anyway.
 ```
@@ -116,7 +122,7 @@ Inside a `tmux` or `screen` session that outlived the connection that started
 it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
 connection. With no display, or a forwarded one, the launch is still skipped;
 with a stale local one it is attempted and usually fails: `WEB-0003` reports that, and the url and the
-tunnel are in `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
+tunnel are printed with `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
 the shell profile used on those hosts, or pass `-no_browser`.
 
 A tab left open across a restart on the same port says so and stops retrying,
@@ -145,7 +151,8 @@ web_server -port 8080 -bind 0.0.0.0
 docker run -p 8080:8080 ...        # then browse to the url openroad printed
 ```
 
-The command-line entry point takes the same options as `-web_*`:
+The command-line entry point takes the same options as `-web_*`, except
+`-token`: other users of the machine can read a command line.
 
 ```shell
 openroad -web -web_port 8080 -web_bind 0.0.0.0

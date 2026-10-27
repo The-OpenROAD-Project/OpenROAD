@@ -735,6 +735,8 @@ std::string reachabilityHint(const BindAddressKind kind,
                              const std::string_view target)
 {
   const std::string port_str = std::to_string(port);
+  const std::string other_url
+      = otherMachineUrl(kind, address, host, port, target);
   if (kind == BindAddressKind::kLoopback) {
     // The far end of the tunnel is the address the listener is actually on:
     // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
@@ -742,20 +744,38 @@ std::string reachabilityHint(const BindAddressKind kind,
     std::string hint
         = "To reach it from another machine, forward the port: ssh -L "
           + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
-    // ssh listens on localhost there, not on the address in the url above.
-    if (far_end != "localhost") {
-      hint += ", then open http://localhost:" + port_str + std::string(target);
+    if (!other_url.empty()) {
+      hint += ", then open " + other_url;
     }
     return hint;
+  }
+  if (!other_url.empty()) {
+    return "From another machine, reach it at " + other_url;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
+}
+
+std::string otherMachineUrl(const BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            const std::string_view host,
+                            const uint16_t port,
+                            const std::string_view target)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // ssh listens on localhost there, not on the address in the url above.
+    if (browserHostForBind(address) == "localhost") {
+      return {};
+    }
+    return "http://localhost:" + port_str + std::string(target);
   }
   if (address.is_unspecified()) {
     // Bound to every interface, but browserHostForBind() had no address to
     // name and said "localhost", which is this machine only.
-    return "From another machine, reach it at http://" + std::string(host) + ":"
-           + port_str + std::string(target);
+    return "http://" + std::string(host) + ":" + port_str + std::string(target);
   }
-  // The URL already carries the address it is listening on.
-  return "That url is reachable from other machines.";
+  return {};
 }
 
 std::string generateAuthToken()
@@ -822,18 +842,24 @@ SessionAuth::SessionAuth(std::string token,
 {
 }
 
-bool SessionAuth::redeemTicket(const std::string_view candidate)
+TicketUse SessionAuth::redeemTicket(const std::string_view candidate)
 {
-  if (candidate.empty() || std::chrono::steady_clock::now() >= expiry_
-      || !constantTimeEquals(candidate, ticket_)) {
-    return false;
+  if (candidate.empty() || !constantTimeEquals(candidate, ticket_)) {
+    return TicketUse::kRefused;
   }
-  return !spent_.exchange(true);
+  auto live = TicketState::kLive;
+  if (std::chrono::steady_clock::now() < expiry_
+      && ticket_state_.compare_exchange_strong(live, TicketState::kRedeemed)) {
+    return TicketUse::kRedeemed;
+  }
+  return ticket_state_ == TicketState::kRedeemed ? TicketUse::kReused
+                                                 : TicketUse::kRefused;
 }
 
 void SessionAuth::revokeTicket()
 {
-  spent_ = true;
+  auto live = TicketState::kLive;
+  ticket_state_.compare_exchange_strong(live, TicketState::kRevoked);
 }
 
 WebSocketResponse errorResponse(const uint32_t id,

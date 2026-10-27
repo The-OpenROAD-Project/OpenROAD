@@ -267,7 +267,8 @@ static http::response<http::string_body> dispatch_request(
     const http::request<http::string_body>& req,
     const std::shared_ptr<TileGenerator>& generator,
     ScriptGate& script_gate,
-    const std::shared_ptr<SessionAuth>& auth)
+    const std::shared_ptr<SessionAuth>& auth,
+    utl::Logger* logger)
 {
   auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
 
@@ -285,9 +286,13 @@ static http::response<http::string_body> dispatch_request(
 
     // The launch ticket buys one redirect to the token, and only for the page:
     // the WebSocket and the download are reached after it, with the token.
+    TicketUse ticket_use = TicketUse::kRefused;
     if (file_path == "/index.html") {
       const auto ticket = params.find("ticket");
-      if (ticket != params.end() && auth->redeemTicket(ticket->second)) {
+      if (ticket != params.end()) {
+        ticket_use = auth->redeemTicket(ticket->second);
+      }
+      if (ticket_use == TicketUse::kRedeemed) {
         res.result(http::status::found);
         res.set(http::field::location,
                 authRedirectTarget(target, auth->token()));
@@ -296,14 +301,32 @@ static http::response<http::string_body> dispatch_request(
         res.prepare_payload();
         return res;
       }
+      if (ticket_use == TicketUse::kReused) {
+        if (auth->firstReuse()) {
+          logger->warn(utl::WEB,
+                       129,
+                       "Refused a launch ticket that was already used. If the "
+                       "viewer did not open in your browser, another client "
+                       "got there first: restart the server to revoke its "
+                       "access.");
+        } else {
+          debugPrint(logger,
+                     utl::WEB,
+                     "auth",
+                     1,
+                     "Refused a launch ticket that was already used.");
+        }
+      }
     }
 
     if (needs_token && !tokenAllowed(params, auth->token())) {
       res.result(http::status::unauthorized);
       res.set(http::field::www_authenticate, kTokenChallenge);
-      res.body()
-          = "Unauthorized: this viewer requires the access token printed by "
-            "OpenROAD when the server started.";
+      res.body() = ticket_use == TicketUse::kReused
+                       ? "Unauthorized: this launch link was already used; "
+                         "see the OpenROAD log."
+                       : "Unauthorized: this viewer requires the access token "
+                         "printed by OpenROAD when the server started.";
       res.prepare_payload();
       return res;
     }
@@ -342,7 +365,7 @@ static http::response<http::string_body> handle_request(
     utl::Logger* logger)
 {
   try {
-    return dispatch_request(req, generator, script_gate, auth);
+    return dispatch_request(req, generator, script_gate, auth, logger);
   } catch (const std::exception& e) {
     logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
     auto res = textResponse(
