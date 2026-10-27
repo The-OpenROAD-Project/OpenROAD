@@ -579,6 +579,13 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
           }
         }
         sum += layer_damage;
+        // ANTENNAAREAMINUSDIFF can make a layer's ratio negative.  The
+        // cumulative ratio stops at zero, so a negative layer doesn't hide
+        // damage on the layers above (LEF/DEF 5.8 Appendix C, Example 2).
+        sum.par = std::max(sum.par, 0.0);
+        sum.psr = std::max(sum.psr, 0.0);
+        sum.diff_par = std::max(sum.diff_par, 0.0);
+        sum.diff_psr = std::max(sum.diff_psr, 0.0);
         // Updating the node with the accumulated values
         node_info.car = sum.par;
         node_info.csr = sum.psr;
@@ -918,7 +925,7 @@ void AntennaChecker::Impl::buildLayerMaps(odb::dbNet* db_net,
   odb::PtrMap<odb::dbTechLayer, PolygonSet> set_by_layer;
 
   wiresToPolygonSetMap(wires, set_by_layer);
-  avoidPinIntersection(db_net, set_by_layer);
+  addPinShapes(db_net, set_by_layer);
 
   int node_count = 0;
   for (const auto& layer_it : set_by_layer) {

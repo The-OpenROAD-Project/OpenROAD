@@ -26,6 +26,7 @@
 #include "odb/geom.h"
 #include "robin_hood.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace grt {
 
@@ -455,6 +456,17 @@ double GridGraph::logistic(const CapacityT& input, const double slope) const
   return 1.0 / (1.0 + exp(input * slope));
 }
 
+CostT GridGraph::congestionCost(const CostT base,
+                                const CapacityT capacity,
+                                const CapacityT resource,
+                                const double slope) const
+{
+  // The RRR multiplier scales the congestion cost height, not only its slope.
+  return base * cost_multiplier_
+         * (capacity < 1.0 ? 1.0
+                           : logistic(resource, slope * cost_multiplier_));
+}
+
 CostT GridGraph::getWireCost(const int layer_index,
                              const PointT lower,
                              const CapacityT demand,
@@ -465,11 +477,10 @@ CostT GridGraph::getWireCost(const int layer_index,
   const CapacityT demand_length = demand * net_factor * edge_length;
   const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
   CostT cost = demand_length * unit_length_wire_cost_;
-  cost += demand_length * unit_length_short_costs_[layer_index]
-          * (edge.capacity < 1.0
-                 ? 1.0
-                 : logistic(edge.capacity - edge.demand,
-                            constants_.cost_logistic_slope * cost_multiplier_));
+  cost += congestionCost(demand_length * unit_length_short_costs_[layer_index],
+                         edge.capacity,
+                         edge.capacity - edge.demand,
+                         constants_.cost_logistic_slope);
   // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
   // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
   // so a full layer range still falls back to min-via.
@@ -886,30 +897,6 @@ void GridGraph::clearCongestionDirtyTiles()
   congestion_dirty_tiles_.clear();
 }
 
-void GridGraph::commitWire(const int layer_index,
-                           const PointT lower,
-                           const bool rip_up,
-                           const double net_factor)
-{
-  // Wire must never land below min_routing_layer.
-  if (layer_index < constants_.min_routing_layer) {
-    logger_->error(utl::GRT,
-                   307,
-                   "Wire committed on layer {} below min routing layer {}.",
-                   layer_names_[layer_index],
-                   layer_names_[constants_.min_routing_layer]);
-  }
-  const int direction = layer_directions_[layer_index];
-  const int edge_length = getEdgeLength(direction, lower[direction]);
-  if (rip_up) {
-    commit(layer_index, lower, -1, net_factor);
-    total_length_ -= edge_length;
-  } else {
-    commit(layer_index, lower, 1, net_factor);
-    total_length_ += edge_length;
-  }
-}
-
 // Enumerate the preferred-direction edges flanking `loc` on `layer`;
 // fn(edge_loc, edge_sum) runs per existing edge with their summed span.
 template <typename F>
@@ -1018,13 +1005,6 @@ void GridGraph::forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
   }
 }
 
-void GridGraph::forEachViaColumn(
-    const std::shared_ptr<GRTreeNode>& tree,
-    const std::function<void(PointT, int, int)>& fn) const
-{
-  forEachViaColumnImpl(tree, fn);
-}
-
 template <typename F>
 void GridGraph::forEachWireEdgeImpl(const int layer_index,
                                     const PointT u,
@@ -1057,26 +1037,6 @@ void GridGraph::forEachWrongWayFlankEdgeImpl(const int layer_index,
   forEachFlankEdge(layer_index, cell, [&](PointT edge_loc, int edge_sum) {
     fn(edge_loc, design_->getWrongWayDemandLength(layer_index) / edge_sum);
   });
-}
-
-void GridGraph::forEachWrongWayFlankEdge(
-    const int layer_index,
-    const PointT cell,
-    const std::function<void(PointT, CapacityT)>& fn) const
-{
-  forEachWrongWayFlankEdgeImpl(layer_index, cell, fn);
-}
-
-void GridGraph::commitWrongWayWire(const int layer_index,
-                                   const PointT loc,
-                                   const bool rip_up,
-                                   const double layer_factor)
-{
-  forEachWrongWayFlankEdgeImpl(
-      layer_index, loc, [&](PointT edge_loc, CapacityT demand) {
-        commit(
-            layer_index, edge_loc, (rip_up ? -demand : demand), layer_factor);
-      });
 }
 
 void GridGraph::addTreeUsage(const GRNet& net)
@@ -1133,7 +1093,7 @@ void GridGraph::forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
         const int layer = node->getLayerIdx();
         // Detailed routes may dip below min_routing_layer for pin access;
         // those layers hold no capacity, so adopted spans commit no demand.
-        // Native trees fall through to the GRT-0307 tripwire in commitWire.
+        // Native trees fall through to the GRT-0307 tripwire in commitTree.
         if (adopted && layer < constants_.min_routing_layer) {
           continue;
         }
@@ -1188,27 +1148,24 @@ void GridGraph::forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
   }
 }
 
-void GridGraph::forEachTreeWireEdge(
-    const std::shared_ptr<GRTreeNode>& tree,
-    const bool adopted,
-    const std::function<void(int, PointT, bool)>& fn) const
-{
-  forEachTreeWireEdgeImpl(tree, adopted, fn);
-}
-
-void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
-                           const bool rip_up,
-                           const std::vector<double>& net_costs,
-                           const bool adopted)
+template <typename F>
+void GridGraph::forEachTreeDemandImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                      const bool adopted,
+                                      const std::vector<double>& net_costs,
+                                      F&& fn) const
 {
   forEachTreeWireEdgeImpl(
       tree, adopted, [&](const int layer, const PointT cell, bool wrong_way) {
         const double factor = layerFactor(net_costs, layer);
-        if (wrong_way) {
-          commitWrongWayWire(layer, cell, rip_up, factor);
-        } else {
-          commitWire(layer, cell, rip_up, factor);
+        if (!wrong_way) {
+          fn(TreeDemand{layer, cell, 1, factor, DemandKind::kWire, cell});
+          return;
         }
+        forEachWrongWayFlankEdgeImpl(
+            layer, cell, [&](const PointT edge, const CapacityT demand) {
+              fn(TreeDemand{
+                  layer, edge, demand, factor, DemandKind::kWrongWay, cell});
+            });
       });
   forEachViaColumnImpl(
       tree, [&](const PointT loc, const int low, const int high) {
@@ -1224,11 +1181,90 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
             high,
             loc,
             net_costs,
-            [&](int l, PointT edge_loc, CapacityT demand, double factor) {
-              commit(l, edge_loc, (rip_up ? -demand : demand), factor);
+            [&](int layer, PointT edge, CapacityT demand, double factor) {
+              fn(TreeDemand{
+                  layer, edge, demand, factor, DemandKind::kViaPad, loc});
             });
-        total_num_vias_ += (rip_up ? -1 : 1) * (high - low);
       });
+}
+
+void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
+                           const bool rip_up,
+                           const std::vector<double>& net_costs,
+                           const bool adopted)
+{
+  forEachTreeDemandImpl(
+      tree, adopted, net_costs, [&](const TreeDemand& charge) {
+        // Wire must never land below min_routing_layer.
+        if (charge.kind == DemandKind::kWire
+            && charge.layer < constants_.min_routing_layer) {
+          logger_->error(
+              utl::GRT,
+              307,
+              "Wire committed on layer {} below min routing layer {}.",
+              layer_names_[charge.layer],
+              layer_names_[constants_.min_routing_layer]);
+        }
+        commit(charge.layer,
+               charge.edge,
+               rip_up ? -charge.demand : charge.demand,
+               charge.factor);
+      });
+}
+
+std::vector<GridGraph::PinAccessTop> GridGraph::pinAccessTops(
+    const GRNet& net) const
+{
+  const int net_min_layer
+      = std::max(constants_.min_routing_layer, net.getLayerRange().min_layer);
+  std::vector<PinAccessTop> tops;
+  tops.reserve(net.getPreferredAccessPoints().size());
+  for (const auto& [index, ap] : net.getPreferredAccessPoints()) {
+    tops.push_back({.gcell = {ap.point.x(), ap.point.y()},
+                    .top = std::max(ap.layers.high(), net_min_layer)});
+  }
+  // One entry per gcell, at its highest top: sort it first, keep the first.
+  std::ranges::sort(tops, [](const PinAccessTop& a, const PinAccessTop& b) {
+    return std::tie(a.gcell, b.top) < std::tie(b.gcell, a.top);
+  });
+  const auto duplicates = std::ranges::unique(tops, {}, &PinAccessTop::gcell);
+  tops.erase(duplicates.begin(), duplicates.end());
+  return tops;
+}
+
+int GridGraph::pinAccessTop(const std::vector<PinAccessTop>& tops,
+                            const PointT loc)
+{
+  const std::pair<int, int> gcell(loc.x(), loc.y());
+  const auto it
+      = std::ranges::lower_bound(tops, gcell, {}, &PinAccessTop::gcell);
+  return (it != tops.end() && it->gcell == gcell) ? it->top : -1;
+}
+
+double GridGraph::reliefScore(const GRNet& net, const double threshold) const
+{
+  const auto& tree = net.getRoutingTree();
+  if (!tree) {
+    return 0.0;
+  }
+  const auto pin_tops = pinAccessTops(net);
+  double score = 0.0;
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        // No reroute moves pin-access pads; lower layers hold no capacity.
+        if (charge.layer < constants_.min_routing_layer
+            || (charge.kind == DemandKind::kViaPad
+                && charge.layer <= pinAccessTop(pin_tops, charge.source))) {
+          return;
+        }
+        const GraphEdge& edge
+            = graph_edges_[charge.layer][charge.edge.x()][charge.edge.y()];
+        const double overflow = edge.demand - edge.capacity * threshold;
+        if (overflow > 0.0) {
+          score += std::min(charge.demand * charge.factor, overflow);
+        }
+      });
+  return score;
 }
 
 void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
@@ -1250,37 +1286,6 @@ void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
                   += demand * layer_factor;
             });
       });
-}
-
-int GridGraph::checkCongestion(const std::shared_ptr<GRTreeNode>& tree,
-                               const double threshold) const
-{
-  if (!tree) {
-    return 0;
-  }
-  int num = 0;
-  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (const auto& child : node->getChildren()) {
-      if (node->getLayerIdx() != child->getLayerIdx()) {
-        continue;
-      }
-      const int layer = node->getLayerIdx();
-      const int direction = layer_directions_[layer];
-      const auto [lo, hi]
-          = std::minmax({(*node)[direction], (*child)[direction]});
-      const int r = (*node)[1 - direction];
-      for (int c = lo; c < hi; c++) {
-        const int x = (direction == MetalLayer::H) ? c : r;
-        const int y = (direction == MetalLayer::H) ? r : c;
-        const auto& edge = graph_edges_[layer][x][y];
-
-        if (edge.demand > edge.capacity * threshold) {
-          ++num;
-        }
-      }
-    }
-  });
-  return num;
 }
 
 std::string GridGraph::getPythonString(
@@ -1429,11 +1434,10 @@ CostT GridGraph::wireCostViewCell(const WireCostViewContext& context,
   const int length = getEdgeLength(direction, edge_index);
   return length
          * (unit_length_wire_cost_
-            + context.unit_length_short_cost[direction]
-                  * (capacity < 1.0 ? 1.0
-                                    : logistic(effective_resource,
-                                               constants_.maze_logistic_slope
-                                                   * cost_multiplier_)));
+            + congestionCost(context.unit_length_short_cost[direction],
+                             capacity,
+                             effective_resource,
+                             constants_.maze_logistic_slope));
 }
 
 void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
@@ -1469,41 +1473,69 @@ void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
                                    const GRNet& net) const
 {
   // The shared view is NDR-blind, like the full extraction without costs.
-  const WireCostViewContext& context = default_view_context_;
-  auto refresh = [&](const int layer, const PointT edge) {
-    // Layers below the minimum routing layer are not part of the view.
-    if (layer < constants_.min_routing_layer) {
-      return;
-    }
-    const int direction = getLayerDirection(layer);
-    view[direction][edge.x()][edge.y()]
-        = wireCostViewCell(context, direction, edge.x(), edge.y());
-  };
   const auto& tree = net.getRoutingTree();
-  forEachTreeWireEdgeImpl(
-      tree,
-      net.isAdopted(),
-      [&](const int layer, const PointT cell, const bool wrong_way) {
-        if (wrong_way) {
-          forEachWrongWayFlankEdgeImpl(
-              layer, cell, [&](const PointT edge, CapacityT) {
-                refresh(layer, edge);
-              });
-        } else {
-          refresh(layer, cell);
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        // Layers below the minimum routing layer are not part of the view.
+        if (charge.layer < constants_.min_routing_layer) {
+          return;
+        }
+        const int direction = getLayerDirection(charge.layer);
+        const int x = charge.edge.x();
+        const int y = charge.edge.y();
+        view[direction][x][y]
+            = wireCostViewCell(default_view_context_, direction, x, y);
+      });
+}
+
+void GridGraph::collectTreeEdges(const GRNet& net,
+                                 std::vector<std::array<int, 3>>& edges) const
+{
+  edges.clear();
+  const auto& tree = net.getRoutingTree();
+  if (!tree) {
+    return;
+  }
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        if (charge.layer >= constants_.min_routing_layer) {
+          edges.push_back({charge.layer, charge.edge.x(), charge.edge.y()});
         }
       });
-  forEachViaColumnImpl(
-      tree, [&](const PointT loc, const int low, const int high) {
-        forEachStackFlankEdgeImpl(
-            low,
-            high,
-            loc,
-            net.getNdrCosts(),
-            [&](const int layer, const PointT edge, CapacityT, double) {
-              refresh(layer, edge);
-            });
-      });
+  utl::sort_and_unique(edges);
+}
+
+CapacityT GridGraph::edgeOverflow(const std::array<int, 3>& edge) const
+{
+  const GraphEdge& graph_edge = graph_edges_[edge[0]][edge[1]][edge[2]];
+  return std::max<CapacityT>(0.0, graph_edge.demand - graph_edge.capacity);
+}
+
+double GridGraph::sumOverflow(
+    const std::vector<std::array<int, 3>>& edges) const
+{
+  double overflow = 0.0;
+  for (const auto& edge : edges) {
+    overflow += edgeOverflow(edge);
+  }
+  return overflow;
+}
+
+std::vector<std::pair<std::array<int, 3>, CapacityT>>
+GridGraph::overflowedEdges() const
+{
+  std::vector<std::pair<std::array<int, 3>, CapacityT>> edges;
+  for (int layer = constants_.min_routing_layer; layer < num_layers_; layer++) {
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        const std::array<int, 3> edge{layer, x, y};
+        if (const CapacityT overflow = edgeOverflow(edge); overflow > 0.0) {
+          edges.emplace_back(edge, overflow);
+        }
+      }
+    }
+  }
+  return edges;
 }
 
 void GridGraph::write(const std::string& heatmap_file) const
