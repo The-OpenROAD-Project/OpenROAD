@@ -49,7 +49,7 @@ using utl::CTS;
 
 int LatencyBalancer::run()
 {
-  if (options_->applyUsefulSkew()) {
+  if (useful_skew_) {
     logger_->info(CTS,
                   544,
                   "Applying useful skew for clock {}",
@@ -62,7 +62,7 @@ int LatencyBalancer::run()
   }
   initSta();
   findLeafBuilders(root_);
-  // buildGraph branches internally on options_->applyUsefulSkew(): the
+  // buildGraph branches internally on useful_skew_: the
   // classic coarse graph vs. the full per-register graph for useful skew.
   buildGraph(root_->getTopInputNet());
   computeBuffersDelay(0);
@@ -70,7 +70,7 @@ int LatencyBalancer::run()
     return 0;
   }
   balanceLatencies(0);
-  if (options_->applyUsefulSkew()) {
+  if (useful_skew_) {
     logger_->info(CTS,
                   545,
                   "inserted {} delay buffers for applying useful skew",
@@ -200,8 +200,6 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
   // register instead of aggregating each leaf builder into a single sink,
   // and it does not maintain worseDelay_ (which only the classic latency
   // balancing uses).
-  const bool full = options_->applyUsefulSkew();
-
   std::string rootSrcName;
   odb::dbITerm* rootOutputITerm = clkInputNet->getFirstOutput();
   if (!rootOutputITerm) {
@@ -253,7 +251,8 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         graph_.push_back(std::move(sinkNode));
         graph_[driverId].childrenIds.push_back(sinkId);
 
-        if (!full && inst2builder_.find(sinkName) != inst2builder_.end()) {
+        if (!useful_skew_
+            && inst2builder_.find(sinkName) != inst2builder_.end()) {
           auto builder = inst2builder_[sinkName];
           float builerAvgArrival = computeAveSinkArrivals(builder);
           worseDelay_ = std::max(worseDelay_, builerAvgArrival);
@@ -262,7 +261,7 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         }
 
         if (sink) {
-          if (full) {
+          if (useful_skew_) {
             // Useful-skew balancing only needs arrival.has_value() as a leaf
             // gate; the value is unused and worseDelay_ is not maintained in
             // this mode, so skip the STA path query (and its spurious CTS-179).
@@ -743,7 +742,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
 
 std::optional<double> LatencyBalancer::usefulSkewTarget(odb::dbInst* inst) const
 {
-  if (!options_->applyUsefulSkew() || inst == nullptr) {
+  if (!useful_skew_ || inst == nullptr) {
     return std::nullopt;
   }
   odb::dbDoubleProperty* prop
@@ -761,7 +760,7 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
     if (node->arrival.has_value()) {
-      if (options_->applyUsefulSkew()) {
+      if (useful_skew_) {
         // use useful skew of RSZ; absent target -> baseline (0)
         odb::dbInst* inst
             = node->inputTerm ? node->inputTerm->getInst() : nullptr;

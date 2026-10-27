@@ -2784,7 +2784,9 @@ void TritonCTS::repairClockNets()
   }
 }
 
-int TritonCTS::runLatencyBalancers(double capPerDBU, double resPerDBU)
+int TritonCTS::runLatencyBalancers(double capPerDBU,
+                                   double resPerDBU,
+                                   bool useful_skew)
 {
   int totalDelayBuff = 0;
   for (auto& builder : std::ranges::reverse_view(builders_)) {
@@ -2798,7 +2800,8 @@ int TritonCTS::runLatencyBalancers(double capPerDBU, double resPerDBU)
                                                  openSta_,
                                                  techChar_.get(),
                                                  capPerDBU,
-                                                 resPerDBU);
+                                                 resPerDBU,
+                                                 useful_skew);
       totalDelayBuff += balancer.run();
     }
   }
@@ -2845,11 +2848,9 @@ void TritonCTS::balanceMacroRegisterLatencies()
   const bool useful_skew = options_->applyUsefulSkew();
 
   // Pass 1: classic latency balancing (always runs).
-  options_->setUsefulSkew(false);
-  totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU);
+  totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU, false);
 
   if (useful_skew) {
-    options_->setUsefulSkew(true);
     // Calculate useful skew for all registers on RSZ
     const double max_buf_delay = getMaxDelayBufferDelay(0.0);
     if (max_buf_delay <= 0.0) {
@@ -2863,7 +2864,7 @@ void TritonCTS::balanceMacroRegisterLatencies()
       resizer_->computeSkewBudget(budget_opts);
 
       // Pass 2: realize the useful-skew schedule.
-      totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU);
+      totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU, true);
     }
   }
   if (totalDelayBuff) {
