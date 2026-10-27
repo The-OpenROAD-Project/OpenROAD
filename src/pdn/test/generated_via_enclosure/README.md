@@ -1,9 +1,7 @@
-# Generated-via enclosure regression
+# Generated-via enclosure tests
 
-These synthetic fixtures exercise ordinary `pdngen` and inspect the actual
-OpenDB cut and landing rectangles. They require no external design, netlist,
-checkpoint, or input database. They reference the existing
-`test/Nangate45/Nangate45.lef`; that file and its notices are unchanged.
+Enclosure correctness is covered in C++. One Tcl integration test checks
+that the PDN rejection report and supply-connectivity checks work together.
 
 ## Native enclosure tests
 
@@ -20,8 +18,7 @@ bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
 On upstream `6f3f28cc85407d71ba64a550cca194d8a6a01c1c`, six new defect tests
 fail in each of three executions. The valid-override control and all 204
 pre-existing via tests pass. These tests do not depend on Tcl or external
-technology files. The integration fixtures below additionally inspect emitted
-OpenDB geometry, fallback behavior, and supply connectivity.
+technology files.
 
 `TestPDNConnect.cpp` checks the caller as well. Containment, tapered-stack,
 landing-extension and ripup controls use landings that meet the declared
@@ -36,84 +33,37 @@ bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
   //src/pdn/test:pdn_connect_unittest //src/pdn/test:pdn_via_unittest
 ```
 
-The original integration reproducer's affected baseline is
-`80c6be93c28244f9f72840852a667daef764a4ff`.
-Build the baseline and the proposed revision with the same dependencies using
-the repository's [build instructions](../../../../docs/user/Build.md).
-Use complete OpenROAD executables with Tcl/OpenDB support. Bash and `cmp` are
-needed for the commands below. The ordinary PDN suite also includes Python
-tests, which require the executable's matching Python runtime.
+## Integration coverage
 
-## Cases and assertions
+`generated_via_default_edge.tcl` retains the cross-tool check not provided by
+the via and connection unit tests. A fixed macro has a narrow M4/M5 overlap
+that cannot hold the generated cut. `pdngen` must report that rejected VSS
+connection while the other connections keep both supply nets connected.
 
-| Case | Original geometry in the affected dimension | Corrected behavior |
-| --- | --- | --- |
-| `edge` | 140 nm cut, 20 nm landing: enclosure is -60 nm on each side, below the zero minimum | Reject the malformed generated array |
-| `positive` | 140 nm cut, 150 nm landing: 5 nm enclosure, below a synthetic 10 nm minimum | Reject that generated array; a separately legal fixed-via fallback is allowed |
-| `valid` | Sufficient overlap with the original rule | Preserve legal geometry and both supplies |
+The test uses the usual `helpers.tcl`, `make_result_file` and `diff_files`
+pattern. Its three-line `.rptok` checks the failure type, net, layers and
+location. Direct `check_power_grid` calls must pass for both VDD and VSS,
+and the macro's pose must remain unchanged. No custom runner, geometry-table
+writer, database dump or change of working directory is needed.
 
-At 2000 DBU/micron, the first two margins are `(40 - 280) / 2 = -120` DBU
-and `(300 - 280) / 2 = 10` DBU; the positive case requires 20 DBU.
-Only the positive fixture changes the generated rule's default, through
-OpenDB. It does not change the fixed via's rules.
+The former positive-minimum and valid-landing Tcl cases are covered by
+`GeneratedDefaultEnclosureAppliesToBothLandings`,
+`GeneratedBuildRejectsInsufficientDefaultEnclosure`, the caller rejection
+tests and emitted-rectangle checks. Their additional copies of the grid
+construction/connectivity sequence have been removed. Numeric enclosure
+assertions remain in C++; the retained Tcl case is an integration check,
+not a second enclosure-rule implementation.
 
-`audit.tcl` computes the four margins from actual rectangles without calling
-PDN's fit predicate. These small fixtures have no cut-layer enclosure overrides;
-the audit is intentionally a default-rule check, not a general DRC engine.
-The tests also assert the macro pose and native VDD/VSS connectivity.
-
-## Reproduce in a clean directory
-
-From the proposed checkout, set `OPENROAD_BEFORE` and `OPENROAD_AFTER` to absolute
-paths for the unpatched and corrected executables. Record their source revisions
-and hashes separately; `-version` alone does not identify an uncommitted patch.
+The fixture references the existing `test/Nangate45/Nangate45.lef` unchanged.
+It requires no external design, netlist, checkpoint or database.
 
 ```bash
-repo_root=$(git rev-parse --show-toplevel)
-git rev-parse HEAD
-sha256sum "$OPENROAD_BEFORE" "$OPENROAD_AFTER"
-repro_dir=$(mktemp -d)
-cp "$repo_root"/src/pdn/test/generated_via_default_*.tcl "$repro_dir/"
-cp -R "$repo_root/src/pdn/test/generated_via_enclosure" "$repro_dir/"
-cp "$repo_root/test/helpers.tcl" "$repro_dir/"
-mkdir "$repro_dir/Nangate45"
-cp "$repo_root/test/Nangate45/Nangate45.lef" "$repro_dir/Nangate45/"
-cd "$repro_dir"
-for variant in before after; do
-  if [ "$variant" = before ]; then exe=$OPENROAD_BEFORE; else exe=$OPENROAD_AFTER; fi
-  for case in edge positive valid; do
-    if RESULTS_DIR="$repro_dir/$variant" "$exe" -no_splash -no_init -exit \
-      "generated_via_default_${case}.tcl" >"${variant}_${case}.log" 2>&1; then
-      status=0
-    else
-      status=$?
-    fi
-    echo "$variant $case exit=$status"
-    cat "$variant/generated_via_default_$case/outcome.txt"
-  done
-done
-for artifact in result.def via_geometry.tsv via_enclosures.tsv; do
-  cmp "before/generated_via_default_valid/$artifact" \
-      "after/generated_via_default_valid/$artifact"
-done
+bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
+  //src/pdn/test:generated_via_default_edge-tcl_test
 ```
 
-Expected original exits are `1, 1, 0`; corrected exits are `0, 0, 0`.
-Original invalid generated-instance counts are `1, 1, 0`; corrected counts
-are all zero. Both supplies pass in all six runs. The three valid-control
-comparisons are byte-identical. See `via_geometry.tsv` for the actual
-rectangles and margins, and `via_enclosures.tsv` for instantiated arrays.
-A successful corrected test can mean an illegal via was rejected; it does
-not mean a replacement connection was constructed.
-
-The three integration tests are registered in `src/pdn/test/BUILD`:
-
-```bash
-bazelisk test --test_output=errors \
-  //src/pdn/test:generated_via_default_edge-tcl_test \
-  //src/pdn/test:generated_via_default_positive-tcl_test \
-  //src/pdn/test:generated_via_default_valid-tcl_test
-```
+Passing this fixture does not mean that every rejected connection can be
+replaced. Here the supplies remain connected through other legal connections.
 
 ## Effective rules and signed rounding
 
