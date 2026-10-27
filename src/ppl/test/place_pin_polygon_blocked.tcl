@@ -11,7 +11,7 @@ $net setSpecial
 $net setSigType POWER
 set swire [odb::dbSWire_create $net "ROUTED"]
 # stripe on the right half of the notch floor, the nearest free position past
-# it is off the face, in the right arm
+# it is off the face, to the right of the notch
 odb::dbSBox_create $swire [$tech findLayer metal2] 60000 26000 80000 30000 \
   "STRIPE"
 # strap along the whole left wall of the notch
