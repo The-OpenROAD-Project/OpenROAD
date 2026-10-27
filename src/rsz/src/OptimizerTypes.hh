@@ -497,28 +497,17 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
 
 // === Estimation inputs and results =========================================
 
-// Input bundle for legacy slack-estimation helpers (e.g., Rebuffer-based
-// unbuffer/splitload flows) that compare a proposed topology change against
-// the setup slack margin on one analysis corner.
-//
-// Only the members actually needed for one helper are populated -- other
-// fields stay null.  `scene` is the single analysis view the caller is
-// evaluating on; callers that need multi-scene slack loop over scenes and
-// build one SlackEstimatorParams per iteration.
-struct SlackEstimatorParams
+// Inputs already resolved by an Unbuffer move for the setup slack check in
+// one analysis scene.  Both Unbuffer generators provide every member.
+struct UnbufferSlackParams
 {
-  SlackEstimatorParams(float margin, const sta::Scene* scene)
-      : setup_slack_margin(margin), scene(scene)
-  {
-  }
-
-  sta::Pin* driver_pin{nullptr};
-  sta::Pin* prev_driver_pin{nullptr};
-  sta::Pin* driver_input_pin{nullptr};
-  sta::Instance* driver{nullptr};
-  const sta::Path* driver_path{nullptr};
-  const sta::Path* prev_driver_path{nullptr};
-  sta::LibertyCell* driver_cell{nullptr};
+  sta::Pin* buffer_output_pin;
+  sta::Pin* upstream_driver_pin;
+  sta::Pin* buffer_input_pin;
+  sta::Instance* buffer_instance;
+  const sta::Path* buffer_path;
+  const sta::Path* upstream_path;
+  sta::LibertyCell* buffer_cell;
   const float setup_slack_margin;
   const sta::Scene* scene;
 };

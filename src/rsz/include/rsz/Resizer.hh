@@ -55,7 +55,7 @@
 
 namespace rsz {
 class SetupLegacyBase;
-struct SlackEstimatorParams;
+struct UnbufferSlackParams;
 }  // namespace rsz
 
 namespace rsz {
@@ -981,7 +981,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
       const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
       float delay_adjust,
-      const rsz::SlackEstimatorParams& params,
+      const rsz::UnbufferSlackParams& params,
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
@@ -989,7 +989,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Whether removeBuffer() keeps the output net of buffer and moves the pins
   // of its input net onto it, instead of the other way round.
   bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
-  bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
+  bool estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                float* upstream_delay_delta_out = nullptr,
+                                float* buffer_delay_saved_out = nullptr);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
