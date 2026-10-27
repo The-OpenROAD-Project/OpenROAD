@@ -4,12 +4,7 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { TimingWidget } from '../../src/timing-widget.js';
-
-// jsdom does not implement scrollIntoView; stub it so _selectPathRow runs.
-if (!window.HTMLElement.prototype.scrollIntoView) {
-    window.HTMLElement.prototype.scrollIntoView = function () {};
-}
+import { TimingWidget, fmtTime } from '../../src/timing-widget.js';
 
 // Build an app stub that records every websocketManager.request call and
 // lets each test control the response per message type.
@@ -68,6 +63,25 @@ describe('TimingWidget._selectPathRow', () => {
         assert.equal(highlight.is_setup, true);
         assert.equal(highlight.start_pin, 'start');
         assert.equal(highlight.end_pin, 'b');
+    });
+
+    it('sends the row\'s clocks, which tell paths with the same pins apart', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        // A register two clocks capture has a path per clock, same pins.
+        widget.showPaths('setup', [
+            makePath(-0.2, 'q', { end_clk: 'clk_a' }),
+            makePath(-0.1, 'q', { end_clk: 'clk_b' }),
+        ]);
+
+        for (const [row, clock] of [[0, 'clk_a'], [1, 'clk_b']]) {
+            app.requests.length = 0;
+            widget._selectPathRow(row);
+            const highlight = app.requests.find(r => r.type === 'timing_highlight');
+            assert.equal(highlight.end_pin, 'q');
+            assert.equal(highlight.start_clk, 'clk');
+            assert.equal(highlight.end_clk, clock);
+        }
     });
 
     it('sends timing_highlight with _originalIndex when paths were filtered', () => {
@@ -405,6 +419,7 @@ describe('TimingWidget unconstrained paths', () => {
         const highlight = app.requests.find(r => r.type === 'timing_highlight');
         assert.equal(highlight.unconstrained, true);
         assert.equal(highlight.pin_name, 'u1/A');
+        assert.equal(highlight.end_clk, 'clk');
     });
 
     it('uses the displayed report options while a refetch is pending', async () => {
@@ -513,6 +528,38 @@ describe('TimingWidget unconstrained paths', () => {
         widget._selectPathRow(0);
         const highlight = app.requests.find(r => r.type === 'timing_highlight');
         assert.equal(highlight.unconstrained, false);
+    });
+
+    it('scales slack bars by finite slacks and shows infinite ones as ∞', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        // An unconstrained path has an infinite slack and required time.
+        widget.showPaths('setup', [
+            makePath(Infinity, 'u', { required: Infinity }),
+            makePath(0.25, 'b'),
+            makePath(-0.5, 'a'),
+        ]);
+
+        const col = key => TimingWidget.PATH_COLS.findIndex(c => c.key === key);
+        const rows = Array.from(widget._pathTable.querySelectorAll('tbody tr'));
+        const slackCells = rows.map(row => row.cells[col('slack')]);
+        assert.deepEqual(
+            slackCells.map(td => td.style.getPropertyValue('--slack-frac')),
+            ['1', '0.5', '']);
+        assert.equal(slackCells[2].classList.contains('slack-cell'), false);
+        assert.equal(slackCells[2].textContent, '∞');
+        assert.equal(rows[2].cells[col('required')].textContent, '∞');
+    });
+});
+
+describe('fmtTime', () => {
+    it('formats times to four places and infinities as ∞', () => {
+        assert.equal(fmtTime(0.5), '0.5000');
+        assert.equal(fmtTime(-0.125), '-0.1250');
+        assert.equal(fmtTime(Infinity), '∞');
+        assert.equal(fmtTime(-Infinity), '-∞');
+        assert.equal(fmtTime(null), '');
+        assert.equal(fmtTime(undefined), '');
     });
 });
 

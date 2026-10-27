@@ -9,7 +9,6 @@
 #include <functional>
 #include <future>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -2834,7 +2833,8 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = makeFakeSelected(&fake_current_);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -2886,7 +2886,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
     EXPECT_TRUE(state_.current_inspected);
     EXPECT_NE(state_.current_inspected, initial_selected);
     ASSERT_EQ(state_.navigation_history.size(), 1u);
-    EXPECT_EQ(state_.navigation_history.back(), initial_selected);
+    EXPECT_EQ(state_.navigation_history.back().sel, initial_selected);
   }
 
   WebSocketRequest back_req;
@@ -3445,7 +3445,8 @@ TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
                        0);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -3542,7 +3543,8 @@ TEST_F(SelectHandlerTest, SelectLayerReplacesPreviousSelection)
     state_.timing_rects.push_back(
         {odb::Rect(0, 0, 10, 10), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
     state_.highlight_rects.emplace_back(0, 0, 10, 10);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -3614,7 +3616,8 @@ TEST_F(SelectHandlerTest, InspectBackResponseIncludesSelectionMetadata)
                        1);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_current_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_current_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -4211,8 +4214,9 @@ TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.emplace_back(&fake_previous_,
-                                           &editable_descriptor_);
+    state_.navigation_history.push_back(
+        {.sel = web::Selected(&fake_previous_, &editable_descriptor_),
+         .xfm = {}});
     state_.selection_set.insert(state_.current_inspected);
     state_.selection_itr = state_.selection_set.begin();
     state_.highlight_rects.push_back(fake_current_.bbox);
@@ -5142,6 +5146,17 @@ class SchematicHandlerTest : public tst::Nangate45Fixture
     makeInst(block_, master, inst_name, opts);
   }
 
+  // Returns modules.top from a schematic response.
+  static boost::json::object schematicTop(const WebSocketResponse& resp)
+  {
+    return boost::json::parse(payloadStr(resp))
+        .as_object()
+        .at("modules")
+        .as_object()
+        .at("top")
+        .as_object();
+  }
+
   // Returns modules.top.cells from a schematic_full response.
   boost::json::object fullCells()
   {
@@ -5151,14 +5166,7 @@ class SchematicHandlerTest : public tst::Nangate45Fixture
     req.json = parseObj("{}");
     auto resp = handler_->handleSchematicFull(req);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-    return boost::json::parse(payloadStr(resp))
-        .as_object()
-        .at("modules")
-        .as_object()
-        .at("top")
-        .as_object()
-        .at("cells")
-        .as_object();
+    return schematicTop(resp).at("cells").as_object();
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -5432,16 +5440,41 @@ TEST_F(SchematicHandlerTest, SchematicPathUsesRequestedInstances)
   req.json = parseObj(R"({"inst_names":["g_buf","missing"]})");
   auto resp = handler_->handleSchematicPath(req);
   ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  boost::json::value json = boost::json::parse(payloadStr(resp));
-  const auto& cells = json.as_object()
-                          .at("modules")
-                          .as_object()
-                          .at("top")
-                          .as_object()
-                          .at("cells")
-                          .as_object();
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
   EXPECT_EQ(cells.size(), 1);
   EXPECT_TRUE(cells.contains("g_buf"));
+}
+
+// emitSchematicCell draws no supply pins, so cones and paths must not emit
+// their nets or ports either: they would show with nothing attached.
+TEST_F(SchematicHandlerTest, SupplyNetsStayOutOfConesAndPaths)
+{
+  makeGate("INV_X1",
+           "g_inv",
+           {{"in", "A"}, {"out", "ZN"}, {"VDD", "VDD"}, {"VSS", "VSS"}});
+  makeBTerm(block_, "VDD");
+  makeBTerm(block_, "VSS");
+
+  WebSocketRequest cone;
+  cone.id = 1;
+  cone.type = WebSocketRequest::kSchematicCone;
+  cone.json
+      = parseObj(R"({"inst_name":"g_inv","fanin_depth":0,"fanout_depth":0})");
+  WebSocketRequest path;
+  path.id = 2;
+  path.type = WebSocketRequest::kSchematicPath;
+  path.json = parseObj(R"({"inst_names":["g_inv"]})");
+  for (const WebSocketResponse& resp : {handler_->handleSchematicCone(cone),
+                                        handler_->handleSchematicPath(path)}) {
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& nets = top.at("netnames").as_object();
+    EXPECT_EQ(nets.size(), 2);
+    EXPECT_TRUE(nets.contains("in"));
+    EXPECT_TRUE(nets.contains("out"));
+    EXPECT_TRUE(top.at("ports").as_object().empty());
+  }
 }
 
 class TimingHighlightHandlerTest : public SchematicHandlerTest
@@ -5501,17 +5534,43 @@ class TimingHighlightHandlerTest : public SchematicHandlerTest
         = std::make_unique<TimingHandler>(gen_, timing_report_, tcl_eval_);
   }
 
+  // The pins and clocks a timing_highlight request names `path` by.
+  static void setHighlightKey(boost::json::object& json,
+                              const TimingPathSummary& path)
+  {
+    json["start_pin"] = path.start_pin;
+    json["end_pin"] = path.end_pin;
+    json["start_clk"] = path.start_clk;
+    json["end_clk"] = path.end_clk;
+  }
+
+  // handleTimingHighlight left exactly these shapes in `state`.
+  static void expectHighlight(const SessionState& state,
+                              const std::vector<ColoredRect>& rects,
+                              const std::vector<FlightLine>& lines)
+  {
+    ASSERT_EQ(state.timing_rects.size(), rects.size());
+    for (size_t i = 0; i < rects.size(); ++i) {
+      EXPECT_EQ(state.timing_rects[i].rect, rects[i].rect);
+      EXPECT_EQ(state.timing_rects[i].color, rects[i].color);
+      EXPECT_EQ(state.timing_rects[i].layer, rects[i].layer);
+      EXPECT_EQ(state.timing_rects[i].filled, rects[i].filled);
+    }
+    ASSERT_EQ(state.timing_lines.size(), lines.size());
+    for (size_t i = 0; i < lines.size(); ++i) {
+      EXPECT_EQ(state.timing_lines[i].p1, lines[i].p1);
+      EXPECT_EQ(state.timing_lines[i].p2, lines[i].p2);
+      EXPECT_EQ(state.timing_lines[i].color, lines[i].color);
+    }
+  }
+
   std::shared_ptr<TimingReport> timing_report_;
   std::unique_ptr<TimingHandler> timing_handler_;
 };
 
 TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
 {
-  const auto paths
-      = timing_report_->getReport(true,
-                                  100,
-                                  -std::numeric_limits<float>::max(),
-                                  std::numeric_limits<float>::max());
+  const auto paths = timing_report_->getReport(true);
   ASSERT_EQ(paths.size(), 3);
   ASSERT_LT(paths[0].slack, paths[1].slack);
   ASSERT_LT(paths[1].slack, paths[2].slack);
@@ -5542,8 +5601,7 @@ TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
 
   req.type = WebSocketRequest::kTimingHighlight;
   req.json["path_index"] = 0;
-  req.json["start_pin"] = filtered.front().start_pin;
-  req.json["end_pin"] = filtered.front().end_pin;
+  setHighlightKey(req.json, filtered.front());
   for (const bool stage : {false, true}) {
     SCOPED_TRACE(stage);
     std::vector<ColoredRect> expected_rects;
@@ -5557,7 +5615,7 @@ TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
       collectTimingStageShapes(gen_->chiplets(),
                                filtered.front(),
                                filtered.front().end_pin,
-                               Color{.r = 255, .g = 255, .b = 0, .a = 180},
+                               kTimingStageColor,
                                expected_rects,
                                expected_lines);
       ASSERT_GT(expected_lines.size(), path_lines);
@@ -5566,38 +5624,19 @@ TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
     SessionState state;
     const auto response = timing_handler_->handleTimingHighlight(req, state);
     ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
-    ASSERT_EQ(state.timing_rects.size(), expected_rects.size());
-    for (size_t i = 0; i < expected_rects.size(); ++i) {
-      EXPECT_EQ(state.timing_rects[i].rect, expected_rects[i].rect);
-      EXPECT_EQ(state.timing_rects[i].color, expected_rects[i].color);
-      EXPECT_EQ(state.timing_rects[i].layer, expected_rects[i].layer);
-      EXPECT_EQ(state.timing_rects[i].filled, expected_rects[i].filled);
-    }
-    ASSERT_EQ(state.timing_lines.size(), expected_lines.size());
-    for (size_t i = 0; i < expected_lines.size(); ++i) {
-      EXPECT_EQ(state.timing_lines[i].p1, expected_lines[i].p1);
-      EXPECT_EQ(state.timing_lines[i].p2, expected_lines[i].p2);
-      EXPECT_EQ(state.timing_lines[i].color, expected_lines[i].color);
-    }
+    expectHighlight(state, expected_rects, expected_lines);
   }
 }
 
 TEST_F(TimingHighlightHandlerTest, HighlightHonorsTheReportPathLimit)
 {
-  const auto paths
-      = timing_report_->getReport(true,
-                                  100,
-                                  -std::numeric_limits<float>::max(),
-                                  std::numeric_limits<float>::max());
+  const auto paths = timing_report_->getReport(true);
   ASSERT_EQ(paths.size(), 3);
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kTimingHighlight;
-  req.json = {{"is_setup", true},
-              {"max_paths", 1},
-              {"path_index", 1},
-              {"start_pin", paths[1].start_pin},
-              {"end_pin", paths[1].end_pin}};
+  req.json = {{"is_setup", true}, {"max_paths", 1}, {"path_index", 1}};
+  setHighlightKey(req.json, paths[1]);
   SessionState state;
   const auto response = timing_handler_->handleTimingHighlight(req, state);
   ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
@@ -5607,11 +5646,7 @@ TEST_F(TimingHighlightHandlerTest, HighlightHonorsTheReportPathLimit)
 
 TEST_F(TimingHighlightHandlerTest, PinsSelectThePathWhenTheIndexIsStale)
 {
-  const auto paths
-      = timing_report_->getReport(true,
-                                  100,
-                                  -std::numeric_limits<float>::max(),
-                                  std::numeric_limits<float>::max());
+  const auto paths = timing_report_->getReport(true);
   ASSERT_EQ(paths.size(), 3);
   std::vector<ColoredRect> expected_rects;
   std::vector<FlightLine> expected_lines;
@@ -5623,18 +5658,12 @@ TEST_F(TimingHighlightHandlerTest, PinsSelectThePathWhenTheIndexIsStale)
   WebSocketRequest req;
   req.id = 1;
   req.type = WebSocketRequest::kTimingHighlight;
-  req.json = {{"is_setup", true},
-              {"path_index", 0},
-              {"start_pin", paths[1].start_pin},
-              {"end_pin", paths[1].end_pin}};
+  req.json = {{"is_setup", true}, {"path_index", 0}};
+  setHighlightKey(req.json, paths[1]);
   SessionState state;
   auto response = timing_handler_->handleTimingHighlight(req, state);
   ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
-  ASSERT_EQ(state.timing_lines.size(), expected_lines.size());
-  for (size_t i = 0; i < expected_lines.size(); ++i) {
-    EXPECT_EQ(state.timing_lines[i].p1, expected_lines[i].p1);
-    EXPECT_EQ(state.timing_lines[i].p2, expected_lines[i].p2);
-  }
+  expectHighlight(state, expected_rects, expected_lines);
 
   // Pins that are not in the report highlight nothing rather than the index.
   req.json["end_pin"] = "no_such_pin";
@@ -5642,6 +5671,39 @@ TEST_F(TimingHighlightHandlerTest, PinsSelectThePathWhenTheIndexIsStale)
   ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
   EXPECT_TRUE(state.timing_rects.empty());
   EXPECT_TRUE(state.timing_lines.empty());
+}
+
+// A register two clocks capture has a path per clock with the same pins, so the
+// pins alone must not pick a path: the clocks have to match too.
+TEST_F(TimingHighlightHandlerTest, ClocksMustMatchAsWellAsPins)
+{
+  const auto paths = timing_report_->getReport(true);
+  ASSERT_EQ(paths.size(), 3);
+  std::vector<ColoredRect> expected_rects;
+  std::vector<FlightLine> expected_lines;
+  collectTimingPathShapes(
+      gen_->chiplets(), paths[1], expected_rects, expected_lines);
+  ASSERT_FALSE(expected_lines.empty());
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true}, {"path_index", 1}};
+  setHighlightKey(req.json, paths[1]);
+  SessionState state;
+  auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  expectHighlight(state, expected_rects, expected_lines);
+
+  for (const char* clock_key : {"start_clk", "end_clk"}) {
+    SCOPED_TRACE(clock_key);
+    setHighlightKey(req.json, paths[1]);
+    req.json[clock_key] = "other_clk";
+    response = timing_handler_->handleTimingHighlight(req, state);
+    ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+    EXPECT_TRUE(state.timing_rects.empty());
+    EXPECT_TRUE(state.timing_lines.empty());
+  }
 }
 
 class ChipletSchematicHandlerTest : public SchematicHandlerTest
@@ -5679,65 +5741,103 @@ class ChipletSchematicHandlerTest : public SchematicHandlerTest
     odb::dbChipInst::create(root, chip_, "die0");
     odb::dbChipInst::create(root, other, "die1")
         ->setLoc(odb::Point3D(kOtherOffsetX, kOtherOffsetY, 0));
+    // die2 places die0's chip again: the two share its block, and so its
+    // instances, nets and ports, which only the name tells apart.
+    odb::dbChipInst::create(root, chip_, "die2")
+        ->setLoc(odb::Point3D(kRepeatOffsetX, kRepeatOffsetY, 0));
     getDb()->setTopChip(root);
 
     gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+    // An inspect resolves its instance through the process-global descriptor
+    // registry, which owns what it holds, so this is heap-allocated.
+    web::DescriptorRegistry::instance()->registerDescriptor<odb::dbInst*>(
+        new TestInstDescriptor);
+  }
+
+  void TearDown() override
+  {
+    web::DescriptorRegistry::instance()->unregisterDescriptor<odb::dbInst*>();
+    SchematicHandlerTest::TearDown();
+  }
+
+  // Where die1 places other_buffer_, which is what a highlight of it shows.
+  odb::Rect otherBufferWorldRect() const
+  {
+    odb::Rect rect = other_buffer_->getBBox()->getBox();
+    rect.moveDelta(kOtherOffsetX, kOtherOffsetY);
+    return rect;
+  }
+
+  // A schematic_path of each die's "buf" keeps the dies apart: every die gets
+  // its own cell, "in" and "out" nets and ports, none sharing a bit.
+  void expectPathKeepsDiesApart(const std::string& inst_names,
+                                const std::vector<std::string>& dies)
+  {
+    WebSocketRequest req;
+    req.id = 3;
+    req.type = WebSocketRequest::kSchematicPath;
+    req.json = parseObj(R"({"inst_names":)" + inst_names + "}");
+    const auto resp = handler_->handleSchematicPath(req);
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& cells = top.at("cells").as_object();
+    ASSERT_EQ(cells.size(), dies.size());
+    const auto& ports = top.at("ports").as_object();
+    const auto& nets = top.at("netnames").as_object();
+    EXPECT_EQ(ports.size(), 2 * dies.size());
+    EXPECT_EQ(nets.size(), 2 * dies.size());
+
+    std::set<int> bits;
+    for (const std::string& die : dies) {
+      ASSERT_TRUE(cells.contains(die + "/buf"));
+      const auto& cell = cells.at(die + "/buf").as_object();
+      EXPECT_EQ(cell.at("type").as_string(), "BUF_X1");
+      const auto& connections = cell.at("connections").as_object();
+      for (const auto& [net, pin] :
+           {std::pair{"in", "A"}, std::pair{"out", "Z"}}) {
+        const int bit = connections.at(pin).as_array().front().to_number<int>();
+        EXPECT_TRUE(bits.insert(bit).second);
+        ASSERT_TRUE(ports.contains(die + "/" + net));
+        ASSERT_TRUE(nets.contains(die + "/" + net));
+        EXPECT_EQ(ports.at(die + "/" + net)
+                      .as_object()
+                      .at("bits")
+                      .as_array()
+                      .front()
+                      .to_number<int>(),
+                  bit);
+        EXPECT_EQ(nets.at(die + "/" + net)
+                      .as_object()
+                      .at("bits")
+                      .as_array()
+                      .front()
+                      .to_number<int>(),
+                  bit);
+      }
+    }
   }
 
   static constexpr int kOtherOffsetX = 400000;
   static constexpr int kOtherOffsetY = 250000;
+  static constexpr int kRepeatOffsetX = 800000;
+  static constexpr int kRepeatOffsetY = 500000;
   odb::dbInst* other_buffer_ = nullptr;
 };
 
 TEST_F(ChipletSchematicHandlerTest, PathKeepsSameNamedCellsAndNetsDistinct)
 {
   ASSERT_EQ(gen_->getBlock(), nullptr);
-  WebSocketRequest req;
-  req.id = 3;
-  req.type = WebSocketRequest::kSchematicPath;
-  req.json = parseObj(
-      R"({"inst_names":["die0/buf","die1/buf","die1/missing","unknown/buf"]})");
-  const auto resp = handler_->handleSchematicPath(req);
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  const auto json = boost::json::parse(payloadStr(resp));
-  const auto& top
-      = json.as_object().at("modules").as_object().at("top").as_object();
-  const auto& cells = top.at("cells").as_object();
-  ASSERT_EQ(cells.size(), 2);
-  const auto& ports = top.at("ports").as_object();
-  const auto& nets = top.at("netnames").as_object();
-  EXPECT_EQ(ports.size(), 4);
-  EXPECT_EQ(nets.size(), 4);
+  expectPathKeepsDiesApart(
+      R"(["die0/buf","die1/buf","die1/missing","unknown/buf"])",
+      {"die0", "die1"});
+}
 
-  std::set<int> bits;
-  for (const std::string die : {"die0", "die1"}) {
-    ASSERT_TRUE(cells.contains(die + "/buf"));
-    const auto& cell = cells.at(die + "/buf").as_object();
-    EXPECT_EQ(cell.at("type").as_string(), "BUF_X1");
-    const auto& connections = cell.at("connections").as_object();
-    for (const auto& [net, pin] :
-         {std::pair{"in", "A"}, std::pair{"out", "Z"}}) {
-      const int bit = connections.at(pin).as_array().front().to_number<int>();
-      EXPECT_TRUE(bits.insert(bit).second);
-      ASSERT_TRUE(ports.contains(die + "/" + net));
-      ASSERT_TRUE(nets.contains(die + "/" + net));
-      EXPECT_EQ(ports.at(die + "/" + net)
-                    .as_object()
-                    .at("bits")
-                    .as_array()
-                    .front()
-                    .to_number<int>(),
-                bit);
-      EXPECT_EQ(nets.at(die + "/" + net)
-                    .as_object()
-                    .at("bits")
-                    .as_array()
-                    .front()
-                    .to_number<int>(),
-                bit);
-    }
-  }
+// Two placements of one chip share its instances and nets, yet a path through
+// both draws each placement's own, as for two different chips.
+TEST_F(ChipletSchematicHandlerTest, PathKeepsBothPlacementsOfAChipApart)
+{
+  expectPathKeepsDiesApart(R"(["die0/buf","die2/buf"])", {"die0", "die2"});
 }
 
 TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheQualifiedInstance)
@@ -5749,17 +5849,59 @@ TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheQualifiedInstance)
       R"({"inst_name":"die1/buf","fanin_depth":0,"fanout_depth":0})");
   const auto resp = handler_->handleSchematicCone(req);
   ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  const auto json = boost::json::parse(payloadStr(resp));
-  const auto& cells = json.as_object()
-                          .at("modules")
-                          .as_object()
-                          .at("top")
-                          .as_object()
-                          .at("cells")
-                          .as_object();
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
   ASSERT_EQ(cells.size(), 1);
   ASSERT_TRUE(cells.contains("die1/buf"));
   EXPECT_EQ(cells.at("die1/buf").as_object().at("type").as_string(), "BUF_X1");
+}
+
+// Selecting an instance in the layout names it by its chip-inst's full path
+// from the root, which is what the schematic then requests.
+TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheLayoutsFullPathName)
+{
+  const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+  const auto die1 = std::ranges::find_if(
+      chiplets, [](const ChipletNode& node) { return node.name == "die1"; });
+  ASSERT_NE(die1, chiplets.end());
+  ASSERT_NE(die1->path, die1->name);
+
+  WebSocketRequest req;
+  req.id = 4;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json = parseObj(R"({"inst_name":")" + die1->path
+                      + R"(/buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
+  ASSERT_EQ(cells.size(), 1);
+  EXPECT_TRUE(cells.contains("die1/buf"));
+}
+
+// A cone is named in the placement it was requested in, cells, nets and ports
+// alike, not after whichever placement of the chip comes first.
+TEST_F(ChipletSchematicHandlerTest, ConeNamesTheRequestedPlacementOfAChip)
+{
+  for (const std::string die : {"die0", "die2"}) {
+    WebSocketRequest req;
+    req.id = 14;
+    req.type = WebSocketRequest::kSchematicCone;
+    req.json = parseObj(R"({"inst_name":")" + die
+                        + R"(/buf","fanin_depth":0,"fanout_depth":0})");
+    const auto resp = handler_->handleSchematicCone(req);
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& cells = top.at("cells").as_object();
+    ASSERT_EQ(cells.size(), 1) << die;
+    EXPECT_TRUE(cells.contains(die + "/buf")) << die;
+    for (const char* kind : {"ports", "netnames"}) {
+      const auto& names = top.at(kind).as_object();
+      EXPECT_EQ(names.size(), 2) << die << " " << kind;
+      EXPECT_TRUE(names.contains(die + "/in")) << die << " " << kind;
+      EXPECT_TRUE(names.contains(die + "/out")) << die << " " << kind;
+    }
+  }
 }
 
 TEST_F(ChipletSchematicHandlerTest, ConeRejectsAnUnqualifiedInstance)
@@ -5777,16 +5919,6 @@ TEST_F(ChipletSchematicHandlerTest, ConeRejectsAnUnqualifiedInstance)
 
 TEST_F(ChipletSchematicHandlerTest, InspectResolvesTheQualifiedInstance)
 {
-  struct ScopedInstDescriptor
-  {
-    ScopedInstDescriptor() : registry(web::DescriptorRegistry::instance())
-    {
-      registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
-    }
-    ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
-    web::DescriptorRegistry* registry;
-  } scoped_inst_descriptor;
-
   SessionState state;
   WebSocketRequest req;
   req.id = 5;
@@ -5798,11 +5930,7 @@ TEST_F(ChipletSchematicHandlerTest, InspectResolvesTheQualifiedInstance)
   EXPECT_EQ(std::any_cast<odb::dbInst*>(state.current_inspected.getObject()),
             other_buffer_);
 
-  const odb::Rect local = other_buffer_->getBBox()->getBox();
-  const odb::Rect expected(local.xMin() + kOtherOffsetX,
-                           local.yMin() + kOtherOffsetY,
-                           local.xMax() + kOtherOffsetX,
-                           local.yMax() + kOtherOffsetY);
+  const odb::Rect expected = otherBufferWorldRect();
   const auto json = parseObj(payloadStr(resp));
   ASSERT_TRUE(json.contains("bbox")) << payloadStr(resp);
   const auto& bbox = json.at("bbox").as_array();
@@ -5814,6 +5942,150 @@ TEST_F(ChipletSchematicHandlerTest, InspectResolvesTheQualifiedInstance)
             expected);
   ASSERT_EQ(state.highlight_rects.size(), 1);
   EXPECT_EQ(state.highlight_rects.front(), expected);
+}
+
+// The inspected highlight is rebuilt on a "Flywires only" flip, after an edit
+// marks the geometry stale, and by an inspector edit.  An instance inspected
+// from the schematic has to keep its chiplet's transform through each of them
+// rather than drop back to block-local coordinates.
+TEST_F(ChipletSchematicHandlerTest, InspectHighlightKeepsTheChipletTransform)
+{
+  class EditableInstDescriptor : public TestInstDescriptor
+  {
+   public:
+    Editors getEditors(const std::any&) const override
+    {
+      Editors editors;
+      editors.emplace("Dont Touch",
+                      makeEditor([](const std::any&) { return true; }));
+      return editors;
+    }
+  };
+  // Swap the fixture's descriptor for one with an editor; TearDown removes it.
+  auto* registry = web::DescriptorRegistry::instance();
+  registry->unregisterDescriptor<odb::dbInst*>();
+  registry->registerDescriptor<odb::dbInst*>(new EditableInstDescriptor);
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 7;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const odb::Rect expected = otherBufferWorldRect();
+  const auto expect_world_highlight = [&](const char* after) {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.highlight_rects.size(), 1) << after;
+    EXPECT_EQ(state.highlight_rects.front(), expected) << after;
+  };
+  expect_world_highlight("the inspect");
+
+  TileHandler tiles(gen_);
+  WebSocketRequest overlay;
+  overlay.id = 8;
+  overlay.type = WebSocketRequest::kOverlayTile;
+  overlay.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto overlay_resp = tiles.handleOverlayTile(overlay, state);
+  ASSERT_NE(overlay_resp.type, WebSocketResponse::kError)
+      << payloadStr(overlay_resp);
+  expect_world_highlight("a Flywires only flip");
+
+  state.highlight_geometry_stale = true;
+  overlay_resp = tiles.handleOverlayTile(overlay, state);
+  ASSERT_NE(overlay_resp.type, WebSocketResponse::kError)
+      << payloadStr(overlay_resp);
+  EXPECT_FALSE(state.highlight_geometry_stale);
+  expect_world_highlight("a geometry-stale rebuild");
+
+  WebSocketRequest edit;
+  edit.id = 9;
+  edit.type = WebSocketRequest::kSetProperty;
+  edit.json = parseObj(R"({"name":"Dont Touch","value":true})");
+  const auto edit_resp = handler_->handleSetProperty(edit, state);
+  ASSERT_EQ(edit_resp.type, WebSocketResponse::kJson) << payloadStr(edit_resp);
+  EXPECT_EQ(parseObj(payloadStr(edit_resp)).at("ok").as_int64(), 1);
+  expect_world_highlight("an inspector edit");
+}
+
+// Re-inspecting an instance inspected from the schematic (a units toggle does)
+// and returning to it with the inspector's Back keep its chiplet's transform,
+// while a link target in between is inspected without it.
+TEST_F(ChipletSchematicHandlerTest, InspectorNavigationKeepsTheChipletTransform)
+{
+  // Declared before `state`, whose selections point at them.
+  FakeDescriptor link_descriptor;
+  FakeInspectable link_target{.name = "link",
+                              .type = "Fake",
+                              .bbox = {10, 20, 30, 40},
+                              .properties = {}};
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const odb::Rect expected = otherBufferWorldRect();
+  const auto expect_highlight = [&](const odb::Rect& rect, const char* after) {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.highlight_rects.size(), 1) << after;
+    EXPECT_EQ(state.highlight_rects.front(), rect) << after;
+  };
+
+  WebSocketRequest inspect;
+  inspect.id = 11;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":-1})");
+  auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  expect_highlight(expected, "a re-inspect");
+
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables = {web::Selected(&link_target, &link_descriptor)};
+  }
+  inspect.json = parseObj(R"({"select_id":0})");
+  inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  expect_highlight(link_target.bbox, "a link to an unrelated object");
+
+  WebSocketRequest back;
+  back.id = 12;
+  back.type = WebSocketRequest::kInspectBack;
+  const auto back_resp = handler_->handleInspectBack(back, state);
+  ASSERT_EQ(back_resp.type, WebSocketResponse::kJson) << payloadStr(back_resp);
+  expect_highlight(expected, "the inspector's Back");
+}
+
+// Two placements of one chip share its block, and so its instances: only the
+// schematic name says which placement to highlight.
+TEST_F(ChipletSchematicHandlerTest, InspectHighlightsTheNamedPlacementOfAChip)
+{
+  odb::dbInst* buffer = block_->findInst("buf");
+  ASSERT_NE(buffer, nullptr);
+  const odb::Rect local = buffer->getBBox()->getBox();
+  const auto expect_highlight_at
+      = [&](const std::string& name, int offset_x, int offset_y) {
+          SessionState state;
+          WebSocketRequest req;
+          req.id = 13;
+          req.type = WebSocketRequest::kSchematicInspect;
+          req.json = parseObj(R"({"inst_name":")" + name + R"("})");
+          const auto resp = handler_->handleSchematicInspect(req, state);
+          ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+          ASSERT_EQ(state.highlight_rects.size(), 1) << name;
+          odb::Rect expected = local;
+          expected.moveDelta(offset_x, offset_y);
+          EXPECT_EQ(state.highlight_rects.front(), expected) << name;
+        };
+  expect_highlight_at("die0/buf", 0, 0);  // die0 sits at the origin
+  expect_highlight_at("die2/buf", kRepeatOffsetX, kRepeatOffsetY);
 }
 
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)

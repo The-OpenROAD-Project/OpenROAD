@@ -7939,35 +7939,49 @@ void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
 // Timing path highlight shape collection
 //------------------------------------------------------------------------------
 
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name)
+{
+  const std::string_view name_view(name);
+  std::vector<std::pair<const ChipletNode*, const char*>> matches;
+  // Timing paths qualify a name with the chip-inst's name, and the layout's
+  // selection with its full path from the root.  Names are tried first.
+  for (const bool by_path : {false, true}) {
+    for (const ChipletNode& node : chiplets) {
+      // Only a chip-inst contributes a path component: the root node's name
+      // is its block's, which never prefixes a name.
+      if (node.inst == nullptr || !node.block) {
+        continue;
+      }
+      const std::string& prefix = by_path ? node.path : node.name;
+      if (name_view.size() <= prefix.size() || !name_view.starts_with(prefix)
+          || name_view[prefix.size()] != odb::kChipletPathDelimiter) {
+        continue;
+      }
+      matches.emplace_back(&node, name.c_str() + prefix.size() + 1);
+    }
+  }
+  return matches;
+}
+
 std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
     const std::vector<ChipletNode>& chiplets,
     const std::string& pin_name)
 {
-  const std::string_view pin_view(pin_name);
-
   // Prefixed pass first.  Hierarchical instance names contain '/' too, so an
   // earlier chiplet can match the whole name and claim a pin that names a
   // later one.
-  bool prefix_matched = false;
-  for (const ChipletNode& node : chiplets) {
-    // Only a chip-inst contributes a path component: the root node's name is
-    // its block's, which never prefixes a pin name.
-    if (node.inst == nullptr || !node.block
-        || pin_view.size() <= node.name.size()
-        || !pin_view.starts_with(node.name)
-        || pin_view[node.name.size()] != odb::kChipletPathDelimiter) {
-      continue;
+  const auto matches = chipletPrefixMatches(chiplets, pin_name);
+  for (const auto& [node, local] : matches) {
+    if (odb::dbITerm* iterm = node->block->findITerm(local)) {
+      return {iterm, nullptr, node};
     }
-    prefix_matched = true;
-    const char* local = pin_name.c_str() + node.name.size() + 1;
-    if (odb::dbITerm* iterm = node.block->findITerm(local)) {
-      return {iterm, nullptr, &node};
-    }
-    if (odb::dbBTerm* bterm = node.block->findBTerm(local)) {
-      return {nullptr, bterm, &node};
+    if (odb::dbBTerm* bterm = node->block->findBTerm(local)) {
+      return {nullptr, bterm, node};
     }
   }
-  if (prefix_matched) {
+  if (!matches.empty()) {
     // The prefix named a chiplet; do not let another one claim the pin.
     return {nullptr, nullptr, nullptr};
   }

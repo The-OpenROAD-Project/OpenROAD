@@ -2474,10 +2474,10 @@ body.is-resizing-h * {
     gap: 4px;
     white-space: nowrap;
 }
-.schematic-timing-legend-item { color: var(--fg-muted); font-size: 11px; }
+.schematic-timing-legend-item { color: var(--fg-muted); font-size: var(--fs-11); }
 .timing-unconstrained {
     color: var(--fg-primary);
-    font-size: 12px;
+    font-size: var(--fs-12);
     cursor: pointer;
     user-select: none;
 }
@@ -2932,7 +2932,7 @@ body.is-resizing-h * {
     box-sizing: border-box;
     padding: 24px;
     color: var(--fg-muted);
-    font-size: 13px;
+    font-size: var(--fs-13);
     text-align: center;
     pointer-events: none;
 }

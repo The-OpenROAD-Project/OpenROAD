@@ -15,6 +15,15 @@ import {
 
 const kIdleStatus = 'Select an instance in the layout to view its schematic.';
 
+// Back keeps at most this many earlier schematics.
+const kMaxSchematicHistory = 50;
+
+// Namespace of netlistsvg's s:* skin attributes.
+const NETLISTSVG_NS = 'https://github.com/nturley/netlistsvg';
+
+// Every SVG shape element, as a selector.
+const SVG_SHAPES = 'path,rect,circle,ellipse,line,polyline,polygon';
+
 // Marks elements restyled for the timing path, so a redraw can restore them
 // without disturbing the selection highlight.
 const TIMING_OVERLAY_CLASS = 'schematic-timing-node';
@@ -61,6 +70,10 @@ function expandRect(rect, padding) {
         width: rect.width + padding * 2,
         height: rect.height + padding * 2,
     };
+}
+
+function cellCountStatus(count) {
+    return `${count} cell${count !== 1 ? 's' : ''}`;
 }
 
 export class SchematicWidget {
@@ -136,7 +149,6 @@ export class SchematicWidget {
         this._selectMode = false;
         this._selectedCell = null;
         this._schematicHistory = [];
-        this._maxSchematicHistory = 50;
         this._backInFlight = false;
 
         // Timing path pushed in by the TimingWidget; re-applied after every
@@ -144,10 +156,31 @@ export class SchematicWidget {
         // the detail-table list on display (data path or capture path).
         this._timingPath = null;
         this._timingNodes = [];
-        this._timingIsCapturePath = false;
+        // Path loads, refresh, Back and double-click expansion each take the
+        // next request id, so the newest of them wins. _timingLoadId is the
+        // path load still in flight: the only one a timing-panel clear has to
+        // cancel.
         this._timingRequestId = 0;
+        this._timingLoadId = null;
         this._timingSchematicActive = false;
+        // The path and leg the schematic on screen was drawn for. Selecting
+        // them again (clicking the row again, say) only restores the colors.
+        this._shownPath = null;
         this._timingLegend = this._buildTimingLegend();
+
+        // A hidden panel can neither show a schematic nor measure one: every
+        // box reads as zero there. So while hidden, only the newest load is
+        // kept, and the passes that measure a rendered SVG wait; both run on
+        // 'show'. The layout manager starts a panel hidden and fires 'show'
+        // when its tab opens; a container without those events is always on
+        // screen.
+        this._displayed = typeof container.on !== 'function';
+        this._deferredLoad = null;
+        this._pendingLayout = null;
+        if (!this._displayed) {
+            container.on('show', () => this._onShow());
+            container.on('hide', () => { this._displayed = false; });
+        }
 
         // Map from SVG element id → ODB instance name.
         // netlistsvg prefixes instance names (e.g. "load2" → id="cell_load2"),
@@ -236,22 +269,21 @@ export class SchematicWidget {
             return null;
         }
 
+        // A committed netlist is never modified (a merge copies the maps it
+        // adds to), so the snapshot can share it.
         return {
-            netlist: this._cloneJson(this._currentNetlist),
+            netlist: this._currentNetlist,
             selectedInstanceName: this.appState.selectedInstanceName || null,
         };
     }
 
     _pushSchematicHistory(snapshot) {
-        if (!snapshot || !snapshot.netlist) {
+        if (!snapshot?.netlist) {
             return;
         }
 
-        this._schematicHistory.push({
-            netlist: snapshot.netlist,
-            selectedInstanceName: snapshot.selectedInstanceName || null,
-        });
-        while (this._schematicHistory.length > this._maxSchematicHistory) {
+        this._schematicHistory.push(snapshot);
+        if (this._schematicHistory.length > kMaxSchematicHistory) {
             this._schematicHistory.shift();
         }
         this._setBackButtonEnabled();
@@ -271,12 +303,12 @@ export class SchematicWidget {
         this._backInFlight = true;
 
         this.showTimingPath(null);
-        const requestId = this._timingRequestId;
+        const requestId = ++this._timingRequestId;
         const previousSelectedInstanceName
             = this.appState.selectedInstanceName || null;
         this.appState.selectedInstanceName = snapshot.selectedInstanceName;
         return Promise.resolve(this.renderNetlist(
-            this._cloneJson(snapshot.netlist),
+            snapshot.netlist,
             () => requestId === this._timingRequestId))
             .then((didRender) => {
                 if (requestId !== this._timingRequestId) return false;
@@ -286,11 +318,11 @@ export class SchematicWidget {
                         this.appState.selectedInstanceName
                             = previousSelectedInstanceName;
                     }
-                    this._schematicHistory.push(snapshot);
-                    this._setBackButtonEnabled();
+                    this._pushSchematicHistory(snapshot);
                     return false;
                 }
 
+                this._leaveTimingSchematic();
                 if (!snapshot.selectedInstanceName) {
                     return true;
                 }
@@ -316,72 +348,12 @@ export class SchematicWidget {
         }
     }
 
-    // Click events often target a skin child path/text or the transparent hit
-    // rect, so resolve either an SVG id or class token back to a cell id.
-    _cellIdFromElement(el) {
-        if (!el) {
-            return null;
-        }
-        if (el.id && this._svgIdToInstName.has(el.id)) {
-            return el.id;
-        }
-
-        const classAttr = el.getAttribute && el.getAttribute('class');
-        if (!classAttr) {
-            return null;
-        }
-        for (const token of classAttr.split(/\s+/)) {
-            if (token && this._svgIdToInstName.has(token)) {
-                return token;
-            }
-        }
-        return null;
-    }
-
-    _closestGroup(el) {
-        while (el && el !== this._svgEl) {
-            const tagName = el.tagName && el.tagName.toLowerCase();
-            if (tagName === 'g') {
-                return el;
-            }
-            el = el.parentElement;
-        }
-        return null;
-    }
-
-    _cellGroupForSvgId(cellId) {
-        if (!this._svgEl || !cellId) {
-            return null;
-        }
-
-        const byId = this._svgEl.querySelector(`#${CSS.escape(cellId)}`);
-        if (byId) {
-            return this._closestGroup(byId) || byId;
-        }
-
-        const byClass = this._svgEl.querySelector(`.${CSS.escape(cellId)}`);
-        return byClass ? this._closestGroup(byClass) : null;
-    }
-
-    // Skin symbols expose the cell id on child classes instead of the group id.
+    // A click can land on any part of a cell (a skin shape, a label or the
+    // hit target), all inside the group netlistsvg ids "cell_<instance>".
     _cellHitFromTarget(target) {
-        if (!this._svgEl) {
-            return null;
-        }
-
-        let el = target;
-        while (el && el !== this._svgEl) {
-            const cellId = this._cellIdFromElement(el);
-            if (cellId) {
-                return {
-                    cellId,
-                    group: this._cellGroupForSvgId(cellId)
-                        || this._closestGroup(el),
-                };
-            }
-            el = el.parentElement;
-        }
-        return null;
+        const group = target?.closest?.('g[id^="cell_"]');
+        const name = group && this._svgIdToInstName.get(group.id);
+        return name ? { name, group } : null;
     }
 
     _highlightCellGroup(cellGroup) {
@@ -393,16 +365,17 @@ export class SchematicWidget {
         try {
             const bb = cellGroup.getBBox();
             const pad = 3;
-            const highlight = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            highlight.setAttribute('x', bb.x - pad);
-            highlight.setAttribute('y', bb.y - pad);
-            highlight.setAttribute('width',  bb.width  + pad * 2);
-            highlight.setAttribute('height', bb.height + pad * 2);
-            highlight.setAttribute('fill', 'none');
-            highlight.setAttribute('stroke', '#e05a00');
-            highlight.setAttribute('stroke-width', '1.5');
-            highlight.setAttribute('rx', '3');
-            highlight.id = '_schematic_highlight';
+            const highlight = svgEl('rect', {
+                x: bb.x - pad,
+                y: bb.y - pad,
+                width: bb.width + pad * 2,
+                height: bb.height + pad * 2,
+                fill: 'none',
+                stroke: '#e05a00',
+                'stroke-width': '1.5',
+                rx: '3',
+                id: '_schematic_highlight',
+            });
             cellGroup.appendChild(highlight);
             this._selectedCell = cellGroup;
             this.controls.querySelector('#schematic-zoom-to').disabled = false;
@@ -424,26 +397,68 @@ export class SchematicWidget {
     // instances the detail table lists, then colored in place.
     // Driven by TimingWidget row selection and detail-tab switching.
     showTimingPath(path, nodes) {
-        const requestId = ++this._timingRequestId;
         const nextPath = path || null;
         const nextNodes = nextPath ? (nodes || nextPath.data_nodes || []) : [];
         this._timingPath = nextPath;
         this._timingNodes = nextNodes;
-        this._timingIsCapturePath = nextPath !== null
-            && nextNodes === nextPath.capture_nodes;
         if (!this._timingPath) {
-            this._timingSchematicActive = false;
+            // Cancel a path load still in flight, but not a cone or Back
+            // load: a sort, Setup/Hold switch or Update clears the path
+            // without replacing the view.
+            if (this._timingLoadId === this._timingRequestId) {
+                ++this._timingRequestId;
+            }
+            if (this._deferredLoad === 'path') {
+                this._deferredLoad = null;
+            }
             this._applyTimingPath();
             const cells = this._topModule(this._currentNetlist)?.cells;
             if (cells) {
-                const count = Object.keys(cells).length;
-                this.setStatus(`${count} cell${count !== 1 ? 's' : ''}`);
+                this.setStatus(cellCountStatus(Object.keys(cells).length));
             } else {
-                this.setStatus(kIdleStatus);
+                this.setStatus(this._unreadyStatus() ?? kIdleStatus);
             }
             return Promise.resolve(false);
         }
-        return this._loadPathSchematic(requestId);
+        if (this._shownPath?.path === nextPath
+            && this._shownPath.nodes === nextNodes) {
+            // Already drawn: restore the colors and keep the view rather than
+            // laying it out again. Anything still loading is now out of date.
+            ++this._timingRequestId;
+            this._deferredLoad = null;
+            this._applyTimingPath();
+            return Promise.resolve(true);
+        }
+        if (!this._displayed) {
+            return this._deferLoad('path');
+        }
+        return this._loadPathSchematic(++this._timingRequestId);
+    }
+
+    // The detail table shows the path's capture leg rather than its data leg.
+    get _timingIsCapturePath() {
+        return this._timingPath !== null
+            && this._timingNodes === this._timingPath.capture_nodes;
+    }
+
+    // While hidden, keep only the newest load for 'show', superseding any
+    // load still in flight.
+    _deferLoad(load) {
+        ++this._timingRequestId;
+        this._deferredLoad = load;
+        return Promise.resolve(false);
+    }
+
+    _onShow() {
+        this._displayed = true;
+        this._runPendingLayout();
+        const load = this._deferredLoad;
+        this._deferredLoad = null;
+        if (load === 'path') {
+            this._loadPathSchematic(++this._timingRequestId);
+        } else if (load === 'refresh') {
+            this.refresh();
+        }
     }
 
     // Fetch and render a schematic containing only this path's instances.
@@ -454,7 +469,9 @@ export class SchematicWidget {
             ? null : this._currentSchematicSnapshot();
         const order = this._timingPathInstances(this._timingNodes);
         const wm = this.appState.websocketManager;
-        if (order.length === 0) {
+        // Without netlistsvg (a saved report) the panel keeps saying it has
+        // no schematic rather than showing an empty state.
+        if (order.length === 0 && this._netlistsvgReady) {
             this._showTimingEmptyState(this._timingEmptyStateMessage());
             this._enterTimingSchematic(previousSnapshot);
             return false;
@@ -466,13 +483,14 @@ export class SchematicWidget {
         }
 
         this.setStatus(`Loading schematic for ${order.length} path cells…`);
+        this._timingLoadId = requestId;
         try {
             const netlist = await wm.request({
                 type: 'schematic_path',
                 inst_names: order.map(e => e.inst),
             });
             if (requestId !== this._timingRequestId) return false;
-            const cells = netlist?.modules?.top?.cells;
+            const cells = this._topModule(netlist)?.cells;
             if (!cells || Object.keys(cells).length === 0) {
                 this._showTimingEmptyState(
                     'No schematic cells found for this timing path.');
@@ -485,6 +503,10 @@ export class SchematicWidget {
             if (requestId !== this._timingRequestId) return false;
             if (didRender) {
                 this._enterTimingSchematic(previousSnapshot);
+                this._shownPath = {
+                    path: this._timingPath,
+                    nodes: this._timingNodes,
+                };
             }
             return didRender;
         } catch (err) {
@@ -495,6 +517,8 @@ export class SchematicWidget {
             this._applyTimingPath();
             this.setStatus(`Path schematic error: ${err}`);
             return false;
+        } finally {
+            if (this._timingLoadId === requestId) this._timingLoadId = null;
         }
     }
 
@@ -506,6 +530,13 @@ export class SchematicWidget {
         }
     }
 
+    // A refresh, Back or expansion drew over the path schematic, so the next
+    // path selection saves the new view as its pre-path view. Clearing the
+    // timing path does not count: the path schematic stays on screen.
+    _leaveTimingSchematic() {
+        this._timingSchematicActive = false;
+    }
+
     _timingEmptyStateMessage() {
         return this._timingIsCapturePath
             ? 'No capture path for this output endpoint.'
@@ -515,6 +546,7 @@ export class SchematicWidget {
     // Keep the last SVG available for restoration, but do not present it as
     // the selected path while there is no timing geometry to display.
     _showTimingEmptyState(message, invalidateRender = true) {
+        this._shownPath = null;
         if (invalidateRender) {
             // Supersede any netlistsvg layout that started before this state.
             this._renderGeneration++;
@@ -638,7 +670,6 @@ export class SchematicWidget {
         for (const el of this._svgEl.querySelectorAll(`.${TIMING_OVERLAY_CLASS}`)) {
             for (const prop of TIMING_STYLE_PROPS) {
                 const attr = `data-openroad-timing-${prop}`;
-                if (!el.hasAttribute(attr)) continue;
                 const value = el.getAttribute(attr);
                 if (value) el.style.setProperty(prop, value);
                 else el.style.removeProperty(prop);
@@ -664,27 +695,29 @@ export class SchematicWidget {
     }
 
     _isTimingShape(el) {
-        const tag = el.tagName && el.tagName.toLowerCase();
-        return ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon'].includes(tag)
+        return el.matches(SVG_SHAPES)
             && el.id !== '_schematic_highlight'
             && !el.hasAttribute('data-openroad-hit-target');
+    }
+
+    // A capture path draws in one color; a data path splits into its launch
+    // (clock) and data legs.
+    _timingStyle(isClock) {
+        if (this._timingIsCapturePath) return TIMING_NODE_STYLE.capture;
+        return isClock ? TIMING_NODE_STYLE.launch : TIMING_NODE_STYLE.data;
     }
 
     // Skin symbols mark body shapes with the cell id class; generic boxes may
     // only have useful descendants, so fall back to geometric children.
     _styleTimingCell(cellGroup, entry) {
-        const cellId = 'cell_' + entry.inst;
         let shapes = Array.from(cellGroup.querySelectorAll(
-            `.${CSS.escape(cellId)}, .${CSS.escape(entry.inst)}`))
+            `.${CSS.escape('cell_' + entry.inst)}`))
             .filter(el => this._isTimingShape(el));
         if (shapes.length === 0) {
-            shapes = Array.from(cellGroup.querySelectorAll(
-                'path,rect,circle,ellipse,line,polyline,polygon'))
+            shapes = Array.from(cellGroup.querySelectorAll(SVG_SHAPES))
                 .filter(el => this._isTimingShape(el));
         }
-        const style = this._timingIsCapturePath
-            ? TIMING_NODE_STYLE.capture
-            : (entry.isClock ? TIMING_NODE_STYLE.launch : TIMING_NODE_STYLE.data);
+        const style = this._timingStyle(entry.isClock);
         shapes.forEach(el => this._styleTimingElement(el, style));
         return shapes.length > 0;
     }
@@ -722,11 +755,7 @@ export class SchematicWidget {
         for (let i = 0; i + 1 < this._timingNodes.length; i++) {
             const bit = this._nodeBit(top, this._timingNodes[i]);
             if (bit !== null && bit === this._nodeBit(top, this._timingNodes[i + 1])) {
-                styles.set(bit, this._timingIsCapturePath
-                    ? TIMING_NODE_STYLE.capture
-                    : (this._timingNodes[i].clk
-                        ? TIMING_NODE_STYLE.launch
-                        : TIMING_NODE_STYLE.data));
+                styles.set(bit, this._timingStyle(this._timingNodes[i].clk));
             }
         }
         return styles;
@@ -760,12 +789,9 @@ export class SchematicWidget {
             return;
         }
 
-        const name = this._svgIdToInstName.get(hit.cellId);
-        if (!name) return;
-
         this._highlightCellGroup(hit.group);
-        this.setStatus(`Selected: ${name}`);
-        this._fetchInspect(name);
+        this.setStatus(`Selected: ${hit.name}`);
+        this._fetchInspect(hit.name);
     }
 
     _handleCellDoubleClick(e) {
@@ -778,19 +804,14 @@ export class SchematicWidget {
             return false;
         }
 
-        const name = this._svgIdToInstName.get(hit.cellId);
-        if (!name) {
-            return false;
-        }
-
         e.preventDefault();
         e.stopPropagation();
         // Save the current view so Back can restore it after expansion.
         const previousSnapshot = this._currentSchematicSnapshot();
-        this.appState.selectedInstanceName = name;
+        this.appState.selectedInstanceName = hit.name;
         this._highlightCellGroup(hit.group);
-        this._fetchInspect(name);
-        return this._expandFromInstance(name, previousSnapshot);
+        this._fetchInspect(hit.name);
+        return this._expandFromInstance(hit.name, previousSnapshot);
     }
 
     // Back waits for the restored inspector selection.
@@ -940,128 +961,115 @@ export class SchematicWidget {
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     // Resolve to whether a schematic was drawn so callers can sequence updates.
-    refresh() {
+    async refresh() {
         if (!this._netlistsvgReady) {
             this.setStatus(this._unreadyStatus());
-            return Promise.resolve(false);
+            return false;
         }
 
         const instName = this.appState.selectedInstanceName;
         if (!instName) {
             this.setStatus(kIdleStatus);
-            return Promise.resolve(false);
+            return false;
         }
 
         const wm = this.appState.websocketManager;
         if (!wm) {
             this.setStatus('Waiting for server connection…');
-            return Promise.resolve(false);
+            return false;
+        }
+        if (!this._displayed) {
+            return this._deferLoad('refresh');
         }
 
         this.showTimingPath(null);
-        const requestId = this._timingRequestId;
+        const requestId = ++this._timingRequestId;
+        const isCurrent = () => requestId === this._timingRequestId;
         this.setStatus(`Loading schematic for ${instName}…`);
-
-        const { faninDepth, fanoutDepth } = this._schematicDepths();
-        const readyPromise = wm.readyPromise || Promise.resolve();
-
-        return readyPromise.then(() =>
-            wm.request({ type: 'schematic_cone', inst_name: instName,
-                         fanin_depth: faninDepth, fanout_depth: fanoutDepth })
-                .then(data => {
-                    if (requestId !== this._timingRequestId) return false;
-                    const cells = data.modules && data.modules.top && data.modules.top.cells;
-                    if (!cells || Object.keys(cells).length === 0) {
-                        this.setStatus('No cells found for selected instance.');
-                        return false;
-                    }
-                    return Promise.resolve(this.renderNetlist(
-                        data, () => requestId === this._timingRequestId))
-                        .then((didRender) => {
-                            if (didRender === false
-                                || requestId !== this._timingRequestId) {
-                                return false;
-                            }
-                            // A fresh refresh replaces the expansion history.
-                            this._clearSchematicHistory();
-                            return true;
-                        });
-                })
-                .catch(err => {
-                    if (requestId !== this._timingRequestId) return false;
-                    this.setStatus(`Error: ${err}`);
-                    return false;
-                }));
+        try {
+            const data = await this._fetchCone(wm, instName, isCurrent);
+            if (!data
+                || await this.renderNetlist(data, isCurrent) === false
+                || !isCurrent()) {
+                return false;
+            }
+            // A fresh refresh replaces the expansion history.
+            this._clearSchematicHistory();
+            this._leaveTimingSchematic();
+            return true;
+        } catch (err) {
+            if (isCurrent()) this.setStatus(`Error: ${err}`);
+            return false;
+        }
     }
 
-    // Shared by refresh and double-click expansion.
-    _schematicDepths() {
-        const faninRaw = parseInt(
-            this.controls.querySelector('#schematic-fanin-depth').value,
-            10);
-        const fanoutRaw = parseInt(
-            this.controls.querySelector('#schematic-fanout-depth').value,
-            10);
-        return {
-            faninDepth: isNaN(faninRaw) ? 1 : faninRaw,
-            fanoutDepth: isNaN(fanoutRaw) ? 1 : fanoutRaw,
+    // Request the cone around `instName` at the panel's depths, shared by
+    // refresh and double-click expansion. Resolves to null once `isCurrent`
+    // fails, and to null with a status when the cone is empty.
+    async _fetchCone(wm, instName, isCurrent) {
+        const depth = (input) => {
+            const value = parseInt(this.controls.querySelector(input).value, 10);
+            return isNaN(value) ? 1 : value;
         };
+        const request = {
+            type: 'schematic_cone',
+            inst_name: instName,
+            fanin_depth: depth('#schematic-fanin-depth'),
+            fanout_depth: depth('#schematic-fanout-depth'),
+        };
+        await wm.readyPromise;
+        const data = await wm.request(request);
+        if (!isCurrent()) {
+            return null;
+        }
+        const cells = this._topModule(data)?.cells;
+        if (!cells || Object.keys(cells).length === 0) {
+            this.setStatus('No cells found for selected instance.');
+            return null;
+        }
+        return data;
     }
 
-    _expandFromInstance(instName, previousSnapshot = null) {
+    async _expandFromInstance(instName, previousSnapshot = null) {
         if (!instName) {
-            return Promise.resolve(false);
+            return false;
         }
 
         if (!this._netlistsvgReady) {
-            this.setStatus('NetlistSVG not ready yet — try again in a moment.');
-            return Promise.resolve(false);
+            this.setStatus(this._unreadyStatus());
+            return false;
         }
 
         const wm = this.appState.websocketManager;
         if (!wm) {
             this.setStatus('Waiting for server connection…');
-            return Promise.resolve(false);
+            return false;
         }
 
         this.setStatus(`Expanding schematic from ${instName}…`);
-
-        const { faninDepth, fanoutDepth } = this._schematicDepths();
-        const readyPromise = wm.readyPromise || Promise.resolve();
-        // Drop the cone if another render replaces its expansion base.
-        const baseNetlistAtRequest = this._currentNetlist;
-
-        return readyPromise.then(() =>
-            wm.request({ type: 'schematic_cone', inst_name: instName,
-                         fanin_depth: faninDepth, fanout_depth: fanoutDepth })
-                .then(data => {
-                    if (this._currentNetlist !== baseNetlistAtRequest) {
-                        return false;
-                    }
-                    const cells = data.modules && data.modules.top && data.modules.top.cells;
-                    if (!cells || Object.keys(cells).length === 0) {
-                        this.setStatus('No cells found for selected instance.');
-                        return false;
-                    }
-                    const netlist = baseNetlistAtRequest
-                        ? this._mergeSchematicNetlists(baseNetlistAtRequest, data)
-                        : data;
-                    return Promise.resolve(this.renderNetlist(
-                        netlist,
-                        () => this._currentNetlist === baseNetlistAtRequest))
-                        .then((didRender) => {
-                            if (didRender === false) {
-                                return false;
-                            }
-                            // Record Back history only after expansion renders.
-                            this._pushSchematicHistory(previousSnapshot);
-                            return true;
-                        });
-                })
-                .catch(err => {
-                    this.setStatus(`Error: ${err}`);
-                    return false;
-                }));
+        // The newest view load wins, as for path loads, refresh and Back; the
+        // cone is also dropped if another render replaces its expansion base.
+        const requestId = ++this._timingRequestId;
+        const base = this._currentNetlist;
+        const isCurrent = () => requestId === this._timingRequestId
+            && this._currentNetlist === base;
+        try {
+            const data = await this._fetchCone(wm, instName, isCurrent);
+            if (!data) {
+                return false;
+            }
+            const netlist = base ? this._mergeSchematicNetlists(base, data) : data;
+            if (await this.renderNetlist(netlist, isCurrent) === false) {
+                return false;
+            }
+            // Record Back history only after expansion renders.
+            this._pushSchematicHistory(previousSnapshot);
+            this._leaveTimingSchematic();
+            return true;
+        } catch (err) {
+            if (isCurrent()) this.setStatus(`Error: ${err}`);
+            return false;
+        }
     }
 
     _cloneJson(value) {
@@ -1126,9 +1134,19 @@ export class SchematicWidget {
             return this._cloneJson(baseNetlist);
         }
 
-        const merged = this._cloneJson(baseNetlist);
-        const mergedTop = this._topModule(merged);
+        // A committed netlist is never modified, so the merge shares the base's
+        // cells, ports and nets, and copies only the maps it adds to.
+        const mergedTop = {
+            ...baseTop,
+            ports: { ...baseTop.ports },
+            cells: { ...baseTop.cells },
+            netnames: { ...baseTop.netnames },
+        };
         this._ensureSchematicTopFields(mergedTop);
+        const merged = {
+            ...baseNetlist,
+            modules: { ...baseNetlist.modules, top: mergedTop },
+        };
 
         const added = this._cloneJson(addedNetlist);
         const addedCloneTop = this._topModule(added);
@@ -1251,13 +1269,11 @@ export class SchematicWidget {
             return null;
         }
 
-        // netlistsvg usually emits cell groups as "cell_<instance>".
-        const prefixed = 'cell_' + instName;
-        return this._cellGroupForSvgId(prefixed)
-            || this._cellGroupForSvgId(instName);
+        // netlistsvg emits each cell group as "cell_<instance>".
+        return this._svgEl.querySelector(`#${CSS.escape('cell_' + instName)}`);
     }
 
-    _addCellHitTarget(group, cellId, bbox) {
+    _addCellHitTarget(group, bbox) {
         if (!bbox
             || bbox.width <= 0
             || bbox.height <= 0
@@ -1266,18 +1282,22 @@ export class SchematicWidget {
             return;
         }
 
+        // A group measured again after its panel showed may already have one.
+        if (group.querySelector(':scope > [data-openroad-hit-target]')) {
+            return;
+        }
+
         // Capture clicks inside open gate shapes without scanning coordinates.
-        const hitTarget = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        hitTarget.setAttribute('x', String(bbox.x));
-        hitTarget.setAttribute('y', String(bbox.y));
-        hitTarget.setAttribute('width', String(bbox.width));
-        hitTarget.setAttribute('height', String(bbox.height));
-        hitTarget.setAttribute('fill', 'transparent');
-        hitTarget.setAttribute('stroke', 'none');
-        hitTarget.setAttribute('pointer-events', 'all');
-        hitTarget.setAttribute('class', cellId);
-        hitTarget.setAttribute('data-openroad-hit-target', 'cell');
-        group.insertBefore(hitTarget, group.firstChild);
+        group.insertBefore(svgEl('rect', {
+            x: bbox.x,
+            y: bbox.y,
+            width: bbox.width,
+            height: bbox.height,
+            fill: 'transparent',
+            stroke: 'none',
+            'pointer-events': 'all',
+            'data-openroad-hit-target': 'cell',
+        }), group.firstChild);
     }
 
     _registerSvgCellHitTargets(instNames) {
@@ -1286,11 +1306,8 @@ export class SchematicWidget {
             const group = this._cellGroupForInstance(instName);
             if (!group) continue;
 
-            // Skin and generic cells expose different id forms.
-            const cellId = 'cell_' + instName;
-            this._svgIdToInstName.set(cellId, instName);
-            this._svgIdToInstName.set(instName, instName);
-            records.push({ group, cellId });
+            this._svgIdToInstName.set(group.id, instName);
+            records.push({ group });
         }
 
         // Exclude labels from every body measurement in one layout pass.
@@ -1301,14 +1318,14 @@ export class SchematicWidget {
         this._measureHidden(labels, () => {
             for (const record of records) {
                 try {
-                    record.bbox = boundsFromBBox(record.group.getBBox());
+                    record.bbox = record.group.getBBox();
                 } catch (_) {
                     // Hidden or otherwise unmeasurable groups have no target.
                 }
             }
         });
-        for (const { group, cellId, bbox } of records) {
-            this._addCellHitTarget(group, cellId, bbox);
+        for (const { group, bbox } of records) {
+            this._addCellHitTarget(group, bbox);
         }
     }
 
@@ -1348,6 +1365,8 @@ export class SchematicWidget {
 
             // Commit the netlist only after its SVG is ready.
             this._currentNetlist = yosysJson;
+            // A path load records its path again once this returns.
+            this._shownPath = null;
             if (typeof window !== 'undefined') window.__lastSchematic = yosysJson;
 
             // Inject SVG into the viewport
@@ -1365,9 +1384,8 @@ export class SchematicWidget {
             // Build SVG-id → ODB instance-name map.
             // netlistsvg renders each cell with id="cell_<instName>", so we
             // check each known instance name against that pattern.
-            const cells = yosysJson.modules && yosysJson.modules.top
-                        && yosysJson.modules.top.cells || {};
-            this._registerSvgCellHitTargets(Object.keys(cells));
+            const instNames = Object.keys(this._topModule(yosysJson)?.cells || {});
+            this._registerSvgCellHitTargets(instNames);
             this._tagNetJunctionDots();
             if (this._svgEl) {
                 // Remove any CSS size constraints — transform-based zoom handles sizing
@@ -1378,22 +1396,25 @@ export class SchematicWidget {
 
             // Reset to identity, then fit once the browser has fully painted
             // the SVG. Two rAFs are used: the first lets the DOM update, the
-            // second lets the layout engine commit real text dimensions.
+            // second lets the layout engine commit real text dimensions. A
+            // hidden panel measures nothing, so there the passes wait for
+            // 'show', hit targets included.
             this._scale = 1;
             this._panX = 0;
             this._panY = 0;
+            this._pendingLayout = {
+                instNames,
+                hitTargets: !this._displayed,
+            };
             requestAnimationFrame(() => {
                 if (!isLatestRender()) return;
                 requestAnimationFrame(() => {
                     if (!isLatestRender()) return;
-                    this._layoutInstanceLabels(renderJson);
-                    this._padSvgToContent();
-                    this.fitView();
+                    this._runPendingLayout();
                 });
             });
 
-            const cellCount = Object.keys(cells).length;
-            this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
+            this.setStatus(cellCountStatus(instNames.length));
             // The new SVG has none of the previous overlay; re-draw it so a
             // cone expansion keeps the path visible. Sets its own status
             // message when a path is active.
@@ -1408,21 +1429,29 @@ export class SchematicWidget {
         }
     }
 
+    // The passes that measure the rendered SVG: label placement, viewBox
+    // padding and fit, plus the hit targets a hidden panel could not size.
+    _runPendingLayout() {
+        const pending = this._pendingLayout;
+        if (!pending || !this._displayed) return;
+        this._pendingLayout = null;
+        if (pending.hitTargets) {
+            this._registerSvgCellHitTargets(pending.instNames);
+        }
+        this._layoutInstanceLabels(pending.instNames);
+        this._padSvgToContent();
+        this.fitView();
+    }
+
     _svgSkinAttribute(el, attrName) {
         // Browser SVG parsers may expose netlistsvg's `s:*` attributes either way.
-        const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
         return el.getAttribute(`s:${attrName}`)
-            || el.getAttributeNS(netlistsvgNS, attrName);
+            || el.getAttributeNS(NETLISTSVG_NS, attrName);
     }
 
     _isInstanceLabel(label) {
         return label.getAttribute('data-openroad-label') === 'instance'
             || this._svgSkinAttribute(label, 'attribute') === 'ref';
-    }
-
-    _stylePortLabel(label, fontSize = 10) {
-        label.style.fontSize = `${fontSize}px`;
-        label.style.pointerEvents = 'none';
     }
 
     // Hide `elements`, run `measure`, then restore each element's original
@@ -1447,126 +1476,63 @@ export class SchematicWidget {
 
     // netlistsvg writes net junction dots with an inline fill:#000, which no
     // stylesheet can re-point. Move it onto a class so the theme owns the
-    // color, and leave the skin's hollow inversion bubbles alone.
+    // color, and leave the skin's hollow inversion bubbles alone. The fill
+    // stays as a presentation attribute, which any stylesheet rule overrides
+    // on the page; an export has no page CSS and would draw the dots hollow.
     _tagNetJunctionDots() {
         if (!this._svgEl) return;
         for (const dot of this._svgEl.querySelectorAll('circle[style]')) {
-            if (!dot.style.getPropertyValue('fill')) continue;
+            const fill = dot.style.getPropertyValue('fill');
+            if (!fill) continue;
             dot.style.removeProperty('fill');
+            dot.setAttribute('fill', fill);
             dot.classList.add(NET_DOT_CLASS);
         }
     }
 
-    _parseSvgNumber(value) {
-        const parsed = parseFloat(value);
-        return Number.isFinite(parsed) ? parsed : null;
-    }
-
-    _parseSvgTranslate(transform) {
-        const match = (transform || '').match(
-            /translate\(\s*([-+]?\d*\.?\d+)(?:[,\s]+([-+]?\d*\.?\d+))?/);
-        if (!match) return null;
-
-        const x = this._parseSvgNumber(match[1]);
-        const y = this._parseSvgNumber(match[2] !== undefined ? match[2] : '0');
-        return x !== null && y !== null ? { x, y } : null;
-    }
-
-    _portMarkerForLabel(group, normalizedPort) {
-        for (const marker of group.querySelectorAll('g')) {
-            if (this._svgSkinAttribute(marker, 'pid') === normalizedPort) {
-                return marker;
+    // Label a gate symbol's pins with the design's pin names; netlistsvg only
+    // labels generic boxes. The skin's pin markers are the group's children
+    // and carry their own s:x/s:y, so placement needs no measuring. As
+    // upstream, inputs sit left of the marker and outputs right of it.
+    _addPortLabels(group, cell) {
+        const markers = new Map();
+        for (const el of group.children) {
+            if (el.tagName === 'g') {
+                markers.set(this._svgSkinAttribute(el, 'pid'), el);
             }
         }
-        return null;
-    }
-
-    _portMarkerPosition(marker, rootGroup) {
-        let x = this._parseSvgNumber(this._svgSkinAttribute(marker, 'x'));
-        let y = this._parseSvgNumber(this._svgSkinAttribute(marker, 'y'));
-        const markerTranslate = this._parseSvgTranslate(marker.getAttribute('transform'));
-        if (markerTranslate) {
-            x = x !== null ? x : markerTranslate.x;
-            y = y !== null ? y : markerTranslate.y;
-        }
-
-        if (x === null || y === null) return null;
-
-        // Labels are appended to the outer cell group, but skin pin markers can
-        // be nested under translated helper groups.
-        for (let el = marker.parentElement; el && el !== rootGroup; el = el.parentElement) {
-            const translate = this._parseSvgTranslate(
-                el.getAttribute && el.getAttribute('transform'));
-            if (translate) {
-                x += translate.x;
-                y += translate.y;
-            }
-        }
-
-        return { x, y };
-    }
-
-    _ensureOpenRoadPortLabelElement(group, normalizedPort) {
-        const existing = group.querySelector(
-            `text[data-openroad-port="${CSS.escape(normalizedPort)}"]`);
-        if (existing) return existing;
-
-        const marker = this._portMarkerForLabel(group, normalizedPort);
-        if (!marker) return null;
-
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('data-openroad-port', normalizedPort);
-        group.appendChild(label);
-        return label;
-    }
-
-    _positionOpenRoadPortLabel(group, label, normalizedPort, direction) {
-        const marker = this._portMarkerForLabel(group, normalizedPort);
-        if (!marker) return false;
-
-        const pin = this._portMarkerPosition(marker, group);
-        if (!pin) return false;
-
-        // Match upstream placement: inputs sit left of the marker, outputs right.
-        const isInput = direction === 'input';
-        const anchor = isInput ? 'end' : 'start';
-        const x = pin.x + (isInput ? -3 : 4);
-        const y = pin.y - 4;
-        const side = isInput ? 'left' : 'right';
-
-        label.setAttribute('x', String(x));
-        label.setAttribute('y', String(y));
-        label.setAttribute('data-openroad-port-side', side);
-        label.setAttribute('text-anchor', anchor);
-        label.style.textAnchor = anchor;
-        return true;
-    }
-
-    _updateOpenRoadPortLabels(group, cell) {
-        const labels = cell.port_labels || {};
         const dirs = cell.port_directions || {};
-        for (const normalizedPort of Object.keys(labels)) {
-            this._ensureOpenRoadPortLabelElement(group, normalizedPort);
-        }
+        for (const [pid, name] of Object.entries(cell.port_labels)) {
+            const marker = markers.get(pid);
+            if (!marker) continue;
+            const x = parseFloat(this._svgSkinAttribute(marker, 'x'));
+            const y = parseFloat(this._svgSkinAttribute(marker, 'y'));
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
 
-        for (const label of group.querySelectorAll('text[data-openroad-port]')) {
-            const normalizedPort = label.getAttribute('data-openroad-port');
-            label.textContent = labels[normalizedPort] || normalizedPort;
-            this._positionOpenRoadPortLabel(
-                group, label, normalizedPort, dirs[normalizedPort]);
-            this._stylePortLabel(label, 5);
+            const isInput = dirs[pid] === 'input';
+            const anchor = isInput ? 'end' : 'start';
+            const label = svgEl('text', {
+                x: x + (isInput ? -3 : 4),
+                y: y - 4,
+                'text-anchor': anchor,
+                'data-openroad-port': pid,
+            });
+            // Half the skin's 10px text keeps pin names proportionate to the
+            // small gate symbols. Inline, since the skin's text rule beats a
+            // presentation attribute.
+            label.style.fontSize = '5px';
+            label.style.textAnchor = anchor;
+            label.style.pointerEvents = 'none';
+            label.textContent = name || pid;
+            group.appendChild(label);
         }
     }
 
-    // Register pin markers are nested, so label placement accumulates transforms.
+    // Label each gate symbol with its instance name and its pins' real names.
     _ensureOpenRoadSymbolLabels(netlist) {
         if (!this._svgEl) return;
 
-        const cells = netlist.modules && netlist.modules.top
-                    && netlist.modules.top.cells || {};
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const netlistsvgNS = 'https://github.com/nturley/netlistsvg';
-
+        const cells = this._topModule(netlist)?.cells || {};
         for (const [instName, cell] of Object.entries(cells)) {
             if (!cell.port_labels) continue;
             const displayName = (cell.attributes && cell.attributes.ref) || instName;
@@ -1575,16 +1541,15 @@ export class SchematicWidget {
 
             let label = this._instanceLabelForGroup(group);
             if (!label) {
-                label = document.createElementNS(svgNS, 'text');
                 const symbolWidth = parseFloat(this._svgSkinAttribute(group, 'width'));
-                label.setAttribute('x', Number.isFinite(symbolWidth)
-                    ? String(symbolWidth / 2)
-                    : '15');
-                label.setAttribute('y', '-4');
-                label.setAttributeNS(netlistsvgNS, 's:attribute', 'ref');
+                label = svgEl('text', {
+                    x: Number.isFinite(symbolWidth) ? symbolWidth / 2 : 15,
+                    y: -4,
+                });
+                label.setAttributeNS(NETLISTSVG_NS, 's:attribute', 'ref');
             }
 
-            this._updateOpenRoadPortLabels(group, cell);
+            this._addPortLabels(group, cell);
             this._setInstanceLabelText(label, displayName);
             label.setAttribute('class', 'nodelabel');
             label.setAttribute('data-openroad-label', 'instance');
@@ -1617,12 +1582,9 @@ export class SchematicWidget {
     }
 
     _setInstanceLabelText(label, name) {
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const lines = this._instanceLabelLines(name);
         label.textContent = '';
-        label.setAttribute('data-openroad-label-line-count', String(lines.length));
-        for (const line of lines) {
-            const tspan = document.createElementNS(svgNS, 'tspan');
+        for (const line of this._instanceLabelLines(name)) {
+            const tspan = svgEl('tspan', {});
             tspan.textContent = line;
             label.appendChild(tspan);
         }
@@ -1660,11 +1622,9 @@ export class SchematicWidget {
         return Number.isFinite(width) && Number.isFinite(height) ? width * height : 0;
     }
 
+    // An OpenROAD label has a tspan per line; netlistsvg's own has one line.
     _labelLineCount(label) {
-        const lineCount = parseInt(
-            label.getAttribute('data-openroad-label-line-count') || '1',
-            10);
-        return Number.isFinite(lineCount) && lineCount > 0 ? lineCount : 1;
+        return Math.max(label.querySelectorAll('tspan').length, 1);
     }
 
     _labelPlacementCandidates(bodyBounds, label) {
@@ -1709,25 +1669,16 @@ export class SchematicWidget {
             .filter((element) => !insideCell(element))
             .map((element) => element.getBoundingClientRect())
             .filter((rect) => rect.width > 0 || rect.height > 0)
-            .map((rect) => ({
-                left: rect.left - 5,
-                right: rect.right + 5,
-                top: rect.top - 5,
-                bottom: rect.bottom + 5,
-                width: rect.width + 10,
-                height: rect.height + 10,
-            }));
+            .map((rect) => expandRect(rect, 5));
     }
 
     // NetlistSVG uses fixed skin label locations; reposition instance labels
     // after layout so names stay readable near ports, wires, and other text.
-    _layoutInstanceLabels(netlist) {
+    _layoutInstanceLabels(instNames) {
         if (!this._svgEl) return;
 
-        const cells = netlist.modules && netlist.modules.top
-                    && netlist.modules.top.cells || {};
         const records = [];
-        for (const instName of Object.keys(cells)) {
+        for (const instName of instNames) {
             const group = this._cellGroupForInstance(instName);
             if (!group) continue;
             const label = this._instanceLabelForGroup(group);
@@ -1879,22 +1830,6 @@ export class SchematicWidget {
         }
     }
 
-    _screenRectToSvgRect(screenRect) {
-        const ctm = this._svgEl && this._svgEl.getScreenCTM();
-        if (!ctm || !screenRect) return null;
-
-        try {
-            return this._rectToSvgRect({
-                x: screenRect.left,
-                y: screenRect.top,
-                width: screenRect.width,
-                height: screenRect.height,
-            }, ctm.inverse());
-        } catch (_) {
-            return null;
-        }
-    }
-
     _localRectToSvgRect(element, rect) {
         const svgCtm = this._svgEl && this._svgEl.getCTM();
         const elementCtm = element.getCTM && element.getCTM();
@@ -1945,32 +1880,35 @@ export class SchematicWidget {
     _svgContentElements() {
         if (!this._svgEl) return [];
 
-        const selectors = [
-            'g[id^="cell_"]',
-            'text',
-            'path',
-            'rect',
-            'circle',
-            'ellipse',
-            'line',
-            'polyline',
-            'polygon',
-        ];
-        return Array.from(this._svgEl.querySelectorAll(selectors.join(',')))
+        return Array.from(this._svgEl.querySelectorAll(
+            `g[id^="cell_"],text,${SVG_SHAPES}`))
             .filter((element) => {
                 const cellGroup = element.closest('g[id^="cell_"]');
                 return !cellGroup || cellGroup === element;
             });
     }
 
+    // Every element's screen box maps back to SVG space through the same
+    // screen transform, so it is inverted once.
     _svgContentBoundsFromScreen() {
-        if (!this._svgEl) return null;
+        const ctm = this._svgEl && this._svgEl.getScreenCTM();
+        if (!ctm) return null;
+        let toSvg;
+        try {
+            toSvg = ctm.inverse();
+        } catch (_) {
+            return null;
+        }
 
         let bounds = null;
         for (const element of this._svgContentElements()) {
             const screenRect = element.getBoundingClientRect();
-            const svgRect = this._screenRectToSvgRect(screenRect);
-            bounds = this._unionSvgRect(bounds, svgRect);
+            bounds = this._unionSvgRect(bounds, this._rectToSvgRect({
+                x: screenRect.left,
+                y: screenRect.top,
+                width: screenRect.width,
+                height: screenRect.height,
+            }, toSvg));
         }
         return bounds;
     }
@@ -2087,12 +2025,11 @@ const SKIN_MULTI_TYPES = new Set([
     'and3', 'and4', 'or3', 'or4', 'nand3', 'nand4', 'nor3', 'nor4',
 ]);
 
-const SKIN_REGISTER_TYPE = {
-    dff: '$_DFF_',
-    dffr: '$dffr',
-    dffs: '$dffs',
-};
-const SKIN_REGISTER_TYPES = new Set(Object.keys(SKIN_REGISTER_TYPE));
+const SKIN_REGISTER_TYPE = new Map([
+    ['dff', '$_DFF_'],
+    ['dffr', '$dffr'],
+    ['dffs', '$dffs'],
+]);
 const PID_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 // Rewrite one cell to a custom-skin gate symbol when it carries a recognised
@@ -2116,7 +2053,7 @@ export function canonicalizeCell(cell) {
     let type;
     const pidOf = {};  // real pin name -> symbol port id
 
-    if (SKIN_REGISTER_TYPES.has(kind)) {
+    if (SKIN_REGISTER_TYPE.has(kind)) {
         const gatePorts = cell.gate_ports;
         if (!gatePorts || typeof gatePorts !== 'object'
             || Array.isArray(gatePorts) || Object.keys(gatePorts).length === 0) {
@@ -2124,11 +2061,11 @@ export function canonicalizeCell(cell) {
         }
         // Registers use explicit skin aliases; plain dff/dffr/dffs can render
         // as generic boxes in some netlistsvg paths.
-        type = SKIN_REGISTER_TYPE[kind];
+        type = SKIN_REGISTER_TYPE.get(kind);
         for (const [symbolPort, realPort] of Object.entries(gatePorts)) {
             if (typeof realPort !== 'string' || realPort.length === 0) return cell;
-            pidOf[realPort]
-                = symbolPort === 'CK' || symbolPort === 'CLK' ? 'C' : symbolPort;
+            // The server names the clock CK; the skin's clock pin is C.
+            pidOf[realPort] = symbolPort === 'CK' ? 'C' : symbolPort;
         }
     } else if (kind === 'aoi' || kind === 'oai') {
         const terms = Array.isArray(cell.gate_terms) ? cell.gate_terms : [];

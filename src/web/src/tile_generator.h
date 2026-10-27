@@ -1350,6 +1350,15 @@ class TileGenerator
 
 struct TimingPathSummary;
 
+// The chip-inst nodes whose name, or full path from the root, prefixes `name`
+// as a whole path component, each with the rest of `name` (pointing into it):
+// the name local to that node's block.  Several can match, so callers try them
+// in order, names before paths.  Any match means `name` is chiplet-qualified,
+// and an unqualified lookup must not claim it instead.
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name);
+
 // Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
 // returning the owning node so the caller can transform the pin's geometry.
 std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(

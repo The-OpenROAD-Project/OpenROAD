@@ -432,9 +432,11 @@ Build a cone of influence around an instance (fanin/fanout) and return
 it as a Yosys-format netlist for the netlistsvg renderer.
 
 For 3DBlox designs, instance names use the chip-instance prefix, for example
-`die0/buf1`. Returned cell, port, and net names use the same prefix to keep
-objects on different dies distinct. `schematic_path` and `schematic_inspect`
-accept these qualified instance names as well.
+`die0/buf1`. The chip instance's full path from the root, as layout selection
+reports it (for example `top/die0/buf1`), is accepted too. Returned cell, port,
+and net names use the short prefix to keep objects on different dies distinct.
+`schematic_path` and `schematic_inspect` accept these qualified instance names
+as well.
 
 | Field           | Type     | Required | Description                                |
 | --------------- | -------- | :------: | ------------------------------------------ |
@@ -615,10 +617,12 @@ single stage emphasized.
 
 | Field        | Type     | Required when            | Description                                                    |
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
-| `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
-| `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
-| `start_pin`  | `string` | `path_index >= 0`        | `start_pin` of the selected path; identifies it with `end_pin`. |
+| `path_index` | `int`    | always                   | `-1` clears; any other value highlights the path the fields below identify. A saved report, which has no server, picks its pre-rendered overlay by this index. |
+| `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report holds the path: setup or hold.        |
+| `start_pin`  | `string` | `path_index >= 0`        | `start_pin` of the selected path.                              |
 | `end_pin`    | `string` | `path_index >= 0`        | `end_pin` of the selected path.                                |
+| `start_clk`  | `string` | `path_index >= 0`        | `start_clk` of the selected path.                              |
+| `end_clk`    | `string` | `path_index >= 0`        | `end_clk` of the selected path.                                |
 | `unconstrained` | `bool` | optional, `>= 0` only   | Include unconstrained paths in the re-run report.              |
 | `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
 | `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
@@ -626,9 +630,10 @@ single stage emphasized.
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
 
 The server re-runs the report with `unconstrained`, `max_paths`,
-`slack_min`, and `slack_max`, then picks the path whose `start_pin` and
-`end_pin` match. If the options differ from the `timing_report` the row came
-from, the worst case is no highlight rather than a different path.
+`slack_min`, and `slack_max`, then picks the path whose pins and clocks all
+match: a register two clocks capture has a path per clock with the same pins.
+If the options differ from the `timing_report` the row came from, the worst
+case is no highlight rather than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

@@ -5,14 +5,13 @@ import './setup-dom.js';
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { EventEmitter } from '../../src/grid-layout.js';
 import {
     SchematicWidget, canonicalizeCell, canonicalizeForSkin, scopeCssSelector,
 } from '../../src/schematic-widget.js';
 import { beginSelection } from '../../src/ui-utils.js';
 
 globalThis.CSS = globalThis.CSS || { escape: (value) => String(value) };
-globalThis.requestAnimationFrame = globalThis.requestAnimationFrame
-    || ((callback) => callback());
 
 const svgNS = 'http://www.w3.org/2000/svg';
 
@@ -37,24 +36,27 @@ function rect(left, top, right, bottom) {
     };
 }
 
-function makeWidget(appState = {}) {
-    const container = { element: document.createElement('div') };
+// `showable` makes the container the layout manager's own, with its 'show'
+// and 'hide' events; its panel then starts hidden, as it does in the app.
+function makeWidget(appState = {}, { showable = false } = {}) {
+    const element = document.createElement('div');
+    const container = showable
+        ? Object.assign(new EventEmitter(), { element })
+        : { element };
     document.body.appendChild(container.element);
     const widget = new SchematicWidget(container, appState);
     return { widget, container };
 }
 
-// Build one cell; identify controls where netlistsvg exposes its id.
+// Build one cell, the way netlistsvg ids it; identify says how the widget
+// learns its name: 'id' maps the id directly, while 'registered' runs the
+// hit-target registration renderNetlist does.
 function makeCell(widget, instName, { identify = 'id', bounds = rect(0, 0, 30, 30) } = {}) {
     const svg = document.createElementNS(svgNS, 'svg');
     const group = document.createElementNS(svgNS, 'g');
     const path = document.createElementNS(svgNS, 'path');
 
-    if (identify !== 'class') {
-        group.id = `cell_${instName}`;
-    } else {
-        path.setAttribute('class', `cell_${instName}`);
-    }
+    group.id = `cell_${instName}`;
     group.getBBox = () => ({ x: 0, y: 0, width: 30, height: 30 });
     group.getBoundingClientRect = () => bounds;
     path.getBoundingClientRect = () => bounds;
@@ -78,9 +80,6 @@ function makeCell(widget, instName, { identify = 'id', bounds = rect(0, 0, 30, 3
 }
 
 const makeInteractiveCell = (widget, instName) => makeCell(widget, instName);
-
-const makeClassOnlyInteractiveCell = (widget, instName) =>
-    makeCell(widget, instName, { identify: 'class' });
 
 const makeHitTargetCell = (widget, instName) =>
     makeCell(widget, instName, {
@@ -584,47 +583,6 @@ describe('SchematicWidget schematic navigation', () => {
         container.element.remove();
     });
 
-    it('expands when the clicked shape only has a cell class', async () => {
-        const requests = [];
-        const centeredNetlist = {
-            modules: {
-                top: {
-                    cells: {
-                        input24: {},
-                    },
-                },
-            },
-        };
-        const appState = {
-            websocketManager: {
-                readyPromise: Promise.resolve(),
-                request: (request) => {
-                    requests.push(request);
-                    if (request.type === 'schematic_cone') {
-                        return Promise.resolve(centeredNetlist);
-                    }
-                    return Promise.resolve({ selected: [{ name: request.inst_name }] });
-                },
-            },
-        };
-        const { widget, container } = makeWidget(appState);
-        const { path } = makeClassOnlyInteractiveCell(widget, 'input24');
-        const event = doubleClickEvent(path);
-
-        widget._netlistsvgReady = true;
-        widget.renderNetlist = async () => {};
-
-        const didCenter = await widget._handleCellDoubleClick(event);
-
-        assert.equal(didCenter, true);
-        assert.equal(appState.selectedInstanceName, 'input24');
-        assert.equal(requests[0].type, 'schematic_inspect');
-        assert.equal(requests[0].inst_name, 'input24');
-        assert.equal(requests[1].type, 'schematic_cone');
-        assert.equal(requests[1].inst_name, 'input24');
-        container.element.remove();
-    });
-
     it('handles the second mousedown of a double-click on a shape', async () => {
         const requests = [];
         const appState = {
@@ -640,7 +598,7 @@ describe('SchematicWidget schematic navigation', () => {
             },
         };
         const { widget, container } = makeWidget(appState);
-        const { path } = makeClassOnlyInteractiveCell(widget, 'u1');
+        const { path } = makeInteractiveCell(widget, 'u1');
         const event = new window.MouseEvent('mousedown', {
             bubbles: true,
             button: 0,
@@ -906,10 +864,8 @@ describe('SchematicWidget cell hit target layout', () => {
                         assert.equal(target.getAttribute('y'), '2');
                         assert.equal(target.getAttribute('width'), '30');
                         assert.equal(target.getAttribute('height'), '40');
-                        assert.equal(target.getAttribute('class'), `cell_u${index}`);
                     }
                     assert.equal(widget._svgIdToInstName.get(`cell_u${index}`), `u${index}`);
-                    assert.equal(widget._svgIdToInstName.get(`u${index}`), `u${index}`);
                 });
             } finally {
                 globalThis.requestAnimationFrame = originalRequestAnimationFrame;
@@ -1184,10 +1140,10 @@ describe('SchematicWidget timing path overlay', () => {
             return Promise.resolve(netlistWith(msg.inst_name));
         }
         return Promise.resolve({ selected: [{ name: msg.inst_name }] });
-    }) {
+    }, widgetOptions = {}) {
         const { widget, container } = makeWidget({
             websocketManager: { request },
-        });
+        }, widgetOptions);
         widget._netlistsvgReady = true;
         widget.fitView = () => {};
         widget.netlistsvg = {
@@ -1363,6 +1319,325 @@ describe('SchematicWidget timing path overlay', () => {
             container.element.remove();
         });
     }
+
+    for (const navigation of ['Refresh', 'Back']) {
+        it(`finishes a pending ${navigation} when the timing panel clears`, async () => {
+            let release;
+            const { widget, container } = makeRenderingPathWidget(msg => {
+                if (msg.type === 'schematic_cone') {
+                    return new Promise(resolve => { release = resolve; });
+                }
+                return Promise.resolve({ selected: [{ name: msg.inst_name }] });
+            });
+            await widget.renderNetlist(netlistWith('base'));
+            widget.appState.selectedInstanceName = 'refreshed';
+            if (navigation === 'Back') {
+                widget._pushSchematicHistory({
+                    netlist: netlistWith('previous'),
+                    selectedInstanceName: null,
+                });
+                const render = widget.netlistsvg.render;
+                widget.netlistsvg.render = (skin, json) => {
+                    if (json.modules.top.cells.previous) {
+                        return new Promise(resolve => { release = resolve; });
+                    }
+                    return render(skin, json);
+                };
+            }
+
+            const pendingNavigation = navigation === 'Refresh'
+                ? widget.refresh() : widget._goBackSchematic();
+            await Promise.resolve();
+            // A sort, Setup/Hold switch or Update clears the timing path.
+            await widget.showTimingPath(null);
+            release(navigation === 'Refresh'
+                ? netlistWith('refreshed') : renderedPathSvg(['previous']));
+
+            assert.equal(await pendingNavigation, true);
+            assertPlainSchematic(widget,
+                [navigation === 'Refresh' ? 'refreshed' : 'previous']);
+            container.element.remove();
+        });
+    }
+
+    for (const pendingStage of ['response', 'layout']) {
+        it(`drops a path ${pendingStage} still pending when the timing panel clears`, async () => {
+            let release;
+            const { widget, container } = makeRenderingPathWidget(msg => {
+                if (msg.type === 'schematic_path' && pendingStage === 'response') {
+                    return new Promise(resolve => { release = resolve; });
+                }
+                return Promise.resolve(netlistWith(
+                    msg.type === 'schematic_path' ? 'late' : msg.inst_name));
+            });
+            await widget.renderNetlist(netlistWith('previous'));
+            if (pendingStage === 'layout') {
+                const render = widget.netlistsvg.render;
+                widget.netlistsvg.render = (skin, json) => {
+                    if (json.modules.top.cells.late) {
+                        return new Promise(resolve => { release = resolve; });
+                    }
+                    return render(skin, json);
+                };
+            }
+
+            const pendingPath = widget.showTimingPath(timingPath([node('late')]));
+            // Let a resolved path response enter netlistsvg layout.
+            await Promise.resolve();
+            await widget.showTimingPath(null);
+            release(pendingStage === 'response'
+                ? netlistWith('late') : renderedPathSvg(['late']));
+
+            assert.equal(await pendingPath, false);
+            assertPlainSchematic(widget, ['previous']);
+            assert.equal(widget._schematicHistory.length, 0);
+            container.element.remove();
+        });
+    }
+
+    it('keeps only the pre-path view in Back history across timing clears', async () => {
+        const { widget, container } = makeRenderingPathWidget();
+        await widget.renderNetlist(netlistWith('cone'));
+
+        await widget.showTimingPath(timingPath([node('row1')]));
+        // Clearing the path leaves its schematic on screen, uncolored; the
+        // next row must not save that as another view to go Back to.
+        await widget.showTimingPath(null);
+        await widget.showTimingPath(timingPath([node('row2')]));
+
+        assert.equal(widget._schematicHistory.length, 1);
+        assert.ok(widget._schematicHistory[0].netlist.modules.top.cells.cone);
+        assert.equal(await widget._goBackSchematic(), true);
+        assertPlainSchematic(widget, ['cone']);
+        container.element.remove();
+    });
+
+    for (const navigation of ['Refresh', 'Back', 'expansion']) {
+        it(`saves what ${navigation} draws over a path for the next path's Back`, async () => {
+            const { widget, container } = makeRenderingPathWidget();
+            await widget.renderNetlist(netlistWith('previous'));
+            await widget.showTimingPath(timingPath([node('row1')]));
+
+            widget.appState.selectedInstanceName = 'refreshed';
+            let didRender;
+            if (navigation === 'Refresh') {
+                didRender = await widget.refresh();
+            } else if (navigation === 'Back') {
+                didRender = await widget._goBackSchematic();
+            } else {
+                didRender = await widget._expandFromInstance(
+                    'added', widget._currentSchematicSnapshot());
+            }
+            assert.equal(didRender, true);
+            const drawn = Object.keys(widget._currentNetlist.modules.top.cells);
+            await widget.showTimingPath(timingPath([node('row2')]));
+
+            const saved = widget._schematicHistory.at(-1);
+            assert.ok(saved, 'the next path saved the view it replaced');
+            assert.deepEqual(Object.keys(saved.netlist.modules.top.cells), drawn);
+            container.element.remove();
+        });
+    }
+
+    it('loads a timing path only once its hidden panel shows', async () => {
+        const requests = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            requests.push(msg.type);
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        }, { showable: true });
+
+        assert.equal(await widget.showTimingPath(timingPath([node('u1')])), false);
+        assert.deepEqual(requests, []);
+
+        container.fire('show');
+        await new Promise(resolve => setTimeout(resolve, 0));
+        assert.deepEqual(requests, ['schematic_path']);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells), ['u1']);
+        assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
+        container.element.remove();
+    });
+
+    it('runs only the newest load once its hidden panel shows', async () => {
+        const requests = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            requests.push(msg);
+            return Promise.resolve(msg.type === 'schematic_path'
+                ? netlistWith(...msg.inst_names) : netlistWith(msg.inst_name));
+        }, { showable: true });
+        widget.appState.selectedInstanceName = 'selected';
+
+        await widget.showTimingPath(timingPath([node('first')]));
+        await widget.refresh();
+        await widget.showTimingPath(timingPath([node('second')]));
+        container.fire('show');
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.deepEqual(requests.map(r => r.inst_names), [['second']]);
+        container.element.remove();
+    });
+
+    for (const pending of ['path', 'refresh']) {
+        it(`${pending === 'path' ? 'drops' : 'keeps'} a hidden ${pending} load when the timing panel clears`, async () => {
+            const requests = [];
+            const { widget, container } = makeRenderingPathWidget(msg => {
+                requests.push(msg.type);
+                return Promise.resolve(netlistWith(msg.inst_name));
+            }, { showable: true });
+            widget.appState.selectedInstanceName = 'selected';
+
+            await (pending === 'path'
+                ? widget.showTimingPath(timingPath([node('u1')]))
+                : widget.refresh());
+            await widget.showTimingPath(null);
+            container.fire('show');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            assert.deepEqual(requests, pending === 'path' ? [] : ['schematic_cone']);
+            container.element.remove();
+        });
+    }
+
+    it('measures a schematic that finished rendering while hidden once shown', async () => {
+        const { widget, container } = makeRenderingPathWidget(undefined, { showable: true });
+        container.fire('show');
+        let release;
+        widget.netlistsvg.render = () => new Promise(resolve => { release = resolve; });
+        const fits = [];
+        widget.fitView = () => fits.push(widget._displayed);
+
+        const rendering = widget.renderNetlist(netlistWith('u1'));
+        container.fire('hide');
+        release(renderedPathSvg(['u1']));
+        assert.equal(await rendering, true);
+        assert.deepEqual(fits, []);
+
+        container.fire('show');
+        assert.deepEqual(fits, [true]);
+        container.element.remove();
+    });
+
+    it('keeps the view when the drawn path is selected again', async () => {
+        const requests = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            requests.push(msg.type);
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        });
+        const path = timingPath([node('u1')]);
+        await widget.showTimingPath(path);
+        widget._scale = 3;
+        widget._panX = 40;
+
+        // Its row is clicked again, then picked again after a sort cleared it.
+        assert.equal(await widget.showTimingPath(path), true);
+        await widget.showTimingPath(null);
+        assert.equal(await widget.showTimingPath(path), true);
+
+        assert.deepEqual(requests, ['schematic_path']);
+        assert.equal(widget._scale, 3);
+        assert.equal(widget._panX, 40);
+        assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
+        assert.equal(legendOf(widget).hidden, false);
+        container.element.remove();
+    });
+
+    it('drops a load in flight when the drawn path is selected again', async () => {
+        let release;
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            if (msg.inst_names.includes('u2')) {
+                return new Promise(resolve => { release = resolve; });
+            }
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        });
+        const drawn = timingPath([node('u1')]);
+        await widget.showTimingPath(drawn);
+        const pending = widget.showTimingPath(timingPath([node('u2')]));
+
+        assert.equal(await widget.showTimingPath(drawn), true);
+        release(netlistWith('u2'));
+
+        assert.equal(await pending, false);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells), ['u1']);
+        assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
+        container.element.remove();
+    });
+
+    it('drops an expansion in flight when the drawn path is selected again', async () => {
+        let release;
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            if (msg.type === 'schematic_cone') {
+                return new Promise(resolve => { release = resolve; });
+            }
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        });
+        const drawn = timingPath([node('u1')]);
+        await widget.showTimingPath(drawn);
+        const expansion = widget._expandFromInstance('u1');
+        await Promise.resolve();
+
+        assert.equal(await widget.showTimingPath(drawn), true);
+        release(netlistWith('u2'));
+
+        assert.equal(await expansion, false);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells), ['u1']);
+        container.element.remove();
+    });
+
+    it('keeps an expansion over a path load sent before it', async () => {
+        let releasePath;
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            if (msg.type === 'schematic_path') {
+                return new Promise(resolve => { releasePath = resolve; });
+            }
+            return Promise.resolve(netlistWith(msg.inst_name));
+        });
+        widget.appState.selectedInstanceName = 'u1';
+        await widget.refresh();
+
+        const pathLoad = widget.showTimingPath(timingPath([node('p1')]));
+        assert.equal(await widget._expandFromInstance('u2'), true);
+        releasePath(netlistWith('p1'));
+
+        assert.equal(await pathLoad, false);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells),
+                         ['u1', 'u2']);
+        container.element.remove();
+    });
+
+    it('reloads a path once something else was drawn over it', async () => {
+        const requests = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            requests.push(msg.type);
+            return Promise.resolve(msg.type === 'schematic_path'
+                ? netlistWith(...msg.inst_names) : netlistWith(msg.inst_name));
+        });
+        const path = timingPath([node('u1')]);
+        await widget.showTimingPath(path);
+        widget.appState.selectedInstanceName = 'cone';
+        await widget.refresh();
+        await widget.showTimingPath(path);
+
+        assert.deepEqual(requests,
+                         ['schematic_path', 'schematic_cone', 'schematic_path']);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells), ['u1']);
+        container.element.remove();
+    });
+
+    it('retries a path whose load failed when it is selected again', async () => {
+        let failures = 1;
+        const requests = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            requests.push(msg.type);
+            if (failures-- > 0) return Promise.reject(new Error('busy'));
+            return Promise.resolve(netlistWith(...msg.inst_names));
+        });
+        const path = timingPath([node('u1')]);
+        await widget.showTimingPath(path);
+        await widget.showTimingPath(path);
+
+        assert.deepEqual(requests, ['schematic_path', 'schematic_path']);
+        assert.deepEqual(Object.keys(widget._currentNetlist.modules.top.cells), ['u1']);
+        container.element.remove();
+    });
 
     it('ignores a schematic response for an older timing path', async () => {
         const releases = [];
@@ -1540,6 +1815,7 @@ describe('SchematicWidget timing path overlay', () => {
 
     it('clears an empty state when timing selection is cleared', async () => {
         const { widget, container } = makeWidget();
+        widget._netlistsvgReady = true;
         const path = timingPath([]);
 
         await widget.showTimingPath(path, path.capture_nodes);
@@ -1552,6 +1828,30 @@ describe('SchematicWidget timing path overlay', () => {
                      'Select an instance in the layout to view its schematic.');
         container.element.remove();
     });
+
+    for (const [isStaticMode, kind, notice] of [
+        [true, 'saved-report', /not available in saved reports/],
+        [false, 'init error', /^Init error/],
+    ]) {
+        it(`keeps the ${kind} notice through timing selections`, async () => {
+            const { widget, container } = makeWidget({
+                websocketManager: { isStaticMode },
+            });
+            assert.equal(widget._netlistsvgReady, false);
+            const status = () =>
+                widget.controls.querySelector('#schematic-status').textContent;
+
+            // The timing panel clears the path on every automatic update.
+            await widget.showTimingPath(null);
+            assert.match(status(), notice);
+            // An output endpoint has an empty capture leg.
+            const path = timingPath([node('u1')]);
+            await widget.showTimingPath(path, path.capture_nodes);
+            assert.match(status(), notice);
+            assert.equal(widget.svgContainer.querySelector('.schematic-empty-state'), null);
+            container.element.remove();
+        });
+    }
 
     it('falls back to annotating the current view when the request fails', async () => {
         const { widget, container } = makePathWidget(new Error('boom'));
@@ -1779,6 +2079,50 @@ describe('SchematicWidget timing path overlay', () => {
         });
     });
 
+    it('maps AOI211 (literals A,B; AND pair C,D)', () => {
+        // !((C1 & C2) | B | A): smallest terms first -> the two literals get
+        // pids A,B and the AND pair gets C,D.
+        const got = canonicalizeCell(cell({
+            type: 'AOI211_X1', gate_kind: 'aoi',
+            gate_terms: [['C1', 'C2'], ['B'], ['A']],
+            port_directions: { C1: 'input', C2: 'input', B: 'input', A: 'input', ZN: 'output' },
+            connections: { C1: [3], C2: [4], B: [2], A: [1], ZN: [5] },
+        }));
+        assert.equal(got.type, 'aoi211');
+        assert.deepEqual(got.connections, { A: [2], B: [1], C: [3], D: [4], Y: [5] });
+        assert.deepEqual(got.port_labels, { A: 'B', B: 'A', C: 'C1', D: 'C2', Y: 'ZN' });
+    });
+
+    it('maps OAI33 to its symbol with six inputs A..F', () => {
+        const got = canonicalizeCell(cell({
+            type: 'OAI33_X1', gate_kind: 'oai',
+            gate_terms: [['A1', 'A2', 'A3'], ['B1', 'B2', 'B3']],
+            port_directions: {
+                A1: 'input', A2: 'input', A3: 'input',
+                B1: 'input', B2: 'input', B3: 'input', ZN: 'output',
+            },
+            connections: { A1: [1], A2: [2], A3: [3], B1: [4], B2: [5], B3: [6], ZN: [7] },
+        }));
+        assert.equal(got.type, 'oai33');
+        assert.deepEqual(Object.keys(got.connections), ['A', 'B', 'C', 'D', 'E', 'F', 'Y']);
+    });
+
+    it('leaves unsupported compound arities unchanged (labelled box)', () => {
+        // A four-term AOI (aoi2111) has no skin symbol, so it stays a box.
+        const orig = cell({
+            type: 'AOI2111_X1', gate_kind: 'aoi',
+            gate_terms: [['A'], ['B'], ['C'], ['D1', 'D2']],
+            port_directions: {
+                A: 'input', B: 'input', C: 'input', D1: 'input', D2: 'input', ZN: 'output',
+            },
+            connections: { A: [1], B: [2], C: [3], D1: [4], D2: [5], ZN: [6] },
+        });
+        const got = canonicalizeCell(orig);
+        assert.equal(got.type, 'AOI2111_X1');          // type unchanged
+        assert.ok(got.connections.D1 && got.connections.ZN);  // real pins kept
+        assert.equal(got.port_labels, undefined);      // no remap -> no labels
+    });
+
     it('leaves cells without gate_kind unchanged', () => {
         const orig = cell({
             type: 'DFF_X1',
@@ -1832,13 +2176,18 @@ describe('SchematicWidget net junction dots', () => {
         bubble.setAttribute('class', 'cell_u1');
         svg.append(dot, bubble);
         widget._svgEl = svg;
+        const inlineFill = dot.style.getPropertyValue('fill');
+        assert.ok(inlineFill);
 
         widget._tagNetJunctionDots();
 
         assert.equal(dot.style.getPropertyValue('fill'), '');
+        // An export carries no page CSS, so the attribute keeps the dot filled.
+        assert.equal(dot.getAttribute('fill'), inlineFill);
         assert.ok(dot.classList.contains('schematic-net-dot'));
         assert.ok(!bubble.classList.contains('schematic-net-dot'));
         assert.equal(bubble.getAttribute('style'), null);
+        assert.equal(bubble.getAttribute('fill'), null);
         container.element.remove();
     });
 });
@@ -1901,7 +2250,7 @@ describe('SchematicWidget wire obstacles', () => {
 describe('SchematicWidget label placement', () => {
     function makeLabelCells(widget, displays = [null, 'inline', 'none', null]) {
         const svg = document.createElementNS(svgNS, 'svg');
-        const cells = {};
+        const instNames = [];
         const groups = [];
         const labels = [];
         displays.forEach((display, index) => {
@@ -1922,20 +2271,20 @@ describe('SchematicWidget label placement', () => {
             };
             group.appendChild(label);
             svg.appendChild(group);
-            cells[instName] = {};
+            instNames.push(instName);
             groups.push(group);
             labels.push(label);
         });
         widget.svgContainer.replaceChildren(svg);
         widget._svgEl = svg;
-        return { svg, groups, labels, netlist: { modules: { top: { cells } } } };
+        return { svg, groups, labels, instNames };
     }
 
     it('keeps label layout flushes constant as the cell count grows', () => {
         const { widget, container } = makeWidget();
         const displays = Array.from({ length: 20 }, (_, index) =>
             [null, 'inline', 'none'][index % 3]);
-        const { groups, labels, netlist } = makeLabelCells(widget, displays);
+        const { groups, labels, instNames } = makeLabelCells(widget, displays);
         let layoutDirty = true;
         let layoutFlushes = 0;
         const readLayout = () => {
@@ -1965,7 +2314,7 @@ describe('SchematicWidget label placement', () => {
                 };
             }
         }
-        widget._layoutInstanceLabels(netlist);
+        widget._layoutInstanceLabels(instNames);
 
         assert.ok(layoutFlushes <= 7, `label layout flushed layout ${layoutFlushes} times`);
         assert.deepEqual(labels.map((label) => label.getAttribute('display')), displays);
@@ -1974,12 +2323,12 @@ describe('SchematicWidget label placement', () => {
 
     it('restores original label display attributes if obstacle measurement fails', () => {
         const { widget, container } = makeWidget();
-        const { svg, labels, netlist } = makeLabelCells(widget);
+        const { svg, labels, instNames } = makeLabelCells(widget);
         const obstacle = document.createElementNS(svgNS, 'text');
         obstacle.getBoundingClientRect = () => { throw new Error('measurement failed'); };
         svg.appendChild(obstacle);
 
-        assert.throws(() => widget._layoutInstanceLabels(netlist), /measurement failed/);
+        assert.throws(() => widget._layoutInstanceLabels(instNames), /measurement failed/);
 
         assert.deepEqual(labels.map((label) => label.getAttribute('display')),
             [null, 'inline', 'none', null]);
@@ -1988,7 +2337,7 @@ describe('SchematicWidget label placement', () => {
 
     it('avoids wires and fixed text while skipping an unmeasurable cell', () => {
         const { widget, container } = makeWidget();
-        const { svg, groups, labels, netlist } = makeLabelCells(widget, [null, 'inline', null]);
+        const { svg, groups, labels, instNames } = makeLabelCells(widget, [null, 'inline', null]);
         const wire = document.createElementNS(svgNS, 'path');
         wire.getBoundingClientRect = () => rect(-15, -23, 45, -17);
         const portLabel = document.createElementNS(svgNS, 'text');
@@ -1996,7 +2345,7 @@ describe('SchematicWidget label placement', () => {
         svg.append(wire, portLabel);
         groups[2].getBBox = () => { throw new Error('unmeasurable cell'); };
 
-        widget._layoutInstanceLabels(netlist);
+        widget._layoutInstanceLabels(instNames);
 
         assert.equal(labels[0].getAttribute('y'), '44');
         assert.equal(labels[1].getAttribute('y'), '44');
@@ -2023,7 +2372,7 @@ describe('SchematicWidget label placement', () => {
         svg.appendChild(group);
         widget._svgEl = svg;
 
-        widget._updateOpenRoadPortLabels(group, {
+        widget._addPortLabels(group, {
             type: '$_NAND_',
             port_labels: { A: 'A1', Y: 'ZN' },
             port_directions: { A: 'input', Y: 'output' },
@@ -2041,35 +2390,6 @@ describe('SchematicWidget label placement', () => {
         assert.equal(output.getAttribute('x'), '34');
         assert.equal(output.getAttribute('y'), '11');
         assert.equal(output.style.pointerEvents, 'none');
-        container.element.remove();
-    });
-
-    it('places labels using translated skin pin markers', () => {
-        const { widget, container } = makeWidget();
-        const svg = document.createElementNS(svgNS, 'svg');
-        const group = document.createElementNS(svgNS, 'g');
-        const wrapper = document.createElementNS(svgNS, 'g');
-        const marker = document.createElementNS(svgNS, 'g');
-
-        wrapper.setAttribute('transform', 'translate(20, 8)');
-        marker.setAttribute('s:pid', 'A');
-        marker.setAttribute('s:x', '3');
-        marker.setAttribute('s:y', '5');
-        wrapper.appendChild(marker);
-        group.appendChild(wrapper);
-        svg.appendChild(group);
-        widget._svgEl = svg;
-
-        widget._updateOpenRoadPortLabels(group, {
-            port_labels: { A: 'A1' },
-            port_directions: { A: 'input' },
-        });
-
-        const input = group.querySelector('text[data-openroad-port="A"]');
-        assert.equal(input.textContent, 'A1');
-        assert.equal(input.getAttribute('x'), '20');
-        assert.equal(input.getAttribute('y'), '9');
-        assert.equal(input.style.textAnchor, 'end');
         container.element.remove();
     });
 });
