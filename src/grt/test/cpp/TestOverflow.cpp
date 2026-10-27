@@ -550,5 +550,26 @@ TEST_F(NDRDeficitTest, NDRNetsSeeTheDeficitOfTheEdge)
   EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
 }
 
+// An NDR net prices a reduced edge against the capacity the edge has left,
+// not against the nominal capacity.
+TEST_F(NDRDeficitTest, ReducedEdgeIsPricedAgainstItsOwnCapacity)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {2, 2, 3});
+
+  // Reducing the top layer to two tracks leaves no layer for the NDR net.
+  router_->addAdjustment(0, 0, 1, 0, kLayers, 2, true);
+  router_->initEdgesCapacityPerLayer();
+  const int capacity = graph.getCapH(0, 0);
+  EXPECT_EQ(capacity, 6);
+  const int usage = graph.getUsageRedH(0, 0);
+  EXPECT_EQ(usage, 1);
+
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 0, 0, kH), 1);
+  EXPECT_DOUBLE_EQ(usageSeenBy(ndr_net_, 0, usage),
+                   capacity - 1 + OverflowTestPeer::kNdrDeficitCost);
+  EXPECT_DOUBLE_EQ(usageSeenBy(regular_nets_[0], 0, usage), usage);
+}
+
 }  // namespace
 }  // namespace grt
