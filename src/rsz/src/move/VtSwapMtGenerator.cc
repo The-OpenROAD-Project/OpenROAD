@@ -4,6 +4,7 @@
 #include "VtSwapMtGenerator.hh"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -34,8 +35,8 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
   // the workers start, key on the link cell.
   sta::LibertyCell* current_cell
       = resizer_.network()->libertyCell(target.inst(resizer_));
-  const std::vector<sta::LibertyCell*> candidate_cells
-      = selectCandidateCells(current_cell);
+  const std::vector<sta::LibertyCell*>& candidate_cells
+      = candidate_cells_cache_.at(current_cell).cells;
 
   // Fanin max-cap headroom is instance-level, captured once per target.
   const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
@@ -87,26 +88,28 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
     return false;
   }
 
-  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr
-      || resizer_.getVTEquivCells(current_cell).size() <= 1) {
+  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr) {
     return false;
   }
-  return true;
-}
 
-std::vector<sta::LibertyCell*> VtSwapMtGenerator::selectCandidateCells(
-    sta::LibertyCell* current_cell) const
-{
-  // Enumerate all VT-equivalent cells except the current implementation.
-  sta::LibertyCellSeq equiv_cells = resizer_.getVTEquivCells(current_cell);
-  std::vector<sta::LibertyCell*> candidates;
-  candidates.reserve(equiv_cells.size());
-  for (sta::LibertyCell* cell : equiv_cells) {
-    if (cell != nullptr && cell != current_cell) {
-      candidates.push_back(cell);
+  std::map<sta::LibertyCell*, CandidateCells>::iterator cached
+      = candidate_cells_cache_.find(current_cell);
+  if (cached == candidate_cells_cache_.end()) {
+    const sta::LibertyCellSeq equiv_cells
+        = resizer_.getVTEquivCells(current_cell);
+    CandidateCells entry;
+    entry.applicable = equiv_cells.size() > 1;
+    entry.cells.reserve(equiv_cells.size());
+    // Enumerate all VT-equivalent cells except the current implementation.
+    for (sta::LibertyCell* cell : equiv_cells) {
+      if (cell != nullptr && cell != current_cell) {
+        entry.cells.push_back(cell);
+      }
     }
+    cached
+        = candidate_cells_cache_.emplace(current_cell, std::move(entry)).first;
   }
-  return candidates;
+  return cached->second.applicable;
 }
 
 }  // namespace rsz
