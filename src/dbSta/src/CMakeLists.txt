@@ -35,6 +35,7 @@ target_link_libraries(dbSta_lib
 # submodule provides them, so stock (parallaxsw) OpenSTA still builds.
 if(EXISTS ${OPENSTA_HOME}/search/AnalysisCorner.i)
   list(APPEND CMAKE_SWIG_FLAGS -DSTA_OPENROAD_FORK)
+  target_compile_definitions(dbSta_lib PRIVATE STA_OPENROAD_FORK)
   set(STA_ANALYSIS_CORNER_TCL ${OPENSTA_HOME}/tcl/AnalysisCorner.tcl)
 else()
   set(STA_ANALYSIS_CORNER_TCL "")

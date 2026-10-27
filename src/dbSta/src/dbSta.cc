@@ -503,6 +503,9 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 
 void dbSta::copyUserActivity(odb::dbITerm* from, odb::dbITerm* to)
 {
+// Power::hasUserActivity/userActivity are public only in the OpenROAD
+// fork of OpenSTA; with stock OpenSTA the annotation is not copied.
+#ifdef STA_OPENROAD_FORK
   const Pin* from_pin = db_network_->dbToSta(from);
   if (power()->hasUserActivity(from_pin)) {
     const PwrActivity& activity = power()->userActivity(from_pin);
@@ -511,6 +514,7 @@ void dbSta::copyUserActivity(odb::dbITerm* from, odb::dbITerm* to)
                              activity.duty(),
                              activity.origin());
   }
+#endif
 }
 
 odb::PtrSet<odb::dbNet> dbSta::findClkNets()
