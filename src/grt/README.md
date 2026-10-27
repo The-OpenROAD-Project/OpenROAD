@@ -188,8 +188,8 @@ set_nets_to_route
 
 The `repair_antennas` command checks the global routing for antenna
 violations and repairs the violations by inserting jumpers and diodes
-near the gates of the violating nets. By default, when neither
-`-jumper_only` nor `-diode_only` is given, both methods are applied.
+near the gates of the violating nets. Both methods are applied unless
+`-jumper_only` or `-diode_only` restricts repair to one of them.
 By default the command runs only one
 iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when

@@ -664,7 +664,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 {
   if (jumper_only && diode_only) {
     logger_->error(
-        GRT, 1254, "Only use either jumper_only or diode_only flag.");
+        GRT, 1254, "jumper_only and diode_only are mutually exclusive.");
   }
   ensureEngineSelected();
   if (!initialized_ || haveDetailedRoutes()) {
