@@ -1,4 +1,6 @@
-# Critical-path slice extracted from sky130hs.  Drives LEGACY repair_setup.
+# LEGACY repair_setup on a critical-path slice of sky130hs aes_cipher_top with
+# 23 violating endpoints. The golden log covers buffer removal, sizing up, pin
+# swaps and buffering, and its worst path runs from a flip-flop to a flip-flop.
 
 source "helpers.tcl"
 

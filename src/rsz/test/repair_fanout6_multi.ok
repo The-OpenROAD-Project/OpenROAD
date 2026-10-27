@@ -26,10 +26,10 @@ fanout1/X                                20     20      0 (MET)
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -2.358 |    -1081.9 |    500 | sink263/D
-     177* |       0 |     164 |        2 |      0 |     0 |    +0.2% |   -0.783 |     -377.5 |    500 | sink461/D
-    final |       0 |     168 |        2 |      0 |     0 |    +0.2% |   -0.783 |     -375.9 |    500 | sink461/D
+     191* |       0 |     183 |        4 |      0 |     0 |    +1.4% |   -0.766 |     -374.7 |    500 | sink263/D
+    final |       0 |     188 |        4 |      0 |     0 |    +1.4% |   -0.764 |     -372.6 |    500 | sink263/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 2 buffers.
-[INFO RSZ-0051] Resized 168 instances: 168 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 188 instances: 188 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -0.78
+worst slack max -0.76

@@ -4,6 +4,11 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    ["upper_layer_net.def"],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 TESTS = [
     "bus_route",
     "check_antennas_cugr",
@@ -27,8 +32,8 @@ TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "cugr_colocated_pins",
-    "cugr_congestion_sources",
     "cugr_detour_limit",
+    "cugr_rrr_accept_stop",
     "cugr_via_demand_disabled",
     "est_rc1",
     "est_rc2",
@@ -96,6 +101,9 @@ TESTS = [
     "remove_buffers5_cugr",
     "remove_buffers6_cugr",
     "remove_buffers3",
+    "remove_buffers7",
+    "remove_buffers8",
+    "remove_buffers9",
     "repair_antennas1",
     "repair_antennas2",
     "repair_antennas2_cugr",
@@ -113,6 +121,8 @@ TESTS = [
     "repair_antennas_post_drt_above_max_layer_cugr",
     "repair_antennas_post_drt_below_min_cugr",
     "repair_antennas_post_drt_cugr",
+    "repair_antennas_post_drt_relief_cugr",
+    "repair_antennas_post_drt_relief_ndr_cugr",
     "repair_antennas_allow_congestion",
     "repair_antennas_cugr",
     "repair_antennas_from_odb",
@@ -131,6 +141,8 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_congestion1",
+    "report_congestion_cugr",
     "report_net_detours1",
     "report_net_detours2",
     "report_net_detours2_cugr",
@@ -331,6 +343,7 @@ cc_test(
     deps = [
         "//src/grt",
         "//src/grt:fastroute",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
@@ -353,6 +366,22 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGlobalRouter",
+    size = "small",
+    srcs = ["cpp/TestGlobalRouter.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
