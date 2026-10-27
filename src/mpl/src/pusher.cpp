@@ -119,7 +119,7 @@ bool Pusher::designHasSingleCentralizedMacroArray()
   return true;
 }
 
-// We only group macros of the same size, so here we can use any HardMacro
+// We only group macros of the same master, so here we can use any HardMacro
 // from the cluster to set the minimum distance from the respective
 // boundary to trigger a push.
 std::map<Boundary, int> Pusher::getDistanceToCloseBoundaries(
