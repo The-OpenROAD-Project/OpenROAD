@@ -353,7 +353,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 class IncrementalParasiticsGuard
 {
  public:
-  IncrementalParasiticsGuard(est::EstimateParasitics* estimate_parasitics);
+  // With reroute, global route parasitics come from an incremental global
+  // route of the edited nets.  Edits that keep every pin shape, such as VT
+  // swaps, pass reroute = false to estimate the nets on their current routes.
+  IncrementalParasiticsGuard(est::EstimateParasitics* estimate_parasitics,
+                             bool reroute = true);
   ~IncrementalParasiticsGuard();
 
   // calls estimate_parasitics_->updateParasitics()
