@@ -58,6 +58,7 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
 }
 
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
@@ -117,6 +118,17 @@ odb::dbInst* ReplaceCell(
             name.c_str(),
             static_cast<odb::dbDoubleProperty*>(prop)->getValue());
         break;
+    }
+  }
+
+  // Keep the activity annotations of the old pins on the new pins
+  for (odb::dbITerm* old_iterm : old_instance->getITerms()) {
+    auto mapped = port_mapping.find(old_iterm->getMTerm()->getName());
+    if (mapped != port_mapping.end()) {
+      odb::dbITerm* new_iterm = new_instance->findITerm(mapped->second.c_str());
+      if (new_iterm) {
+        sta->copyUserActivity(old_iterm, new_iterm);
+      }
     }
   }
 
