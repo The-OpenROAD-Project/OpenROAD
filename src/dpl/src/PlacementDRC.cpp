@@ -384,6 +384,15 @@ class PlacementDRC::FixedSupplyVias
     std::vector<odb::dbTechLayerCutSpacingTableDefRule*> rules;
   };
 
+  // Where an end-of-line rule rejects a cell shape: every signed horizontal
+  // gap up to |keepout|, for |spacing| along the line end.
+  struct EolKeepout
+  {
+    int64_t keepout{0};
+    int spacing{0};
+    bool end_to_end{false};
+  };
+
   // The spacing a cut pair violates and how it was measured.
   struct CutViolation
   {
@@ -438,16 +447,37 @@ class PlacementDRC::FixedSupplyVias
           {0,
            static_cast<int64_t>(source.fixed_rect.yMin()) - placed.yMax(),
            static_cast<int64_t>(placed.yMin()) - source.fixed_rect.yMax()});
-      // Cut tables pick the rule per position, so name the one that fired.
+      // Cut tables and end-of-line rules pick the rule per position, so name
+      // the one that fired.
       int space = source.space;
-      bool center_to_center = false;
+      const char* measure = "edge-to-edge";
       if (const std::optional<CutTable> cut_table
           = exactCutTable(source.layer, source.fixed_rect, source.cell_rect)) {
         if (const std::optional<CutViolation> violation = cutViolation(
                 source.layer, *cut_table, source.fixed_rect, placed)) {
           space = violation->spacing;
-          center_to_center = violation->center_to_center;
+          measure = violation->center_to_center ? "center-to-center"
+                                                : "edge-to-edge";
         }
+      }
+      const int64_t signed_dx = std::max(
+          static_cast<int64_t>(source.fixed_rect.xMin()) - placed.xMax(),
+          static_cast<int64_t>(placed.xMin()) - source.fixed_rect.xMax());
+      for (const EolKeepout& zone : eolKeepouts(
+               source.layer,
+               source.fixed_rect,
+               source.cell_rect,
+               verticalPrl(source.fixed_rect, source.cell_rect, origin_y))) {
+        if (signed_dx <= zone.keepout) {
+          space = zone.spacing;
+          measure = zone.end_to_end ? "end-to-end" : "end-of-line";
+          break;
+        }
+      }
+      // Touching or overlapping shapes conflict whatever the rule.
+      if (dx == 0 && dy == 0) {
+        space = 0;
+        measure = "overlap";
       }
       debugPrint(
           logger_,
@@ -476,7 +506,7 @@ class PlacementDRC::FixedSupplyVias
           block_->dbuToMicrons(source.fixed_rect.xMax()),
           block_->dbuToMicrons(source.fixed_rect.yMax()),
           block_->dbuToMicrons(space),
-          center_to_center ? "center-to-center" : "edge-to-edge",
+          measure,
           block_->dbuToMicrons(dx),
           block_->dbuToMicrons(dy));
     }
@@ -542,6 +572,9 @@ class PlacementDRC::FixedSupplyVias
       = std::unordered_map<odb::dbTechLayer*, std::vector<VerticalRange>>;
   using RowOrientations = std::vector<std::vector<odb::dbOrientType>>;
   static constexpr int page_size_ = 64;
+  // A keepout is the largest signed horizontal gap that still conflicts, with
+  // an overlap as a negative gap, so -1 means "must overlap".  This marks none.
+  static constexpr int64_t no_keepout_ = std::numeric_limits<int64_t>::min();
 
   size_t fixedShapeCount() const
   {
@@ -623,10 +656,20 @@ class PlacementDRC::FixedSupplyVias
     return 0;
   }
 
+  // Vertical parallel run length: how far the two shapes overlap in y, or
+  // minus their gap.
+  static int64_t verticalPrl(const odb::Rect& fixed,
+                             const odb::Rect& cell,
+                             const int64_t origin_y)
+  {
+    return std::min<int64_t>(fixed.yMax(), origin_y + cell.yMax())
+           - std::max<int64_t>(fixed.yMin(), origin_y + cell.yMin());
+  }
+
   static int64_t horizontalKeepout(const int space, const int64_t vertical_gap)
   {
     if (space <= 0 || vertical_gap >= space) {
-      return -1;
+      return no_keepout_;
     }
     const int64_t space_squared = static_cast<int64_t>(space) * space;
     const int64_t gap_squared = vertical_gap * vertical_gap;
@@ -912,10 +955,12 @@ class PlacementDRC::FixedSupplyVias
     // Touching or overlapping shapes always conflict.
     const int64_t x_keepout = std::max(
         {horizontalKeepout(space, vertical_gap),
-         eolKeepout(
-             cell_shape.layer, fixed.rect, cell_shape.rect, vertical_gap),
-         vertical_gap == 0 ? int64_t{0} : int64_t{-1}});
-    if (x_keepout < 0) {
+         eolKeepout(cell_shape.layer,
+                    fixed.rect,
+                    cell_shape.rect,
+                    verticalPrl(fixed.rect, cell_shape.rect, origin_y)),
+         vertical_gap == 0 ? int64_t{0} : no_keepout_});
+    if (x_keepout == no_keepout_) {
       return false;
     }
     const int low = clipToInt(static_cast<int64_t>(fixed.rect.xMin())
@@ -1395,6 +1440,12 @@ class PlacementDRC::FixedSupplyVias
       }
       max_spacing
           = std::max({max_spacing, rule->getEolSpace(), rule->getEolWithin()});
+      if (rule->isEndToEndValid()) {
+        max_spacing = std::max(max_spacing, rule->getEndToEndSpace());
+        if (rule->isExtensionValid()) {
+          max_spacing = std::max(max_spacing, 2 * rule->getExtension());
+        }
+      }
       debugPrint(logger_,
                  DPL,
                  "fixed_supply_via",
@@ -1412,31 +1463,65 @@ class PlacementDRC::FixedSupplyVias
 
   // End-of-line spacing only reaches past an edge narrower than EOLWIDTH: EOL
   // space beyond it and WITHIN to either side, a rectangle rather than a
-  // circle.  Returns the largest horizontal gap that still violates at this
-  // vertical gap, or -1.
-  static int64_t eolKeepout(odb::dbTechLayer* layer,
-                            const odb::Rect& fixed,
-                            const odb::Rect& cell,
-                            const int64_t vertical_gap)
+  // circle.  When the facing edge is a line end too, drt
+  // (checkMetalEndOfLine_eol_hasEol_endToEndHelper) applies ENDTOEND space
+  // instead, and only where the two ends overlap once each is widened by
+  // EXTENSION.  Lists each zone that applies at this vertical PRL (y overlap,
+  // or minus the gap).
+  static std::vector<EolKeepout> eolKeepouts(odb::dbTechLayer* layer,
+                                             const odb::Rect& fixed,
+                                             const odb::Rect& cell,
+                                             const int64_t vertical_prl)
   {
-    int64_t keepout = -1;
+    std::vector<EolKeepout> keepouts;
     if (layer->getType() == odb::dbTechLayerType::CUT) {
-      return keepout;
+      return keepouts;
     }
+    const int64_t vertical_gap = std::max<int64_t>(0, -vertical_prl);
     for (auto rule : layer->getTechLayerSpacingEolRules()) {
       const int width = rule->getEolWidth();
       const int space = rule->getEolSpace();
       const int within = rule->getEolWithin();
-      for (const odb::Rect& rect : {fixed, cell}) {
+      const bool end_to_end = rule->isEndToEndValid();
+      const int end_space = rule->getEndToEndSpace();
+      const int64_t extension
+          = rule->isExtensionValid() ? rule->getExtension() : 0;
+      for (const auto& [rect, other] :
+           {std::pair{fixed, cell}, std::pair{cell, fixed}}) {
         // Narrow top and bottom edges: space vertically, within sideways.
-        if (rect.dx() < width && vertical_gap < space) {
-          keepout = std::max<int64_t>(keepout, within - 1);
+        if (rect.dx() < width) {
+          if (end_to_end && other.dx() < width) {
+            if (vertical_gap < end_space) {
+              keepouts.push_back({2 * extension - 1, end_space, true});
+            }
+          } else if (vertical_gap < space) {
+            keepouts.push_back({within - 1, space, false});
+          }
         }
         // Narrow left and right edges: space sideways, within vertically.
-        if (rect.dy() < width && vertical_gap < within) {
-          keepout = std::max<int64_t>(keepout, space - 1);
+        if (rect.dy() < width) {
+          if (end_to_end && other.dy() < width) {
+            if (vertical_prl > -2 * extension) {
+              keepouts.push_back({end_space - 1, end_space, true});
+            }
+          } else if (vertical_gap < within) {
+            keepouts.push_back({space - 1, space, false});
+          }
         }
       }
+    }
+    return keepouts;
+  }
+
+  static int64_t eolKeepout(odb::dbTechLayer* layer,
+                            const odb::Rect& fixed,
+                            const odb::Rect& cell,
+                            const int64_t vertical_prl)
+  {
+    int64_t keepout = no_keepout_;
+    for (const EolKeepout& zone :
+         eolKeepouts(layer, fixed, cell, vertical_prl)) {
+      keepout = std::max(keepout, zone.keepout);
     }
     return keepout;
   }
@@ -1461,12 +1546,21 @@ class PlacementDRC::FixedSupplyVias
       const int width = rule->getEolWidth();
       const int space = rule->getEolSpace();
       const int within = rule->getEolWithin();
+      // Two facing line ends: ENDTOEND space, overlapping once extended.
+      const int end_space
+          = rule->isEndToEndValid() ? rule->getEndToEndSpace() : 0;
+      const int end_reach = rule->isExtensionValid()
+                                ? std::max(0, 2 * rule->getExtension() - 1)
+                                : 0;
       // Narrow top and bottom edges: space vertically, within sideways.
       if (fixed.dx() < width
           || std::ranges::any_of(cells, [&](const DimensionClass& cell) {
                return cell.first < width;
              })) {
         add_zone(within, space);
+        if (end_space > 0) {
+          add_zone(end_reach, end_space);
+        }
       }
       // Narrow left and right edges: space sideways, within vertically.
       if (fixed.dy() < width
@@ -1474,6 +1568,9 @@ class PlacementDRC::FixedSupplyVias
                return cell.second < width;
              })) {
         add_zone(space, within);
+        if (end_space > 0) {
+          add_zone(end_space, end_reach);
+        }
       }
     }
     return zones;

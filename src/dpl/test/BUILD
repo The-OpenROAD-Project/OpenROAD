@@ -109,6 +109,7 @@ PASSFAIL_TESTS = [
     "pdn_via_array",
     "pdn_via_cut",
     "pdn_via_cut_class",
+    "pdn_via_end_to_end",
     "pdn_via_euclidean",
     "pdn_via_mirror",
 ]
