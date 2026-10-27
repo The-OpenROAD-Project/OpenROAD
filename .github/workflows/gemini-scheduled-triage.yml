@@ -65,12 +65,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
         run: |-
           echo '🔍 Finding unlabeled issues...'
+          # Truncate bodies and cap the batch so ISSUES_TO_TRIAGE stays under
+          # the 128 KiB Linux limit on a single environment variable; later
+          # runs pick up the remaining issues.
           ISSUES="$(gh issue list \
             --state 'open' \
             --search 'no:label' \
             --json number,title,body \
-            --limit '100' \
-            --repo "${GITHUB_REPOSITORY}"
+            --limit '20' \
+            --repo "${GITHUB_REPOSITORY}" |
+            jq -c 'map(.body = ((.body // "") | .[0:3000]))'
           )"
           echo '📝 Setting output for GitHub Actions...'
           echo "issues_to_triage=${ISSUES}" >> "${GITHUB_OUTPUT}"
