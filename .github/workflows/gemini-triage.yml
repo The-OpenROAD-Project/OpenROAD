@@ -49,12 +49,27 @@ jobs:
             core.setOutput('available_labels', labelNames.join(','));
             core.info(`Found ${labelNames.length} labels: ${labelNames.join(', ')}`);
             return labelNames;
+      # The Gemini action installs its own gemini-*.toml commands, so ours
+      # use distinct names to avoid being overwritten.
+      - name: Checkout triage commands
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/commands
+          sparse-checkout-cone-mode: false
+      - name: Install triage commands
+        run: |-
+          mkdir -p .gemini/commands
+          cp .github/commands/openroad-*.toml .gemini/commands/
       - name: Run Gemini issue analysis
         id: gemini_analysis
         if: |-
           ${{ steps.get_labels.outputs.available_labels != '' }}
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
+          # The workspace holds only the checked-out commands and the
+          # action's settings; issue text arrives through env vars.
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
           GITHUB_TOKEN: '' # Do NOT pass any auth tokens here since this runs on untrusted inputs
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -91,7 +106,7 @@ jobs:
                 ]
               }
             }
-          prompt: /gemini-triage
+          prompt: /openroad-triage
   label:
     runs-on: ubuntu-latest
     needs:
