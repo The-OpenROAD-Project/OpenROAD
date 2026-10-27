@@ -76,12 +76,27 @@ jobs:
           echo "issue_numbers=${ISSUE_NUMBERS}" >> "${GITHUB_OUTPUT}"
           ISSUE_COUNT="$(echo "${ISSUES}" | jq 'length')"
           echo "✅ Found ${ISSUE_COUNT} issue(s) to triage! 🎯"
+      # The Gemini action installs its own gemini-*.toml commands, so ours
+      # use distinct names to avoid being overwritten.
+      - name: Checkout triage commands
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/commands
+          sparse-checkout-cone-mode: false
+      - name: Install triage commands
+        run: |-
+          mkdir -p .gemini/commands
+          cp .github/commands/openroad-*.toml .gemini/commands/
       - name: Run Gemini Issue Analysis
         id: gemini_issue_analysis
         if: |-
           ${{ steps.find_issues.outputs.issues_to_triage != '[]' }}
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
+          # The workspace holds only the checked-out commands and the
+          # action's settings; issue text arrives through env vars.
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
           GITHUB_TOKEN: '' # Do not pass any auth token here since this runs on untrusted inputs
           ISSUES_TO_TRIAGE: ${{ steps.find_issues.outputs.issues_to_triage }}
           REPOSITORY: ${{ github.repository }}
@@ -119,7 +134,7 @@ jobs:
                 ]
               }
             }
-          prompt: /gemini-scheduled-triage
+          prompt: /openroad-scheduled-triage
   label:
     runs-on: ubuntu-latest
     needs:
