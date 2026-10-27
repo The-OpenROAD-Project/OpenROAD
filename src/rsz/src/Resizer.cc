@@ -8233,8 +8233,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const sta::Scene* corner,
     std::map<const sta::Pin*, float>& load_pin_slew)
 {
-  repair_design_->init();
-
   using BnetPtr = BufferedNetPtr;
 
   sta::LibertyCell* cell = network_->libertyCell(buffer_instance);
