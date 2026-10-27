@@ -159,6 +159,8 @@ std::string IOPlacer::getEdgeString(Edge edge)
     edge_str = "LEFT";
   } else if (edge == Edge::right) {
     edge_str = "RIGHT";
+  } else if (edge == Edge::polygonEdge) {
+    edge_str = "POLYGON";
   }
 
   return edge_str;
@@ -775,7 +777,7 @@ void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
   const bool vertical_pin
       = tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
   // empty layer sets mean standalone place_pin, where every layer
-  // participates and polygon slots are never tested
+  // participates
   const bool standalone_place_pin = ver_layers_.empty() && hor_layers_.empty();
   if (!standalone_place_pin) {
     const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
@@ -789,8 +791,9 @@ void IOPlacer::excludeBoundaryShape(const BlockingShape& shape,
   }
   // polygon dies have slots on edges the bounding box cannot represent, so
   // also block their slots with the padded shape itself
-  const std::vector<odb::Line>& die_edges = core_->getDieAreaEdges();
-  if (die_edges.size() > 4 && !standalone_place_pin) {
+  const std::vector<odb::Line>& die_edges
+      = standalone_place_pin ? place_pin_die_edges_ : core_->getDieAreaEdges();
+  if (die_edges.size() > 4) {
     for (const odb::Line& die_edge : die_edges) {
       if (boost::geometry::intersects(padded_box, die_edge)) {
         std::vector<odb::Rect>& shapes = layer_blocked_shapes_[layer];
@@ -3058,6 +3061,11 @@ struct IOPlacer::ManualPinBlocking
     pin_size.half_width = (vertical_pin ? width : height) / 2;
     pin_size.height = vertical_pin ? height : width;
     placer_->pin_size_cache_[layer->getRoutingLevel()] = pin_size;
+    const std::vector<odb::Point> points
+        = placer_->getBlock()->getDieAreaPolygon().getPoints();
+    for (size_t i = 1; i < points.size(); i++) {
+      placer_->place_pin_die_edges_.emplace_back(points[i - 1], points[i]);
+    }
   }
 
   ~ManualPinBlocking()
@@ -3070,6 +3078,7 @@ struct IOPlacer::ManualPinBlocking
     placer_->layer_fixed_pins_keepouts_.clear();
     placer_->layer_blocked_shapes_.clear();
     placer_->pin_size_cache_.clear();
+    placer_->place_pin_die_edges_.clear();
   }
 
   IOPlacer* placer_;
@@ -3104,7 +3113,6 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
   odb::Rect die_boundary = getBlock()->getDieArea();
   odb::Point lb = die_boundary.ll();
-  odb::Point ub = die_boundary.ur();
 
   float pin_width = std::min(width, height);
   if (pin_width < layer->getWidth()) {
@@ -3135,7 +3143,7 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     // is an explicit request
     getBlockedRegionsFromDbObstructions();
     getBlockedRegionsFromPDN();
-    movePinToTrack(pos, layer_level, width, height, die_boundary);
+    movePinToTrack(pos, layer_level);
     Edge edge;
     odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(layer);
     int min_spacing, init_track, num_track;
@@ -3143,40 +3151,80 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
 
     if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       track_grid->getGridPatternY(0, init_track, num_track, min_spacing);
-      int dist_lb = abs(pos.x() - lb.x());
-      int dist_ub = abs(pos.x() - ub.x());
-      edge = (dist_lb < dist_ub) ? Edge::left : Edge::right;
     } else {
       track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
-      int dist_lb = abs(pos.y() - lb.y());
-      int dist_ub = abs(pos.y() - ub.y());
-      edge = (dist_lb < dist_ub) ? Edge::bottom : Edge::top;
     }
+
+    const int half_span = (horizontal ? height : width) / 2;
+    // use the die edge nearest to the requested position, like
+    // nearestFreeSlot, since a polygon die can be inside its bounding box
+    const odb::Orientation2D along
+        = horizontal ? odb::vertical : odb::horizontal;
+    odb::Line die_edge;
+    odb::Point edge_pos;
+    int edge_min = die_boundary.low(along);
+    int edge_max = die_boundary.high(along);
+    int64_t best_dist = std::numeric_limits<int64_t>::max();
+    for (const odb::Line& line : place_pin_die_edges_) {
+      // pins on horizontal layers only reach vertical edges
+      if ((line.pt0().x() == line.pt1().x()) != horizontal) {
+        continue;
+      }
+      const odb::Rect span(line.pt0(), line.pt1());
+      // the pin center stays half a pin away from the edge ends
+      const odb::Point nearest
+          = span.bloat(-half_span, along).closestPtInside(odb::Point(x, y));
+      const int64_t dist
+          = odb::Point::manhattanDistance(nearest, odb::Point(x, y));
+      if (dist < best_dist) {
+        best_dist = dist;
+        die_edge = line;
+        edge_pos = nearest;
+        edge_min = span.low(along);
+        edge_max = span.high(along);
+      }
+    }
+    // the pin extends from the edge to the inside of the die
+    const odb::Orientation2D across = along.turn_90();
+    const int half_depth = (horizontal ? width : height) / 2;
+    odb::Point inward = edge_pos;
+    inward.set(across, edge_pos.get(across) + half_depth);
+    if (!isPointInsidePolygon(inward, getBlock()->getDieAreaPolygon())) {
+      inward.set(across, edge_pos.get(across) - half_depth);
+    }
+    pos.set(across, inward.get(across));
+    // the edges of a rectangular die keep their own blocked intervals
+    if (place_pin_die_edges_.size() > 4) {
+      edge = Edge::polygonEdge;
+    } else if (horizontal) {
+      edge = die_edge.pt0().x() == lb.x() ? Edge::left : Edge::right;
+    } else {
+      edge = die_edge.pt0().y() == lb.y() ? Edge::bottom : Edge::top;
+    }
+    // keep the search inside the die edge, so the pin is never pushed out of it
+    const int max_offset = horizontal ? edge_max - height / 2 - pos.y()
+                                      : edge_max - width / 2 - pos.x();
+    const int min_offset = horizontal ? edge_min + height / 2 - pos.y()
+                                      : edge_min + width / 2 - pos.x();
 
     // check the center and the extremities of the pin shape, so wide pins do
     // not straddle a blocked region
-    // empty line created to comply with definition
-    odb::Line empty_line;
-    const int half_span = (horizontal ? height : width) / 2;
     auto is_blocked_at = [&](const int offset) {
+      // a track past the end of the edge is off the die
+      if (offset < min_offset || offset > max_offset) {
+        return true;
+      }
       for (const int delta : {offset - half_span, offset, offset + half_span}) {
         const odb::Point probe = horizontal
                                      ? odb::Point(pos.x(), pos.y() + delta)
                                      : odb::Point(pos.x() + delta, pos.y());
-        if (checkBlocked(edge, empty_line, probe, layer_level)) {
+        if (checkBlocked(edge, die_edge, probe, layer_level)) {
           return true;
         }
       }
       return false;
     };
     bool placed_at_blocked = is_blocked_at(0);
-    // keep the search inside the die area, so the pin is never pushed out of it
-    const int max_offset = horizontal
-                               ? die_boundary.yMax() - height / 2 - pos.y()
-                               : die_boundary.xMax() - width / 2 - pos.x();
-    const int min_offset = horizontal
-                               ? die_boundary.yMin() + height / 2 - pos.y()
-                               : die_boundary.xMin() + width / 2 - pos.x();
     bool sum = true;
     int offset_sum = 1;
     int offset_sub = 1;
@@ -3247,20 +3295,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   }
 }
 
-void IOPlacer::movePinToTrack(odb::Point& pos,
-                              int layer,
-                              int width,
-                              int height,
-                              const odb::Rect& die_boundary)
+void IOPlacer::movePinToTrack(odb::Point& pos, int layer)
 {
-  odb::Point lb = die_boundary.ll();
-  odb::Point ub = die_boundary.ur();
-
-  int lb_x = lb.x();
-  int lb_y = lb.y();
-  int ub_x = ub.x();
-  int ub_y = ub.y();
-
   odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
   odb::dbTrackGrid* track_grid = getBlock()->findTrackGrid(tech_layer);
   int min_spacing, init_track, num_track;
@@ -3272,20 +3308,11 @@ void IOPlacer::movePinToTrack(odb::Point& pos,
       pos.setY(round(static_cast<double>((pos.y() - init_track)) / min_spacing)
                    * min_spacing
                + init_track);
-      int dist_lb = abs(pos.x() - lb_x);
-      int dist_ub = abs(pos.x() - ub_x);
-      int new_x = (dist_lb < dist_ub) ? lb_x + (width / 2) : ub_x - (width / 2);
-      pos.setX(new_x);
     } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
       track_grid->getGridPatternX(0, init_track, num_track, min_spacing);
       pos.setX(round(static_cast<double>((pos.x() - init_track)) / min_spacing)
                    * min_spacing
                + init_track);
-      int dist_lb = abs(pos.y() - lb_y);
-      int dist_ub = abs(pos.y() - ub_y);
-      int new_y
-          = (dist_lb < dist_ub) ? lb_y + (height / 2) : ub_y - (height / 2);
-      pos.setY(new_y);
     }
   }
 }
