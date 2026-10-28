@@ -48,6 +48,7 @@ TESTS = [
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
+    "rebuffer_size_driver",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",
@@ -315,6 +316,7 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
@@ -324,6 +326,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # as CMake runs every PASSFAIL test.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
@@ -542,6 +545,26 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPreChecks",
+    srcs = ["cpp/TestPreChecks.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_slow.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/rsz:rsz_impl",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

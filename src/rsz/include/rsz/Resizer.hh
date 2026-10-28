@@ -951,7 +951,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool removeBufferIfPossible(sta::Instance* buffer,
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement);
+                                  const sta::LibertyCell* replacement,
+                                  const sta::Mode* mode = nullptr);
   // The load a driver can still take under its max-cap limit: none once the
   // limit is violated, and no bound without a limit.
   float maxCapIncrease(const sta::Pin* drvr_pin);
@@ -1095,6 +1096,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   const sta::MinMax* max_ = sta::MinMax::max();
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
+  sta::LibertyCell* port_buffer_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.

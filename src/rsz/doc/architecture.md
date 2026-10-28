@@ -703,7 +703,7 @@ The policy owns the journal, the STA queries, the generators and the batch outco
 
 `-sequence` is the move set. `vt_swap`, `sizeup`, `buffer`, `split`, `size_down`, `unbuffer` and `swap` map to `VtSwapMt`, `SizeUpMt`, `RebufferMt`, `SplitLoadMt`, `SizeDownFanoutMt`, `UnbufferMt` and `SwapPinsMt`. `clone`, `sizeup_match`, `reroute` and `buffer_to_inverters` have no `PARALLEL_EVAL` form and are skipped with a warning.
 
-An omitted sequence runs `vt_swap sizeup buffer split`. `VtSwapMt` runs first because it keeps the cell footprint, so it takes the slack it can before `SizeUpMt` spends area on the same path. The default goes through the same filter as an explicit sequence: `-skip_vt_swap` or a single-VT library drops `VtSwapMt`, and `-skip_buffering` drops `RebufferMt` and `SplitLoadMt`.
+An omitted sequence runs `unbuffer vt_swap sizeup buffer split`. `VtSwapMt` runs before `SizeUpMt` because it keeps the cell footprint, so it takes the slack it can before `SizeUpMt` spends area on the same path. The default goes through the same filter as an explicit sequence: `-skip_buffer_removal` drops `UnbufferMt`, `-skip_vt_swap` or a single-VT library drops `VtSwapMt`, and `-skip_buffering` drops `RebufferMt` and `SplitLoadMt`.
 
 ### Evaluation Funnel
 

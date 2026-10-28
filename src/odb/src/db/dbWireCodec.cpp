@@ -594,7 +594,7 @@ void dbWireEncoder::end()
   wire_->opcodes_.reserve(n);
   wire_->opcodes_ = opcodes_;
 
-  wire_->flags_.ordered = 0;
+  wire_->flags_.normalized_connectivity = 0;
 
   // Should we calculate the bbox???
   ((_dbBlock*) block_)->flags_.valid_bbox = 0;

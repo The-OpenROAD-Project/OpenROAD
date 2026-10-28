@@ -16,7 +16,8 @@ set max_util [expr { 100.0 * [rsz::utilization] * 1.001 }]
 puts [format "max_utilization %.4f%%" $max_util]
 report_design_area
 
-repair_timing -setup -phases "PARALLEL_EVAL" -max_iterations 3 -verbose \
+repair_timing -setup -phases "PARALLEL_EVAL" \
+  -sequence "sizeup buffer split" -max_iterations 3 -verbose \
   -max_utilization $max_util
 
 # The undone batches leave the design below the limit.

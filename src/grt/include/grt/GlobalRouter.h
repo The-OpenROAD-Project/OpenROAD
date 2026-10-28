@@ -386,6 +386,10 @@ class GlobalRouter
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
   bool isCongested() const { return is_congested_; }
+  // Per-layer congestion table of the current routing, FastRoute or CUGR.
+  void reportCongestion();
+  // True if the current routing has overflow.
+  bool hasCongestion();
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
@@ -437,6 +441,7 @@ class GlobalRouter
   std::vector<Net*> initNets(bool check_pin_placement = true);
   void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
+  void initEngineWithExistingRouting();
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -470,6 +475,18 @@ class GlobalRouter
   void updateInitialSteinerWirelength(Net* net);
   int computeNetInitialSteinerWirelength(Net* net);
   int computeNetPlanarWirelength(odb::dbNet* db_net);
+  struct NetDetour
+  {
+    odb::dbNet* net;
+    int64_t initial_wl;
+    int64_t final_wl;
+    int64_t delta;
+    double ratio;
+  };
+  std::vector<NetDetour> collectNetDetours(int64_t& total_initial,
+                                           int64_t& total_final);
+  // Emits the detour metrics; nothing is printed.
+  void computeDetourMetrics();
   std::ofstream openDetourFile(const char* file_name);
   std::vector<Pin*> getAllPorts();
   void computeTrackConsumption(const Net* net,
@@ -522,7 +539,7 @@ class GlobalRouter
   void printSegment(const GSegment& segment);
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
-  void reportCongestion();
+  void reportFastRouteCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
   void computeGCellGridPatternFromGuides(
