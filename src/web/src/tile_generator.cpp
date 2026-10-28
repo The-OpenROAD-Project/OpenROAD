@@ -6206,7 +6206,6 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   odb::dbBlock* block = getBlock();
   if (!block) {
     logger_->error(utl::WEB, 20, "No design loaded.");
-    return {};
   }
 
   // Determine rendering region (DBU).
@@ -6225,6 +6224,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     area.bloat(static_cast<int>(std::min(area.dx(), area.dy()) * kMargin),
                area);
   }
+  if (area.dx() <= 0 || area.dy() <= 0) {
+    logger_->error(utl::WEB, 21, "Invalid image dimensions.");
+  }
 
   // Determine scale (pixels per DBU).
   double scale = 0;
@@ -6237,22 +6239,18 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     scale = 1024.0 / area.dx();
   }
 
-  const int img_w = static_cast<int>(std::ceil(area.dx() * scale));
-  const int img_h = static_cast<int>(std::ceil(area.dy() * scale));
-
-  if (img_w <= 0 || img_h <= 0) {
-    logger_->error(utl::WEB, 21, "Invalid image dimensions.");
-    return {};
-  }
+  // In double: a thin region at a high scale overflows an int.
+  const double wanted_w = std::ceil(area.dx() * scale);
+  const double wanted_h = std::ceil(area.dy() * scale);
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
   constexpr int kMaxDim = 16384;
-  if (img_w > kMaxDim || img_h > kMaxDim) {
+  if (wanted_w > kMaxDim || wanted_h > kMaxDim) {
     logger_->warn(utl::WEB,
                   22,
-                  "Image dimensions {}x{} exceed max {}; clamping.",
-                  img_w,
-                  img_h,
+                  "Image dimensions {:.0f}x{:.0f} exceed max {}; clamping.",
+                  wanted_w,
+                  wanted_h,
                   kMaxDim);
     scale = std::min(static_cast<double>(kMaxDim) / area.dx(),
                      static_cast<double>(kMaxDim) / area.dy());
@@ -6260,6 +6258,11 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
 
   const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
   const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+  // A scale that underflowed to zero (-resolution Inf) frames nothing.
+  if (final_w <= 0 || final_h <= 0) {
+    logger_->error(
+        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
+  }
 
   // Compute zoom level that gives tile_scale close to our target scale.
   // tile_scale = kTileSizeInPixel / (maxDXDY / 2^z)
@@ -6513,9 +6516,6 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
   int final_h = 0;
   const std::vector<unsigned char> final_buf = renderImageBuffer(
       region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
-  if (final_buf.empty()) {
-    return {};  // renderImageBuffer already logged the error.
-  }
 
   // Encode to PNG.
   unsigned encode_error = 0;
@@ -6524,7 +6524,6 @@ std::vector<unsigned char> TileGenerator::renderImagePng(
   if (encode_error != 0) {
     logger_->error(
         utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(encode_error));
-    return {};
   }
   if (out_width) {
     *out_width = final_w;
@@ -6546,9 +6545,6 @@ void TileGenerator::saveImage(const std::string& filename,
   int final_h = 0;
   const std::vector<unsigned char> png_data = renderImagePng(
       region, width_px, dbu_per_pixel, vis, bg, &final_w, &final_h);
-  if (png_data.empty()) {
-    return;
-  }
   const unsigned save_error = lodepng::save_file(png_data, filename);
   if (save_error != 0) {
     logger_->error(utl::WEB,

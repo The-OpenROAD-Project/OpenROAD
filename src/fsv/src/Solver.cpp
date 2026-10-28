@@ -14,14 +14,17 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "CubeGreens.h"
 #include "Dielectric.h"
+#include "GaussianSurface.h"
 #include "LayeredCubeGreens.h"
 #include "LayeredSquareGreens.h"
 #include "Philox.h"
@@ -39,16 +42,8 @@ namespace {
 // Vacuum permittivity in fF/µm.
 constexpr double kEps0 = 8.8541878128e-3;
 
-// Box around the master on which walks start; charge is the flux through it.
-// In 2D, a rectangle whose edges carry the charge per unit length.
-template <int D>
-struct GaussianSurface
-{
-  AlignedBox<D> box;
-  // By face 2 * axis + (high ? 1 : 0), the order of BoxFace::index() in 3D.
-  std::array<double, 2 * D> face_area;
-  double area = 0;
-};
+// A walk result that is not a column.
+constexpr int kHopGuardHit = -1;
 
 // Sums over one batch of walks; one column per net plus the ground plane.
 // The all-walk sums feed the control variate (the weights average to zero).
@@ -58,6 +53,8 @@ struct Tally
   std::vector<double> sum2;
   double sum_all = 0;
   double sum2_all = 0;
+  // |weight| of walks that reached outside the window and ended on a net.
+  double left_sum = 0;
   int64_t hops = 0;
   int64_t guard_hits = 0;
 
@@ -78,6 +75,7 @@ struct Tally
     }
     sum_all += other.sum_all;
     sum2_all += other.sum2_all;
+    left_sum += other.left_sum;
     hops += other.hops;
     guard_hits += other.guard_hits;
   }
@@ -97,127 +95,6 @@ std::pair<double, double> estimate(const Tally& t, const int c, const double n)
   return {mean, std::sqrt(var / n)};
 }
 
-template <int D>
-GaussianSurface<D> makeGaussianSurface(const std::vector<AlignedBox<D>>& boxes,
-                                       const std::function<int(int)>& box_net,
-                                       const Dielectric<D>& dielectric,
-                                       const int master,
-                                       const double offset_frac)
-{
-  AlignedBox<D> bbox{};
-  bool first = true;
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (box_net(b) != master) {
-      continue;
-    }
-    if (first) {
-      bbox = boxes[b];
-      first = false;
-      continue;
-    }
-    for (int k = 0; k < D; k++) {
-      bbox.lo[k] = std::min(bbox.lo[k], boxes[b].lo[k]);
-      bbox.hi[k] = std::max(bbox.hi[k], boxes[b].hi[k]);
-    }
-  }
-  if (first) {
-    throw std::invalid_argument("fsv: master net has no boxes");
-  }
-  // Offset: a fraction of the master's smallest dimension, at most half the
-  // gap to the nearest other conductor or the ground plane.
-  double gap = bbox.lo[D - 1];
-  for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
-    if (box_net(b) != master) {
-      gap = std::min(gap, linfGap(bbox, boxes[b]));
-    }
-  }
-  if (gap <= 0) {
-    throw std::invalid_argument(
-        "fsv: another conductor touches the master's bounding box");
-  }
-  double min_dim = std::numeric_limits<double>::max();
-  for (int k = 0; k < D; k++) {
-    min_dim = std::min(min_dim, bbox.hi[k] - bbox.lo[k]);
-  }
-  const double limit = 0.5 * gap;
-  double offset = std::min(limit, offset_frac * min_dim);
-  // Keep the surface clear of every shell face parallel to it nearby, so
-  // that first hops near it never meet two interfaces at once (their
-  // weight grows as the cube shrinks). Each face is an offset to avoid by a
-  // clearance of a quarter of the offset. If the offset is too close to one,
-  // move it to the nearest point clear of them all within (0, limit], or
-  // into the middle of the widest gap between them.
-  std::vector<double> faces;
-  for (const Shell<D>& shell : dielectric.shells()) {
-    if (linfGap(bbox, shell.outer) >= limit) {
-      continue;
-    }
-    for (int k = 0; k < D; k++) {
-      for (const double c : {shell.outer.lo[k], shell.outer.hi[k]}) {
-        for (const double d : {bbox.lo[k] - c, c - bbox.hi[k]}) {
-          if (d > 0 && d < limit) {
-            faces.push_back(d);
-          }
-        }
-      }
-    }
-  }
-  std::ranges::sort(faces);
-  // Moving the offset changes its clearance, so repeat until it holds.
-  for (int attempt = 0; attempt < 4; attempt++) {
-    const double clearance = 0.25 * offset;
-    if (std::ranges::none_of(faces, [&](const double d) {
-          return std::abs(d - offset) < clearance;
-        })) {
-      break;
-    }
-    // Gaps between consecutive faces, bounded by 0 and the limit, which are
-    // not faces.
-    double best = offset;
-    double best_move = std::numeric_limits<double>::infinity();
-    double widest = -1;
-    double widest_mid = offset;
-    for (size_t i = 0; i <= faces.size(); i++) {
-      const double gap_lo = i == 0 ? 0 : faces[i - 1];
-      const double gap_hi = i == faces.size() ? limit : faces[i];
-      const double lo = i == 0 ? 0 : gap_lo + clearance;
-      const double hi = i == faces.size() ? limit : gap_hi - clearance;
-      if (gap_hi - gap_lo > widest) {
-        widest = gap_hi - gap_lo;
-        widest_mid = 0.5 * (gap_lo + gap_hi);
-      }
-      if (!(hi > lo)) {
-        continue;
-      }
-      const double candidate = std::clamp(offset, lo, hi);
-      if (candidate > 0 && std::abs(candidate - offset) < best_move) {
-        best_move = std::abs(candidate - offset);
-        best = candidate;
-      }
-    }
-    offset = std::isfinite(best_move) ? best : widest_mid;
-  }
-
-  GaussianSurface<D> g;
-  for (int k = 0; k < D; k++) {
-    g.box.lo[k] = bbox.lo[k] - offset;
-    g.box.hi[k] = bbox.hi[k] + offset;
-  }
-  // Each face's area (length, in 2D) is the product of its tangent extents.
-  for (int a = 0; a < D; a++) {
-    double area = 1;
-    for (int t = 0; t < D; t++) {
-      if (t != a) {
-        area *= g.box.hi[t] - g.box.lo[t];
-      }
-    }
-    g.face_area[2 * a] = area;
-    g.face_area[2 * a + 1] = area;
-    g.area += 2 * area;
-  }
-  return g;
-}
-
 // Heights within this fraction of a cube's size count as on the interface.
 constexpr double kOnInterface = 1e-9;
 
@@ -234,6 +111,10 @@ struct Space
 
   static const std::vector<Box>& shapes(const Geometry& g) { return g.boxes(); }
   static int shapeNet(const Geometry& g, const int i) { return g.boxNet(i); }
+  static const AlignedBox<2>* window(const Geometry& g)
+  {
+    return g.window() ? &*g.window() : nullptr;
+  }
 
   // The uniform tables' axis for a world axis.
   static Axis uniformAxis(const int world) { return static_cast<Axis>(world); }
@@ -270,6 +151,7 @@ struct Plane
     return g.rects();
   }
   static int shapeNet(const Geometry2D& g, const int i) { return g.rectNet(i); }
+  static const AlignedBox<2>* window(const Geometry2D&) { return nullptr; }
 
   static int uniformAxis(const int world) { return world; }
 
@@ -393,6 +275,7 @@ class Walker
          const int64_t hop_guard,
          const uint64_t key)
       : geometry_(geometry),
+        window_(Frame::window(geometry)),
         index_(index),
         dielectric_(dielectric),
         gauss_(gauss),
@@ -400,26 +283,37 @@ class Walker
         tables_(tables),
         capture_(capture),
         hop_guard_(hop_guard),
-        key_(key),
-        charge_scale_(kEps0 * gauss.area)
+        key_(key)
   {
   }
 
   // One walk: returns the column it ends in (the last is the ground
-  // plane), or -1 if it hit the hop guard.
-  int walk(const int64_t walk_id, double& weight, int64_t& hops) const
+  // plane, which grounded nets join) or kHopGuardHit. `left` tells whether
+  // a cube could have reached outside the geometry's window.
+  int walk(const int64_t walk_id,
+           double& weight,
+           int64_t& hops,
+           bool& left) const
   {
     Philox rng(key_, static_cast<uint64_t>(walk_id));
     Face face{};
-    Point p = startPoint(rng, face);
-    weight = firstHop(p, face, rng);
+    Point p;
+    left = false;
+    const double charge_scale = kEps0 * startPoint(rng, p, face);
+    const double first_size = index_.nearest(p).dist;
+    left = reaches(p, first_size);
+    weight = charge_scale * firstHop(p, first_size, face, rng);
     // Transition hops until the walk is captured by a conductor.
     for (hops = 0; hops < hop_guard_; hops++) {
       const typename SpatialIndex<D>::Nearest n = index_.nearest(p);
+      // A conductor outside the window could only matter within n.dist.
+      left = left || reaches(p, n.dist);
       if (n.dist <= capture_) {
-        return n.box == SpatialIndex<D>::kGround
-                   ? geometry_.netCount()
-                   : Frame::shapeNet(geometry_, n.box);
+        if (n.box == SpatialIndex<D>::kGround) {
+          return geometry_.netCount();
+        }
+        const int net = Frame::shapeNet(geometry_, n.box);
+        return geometry_.grounded(net) ? geometry_.netCount() : net;
       }
       const Cube<Layered> cube = transition(p, n.dist, rng);
       const Point offset
@@ -430,41 +324,53 @@ class Walker
         p[k] += cube.half_size * offset[k];
       }
     }
-    return -1;
+    return kHopGuardHit;
   }
 
  private:
-  // A point on the Gaussian surface: a face by area, then uniform on it.
-  Point startPoint(Philox& rng, Face& face) const
+  // Whether the cube of half-size r at p reaches outside the window.
+  bool reaches(const Point& p, const double r) const
   {
-    double u = rng.uniform() * gauss_.area;
-    int f = 0;
-    while (f < 2 * D - 1 && u >= gauss_.face_area[f]) {
-      u -= gauss_.face_area[f];
-      f++;
-    }
-    face = {f / 2, f % 2 == 1};
-    Point p;
-    p[face.axis]
-        = face.high ? gauss_.box.hi[face.axis] : gauss_.box.lo[face.axis];
+    return window_ != nullptr
+           && (p[0] - r < window_->lo[0] || p[0] + r > window_->hi[0]
+               || p[1] - r < window_->lo[1] || p[1] + r > window_->hi[1]);
+  }
+
+  // A point on the surface: a piece drawn by its start probability, then a
+  // uniform point on it. Returns the piece's scale.
+  double startPoint(Philox& rng, Point& p, Face& face) const
+  {
+    const double u = rng.uniform() * gauss_.cumulative.back();
+    const int last = static_cast<int>(gauss_.cumulative.size()) - 1;
+    const int i = std::min(
+        last,
+        static_cast<int>(std::ranges::upper_bound(gauss_.cumulative, u)
+                         - gauss_.cumulative.begin()));
+    const typename GaussianSurface<D>::Piece& piece = gauss_.pieces[i];
+    face = {piece.axis, piece.high};
+    const AlignedBox<D>& rect = piece.rect;
+    p[face.axis] = rect.lo[face.axis];
     for (int t = 0; t < D; t++) {
       if (t != face.axis) {
-        p[t] = gauss_.box.lo[t]
-               + rng.uniform() * (gauss_.box.hi[t] - gauss_.box.lo[t]);
+        p[t] = rect.lo[t] + rng.uniform() * (rect.hi[t] - rect.lo[t]);
       }
     }
-    return p;
+    return piece.scale;
   }
 
   // First hop from p on the surface's face: sample by |eps dP/dn|, since
   // Q = -flux of eps grad(phi) through the surface. Moves p and returns the
-  // walk's weight. The cube is never shrunk for an interface: the weight
-  // scales as 1 / size, and shrinking near interfaces gives it infinite
-  // variance. Instead, an interface at an untabulated position is handled
-  // by the mixture of the two nearest tabulated positions.
-  double firstHop(Point& p, const Face face, Philox& rng) const
+  // walk's weight over eps0 and the start piece's scale. The cube is never
+  // shrunk for an interface: the weight scales as 1 / size, and shrinking near
+  // interfaces gives it infinite variance. Instead, an interface at an
+  // untabulated position is handled by the mixture of the two nearest tabulated
+  // positions.
+  double firstHop(Point& p,
+                  const double max_half_size,
+                  const Face face,
+                  Philox& rng) const
   {
-    const DielectricCube first = dielectric_.cube(p, index_.nearest(p).dist);
+    const DielectricCube first = dielectric_.cube(p, max_half_size);
     const double eps_here = dielectric_.eps(p);
     BasicFirstHop<D> hop;
     double norm;
@@ -486,7 +392,7 @@ class Walker
       p[k] += first.half_size * hop.offset[k];
     }
     const double normal_sign = face.high ? 1.0 : -1.0;
-    return -charge_scale_ * norm * normal_sign * hop.sign / first.half_size;
+    return -norm * normal_sign * hop.sign / first.half_size;
   }
 
   // A transition cube. When an interface plane falls inside, the cube is
@@ -539,6 +445,7 @@ class Walker
   }
 
   const typename Frame::GeometryType& geometry_;
+  const AlignedBox<2>* window_;  // x-y; null when there is none
   const SpatialIndex<D>& index_;
   const Dielectric<D>& dielectric_;
   const GaussianSurface<D>& gauss_;
@@ -547,7 +454,6 @@ class Walker
   const double capture_;
   const int64_t hop_guard_;
   const uint64_t key_;
-  const double charge_scale_;
 };
 
 // Runs batches [first, first + count) of `batch_size` walks on the pool,
@@ -569,11 +475,18 @@ void runRound(WorkerPool& pool,
     for (int64_t w = first_walk; w < first_walk + batch_size; w++) {
       double weight = 0;
       int64_t hops = 0;
-      const int column = walker.walk(w, weight, hops);
+      bool left = false;
+      const int column = walker.walk(w, weight, hops, left);
       tally.hops += hops;
-      if (column < 0) {
+      if (column == kHopGuardHit) {
         tally.guard_hits++;
         continue;
+      }
+      // Walks that reached outside the window and came back to a conductor;
+      // those that went on to the ground plane would at most end on a
+      // conductor outside instead, which ground stands in for.
+      if (left && column != columns - 1) {
+        tally.left_sum += std::abs(weight);
       }
       tally.sum[column] += weight;
       tally.sum2[column] += weight * weight;
@@ -611,11 +524,27 @@ void checkSolveArguments(const GeometryType& geometry,
     throw std::invalid_argument("fsv: master net " + std::to_string(master)
                                 + " is out of range");
   }
+  if (geometry.grounded(master)) {
+    throw std::invalid_argument("fsv: master net " + geometry.netName(master)
+                                + " is grounded");
+  }
   if (options.hop_guard <= 0) {
     throw std::invalid_argument("fsv: hop_guard must be positive");
   }
   if (options.max_walks <= 0) {
     throw std::invalid_argument("fsv: max_walks must be positive");
+  }
+  if (!(options.gauss_offset > 0) || !std::isfinite(options.gauss_offset)) {
+    throw std::invalid_argument("fsv: gauss_offset must be positive");
+  }
+  // The stopping test divides by the tolerances.
+  if (!(options.tol_total > 0) || !std::isfinite(options.tol_total)) {
+    throw std::invalid_argument("fsv: tol_total must be positive");
+  }
+  if (options.tol_coupling
+      && (!(*options.tol_coupling > 0)
+          || !std::isfinite(*options.tol_coupling))) {
+    throw std::invalid_argument("fsv: tol_coupling must be positive");
   }
 }
 
@@ -630,26 +559,42 @@ void estimateRow(const Tally& total, const int nets, CapRow& row)
   }
   std::tie(row.ground, row.ground_sigma) = estimate(total, nets, n);
   row.hops = total.hops;
+  row.window_leakage = total.left_sum / n;
 }
 
-// Whether the total and every coupling of at least coupling_threshold of
-// the total meet their tolerances.
-bool converged(const CapRow& row, const SolveOptions& options)
+// The largest ratio of a standard error to its target: the total's to
+// tol_total of the total, and each coupling's, the ground's included, to
+// tol_coupling of the total. The row has converged when it is below 1.
+double worstErrorRatio(const CapRow& row, const SolveOptions& options)
 {
   const int nets = static_cast<int>(row.cap.size());
   const double c_total = row.cap[row.master];
-  bool ok = row.sigma[row.master] < options.tol_total * c_total;
-  for (int c = 0; c <= nets && ok; c++) {
-    if (c == row.master) {
-      continue;
-    }
-    const double cap = c < nets ? row.cap[c] : row.ground;
-    const double sigma = c < nets ? row.sigma[c] : row.ground_sigma;
-    if (std::abs(cap) >= options.coupling_threshold * c_total) {
-      ok = sigma < options.tol_coupling * std::abs(cap);
+  if (!(c_total > 0)) {
+    return std::numeric_limits<double>::infinity();
+  }
+  double worst = row.sigma[row.master] / (options.tol_total * c_total);
+  const double coupling_target
+      = options.tol_coupling.value_or(options.tol_total) * c_total;
+  for (int c = 0; c < nets; c++) {
+    if (c != row.master) {
+      worst = std::max(worst, row.sigma[c] / coupling_target);
     }
   }
-  return ok;
+  return std::max(worst, row.ground_sigma / coupling_target);
+}
+
+// The walks the row needs to meet its tolerances, or min_walks if more:
+// standard errors fall as 1 / sqrt(walks).
+int64_t walksNeeded(const CapRow& row, const SolveOptions& options)
+{
+  const double ratio = worstErrorRatio(row, options);
+  const double walks
+      = std::ceil(ratio * ratio * static_cast<double>(row.walks));
+  // An infinite or NaN ratio (a non-positive total, or NaN weights) asks for
+  // as many walks as max_walks allows.
+  constexpr double kMost = 9.0e18;
+  return std::max(options.min_walks,
+                  static_cast<int64_t>(walks < kMost ? walks : kMost));
 }
 
 // Runs rounds of walks until the row meets its tolerances or max_walks.
@@ -664,9 +609,10 @@ CapRow runRounds(WorkerPool& pool,
 {
   // The worker pool runs one round of batches at a time. Each batch has its
   // own tally and the tallies are reduced in batch order, so the sums do not
-  // depend on the thread count. Rounds start small and double up to
-  // round_batches, so loose tolerances stop near their target and long solves
-  // still give every thread work.
+  // depend on the thread count. After a small first round, each round is
+  // sized to the walks still needed (see walksNeeded) plus a margin, within
+  // [first_round_batches, round_batches], so solves stop near their target
+  // and long ones still give every thread work.
   const int nets = geometry.netCount();
   const int columns = nets + 1;  // last column is the ground plane
   CapRow row;
@@ -694,10 +640,14 @@ CapRow runRounds(WorkerPool& pool,
     }
     round_first += round_size;
     row.walks = round_first * options.batch_size;
-    round_size = std::min(2 * round_size, options.round_batches);
     estimateRow(total, nets, row);
 
     // A dropped walk would bias every column without showing up in sigma.
+    if (!std::isfinite(row.cap[master])) {
+      throw std::runtime_error(
+          "fsv: walks of non-finite weight while solving net "
+          + geometry.netName(master));
+    }
     if (total.guard_hits > 0) {
       throw std::runtime_error(
           "fsv: " + std::to_string(total.guard_hits) + " walk(s) exceeded "
@@ -708,11 +658,81 @@ CapRow runRounds(WorkerPool& pool,
     if (row.walks >= solve_options.max_walks) {
       break;
     }
-    if (row.walks >= solve_options.min_walks && converged(row, solve_options)) {
+    if (row.walks >= solve_options.min_walks
+        && worstErrorRatio(row, solve_options) < 1) {
       break;
     }
+    // The estimate of the walks needed is itself noisy; the margin makes
+    // falling just short, which costs another round, less likely.
+    constexpr double kMargin = 1.05;
+    const double missing
+        = kMargin * static_cast<double>(walksNeeded(row, solve_options))
+          - static_cast<double>(row.walks);
+    const double batches = std::ceil(missing / options.batch_size);
+    round_size = static_cast<int>(
+        std::clamp(batches,
+                   static_cast<double>(std::min(options.first_round_batches,
+                                                options.round_batches)),
+                   static_cast<double>(options.round_batches)));
   }
   return row;
+}
+
+// Each trial round in choosing a Gaussian surface: 8192 walks, in batches
+// small enough to occupy many threads.
+constexpr int kTrialBatches = 32;
+constexpr int kTrialBatchSize = 256;
+// The inside surface must cost at most this much of the other in its trial:
+// a close call is not worth the noise in either cost.
+constexpr double kInsideAdvantage = 0.8;
+// Below this first-cube shrink on the clear surface (see GaussianSurface),
+// the inside one has nothing to gain and is not tried.
+constexpr double kShrinkToTry = 1.1;
+// A solve allowed fewer than this many times the trial's walks (both
+// surfaces) skips the trial, which would be a large part of its budget.
+constexpr int64_t kTrialBudget = 8;
+// These constants were tuned on the benchmark; see test/README.md, Surface
+// placement.
+
+// The hops a walker's solve would take, from one trial round of walks on
+// stream `key`: the walks needed to meet the tolerances (see
+// worstErrorRatio), held within [min_walks, max_walks] as the solve's are,
+// times the hops per walk. With min_walks = max_walks only the hops per
+// walk differ. A walk past the hop guard, or a surface with no finite
+// estimate, makes it infinite.
+template <class W, class GeometryType>
+double trialCost(WorkerPool& pool,
+                 const W& walker,
+                 const SolveOptions& solve_options,
+                 const GeometryType& geometry,
+                 const int master)
+{
+  const int nets = geometry.netCount();
+  const int columns = nets + 1;
+  std::vector<Tally> tallies(kTrialBatches, Tally(columns));
+  runRound(pool, walker, kTrialBatchSize, 0, kTrialBatches, columns, tallies);
+  Tally total(columns);
+  for (const Tally& tally : tallies) {
+    total.add(tally);
+  }
+  if (total.guard_hits > 0) {
+    return std::numeric_limits<double>::infinity();
+  }
+  CapRow row;
+  row.master = master;
+  row.walks = static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  estimateRow(total, nets, row);
+  const double ratio = worstErrorRatio(row, solve_options);
+  if (!std::isfinite(ratio)) {
+    // No estimate (a non-positive or non-finite total): never the cheaper.
+    return std::numeric_limits<double>::infinity();
+  }
+  const double lo = static_cast<double>(solve_options.min_walks);
+  const double hi = static_cast<double>(solve_options.max_walks);
+  double walks = ratio * ratio * static_cast<double>(row.walks);
+  // An infinite or NaN ratio runs to max_walks.
+  walks = walks < hi ? std::max(walks, lo) : hi;
+  return walks * static_cast<double>(row.hops) / static_cast<double>(row.walks);
 }
 
 // The two-dielectric tables for one permittivity ratio, by interface
@@ -750,12 +770,17 @@ CapRow solveScene(const SceneType& scene,
   using Layered = typename Frame::Layered;
   const auto& geometry = scene.geometry();
   checkSolveArguments(geometry, master, solve_options);
-  const GaussianSurface<D> gauss = makeGaussianSurface<D>(
-      Frame::shapes(geometry),
-      [&](const int b) { return Frame::shapeNet(geometry, b); },
-      scene.dielectric(),
-      master,
-      solve_options.gauss_offset);
+  auto surface = [&](const SurfacePlacement placement) {
+    return makeGaussianSurface<D>(
+        Frame::shapes(geometry),
+        [&](const int b) { return Frame::shapeNet(geometry, b); },
+        scene.index(),
+        scene.dielectric(),
+        master,
+        solve_options.gauss_offset,
+        placement);
+  };
+  const GaussianSurface<D> clear = surface(SurfacePlacement::kClearOfShells);
   LayeredTableCache<Layered, D> tables(
       scene.dielectric(),
       [&](const double ratio) -> const Tables<Layered>& {
@@ -765,16 +790,46 @@ CapRow solveScene(const SceneType& scene,
   const uint64_t key
       = options.seed
         ^ (0x9E3779B97F4A7C15ull * (static_cast<uint64_t>(master) + 1));
-  const Walker<Frame> walker(geometry,
-                             scene.index(),
-                             scene.dielectric(),
-                             gauss,
-                             greens,
-                             tables,
-                             solve_options.capture_rel * scene.minDimension(),
-                             solve_options.hop_guard,
-                             key);
-  return runRounds(pool, walker, options, solve_options, geometry, master);
+  auto walker = [&](const GaussianSurface<D>& gauss, const uint64_t k) {
+    return Walker<Frame>(geometry,
+                         scene.index(),
+                         scene.dielectric(),
+                         gauss,
+                         greens,
+                         tables,
+                         solve_options.capture_rel * scene.minDimension(),
+                         solve_options.hop_guard,
+                         k);
+  };
+  // Inside the shells the first cubes meet fewer interfaces but are
+  // smaller, which wins on some structures and loses on others; one trial
+  // round on each surface picks the cheaper. The trial walks use their own
+  // streams and are discarded, so the choice does not bias the solve.
+  const GaussianSurface<D>* gauss = &clear;
+  std::optional<GaussianSurface<D>> inside;
+  constexpr int64_t kTrialWalks
+      = 2 * static_cast<int64_t>(kTrialBatches) * kTrialBatchSize;
+  if (clear.first_cube_shrink > kShrinkToTry
+      && solve_options.max_walks >= kTrialBudget * kTrialWalks) {
+    inside = surface(SurfacePlacement::kInsideShells);
+  }
+  int64_t trial_walks = 0;
+  if (inside && inside->inside_shells) {
+    const uint64_t trial_key = key ^ 0xD1B54A32D192ED03ull;
+    const double clear_cost = trialCost(
+        pool, walker(clear, trial_key), solve_options, geometry, master);
+    const double inside_cost = trialCost(
+        pool, walker(*inside, ~trial_key), solve_options, geometry, master);
+    trial_walks = kTrialWalks;
+    if (inside_cost < kInsideAdvantage * clear_cost) {
+      gauss = &*inside;
+    }
+  }
+  CapRow row = runRounds(
+      pool, walker(*gauss, key), options, solve_options, geometry, master);
+  row.inside_surface = gauss != &clear;
+  row.trial_walks = trial_walks;
+  return row;
 }
 
 // The panel count, checked before any table is built: every tabulated

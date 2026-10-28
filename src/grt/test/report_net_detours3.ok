@@ -15,12 +15,12 @@ Detour metric (final routed WL vs initial Steiner WL):
 [INFO GRT-0332] Net _310_ detour: initial 14.40um, final 14.40um, delta 0.00um, ratio 1.00
 [INFO GRT-0332] Net _308_ detour: initial 7.20um, final 7.20um, delta 0.00um, ratio 1.00
 [INFO GRT-0332] Net _309_ detour: initial 21.60um, final 21.60um, delta 0.00um, ratio 1.00
-[INFO GRT-0332] Net _310_ detour: initial 28.80um, final 28.80um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _310_ detour: initial 28.80um, final 57.60um, delta 28.80um, ratio 2.00
 Detour metric (final routed WL vs initial Steiner WL):
   Nets analyzed: 374
   Total initial Steiner WL: 22017.60um
-  Total final routed WL:    23292.00um
-  Total detour:             1274.40um (ratio 1.06)
+  Total final routed WL:    23320.80um
+  Total detour:             1303.20um (ratio 1.06)
   Worst 3 nets by detour ratio:
     initial_um    final_um    delta_um    ratio  net
          14.40       36.00       21.60     2.50  _192_

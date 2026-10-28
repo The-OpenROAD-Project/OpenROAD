@@ -48,9 +48,10 @@ class Scene
 
  private:
   const Geometry& geometry_;
+  // Before the dielectric, whose checks use it.
+  std::unique_ptr<SpatialIndex<3>> index_;
   std::unique_ptr<Dielectric<3>> dielectric_;
   double min_dimension_;
-  std::unique_ptr<SpatialIndex<3>> index_;
 };
 
 // A cross section prepared for solving, the 2D counterpart of Scene: the
@@ -80,9 +81,10 @@ class Scene2D
 
  private:
   const Geometry2D& geometry_;
+  // Before the dielectric, whose checks use it.
+  std::unique_ptr<SpatialIndex<2>> index_;
   std::unique_ptr<Dielectric<2>> dielectric_;
   double min_dimension_;
-  std::unique_ptr<SpatialIndex<2>> index_;
 };
 
 }  // namespace fsv

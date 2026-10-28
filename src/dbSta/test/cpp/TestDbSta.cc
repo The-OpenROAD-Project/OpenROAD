@@ -4,15 +4,19 @@
 #include <cassert>
 #include <cstdio>
 #include <string>
+#include <vector>
 
+#include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
@@ -29,6 +33,141 @@ class TestDbSta : public tst::IntegratedFixture
   {
   }
 };
+
+namespace {
+
+InstanceSeq findLiteralInstances(dbSdcNetwork* network, const std::string& path)
+{
+  PatternMatch pattern(path);
+  return network->findInstancesMatching(nullptr, &pattern);
+}
+
+class RemovalLookupObserver : public odb::dbBlockCallBackObj
+{
+ public:
+  explicit RemovalLookupObserver(dbSdcNetwork* network) : network_(network) {}
+
+  void inDbPostInstParentChange(odb::dbInst* inst) override
+  {
+    EXPECT_EQ(parent_changes, destroys);
+    ++parent_changes;
+    EXPECT_EQ(inst->getModule(), nullptr);
+    EXPECT_TRUE(inst->getITerms().empty());
+    EXPECT_TRUE(findLiteralInstances(network_, removed_path).empty());
+  }
+
+  void inDbInstDestroy(odb::dbInst*) override
+  {
+    ++destroys;
+    EXPECT_EQ(parent_changes, destroys);
+  }
+
+  std::string removed_path;
+  int parent_changes = 0;
+  int destroys = 0;
+
+ private:
+  dbSdcNetwork* network_;
+};
+
+}  // namespace
+
+TEST_F(TestDbSta, DeletionKeepsLiteralCacheIncremental)
+{
+  readVerilogAndSetup("TestDbSta_0.v");
+  auto* sdc_network = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
+  ASSERT_NE(sdc_network, nullptr);
+  odb::dbModule* child = odb::dbModule::create(block_, "cache_child");
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(
+      odb::dbModInst::create(block_->getTopModule(), child, R"(cache\/parent)"),
+      nullptr);
+  odb::dbMaster* master = db_->findMaster("BUF_X1");
+  ASSERT_NE(master, nullptr);
+
+  constexpr int count = 1024;
+  std::vector<odb::dbInst*> victims;
+  victims.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    const std::string name = "victim_" + std::to_string(i);
+    odb::dbInst* inst
+        = odb::dbInst::create(block_, master, name.c_str(), false, child);
+    ASSERT_NE(inst, nullptr);
+    victims.push_back(inst);
+  }
+  odb::dbInst* survivor
+      = odb::dbInst::create(block_, master, "survivor", false, child);
+  ASSERT_NE(survivor, nullptr);
+  ASSERT_EQ(findLiteralInstances(sdc_network, "cache/parent/survivor").size(),
+            1);
+  sta_->ensureGraph();
+  const size_t initial_builds = sdc_network->sdcPathCacheBuildCount();
+  ASSERT_GT(initial_builds, 0);
+
+  // Registered after dbSta: inspect its cache before final destruction.
+  RemovalLookupObserver observer(sdc_network);
+  observer.addOwner(block_);
+  for (int i = 0; i < count; ++i) {
+    SCOPED_TRACE(i);
+    observer.removed_path = "cache/parent/victim_" + std::to_string(i);
+    odb::dbInst::destroy(victims[i]);
+    EXPECT_TRUE(
+        findLiteralInstances(sdc_network, observer.removed_path).empty());
+    PatternMatch pin_pattern("cache/parent/survivor/A");
+    const PinSeq pins = sdc_network->findPinsMatching(nullptr, &pin_pattern);
+    ASSERT_EQ(pins.size(), 1);
+    EXPECT_EQ(pins.front(), db_network_->dbToSta(survivor->findITerm("A")));
+  }
+  EXPECT_EQ(observer.parent_changes, count);
+  EXPECT_EQ(observer.destroys, count);
+  const size_t final_builds = sdc_network->sdcPathCacheBuildCount();
+  RecordProperty("deleted_instances", count);
+  RecordProperty("initial_cache_builds", std::to_string(initial_builds));
+  RecordProperty("final_cache_builds", std::to_string(final_builds));
+  EXPECT_EQ(final_builds, initial_builds);
+
+  odb::dbInst* replacement
+      = odb::dbInst::create(block_, master, "victim_0", false, child);
+  ASSERT_NE(replacement, nullptr);
+  const InstanceSeq matches
+      = findLiteralInstances(sdc_network, "cache/parent/victim_0");
+  ASSERT_EQ(matches.size(), 1);
+  EXPECT_EQ(matches.front(), db_network_->dbToSta(replacement));
+}
+
+TEST_F(TestDbSta, PinlessReparentUpdatesLiteralCache)
+{
+  readVerilogAndSetup("TestDbSta_0.v");
+  auto* sdc_network = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
+  ASSERT_NE(sdc_network, nullptr);
+  odb::dbLib* pinless_lib
+      = odb::dbLib::create(db_.get(), "pinless_lib", block_->getTech());
+  ASSERT_NE(pinless_lib, nullptr);
+  odb::dbMaster* master = odb::dbMaster::create(pinless_lib, "PINLESS");
+  ASSERT_NE(master, nullptr);
+  master->setFrozen();
+  db_network_->readLefAfter(pinless_lib);
+  odb::dbModule* child = odb::dbModule::create(block_, "cache_child");
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(
+      odb::dbModInst::create(block_->getTopModule(), child, R"(cache\/parent)"),
+      nullptr);
+  odb::dbInst* inst
+      = odb::dbInst::create(block_, master, "pinless", false, child);
+  ASSERT_NE(inst, nullptr);
+  ASSERT_TRUE(inst->getITerms().empty());
+  ASSERT_EQ(findLiteralInstances(sdc_network, "cache/parent/pinless").size(),
+            1);
+  const size_t initial_builds = sdc_network->sdcPathCacheBuildCount();
+
+  block_->getTopModule()->addInst(inst);
+  EXPECT_TRUE(
+      findLiteralInstances(sdc_network, "cache/parent/pinless").empty());
+  const InstanceSeq matches = findLiteralInstances(sdc_network, "pinless");
+  ASSERT_EQ(matches.size(), 1);
+  EXPECT_EQ(matches.front(), db_network_->dbToSta(inst));
+  EXPECT_GT(sdc_network->sdcPathCacheBuildCount(), initial_builds);
+}
 
 TEST_F(TestDbSta, TestHierarchyConnectivity)
 {

@@ -522,6 +522,19 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         } else {
           odb::dbStringProperty::create(tray_iterm, kOrigNameProp, val.c_str());
         }
+
+        // Tray pins come from different flops, so record the originating
+        // flop's src attribute on the tray pin.
+        if (odb::dbStringProperty* inst_src_prop
+            = odb::dbStringProperty::find(insts_[flops[i].idx], "src")) {
+          const std::string src_val = inst_src_prop->getValue();
+          if (odb::dbStringProperty* src_prop
+              = odb::dbStringProperty::find(tray_iterm, "src")) {
+            src_prop->setValue(src_val.c_str());
+          } else {
+            odb::dbStringProperty::create(tray_iterm, "src", src_val.c_str());
+          }
+        }
       }
     }
   }
@@ -881,6 +894,13 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   sat::Model model;
   sat::SatParameters parameters;
+  if (num_flops <= 128) {
+    // Small ILPs are solved fastest by a single deterministic LP-backed
+    // worker; presolve and a parallel subsolver portfolio only add overhead.
+    parameters.set_cp_model_presolve(false);
+    parameters.set_num_workers(1);
+    parameters.set_interleave_search(false);
+  }
   model.Add(NewSatParameters(parameters));
   sat::CpSolverResponse response = sat::SolveCpModel(cp_model.Build(), &model);
 
@@ -1218,7 +1238,7 @@ void MBFF::RunMultistart(
     RunCapacitatedKMeans(flops,
                          start_trays[bit_idx][tray_idx],
                          bit_cnt,
-                         8,
+                         4,
                          tmp_cluster,
                          array_mask);
 
@@ -1783,7 +1803,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
             RunCapacitatedKMeans(pointsets[t],
                                  cur_trays[i],
                                  GetBitCnt(i),
-                                 35,
+                                 15,
                                  cluster,
                                  array_mask);
             MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -55,16 +56,27 @@ class Geometry
   int addNet(std::string_view name);
   // Adds a conductor box to a net. The box must lie above the ground plane.
   void addBox(int net, const Box& box);
+  // Ties a net to the ground plane: walks ending on it count as ground, and
+  // it cannot be a master.
+  void setGrounded(int net);
+  // The x-y window the geometry was taken from, when it is a part of a
+  // larger layout: conductors outside it are missing. Solves then estimate
+  // how much the window matters (CapRow::window_leakage).
+  void setWindow(const AlignedBox<2>& xy);
 
   int netCount() const { return static_cast<int>(net_names_.size()); }
   const std::string& netName(int net) const { return net_names_.at(net); }
+  bool grounded(int net) const { return grounded_.at(net); }
   const std::vector<Box>& boxes() const { return boxes_; }
   int boxNet(int box) const { return box_nets_[box]; }
+  const std::optional<AlignedBox<2>>& window() const { return window_; }
 
  private:
   std::vector<std::string> net_names_;
+  std::vector<bool> grounded_;
   std::vector<Box> boxes_;
   std::vector<int> box_nets_;
+  std::optional<AlignedBox<2>> window_;
 };
 
 // A cross section: conductors in the x-z plane, infinitely long along y,
@@ -79,6 +91,7 @@ class Geometry2D
 
   int netCount() const { return static_cast<int>(net_names_.size()); }
   const std::string& netName(int net) const { return net_names_.at(net); }
+  bool grounded(int) const { return false; }
   const std::vector<Rect>& rects() const { return rects_; }
   int rectNet(int rect) const { return rect_nets_[rect]; }
 
