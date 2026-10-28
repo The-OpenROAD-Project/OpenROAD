@@ -223,10 +223,17 @@ class Lab
       : o_(o),
         stack_(fsv::readItfFile(o.itf)),
         solver_({.threads = o.threads}),
-        layer_(*requireConductor(o.layer))
+        layer_(layer(o.layer))
   {
-    below_ = pex::layersBelow(stack_, o.layer);
-    above_ = pex::layersAbove(stack_, o.layer);
+    if (!layer_.valid()) {
+      throw std::invalid_argument("the experiments need a layer (--layer)");
+    }
+    for (const pex::Layer l : pex::layersBelow(stack_, layer_)) {
+      below_.push_back(stack_.name(l));
+    }
+    for (const pex::Layer l : pex::layersAbove(stack_, layer_)) {
+      above_.push_back(stack_.name(l));
+    }
     if (!o.csv.empty()) {
       csv_.open(o.csv);
       if (!csv_.good()) {
@@ -236,19 +243,29 @@ class Lab
     }
   }
 
-  const fsv::Stack::Conductor* requireConductor(const std::string& name)
+  // The handle of a layer the experiments name; none for "". Throws for
+  // a name the stack lacks.
+  pex::Layer layer(const std::string& name) const
   {
-    const fsv::Stack::Conductor* c = stack_.findConductor(name);
-    if (c == nullptr) {
-      throw std::invalid_argument("the stack has no conductor " + name);
+    if (name.empty()) {
+      return {};
     }
-    return c;
+    const pex::Layer l = stack_.layer(name);
+    if (!l.valid()) {
+      throw std::invalid_argument("the stack has no layer " + name);
+    }
+    return l;
+  }
+  const fsv::Stack::Conductor& conductor(const std::string& name) const
+  {
+    return stack_.conductor(layer(name));
   }
 
   const fsv::Stack& stack() const { return stack_; }
   const Options& options() const { return o_; }
-  double wmin() const { return layer_.min_width; }
-  double smin() const { return layer_.min_spacing; }
+  pex::Layer layer() const { return layer_; }
+  double wmin() const { return stack_.conductor(layer_).min_width; }
+  double smin() const { return stack_.conductor(layer_).min_spacing; }
   // The covering layers, nearest first.
   const std::vector<std::string>& below() const { return below_; }
   const std::vector<std::string>& above() const { return above_; }
@@ -300,7 +317,7 @@ class Lab
                 error.c_str());
     std::fflush(stdout);
     if (csv_.is_open()) {
-      csv_ << experiment << ',' << stack_.technology << ',' << o_.layer << ','
+      csv_ << experiment << ',' << stack_.technology() << ',' << o_.layer << ','
            << name << ',' << quantity << ',' << fmt(truth) << ',' << fmt(sigma)
            << ',' << (model ? fmt(*model) : "") << ',' << error << '\n';
       csv_.flush();
@@ -319,7 +336,7 @@ class Lab
   Options o_;
   fsv::Stack stack_;
   fsv::Solver solver_;
-  const fsv::Stack::Conductor& layer_;
+  const pex::Layer layer_;
   std::vector<std::string> below_;
   std::vector<std::string> above_;
   std::vector<Row> rows_;
@@ -366,10 +383,10 @@ PerLength perLength(Lab& lab,
                     const double tol)
 {
   pex::LateralPattern p;
-  p.layer = lab.options().layer;
+  p.layer = lab.layer();
   p.width = width;
-  p.below = ctx.below;
-  p.above = ctx.above;
+  p.below = lab.layer(ctx.below);
+  p.above = lab.layer(ctx.above);
   p.extent = lab.options().extent;
   const pex::LateralPattern::Section s = p.build(lab.stack());
   const fsv::CapRow row = lab.solve(s.geometry, s.wire, tol);
@@ -395,11 +412,11 @@ Wire3D wire3D(const Lab& lab,
               const double margin)
 {
   pex::EndPattern pattern;
-  pattern.layer = lab.options().layer;
+  pattern.layer = lab.layer();
   pattern.width = width;
   pattern.length = length;
-  pattern.below = ctx.below;
-  pattern.above = ctx.above;
+  pattern.below = lab.layer(ctx.below);
+  pattern.above = lab.layer(ctx.above);
   pattern.extent = lab.options().extent;
   pattern.margin = margin;
   pex::EndPattern::Wire wire = pattern.build(lab.stack());
@@ -428,11 +445,11 @@ PerLength2 perLength2(Lab& lab,
 {
   const Options& o = lab.options();
   pex::LateralPattern p;
-  p.layer = o.layer;
+  p.layer = lab.layer();
   p.width = lab.wmin();
   p.left = p.right = neighbors ? lab.smin() : -1;
-  p.below = ctx.below;
-  p.above = ctx.above;
+  p.below = lab.layer(ctx.below);
+  p.above = lab.layer(ctx.above);
   p.extent = o.extent;
   const pex::LateralPattern::Section s = p.build(lab.stack());
   const fsv::CapRow row = lab.solve(s.geometry, s.wire, tol);
@@ -479,14 +496,14 @@ Crossed crossed(Lab& lab,
   double len[2];
   for (int i = 0; i < 2; i++) {
     pex::CrossingPattern pattern;
-    pattern.layer = o.layer;
-    pattern.cover = cover;
+    pattern.layer = lab.layer();
+    pattern.cover = lab.layer(cover);
     pattern.width = lab.wmin();
     pattern.crossing_width = wc;
     pattern.pitch = pitch;
     pattern.length = (i == 0 ? n_short : n_long) * pitch;
     pattern.spacing = neighbors ? lab.smin() : -1;
-    pattern.other = other;
+    pattern.other = lab.layer(other);
     pattern.extent = o.extent;
     const pex::CrossingPattern::Array g = pattern.build(lab.stack());
     const fsv::CapRow row = lab.solve(g.geometry, g.wire, o.tol);
@@ -529,7 +546,7 @@ void crossing(Lab& lab)
     const Context plane{over ? "" : cover, over ? cover : ""};
     const Context with_other{over ? other : "", over ? "" : other};
     const Context both{over ? other : cover, over ? cover : other};
-    const double cmin = lab.stack().findConductor(cover)->min_width;
+    const double cmin = lab.conductor(cover).min_width;
     // 2D values: [neighbors][other plane] for the open and the plane case.
     PerLength2 open[2][2];
     PerLength2 covered[2][2];
@@ -674,7 +691,8 @@ void ends(Lab& lab)
     const double gap = gf * lab.smin();
     Wire3D g = wire3D(lab, ctx, w, length, 0);
     const pex::NetIndex b = g.builder.net("b");
-    g.builder.add(o.layer, b, -w / 2, length + gap, w / 2, 2 * length + gap);
+    g.builder.add(
+        lab.layer(), b, -w / 2, length + gap, w / 2, 2 * length + gap);
     const fsv::CapRow row = lab.solve(g.builder.geometry(), g.wire, o.tol);
     const std::string name = "facing gap=" + fmt(gf) + "smin L=" + fmt(length);
     lab.row("e3", name, "total", row.total(), row.sigma[g.wire], single);
@@ -703,19 +721,19 @@ Neighbors neighbors(const Lab& lab,
   Neighbors n;
   const double half = lab.wmin() / 2;
   n.wire = b.net("wire");
-  b.add(o.layer, n.wire, -half, half);
+  b.add(lab.layer(), n.wire, -half, half);
   for (int i = 1; i <= k; i++) {
     const double edge = half + i * spacing + (i - 1) * neighbor_width;
     n.left.push_back(b.net("l" + std::to_string(i)));
-    b.add(o.layer, n.left.back(), -edge - neighbor_width, -edge);
+    b.add(lab.layer(), n.left.back(), -edge - neighbor_width, -edge);
     n.right.push_back(b.net("r" + std::to_string(i)));
-    b.add(o.layer, n.right.back(), edge, edge + neighbor_width);
+    b.add(lab.layer(), n.right.back(), edge, edge + neighbor_width);
   }
   if (!ctx.below.empty()) {
-    b.add(ctx.below, b.net("below"), -o.extent, o.extent);
+    b.add(lab.layer(ctx.below), b.net("below"), -o.extent, o.extent);
   }
   if (!ctx.above.empty()) {
-    b.add(ctx.above, b.net("above"), -o.extent, o.extent);
+    b.add(lab.layer(ctx.above), b.net("above"), -o.extent, o.extent);
   }
   n.geometry = std::move(b.geometry());
   return n;
@@ -796,12 +814,12 @@ void vertical(Lab& lab)
                  const std::vector<std::string>& a) {
     pex::SectionBuilder sb(lab.stack());
     const pex::NetIndex wire = sb.net("wire");
-    sb.add(o.layer, wire, -lab.wmin() / 2, lab.wmin() / 2);
+    sb.add(lab.layer(), wire, -lab.wmin() / 2, lab.wmin() / 2);
     for (const std::string& layer : b) {
-      sb.add(layer, sb.net(layer), -o.extent, o.extent);
+      sb.add(lab.layer(layer), sb.net(layer), -o.extent, o.extent);
     }
     for (const std::string& layer : a) {
-      sb.add(layer, sb.net(layer), -o.extent, o.extent);
+      sb.add(lab.layer(layer), sb.net(layer), -o.extent, o.extent);
     }
     const fsv::CapRow row = lab.solve(sb.geometry(), wire, o.tol);
     return std::pair{row.total(), row.sigma[wire]};
@@ -862,7 +880,7 @@ pex::Model buildTables(const Lab& lab)
     }
   };
   pex::Model model;
-  pex::buildLateral(lab.stack(), o.layer, b, model);
+  pex::buildLateral(lab.stack(), lab.layer(), b, model);
   return model;
 }
 
@@ -961,12 +979,12 @@ void interpolation(Lab& lab, const pex::Model& model)
         const double sl = p.left < 0 ? -1 : p.left * lab.smin();
         const double sr = p.right < 0 ? -1 : p.right * lab.smin();
         pex::LateralPattern pattern;
-        pattern.layer = o.layer;
+        pattern.layer = lab.layer();
         pattern.width = w;
         pattern.left = sl;
         pattern.right = sr;
-        pattern.below = key.below;
-        pattern.above = key.above;
+        pattern.below = lab.layer(key.below);
+        pattern.above = lab.layer(key.above);
         pattern.extent = o.extent;
         const pex::LateralPattern::Section s = pattern.build(lab.stack());
         const fsv::CapRow row = lab.solve(s.geometry, s.wire, o.tol);
@@ -1026,7 +1044,7 @@ void additivity(Lab& lab)
   const Context covered{"", lab.nearestAbove()};
   // Per-unit-length values of the three pieces.
   pex::LateralPattern p;
-  p.layer = o.layer;
+  p.layer = lab.layer();
   p.width = w;
   p.left = s;
   p.extent = o.extent;
@@ -1042,10 +1060,14 @@ void additivity(Lab& lab)
   const pex::NetIndex neighbor = g.builder.net("neighbor");
   const double l1 = length / 3;
   const double l2 = length / 2;
-  g.builder.add(o.layer, neighbor, -w / 2 - s - w, 0, -w / 2 - s, l1);
+  g.builder.add(lab.layer(), neighbor, -w / 2 - s - w, 0, -w / 2 - s, l1);
   const pex::NetIndex cover = g.builder.net("cover");
-  g.builder.add(
-      lab.nearestAbove(), cover, -o.extent, l2, o.extent, length + o.extent);
+  g.builder.add(lab.layer(lab.nearestAbove()),
+                cover,
+                -o.extent,
+                l2,
+                o.extent,
+                length + o.extent);
   const fsv::CapRow row = lab.solve(g.builder.geometry(), g.wire, o.tol);
   const std::string name
       = "neighbor 0-" + fmt(l1) + " cover " + fmt(l2) + "-" + fmt(length);
@@ -1083,8 +1105,8 @@ void vias(Lab& lab)
     return;
   }
   std::string cut;
-  for (const fsv::Stack::Via& v : lab.stack().vias) {
-    if (v.lower == o.layer && v.upper == upper) {
+  for (const fsv::Stack::Via& v : lab.stack().vias()) {
+    if (v.lower == lab.layer() && v.upper == lab.layer(upper)) {
       cut = v.name;
     }
   }
@@ -1093,7 +1115,7 @@ void vias(Lab& lab)
     return;
   }
   const double w = lab.wmin();
-  const double side = std::min(w, lab.stack().findConductor(upper)->min_width);
+  const double side = std::min(w, lab.conductor(upper).min_width);
   const double length = o.smoke ? 1 : 2;
   for (const std::string& where :
        trim(std::vector<std::string>{"end", "middle"}, o.smoke)) {
@@ -1102,10 +1124,14 @@ void vias(Lab& lab)
     double sigma = 0;
     for (const bool with_cut : {false, true}) {
       Wire3D g = wire3D(lab, {"", ""}, w, length, 0);
-      g.builder.add(
-          upper, g.wire, -0.5 - side / 2, y, 0.5 + side / 2, y + side);
+      g.builder.add(lab.layer(upper),
+                    g.wire,
+                    -0.5 - side / 2,
+                    y,
+                    0.5 + side / 2,
+                    y + side);
       if (with_cut) {
-        g.builder.add(cut, g.wire, -side / 2, y, side / 2, y + side);
+        g.builder.add(lab.layer(cut), g.wire, -side / 2, y, side / 2, y + side);
       }
       const fsv::CapRow row
           = lab.solve(g.builder.geometry(), g.wire, o.tol / 3);
@@ -1193,12 +1219,12 @@ pex::Model netsModel(const Lab& lab, const Design& design)
   // The technology's routing layers that the stack has.
   for (odb::dbTechLayer* layer : design.block->getTech()->getLayers()) {
     if (layer->getType() == odb::dbTechLayerType::ROUTING
-        && lab.stack().findConductor(layer->getName()) != nullptr) {
+        && lab.stack().isConductor(lab.stack().layer(layer->getName()))) {
       b.layers.push_back(layer->getName());
     }
   }
   const pex::ModelSource expected{
-      lab.stack().technology, o.itf, pex::buildFingerprint(lab.stack(), b)};
+      lab.stack().technology(), o.itf, pex::buildFingerprint(lab.stack(), b)};
   if (!o.model.empty()) {
     std::ifstream in(o.model);
     if (in.good()) {
@@ -1229,7 +1255,7 @@ pex::Model netsModel(const Lab& lab, const Design& design)
         std::fflush(stdout);
       }
     };
-    pex::buildLayer(lab.stack(), layer, b, model);
+    pex::buildLayer(lab.stack(), lab.layer(layer), b, model);
   }
   if (!o.model.empty()) {
     pex::writeModelFile(model, expected, o.model);
@@ -1273,7 +1299,8 @@ void nets(Lab& lab)
     }
   }
   const fsv::LayerExtent extent = [&](const std::string_view layer) {
-    const pex::ZRange z = pex::zRange(lab.stack(), layer);
+    const fsv::Stack::ZExtent z
+        = pex::layerExtent(lab.stack(), lab.layer(std::string(layer)));
     return std::make_pair(z.bottom, z.top);
   };
   for (odb::dbNet* net : targets) {
@@ -1351,13 +1378,13 @@ void diagonal(Lab& lab)
     others.push_back(lab.below()[1]);
   }
   for (const std::string& other : trim(others, o.smoke)) {
-    const double omin = lab.stack().findConductor(other)->min_width;
+    const double omin = lab.conductor(other).min_width;
     // Alone, with neighbors on both sides, and with the far side open.
     for (const int variant : trim(std::vector<int>{0, 1, 2}, o.smoke)) {
       const bool neighbors = variant > 0;
       pex::DiagonalPattern pattern;
-      pattern.layer = o.layer;
-      pattern.other = other;
+      pattern.layer = lab.layer();
+      pattern.other = lab.layer(other);
       pattern.width = w;
       pattern.spacing = neighbors ? lab.smin() : -1;
       pattern.far_spacing = variant == 1 ? lab.smin() : -1;
@@ -1417,7 +1444,7 @@ int main(int argc, char** argv)
     const Options o = parse(argc, argv);
     Lab lab(o);
     std::printf("# %s %s, tol %g, %d threads\n",
-                lab.stack().technology.c_str(),
+                lab.stack().technology().c_str(),
                 o.layer.c_str(),
                 o.tol,
                 o.threads);

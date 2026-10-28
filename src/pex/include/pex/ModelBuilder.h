@@ -13,6 +13,7 @@
 
 #include "fsv/Stack.h"
 #include "pex/Model.h"
+#include "pex/Patterns.h"
 
 namespace pex {
 
@@ -71,22 +72,23 @@ std::string buildFingerprint(const fsv::Stack& stack,
                              const BuildOptions& options);
 
 // The covering contexts of a layer within the options' depths: the layers
-// below nearest first with "" (the substrate) first, and likewise above
-// with "" (none) first. A conductor sitting on the ground plane is the
-// ground and does not count, nor does one outside the options' layers.
-std::vector<std::string> coversBelow(const fsv::Stack& stack,
-                                     std::string_view layer,
-                                     const BuildOptions& options);
-std::vector<std::string> coversAbove(const fsv::Stack& stack,
-                                     std::string_view layer,
-                                     const BuildOptions& options);
+// below nearest first with no layer (the substrate) first, and likewise
+// above with no layer (open) first. A conductor sitting on the ground
+// plane is the ground and does not count, nor does one outside the
+// options' layers.
+std::vector<Layer> coversBelow(const fsv::Stack& stack,
+                               Layer layer,
+                               const BuildOptions& options);
+std::vector<Layer> coversAbove(const fsv::Stack& stack,
+                               Layer layer,
+                               const BuildOptions& options);
 
 // Builds the lateral tables of a conductor layer, one per covering context,
 // into the model. Each table point is its own single-threaded solve, seeded
 // by its position, so the tables do not depend on the thread count. Throws
-// std::invalid_argument for a layer the stack does not have.
+// std::invalid_argument for a handle that is not a conductor of the stack.
 void buildLateral(const fsv::Stack& stack,
-                  std::string_view layer,
+                  Layer layer,
                   const BuildOptions& options,
                   Model& model);
 
@@ -95,8 +97,8 @@ void buildLateral(const fsv::Stack& stack,
 // every crossing width and coverage of the options; each array gives the
 // share kept over the gap between its crossings.
 void buildCrossing(const fsv::Stack& stack,
-                   std::string_view layer,
-                   std::string_view cover,
+                   Layer layer,
+                   Layer cover,
                    const BuildOptions& options,
                    Model& model);
 
@@ -105,21 +107,21 @@ void buildCrossing(const fsv::Stack& stack,
 // wire on the other layer beside it on the right, at every width, gap and
 // pair of spacings of the options.
 void buildDiagonal(const fsv::Stack& stack,
-                   std::string_view layer,
-                   std::string_view other,
+                   Layer layer,
+                   Layer other,
                    const BuildOptions& options,
                    Model& model);
 
 // The layers within the diagonal depth of a layer, below and above, that
 // do not sit on the ground plane.
-std::vector<std::string> diagonalLayers(const fsv::Stack& stack,
-                                        std::string_view layer,
-                                        const BuildOptions& options);
+std::vector<Layer> diagonalLayers(const fsv::Stack& stack,
+                                  Layer layer,
+                                  const BuildOptions& options);
 
 // Builds the end tables of a layer for the same contexts as its lateral
 // tables: what one line end adds, over the lateral grid's widths.
 void buildEnds(const fsv::Stack& stack,
-               std::string_view layer,
+               Layer layer,
                const BuildOptions& options,
                Model& model);
 
@@ -127,7 +129,7 @@ void buildEnds(const fsv::Stack& stack,
 // every cover within the depths, and a diagonal table for every layer
 // within the diagonal depth.
 void buildLayer(const fsv::Stack& stack,
-                std::string_view layer,
+                Layer layer,
                 const BuildOptions& options,
                 Model& model);
 

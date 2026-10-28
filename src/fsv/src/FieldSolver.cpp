@@ -59,7 +59,7 @@ void FieldSolver::readItf(const std::string& path)
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
   std::set<std::string> conformals;
-  for (const Stack::Conductor& c : stack.conductors) {
+  for (const Stack::Conductor& c : stack.conductors()) {
     for (const Stack::ConformalDielectric& cf : c.conformals) {
       conformals.insert(cf.name);
     }
@@ -68,11 +68,11 @@ void FieldSolver::readItf(const std::string& path)
                 2,
                 "Read ITF {}: {} dielectrics, {} conductors, {} conformal "
                 "dielectrics, {} vias.",
-                stack.technology,
-                stack.dielectrics.size(),
-                stack.conductors.size(),
+                stack.technology(),
+                stack.dielectrics().size(),
+                stack.conductors().size(),
                 conformals.size(),
-                stack.vias.size());
+                stack.vias().size());
   resetScenes();
   stack_ = std::move(stack);
   has_stack_ = true;
@@ -159,29 +159,22 @@ std::pair<double, double> FieldSolver::layerExtent(
     logger_->error(
         utl::FSV, 6, "Read an ITF file before adding shapes by layer.");
   }
-  const Stack::ZExtent extent = stack_.zExtent(layer);
-  switch (extent.status) {
-    case Stack::ZExtent::kFound:
-      break;
-    case Stack::ZExtent::kUnknownLayer:
-      logger_->error(utl::FSV,
-                     7,
-                     "Layer {} is not a conductor or via of the ITF stack.",
-                     layer);
-    case Stack::ZExtent::kViaToGround:
-      // Its net would be grounded, with no capacitance to solve.
-      logger_->error(utl::FSV,
-                     14,
-                     "Via {} lands on the ground plane, which would ground "
-                     "its net.",
-                     layer);
-    case Stack::ZExtent::kViaWithoutUpper:
-      logger_->error(utl::FSV,
-                     13,
-                     "Via {} has no upper conductor {} in the ITF stack.",
-                     layer,
-                     extent.via->upper);
+  const Stack::Layer handle = stack_.layer(layer);
+  if (!handle.valid()) {
+    logger_->error(utl::FSV,
+                   7,
+                   "Layer {} is not a conductor or via of the ITF stack.",
+                   layer);
   }
+  if (stack_.isVia(handle) && !stack_.via(handle).lower.valid()) {
+    // Its net would be grounded, with no capacitance to solve.
+    logger_->error(utl::FSV,
+                   14,
+                   "Via {} lands on the ground plane, which would ground "
+                   "its net.",
+                   layer);
+  }
+  const Stack::ZExtent extent = stack_.zExtent(handle);
   return {extent.bottom, extent.top};
 }
 
