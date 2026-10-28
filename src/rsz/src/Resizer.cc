@@ -5905,7 +5905,14 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     sta_->findRequireds();
   }
   std::vector<float> initial_latency(ck_pins.size(), 0.0f);
-  std::vector<bool> initial_pin_latency_set(ck_pins.size(), false);
+  // Full original pin-level latency per (rise/fall, min/max) so an asymmetric
+  // annotation is restored exactly instead of being collapsed to one value.
+  // initial_latency[] keeps only the rise/max baseline the LP shifts.
+  using PinLatency = std::array<std::array<float, 2>, 2>;
+  using PinLatencySet = std::array<std::array<bool, 2>, 2>;
+  std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
+  std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
+                                                  PinLatencySet{});
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
@@ -5938,11 +5945,19 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     float val = 0.0f;
     bool exists = false;
     sdc->clockLatency(ck_clocks[i], ck_pins[i], rf_rise, mm_max, val, exists);
-    initial_pin_latency_set[i] = exists;
     if (!exists) {
       sdc->clockLatency(ck_clocks[i], rf_rise, mm_max, val, exists);
     }
     initial_latency[i] = val;
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        float lat = 0.0f;
+        bool lat_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, lat, lat_exists);
+        orig_pin_latency_set[i][rf->index()][mm->index()] = lat_exists;
+        orig_pin_latency[i][rf->index()][mm->index()] = lat;
+      }
+    }
   }
 
   // 4. Cutting-plane iteration.
@@ -6358,18 +6373,37 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // budget never leaves the cutting-plane's tentative set_clock_latency
   // annotations in the SDC. Without this, an abort would corrupt downstream
   // timing with skew that was computed but never realized.
+  // Put one CK pin back to its exact pre-LP SDC state: drop the clock/pin
+  // latency the LP wrote, then re-apply each original per-(rise/fall, min/max)
+  // value only if removing the LP's annotation also dropped it. A
+  // clock-agnostic pin latency survives removeClockLatency, so re-applying it
+  // would duplicate the original as a clock-specific annotation.
+  auto restore_pin_latency = [&](int i) {
+    sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        const size_t ri = rf->index();
+        const size_t mi = mm->index();
+        if (!orig_pin_latency_set[i][ri][mi]) {
+          continue;
+        }
+        float cur = 0.0f;
+        bool cur_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, cur, cur_exists);
+        if (!cur_exists || cur != orig_pin_latency[i][ri][mi]) {
+          sta_->setClockLatency(ck_clocks[i],
+                                const_cast<sta::Pin*>(ck_pins[i]),
+                                rf->asRiseFallBoth(),
+                                mm->asMinMaxAll(),
+                                orig_pin_latency[i][ri][mi],
+                                sdc);
+        }
+      }
+    }
+  };
   auto restore_initial_latencies = [&]() {
     for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
-      if (initial_pin_latency_set[i]) {
-        sta_->setClockLatency(ck_clocks[i],
-                              const_cast<sta::Pin*>(ck_pins[i]),
-                              sta::RiseFallBoth::riseFall(),
-                              sta::MinMaxAll::all(),
-                              initial_latency[i],
-                              sdc);
-      } else {
-        sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
-      }
+      restore_pin_latency(i);
     }
     sta_->findRequireds();
   };
@@ -6555,16 +6589,7 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     // and double-count once CTS inserts the delay buffers). The schedule
     // survives only as the useful_skew_target property — a timing-inert
     // signal CTS reads to decide whether to realize the skew.
-    if (initial_pin_latency_set[i]) {
-      sta_->setClockLatency(ck_clocks[i],
-                            const_cast<sta::Pin*>(ck_pins[i]),
-                            sta::RiseFallBoth::riseFall(),
-                            sta::MinMaxAll::all(),
-                            initial_latency[i],
-                            sdc);
-    } else {
-      sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
-    }
+    restore_pin_latency(i);
 
     if (std::fabs(ti) >= opts.emit_threshold) {
       odb::dbITerm* ck_iterm = nullptr;
