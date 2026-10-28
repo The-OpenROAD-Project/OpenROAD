@@ -8535,7 +8535,8 @@ bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
 }
 
 bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
-                                         const sta::LibertyCell* replacement)
+                                         const sta::LibertyCell* replacement,
+                                         const sta::Mode* mode)
 {
   if (replacement == nullptr) {
     return false;
@@ -8558,6 +8559,27 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
     sta::PinSet* drivers = network_->drivers(pin);
     if (drivers == nullptr) {
       continue;
+    }
+
+    // Skip the max-cap check on a register clock pin only when its clock is
+    // ideal: the clock net's capacitance is irrelevant to timing then.
+    if (network_->isRegClkPin(pin) && mode != nullptr
+        && mode->clkNetwork()->isIdealClock(pin)) {
+      continue;
+    }
+
+    // Skip the max-cap check on scan-enable/scan-in pins because they
+    // tend to be high fanout pins
+    if (db_network_ != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      db_network_->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm != nullptr
+          && (db_network_->isScanEnable(iterm)
+              || db_network_->isScanIn(iterm))) {
+        continue;
+      }
     }
 
     const float old_cap
