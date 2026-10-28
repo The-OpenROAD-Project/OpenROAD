@@ -3701,6 +3701,11 @@ void RamGen::splitPeriphery()
   for (auto& terms : q_outputs_) {
     forget(terms);
   }
+
+  for (auto& terms : write_enable_) {
+    forget(terms);
+  }
+
   for (dbBTerm* t : dropped) {
     odb::dbBTerm::destroy(t);
   }
@@ -4233,8 +4238,10 @@ double RamGen::reportTiming()
         pins->insert(network_->dbToSta(bterm));
       }
     }
-    for (auto* bterm : write_enable_) {
-      pins->insert(network_->dbToSta(bterm));
+    for (auto& port_enables : write_enable_) {
+      for (auto* bterm : port_enables) {
+        pins->insert(network_->dbToSta(bterm));
+      }
     }
     return pins;
   };
