@@ -159,7 +159,7 @@ struct ParallelEvalPolicyConfig
   float wns_tail_tns_ratio{10.0f};
   // A tail batch is WNS progress only when it raises the best WNS by this
   // percent of the reference clock period.
-  float wns_tail_min_gain_period_pct{0.05f};
+  float wns_tail_min_gain_period_pct{0.1f};
   // Tail work budget: this percent of the batch stage's work, at least
   // wns_tail_min_work.
   float wns_tail_work_pct{400.0f};

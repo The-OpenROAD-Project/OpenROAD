@@ -15,11 +15,11 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -34.849 |     -241.8 |     46 | resp_msg[13]
 [DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 16 (WNS 2.098e-11)
-    final |       0 |     187 |       35 |      0 |    17 |    +9.0% |   29.616 |        0.0 |     11 | resp_msg[13]
+    final |       0 |     160 |       35 |      0 |    16 |    +8.8% |   28.389 |        0.0 |     24 | resp_msg[12]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 35 buffers.
-[INFO RSZ-0051] Resized 187 instances: 36 up, 0 up match, 24 down, 127 VT
-[INFO RSZ-0043] Swapped pins on 17 instances.
+[INFO RSZ-0051] Resized 160 instances: 33 up, 0 up match, 9 down, 118 VT
+[INFO RSZ-0043] Swapped pins on 16 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max 29.616
+worst slack max 28.389
 tns max 0.000
