@@ -12,6 +12,7 @@ class dbNet;
 class dbTechLayer;
 class dbMarkerCategory;
 class dbMarker;
+class dbTransform;
 class dbBPin;
 class dbITerm;
 class dbInst;
@@ -37,7 +38,9 @@ class IRShort
   const odb::Polygon& getShape() const { return shape_; }
 
   void report(odb::dbNet* net, utl::Logger* logger, double dbu) const;
-  void commit(odb::dbNet* net, odb::dbMarkerCategory* category) const;
+  void commit(odb::dbNet* net,
+              odb::dbMarkerCategory* category,
+              const odb::dbTransform& marker_transform) const;
 
  protected:
   // Describes the object the net is shorted to.

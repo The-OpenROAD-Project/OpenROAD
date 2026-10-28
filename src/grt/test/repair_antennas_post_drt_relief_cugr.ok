@@ -20,4 +20,4 @@
 [INFO GRT-0015] Inserted 5 diodes.
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-Routed nets with new guides: 6, keeping their old wire: 0
+Routed nets with new guides: 13, keeping their old wire: 0

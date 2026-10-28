@@ -1982,6 +1982,94 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
   clearCongestionDirtyTiles();
 }
 
+// The inverse of updateDbCongestion(): for each edge, the map holds the
+// capacity plus the blockage (the tracks) and the usage plus the blockage.
+// With the same routes in this engine's usage, the blockage the edge had when
+// the map was written, and so its capacity, follow.
+int FastRouteCore::restoreCapacitiesFromDb(const int min_routing_layer,
+                                           const int max_routing_layer)
+{
+  if (h_edges_3D_.num_elements() == 0) {
+    return 0;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr || db_gcell->getNumGridPatternsX() != 1
+      || db_gcell->getNumGridPatternsY() != 1) {
+    return 0;
+  }
+  int origin_x, count_x, step_x, origin_y, count_y, step_y;
+  db_gcell->getGridPatternX(0, origin_x, count_x, step_x);
+  db_gcell->getGridPatternY(0, origin_y, count_y, step_y);
+  if (origin_x != x_corner_ || count_x != x_grid_ || step_x != tile_size_
+      || origin_y != y_corner_ || count_y != y_grid_ || step_y != tile_size_) {
+    debugPrint(logger_,
+               GRT,
+               "incr",
+               1,
+               "The odb congestion map is on another grid; capacities kept.");
+    return 0;
+  }
+
+  auto db_tech = db_->getTech();
+  int changed = 0;
+  int kept = 0;
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
+    odb::dbTechLayer* layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    const bool horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    const EdgeDirection direction
+        = horizontal ? EdgeDirection::Horizontal : EdgeDirection::Vertical;
+    for (int y = 0; y < y_grid_; y++) {
+      for (int x = 0; x < x_grid_; x++) {
+        // The last column (row) only mirrors its neighbor.
+        if ((horizontal && x == x_grid_ - 1)
+            || (!horizontal && y == y_grid_ - 1)) {
+          continue;
+        }
+        const Edge3D& edge
+            = horizontal ? h_edges_3D_[k][y][x] : v_edges_3D_[k][y][x];
+        const Edge3D& other
+            = horizontal ? v_edges_3D_[k][y][x] : h_edges_3D_[k][y][x];
+        const int tracks = std::lround(db_gcell->getCapacity(layer, x, y));
+        const int blockage = std::lround(db_gcell->getUsage(layer, x, y))
+                             - edge.usage - other.usage - other.red;
+        // Other tracks, or other routes, than the map was written with.
+        if (tracks != edge.cap + edge.red || blockage < 0
+            || blockage > tracks) {
+          kept++;
+          continue;
+        }
+        const int cap = tracks - blockage;
+        if (cap == edge.cap) {
+          continue;
+        }
+        const int delta = cap - edge.cap;
+        addAdjustment(x,
+                      y,
+                      horizontal ? x + 1 : x,
+                      horizontal ? y : y + 1,
+                      k + 1,
+                      cap,
+                      delta < 0);
+        graph2d_.addCap3D(x, y, k, direction, delta);
+        changed++;
+      }
+    }
+  }
+  debugPrint(logger_,
+             GRT,
+             "incr",
+             1,
+             "Capacities from the odb congestion map: {} edges changed, {} "
+             "kept (map inconsistent with the routes).",
+             changed,
+             kept);
+  return changed;
+}
+
 // The usage odb reports for one GCell on layer index `k`.  Shared by the full
 // rebuild and the incremental refresh so the two cannot drift apart.
 int FastRouteCore::gcellUsage(const int k, const int x, const int y) const
