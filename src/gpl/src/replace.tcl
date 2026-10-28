@@ -7,6 +7,7 @@ sta::define_cmd_args "global_placement" {\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-timing_driven_repair_timing]\
+    [-power_driven]\
     [-routability_driven]\
     [-virtual_cts]\
     [-incremental]\
@@ -46,7 +47,8 @@ sta::define_cmd_args "global_placement" {\
     [-disable_pin_density_adjust]\
     [-random_seed random_seed]\
     [-perturb_dist perturb_dist]\
-    [-enable_routing_congestion]
+    [-enable_routing_congestion]\
+    [-power_driven_net_weight power_driven_net_weight]
 }
 
 proc global_placement { args } {
@@ -74,12 +76,14 @@ proc global_placement { args } {
       -virtual_cts_max_skew_fraction \
       -random_seed \
       -perturb_dist \
-      -pad_left -pad_right} \
+      -pad_left -pad_right \
+      -power_driven_net_weight} \
     flags {-skip_initial_place \
       -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
       -timing_driven_repair_timing \
+      -power_driven \
       -routability_driven \
       -virtual_cts \
       -routability_use_grt \

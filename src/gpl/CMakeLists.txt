@@ -41,6 +41,7 @@ add_library(gpl_lib
   src/routeBase.cpp
   src/timingBase.cpp
   src/clockBase.cpp
+  src/powerBase.cpp
   src/graphicsNone.cpp
   src/solver.cpp
   src/mbff.cpp

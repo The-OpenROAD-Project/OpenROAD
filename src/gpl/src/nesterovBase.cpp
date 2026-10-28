@@ -365,6 +365,11 @@ void GNet::setCustomWeight(float customWeight)
   customWeight_ = customWeight;
 }
 
+void GNet::setPowerWeight(float powerWeight)
+{
+  powerWeight_ = powerWeight;
+}
+
 void GNet::addGPin(GPin* gPin)
 {
   gPins_.push_back(gPin);
