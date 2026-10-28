@@ -13,10 +13,24 @@ package(
 )
 
 cc_library(
+    name = "bottom_up_buffering",
+    srcs = [
+        "src/BottomUpBuffering.cpp",
+        "src/BufferingSearch.cpp",
+    ],
+    hdrs = [
+        "src/BottomUpBuffering.h",
+        "src/BufferingSearch.h",
+    ],
+    includes = ["src"],
+)
+
+cc_library(
     name = "cts_impl",
     srcs = [
         "src/Clock.cpp",
         "src/Clustering.cpp",
+        "src/CtsBuffering.cpp",
         "src/CtsOptions.cpp",
         "src/HTreeBuilder.cpp",
         "src/LatencyBalancer.cpp",
@@ -44,6 +58,7 @@ cc_library(
     ],
     visibility = ["//src/cts:__subpackages__"],
     deps = [
+        ":bottom_up_buffering",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/est",

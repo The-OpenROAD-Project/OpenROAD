@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2026, The OpenROAD Authors */
+library(cts_pin_mismatch) {
+    delay_model : table_lookup;
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    pulling_resistance_unit : "1kohm";
+    capacitive_load_unit (1,pf);
+    nom_process : 1;
+    nom_voltage : 1.1;
+    nom_temperature : 25;
+    cell(CTS_PIN_MISMATCH) {
+        area : 1;
+        pin(A) {
+            direction : input;
+            capacitance : 0.001;
+        }
+        pin(Z) {
+            direction : output;
+            function : "A";
+            max_capacitance : 0.01;
+        }
+    }
+}

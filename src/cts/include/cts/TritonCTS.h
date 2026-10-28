@@ -42,6 +42,8 @@ struct Tree;
 }  // namespace stt
 
 namespace cts {
+struct BufferingAudit;
+struct BufferingWireRC;
 
 class ClockInst;
 class CtsOptions;
@@ -77,6 +79,9 @@ class TritonCTS
   void setSinkBuffer(const char* buffers);
 
  private:
+  friend class BottomUpClockTreeTest;
+  void resetRunState();
+  void runClockTreeSynthesis();
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
@@ -95,6 +100,13 @@ class TritonCTS
   void checkCharacterization();
   void findClockRoots();
   void buildClockTrees();
+  void bufferClockTreeBottomUp(TreeBuilder* builder);
+  BufferingAudit checkClockTreeElectricals();
+  void checkClockPinElectricals(const sta::Pin* pin,
+                                bool driver,
+                                BufferingAudit& audit);
+  void finishClockTreeElectricals(BufferingAudit& audit);
+  BufferingWireRC validateBottomUpWireRC();
   void writeDataToDb();
 
   // NDR functions
@@ -203,6 +215,9 @@ class TritonCTS
                           std::unordered_set<odb::dbInst*>& dummies);
   bool computeIdealOutputCaps(Clock& clockNet);
   void findCandidateDummyCells(std::vector<sta::LibertyCell*>& dummyCandidates);
+  static sta::LibertyCell* findBestDummyCell(
+      const std::vector<sta::LibertyCell*>& dummyCandidates,
+      float deltaCap);
   odb::dbInst* insertDummyCell(
       Clock& clockNet,
       ClockInst* inst,
