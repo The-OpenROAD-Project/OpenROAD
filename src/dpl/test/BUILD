@@ -107,6 +107,16 @@ COMPULSORY_TESTS = [
 ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
+    name = "pin_access_service_fixture",
+    srcs = [
+        "repair_pin_access_tech.lef",
+        "repair_pin_access_failure.def",
+        "repair_pin_access_failure.lef",
+    ],
+    visibility = ["//src/drt/test:__pkg__"],
+)
+
+filegroup(
     name = "regression_resources",
     srcs = [
         "Nangate45/Nangate45.lef",

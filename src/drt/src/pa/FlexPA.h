@@ -123,8 +123,13 @@ class FlexPA
   void addAvoidViaDef(const frViaDef* via_def);
   void removeDirtyInst(frInst* inst);
   void updateDirtyInsts();
+  bool hasDirtyInsts() const { return !dirty_insts_.empty(); }
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
+  bool isPinAccessRequired(frInstTerm* term) const;
+  void beginRecovery(int min_access_points);
+  std::vector<odb::dbITerm*> getMissingPinAccess() const;
+  void finishRecovery();
 
   int main();
 
@@ -161,6 +166,8 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
   frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
+  bool recovery_active_{false};
+  int recovery_min_access_points_{1};
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -176,13 +183,14 @@ class FlexPA
   }
   void applyPatternsFile(const char* file_path);
   ViaRawPriorityTuple getViaRawPriority(const frViaDef* via_def) const;
-  bool isSkipInstTermLocal(frInstTerm* in);
-  bool isSkipInstTerm(frInstTerm* in);
+  bool isSkipInstTermLocal(frInstTerm* in) const;
+  bool isSkipInstTerm(frInstTerm* in) const;
   bool isSkipInst(frInst* inst);
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
   void init();
+  void updateDirtyRecoveryInsts();
   void initTrackCoords();
   void initViaRawPriority();
   void initAllSkipInstTerm();
@@ -238,6 +246,8 @@ class FlexPA
   bool EnoughAccessPoints(std::vector<std::unique_ptr<frAccessPoint>>& aps,
                           frInstTerm* inst_term,
                           pa_requirements_met& reqs);
+
+  int minAccessPoints(frInstTerm* inst_term);
 
   /**
    * @brief determines if the current access points meet the minimum sparse

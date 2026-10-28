@@ -173,6 +173,22 @@ test_suite(
 )
 
 cc_test(
+    name = "pin_access_service_unittest",
+    srcs = ["PinAccessServiceTest.cpp"],
+    data = ["//src/dpl/test:pin_access_service_fixture"],
+    deps = [
+        "//src/drt:drt_impl",
+        "//src/dst",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "gc_unittest",
     srcs = [
         "fixture.cpp",

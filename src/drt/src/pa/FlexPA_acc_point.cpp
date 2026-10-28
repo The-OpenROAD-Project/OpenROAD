@@ -1207,6 +1207,16 @@ void FlexPA::updatePinStats(
   }
 }
 
+int FlexPA::minAccessPoints(frInstTerm* inst_term)
+{
+  const int configured_min = isStdCellTerm(inst_term)
+                                 ? router_cfg_->MINNUMACCESSPOINT_STDCELLPIN
+                                 : router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN;
+  return recovery_active_
+             ? std::max(configured_min, recovery_min_access_points_)
+             : configured_min;
+}
+
 bool FlexPA::EnoughSparsePoints(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
     frInstTerm* inst_term)
@@ -1234,16 +1244,8 @@ bool FlexPA::EnoughSparsePoints(
     }
   }
 
-  if (is_std_cell_pin
-      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
-    return true;
-  }
-  if (is_macro_cell_pin
-      && n_sparse_access_points
-             >= router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN) {
-    return true;
-  }
-  return false;
+  return (is_std_cell_pin || is_macro_cell_pin)
+         && n_sparse_access_points >= minAccessPoints(inst_term);
 }
 
 bool FlexPA::EnoughPointsFarFromEdge(
@@ -1468,13 +1470,9 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   if (!enough_access_points && inst_term) {
     std::string unmet_requirements;
     if (!reqs.sparse_points) {
-      unmet_requirements
-          += "\n\tAt least "
-             + (isStdCellTerm(inst_term)
-                    ? std::to_string(router_cfg_->MINNUMACCESSPOINT_STDCELLPIN)
-                    : std::to_string(
-                          router_cfg_->MINNUMACCESSPOINT_MACROCELLPIN))
-             + " sparse access points";
+      unmet_requirements += "\n\tAt least "
+                            + std::to_string(minAccessPoints(inst_term))
+                            + " sparse access points";
     }
     debugPrint(logger_,
                utl::DRT,
@@ -1518,7 +1516,7 @@ void FlexPA::genInstAccessPoints(frInst* unique_inst)
     for (auto& pin : inst_term->getTerm()->getPins()) {
       n_aps += genPinAccess(pin.get(), inst_term.get());
     }
-    if (!n_aps) {
+    if (!n_aps && !(recovery_active_ && isStdCell(unique_inst))) {
       logger_->error(DRT,
                      73,
                      "No access point for {}/{} ({}).",

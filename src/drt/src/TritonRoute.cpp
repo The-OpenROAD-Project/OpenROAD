@@ -93,12 +93,130 @@ TritonRoute::~TritonRoute()
   service_registry_->withdraw<PinAccessService>(this);
 }
 
+bool TritonRoute::hasPinAccess() const
+{
+  return pa_block_ && !pa_recovery_active_ && db_callback_->hasOwner()
+         && db_->getChip() && db_->getChip()->getBlock() == pa_block_;
+}
+
+void TritonRoute::invalidatePinAccess()
+{
+  pa_recovery_active_ = false;
+  pa_block_ = nullptr;
+}
+
+bool TritonRoute::isPinAccessRequired(odb::dbITerm* term) const
+{
+  if (!hasPinAccess()) {
+    logger_->error(
+        DRT, 629, "Run full pin_access for the current design first.");
+  }
+  auto inst = design_->getTopBlock()->findInst(term->getInst());
+  const auto index = term->getMTerm()->getIndex();
+  auto inst_term = inst && index < inst->getInstTerms().size()
+                       ? inst->getInstTerm(index)
+                       : nullptr;
+  if (inst_term == nullptr) {
+    logger_->error(
+        DRT,
+        630,
+        "Pin access data is missing for {}/{}. Run full pin_access again.",
+        term->getInst()->getName(),
+        term->getMTerm()->getName());
+  }
+  return pa_->isPinAccessRequired(inst_term);
+}
+
 void TritonRoute::updateDirtyPinAccess()
 {
-  if (design_ == nullptr || design_->getTopBlock() == nullptr) {
+  if (pa_recovery_active_) {
+    updatePinAccessRecovery();
+    return;
+  }
+  if (!pa_rebuild_required_
+      && (design_ == nullptr || design_->getTopBlock() == nullptr)) {
     return;
   }
   updateDirtyPAData();
+}
+
+void TritonRoute::beginPinAccessRecovery(int min_access_points)
+{
+  if (min_access_points < 1) {
+    logger_->error(
+        DRT,
+        635,
+        "Pin access recovery minimum access points must be at least 1.");
+  }
+  if (distributed_) {
+    logger_->error(DRT, 631, "Pin access recovery requires local pin access.");
+  }
+  clearDesign();
+  try {
+    if (router_cfg_->DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+      router_cfg_->USENONPREFTRACKS = false;
+    }
+    router_cfg_->ENABLE_VIA_GEN = true;
+    initDesign();
+    pa_ = std::make_unique<FlexPA>(
+        getDesign(), logger_, dist_, router_cfg_.get());
+    if (debug_->debugPA) {
+      pa_->setDebug(graphics_factory_->makeUniquePAGraphics());
+    }
+    pa_recovery_active_ = true;
+    pa_block_ = db_->getChip()->getBlock();
+    pa_->beginRecovery(min_access_points);
+  } catch (...) {
+    cancelPinAccessRecovery();
+    throw;
+  }
+}
+
+std::vector<odb::dbITerm*> TritonRoute::getMissingPinAccess() const
+{
+  if (!pa_recovery_active_ || !pa_ || !db_callback_->hasOwner()
+      || !db_->getChip() || db_->getChip()->getBlock() != pa_block_) {
+    logger_->error(DRT, 632, "No active pin access recovery session.");
+  }
+  return pa_->getMissingPinAccess();
+}
+
+void TritonRoute::updatePinAccessRecovery()
+{
+  try {
+    if (!pa_recovery_active_ || !pa_ || !db_callback_->hasOwner()
+        || !db_->getChip() || db_->getChip()->getBlock() != pa_block_) {
+      logger_->error(DRT, 634, "No active pin access recovery session.");
+    }
+    design_->getTopBlock()->removeDeletedObjects();
+    pa_->updateDirtyInsts();
+  } catch (...) {
+    cancelPinAccessRecovery();
+    throw;
+  }
+}
+
+void TritonRoute::finishPinAccessRecovery()
+{
+  try {
+    updatePinAccessRecovery();
+    if (!getMissingPinAccess().empty()) {
+      logger_->error(DRT, 633, "Pin access recovery has unresolved terminals.");
+    }
+    pa_->finishRecovery();
+    io::Writer writer(getDesign(), logger_);
+    writer.updateDb(db_, router_cfg_.get(), true);
+    pa_recovery_active_ = false;
+  } catch (...) {
+    cancelPinAccessRecovery();
+    throw;
+  }
+}
+
+void TritonRoute::cancelPinAccessRecovery()
+{
+  // Detach callbacks before the placer restores trial locations.
+  clearDesign();
 }
 
 void TritonRoute::initGraphics(
@@ -368,8 +486,14 @@ void TritonRoute::resetDb(const char* file_name)
   }
 }
 
-void TritonRoute::clearDesign()
+void TritonRoute::clearDesign(bool detach_callback)
 {
+  invalidatePinAccess();
+  pa_rebuild_required_ = false;
+  pa_.reset();
+  if (detach_callback) {
+    db_callback_->removeOwner();
+  }
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
 }
 
@@ -583,6 +707,7 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
+  invalidatePinAccess();
   if (db_ == nullptr || db_->getChip() == nullptr
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
@@ -1129,6 +1254,7 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   pa_->main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get(), true);
+  pa_block_ = target_insts.empty() ? db_->getChip()->getBlock() : nullptr;
 }
 
 void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
@@ -1156,11 +1282,22 @@ void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
 }
 void TritonRoute::updateDirtyPAData()
 {
-  if (pa_) {
+  try {
+    if (pa_rebuild_required_) {
+      pinAccess();
+      return;
+    }
+    if (!pa_ || !pa_->hasDirtyInsts()) {
+      return;
+    }
     design_->getTopBlock()->removeDeletedObjects();
     pa_->updateDirtyInsts();
     io::Writer writer(getDesign(), logger_);
     writer.updateDb(getDb(), getRouterConfiguration(), true);
+  } catch (...) {
+    pa_block_ = nullptr;
+    pa_rebuild_required_ = true;
+    throw;
   }
 }
 

@@ -90,6 +90,12 @@ class UniqueClass
   frInst* getFirstInst() const;
   bool isSkipTerm(frMTerm* term) const;
   void setSkipTerm(frMTerm* term, bool skip);
+  void resetSkipTerms()
+  {
+    for (auto& [term, skip] : skip_term_) {
+      skip = true;
+    }
+  }
   bool isInitialized() const { return pin_access_idx_ != -1; }
 
  private:
