@@ -1795,7 +1795,7 @@ void NesterovBaseCommon::getWireLengthGradientsWA(
   if (log_->debugCheck(GPL, "getGradientWA", 1)) {
     for (size_t i = 0; i < num_gcells; ++i) {
       const GCell* gCell = gCells[i];
-      if (gCell && gCell->isInstance()) {
+      if (gCell->isInstance()) {
         debugPrint(log_,
                    GPL,
                    "getGradientWA",
@@ -2716,8 +2716,8 @@ NesterovBase::~NesterovBase() = default;
 void NesterovBase::updateGCellCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) schedule(static)
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+#pragma omp parallel for `num_threads(nbc_->getNumThreads()) schedule(static)
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
 #ifdef ENABLE_GPU
@@ -2731,7 +2731,7 @@ void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) schedule(static)
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
   if (io_) {
