@@ -1252,6 +1252,15 @@ double FastRouteCore::getUsageNDRAware(FrNet* net,
   return std::max(usage, capacity - 1.0 + kNdrDeficitCost * deficit);
 }
 
+// The 3D maze routing runs on a 2D routing without usage overflow. The NDR
+// deficit in `overflow_2d` does not count: it comes from first-fit layer
+// reservations in 2D, which layer assignment can improve on, and the NDR nets
+// it leaves overflowing in 3D are demoted (see disableNDRForCongestedNets).
+bool FastRouteCore::canRunMaze3D(const int overflow_2d) const
+{
+  return overflow_2d == graph2d_.getTotalNDRDeficit();
+}
+
 bool FastRouteCore::hasNonSoftNdrNets() const
 {
   for (const int net_id : net_ids_) {
@@ -2754,8 +2763,9 @@ NetRouteMap FastRouteCore::run()
     }
 
     // Mismatch between 2D and 3D congestion related to NDR nets. An NDR
-    // deficit left in 2D always becomes 3D overflow, even when the totals
-    // happen to match.
+    // deficit left in 2D may or may not become 3D overflow, as layer
+    // assignment can fit nets the first-fit 2D reservations could not, so it
+    // is checked even when the totals happen to match.
     if (past_cong != total_overflow_ || graph2d_.getTotalNDRDeficit() > 0) {
       disableNDRForCongestedNets(net_ids_);
       long_edge_len = BIG_INT;
@@ -2766,7 +2776,7 @@ NetRouteMap FastRouteCore::run()
     costheight_ = 3;
     via_cost_ = 1;
 
-    if (past_cong == 0) {
+    if (canRunMaze3D(past_cong)) {
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
         long_edge_len = BIG_INT;

@@ -2271,8 +2271,10 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
+  int ndr_deficit = 0;
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     total_usage += graph2d_.getUsageH(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Horizontal);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
       if (logger_->debugCheck(GRT, "congestion2D", 1)) {
@@ -2290,6 +2292,7 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     total_usage += graph2d_.getUsageV(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Vertical);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
       if (logger_->debugCheck(GRT, "congestion2D", 1)) {
@@ -2307,7 +2310,8 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
 
   int max_overflow = std::max(max_H_overflow, max_V_overflow);
   // The tracks the NDR nets miss are overflow too, though not edge usage.
-  const int ndr_deficit = graph2d_.getTotalNDRDeficit();
+  // They are summed over the edges rather than read from the running
+  // total, so that the overflow checks catch the total drifting.
   total_overflow_ = H_overflow + V_overflow + ndr_deficit;
   *maxOverflow = max_overflow;
 
@@ -2350,9 +2354,11 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
   int numedges = 0;
 
   int total_usage = 0;
+  int ndr_deficit = 0;
 
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     total_usage += graph2d_.getEstUsageH(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Horizontal);
     const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
     hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
@@ -2371,6 +2377,7 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     total_usage += graph2d_.getEstUsageV(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Vertical);
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
@@ -2389,7 +2396,8 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
 
   const int max_overflow = std::max(max_H_overflow, max_V_overflow);
   // The tracks the NDR nets miss are overflow too, though not edge usage.
-  const int ndr_deficit = graph2d_.getTotalNDRDeficit();
+  // They are summed over the edges rather than read from the running
+  // total, so that the overflow checks catch the total drifting.
   total_overflow_ = H_overflow + V_overflow + ndr_deficit;
   *maxOverflow = max_overflow;
 

@@ -157,10 +157,13 @@ class Graph2D
                             EdgeDirection direction) const;
   // True when an NDR net using the edge fits no single layer there.
   bool hasNDRDeficit(int x, int y, EdgeDirection direction) const;
+  // Deficit of all the NDR nets using the edge.
+  int getEdgeNDRDeficit(int x, int y, EdgeDirection direction) const;
   int getTotalNDRDeficit() const { return ndr_deficit_total_; }
 
  private:
   friend class Graph2DTestPeer;
+  friend class OverflowTestPeer;
 
   int x_grid_ = 0;
   int y_grid_ = 0;
@@ -249,6 +252,7 @@ class Graph2D
                           int y,
                           EdgeDirection dir,
                           const NDRUsage& ndr_usage);
+  void refitNDRDeficitNets(int x, int y, EdgeDirection dir);
 
   multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
   multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)

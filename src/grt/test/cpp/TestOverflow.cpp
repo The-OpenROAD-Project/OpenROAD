@@ -94,6 +94,14 @@ class OverflowTestPeer
   {
     return router.getUsageNDRAware(net, x, y, direction, usage);
   }
+  static bool canRunMaze3D(const FastRouteCore& router, int overflow_2d)
+  {
+    return router.canRunMaze3D(overflow_2d);
+  }
+  static void corruptNDRDeficitTotal(FastRouteCore& router)
+  {
+    router.graph2d_.ndr_deficit_total_++;
+  }
   static constexpr int kNdrDeficitCost = FastRouteCore::kNdrDeficitCost;
 };
 
@@ -569,6 +577,84 @@ TEST_F(NDRDeficitTest, ReducedEdgeIsPricedAgainstItsOwnCapacity)
   EXPECT_DOUBLE_EQ(usageSeenBy(ndr_net_, 0, usage),
                    capacity - 1 + OverflowTestPeer::kNdrDeficitCost);
   EXPECT_DOUBLE_EQ(usageSeenBy(regular_nets_[0], 0, usage), usage);
+}
+
+// The tracks a net releases go to the NDR nets that missed tracks on the
+// edge, so that their deficit does not outlive the net that caused it.
+TEST_F(NDRDeficitTest, ReleasedTracksLetDeficitNetsFit)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(1, {2, 2, 3});
+  FrNet* second_ndr_net = addNet("second_ndr", kNdrWidth);
+  FrNet* third_ndr_net = addNet("third_ndr", kNdrWidth);
+
+  // The first NDR net takes the top layer, the other two miss a track each.
+  graph.updateUsageH(1, 0, ndr_net_, kNdrWidth);
+  graph.updateUsageH(1, 0, second_ndr_net, kNdrWidth);
+  graph.updateUsageH(1, 0, third_ndr_net, kNdrWidth);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 2);
+
+  // Once it leaves, the top layer goes to the remaining net with the lowest
+  // id, and the 2D overflow only counts the net still left without room.
+  graph.updateUsageH(1, 0, ndr_net_, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(second_ndr_net, 1, 0, kH), 0);
+  EXPECT_EQ(graph.getNDRDeficit(third_ndr_net, 1, 0, kH), 1);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 1);
+
+  graph.updateUsageH(1, 0, second_ndr_net, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(third_ndr_net, 1, 0, kH), 0);
+  EXPECT_FALSE(graph.hasNDRDeficit(1, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+
+  // The last rip-up returns all the NDR capacity of the edge.
+  graph.updateUsageH(1, 0, third_ndr_net, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 1, 0, kH), 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+}
+
+// The 2D deficit comes from first-fit layer reservations. Here the narrow net,
+// reserved first, takes the bottom layer and leaves the wide net a track short,
+// although the narrow net on the middle layer and the wide one on the bottom
+// layer would both fit. Layer assignment can find that, so a deficit alone
+// does not keep the 3D maze routing from running.
+TEST_F(NDRDeficitTest, DeficitAloneDoesNotBlockMaze3D)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {3, 2, 0});
+  FrNet* narrow_ndr_net = addNet("narrow_ndr", 2);
+  graph.updateUsageH(0, 0, narrow_ndr_net, 2);
+  graph.updateUsageH(0, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(ndr_net_, 0, 0, kH), 1);
+
+  const int overflow
+      = OverflowTestPeer::query2D(*router_, false, false).overflow;
+  EXPECT_EQ(overflow, 1);
+  EXPECT_TRUE(OverflowTestPeer::canRunMaze3D(*router_, overflow));
+
+  // Usage overflow still blocks it.
+  graph.updateUsageH(0, 0, regular_nets_[0], 1);
+  const int congested
+      = OverflowTestPeer::query2D(*router_, false, false).overflow;
+  EXPECT_EQ(congested, 2);
+  EXPECT_FALSE(OverflowTestPeer::canRunMaze3D(*router_, congested));
+}
+
+// The full-scan reference sums the deficits of the edges, so the overflow
+// checks catch a running total that drifts from them.
+TEST_F(NDRDeficitTest, DebugCheckDetectsNDRDeficitDrift)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {2, 2, 2});
+  graph.updateUsageH(0, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 1);
+
+  OverflowTestPeer::corruptNDRDeficitTotal(*router_);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, true).overflow, 1);
+  EXPECT_THROW(OverflowTestPeer::query2D(*router_, false, false),
+               std::runtime_error);
+  EXPECT_THROW(OverflowTestPeer::query2D(*router_, true, false),
+               std::runtime_error);
 }
 
 }  // namespace

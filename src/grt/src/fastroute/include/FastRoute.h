@@ -493,6 +493,7 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  bool canRunMaze3D(int overflow_2d) const;
   void addNeighborPoints(int netID,
                          int n1,
                          int n2,
