@@ -221,7 +221,7 @@ class Lab
  public:
   explicit Lab(const Options& o)
       : o_(o),
-        stack_(fsv::readItfFile(o.itf)),
+        stack_(readStack(o.itf)),
         solver_({.threads = o.threads}),
         layer_(layer(o.layer))
   {
@@ -241,6 +241,17 @@ class Lab
       }
       csv_ << "experiment,stack,layer,case,quantity,truth,sigma,model,error\n";
     }
+  }
+
+  // The stack, with whatever the reader skipped reported.
+  static fsv::Stack readStack(const std::string& itf)
+  {
+    std::vector<fsv::ItfWarning> warnings;
+    fsv::Stack stack = fsv::readItfFile(itf, &warnings);
+    for (const fsv::ItfWarning& w : warnings) {
+      std::printf("# %s line %d: %s\n", itf.c_str(), w.line, w.message.c_str());
+    }
+    return stack;
   }
 
   // The handle of a layer the experiments name; none for "". Throws for
