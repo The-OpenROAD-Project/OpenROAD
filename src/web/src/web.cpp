@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -23,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -47,6 +47,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "report_html.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
 #include "tcl.h"
@@ -123,17 +124,6 @@ std::string sanitizeFilename(std::string name)
     name = "layout.png";
   }
   return name;
-}
-
-// Parse an integer that must span the whole string_view (no trailing garbage),
-// exception-free.  Returns false on any malformed/partial input.
-template <typename T>
-bool parseIntExact(std::string_view s, T& out, int base = 10)
-{
-  const char* const first = s.data();
-  const char* const last = first + s.size();
-  const auto res = std::from_chars(first, last, out, base);
-  return res.ec == std::errc{} && res.ptr == last;
 }
 
 // Percent-decode a URL query value (e.g. the JSON `vis` payload).
@@ -213,12 +203,25 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
+// The plain-text response every HTTP answer starts from.
+http::response<http::string_body> textResponse(const http::status status,
+                                               const unsigned version,
+                                               const bool keep_alive)
+{
+  http::response<http::string_body> res{status, version};
+  res.set(http::field::server, "OpenROAD");
+  res.set(http::field::content_type, "text/plain");
+  res.set(http::field::access_control_allow_origin, "*");
+  res.keep_alive(keep_alive);
+  return res;
+}
+
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
                          std::string_view target,
                          http::response<http::string_body>& res)
 {
-  if (!generator) {
+  if (!generator || !generator->getBlock()) {
     res.result(http::status::not_found);
     res.body() = "No design loaded.";
     return;
@@ -266,11 +269,6 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
-  if (png.empty()) {
-    res.result(http::status::internal_server_error);
-    res.body() = "Image render failed.";
-    return;
-  }
 
   const auto fname_it = params.find("filename");
   const std::string filename = sanitizeFilename(
@@ -307,16 +305,13 @@ class ScriptGateScope
   const bool entered_;
 };
 
-static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req,
+// The routing itself.  Anything it throws is caught by handle_request below.
+static http::response<http::string_body> dispatch_request(
+    const http::request<http::string_body>& req,
     const std::shared_ptr<TileGenerator>& generator,
     ScriptGate& script_gate)
 {
-  http::response<http::string_body> res{http::status::ok, req.version()};
-  res.set(http::field::server, "Boost.Beast Server (C++17)");
-  res.set(http::field::content_type, "text/plain");
-  res.keep_alive(req.keep_alive());
-  res.set(http::field::access_control_allow_origin, "*");
+  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the download handler needs the
@@ -335,15 +330,7 @@ static http::response<http::string_body> handle_request(
     } else {
       const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
-        res.set(http::field::content_type, asset->content_type);
-        // The assets are compiled into the binary, so their URLs carry no
-        // version and never change.  Without this a browser is free to
-        // heuristically cache them, and a tab reloaded against a rebuilt
-        // OpenROAD keeps running the old JavaScript -- the change appears
-        // to have done nothing until someone thinks to hard-reload.  They
-        // are served from memory, so re-fetching them costs nothing.
-        res.set(http::field::cache_control, "no-store");
-        res.body() = std::string(asset->content());
+        serveEmbeddedAsset(*asset, req[http::field::accept_encoding], res);
       } else {
         res.result(http::status::not_found);
         res.body() = "Resource not found.";
@@ -356,6 +343,25 @@ static http::response<http::string_body> handle_request(
 
   res.prepare_payload();
   return res;
+}
+
+// utl::Logger::error throws: answer 500 rather than drop the connection.
+static http::response<http::string_body> handle_request(
+    http::request<http::string_body>&& req,
+    const std::shared_ptr<TileGenerator>& generator,
+    ScriptGate& script_gate,
+    utl::Logger* logger)
+{
+  try {
+    return dispatch_request(req, generator, script_gate);
+  } catch (const std::exception& e) {
+    logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
+    auto res = textResponse(
+        http::status::internal_server_error, req.version(), req.keep_alive());
+    res.body() = "Request failed.";
+    res.prepare_payload();
+    return res;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -401,6 +407,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   // Debug-graphics hook (nullable).  When set, this session registers a
   // send callback for server-push broadcasts (pause/continue notifications).
   WebViewerHook* viewer_hook_ = nullptr;
+  std::shared_ptr<SessionRegistry> registry_;  // the one viewer_token_ is in
   std::size_t viewer_token_ = 0;
 
   // In-flight request window announced to the client on connect.
@@ -928,12 +935,12 @@ WebSocketSession::~WebSocketSession()
       }
     }
   }
-  if (viewer_hook_ != nullptr && viewer_token_ != 0) {
-    viewer_hook_->sessions().remove(viewer_token_);
+  if (registry_ && viewer_token_ != 0) {
+    registry_->remove(viewer_token_);
   }
-  if (init_thread_.joinable()) {
-    init_thread_.join();
-  }
+  // The init thread may have dropped the last reference, and then this runs on
+  // it, where a join would deadlock.
+  joinUnlessSelf(init_thread_);
   std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
   if (!state_.active_heatmap.empty()) {
     auto active = state_.heatmaps.find(state_.active_heatmap);
@@ -1001,7 +1008,8 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // browsers reject with "A server must not mask any frames".
   if (viewer_hook_ != nullptr) {
     auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
-    viewer_token_ = viewer_hook_->sessions().add(
+    registry_ = viewer_hook_->sessionsHandle();
+    viewer_token_ = registry_->add(
         // SendFn — queue a JSON push message on this session's write queue.
         [weak_self](const std::string& json) {
           auto self = weak_self.lock();
@@ -1132,12 +1140,10 @@ namespace {
 
 // Run a request handler, converting any exception into an error response.
 //
-// Handlers run either on the read thread or on a bare io_context thread, and
-// neither has a try/catch above it: the threads run io_context::run() directly
-// (see createAndRunListener), so an exception escaping a handler unwinds out of
-// the thread function and calls std::terminate -- the whole openroad process
-// dies, taking the design with it.  A malformed request must cost the client
-// one error response, never the session.
+// An exception escaping a handler reaches runIoContext(), which logs it, but
+// the request goes unanswered and, on the read thread, the session stops
+// reading.  A malformed request must cost the client one error response,
+// never the session.
 //
 // The obvious offender is a field whose JSON type is wrong -- boost::json's
 // as_int64()/as_string() throw rather than return an error.  See
@@ -1373,8 +1379,8 @@ void HttpSession::on_read(beast::error_code ec)
     return;
   }
 
-  res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), generator_, tcl_eval_->script_gate));
+  res_ = std::make_shared<http::response<http::string_body>>(handle_request(
+      std::move(req_), generator_, tcl_eval_->script_gate, logger_));
   do_write();
 }
 
@@ -1707,19 +1713,10 @@ void WebServer::stopAndJoinIoThreads()
   if (ioc_) {
     ioc_->stop();
   }
-  const auto self_id = std::this_thread::get_id();
+  // ioc_->stop() unblocks the workers, so the one joinUnlessSelf detaches (when
+  // stop() runs on a worker) finishes on its own.
   for (auto& t : threads_) {
-    if (!t.joinable()) {
-      continue;
-    }
-    if (t.get_id() == self_id) {
-      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
-      // worker so detaching is safe — the thread runs to completion on
-      // its own.
-      t.detach();
-    } else {
-      t.join();
-    }
+    joinUnlessSelf(t);
   }
   threads_.clear();
 }
@@ -1765,11 +1762,6 @@ WebServer::~WebServer()
   (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
 }
 
-// Embedded JS/CSS for standalone timing report (generated at build time
-// by embed_report_assets.py → report_assets.cpp).
-extern const std::string_view kReportCSS;
-extern const std::string_view kReportJS;
-
 static std::string base64Encode(const std::vector<unsigned char>& data)
 {
   static const char kChars[]
@@ -1802,6 +1794,25 @@ void WebServer::saveReport(const std::string& filename,
     logger_->error(utl::WEB, 35, "No design loaded.");
     return;
   }
+
+  // Inflated before the file is opened, so a blob that fails to inflate
+  // leaves no half-written report behind.
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  const std::string report_head = reportHead(page ? assetText(*page) : "");
+  if (report_head.empty()) {
+    logger_->error(
+        utl::WEB, 118, "The embedded viewer page has no saved-report block.");
+  }
+  const std::string report_js = assetText(kReportJS);
+  // The report carries the bundled libraries' code, so their licences too.
+  const EmbeddedAsset* licenses_asset
+      = findEmbeddedAsset("/THIRD_PARTY_LICENSES.txt");
+  if (!licenses_asset) {
+    logger_->error(
+        utl::WEB, 117, "The embedded third-party licences are missing.");
+    return;
+  }
+  const std::string licenses = htmlCommentSafe(assetText(*licenses_asset));
 
   std::ofstream out(filename);
   if (!out) {
@@ -1957,22 +1968,20 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head: the served page's stylesheets, icons inlined as data: URIs, so
+  // the file opens with no server and no network.
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-<link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
-<style>
-)" << kReportCSS
+<!--
+)" << licenses
       << R"(
-</style>
+-->
+)" << report_head
+      << R"(
 </head>
 <body>
 <div id="menu-bar"></div>
@@ -1985,29 +1994,34 @@ void WebServer::saveReport(const std::string& filename,
   </div>
 </div>
 <script>
-window.__STATIC_CACHE__ = {
+window.__STATIC_CACHE__ = )";
+
+  // The whole cache object goes through scriptSafeJson once: none of it may
+  // end the <script> block early.
+  std::ostringstream cache;
+  cache << R"({
   zoom: )"
-      << kZ << R"(,
+        << kZ << R"(,
   json: {
     "tech": )"
-      << tech_json << R"(,
+        << tech_json << R"(,
     "bounds": )"
-      << bounds_json << R"(,
+        << bounds_json << R"(,
     "heatmaps": {"active":"","heatmaps":[]},
     "timing_report:setup": )"
-      << setup_json << R"(,
+        << setup_json << R"(,
     "timing_report:hold": )"
-      << hold_json << R"(,
+        << hold_json << R"(,
     "slack_histogram:setup": )"
-      << hist_setup << R"(,
+        << hist_setup << R"(,
     "slack_histogram:hold": )"
-      << hist_hold << R"(,
+        << hist_hold << R"(,
     "fanout_histogram": )"
-      << hist_fanout << R"(,
+        << hist_fanout << R"(,
     "chart_filters": )"
-      << filters << R"(,
+        << filters << R"(,
     "module_hierarchy": )"
-      << hierarchy_json << R"(
+        << hierarchy_json << R"(
   },
   tiles: {)";
 
@@ -2015,47 +2029,48 @@ window.__STATIC_CACHE__ = {
   // special characters consistently (the value side is already base64).
   for (size_t i = 0; i < tile_entries.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
-    out << "\n    "
-        << boost::json::serialize(boost::json::value(tile_entries[i].first))
-        << ":\"" << tile_entries[i].second << "\"";
+    cache << "\n    "
+          << boost::json::serialize(boost::json::value(tile_entries[i].first))
+          << ":\"" << tile_entries[i].second << "\"";
   }
 
-  out << R"(
+  cache << R"(
   },
   overlays: {
     setup: [)";
   for (size_t i = 0; i < setup_overlays.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
     if (setup_overlays[i].empty()) {
-      out << "null";
+      cache << "null";
     } else {
-      out << "\"" << setup_overlays[i] << "\"";
+      cache << "\"" << setup_overlays[i] << "\"";
     }
   }
-  out << R"(],
+  cache << R"(],
     hold: [)";
   for (size_t i = 0; i < hold_overlays.size(); ++i) {
     if (i > 0) {
-      out << ",";
+      cache << ",";
     }
     if (hold_overlays[i].empty()) {
-      out << "null";
+      cache << "null";
     } else {
-      out << "\"" << hold_overlays[i] << "\"";
+      cache << "\"" << hold_overlays[i] << "\"";
     }
   }
-  out << R"(]
+  cache << R"(]
   }
-};
+})";
+  out << scriptSafeJson(cache.str()) << R"(;
 </script>
-<script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
-import * as THREE from 'https://esm.sh/three@0.160.0';
-)" << kReportJS
+)" <<  // Deferred like the served page's app.min.js: golden-layout will not
+       // lay out a page that is still being parsed.
+      R"(<script type="module">
+)" << report_js
       << R"(
 </script>
 </body>
@@ -2625,9 +2640,6 @@ void WebServer::gifAddFrame(std::optional<int> key,
                                       viewerBackground(viewer_hook_.get()),
                                       &w,
                                       &h);
-  if (rgba.empty()) {
-    return;  // renderImageBuffer already logged the error.
-  }
 
   const int d = delay.value_or(kDefaultGifDelay);
   if (gif->frame_count == 0) {
@@ -2635,10 +2647,9 @@ void WebServer::gifAddFrame(std::optional<int> key,
     gif->width = w;
     gif->height = h;
     if (!gif->encoder.begin(gif->filename, w, h, d)) {
-      logger_->error(
-          utl::WEB, 71, "Failed to open GIF file {}.", gif->filename);
+      const std::string filename = gif->filename;  // `gif` dies with the slot
       gifs_[idx].reset();
-      return;
+      logger_->error(utl::WEB, 71, "Failed to open GIF file {}.", filename);
     }
   } else if (w != gif->width || h != gif->height) {
     // Later frames are scaled to match the first (like gui's QImage::scaled).
@@ -2646,8 +2657,8 @@ void WebServer::gifAddFrame(std::optional<int> key,
   }
 
   if (!gif->encoder.addFrame(rgba, gif->width, gif->height, d)) {
+    gifs_[idx].reset();
     logger_->error(utl::WEB, 72, "Failed to write GIF frame.");
-    return;
   }
   ++gif->frame_count;
 }
@@ -2666,13 +2677,15 @@ void WebServer::gifEnd(std::optional<int> key)
     gifs_[idx].reset();
     return;
   }
-  gif->encoder.end();
-  logger_->info(utl::WEB,
-                75,
-                "Saved animated GIF ({} frames) to {}.",
-                gif->frame_count,
-                gif->filename);
+  const bool written = gif->encoder.end();
+  const std::string filename = gif->filename;  // `gif` dies with the slot
+  const int frames = gif->frame_count;
   gifs_[idx].reset();
+  if (!written) {
+    logger_->error(utl::WEB, 127, "Failed to write GIF {}.", filename);
+  }
+  logger_->info(
+      utl::WEB, 75, "Saved animated GIF ({} frames) to {}.", frames, filename);
 }
 
 std::string WebServer::addToolbarButton(const std::string& name,

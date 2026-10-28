@@ -59,6 +59,7 @@ class Progress;
   X(EXA)                \
   X(FIN)                \
   X(FLW)                \
+  X(FSV)                \
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \
@@ -99,7 +100,7 @@ class Progress;
 enum ToolId
 {
   FOREACH_TOOL(GENERATE_ENUM)
-      SIZE  // the number of tools, do not put anything after this
+  SIZE  // the number of tools, do not put anything after this
 };
 
 class Logger
@@ -166,10 +167,10 @@ class Logger
   }
 
   template <typename... Args>
-  __attribute__((noreturn)) void error(ToolId tool,
-                                       int id,
-                                       const std::string& message,
-                                       const Args&... args)
+  [[noreturn]] void error(ToolId tool,
+                          int id,
+                          const std::string& message,
+                          const Args&... args)
   {
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
@@ -178,10 +179,10 @@ class Logger
   }
 
   template <typename... Args>
-  __attribute__((noreturn)) void critical(ToolId tool,
-                                          int id,
-                                          const std::string& message,
-                                          const Args&... args)
+  [[noreturn]] void critical(ToolId tool,
+                             int id,
+                             const std::string& message,
+                             const Args&... args)
   {
     log(tool, spdlog::level::level_enum::critical, id, message, args...);
     exit(EXIT_FAILURE);
@@ -407,9 +408,9 @@ struct test_ostream
 {
  public:
   template <class T>
-  static auto test(int) -> decltype(std::declval<std::ostream>()
-                                        << std::declval<T>(),
-                                    std::true_type());
+  static auto test(int)
+      -> decltype(std::declval<std::ostream>() << std::declval<T>(),
+                  std::true_type());
 
   template <class>
   static auto test(...) -> std::false_type;

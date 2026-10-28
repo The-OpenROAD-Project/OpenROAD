@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 
 #include "ir.h"

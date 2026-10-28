@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm_web//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -13,148 +16,118 @@ package(
 )
 
 py_binary(
-    name = "embed_report_assets",
-    srcs = ["src/embed_report_assets.py"],
-    main = "src/embed_report_assets.py",
-)
-
-py_binary(
     name = "embed_web_assets",
     srcs = ["src/embed_web_assets.py"],
     main = "src/embed_web_assets.py",
 )
 
-genrule(
-    name = "report_assets",
-    srcs = [
-        "src/style.css",
-        "src/theme.js",
-        "src/display-state.js",
-        "src/3d-viewer-widget.js",
-        "src/coordinates.js",
-        "src/ui-utils.js",
-        "src/checkbox-tree-model.js",
-        "src/vis-tree.js",
-        "src/websocket-manager.js",
-        "src/tile-merge.js",
-        "src/tile-request.js",
-        "src/device-pixels.js",
-        "src/layer-extents.js",
-        "src/websocket-tile-layer.js",
-        "src/merged-tile-layer.js",
-        "src/display-controls.js",
-        "src/inspector.js",
-        "src/ruler.js",
-        "src/label-manager.js",
-        "src/tcl-completer.js",
-        "src/hierarchy-browser.js",
-        "src/menu-bar.js",
-        "src/options-dialogs.js",
-        "src/context-menu.js",
-        "src/search-nav.js",
-        "src/capture.js",
-        "src/toolbar.js",
-        "src/image-export.js",
-        "src/edit-dialogs.js",
-        "src/title.js",
-        "src/clock-tree-widget.js",
-        "src/schematic-widget.js",
-        "src/charts-widget.js",
-        "src/timing-widget.js",
-        "src/drc-widget.js",
-        "src/selection-browser.js",
-        "src/main.js",
-    ],
-    outs = ["src/report_assets.cpp"],
-    cmd = "$(execpath :embed_report_assets)" +
-          " --output $@" +
-          " --css $(location src/style.css)" +
-          " --js $(location src/theme.js)" +
-          " $(location src/display-state.js)" +
-          " $(location src/3d-viewer-widget.js)" +
-          " $(location src/coordinates.js)" +
-          " $(location src/ui-utils.js)" +
-          " $(location src/checkbox-tree-model.js)" +
-          " $(location src/vis-tree.js)" +
-          " $(location src/websocket-manager.js)" +
-          " $(location src/tile-merge.js)" +
-          " $(location src/tile-request.js)" +
-          " $(location src/device-pixels.js)" +
-          " $(location src/layer-extents.js)" +
-          " $(location src/websocket-tile-layer.js)" +
-          " $(location src/merged-tile-layer.js)" +
-          " $(location src/display-controls.js)" +
-          " $(location src/inspector.js)" +
-          " $(location src/ruler.js)" +
-          " $(location src/label-manager.js)" +
-          " $(location src/tcl-completer.js)" +
-          " $(location src/hierarchy-browser.js)" +
-          " $(location src/menu-bar.js)" +
-          " $(location src/options-dialogs.js)" +
-          " $(location src/context-menu.js)" +
-          " $(location src/search-nav.js)" +
-          " $(location src/capture.js)" +
-          " $(location src/toolbar.js)" +
-          " $(location src/image-export.js)" +
-          " $(location src/edit-dialogs.js)" +
-          " $(location src/title.js)" +
-          " $(location src/clock-tree-widget.js)" +
-          " $(location src/schematic-widget.js)" +
-          " $(location src/charts-widget.js)" +
-          " $(location src/timing-widget.js)" +
-          " $(location src/drc-widget.js)" +
-          " $(location src/selection-browser.js)" +
-          " $(location src/main.js)",
-    tools = [":embed_report_assets"],
+py_binary(
+    name = "inline_styles",
+    srcs = ["src/inline_styles.py"],
+    main = "src/inline_styles.py",
 )
 
+py_binary(
+    name = "collect_licenses",
+    srcs = ["src/collect_licenses.py"],
+    main = "src/collect_licenses.py",
+)
+
+# ── The browser bundle ──────────────────────────────────────────────────────
+# The viewer and its npm libraries, bundled and minified for web_assets below.
+# The CMake build embeds the copy in dist/ (see dist/README.md).
+
+npm_link_all_packages(name = "node_modules")
+
+# What the bundle carries, with their dependencies, and so whose licences ship
+# with it.
+_BUNDLED_PACKAGES = [":node_modules/" + p for p in [
+    "golden-layout",
+    "leaflet",
+    "lit",
+    "netlistsvg",
+    "three",
+]]
+
+js_library(
+    name = "app_js",
+    srcs = glob(["src/*.js"]) + [
+        "esbuild.config.mjs",
+        "src/openroad_skin.svg",
+    ],
+    deps = _BUNDLED_PACKAGES,
+)
+
+# The stylesheets import Golden Layout's and Leaflet's CSS.
+js_library(
+    name = "css",
+    srcs = glob(["src/*.css"]),
+    deps = [
+        ":node_modules/golden-layout",
+        ":node_modules/leaflet",
+    ],
+)
+
+# $(SRCS) expands to every package directory, dependencies included.
+genrule(
+    name = "third_party_licenses",
+    srcs = _BUNDLED_PACKAGES,
+    outs = ["bundle/THIRD_PARTY_LICENSES.txt"],
+    cmd = "$(execpath :collect_licenses) --output $@ $(SRCS)",
+    tools = [":collect_licenses"],
+)
+
+[esbuild(
+    name = name,
+    config = "esbuild.config.mjs",
+    entry_point = "src/%s" % entry,
+    # sax requires Node's stream inside a try, and falls back without it.
+    external = ["stream"],
+    minify = True,
+    output = output,
+    # No .map is served; esbuild.config.mjs cannot set this key.
+    sourcemap = "",
+    deps = [":app_js" if entry.endswith(".js") else ":css"],
+) for name, entry, output in [
+    ("app_bundle", "entry-app.js", "bundle/app.min.js"),
+    # Without netlistsvg and three, whose panels need a live server.
+    ("report_bundle", "entry-report.js", "bundle/report.min.js"),
+    ("vendor_css", "vendor.css", "vendor.min.css"),
+    ("app_css", "style.css", "app.min.css"),
+    ("gl_theme_dark_bundle", "gl-theme-dark.css", "gl-dark.min.css"),
+    ("gl_theme_light_bundle", "gl-theme-light.css", "gl-light.min.css"),
+]]
+
+_STYLES = [
+    "app.min.css",
+    "gl-dark.min.css",
+    "gl-light.min.css",
+    "vendor.min.css",
+]
+
+genrule(
+    name = "index_html",
+    srcs = ["src/index.html"] + _STYLES,
+    outs = ["bundle/index.html"],
+    cmd = "$(execpath :inline_styles) --html $(location src/index.html)" +
+          " --output $@ " +
+          " ".join(["--style $(location %s)" % s for s in _STYLES]),
+    tools = [":inline_styles"],
+)
+
+# Served by file name, and the saved report's script, kept out of the table.
 _WEB_ASSET_FILES = [
-    "src/index.html",
-    "src/style.css",
-    "src/theme.js",
-    "src/tile-merge.js",
-    "src/tile-request.js",
-    "src/device-pixels.js",
-    "src/layer-extents.js",
-    "src/merged-tile-layer.js",
-    "src/display-state.js",
-    "src/3d-viewer-widget.js",
-    "src/coordinates.js",
-    "src/ui-utils.js",
-    "src/checkbox-tree-model.js",
-    "src/vis-tree.js",
-    "src/websocket-manager.js",
-    "src/websocket-tile-layer.js",
-    "src/display-controls.js",
-    "src/inspector.js",
-    "src/ruler.js",
-    "src/label-manager.js",
-    "src/tcl-completer.js",
-    "src/hierarchy-browser.js",
-    "src/menu-bar.js",
-    "src/options-dialogs.js",
-    "src/context-menu.js",
-    "src/search-nav.js",
-    "src/capture.js",
-    "src/toolbar.js",
-    "src/image-export.js",
-    "src/edit-dialogs.js",
-    "src/title.js",
-    "src/clock-tree-widget.js",
-    "src/schematic-widget.js",
-    "src/openroad_skin.svg",
-    "src/charts-widget.js",
-    "src/timing-widget.js",
-    "src/drc-widget.js",
-    "src/selection-browser.js",
-    "src/main.js",
+    "bundle/THIRD_PARTY_LICENSES.txt",
+    "bundle/app.min.js",
+    "bundle/index.html",
 ]
 
 genrule(
     name = "web_assets",
-    srcs = _WEB_ASSET_FILES,
+    srcs = _WEB_ASSET_FILES + ["bundle/report.min.js"],
     outs = ["src/web_assets.cpp"],
-    cmd = "$(execpath :embed_web_assets) --output $@ " +
+    cmd = "$(execpath :embed_web_assets) --output $@" +
+          " --extern kReportJS=$(location bundle/report.min.js) " +
           " ".join(["$(location %s)" % f for f in _WEB_ASSET_FILES]),
     tools = [":embed_web_assets"],
 )
@@ -228,6 +201,7 @@ cc_library(
 cc_library(
     name = "web",
     srcs = [
+        "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
@@ -235,6 +209,7 @@ cc_library(
         "src/glyph_cache.cpp",
         "src/hierarchy_report.cpp",
         "src/module_color_palette.h",
+        "src/report_html.cpp",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
         "src/search.cpp",
@@ -242,14 +217,12 @@ cc_library(
         "src/tile_generator.cpp",
         "src/timing_report.cpp",
         "src/web.cpp",
-        "src/web_assets.h",
         "src/web_chart.cpp",
         "src/web_gif.cpp",
         "src/web_gif.h",
         "src/web_painter.cpp",
         "src/web_serve.cpp",
         "src/web_viewer_hook.cpp",
-        ":report_assets",
         ":web_assets",
     ],
     hdrs = [
@@ -267,8 +240,10 @@ cc_library(
         "src/web_painter.h",
         "src/web_viewer_hook.h",
         "src/request_handler.h",
+        "src/report_html.h",
         "src/clock_tree_report.h",
         "src/hierarchy_report.h",
+        "src/web_assets.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -291,6 +266,7 @@ cc_library(
         "//third-party/gif-h:gif_h",
         "//third-party/lodepng",
         "//third-party/stb_truetype",
+        "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
@@ -299,6 +275,7 @@ cc_library(
         "@libdeflate//:deflate",
         "@spdlog",
         "@tcl_lang//:tcl",
+        "@zlib",
     ],
 )
 
@@ -357,6 +334,16 @@ tcl_wrap_cc(
 )
 
 exports_files(["README.md"])
+
+exports_files(
+    [
+        "esbuild.config.mjs",
+        "package.json",
+        "pnpm-lock.yaml",
+        "src/openroad_skin.svg",
+    ],
+    visibility = ["//src/web/test:__pkg__"],
+)
 
 messages_txt(
     visibility = ["//docs:__pkg__"],

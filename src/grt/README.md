@@ -41,7 +41,7 @@ global_route
 | Switch Name | Description |
 | ----- | ----- |
 | `-guide_file` | Set the output guides file name (e.g., `route.guide`). |
-| `-congestion_iterations` | Set the number of iterations made to remove the congestion of the routing. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
+| `-congestion_iterations` | Set the maximum number of iterations made to remove the congestion of the routing; the router stops earlier once the iterations no longer reduce it. The default value is `50` for FastRoute and `5` when `-use_cugr` is set; the allowed values are integers `[0, MAX_INT]`. |
 | `-congestion_report_file` | Set the file name to save the congestion report. The file generated can be read by the DRC viewer in the GUI (e.g., `report_file.rpt`). |
 | `-congestion_report_iter_step` | Set the number of iterations to report. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
@@ -187,8 +187,10 @@ set_nets_to_route
 ### Repair Antennas
 
 The `repair_antennas` command checks the global routing for antenna
-violations and repairs the violations by inserting diodes near the
-gates of the violating nets.  By default the command runs only one
+violations and repairs the violations by inserting jumpers and diodes
+near the gates of the violating nets. Both methods are applied unless
+`-jumper_only` or `-diode_only` restricts repair to one of them.
+By default the command runs only one
 iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when
 `repair_antennas` is called.
@@ -215,6 +217,8 @@ repair_antennas
     [diode_cell]
     [-iterations iterations]
     [-ratio_margin margin]
+    [-jumper_only]
+    [-diode_only]
 ```
 
 #### Options
@@ -224,6 +228,8 @@ repair_antennas
 | `diode_cell` | Diode cell to fix antenna violations. |
 | `-iterations` | Number of iterations. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
+| `-jumper_only` | Fix antenna violations using jumper insertion only, without inserting diodes. Mutually exclusive with `-diode_only`. |
+| `-diode_only` | Fix antenna violations using diode insertion only, without inserting jumpers. Mutually exclusive with `-jumper_only`. |
 
 
 ### Draw Route Segments
@@ -272,6 +278,61 @@ report_wire_length
 | `-detailed_route` | Report the wire length of the detailed routing. |
 | `-verbose` | This flag enables the full reporting of the layer-wise wirelength information. |
 | `-summary` | This flag reports the wire length for each layer of the design. |
+
+### Report Net Detours
+
+The `report_net_detours` command reports how much each net's global route
+detours from its initial Steiner tree, as the difference and the ratio between
+the routed wirelength and the Steiner tree wirelength. Both are measured from
+the center of the gcell where each pin is accessed, and the routed wirelength
+only counts planar wire length, so a route that follows the Steiner tree has a
+ratio of 1. The Steiner wirelength is captured by `global_route` and refreshed
+for the nets rerouted by incremental global routing, with both FastRoute and
+CUGR. For a design read with global routing guides, it is computed from the
+pins when the command runs. Without `-net`, the command reports the totals over
+all routed nets and the nets with the largest detour ratio. Local nets, with
+all pins in the same gcell, are skipped. This command is read-only and does not
+change the routing.
+
+Example: `report_net_detours -top_n 20 -file detours.txt`
+
+```tcl
+report_net_detours
+    [-net net_list]
+    [-file file]
+    [-top_n count]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-net` | List of nets to report the detour. When set, `-top_n` is ignored. |
+| `-file` | The name of the file where a `grt_detour: net initial_um final_um delta_um ratio` line is appended for each reported net. Without `-net`, all analyzed nets are written. |
+| `-top_n` | Number of nets with the largest detour ratio to report. The default value is `10`. |
+
+### Report Congestion
+
+The `report_congestion` command reports the overflow of the current global
+routing per routing layer, in the same table `global_route -verbose` prints at
+the end of the routing. It works with FastRoute and CUGR. Unlike FastRoute,
+CUGR can finish an incremental global routing with congestion, so use it with
+`has_congestion` to report that congestion. Run `global_route` first.
+
+Example: `if { [has_congestion] } { report_congestion }`
+
+```tcl
+report_congestion
+```
+
+### Has Congestion
+
+The `has_congestion` command returns 1 if the current global routing has
+overflow and 0 otherwise. Run `global_route` first.
+
+```tcl
+has_congestion
+```
 
 ### Global Route Debug Mode
 
@@ -407,15 +468,17 @@ If you are a developer, you might find these useful. More details can be found i
 | `parse_layer_range` | Parses a range from `layer_range` argument of format (%s-%s). `cmd` argument is not used. |
 | `check_region` | Checks the defined region if its within the die area. |
 | `have_detailed_route` | Checks if block has detailed route already. |
+| `design_is_placed` | Checks if every pin and every instance on a signal net is placed. |
+| `have_congested_routes` | Checks if block has global routes that are congested and were not accepted with `-allow_congestion`. |
 
 ## Regression tests
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/grt/...
 ```
 
 ## Limitations
