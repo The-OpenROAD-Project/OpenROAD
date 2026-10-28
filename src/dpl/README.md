@@ -70,6 +70,35 @@ detailed_placement
 | `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 | `-quiet` | Less verbose, shows: number of instances moves, displacement, HPWL, and runtime at logs and json. Use it when dpl is called by other stages (e.g. after clock tree synthesis or antenna repair). |
 
+### Repair Pin Access
+
+Move standard cells to legal sites where their pin-access vias clear fixed
+supply geometry. Requires legal placement and successful full `pin_access`
+in the current session; `-recovery_attempts` starts fresh PA instead.
+
+```tcl
+repair_pin_access
+    [-max_displacement {sites rows}]
+    [-max_rounds count]
+    [-recovery_attempts attempts]
+    [-min_access_points count]
+```
+
+| Switch | Description |
+| ----- | ----- |
+| `-max_displacement` | Maximum displacement from entry, in sites and rows. Default `{20 2}`. |
+| `-max_rounds` | Move/refresh rounds. Default `3`. |
+| `-recovery_attempts` | Native PA trial placements per deficient cell; `0` disables recovery (default). |
+| `-min_access_points` | Required APs per terminal, summed across physical pins; each AP counts once. Default `1`. |
+
+Recovery retries the nearest legal empty sites, preserves orientation and
+satisfied pins, and refreshes affected PA classes. Failure restores recovery
+moves and leaves PA unready. Limits must be positive integers; recovery attempts
+may be zero.
+
+Returns the number of cells with unresolved first-hop conflicts. Check routing
+DRCs separately; preferred-AP selection issues are reported separately.
+
 ### Set Placement Padding
 
 The `set_placement_padding` command sets left and right padding in multiples

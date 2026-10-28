@@ -104,7 +104,14 @@ COMPULSORY_TESTS = [
     "regions2-opt",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+PASSFAIL_TESTS = [
+    "repair_pin_access",
+    "repair_pin_access_failure",
+    "repair_pin_access_phase",
+    "repair_pin_access_zero_ap",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "pin_access_service_fixture",
@@ -133,6 +140,17 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "repair_pin_access": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_phase": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
+            "repair_pin_access_zero_ap": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+                "repair_pin_access_failure.lef",
+            ],
             "aes": [
                 "aes_cipher_top_replace.def",
             ],
@@ -339,6 +357,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],
@@ -348,10 +368,11 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc"],
+    srcs = ["dpl_test.cc", "PinAccessRepairTest.cc"],
     data = ["extra.lef"],
     deps = [
         "//src/dpl",
+        "//src/drt:pin_access_service",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",

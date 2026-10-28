@@ -100,7 +100,8 @@ or_integration_tests(
     regions2-opt
 )
 
-add_executable(dpl_test dpl_test.cc)
+add_executable(dpl_test dpl_test.cc PinAccessRepairTest.cc)
+target_include_directories(dpl_test PRIVATE ${PROJECT_SOURCE_DIR}/src/drt/include)
 
 target_link_libraries(dpl_test
     GTest::gtest
