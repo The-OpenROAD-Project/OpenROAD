@@ -69,6 +69,35 @@ proc add_field_solver_rect { args } {
   }
 }
 
+sta::define_cmd_args "add_field_solver_nets" {-nets nets\
+                                               [-halo halo]\
+                                               [-margin margin]\
+                                               [-layer_map layer_map]}
+
+proc add_field_solver_nets { args } {
+  sta::parse_key_args "add_field_solver_nets" args \
+    keys {-nets -halo -margin -layer_map} flags {}
+  sta::check_argc_eq0 "add_field_solver_nets" $args
+  set nets [fsv::required_key -nets [array get keys]]
+  # -1 takes the default, a multiple of the nets' height.
+  set halo -1
+  set margin -1
+  if { [info exists keys(-halo)] } {
+    set halo [fsv::check_distance -halo $keys(-halo)]
+  }
+  if { [info exists keys(-margin)] } {
+    set margin [fsv::check_distance -margin $keys(-margin)]
+  }
+  set layer_map {}
+  if { [info exists keys(-layer_map)] } {
+    set layer_map $keys(-layer_map)
+    if { [llength $layer_map] % 2 != 0 } {
+      utl::error FSV 32 "-layer_map needs pairs of design and stack layers."
+    }
+  }
+  fsv::add_nets_cmd $nets $halo $margin $layer_map
+}
+
 sta::define_cmd_args "clear_field_solver" {}
 
 proc clear_field_solver { args } {
@@ -78,8 +107,7 @@ proc clear_field_solver { args } {
   fsv::clear_cmd
 }
 
-sta::define_cmd_args "solve_capacitance" {[-coupling_threshold fraction]\
-                                           [-max_walks walks]\
+sta::define_cmd_args "solve_capacitance" {[-max_walks walks]\
                                            [-min_walks walks]\
                                            [-nets nets]\
                                            [-panels panels]\
@@ -89,8 +117,8 @@ sta::define_cmd_args "solve_capacitance" {[-coupling_threshold fraction]\
 
 proc solve_capacitance { args } {
   sta::parse_key_args "solve_capacitance" args \
-    keys {-coupling_threshold -max_walks -min_walks -nets -panels -seed \
-          -tol_coupling -tol_total} \
+    keys {-max_walks -min_walks -nets -panels -seed -tol_coupling \
+          -tol_total} \
     flags {}
   sta::check_argc_eq0 "solve_capacitance" $args
 
@@ -98,7 +126,6 @@ proc solve_capacitance { args } {
   set values {}
   foreach {key check} {-tol_total fsv::check_tolerance \
                        -tol_coupling fsv::check_tolerance \
-                       -coupling_threshold fsv::check_fraction \
                        -min_walks {fsv::check_count 0} \
                        -max_walks {fsv::check_count 1} \
                        -seed {fsv::check_count 0} \
@@ -114,7 +141,7 @@ proc solve_capacitance { args } {
   if { [info exists keys(-nets)] } {
     set nets $keys(-nets)
   } else {
-    set nets [fsv::net_names_cmd]
+    set nets [fsv::default_targets_cmd]
   }
   if { [llength $nets] == 0 } {
     utl::error FSV 23 "No nets to solve; add boxes or rectangles first."
@@ -137,15 +164,16 @@ proc required_key { key keys_list } {
   return $keys($key)
 }
 
+proc check_distance { key value } {
+  if { !([string is double -strict $value] && $value >= 0) } {
+    utl::error FSV 33 "$key must be a distance of at least 0."
+  }
+  return $value
+}
+
 proc check_tolerance { key value } {
   if { !([string is double -strict $value] && $value > 0) } {
     utl::error FSV 25 "$key must be a number greater than 0."
-  }
-}
-
-proc check_fraction { key value } {
-  if { !([string is double -strict $value] && $value >= 0 && $value <= 1) } {
-    utl::error FSV 26 "$key must be a number from 0 to 1."
   }
 }
 

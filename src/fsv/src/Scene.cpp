@@ -147,6 +147,7 @@ template <int D>
 std::unique_ptr<Dielectric<D>> stackDielectric(
     const std::vector<AlignedBox<D>>& boxes,
     const std::function<int(int)>& box_net,
+    const SpatialIndex<D>& box_index,
     const Stack& stack)
 {
   checkStack(stack);
@@ -196,13 +197,28 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
     }
   }
 
+  auto dielectric = std::make_unique<Dielectric<D>>(
+      baseEps(stack), stack.planarInterfaces(), std::move(shells));
+
   // Outside a group, shells of different conformal dielectrics may not
   // overlap, except where a conductor cuts into them. A shell's region is
-  // its outer box minus the shallower shells of its group.
-  for (size_t i = 0; i < shells.size(); i++) {
-    for (size_t j = i + 1; j < shells.size(); j++) {
-      const Shell<D>& a = shells[i];
-      const Shell<D>& s = shells[j];
+  // its outer box minus the shallower shells of its group. Pairs are checked
+  // in index order, so the error names the same pair however the indexes
+  // visit them.
+  const std::vector<Shell<D>>& all = dielectric->shells();
+  const SpatialIndex<D>& shell_index = dielectric->shellIndex();
+  std::vector<int> candidates;
+  for (size_t i = 0; i < all.size(); i++) {
+    candidates.clear();
+    shell_index.forEachOverlapping(all[i].outer, [&](const int j) {
+      if (j > static_cast<int>(i)) {
+        candidates.push_back(j);
+      }
+    });
+    std::ranges::sort(candidates);
+    for (const int j : candidates) {
+      const Shell<D>& a = all[i];
+      const Shell<D>& s = all[j];
       if (a.material == s.material || a.group == s.group
           || !overlaps(a.outer, s.outer)) {
         continue;
@@ -213,18 +229,19 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
         both.hi[k] = std::min(a.outer.hi[k], s.outer.hi[k]);
       }
       std::vector<const AlignedBox<D>*> holes;
-      for (const Shell<D>& t : shells) {
+      shell_index.forEachOverlapping(both, [&](const int k) {
+        const Shell<D>& t = all[k];
         const bool shallower = (t.group == a.group && t.depth < a.depth)
                                || (t.group == s.group && t.depth < s.depth);
         if (shallower && overlaps(both, t.outer)) {
           holes.push_back(&t.outer);
         }
-      }
-      for (const AlignedBox<D>& box : boxes) {
-        if (overlaps(both, box)) {
-          holes.push_back(&box);
+      });
+      box_index.forEachOverlapping(both, [&](const int k) {
+        if (overlaps(both, boxes[k])) {
+          holes.push_back(&boxes[k]);
         }
-      }
+      });
       if (anyLeft(both, holes, 0)) {
         throw std::invalid_argument("fsv: conformal dielectrics "
                                     + material_names[a.material] + " and "
@@ -232,18 +249,26 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
       }
     }
   }
-  return std::make_unique<Dielectric<D>>(
-      baseEps(stack), stack.planarInterfaces(), std::move(shells));
+  return dielectric;
 }
 
-// Rectangles of different nets may not overlap.
-void checkNoOverlap(const Geometry2D& geometry)
+// Rectangles of different nets may not overlap; the first pair in index
+// order is reported.
+void checkNoOverlap(const Geometry2D& geometry, const SpatialIndex<2>& index)
 {
   const std::vector<Rect>& rects = geometry.rects();
+  std::vector<int> candidates;
   for (size_t i = 0; i < rects.size(); i++) {
-    for (size_t j = i + 1; j < rects.size(); j++) {
+    candidates.clear();
+    index.forEachOverlapping(rects[i], [&](const int j) {
+      if (j > static_cast<int>(i)) {
+        candidates.push_back(j);
+      }
+    });
+    std::ranges::sort(candidates);
+    for (const int j : candidates) {
       const int a = geometry.rectNet(static_cast<int>(i));
-      const int b = geometry.rectNet(static_cast<int>(j));
+      const int b = geometry.rectNet(j);
       if (a != b && overlaps(rects[i], rects[j])) {
         throw std::invalid_argument("fsv: rectangles of nets "
                                     + geometry.netName(a) + " and "
@@ -257,20 +282,21 @@ void checkNoOverlap(const Geometry2D& geometry)
 
 Scene::Scene(const Geometry& geometry, const double eps_r)
     : geometry_(geometry),
+      index_(std::make_unique<SpatialIndex<3>>(geometry.boxes())),
       dielectric_(uniformDielectric<3>(eps_r)),
-      min_dimension_(smallestDimension(geometry.boxes())),
-      index_(std::make_unique<SpatialIndex<3>>(geometry.boxes()))
+      min_dimension_(smallestDimension(geometry.boxes()))
 {
 }
 
 Scene::Scene(const Geometry& geometry, const Stack& stack)
     : geometry_(geometry),
+      index_(std::make_unique<SpatialIndex<3>>(geometry.boxes())),
       dielectric_(stackDielectric<3>(
           geometry.boxes(),
           [&](const int b) { return geometry.boxNet(b); },
+          *index_,
           stack)),
-      min_dimension_(smallestDimension(geometry.boxes())),
-      index_(std::make_unique<SpatialIndex<3>>(geometry.boxes()))
+      min_dimension_(smallestDimension(geometry.boxes()))
 {
 }
 
@@ -288,23 +314,24 @@ double Scene::epsAt(const double z) const
 
 Scene2D::Scene2D(const Geometry2D& geometry, const double eps_r)
     : geometry_(geometry),
+      index_(std::make_unique<SpatialIndex<2>>(geometry.rects())),
       dielectric_(uniformDielectric<2>(eps_r)),
-      min_dimension_(smallestDimension(geometry.rects())),
-      index_(std::make_unique<SpatialIndex<2>>(geometry.rects()))
+      min_dimension_(smallestDimension(geometry.rects()))
 {
-  checkNoOverlap(geometry);
+  checkNoOverlap(geometry, *index_);
 }
 
 Scene2D::Scene2D(const Geometry2D& geometry, const Stack& stack)
     : geometry_(geometry),
+      index_(std::make_unique<SpatialIndex<2>>(geometry.rects())),
       dielectric_(stackDielectric<2>(
           geometry.rects(),
           [&](const int r) { return geometry.rectNet(r); },
+          *index_,
           stack)),
-      min_dimension_(smallestDimension(geometry.rects())),
-      index_(std::make_unique<SpatialIndex<2>>(geometry.rects()))
+      min_dimension_(smallestDimension(geometry.rects()))
 {
-  checkNoOverlap(geometry);
+  checkNoOverlap(geometry, *index_);
 }
 
 Scene2D::~Scene2D() = default;

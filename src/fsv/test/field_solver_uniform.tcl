@@ -7,8 +7,9 @@ add_field_solver_box -net b -box {0 0.4 0.5 5 0.6 0.7}
 set result [solve_capacitance -tol_total 0.01]
 
 check "every net is solved" { dict keys $result } {a b}
-check "a row's keys" { dict keys [dict get $result a] } \
-  {total total_sigma ground ground_sigma couplings coupling_sigmas walks hops seconds cross_section}
+set keys {total total_sigma ground ground_sigma couplings coupling_sigmas
+  walks hops seconds cross_section window_leakage}
+check "a row's keys" { dict keys [dict get $result a] } [list {*}$keys]
 check "couplings name the other nets" { dict keys [dict get $result a couplings] } b
 
 # The matrix is symmetric within the statistical error.

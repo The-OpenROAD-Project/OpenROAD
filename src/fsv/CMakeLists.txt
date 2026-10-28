@@ -16,12 +16,14 @@ target_sources(fsv
     src/CubePanels.cpp
     src/Dielectric.cpp
     src/FieldSolver.cpp
+    src/GaussianSurface.cpp
     src/Geometry.cpp
     src/Itf.cpp
     src/LayerModes.cpp
     src/LayeredCubeGreens.cpp
     src/LayeredSquareGreens.cpp
     src/MakeFieldSolver.cpp
+    src/NetWindow.cpp
     src/Scene.cpp
     src/Solver.cpp
     src/SpatialIndex.cpp
@@ -39,6 +41,7 @@ target_include_directories(fsv
 
 target_link_libraries(fsv
   PRIVATE
+    odb
     utl_lib
     ${TCL_LIBRARY}
 )
@@ -46,3 +49,26 @@ target_link_libraries(fsv
 messages(
   TARGET fsv
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          fsv_py
+           NAMESPACE     fsv
+           LANGUAGE      python
+           I_FILE        src/FieldSolver-py.i
+           SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/fsv_py.py
+  )
+
+  target_include_directories(fsv_py
+    PRIVATE
+      src
+  )
+
+  target_link_libraries(fsv_py
+    PUBLIC
+      fsv
+      odb
+  )
+
+endif()
