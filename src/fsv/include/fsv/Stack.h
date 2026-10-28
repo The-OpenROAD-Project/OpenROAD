@@ -12,9 +12,12 @@ namespace fsv {
 
 // A process stack in µm, with z = 0 at the ground plane. Planar dielectric
 // layers are listed bottom-up and tile [0, top) without gaps; above the top
-// layer the background dielectric extends to infinity.
-struct Stack
+// layer the background dielectric extends to infinity. Conductors and vias
+// are added in that order and addressed by handle afterwards; every add
+// checks its layer, so a stack never holds one it cannot use.
+class Stack
 {
+ public:
   struct Dielectric
   {
     std::string name;
@@ -56,7 +59,7 @@ struct Stack
     constexpr auto operator<=>(const Layer&) const = default;
 
    private:
-    friend struct Stack;
+    friend class Stack;
     explicit constexpr Layer(const int index) : index_(index) {}
     int index_ = -1;
   };
@@ -71,11 +74,24 @@ struct Stack
     Layer lower;
   };
 
-  std::string technology;
-  double background_eps = 1.0;
-  std::vector<Dielectric> dielectrics;
-  std::vector<Conductor> conductors;
-  std::vector<Via> vias;
+  // Building. Each add throws std::invalid_argument for a layer that
+  // does not fit: a dielectric must start where the last one ends (at 0
+  // for the first) with a positive permittivity; a conductor needs a
+  // name no layer has yet, a positive thickness at or above the ground
+  // plane, and must come before any via, since via handles follow the
+  // conductors; a via needs a name no layer has, a conductor above (its
+  // upper) and a conductor or the ground plane (no handle) below it.
+  void setTechnology(std::string technology);
+  void setBackgroundEps(double eps);
+  void addDielectric(const Dielectric& dielectric);
+  Layer addConductor(const Conductor& conductor);
+  Layer addVia(const Via& via);
+
+  const std::string& technology() const { return technology_; }
+  double backgroundEps() const { return background_eps_; }
+  const std::vector<Dielectric>& dielectrics() const { return dielectrics_; }
+  const std::vector<Conductor>& conductors() const { return conductors_; }
+  const std::vector<Via>& vias() const { return vias_; }
 
   // The conductor or via of a name; a handle that names no layer when
   // the stack has neither.
@@ -95,7 +111,7 @@ struct Stack
   // The z extent of a layer: a conductor's own, or a via's from the top of
   // its lower conductor (the ground plane, 0, for a substrate via) to the
   // bottom of its upper one. Throws std::invalid_argument for a handle
-  // that names no layer, or a via without an upper conductor.
+  // that names no layer.
   struct ZExtent
   {
     double bottom = 0;
@@ -120,6 +136,13 @@ struct Stack
   // own permittivity applies instead, and conformal boundaries are per-wire
   // geometry, not part of the stack.
   std::vector<PlanarInterface> planarInterfaces() const;
+
+ private:
+  std::string technology_;
+  double background_eps_ = 1.0;
+  std::vector<Dielectric> dielectrics_;
+  std::vector<Conductor> conductors_;
+  std::vector<Via> vias_;
 };
 
 }  // namespace fsv

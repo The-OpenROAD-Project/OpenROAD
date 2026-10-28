@@ -59,7 +59,7 @@ void FieldSolver::readItf(const std::string& path)
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
   std::set<std::string> conformals;
-  for (const Stack::Conductor& c : stack.conductors) {
+  for (const Stack::Conductor& c : stack.conductors()) {
     for (const Stack::ConformalDielectric& cf : c.conformals) {
       conformals.insert(cf.name);
     }
@@ -68,11 +68,11 @@ void FieldSolver::readItf(const std::string& path)
                 2,
                 "Read ITF {}: {} dielectrics, {} conductors, {} conformal "
                 "dielectrics, {} vias.",
-                stack.technology,
-                stack.dielectrics.size(),
-                stack.conductors.size(),
+                stack.technology(),
+                stack.dielectrics().size(),
+                stack.conductors().size(),
                 conformals.size(),
-                stack.vias.size());
+                stack.vias().size());
   resetScenes();
   stack_ = std::move(stack);
   has_stack_ = true;

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
@@ -17,8 +18,9 @@ namespace fsv {
 Structure readStructure(const std::string& name, const double length)
 {
   Structure s;
-  s.stack.technology = name;
+  s.stack.setTechnology(name);
   std::map<std::string, int> nets;
+  std::vector<Stack::Conductor> conductors;
   std::ifstream in(std::string(kGoldenDir) + name + ".txt");
   if (!in.good()) {
     throw std::runtime_error("cannot read structure " + name);
@@ -32,12 +34,14 @@ Structure readStructure(const std::string& name, const double length)
       continue;
     }
     if (kind == "background") {
-      words >> s.stack.background_eps;
+      double eps = 0;
+      words >> eps;
+      s.stack.setBackgroundEps(eps);
     } else if (kind == "layer") {
       double top = 0;
       double eps = 0;
       words >> top >> eps;
-      s.stack.dielectrics.push_back(
+      s.stack.addDielectric(
           {.name = "layer", .bottom = bottom, .top = top, .eps = eps});
       bottom = top;
     } else if (kind == "box") {
@@ -60,20 +64,23 @@ Structure readStructure(const std::string& name, const double length)
       words >> c.name >> layer_bottom >> layer_top >> c.side_thickness
           >> c.top_thickness >> c.eps;
       Stack::Conductor* layer = nullptr;
-      for (Stack::Conductor& existing : s.stack.conductors) {
+      for (Stack::Conductor& existing : conductors) {
         if (existing.bottom == layer_bottom && existing.top == layer_top) {
           layer = &existing;
         }
       }
       if (layer == nullptr) {
-        layer = &s.stack.conductors.emplace_back(Stack::Conductor{
-            .name = "layer" + std::to_string(s.stack.conductors.size()),
-            .bottom = layer_bottom,
-            .top = layer_top,
-            .conformals = {}});
+        Stack::Conductor added;
+        added.name = "layer" + std::to_string(conductors.size());
+        added.bottom = layer_bottom;
+        added.top = layer_top;
+        layer = &conductors.emplace_back(std::move(added));
       }
       layer->conformals.push_back(c);
     }
+  }
+  for (const Stack::Conductor& c : conductors) {
+    s.stack.addConductor(c);
   }
   return s;
 }

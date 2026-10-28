@@ -20,6 +20,18 @@ const fsv::Stack& sky130()
   return stack;
 }
 
+// A conductor of a hand-built stack, by its name and z extent.
+fsv::Stack::Conductor conductorAt(const char* name,
+                                  const double bottom,
+                                  const double top)
+{
+  fsv::Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  return c;
+}
+
 // The names of layers, for comparisons.
 std::vector<std::string> names(const fsv::Stack& stack,
                                const std::vector<Layer>& layers)
@@ -48,9 +60,12 @@ TEST(Patterns, LayerExtentOfConductorsAndVias)
   // no extent a pattern can use.
   EXPECT_THROW(layerExtent(stack, stack.layer("met9")), std::invalid_argument);
   fsv::Stack bare;
-  bare.conductors.push_back(
-      {.name = "m1", .bottom = 1, .top = 2, .conformals = {}});
-  bare.vias.push_back({"tie", bare.layer("m1"), {}});
+  bare.addDielectric({"d", 0, 10, 1});
+  bare.addConductor(conductorAt("m1", 1, 2));
+  fsv::Stack::Via tie;
+  tie.name = "tie";
+  tie.upper = bare.layer("m1");
+  bare.addVia(tie);
   EXPECT_THROW(layerExtent(bare, bare.layer("tie")), std::invalid_argument);
 }
 
@@ -105,11 +120,11 @@ TEST(Patterns, BuilderAddsBoxesWithTheLayerExtent)
 TEST(Patterns, BuildsTheGoldenThreeWires)
 {
   fsv::Stack stack;
-  stack.background_eps = 1.0;
-  stack.dielectrics
-      = {{"a", 0, 0.3, 3.9}, {"b", 0.3, 1.0, 4.2}, {"c", 1.0, 1.05, 7.5}};
-  stack.conductors.push_back(
-      {.name = "m", .bottom = 0.5, .top = 0.8, .conformals = {}});
+  stack.setBackgroundEps(1.0);
+  stack.addDielectric({"a", 0, 0.3, 3.9});
+  stack.addDielectric({"b", 0.3, 1.0, 4.2});
+  stack.addDielectric({"c", 1.0, 1.05, 7.5});
+  stack.addConductor(conductorAt("m", 0.5, 0.8));
   SectionBuilder builder(stack);
   builder.add(stack.layer("m"), builder.net("left"), 0, 0.2);
   builder.add(stack.layer("m"), builder.net("middle"), 0.4, 0.6);

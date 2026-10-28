@@ -317,7 +317,7 @@ class Lab
                 error.c_str());
     std::fflush(stdout);
     if (csv_.is_open()) {
-      csv_ << experiment << ',' << stack_.technology << ',' << o_.layer << ','
+      csv_ << experiment << ',' << stack_.technology() << ',' << o_.layer << ','
            << name << ',' << quantity << ',' << fmt(truth) << ',' << fmt(sigma)
            << ',' << (model ? fmt(*model) : "") << ',' << error << '\n';
       csv_.flush();
@@ -1105,7 +1105,7 @@ void vias(Lab& lab)
     return;
   }
   std::string cut;
-  for (const fsv::Stack::Via& v : lab.stack().vias) {
+  for (const fsv::Stack::Via& v : lab.stack().vias()) {
     if (v.lower == lab.layer() && v.upper == lab.layer(upper)) {
       cut = v.name;
     }
@@ -1224,7 +1224,7 @@ pex::Model netsModel(const Lab& lab, const Design& design)
     }
   }
   const pex::ModelSource expected{
-      lab.stack().technology, o.itf, pex::buildFingerprint(lab.stack(), b)};
+      lab.stack().technology(), o.itf, pex::buildFingerprint(lab.stack(), b)};
   if (!o.model.empty()) {
     std::ifstream in(o.model);
     if (in.good()) {
@@ -1444,7 +1444,7 @@ int main(int argc, char** argv)
     const Options o = parse(argc, argv);
     Lab lab(o);
     std::printf("# %s %s, tol %g, %d threads\n",
-                lab.stack().technology.c_str(),
+                lab.stack().technology().c_str(),
                 o.layer.c_str(),
                 o.tol,
                 o.threads);

@@ -24,6 +24,18 @@ const fsv::Stack& sky130()
   return stack;
 }
 
+// A conductor of a hand-built stack, by its name and z extent.
+fsv::Stack::Conductor conductorAt(const char* name,
+                                  const double bottom,
+                                  const double top)
+{
+  fsv::Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  return c;
+}
+
 // A sky130 layer by name; no layer for a name the stack lacks.
 Layer L(const std::string& name)
 {
@@ -245,12 +257,30 @@ TEST(ModelBuilder, FingerprintFollowsTheStackAndTheOptions)
   BuildOptions deeper = o;
   deeper.diagonal_depth++;
   EXPECT_NE(buildFingerprint(sky130(), deeper), base);
-  fsv::Stack thicker = sky130();
-  thicker.conductors[1].top += 0.01;
-  EXPECT_NE(buildFingerprint(thicker, o), base);
-  fsv::Stack renamed = sky130();
-  renamed.technology = "other";
-  EXPECT_NE(buildFingerprint(renamed, o), base);
+  // A stack like sky130's with one conductor thicker, and one renamed.
+  auto rebuilt = [&](const char* technology, const double extra_top) {
+    fsv::Stack stack;
+    stack.setTechnology(technology);
+    stack.setBackgroundEps(sky130().backgroundEps());
+    for (const fsv::Stack::Dielectric& d : sky130().dielectrics()) {
+      stack.addDielectric(d);
+    }
+    for (fsv::Stack::Conductor c : sky130().conductors()) {
+      if (c.name == "met1") {
+        c.top += extra_top;
+      }
+      stack.addConductor(c);
+    }
+    for (const fsv::Stack::Via& v : sky130().vias()) {
+      stack.addVia(v);
+    }
+    return stack;
+  };
+  EXPECT_EQ(buildFingerprint(rebuilt(sky130().technology().c_str(), 0), o),
+            base);
+  EXPECT_NE(buildFingerprint(rebuilt(sky130().technology().c_str(), 0.01), o),
+            base);
+  EXPECT_NE(buildFingerprint(rebuilt("other", 0), o), base);
 }
 
 TEST(ModelBuilder, RejectsUnknownLayer)
@@ -265,10 +295,10 @@ TEST(ModelBuilder, RejectsUnknownLayer)
 TEST(ModelBuilder, SectionMatchesTheGolden)
 {
   fsv::Stack stack;
-  stack.dielectrics
-      = {{"a", 0, 0.3, 3.9}, {"b", 0.3, 1.0, 4.2}, {"c", 1.0, 1.05, 7.5}};
-  stack.conductors.push_back(
-      {.name = "m", .bottom = 0.5, .top = 0.8, .conformals = {}});
+  stack.addDielectric({"a", 0, 0.3, 3.9});
+  stack.addDielectric({"b", 0.3, 1.0, 4.2});
+  stack.addDielectric({"c", 1.0, 1.05, 7.5});
+  stack.addConductor(conductorAt("m", 0.5, 0.8));
   SectionBuilder builder(stack);
   const int left = builder.net("left");
   const int middle = builder.net("middle");

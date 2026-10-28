@@ -39,8 +39,8 @@ void expectError(const std::string& text, const std::string_view fragment)
 TEST(Itf, Sky130Stack)
 {
   const Stack stack = readItfFile("src/fsv/test/sky130.itf");
-  EXPECT_EQ(stack.technology, "skywater130_nominal");
-  EXPECT_EQ(stack.background_eps, 1.0);
+  EXPECT_EQ(stack.technology(), "skywater130_nominal");
+  EXPECT_EQ(stack.backgroundEps(), 1.0);
 
   struct Layer
   {
@@ -59,12 +59,12 @@ TEST(Itf, Sky130Stack)
                                           {"NILD6", 3.9461, 5.2961, 4.0},
                                           {"TOPNIT", 5.2961, 5.6738, 7.5},
                                           {"PI1", 5.6738, 11.8084, 2.94}};
-  ASSERT_EQ(stack.dielectrics.size(), dielectrics.size());
+  ASSERT_EQ(stack.dielectrics().size(), dielectrics.size());
   for (size_t i = 0; i < dielectrics.size(); i++) {
-    EXPECT_EQ(stack.dielectrics[i].name, dielectrics[i].name);
-    EXPECT_NEAR(stack.dielectrics[i].bottom, dielectrics[i].bottom, kTol);
-    EXPECT_NEAR(stack.dielectrics[i].top, dielectrics[i].top, kTol);
-    EXPECT_EQ(stack.dielectrics[i].eps, dielectrics[i].eps);
+    EXPECT_EQ(stack.dielectrics()[i].name, dielectrics[i].name);
+    EXPECT_NEAR(stack.dielectrics()[i].bottom, dielectrics[i].bottom, kTol);
+    EXPECT_NEAR(stack.dielectrics()[i].top, dielectrics[i].top, kTol);
+    EXPECT_EQ(stack.dielectrics()[i].eps, dielectrics[i].eps);
   }
 
   const std::vector<Layer> conductors = {{"DIFF", 0.0, 0.12, 0},
@@ -75,7 +75,7 @@ TEST(Itf, Sky130Stack)
                                          {"met3", 2.7111, 3.5561, 0},
                                          {"met4", 3.9461, 4.7911, 0},
                                          {"met5", 5.2961, 6.5561, 0}};
-  ASSERT_EQ(stack.conductors.size(), conductors.size());
+  ASSERT_EQ(stack.conductors().size(), conductors.size());
   for (const Layer& expected : conductors) {
     const Stack::Layer layer = stack.layer(expected.name);
     ASSERT_TRUE(stack.isConductor(layer)) << expected.name;
@@ -135,10 +135,10 @@ TEST(Itf, Sky130Stack)
   EXPECT_EQ(stack.epsAt(1.0), 7.3);
   EXPECT_EQ(stack.epsAt(20.0), 1.0);
 
-  EXPECT_EQ(stack.vias.size(), 7u);
-  EXPECT_EQ(stack.vias[0].name, "via4");
-  EXPECT_EQ(stack.name(stack.vias[0].upper), "met5");
-  EXPECT_EQ(stack.name(stack.vias[0].lower), "met4");
+  EXPECT_EQ(stack.vias().size(), 7u);
+  EXPECT_EQ(stack.vias()[0].name, "via4");
+  EXPECT_EQ(stack.name(stack.vias()[0].upper), "met5");
+  EXPECT_EQ(stack.name(stack.vias()[0].lower), "met4");
 }
 
 TEST(Itf, CommentsAndBackground)
@@ -152,8 +152,8 @@ TEST(Itf, CommentsAndBackground)
       "CONDUCTOR M1 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 RPSQ=0.1 }\n"
       "DIELECTRIC D1 { THICKNESS=0.5 ER=4.0 }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
-  EXPECT_EQ(stack.background_eps, 3.0);
-  ASSERT_EQ(stack.dielectrics.size(), 2u);
+  EXPECT_EQ(stack.backgroundEps(), 3.0);
+  ASSERT_EQ(stack.dielectrics().size(), 2u);
   EXPECT_NEAR(stack.conductor(stack.layer("M1")).bottom, 0.5, kTol);
   EXPECT_NEAR(stack.conductor(stack.layer("M1")).top, 0.7, kTol);
   // D1 and D2 share ER 4.0; the only interface is the top of D2, against
@@ -175,8 +175,8 @@ TEST(Itf, NumberForms)
       "DIELECTRIC D2 { THICKNESS=5e-1 ER=+4.0 }\n"
       "DIELECTRIC D1 { THICKNESS=0.5E0 ER=4 }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
-  ASSERT_EQ(stack.dielectrics.size(), 3u);
-  for (const Stack::Dielectric& d : stack.dielectrics) {
+  ASSERT_EQ(stack.dielectrics().size(), 3u);
+  for (const Stack::Dielectric& d : stack.dielectrics()) {
     EXPECT_DOUBLE_EQ(d.top - d.bottom, 0.5) << d.name;
     EXPECT_DOUBLE_EQ(d.eps, 4.0) << d.name;
   }
@@ -196,13 +196,13 @@ TEST(Itf, ViaLayersOrderedByHeight)
       "VIA up { FROM=M1 TO=M2 }\n"
       "VIA down { FROM=M2 TO=M1 }\n"
       "VIA tie { FROM=SUBSTRATE TO=M1 }\n");
-  ASSERT_EQ(stack.vias.size(), 3u);
+  ASSERT_EQ(stack.vias().size(), 3u);
   for (int i = 0; i < 2; i++) {
-    EXPECT_EQ(stack.name(stack.vias[i].upper), "M2");
-    EXPECT_EQ(stack.name(stack.vias[i].lower), "M1");
+    EXPECT_EQ(stack.name(stack.vias()[i].upper), "M2");
+    EXPECT_EQ(stack.name(stack.vias()[i].lower), "M1");
   }
-  EXPECT_EQ(stack.name(stack.vias[2].upper), "M1");
-  EXPECT_FALSE(stack.vias[2].lower.valid());
+  EXPECT_EQ(stack.name(stack.vias()[2].upper), "M1");
+  EXPECT_FALSE(stack.vias()[2].lower.valid());
 }
 
 // A conductor spans its own thickness and a via the gap between its layers;
@@ -250,16 +250,18 @@ TEST(Itf, ZExtent)
   EXPECT_THROW(stack.name(none), std::invalid_argument);
   EXPECT_THROW(stack.conductor(v1), std::invalid_argument);
   EXPECT_THROW(stack.via(m1), std::invalid_argument);
-  // A via whose upper conductor is missing (a hand-built stack) is named.
+  // A via needs a conductor above it; the stack refuses one without.
   Stack broken = stack;
-  broken.vias.push_back({"v9", {}, m1});
-  try {
-    broken.zExtent(broken.layer("v9"));
-    ADD_FAILURE() << "expected an error";
-  } catch (const std::invalid_argument& e) {
-    EXPECT_NE(std::string(e.what()).find("via v9 has no upper conductor"),
-              std::string::npos);
-  }
+  Stack::Via v9;
+  v9.name = "v9";
+  v9.lower = m1;
+  EXPECT_THROW(broken.addVia(v9), std::invalid_argument);
+  // A conductor after the vias would shift their handles.
+  Stack::Conductor late;
+  late.name = "M3";
+  late.bottom = 2;
+  late.top = 3;
+  EXPECT_THROW(broken.addConductor(late), std::invalid_argument);
   // Handles are indices: equal for the same layer, ordered, and the same
   // on a copy of the stack.
   EXPECT_EQ(stack.layer("M1"), m1);
@@ -300,7 +302,7 @@ TEST(Itf, TrailingComment)
       "CONDUCTOR M1 { THICKNESS=0.2 $ nominal\n"
       "  WMIN=0.1 }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
-  EXPECT_EQ(stack.technology, "t");
+  EXPECT_EQ(stack.technology(), "t");
   EXPECT_NEAR(stack.conductor(stack.layer("M1")).top, 0.2, kTol);
   EXPECT_EQ(stack.conductor(stack.layer("M1")).min_width, 0.1);
 }
@@ -320,7 +322,7 @@ TEST(Itf, IndependentOfLocale)
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
   std::setlocale(LC_NUMERIC, saved.c_str());
   EXPECT_NEAR(stack.conductor(stack.layer("M1")).top, 0.25, kTol);
-  EXPECT_EQ(stack.dielectrics[0].eps, 3.9);
+  EXPECT_EQ(stack.dielectrics()[0].eps, 3.9);
 }
 
 TEST(Itf, Errors)

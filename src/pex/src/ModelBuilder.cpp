@@ -173,15 +173,15 @@ std::string buildFingerprint(const fsv::Stack& stack,
   // A canonical text of the inputs, hashed.
   std::ostringstream text;
   text.precision(17);
-  text << stack.technology << '|' << stack.background_eps << '|';
+  text << stack.technology() << '|' << stack.backgroundEps() << '|';
   for (const std::string& name : options.layers) {
     text << 'l' << name << '|';
   }
-  for (const fsv::Stack::Dielectric& d : stack.dielectrics) {
+  for (const fsv::Stack::Dielectric& d : stack.dielectrics()) {
     text << 'd' << d.name << ' ' << d.bottom << ' ' << d.top << ' ' << d.eps
          << '|';
   }
-  for (const fsv::Stack::Conductor& c : stack.conductors) {
+  for (const fsv::Stack::Conductor& c : stack.conductors()) {
     text << 'c' << c.name << ' ' << c.bottom << ' ' << c.top << ' '
          << c.min_width << ' ' << c.min_spacing;
     for (const fsv::Stack::ConformalDielectric& f : c.conformals) {
@@ -190,7 +190,7 @@ std::string buildFingerprint(const fsv::Stack& stack,
     }
     text << '|';
   }
-  for (const fsv::Stack::Via& v : stack.vias) {
+  for (const fsv::Stack::Via& v : stack.vias()) {
     text << 'v' << v.name << ' ' << stack.name(v.upper) << ' '
          << (v.lower.valid() ? stack.name(v.lower) : "SUBSTRATE") << '|';
   }
