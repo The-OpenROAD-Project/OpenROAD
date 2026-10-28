@@ -47,6 +47,13 @@ values to decrease runtime, for example.
 
 You can also set an overflow value for `keep_resize_below_overflow`, when below that, the modifications made by the rsz tool are maintained (non-virtual `repair_design`).
 
+When using the `-power_driven` flag, `gpl` weights nets by their switching
+activity, so that nets that toggle often are kept short and use less switching
+power. The activity is read from `read_saif`, `read_vcd` or
+`set_power_activity` if given, otherwise from the OpenSTA default propagation,
+in the same scene (`set_scene`) that `report_power` uses. The extra weight
+scales with activity. Clock nets are not weighted.
+
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
 will have the area of their logic cells inflated to reduce routing congestion. 
@@ -74,12 +81,16 @@ Timing-driven arguments
 - They begin with `-timing_driven`.
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
+Power-driven arguments
+- `-power_driven_net_weight`
+
 ```tcl
 global_placement
     [-skip_initial_place]\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-power_driven]\
     [-routability_driven]\
     [-incremental]\
     [-skip_io]\
@@ -108,6 +119,7 @@ global_placement
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-timing_driven_repair_timing]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
+    [-power_driven_net_weight power_driven_net_weight]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -124,6 +136,7 @@ global_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
+| `-power_driven` | Enable power-driven mode. See [link](#power-driven-arguments) for power-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
@@ -180,6 +193,12 @@ global_placement
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
 | `-timing_driven_repair_timing` | **Experimental.** Enable a conservative `repair_setup` pass during last timing-driven iteration. The intent is to apply minimal buffering and gate sizing so that the placement better correlates with global routing timing. Only the worst setup violators are targeted. Disruptive operations (pin swap, gate cloning, VT swap) are suppressed to avoid topology changes during placement. Not ready for production use. |
 | `-timing_driven_repair_tns_end_percent` | **Experimental.** When `-timing_driven_repair_timing` is enabled, controls the percentage of violating endpoints targeted by the `repair_setup` call. The default value is `1.0` and the allowed values are floats `[0, 100]`. |
+
+#### Power-Driven Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A net gains this value times its toggles per cycle, capped at one toggle. The default value is `1`, and the allowed values are floats `>= 0`. |
 
 ### Placement Configuration
 

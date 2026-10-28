@@ -196,6 +196,31 @@ if(ENABLE_GPU)
            COMMAND $<TARGET_FILE:place_ios_test> --gtest_list_tests)
 endif()
 
+add_executable(power_base_test power_base_test.cpp)
+
+target_include_directories(power_base_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+  ${OPENSTA_HOME}
+)
+
+target_link_libraries(power_base_test
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  tst
+  defin
+)
+
+gtest_discover_tests(power_base_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    ${gpl_gpu_test_discovery}
+)
+if(ENABLE_GPU)
+  add_test(NAME power_base_test_load_sentinel
+           COMMAND $<TARGET_FILE:power_base_test> --gtest_list_tests)
+endif()
+
 add_executable(placer_base_test
   placer_base_test.cpp
 )
