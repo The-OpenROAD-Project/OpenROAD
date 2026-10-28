@@ -638,6 +638,7 @@ cc_test(
     ],
     deps = [
         "//src/dbSta:dbNetwork",
+        "//src/dbSta:dbSdcNetwork",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",

@@ -11,12 +11,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.667 |      -10.4 |     21 | capture_9/D
-     406* |      14 |     117 |       28 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
-    final |      14 |     117 |       28 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
+     401* |      12 |     114 |       26 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
+    final |      12 |     114 |       26 |      1 |     5 |   +10.1% |   -0.454 |       -7.4 |     21 | capture_2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 14 buffers.
-[INFO RSZ-0040] Inserted 28 buffers.
-[INFO RSZ-0051] Resized 117 instances: 117 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0059] Removed 12 buffers.
+[INFO RSZ-0040] Inserted 26 buffers.
+[INFO RSZ-0051] Resized 114 instances: 114 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 5 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
@@ -93,12 +93,12 @@ Path Type: max
    0.0499    1.6125 ^ inst36/Z (MUX2_X1)
    0.0184    1.6309 v inst37/ZN (AOI21_X2)
    0.0904    1.7214 ^ inst38/ZN (OAI33_X1)
-   0.0403    1.7617 ^ inst39/Z (BUF_X4)
-   0.0309    1.7926 ^ rebuffer6/Z (BUF_X8)
-   0.0217    1.8143 ^ clone3/Z (BUF_X16)
-   0.0191    1.8334 v inst40_neighbor7/ZN (OAI21_X4)
-   0.0057    1.8391 v capture_2/D (DFF_X1)
-             1.8391   data arrival time
+   0.0406    1.7620 ^ inst39/Z (BUF_X4)
+   0.0312    1.7931 ^ rebuffer6/Z (BUF_X8)
+   0.0217    1.8149 ^ clone3/Z (BUF_X16)
+   0.0191    1.8339 v inst40_neighbor7/ZN (OAI21_X4)
+   0.0057    1.8396 v capture_2/D (DFF_X1)
+             1.8396   data arrival time
 
    1.4300    1.4300   clock core_clock (rise edge)
    0.0000    1.4300   clock network delay (ideal)
@@ -108,8 +108,8 @@ Path Type: max
              1.3854   data required time
 -------------------------------------------------------------
              1.3854   data required time
-            -1.8391   data arrival time
+            -1.8396   data arrival time
 -------------------------------------------------------------
-            -0.4537   slack (VIOLATED)
+            -0.4542   slack (VIOLATED)
 
 
