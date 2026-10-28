@@ -2716,7 +2716,7 @@ NesterovBase::~NesterovBase() = default;
 void NesterovBase::updateGCellCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-#pragma omp parallel for `num_threads(nbc_->getNumThreads()) schedule(static)
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) schedule(static)
   for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
