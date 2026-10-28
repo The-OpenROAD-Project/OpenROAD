@@ -196,16 +196,20 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
   // The via/patch metal is much smaller than a pixel, so check the pin
   // shapes on those layers against the actual metal.
   const Master* master = cell->getMaster();
+  odb::dbInst* inst = cell->getDbInst();
   const DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
   const DbuY y_real = grid_->gridYToDbu(y);
   for (int level = 1; level <= kMaxPinLevel; level++) {
     if ((pin_layers & (1 << level)) == 0) {
       continue;
     }
-    for (const odb::Rect& shape : master->getPinShapes(level)) {
-      const odb::Rect pin_rect
-          = cell_edges::transformEdgeRect(shape, cell, x_real, y_real, orient);
-      if (grid_->overlapsPinBlockage(level, pin_rect)) {
+    for (const Master::PinShape& shape : master->getPinShapes(level)) {
+      const odb::Rect pin_rect = cell_edges::transformEdgeRect(
+          shape.rect, cell, x_real, y_real, orient);
+      // A pin may touch special-net metal on its own net.
+      const odb::dbNet* pin_net
+          = inst ? inst->getITerm(shape.mterm)->getNet() : nullptr;
+      if (grid_->overlapsPinBlockage(level, pin_rect, pin_net)) {
         return false;
       }
     }
