@@ -49,6 +49,7 @@ TESTS = [
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_from_odb",
     "incremental_repair_cugr",
     "incremental_update_net",
     "infinite_cap",
@@ -347,6 +348,23 @@ cc_test(
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestResistanceMode",
+    size = "small",
+    srcs = ["cpp/TestResistanceMode.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:physical_builder",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

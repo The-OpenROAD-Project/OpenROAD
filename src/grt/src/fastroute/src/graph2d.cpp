@@ -1023,6 +1023,19 @@ void Graph2D::updateCap3D(int x,
   cap3D.cap_ndr = cap;
 }
 
+void Graph2D::addCap3D(const int x,
+                       const int y,
+                       const int layer,
+                       const EdgeDirection direction,
+                       const int delta)
+{
+  auto& cap3D = (EdgeDirection::Horizontal == direction)
+                    ? h_cap_3D_[layer][x][y]
+                    : v_cap_3D_[layer][x][y];
+  cap3D.cap += delta;
+  cap3D.cap_ndr += delta;
+}
+
 // Prints the capacity of each edge per layer.
 void Graph2D::printEdgeCapPerLayer()
 {

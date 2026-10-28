@@ -893,6 +893,13 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   sat::Model model;
   sat::SatParameters parameters;
+  if (num_flops <= 128) {
+    // Small ILPs are solved fastest by a single deterministic LP-backed
+    // worker; presolve and a parallel subsolver portfolio only add overhead.
+    parameters.set_cp_model_presolve(false);
+    parameters.set_num_workers(1);
+    parameters.set_interleave_search(false);
+  }
   model.Add(NewSatParameters(parameters));
   sat::CpSolverResponse response = sat::SolveCpModel(cp_model.Build(), &model);
 
@@ -1230,7 +1237,7 @@ void MBFF::RunMultistart(
     RunCapacitatedKMeans(flops,
                          start_trays[bit_idx][tray_idx],
                          bit_cnt,
-                         8,
+                         4,
                          tmp_cluster,
                          array_mask);
 
@@ -1786,7 +1793,7 @@ float MBFF::RunClustering(const std::vector<Flop>& flops,
 
         std::vector<std::pair<int, int>> cluster;
         RunCapacitatedKMeans(
-            pointsets[t], cur_trays[i], GetBitCnt(i), 35, cluster, array_mask);
+            pointsets[t], cur_trays[i], GetBitCnt(i), 15, cluster, array_mask);
         MinCostFlow(pointsets[t], cur_trays[i], GetBitCnt(i), cluster);
         for (int j = 0; j < num_trays; j++) {
           GetSlots(
