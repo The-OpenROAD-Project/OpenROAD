@@ -74,8 +74,11 @@
 #include "dbIsolation.h"
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
+#include "dbLib.h"
 #include "dbLogicPort.h"
+#include "dbMPin.h"
 #include "dbMarkerCategory.h"
+#include "dbMaster.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -507,7 +510,25 @@ _dbBlock::~_dbBlock()
 void dbBlock::clear()
 {
   _dbBlock* block = (_dbBlock*) this;
+  for (auto callback : block->callbacks_) {
+    callback->inDbBlockClear(this);
+  }
   _dbDatabase* db = block->getDatabase();
+  // Only master pins survive the bulk destruction of block contents.
+  for (auto access_point : getAccessPoints()) {
+    auto ap = (_dbAccessPoint*) access_point;
+    if (!ap->mpin_.isValid() || !db->lib_tbl_->validId(ap->lib_)) {
+      continue;
+    }
+    auto lib = db->lib_tbl_->getPtr(ap->lib_);
+    if (!lib->master_tbl_->validId(ap->master_)) {
+      continue;
+    }
+    auto master = lib->master_tbl_->getPtr(ap->master_);
+    if (master->mpin_tbl_->validId(ap->mpin_)) {
+      master->mpin_tbl_->getPtr(ap->mpin_)->aps_.clear();
+    }
+  }
   _dbBlock* parent = (_dbBlock*) getParent();
   _dbChip* chip = (_dbChip*) getChip();
 
@@ -882,8 +903,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::* module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
+    dbId<_dbModule> T_impl::*module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {
