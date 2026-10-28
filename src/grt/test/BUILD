@@ -49,6 +49,7 @@ TESTS = [
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_from_odb",
     "incremental_repair_cugr",
     "incremental_update_net",
     "infinite_cap",
@@ -141,6 +142,8 @@ TESTS = [
     "resistance_aware_asap7_fr",
     "resistance_aware_cugr",
     "resistance_aware_highres_cugr",
+    "report_congestion1",
+    "report_congestion_cugr",
     "report_net_detours1",
     "report_net_detours2",
     "report_net_detours2_cugr",
@@ -341,9 +344,27 @@ cc_test(
     deps = [
         "//src/grt",
         "//src/grt:fastroute",
+        "//src/grt:groute",
         "//src/odb/src/db",
         "//src/stt",
         "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestResistanceMode",
+    size = "small",
+    srcs = ["cpp/TestResistanceMode.cpp"],
+    deps = [
+        "//src/grt",
+        "//src/grt:fastroute",
+        "//src/odb/src/db",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:physical_builder",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -363,6 +384,22 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGlobalRouter",
+    size = "small",
+    srcs = ["cpp/TestGlobalRouter.cpp"],
+    data = [":test_resources"],
+    deps = [
+        "//src/dbSta",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

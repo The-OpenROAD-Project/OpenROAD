@@ -9,12 +9,11 @@
 [ERROR FSV-0007] Layer met9 is not a conductor or via of the ITF stack.
 [ERROR FSV-0009] Net b has no shapes.
 [ERROR FSV-0025] -tol_total must be a number greater than 0.
-[ERROR FSV-0026] -coupling_threshold must be a number from 0 to 1.
 [ERROR FSV-0027] -max_walks must be an integer of at least 1.
 [ERROR FSV-0028] -panels must be a positive multiple of 16.
 [ERROR FSV-0012] panels must be a positive multiple of 16
-[INFO FSV-0011] Net a: total 0.17138 fF +- 0.0067 after 16384 walks (173.2 hops per walk).
-  ground                    0.17138 +- 0.0067 fF
+[INFO FSV-0011] Net a: total 0.15367 fF +- 0.0058 after 32768 walks (52.4 hops per walk).
+  ground                    0.15367 +- 0.0058 fF
 [ERROR FSV-0015] The field solver holds boxes; run clear_field_solver before adding cross-section rectangles.
 [ERROR FSV-0016] -rect cannot be combined with -layer or -x.
 [ERROR FSV-0017] Give -rect, or -layer with -x.
@@ -26,5 +25,5 @@
 [ERROR FSV-0001] ITF: cannot open missing.itf
 [INFO FSV-0002] Read ITF substrate_via: 1 dielectrics, 1 conductors, 0 conformal dielectrics, 1 vias.
 [ERROR FSV-0014] Via tie lands on the ground plane, which would ground its net.
-Summary 25 / 25 (100% pass)
+Summary 24 / 24 (100% pass)
 pass

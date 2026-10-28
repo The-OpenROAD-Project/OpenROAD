@@ -44,29 +44,29 @@ Stage 3: Pattern routing with detours.
 [DEBUG GRT-rrr] stage 3: total overflow 105.
 Stage 4: Maze routing on sparsified graph.
 [DEBUG GRT-verify_view] iteration 0: 261 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 0: 261 nets rerouted, 18 of them rolled back (the new route added overflow); overflow change -58.13.
+[DEBUG GRT-rrr] iteration 0: 261 nets rerouted, 18 of them rolled back by the accept test; overflow change -58.13.
 [DEBUG GRT-rrr] stage 4: total overflow 46.
 [DEBUG GRT-rrr] Nets with congestion: 227.
 Stage 5: Iterative rip-up and re-route.
 [DEBUG GRT-rrr] Nets with congestion: 227.
 [INFO GRT-0117] Start extra iteration 1/5
 [DEBUG GRT-verify_view] iteration 1: 227 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 1: 227 nets rerouted, 17 of them rolled back (the new route added overflow); overflow change -33.03.
+[DEBUG GRT-rrr] iteration 1: 227 nets rerouted, 17 of them rolled back by the accept test; overflow change -33.03.
 [DEBUG GRT-rrr] rrr iteration 1: total overflow 13.
 [DEBUG GRT-rrr] Nets with congestion: 106.
 [INFO GRT-0117] Start extra iteration 2/5
 [DEBUG GRT-verify_view] iteration 2: 106 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 2: 106 nets rerouted, 8 of them rolled back (the new route added overflow); overflow change -7.07.
+[DEBUG GRT-rrr] iteration 2: 106 nets rerouted, 8 of them rolled back by the accept test; overflow change -7.07.
 [DEBUG GRT-rrr] rrr iteration 2: total overflow 6.
 [DEBUG GRT-rrr] Nets with congestion: 57.
 [INFO GRT-0117] Start extra iteration 3/5
 [DEBUG GRT-verify_view] iteration 3: 57 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 3: 57 nets rerouted, 11 of them rolled back (the new route added overflow); overflow change -0.91.
+[DEBUG GRT-rrr] iteration 3: 57 nets rerouted, 11 of them rolled back by the accept test; overflow change -0.91.
 [DEBUG GRT-rrr] rrr iteration 3: total overflow 6.
 [DEBUG GRT-rrr] Nets with congestion: 49.
 [INFO GRT-0117] Start extra iteration 4/5
 [DEBUG GRT-verify_view] iteration 4: 49 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 4: 49 nets rerouted, 12 of them rolled back (the new route added overflow); overflow change -0.55.
+[DEBUG GRT-rrr] iteration 4: 49 nets rerouted, 12 of them rolled back by the accept test; overflow change -0.55.
 [DEBUG GRT-rrr] rrr iteration 4: total overflow 5.
 [INFO GRT-0124] Iterative RRR stopped after iteration 4: the last 2 iterations each removed less than 1 track of overflow.
 [WARNING GRT-0118] Iterative RRR finished with congestion remaining (5).

@@ -97,8 +97,23 @@ filegroup(
 filegroup(
     name = "asap7_data",
     srcs = [
+        "asap7/asap7.tracks.tcl",
         "asap7/asap7_tech_1x_201209.lef",
         "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# asap7's NLDM liberty, for the cells' functions: the ram module's asap7
+# tests find their cells by them.
+filegroup(
+    name = "asap7_nldm_data",
+    srcs = [
+        "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
     ],
     visibility = ["//visibility:public"],
 )

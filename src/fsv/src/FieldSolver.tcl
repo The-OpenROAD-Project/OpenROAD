@@ -107,8 +107,7 @@ proc clear_field_solver { args } {
   fsv::clear_cmd
 }
 
-sta::define_cmd_args "solve_capacitance" {[-coupling_threshold fraction]\
-                                           [-max_walks walks]\
+sta::define_cmd_args "solve_capacitance" {[-max_walks walks]\
                                            [-min_walks walks]\
                                            [-nets nets]\
                                            [-panels panels]\
@@ -118,8 +117,8 @@ sta::define_cmd_args "solve_capacitance" {[-coupling_threshold fraction]\
 
 proc solve_capacitance { args } {
   sta::parse_key_args "solve_capacitance" args \
-    keys {-coupling_threshold -max_walks -min_walks -nets -panels -seed \
-          -tol_coupling -tol_total} \
+    keys {-max_walks -min_walks -nets -panels -seed -tol_coupling \
+          -tol_total} \
     flags {}
   sta::check_argc_eq0 "solve_capacitance" $args
 
@@ -127,7 +126,6 @@ proc solve_capacitance { args } {
   set values {}
   foreach {key check} {-tol_total fsv::check_tolerance \
                        -tol_coupling fsv::check_tolerance \
-                       -coupling_threshold fsv::check_fraction \
                        -min_walks {fsv::check_count 0} \
                        -max_walks {fsv::check_count 1} \
                        -seed {fsv::check_count 0} \
@@ -176,12 +174,6 @@ proc check_distance { key value } {
 proc check_tolerance { key value } {
   if { !([string is double -strict $value] && $value > 0) } {
     utl::error FSV 25 "$key must be a number greater than 0."
-  }
-}
-
-proc check_fraction { key value } {
-  if { !([string is double -strict $value] && $value >= 0 && $value <= 1) } {
-    utl::error FSV 26 "$key must be a number from 0 to 1."
   }
 }
 
