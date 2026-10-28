@@ -3,51 +3,117 @@
 
 #include "fsv/Stack.h"
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace fsv {
 
-const Stack::Conductor* Stack::findConductor(const std::string_view name) const
+Stack::Layer Stack::layer(const std::string_view name) const
 {
-  for (const Conductor& c : conductors) {
-    if (c.name == name) {
-      return &c;
+  for (size_t i = 0; i < conductors.size(); i++) {
+    if (conductors[i].name == name) {
+      return Layer(static_cast<int>(i));
     }
   }
-  return nullptr;
+  for (size_t i = 0; i < vias.size(); i++) {
+    if (vias[i].name == name) {
+      return Layer(static_cast<int>(conductors.size() + i));
+    }
+  }
+  return Layer();
 }
 
-Stack::ZExtent Stack::zExtent(const std::string_view layer) const
+std::vector<Stack::Layer> Stack::conductorLayers() const
 {
-  ZExtent extent;
-  if (const Conductor* c = findConductor(layer)) {
-    extent.status = ZExtent::kFound;
-    extent.bottom = c->bottom;
-    extent.top = c->top;
-    return extent;
+  std::vector<Layer> layers;
+  for (size_t i = 0; i < conductors.size(); i++) {
+    layers.push_back(Layer(static_cast<int>(i)));
   }
-  for (const Via& v : vias) {
-    if (v.name == layer) {
-      extent.via = &v;
-    }
+  return layers;
+}
+
+std::vector<Stack::Layer> Stack::viaLayers() const
+{
+  std::vector<Layer> layers;
+  for (size_t i = 0; i < vias.size(); i++) {
+    layers.push_back(Layer(static_cast<int>(conductors.size() + i)));
   }
-  if (extent.via == nullptr) {
-    return extent;
+  return layers;
+}
+
+bool Stack::isConductor(const Layer layer) const
+{
+  return layer.valid() && layer.index() < static_cast<int>(conductors.size());
+}
+
+bool Stack::isVia(const Layer layer) const
+{
+  return layer.valid() && !isConductor(layer)
+         && layer.index() < static_cast<int>(conductors.size() + vias.size());
+}
+
+namespace {
+
+// What a handle that is neither a conductor nor a via of the stack is.
+[[noreturn]] void failHandle(const Stack::Layer layer)
+{
+  throw std::invalid_argument(
+      layer.valid() ? "layer handle " + std::to_string(layer.index())
+                          + " is past the stack's layers"
+                    : std::string("no layer given"));
+}
+
+}  // namespace
+
+const Stack::Conductor& Stack::conductor(const Layer layer) const
+{
+  if (isVia(layer)) {
+    throw std::invalid_argument(name(layer)
+                                + " is a via, not a conductor of the stack");
   }
-  const Conductor* lower = findConductor(extent.via->lower);
-  const Conductor* upper = findConductor(extent.via->upper);
-  if (lower == nullptr) {
-    extent.status = ZExtent::kViaToGround;
-  } else if (upper == nullptr) {
-    extent.status = ZExtent::kViaWithoutUpper;
-  } else {
-    extent.status = ZExtent::kFound;
-    extent.bottom = lower->top;
-    extent.top = upper->bottom;
+  if (!isConductor(layer)) {
+    failHandle(layer);
   }
-  return extent;
+  return conductors[layer.index()];
+}
+
+const Stack::Via& Stack::via(const Layer layer) const
+{
+  if (isConductor(layer)) {
+    throw std::invalid_argument(name(layer)
+                                + " is a conductor, not a via of the stack");
+  }
+  if (!isVia(layer)) {
+    failHandle(layer);
+  }
+  return vias[layer.index() - conductors.size()];
+}
+
+const std::string& Stack::name(const Layer layer) const
+{
+  if (isConductor(layer)) {
+    return conductors[layer.index()].name;
+  }
+  if (isVia(layer)) {
+    return vias[layer.index() - conductors.size()].name;
+  }
+  failHandle(layer);
+}
+
+Stack::ZExtent Stack::zExtent(const Layer layer) const
+{
+  if (isConductor(layer)) {
+    const Conductor& c = conductor(layer);
+    return {c.bottom, c.top};
+  }
+  const Via& v = via(layer);
+  if (!isConductor(v.upper)) {
+    throw std::invalid_argument("via " + v.name + " has no upper conductor");
+  }
+  return {v.lower.valid() ? conductor(v.lower).top : 0,
+          conductor(v.upper).bottom};
 }
 
 double Stack::epsAt(const double z) const

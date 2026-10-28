@@ -464,26 +464,27 @@ void Parser::addVias(const std::vector<Block>& vias, Stack& stack) const
   for (const Block& b : vias) {
     const std::string& from = b.text("FROM");
     const std::string& to = b.text("TO");
-    if (from != kSubstrate && !stack.findConductor(from)) {
+    const Stack::Layer a = stack.layer(from);
+    const Stack::Layer c = stack.layer(to);
+    if (from != kSubstrate && !stack.isConductor(a)) {
       fail(b.lineOf("FROM"), "VIA " + b.name + " names unknown layer " + from);
     }
-    if (to != kSubstrate && !stack.findConductor(to)) {
+    if (to != kSubstrate && !stack.isConductor(c)) {
       fail(b.lineOf("TO"), "VIA " + b.name + " names unknown layer " + to);
     }
     if (from == to) {
       fail(b.line, "VIA " + b.name + " connects " + from + " to itself");
     }
     if (from == kSubstrate || to == kSubstrate) {
-      stack.vias.push_back(
-          {b.name, from == kSubstrate ? to : from, std::string(kSubstrate)});
+      stack.vias.push_back({b.name, from == kSubstrate ? c : a, {}});
       continue;
     }
-    const Stack::Conductor* a = stack.findConductor(from);
-    const Stack::Conductor* c = stack.findConductor(to);
-    if (a->bottom >= c->top - kHeightTolerance) {
-      stack.vias.push_back({b.name, from, to});
-    } else if (c->bottom >= a->top - kHeightTolerance) {
-      stack.vias.push_back({b.name, to, from});
+    const Stack::Conductor& from_conductor = stack.conductor(a);
+    const Stack::Conductor& to_conductor = stack.conductor(c);
+    if (from_conductor.bottom >= to_conductor.top - kHeightTolerance) {
+      stack.vias.push_back({b.name, a, c});
+    } else if (to_conductor.bottom >= from_conductor.top - kHeightTolerance) {
+      stack.vias.push_back({b.name, c, a});
     } else {
       fail(b.line,
            "VIA " + b.name + " connects " + from + " and " + to

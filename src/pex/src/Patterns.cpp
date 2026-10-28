@@ -15,53 +15,39 @@
 
 namespace pex {
 
-ZRange zRange(const fsv::Stack& stack, const std::string_view layer)
+fsv::Stack::ZExtent layerExtent(const fsv::Stack& stack, const Layer layer)
 {
-  const fsv::Stack::ZExtent z = stack.zExtent(layer);
-  switch (z.status) {
-    case fsv::Stack::ZExtent::kFound:
-      return {z.bottom, z.top};
-    case fsv::Stack::ZExtent::kUnknownLayer:
-      throw std::invalid_argument("the stack has no layer "
-                                  + std::string(layer));
-    case fsv::Stack::ZExtent::kViaToGround:
-      throw std::invalid_argument("via " + std::string(layer)
-                                  + " lands on the ground plane");
-    case fsv::Stack::ZExtent::kViaWithoutUpper:
-      throw std::invalid_argument("via " + std::string(layer)
-                                  + " has no upper conductor");
+  if (!layer.valid()) {
+    throw std::invalid_argument("no layer given");
   }
-  throw std::invalid_argument("bad layer " + std::string(layer));
+  if (stack.isVia(layer) && !stack.via(layer).lower.valid()) {
+    throw std::invalid_argument("via " + stack.name(layer)
+                                + " lands on the ground plane");
+  }
+  return stack.zExtent(layer);
 }
 
 namespace {
 
-std::vector<std::string> layersBeside(const fsv::Stack& stack,
-                                      const std::string_view layer,
-                                      const bool below)
+std::vector<Layer> layersBeside(const fsv::Stack& stack,
+                                const Layer layer,
+                                const bool below)
 {
-  const ZRange z = zRange(stack, layer);
-  std::vector<const fsv::Stack::Conductor*> others;
-  for (const fsv::Stack::Conductor& c : stack.conductors) {
-    if (c.name == layer) {
-      continue;
-    }
-    if (below ? c.top <= z.bottom : c.bottom >= z.top) {
-      others.push_back(&c);
+  const fsv::Stack::Conductor& c = stack.conductor(layer);
+  std::vector<Layer> others;
+  for (const Layer other : stack.conductorLayers()) {
+    const fsv::Stack::Conductor& o = stack.conductor(other);
+    if (other != layer && (below ? o.top <= c.bottom : o.bottom >= c.top)) {
+      others.push_back(other);
     }
   }
   std::stable_sort(
-      others.begin(),
-      others.end(),
-      [&](const fsv::Stack::Conductor* a, const fsv::Stack::Conductor* b) {
-        return below ? a->top > b->top : a->bottom < b->bottom;
+      others.begin(), others.end(), [&](const Layer a, const Layer b) {
+        const fsv::Stack::Conductor& ca = stack.conductor(a);
+        const fsv::Stack::Conductor& cb = stack.conductor(b);
+        return below ? ca.top > cb.top : ca.bottom < cb.bottom;
       });
-  std::vector<std::string> names;
-  names.reserve(others.size());
-  for (const fsv::Stack::Conductor* c : others) {
-    names.push_back(c->name);
-  }
-  return names;
+  return others;
 }
 
 template <class Geometry>
@@ -77,14 +63,12 @@ int findOrAddNet(Geometry& geometry, const std::string_view name)
 
 }  // namespace
 
-std::vector<std::string> layersBelow(const fsv::Stack& stack,
-                                     const std::string_view layer)
+std::vector<Layer> layersBelow(const fsv::Stack& stack, const Layer layer)
 {
   return layersBeside(stack, layer, true);
 }
 
-std::vector<std::string> layersAbove(const fsv::Stack& stack,
-                                     const std::string_view layer)
+std::vector<Layer> layersAbove(const fsv::Stack& stack, const Layer layer)
 {
   return layersBeside(stack, layer, false);
 }
@@ -94,14 +78,14 @@ NetIndex PatternBuilder::net(const std::string_view name)
   return findOrAddNet(geometry_, name);
 }
 
-void PatternBuilder::add(const std::string_view layer,
+void PatternBuilder::add(const Layer layer,
                          const NetIndex net,
                          const double x0,
                          const double y0,
                          const double x1,
                          const double y1)
 {
-  const ZRange z = zRange(stack_, layer);
+  const fsv::Stack::ZExtent z = layerExtent(stack_, layer);
   geometry_.addBox(net, {{x0, y0, z.bottom}, {x1, y1, z.top}});
 }
 
@@ -110,26 +94,23 @@ NetIndex SectionBuilder::net(const std::string_view name)
   return findOrAddNet(geometry_, name);
 }
 
-void SectionBuilder::add(const std::string_view layer,
+void SectionBuilder::add(const Layer layer,
                          const NetIndex net,
                          const double x0,
                          const double x1)
 {
-  const ZRange z = zRange(stack_, layer);
+  const fsv::Stack::ZExtent z = layerExtent(stack_, layer);
   geometry_.addRect(net, {{x0, z.bottom}, {x1, z.top}});
 }
 
 LateralPattern::Section LateralPattern::build(const fsv::Stack& stack) const
 {
-  const fsv::Stack::Conductor* conductor = stack.findConductor(layer);
-  if (conductor == nullptr) {
-    throw std::invalid_argument("the stack has no conductor " + layer);
-  }
+  const fsv::Stack::Conductor& conductor = stack.conductor(layer);
   if (width <= 0) {
     throw std::invalid_argument("the wire needs a positive width");
   }
   const double neighbor_w
-      = neighbor_width > 0 ? neighbor_width : conductor->min_width;
+      = neighbor_width > 0 ? neighbor_width : conductor.min_width;
   if (neighbor_w <= 0) {
     throw std::invalid_argument("the neighbors need a positive width");
   }
@@ -154,11 +135,11 @@ LateralPattern::Section LateralPattern::build(const fsv::Stack& stack) const
   }
   const double plane_left = outer_left - extent;
   const double plane_right = outer_right + extent;
-  if (!below.empty()) {
+  if (below.valid()) {
     section.below = builder.net("below");
     builder.add(below, section.below, plane_left, plane_right);
   }
-  if (!above.empty()) {
+  if (above.valid()) {
     section.above = builder.net("above");
     builder.add(above, section.above, plane_left, plane_right);
   }
@@ -175,11 +156,11 @@ EndPattern::Wire EndPattern::build(const fsv::Stack& stack) const
   Wire w;
   w.wire = builder.net("wire");
   builder.add(layer, w.wire, -width / 2, 0, width / 2, length);
-  if (!below.empty()) {
+  if (below.valid()) {
     w.below = builder.net("below");
     builder.add(below, w.below, -extent, -margin, extent, length + margin);
   }
-  if (!above.empty()) {
+  if (above.valid()) {
     w.above = builder.net("above");
     builder.add(above, w.above, -extent, -margin, extent, length + margin);
   }
@@ -221,7 +202,7 @@ CrossingPattern::Array CrossingPattern::build(const fsv::Stack& stack) const
     array.right = builder.net("right");
     builder.add(layer, array.right, w / 2 + s, y0, w / 2 + s + w, y1);
   }
-  if (!other.empty()) {
+  if (other.valid()) {
     array.other = builder.net("other");
     builder.add(other, array.other, -extent, y0, extent, y1);
   }

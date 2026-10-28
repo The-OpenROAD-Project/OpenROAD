@@ -24,6 +24,22 @@ const fsv::Stack& sky130()
   return stack;
 }
 
+// A sky130 layer by name; no layer for a name the stack lacks.
+Layer L(const std::string& name)
+{
+  return sky130().layer(name);
+}
+
+// The names of layers, "" for none, for comparisons.
+std::vector<std::string> names(const std::vector<Layer>& layers)
+{
+  std::vector<std::string> out;
+  for (const Layer layer : layers) {
+    out.push_back(layer.valid() ? sky130().name(layer) : "");
+  }
+  return out;
+}
+
 BuildOptions smallBuild(const int threads)
 {
   BuildOptions o;
@@ -47,7 +63,7 @@ TEST(ModelBuilder, TablesAreSymmetricAndThreadIndependent)
     EXPECT_EQ(done, calls);
     EXPECT_EQ(total, 2 * 2 * 6);
   };
-  buildLateral(sky130(), "met2", options, one);
+  buildLateral(sky130(), L("met2"), options, one);
   EXPECT_EQ(calls, 24);
   ASSERT_EQ(one.laterals().size(), 2u);
   EXPECT_NE(one.lateral({"met2", "", ""}), nullptr);
@@ -86,7 +102,7 @@ TEST(ModelBuilder, TablesAreSymmetricAndThreadIndependent)
     EXPECT_EQ(total, 24);
     last = done;
   };
-  buildLateral(sky130(), "met2", threaded, three);
+  buildLateral(sky130(), L("met2"), threaded, three);
   EXPECT_EQ(last, 24);
   const LateralTable* again = three.lateral({"met2", "met1", ""});
   ASSERT_NE(again, nullptr);
@@ -113,10 +129,10 @@ TEST(ModelBuilder, CrossingAndEndTables)
   for (const double bad : {0.0, 1.0}) {
     BuildOptions full = o;
     full.coverages = {bad};
-    EXPECT_THROW(buildCrossing(sky130(), "met2", "met3", full, model),
+    EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), full, model),
                  std::invalid_argument);
   }
-  buildCrossing(sky130(), "met2", "met3", o, model);
+  buildCrossing(sky130(), L("met2"), L("met3"), o, model);
   const CrossingTable* c = model.crossing({"met2", "met3"});
   ASSERT_NE(c, nullptr);
   // Gaps are wc (1 / f - 1): 0.3, 0.9 (twice, merged) and 2.7 µm.
@@ -129,10 +145,10 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_LT(c->values()[0].total, 1.0);
   EXPECT_GT(c->values()[0].total, c->values()[1].total);
   EXPECT_GT(c->values()[1].cross, 0);
-  EXPECT_THROW(buildCrossing(sky130(), "met2", "met2", o, model),
+  EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met2"), o, model),
                std::invalid_argument);
 
-  buildEnds(sky130(), "met2", o, model);
+  buildEnds(sky130(), L("met2"), o, model);
   EXPECT_EQ(model.ends().size(), 2u);
   const EndTable* e = model.end({"met2", "met1", ""});
   ASSERT_NE(e, nullptr);
@@ -151,7 +167,7 @@ TEST(ModelBuilder, DiagonalTable)
   o.diagonal_far_spacing_factors = {1};
   o.tol = 0.02;
   Model model;
-  buildDiagonal(sky130(), "met2", "met1", o, model);
+  buildDiagonal(sky130(), L("met2"), L("met1"), o, model);
   const DiagonalTable* t = model.diagonal({"met2", "met1"});
   ASSERT_NE(t, nullptr);
   ASSERT_EQ(t->values().size(), 1u * 2 * 2 * 2);
@@ -170,17 +186,17 @@ TEST(ModelBuilder, DiagonalTable)
   EXPECT_LT(near_shielded.lateral_delta, 0);
   EXPECT_LT(far_shielded.coupling, near_open.coupling);
   EXPECT_EQ(far_shielded.lateral_delta, 0);
-  EXPECT_EQ(diagonalLayers(sky130(), "met2", o),
+  EXPECT_EQ(names(diagonalLayers(sky130(), L("met2"), o)),
             (std::vector<std::string>{"met1", "li1", "met3", "met4"}));
   // Only the technology's routing layers take part when they are given.
   BuildOptions routing = o;
   routing.layers = {"met1", "met2", "met3"};
   routing.above_depth = 1;
-  EXPECT_EQ(diagonalLayers(sky130(), "met2", routing),
+  EXPECT_EQ(names(diagonalLayers(sky130(), L("met2"), routing)),
             (std::vector<std::string>{"met1", "met3"}));
-  EXPECT_EQ(coversBelow(sky130(), "met1", routing),
+  EXPECT_EQ(names(coversBelow(sky130(), L("met1"), routing)),
             (std::vector<std::string>{""}));
-  EXPECT_EQ(coversAbove(sky130(), "met2", routing),
+  EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
             (std::vector<std::string>{"", "met3"}));
   EXPECT_NE(buildFingerprint(sky130(), routing), buildFingerprint(sky130(), o));
 }
@@ -190,14 +206,16 @@ TEST(ModelBuilder, RefusesBadLayersBeforeSolving)
   BuildOptions o = smallBuild(2);
   Model model;
   // A conductor on the ground plane cannot be a wire or a parallel wire.
-  EXPECT_THROW(buildLateral(sky130(), "DIFF", o, model), std::invalid_argument);
-  EXPECT_THROW(buildDiagonal(sky130(), "met1", "DIFF", o, model),
+  EXPECT_THROW(buildLateral(sky130(), L("DIFF"), o, model),
+               std::invalid_argument);
+  EXPECT_THROW(buildDiagonal(sky130(), L("met1"), L("DIFF"), o, model),
                std::invalid_argument);
   // A layer the stack lacks, among the options' layers or as the layer.
   o.layers = {"met1", "metX"};
-  EXPECT_THROW(coversBelow(sky130(), "met2", o), std::invalid_argument);
-  EXPECT_THROW(diagonalLayers(sky130(), "met2", o), std::invalid_argument);
-  EXPECT_THROW(buildLateral(sky130(), "metX", o, model), std::invalid_argument);
+  EXPECT_THROW(coversBelow(sky130(), L("met2"), o), std::invalid_argument);
+  EXPECT_THROW(diagonalLayers(sky130(), L("met2"), o), std::invalid_argument);
+  EXPECT_THROW(buildLateral(sky130(), L("metX"), o, model),
+               std::invalid_argument);
   EXPECT_TRUE(model.laterals().empty());
 }
 
@@ -211,7 +229,8 @@ TEST(ModelBuilder, JobExceptionsPropagate)
   // when the pattern is built inside the job.
   o.extent = -100;
   Model model;
-  EXPECT_THROW(buildLateral(sky130(), "met2", o, model), std::invalid_argument);
+  EXPECT_THROW(buildLateral(sky130(), L("met2"), o, model),
+               std::invalid_argument);
 }
 
 TEST(ModelBuilder, FingerprintFollowsTheStackAndTheOptions)
@@ -237,7 +256,7 @@ TEST(ModelBuilder, FingerprintFollowsTheStackAndTheOptions)
 TEST(ModelBuilder, RejectsUnknownLayer)
 {
   Model model;
-  EXPECT_THROW(buildLateral(sky130(), "met9", smallBuild(1), model),
+  EXPECT_THROW(buildLateral(sky130(), L("met9"), smallBuild(1), model),
                std::invalid_argument);
 }
 
@@ -254,9 +273,9 @@ TEST(ModelBuilder, SectionMatchesTheGolden)
   const int left = builder.net("left");
   const int middle = builder.net("middle");
   const int right = builder.net("right");
-  builder.add("m", left, 0, 0.2);
-  builder.add("m", middle, 0.4, 0.6);
-  builder.add("m", right, 0.8, 1.0);
+  builder.add(stack.layer("m"), left, 0, 0.2);
+  builder.add(stack.layer("m"), middle, 0.4, 0.6);
+  builder.add(stack.layer("m"), right, 0.8, 1.0);
   const fsv::Scene2D scene(builder.geometry(), stack);
   fsv::Solver solver({.threads = 2});
   fsv::SolveOptions options;

@@ -21,7 +21,7 @@ fsv::Stack twoLayers()
       {.name = "m1", .bottom = 1, .top = 2, .conformals = {}});
   stack.conductors.push_back(
       {.name = "m2", .bottom = 3, .top = 4, .conformals = {}});
-  stack.vias.push_back({.name = "v1", .upper = "m2", .lower = "m1"});
+  stack.vias.push_back({"v1", stack.layer("m2"), stack.layer("m1")});
   return stack;
 }
 

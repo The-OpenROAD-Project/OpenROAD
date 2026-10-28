@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <compare>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -42,14 +43,32 @@ struct Stack
     std::vector<ConformalDielectric> conformals;
   };
 
+  // A handle to a conductor or via of the stack that made it: an index,
+  // so it stays valid across copies of that stack, but not across changes
+  // to its conductors or vias, and it means nothing to another stack. A
+  // default handle names no layer.
+  class Layer
+  {
+   public:
+    constexpr Layer() = default;
+    constexpr bool valid() const { return index_ >= 0; }
+    constexpr int index() const { return index_; }
+    constexpr auto operator<=>(const Layer&) const = default;
+
+   private:
+    friend struct Stack;
+    explicit constexpr Layer(const int index) : index_(index) {}
+    int index_ = -1;
+  };
+
   // A via between two conductor layers; it spans from the top of `lower` to
-  // the bottom of `upper`. `lower` is "SUBSTRATE" for a via that lands on the
-  // ground plane.
+  // the bottom of `upper`. A `lower` that names no layer is the ground
+  // plane (an ITF SUBSTRATE via).
   struct Via
   {
     std::string name;
-    std::string upper;
-    std::string lower;
+    Layer upper;
+    Layer lower;
   };
 
   std::string technology;
@@ -58,25 +77,31 @@ struct Stack
   std::vector<Conductor> conductors;
   std::vector<Via> vias;
 
-  const Conductor* findConductor(std::string_view name) const;
+  // The conductor or via of a name; a handle that names no layer when
+  // the stack has neither.
+  Layer layer(std::string_view name) const;
+  // Handles to every conductor, in the stack's order.
+  std::vector<Layer> conductorLayers() const;
+  std::vector<Layer> viaLayers() const;
+  bool isConductor(Layer layer) const;
+  bool isVia(Layer layer) const;
+  // The conductor (or via) behind a handle. Throws std::invalid_argument
+  // for a handle that names no layer, one past the stack's layers, or one
+  // of the other kind.
+  const Conductor& conductor(Layer layer) const;
+  const Via& via(Layer layer) const;
+  const std::string& name(Layer layer) const;
 
-  // The z extent of a conductor or via layer: a conductor's own, or a via's
-  // from the top of its lower conductor to the bottom of its upper one.
+  // The z extent of a layer: a conductor's own, or a via's from the top of
+  // its lower conductor (the ground plane, 0, for a substrate via) to the
+  // bottom of its upper one. Throws std::invalid_argument for a handle
+  // that names no layer, or a via without an upper conductor.
   struct ZExtent
   {
-    enum Status
-    {
-      kFound,
-      kUnknownLayer,
-      kViaToGround,  // lands on the ground plane (a SUBSTRATE via)
-      kViaWithoutUpper,
-    };
-    Status status = kUnknownLayer;
     double bottom = 0;
     double top = 0;
-    const Via* via = nullptr;  // for a via layer
   };
-  ZExtent zExtent(std::string_view layer) const;
+  ZExtent zExtent(Layer layer) const;
   // Relative permittivity of the planar stack at height z (z >= 0).
   double epsAt(double z) const;
   // A horizontal boundary in the planar stack where the permittivity
