@@ -180,6 +180,12 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(
         PinAccessCase{"TopLayer", "metal10", 10, true, false, true},
         PinAccessCase{"AboveTopRoutingLayer", "metal10", 9, false, false, true},
+        PinAccessCase{"FarAboveTopRoutingLayer",
+                      "metal10",
+                      8,
+                      false,
+                      false,
+                      true},
         PinAccessCase{"MiddleLayer", "metal6", 10, true, true, true},
         PinAccessCase{"BottomLayer", "metal2", 10, true, true, false}),
     [](const testing::TestParamInfo<PinAccessCase>& info) {

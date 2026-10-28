@@ -341,7 +341,7 @@ void FlexPA::createMultipleAccessPoints(
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   bool allow_planar = isRoutableLayer(layer_num);
   bool allow_via
-      = isRoutableLayer(layer_num + 2) || isRoutableLayer(layer_num - 2);
+      = hasRoutableLayerAbove(layer_num) || hasRoutableLayerBelow(layer_num);
   if (isStdCellTerm(inst_term)) {
     //  only VIA_ACCESS_LAYERNUM layer can have via access
     allow_planar = !((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
@@ -907,12 +907,8 @@ void FlexPA::filterViaAccess(
     const int max_vias
         = try_all_vias ? std::numeric_limits<int>::max() : max_num_via_trial;
 
-    bool allow_up = isRoutableLayer(layer_num + 2);
-    bool allow_down = isRoutableLayer(layer_num - 2);
-    if (isStdCellTerm(inst_term) || isMacroCellTerm(inst_term)) {
-      allow_up = layer_num + 2 <= router_cfg_->TOP_ROUTING_LAYER;
-      allow_down = false;
-    }
+    const bool allow_up = hasRoutableLayerAbove(layer_num);
+    const bool allow_down = hasRoutableLayerBelow(layer_num);
 
     // UP Vias
     if (allow_up) {

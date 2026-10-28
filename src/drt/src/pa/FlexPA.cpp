@@ -454,6 +454,30 @@ bool FlexPA::isRoutableLayer(const frLayerNum layer_num)
          && getDesign()->getTech()->getLayer(layer_num)->isRoutable();
 }
 
+bool FlexPA::hasRoutableLayerAbove(const frLayerNum layer_num)
+{
+  for (frLayerNum above = layer_num + 2;
+       above <= router_cfg_->TOP_ROUTING_LAYER;
+       above += 2) {
+    if (isRoutableLayer(above)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FlexPA::hasRoutableLayerBelow(const frLayerNum layer_num)
+{
+  for (frLayerNum below = layer_num - 2;
+       below >= router_cfg_->BOTTOM_ROUTING_LAYER;
+       below -= 2) {
+    if (isRoutableLayer(below)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");
