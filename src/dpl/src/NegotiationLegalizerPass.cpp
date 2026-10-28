@@ -724,8 +724,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      // targetOrient is computed above, where the fixed supply via check
-      // needs it.
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node,
           GridX{target_x},

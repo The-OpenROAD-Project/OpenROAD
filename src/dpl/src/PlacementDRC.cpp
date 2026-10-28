@@ -118,9 +118,7 @@ class PlacementDRC::FixedSupplyVias
       }
     }
 
-    // Fixed supply via constituent layers are the only master geometry that
-    // can affect placement.  Avoid collecting master geometry when there are
-    // no fixed supply via shapes.
+    // Only fixed supply via layers can contribute placement conflicts.
     if (layers_.empty()) {
       return;
     }
@@ -137,8 +135,7 @@ class PlacementDRC::FixedSupplyVias
       collectMasterShapes(master);
     }
 
-    // Do not retain fixed layers for which no instantiated master has
-    // geometry.  They cannot contribute a placement conflict.
+    // Layers unused by instantiated masters cannot contribute conflicts.
     for (auto layer_it = layers_.begin(); layer_it != layers_.end();) {
       if (!master_dimensions_.contains(layer_it->first)) {
         layer_it = layers_.erase(layer_it);
@@ -154,16 +151,16 @@ class PlacementDRC::FixedSupplyVias
         = std::ranges::any_of(block->getRows(), [](odb::dbRow* row) {
             return row->getOrient().isRightAngleRotation();
           });
-    // Standard cells can only be placed at legal row origins. For rows without
-    // right-angle rotations, merge cell geometry vertically per physical row
-    // to prove when no via can conflict.
+    // Legal row origins bound vertical conflicts without right-angle rotations.
     const LayerVerticalRanges cell_ranges
         = has_right_angle_row ? LayerVerticalRanges{}
                               : cellVerticalRanges(masters, block);
     size_t vertically_safe_shape_count = 0;
+    int max_query_halo = 0;
     for (auto& [layer, data] : layers_) {
       const int max_spacing = maximumSpacing(layer, data);
       data.query_halo = std::max(0, max_spacing - 1);
+      max_query_halo = std::max(max_query_halo, data.query_halo);
       // maximumSpacing() populates the cache via spacing(); resolve directly in
       // case it returned before evaluating any dimension pair.
       auto [lef58_it, inserted] = lef58_spacing_.try_emplace(layer, 0);
@@ -187,57 +184,46 @@ class PlacementDRC::FixedSupplyVias
                  data.shapes.size(),
                  data.fixed_dimensions.size(),
                  master_dimensions_.at(layer).size());
+      data.fixed_dimensions.clear();
       if (max_spacing == 0) {
         // No spacing rule this code understands resolved on a layer that both
-        // the PDN vias and the standard cells occupy, so the check silently
-        // passes there.  Warn rather than imply the layer was verified.
+        // the PDN vias and the standard cells occupy.  Warn rather than imply
+        // the layer was verified beyond overlap.
         logger_->warn(DPL,
                       63,
                       "No spacing rule found for layer {}; fixed supply via "
-                      "checks are skipped on it.",
+                      "checks only reject overlap on it.",
                       layer->getName());
       }
-      if (max_spacing == 0
-          || (!has_right_angle_row
-              && !hasPotentialVerticalConflict(data, cell_ranges.at(layer)))) {
+      if (!has_right_angle_row
+          && !hasPotentialVerticalConflict(data, cell_ranges.at(layer))) {
         vertically_safe_shape_count += data.shapes.size();
       }
     }
     if (vertically_safe_shape_count == fixedShapeCount()) {
       legal_sites_safe_ = true;
-      if (logger_->debugCheck(DPL, "fixed_supply_via", 1)) {
-        debugPrint(logger_,
-                   DPL,
-                   "fixed_supply_via",
-                   1,
-                   "skipped fixed supply via checks at legal sites for {} "
-                   "shapes that cannot violate spacing",
-                   vertically_safe_shape_count);
-      }
+      debugPrint(logger_,
+                 DPL,
+                 "fixed_supply_via",
+                 1,
+                 "skipped fixed supply via checks at legal sites for {} "
+                 "shapes that cannot violate spacing",
+                 vertically_safe_shape_count);
       return;
     }
 
-    size_t fixed_shape_count = 0;
-    int max_query_halo = 0;
     buildIndexes();
-    for (const auto& [layer, data] : layers_) {
-      fixed_shape_count += data.shapes.size();
-      max_query_halo = std::max(max_query_halo, data.query_halo);
-    }
-
-    if (logger_->debugCheck(DPL, "fixed_supply_via", 1)) {
-      debugPrint(
-          logger_,
-          DPL,
-          "fixed_supply_via",
-          1,
-          "indexed {} fixed supply via shapes on {} master-used layers from {} "
-          "instantiated masters; maximum query halo={}",
-          fixed_shape_count,
-          layers_.size(),
-          masters.size(),
-          max_query_halo);
-    }
+    debugPrint(
+        logger_,
+        DPL,
+        "fixed_supply_via",
+        1,
+        "indexed {} fixed supply via shapes on {} master-used layers from {} "
+        "instantiated masters; maximum query halo={}",
+        fixedShapeCount(),
+        layers_.size(),
+        masters.size(),
+        max_query_halo);
   }
 
   bool check(const Node* cell,
@@ -278,15 +264,28 @@ class PlacementDRC::FixedSupplyVias
       reportConflicts(cell, x, y, orient, recipe, query_mask);
       return false;
     }
-    // Avoid scanning terminal entries for pages whose terminal shapes do not
-    // conflict at the queried site.
+    // Skip terminal scans when no terminal shape conflicts at this site.
     if ((recipe.conditional_mask & query_mask) == 0) {
       return true;
     }
 
     for (const RecipeEntry& entry : recipe.entries) {
-      if ((entry.mask & query_mask) != 0
-          && cell->getDbInst()->getITerm(entry.term)->getNet() != entry.net) {
+      if ((entry.mask & query_mask) == 0) {
+        continue;
+      }
+      odb::dbNet* pin_net = cell->getDbInst()->getITerm(entry.term)->getNet();
+      if (pin_net != entry.net) {
+        if (pin_net == nullptr && entry.term->getSigType().isSupply()
+            && !warned_unconnected_supply_) {
+          logger_->warn(DPL,
+                        502,
+                        "Unconnected supply pin {}/{} prevents same-net PDN "
+                        "exemptions. Connect supply pins before PDN-aware "
+                        "legalization.",
+                        cell->getDbInst()->getName(),
+                        entry.term->getName());
+          warned_unconnected_supply_ = true;
+        }
         reportConflicts(cell, x, y, orient, recipe, query_mask);
         return false;
       }
@@ -539,16 +538,8 @@ class PlacementDRC::FixedSupplyVias
   {
     bool operator()(const RecipeEntryKey& lhs, const RecipeEntryKey& rhs) const
     {
-      if ((lhs.term == nullptr) != (rhs.term == nullptr)) {
-        return lhs.term == nullptr;
-      }
-      if (lhs.term != nullptr && lhs.term->getId() != rhs.term->getId()) {
-        return lhs.term->getId() < rhs.term->getId();
-      }
-      if ((lhs.net == nullptr) != (rhs.net == nullptr)) {
-        return lhs.net == nullptr;
-      }
-      return lhs.net != nullptr && lhs.net->getId() < rhs.net->getId();
+      return std::pair(lhs.term->getId(), lhs.net->getId())
+             < std::pair(rhs.term->getId(), rhs.net->getId());
     }
   };
 
@@ -673,8 +664,7 @@ class PlacementDRC::FixedSupplyVias
     }
     const int64_t space_squared = static_cast<int64_t>(space) * space;
     const int64_t gap_squared = vertical_gap * vertical_gap;
-    // Distances are integer DBU values and spacing is strict.  Subtracting
-    // one makes the square-root bound exact without floating-point rounding.
+    // Subtract one to preserve strict integer spacing at the square-root bound.
     return floorSqrt(space_squared - gap_squared - 1);
   }
 
@@ -807,9 +797,14 @@ class PlacementDRC::FixedSupplyVias
     }
 
     const odb::Rect core = grid_->getCore();
+    std::unordered_map<odb::dbSite*, RowOrientations> site_orientations;
     for (odb::dbMaster* master : masters) {
-      const RowOrientations row_orientations
-          = rowOrientations(block, master->getSite());
+      auto [orientations_it, inserted]
+          = site_orientations.try_emplace(master->getSite());
+      if (inserted) {
+        orientations_it->second = rowOrientations(block, master->getSite());
+      }
+      const RowOrientations& row_orientations = orientations_it->second;
       for (int start_row = 0; start_row < row_count; ++start_row) {
         for (const odb::dbOrientType& orient : row_orientations[start_row]) {
           const std::vector<MasterShape>& shapes = masterShapes(master, orient);
@@ -904,13 +899,7 @@ class PlacementDRC::FixedSupplyVias
         clipToInt(static_cast<int64_t>(origin_y) + cell_shape.rect.yMin()),
         clipToInt(static_cast<int64_t>(last_x) + cell_shape.rect.xMax()),
         clipToInt(static_cast<int64_t>(origin_y) + cell_shape.rect.yMax()));
-    odb::Rect query = bloatClipped(swept, halo);
-    // divFloor() historically truncates a negative right endpoint toward zero.
-    // Include that possible site-zero interval in the spatial candidate query;
-    // the exact span calculation below still decides the mask.
-    query.set_xlo(clipToInt(static_cast<int64_t>(query.xMin())
-                            - std::max(0, site_width - 1)));
-    return query;
+    return bloatClipped(swept, halo);
   }
 
   bool addConflict(const MasterShape& cell_shape,
@@ -947,26 +936,40 @@ class PlacementDRC::FixedSupplyVias
       }
     }
 
-    // Routing and cut spacing use strict Euclidean distance in integer DBU.
     const int64_t origin_y
         = static_cast<int64_t>(core.yMin()) + grid_->gridYToDbu(GridY{row}).v;
-    const int64_t vertical_gap
-        = verticalDistance(fixed.rect, cell_shape.rect, origin_y);
-    // Touching or overlapping shapes always conflict.
-    const int64_t x_keepout = std::max(
-        {horizontalKeepout(space, vertical_gap),
-         eolKeepout(cell_shape.layer,
-                    fixed.rect,
-                    cell_shape.rect,
-                    verticalPrl(fixed.rect, cell_shape.rect, origin_y)),
-         vertical_gap == 0 ? int64_t{0} : no_keepout_});
-    if (x_keepout == no_keepout_) {
-      return false;
+    const int64_t eol_keepout
+        = eolKeepout(cell_shape.layer,
+                     fixed.rect,
+                     cell_shape.rect,
+                     verticalPrl(fixed.rect, cell_shape.rect, origin_y));
+    int low;
+    int high;
+    if (space == 0 && eol_keepout == no_keepout_) {
+      // Zero spacing permits boundary contact, but not positive-area overlap.
+      if (origin_y + cell_shape.rect.yMax() <= fixed.rect.yMin()
+          || origin_y + cell_shape.rect.yMin() >= fixed.rect.yMax()) {
+        return false;
+      }
+      low = clipToInt(static_cast<int64_t>(fixed.rect.xMin())
+                      - cell_shape.rect.xMax() + 1);
+      high = clipToInt(static_cast<int64_t>(fixed.rect.xMax())
+                       - cell_shape.rect.xMin() - 1);
+    } else {
+      // Routing and cut spacing use strict Euclidean distance in integer DBU;
+      // EOL spacing widens it at line ends.
+      const int64_t vertical_gap
+          = verticalDistance(fixed.rect, cell_shape.rect, origin_y);
+      const int64_t x_keepout
+          = std::max(horizontalKeepout(space, vertical_gap), eol_keepout);
+      if (x_keepout == no_keepout_) {
+        return false;
+      }
+      low = clipToInt(static_cast<int64_t>(fixed.rect.xMin()) - x_keepout
+                      - cell_shape.rect.xMax());
+      high = clipToInt(static_cast<int64_t>(fixed.rect.xMax()) + x_keepout
+                       - cell_shape.rect.xMin());
     }
-    const int low = clipToInt(static_cast<int64_t>(fixed.rect.xMin())
-                              - x_keepout - cell_shape.rect.xMax());
-    const int high = clipToInt(static_cast<int64_t>(fixed.rect.xMax())
-                               + x_keepout - cell_shape.rect.xMin());
     if (high < core.xMin()) {
       return false;
     }
@@ -1580,9 +1583,8 @@ class PlacementDRC::FixedSupplyVias
               const odb::Rect& fixed,
               const odb::Rect& cell) const
   {
-    // Fixed supply via constituent checks cover width/PRL routing spacing and
-    // default cut spacing. Detailed routing remains authoritative for other
-    // LEF58 rules.
+    // Width/PRL routing spacing, default and cut-class cut spacing, and the
+    // shape-independent LEF58 bound; EOL is resolved separately.
     auto [lef58_it, inserted] = lef58_spacing_.try_emplace(layer, 0);
     if (inserted) {
       lef58_it->second = lef58MaxSpacing(layer);
@@ -1652,15 +1654,16 @@ class PlacementDRC::FixedSupplyVias
   const bool report_conflicts_{logger_->debugCheck(DPL, "fixed_supply_via", 1)};
   // Shape-independent LEF58 spacing bound per layer, resolved on first use.
   mutable std::unordered_map<odb::dbTechLayer*, int> lef58_spacing_;
+  // Kept after construction: fixedSupplyViaKeepouts() needs it for drawing.
   std::unordered_map<odb::dbTechLayer*, std::set<DimensionClass>>
       master_dimensions_;
   std::unordered_map<odb::dbMaster*, std::vector<MasterShape>>
       source_master_shapes_;
   std::unordered_map<odb::dbTechLayer*, LayerData> layers_;
   std::map<GeometryKey, std::vector<MasterShape>> master_shapes_;
-  // Placement DRC currently calls check() from one thread. These lazy caches
-  // intentionally rely on that contract and need synchronization if it changes.
+  // Lazy caches rely on placement DRC's single-threaded check() contract.
   bool legal_sites_safe_{false};
+  bool warned_unconnected_supply_{false};
   std::unordered_map<PhysicalPageKey, PageRecipe, boost::hash<PhysicalPageKey>>
       physical_pages_;
 };
@@ -1825,16 +1828,20 @@ bool PlacementDRC::checkBlockedLayers(const Node* cell,
   // The via/patch metal is much smaller than a pixel, so check the pin
   // shapes on those layers against the actual metal.
   const Master* master = cell->getMaster();
+  odb::dbInst* inst = cell->getDbInst();
   const DbuX x_real = gridToDbu(x, grid_->getSiteWidth());
   const DbuY y_real = grid_->gridYToDbu(y);
   for (int level = 1; level <= kMaxPinLevel; level++) {
     if ((pin_layers & (1 << level)) == 0) {
       continue;
     }
-    for (const odb::Rect& shape : master->getPinShapes(level)) {
-      const odb::Rect pin_rect
-          = cell_edges::transformEdgeRect(shape, cell, x_real, y_real, orient);
-      if (grid_->overlapsPinBlockage(level, pin_rect)) {
+    for (const Master::PinShape& shape : master->getPinShapes(level)) {
+      const odb::Rect pin_rect = cell_edges::transformEdgeRect(
+          shape.rect, cell, x_real, y_real, orient);
+      // A pin may touch power metal of the net it is connected to
+      const odb::dbNet* pin_net
+          = inst ? inst->getITerm(shape.mterm)->getNet() : nullptr;
+      if (grid_->overlapsPinBlockage(level, pin_rect, pin_net)) {
         return false;
       }
     }

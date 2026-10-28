@@ -26,6 +26,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
@@ -143,8 +144,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   quiet_ = quiet;
   importDb();
   adjustNodesOrient();
+  pdn_aware_block_observer_.reset();
   pdn_aware_ = pdn_aware;
   pdn_aware_block_ = block_;
+  if (pdn_aware_) {
+    pdn_aware_block_observer_ = std::make_unique<odb::dbBlockCallBackObj>();
+    pdn_aware_block_observer_->addOwner(block_);
+  }
   if (!incremental_) {
     for (const auto& node : network_->getNodes()) {
       if (node->getType() == Node::CELL && !node->isFixed()) {
@@ -472,27 +478,15 @@ void Opendp::findDisplacementStats()
 
 void Opendp::optimizeMirroring()
 {
-  // Read the PDN-aware state before importDb() reassigns block_.
-  const bool pdn_aware = isPdnAwareForCurrentBlock();
   // Mirroring swaps the left/right cell edges, so the cell edge spacing rules
   // have to be rechecked for every candidate, which needs the grid and the
-  // DRC engine. When PDN aware, the fixed supply vias have to be in the grid
-  // too, so the legal predicate below can check the mirrored orientation.
+  // DRC engine.
   importDb();
   adjustNodesOrient();
-  initGrid(pdn_aware);
+  initGrid(isPdnAwareForCurrentBlock());
   setGridCells();
-  // Constructed after the setup above: importDb() reseats drc_engine_.
   OptimizeMirroring opt(
       logger_, db_, network_.get(), grid_.get(), drc_engine_.get());
-  if (pdn_aware) {
-    opt.setLegalPredicate(
-        [this](odb::dbInst* inst, const odb::dbOrientType& orient) {
-          Node* cell = network_->getNode(inst);
-          return drc_engine_->checkFixedSupplyVias(
-              cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
-        });
-  }
   opt.run();
 }
 
@@ -587,9 +581,12 @@ bool Opendp::isPdnAwareForCurrentBlock()
 {
   odb::dbBlock* current_block
       = db_->getChip() == nullptr ? nullptr : db_->getChip()->getBlock();
-  if (pdn_aware_block_ != current_block) {
+  // ODB may reuse a destroyed block's address.
+  if (pdn_aware_block_ != current_block
+      || (pdn_aware_ && !pdn_aware_block_observer_->hasOwner())) {
     pdn_aware_ = false;
     pdn_aware_block_ = current_block;
+    pdn_aware_block_observer_.reset();
   }
   return pdn_aware_;
 }

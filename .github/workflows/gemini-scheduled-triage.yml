@@ -209,7 +209,7 @@ jobs:
                 continue;
               }
               if (!batchIssueNumbers.includes(Number(issueNumber))) {
-                core.warning(`Skipping issue #${issueNumber} - not in the triage batch.`);
+                core.warning(`Skipping issue  #${issueNumber} - not in the triage batch.`);
                 continue;
               }
               // Extract and reject invalid labels - we do this just in case

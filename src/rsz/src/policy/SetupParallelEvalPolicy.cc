@@ -190,7 +190,8 @@ void SetupParallelEvalPolicy::selectMoveSequence()
   // still remove VtSwapMt.
   std::vector<MoveType> requested_sequence = config_.sequence;
   if (requested_sequence.empty()) {
-    requested_sequence = {MoveType::kVtSwap,
+    requested_sequence = {MoveType::kUnbuffer,
+                          MoveType::kVtSwap,
                           MoveType::kSizeUp,
                           MoveType::kBuffer,
                           MoveType::kSplitLoad};

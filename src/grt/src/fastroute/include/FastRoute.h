@@ -179,6 +179,10 @@ class FastRouteCore
                    uint8_t& blockage_h,
                    uint8_t& blockage_v);
   void updateDbCongestion(int min_routing_layer, int max_routing_layer);
+  // Sets the capacities back to those the odb congestion map was written
+  // with, once the routes it was written with are in the usage. Returns the
+  // number of edges whose capacity changed.
+  int restoreCapacitiesFromDb(int min_routing_layer, int max_routing_layer);
   // Rewrite the usage of just `tiles` (GCell indices).
   void updateDbCongestionTiles(int min_routing_layer,
                                int max_routing_layer,
@@ -335,6 +339,7 @@ class FastRouteCore
  private:
   friend class Maze3DTestPeer;
   friend class OverflowTestPeer;
+  friend class ResistanceModeTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,

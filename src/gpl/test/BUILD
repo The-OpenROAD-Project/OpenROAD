@@ -310,6 +310,35 @@ cc_test(
 )
 
 cc_test(
+    name = "power_base_test",
+    srcs = ["power_base_test.cpp"],
+    data = [
+        "library/nangate45/NangateOpenCellLibrary_typical.lib",
+        "nangate45.lef",
+        "simple01-td.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "placer_base_test",
     srcs = ["placer_base_test.cpp"],
     env = GPU_ENV_OFF,

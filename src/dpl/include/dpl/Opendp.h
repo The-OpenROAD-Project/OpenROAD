@@ -28,6 +28,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+namespace odb {
+class dbBlockCallBackObj;
+}
+
 namespace dpl {
 
 class Node;
@@ -427,6 +431,9 @@ class Opendp
   int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_diamond_legalizer_ = false;
+  bool pdn_aware_ = false;
+  odb::dbBlock* pdn_aware_block_ = nullptr;
+  std::unique_ptr<odb::dbBlockCallBackObj> pdn_aware_block_observer_;
   bool quiet_ = false;
   int total_moves_ = 0;
   // Counters for reporting
@@ -440,9 +447,6 @@ class Opendp
   int negotiation_converge_phase_ = 0;
   int negotiation_diamond_recoveries_ = 0;
   std::string negotiation_finish_ = "not run";
-
-  bool pdn_aware_ = false;
-  odb::dbBlock* pdn_aware_block_ = nullptr;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

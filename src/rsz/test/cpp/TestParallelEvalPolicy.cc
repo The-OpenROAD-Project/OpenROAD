@@ -132,8 +132,10 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   OptimizerRunConfig config;
   SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
   ASSERT_TRUE(policy.start());
-  const std::vector<MoveType> without_vt_swap{
-      MoveType::kSizeUp, MoveType::kBuffer, MoveType::kSplitLoad};
+  const std::vector<MoveType> without_vt_swap{MoveType::kUnbuffer,
+                                              MoveType::kSizeUp,
+                                              MoveType::kBuffer,
+                                              MoveType::kSplitLoad};
   EXPECT_EQ(ResizerTestPeer::moveSequence(policy), without_vt_swap);
 
   OptimizerRunConfig requested;
@@ -150,7 +152,9 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   skipped.skip_buffering = true;
   SetupParallelEvalPolicy filtered(resizer_, committer, setup_context, skipped);
   ASSERT_TRUE(filtered.start());
-  EXPECT_EQ(ResizerTestPeer::moveSequence(filtered), size_up_only);
+  const std::vector<MoveType> unbuffer_and_size_up{MoveType::kUnbuffer,
+                                                   MoveType::kSizeUp};
+  EXPECT_EQ(ResizerTestPeer::moveSequence(filtered), unbuffer_and_size_up);
 }
 
 TEST_F(TestResizerMt, SetupParallelEvalPolicyAcceptsSwapPinsInSequence)
@@ -191,20 +195,19 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyWnsTailHonorsSequenceAndSkips)
   RepairSetupContext setup_context(resizer_);
 
   // -skip_buffering keeps RebufferMt, which needs wire RC, out of every run
-  // below.  The default sequence then holds SizeUpMt alone.
+  // below.  The default sequence then holds UnbufferMt and SizeUpMt.
   OptimizerRunConfig base;
   base.skip_buffering = true;
   const std::vector<MoveType> size_up_only{MoveType::kSizeUp};
 
-  // Under the default sequence the tail adds its pin swaps, buffer removal
-  // and size down.
+  // Under the default sequence the tail adds its pin swaps and size down.
   SetupParallelEvalPolicy default_policy(
       resizer_, committer, setup_context, base);
   ASSERT_TRUE(default_policy.start());
   ASSERT_TRUE(ResizerTestPeer::startWnsTail(default_policy, "test"));
-  const std::vector<MoveType> default_tail{MoveType::kSizeUp,
+  const std::vector<MoveType> default_tail{MoveType::kUnbuffer,
+                                           MoveType::kSizeUp,
                                            MoveType::kSwapPins,
-                                           MoveType::kUnbuffer,
                                            MoveType::kSizeDownFanout};
   EXPECT_EQ(generatorTypes(default_policy), default_tail);
 

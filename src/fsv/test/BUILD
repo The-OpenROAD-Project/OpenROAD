@@ -228,6 +228,12 @@ filegroup(
     ],
 )
 
+exports_files([
+    "GT2.itf",
+    "field_solver_gcd.def",
+    "sky130.itf",
+])
+
 [regression_test(
     name = test_name,
     data = [":test_resources"],

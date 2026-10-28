@@ -4,7 +4,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -53,11 +52,6 @@ class OptimizeMirroring
                     Network* network,
                     Grid* grid,
                     PlacementDRC* drc_engine);
-  void setLegalPredicate(
-      const std::function<bool(odb::dbInst*, const odb::dbOrientType&)>& legal)
-  {
-    legal_ = legal;
-  }
 
   void run();
 
@@ -80,6 +74,10 @@ class OptimizeMirroring
   // metal.
   bool isBlockedLayersLegal(const Node* cell,
                             const odb::dbOrientType& orient) const;
+  // Mirroring moves the pin shapes, which can then overlap fixed supply vias
+  // when PDN-aware placement is enabled.
+  bool isFixedSupplyViasLegal(const Node* cell,
+                              const odb::dbOrientType& orient) const;
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -87,7 +85,6 @@ class OptimizeMirroring
   Network* network_ = nullptr;
   Grid* grid_ = nullptr;
   PlacementDRC* drc_engine_ = nullptr;
-  std::function<bool(odb::dbInst*, const odb::dbOrientType&)> legal_;
 
   NetBoxMap net_box_map_;
 

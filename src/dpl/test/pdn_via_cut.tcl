@@ -9,17 +9,8 @@ read_def pdn_via_cut.def
 detailed_placement -pdn_aware
 check_placement
 
-set block [ord::get_db_block]
-check "cut constituent conflict location" {
-  [$block findInst cut_conflict] getLocation
-} "2200 0"
-check "diagonal below cut spacing location" {
-  [$block findInst diagonal_below] getLocation
-} "3800 0"
-check "diagonal equal to cut spacing" {
-  [$block findInst diagonal_equal] getLocation
-} "6000 0"
-check "diagonal above cut spacing" {
-  [$block findInst diagonal_above] getLocation
-} "8000 0"
+set def_file [make_result_file pdn_via_cut.def]
+write_def $def_file
+check "placement DEF" {diff_files pdn_via_cut.defok $def_file} 0
+
 exit_summary

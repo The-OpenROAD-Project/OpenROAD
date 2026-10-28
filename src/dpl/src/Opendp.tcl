@@ -82,8 +82,8 @@ proc detailed_placement { args } {
       [info exists flags(-use_diamond_legalizer)] \
       $site_search_window $row_search_window $drc_penalty \
       [info exists flags(-disable_window_extension)] \
-      [info exists flags(-quiet)] \
-      [info exists flags(-pdn_aware)]
+      [info exists flags(-pdn_aware)] \
+      [info exists flags(-quiet)]
     # -quiet also skips the analysis report and its metrics.  Tools that call
     # detailed_placement as a service (CTS, GRT) use it so their logs and
     # metrics files are not overwritten by an incidental legalization.

@@ -21,6 +21,8 @@ COMPULSORY_TESTS = [
     "net_name_consistency",
     "coordinates",
     "no_merging",
+    "perpendicular_route_touching_bterm",
+    "perpendicular_route_touching_iterm",
     "short_resover",
 ]
 

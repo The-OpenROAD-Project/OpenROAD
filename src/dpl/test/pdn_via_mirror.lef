@@ -11,7 +11,7 @@ MACRO MIRROR_CELL
     DIRECTION INPUT ;
     USE SIGNAL ;
     PORT
-      LAYER metal1 ;
+      LAYER metal3 ;
         RECT 0.06 0.525 0.17 0.7 ;
     END
   END A
