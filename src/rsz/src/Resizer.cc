@@ -7128,17 +7128,19 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // ODB's insertBuffer* already placed the instance; re-run through
-  // setLocation so clampLocToCore can pull it back inside the core if
-  // the insertion point landed in the die-core gap.
-  setLocation(buffer_inst, buffer_inst->getLocation());
+  if (buffer_inst->isPlaced()) {
+    // ODB's insertBuffer* already placed the instance; re-run through
+    // setLocation so clampLocToCore can pull it back inside the core if
+    // the insertion point landed in the die-core gap.
+    setLocation(buffer_inst, buffer_inst->getLocation());
 
-  // Legalize the cell position for accurate parasitic estimation
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
-    opendp_->legalCellPos(buffer_inst);
+    // Legalize the cell position for accurate parasitic estimation
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::kGlobalRouting
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kDetailedRouting) {
+      opendp_->legalCellPos(buffer_inst);
+    }
   }
 
   // Increment the design area
