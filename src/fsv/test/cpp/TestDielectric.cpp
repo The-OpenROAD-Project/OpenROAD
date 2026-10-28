@@ -251,8 +251,9 @@ void bruteCube(const Dielectric<D>& d,
     const double du = up < count ? planar[up].z - p[kZ] : max_half_size;
     const double dd = down >= 0 ? p[kZ] - planar[down].z : max_half_size;
     const int i = du <= dd ? up++ : down--;
-    if (std::min(du, dd) < max_half_size) {
-      pieces.push_back({kZ, planar[i].z, std::min(du, dd)});
+    const double dist = std::min(du, dd);
+    if (dist < max_half_size) {
+      pieces.push_back({kZ, planar[i].z, dist});
     }
   }
   for (const Shell<D>& s : d.shells()) {
