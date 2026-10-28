@@ -124,7 +124,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
 }
 
 // Returns the vertex of a constant 1 or 0 cell if the driver of the input
-// pin is a constant 0 or 1 cell. Otherwise return nullptr.
+// pin is a constant 0 or 1 port. Otherwise return nullptr.
 sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
                                        sta::Vertex* input_vertex,
                                        AbcLibrary& abc_library,
@@ -149,9 +149,12 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
   if (!instance) {
     return nullptr;
   }
-  // Okay if the cell we're looking for is actually a const cell add it.
+  // Okay if the port we're looking for is actually a const port add it.
   sta::LibertyCell* liberty_cell = network->libertyCell(instance);
-  if (!abc_library.IsConstCell(liberty_cell->name())) {
+  sta::LibertyPort* liberty_port = network->libertyPort(constant_pin);
+  if (!abc_library.IsConst1Port(liberty_cell->name(), liberty_port->name())
+      && !abc_library.IsConst0Port(liberty_cell->name(),
+                                   liberty_port->name())) {
     return nullptr;
   }
   sta::Vertex* constant_vertex = graph->vertex(network->vertexId(constant_pin));
