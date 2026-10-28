@@ -165,6 +165,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestInsertBuffer",
+    srcs = ["TestInsertBuffer.cpp"],
+    data = ["insert_buffer_port_alias.v"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestJournal",
     srcs = ["TestJournal.cpp"],
     deps = [
@@ -228,6 +241,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestNetAbutment",
+    srcs = ["TestNetAbutment.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:physical_builder",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestNetTrack",
     srcs = ["TestNetTrack.cpp"],
     deps = [
@@ -245,8 +270,8 @@ cc_test(
         "TestDbNet.cpp",
         "TestDbWire.cc",
         "TestDesignIsRouted.cpp",
-        "TestOrderWires.cpp",
         "TestPolygonalFloorplan.cc",
+        "TestWireNormalizer.cpp",
     ],
     args = [],
     data = [
@@ -258,6 +283,7 @@ cc_test(
         "//src/odb/src/defin",
         "//src/odb/src/lefin",
         "//src/odb/src/lefout",
+        "//src/odb/src/wireNormalizer",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/tst:nangate45_fixture",

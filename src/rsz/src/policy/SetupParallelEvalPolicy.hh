@@ -44,7 +44,30 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void iterate() override;
   void finish() override;
 
+  // === Batch rules ==========================================================
+  // Pure functions of the batch flow.
+  // The failing endpoint count clamped to [min_cap, max_cap].
+  static int adaptiveBatchSize(size_t failing_endpoint_count,
+                               int min_cap,
+                               int max_cap);
+  // Endpoints per chunk: a multiple of the batch cap, leaving room for
+  // conflicts and targets without candidates.
+  static size_t evaluationEndpointLimit(int batch_cap,
+                                        int eval_endpoint_factor,
+                                        int min_endpoints);
+  // WNS better, or TNS better while WNS stays within wns_tolerance of the best
+  // checkpoint WNS (a tie when the tolerance is 0).
+  static bool batchImprovesCheckpoint(sta::Slack checkpoint_wns,
+                                      sta::Slack checkpoint_tns,
+                                      sta::Slack current_wns,
+                                      sta::Slack current_tns,
+                                      sta::Slack best_wns,
+                                      sta::Slack wns_tolerance);
+
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // === Batch types ==========================================================
   // The violating endpoints this batch draws from and its move cap.
   struct BatchScope
@@ -117,9 +140,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // batch scope.
   BatchScope collectTargetEndpoints();
   // Clamp the current failing-endpoint count to the active batch limits.
-  int effectiveBatchCap(size_t fep_count) const;
-  // The failing endpoint count clamped to [min_cap, max_cap].
-  static int adaptiveBatchSize(size_t fep_count, int min_cap, int max_cap);
+  int effectiveBatchCap(size_t failing_endpoint_count) const;
   // Restart a run whose batches kept no move with a smaller batch cap once.
   void startSmallBatchRetry();
   // The cone weights while the saved batches stall WNS; one analysis serves
@@ -130,11 +151,6 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // Evaluates the scope in chunks, worst slack first, until the batch is full.
   // The returned pool carries the selected batch.
   BatchPool evaluateTargets(const BatchScope& scope);
-  // Endpoints per chunk: a multiple of the batch cap, leaving room for
-  // conflicts and targets without candidates.
-  static size_t evaluationEndpointLimit(int batch_cap,
-                                        int eval_endpoint_factor,
-                                        int min_endpoints);
   // The path-driver targets of the violating endpoints [begin, end);
   // visited_pins dedups drivers across chunks.
   std::vector<Target> collectTargets(
@@ -191,18 +207,10 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // same endpoints would hide every gain in the group.
   BatchQor measureQor() const;
   // The verdict: saves a batch that beats the checkpoint, else salvages it
-  // without its culprits, keeps it on speculation in the WNS tail, or undoes
-  // it.  True when the batch or its salvage was saved.
+  // without its culprits, speculates on it in the WNS tail, or undoes it.
+  // True when the batch or its salvage was saved.
   bool judgeBatch(BatchPool& pool, sta::Slack pre_batch_wns, int& batch_moves);
   bool withinMaxUtilization() const;
-  // WNS better, or TNS better while WNS stays within wns_tolerance of the best
-  // checkpoint WNS (a tie when the tolerance is 0).
-  static bool batchImprovesCheckpoint(sta::Slack checkpoint_wns,
-                                      sta::Slack checkpoint_tns,
-                                      sta::Slack current_wns,
-                                      sta::Slack current_tns,
-                                      sta::Slack best_wns,
-                                      sta::Slack wns_tolerance);
   sta::Slack checkpointWnsTolerance() const;
   // batchImprovesCheckpoint() plus the tail's limit on the TNS a WNS gain may
   // cost.
@@ -211,13 +219,14 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void saveBatchCheckpoint(sta::Slack wns, sta::Slack tns);
   // Charge a missed batch to the checkpoint-miss and stall counters.
   void noteMissedBatch(bool utilization_legal);
-  // Keeps a missed batch on speculation in the WNS tail, else undoes it.
+  // Speculates on a missed batch in the WNS tail, else undoes it.
   void settleMissedBatch(int batch_moves);
-  // Undoes the current batch; a failed speculative run first puts all its
+  // Undoes the current batch; a failed speculative run also puts all its
   // instances on the tabu.
   void undoMissedBatch();
-  // Rolls back the current batch and puts its instances on the tabu.
-  void undoBatch();
+  // Rolls back the current batch and puts its instances, and the
+  // `speculative` instances of a failed run, on the tabu.
+  void undoBatch(const std::vector<InstanceRecord>& speculative = {});
   // Restore the last saved design before another batch is attempted.
   void restoreBatchCheckpoint();
   // Restores the batch journal and takes back its moves.  The callers count the
@@ -305,8 +314,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // single-move batches.
   bool unbuffer_in_sequence_{false};
 
-  // Moves of the batch under evaluation.
-  std::vector<sta::Instance*> batch_instances_;
+  // Moves of the batch under evaluation.  The candidates and the swaps point
+  // into the pool of iterate() and are cleared when it returns.
+  std::vector<InstanceRecord> batch_instances_;
   std::vector<MoveCandidate*> batch_candidates_;
   // Cell swaps eligible for in-place salvage of the current batch.
   std::vector<SwapRecord> batch_swaps_;

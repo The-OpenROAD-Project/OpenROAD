@@ -192,33 +192,55 @@ std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
 {
   std::vector<MinCutRule> rules;
 
+  // LEF names the side a via connects to this layer from, while MinCutRule
+  // names the side of the via this layer is on.  A via from below has this
+  // layer above it, so FROMBELOW (isBelowOnly in LEF 5.4) sets above and
+  // FROMABOVE (isAboveOnly) sets below.
+
   // get all the LEF55 rules
   for (auto* min_cut_rule : layer_->getMinCutRules()) {
     uint32_t numcuts;
     uint32_t rule_width;
     min_cut_rule->getMinimumCuts(numcuts, rule_width);
 
-    rules.push_back(MinCutRule{nullptr,
-                               min_cut_rule->isAboveOnly(),
-                               min_cut_rule->isBelowOnly(),
-                               static_cast<int>(rule_width),
-                               static_cast<int>(numcuts)});
+    rules.push_back(MinCutRule{.cut_class = nullptr,
+                               .above = min_cut_rule->isBelowOnly(),
+                               .below = min_cut_rule->isAboveOnly(),
+                               .width = static_cast<int>(rule_width),
+                               .cuts = static_cast<int>(numcuts)});
   }
 
   for (auto* rule : layer_->getTechLayerMinCutRules()) {
+    if (rule->getCutClassCutsMap().empty()) {
+      rules.push_back(MinCutRule{.cut_class = nullptr,
+                                 .above = rule->isFromBelow(),
+                                 .below = rule->isFromAbove(),
+                                 .width = rule->getWidth(),
+                                 .cuts = rule->getNumCuts()});
+    }
     for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
-      auto* cut_class = layer_->getLowerLayer()->findTechLayerCutClassRule(
-          cut_class_name.c_str());
-      if (cut_class == nullptr) {
-        cut_class = layer_->getUpperLayer()->findTechLayerCutClassRule(
-            cut_class_name.c_str());
-      }
+      // a class name can be defined on the cut layers both below and above,
+      // but a FROMBELOW or FROMABOVE rule only covers the one on its side
+      odb::dbTechLayer* below
+          = rule->isFromAbove() ? nullptr : layer_->getLowerLayer();
+      odb::dbTechLayer* above
+          = rule->isFromBelow() ? nullptr : layer_->getUpperLayer();
+      for (auto* cut_layer : {below, above}) {
+        if (cut_layer == nullptr) {
+          continue;
+        }
+        auto* cut_class
+            = cut_layer->findTechLayerCutClassRule(cut_class_name.c_str());
+        if (cut_class == nullptr) {
+          continue;
+        }
 
-      rules.push_back(MinCutRule{cut_class,
-                                 rule->isFromBelow(),  // same as ABOVE
-                                 rule->isFromAbove(),  // same as BELOW
-                                 rule->getWidth(),
-                                 cuts});
+        rules.push_back(MinCutRule{.cut_class = cut_class,
+                                   .above = rule->isFromBelow(),
+                                   .below = rule->isFromAbove(),
+                                   .width = rule->getWidth(),
+                                   .cuts = cuts});
+      }
     }
   }
 
@@ -243,7 +265,8 @@ odb::Rect TechLayer::adjustToMinArea(
     return rect;
   }
 
-  int64_t min_area = 0;
+  // the LEF58 rules add to the layer's own AREA, they do not replace it
+  int64_t min_area = layer_->hasArea() ? layer_->getArea() : 0;
   if (has_rules) {
     for (auto* rule : layer_->getTechLayerAreaRules()) {
       const int64_t layer_min_area = rule->getArea();
@@ -255,8 +278,6 @@ odb::Rect TechLayer::adjustToMinArea(
       // TODO: Check except rules
       min_area = std::max(min_area, layer_min_area);
     }
-  } else {
-    min_area = layer_->getArea();
   }
 
   if (min_area == 0) {

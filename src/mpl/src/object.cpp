@@ -694,11 +694,6 @@ bool HardMacro::operator<(const HardMacro& macro) const
   return height_ < macro.height_;
 }
 
-bool HardMacro::operator==(const HardMacro& macro) const
-{
-  return (width_ == macro.width_) && (height_ == macro.height_);
-}
-
 // Cluster support to identify if a fixed terminal correponds
 // to a cluster of unplaced IO pins when running HardMacro SA.
 bool HardMacro::isClusterOfUnplacedIOPins() const

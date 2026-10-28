@@ -187,10 +187,10 @@ Download them from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
 
 Each release has one `.deb` package per supported Ubuntu version.
 Install the one that matches your system.
-For example, on Ubuntu 22.04:
+For example, on Ubuntu 26.04:
 
 ```shell
-sudo apt install ./openroad_<version>_amd64-ubuntu-22.04.deb
+sudo apt install ./openroad_<version>_amd64-ubuntu-26.04.deb
 ```
 
 Check the installation:
@@ -221,7 +221,7 @@ with the prebuilt binaries.
 Start a container in interactive mode:
 
 ```shell
-docker run -it ubuntu:22.04
+docker run -it ubuntu:26.04
 ```
 
 Inside the container, download the `.deb` package for the image's Ubuntu version

@@ -18,6 +18,7 @@ add_subdirectory(src/cdl)
 add_subdirectory(src/3dblox)
 add_subdirectory(src/gdsin)
 add_subdirectory(src/gdsout)
+add_subdirectory(src/wireNormalizer)
 
 if(ENABLE_TESTS)
   add_subdirectory(test)
@@ -37,6 +38,7 @@ target_link_libraries(odb
     utl_lib
     gdsin
     gdsout
+    wireNormalizer
     ${TCL_LIBRARY}
 )
 

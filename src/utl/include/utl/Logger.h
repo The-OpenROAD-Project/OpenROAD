@@ -59,6 +59,7 @@ class Progress;
   X(EXA)                \
   X(FIN)                \
   X(FLW)                \
+  X(FSV)                \
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \
@@ -166,10 +167,10 @@ class Logger
   }
 
   template <typename... Args>
-  __attribute__((noreturn)) void error(ToolId tool,
-                                       int id,
-                                       const std::string& message,
-                                       const Args&... args)
+  [[noreturn]] void error(ToolId tool,
+                          int id,
+                          const std::string& message,
+                          const Args&... args)
   {
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
@@ -178,10 +179,10 @@ class Logger
   }
 
   template <typename... Args>
-  __attribute__((noreturn)) void critical(ToolId tool,
-                                          int id,
-                                          const std::string& message,
-                                          const Args&... args)
+  [[noreturn]] void critical(ToolId tool,
+                             int id,
+                             const std::string& message,
+                             const Args&... args)
   {
     log(tool, spdlog::level::level_enum::critical, id, message, args...);
     exit(EXIT_FAILURE);

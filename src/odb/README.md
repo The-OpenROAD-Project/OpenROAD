@@ -509,6 +509,10 @@ set lib [odb::read_lef $db ./src/odb/test/data/gscl45nm.lef]
 
 You can find examples on using the API from Tcl under `test/tcl/` directory.
 
+For a Tcl shell with only the odb module loaded, build the standalone `odbtcl` binary with `bazelisk build //src/odb/src/swig:odbtcl`.
+Run it as `bazel-bin/src/odb/src/swig/odbtcl [script.tcl]`.
+The test `bazelisk test //src/odb/test:odbtcl_test` runs some of the `test/tcl/` scripts with this binary.
+
 The full set of the Tcl commands exposed is defined by the SWIG interface files
 `src/odb/src/swig/common/odb.i` and `src/odb/src/swig/tcl/*.i`.
 
