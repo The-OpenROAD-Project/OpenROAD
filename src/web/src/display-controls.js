@@ -13,8 +13,7 @@ import { isStaticMode, makeGroupHeader, attachGroupCollapse, beginSelection,
          isCurrentSelection, onSelectionReset, isValidHexColor }
     from './ui-utils.js';
 import { setItemVisible } from './tile-merge.js';
-import { nativeDpr, tileSizeCss } from './tile-request.js';
-import { DEFAULT_GROUP_LAYERS, createCompositeSource } from './tile-sources.js';
+import { createCompositeSource } from './tile-sources.js';
 import { DRAW_ORDER } from './layout-view.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
@@ -86,15 +85,6 @@ const fallbackLayerPalette = [
     [180, 70, 150],  // magenta
 ];
 
-// Layers per server-composited group (tile_group), or 0 to fetch each layer:
-// groups only with ?composite=1, and a saved report has per-layer tiles only.
-export function serverGroupLayers(app) {
-    if (!app.forceComposite || isStaticMode(app)) {
-        return 0;
-    }
-    return app.groupLayers || DEFAULT_GROUP_LAYERS;
-}
-
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, selectability,
                                          techData, redrawAllLayers,
@@ -108,11 +98,8 @@ export function populateDisplayControls(app, visibility, selectability,
 
     // ─── Tile slots ──────────────────────────────────────────────────────
     //
-    // Every layout layer is composited, in z-order, into one image per tile.
-    // The view draws one tile layer per tile per slot and each costs CPU on
-    // every frame, so one composite for the layout, plus one for the few
-    // layers that sit above the highlight overlay, keeps that bounded.  A
-    // toggle flips its entry's `visible` and refreshes the slot once.
+    // Two slots, the layout and the layers over the highlight overlay, each
+    // composited into one image per tile: every drawn tile costs CPU a frame.
     for (const slot of app.allLayers || []) {
         slot.remove();
     }
@@ -247,6 +234,8 @@ export function populateDisplayControls(app, visibility, selectability,
             app.layerPatterns[name] = value;
         }
         persistLayerPatterns();
+        // or_layer_patterns is part of the saved display state.
+        app.syncDisplayState?.();
         markBaseDirty();
         flushDirtySlots();
     }
@@ -422,10 +411,7 @@ export function populateDisplayControls(app, visibility, selectability,
                 wm: app.websocketManager,
                 ctx: app.tileCtx,
                 getItems: () => items,
-                dpr: nativeDpr,
-                tileSize: tileSizeCss,
                 isDoubleBuffer: () => app.doubleBuffer,
-                groupLayers: () => serverGroupLayers(app),
             }),
         });
         slot.items = items;   // the draw list, bottom-most first
@@ -544,7 +530,7 @@ export function populateDisplayControls(app, visibility, selectability,
         // or_hidden_layers is part of the saved display state; the chiplet
         // mirror below only reaches the sync (via redrawAllLayers) when the
         // visible-chiplet set changes, so push explicitly (rAF-coalesced).
-        app.syncDisplayState();
+        app.syncDisplayState?.();
 
         // Mirror chiplet toggles into the Chiplets panel.  Toggling
         // wrapper_1 in the Layers tree must also remove its path from
@@ -603,7 +589,7 @@ export function populateDisplayControls(app, visibility, selectability,
         } catch (_) { /* ignore */ }
         // Selectability changes the rendering of nothing, so no redraw runs;
         // push the saved display state explicitly.
-        app.syncDisplayState();
+        app.syncDisplayState?.();
     });
     layerSelModel.addFromSpec(layerSelSpec);
 

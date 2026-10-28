@@ -124,7 +124,7 @@ class CUGR
   void gcellCongestion(int layer, int x, int y, double& cap, double& use) const;
   // CUGR-native congestion table (GRT-0130): fractional tracks, demand and
   // overflow split into wire vs via-stub shares (proportional attribution);
-  // sub-min layers shown as all-zero rows. Gated on verbose_.
+  // sub-min layers shown as all-zero rows. The caller decides when to print.
   void reportCongestion() const;
   void getITermsAccessPoints(
       odb::dbNet* net,
@@ -266,18 +266,6 @@ class CUGR
    */
   void updateCongestedNets(std::vector<int>& net_indices,
                            double threshold = 1.0);
-  // A pin gcell and its top pin-access layer; vias above it are climbs.
-  struct PinAccessTop
-  {
-    std::pair<int, int> gcell;
-    int top;
-  };
-  // The net's pin-access tops, one per pin gcell, sorted by gcell.
-  std::vector<PinAccessTop> pinAccessTops(const GRNet& net) const;
-  // The top at gcell `loc` in pinAccessTops' result, or -1 off the pins.
-  static int pinAccessTop(const std::vector<PinAccessTop>& tops, PointT loc);
-  // Overflow the net's removal alone would relieve, pin-access pads excluded.
-  double computeReliefScore(const GRNet& net, double threshold) const;
 
   void patternRoute(std::vector<int>& net_indices);
   // Re-route the critical nets on real 3D-tree resistance, right after the

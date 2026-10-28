@@ -111,7 +111,7 @@ void extMain::makeBlockRCsegs_v2(const char* netNames, const char* extRules)
 
   // Create RC network for every net: Resistor Nodes and Resistor Segments,
   // Following the order of the wires
-  // NOTE: dependent on odb::orderWires
+  // NOTE: dependent on odb::normalizeWireConnectivity
   if (!makeRCNetwork_v2()) {
     return;
   }

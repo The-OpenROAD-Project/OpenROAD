@@ -175,8 +175,9 @@ export function flyPath(a, b) {
     const d1 = Math.sqrt(d2);
     const b0 = (w1 * w1 - w0 * w0 + rho4 * d2) / (2 * w0 * rho2 * d1);
     const b1 = (w1 * w1 - w0 * w0 - rho4 * d2) / (2 * w1 * rho2 * d1);
-    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0);
-    const r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+    // ln(sqrt(b^2 + 1) - b), without the cancellation that makes it log(0).
+    const r0 = -Math.asinh(b0);
+    const r1 = -Math.asinh(b1);
     const S = (r1 - r0) / rho;
     const coshr0 = Math.cosh(r0);
     return {
@@ -192,4 +193,18 @@ export function flyPath(a, b) {
                      zoom: zoomOf(w0 * coshr0 / Math.cosh(rho * s + r0)) };
         },
     };
+}
+
+// Animation curves, 0..1 to 0..1.
+export function easeOutQuad(t) {
+    return 1 - (1 - t) * (1 - t);
+}
+
+// Close to cubic-bezier(0, 0, 0.25, 1).
+export function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+export function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2;
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Every module must import without the renderer global (`deck`), which only
-// exists once its CDN script has run.  A module that reads it at its top
-// level breaks every test that imports it and the saved report too.
+// Every module must import without `deck`, the global deck-global.js sets:
+// one read at a module's top level breaks every test that imports it.
 
 import './setup-dom.js';
 import { describe, it } from 'node:test';
@@ -22,8 +21,7 @@ describe('modules import without the renderer global', () => {
             try {
                 await import(join(srcDir, file));
             } catch (e) {
-                // Remote ES imports (esm.sh) cannot resolve offline; only a
-                // missing global is this test's business.
+                // Only a missing global is this test's business.
                 assert.ok(!/\bdeck is not defined/.test(String(e)),
                           `${file}: ${e}`);
             } finally {

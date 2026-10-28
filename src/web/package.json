@@ -15,6 +15,13 @@
   "pnpm": {
     "onlyBuiltDependencies": [],
     "overrides": {
+      "@deck.gl/core>@types/offscreencanvas": "-",
+      "@deck.gl/layers>@types/geojson": "-",
+      "@loaders.gl/schema-utils>@types/geojson": "-",
+      "@loaders.gl/schema>@types/geojson": "-",
+      "@luma.gl/core>@types/offscreencanvas": "-",
+      "apache-arrow>@types/node": "-",
+      "lit-html>@types/trusted-types": "-",
       "netlistsvg>@types/clone": "-",
       "netlistsvg>@types/json5": "-",
       "netlistsvg>@types/lodash": "-",

@@ -198,6 +198,22 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         assert.ok(hooks.includes('refreshOverlay'));
     });
 
+    it('clearing focus nets or route guides empties their client copies',
+       async () => {
+        for (const [item, focus, guides] of [['Focus nets', [], ['b']],
+                                             ['Route Guides', ['a'], []],
+                                             ['All', [], []]]) {
+            const { app } = appWithHooks();
+            app.focusNets = new Set(['a']);
+            app.routeGuideNets = new Set(['b']);
+            openMenu(app);
+            clickItem(item);
+            await settle();
+            assert.deepEqual([...app.focusNets], focus, item);
+            assert.deepEqual([...app.routeGuideNets], guides, item);
+        }
+    });
+
     it('Select → Output Nets refreshes the panel too', async () => {
         const { app, hooks } = appWithHooks();
         openMenu(app);

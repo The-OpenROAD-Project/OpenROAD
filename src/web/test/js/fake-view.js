@@ -28,9 +28,6 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
         getZoom: () => vs.zoom,
         getTargetZoom: () => vs.zoom,
         getCenter: () => [...vs.target],
-        getViewState: () => ({ ...vs, target: [...vs.target] }),
-        isAnimating: () => false,
-        isMoving: () => false,
         project: (w) => project(w, vs),
         unproject: (p) => unproject(p, vs),
 
@@ -91,7 +88,9 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
         },
         invalidateSize() {},
         applyPrefs() {},
-        redraw() {},
+        setGesture(on) {
+            view.gesture = !!on;
+        },
 
         addTileSlot(id, opts = {}) {
             const slot = {
@@ -112,7 +111,6 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
                 view.overlays.set(id, { shapes, order });
             }
         },
-        hasOverlay: (id) => view.overlays.has(id),
         shapes: (id) => view.overlays.get(id)?.shapes || [],
         setImageOverlay(id, img, { order = 0 } = {}) {
             if (!img) {
@@ -167,7 +165,6 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
             ? { image: view.canvas, rect: view.canvas.getBoundingClientRect() }
             : null),
         debugSnapshot: () => ({ zoom: vs.zoom, target: [...vs.target] }),
-        destroy() {},
     };
 
     function markerGroup(group) {

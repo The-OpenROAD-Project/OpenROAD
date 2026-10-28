@@ -5,6 +5,13 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  '@deck.gl/core>@types/offscreencanvas': '-'
+  '@deck.gl/layers>@types/geojson': '-'
+  '@loaders.gl/schema-utils>@types/geojson': '-'
+  '@loaders.gl/schema>@types/geojson': '-'
+  '@luma.gl/core>@types/offscreencanvas': '-'
+  apache-arrow>@types/node: '-'
+  lit-html>@types/trusted-types: '-'
   netlistsvg>@types/clone: '-'
   netlistsvg>@types/json5: '-'
   netlistsvg>@types/lodash: '-'
@@ -150,18 +157,6 @@ packages:
   '@probe.gl/stats@4.1.2':
     resolution: {integrity: sha512-Hqc0UIHd0IZ2+JbovzTz7lYG7CY9D8yCB81zyP92Zl9UDSPcw2cLbTySW14keAQeAo1sjGjUw0+KHxr0Y2h/hA==}
 
-  '@types/geojson@7946.0.16':
-    resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
-
-  '@types/node@25.9.9':
-    resolution: {integrity: sha512-b4e2xxj/yMeT2hNlD6x7zNFiQK2Dlmkb9CQ6v3/1G2RezKN4YS2lcEv8lzGm1mhs4f2lM4yNAMI/zUDBZBBt7w==}
-
-  '@types/offscreencanvas@2019.7.3':
-    resolution: {integrity: sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A==}
-
-  '@types/trusted-types@2.0.7':
-    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
-
   '@webgpu/types@0.1.74':
     resolution: {integrity: sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==}
 
@@ -223,9 +218,6 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  undici-types@7.24.6:
-    resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
-
 snapshots:
 
   '@deck.gl/core@9.4.0(@luma.gl/webgpu@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2)))':
@@ -244,7 +236,6 @@ snapshots:
       '@probe.gl/env': 4.1.2
       '@probe.gl/log': 4.1.2
       '@probe.gl/stats': 4.1.2
-      '@types/offscreencanvas': 2019.7.3
       gl-matrix: 3.4.4
       mjolnir.js: 3.1.1
     transitivePeerDependencies:
@@ -272,7 +263,6 @@ snapshots:
       '@math.gl/core': 4.1.0
       '@math.gl/polygon': 4.1.0
       '@math.gl/web-mercator': 4.1.0
-      '@types/geojson': 7946.0.16
       earcut: 2.2.4
 
   '@lit-labs/ssr-dom-shim@1.6.0': {}
@@ -308,12 +298,10 @@ snapshots:
       '@loaders.gl/core': 4.5.4
       '@loaders.gl/schema': 4.5.4
       '@math.gl/types': 4.1.0
-      '@types/geojson': 7946.0.16
       apache-arrow: 21.2.0
 
   '@loaders.gl/schema@4.5.4':
     dependencies:
-      '@types/geojson': 7946.0.16
       apache-arrow: 21.2.0
 
   '@loaders.gl/worker-utils@4.5.4(@loaders.gl/core@4.5.4)':
@@ -326,7 +314,6 @@ snapshots:
       '@probe.gl/env': 4.1.2
       '@probe.gl/log': 4.1.2
       '@probe.gl/stats': 4.1.2
-      '@types/offscreencanvas': 2019.7.3
 
   '@luma.gl/engine@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2))':
     dependencies:
@@ -393,21 +380,10 @@ snapshots:
 
   '@probe.gl/stats@4.1.2': {}
 
-  '@types/geojson@7946.0.16': {}
-
-  '@types/node@25.9.9':
-    dependencies:
-      undici-types: 7.24.6
-
-  '@types/offscreencanvas@2019.7.3': {}
-
-  '@types/trusted-types@2.0.7': {}
-
   '@webgpu/types@0.1.74': {}
 
   apache-arrow@21.2.0:
     dependencies:
-      '@types/node': 25.9.9
       flatbuffers: 25.9.23
       json-with-bigint: 3.5.12
       tslib: 2.8.1
@@ -432,9 +408,7 @@ snapshots:
       '@lit/reactive-element': 2.1.2
       lit-html: 3.3.3
 
-  lit-html@3.3.3:
-    dependencies:
-      '@types/trusted-types': 2.0.7
+  lit-html@3.3.3: {}
 
   lit@3.3.3:
     dependencies:
@@ -462,5 +436,3 @@ snapshots:
   three@0.160.0: {}
 
   tslib@2.8.1: {}
-
-  undici-types@7.24.6: {}

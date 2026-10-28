@@ -3,7 +3,8 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDbu, formatDistance, parseDbu } from '../../src/ui-utils.js';
+import { beginSelection, formatDbu, formatDistance, onSelectionReset, parseDbu }
+    from '../../src/ui-utils.js';
 
 import './setup-dom.js';
 import { makeFakeView } from './fake-view.js';
@@ -441,6 +442,53 @@ describe('Ruler inspector data', () => {
         mgr._selectRuler(1);
         assert.equal(mgr._selectedRulerId, 1);
     });
+
+    it('unmarks the ruler when another object takes the selection', () => {
+        const { mgr, app } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        let renders = 0;
+        const render = mgr._renderAll.bind(mgr);
+        mgr._renderAll = () => { renders++; render(); };
+        beginSelection(app);
+        assert.equal(mgr._selectedRulerId, null);
+        assert.equal(renders, 1, 'repainted without the highlight');
+    });
+
+    it('keeps its own selection, and takes it from other panels', () => {
+        const { mgr, app } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        mgr._selectRuler(0);
+        assert.equal(resets, 1);
+        assert.equal(mgr._selectedRulerId, 0);
+    });
+
+    it('draws once when selected again', () => {
+        const { mgr } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        let renders = 0;
+        const render = mgr._renderAll.bind(mgr);
+        mgr._renderAll = () => { renders++; render(); };
+        mgr._selectRuler(0);
+        assert.equal(renders, 1);
+    });
+
+    it('shows the selected ruler again without the selection or the focus',
+       () => {
+        const { mgr, app, inspectorData, focusCalls } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        const token = app.selectionToken;
+        const shown = inspectorData.length;
+        const focused = focusCalls.length;
+        mgr.refreshInspector();
+        assert.equal(inspectorData.length, shown + 1);
+        assert.equal(focusCalls.length, focused);
+        assert.equal(app.selectionToken, token);
+    });
 });
 
 // ─── Ruler naming ────────────────────────────────────────────────────────────
@@ -545,7 +593,7 @@ describe('Ruler drawing', () => {
         const { mgr, app } = makeDrawingManager();
         mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
         mgr.deleteRuler(0);
-        assert.equal(app.view.hasOverlay('rulers'), false);
+        assert.equal(app.view.overlays.has('rulers'), false);
         assert.equal(app.view.markersIn('ruler-labels').length, 0);
     });
 
@@ -554,7 +602,7 @@ describe('Ruler drawing', () => {
         mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
         mgr._visibility.rulers = false;
         mgr.updateVisibility();
-        assert.equal(app.view.hasOverlay('rulers'), false);
+        assert.equal(app.view.overlays.has('rulers'), false);
         assert.equal(app.view.markersIn('ruler-labels').length, 0);
         mgr._visibility.rulers = true;
         mgr.updateVisibility();
@@ -573,7 +621,7 @@ describe('Ruler placement from view clicks', () => {
         assert.equal(mgr._rulers.length, 1);
         assert.deepEqual(mgr._rulers[0].pt1, { x: 500000, y: 0 });
         assert.equal(mgr.isActive(), true);
-        assert.equal(app.view.hasOverlay('ruler-preview'), false);
+        assert.equal(app.view.overlays.has('ruler-preview'), false);
     });
 
     it('a click outside ruler mode is ignored', () => {
@@ -594,7 +642,7 @@ describe('Ruler placement from view clicks', () => {
         const label = app.view.markersIn('ruler-preview')[0];
         assert.equal(label.el.textContent, app.formatDistance(250000));
         mgr.cancelRulerBuild();
-        assert.equal(app.view.hasOverlay('ruler-preview'), false);
+        assert.equal(app.view.overlays.has('ruler-preview'), false);
         assert.equal(app.view.markersIn('ruler-preview').length, 0);
     });
 
@@ -606,7 +654,7 @@ describe('Ruler placement from view clicks', () => {
         assert.equal(snap[0].kind, 'circle');
         assert.deepEqual(snap[0].center, [128, 0]);
         mgr._clearSnap();
-        assert.equal(app.view.hasOverlay('ruler-snap'), false);
+        assert.equal(app.view.overlays.has('ruler-snap'), false);
     });
 });
 

@@ -24,13 +24,17 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
   wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
   otherwise the server inflates them first. Every asset response carries
   `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- `GET /download/image` answers 404 when no design is loaded, 400 for a
+  malformed `bbox`, and 500 when the render fails.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
 ## Wire frame format
 
-Every WebSocket message — both client→server and server→client — is a
-binary frame with the following layout:
+The two directions are not symmetric. A **request** is a plain UTF-8 JSON
+document sent as-is (the reference frontend uses `JSON.stringify`); it carries
+no header. A **response**, and every server push, is a binary frame with the
+following layout:
 
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |
@@ -107,7 +111,7 @@ simply listening on the WebSocket; there's no opt-in.
 
 | `type` field   | Trigger                                                                 | Body                            |
 | -------------- | ----------------------------------------------------------------------- | ------------------------------- |
-| `config`       | First message on every connection.                                      | `{"type":"config","max_in_flight":16}` |
+| `config`       | Once per connection, before any reply to a request.                     | `{"type":"config","max_in_flight":16}` |
 | `refresh`      | Initial spatial-index build finished after a connection / `web_server`. | `{"type":"refresh"}`            |
 | `log`          | Buffered server log lines being flushed to clients.                     | `{"type":"log","text":"<lines>"}` |
 | `debug_paused` | The graphics-debug pause hook entered (e.g. placer breakpoint).         | `{"type":"debug_paused"}`       |
@@ -156,32 +160,13 @@ Render a single 256×256 PNG tile of the layout.
 when the layer has nothing to draw in this tile.
 
 **Caching:** the server caches the response under the tile, the rendered
-`dpr` and `tile_px`, and the parsed fields that can change this layer's
-pixels. Selectability fields, keys the server does not parse, and flags that
-only another layer draws (for example `pin_markers` outside `_pins`, or
-`visible_layers` outside `_pins` and `_access_points`) do not split the cache.
+`dpr` and `tile_px`, the design revision, and the parsed fields that can
+change this layer's pixels. Selectability fields, keys the server does not
+parse, and flags that only another layer draws (for example `pin_markers`
+outside `_pins`, or `visible_layers` outside `_pins`, `_access_points` and,
+while pin names are shown, `_inst_labels`) do not split the cache.
 Tiles that depend on per-session state (module colors, focused nets, debug
 renderers) are not cached.
-
-### `tile_group`
-
-Render several tech layers into one PNG, composited bottom to top with
-straight-alpha source-over. It is the image the client would get by stacking
-the `tile` responses for the same layers, in one request instead of one per
-layer. Accepts the same visibility fields and sizing fields as `tile`. The web
-client sends it only when opened with `?composite=1`; by default it fetches one
-`tile` per layer.
-
-| Field      | Type       | Required | Description |
-| ---------- | ---------- | :------: | ----------- |
-| `layers`   | `string[]` |    ✓     | Tech layer names, bottom first; 1 to 256. A name may repeat (one per chiplet in a multi-die design). Synthetic layers (`_…`) are rejected. |
-| `patterns` | `int[]`    |    —     | Fill pattern per layer, same length as `layers` (see `pattern` under `tile`). Default: solid. |
-| `z`, `x`, `y` | `int`   |    ✓     | As for `tile`. |
-
-**Response:** PNG image (frame type `1`), frame type `3` when none of the
-layers draws anything in this tile, or an error for a malformed request. A
-request cancelled between two of its layers answers `cancelled`, like `tile`.
-Cached like `tile`, under the ordered layer and pattern list.
 
 ### `overlay_tile`
 
@@ -1033,7 +1018,9 @@ request gets a `kError` response, the rest of the session continues.
   conversion failure, internal `runtime_error`, …): `kError` body
   `server error: <exception what()>`.
 
-Every `kError` response logs a server-side warning:
+Every `kError` response logs a server-side warning, except the routine ones:
+the busy reply while a script runs and `cancelled` for a request the client
+cancelled:
 
 ```
 [WARNING WEB-0043] request id=<id> type=<type> failed: <body>

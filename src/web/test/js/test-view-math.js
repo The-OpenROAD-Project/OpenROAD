@@ -227,4 +227,34 @@ describe('flyPath', () => {
         assert.deepEqual(p.at(0.5).target, [10, 10]);
         assert.ok(near(p.S, 4 * Math.LN2 / Math.SQRT2, 1e-9));
     });
+
+    // A view zoomed in by its centre ends a sub-pixel away from the fit once
+    // snapTarget has run; the flight back must still be a number everywhere.
+    it('stays finite for a tiny shift between far-apart zooms', () => {
+        const view = { width: 1600, height: 1000 };
+        const cases = [
+            [{ ...view, target: [120.0001, 120], zoom: 12 },
+             { ...view, target: [120, 120], zoom: 2 }],
+        ];
+        for (let k = 0; k < 20; k++) {
+            const centre = [100 + k * 3.7171, 80 + k * 2.3131];
+            const zoomed = { ...view, target: centre, zoom: 10 };
+            cases.push([{ ...zoomed, target: snapTarget(zoomed, 1.5) },
+                        { ...view, target: centre, zoom: 1 }]);
+        }
+        for (const [from, to] of cases) {
+            const p = flyPath(from, to);
+            assert.ok(Number.isFinite(p.S), `S ${p.S}`);
+            for (let i = 0; i <= 10; i++) {
+                const { target, zoom } = p.at(i / 10);
+                assert.ok(Number.isFinite(zoom)
+                          && target.every(Number.isFinite), `t=${i / 10}`);
+            }
+            const s = p.at(0);
+            const e = p.at(1);
+            assert.ok(near(s.zoom, from.zoom, 1e-6), `start zoom ${s.zoom}`);
+            assert.ok(near(e.zoom, to.zoom) && near(e.target[0], to.target[0])
+                      && near(e.target[1], to.target[1]));
+        }
+    });
 });

@@ -6,7 +6,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { showFindDialog, showGotoDialog } from '../../src/search-nav.js';
 import { dbuRectToWorldRect, dbuToWorld } from '../../src/coordinates.js';
-import { formatDbu, parseDbu, unitLabel } from '../../src/ui-utils.js';
+import { beginSelection, formatDbu, onSelectionReset, parseDbu, unitLabel }
+    from '../../src/ui-utils.js';
 
 const wait = () => new Promise((r) => setTimeout(r, 0));
 
@@ -186,6 +187,59 @@ describe('Find dialog', () => {
         assert.deepEqual(calls, [['fitWorldRect', expected]]);
         assert.deepEqual(app.lastSelectionBounds, [0, 0, 3000, 4000]);
         assert.match(errorText(), /2 found/);
+    });
+
+    it('takes the selection from other panels', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 1, selection_count: 1 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        showFindDialog(app);
+        setInput('.sn-pattern', 'u1');
+        clickOk();
+        await wait();
+        assert.equal(resets, 1);
+        assert.match(errorText(), /1 found/);
+    });
+
+    it('drops a reply a later selection overtook', async () => {
+        document.body.innerHTML = '';
+        const { app, calls } = findApp(
+            { count: 2, selection_count: 2, bbox: [0, 0, 3000, 4000] });
+        showFindDialog(app);
+        setInput('.sn-pattern', '_4*');
+        clickOk();
+        beginSelection(app);   // a click on the layout before the reply
+        await wait();
+        assert.deepEqual(calls, []);
+        assert.equal(app.lastSelectionBounds, undefined);
+        assert.match(errorText(), /2 found/);
+    });
+
+    it('leaves the selection alone when nothing is found', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 0, selection_count: 0 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        const token = app.selectionToken;
+        showFindDialog(app);
+        setInput('.sn-pattern', 'zzz');
+        clickOk();
+        await wait();
+        assert.equal(resets, 0);
+        assert.equal(app.selectionToken, token);
+    });
+
+    it('brings the Select Highlight panel up to date', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 1, selection_count: 1 });
+        let refreshes = 0;
+        app.selectionBrowser = { scheduleRefresh: () => refreshes++ };
+        showFindDialog(app);
+        setInput('.sn-pattern', 'u1');
+        clickOk();
+        await wait();
+        assert.equal(refreshes, 1);
     });
 
     it('reports when nothing is found and does not zoom', async () => {

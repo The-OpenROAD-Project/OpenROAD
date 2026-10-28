@@ -7,7 +7,8 @@
 // Both reuse the .modal-overlay/.modal-dialog pattern from menu-bar.js.
 
 import { dbuRectToWorldRect, dbuToWorld, worldToDbu } from './coordinates.js';
-import { applySelectionFlags, buildModal } from './ui-utils.js';
+import { applySelectionFlags, beginSelection, buildModal, isCurrentSelection }
+    from './ui-utils.js';
 
 // The .search-nav-dialog rules size these two dialogs' rows; every caller here
 // passes it so buildModal itself stays dialog-agnostic.
@@ -57,6 +58,9 @@ export function showFindDialog(app) {
             return;
         }
         showError('Searching…', true);
+        // Find takes the selection only once it has matches, and not from a
+        // selection that started while it was searching.
+        const issued = app.selectionToken;
         app.websocketManager
             .request({
                 type: 'find',
@@ -65,12 +69,17 @@ export function showFindDialog(app) {
                 match_case: caseChk.checked,
             })
             .then((resp) => {
-                applySelectionFlags(app, resp);
                 const count = resp && resp.count ? resp.count : 0;
                 if (!count) {
                     showError('No objects found.');
                     return;
                 }
+                if (!isCurrentSelection(app, issued)) {
+                    showError(`${count} found.`, true);
+                    return;
+                }
+                beginSelection(app);
+                applySelectionFlags(app, resp);
                 // Auto-zoom to the matched objects — an improvement over the Qt
                 // Find dialog, which only selects without centering.
                 if (Array.isArray(resp.bbox)) {
@@ -85,6 +94,7 @@ export function showFindDialog(app) {
                 if (typeof app.redrawAllLayers === 'function') {
                     app.redrawAllLayers();
                 }
+                app.selectionBrowser?.scheduleRefresh();
                 const shown = resp.selection_count || count;
                 showError(resp.truncated
                     ? `${count} found (showing first ${shown}).`

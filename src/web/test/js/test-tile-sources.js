@@ -9,8 +9,7 @@ const {
     buildHeatmapRequest, releaseDrawable,
 } = await import('../../src/tile-sources.js');
 const { LayerExtents } = await import('../../src/layer-extents.js');
-const { buildGroupTileRequestFor, tileRequestBuilder }
-    = await import('../../src/tile-request.js');
+const { tileRequestBuilder } = await import('../../src/tile-request.js');
 
 // A manager whose replies the test hands out per layer.  Ids start high and
 // are only known from each promise's requestId, as with WebSocketManager.
@@ -250,6 +249,18 @@ describe('createCompositeSource with repeated layers', () => {
         source.load({ z: 1, x: 0, y: 0 });
         assert.deepEqual(wm.sent.map((s) => s.msg.layer), ['M_TOP']);
     });
+
+    // The draw list holds each chiplet's layers as a block: hiding a layer in
+    // one chiplet must not lift it above the next one in the stack.
+    it('keeps the stacking order when a layer is hidden in one chiplet', () => {
+        const items = [{ layer: 'M1', opacity: 1, visible: false },   // chiplet A
+                       { layer: 'M2', opacity: 1, visible: true },
+                       { layer: 'M1', opacity: 1, visible: true },    // chiplet B
+                       { layer: 'M2', opacity: 1, visible: true }];
+        const { wm, source } = composite({ getItems: () => items });
+        source.load({ z: 1, x: 0, y: 0 });
+        assert.deepEqual(wm.sent.map((s) => s.msg.layer), ['M1', 'M2']);
+    });
 });
 
 // The server's layer_extents bound where each layer has shapes; a tile outside
@@ -347,9 +358,9 @@ describe('releaseDrawable', () => {
     });
 });
 
-describe('tile_group requests', () => {
+describe('tile requests', () => {
     const coords = { x: 1, y: 2, z: 3 };
-    const gctx = {
+    const tctx = {
         visibility: { stdcells: true, scale_bar: false },
         selectability: { stdcells: true },
         visibleLayers: new Set(['metal1', 'metal2']),
@@ -360,120 +371,28 @@ describe('tile_group requests', () => {
         },
     };
 
-    it('carries the layers bottom first, with the render fields of tile', () => {
-        const group = buildGroupTileRequestFor(
-            coords, ['metal1', 'metal2'], gctx, 2, 240);
-        const tile = tileRequestBuilder(coords, gctx, 2, 240)('metal1');
-        assert.equal(group.type, 'tile_group');
-        assert.deepEqual(group.layers, ['metal1', 'metal2']);
-        for (const k of ['z', 'x', 'y', 'dpr', 'tile_px', 'visible_layers',
-                         'visible_chiplets', 'stdcells', 'scale_bar']) {
-            assert.deepEqual(group[k], tile[k], k);
-        }
+    it('carries the fields a layer render reads', () => {
+        const tile = tileRequestBuilder(coords, tctx, 2, 240)('metal1');
+        assert.equal(tile.type, 'tile');
+        assert.equal(tile.layer, 'metal1');
+        assert.deepEqual([tile.z, tile.x, tile.y], [3, 1, 2]);
+        assert.equal(tile.dpr, 2);
+        assert.equal(tile.tile_px, 480);
+        assert.deepEqual(tile.visible_layers, ['metal1', 'metal2']);
+        assert.deepEqual(tile.visible_chiplets, ['chip']);
+        assert.equal(tile.stdcells, true);
+        assert.equal(tile.scale_bar, false);
     });
 
-    it('leaves selectability off the wire, while tile keeps it', () => {
-        const group = buildGroupTileRequestFor(coords, ['metal1'], gctx, 1, 240);
-        assert.equal(group.selectable_layers, undefined);
-        assert.equal(group.s_stdcells, undefined);
-        const tile = tileRequestBuilder(coords, gctx, 1, 240)('metal1');
+    it('keeps selectability on the wire', () => {
+        const tile = tileRequestBuilder(coords, tctx, 1, 240)('metal1');
         assert.deepEqual(tile.selectable_layers, ['metal1']);
         assert.equal(tile.s_stdcells, true);
     });
 
-    it('sends one pattern per layer, and none when all are solid', () => {
-        assert.deepEqual(buildGroupTileRequestFor(
-            coords, ['metal1', 'metal2'], gctx, 1, 240).patterns, [1, 3]);
-        assert.equal(buildGroupTileRequestFor(
-            coords, ['metal1'], gctx, 1, 240).patterns, undefined);
-    });
-});
-
-// With ?composite=1 the server composites runs of layers (tile_group).
-describe('createCompositeSource with server groups', () => {
-    const five = ['_instances', 'm1', 'm2', 'm3', 'm4'].map(
-        (layer) => ({ layer, opacity: 1, visible: true }));
-
-    it('asks for bottom-up runs of up to K layers, one request each', async () => {
-        const { wm, kit, source } = composite({ getItems: () => five,
-                                                groupLayers: () => 3 });
-        const h = source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => [s.msg.type, s.msg.layers]),
-                         [['tile', undefined],
-                          ['tile_group', ['m1', 'm2', 'm3']],
-                          ['tile_group', ['m4']]]);
-        wm.reply('_instances', 'instances');
-        wm.reply('tile_group', 'group');
-        const d = await h.promise;
-        assert.ok(d);
-        assert.deepEqual(kit.draws.filter((x) => x !== 'clear'),
-                         ['instances', 'group', 'group']);
-    });
-
-    it('groups after dropping repeated and hidden layers', () => {
-        const items = [...five, { layer: 'm1', opacity: 1, visible: true },
-                       { layer: 'm9', opacity: 1, visible: false }];
-        const { wm, source } = composite({ getItems: () => items,
-                                           groupLayers: () => 10 });
-        source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.layers || s.msg.layer),
-                         ['_instances', ['m1', 'm2', 'm3', 'm4']]);
-    });
-
-    // The server only composites tech layers.
-    it('keeps a pseudo layer in its own request, splitting the runs', () => {
-        const items = ['m1', '_mfg_grid', 'm2', 'm3', 'm4', '_gcell_grid'].map(
-            (layer) => ({ layer, opacity: 1, visible: true }));
-        const { wm, source } = composite({ getItems: () => items,
-                                           groupLayers: () => 3 });
-        source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.layers || s.msg.layer),
-                         [['m1'], '_mfg_grid', ['m2', 'm3', 'm4'],
-                          '_gcell_grid']);
-    });
-
-    // Runs come from the whole list, not the visible part of it.
-    it('hiding a layer changes only the request of its own run', () => {
-        const items = ['_instances', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'].map(
-            (layer) => ({ layer, opacity: 1, visible: true }));
-        const { wm, source } = composite({ getItems: () => items,
-                                           groupLayers: () => 3 });
-        source.load({ z: 1, x: 0, y: 0 });
-        const before = wm.sent.map((s) => JSON.stringify(s.msg));
-        items[2].visible = false;   // m2
-        wm.sent.length = 0;
-        source.load({ z: 1, x: 0, y: 0 });
-        const after = wm.sent.map((s) => JSON.stringify(s.msg));
-        assert.deepEqual(wm.sent.map((s) => s.msg.layers || s.msg.layer),
-                         ['_instances', ['m1', 'm3'], ['m4', 'm5', 'm6']]);
-        assert.equal(after[0], before[0]);
-        assert.notEqual(after[1], before[1]);
-        assert.equal(after[2], before[2]);
-    });
-
-    it('fetches each layer when a layer is translucent', () => {
-        const items = [...five.slice(0, 2),
-                       { layer: 'm2', opacity: 0.5, visible: true }];
-        const { wm, source } = composite({ getItems: () => items,
-                                           groupLayers: () => 3 });
-        source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.type),
-                         ['tile', 'tile', 'tile']);
-    });
-
-    it('fetches each layer when groups are off', () => {
-        const { wm, source } = composite({ getItems: () => five });
-        source.load({ z: 1, x: 0, y: 0 });
-        assert.equal(wm.sent.length, 5);
-        assert.ok(wm.sent.every((s) => s.msg.type === 'tile'));
-    });
-
-    it('cancels its group requests', () => {
-        const { wm, source } = composite({ getItems: () => five,
-                                           groupLayers: () => 3 });
-        const h = source.load({ z: 1, x: 0, y: 0 });
-        h.promise.catch(() => {});
-        h.cancel();
-        assert.deepEqual(wm.cancelled, wm.sent.map((s) => s.id));
+    it('sends a pattern only when it is not solid', () => {
+        const build = tileRequestBuilder(coords, tctx, 1, 240);
+        assert.equal(build('metal2').pattern, 3);
+        assert.equal(build('metal1').pattern, undefined);
     });
 });

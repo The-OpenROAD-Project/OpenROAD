@@ -454,17 +454,18 @@ describe('WebSocketManager flow control', () => {
     });
 });
 
+// A manager with a one-request window, already full.
+async function saturated() {
+    const mgr = new WebSocketManager('ws://fake');
+    await mgr.readyPromise;
+    mgr._maxInFlight = 1;
+    const first = mgr.request({ type: 'tile', n: 0 });
+    first.catch(() => {});
+    return { mgr, first };
+}
+
 // Tiles prefetched around the view (#11340) must never delay one on screen.
 describe('WebSocketManager background requests', () => {
-    async function saturated() {
-        const mgr = new WebSocketManager('ws://fake');
-        await mgr.readyPromise;
-        mgr._maxInFlight = 1;
-        const first = mgr.request({ type: 'tile', n: 0 });
-        first.catch(() => {});
-        return { mgr, first };
-    }
-
     it('go out only once the foreground queue is empty', async () => {
         const { mgr, first } = await saturated();
         const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
@@ -505,7 +506,6 @@ describe('WebSocketManager background requests', () => {
         const bg = mgr.request({ type: 'tile', n: 0 }, { background: true });
         bg.catch(() => {});
         mgr.cancel(bg.requestId);
-        assert.equal(mgr._bgSent.size, 0);
         assert.equal(mgr.pendingCount, 0);
     });
 
@@ -517,17 +517,66 @@ describe('WebSocketManager background requests', () => {
         await assert.rejects(bg, { message: 'WebSocket closed' });
         assert.equal(mgr._bgQueue.size, 0);
     });
+
+    it('take at most half the window', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 4;
+        for (let i = 0; i < 10; i++) {
+            mgr.request({ type: 'tile', n: i }, { background: true })
+                .catch(() => {});
+        }
+        assert.equal(mgr.socket.sent.length, 2);
+        const fg = mgr.request({ type: 'tile', n: 10 });
+        fg.catch(() => {});
+        assert.equal(sentIds(mgr).at(-1), fg.requestId,
+            'a tile on screen goes out at once');
+    });
+
+    it('keep half the window for the foreground already in flight', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 4;
+        for (let i = 0; i < 2; i++) {
+            mgr.request({ type: 'tile', n: i }).catch(() => {});
+        }
+        for (let i = 2; i < 7; i++) {
+            mgr.request({ type: 'tile', n: i }, { background: true })
+                .catch(() => {});
+        }
+        assert.equal(mgr.socket.sent.length, 2, 'no background goes out');
+        const fg = mgr.request({ type: 'tile', n: 7 });
+        fg.catch(() => {});
+        assert.equal(sentIds(mgr).at(-1), fg.requestId,
+            'a tile on screen goes out at once');
+    });
+
+    it('keep their slot until the reply, even when cancelled', async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 2;
+        const first = mgr.request({ type: 'tile', n: 0 }, { background: true });
+        first.catch(() => {});
+        mgr.request({ type: 'tile', n: 1 }, { background: true })
+            .catch(() => {});
+        const tiles = () => mgr.socket.sent.filter(
+            msg => JSON.parse(msg).type === 'tile').length;
+
+        mgr.cancel(first.requestId);
+        // Pumps, and must still find the slot taken.
+        mgr.request({ type: 'tile', n: 2 }, { background: true })
+            .catch(() => {});
+        assert.equal(tiles(), 1, 'the server is still rendering the first');
+        deliverReply(mgr, first.requestId);
+        assert.equal(tiles(), 2);
+    });
 });
 
 // A ring tile that comes on screen while still queued must stop waiting
 // behind the foreground (TileGrid promotes it).
 describe('WebSocketManager.promote', () => {
     it('moves a queued background request into the foreground queue', async () => {
-        const mgr = new WebSocketManager('ws://fake');
-        await mgr.readyPromise;
-        mgr._maxInFlight = 1;
-        const first = mgr.request({ type: 'tile', n: 0 });
-        first.catch(() => {});
+        const { mgr, first } = await saturated();
         const bg = mgr.request({ type: 'tile', n: 1 }, { background: true });
         bg.catch(() => {});
         const fg = mgr.request({ type: 'tile', n: 2 });
@@ -584,6 +633,30 @@ describe('WebSocketManager liveness', () => {
                 'the wedged socket is detached so it cannot drive our state');
             assert.notEqual(mgr.socket, dead,
                 'we reconnect without waiting for the dead socket to close');
+        } finally {
+            performance.now = realNow;
+        }
+    });
+
+    it('force-closes when background work alone is stuck', async () => {
+        // Background requests never fill the window, so their own share
+        // full counts as saturated.
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 4;
+        for (let i = 0; i < 10; i++) {
+            mgr.request({ type: 'tile', n: i }, { background: true })
+                .catch(() => {});
+        }
+        const realNow = performance.now.bind(performance);
+        const t0 = realNow();
+        mgr._lastRecvAt = t0;
+        performance.now = () => t0 + 100000;
+        try {
+            const dead = mgr.socket;
+            const before = dead.closeCount;
+            mgr._checkLiveness();
+            assert.equal(dead.closeCount, before + 1);
         } finally {
             performance.now = realNow;
         }

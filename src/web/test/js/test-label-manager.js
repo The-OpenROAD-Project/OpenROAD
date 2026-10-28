@@ -10,6 +10,7 @@ import { makeFakeView } from './fake-view.js';
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 
 const { LabelManager } = await import('../../src/label-manager.js');
+const { beginSelection, onSelectionReset } = await import('../../src/ui-utils.js');
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -355,6 +356,83 @@ describe('LabelManager handles', () => {
                                                  () => { reached = true; });
         el.dispatchEvent(pointer('pointerdown', 0, 0));
         assert.equal(reached, false);
+    });
+
+    // resyncBounds can change the design's scale and origin, then redraws.
+    it('re-places the handles when the visibility is updated', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        app.designScale = 512 / 1e6;
+        mgr.updateVisibility();
+        assert.deepEqual(app.view.markersIn('label-handles')[0].world, [256, 128]);
+    });
+
+    it('unmarks the label when another object takes the selection', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        assert.ok(app.view.markersIn('label-handles')[0].el
+            .classList.contains('label-handle-selected'));
+        beginSelection(app);
+        assert.equal(mgr._selectedName, null);
+        assert.ok(!app.view.markersIn('label-handles')[0].el
+            .classList.contains('label-handle-selected'));
+    });
+
+    it('takes the selection from other panels when selected', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        mgr._select('L0');
+        assert.equal(resets, 1);
+        assert.equal(mgr._selectedName, 'L0');
+    });
+
+    it('draws the handles once when selected again', async () => {
+        const { mgr } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        let renders = 0;
+        const render = mgr._renderHandles.bind(mgr);
+        mgr._renderHandles = () => { renders++; render(); };
+        mgr._select('L0');
+        assert.equal(renders, 1);
+    });
+
+    it('shows the label in the Inspector again without the selection',
+       async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        const shown = [];
+        let focused = 0;
+        mgr._updateInspector = (d) => shown.push(d.name);
+        mgr._focusComponent = () => focused++;
+        const token = app.selectionToken;
+        mgr.refreshInspector('L0');
+        assert.deepEqual(shown, ['L0']);
+        assert.equal(focused, 0);
+        assert.equal(app.selectionToken, token);
+    });
+
+    it('leaves the handles alone when nothing moved', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        mgr.updateVisibility();
+        assert.equal(app.view.markersIn('label-handles')[0].el, el);
+    });
+
+    it('keeps the dragged handle through a resync', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a', size: 0 }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        el.dispatchEvent(pointer('pointerdown', 500, 464));
+        el.dispatchEvent(pointer('pointermove', 564, 464));
+        app.designScale = 512 / 1e6;
+        mgr.updateVisibility();
+        assert.equal(app.view.markersIn('label-handles')[0].el, el);
     });
 
     it('follows the Labels visibility', async () => {

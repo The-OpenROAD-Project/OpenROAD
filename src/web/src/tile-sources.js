@@ -7,9 +7,8 @@
 // `load(coords, {background, onPartial}) -> {promise, cancel, promote}` and
 // `release(drawable)`.
 
-import {
-    buildGroupTileRequestFor, tileDevicePx, tileRequestBuilder, tileSizeFields,
-} from './tile-request.js';
+import { nativeDpr, tileDevicePx, tileRequestBuilder, tileSizeCss, tileSizeFields }
+    from './tile-request.js';
 import { closeAll, mergeOntoContext, renderMergedTile } from './tile-merge.js';
 import { tileMayHaveContent } from './layer-extents.js';
 
@@ -108,102 +107,35 @@ function loadHandle(wm, ids, promise, onCancel) {
     };
 }
 
-// Layers per group when the server composites runs of layers (tile_group).
-export const DEFAULT_GROUP_LAYERS = 3;
-
-// Each tech layer's run: the slot's whole list cut into runs of up to `perRun`
-// between pseudo layers, so a toggle changes the request of its own run only.
-// Pseudo layers ('_instances', ...) map to null: the server groups tech
-// layers only.
-function runOf(all, perRun) {
-    const runs = new Map();
-    let segment = 0;
-    let n = 0;
-    for (const item of all) {
-        if (!item || runs.has(item.layer)) {
-            continue;
-        }
-        if (item.layer.startsWith('_')) {
-            runs.set(item.layer, null);
-            segment++;
-            n = 0;
-            continue;
-        }
-        runs.set(item.layer, `${segment}:${Math.floor(n++ / perRun)}`);
-    }
-    return runs;
-}
-
-// One tile_group request per run present in the tile, bottom up, and a
-// 'tile' request for each pseudo layer.
-function groupRequests(all, items, perRun, build, coords, ctx, dpr, tileSize) {
-    const runs = runOf(all, perRun);
-    const parts = [];
-    let run = null;
-    const flush = () => {
-        if (run) {
-            parts.push({ opacity: 1, msg: buildGroupTileRequestFor(
-                coords, run.layers, ctx, dpr, tileSize) });
-            run = null;
-        }
-    };
-    for (const item of items) {
-        const id = runs.get(item.layer);
-        if (id == null) {
-            flush();
-            parts.push({ opacity: 1, msg: build(item.layer) });
-            continue;
-        }
-        if (run && run.id !== id) {
-            flush();
-        }
-        run = run || { id, layers: [] };
-        run.layers.push(item.layer);
-    }
-    flush();
-    return parts;
-}
-
 // The layout layers of a slot, composited into one image per tile in z-order
 // (`getItems()` returns [{layer, opacity, visible}], bottom-most first).  With
 // double buffering the tile is drawn once, complete; otherwise every layer that
-// lands is published as a partial composite.  `groupLayers()` > 0 asks the
-// server to composite runs of that many layers (tile_group).
+// lands is published as a partial composite.
 export function createCompositeSource({
-    wm, ctx, getItems, dpr = () => 1, tileSize = () => 240,
+    wm, ctx, getItems, dpr = nativeDpr, tileSize = tileSizeCss,
     isDoubleBuffer = () => true, decode = decodeTilePayload,
     makeCanvas = defaultCanvas, snapshot = defaultSnapshot,
-    groupLayers = () => 0,
 }) {
     return {
         load({ z, x, y }, { background = false, onPartial } = {}) {
             const all = getItems() || [];
-            // A layer with nothing in this tile is not requested at all
-            // (layer-extents.js).
-            const visible = all.filter(
-                (item) => item && item.visible !== false
-                          && tileMayHaveContent(ctx, item.layer, { z, x, y }));
             const d = dpr();
             const t = tileSize();
-            // One request per layer: every chiplet lists its own copy of a
-            // shared tech layer, and the server answers each copy with the
-            // same image, which would be composited once per copy.
+            // One request per layer, where its first copy sits (each chiplet
+            // lists a shared layer again); layer-extents.js skips empty ones.
+            const shown = new Set(all.filter((item) => item && item.visible !== false)
+                .map((item) => item.layer));
             const seen = new Set();
-            const items = visible.filter((item) => !seen.has(item.layer)
-                                                   && seen.add(item.layer));
+            const items = all.filter(
+                (item) => item && shown.has(item.layer) && !seen.has(item.layer)
+                          && seen.add(item.layer)
+                          && tileMayHaveContent(ctx, item.layer, { z, x, y }));
             if (items.length === 0) {
                 return NOTHING;
             }
             const build = tileRequestBuilder({ z, x, y }, ctx, d, t);
-            // The server composites at full opacity, so one translucent layer
-            // sends the whole tile per layer.
-            const perRun = groupLayers();
-            const parts = perRun > 0
-                && items.every((item) => (item.opacity ?? 1) === 1)
-                ? groupRequests(all, items, perRun, build, { z, x, y }, ctx,
-                                d, t)
-                : items.map((item) => ({ opacity: item.opacity,
-                                         msg: build(item.layer) }));
+            const parts = items.map((item) => ({ opacity: item.opacity,
+                                                 msg: build(item.layer) }));
             const px = tileDevicePx(t, d);
             // Made on the first draw with an image, so an empty or
             // cancelled tile never allocates one.
@@ -257,7 +189,7 @@ export function createCompositeSource({
 // One server image per tile: `buildRequest({z, x, y}, dpr, tileSize)` returns
 // the request, or null for a tile that needs none.
 export function createImageSource({
-    wm, buildRequest, dpr = () => 1, tileSize = () => 240,
+    wm, buildRequest, dpr = nativeDpr, tileSize = tileSizeCss,
     decode = decodeTilePayload,
 }) {
     return {

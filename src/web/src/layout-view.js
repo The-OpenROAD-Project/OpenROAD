@@ -12,14 +12,15 @@
 // World coordinates are view-math's: CSS px at zoom 0, y up, tile grid [0, T].
 
 import {
-    clampZoom, fitView, flyPath, growRange, growRect, project, rectsOverlap,
-    snapTarget,
+    clampZoom, easeInOutCubic, easeOutCubic, fitView, flyPath, growRange,
+    growRect, project, rectsOverlap, snapTarget,
     tileRange, tileWorldBounds, tileZoomFor, unproject, viewWorldRect,
     zoomAround as zoomAroundTarget,
 } from './view-math.js';
 import { TileGrid, tileKey } from './tile-grid.js';
+import { nativeDpr, tileSizeCss } from './tile-request.js';
 import { copyToCanvas2d } from './tile-sources.js';
-import { rafCoalesce } from './ui-utils.js';
+import { cssColorToHex, MAX_TILE_ZOOM, rafCoalesce } from './ui-utils.js';
 import { ZoomSwap } from './zoom-swap.js';
 
 // Bottom to top.
@@ -45,8 +46,8 @@ const kFlightMinMs = 400;
 const kFlightMaxMs = 1000;
 const kInertiaWindowMs = 100;              // drag samples that set the speed
 const kInertiaMinSpeed = 0.05;             // px/ms; slower releases just stop
-const kFlashMs = 1200;                     // three 400 ms pulses
-const kMaxTileZoom = 30;
+const kFlashPulseMs = 400;
+const kFlashMs = 3 * kFlashPulseMs;
 
 // '#rgb', '#rrggbb' or [r, g, b(, a)] to [r, g, b, a] with alpha 0..255.
 export function toRgba(color, opacity = 1) {
@@ -60,15 +61,6 @@ export function toRgba(color, opacity = 1) {
     }
     const n = parseInt(hex.slice(0, 6), 16) || 0;
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255, Math.round(255 * opacity)];
-}
-
-function easeOut(t) {
-    // Close to cubic-bezier(0, 0, 0.25, 1).
-    return 1 - Math.pow(1 - t, 3);
-}
-
-function easeInOut(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(2 - 2 * t, 3) / 2;
 }
 
 function makeEmitter() {
@@ -116,17 +108,17 @@ export function createLayoutView(container, opts = {}) {
         smooth: () => false, doubleBuffer: () => true, defer: () => false,
         ...(opts.prefs || {}),
     };
-    const tileSize = opts.tileSize || (() => 240);
-    const dpr = opts.dpr || (() => (typeof devicePixelRatio === 'number'
-        ? devicePixelRatio : 1));
+    const tileSize = opts.tileSize || tileSizeCss;
+    const dpr = opts.dpr || nativeDpr;
     const raf = opts.raf || ((fn) => requestAnimationFrame(fn));
     const now = opts.now || (() => performance.now());
     const events = makeEmitter();
 
     const vs = { target: [0, 0], zoom: 0, width: 1, height: 1 };
-    const limits = { minZoom: -Infinity, maxZoom: kMaxTileZoom };
+    const limits = { minZoom: -Infinity, maxZoom: MAX_TILE_ZOOM };
     let anim = null;          // { from, to, anchor, start, ms }
     let interacting = false;  // a drag or pinch from the controller
+    let gesturing = false;    // a wheel or trackpad gesture (setGesture)
     let afterFrame = [];      // called once deck has drawn its next frame
     let rendererInfo = null;  // what draws, once deck's device is up
     let dragSamples = [];     // { t, target, zoom } while interacting
@@ -137,7 +129,6 @@ export function createLayoutView(container, opts = {}) {
     let moving = false;       // between movestart and moveend
     let flashUntil = 0;
     const cursorModes = new Set();   // 'ruler', 'label'
-    let destroyed = false;
 
     // ─── DOM ────────────────────────────────────────────────────────────
     container.classList.add('or-view');
@@ -268,9 +259,6 @@ export function createLayoutView(container, opts = {}) {
         const canvas = deckgl.getCanvas && deckgl.getCanvas();
         canvas?.addEventListener('webglcontextlost', (e) => {
             e.preventDefault();
-            if (destroyed) {
-                return;
-            }
             events.emit('contextlost');
             const old = deckgl;
             deckgl = null;
@@ -310,10 +298,8 @@ export function createLayoutView(container, opts = {}) {
         return changed;
     }
     measure();
-    let resizeObserver = null;
     if (typeof ResizeObserver === 'function') {
-        resizeObserver = new ResizeObserver(() => invalidateSize());
-        resizeObserver.observe(container);
+        new ResizeObserver(() => invalidateSize()).observe(container);
     }
 
     function invalidateSize() {
@@ -487,7 +473,7 @@ export function createLayoutView(container, opts = {}) {
     }
 
     function stepAnimation() {
-        if (!anim || destroyed) {
+        if (!anim) {
             return;
         }
         if (anim.start === null) {
@@ -499,11 +485,11 @@ export function createLayoutView(container, opts = {}) {
             anim.start = now();
         }
         const t = Math.min(1, (now() - anim.start) / anim.ms);
-        const e = easeOut(t);
+        const e = easeOutCubic(t);
         let zoom = anim.from.zoom + (anim.to.zoom - anim.from.zoom) * e;
         let target;
         if (anim.flight) {
-            ({ target, zoom } = anim.flight.path.at(easeInOut(t)));
+            ({ target, zoom } = anim.flight.path.at(easeInOutCubic(t)));
         } else if (anim.anchor) {
             target = zoomAroundTarget(anim.from, anim.anchor, zoom);
         } else {
@@ -541,12 +527,12 @@ export function createLayoutView(container, opts = {}) {
         const z = clampZoom(tileZoomFor(vs.zoom, {
             targetZoom: anim ? anim.to.zoom : null,
             hidingNewLevels: hiding,
-        }), { minZoom: 0, maxZoom: kMaxTileZoom });
+        }), { minZoom: 0, maxZoom: MAX_TILE_ZOOM });
         const dest = tileView();
         const range = tileRange(viewWorldRect(dest), z, tileSize());
         const ring = growRange(range);
         const shown = swap.shownZ;
-        const frozen = prefs.defer() && interacting;
+        const frozen = prefs.defer() && (interacting || gesturing);
         // Frozen, the grids keep their old level, so the swap must too.
         if (!frozen) {
             swap.setZoom(z, {
@@ -558,12 +544,13 @@ export function createLayoutView(container, opts = {}) {
         // At rest only: it is background work and must not compete with the
         // view while it moves.
         const extra = [];
-        if (z > 0 && !anim && !interacting && !moving
-            && swap.pendingZ === null) {
-            prefetchZ = z - 1;
-            extra.push({ z: prefetchZ, range: tileRange(
-                growRect(viewWorldRect(dest), kPrefetchMargin), prefetchZ,
-                tileSize()) });
+        if (!anim && !interacting && !moving && swap.pendingZ === null) {
+            prefetchZ = z > 0 ? z - 1 : null;
+            if (prefetchZ !== null) {
+                extra.push({ z: prefetchZ, range: tileRange(
+                    growRect(viewWorldRect(dest), kPrefetchMargin), prefetchZ,
+                    tileSize()) });
+            }
         }
         const apex = flightApex();
         if (apex) {
@@ -584,17 +571,21 @@ export function createLayoutView(container, opts = {}) {
         return (anim && anim.flight && anim.flight.apex) || flightTrail;
     }
 
-    // Levels drawn under the shown ones where those have no tile: a flight's
-    // pulled-out level, then the level waiting to be revealed.
+    // Levels drawn under the shown ones where those have no tile, coarsest
+    // first: a flight's pulled-out level, the level waiting to be revealed
+    // and, on a zoom out past it, the level above loaded at rest.
     function underLevels(drawn) {
+        const changing = swap.pendingZ !== null || swap.under.length > 0;
+        const above = changing && prefetchZ !== null
+            && swap.wantedZ() < prefetchZ ? prefetchZ : null;
         const out = [];
-        for (const z of [flightApex()?.z, swap.pendingZ]) {
+        for (const z of [flightApex()?.z, swap.pendingZ, above]) {
             if (z != null && !out.includes(z)
                 && !drawn.some((l) => l.z === z)) {
                 out.push(z);
             }
         }
-        return out;
+        return out.sort((a, b) => a - b);
     }
 
     // Once a level change has landed, fetch the level above it too.
@@ -605,9 +596,7 @@ export function createLayoutView(container, opts = {}) {
         prefetchPending = true;
         queueMicrotask(() => {
             prefetchPending = false;
-            if (!destroyed) {
-                updateTiles();
-            }
+            updateTiles();
         });
     }
 
@@ -621,12 +610,15 @@ export function createLayoutView(container, opts = {}) {
     }
 
     function checkSwap(tile) {
-        const changed = swap.check({ settled: allSettled(), animating: !!anim });
+        // Only a level on its way in or out needs the walk over every tile.
+        const settled = (swap.pendingZ !== null || swap.under.length > 0
+                         || flightTrail !== null) && allSettled();
+        const changed = swap.check({ settled, animating: !!anim });
         if (changed && swap.pendingZ === null) {
             schedulePrefetch();
         }
         let landed = false;
-        if (flightTrail && !anim && swap.isIdle() && allSettled()) {
+        if (flightTrail && !anim && swap.isIdle() && settled) {
             flightTrail = null;
             landed = true;
         }
@@ -716,7 +708,7 @@ export function createLayoutView(container, opts = {}) {
         if (t >= flashUntil) {
             return 1;
         }
-        const phase = ((kFlashMs - (flashUntil - t)) % 400) / 400;
+        const phase = ((kFlashMs - (flashUntil - t)) % kFlashPulseMs) / kFlashPulseMs;
         return 1 - 0.7 * (0.5 - 0.5 * Math.cos(2 * Math.PI * phase));
     }
 
@@ -752,7 +744,11 @@ export function createLayoutView(container, opts = {}) {
         }
     }
 
+    // The background, read once per tileLayers(): a style read per mask can
+    // force a recalc.
+    let maskFill = null;
     function tileLayers(t, view) {
+        maskFill = null;
         const out = [];
         const plan = swap.plan(t);
         if (!plan.fading && swap.pendingZ === null && plan.draw.length > 0) {
@@ -773,10 +769,19 @@ export function createLayoutView(container, opts = {}) {
             if (slot === bottom && under.length > 0) {
                 out.push(...underlay(slot, under, plan.draw, view, flash));
             }
-            for (const level of plan.draw) {
+            // Only the bottom slot can mask the older levels a reveal keeps
+            // under the shown one; the others would draw them twice.
+            const levels = slot === bottom || plan.fading
+                ? plan.draw : plan.draw.slice(-1);
+            levels.forEach((level, i) => {
+                if (i > 0 && slot === bottom && !plan.fading) {
+                    out.push(...maskOver(slot, [level.z], view,
+                                         `${slot.id}:mask:draw:${level.z}`,
+                                         { settledOnly: true }));
+                }
                 pushTileLayers(out, slot, level.z, view, '',
                                level.opacity * flash);
-            }
+            });
         }
         return { layers: out, animate: plan.fading || t < flashUntil };
     }
@@ -787,17 +792,34 @@ export function createLayoutView(container, opts = {}) {
     function underlay(slot, zs, levels, view, flash) {
         const out = [];
         for (const z of zs) {
-            pushTileLayers(out, slot, z, view, 'under:', flash);
+            const tiles = [];
+            pushTileLayers(tiles, slot, z, view, 'under:', flash);
+            if (tiles.length === 0) {
+                continue;
+            }
+            // A finer level hides the coarser ones under it.
+            if (out.length > 0) {
+                out.push(...maskOver(slot, [z], view, `${slot.id}:mask:${z}`));
+            }
+            out.push(...tiles);
         }
-        if (out.length === 0) {
-            return out;
+        if (out.length > 0) {
+            out.push(...maskOver(slot, levels.map((l) => l.z), view,
+                                 `${slot.id}:mask`));
         }
+        return out;
+    }
+
+    // The mask over the tiles of levels `zs` in view, or nothing.
+    // `settledOnly` leaves out a tile still painting, whose partial image
+    // lacks layers the levels under it still show.
+    function maskOver(slot, zs, view, id, { settledOnly = false } = {}) {
         // One CSS px of overlap, so no seam opens between two masks.
         const pad = 1 / Math.pow(2, vs.zoom);
         const masks = [];
         for (const tile of slot.grid.tiles.values()) {
-            if (!levels.some((l) => l.z === tile.z)
-                || (tile.loading && !tile.drawable)) {
+            if (!zs.includes(tile.z)
+                || (tile.loading && (settledOnly || !tile.drawable))) {
                 continue;
             }
             const bounds = boundsOf(tile);
@@ -807,23 +829,19 @@ export function createLayoutView(container, opts = {}) {
                             [x1 + pad, y1 + pad], [x0 - pad, y1 + pad]]);
             }
         }
-        if (masks.length) {
-            out.push({ order: slot.order, kind: 'SolidPolygonLayer', props: {
-                id: `${slot.id}:mask`, data: masks,
-                getPolygon: (d) => d, getFillColor: backgroundRgba(),
-                parameters: noDepth,
-            } });
+        if (masks.length === 0) {
+            return [];
         }
-        return out;
+        return [{ order: slot.order, kind: 'SolidPolygonLayer', props: {
+            id, data: masks, getPolygon: (d) => d,
+            getFillColor: maskFill || (maskFill = backgroundRgba()),
+            parameters: noDepth,
+        } }];
     }
 
     function backgroundRgba() {
-        const m = (getComputedStyle(container).backgroundColor || '')
-            .match(/[\d.]+/g);
-        if (!m || m.length < 3 || (m.length > 3 && Number(m[3]) === 0)) {
-            return [0, 0, 0, 255];
-        }
-        return [Number(m[0]), Number(m[1]), Number(m[2]), 255];
+        return toRgba(cssColorToHex(getComputedStyle(container).backgroundColor)
+                      || '#000');
     }
 
     // The layer specs of one overlay, built when it is set so deck keeps the
@@ -916,9 +934,6 @@ export function createLayoutView(container, opts = {}) {
 
     let lastLayerCount = 0;
     function render() {
-        if (destroyed) {
-            return;
-        }
         const t = now();
         // deck may draw a new view state before this runs again, so tiles
         // half a view off screen are kept: a pan or a one-level zoom out
@@ -1007,17 +1022,12 @@ export function createLayoutView(container, opts = {}) {
     }
 
     const view = {
-        DRAW_ORDER,
         getContainer: () => container,
-        getRendererInfo: () => rendererInfo,
         getSize,
         getZoom: () => vs.zoom,
         // The zoom an animation in flight will end on.
         getTargetZoom: () => (anim ? anim.to.zoom : vs.zoom),
         getCenter: () => [...vs.target],
-        getViewState: () => ({ ...vs, target: [...vs.target] }),
-        isAnimating: () => !!anim,
-        isMoving: () => moving,
         project: (w) => project(w, vs),
         unproject: (p) => unproject(p, vs),
         on: events.on,
@@ -1080,6 +1090,17 @@ export function createLayoutView(container, opts = {}) {
         applyPrefs() {
             updateTiles();
         },
+        // view-input streams a wheel or trackpad gesture between these;
+        // deferred tile updates wait for its end, as they do for a drag.
+        setGesture(on) {
+            if (gesturing === !!on) {
+                return;
+            }
+            gesturing = !!on;
+            if (!gesturing) {
+                updateTiles();
+            }
+        },
 
         addTileSlot,
 
@@ -1091,7 +1112,6 @@ export function createLayoutView(container, opts = {}) {
             }
             scheduleRender();
         },
-        hasOverlay: (id) => overlays.has(id),
 
         setImageOverlay(id, spec, { order = DRAW_ORDER.pathImage } = {}) {
             if (!spec) {
@@ -1190,7 +1210,14 @@ export function createLayoutView(container, opts = {}) {
             render();
             return new Promise((resolve) => {
                 let timer = null;
+                let finished = false;
+                // The timeout's redraw may itself run done() through
+                // onAfterRender; one copy is enough.
                 const done = () => {
+                    if (finished) {
+                        return;
+                    }
+                    finished = true;
                     clearTimeout(timer);
                     afterFrame = afterFrame.filter((fn) => fn !== done);
                     const canvas = deckgl?.getCanvas();
@@ -1206,8 +1233,6 @@ export function createLayoutView(container, opts = {}) {
                 }, timeoutMs);
             });
         },
-
-        redraw: () => scheduleRender(),
 
         debugSnapshot() {
             const plan = swap.plan();
@@ -1226,16 +1251,6 @@ export function createLayoutView(container, opts = {}) {
                     ...s.grid.stats(),
                 })),
             };
-        },
-
-        destroy() {
-            destroyed = true;
-            resizeObserver?.disconnect();
-            swap.dispose();
-            for (const slot of slots.values()) {
-                slot.grid.clear();
-            }
-            deckgl?.finalize?.();
         },
     };
     return view;

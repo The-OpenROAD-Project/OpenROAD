@@ -73,11 +73,22 @@ VIEW_TEST_DATA = DOM_TEST_DATA + ["js/fake-view.js"]
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":charts_test",
+        ":clock_tree_report_test",
+        ":debug_graphics_test",
         ":gif_test",
+        ":glyph_cache_test",
         ":heat_map_test",
+        ":hierarchy_report_test",
+        ":labels_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":save_image_test",
+        ":save_report_test",
+        ":session_lifetime_test",
+        ":snap_test",
         ":tile_generator_test",
+        ":timing_cone_test",
         ":web_assets_test",
     ],
 )
@@ -491,10 +502,22 @@ cc_test(
         "//src/utl",
         "//src/web",
         "//src/web:core",
-        "//third-party/lodepng",
         "@boost.asio",
         "@boost.beast",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "session_lifetime_test",
+    srcs = ["cpp/TestSessionLifetime.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/web",
+        "@boost.asio",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

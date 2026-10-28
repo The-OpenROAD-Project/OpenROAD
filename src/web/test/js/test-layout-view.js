@@ -119,12 +119,12 @@ describe('LayoutView view state', () => {
         const { view, frames } = setup({ smooth: true });
         view.setView([120, 120], 1, { animate: false });
         view.zoomAround(null, 1);
-        assert.ok(view.isAnimating());
+        assert.ok(view.debugSnapshot().animating);
         assert.equal(view.getTargetZoom(), 2);
         frames.flush(100);
         assert.ok(view.getZoom() > 1 && view.getZoom() < 2);
         frames.flush(200);
-        assert.ok(!view.isAnimating());
+        assert.ok(!view.debugSnapshot().animating);
         assert.equal(view.getZoom(), 2);
     });
 
@@ -132,14 +132,14 @@ describe('LayoutView view state', () => {
         const { view } = setup();
         view.setView([120, 120], 3, { animate: false });
         const events = [];
-        view.on('movestart moveend', (e) => events.push(view.isMoving()));
+        view.on('movestart moveend', (e) => events.push(view.debugSnapshot().moving));
         view.zoomAround([100, 100], 0.4, { animate: false, settle: false });
         assert.ok(Math.abs(view.getZoom() - 3.4) < 1e-9);
-        assert.ok(view.isMoving());
+        assert.ok(view.debugSnapshot().moving);
         assert.deepEqual(events, [true]);
         view.zoomAround([100, 100], 4 - view.getZoom());
         assert.equal(view.getZoom(), 4);
-        assert.ok(!view.isMoving());
+        assert.ok(!view.debugSnapshot().moving);
         assert.deepEqual(events, [true, false]);
     });
 
@@ -318,6 +318,8 @@ describe('LayoutView tiles', () => {
         assert.ok(deck.layers().some((l) => l.id === 'base:0/0/0'),
                   'the old level stays under the fade');
         assert.ok(fading.every((l) => l.props.opacity < 1));
+        assert.ok(!deck.layers().some((l) => l.id.includes(':mask:draw:')),
+                  'no mask cuts the fade');
         frames.flush(200);
         assert.ok(!deck.layers().some((l) => l.id === 'base:0/0/0'));
     });
@@ -336,6 +338,31 @@ describe('LayoutView tiles', () => {
         d.props.onInteractionStateChange({ isDragging: false });
         await tick();
         frames.flush();
+        assert.ok([...source.loads.keys()].some((k) => !before.has(k)));
+    });
+
+    it('defers tile updates through a wheel gesture when asked to', () => {
+        const { view } = setup({ defer: true });
+        const source = makeSource();
+        view.setView([40, 40], 3);
+        view.addTileSlot('base', { order: DRAW_ORDER.base, source });
+        const before = new Set(source.loads.keys());
+        view.setGesture(true);
+        view.panByPx(300, 0, { animate: false });
+        assert.deepEqual(new Set(source.loads.keys()), before,
+                         'nothing new mid-gesture');
+        view.setGesture(false);
+        assert.ok([...source.loads.keys()].some((k) => !before.has(k)));
+    });
+
+    it('ignores a gesture without defer', () => {
+        const { view } = setup();
+        const source = makeSource();
+        view.setView([40, 40], 3);
+        view.addTileSlot('base', { order: DRAW_ORDER.base, source });
+        const before = new Set(source.loads.keys());
+        view.setGesture(true);
+        view.panByPx(300, 0, { animate: false });
         assert.ok([...source.loads.keys()].some((k) => !before.has(k)));
     });
 
@@ -433,9 +460,9 @@ describe('LayoutView prefetch of the level above', () => {
         const { view, requested, frames } = atRest(3, { smooth: true });
         const before = requested.length;
         view.panByPx(100, 0);
-        assert.ok(view.isAnimating());
+        assert.ok(view.debugSnapshot().animating);
         frames.flush(100);
-        assert.ok(view.isAnimating());
+        assert.ok(view.debugSnapshot().animating);
         assert.ok(!requested.slice(before).some((r) => r.z === 2));
         frames.flush(300);
         assert.ok(requested.slice(before).some((r) => r.z === 2));
@@ -518,7 +545,7 @@ describe('LayoutView prefetch of the level above', () => {
         await tick();
         frames.flush();
         assert.equal(builds, 0);
-        view.redraw();
+        view.setOverlay('poke', []);   // any change that renders
         frames.flush();
         assert.equal(builds, 1);
     });
@@ -531,9 +558,154 @@ describe('LayoutView prefetch of the level above', () => {
         await tick();
         frames.flush();
         const tiles = view.debugSnapshot().slots[0].tiles;
-        view.redraw();
+        view.setOverlay('poke', []);   // any change that renders
         frames.flush();
         assert.equal(view.debugSnapshot().slots[0].tiles, tiles);
+    });
+
+    // Shift+- jumps three levels; the level above fills what the old level
+    // leaves while the new one loads.
+    it('fills a zoom out past it from the level above', async () => {
+        const { view, deck, source, frames } = atRest(3);
+        source.settle(3);
+        await tick();
+        source.settle(2);
+        await tick();
+        frames.flush();
+        view.zoomAround(null, -3);
+        frames.flush();
+        assert.equal(view.debugSnapshot().pendingZ, 0);
+        assert.equal(view.debugSnapshot().coverage, 1, 'no blank');
+        assert.ok(deck.layers().some((l) => l.id.startsWith('base:under:2/')));
+    });
+
+    // The new level's tiles land under the level above, which a mask keeps
+    // from showing them through its clear pixels.
+    it('masks the level above over the loading level', async () => {
+        const { view, deck, source, frames } = atRest(4);
+        source.settle(4);
+        await tick();
+        source.settle(3);
+        await tick();
+        view.zoomAround(null, -3);
+        const [key, first] = [...source.loads].find(([, l]) => l.z === 1);
+        source.loads.delete(key);
+        first.resolve({ image: { key }, width: 480, height: 480 });
+        await tick();
+        frames.flush();
+        const ids = deck.layers().map((l) => l.id);
+        const order = [ids.indexOf(`base:under:${key}`),
+                       ids.indexOf('base:mask:3'),
+                       ids.findIndex((id) => id.startsWith('base:under:3/')),
+                       ids.indexOf('base:mask'),
+                       ids.findIndex((id) => id.startsWith('base:4/'))];
+        assert.ok(order.every((i, n) => i >= 0 && (n === 0 || i > order[n - 1])),
+                  ids.join(' '));
+    });
+
+    it('lets the level above go at level 0', async () => {
+        const { view, source, released, frames } = atRest(2);
+        source.settle(2);
+        await tick();
+        source.settle(1);
+        await tick();
+        view.zoomAround(null, -2);
+        source.settle(0);
+        await tick();
+        await tick();
+        frames.flush();
+        assert.equal(view.debugSnapshot().shownZ, 0);
+        assert.ok(released.some((k) => k?.startsWith('1/')), released.join(' '));
+    });
+});
+
+// Without double buffering (and after a timed-out swap) a level is shown before
+// it settles, with the old one kept under it.
+describe('LayoutView levels shown before they settle', () => {
+    // At level 2 with the view at rest, then zoomed out to level 1, whose
+    // four tiles are still loading.
+    function zoomedOut(source) {
+        const ctx = setup({ doubleBuffer: false });
+        ctx.view.setView([120, 120], 2);
+        ctx.view.addTileSlot('base', { order: DRAW_ORDER.base, source });
+        return ctx;
+    }
+
+    // Hands out a partial image of a tile still loading, as progressive
+    // painting does.
+    function withPartials(source) {
+        const partials = new Map();
+        const load = source.load.bind(source);
+        source.load = (c, o) => {
+            partials.set(`${c.z}/${c.x}/${c.y}`, o.onPartial);
+            return load(c, o);
+        };
+        return partials;
+    }
+
+    const image = (key) => ({ image: { key }, width: 480, height: 480 });
+
+    it('masks the old level under the settled tiles of the new one', async () => {
+        const source = makeSource();
+        const { view, deck, frames } = zoomedOut(source);
+        source.settle(2);
+        await tick();
+        view.zoomAround(null, -1);
+        const [key, first] = [...source.loads].find(([, l]) => l.z === 1);
+        source.loads.delete(key);
+        first.resolve(image(key));
+        await tick();
+        frames.flush();
+        const ids = deck.layers().map((l) => l.id);
+        const old = ids.findIndex((id) => id.startsWith('base:2/'));
+        const mask = ids.indexOf('base:mask:draw:1');
+        const shown = ids.indexOf(`base:${key}`);
+        assert.ok(old >= 0 && mask > old && shown > mask, ids.join(' '));
+        assert.equal(deck.layers()[mask].props.data.length, 1);
+    });
+
+    it('keeps the old level under a tile still painting', async () => {
+        const source = makeSource();
+        const partials = withPartials(source);
+        const { view, deck, frames } = zoomedOut(source);
+        source.settle(2);
+        await tick();
+        view.zoomAround(null, -1);
+        const key = [...source.loads.keys()].find((k) => k.startsWith('1/'));
+        partials.get(key)(image(key));
+        frames.flush();
+        const ids = deck.layers().map((l) => l.id);
+        assert.ok(ids.includes(`base:${key}`), 'the partial is drawn');
+        assert.ok(!ids.includes('base:mask:draw:1'), ids.join(' '));
+    });
+
+    it('drops the mask once the new level settles', async () => {
+        const source = makeSource();
+        const { view, deck, frames } = zoomedOut(source);
+        source.settle(2);
+        await tick();
+        view.zoomAround(null, -1);
+        source.settle(1);
+        await tick();
+        frames.flush();
+        assert.ok(deck.layers().some((l) => l.id.startsWith('base:1/')));
+        assert.ok(!deck.layers().some((l) => l.id.includes(':mask:draw:')));
+        assert.ok(!deck.layers().some((l) => l.id.startsWith('base:2/')));
+    });
+
+    it('draws the older levels in the bottom slot only', async () => {
+        const base = makeSource();
+        const top = makeSource();
+        const { view, deck, frames } = zoomedOut(base);
+        view.addTileSlot('top', { order: DRAW_ORDER.top, source: top });
+        base.settle(2);
+        top.settle(2);
+        await tick();
+        view.zoomAround(null, -1);
+        frames.flush();
+        const ids = deck.layers().map((l) => l.id);
+        assert.ok(ids.some((id) => id.startsWith('base:2/')), ids.join(' '));
+        assert.ok(!ids.some((id) => id.startsWith('top:2/')), ids.join(' '));
     });
 });
 
@@ -561,7 +733,7 @@ describe('LayoutView flights', () => {
         await tick();
         const before = requested.length;
         view.setView([200, 200], 5);
-        assert.ok(view.isAnimating());
+        assert.ok(view.debugSnapshot().animating);
         const apex = requested.slice(before).filter(
             (r) => r.z < 4 && !r.background);
         assert.ok(apex.length > 0, 'the pulled-out level, in the foreground');
@@ -582,7 +754,7 @@ describe('LayoutView flights', () => {
         }
         assert.ok(lowest < 4, `pulled out to ${lowest}`);
         frames.flush(1000);
-        assert.ok(!view.isAnimating());
+        assert.ok(!view.debugSnapshot().animating);
         assert.deepEqual(view.getCenter().map(Math.round), [200, 200]);
         assert.equal(view.getZoom(), 5);
     });
@@ -628,7 +800,7 @@ describe('LayoutView flights', () => {
         frames.flush(16);
         frames.flush(2000);
         frames.flush(16);
-        assert.ok(!view.isAnimating(), 'landed');
+        assert.ok(!view.debugSnapshot().animating, 'landed');
         assert.ok(!view.debugSnapshot().slots[0].settled, 'destination loading');
         assert.equal(view.debugSnapshot().coverage, 1, 'no blank after landing');
         assert.ok(deck.layers().some((l) => l.id.startsWith(`base:under:${apexZ}/`)));
@@ -663,7 +835,7 @@ describe('LayoutView flights', () => {
     it('cuts straight there without smoothing', () => {
         const { view } = flying({ smooth: false });
         view.setView([200, 200], 5);
-        assert.ok(!view.isAnimating());
+        assert.ok(!view.debugSnapshot().animating);
         assert.deepEqual(view.getCenter().map(Math.round), [200, 200]);
     });
 });
@@ -688,7 +860,7 @@ describe('LayoutView drag and inertia', () => {
 
     function track(view) {
         const events = [];
-        view.on('movestart moveend', () => events.push(view.isMoving()));
+        view.on('movestart moveend', () => events.push(view.debugSnapshot().moving));
         return events;
     }
 
@@ -705,11 +877,11 @@ describe('LayoutView drag and inertia', () => {
         const moves = track(view);
         await drag(deck, frames, view);
         const released = view.getCenter()[0];
-        assert.ok(view.isAnimating(), 'gliding');
-        assert.ok(view.isMoving());
+        assert.ok(view.debugSnapshot().animating, 'gliding');
+        assert.ok(view.debugSnapshot().moving);
         frames.flush(400);
-        assert.ok(!view.isAnimating());
-        assert.ok(!view.isMoving(), 'moveend fired');
+        assert.ok(!view.debugSnapshot().animating);
+        assert.ok(!view.debugSnapshot().moving, 'moveend fired');
         assert.ok(view.getCenter()[0] > released + 10, 'carried on the drag');
         assert.deepEqual(moves, [true, false]);
     });
@@ -718,16 +890,16 @@ describe('LayoutView drag and inertia', () => {
         const { view, deck, frames } = setup({ smooth: true });
         view.setView([120, 120], 0, { animate: false });
         await drag(deck, frames, view, { dx: 0.1 });
-        assert.ok(!view.isAnimating());
-        assert.ok(!view.isMoving());
+        assert.ok(!view.debugSnapshot().animating);
+        assert.ok(!view.debugSnapshot().moving);
     });
 
     it('stops dead without smoothing', async () => {
         const { view, deck, frames } = setup({ smooth: false });
         view.setView([120, 120], 0, { animate: false });
         await drag(deck, frames, view);
-        assert.ok(!view.isAnimating());
-        assert.ok(!view.isMoving());
+        assert.ok(!view.debugSnapshot().animating);
+        assert.ok(!view.debugSnapshot().moving);
     });
 
     it('does not glide after holding still before the release', async () => {
@@ -743,18 +915,18 @@ describe('LayoutView drag and inertia', () => {
         frames.t += 500;
         p.onInteractionStateChange({ isDragging: false });
         await tick();
-        assert.ok(!view.isAnimating());
-        assert.ok(!view.isMoving());
+        assert.ok(!view.debugSnapshot().animating);
+        assert.ok(!view.debugSnapshot().moving);
     });
 
     it('a new drag stops the glide', async () => {
         const { view, deck, frames } = setup({ smooth: true });
         view.setView([120, 120], 0, { animate: false });
         await drag(deck, frames, view);
-        assert.ok(view.isAnimating());
+        assert.ok(view.debugSnapshot().animating);
         await drag(deck, frames, view, { dx: 0.1 });
-        assert.ok(!view.isAnimating());
-        assert.ok(!view.isMoving());
+        assert.ok(!view.debugSnapshot().animating);
+        assert.ok(!view.debugSnapshot().moving);
     });
 });
 
@@ -784,7 +956,7 @@ describe('LayoutView shapes, markers and capture', () => {
         frames.flush();
         const el = document.createElement('div');
         view.addMarker('labels', 'a', [100, 100], el);
-        const [x, y] = project([100, 100], view.getViewState());
+        const [x, y] = project([100, 100], view.debugSnapshot());
         assert.equal(el.style.transform, `translate(${x}px, ${y}px)`);
         view.setMarkerGroupVisible('labels', false);
         assert.equal(el.style.display, 'none');
@@ -834,6 +1006,21 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(d.redraws, redraws + 1);
         assert.equal(shot.image.of, d.canvas);
         assert.equal(shot.image.layers, d.props.layers);
+    });
+
+    // deck may draw inside redraw(), so the frame callback runs first.
+    it('copies once when the redraw draws at once', async () => {
+        const deck = makeFakeDeck();
+        let copies = 0;
+        const { view } = setup({
+            deck,
+            copyCanvas: (c) => { copies++; return { of: c }; },
+        });
+        await tick();
+        const d = deck.decks[0];
+        d.redraw = () => d.frame();
+        await view.captureCanvas({ timeoutMs: 10 });
+        assert.equal(copies, 1);
     });
 
     it('keeps the drawing buffer only when asked to', () => {
@@ -906,11 +1093,10 @@ describe('LayoutView renderer', () => {
         const { view } = setup();
         const seen = [];
         view.on('renderer', (info) => seen.push(info));
-        assert.equal(view.getRendererInfo(), null);
+        assert.deepEqual(seen, [], 'not before the device is up');
         await tick();
         const fake = { gpuType: 'discrete', renderer: 'Fake GPU', vendor: 'Fake' };
         assert.deepEqual(seen, [fake]);
-        assert.deepEqual(view.getRendererInfo(), fake);
     });
 
     it('reports a software renderer, and again after a lost context', async () => {
@@ -918,16 +1104,15 @@ describe('LayoutView renderer', () => {
         deck.deviceInfo = { gpuType: 'cpu', renderer: 'SwiftShader' };
         const { view } = setup({ deck });
         const seen = [];
-        view.on('renderer', (info) => seen.push(info.gpuType));
+        view.on('renderer', (info) => seen.push(info));
         await tick();
-        assert.deepEqual(view.getRendererInfo(),
-                         { gpuType: 'cpu', renderer: 'SwiftShader', vendor: '' });
+        assert.deepEqual(seen,
+                         [{ gpuType: 'cpu', renderer: 'SwiftShader', vendor: '' }]);
         deck.deviceInfo = { gpuType: 'integrated' };
         deck.decks[0].getCanvas().dispatchEvent(
             new window.Event('webglcontextlost', { cancelable: true }));
         await tick();
-        assert.deepEqual(seen, ['cpu', 'integrated']);
-        assert.equal(view.getRendererInfo().gpuType, 'integrated');
+        assert.deepEqual(seen.map((info) => info.gpuType), ['cpu', 'integrated']);
     });
 
     it('reports a browser without WebGL as no renderer at all', async (t) => {
@@ -940,7 +1125,6 @@ describe('LayoutView renderer', () => {
         await tick();
         const none = { gpuType: 'none', renderer: '', vendor: '' };
         assert.deepEqual(seen, [none]);
-        assert.deepEqual(view.getRendererInfo(), none);
     });
 
     it('takes a later error for just an error', async (t) => {
@@ -951,6 +1135,5 @@ describe('LayoutView renderer', () => {
         await tick();
         deck.decks[0].props.onError(new Error('picking failed'));
         assert.deepEqual(seen, ['discrete']);
-        assert.equal(view.getRendererInfo().gpuType, 'discrete');
     });
 });

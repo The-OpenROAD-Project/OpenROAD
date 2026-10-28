@@ -11,14 +11,11 @@
 // has settled.
 
 import { prefersReducedMotion } from './ui-utils.js';
+import { easeOutQuad } from './view-math.js';
 
 const ATOMIC_ZOOM_TIMEOUT_MS = 10000;
 export const ZOOM_FADE_MS = 150;
 const kMaxUnder = 3;                     // levels kept under a loading one
-
-function easeOut(t) {
-    return 1 - (1 - t) * (1 - t);
-}
 
 export class ZoomSwap {
     constructor({
@@ -67,8 +64,9 @@ export class ZoomSwap {
             this.pendingZ = null;       // zoomed back before the swap
         } else if (this.isEnabled()) {
             this.pendingZ = z;
-            this.under = [];
-            this._timer = this.setTimer(() => this.reveal(), this.timeoutMs);
+            this.under = this.under.filter((u) => u !== z);
+            this._timer = this.setTimer(() => this.reveal({ settled: false }),
+                                        this.timeoutMs);
         } else {
             // A level still loading covers only part of the view, so the
             // ones under it stay too, as many as kMaxUnder.
@@ -87,7 +85,7 @@ export class ZoomSwap {
             if (animating || (!settled && this.isEnabled())) {
                 return false;
             }
-            this.reveal();
+            this.reveal({ settled });
             return true;
         }
         if (this.under.length > 0 && settled && !animating) {
@@ -98,7 +96,9 @@ export class ZoomSwap {
         return false;
     }
 
-    reveal() {
+    // Shown before it is complete, the new level keeps the old ones under it
+    // until check() sees it settled.
+    reveal({ settled = true } = {}) {
         if (this.pendingZ === null) {
             return;
         }
@@ -106,6 +106,12 @@ export class ZoomSwap {
         const from = this.shownZ;
         this.shownZ = this.pendingZ;
         this.pendingZ = null;
+        if (settled) {
+            this.under = [];
+        } else if (from !== null) {
+            this.under = [...this.under.filter(
+                (u) => u !== from && u !== this.shownZ), from].slice(-kMaxUnder);
+        }
         const ms = this.isSmooth() && !this.reducedMotion() ? this.fadeMs : 0;
         this.fade = (ms > 0 && from !== null)
             ? { fromZ: from, toZ: this.shownZ, start: this.now(), ms }
@@ -127,7 +133,7 @@ export class ZoomSwap {
             if (t < 1) {
                 return {
                     draw: [{ z: this.fade.fromZ, opacity: 1 },
-                           { z: this.fade.toZ, opacity: easeOut(Math.max(0, t)) }],
+                           { z: this.fade.toZ, opacity: easeOutQuad(Math.max(0, t)) }],
                     fading: true,
                 };
             }
@@ -135,9 +141,6 @@ export class ZoomSwap {
         }
         if (this.shownZ === null) {
             return { draw: [], fading: false };
-        }
-        if (this.pendingZ !== null) {
-            return { draw: [{ z: this.shownZ, opacity: 1 }], fading: false };
         }
         if (this.under.length > 0) {
             return { draw: [...this.under, this.shownZ].map(
@@ -151,10 +154,6 @@ export class ZoomSwap {
     isIdle(now = this.now()) {
         return this.pendingZ === null && this.under.length === 0
             && !this.plan(now).fading;
-    }
-
-    dispose() {
-        this._clearTimer();
     }
 
     _clearTimer() {

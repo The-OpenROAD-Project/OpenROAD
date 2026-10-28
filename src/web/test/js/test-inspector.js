@@ -903,7 +903,7 @@ describe('animateSelection', () => {
             panel.animateSelection([0, 0, 100, 100], { repeats: 2 });
             // maxState = repeats*3 = 6: the 6th tick tears down.
             for (let i = 0; i < 6; i++) timers.cb();
-            assert.equal(app.view.hasOverlay('anim'), false);
+            assert.equal(app.view.overlays.has('anim'), false);
             assert.ok(timers.cleared >= 1);
         } finally {
             restoreTimers();
@@ -914,9 +914,9 @@ describe('animateSelection', () => {
         try {
             panel.animateSelection([0, 0, 100, 100], { repeats: 0 });
             for (let i = 0; i < 50; i++) timers.cb();
-            assert.ok(app.view.hasOverlay('anim'), 'still animating after 50 ticks');
+            assert.ok(app.view.overlays.has('anim'), 'still animating after 50 ticks');
             panel.stopSelectionAnimation();
-            assert.equal(app.view.hasOverlay('anim'), false);
+            assert.equal(app.view.overlays.has('anim'), false);
             assert.ok(timers.cleared >= 1);
         } finally {
             restoreTimers();
@@ -940,7 +940,7 @@ describe('animateSelection', () => {
             globalThis.matchMedia = () => ({ matches: true });
             panel.animateSelection([0, 0, 100, 100]);
             assert.equal(timers.cb, null, 'no interval when reduced motion');
-            assert.equal(app.view.hasOverlay('anim'), false);
+            assert.equal(app.view.overlays.has('anim'), false);
         } finally {
             delete globalThis.matchMedia;
             restoreTimers();
@@ -968,22 +968,22 @@ describe('selection outline and hover on the view', () => {
         assert.deepEqual(o.dash, [6, 4]);
         assert.deepEqual(o.stroke.slice(0, 3), [255, 255, 0]);
         app.clearSelectionOutline();
-        assert.equal(app.view.hasOverlay('selection'), false);
+        assert.equal(app.view.overlays.has('selection'), false);
     });
 
     it('skips the outline for a net', () => {
         panel.highlightBBox(100, 200, 300, 400, 'Net');
-        assert.equal(app.view.hasOverlay('selection'), false);
+        assert.equal(app.view.overlays.has('selection'), false);
     });
 
     it('follows the Highlight selected toggle', () => {
         panel.highlightBBox(100, 200, 300, 400, 'Inst');
         app.visibility.highlight_selected = false;
         app.renderSelectionOutline();
-        assert.equal(app.view.hasOverlay('selection'), false);
+        assert.equal(app.view.overlays.has('selection'), false);
         app.visibility.highlight_selected = true;
         app.renderSelectionOutline();
-        assert.ok(app.view.hasOverlay('selection'));
+        assert.ok(app.view.overlays.has('selection'));
     });
 
     // 10 px minimum on screen: 2.5 world units at zoom 2, 1.25 at zoom 3.
@@ -1008,5 +1008,45 @@ describe('selection outline and hover on the view', () => {
         assert.ok(near(rect(), [99.25, 200, 101.75, 260]), String(rect()));
         app.view.setZoomForTest(3);
         assert.ok(near(rect(), [99.875, 200, 101.125, 260]), String(rect()));
+    });
+});
+
+// Rulers and labels are client-side as far as the Inspector goes: refreshing
+// one (a Show DBU toggle, a refresh push) shows it again instead of asking the
+// server, and must not take the selection from whatever came later.
+describe('refreshInspector', () => {
+    it('shows an inspected label again without taking the selection', () => {
+        const app = makeApp();
+        const panel = createInspectorPanel(app, () => {}, () => {});
+        const shown = [];
+        app.labelManager = {
+            refreshInspector: (name) => shown.push(name),
+            _select: () => assert.fail('took the selection'),
+        };
+        panel.updateInspector({
+            type: 'Label', name: 'L0', bbox: [0, 0, 0, 0],
+            properties: [{ name: 'Name', value: 'L0' }],
+        });
+        const token = app.selectionToken;
+        panel.refreshInspector();
+        assert.deepEqual(shown, ['L0']);
+        assert.equal(app.selectionToken, token);
+        assert.equal(app._requests.filter((r) => r.type === 'inspect').length, 0);
+    });
+
+    it('shows an inspected ruler again without taking the selection', () => {
+        const app = makeApp();
+        const panel = createInspectorPanel(app, () => {}, () => {});
+        let shown = 0;
+        app.rulerManager = {
+            refreshInspector: () => shown++,
+            _selectRuler: () => assert.fail('took the selection'),
+        };
+        panel.updateInspector({
+            type: 'Ruler', name: 'R0', bbox: [0, 0, 1, 1],
+            properties: [{ name: 'Name', value: 'R0' }],
+        });
+        panel.refreshInspector();
+        assert.equal(shown, 1);
     });
 });

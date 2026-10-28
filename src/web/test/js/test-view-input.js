@@ -17,6 +17,8 @@ function makeView() {
                                                bottom: 800, width: 1000,
                                                height: 800 });
     const calls = [];
+    // [on, calls made before it], kept apart so `calls` reads as before.
+    const gestures = [];
     const view = {
         getContainer: () => container,
         unproject: ([x, y]) => [x / 2, y / 2],
@@ -28,8 +30,9 @@ function makeView() {
             view.zoom += delta;
         },
         fitWorldRect: (rect) => calls.push(['fit', rect]),
+        setGesture: (on) => gestures.push([on, calls.length]),
     };
-    return { view, container, calls };
+    return { view, container, calls, gestures };
 }
 
 function fire(target, type, init = {}) {
@@ -173,6 +176,28 @@ describe('trackpad', () => {
         assert.deepEqual(calls, [['pan', 5, 12, { animate: false }]]);
     });
 
+    it('holds the view through a scroll pan until it pauses', async () => {
+        const { view, container, gestures } = makeView();
+        installViewInput(view, { wheelZoom: () => false, gestureIdleMs: 20 });
+        fire(container, 'wheel', { deltaY: 12 });
+        fire(container, 'wheel', { deltaY: 12 });
+        assert.deepEqual(gestures, [[true, 0]]);
+        await wait(40);
+        assert.deepEqual(gestures, [[true, 0], [false, 2]]);
+    });
+
+    // Let go before the settling zoom, the view would load the fractional
+    // level the fingers left it on.
+    it('lets go of a pinch only after settling it', async () => {
+        const { view, container, gestures } = makeView();
+        installViewInput(view, { wheelZoom: () => true, gestureIdleMs: 20 });
+        fire(container, 'wheel', { deltaY: -LEVEL / 2, ctrlKey: true });
+        fire(container, 'wheel', { deltaY: -LEVEL / 2, ctrlKey: true });
+        assert.deepEqual(gestures, [[true, 0]]);
+        await wait(40);
+        assert.deepEqual(gestures, [[true, 0], [false, 3]]);
+    });
+
     it('settles a gesture before a mouse step', () => {
         const { view, container, calls } = makeView();
         installViewInput(view, { wheelZoom: () => true, gestureIdleMs: 1000 });
@@ -304,6 +329,78 @@ describe('left button', () => {
         fire(window, 'pointerup', { button: 0, clientX: 50, clientY: 30 });
         assert.equal(rendererSaw, 0);
         assert.deepEqual(calls, [['fit', [5, 5, 25, 15]]]);
+        assert.equal(document.querySelector('.rubber-band'), null);
+    });
+
+    function shiftCanvas(container) {
+        const wrap = document.createElement('div');
+        wrap.className = 'or-view-canvas';
+        const canvas = document.createElement('canvas');
+        wrap.appendChild(canvas);
+        container.appendChild(wrap);
+        return canvas;
+    }
+
+    // A Shift+click adds to the selection; a hand that moves a few pixels on
+    // one axis must not turn it into a zoom to a sliver.
+    it('keeps a Shift+click that jitters on one axis a click', () => {
+        const { view, container, calls } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: (w, e) => clicks.push([w, e.shiftKey]) });
+        const canvas = shiftCanvas(container);
+        fire(canvas, 'pointerdown', { button: 0, shiftKey: true,
+                                      clientX: 10, clientY: 10 });
+        fire(window, 'pointermove', { clientX: 16, clientY: 10 });
+        assert.equal(document.querySelector('.rubber-band'), null);
+        fire(window, 'pointerup', { button: 0, shiftKey: true,
+                                    clientX: 16, clientY: 10 });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(clicks, [[[8, 5], true]]);
+    });
+
+    it('does nothing for a long Shift+drag along one axis', () => {
+        const { view, container, calls } = makeView();
+        const clicks = [];
+        installViewInput(view, { onClick: (w, e) => clicks.push([w, e.shiftKey]) });
+        const canvas = shiftCanvas(container);
+        fire(canvas, 'pointerdown', { button: 0, shiftKey: true,
+                                      clientX: 10, clientY: 10 });
+        fire(window, 'pointermove', { clientX: 310, clientY: 12 });
+        assert.equal(document.querySelector('.rubber-band'), null);
+        fire(window, 'pointerup', { button: 0, shiftKey: true,
+                                    clientX: 310, clientY: 12 });
+        assert.deepEqual(calls, []);
+        assert.deepEqual(clicks, []);
+    });
+
+    it('drops a band the browser takes away', () => {
+        for (const [type, target] of [['pointercancel', window], ['blur', window]]) {
+            const { view, container, calls } = makeView();
+            const input = installViewInput(view);
+            const canvas = shiftCanvas(container);
+            fire(canvas, 'pointerdown', { button: 0, shiftKey: true,
+                                          clientX: 10, clientY: 10 });
+            fire(window, 'pointermove', { clientX: 50, clientY: 30 });
+            fire(container, 'pointerdown', { button: 2, clientX: 100, clientY: 80 });
+            fire(window, 'pointermove', { clientX: 60, clientY: 20 });
+            assert.equal(document.querySelectorAll('.rubber-band').length, 2, type);
+            fire(target, type);
+            assert.equal(document.querySelector('.rubber-band'), null, type);
+            fire(window, 'pointerup', { button: 0, clientX: 50, clientY: 30 });
+            fire(window, 'pointerup', { button: 2, clientX: 60, clientY: 20 });
+            assert.deepEqual(calls, [], type);
+            input.dispose();
+        }
+    });
+
+    it('removes a band in flight when disposed', () => {
+        const { view, container } = makeView();
+        const input = installViewInput(view);
+        fire(shiftCanvas(container), 'pointerdown', { button: 0, shiftKey: true,
+                                                     clientX: 10, clientY: 10 });
+        fire(window, 'pointermove', { clientX: 50, clientY: 30 });
+        assert.ok(document.querySelector('.rubber-band'));
+        input.dispose();
         assert.equal(document.querySelector('.rubber-band'), null);
     });
 

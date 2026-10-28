@@ -246,6 +246,14 @@ export class ContextMenu {
     // server no longer has selected or highlighted.
     _syncAfterAction(action) {
         const app = this._app;
+        // The Inspector's Focus and Route Guides buttons read these
+        // client-side copies of what the server just cleared.
+        if (action === 'clear_focus_nets' || action === 'clear_all') {
+            app.focusNets?.clear();
+        }
+        if (action === 'clear_route_guides' || action === 'clear_all') {
+            app.routeGuideNets?.clear();
+        }
         // Base tiles only carry focus nets and route guides; every other
         // action lives entirely in the overlay.
         if ((action === 'clear_focus_nets' || action === 'clear_route_guides'

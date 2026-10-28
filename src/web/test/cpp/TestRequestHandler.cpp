@@ -4,22 +4,25 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
-#include <cmath>
 #include <cstdint>
-#include <cstdlib>
 #include <exception>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/post.hpp"
 #include "boost/beast/http/field.hpp"
 #include "boost/beast/http/message.hpp"
 #include "boost/beast/http/status.hpp"
@@ -30,7 +33,6 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "request_handler.h"
-#include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
@@ -546,6 +548,22 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   EXPECT_EQ(first[3].as_int64(), 100);
 }
 
+// A new connection starts from an empty tile cache, without a reindex.
+TEST_F(TileHandlerTest, EnsureInitEmptiesTheTileCache)
+{
+  gen_->ensureInit();
+  const auto colors = gen_->getLayerColorMap();
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0})");
+  handler_->handleTile(req, state_);
+  ASSERT_EQ(gen_->tileCacheSize(), 1u);
+  gen_->ensureInit();
+  EXPECT_EQ(gen_->tileCacheSize(), 0u);
+  EXPECT_EQ(gen_->getLayerColorMap().get(), colors.get());
+}
+
 // PNG dimensions live in the IHDR chunk: 8-byte signature, 4-byte length,
 // 4-byte type, then width and height as big-endian uint32.  Read directly so
 // this test needs no PNG decoder dependency.
@@ -878,6 +896,365 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
 }
 
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
+}
+
+// A local session: nothing says the browser lives elsewhere.
+static BrowserEnv localEnv()
+{
+  BrowserEnv env;
+  env.display = ":0";
+  env.host_name = "workstation";
+  return env;
+}
+
+TEST(DisplayIsRemote, LocalSpellingsStayLocal)
+{
+  EXPECT_FALSE(displayIsRemote(":0", "workstation"));
+  EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, ThisMachineByEitherName)
+{
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation.example.com"));
+  EXPECT_FALSE(displayIsRemote("workstation.example.com:0", "workstation"));
+}
+
+TEST(DisplayIsRemote, AnotherMachineIsRemote)
+{
+  // The farm case (issue #11389): a scheduler copied the submitting shell's
+  // $DISPLAY onto a compute host.
+  EXPECT_TRUE(displayIsRemote("workstation:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, HostNamesIgnoreCase)
+{
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
+}
+
+TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
+{
+  const std::vector<boost::asio::ip::address> mine
+      = {boost::asio::ip::make_address("10.0.0.5")};
+  EXPECT_FALSE(displayIsRemote("10.0.0.5:0", "farm-42", mine));
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
+  // Never cut at the first dot as a name would be.
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
+}
+
+TEST(DisplayIsRemote, BracketedIpv6)
+{
+  EXPECT_FALSE(displayIsRemote("[::1]:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("[fd00::5]:0", "farm-42"));
+}
+
+TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
+{
+  EXPECT_EQ(localDisplaySocket(":1"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket(":1.0"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket("unix:12"), "/tmp/.X11-unix/X12");
+  EXPECT_EQ(localDisplaySocket("localhost:10.0"), "");
+  EXPECT_EQ(localDisplaySocket("workstation:0"), "");
+  EXPECT_EQ(localDisplaySocket(":-1"), "");
+  EXPECT_EQ(localDisplaySocket(":"), "");
+  EXPECT_EQ(localDisplaySocket(""), "");
+}
+
+// A plain ssh session: no display forwarded.
+static BrowserEnv sshEnv()
+{
+  BrowserEnv env;
+  env.ssh_session = true;
+  env.host_name = "farm-42";
+  env.has_display = false;
+  return env;
+}
+
+// A VS Code terminal over ssh: the editor's IPC socket and $BROWSER helper.
+static BrowserEnv vsCodeEnv()
+{
+  BrowserEnv env = sshEnv();
+  env.vscode_ipc_hook = "/run/user/1000/vscode-ipc-1.sock";
+  env.browser = "/home/u/.vscode-server/bin/abc/bin/helpers/browser.sh";
+  return env;
+}
+
+static LaunchSkip autoSkip(const BrowserEnv& env)
+{
+  return browserLaunchSkipReason(BrowserLaunch::kAuto, env);
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeTerminalOverSshLaunches)
+{
+  const BrowserEnv env = vsCodeEnv();
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+  EXPECT_TRUE(launchesThroughBrowserEnv(env));
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
+{
+  BrowserEnv hook_only = vsCodeEnv();
+  hook_only.browser.clear();
+  EXPECT_EQ(autoSkip(hook_only), LaunchSkip::kSshSession);
+
+  // A $BROWSER from a shell profile is a browser on this host, not the
+  // editor's helper; with a shared home it is the one #11389 is about.
+  BrowserEnv browser_only = sshEnv();
+  browser_only.browser = "firefox";
+  EXPECT_EQ(autoSkip(browser_only), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(browser_only));
+
+  // Even in a VS Code terminal, a profile's $BROWSER is not the helper.
+  BrowserEnv profile_browser = vsCodeEnv();
+  profile_browser.browser = "firefox";
+  EXPECT_EQ(autoSkip(profile_browser), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
+}
+
+TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
+{
+  // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.
+  BrowserEnv env = localEnv();
+  env.display = "172.20.0.1:0.0";
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
+{
+  BrowserEnv env = vsCodeEnv();
+  env.batch_job = true;
+  env.display = ":1";
+  env.own_local_display = true;
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kBatchJob);
+}
+
+TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
+{
+  // A VNC or x2go desktop started from an ssh shell: its X server is ours.
+  BrowserEnv env = sshEnv();
+  env.display = ":1";
+  env.has_display = true;
+  env.own_local_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
+{
+  // Another user's X server would get our browser.
+  BrowserEnv foreign = sshEnv();
+  foreign.display = ":0";
+  foreign.has_display = true;
+  EXPECT_EQ(autoSkip(foreign), LaunchSkip::kSshSession);
+
+  BrowserEnv forwarded = sshEnv();
+  forwarded.display = "localhost:10.0";
+  forwarded.has_display = true;
+  EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
+}
+
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
+TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
+{
+  EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
+{
+  BrowserEnv ssh = localEnv();
+  ssh.ssh_session = true;
+  EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
+
+  // A batch job runs wherever the scheduler put it, and inherits the
+  // submitting shell's $DISPLAY.
+  BrowserEnv batch = localEnv();
+  batch.batch_job = true;
+  EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
+
+  BrowserEnv remote_display = localEnv();
+  remote_display.display = "workstation:0";
+  remote_display.host_name = "farm-42";
+  EXPECT_EQ(autoSkip(remote_display), LaunchSkip::kRemoteDisplay);
+
+  BrowserEnv headless = localEnv();
+  headless.has_display = false;
+  headless.display = "";
+  EXPECT_EQ(autoSkip(headless), LaunchSkip::kNoDisplay);
+
+  BrowserEnv opted_out = localEnv();
+  opted_out.no_browser = true;
+  EXPECT_EQ(autoSkip(opted_out), LaunchSkip::kOptOut);
+
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kNever, localEnv()),
+            LaunchSkip::kFlag);
+}
+
+TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
+{
+  BrowserEnv hostile = localEnv();
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
+  hostile.display = "workstation:0";
+  hostile.host_name = "farm-42";
+  hostile.no_browser = true;
+  hostile.has_display = false;
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kAlways, hostile),
+            LaunchSkip::kNone);
+}
+
+TEST(BrowserSkipReasonText, EveryReasonReadsInsideTheMessage)
+{
+  EXPECT_TRUE(browserSkipReasonText(LaunchSkip::kNone).empty());
+  for (const LaunchSkip reason : {LaunchSkip::kFlag,
+                                  LaunchSkip::kOptOut,
+                                  LaunchSkip::kSshSession,
+                                  LaunchSkip::kBatchJob,
+                                  LaunchSkip::kRemoteDisplay,
+                                  LaunchSkip::kNoDisplay}) {
+    EXPECT_FALSE(browserSkipReasonText(reason).empty());
+  }
+}
+
+TEST(BrowserLaunchFromString, KnownModesAndFallback)
+{
+  EXPECT_EQ(browserLaunchFromString("never"), BrowserLaunch::kNever);
+  EXPECT_EQ(browserLaunchFromString("always"), BrowserLaunch::kAlways);
+  EXPECT_EQ(browserLaunchFromString("auto"), BrowserLaunch::kAuto);
+  // Never a reason to fail starting the server.
+  EXPECT_EQ(browserLaunchFromString(""), BrowserLaunch::kAuto);
+  EXPECT_EQ(browserLaunchFromString("maybe"), BrowserLaunch::kAuto);
+}
+
+TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
+{
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.1"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:localhost:8080 farm-42");
+}
+
+TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
+{
+  // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.2"),
+                             "farm-42",
+                             8080),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:127.0.0.2:8080 farm-42, then open http://localhost:8080");
+}
+
+TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
+{
+  // With -bind 0.0.0.0 the port is open to the network, but the reported url
+  // says "localhost", and a tunnel to it would be pointless.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("0.0.0.0"),
+                         "farm-42",
+                         8080);
+  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+}
+
+TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
+{
+  // -bind 10.0.0.5: the address is already in the url the user was given.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("10.0.0.5"),
+                         "farm-42",
+                         8080);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+  EXPECT_EQ(hint.find("farm-42"), std::string::npos);
+}
+
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
 {
   struct Case
@@ -1077,157 +1454,39 @@ TEST_F(TileHandlerTest, VisibleLayersOnlyKeyThePinsLayer)
             pins + 1);
 }
 
-// ─── tile_group ─────────────────────────────────────────────────────────────
-
-// Overlapping pin shapes on metal1 and metal2, so a group's stacking order and
-// blending both show in its pixels.
-class TileGroupTest : public TileHandlerTest
+TEST_F(TileHandlerTest, AnEditOnAnUnbuiltIndexStillMissesTheCache)
 {
- protected:
-  void SetUp() override
-  {
-    TileHandlerTest::SetUp();
-    addPinBox("p1", "metal1", odb::Rect(20000, 20000, 60000, 60000));
-    addPinBox("p2", "metal2", odb::Rect(40000, 40000, 80000, 80000));
-    gen_->eagerInit();
-  }
-
-  void addPinBox(const char* name, const char* layer_name, const odb::Rect& box)
-  {
-    odb::dbNet* net = odb::dbNet::create(block_, name);
-    odb::dbBTerm* bterm = odb::dbBTerm::create(net, name);
-    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-    odb::dbTechLayer* layer = getDb()->getTech()->findLayer(layer_name);
-    ASSERT_NE(layer, nullptr);
-    odb::dbBox::create(
-        bpin, layer, box.xMin(), box.yMin(), box.xMax(), box.yMax());
-    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  }
-
-  WebSocketResponse group(const std::string& fields, const uint32_t id = 1)
-  {
-    WebSocketRequest req;
-    req.id = id;
-    req.type = WebSocketRequest::kTileGroup;
-    req.json = parseObj(R"({"z":0,"x":0,"y":0,"tile_px":256,)" + fields + "}");
-    return handler_->handleTileGroup(req, state_);
-  }
-
-  WebSocketResponse single(const std::string& layer)
-  {
-    WebSocketRequest req;
-    req.id = 1;
-    req.type = WebSocketRequest::kTile;
-    req.json = parseObj(R"({"z":0,"x":0,"y":0,"tile_px":256,"layer":")" + layer
-                        + R"("})");
-    return handler_->handleTile(req, state_);
-  }
-
-  static std::vector<unsigned char> pixels(const WebSocketResponse& resp)
-  {
-    std::vector<unsigned char> rgba;
-    unsigned w = 0;
-    unsigned h = 0;
-    EXPECT_EQ(lodepng::decode(rgba, w, h, resp.payload), 0u);
-    return rgba;
-  }
-
-  // Straight-alpha src-over, the model both the browser's canvas merge and the
-  // server compositor follow.
-  static void over(std::vector<unsigned char>& dst,
-                   const std::vector<unsigned char>& src)
-  {
-    for (size_t i = 0; i + 3 < dst.size(); i += 4) {
-      const double sa = src[i + 3] / 255.0;
-      const double da = dst[i + 3] / 255.0;
-      const double oa = sa + (da * (1 - sa));
-      for (size_t c = 0; c < 3; ++c) {
-        const double v
-            = oa > 0 ? ((src[i + c] * sa) + (dst[i + c] * da * (1 - sa))) / oa
-                     : 0;
-        dst[i + c] = static_cast<unsigned char>(std::lround(v));
-      }
-      dst[i + 3] = static_cast<unsigned char>(std::lround(oa * 255));
-    }
-  }
-};
-
-TEST_F(TileGroupTest, OneLayerGroupIsThatLayersTile)
-{
-  const auto resp = group(R"("layers":["metal1"])");
-  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
-  EXPECT_EQ(pixels(resp), pixels(single("metal1")));
+  // No row index is built yet, so this edit clears no cache; the revision in
+  // the key is what keeps the old tile from being served.
+  const size_t first
+      = requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")");
+  odb::dbSite* site = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+  ASSERT_NE(site, nullptr);
+  odb::dbRow::create(block_,
+                     "row0",
+                     site,
+                     0,
+                     0,
+                     odb::dbOrientType::R0,
+                     odb::dbRowDir::HORIZONTAL,
+                     20,
+                     site->getWidth());
+  EXPECT_EQ(requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")"),
+            first + 1);
 }
 
-TEST_F(TileGroupTest, ComposesItsLayersBottomToTop)
+TEST_F(TileHandlerTest, AMovedChipletMissesTheCache)
 {
-  const auto resp = group(R"("layers":["metal1","metal2"])");
-  ASSERT_EQ(resp.type, WebSocketResponse::kPng);
-  std::vector<unsigned char> expected = pixels(single("metal1"));
-  over(expected, pixels(single("metal2")));
-  const std::vector<unsigned char> actual = pixels(resp);
-  ASSERT_EQ(actual.size(), expected.size());
-  int worst = 0;
-  for (size_t i = 0; i < actual.size(); ++i) {
-    worst = std::max(worst, std::abs(actual[i] - expected[i]));
-  }
-  EXPECT_LE(worst, 1);
-
-  EXPECT_NE(pixels(group(R"("layers":["metal2","metal1"])")), actual)
-      << "the overlap must depend on which layer is on top";
-}
-
-TEST_F(TileGroupTest, GroupOfEmptyLayersIsEmpty)
-{
-  const auto resp = group(R"("layers":["metal9","metal10"])");
-  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty);
-  EXPECT_TRUE(resp.payload.empty());
-}
-
-TEST_F(TileGroupTest, EachLayerKeepsItsFillPattern)
-{
-  const auto solid = pixels(group(R"("layers":["metal1"],"patterns":[1])"));
-  EXPECT_EQ(solid, pixels(group(R"("layers":["metal1"])")));
-  EXPECT_NE(solid, pixels(group(R"("layers":["metal1"],"patterns":[3])")));
-}
-
-TEST_F(TileGroupTest, CachedByLayersInOrderAndPatterns)
-{
-  group(R"("layers":["metal1","metal2"])");
-  const size_t size = gen_->tileCacheSize();
-  group(R"("layers":["metal1","metal2"],"scale_bar":true)");
-  EXPECT_EQ(gen_->tileCacheSize(), size);
-  group(R"("layers":["metal2","metal1"])");
-  EXPECT_EQ(gen_->tileCacheSize(), size + 1);
-  group(R"("layers":["metal1","metal2"],"patterns":[1,3])");
-  EXPECT_EQ(gen_->tileCacheSize(), size + 2);
-}
-
-TEST_F(TileGroupTest, CancelledBeforeRender)
-{
-  {
-    std::lock_guard<std::mutex> lock(state_.cancelled_mutex);
-    state_.cancelled_ids.insert(7);
-  }
-  const auto resp = group(R"("layers":["metal1"])", 7);
-  EXPECT_EQ(resp.type, WebSocketResponse::kError);
-  EXPECT_EQ(payloadStr(resp), "cancelled");
-}
-
-TEST_F(TileGroupTest, RejectsBadInput)
-{
-  for (const char* fields : {R"("nolayers":1)",
-                             R"("layers":[])",
-                             R"("layers":"metal1")",
-                             R"("layers":["_pins"])",
-                             R"("layers":[1])",
-                             R"("layers":["metal1"],"patterns":[1,1])",
-                             R"("layers":["metal1"],"patterns":["x"])"}) {
-    const auto resp = group(fields);
-    EXPECT_EQ(resp.type, WebSocketResponse::kError) << fields;
-    EXPECT_TRUE(payloadStr(resp).starts_with("bad tile_group request"))
-        << fields;
-  }
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  getDb()->setTopChip(root);
+  odb::dbChipInst* die = odb::dbChipInst::create(root, chip_, "die0");
+  const size_t first
+      = requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")");
+  // No ODB hook reports this.
+  die->setOrient(odb::dbOrientType3D("MZ"));
+  EXPECT_EQ(requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")"),
+            first + 1);
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -2111,9 +2370,17 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
+// The heat map registry keeps the first registration for the whole process,
+// so the logger its factories capture has to live as long.
+utl::Logger* processLogger()
+{
+  static utl::Logger logger;
+  return &logger;
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -2130,7 +2397,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -2166,7 +2433,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2236,7 +2503,7 @@ TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -2272,7 +2539,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2295,7 +2562,7 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 // types 90.  The handler must accept it rather than failing as_double().
 TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -2318,8 +2585,8 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   populate_calls = 0;
 
   web::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
-        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
+        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
                                                      &populate_calls);
       });
 
@@ -5226,6 +5493,7 @@ TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
       = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
   auto resp = handler_->handleTile(tile, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_EQ(payloadStr(resp), kCancelledMsg);
 
   // The cancellation is consumed: re-issuing the same id now renders.  metal1
   // holds nothing in this fixture, so a completed render is an empty tile --

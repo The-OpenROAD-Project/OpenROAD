@@ -10,6 +10,7 @@
 // on the overlay.
 
 import { dbuToWorld, worldToDbu } from './coordinates.js';
+import { beginSelection, onSelectionReset } from './ui-utils.js';
 
 const HANDLES = 'label-handles';
 // A press that moves further than this drags the handle instead of clicking.
@@ -26,13 +27,31 @@ export class LabelManager {
         this._anchors = [];         // anchor names the server accepts
         this._mode = false;         // placement mode (next click creates a label)
         this._selectedName = null;
+        this._placedFor = null;     // [scale, originX, originY] of the handles
+        this._dragging = false;
+        // Another object taking the selection unmarks the label.
+        onSelectionReset(app, () => {
+            if (this._selectedName !== null) {
+                this._selectedName = null;
+                this._renderHandles();
+            }
+        });
     }
 
     isActive() {
         return this._mode;
     }
 
+    // Also re-places the handles if a resync moved the design's origin or
+    // scale, but not under a drag, which would lose the dragged element.
     updateVisibility() {
+        const app = this._app;
+        const placed = this._placedFor;
+        if (!this._dragging && (!placed || placed[0] !== app.designScale
+                                || placed[1] !== app.designOriginX
+                                || placed[2] !== app.designOriginY)) {
+            this._renderHandles();
+        }
         this._app.view?.setMarkerGroupVisible(HANDLES,
                                               !!this._visibility.labels);
     }
@@ -126,6 +145,8 @@ export class LabelManager {
         view.clearMarkers(HANDLES);
         const app = this._app;
         if (!app.designScale) return;
+        this._placedFor = [app.designScale, app.designOriginX,
+                           app.designOriginY];
 
         for (const label of this._labels) {
             const el = document.createElement('div');
@@ -155,6 +176,7 @@ export class LabelManager {
             e.preventDefault();
             el.setPointerCapture?.(e.pointerId);
             press = { x: e.clientX, y: e.clientY, moved: false };
+            this._dragging = true;
         });
         el.addEventListener('pointermove', (e) => {
             if (!press) return;
@@ -170,6 +192,7 @@ export class LabelManager {
             if (!press) return;
             const p = press;
             press = null;
+            this._dragging = false;
             el.releasePointerCapture?.(e.pointerId);
             if (!commit) {
                 this._renderHandles();
@@ -205,8 +228,21 @@ export class LabelManager {
     }
 
     _select(name) {
+        // Our own mark goes first, so the reset that unmarks every other panel
+        // does not redraw the handles a second time.
+        this._selectedName = null;
+        beginSelection(this._app);
         this._selectedName = name;
         this._renderHandles();
+        this._inspect(name, { focus: true });
+    }
+
+    // Shows the label in the Inspector again without taking the selection.
+    refreshInspector(name) {
+        this._inspect(name, { focus: false });
+    }
+
+    _inspect(name, { focus }) {
         const label = this._labels.find(l => l.name === name);
         if (!label) return;
         const fmt = (dbu) => this._app.formatDbu(dbu, true);
@@ -239,7 +275,9 @@ export class LabelManager {
             },
         };
         this._updateInspector(data);
-        this._focusComponent('Inspector');
+        if (focus) {
+            this._focusComponent('Inspector');
+        }
 
         requestAnimationFrame(() => {
             const toolbar

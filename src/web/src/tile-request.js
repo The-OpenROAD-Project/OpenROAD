@@ -166,6 +166,22 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
     };
 }
 
+// Serialize the layer/selectability visibility flags the way the server
+// parses them: each visibility key as a boolean, each selectability key with
+// an `s_` prefix.  Callers add request-specific fields (visible_layers,
+// selectable_layers, visible_chiplets) on top.  Shared by the tile requests,
+// click-select, and the Save export so the columns can't drift.
+export function buildVisibilityFlags(visibility, selectability) {
+    const vf = {};
+    for (const [k, v] of Object.entries(visibility || {})) {
+        vf[k] = !!v;
+    }
+    for (const [k, v] of Object.entries(selectability || {})) {
+        vf['s_' + k] = !!v;
+    }
+    return vf;
+}
+
 // Pure builder for the tile-request payload. `ctx` carries the per-layer
 // visibility/selectability context.
 //
@@ -176,15 +192,19 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
 // this module knowing anything about why.  Returns `layerName => request`,
 // with the fields every layer shares built once.
 export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
-    const { selectability, selectableLayers, app } = ctx;
+    const { visibility, selectability, visibleLayers, selectableLayers, app }
+        = ctx;
     const shared = {
-        ...renderFields(coords, ctx, dpr, tileSize),
+        z: coords.z,
+        x: coords.x,
+        y: coords.y,
+        ...tileSizeFields(dpr, tileSize),
+        visible_layers: visibleLayers ? [...visibleLayers] : [],
         selectable_layers: selectableLayers ? [...selectableLayers] : [],
+        ...buildVisibilityFlags(visibility, selectability),
     };
-    if (selectability) {
-        for (const [k, v] of Object.entries(selectability)) {
-            shared['s_' + k] = !!v;
-        }
+    if (app && app.visibleChiplets instanceof Set) {
+        shared.visible_chiplets = [...app.visibleChiplets];
     }
     return (layerName) => {
         const req = { type: 'tile', layer: layerName, ...shared };
@@ -194,42 +214,6 @@ export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
         }
         return req;
     };
-}
-
-// One request for a run of layers, which the server composites bottom to top
-// into a single image.  Selectability changes no pixel, so it is left off.
-export function buildGroupTileRequestFor(coords, layerNames, ctx, dpr,
-                                         tileSize = tileSizeCss()) {
-    const req = {
-        type: 'tile_group',
-        layers: [...layerNames],
-        ...renderFields(coords, ctx, dpr, tileSize),
-    };
-    const patterns = layerNames.map(name => layerPattern(ctx.app, name));
-    if (patterns.some(p => p !== 1)) {
-        req.patterns = patterns;
-    }
-    return req;
-}
-
-// The fields a layer render reads, shared by 'tile' and 'tile_group' so the
-// two cannot drift.
-function renderFields(coords, ctx, dpr, tileSize) {
-    const { visibility, visibleLayers, app } = ctx;
-    const fields = {
-        z: coords.z,
-        x: coords.x,
-        y: coords.y,
-        ...tileSizeFields(dpr, tileSize),
-        visible_layers: visibleLayers ? [...visibleLayers] : [],
-    };
-    for (const [k, v] of Object.entries(visibility || {})) {
-        fields[k] = !!v;
-    }
-    if (app && app.visibleChiplets instanceof Set) {
-        fields.visible_chiplets = [...app.visibleChiplets];
-    }
-    return fields;
 }
 
 // Per-layer fill pattern (int matching the server's FillPattern enum; 1 =

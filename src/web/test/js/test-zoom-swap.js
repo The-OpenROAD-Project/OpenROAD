@@ -103,6 +103,52 @@ describe('ZoomSwap with double buffering', () => {
         assert.equal(swap.check({ settled: false }), true);
         assert.equal(swap.shownZ, 4);
     });
+
+    // Shown before it is complete, the new level would leave holes where its
+    // tiles are still loading; the old one stays under until it settles.
+    it('keeps the old level under a level shown before it settles', () => {
+        for (const reveal of ['timeout', 'double buffering off']) {
+            let enabled = true;
+            const { swap, advance } = makeSwap({ timeoutMs: 50,
+                                                 isEnabled: () => enabled });
+            swap.setZoom(3);
+            swap.setZoom(4);
+            if (reveal === 'timeout') {
+                advance(50);
+            } else {
+                enabled = false;
+                swap.check({ settled: false });
+            }
+            assert.deepEqual(levels(swap.plan()), [3, 4], reveal);
+            assert.equal(swap.check({ settled: false }), false, reveal);
+            assert.equal(swap.check({ settled: true }), true, reveal);
+            assert.deepEqual(levels(swap.plan()), [4], reveal);
+        }
+    });
+
+    // The early reveal left level 4 with holes; the next zoom keeps level 3
+    // filling them until level 5 is shown.
+    it('keeps what lay under an early reveal through the next zoom', () => {
+        const { swap, advance } = makeSwap({ timeoutMs: 50 });
+        swap.setZoom(3);
+        swap.setZoom(4);
+        advance(50);
+        assert.deepEqual(levels(swap.plan()), [3, 4]);
+        swap.setZoom(5);
+        assert.equal(swap.pendingZ, 5);
+        assert.deepEqual(levels(swap.plan()), [3, 4]);
+        assert.equal(swap.check({ settled: true }), true);
+        assert.deepEqual(levels(swap.plan()), [5]);
+        assert.deepEqual(swap.under, []);
+    });
+
+    it('drops the old level when the new one arrives complete', () => {
+        const { swap } = makeSwap();
+        swap.setZoom(3);
+        swap.setZoom(4);
+        assert.equal(swap.check({ settled: true }), true);
+        assert.deepEqual(levels(swap.plan()), [4]);
+    });
 });
 
 describe('ZoomSwap fade', () => {

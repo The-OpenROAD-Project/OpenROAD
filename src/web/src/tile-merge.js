@@ -17,8 +17,7 @@
 // draw them, release them immediately, and keep only the merged result.
 //
 // What it does NOT buy: bandwidth.  The same K images are still fetched per
-// tile.  With ?composite=1 the server composites runs of layers instead
-// (tile_group, see tile-sources.js).
+// tile.
 
 // Set a draw item's visibility, returning whether it actually changed.
 //
@@ -144,13 +143,8 @@ export function closeAll(images) {
 // land.  A request that never settles therefore costs one missing layer instead
 // of a blank tile; waiting for the whole group would blank the whole tile.
 //
-// `incremental: false` is Options > "Double buffering" (#11340): every repaint
-// clears the canvas first, so on a refresh of a tile already on screen the
-// group is visibly rebuilt layer by layer.  Painting once, after every request
-// has settled, makes the swap atomic — the canvas is the buffer, since one
-// synchronous clear-and-composite is never presented half done.  It costs
-// nothing in memory (the decodes were already held to the end, see Lifetime
-// below) and the tile now appears at the pace of its slowest layer.
+// `incremental: false` (Options > "Double buffering") paints once, after every
+// request has settled, so a refreshed tile swaps whole, not layer by layer.
 //
 // Lifetime: every decoded image is released in a finally, including on a draw
 // failure or a stale abort.  Explicit release is the entire reason for

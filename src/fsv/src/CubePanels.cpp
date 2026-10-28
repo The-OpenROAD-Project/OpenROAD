@@ -41,4 +41,15 @@ Vec3 cubeFacePoint(const BoxFace face,
   return p;
 }
 
+Vec2 squareEdgePoint(const SquareEdge edge,
+                     const int n,
+                     const int i,
+                     const double u)
+{
+  Vec2 p;
+  p[edge.axis] = edge.normalSign();
+  p[1 - edge.axis] = -1.0 + 2.0 * (i + u) / n;
+  return p;
+}
+
 }  // namespace fsv

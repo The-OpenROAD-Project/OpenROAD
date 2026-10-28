@@ -22,10 +22,12 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/beast/core/string.hpp"
 #include "boost/beast/http/field.hpp"
@@ -432,18 +434,8 @@ bool webSocketOriginAllowed(const std::string_view origin,
   //
   // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
   // and a proxy or non-browser client may vary it, which would otherwise 403 a
-  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
-  // without std::tolower and its locale.
-  const auto ascii_lower = [](const char c) {
-    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
-  };
-  return std::equal(authority.begin(),
-                    authority.end(),
-                    host.begin(),
-                    host.end(),
-                    [&ascii_lower](const char a, const char b) {
-                      return ascii_lower(a) == ascii_lower(b);
-                    });
+  // legitimate handshake.
+  return boost::beast::iequals(authority, host);
 }
 
 BindAddressKind classifyBindAddress(const std::string_view address)
@@ -485,6 +477,206 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+void joinUnlessSelf(std::thread& t)
+{
+  if (!t.joinable()) {
+    return;
+  }
+  if (t.get_id() == std::this_thread::get_id()) {
+    t.detach();
+    return;
+  }
+  t.join();
+}
+
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger)
+{
+  for (;;) {
+    try {
+      ioc.run();
+      return;
+    } catch (const std::exception& e) {
+      logger->warn(utl::WEB, 119, "Web server thread error: {}", e.what());
+    }
+  }
+}
+
+namespace {
+
+// sshd's X11DisplayOffset: the displays it forwards are numbered from here.
+constexpr unsigned kSshDisplayOffset = 10;
+
+// The display number of "N" or "N.S", screen dropped; false when there is none.
+bool parseDisplayNumber(const std::string_view rest, unsigned& number)
+{
+  return parseIntExact(rest.substr(0, rest.find('.')), number);
+}
+
+}  // namespace
+
+bool displayIsRemote(
+    const std::string_view display,
+    const std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses)
+{
+  const std::size_t colon = display.rfind(':');
+  if (colon == std::string_view::npos) {
+    return false;  // no display, or not one we understand; do not guess
+  }
+  std::string_view host = display.substr(0, colon);
+  if (host.size() >= 2 && host.front() == '[' && host.back() == ']') {
+    host = host.substr(1, host.size() - 2);
+  }
+  // No host, or "unix", is this machine's socket.
+  if (host.empty() || boost::beast::iequals(host, "unix")) {
+    return false;
+  }
+  // A local X server is reached through its socket; a TCP display on this
+  // machine numbered like sshd's is one ssh -X forwards from elsewhere.
+  unsigned number = 0;
+  const bool forwarded = parseDisplayNumber(display.substr(colon + 1), number)
+                         && number >= kSshDisplayOffset;
+  if (boost::beast::iequals(host, "localhost")) {
+    return forwarded;
+  }
+  boost::system::error_code ec;
+  const boost::asio::ip::address ip = boost::asio::ip::make_address(host, ec);
+  if (!ec) {
+    const bool here
+        = ip.is_loopback()
+          || std::find(local_addresses.begin(), local_addresses.end(), ip)
+                 != local_addresses.end();
+    return !here || forwarded;
+  }
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  const auto short_name = [](const std::string_view name) {
+    const std::size_t dot = name.find('.');
+    return dot == std::string_view::npos ? name : name.substr(0, dot);
+  };
+  return !boost::beast::iequals(short_name(host), short_name(host_name))
+         || forwarded;
+}
+
+std::string localDisplaySocket(const std::string_view display)
+{
+  std::string_view rest = display;
+  if (rest.starts_with("unix:")) {
+    rest.remove_prefix(4);
+  }
+  if (!rest.starts_with(':')) {
+    return {};
+  }
+  rest.remove_prefix(1);
+  unsigned number = 0;
+  if (!parseDisplayNumber(rest, number)) {
+    return {};
+  }
+  return "/tmp/.X11-unix/X" + std::to_string(number);
+}
+
+bool launchesThroughBrowserEnv(const BrowserEnv& env)
+{
+  // Only VS Code's own helper: a $BROWSER from a profile is a browser here.
+  return !env.vscode_ipc_hook.empty()
+         && env.browser.ends_with("/helpers/browser.sh");
+}
+
+LaunchSkip browserLaunchSkipReason(const BrowserLaunch mode,
+                                   const BrowserEnv& env)
+{
+  if (mode == BrowserLaunch::kAlways) {
+    return LaunchSkip::kNone;
+  }
+  if (mode == BrowserLaunch::kNever) {
+    return LaunchSkip::kFlag;
+  }
+  if (env.no_browser) {
+    return LaunchSkip::kOptOut;
+  }
+  // A scheduler chose this host and copied the submitting shell's
+  // environment, $DISPLAY and the VS Code variables included.
+  if (env.batch_job) {
+    return LaunchSkip::kBatchJob;
+  }
+  if (launchesThroughBrowserEnv(env)) {
+    return LaunchSkip::kNone;
+  }
+  // Over ssh the user looks at another machine, unless it is their own X
+  // server here (a VNC or x2go desktop).
+  if (env.ssh_session) {
+    return env.own_local_display ? LaunchSkip::kNone : LaunchSkip::kSshSession;
+  }
+  // WSL's browser is the Windows one, which needs no X server here.
+  if (env.wsl) {
+    return LaunchSkip::kNone;
+  }
+  if (displayIsRemote(env.display, env.host_name, env.local_addresses)) {
+    return LaunchSkip::kRemoteDisplay;
+  }
+  return env.has_display ? LaunchSkip::kNone : LaunchSkip::kNoDisplay;
+}
+
+std::string_view browserSkipReasonText(const LaunchSkip reason)
+{
+  switch (reason) {
+    case LaunchSkip::kNone:
+      return "";
+    case LaunchSkip::kFlag:
+      return "-no_browser";
+    case LaunchSkip::kOptOut:
+      return "OPENROAD_NO_BROWSER is set";
+    case LaunchSkip::kSshSession:
+      return "this is an ssh session";
+    case LaunchSkip::kBatchJob:
+      return "this is a batch job";
+    case LaunchSkip::kRemoteDisplay:
+      return "$DISPLAY belongs to another machine";
+    case LaunchSkip::kNoDisplay:
+      return "no display";
+  }
+  return "";
+}
+
+BrowserLaunch browserLaunchFromString(const std::string_view mode)
+{
+  if (mode == "never") {
+    return BrowserLaunch::kNever;
+  }
+  if (mode == "always") {
+    return BrowserLaunch::kAlways;
+  }
+  return BrowserLaunch::kAuto;
+}
+
+std::string reachabilityHint(const BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             const std::string_view host,
+                             const uint16_t port)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // The far end of the tunnel is the address the listener is actually on:
+    // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
+    const std::string far_end = browserHostForBind(address);
+    std::string hint
+        = "To reach it from another machine, forward the port: ssh -L "
+          + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
+    // ssh listens on localhost there, not on the address in the url above.
+    if (far_end != "localhost") {
+      hint += ", then open http://localhost:" + port_str;
+    }
+    return hint;
+  }
+  if (address.is_unspecified()) {
+    // Bound to every interface, but browserHostForBind() had no address to
+    // name and said "localhost", which is this machine only.
+    return "From another machine, reach it at http://" + std::string(host) + ":"
+           + port_str;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
@@ -3146,7 +3338,8 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
 
     odb::dbTech* tech = nullptr;
     if (!chiplet_path.empty()) {
-      for (const ChipletNode& node : gen_->chiplets()) {
+      const auto nodes = gen_->chiplets();
+      for (const ChipletNode& node : *nodes) {
         if (node.path == chiplet_path && node.chip != nullptr) {
           tech = node.chip->getTech();
           break;
@@ -4237,7 +4430,8 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     constexpr int kDefaultChipHeight = 100000;
     constexpr int kDefaultChipThickness = 10000;
 
-    for (const ChipletNode& node : gen_->chiplets()) {
+    const auto nodes = gen_->chiplets();
+    for (const ChipletNode& node : *nodes) {
       // Leaves only: a chip that holds chip insts is a grouping node with no
       // geometry of its own, and the root has no dbChipInst at all.
       if (node.inst == nullptr || node.chip == nullptr
@@ -4546,7 +4740,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       if (path_index < static_cast<int>(paths.size())) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
-        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        const auto chiplet_list = gen_->chiplets();
+        const std::vector<ChipletNode>& chiplets = *chiplet_list;
         collectTimingPathShapes(
             chiplets, paths[path_index], new_rects, new_lines);
 
@@ -4987,11 +5182,6 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleTile(req, state);
         });
-  d.add("tile_group",
-        WebSocketRequest::kTileGroup,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleTileGroup(req, state);
-        });
   d.add("bounds",
         WebSocketRequest::kBounds,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5125,34 +5315,6 @@ void TileHandler::syncHeatMapsLocked(SessionState& state)
   }
 }
 
-namespace {
-
-WebSocketResponse cancelledResponse(const uint32_t id)
-{
-  return errorResponse(id, "cancelled");
-}
-
-std::set<uint32_t> snapshotFocusNets(SessionState& state)
-{
-  std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
-  return state.focus_net_ids;
-}
-
-// An empty cache entry is a tile the renderer drew nothing into, stored
-// without the bytes of a transparent PNG nobody would decode.
-WebSocketResponse cachedTileResponse(const uint32_t id,
-                                     std::vector<unsigned char> cached)
-{
-  WebSocketResponse resp;
-  resp.id = id;
-  resp.type
-      = cached.empty() ? WebSocketResponse::kEmpty : WebSocketResponse::kPng;
-  resp.payload = std::move(cached);
-  return resp;
-}
-
-}  // namespace
-
 WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                           SessionState& state)
 {
@@ -5200,7 +5362,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  z,
                  x,
                  y);
-      return cancelledResponse(req.id);
+      return errorResponse(req.id, kCancelledMsg);
     }
   }
 
@@ -5216,7 +5378,12 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::map<uint32_t, Color>* mod_ptr
       = mod_colors.empty() ? nullptr : &mod_colors;
 
-  const std::set<uint32_t> focus_nets = snapshotFocusNets(state);
+  // Snapshot focus nets
+  std::set<uint32_t> focus_nets;
+  {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    focus_nets = state.focus_net_ids;
+  }
   const std::set<uint32_t>* focus_ptr
       = focus_nets.empty() ? nullptr : &focus_nets;
 
@@ -5239,21 +5406,33 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                          && !vis.debug_live;
 
   std::string cache_key;
+  uint64_t cache_epoch = 0;
   if (cacheable) {
-    // Key = what the render reads: the tile, the rendered dpr and pixel count,
-    // and the parsed visibility this layer depends on.  Selectability and keys
-    // the server does not parse never reach it.
-    const boost::json::object tile_obj{{"layer", layer},
-                                       {"z", z},
-                                       {"x", x},
-                                       {"y", y},
-                                       {"dpr", dpr},
-                                       {"tile_px", tile_px}};
+    // Read before rendering: a design edit meanwhile makes the result stale.
+    cache_epoch = gen_->tileCacheEpoch();
+    // Key = what the render reads: the tile, its dpr and pixel count, the
+    // design and chiplet revisions and the visibility this layer depends on.
+    const boost::json::object tile_obj{
+        {"layer", layer},
+        {"z", z},
+        {"x", x},
+        {"y", y},
+        {"dpr", dpr},
+        {"tile_px", tile_px},
+        {"rev", gen_->searchRevision()},
+        {"chiplets", gen_->chipletsGeneration()}};
     cache_key = boost::json::serialize(tile_obj)
                 + TileGenerator::tileCacheKey(vis, layer);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
-      WebSocketResponse resp = cachedTileResponse(req.id, std::move(cached));
+      WebSocketResponse resp;
+      resp.id = req.id;
+      // An empty cache entry is a tile the renderer drew nothing into; it is
+      // stored that way so a blank tile costs an LRU slot and not the bytes of
+      // a transparent PNG nobody will decode.
+      resp.type = cached.empty() ? WebSocketResponse::kEmpty
+                                 : WebSocketResponse::kPng;
+      resp.payload = std::move(cached);
       debugPrint(gen_->getLogger(),
                  utl::WEB,
                  "tile",
@@ -5295,7 +5474,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       = resp.type == WebSocketResponse::kEmpty
         || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
   if (cacheable && worth_caching) {
-    gen_->tileCachePut(std::move(cache_key), resp.payload);
+    gen_->tileCachePut(std::move(cache_key), resp.payload, cache_epoch);
   }
 
   debugPrint(gen_->getLogger(),
@@ -5317,153 +5496,6 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              vis.detailed,
              resp.payload.size());
 
-  return resp;
-}
-
-namespace {
-
-// Bounds the work one tile_group request can ask for.
-constexpr size_t kMaxGroupLayers = 256;
-
-// Reads a tile_group's layer list and its matching fill patterns.  Returns an
-// error message, empty on success.
-std::string parseTileGroupLayers(const boost::json::object& json,
-                                 std::vector<std::string>& layers,
-                                 std::vector<FillPattern>& patterns)
-{
-  const auto layers_it = json.find("layers");
-  if (layers_it == json.end() || !layers_it->value().is_array()) {
-    return "layers must be an array";
-  }
-  const boost::json::array& names = layers_it->value().get_array();
-  if (names.empty() || names.size() > kMaxGroupLayers) {
-    return "layers must hold 1 to " + std::to_string(kMaxGroupLayers)
-           + " names";
-  }
-  for (const boost::json::value& name : names) {
-    // Pseudo layers ("_pins", ...) are always requested one by one.
-    if (!name.is_string() || name.get_string().empty()
-        || name.get_string().front() == '_') {
-      return "layers must be tech layer names";
-    }
-    layers.emplace_back(name.get_string());
-  }
-  const auto patterns_it = json.find("patterns");
-  if (patterns_it == json.end()) {
-    patterns.assign(layers.size(), FillPattern::kSolid);
-    return {};
-  }
-  if (!patterns_it->value().is_array()
-      || patterns_it->value().get_array().size() != layers.size()) {
-    return "patterns must match layers";
-  }
-  for (const boost::json::value& pattern : patterns_it->value().get_array()) {
-    if (!pattern.is_int64()) {
-      return "patterns must be integers";
-    }
-    patterns.push_back(toFillPattern(pattern.get_int64()));
-  }
-  return {};
-}
-
-}  // namespace
-
-WebSocketResponse TileHandler::handleTileGroup(const WebSocketRequest& req,
-                                               SessionState& state)
-{
-  int z = 0;
-  int x = 0;
-  int y = 0;
-  if (std::string coord_error;
-      !parseTileCoords(req.json, z, x, y, coord_error)) {
-    return errorResponse(req.id, "bad tile_group request: " + coord_error);
-  }
-  std::vector<std::string> layers;
-  std::vector<FillPattern> patterns;
-  if (const std::string error
-      = parseTileGroupLayers(req.json, layers, patterns);
-      !error.empty()) {
-    return errorResponse(req.id, "bad tile_group request: " + error);
-  }
-
-  // Abandoned while queued, or between two of the group's layers.
-  bool was_cancelled = false;
-  const auto cancelled = [&state, &was_cancelled, id = req.id] {
-    std::lock_guard<std::mutex> lock(state.cancelled_mutex);
-    was_cancelled = state.cancelled_ids.erase(id) > 0;
-    return was_cancelled;
-  };
-  if (cancelled()) {
-    return cancelledResponse(req.id);
-  }
-
-  TileVisibility vis;
-  vis.parseFromJson(req.json);
-
-  // Focused nets dim the others on tech layers; module colors only paint
-  // _modules, which never joins a group.
-  const std::set<uint32_t> focus_nets = snapshotFocusNets(state);
-  const std::set<uint32_t>* focus_ptr
-      = focus_nets.empty() ? nullptr : &focus_nets;
-
-  const double dpr = quantizeDpr(jsonOr<double>(req.json, "dpr", 1.0));
-  const int tile_px = quantizeTilePx(jsonOr<double>(req.json, "tile_px", 0.0));
-
-  const bool cacheable = focus_ptr == nullptr && !vis.debug
-                         && !vis.debug_renderers && !vis.debug_live;
-  std::string cache_key;
-  if (cacheable) {
-    boost::json::array group;
-    for (size_t i = 0; i < layers.size(); ++i) {
-      group.push_back(
-          boost::json::array{layers[i], static_cast<int>(patterns[i])});
-    }
-    const boost::json::object tile_obj{{"group", std::move(group)},
-                                       {"z", z},
-                                       {"x", x},
-                                       {"y", y},
-                                       {"dpr", dpr},
-                                       {"tile_px", tile_px}};
-    // Every member is a tech layer, so they share one visibility key.
-    cache_key = boost::json::serialize(tile_obj)
-                + TileGenerator::tileCacheKey(vis, layers.front());
-    std::vector<unsigned char> cached;
-    if (gen_->tileCacheGet(cache_key, cached)) {
-      return cachedTileResponse(req.id, std::move(cached));
-    }
-  }
-
-  WebSocketResponse resp;
-  resp.id = req.id;
-  resp.type = WebSocketResponse::kPng;
-  resp.payload = gen_->generateGroupTile(
-      layers, patterns, z, x, y, vis, focus_ptr, dpr, tile_px, cancelled);
-  if (was_cancelled) {
-    return cancelledResponse(req.id);
-  }
-  if (resp.payload.empty()) {
-    return errorResponse(req.id, "tile_group: PNG encode failed");
-  }
-  markEmptyIfBlank(resp);
-  if (cacheable) {
-    gen_->tileCachePut(std::move(cache_key), resp.payload);
-  }
-
-  debugPrint(gen_->getLogger(),
-             utl::WEB,
-             "tile",
-             1,
-             "tile_group: id={} layers={} z/x/y={}/{}/{} dpr={} tile_px={} "
-             "cache={} bytes={}",
-             req.id,
-             layers.size(),
-             z,
-             x,
-             y,
-             dpr,
-             tile_px,
-             cacheable ? "miss" : "off",
-             resp.payload.size());
   return resp;
 }
 

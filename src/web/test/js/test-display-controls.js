@@ -7,7 +7,6 @@ import { dom } from './setup-dom.js';
 
 const {
     anyGroupOn, layerRangeSet, nonSolidPatterns, populateDisplayControls,
-    serverGroupLayers,
 } = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 const { makeFakeView } = await import('./fake-view.js');
@@ -180,6 +179,22 @@ describe('layer row selection', () => {
 
     // Let the request promise's .then chain run.
     const flush = () => new Promise(r => setTimeout(r, 0));
+
+    it('a fill pattern from the layer menu reaches the saved display state', () => {
+        let syncs = 0;
+        app.syncDisplayState = () => syncs++;
+        const container = render();
+        const row = layerRow(container, 'metal1');
+        row.querySelector('.vis-cb').parentElement.dispatchEvent(
+            new dom.window.MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        const menu = [...document.querySelectorAll('.context-menu')].at(-1);
+        const item = [...menu.querySelectorAll('.context-menu-item')]
+            .find((el) => el.textContent.includes('Fill: Diagonal'));
+        const before = syncs;
+        click(item);
+        assert.equal(app.layerPatterns.metal1, 2);
+        assert.equal(syncs, before + 1);
+    });
 
     it('sends select_layer with the layer name and owning chiplet', async () => {
         const container = render();
@@ -993,26 +1008,5 @@ describe('flipped chiplet layer order', () => {
             return out;
         };
         assert.deepEqual(colorIndexByName(true), colorIndexByName(false));
-    });
-});
-
-describe('serverGroupLayers', () => {
-    const app = (over = {}) => ({ forceComposite: false,
-                                  websocketManager: {}, ...over });
-
-    it('fetches each layer by default', () => {
-        assert.equal(serverGroupLayers(app()), 0);
-        assert.equal(serverGroupLayers(app({ groupLayers: 5 })), 0);
-    });
-
-    it('groups only with ?composite=1, K from ?grouplayers', () => {
-        assert.equal(serverGroupLayers(app({ forceComposite: true })), 3);
-        assert.equal(serverGroupLayers(app({ forceComposite: true,
-                                             groupLayers: 5 })), 5);
-    });
-
-    it('fetches each layer in a saved report', () => {
-        assert.equal(serverGroupLayers(app({ forceComposite: true,
-            websocketManager: { isStaticMode: true } })), 0);
     });
 });

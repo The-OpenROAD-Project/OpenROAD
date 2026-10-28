@@ -53,12 +53,9 @@ const noLoadersCdn = {
     },
 };
 
-// The private repository's security hook rejects text naming a foundry, and
-// luma.gl names one GPU maker that is also a foundry.  Each rewrite is applied
-// everywhere it occurs, so luma.gl behaves the same: its detecting regex still
-// matches the browser's strings, and the vendor value it compares and the
-// shader macros it defines and tests change together.  Exported for a test.
-// The name is spelled in two parts because the hook reads this file too.
+// The private repository's hook rejects a foundry name luma.gl gives a GPU
+// maker.  Every match is rewritten, so luma.gl's checks still agree; the name
+// is split because the hook reads this file too.
 const kFoundryName = 'int' + 'el';
 
 export function hideFoundryNames(text) {
@@ -85,6 +82,9 @@ export default {
     format: 'iife',
     platform: 'browser',
     target: ['es2022'],
+    // deck.gl's builds without WebGPU; the viewer draws with WebGL only.
+    // Custom conditions drop esbuild's default 'module', so it is listed too.
+    conditions: ['visgl:webgl-only', 'module'],
     loader: {
         // The golden-layout stylesheets reach icons through relative
         // url(); inlined, the page needs no file besides the bundles.

@@ -6,6 +6,7 @@
 
 import { dbuRectToWorldRect } from './coordinates.js';
 import { DRAW_ORDER, toRgba } from './layout-view.js';
+import { easeOutQuad } from './view-math.js';
 import { beginSelection, isCurrentSelection, isStaticMode,
          prefersReducedMotion, showConfirmModal, showToast } from './ui-utils.js';
 
@@ -453,7 +454,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         hoverRects = rects;
         app.view.on('zoom', redrawHoverOnZoom);
         stopHoverPulse = runKeyframes(900, 3,
-            (t) => drawHover(keyframeAt(HOVER_FRAMES, 1 - Math.pow(1 - t, 2))),
+            (t) => drawHover(keyframeAt(HOVER_FRAMES, easeOutQuad(t))),
             () => drawHover(HOVER_REST));
     }
 
@@ -1193,12 +1194,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
     // Re-request the currently inspected object from the server
     // (e.g. after toggling show-DBU so property formatting changes).
-    // Rulers are client-side so we re-select instead of re-requesting.
+    // Rulers are client-side, so they show themselves again instead.
     function refreshInspector() {
         if (!lastInspectData) return;
         if (lastInspectData.type === 'Ruler') {
-            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
-                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            app.rulerManager?.refreshInspector();
+            return;
+        }
+        // So are labels, as far as the Inspector goes: the server's selection
+        // is something else.
+        if (lastInspectData.type === 'Label') {
+            if (lastInspectData.name) {
+                app.labelManager?.refreshInspector(lastInspectData.name);
             }
             return;
         }

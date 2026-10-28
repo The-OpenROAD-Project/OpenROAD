@@ -10,7 +10,7 @@ import {
     buildHeatmapRequest, buildOverlayRequest, createImageSource,
 } from './tile-sources.js';
 import {
-    nativeDpr, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    tileSizeCss, useFittedTileSize, useStaticTileSize,
     watchDevicePixelRatio,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -24,7 +24,7 @@ import { applySelectionFlags, beginSelection, boundsEqual,
          computeScaleBar, decorateTabIcons, fittedTileSizeCss, formatDbu,
          formatDistance, isCurrentSelection, isStaticMode, maxUsefulZoom,
          parseDbu, rafCoalesce, renderingWarning, showCornerWarning,
-         showToast, unitLabel }
+         showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -400,10 +400,7 @@ try {
     // Ignore malformed cookie.
 }
 
-// Debug switches for the view and its tiles:
-//   ?composite=1       composite runs of layers on the server (tile_group;
-//                      default: one request per layer, merged in the browser)
-//   ?grouplayers=<K>   layers per server-composited group
+// Debug switch for the view:
 //   ?preservebuffer=1  keep the canvas readable between frames (probes)
 (function configureViewDebug() {
     let params = null;
@@ -412,12 +409,7 @@ try {
     } catch (_) {
         return;
     }
-    app.forceComposite = params.get('composite') === '1';
     app.preserveBuffer = params.get('preservebuffer') === '1';
-    const groupLayers = Number(params.get('grouplayers'));
-    if (Number.isFinite(groupLayers) && groupLayers > 0) {
-        app.groupLayers = Math.floor(groupLayers);
-    }
 })();
 
 // What every layout tile request reads lazily (tile-request.js): the
@@ -435,8 +427,6 @@ function createHeatMapSlot() {
         visible: !!app.activeHeatMap,
         source: createImageSource({
             wm: app.websocketManager,
-            dpr: nativeDpr,
-            tileSize: tileSizeCss,
             buildRequest: (c, dpr, t) => buildHeatmapRequest(c, dpr, t, app),
         }),
     });
@@ -633,8 +623,6 @@ function createLayoutViewer(container) {
             doubleBuffer: () => app.doubleBuffer,
             defer: () => app.deferTileUpdates,
         },
-        tileSize: tileSizeCss,
-        dpr: nativeDpr,
         isStatic: isStaticMode(app),
     });
     app.view.on('contextlost', () => {
@@ -1197,7 +1185,7 @@ if (staticCache) {
     app.websocketManager = WebSocketManager.fromCache(staticCache,
                                                       scheduleUpdateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    const websocketUrl = websocketUrlFrom(window.location);
     app.websocketManager = new WebSocketManager(websocketUrl,
                                                 scheduleUpdateStatus);
     // Where each tech layer has shapes, so tiles that would come back empty
@@ -1218,19 +1206,6 @@ updateStatus();
 
 // Mount layout components
 app.goldenLayout.loadLayout(defaultLayoutConfig);
-addTabIcons();
-
-// Add the per-panel tab icons and make sure headers update
-function addTabIcons() {
-    if (decorateTabIcons(document.getElementById('gl-container')) > 0) {
-        app.goldenLayout.updateSize();
-    }
-}
-
-// Persist layout on changes
-app.goldenLayout.on('stateChanged', () => {
-    addTabIcons();
-});
 
 // Sync layout size on window resize
 function syncLayoutSize() {
@@ -1924,7 +1899,7 @@ app.websocketManager.readyPromise.then(async () => {
                         if (app.clearSelectionOutline) app.clearSelectionOutline();
                         app.lastSelectionBounds = null;
                     }
-                    refreshOverlay();
+                    scheduleRefreshOverlay();
                     return data;
                 })
                 .catch(err => {
@@ -1962,8 +1937,6 @@ app.websocketManager.readyPromise.then(async () => {
                 order: DRAW_ORDER.overlay,
                 source: createImageSource({
                     wm: app.websocketManager,
-                    dpr: nativeDpr,
-                    tileSize: tileSizeCss,
                     buildRequest: (c, dpr, t) => buildOverlayRequest(
                         c, dpr, t, visibility, app),
                 }),

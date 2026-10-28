@@ -659,79 +659,6 @@ std::vector<int> CUGR::computeNdrWidths(odb::dbNet* db_net) const
   return widths;
 }
 
-std::vector<CUGR::PinAccessTop> CUGR::pinAccessTops(const GRNet& net) const
-{
-  const int net_min_layer
-      = std::max(constants_.min_routing_layer, net.getLayerRange().min_layer);
-  std::vector<PinAccessTop> tops;
-  tops.reserve(net.getPreferredAccessPoints().size());
-  for (const auto& [index, ap] : net.getPreferredAccessPoints()) {
-    tops.push_back({.gcell = {ap.point.x(), ap.point.y()},
-                    .top = std::max(ap.layers.high(), net_min_layer)});
-  }
-  // One entry per gcell, at its highest top: sort it first, keep the first.
-  std::ranges::sort(tops, [](const PinAccessTop& a, const PinAccessTop& b) {
-    return std::tie(a.gcell, b.top) < std::tie(b.gcell, a.top);
-  });
-  const auto duplicates = std::ranges::unique(tops, {}, &PinAccessTop::gcell);
-  tops.erase(duplicates.begin(), duplicates.end());
-  return tops;
-}
-
-int CUGR::pinAccessTop(const std::vector<PinAccessTop>& tops, const PointT loc)
-{
-  const std::pair<int, int> gcell(loc.x(), loc.y());
-  const auto it
-      = std::ranges::lower_bound(tops, gcell, {}, &PinAccessTop::gcell);
-  return (it != tops.end() && it->gcell == gcell) ? it->top : -1;
-}
-
-double CUGR::computeReliefScore(const GRNet& net, const double threshold) const
-{
-  const auto& tree = net.getRoutingTree();
-  if (!tree) {
-    return 0.0;
-  }
-  double score = 0.0;
-  auto relieve = [&](const int layer, const PointT edge, const double demand) {
-    if (layer < constants_.min_routing_layer) {
-      return;
-    }
-    const GraphEdge e = grid_graph_->getEdge(layer, edge.x(), edge.y());
-    const double overflow = e.demand - e.capacity * threshold;
-    if (overflow > 0.0) {
-      score += std::min(demand, overflow);
-    }
-  };
-  grid_graph_->forEachTreeWireEdge(
-      tree, net.isAdopted(), [&](int layer, PointT cell, bool wrong_way) {
-        const double factor = net.getNdrCost(layer);
-        if (wrong_way) {
-          grid_graph_->forEachWrongWayFlankEdge(
-              layer, cell, [&](PointT edge, CapacityT pad) {
-                relieve(layer, edge, pad * factor);
-              });
-        } else {
-          relieve(layer, cell, factor);
-        }
-      });
-  const auto pin_tops = pinAccessTops(net);
-  grid_graph_->forEachViaColumn(tree, [&](PointT loc, int low, int high) {
-    const int access_top = pinAccessTop(pin_tops, loc);
-    grid_graph_->forEachStackFlankEdge(
-        low,
-        high,
-        loc,
-        net.getNdrCosts(),
-        [&](int layer, PointT edge, CapacityT pad, double factor) {
-          if (layer > access_top) {
-            relieve(layer, edge, pad * factor);
-          }
-        });
-  });
-  return score;
-}
-
 void CUGR::updateCongestedNets(std::vector<int>& net_indices,
                                const double threshold)
 {
@@ -741,7 +668,7 @@ void CUGR::updateCongestedNets(std::vector<int>& net_indices,
     if (net == nullptr || !net->getRoutingTree()) {
       return;
     }
-    if (computeReliefScore(*net, threshold) > 0.0) {
+    if (grid_graph_->reliefScore(*net, threshold) > 0.0) {
       net_indices.push_back(index);
     }
   };
@@ -948,11 +875,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     if (net->getNumPins() < 2) {
       continue;
     }
-    const std::shared_ptr<GRTreeNode> old_tree = net->getRoutingTree();
-    const bool old_adopted = net->isAdopted();
-    // The maze re-selects the access points; a rollback needs the old ones.
-    std::map<int, AccessPoint> old_access_points
-        = net->getPreferredAccessPoints();
+    // A rollback restores the route and the access points the maze re-selects.
+    GRNet::SavedRoute old_route = net->saveRoute();
     // Overflow change of the transaction, measured on the touched edges.
     grid_graph_->collectTreeEdges(*net, touched_edges);
     double delta = -grid_graph_->sumOverflow(touched_edges);
@@ -1012,9 +936,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
-      net->setRoutingTree(old_tree);
-      net->setAdopted(old_adopted);
-      net->setPreferredAccessPoints(std::move(old_access_points));
+      net->restoreRoute(std::move(old_route));
       grid_graph_->addTreeUsage(*net);
       rejected++;
     } else {
@@ -1994,7 +1916,7 @@ void CUGR::printStatistics() const
   }
 
   // Overflow is computed from edge.demand (which includes via-stub
-  // demand). This is the same metric used by CUGR's computeReliefScore,
+  // demand). This is the same metric used by GridGraph::reliefScore,
   // updateCongestedNets, and extractCongestionView.
   CapacityT total_overflow = 0;
   CapacityT min_resource = std::numeric_limits<CapacityT>::max();
@@ -2029,10 +1951,6 @@ void CUGR::printStatistics() const
 
 void CUGR::reportCongestion() const
 {
-  if (!verbose_) {
-    return;
-  }
-
   const int num_layers = grid_graph_->getNumLayers();
   const int x_size = grid_graph_->getXSize();
   const int y_size = grid_graph_->getYSize();

@@ -601,13 +601,13 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     ASSERT_EQ(bounds.maxDXDY() % 8, 0);
     const int tile_dbu = bounds.maxDXDY() / 4;
     const int half_tile = tile_dbu / 2;
-    // Tile column 1, row 1 from the bottom (Leaflet row 2); the macro starts a
-    // fraction of a pixel past 5/8 of the column, so its name crosses into
-    // column 2.
+    // Tile column 1, row 1 from the bottom (tile y = 2, counted from the top);
+    // the macro starts a fraction of a pixel past 5/8 of the column, so its
+    // name crosses into column 2.
     const int x0 = bounds.xMin() + tile_dbu + tile_dbu * 5 / 8 + 37;
     const int y0 = bounds.yMin() + tile_dbu + tile_dbu / 4;
 
-    // Tiles 1 and 2 of Leaflet row 2, side by side.
+    // Tiles x = 1 and 2 of row y = 2, side by side.
     const auto stitch = [&](unsigned& w, unsigned& h) {
       makeTileGen();
       tile_gen_->eagerInit();
@@ -1717,14 +1717,14 @@ TEST_F(TileGeneratorTest, GetLayerColorMapMatchesGuiPalette)
   }
 
   makeTileGen();
-  const auto& colors = tile_gen_->getLayerColorMap();
+  const auto colors = tile_gen_->getLayerColorMap();
 
   // Helper: assert a layer's color matches an expected RGB (alpha is always
   // 180 in both the GUI and the web palette).
   auto expectColor = [&](const char* name, int r, int g, int b) {
     odb::dbTechLayer* layer = tech->findLayer(name);
     ASSERT_NE(layer, nullptr) << "missing layer " << name;
-    const Color c = colors.at(layer);
+    const Color c = colors->at(layer);
     EXPECT_EQ(c.r, r) << name << " red";
     EXPECT_EQ(c.g, g) << name << " green";
     EXPECT_EQ(c.b, b) << name << " blue";
@@ -1813,14 +1813,14 @@ TEST_F(TileGeneratorTest, GetLayerColorMapWithBacksideMetals)
   }
 
   makeTileGen();
-  const auto& colors = tile_gen_->getLayerColorMap();
+  const auto colors = tile_gen_->getLayerColorMap();
 
   // Helper: assert a layer's color matches an expected RGB (alpha is always
   // 180 in both the GUI and the web palette).
   auto expectColor = [&](const char* name, int r, int g, int b) {
     odb::dbTechLayer* layer = tech->findLayer(name);
     ASSERT_NE(layer, nullptr) << "missing layer " << name;
-    const Color c = colors.at(layer);
+    const Color c = colors->at(layer);
     EXPECT_EQ(c.r, r) << name << " red";
     EXPECT_EQ(c.g, g) << name << " green";
     EXPECT_EQ(c.b, b) << name << " blue";
@@ -1876,9 +1876,9 @@ TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
   makeTileGen();
   // Identity check: same tech ⇒ same map object.  This is the contract that
   // makes caching observable to callers (no rebuild between tile renders).
-  const auto& first = tile_gen_->getLayerColorMap();
-  const auto& second = tile_gen_->getLayerColorMap();
-  EXPECT_EQ(&first, &second);
+  const auto first = tile_gen_->getLayerColorMap();
+  const auto second = tile_gen_->getLayerColorMap();
+  EXPECT_EQ(first.get(), second.get());
 }
 
 TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
@@ -1890,12 +1890,55 @@ TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
   // dbTech allocated at the same address can't read stale colors.
   tile_gen_->eagerInit();
   // Recomputing still produces correct values.
-  const auto& colors = tile_gen_->getLayerColorMap();
+  const auto colors = tile_gen_->getLayerColorMap();
   odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
   ASSERT_NE(metal1, nullptr);
-  EXPECT_EQ(colors.at(metal1).r, 0);
-  EXPECT_EQ(colors.at(metal1).g, 0);
-  EXPECT_EQ(colors.at(metal1).b, 254);
+  EXPECT_EQ(colors->at(metal1).r, 0);
+  EXPECT_EQ(colors->at(metal1).g, 0);
+  EXPECT_EQ(colors->at(metal1).b, 254);
+}
+
+// A renderer reading the map keeps it through the eagerInit() of a session
+// that connects meanwhile.
+TEST_F(TileGeneratorTest, LayerColorsOutliveACacheReset)
+{
+  makeTileGen();
+  const auto colors = tile_gen_->getLayerColorMap();
+  tile_gen_->eagerInit();
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  EXPECT_EQ(colors->at(metal1).b, 254);
+  EXPECT_NE(tile_gen_->getLayerColorMap().get(), colors.get());
+}
+
+// A second tab or a reconnect redoes the init only after a design load, and
+// refreshes the clients only for a pin-label margin that moved every tile.
+TEST_F(TileGeneratorTest, EnsureInitReinitsOnlyAfterADesignLoad)
+{
+  block_->setDieArea(odb::Rect(0, 0, 8000, 8000));
+  makeBTermAtEdge("p", "metal1", 0, 4000, 200, 200);
+  makeTileGen();
+  int refreshes = 0;
+  tile_gen_->setDesignChangedCallback([&refreshes] { ++refreshes; });
+  tile_gen_->ensureInit();
+  const auto colors = tile_gen_->getLayerColorMap();
+  tile_gen_->ensureInit();
+  EXPECT_EQ(tile_gen_->getLayerColorMap().get(), colors.get());
+  EXPECT_EQ(refreshes, 0);
+
+  // A longer pin name widens the label margin.
+  makeBTermAtEdge("a_much_longer_pin_name", "metal1", 7800, 4000, 200, 200);
+  const int before = refreshes;
+  tile_gen_->ensureInit();
+  EXPECT_EQ(refreshes, before + 1);
+  EXPECT_EQ(tile_gen_->getLayerColorMap().get(), colors.get());
+  tile_gen_->ensureInit();
+  EXPECT_EQ(refreshes, before + 1);
+
+  // The lightest load hook: dbSta ignores a LEF read with no library.
+  getDb()->triggerPostReadLef(nullptr, nullptr);
+  tile_gen_->ensureInit();
+  EXPECT_NE(tile_gen_->getLayerColorMap().get(), colors.get());
 }
 
 // The per-instance render pass reads master OBS and pin shapes out of the
@@ -2369,7 +2412,8 @@ TEST_F(TileGeneratorTest, ResolvePinFindsAChipletPinByChipInstPrefix)
   makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
   makeTileGen();
 
-  const std::vector<ChipletNode>& chiplets = tile_gen_->chiplets();
+  const auto chiplet_list = tile_gen_->chiplets();
+  const std::vector<ChipletNode>& chiplets = *chiplet_list;
   auto [iterm, bterm, node] = resolvePin(chiplets, "die0/buf1/Z");
   EXPECT_EQ(bterm, nullptr);
   ASSERT_NE(iterm, nullptr) << "chip-inst-prefixed pin name did not resolve";
@@ -2427,7 +2471,8 @@ TEST_F(TileGeneratorTest, ResolvePinPrefersThePrefixedChiplet)
       ->setLoc(odb::Point3D(0, 0, 1));
   makeTileGen();
 
-  const std::vector<ChipletNode>& chiplets = tile_gen_->chiplets();
+  const auto chiplet_list = tile_gen_->chiplets();
+  const std::vector<ChipletNode>& chiplets = *chiplet_list;
   const auto die0_at = std::ranges::find(chiplets, "die0", &ChipletNode::name);
   const auto die1_at = std::ranges::find(chiplets, "die1", &ChipletNode::name);
   ASSERT_NE(die0_at, chiplets.end());
@@ -2491,7 +2536,7 @@ TEST_F(TileGeneratorTest, CollectTimingPathShapesSkipsIntraCellHop)
 
   std::vector<ColoredRect> rects;
   std::vector<FlightLine> lines;
-  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  collectTimingPathShapes(*tile_gen_->chiplets(), path, rects, lines);
   EXPECT_TRUE(lines.empty())
       << "flight line drawn across a cell's own input-to-output arc";
   EXPECT_TRUE(rects.empty());
@@ -2599,15 +2644,17 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   odb::dbChipInst* die0 = *root->getChipInsts().begin();
   makeTileGen();
 
+  const auto before_list = tile_gen_->chiplets();
   const ChipletNode* before
-      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+      = findChiplet(*before_list, "root/" + die0->getName());
   ASSERT_NE(before, nullptr);
   ASSERT_FALSE(before->isFlipped());
 
   die0->setOrient(odb::dbOrientType3D("MZ"));
 
+  const auto after_list = tile_gen_->chiplets();
   const ChipletNode* after
-      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+      = findChiplet(*after_list, "root/" + die0->getName());
   ASSERT_NE(after, nullptr);
   EXPECT_TRUE(after->isFlipped())
       << "the chiplet cache did not notice setOrient, so the viewer keeps "
@@ -2617,12 +2664,76 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   // rebuild it (that would free objects a concurrent reader is walking), so
   // the edit has to stay visible on later calls too — not just the one that
   // detected it.
+  const auto later_list = tile_gen_->chiplets();
   const ChipletNode* later
-      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+      = findChiplet(*later_list, "root/" + die0->getName());
   ASSERT_NE(later, nullptr);
   EXPECT_TRUE(later->isFlipped())
       << "the reorient was reported once and then lost, which means a stale "
          "unfolded model was read back";
+}
+
+// A reconnect after a move keeps the chiplet where it was moved.
+TEST_F(TileGeneratorTest, EnsureInitKeepsAMovedChipletWhereItWasMoved)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+  tile_gen_->ensureInit();
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  tile_gen_->ensureInit();
+  const auto nodes = tile_gen_->chiplets();
+  const ChipletNode* node = findChiplet(*nodes, "root/" + die0->getName());
+  ASSERT_NE(node, nullptr);
+  EXPECT_TRUE(node->isFlipped());
+}
+
+// The unfolded model is the load's: a move made before the first init, or
+// followed by a load hook, must survive the reinit.
+TEST_F(TileGeneratorTest, ChipletsMovedBeforeAReinitStayMoved)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+  const auto flipped = [&] {
+    const auto nodes = tile_gen_->chiplets();
+    const ChipletNode* node = findChiplet(*nodes, "root/" + die0->getName());
+    return node != nullptr && node->isFlipped();
+  };
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  tile_gen_->ensureInit();
+  EXPECT_TRUE(flipped()) << "moved before the first init";
+  // The lightest load hook: dbSta ignores a LEF read with no library.
+  getDb()->triggerPostReadLef(nullptr, nullptr);
+  tile_gen_->ensureInit();
+  EXPECT_TRUE(flipped()) << "moved before a load hook";
+}
+
+// A top chip made without a load hook still gets the init it needs.
+TEST_F(TileGeneratorTest, EnsureInitReinitsForANewTopChip)
+{
+  makeTileGen();
+  tile_gen_->ensureInit();
+  const auto colors = tile_gen_->getLayerColorMap();
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  tile_gen_->ensureInit();
+  EXPECT_NE(tile_gen_->getLayerColorMap().get(), colors.get());
+}
+
+// A renderer walking the list keeps it through the eagerInit() of a session
+// that connects meanwhile.
+TEST_F(TileGeneratorTest, ChipletsOutliveACacheReset)
+{
+  makeTileGen();
+  const auto nodes = tile_gen_->chiplets();
+  ASSERT_FALSE(nodes->empty());
+  tile_gen_->eagerInit();
+  EXPECT_EQ((*nodes)[0].block, block_);
+  EXPECT_NE(tile_gen_->chiplets().get(), nodes.get());
 }
 
 // Compare the two routes node by node.  `path` orders them, so a disagreement
@@ -2824,7 +2935,7 @@ TEST_F(TileGeneratorTest,
 
   std::vector<ColoredRect> rects;
   std::vector<FlightLine> lines;
-  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  collectTimingPathShapes(*tile_gen_->chiplets(), path, rects, lines);
   ASSERT_EQ(lines.size(), 1u)
       << "cross-chiplet pin pair drew " << lines.size() << " flight lines";
 
@@ -2866,7 +2977,7 @@ TEST_F(TileGeneratorTest, CollectTimingPathShapesDrawsACommonClockHopOnce)
 
   std::vector<ColoredRect> rects;
   std::vector<FlightLine> lines;
-  collectTimingPathShapes(tile_gen_->chiplets(), path, rects, lines);
+  collectTimingPathShapes(*tile_gen_->chiplets(), path, rects, lines);
   EXPECT_EQ(lines.size(), 1u) << "common clock hop drawn once per node list";
 }
 
@@ -2903,7 +3014,7 @@ TEST_F(TileGeneratorTest, CollectTimingStageShapesDrawsUnroutedHop)
     std::vector<ColoredRect> rects;
     std::vector<FlightLine> lines;
     collectTimingStageShapes(
-        tile_gen_->chiplets(), path, pin, yellow, rects, lines);
+        *tile_gen_->chiplets(), path, pin, yellow, rects, lines);
     ASSERT_EQ(lines.size(), 1u) << "no stage flight line for " << pin;
     EXPECT_EQ(lines[0].p1, drv) << pin;
     EXPECT_EQ(lines[0].p2, snk) << pin;
@@ -4639,9 +4750,9 @@ TEST_F(TileGeneratorTest, TracksKeepTheirAlphaNextToCoverageShapes)
   makeTileGen();
   tile_gen_->eagerInit();
 
-  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
-  const auto entry = colors.find(metal1);
-  ASSERT_NE(entry, colors.end());
+  const auto colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors->find(metal1);
+  ASSERT_NE(entry, colors->end());
   const Color layer = entry->second;
 
   TileVisibility vis = trackOnlyVisibility();
@@ -6300,7 +6411,8 @@ TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
   for (size_t i = 0; i < kCap + 10; ++i) {
     tile_gen_->tileCachePut("k" + std::to_string(i),
                             {static_cast<unsigned char>(i & 0xff),
-                             static_cast<unsigned char>((i >> 8) & 0xff)});
+                             static_cast<unsigned char>((i >> 8) & 0xff)},
+                            tile_gen_->tileCacheEpoch());
   }
   EXPECT_EQ(tile_gen_->tileCacheSize(), kCap);
 
@@ -6316,7 +6428,7 @@ TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
   // k10 must survive because the touch made it most-recently-used; the next
   // oldest (k11) is evicted instead.
   ASSERT_TRUE(tile_gen_->tileCacheGet("k10", out));
-  tile_gen_->tileCachePut("knew", {7});
+  tile_gen_->tileCachePut("knew", {7}, tile_gen_->tileCacheEpoch());
   EXPECT_TRUE(tile_gen_->tileCacheGet("k10", out));
   EXPECT_FALSE(tile_gen_->tileCacheGet("k11", out));
 
@@ -6332,7 +6444,8 @@ TEST_F(TileGeneratorTest, TileCacheStaysWithinItsByteBudget)
   constexpr size_t kFits = TileGenerator::kTileCacheBytesCap / kMiB;
   const std::vector<unsigned char> mib(kMiB, 1);
   for (size_t i = 0; i < kFits + 5; ++i) {
-    tile_gen_->tileCachePut("m" + std::to_string(i), mib);
+    tile_gen_->tileCachePut(
+        "m" + std::to_string(i), mib, tile_gen_->tileCacheEpoch());
     EXPECT_LE(tile_gen_->tileCacheBytes(), TileGenerator::kTileCacheBytesCap);
   }
   EXPECT_EQ(tile_gen_->tileCacheSize(), kFits);
@@ -6345,13 +6458,14 @@ TEST_F(TileGeneratorTest, TileCacheStaysWithinItsByteBudget)
 
   // Replacing an entry counts its bytes once.
   const size_t bytes = tile_gen_->tileCacheBytes();
-  tile_gen_->tileCachePut("m5", mib);
+  tile_gen_->tileCachePut("m5", mib, tile_gen_->tileCacheEpoch());
   EXPECT_EQ(tile_gen_->tileCacheBytes(), bytes);
 
   // An entry larger than the whole budget is not kept.
   tile_gen_->tileCachePut(
       "huge",
-      std::vector<unsigned char>(TileGenerator::kTileCacheBytesCap + 1));
+      std::vector<unsigned char>(TileGenerator::kTileCacheBytesCap + 1),
+      tile_gen_->tileCacheEpoch());
   EXPECT_FALSE(tile_gen_->tileCacheGet("huge", out));
   EXPECT_EQ(tile_gen_->tileCacheSize(), kFits);
 
@@ -6427,7 +6541,7 @@ TEST_F(TileGeneratorTest, InPlaceDesignEditInvalidatesTileCache)
   // Search::announceModified debounces and only fires once the index exists.
   tile_gen_->generateTile("_instances", 0, 0, 0);
 
-  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  tile_gen_->tileCachePut("dummy", {1, 2, 3}, tile_gen_->tileCacheEpoch());
   ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
 
   // Move the placed instance: odb fires inDbPostMoveInst → Search::clearInsts →
@@ -6454,7 +6568,7 @@ TEST_F(TileGeneratorTest, DieAreaChangeInvalidatesTileCache)
   int refresh_calls = 0;
   tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
 
-  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  tile_gen_->tileCachePut("dummy", {1, 2, 3}, tile_gen_->tileCacheEpoch());
   ASSERT_GT(tile_gen_->tileCacheSize(), 0u);
 
   block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
@@ -6463,6 +6577,28 @@ TEST_F(TileGeneratorTest, DieAreaChangeInvalidatesTileCache)
       << "die-area change left stale PNGs in the tile cache";
   EXPECT_GE(refresh_calls, 1)
       << "die-area change did not notify clients to re-request tiles";
+}
+
+// A tile rendered across a cache clear shows the design from before it: put
+// afterwards, it must not bring the stale image back.
+TEST_F(TileGeneratorTest, TileRenderedAcrossAClearIsNotCached)
+{
+  placeInst("INV_X1", "i1", 10000, 10000);
+  makeTileGen();
+  std::vector<unsigned char> out;
+
+  uint64_t before = tile_gen_->tileCacheEpoch();
+  block_->setDieArea(odb::Rect(0, 0, 120000, 120000));  // a design edit
+  tile_gen_->tileCachePut("edited", {1, 2, 3}, before);
+  EXPECT_FALSE(tile_gen_->tileCacheGet("edited", out));
+
+  before = tile_gen_->tileCacheEpoch();
+  tile_gen_->eagerInit();  // a design reload
+  tile_gen_->tileCachePut("reloaded", {1, 2, 3}, before);
+  EXPECT_FALSE(tile_gen_->tileCacheGet("reloaded", out));
+
+  tile_gen_->tileCachePut("fresh", {1, 2, 3}, tile_gen_->tileCacheEpoch());
+  EXPECT_TRUE(tile_gen_->tileCacheGet("fresh", out));
 }
 
 TEST_F(TileGeneratorTest, EagerInitReindexDoesNotSpuriouslyNotify)
@@ -6482,7 +6618,7 @@ TEST_F(TileGeneratorTest, EagerInitReindexDoesNotSpuriouslyNotify)
   block_->setDieArea(odb::Rect(0, 0, 120000, 120000));
   ASSERT_GE(refresh_calls, 1);
 
-  tile_gen_->tileCachePut("dummy", {1, 2, 3});
+  tile_gen_->tileCachePut("dummy", {1, 2, 3}, tile_gen_->tileCacheEpoch());
   refresh_calls = 0;
   tile_gen_->eagerInit();
 
@@ -6645,9 +6781,9 @@ TEST_F(TileGeneratorTest, IndexedEncodingPreservesTheLayerColour)
 
   odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
   ASSERT_NE(metal1, nullptr);
-  const auto& colors = tile_gen_->getLayerColorMap(getDb()->getTech());
-  const auto entry = colors.find(metal1);
-  ASSERT_NE(entry, colors.end());
+  const auto colors = tile_gen_->getLayerColorMap(getDb()->getTech());
+  const auto entry = colors->find(metal1);
+  ASSERT_NE(entry, colors->end());
   const Color expected = entry->second;
 
   unsigned width = 0;
@@ -7341,21 +7477,28 @@ bool keyCounts(const std::string& on,
          != TileGenerator::tileCacheKey(visWith(off), layer);
 }
 
+// The flags only one layer draws, with that layer.
+const std::pair<std::string_view, std::string_view> kOwnedFlags[]
+    = {{"access_points", "_access_points"},
+       {"regions", "_regions"},
+       {"mfg_grid", "_mfg_grid"},
+       {"gcell_grid", "_gcell_grid"},
+       {"rudy", "_rudy"},
+       {"inst_names", "_inst_labels"},
+       {"inst_pin_names", "_inst_labels"},
+       {"pin_markers", "_pins"},
+       {"pin_names", "_pins"},
+       {"rows", "_instances"},
+       {"placement_blockages", "_instances"}};
+
 // Pins the exclusions in TileGenerator::tileCacheKey: every other flag, a new
 // one included, must count for a tech layer.
 TEST(TileCacheKeyTest, EveryFlagCountsForATechLayerButTheExcludedOnes)
 {
-  const std::set<std::string_view> excluded = {"access_points",
-                                               "regions",
-                                               "mfg_grid",
-                                               "gcell_grid",
-                                               "rudy",
-                                               "inst_names",
-                                               "inst_pin_names",
-                                               "pin_markers",
-                                               "pin_names",
-                                               "rows",
-                                               "labels"};
+  std::set<std::string_view> excluded = {"labels"};
+  for (const auto& [flag, layer] : kOwnedFlags) {
+    excluded.insert(flag);
+  }
   for (const std::string_view flag : TileVisibility::flagKeys()) {
     EXPECT_EQ(keyCounts(flagJson(flag, true), flagJson(flag, false), "metal1"),
               !excluded.contains(flag))
@@ -7365,18 +7508,7 @@ TEST(TileCacheKeyTest, EveryFlagCountsForATechLayerButTheExcludedOnes)
 
 TEST(TileCacheKeyTest, ExcludedFlagsCountForTheirOwnLayer)
 {
-  const std::pair<std::string_view, std::string_view> own[]
-      = {{"access_points", "_access_points"},
-         {"regions", "_regions"},
-         {"mfg_grid", "_mfg_grid"},
-         {"gcell_grid", "_gcell_grid"},
-         {"rudy", "_rudy"},
-         {"inst_names", "_inst_labels"},
-         {"inst_pin_names", "_inst_labels"},
-         {"pin_markers", "_pins"},
-         {"pin_names", "_pins"},
-         {"rows", "_instances"}};
-  for (const auto& [flag, layer] : own) {
+  for (const auto& [flag, layer] : kOwnedFlags) {
     EXPECT_TRUE(keyCounts(flagJson(flag, true), flagJson(flag, false), layer))
         << flag << " on " << layer;
   }
@@ -7428,17 +7560,23 @@ TEST(TileCacheKeyTest, SelectabilityAndUnknownKeysDoNotCount)
   }
 }
 
-// Same key must mean same pixels.  For every flag and layer where flipping the
-// flag leaves the key unchanged, the rendered tile has to stay the same too.
-TEST_F(TileGeneratorTest, FlagsLeftOutOfTheCacheKeyDoNotChangeTheTile)
+// Same key must mean same pixels.  For every parsed field and layer where a
+// change leaves the key unchanged, the rendered tile has to stay the same too.
+TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
 {
   block_->setDieArea(odb::Rect(0, 0, 8000, 8000));
   placeInst("BUF_X16", "buf1", 1000, 1000);
   makeBTermAtEdge("pin_m1", "metal1", 0, 4000, 200, 200);
   makeBTermAtEdge("pin_m3", "metal3", 7800, 4000, 200, 200);
+  ASSERT_NE(makeMetal1AccessPoint(), nullptr);
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  grid->addGridPatternX(0, 4, 2000);
+  grid->addGridPatternY(0, 4, 2000);
   odb::dbRegion* region = odb::dbRegion::create(block_, "dom");
   ASSERT_NE(region, nullptr);
   odb::dbBox::create(region, 2000, 2000, 6000, 6000);
+  ASSERT_NE(odb::dbBlockage::create(block_, 6500, 6500, 7500, 7500), nullptr);
   odb::dbSite* site = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
   ASSERT_NE(site, nullptr);
   odb::dbRow::create(block_,
@@ -7456,33 +7594,65 @@ TEST_F(TileGeneratorTest, FlagsLeftOutOfTheCacheKeyDoNotChangeTheTile)
   const auto render = [&](std::string_view layer, const std::string& json) {
     return tile_gen_->generateTile(std::string(layer), 0, 0, 0, visWith(json));
   };
-  const std::string_view layers[]
-      = {"metal1", "metal3", "_instances", "_pins", "_regions"};
+  // What is off by default, on, so that every overlay draws.
+  const boost::json::object base
+      = parseObj(R"({"access_points":true,"mfg_grid":true,"gcell_grid":true,)"
+                 R"("rudy":true,"inst_pin_names":true,"rows":true,)"
+                 R"("site_FreePDK45_38x28_10R_NP_162NW_34O":true})");
+  const auto with = [&base](const boost::json::object& change) {
+    boost::json::object json = base;
+    for (const auto& field : change) {
+      json[field.key()] = field.value();
+    }
+    return boost::json::serialize(json);
+  };
+
+  std::vector<std::pair<std::string, std::string>> changes;
   for (const std::string_view flag : TileVisibility::flagKeys()) {
+    changes.emplace_back(with({{flag, true}}), with({{flag, false}}));
+  }
+  const std::string m1 = with({{"visible_layers", {"metal1"}}});
+  const std::string m5 = with({{"visible_layers", {"metal5"}}});
+  changes.emplace_back(m1, m5);
+  changes.emplace_back(with({{"visible_layers", boost::json::array{}}}),
+                       with({}));
+  changes.emplace_back(with({{"visible_chiplets", {"x"}}}), with({}));
+  changes.emplace_back(with({{"pattern", 1}}), with({{"pattern", 3}}));
+  changes.emplace_back(with({{"site_FreePDK45_38x28_10R_NP_162NW_34O", false}}),
+                       with({}));
+
+  const std::string_view layers[] = {"metal1",
+                                     "metal3",
+                                     "_instances",
+                                     "_pins",
+                                     "_regions",
+                                     "_inst_labels",
+                                     "_access_points",
+                                     "_mfg_grid",
+                                     "_gcell_grid",
+                                     "_rudy"};
+  for (const auto& [a, b] : changes) {
     for (const std::string_view layer : layers) {
-      const std::string on = flagJson(flag, true);
-      const std::string off = flagJson(flag, false);
-      if (!keyCounts(on, off, layer)) {
-        EXPECT_EQ(render(layer, on), render(layer, off))
-            << flag << " on " << layer;
+      if (!keyCounts(a, b, layer)) {
+        EXPECT_EQ(render(layer, a), render(layer, b))
+            << a << " vs " << b << " on " << layer;
       }
     }
   }
-  const std::string m1 = R"({"visible_layers":["metal1"]})";
-  const std::string m5 = R"({"visible_layers":["metal5"]})";
-  for (const std::string_view layer : {"metal1", "metal3", "_instances"}) {
-    EXPECT_EQ(render(layer, m1), render(layer, m5)) << layer;
-  }
 
-  // The scene gives each exclusion something to switch on its own layer.
-  EXPECT_NE(render("_pins", flagJson("pin_markers", true)),
-            render("_pins", flagJson("pin_markers", false)));
-  EXPECT_NE(render("_regions", flagJson("regions", true)),
-            render("_regions", flagJson("regions", false)));
-  EXPECT_NE(
-      render("_instances",
-             R"({"rows":true,"site_FreePDK45_38x28_10R_NP_162NW_34O":true})"),
-      render("_instances", flagJson("rows", false)));
+  // The scene gives each exclusion something to switch on its own layer, but
+  // pin names need a closer zoom and no RUDY source is in this binary.
+  const auto lit = [&](std::string_view layer, std::string_view flag) {
+    return render(layer, with({{flag, true}}))
+           != render(layer, with({{flag, false}}));
+  };
+  const std::set<std::string_view> unlit
+      = {"pin_names", "inst_pin_names", "rudy"};
+  for (const auto& [flag, layer] : kOwnedFlags) {
+    if (!unlit.contains(flag)) {
+      EXPECT_TRUE(lit(layer, flag)) << flag << " on " << layer;
+    }
+  }
   EXPECT_NE(render("_pins", m1), render("_pins", m5));
 }
 

@@ -12,7 +12,7 @@
 
 import { dbuToWorld, worldToDbu } from './coordinates.js';
 import { DRAW_ORDER, toRgba } from './layout-view.js';
-import { beginSelection } from './ui-utils.js';
+import { beginSelection, onSelectionReset } from './ui-utils.js';
 
 const RULER_COLOR = '#00ffff';
 const RULER_SELECTED_COLOR = '#ffff00';
@@ -37,6 +37,13 @@ export class RulerManager {
         this._nextId = 0;
         this._pt0 = null;           // {x, y} in DBU
         this._selectedRulerId = null;
+        // Another object taking the selection unmarks the ruler.
+        onSelectionReset(app, () => {
+            if (this._selectedRulerId !== null) {
+                this._selectedRulerId = null;
+                this._renderAll();
+            }
+        });
 
         // Modifier key state (updated on mousemove/click)
         this._ctrlHeld = false;
@@ -450,16 +457,26 @@ export class RulerManager {
     // ─── Selection and inspector ─────────────────────────────────────
 
     _selectRuler(rulerId) {
+        // A client-side object that still takes the selection from the other
+        // panels; ours is dropped first, so their reset does not redraw it.
+        this._selectedRulerId = null;
+        beginSelection(this._app);
         this._selectedRulerId = rulerId;
         this._renderAll();
+        this._inspectRuler(rulerId, { focus: true });
+    }
 
+    // Shows the selected ruler in the Inspector again without taking the
+    // selection.
+    refreshInspector() {
+        if (this._selectedRulerId !== null) {
+            this._inspectRuler(this._selectedRulerId, { focus: false });
+        }
+    }
+
+    _inspectRuler(rulerId, { focus }) {
         const ruler = this._rulers.find(r => r.id === rulerId);
         if (!ruler) return;
-
-        // A ruler is a client-side object, but it still takes over the
-        // Inspector, so other panels must drop the selection they painted and
-        // any of their responses still in flight must not overwrite it.
-        beginSelection(this._app);
 
         const dx = Math.abs(ruler.pt1.x - ruler.pt0.x);
         const dy = Math.abs(ruler.pt1.y - ruler.pt0.y);
@@ -529,7 +546,9 @@ export class RulerManager {
         };
 
         this._updateInspector(data);
-        this._focusComponent('Inspector');
+        if (focus) {
+            this._focusComponent('Inspector');
+        }
 
         // Add delete button after inspector renders
         requestAnimationFrame(() => {

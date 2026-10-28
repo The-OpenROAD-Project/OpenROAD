@@ -6,7 +6,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { hideFoundryNames } from '../../esbuild.config.mjs';
+import config, { hideFoundryNames } from '../../esbuild.config.mjs';
 
 const name = 'Int' + 'el';
 const blocked = new RegExp(`${name}(?!l)`, 'i');
@@ -47,5 +47,14 @@ describe('hideFoundryNames', () => {
     it('leaves words that only start the same alone', () => {
         const text = `${name}ligent ${name.toLowerCase()}lisense`;
         assert.equal(hideFoundryNames(text), text);
+    });
+});
+
+// Setting conditions at all drops esbuild's default 'module', which the
+// bundles have always resolved with.
+describe('conditions', () => {
+    it("picks deck.gl's WebGL-only builds and keeps 'module'", () => {
+        assert.ok(config.conditions.includes('visgl:webgl-only'));
+        assert.ok(config.conditions.includes('module'));
     });
 });

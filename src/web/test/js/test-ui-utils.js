@@ -7,7 +7,7 @@ import { JSDOM } from 'jsdom';
 import { boundsEqual, computeBoundsTransforms, computeScaleBar, cssColorToHex,
          fittedTileSizeCss, isValidHexColor, kZoomMargin, maxUsefulZoom,
          MAX_TILE_ZOOM, niceRoundParts, prefersReducedMotion, rafCoalesce,
-         renderingWarning, showCornerWarning }
+         renderingWarning, showCornerWarning, websocketUrlFrom }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -509,5 +509,19 @@ describe('showCornerWarning', () => {
                                       { dontShowAgain: () => silenced++ });
         box.querySelector('.or-corner-warning-close').click();
         assert.equal(silenced, 0);
+    });
+});
+
+describe('websocketUrlFrom', () => {
+    // A page served over https may not open a plain ws:// socket.
+    it('uses wss when the page came over https', () => {
+        assert.equal(websocketUrlFrom({ protocol: 'https:', host: 'h:1' }),
+                     'wss://h:1/ws');
+    });
+
+    it('uses ws otherwise, and the default host when there is none', () => {
+        assert.equal(websocketUrlFrom({ protocol: 'http:', host: 'h:1' }),
+                     'ws://h:1/ws');
+        assert.equal(websocketUrlFrom({ host: '' }), 'ws://localhost:8080/ws');
     });
 });

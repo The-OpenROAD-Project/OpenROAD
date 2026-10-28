@@ -57,6 +57,8 @@ export class WebSocketManager {
         // Background requests (tiles prefetched around the view): sent only
         // while _queue is empty, and left out of pendingCount.
         this._bgQueue = new Map();
+        // Background requests sent and still awaited, which pendingCount
+        // leaves out.
         this._bgSent = new Set();
         // Requests sent but not yet answered by the server (the real wire
         // window). Incremented on send, decremented when a reply for that sent
@@ -92,6 +94,13 @@ export class WebSocketManager {
     get pendingCount() {
         return this.pending.size - this._bgSent.size
             + (this._queue ? this._queue.size : 0);
+    }
+
+    // Next up is background work and the window is already half full: the
+    // other half is kept for tiles needed on screen.
+    _bgFull() {
+        return this._queue.size === 0
+            && this._inFlight >= Math.max(1, Math.floor(this._maxInFlight / 2));
     }
 
     // Create a cache-backed instance (no WebSocket connection).
@@ -260,6 +269,7 @@ export class WebSocketManager {
         if (this._inFlightIds.delete(id) && this._inFlight > 0) {
             this._inFlight--;
         }
+        this._bgSent.delete(id);
 
         const handler = this.pending.get(id);
         if (!handler) {
@@ -267,7 +277,6 @@ export class WebSocketManager {
             return; // stale response (e.g. tile scrolled away / cancelled)
         }
         this.pending.delete(id);
-        this._bgSent.delete(id);
         this._pump(); // let the next queued request go out
         this.onStatusChange();
 
@@ -352,6 +361,9 @@ export class WebSocketManager {
                && (this._queue.size > 0 || this._bgQueue.size > 0)
                && this.socket.bufferedAmount < MAX_BUFFERED_BYTES) {
             const background = this._queue.size === 0;
+            if (this._bgFull()) {
+                break;
+            }
             const queue = background ? this._bgQueue : this._queue;
             const [id, entry] = queue.entries().next().value;
             queue.delete(id);
@@ -483,14 +495,17 @@ export class WebSocketManager {
         this._lastBuffered = buf;
 
         // Signature 2: saturated with work queued, yet silent for DEAD_MS.
+        // Background work alone saturates at its share of the window.
+        const saturated = this._inFlight >= this._maxInFlight || this._bgFull();
         if (!wedged
-            && this._inFlight >= this._maxInFlight
+            && saturated
             && this._queue.size + this._bgQueue.size > 0
             && this._lastRecvAt > 0
             && now - this._lastRecvAt > DEAD_MS) {
             wedged = true;
-            why = `saturated (${this._inFlight} in flight, ${this._queue.size} `
-                + `queued) but silent for ${Math.round(now - this._lastRecvAt)}ms`;
+            why = `saturated (${this._inFlight} in flight, `
+                + `${this._queue.size + this._bgQueue.size} queued) but silent `
+                + `for ${Math.round(now - this._lastRecvAt)}ms`;
         }
 
         if (wedged) {

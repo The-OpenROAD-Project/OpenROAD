@@ -294,8 +294,12 @@ DelayEstimatorReporter::EcoJournalScope::~EcoJournalScope()
     odb::dbDatabase::undoEco(reporter_.block_);
     reporter_.resizer_.updateParasiticsAndTiming();
   } catch (...) {
-    // Destructors must not throw during diagnostic ECO cleanup.
-    return;
+    // Destructors must not throw during diagnostic ECO cleanup, but the trial
+    // edits may still be in the design.
+    reporter_.logger_->warn(RSZ,
+                            3212,
+                            "The accuracy report could not undo its trial "
+                            "edits; the design may keep them.");
   }
 }
 
@@ -418,6 +422,17 @@ void DelayEstimatorReporter::reportAccuracyForRebufferTree(
     sta::Pin* driver_pin,
     const int delay_levels)
 {
+  // -driver_pin names an output pin of -inst.
+  if (driver_pin != nullptr
+      && (network_->instance(driver_pin) != inst
+          || !network_->isDriver(driver_pin))) {
+    logger_->error(RSZ,
+                   3211,
+                   "-driver_pin {} is not an output pin of instance {}.",
+                   network_->pathName(driver_pin),
+                   network_->pathName(inst));
+  }
+
   resizer_.init();
   resizer_.resizePreamble();
   block_ = resizer_.block_;

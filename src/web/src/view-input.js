@@ -5,8 +5,11 @@
 // API.  Drag-panning is left to the renderer; everything that zooms, selects
 // or draws a box is here.
 
+import { kArrowStepDefault } from './ui-utils.js';
+
 const kClickTolerancePx = 3;   // a press that moves less is a click
 const kBandMinPx = 4;          // a smaller right-drag is a click
+const kShiftJitterPx = 12;     // a Shift+click may move this far without a band
 const kNotchMinPx = 50;        // a mouse wheel step in pixels is at least this
 const kPxPerLevel = 100;       // trackpad scroll that zooms one level
 const kGestureIdleMs = 200;    // a pause this long ends a trackpad gesture
@@ -71,7 +74,7 @@ export function installViewInput(view, opts = {}) {
     const container = view.getContainer();
     const isStatic = opts.isStatic || (() => false);
     const wheelZoom = opts.wheelZoom || (() => true);
-    const arrowStep = opts.arrowStep || (() => 80);
+    const arrowStep = opts.arrowStep || (() => kArrowStepDefault);
     const gestureIdleMs = opts.gestureIdleMs ?? kGestureIdleMs;
     const contextEnabled = opts.contextEnabled || (() => true);
     const listeners = [];
@@ -93,10 +96,21 @@ export function installViewInput(view, opts = {}) {
         container.tabIndex = 0;
     }
 
+    // The view holds deferred tile updates while a gesture streams in.
+    let holding = false;
+    let panTimer;
+    function hold(on) {
+        if (holding !== on) {
+            holding = on;
+            view.setGesture(on);
+        }
+    }
+
     // A trackpad zoom follows the fingers at fractional levels, then rests on
     // a whole level once they stop.
     let gesture = null;   // { z0, pt, timer }
     function zoomGesture(pt, levels) {
+        hold(true);
         if (!gesture) {
             gesture = { z0: view.getZoom() };
         }
@@ -114,10 +128,14 @@ export function installViewInput(view, opts = {}) {
         clearTimeout(g.timer);
         const z = view.getZoom();
         view.zoomAround(g.pt, g.z0 + gestureSteps(z - g.z0) - z);
+        clearTimeout(panTimer);
+        hold(false);
     }
     listeners.push(() => {
         clearTimeout(gesture?.timer);
         gesture = null;
+        clearTimeout(panTimer);
+        hold(false);
     });
 
     // Wheel: the preference and Ctrl pick between panning and zooming around
@@ -137,6 +155,9 @@ export function installViewInput(view, opts = {}) {
         }
         if (wheelZoom() === e.ctrlKey) {
             const [dx, dy] = wheelDeltaPx(e, container);
+            hold(true);
+            clearTimeout(panTimer);
+            panTimer = setTimeout(() => !gesture && hold(false), gestureIdleMs);
             view.panByPx(dx, dy, { animate: false });
             return;
         }
@@ -194,7 +215,10 @@ export function installViewInput(view, opts = {}) {
             || Math.abs(dy) > kClickTolerancePx) {
             press.moved = true;
         }
-        if (press.box && press.moved) {
+        // As big as a right-drag band before it zooms: a Shift+click that
+        // jitters a few pixels still adds to the selection.
+        if (press.box && (box || (Math.abs(dx) >= kBandMinPx
+                                  && Math.abs(dy) >= kBandMinPx))) {
             box = drawBand(box, press, e);
         }
     });
@@ -205,15 +229,20 @@ export function installViewInput(view, opts = {}) {
         }
         const p = press;
         press = null;
+        const boxed = !!box;
         if (box) {
             box.remove();
             box = null;
         }
-        if (p.box && p.moved) {
+        if (boxed) {
             fitScreenBox(p, e);
             return;
         }
-        if (!p.moved && opts.onClick && isInside(e)) {
+        // A Shift press that only jittered still clicks; a longer drag that
+        // drew no band does nothing.
+        const still = Math.abs(e.clientX - p.x) <= kShiftJitterPx
+            && Math.abs(e.clientY - p.y) <= kShiftJitterPx;
+        if ((!p.moved || (p.box && still)) && opts.onClick && isInside(e)) {
             opts.onClick(worldAt(e), e);
         }
     });
@@ -263,6 +292,19 @@ export function installViewInput(view, opts = {}) {
         }
     });
 
+    // A drag the browser takes away (a touch turned into a scroll, the window
+    // losing focus) gets no pointerup: drop its band too.
+    function endDrags() {
+        press = null;
+        band = null;
+        box?.remove();
+        box = null;
+        bandEl?.remove();
+        bandEl = null;
+    }
+    on(window, 'pointercancel', endDrags);
+    on(window, 'blur', endDrags);
+
     on(container, 'pointermove', (e) => {
         if (opts.onMove) {
             opts.onMove(worldAt(e), e);
@@ -290,6 +332,7 @@ export function installViewInput(view, opts = {}) {
 
     return {
         dispose() {
+            endDrags();
             for (const off of listeners.splice(0)) {
                 off();
             }
