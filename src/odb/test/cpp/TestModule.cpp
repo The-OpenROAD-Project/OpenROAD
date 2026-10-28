@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/util.h"
 
@@ -251,6 +252,131 @@ TEST_F(ModuleFixture, getBaseNamePreservesEscapedDelimiters)
 {
   EXPECT_STREQ(block_->getBaseName(R"(parent/path\/leaf)"), R"(path\/leaf)");
   EXPECT_STREQ(block_->getBaseName(R"(parent/path\\/leaf)"), "leaf");
+}
+
+class ParentChangeCallback : public dbBlockCallBackObj
+{
+ public:
+  void inDbInstCreate(dbInst* inst) override
+  {
+    creates++;
+    observed_module = inst->getModule();
+  }
+
+  void inDbPostInstParentChange(dbInst* inst) override
+  {
+    calls++;
+    observed_module = inst->getModule();
+    observed_modules.push_back(observed_module);
+    for (dbModule* module : checked_modules) {
+      EXPECT_EQ(module->findDbInst(inst->getConstName()),
+                module == observed_module ? inst : nullptr);
+      bool found = false;
+      for (dbInst* member : module->getInsts()) {
+        found |= member == inst;
+      }
+      EXPECT_EQ(found, module == observed_module);
+    }
+  }
+
+  int creates = 0;
+  int calls = 0;
+  dbModule* observed_module = nullptr;
+  std::vector<dbModule*> observed_modules;
+  std::vector<dbModule*> checked_modules;
+};
+
+TEST_F(ModuleFixture, InitialModuleAssignmentUsesCreateCallback)
+{
+  dbModule* top = block_->getTopModule();
+  dbModule* child = dbModule::create(block_, "child");
+  ParentChangeCallback callback;
+  callback.addOwner(block_);
+
+  dbInst* top_inst
+      = dbInst::create(block_, lib_->findMaster("and2"), "top_inst");
+  ASSERT_NE(top_inst, nullptr);
+  EXPECT_EQ(callback.creates, 1);
+  EXPECT_EQ(callback.calls, 0);
+  EXPECT_EQ(callback.observed_module, top);
+  EXPECT_EQ(top->findDbInst("top_inst"), top_inst);
+
+  dbInst* child_inst = dbInst::create(
+      block_, lib_->findMaster("and2"), "child_inst", false, child);
+  ASSERT_NE(child_inst, nullptr);
+  EXPECT_EQ(callback.creates, 2);
+  EXPECT_EQ(callback.calls, 0);
+  EXPECT_EQ(callback.observed_module, child);
+  EXPECT_EQ(child->findDbInst("child_inst"), child_inst);
+}
+
+TEST_F(ModuleFixture, ReparentUpdatesIndexAndFiresCallback)
+{
+  dbModule* top = block_->getTopModule();
+  dbModule* child = dbModule::create(block_, "child");
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "inst");
+  ASSERT_NE(inst, nullptr);
+  ASSERT_EQ(top->findDbInst("inst"), inst);
+
+  ParentChangeCallback callback;
+  callback.checked_modules = {top, child};
+  callback.addOwner(block_);
+
+  child->addInst(inst);
+  EXPECT_EQ(callback.calls, 1);
+  EXPECT_THAT(callback.observed_modules, ElementsAre(child));
+  EXPECT_EQ(callback.observed_module, child);
+  EXPECT_EQ(inst->getModule(), child);
+  EXPECT_EQ(top->findDbInst("inst"), nullptr);
+  EXPECT_EQ(child->findDbInst("inst"), inst);
+
+  child->addInst(inst);
+  EXPECT_EQ(callback.calls, 1);
+
+  top->addInst(inst);
+  EXPECT_EQ(callback.calls, 2);
+  EXPECT_THAT(callback.observed_modules, ElementsAre(child, top));
+  EXPECT_EQ(callback.observed_module, top);
+  EXPECT_EQ(child->findDbInst("inst"), nullptr);
+  EXPECT_EQ(top->findDbInst("inst"), inst);
+}
+
+TEST_F(ModuleFixture, RemovingModuleFiresCallback)
+{
+  dbModule* child = dbModule::create(block_, "child");
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "inst");
+  ASSERT_NE(inst, nullptr);
+
+  ParentChangeCallback callback;
+  callback.checked_modules = {block_->getTopModule(), child};
+  callback.addOwner(block_);
+
+  child->addInst(inst);
+  ASSERT_EQ(callback.calls, 1);
+  ASSERT_EQ(inst->getModule(), child);
+
+  dbInst::destroy(inst);
+  EXPECT_EQ(callback.calls, 2);
+  EXPECT_THAT(callback.observed_modules, ElementsAre(child, nullptr));
+  EXPECT_EQ(callback.observed_module, nullptr);
+  EXPECT_EQ(child->findDbInst("inst"), nullptr);
+}
+
+TEST_F(ModuleFixture, RenameUpdatesModuleIndex)
+{
+  dbModule* child = dbModule::create(block_, "child");
+  dbInst* inst = dbInst::create(block_, lib_->findMaster("and2"), "old_name");
+  ASSERT_NE(inst, nullptr);
+  child->addInst(inst);
+  ASSERT_EQ(child->findDbInst("old_name"), inst);
+
+  ASSERT_TRUE(inst->rename("new_name"));
+  EXPECT_EQ(child->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(child->findDbInst("new_name"), inst);
+
+  dbInst::destroy(inst);
+  EXPECT_EQ(child->findDbInst("old_name"), nullptr);
+  EXPECT_EQ(child->findDbInst("new_name"), nullptr);
 }
 
 // Splitting a flattened instance name into its path segments is how the web
