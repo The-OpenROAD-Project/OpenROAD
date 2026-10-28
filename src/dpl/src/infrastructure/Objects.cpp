@@ -84,11 +84,13 @@ odb::dbMaster* Master::getDbMaster() const
 {
   return db_master_;
 }
-void Master::addPinShape(const int level, const odb::Rect& rect)
+void Master::addPinShape(const int level,
+                         const odb::Rect& rect,
+                         odb::dbMTerm* mterm)
 {
-  pin_shapes_[level].push_back(rect);
+  pin_shapes_[level].push_back({.rect = rect, .mterm = mterm});
 }
-const std::vector<odb::Rect>& Master::getPinShapes(const int level) const
+const std::vector<Master::PinShape>& Master::getPinShapes(const int level) const
 {
   return pin_shapes_[level];
 }
