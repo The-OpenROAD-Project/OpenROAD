@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "TestResizerMtFixture.hh"
+#include "sta/ExceptionPath.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -786,7 +788,8 @@ TEST(TestParallelEvalRules, ParallelEvalTailGainFollowsThePeriod)
 }
 
 // The reference clock period is the shortest period of a clock with source
-// pins, and it scales the checkpoint tolerance.
+// pins, and it scales the checkpoint tolerance.  Without clocks the shortest
+// set_max_delay sets it.
 TEST_F(TestResizerMt, SetupParallelEvalPolicyReferencePeriod)
 {
   prepareUniqueViolatingEndpoint();
@@ -826,6 +829,44 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyReferencePeriod)
   sta_->removeClock(sdc->findClock("vclk"), sdc);
   EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
                   1e-12f);
+
+  // The shortest set_max_delay stands in for the period; a shorter
+  // set_min_delay bounds hold and does not count.
+  for (const sta::MinMax* min_max : {sta::MinMax::max(), sta::MinMax::min()}) {
+    sta::PinSet* to_pins = new sta::PinSet(db_network_);
+    to_pins->insert(db_network_->findPin("out2"));
+    sta::ExceptionTo* to = sta_->makeExceptionTo(to_pins,
+                                                 /*to_clks=*/nullptr,
+                                                 /*to_insts=*/nullptr,
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sdc);
+    sta_->makePathDelay(
+        /*from=*/nullptr,
+        /*thrus=*/nullptr,
+        to,
+        min_max,
+        /*ignore_clk_latency=*/false,
+        /*break_path=*/false,
+        min_max == sta::MinMax::max() ? period / 2.0f : period / 8.0f,
+        /*comment=*/"",
+        sdc);
+  }
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period / 2.0f);
+
+  // A clock outranks set_max_delay even when the max delay is shorter.
+  sta::PinSet clk_pins(db_network_);
+  clk_pins.insert(db_network_->findPin("clk"));
+  sta_->makeClock("clk",
+                  clk_pins,
+                  /*add_to_pins=*/false,
+                  period,
+                  sta::FloatSeq{0.0f, period / 2.0f},
+                  /*comment=*/"",
+                  sta_->cmdMode());
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period);
 }
 
 // The tabu takes only instances a rollback kept: a deleted instance can hand

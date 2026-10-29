@@ -41,9 +41,11 @@
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/Sdc.hh"
@@ -132,6 +134,14 @@ std::unique_ptr<MoveGenerator> makeParallelEvalGenerator(
   }
 
   return nullptr;
+}
+
+// Keeps the shortest positive value seen so far in shortest.
+void keepShortest(float& shortest, const float value)
+{
+  if (value > 0.0f && (shortest == 0.0f || value < shortest)) {
+    shortest = value;
+  }
 }
 
 }  // namespace
@@ -270,18 +280,15 @@ void SetupParallelEvalPolicy::saveInitialCheckpoint()
 float SetupParallelEvalPolicy::referencePeriod(
     const sta::Slack initial_wns) const
 {
-  // A virtual clock times only IO constraints, whose budgets are often rough,
-  // so it sets the scale only when no clock has source pins.
+  // Every mode times the design, so the shortest clock of any mode sets the
+  // scale.  A virtual clock times only IO constraints, whose budgets are often
+  // rough, so it sets the scale only when no clock has source pins.
   float real_period = 0.0f;
   float virtual_period = 0.0f;
-  for (const sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
-    const float period = clk->period();
-    if (period <= 0.0f) {
-      continue;
-    }
-    float& shortest = clk->isVirtual() ? virtual_period : real_period;
-    if (shortest == 0.0f || period < shortest) {
-      shortest = period;
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::Clock* clk : mode->sdc()->clocks()) {
+      keepShortest(clk->isVirtual() ? virtual_period : real_period,
+                   clk->period());
     }
   }
   if (real_period > 0.0f) {
@@ -291,7 +298,21 @@ float SetupParallelEvalPolicy::referencePeriod(
     return virtual_period;
   }
 
-  // Without clocks the initial WNS is the only time scale.
+  // set_max_delay sets the scale only when no mode has a clock.
+  float max_delay = 0.0f;
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      if (exception->isPathDelay()
+          && exception->minMax()->matches(sta::MinMax::max())) {
+        keepShortest(max_delay, exception->delay());
+      }
+    }
+  }
+  if (max_delay > 0.0f) {
+    return max_delay;
+  }
+
+  // Without clocks or max delays the initial WNS is the only time scale.
   return std::abs(sta::delayAsFloat(initial_wns));
 }
 

@@ -130,8 +130,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void resetRunState();
   // Capture initial QoR and reset checkpoint, stall, and work references.
   void saveInitialCheckpoint();
-  // The shortest period of a clock with source pins, else of a virtual clock;
-  // without clocks, the magnitude of the initial WNS.
+  // The shortest period of a clock with source pins in any mode, else of a
+  // virtual clock, else the shortest set_max_delay; without any of them, the
+  // magnitude of the initial WNS.
   float referencePeriod(sta::Slack initial_wns) const;
   void buildMoveGenerators(const std::vector<MoveType>& move_types,
                            const GeneratorContext& context) override;

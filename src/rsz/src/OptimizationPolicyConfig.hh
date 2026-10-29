@@ -12,8 +12,8 @@ namespace rsz {
 // initializer is the shipped value; forParallelEval() sets the PARALLEL_EVAL
 // values.  Times are seconds and "pct" fields are percent.  "period_pct"
 // fields are percent of the reference clock period of a PARALLEL_EVAL run:
-// the shortest period of a clock with source pins, fixed for the run.  A
-// share of |WNS| would vanish as WNS approaches zero.
+// the shortest period of a clock with source pins in any mode, fixed for the
+// run.  A share of |WNS| would vanish as WNS approaches zero.
 
 // Controls how stalled batches favor targets in shared violating cones.
 // The rank is score * (1 + bottleneck_scale *
