@@ -248,7 +248,7 @@ float KWayPMRefine::PerformPairFM(
     const std::vector<int> neighbors = FindNeighbors(
         hgraph, vertex, visited_vertices_flag, solution, partition_pair);
     // update the neighbors of v for all gain buckets
-    for (auto& to_pid : blocks) {
+    for (const auto to_pid : blocks) {
       UpdateSingleGainBucket(
           to_pid, buckets, hgraph, neighbors, net_degs, paths_cost, solution);
     }
