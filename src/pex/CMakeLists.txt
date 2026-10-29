@@ -6,6 +6,7 @@ include("openroad")
 add_library(pex
   src/Model.cpp
   src/ModelBuilder.cpp
+  src/CoverMap.cpp
   src/ModelJson.cpp
   src/Patterns.cpp
 )

@@ -30,7 +30,12 @@ open). Four kinds of table describe a layer:
   linear in the width and in the logarithms of the spacings, a coupling
   interpolating geometrically along its own side. Each point is one cross
   section solved in 2D: the wire between its neighbors, with a plane on
-  each covering layer.
+  each covering layer. The contexts reach a set depth each way; past it
+  only a few far layers at spaced distances get contexts, and a cover
+  between two of them takes both, weighted in the logarithm of its
+  distance (`pex/CoverMap.h`; e12 measures what that costs), so the table
+  count grows with the depth and the far factors, not with the square of
+  the layer count.
 - **Crossing.** A covering layer is rarely a plane: it is wires crossing
   the piece. One table per `(layer, cover)` pair holds the share of the
   plane's effect that the crossings keep over the uncovered gap between two
@@ -55,8 +60,9 @@ open). Four kinds of table describe a layer:
   per-unit-length value times its length.
 
 A point and its mirror share one solve, and each solve is seeded by its
-position, so a table does not depend on the thread count. The model file
-is JSON with a format version.
+position, so a table does not depend on the thread count. A table the
+model already holds is not built again, so a build resumes from a saved
+model. The model file is JSON with a format version.
 
 ## Experiments
 
@@ -83,10 +89,12 @@ bazel-bin/src/pex/test/Experiments --threads 64 --tol 0.003 \
 | e8 vias | a via at a wire's end and in its middle, with and without the cut | the wires without the via | the via term |
 | e9 nets | nets of a routed design, each solved within a halo | the model applied to the same boxes by the reference evaluator | the attainable accuracy |
 | e11 diagonal | a parallel wire on a nearby layer beside the wire, alone and with neighbors | the wire without it | the diagonal table |
+| e12 far covers | a wire under or over a plane on each layer the builder would not tabulate | the tabulated covers it resolves to, and the open context a lookup would fall back to without them | the far cover factors |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
 ODB file, builds the model for every routing layer of the design the stack
-has, saves it to `--model`, and reads it back on later runs:
+has, saves it to `--model` after each layer, and reads it back on later
+runs, finishing a build that stopped:
 
 ```
 bazel-bin/src/pex/test/Experiments --groups e9 --threads 64 --tol 0.003 \

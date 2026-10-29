@@ -277,15 +277,30 @@ Stack planarStack(const std::vector<std::pair<double, double>>& layers,
                   const double background)
 {
   Stack stack;
-  stack.technology = "test";
-  stack.background_eps = background;
+  stack.setTechnology("test");
+  stack.setBackgroundEps(background);
   double bottom = 0;
   for (const auto& [top, eps] : layers) {
-    stack.dielectrics.push_back(
+    stack.addDielectric(
         {.name = "D", .bottom = bottom, .top = top, .eps = eps});
     bottom = top;
   }
   return stack;
+}
+
+// A conductor of a hand-built stack with its conformal dielectrics.
+Stack::Conductor conductorWith(
+    const char* name,
+    const double bottom,
+    const double top,
+    std::vector<Stack::ConformalDielectric> conformals)
+{
+  Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  c.conformals = std::move(conformals);
+  return c;
 }
 
 // ILD (2.7) up to 0.8, an etch stop (7.0) to 1.0, then 3.9 above: one wire
@@ -395,20 +410,24 @@ TEST(Solver, RejectsPanelsNotMultipleOf16)
   EXPECT_NO_THROW(Solver({.panels = 48}));
 }
 
+// The stack refuses layers a scene could not use, so a scene never sees
+// them.
 TEST(Solver, RejectsBadStacks)
 {
-  const Geometry geometry = wiresAcrossEtchStop();
   for (const double eps : {0.0, -1.0, std::nan("")}) {
     Stack layer = etchStopStack();
-    layer.dielectrics.back().eps = eps;
-    EXPECT_THROW(Scene(geometry, layer), std::invalid_argument) << eps;
-    Stack background = etchStopStack();
-    background.background_eps = eps;
-    EXPECT_THROW(Scene(geometry, background), std::invalid_argument) << eps;
+    EXPECT_THROW(layer.addDielectric({"E", 1.0, 2.0, eps}),
+                 std::invalid_argument)
+        << eps;
+    EXPECT_THROW(layer.setBackgroundEps(eps), std::invalid_argument) << eps;
   }
   Stack unordered = etchStopStack();
-  unordered.dielectrics.back().top = unordered.dielectrics.front().top;
-  EXPECT_THROW(Scene(geometry, unordered), std::invalid_argument);
+  // A dielectric must start where the stack ends, and reach above it.
+  EXPECT_THROW(unordered.addDielectric({"E", 0.5, 2.0, 3.9}),
+               std::invalid_argument);
+  EXPECT_THROW(unordered.addDielectric({"E", 1.0, 1.0, 3.9}),
+               std::invalid_argument);
+  EXPECT_EQ(unordered.dielectrics().size(), 2u);
 }
 
 // The scene's interface lookup agrees with the stack's, on the interfaces
@@ -418,7 +437,7 @@ TEST(Solver, SceneEpsMatchesStack)
   const Stack stack = etchStopStack();
   const Geometry geometry = wiresAcrossEtchStop();
   const Scene scene(geometry, stack);
-  for (const Stack::Dielectric& d : stack.dielectrics) {
+  for (const Stack::Dielectric& d : stack.dielectrics()) {
     for (const double z : {d.bottom, 0.5 * (d.bottom + d.top), d.top}) {
       EXPECT_EQ(scene.epsAt(z), stack.epsAt(z)) << z;
     }
@@ -433,12 +452,8 @@ Stack conformalStack(
     const std::vector<Stack::ConformalDielectric>& m1_conformals)
 {
   Stack stack = etchStopStack();
-  stack.conductors.push_back(
-      {.name = "M1", .bottom = 0.5, .top = 0.7, .conformals = m1_conformals});
-  stack.conductors.push_back({.name = "M2",
-                              .bottom = 1.1,
-                              .top = 1.3,
-                              .conformals = {{"C2", 0.03, 0.02, 4.5}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, m1_conformals));
+  stack.addConductor(conductorWith("M2", 1.1, 1.3, {{"C2", 0.03, 0.02, 4.5}}));
   return stack;
 }
 
@@ -448,10 +463,7 @@ TEST(Solver, EqualPermittivityConformalMatchesPlanar)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 0.05, 0.05, 2.7}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.05, 0.05, 2.7}}));
   SolveOptions options;
   options.tol_total = 0.002;
   Solver solver({.threads = 8});
@@ -470,10 +482,7 @@ TEST(Solver, ConformalFillingLayerMatchesPlanar)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 30, 0.1, 5.0}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 30, 0.1, 5.0}}));
   const Stack split = planarStack({{0.5, 2.7}, {0.8, 5.0}, {1.0, 7.0}}, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
@@ -779,13 +788,9 @@ TEST(Solver, ConformalWithoutPlanarInterfaces)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack bare = planarStack({{1.0, 3.9}}, 3.9);
-  bare.conductors.push_back({.name = "M1",
-                             .bottom = 0.5,
-                             .top = 0.7,
-                             .conformals = {{"C", 0.05, 0.05, 7.0}}});
-  Stack layered = bare;
-  layered.dielectrics = {{.name = "D", .bottom = 0, .top = 20, .eps = 3.9}};
-  layered.background_eps = 3.9 * (1 + 1e-9);
+  bare.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.05, 0.05, 7.0}}));
+  Stack layered = planarStack({{20, 3.9}}, 3.9 * (1 + 1e-9));
+  layered.addConductor(bare.conductors().front());
   const Scene bare_scene(geometry, bare);
   ASSERT_TRUE(bare_scene.interfaces().empty());
   SolveOptions options;
@@ -913,15 +918,13 @@ TEST(Solver, RejectsOverlappingConformals)
   geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
   geometry.addBox(1, {{0, 0.3, 0.5}, {2, 0.5, 0.7}});
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 0.06, 0.02, 4.5}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.06, 0.02, 4.5}}));
   EXPECT_NO_THROW(Scene(geometry, stack));
   // Each wire's outer shell D reaches into the other's inner shell C.
-  stack.conductors.back().conformals
-      = {{"C", 0.04, 0.02, 4.5}, {"D", 0.03, 0.02, 3.5}};
-  EXPECT_THROW(Scene(geometry, stack), std::invalid_argument);
+  Stack nested = etchStopStack();
+  nested.addConductor(conductorWith(
+      "M1", 0.5, 0.7, {{"C", 0.04, 0.02, 4.5}, {"D", 0.03, 0.02, 3.5}}));
+  EXPECT_THROW(Scene(geometry, nested), std::invalid_argument);
 }
 
 }  // namespace

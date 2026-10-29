@@ -20,39 +20,65 @@ const fsv::Stack& sky130()
   return stack;
 }
 
-TEST(Patterns, ZRangeOfConductorsAndVias)
+// A conductor of a hand-built stack, by its name and z extent.
+fsv::Stack::Conductor conductorAt(const char* name,
+                                  const double bottom,
+                                  const double top)
+{
+  fsv::Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  return c;
+}
+
+// The names of layers, for comparisons.
+std::vector<std::string> names(const fsv::Stack& stack,
+                               const std::vector<Layer>& layers)
+{
+  std::vector<std::string> out;
+  for (const Layer layer : layers) {
+    out.push_back(stack.name(layer));
+  }
+  return out;
+}
+
+TEST(Patterns, LayerExtentOfConductorsAndVias)
 {
   const fsv::Stack& stack = sky130();
-  const fsv::Stack::Conductor* met2 = stack.findConductor("met2");
-  ASSERT_NE(met2, nullptr);
-  const ZRange z = zRange(stack, "met2");
-  EXPECT_EQ(z.bottom, met2->bottom);
-  EXPECT_EQ(z.top, met2->top);
+  const Layer met2 = stack.layer("met2");
+  ASSERT_TRUE(stack.isConductor(met2));
+  const fsv::Stack::ZExtent z = layerExtent(stack, met2);
+  EXPECT_EQ(z.bottom, stack.conductor(met2).bottom);
+  EXPECT_EQ(z.top, stack.conductor(met2).top);
 
-  const ZRange via = zRange(stack, "via");
-  EXPECT_EQ(via.bottom, stack.findConductor("met1")->top);
-  EXPECT_EQ(via.top, met2->bottom);
+  const fsv::Stack::ZExtent via = layerExtent(stack, stack.layer("via"));
+  EXPECT_EQ(via.bottom, stack.conductor(stack.layer("met1")).top);
+  EXPECT_EQ(via.top, stack.conductor(met2).bottom);
 
-  EXPECT_THROW(zRange(stack, "met9"), std::invalid_argument);
-
+  // A name the stack lacks gives no layer; a via to the ground plane has
+  // no extent a pattern can use.
+  EXPECT_THROW(layerExtent(stack, stack.layer("met9")), std::invalid_argument);
   fsv::Stack bare;
-  bare.conductors.push_back(
-      {.name = "m1", .bottom = 1, .top = 2, .conformals = {}});
-  bare.vias.push_back({.name = "tie", .upper = "m1", .lower = "SUBSTRATE"});
-  bare.vias.push_back({.name = "open", .upper = "m2", .lower = "m1"});
-  EXPECT_THROW(zRange(bare, "tie"), std::invalid_argument);
-  EXPECT_THROW(zRange(bare, "open"), std::invalid_argument);
+  bare.addDielectric({"d", 0, 10, 1});
+  bare.addConductor(conductorAt("m1", 1, 2));
+  fsv::Stack::Via tie;
+  tie.name = "tie";
+  tie.upper = bare.layer("m1");
+  bare.addVia(tie);
+  EXPECT_THROW(layerExtent(bare, bare.layer("tie")), std::invalid_argument);
 }
 
 TEST(Patterns, LayersBelowAndAboveNearestFirst)
 {
   const fsv::Stack& stack = sky130();
   const std::vector<std::string> below{"met1", "li1", "fieldpoly", "DIFF"};
-  EXPECT_EQ(layersBelow(stack, "met2"), below);
+  EXPECT_EQ(names(stack, layersBelow(stack, stack.layer("met2"))), below);
   const std::vector<std::string> above{"met3", "met4", "met5"};
-  EXPECT_EQ(layersAbove(stack, "met2"), above);
-  EXPECT_TRUE(layersAbove(stack, "met5").empty());
-  EXPECT_TRUE(layersBelow(stack, "DIFF").empty());
+  EXPECT_EQ(names(stack, layersAbove(stack, stack.layer("met2"))), above);
+  EXPECT_TRUE(layersAbove(stack, stack.layer("met5")).empty());
+  EXPECT_TRUE(layersBelow(stack, stack.layer("DIFF")).empty());
+  EXPECT_THROW(layersBelow(stack, stack.layer("via")), std::invalid_argument);
 }
 
 TEST(Patterns, BuilderAddsBoxesWithTheLayerExtent)
@@ -63,11 +89,11 @@ TEST(Patterns, BuilderAddsBoxesWithTheLayerExtent)
   EXPECT_EQ(builder.net("a"), a);
   const int b = builder.net("b");
   EXPECT_NE(a, b);
-  builder.add("met1", a, 0, 1, 2, 3);
-  builder.add("via", b, 0.5, 1.5, 0.7, 1.7);
+  builder.add(stack.layer("met1"), a, 0, 1, 2, 3);
+  builder.add(stack.layer("via"), b, 0.5, 1.5, 0.7, 1.7);
   const fsv::Geometry& g = builder.geometry();
   ASSERT_EQ(g.boxes().size(), 2u);
-  const ZRange m1 = zRange(stack, "met1");
+  const fsv::Stack::ZExtent m1 = layerExtent(stack, stack.layer("met1"));
   const fsv::Box& box = g.boxes()[0];
   EXPECT_EQ(box.lo[0], 0);
   EXPECT_EQ(box.lo[1], 1);
@@ -81,28 +107,28 @@ TEST(Patterns, BuilderAddsBoxesWithTheLayerExtent)
 
   SectionBuilder section(stack);
   const int c = section.net("c");
-  section.add("met3", c, -1, 1);
+  section.add(stack.layer("met3"), c, -1, 1);
   const fsv::Geometry2D& s = section.geometry();
   ASSERT_EQ(s.rects().size(), 1u);
   EXPECT_EQ(s.rects()[0].lo[0], -1);
   EXPECT_EQ(s.rects()[0].hi[0], 1);
-  EXPECT_EQ(s.rects()[0].lo[1], zRange(stack, "met3").bottom);
-  EXPECT_EQ(s.rects()[0].hi[1], zRange(stack, "met3").top);
+  EXPECT_EQ(s.rects()[0].lo[1], layerExtent(stack, stack.layer("met3")).bottom);
+  EXPECT_EQ(s.rects()[0].hi[1], layerExtent(stack, stack.layer("met3")).top);
 }
 
 // The golden structure three_wires of src/fsv/test/golden, built by layer.
 TEST(Patterns, BuildsTheGoldenThreeWires)
 {
   fsv::Stack stack;
-  stack.background_eps = 1.0;
-  stack.dielectrics
-      = {{"a", 0, 0.3, 3.9}, {"b", 0.3, 1.0, 4.2}, {"c", 1.0, 1.05, 7.5}};
-  stack.conductors.push_back(
-      {.name = "m", .bottom = 0.5, .top = 0.8, .conformals = {}});
+  stack.setBackgroundEps(1.0);
+  stack.addDielectric({"a", 0, 0.3, 3.9});
+  stack.addDielectric({"b", 0.3, 1.0, 4.2});
+  stack.addDielectric({"c", 1.0, 1.05, 7.5});
+  stack.addConductor(conductorAt("m", 0.5, 0.8));
   SectionBuilder builder(stack);
-  builder.add("m", builder.net("left"), 0, 0.2);
-  builder.add("m", builder.net("middle"), 0.4, 0.6);
-  builder.add("m", builder.net("right"), 0.8, 1.0);
+  builder.add(stack.layer("m"), builder.net("left"), 0, 0.2);
+  builder.add(stack.layer("m"), builder.net("middle"), 0.4, 0.6);
+  builder.add(stack.layer("m"), builder.net("right"), 0.8, 1.0);
   const fsv::Geometry2D& g = builder.geometry();
   ASSERT_EQ(g.rects().size(), 3u);
   for (const fsv::Rect& r : g.rects()) {
@@ -117,10 +143,10 @@ TEST(Patterns, LateralSectionPlacesTheParts)
 {
   const fsv::Stack& stack = sky130();
   LateralPattern pattern;
-  pattern.layer = "met2";
+  pattern.layer = stack.layer("met2");
   pattern.width = 0.2;
   pattern.left = 0.3;
-  pattern.below = "met1";
+  pattern.below = stack.layer("met1");
   pattern.extent = 4;
   const LateralPattern::Section s = pattern.build(stack);
   EXPECT_EQ(s.right, kNullNetIndex);
@@ -130,7 +156,7 @@ TEST(Patterns, LateralSectionPlacesTheParts)
   ASSERT_GE(s.below, 0);
   const auto& rects = s.geometry.rects();
   ASSERT_EQ(rects.size(), 3u);
-  const double wmin = stack.findConductor("met2")->min_width;
+  const double wmin = stack.conductor(stack.layer("met2")).min_width;
   for (int i = 0; i < 3; i++) {
     const fsv::Rect& r = rects[i];
     const int net = s.geometry.rectNet(i);
@@ -145,15 +171,15 @@ TEST(Patterns, LateralSectionPlacesTheParts)
       EXPECT_EQ(net, s.below);
       EXPECT_DOUBLE_EQ(r.lo[0], -0.4 - wmin - 4);
       EXPECT_DOUBLE_EQ(r.hi[0], 0.1 + 4);
-      EXPECT_EQ(r.hi[1], zRange(stack, "met1").top);
+      EXPECT_EQ(r.hi[1], layerExtent(stack, stack.layer("met1")).top);
     }
   }
 
   pattern.left = -1;
   pattern.right = 0.5;
   pattern.neighbor_width = 1;
-  pattern.below.clear();
-  pattern.above = "met3";
+  pattern.below = Layer();
+  pattern.above = stack.layer("met3");
   const LateralPattern::Section t = pattern.build(stack);
   EXPECT_EQ(t.left, kNullNetIndex);
   EXPECT_EQ(t.below, kNullNetIndex);
@@ -163,7 +189,7 @@ TEST(Patterns, LateralSectionPlacesTheParts)
   EXPECT_DOUBLE_EQ(right.lo[0], 0.6);
   EXPECT_DOUBLE_EQ(right.hi[0], 1.6);
 
-  pattern.layer = "nope";
+  pattern.layer = stack.layer("nope");
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
 }
 
@@ -171,10 +197,10 @@ TEST(Patterns, EndWirePlacesThePlanes)
 {
   const fsv::Stack& stack = sky130();
   EndPattern pattern;
-  pattern.layer = "met2";
+  pattern.layer = stack.layer("met2");
   pattern.width = 0.2;
   pattern.length = 3;
-  pattern.below = "met1";
+  pattern.below = stack.layer("met1");
   pattern.extent = 4;
   pattern.margin = 1;
   const EndPattern::Wire w = pattern.build(stack);
@@ -190,7 +216,7 @@ TEST(Patterns, EndWirePlacesThePlanes)
       EXPECT_DOUBLE_EQ(b.hi[0], 0.1);
       EXPECT_DOUBLE_EQ(b.lo[1], 0);
       EXPECT_DOUBLE_EQ(b.hi[1], 3);
-      EXPECT_EQ(b.lo[2], zRange(stack, "met2").bottom);
+      EXPECT_EQ(b.lo[2], layerExtent(stack, stack.layer("met2")).bottom);
     } else {
       // The plane reaches the extent sideways and the margin past the ends.
       EXPECT_EQ(w.geometry.boxNet(i), w.below);
@@ -198,7 +224,7 @@ TEST(Patterns, EndWirePlacesThePlanes)
       EXPECT_DOUBLE_EQ(b.hi[0], 4);
       EXPECT_DOUBLE_EQ(b.lo[1], -1);
       EXPECT_DOUBLE_EQ(b.hi[1], 4);
-      EXPECT_EQ(b.hi[2], zRange(stack, "met1").top);
+      EXPECT_EQ(b.hi[2], layerExtent(stack, stack.layer("met1")).top);
     }
   }
   pattern.length = 0;
@@ -209,14 +235,14 @@ TEST(Patterns, CrossingArrayRoundsToWholePitches)
 {
   const fsv::Stack& stack = sky130();
   CrossingPattern p;
-  p.layer = "met2";
-  p.cover = "met3";
+  p.layer = stack.layer("met2");
+  p.cover = stack.layer("met3");
   p.width = 0.14;
   p.crossing_width = 0.3;
   p.pitch = 1.2;
   p.length = 10;
   p.spacing = 0.14;
-  p.other = "met1";
+  p.other = stack.layer("met1");
   p.extent = 5;
   p.margin = 2;
   const CrossingPattern::Array a = p.build(stack);
@@ -234,7 +260,7 @@ TEST(Patterns, CrossingArrayRoundsToWholePitches)
       crossings++;
       EXPECT_NEAR(box.hi[1] - box.lo[1], 0.3, 1e-9);
       EXPECT_EQ(box.lo[0], -5);
-      EXPECT_EQ(box.lo[2], zRange(stack, "met3").bottom);
+      EXPECT_EQ(box.lo[2], layerExtent(stack, stack.layer("met3")).bottom);
     } else if (net == a.wire) {
       EXPECT_EQ(box.lo[1], 0);
       EXPECT_NEAR(box.hi[1], a.length, 1e-9);
@@ -256,8 +282,8 @@ TEST(Patterns, DiagonalSectionPlacesTheParallelWire)
 {
   const fsv::Stack& stack = sky130();
   DiagonalPattern p;
-  p.layer = "met2";
-  p.other = "met1";
+  p.layer = stack.layer("met2");
+  p.other = stack.layer("met1");
   p.width = 0.2;
   p.other_width = 0.5;
   p.gap = -0.05;
@@ -272,7 +298,7 @@ TEST(Patterns, DiagonalSectionPlacesTheParallelWire)
   EXPECT_EQ(d.geometry.rectNet(3), d.diagonal);
   EXPECT_DOUBLE_EQ(diag.lo[0], 0.1 - 0.05);
   EXPECT_DOUBLE_EQ(diag.hi[0], 0.1 - 0.05 + 0.5);
-  EXPECT_EQ(diag.lo[1], zRange(stack, "met1").bottom);
+  EXPECT_EQ(diag.lo[1], layerExtent(stack, stack.layer("met1")).bottom);
   EXPECT_DOUBLE_EQ(rects[2].lo[0], 0.1 + 0.3);
   p.other_width = 0;
   p.spacing = -1;
