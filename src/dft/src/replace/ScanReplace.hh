@@ -3,10 +3,14 @@
 
 #pragma once
 
+#include <cstddef>
+#include <limits>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -16,13 +20,38 @@
 
 namespace dft {
 
+// Multi-criteria ranking record for comparing candidate scan cells:
+// footprint match -> same library -> 1% relative R_drive -> area -> name.
+struct CandidateRank
+{
+  bool footprint_match = false;
+  bool same_library = false;
+  double rel_drive_diff = std::numeric_limits<double>::max();
+  float area = std::numeric_limits<float>::max();
+  bool direct_name_match = false;
+  std::string_view name;
+};
+
+// Returns true if `scan_str` is formed by inserting a single 's' or 'S' into
+// `non_scan_str` (e.g. "DFF_X1" -> "SDFF_X1" or "dfxtp_1" -> "sdfxtp_1").
+bool IsSingleCharScanInsertion(std::string_view non_scan_str,
+                               std::string_view scan_str);
+
+// Returns true if `ns` and `s` are non-empty and match either identically or
+// via a single-character 's'/'S' insertion.
+bool IsMatchingFootprint(std::string_view ns, std::string_view s);
+
+// Returns the index of the best `CandidateRank` in `ranks` (returns 0 if
+// `ranks` is empty) by successively filtering candidates across ranking tiers.
+size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks);
+
 // A scan cell that can be use to replace a non-scan cell
 // It contains the LibertyCell that we can use to instantiate a new cell and a
 // port map to store the equivalence non-scan and scan ports.
 //
-// A scan candidate is decided by checking some performance data (see
-// ScanCandidate.cpp's DifferencePerformanceCells) to select the most similar
-// one to the original cell
+// The best scan candidate is selected by `SelectBestScanCell` (in
+// `ScanReplace.cpp`) using footprint, library, relative drive resistance, and
+// cell area.
 //
 class ScanCandidate
 {
@@ -45,6 +74,13 @@ class ScanCandidate
   sta::LibertyCell* scan_cell_;
   std::unordered_map<std::string, std::string> port_mapping_;
 };
+
+// Selects and returns the best scan candidate for `non_scan_cell` from
+// `scan_candidates` (returns nullptr if `non_scan_cell` is null or
+// `scan_candidates` is empty).
+std::unique_ptr<ScanCandidate> SelectBestScanCell(
+    const sta::LibertyCell* non_scan_cell,
+    std::vector<std::unique_ptr<ScanCandidate>>& scan_candidates);
 
 class RollbackCandidate
 {
