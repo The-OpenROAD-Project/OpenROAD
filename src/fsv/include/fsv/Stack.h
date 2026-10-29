@@ -35,6 +35,75 @@ class Stack
     double eps;
   };
 
+  // A table over widths and spacings, as the ITF *_VS_WIDTH_AND_SPACING
+  // keywords give it: both axes ascending, values row by row per width.
+  struct WidthSpacingTable
+  {
+    std::vector<double> widths;
+    std::vector<double> spacings;
+    std::vector<double> values;  // [width][spacing]
+
+    bool empty() const { return values.empty(); }
+    // Throws std::out_of_range off the grid.
+    double at(const int width, const int spacing) const
+    {
+      if (spacing < 0 || spacing >= static_cast<int>(spacings.size())) {
+        throw std::out_of_range("spacing index off the table");
+      }
+      return values.at(width * spacings.size() + spacing);
+    }
+  };
+
+  // A quantity against one variable, ascending in x.
+  struct Curve
+  {
+    std::vector<double> x;
+    std::vector<double> y;
+
+    bool empty() const { return x.empty(); }
+  };
+
+  // The temperature coefficients of a resistance: R(T) = R(T0) × (1 + crt1
+  // (T - T0) + crt2 (T - T0)²).
+  struct Crt
+  {
+    double crt1 = 0;
+    double crt2 = 0;
+  };
+
+  // Temperature coefficients against a width or area, ascending in x.
+  struct CrtCurve
+  {
+    std::vector<double> x;
+    std::vector<Crt> crt;
+
+    bool empty() const { return x.empty(); }
+  };
+
+  // An etch of each sidewall, µm, positive shrinking the drawn width, that
+  // varies with the wire's width and its spacing to the neighbor on that
+  // side (ITF ETCH_VS_WIDTH_AND_SPACING).
+  struct EtchTable
+  {
+    enum class Affects
+    {
+      kBoth,
+      kCapacitance,
+      kResistance,
+    };
+    // Which wires the table applies to, against the stack's reference
+    // direction.
+    enum class Direction
+    {
+      kAll,
+      kParallelToReference,
+      kPerpendicularToReference,
+    };
+    Affects affects = Affects::kBoth;
+    Direction direction = Direction::kAll;
+    WidthSpacingTable table;
+  };
+
   struct Conductor
   {
     std::string name;
@@ -44,6 +113,29 @@ class Stack
     double min_spacing = 0;
     // Conformal dielectrics in nesting order, innermost first.
     std::vector<ConformalDielectric> conformals;
+    // ITF LAYER_TYPE; "" for a routing layer.
+    std::string layer_type;
+    // The etch of each sidewall, µm, positive shrinking the drawn width:
+    // the tables in order, then the constant for capacitance and the one
+    // for resistance (ITF ETCH sets both).
+    std::vector<EtchTable> etch_tables;
+    double capacitive_etch = 0;
+    double resistive_etch = 0;
+    // Sheet resistance, ohm/square, in one of five forms, the others left
+    // at zero or empty: a constant, against the silicon width, or against
+    // width and spacing; or a resistivity rho in ohm·µm, constant or
+    // against width and spacing, over the thickness.
+    double rpsq = 0;
+    Curve rpsq_vs_width;
+    WidthSpacingTable rpsq_vs_width_spacing;
+    double rho = 0;
+    WidthSpacingTable rho_vs_width_spacing;
+    // Temperature: the nominal temperature of the resistances, °C (the
+    // stack's global one unless the layer gives its own), and the
+    // coefficients, constant or against the silicon width.
+    double t0 = 25;
+    Crt crt;
+    CrtCurve crt_vs_width;
   };
 
   // A handle to a conductor or via of the stack that made it: an index,
@@ -72,6 +164,23 @@ class Stack
     std::string name;
     Layer upper;
     Layer lower;
+    // Resistance, in one of three forms, the others left at zero or
+    // empty: per via of `area` µm², against the via's area, or a
+    // resistivity in ohm·µm.
+    double rpv = 0;
+    double area = 0;
+    Curve rpv_vs_area;
+    double rho = 0;
+    double t0 = 25;  // °C
+    Crt crt;
+    CrtCurve crt_vs_area;
+  };
+
+  enum class ReferenceDirection
+  {
+    kNone,
+    kVertical,
+    kHorizontal,
   };
 
   // Building. Each add throws std::invalid_argument for a layer that
@@ -83,12 +192,23 @@ class Stack
   // upper) and a conductor or the ground plane (no handle) below it.
   void setTechnology(std::string technology);
   void setBackgroundEps(double eps);
+  void setGlobalTemperature(double celsius);
+  // Must be positive.
+  void setHalfNodeScaleFactor(double factor);
+  void setReferenceDirection(ReferenceDirection direction);
   void addDielectric(const Dielectric& dielectric);
   Layer addConductor(const Conductor& conductor);
   Layer addVia(const Via& via);
 
   const std::string& technology() const { return technology_; }
   double backgroundEps() const { return background_eps_; }
+  double globalTemperature() const { return global_temperature_; }
+  // The design shrinks by this before extraction (ITF
+  // HALF_NODE_SCALE_FACTOR); 1 when none.
+  double halfNodeScaleFactor() const { return half_node_scale_factor_; }
+  // The direction the etch tables' PARALLEL_TO_REFERENCE and
+  // PERPENDICULAR_TO_REFERENCE refer to.
+  ReferenceDirection referenceDirection() const { return reference_direction_; }
   const std::vector<Dielectric>& dielectrics() const { return dielectrics_; }
   const std::vector<Conductor>& conductors() const { return conductors_; }
   const std::vector<Via>& vias() const { return vias_; }
@@ -140,6 +260,9 @@ class Stack
  private:
   std::string technology_;
   double background_eps_ = 1.0;
+  double global_temperature_ = 25;  // °C
+  double half_node_scale_factor_ = 1;
+  ReferenceDirection reference_direction_ = ReferenceDirection::kNone;
   std::vector<Dielectric> dielectrics_;
   std::vector<Conductor> conductors_;
   std::vector<Via> vias_;

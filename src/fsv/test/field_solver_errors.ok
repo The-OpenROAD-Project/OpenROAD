@@ -25,5 +25,6 @@
 [ERROR FSV-0001] ITF: cannot open missing.itf
 [INFO FSV-0002] Read ITF substrate_via: 1 dielectrics, 1 conductors, 0 conformal dielectrics, 1 vias.
 [ERROR FSV-0014] Via tie lands on the ground plane, which would ground its net.
-Summary 24 / 24 (100% pass)
+[ERROR FSV-0019] Conductor M1 has a capacitive etch, which the solver does not apply.
+Summary 25 / 25 (100% pass)
 pass
