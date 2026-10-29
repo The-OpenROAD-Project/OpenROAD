@@ -359,8 +359,9 @@ bool WebViewerHook::requestExit()
     }
     exit_requested_ = true;
     released_ = true;
+    // The exit hook may destroy this object as soon as the waiter resumes.
+    pause_cv_.notify_all();
   }
-  pause_cv_.notify_all();
   return true;
 }
 
