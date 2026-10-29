@@ -3,7 +3,7 @@
 
 %{
 #include "ord/OpenRoad.hh"
-#include "ret/SequentialUnmapper.h"
+#include "ret/Retimer.h"
 %}
 
 %include "../../Exception.i"
@@ -15,9 +15,13 @@ namespace ret {
 bool
 unmap_sequential_cells_cmd()
 {
-  ret::SequentialUnmapper* unmapper
-      = ord::OpenRoad::openRoad()->getSequentialUnmapper();
-  return unmapper->unmap();
+  return ord::OpenRoad::openRoad()->getRetimer()->unmapSequentialCells();
+}
+
+void
+retime_cmd(int max_moves, bool stop_at_period)
+{
+  ord::OpenRoad::openRoad()->getRetimer()->retime(max_moves, stop_at_period);
 }
 
 } // namespace ret

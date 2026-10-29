@@ -6,6 +6,8 @@ load("//test:regression.bzl", "regression_test")
 package(features = ["layering_check"])
 
 TESTS = [
+    "retime_basic",
+    "retime_unmap",
     "unmap_basic",
 ]
 

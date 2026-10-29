@@ -12,6 +12,10 @@ swig_lib(NAME         ret
 # ret_lib holds the functional code without Tcl dependencies so the C++
 # unit tests can link it directly.
 add_library(ret_lib
+  src/RegisterUtils.cpp
+  src/Retime.cpp
+  src/Retimer.cpp
+  src/RetimingGraph.cpp
   src/SequentialUnmapper.cpp
 )
 
@@ -27,6 +31,8 @@ target_link_libraries(ret_lib
 target_include_directories(ret_lib
   PUBLIC
     include
+  PRIVATE
+    src
 )
 
 target_sources(ret

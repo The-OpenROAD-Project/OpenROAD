@@ -75,6 +75,7 @@ man_pages(
         "//src/psm:README.md",
         "//src/ram:README.md",
         "//src/rcx:README.md",
+        "//src/ret:README.md",
         "//src/rmp:README.md",
         "//src/rsz:README.md",
         "//src/stt:README.md",

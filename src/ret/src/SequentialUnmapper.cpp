@@ -40,6 +40,13 @@ bool isNegedge(const sta::Sequential* seq)
          && seq->clock()->op() == sta::FuncExpr::Op::not_;
 }
 
+// Library cells a retimer may instantiate: ordinary standard cells only.
+bool usableCell(const sta::LibertyCell* cell)
+{
+  return !cell->dontUse() && !cell->isIsolationCell() && !cell->isLevelShifter()
+         && !cell->alwaysOn() && !cell->isPad() && !cell->isMacro();
+}
+
 }  // namespace
 
 SequentialUnmapper::SequentialUnmapper(odb::dbDatabase* db,
@@ -87,18 +94,6 @@ bool SequentialUnmapper::prepare()
   return ok;
 }
 
-bool SequentialUnmapper::unmap()
-{
-  if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr) {
-    logger_->error(utl::RET, 11, "No design loaded.");
-  }
-  if (!prepare()) {
-    return false;
-  }
-  run();
-  return true;
-}
-
 // A base register: single-bit, edge-triggered on the requested clock edge,
 // no asynchronous controls, next_state is exactly one input port, and an
 // output pin that reads the state directly.  The smallest single-output
@@ -121,6 +116,9 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
     sta::LibertyCellIterator cell_iter(lib);
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
+      if (!usableCell(cell)) {
+        continue;
+      }
       const sta::Sequential* seq = singleSequential(cell);
       if (seq == nullptr || !seq->isRegister() || seq->clock() == nullptr
           || isNegedge(seq) != negedge || seq->clear() != nullptr
@@ -195,6 +193,9 @@ bool SequentialUnmapper::findInverterCell()
     sta::LibertyCellIterator cell_iter(lib_iter->next());
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
+      if (!usableCell(cell)) {
+        continue;
+      }
       if (cell->isSequential()) {
         continue;
       }
@@ -204,6 +205,9 @@ bool SequentialUnmapper::findInverterCell()
       sta::LibertyCellPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPort* port = port_iter.next();
+        if (port->direction()->isPowerGround()) {
+          continue;
+        }
         if (!port->direction()->isOutput()) {
           inputs++;
           continue;
@@ -242,6 +246,9 @@ bool SequentialUnmapper::findTwoInputGate(bool is_and, odb::dbMaster*& master)
     sta::LibertyCellIterator cell_iter(lib_iter->next());
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
+      if (!usableCell(cell)) {
+        continue;
+      }
       if (cell->isSequential()) {
         continue;
       }
@@ -251,6 +258,9 @@ bool SequentialUnmapper::findTwoInputGate(bool is_and, odb::dbMaster*& master)
       sta::LibertyCellPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         sta::LibertyPort* port = port_iter.next();
+        if (port->direction()->isPowerGround()) {
+          continue;
+        }
         if (port->direction()->isOutput()) {
           out_port = port;
           outputs++;
@@ -296,6 +306,9 @@ bool SequentialUnmapper::findTieCell(bool one)
     sta::LibertyCellIterator cell_iter(lib_iter->next());
     while (cell_iter.hasNext()) {
       sta::LibertyCell* cell = cell_iter.next();
+      if (!usableCell(cell)) {
+        continue;
+      }
       if (cell->isSequential()) {
         continue;
       }

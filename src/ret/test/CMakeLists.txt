@@ -6,6 +6,8 @@ include("openroad")
 or_integration_tests(
   "ret"
   TESTS
+    retime_basic
+    retime_unmap
     unmap_basic
 )
 

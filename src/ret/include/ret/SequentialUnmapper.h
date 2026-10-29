@@ -44,10 +44,8 @@ class SequentialUnmapper
   // Unmap every register, or only the instances in `candidates` when given.
   void run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
 
-  // prepare() followed by run(); the command entry point.
-  bool unmap();
-
   odb::dbMaster* getBaseSequentialMaster() const { return seq_master_; }
+  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_q_mterm_; }
   odb::dbMaster* getNegedgeSequentialMaster() const
   {
     return negedge_seq_master_;

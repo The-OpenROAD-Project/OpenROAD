@@ -14,9 +14,17 @@ package(
 cc_library(
     name = "ret",
     srcs = [
+        "src/RegisterUtils.cpp",
+        "src/RegisterUtils.h",
+        "src/Retime.cpp",
+        "src/Retime.h",
+        "src/Retimer.cpp",
+        "src/RetimingGraph.cpp",
+        "src/RetimingGraph.h",
         "src/SequentialUnmapper.cpp",
     ],
     hdrs = [
+        "include/ret/Retimer.h",
         "include/ret/SequentialUnmapper.h",
     ],
     includes = [

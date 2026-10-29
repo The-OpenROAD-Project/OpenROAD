@@ -72,7 +72,7 @@ class Example;
 }
 
 namespace ret {
-class SequentialUnmapper;
+class Retimer;
 }
 
 namespace fsv {
@@ -183,10 +183,7 @@ class OpenRoad
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
-  ret::SequentialUnmapper* getSequentialUnmapper()
-  {
-    return sequential_unmapper_;
-  }
+  ret::Retimer* getRetimer() { return retimer_; }
   fsv::FieldSolver* getFieldSolver() { return field_solver_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
@@ -294,7 +291,7 @@ class OpenRoad
   ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
-  ret::SequentialUnmapper* sequential_unmapper_ = nullptr;
+  ret::Retimer* retimer_ = nullptr;
   fsv::FieldSolver* field_solver_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   cgt::ClockGating* clock_gating_ = nullptr;
