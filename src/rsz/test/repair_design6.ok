@@ -23,7 +23,7 @@ place86/Y                              92.160  154.508  -62.348 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       419
-    final |   +119.4% |       5 |     220 |           139 |         0
+    final |   +119.5% |       5 |     220 |           139 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 139 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.

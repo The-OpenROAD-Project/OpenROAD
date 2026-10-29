@@ -2748,13 +2748,12 @@ NetRouteMap FastRouteCore::run()
     if (past_cong == 0) {
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
+        short_edge_len = BIG_INT;
         long_edge_len = BIG_INT;
       }
 
       mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-      if (!enable_resistance_aware_) {
-        mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
-      }
+      mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
     }
 
     // Disable estimate parasitics for grt incremental steps with
