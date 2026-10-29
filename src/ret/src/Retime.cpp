@@ -132,6 +132,17 @@ void Retime::computeArcDelays()
   }
 
   resolveFlopDCap();
+  pi_source_.assign(n, 0.0f);
+  for (int u = 0; u < n; u++) {
+    if (!graph_->input_fed_[u]) {
+      continue;
+    }
+    for (odb::dbITerm* iterm : graph_->nodes_[u]->getITerms()) {
+      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        pi_source_[u] = std::max(pi_source_[u], pinArrival(iterm));
+      }
+    }
+  }
   computeWireArcs();
   computeCombArcs();
   computeSeqArcs();
@@ -343,6 +354,7 @@ void Retime::computeArrivals()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
   std::fill(arrivals_.begin(), arrivals_.end(), 0.0);
+  std::fill(arrivals_pi_.begin(), arrivals_pi_.end(), kExcluded);
   std::fill(scratch_.indeg.begin(), scratch_.indeg.end(), 0);
   for (int t = 0; t < n; t++) {
     for (const FaninEdge& fe : fanin_[t]) {
@@ -355,7 +367,12 @@ void Retime::computeArrivals()
   int tail = 0;
   for (int u = 0; u < n; u++) {
     if (scratch_.indeg[u] == 0) {
-      arrivals_[u] = graph_->input_fed_[u] ? kExcluded : gate_floor_[u];
+      if (graph_->input_fed_[u]) {
+        arrivals_[u] = kExcluded;
+        arrivals_pi_[u] = pi_source_[u];
+      } else {
+        arrivals_[u] = gate_floor_[u];
+      }
       scratch_.queue[tail++] = u;
     }
   }
@@ -369,14 +386,17 @@ void Retime::computeArrivals()
       if (--scratch_.indeg[s] == 0) {
         const bool registered = outputRegistered(s);
         double a = kExcluded;
+        double a_pi = kExcluded;
         for (const FaninEdge& fe : fanin_[s]) {
           if (fe.weight + r_[s] - r_[fe.u] != 0) {
             continue;
           }
           const double arc = registered ? fe.arc_reg : fe.arc_comb;
           a = std::max(a, arrivals_[fe.u] + fe.wire + arc);
+          a_pi = std::max(a_pi, arrivals_pi_[fe.u] + fe.wire + arc);
         }
         arrivals_[s] = a;
+        arrivals_pi_[s] = a_pi;
         scratch_.queue[tail++] = s;
       }
     }
@@ -392,8 +412,10 @@ double Retime::markCriticalCone()
   computeArrivals();
 
   double worst = 0.0;
+  worst_pi_ = kExcluded;
   for (int v = 0; v < n; v++) {
     worst = std::max(worst, arrivals_[v]);
+    worst_pi_ = std::max(worst_pi_, arrivals_pi_[v]);
   }
   critical_threshold_ = worst * (1.0 - kSlackBand);
 
@@ -588,12 +610,16 @@ void Retime::run(int max_moves)
   const int n = static_cast<int>(graph_->nodes_.size());
   r_.assign(n, 0);
   arrivals_.assign(n, 0.0);
+  arrivals_pi_.assign(n, kExcluded);
   in_critical_cone_.assign(n, 0);
   scratch_.init(n);
 
   computeArcDelays();
 
   double cur = markCriticalCone();
+  // Input-rooted paths may not get worse than the period, or than they
+  // already are.
+  pi_limit_ = std::max(static_cast<double>(graph_->clock_period_), worst_pi_);
   logger_->info(
       utl::RET,
       20,
@@ -611,6 +637,7 @@ void Retime::run(int max_moves)
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
   const double eps = 1e-15;
   int moves = 0;
+  int pi_rejects = 0;
 
   while (moves < cap) {
     bool accepted = false;
@@ -623,7 +650,11 @@ void Retime::run(int max_moves)
       }
       r_[v] -= 1;
       const double trial = markCriticalCone();  // exact recompute decides
-      if (trial < cur - eps) {
+      const bool pi_ok = worst_pi_ <= pi_limit_ + eps;
+      if (!pi_ok) {
+        pi_rejects++;
+      }
+      if (pi_ok && trial < cur - eps) {
         cur = trial;
         moves++;
         std::string net_name = "?";
@@ -679,7 +710,16 @@ void Retime::run(int max_moves)
   }
 
   if (moves == 0) {
-    logger_->info(utl::RET, 16, "Retime found no slides.");
+    if (pi_rejects > 0) {
+      logger_->info(
+          utl::RET,
+          19,
+          "Retime found no slides ({} candidates rejected for pushing "
+          "an input path past the clock period).",
+          pi_rejects);
+    } else {
+      logger_->info(utl::RET, 16, "Retime found no slides.");
+    }
     return;
   }
   logger_->report(
@@ -687,10 +727,12 @@ void Retime::run(int max_moves)
   logger_->info(
       utl::RET,
       23,
-      "Final worst arrival {:.4g} (model slack {:.4g}) after {} slides",
+      "Final worst arrival {:.4g} (model slack {:.4g}) after {} slides; {} "
+      "candidates rejected for pushing an input path past the clock period",
       cur,
       graph_->clock_period_ - cur,
-      moves);
+      moves,
+      pi_rejects);
 }
 
 }  // namespace ret

@@ -14,7 +14,7 @@ worst slack max 0.8497
      1 |  3.132e-11 |     1 |     1 |      1 | g1 -> n1
      2 |  2.135e-11 |     0 |     1 |      1 | g2 -> n2
 -------+------------+-------+-------+--------+---------------------
-[INFO RET-0023] Final worst arrival 2.135e-11 (model slack 9.786e-10) after 2 slides
+[INFO RET-0023] Final worst arrival 2.135e-11 (model slack 9.786e-10) after 2 slides; 0 candidates rejected for pushing an input path past the clock period
 [INFO RET-0024] Removed 1 registers (2 of 5 register groups changed).
 [INFO RET-0025] Inserted 1 registers.
 worst slack max 0.8662
