@@ -908,7 +908,9 @@ void FlexPA::filterViaAccess(
         = try_all_vias ? std::numeric_limits<int>::max() : max_num_via_trial;
 
     const bool allow_up = hasRoutableLayerAbove(layer_num);
-    const bool allow_down = hasRoutableLayerBelow(layer_num);
+    const bool allow_down = !isStdCellTerm(inst_term)
+                            && !isMacroCellTerm(inst_term)
+                            && hasRoutableLayerBelow(layer_num);
 
     // UP Vias
     if (allow_up) {
