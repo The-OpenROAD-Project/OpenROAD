@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "gtest/gtest.h"
 #include "pex/Model.h"
 #include "pex/ModelBuilder.h"
+#include "pex/ModelJson.h"
 #include "pex/Patterns.h"
 
 namespace pex {
@@ -59,6 +61,7 @@ BuildOptions smallBuild(const int threads)
   o.spacing_factors = {1, 2};
   o.below_depth = 1;
   o.above_depth = 0;
+  o.far_cover_factors = {};  // the far ladder has its own test
   o.tol = 0.02;
   o.threads = threads;
   o.extent = 3;
@@ -211,6 +214,90 @@ TEST(ModelBuilder, DiagonalTable)
   EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
             (std::vector<std::string>{"", "met3"}));
   EXPECT_NE(buildFingerprint(sky130(), routing), buildFingerprint(sky130(), o));
+  // Past the depth, the far factors pick layers by distance, and the
+  // farthest always joins: met4 is the first past it and met5 the
+  // farthest, so both are tabulated whatever the factors, each once.
+  routing.layers = {"met1", "met2", "met3", "met4", "met5"};
+  routing.far_cover_factors = {1, 2, 4};
+  EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
+            (std::vector<std::string>{"", "met3", "met4", "met5"}));
+  routing.far_cover_factors = {1};
+  EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
+            (std::vector<std::string>{"", "met3", "met4", "met5"}));
+  routing.far_cover_factors = {4};
+  EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
+            (std::vector<std::string>{"", "met3", "met5"}));
+  // Below met2 with met1 in the depth there is nothing far.
+  EXPECT_EQ(names(coversBelow(sky130(), L("met2"), routing)),
+            (std::vector<std::string>{"", "met1"}));
+  EXPECT_EQ(names(coversAbove(sky130(), L("met5"), routing)),
+            (std::vector<std::string>{""}));
+  routing.far_cover_factors = {};
+  EXPECT_EQ(names(coversAbove(sky130(), L("met2"), routing)),
+            (std::vector<std::string>{"", "met3"}));
+  routing.far_cover_factors = {1, 0};
+  EXPECT_THROW(coversAbove(sky130(), L("met2"), routing),
+               std::invalid_argument);
+  routing.far_cover_factors = {};
+  EXPECT_NE(buildFingerprint(sky130(), routing), buildFingerprint(sky130(), o));
+}
+
+// A table the model holds is not built again, so a build resumes from a
+// saved model; a far layer gets its lateral, end and crossing tables like
+// one within the depth.
+TEST(ModelBuilder, ResumesAndBuildsFarLayers)
+{
+  BuildOptions o = smallBuild(4);
+  o.above_depth = 0;
+  o.below_depth = 0;
+  o.far_cover_factors = {1};
+  o.layers = {"met1", "met2", "met3"};
+  o.crossing_width_factors = {1};
+  o.coverages = {0.5};
+  o.crossing_length = 2;
+  o.crossing_length_long = 4;
+  o.end_length = 1;
+  o.width_factors = {1};
+  o.diagonal_depth = 0;
+  o.tol = 0.03;
+  int solves = 0;
+  o.progress = [&](int, int) { solves++; };
+  Model model;
+  buildLayer(sky130(), L("met2"), o, model);
+  EXPECT_GT(solves, 0);
+  // The depth is 0 each way, so met1 and met3 are far layers, the only
+  // covers each side.
+  EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
+  EXPECT_NE(model.lateral({"met2", "", "met3"}), nullptr);
+  EXPECT_NE(model.end({"met2", "met1", ""}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met3"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
+  solves = 0;
+  buildLayer(sky130(), L("met2"), o, model);
+  EXPECT_EQ(solves, 0);
+  // A model saved and read back resumes too, though the file rounds its
+  // grids (1.5 × 0.14 is 0.21000000000000002 in memory, 0.21 in the file).
+  BuildOptions grid = o;
+  grid.width_factors = {1, 1.5};
+  Model fresh;
+  buildLateral(sky130(), L("met2"), grid, fresh);
+  buildEnds(sky130(), L("met2"), grid, fresh);
+  std::stringstream file;
+  writeModel(fresh, {}, file);
+  Model saved = readModel(file);
+  solves = 0;
+  EXPECT_NO_THROW(buildLateral(sky130(), L("met2"), grid, saved));
+  EXPECT_NO_THROW(buildEnds(sky130(), L("met2"), grid, saved));
+  EXPECT_EQ(solves, 0);
+  // A model built on another grid is not resumed; its tables came from
+  // another build.
+  BuildOptions wider = o;
+  wider.width_factors = {1, 2};
+  EXPECT_THROW(buildLateral(sky130(), L("met2"), wider, model),
+               std::invalid_argument);
+  EXPECT_THROW(buildEnds(sky130(), L("met2"), wider, model),
+               std::invalid_argument);
+  EXPECT_EQ(solves, 0);
 }
 
 TEST(ModelBuilder, RefusesBadLayersBeforeSolving)
