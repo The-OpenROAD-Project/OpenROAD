@@ -15,7 +15,6 @@
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
-#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/architecture.h"
@@ -497,25 +496,18 @@ void NegotiationLegalizer::buildGrid()
   // Blockade each fixed cell and record its usage in one pass.  Footprint
   // only: padding is left to PlacementDRC, which knows both masters and so
   // can apply the class-pair rules that a plain capacity cannot express.
-  // Block every site the instance overlaps, as checkPlacement does: the
-  // rounded NegCell footprint can leave the edge column/row of an off-grid
-  // fixed cell open to movable cells.
+  // Block the same pixels checkPlacement checks for overlap, so an off-grid
+  // fixed cell's partially covered edge sites are blocked too.  Fixed cells
+  // without a Node lie outside the rows, where capacity is already 0.
   for (const NegCell& cell : cells_) {
-    if (!cell.fixed) {
+    if (!cell.fixed || cell.node == nullptr) {
       continue;
     }
-    odb::Rect bbox = cell.db_inst->getBBox()->getBox();
-    bbox.moveDelta(-die_xlo_, -die_ylo_);
-    const GridRect cover = dplGrid->gridCovering(bbox);
-    for (int gy = cover.ylo.v; gy < cover.yhi.v; ++gy) {
-      for (int gx = cover.xlo.v; gx < cover.xhi.v; ++gx) {
-        if (gridExists(gx, gy)) {
-          Pixel& pixel = gridAt(gx, gy);
-          pixel.capacity = 0;
-          pixel.usage = 1;
-        }
-      }
-    }
+    dplGrid->visitCellPixels(
+        *cell.node, /*padded=*/false, [](Pixel* pixel, bool /*padded*/) {
+          pixel->capacity = 0;
+          pixel->usage = 1;
+        });
   }
 }
 
