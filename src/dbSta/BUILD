@@ -101,7 +101,7 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/dbSta/test:__pkg__"],
     deps = [
         "//src/sta:opensta_lib",
         "@spdlog",

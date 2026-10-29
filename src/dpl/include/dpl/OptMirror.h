@@ -74,6 +74,10 @@ class OptimizeMirroring
   // metal.
   bool isBlockedLayersLegal(const Node* cell,
                             const odb::dbOrientType& orient) const;
+  // Mirroring moves the pin shapes, which can then overlap fixed supply vias
+  // when PDN-aware placement is enabled.
+  bool isFixedSupplyViasLegal(const Node* cell,
+                              const odb::dbOrientType& orient) const;
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;

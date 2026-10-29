@@ -30,9 +30,10 @@ def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
 
-    # The pypandoc-binary wheel (pinned in bazel/requirements.in) ships a
-    # statically linked pandoc; its other files are Python bindings the
-    # driver does not use, so only the binary becomes an action input.
+    # //bazel:pandoc is the pypandoc-binary wheel (pinned in
+    # bazel/requirements.in), or the upstream pandoc release on macOS arm64.
+    # The wheel's other files are Python bindings the driver does not use,
+    # so only the binary becomes an action input.
     pandoc = None
     for f in ctx.files._pandoc:
         if f.basename == "pandoc":
@@ -128,9 +129,9 @@ man_pages = rule(
             cfg = "exec",
         ),
         "_pandoc": attr.label(
-            default = "@openroad-pip//pypandoc_binary:extracted_whl_files",
+            default = "//bazel:pandoc",
             allow_files = True,
-            # pandoc runs during the build, so take the wheel for the
+            # pandoc runs during the build, so take the pandoc for the
             # execution platform, not the target platform.
             cfg = "exec",
         ),

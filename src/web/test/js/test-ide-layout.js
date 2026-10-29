@@ -4,7 +4,10 @@
 import './setup-dom.js';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { GridLayoutManager, IdePaneElement, IdeSplitterElement, IdeTabElement } from '../../src/grid-layout.js';
+import {
+    GridLayoutManager, IdePaneElement, IdeSplitterElement, IdeTabElement,
+    TabIcon, COMPONENT_CONFIG
+} from '../../src/grid-layout.js';
 
 describe('GridLayoutManager', () => {
     let containerEl;
@@ -54,19 +57,19 @@ describe('GridLayoutManager', () => {
         layout.loadLayout({});
 
         // Check DOM placement
-        const leftContent = containerEl.querySelector('#pane-left-content');
-        assert.ok(leftContent.querySelector('#cmp-DisplayControls'));
+        const leftPane = containerEl.querySelector('#pane-left');
+        assert.ok(leftPane.querySelector('#cmp-DisplayControls'));
 
-        const mainContent = containerEl.querySelector('#pane-main-content');
-        assert.ok(mainContent.querySelector('#cmp-LayoutViewer'));
-        assert.ok(mainContent.querySelector('#cmp-SchematicWidget'));
+        const mainPane = containerEl.querySelector('#pane-main');
+        assert.ok(mainPane.querySelector('#cmp-LayoutViewer'));
+        assert.ok(mainPane.querySelector('#cmp-SchematicWidget'));
 
-        const bottomContent = containerEl.querySelector('#pane-bottom-content');
-        assert.ok(bottomContent.querySelector('#cmp-TclConsole'));
+        const bottomPane = containerEl.querySelector('#pane-bottom');
+        assert.ok(bottomPane.querySelector('#cmp-TclConsole'));
 
-        const rightContent = containerEl.querySelector('#pane-right-content');
-        assert.ok(rightContent.querySelector('#cmp-Inspector'));
-        assert.ok(rightContent.querySelector('#cmp-TimingWidget'));
+        const rightPane = containerEl.querySelector('#pane-right');
+        assert.ok(rightPane.querySelector('#cmp-Inspector'));
+        assert.ok(rightPane.querySelector('#cmp-TimingWidget'));
 
         // Default tabs should be active
         assert.equal(layout.activeTabs.left, 'DisplayControls');
@@ -77,6 +80,12 @@ describe('GridLayoutManager', () => {
         // Active component containers have .active
         assert.ok(containerEl.querySelector('#cmp-LayoutViewer').classList.contains('active'));
         assert.ok(!containerEl.querySelector('#cmp-SchematicWidget').classList.contains('active'));
+
+        // Tabs receive icons from COMPONENT_CONFIG
+        const layoutTab = containerEl.querySelector('#tab-LayoutViewer');
+        assert.equal(layoutTab.icon, TabIcon.LAYOUT);
+        const tclTab = containerEl.querySelector('#tab-TclConsole');
+        assert.equal(tclTab.icon, TabIcon.TCL_CONSOLE);
     });
 
     it('switches tabs and delivers lifecycle events', () => {
@@ -119,8 +128,8 @@ describe('GridLayoutManager', () => {
 
         assert.equal(layout.activeTabs.right, 'TimingWidget');
         assert.ok(layout.closedComponents.has('Inspector'));
-        const inspTab = containerEl.querySelector('#pane-right-tabs [data-component="Inspector"]');
-        assert.equal(inspTab.style.display, 'none');
+        const inspTab = containerEl.querySelector('#pane-right [data-component="Inspector"]');
+        assert.ok(inspTab.hidden);
     });
 
     it('focusComponent reopens a closed component and activates it', () => {
@@ -134,15 +143,20 @@ describe('GridLayoutManager', () => {
         layout.focusComponent('Inspector');
         assert.equal(layout.activeTabs.right, 'Inspector');
         assert.ok(!layout.closedComponents.has('Inspector'));
-        const inspTab = containerEl.querySelector('#pane-right-tabs [data-component="Inspector"]');
-        assert.equal(inspTab.style.display, '');
+        const inspTab = containerEl.querySelector('#pane-right [data-component="Inspector"]');
+        assert.ok(!inspTab.hidden);
     });
 
-    it('collapses and restores panes via controls, gutter buttons, and classes', () => {
+    it('collapses and restores panes via controls, gutter buttons, and classes', async () => {
         layout.registerComponentFactoryFunction('DisplayControls', () => {});
         layout.registerComponentFactoryFunction('Inspector', () => {});
         layout.registerComponentFactoryFunction('TclConsole', () => {});
         layout.loadLayout({});
+
+        await Promise.all([
+            layout.panes.right.updateComplete,
+            layout.panes.bottom.updateComplete,
+        ]);
 
         // Left pane: collapse via helper / API, restore via gutter expand button
         const gutterLeft = containerEl.querySelector('#gutter-expand-left');
@@ -153,7 +167,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
 
         // Right pane: collapse via header button, restore via gutter button
-        const btnCollapseRight = containerEl.querySelector('#btn-collapse-right');
+        const btnCollapseRight = layout.panes.right.shadowRoot.querySelector('.ide-btn-collapse');
         const gutterRight = containerEl.querySelector('#gutter-expand-right');
         assert.ok(btnCollapseRight);
         assert.ok(gutterRight);
@@ -163,7 +177,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-right'));
 
         // Bottom pane: collapse via header button, restore via gutter button
-        const btnCollapseBottom = containerEl.querySelector('#btn-collapse-bottom');
+        const btnCollapseBottom = layout.panes.bottom.shadowRoot.querySelector('.ide-btn-collapse');
         const gutterBottom = containerEl.querySelector('#gutter-expand-bottom');
         assert.ok(btnCollapseBottom);
         assert.ok(gutterBottom);
@@ -178,7 +192,7 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
     });
 
-    it('resets layout to defaults', () => {
+    it('resets layout to defaults', async () => {
         layout.registerComponentFactoryFunction('DisplayControls', () => {});
         layout.registerComponentFactoryFunction('LayoutViewer', () => {});
         layout.registerComponentFactoryFunction('SchematicWidget', () => {});
@@ -193,10 +207,13 @@ describe('GridLayoutManager', () => {
         layout.collapsePane('left');
         layout.collapsePane('right');
         layout.collapsePane('bottom');
-        containerEl.querySelector('#pane-main').classList.add('maximized');
+        layout.maximizePane('main');
+        await layout.panes.main.updateComplete;
+        assert.ok(layout.panes.main.hasAttribute('maximized'));
 
         // Reset
         layout.resetLayout();
+        await layout.panes.main.updateComplete;
 
         assert.equal(containerEl.style.getPropertyValue('--pane-left-width'), '240px');
         assert.equal(containerEl.style.getPropertyValue('--pane-right-width'), '340px');
@@ -204,83 +221,79 @@ describe('GridLayoutManager', () => {
         assert.ok(!containerEl.classList.contains('hide-left'));
         assert.ok(!containerEl.classList.contains('hide-right'));
         assert.ok(!containerEl.querySelector('#pane-center').classList.contains('hide-bottom'));
-        assert.ok(!containerEl.querySelector('#pane-main').classList.contains('maximized'));
+        assert.ok(!layout.panes.main.hasAttribute('maximized'));
         assert.equal(layout.activeTabs.main, 'LayoutViewer');
         assert.equal(layout.activeTabs.left, 'DisplayControls');
     });
 
-    it('renders empty-state when all main views are closed and allows reset', () => {
-        layout.registerComponentFactoryFunction('LayoutViewer', () => {});
-        layout.registerComponentFactoryFunction('DisplayControls', () => {});
-        layout.loadLayout({});
-
-        const emptyState = containerEl.querySelector('#ide-empty-state');
-        assert.ok(emptyState);
-        assert.equal(emptyState.style.display, 'none');
-
-        // Simulate no active tab in main
-        layout.activeTabs.main = null;
-        layout._updateEmptyState();
-        assert.equal(emptyState.style.display, 'flex');
-
-        // Clicking reset restores layout and hides empty state
-        const resetBtn = emptyState.querySelector('#btn-empty-reset-layout');
-        assert.ok(resetBtn);
-        resetBtn.click();
-        assert.equal(emptyState.style.display, 'none');
-        assert.equal(layout.activeTabs.main, 'LayoutViewer');
-    });
-
-    it('maximizes and restores main pane', () => {
+    it('maximizes and restores main pane', async () => {
         layout.registerComponentFactoryFunction('LayoutViewer', () => {});
         layout.loadLayout({});
 
-        const btnMaxMain = containerEl.querySelector('#btn-maximize-main');
+        const mainPane = layout.panes.main;
+        await mainPane.updateComplete;
+        const btnMaxMain = mainPane.shadowRoot.querySelector('.ide-btn-maximize');
         assert.ok(btnMaxMain);
 
         btnMaxMain.click();
-        const mainPane = containerEl.querySelector('#pane-main');
-        assert.ok(mainPane.classList.contains('maximized'));
+        await mainPane.updateComplete;
+        assert.ok(mainPane.maximized);
+        assert.ok(mainPane.hasAttribute('maximized'));
         assert.ok(containerEl.classList.contains('maximized-main'));
 
         btnMaxMain.click();
-        assert.ok(!mainPane.classList.contains('maximized'));
+        await mainPane.updateComplete;
+        assert.ok(!mainPane.maximized);
+        assert.ok(!mainPane.hasAttribute('maximized'));
         assert.ok(!containerEl.classList.contains('maximized-main'));
     });
 
-    it('toggles maximized pane state and restores layout correctly', () => {
-        const bottomPane = containerEl.querySelector('#pane-bottom');
-        const btnMaxBottom = containerEl.querySelector('#btn-maximize-bottom');
-        const btnColBottom = containerEl.querySelector('#btn-collapse-bottom');
+    it('toggles maximized pane state and restores layout correctly', async () => {
+        const bottomPane = layout.panes.bottom;
+        await bottomPane.updateComplete;
+        const btnMaxBottom = bottomPane.shadowRoot.querySelector('.ide-btn-maximize');
+        const btnColBottom = bottomPane.shadowRoot.querySelector('.ide-btn-collapse');
 
         assert.ok(btnMaxBottom);
         assert.ok(btnColBottom);
 
         // Maximize bottom pane
         btnMaxBottom.click();
+        await bottomPane.updateComplete;
         assert.ok(layout.isPaneMaximized('bottom'));
-        assert.ok(bottomPane.classList.contains('maximized'));
+        assert.ok(bottomPane.maximized);
+        assert.ok(bottomPane.hasAttribute('maximized'));
 
         // Restore from maximize
         btnMaxBottom.click();
+        await bottomPane.updateComplete;
         assert.ok(!layout.isPaneMaximized('bottom'));
-        assert.ok(!bottomPane.classList.contains('maximized'));
+        assert.ok(!bottomPane.maximized);
+        assert.ok(!bottomPane.hasAttribute('maximized'));
 
         // Maximize via API
         layout.maximizePane('bottom');
+        await bottomPane.updateComplete;
         assert.ok(layout.isPaneMaximized('bottom'));
-        assert.ok(bottomPane.classList.contains('maximized'));
+        assert.ok(bottomPane.maximized);
+        assert.ok(bottomPane.hasAttribute('maximized'));
 
         // Restore via restoreMaximized API
         layout.restoreMaximized();
+        await bottomPane.updateComplete;
         assert.ok(!layout.isPaneMaximized('bottom'));
-        assert.ok(!bottomPane.classList.contains('maximized'));
+        assert.ok(!bottomPane.maximized);
+        assert.ok(!bottomPane.hasAttribute('maximized'));
 
         // Normal collapsing works
         layout.collapsePane('bottom');
+        await bottomPane.updateComplete;
         assert.ok(layout.isPaneCollapsed('bottom'));
+        assert.ok(bottomPane.collapsed);
         layout.restorePane('bottom');
+        await bottomPane.updateComplete;
         assert.ok(!layout.isPaneCollapsed('bottom'));
+        assert.ok(!bottomPane.collapsed);
     });
 
     it('persists and restores layout dimensions and active tabs', () => {
@@ -316,7 +329,7 @@ describe('GridLayoutManager', () => {
         assert.equal(layout2.activeTabs.main, 'SchematicWidget');
     });
 
-    it('renders and manages <ide-pane> custom elements properly', () => {
+    it('renders and manages <ide-pane> custom elements properly', async () => {
         const pane = document.createElement('ide-pane');
         pane.id = 'pane-custom';
         pane.setAttribute('name', 'custom');
@@ -324,17 +337,16 @@ describe('GridLayoutManager', () => {
         pane.setAttribute('collapsible', '');
 
         document.body.appendChild(pane);
+        await pane.updateComplete;
 
         assert.equal(pane.tagName.toLowerCase(), 'ide-pane');
         assert.ok(pane.classList.contains('ide-pane'));
         assert.ok(pane.classList.contains('ide-pane-custom'));
 
-        assert.ok(pane.headerEl);
-        assert.ok(pane.tabsEl);
-        assert.ok(pane.controlsEl);
-        assert.ok(pane.contentEl);
-        assert.ok(pane.maximizeBtn);
-        assert.ok(pane.collapseBtn);
+        const maxBtn = pane.shadowRoot.querySelector('.ide-btn-maximize');
+        const colBtn = pane.shadowRoot.querySelector('.ide-btn-collapse');
+        assert.ok(maxBtn);
+        assert.ok(colBtn);
 
         let maxEventFired = false;
         let colEventFired = false;
@@ -347,30 +359,35 @@ describe('GridLayoutManager', () => {
             assert.equal(e.detail.pane, 'custom');
         });
 
-        pane.maximizeBtn.click();
+        maxBtn.click();
         assert.ok(maxEventFired);
 
-        pane.collapseBtn.click();
+        colBtn.click();
         assert.ok(colEventFired);
 
         pane.setMaximized(true);
-        assert.ok(pane.classList.contains('maximized'));
-        assert.equal(pane.maximizeBtn.textContent, '⧉');
+        await pane.updateComplete;
+        assert.ok(pane.hasAttribute('maximized'));
+        assert.ok(pane.maximized);
+        assert.equal(maxBtn.textContent, '⧉');
 
         pane.setMaximized(false);
-        assert.ok(!pane.classList.contains('maximized'));
-        assert.equal(pane.maximizeBtn.textContent, '⤢');
+        await pane.updateComplete;
+        assert.ok(!pane.hasAttribute('maximized'));
+        assert.ok(!pane.maximized);
+        assert.equal(maxBtn.textContent, '⤢');
 
         pane.remove();
     });
 
-    it('renders and manages <ide-splitter> custom elements properly', () => {
+    it('renders and manages <ide-splitter> custom elements properly', async () => {
         const splitter = document.createElement('ide-splitter');
         splitter.id = 'splitter-test';
         splitter.setAttribute('for', 'left');
         splitter.setAttribute('orientation', 'vertical');
 
         document.body.appendChild(splitter);
+        await splitter.updateComplete;
 
         assert.equal(splitter.tagName.toLowerCase(), 'ide-splitter');
         assert.equal(splitter.getAttribute('role'), 'separator');
@@ -411,7 +428,7 @@ describe('GridLayoutManager', () => {
         splitter.remove();
     });
 
-    it('creates and manages header, tabs, controls, and content in <ide-pane>', () => {
+    it('creates and manages header, tabs, controls, and content in <ide-pane>', async () => {
         const pane = document.createElement('ide-pane');
         pane.id = 'pane-structure';
         pane.setAttribute('name', 'structure');
@@ -419,13 +436,14 @@ describe('GridLayoutManager', () => {
         pane.setAttribute('collapsible', '');
 
         document.body.appendChild(pane);
+        await pane.updateComplete;
 
-        assert.ok(pane.querySelector('.ide-header'));
-        assert.ok(pane.querySelector('.ide-tabs'));
-        assert.ok(pane.querySelector('.ide-controls'));
-        assert.ok(pane.querySelector('.ide-content'));
-        assert.ok(pane.querySelector('#btn-maximize-structure'));
-        assert.ok(pane.querySelector('#btn-collapse-structure'));
+        assert.ok(pane.shadowRoot.querySelector('.ide-header'));
+        assert.ok(pane.shadowRoot.querySelector('.ide-tabs'));
+        assert.ok(pane.shadowRoot.querySelector('.ide-controls'));
+        assert.ok(pane.shadowRoot.querySelector('.ide-content'));
+        assert.ok(pane.shadowRoot.querySelector('#btn-maximize-structure'));
+        assert.ok(pane.shadowRoot.querySelector('#btn-collapse-structure'));
 
         pane.remove();
     });
@@ -438,15 +456,16 @@ describe('GridLayoutManager', () => {
         tab.setAttribute('closable', '');
 
         document.body.appendChild(tab);
+        await tab.updateComplete;
 
         assert.equal(tab.tagName.toLowerCase(), 'ide-tab');
+        assert.ok(tab.shadowRoot, 'Expected shadowRoot to be created');
         assert.ok(tab.classList.contains('ide-tab'));
-        assert.ok(tab.classList.contains('lm_tab'));
         assert.equal(tab.getAttribute('role'), 'tab');
         assert.equal(tab.targetComponent, 'test-component');
-        assert.equal(tab.titleText, 'Test Component');
-        assert.ok(tab.titleEl);
-        assert.ok(tab.closeBtn);
+        assert.equal(tab.title, 'Test Component');
+        assert.ok(tab.shadowRoot.querySelector('.ide-tab-title'));
+        assert.ok(tab.shadowRoot.querySelector('.ide-tab-close'));
 
         let selectFired = false;
         let closeFired = false;
@@ -464,29 +483,83 @@ describe('GridLayoutManager', () => {
         tab.click();
         assert.ok(selectFired);
 
-        tab.closeBtn.click();
+        tab.shadowRoot.querySelector('.ide-tab-close').click();
         assert.ok(closeFired);
 
         tab.setActive(true);
-        assert.ok(tab.classList.contains('active'));
-        assert.ok(tab.classList.contains('lm_active'));
+        await tab.updateComplete;
+        assert.ok(tab.hasAttribute('active'));
+        assert.ok(tab.active);
         assert.equal(tab.getAttribute('aria-selected'), 'true');
 
         tab.setActive(false);
-        assert.ok(!tab.classList.contains('active'));
+        await tab.updateComplete;
+        assert.ok(!tab.hasAttribute('active'));
+        assert.ok(!tab.active);
         assert.equal(tab.getAttribute('aria-selected'), 'false');
 
-        // Test Lit reactivity with Light DOM
+        // Test Lit reactivity with Shadow DOM
         tab.title = 'Updated Title';
         tab.active = true;
         tab.closable = false;
         await tab.updateComplete;
 
-        assert.equal(tab.titleEl.textContent, 'Updated Title');
-        assert.ok(tab.classList.contains('active'));
+        assert.equal(tab.shadowRoot.querySelector('.ide-tab-title').textContent, 'Updated Title');
+        assert.ok(tab.hasAttribute('active'));
+        assert.ok(tab.active);
         assert.equal(tab.getAttribute('aria-selected'), 'true');
-        assert.equal(tab.querySelector('.ide-tab-close'), null);
+        assert.equal(tab.shadowRoot.querySelector('.ide-tab-close'), null);
+
+        // Test custom DOM element icon property support
+        const testIcon = document.createElement('span');
+        testIcon.className = 'custom-test-icon';
+        tab.icon = testIcon;
+        await tab.updateComplete;
+        assert.ok(tab.shadowRoot.querySelector('.custom-test-icon'));
+
+        // Test TabIcon enum rendering
+        tab.icon = TabIcon.LAYOUT;
+        await tab.updateComplete;
+        assert.ok(tab.shadowRoot.querySelector('.or-tab-icon svg'));
+
+        // Test updating to another TabIcon
+        tab.icon = TabIcon.TCL_CONSOLE;
+        await tab.updateComplete;
+        assert.ok(tab.shadowRoot.querySelector('.or-tab-icon svg'));
+
+        // Tabs without an icon do not render an icon container
+        tab.icon = null;
+        await tab.updateComplete;
+        assert.equal(tab.shadowRoot.querySelector('.or-tab-icon'), null);
 
         tab.remove();
+    });
+
+    it('defines TabIcon enum with all-caps keys and binds them in COMPONENT_CONFIG', () => {
+        const expectedKeys = [
+            'LAYOUT', 'SCHEMATIC', 'VIEWER_3D', 'DISPLAY_CONTROLS', 'INSPECTOR',
+            'HIERARCHY', 'TIMING', 'DRC', 'SELECT_HIGHLIGHT', 'CLOCK_TREE',
+            'CHARTS', 'TCL_CONSOLE', 'HELP'
+        ];
+        for (const key of expectedKeys) {
+            assert.ok(key in TabIcon, `Expected ${key} in TabIcon`);
+            assert.equal(key, key.toUpperCase(), `Key ${key} must be all-caps`);
+            assert.ok(TabIcon[key], `Expected TabIcon.${key} to be defined`);
+        }
+
+        // Verify COMPONENT_CONFIG has icons configured
+        assert.equal(COMPONENT_CONFIG.LayoutViewer.icon, TabIcon.LAYOUT);
+        assert.equal(COMPONENT_CONFIG.SchematicWidget.icon, TabIcon.SCHEMATIC);
+        assert.equal(COMPONENT_CONFIG['3DViewer'].icon, TabIcon.VIEWER_3D);
+        assert.equal(COMPONENT_CONFIG.DisplayControls.icon, TabIcon.DISPLAY_CONTROLS);
+        assert.equal(COMPONENT_CONFIG.Inspector.icon, TabIcon.INSPECTOR);
+        assert.equal(COMPONENT_CONFIG.Browser.icon, TabIcon.HIERARCHY);
+        assert.equal(COMPONENT_CONFIG.TimingWidget.icon, TabIcon.TIMING);
+        assert.equal(COMPONENT_CONFIG.DRCWidget.icon, TabIcon.DRC);
+        assert.equal(COMPONENT_CONFIG.SelectHighlight.icon, TabIcon.SELECT_HIGHLIGHT);
+        assert.equal(COMPONENT_CONFIG.ClockWidget.icon, TabIcon.CLOCK_TREE);
+        assert.equal(COMPONENT_CONFIG.ChartsWidget.icon, TabIcon.CHARTS);
+        assert.equal(COMPONENT_CONFIG.TclConsole.icon, TabIcon.TCL_CONSOLE);
+        assert.equal(COMPONENT_CONFIG.HelpWidget.icon, TabIcon.HELP);
     });
 });

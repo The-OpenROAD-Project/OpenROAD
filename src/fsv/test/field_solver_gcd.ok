@@ -1,0 +1,132 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 141 components and 538 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 282 connections.
+[INFO ODB-0133]     Created 150 nets and 254 connections.
+[INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 conformal dielectrics, 7 vias.
+[INFO FSV-0018] Read 1 target and 16 neighbour nets: 408 boxes, 31 of them clipped and 6 obstructions trimmed, within a halo of 4 um and a margin of 1 um.
+[INFO FSV-0011] Net _042_: total 1.5 fF +- 0.026 after 65536 walks (120.9 hops per walk).
+  ground                    0.28221 +- 0.015 fF
+  VDD                        0.2344 +- 0.011 fF
+  VSS                      0.012393 +- 0.0031 fF
+  _034_                 -0.00013194 +- 0.0011 fF
+  _043_                     0.19562 +- 0.0092 fF
+  _044_                     0.26967 +- 0.013 fF
+  _119_/_030_                    -0 +- 0 fF
+  clknet_2_0__leaf_clk    0.0054502 +- 0.0018 fF
+  net10                    0.019253 +- 0.0031 fF
+  net167                    0.11503 +- 0.009 fF
+  net186                    0.10507 +- 0.01 fF
+  net188                   0.056111 +- 0.0048 fF
+  net214                     0.2047 +- 0.011 fF
+  net378                         -0 +- 0 fF
+  net39                  0.00016709 +- 0.00017 fF
+  net446                 0.00022508 +- 0.00023 fF
+  net_2                 -0.00020738 +- 0.00035 fF
+  window leakage 0.012 fF (0.77% of the total)
+[INFO FSV-0018] Read 1 target and 51 neighbour nets: 1193 boxes, 94 of them clipped and 48 obstructions trimmed, within a halo of 4 um and a margin of 1 um.
+[INFO FSV-0011] Net _119_/_067_: total 4.1449 fF +- 0.071 after 65536 walks (99.8 hops per walk).
+  ground                    0.25285 +- 0.023 fF
+  VDD                       0.77608 +- 0.037 fF
+  VSS                       0.87039 +- 0.039 fF
+  _020_                    0.011415 +- 0.0042 fF
+  _032_                   0.0022782 +- 0.0022 fF
+  _093_                          -0 +- 0 fF
+  _118_                  0.00065517 +- 0.001 fF
+  _119_/_000_                    -0 +- 0 fF
+  _119_/_002_               0.18819 +- 0.015 fF
+  _119_/_005_                    -0 +- 0 fF
+  _119_/_006_            0.00049463 +- 0.00049 fF
+  _119_/_015_            0.00049744 +- 0.00085 fF
+  _119_/_018_            0.00049488 +- 0.00049 fF
+  _119_/_037_             0.0034694 +- 0.0021 fF
+  _119_/_038_               0.43876 +- 0.028 fF
+  _119_/_045_                    -0 +- 0 fF
+  _119_/_053_              0.023036 +- 0.0074 fF
+  _119_/_055_                    -0 +- 0 fF
+  _119_/_058_                    -0 +- 0 fF
+  _119_/_059_            0.00098927 +- 0.0007 fF
+  _119_/_060_              0.013929 +- 0.0053 fF
+  _119_/_062_              0.067979 +- 0.0095 fF
+  _119_/_064_                    -0 +- 0 fF
+  _119_/_066_               0.41157 +- 0.026 fF
+  _119_/_068_                0.1008 +- 0.019 fF
+  _119_/_069_                    -0 +- 0 fF
+  _119_/_070_                    -0 +- 0 fF
+  _119_/_072_           -0.00049201 +- 0.00087 fF
+  _119_/_073_               0.13024 +- 0.016 fF
+  _119_/_074_               0.01039 +- 0.0044 fF
+  _119_/_075_              0.053365 +- 0.0098 fF
+  _119_/_121_              0.070088 +- 0.01 fF
+  _119_/_122_             0.0012427 +- 0.0011 fF
+  _119_/_123_             0.0028754 +- 0.0024 fF
+  _119_/_124_              0.032718 +- 0.0064 fF
+  _119_/_125_                    -0 +- 0 fF
+  _119_/net159             0.055422 +- 0.0095 fF
+  _119_/net161              0.32771 +- 0.023 fF
+  _119_/net168           0.00050673 +- 0.00051 fF
+  _119_/net169              0.17511 +- 0.021 fF
+  _119_/net177           0.00043815 +- 0.00044 fF
+  _119_/net191                   -0 +- 0 fF
+  _119_/net409             0.039937 +- 0.0094 fF
+  clknet_2_1__leaf_clk           -0 +- 0 fF
+  clknet_2_3__leaf_clk      0.07375 +- 0.011 fF
+  net151                 0.00099183 +- 0.00099 fF
+  net153                 0.00049463 +- 0.00049 fF
+  net155                         -0 +- 0 fF
+  net188                  0.0010522 +- 0.0012 fF
+  net208                  0.0057184 +- 0.0024 fF
+  net42                          -0 +- 0 fF
+  net_1                 -0.00049234 +- 0.00049 fF
+  window leakage 0.063 fF (1.5% of the total)
+[INFO FSV-0018] Read 1 target and 12 neighbour nets: 283 boxes, 27 of them clipped and 13 obstructions trimmed, within a halo of 4 um and a margin of 1 um.
+[INFO FSV-0011] Net req_msg[10]: total 0.84695 fF +- 0.015 after 65536 walks (104.9 hops per walk).
+  ground                    0.32819 +- 0.011 fF
+  VDD                      0.047861 +- 0.0041 fF
+  VSS                       0.10862 +- 0.0065 fF
+  req_msg[26]               0.30938 +- 0.01 fF
+  _073_                          -0 +- 0 fF
+  _074_                   0.0018238 +- 0.0009 fF
+  _096_                          -0 +- 0 fF
+  _097_                   0.0036385 +- 0.0012 fF
+  clknet_2_2__leaf_clk     0.011825 +- 0.0022 fF
+  net149                   0.026607 +- 0.003 fF
+  net187                  0.0056087 +- 0.0013 fF
+  net21                   0.0022212 +- 0.00078 fF
+  net4                    0.0011807 +- 0.00055 fF
+  window leakage 0.19 fF (23% of the total)
+[INFO FSV-0018] Read 1 target and 5 neighbour nets: 90 boxes, 14 of them clipped and 5 obstructions trimmed, within a halo of 2 um and a margin of 1 um.
+[INFO FSV-0011] Net req_msg[10]: total 0.85414 fF +- 0.015 after 65536 walks (104.4 hops per walk).
+  ground                    0.36075 +- 0.011 fF
+  VDD                      0.032697 +- 0.0035 fF
+  VSS                       0.10905 +- 0.0064 fF
+  req_msg[26]               0.31494 +- 0.01 fF
+  clknet_2_2__leaf_clk    0.0025568 +- 0.0011 fF
+  net149                   0.034158 +- 0.0033 fF
+  window leakage 0.35 fF (41% of the total)
+[INFO FSV-0018] Read 1 target and 18 neighbour nets: 528 boxes, 45 of them clipped and 23 obstructions trimmed, within a halo of 6 um and a margin of 1 um.
+[INFO FSV-0011] Net req_msg[10]: total 0.85362 fF +- 0.015 after 65536 walks (106.5 hops per walk).
+  ground                    0.32157 +- 0.011 fF
+  VDD                      0.048321 +- 0.0041 fF
+  VSS                       0.11045 +- 0.0065 fF
+  req_msg[26]               0.31241 +- 0.01 fF
+  req_msg[9]             0.00062151 +- 0.00037 fF
+  _072_                  0.00012454 +- 0.00021 fF
+  _073_                  0.00026319 +- 0.00035 fF
+  _074_                   0.0015241 +- 0.00067 fF
+  _096_                  0.00037904 +- 0.00046 fF
+  _097_                   0.0018294 +- 0.00088 fF
+  _119_/_048_                    -0 +- 0 fF
+  clk                      0.011018 +- 0.0021 fF
+  clknet_2_2__leaf_clk     0.011579 +- 0.0021 fF
+  net149                   0.027098 +- 0.003 fF
+  net187                  0.0033519 +- 0.0011 fF
+  net188                 0.00016343 +- 0.00056 fF
+  net21                   0.0017971 +- 0.00075 fF
+  net34                          -0 +- 0 fF
+  net4                    0.0011212 +- 0.00051 fF
+  window leakage 0.1 fF (12% of the total)
+Summary 4 / 4 (100% pass)
+pass

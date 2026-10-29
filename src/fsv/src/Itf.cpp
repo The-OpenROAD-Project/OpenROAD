@@ -158,7 +158,13 @@ class Parser
   void checkKeys(const Block& block,
                  const std::set<std::string>& values,
                  const std::set<std::string>& flags) const;
-  void place(const std::vector<Block>& layers, Stack& stack);
+  // The layers placed by height, before the ground shift.
+  struct Placed
+  {
+    std::vector<Stack::Dielectric> dielectrics;
+    std::vector<Stack::Conductor> conductors;
+  };
+  Placed place(const std::vector<Block>& layers);
   void addVias(const std::vector<Block>& vias, Stack& stack) const;
 
   std::vector<Token> tokens_;
@@ -248,8 +254,9 @@ void Parser::checkKeys(const Block& block,
 // sits on the layer below it and is embedded in the dielectrics above. A
 // conformal dielectric wraps its ASSOCIATED_CONDUCTOR or, without one, every
 // conductor that rises above the current planar top.
-void Parser::place(const std::vector<Block>& layers, Stack& stack)
+Parser::Placed Parser::place(const std::vector<Block>& layers)
 {
+  Placed placed;
   std::map<std::string, double> tops_by_name;
   std::set<std::string> names;
   double planar_top = 0;
@@ -265,12 +272,13 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
              "CONDUCTOR " + b.name + " needs a positive THICKNESS");
       }
       conductor_lines_[b.name] = b.line;
-      stack.conductors.push_back({.name = b.name,
-                                  .bottom = planar_top,
-                                  .top = planar_top + thickness,
-                                  .min_width = b.number("WMIN", 0),
-                                  .min_spacing = b.number("SMIN", 0),
-                                  .conformals = {}});
+      Stack::Conductor conductor;
+      conductor.name = b.name;
+      conductor.bottom = planar_top;
+      conductor.top = planar_top + thickness;
+      conductor.min_width = b.number("WMIN", 0);
+      conductor.min_spacing = b.number("SMIN", 0);
+      placed.conductors.push_back(std::move(conductor));
       continue;
     }
     const double eps = b.required("ER");
@@ -299,7 +307,7 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
       const bool has_associated = b.has("ASSOCIATED_CONDUCTOR");
       const std::string& associated = b.text("ASSOCIATED_CONDUCTOR");
       bool wrapped = false;
-      for (Stack::Conductor& c : stack.conductors) {
+      for (Stack::Conductor& c : placed.conductors) {
         double outer_top = c.top;
         for (const Stack::ConformalDielectric& inner : c.conformals) {
           outer_top += inner.top_thickness;
@@ -349,10 +357,11 @@ void Parser::place(const std::vector<Block>& layers, Stack& stack)
            "dielectric " + b.name
                + " has no thickness above the layer below it");
     }
-    stack.dielectrics.push_back({b.name, planar_top, top, eps});
+    placed.dielectrics.push_back({b.name, planar_top, top, eps});
     tops_by_name[b.name] = top;
     planar_top = top;
   }
+  return placed;
 }
 
 Stack Parser::parse()
@@ -373,16 +382,17 @@ Stack Parser::parse()
     }
     if (t.text == "TECHNOLOGY") {
       expect("=");
-      stack.technology = next().text;
+      stack.setTechnology(next().text);
     } else if (t.text == "GLOBAL_TEMPERATURE") {
       expect("=");
       parseNumber(next(), t.text);
     } else if (t.text == "BACKGROUND_ER") {
       expect("=");
-      stack.background_eps = parseNumber(next(), t.text);
-      if (!(stack.background_eps > 0)) {
+      const double eps = parseNumber(next(), t.text);
+      if (!(eps > 0)) {
         fail(t.line, "BACKGROUND_ER must be positive");
       }
+      stack.setBackgroundEps(eps);
     } else if (t.text == "DIELECTRIC") {
       Block b = parseBlock(t.text);
       checkKeys(b,
@@ -430,28 +440,31 @@ Stack Parser::parse()
     }
   }
 
-  if (stack.technology.empty()) {
+  if (stack.technology().empty()) {
     failFile("missing TECHNOLOGY");
   }
-  place(layers, stack);
-  if (stack.dielectrics.empty()) {
+  Placed placed = place(layers);
+  if (placed.dielectrics.empty()) {
     failFile("no planar dielectric layers");
   }
 
   // The ground plane is the top of the lowest dielectric, which is dropped.
-  const double ground = stack.dielectrics.front().top;
-  stack.dielectrics.erase(stack.dielectrics.begin());
-  for (Stack::Dielectric& d : stack.dielectrics) {
+  const double ground = placed.dielectrics.front().top;
+  for (size_t i = 1; i < placed.dielectrics.size(); i++) {
+    Stack::Dielectric d = placed.dielectrics[i];
     d.bottom -= ground;
     d.top -= ground;
+    stack.addDielectric(d);
   }
-  for (Stack::Conductor& c : stack.conductors) {
+  for (Stack::Conductor& c : placed.conductors) {
     c.bottom -= ground;
     c.top -= ground;
     if (c.bottom < -kHeightTolerance) {
       fail(conductor_lines_.at(c.name),
            "conductor " + c.name + " lies below the ground plane");
     }
+    c.bottom = std::max(c.bottom, 0.0);
+    stack.addConductor(c);
   }
   addVias(vias, stack);
   return stack;
@@ -464,26 +477,27 @@ void Parser::addVias(const std::vector<Block>& vias, Stack& stack) const
   for (const Block& b : vias) {
     const std::string& from = b.text("FROM");
     const std::string& to = b.text("TO");
-    if (from != kSubstrate && !stack.findConductor(from)) {
+    const Stack::Layer a = stack.layer(from);
+    const Stack::Layer c = stack.layer(to);
+    if (from != kSubstrate && !stack.isConductor(a)) {
       fail(b.lineOf("FROM"), "VIA " + b.name + " names unknown layer " + from);
     }
-    if (to != kSubstrate && !stack.findConductor(to)) {
+    if (to != kSubstrate && !stack.isConductor(c)) {
       fail(b.lineOf("TO"), "VIA " + b.name + " names unknown layer " + to);
     }
     if (from == to) {
       fail(b.line, "VIA " + b.name + " connects " + from + " to itself");
     }
     if (from == kSubstrate || to == kSubstrate) {
-      stack.vias.push_back(
-          {b.name, from == kSubstrate ? to : from, std::string(kSubstrate)});
+      stack.addVia({b.name, from == kSubstrate ? c : a, {}});
       continue;
     }
-    const Stack::Conductor* a = stack.findConductor(from);
-    const Stack::Conductor* c = stack.findConductor(to);
-    if (a->bottom >= c->top - kHeightTolerance) {
-      stack.vias.push_back({b.name, from, to});
-    } else if (c->bottom >= a->top - kHeightTolerance) {
-      stack.vias.push_back({b.name, to, from});
+    const Stack::Conductor& from_conductor = stack.conductor(a);
+    const Stack::Conductor& to_conductor = stack.conductor(c);
+    if (from_conductor.bottom >= to_conductor.top - kHeightTolerance) {
+      stack.addVia({b.name, a, c});
+    } else if (to_conductor.bottom >= from_conductor.top - kHeightTolerance) {
+      stack.addVia({b.name, c, a});
     } else {
       fail(b.line,
            "VIA " + b.name + " connects " + from + " and " + to
@@ -496,7 +510,12 @@ void Parser::addVias(const std::vector<Block>& vias, Stack& stack) const
 
 Stack readItf(std::istream& in)
 {
-  return Parser(tokenize(in)).parse();
+  try {
+    return Parser(tokenize(in)).parse();
+  } catch (const std::invalid_argument& e) {
+    // A layer the stack refuses that the checks above did not catch.
+    throw std::runtime_error(std::string("ITF: ") + e.what());
+  }
 }
 
 Stack readItfFile(const std::string& path)
