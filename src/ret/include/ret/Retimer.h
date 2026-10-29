@@ -68,7 +68,8 @@ class Retimer
   void removeRegister(odb::dbInst* inst);
   std::vector<odb::dbNet*> buildChain(odb::dbBlock* block,
                                       odb::dbNet* driver_net,
-                                      int depth);
+                                      int depth,
+                                      const odb::Point* location);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

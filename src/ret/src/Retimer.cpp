@@ -309,10 +309,13 @@ void Retimer::removeRegister(odb::dbInst* inst)
 }
 
 // A chain of `depth` base registers fed by driver_net; nets[k] is the net
-// after the k-th register.
+// after the k-th register.  New registers start at `location` (the spot of
+// the registers they replace) so detailed placement can legalize them;
+// detailed placement skips unplaced instances.
 std::vector<odb::dbNet*> Retimer::buildChain(odb::dbBlock* block,
                                              odb::dbNet* driver_net,
-                                             int depth)
+                                             int depth,
+                                             const odb::Point* location)
 {
   std::vector<odb::dbNet*> nets(depth + 1);
   nets[0] = driver_net;
@@ -323,6 +326,10 @@ std::vector<odb::dbNet*> Retimer::buildChain(odb::dbBlock* block,
     odb::dbNet* out = odb::dbNet::create(
         block, ("ret_net_" + std::to_string(uniquify_)).c_str());
     uniquify_++;
+    if (location != nullptr) {
+      ff->setLocation(location->x(), location->y());
+      ff->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
     for (odb::dbITerm* iterm : ff->getITerms()) {
       if (iterm->getSigType() == odb::dbSigType::CLOCK) {
         iterm->connect(clock_net_);
@@ -355,6 +362,7 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
   // instances, is the same on every run.
   std::map<uint, odb::dbNet*> group_nets;
   std::unordered_map<odb::dbNet*, std::vector<SinkWr>> groups;
+  std::unordered_map<odb::dbNet*, odb::dbITerm*> group_driver;
   std::unordered_map<odb::dbNet*, std::unordered_set<odb::dbInst*>> group_flops;
   std::unordered_set<odb::dbNet*> changed;
   std::unordered_set<odb::dbNet*> dont_touch;
@@ -375,6 +383,7 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
       const int wr = w + r[edges[k].target] - r[u];
       group_nets[driver_net->getId()] = driver_net;
       groups[driver_net].push_back({handles[k].sink, wr});
+      group_driver[driver_net] = handles[k].driver;
       for (odb::dbInst* f : handles[k].flops) {
         group_flops[driver_net].insert(f);
         if (isDontTouchRegister(sta_, f)) {
@@ -403,6 +412,35 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
     }
     groups_changed++;
 
+    // Start location for the rebuilt chain: centroid of the registers being
+    // replaced, else the driving instance.
+    odb::Point location;
+    bool have_location = false;
+    {
+      long long sx = 0;
+      long long sy = 0;
+      int n_placed = 0;
+      for (odb::dbInst* f : group_flops[driver_net]) {
+        if (f->isPlaced()) {
+          const odb::Point pt = f->getLocation();
+          sx += pt.x();
+          sy += pt.y();
+          n_placed++;
+        }
+      }
+      if (n_placed > 0) {
+        location = odb::Point(static_cast<int>(sx / n_placed),
+                              static_cast<int>(sy / n_placed));
+        have_location = true;
+      } else {
+        odb::dbInst* driver = group_driver[driver_net]->getInst();
+        if (driver->isPlaced()) {
+          location = driver->getLocation();
+          have_location = true;
+        }
+      }
+    }
+
     for (odb::dbInst* f : group_flops[driver_net]) {
       removeRegister(f);
       removed++;
@@ -414,8 +452,8 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
     if (max_depth == 0) {
       continue;  // purely combinational now
     }
-    const std::vector<odb::dbNet*> depth_net
-        = buildChain(block, driver_net, max_depth);
+    const std::vector<odb::dbNet*> depth_net = buildChain(
+        block, driver_net, max_depth, have_location ? &location : nullptr);
     inserted += max_depth;
     for (const SinkWr& s : sinks) {
       if (s.wr > 0) {

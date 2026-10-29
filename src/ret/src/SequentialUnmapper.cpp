@@ -488,6 +488,8 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   created_.clear();
   const std::string inst_name = inst->getName();
   const std::string inst_master = inst->getMaster()->getName();
+  const bool placed = inst->isPlaced();
+  const odb::Point location = inst->getLocation();
   out_port_ = seq->output();
   out_inv_port_ = seq->outputInv();
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -576,6 +578,15 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     moves.push_back(std::move(move));
   }
 
+  // The replacement cells start where the register was, so detailed
+  // placement can legalize them (it skips unplaced instances).
+  if (placed) {
+    for (odb::dbInst* created : created_) {
+      created->setLocation(location.x(), location.y());
+      created->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+  }
+
   odb::dbInst::destroy(inst);
   for (const OutputMove& move : moves) {
     for (odb::dbITerm* load : move.loads) {
@@ -592,9 +603,9 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
 
   // Trace: original register -> base register + gates, by master.
   std::map<std::string, int> gates;
-  for (odb::dbMaster* master : created_) {
-    if (master != base) {
-      gates[master->getName()]++;
+  for (odb::dbInst* created : created_) {
+    if (created->getMaster() != base) {
+      gates[created->getMaster()->getName()]++;
     }
   }
   std::string gate_list;
@@ -692,11 +703,12 @@ odb::dbNet* SequentialUnmapper::newNet(const char* prefix)
 odb::dbInst* SequentialUnmapper::newInst(const char* prefix,
                                          odb::dbMaster* master)
 {
-  created_.push_back(master);
-  return odb::dbInst::create(
+  odb::dbInst* inst = odb::dbInst::create(
       block_,
       master,
       (std::string(prefix) + std::to_string(uniquify_++)).c_str());
+  created_.push_back(inst);
+  return inst;
 }
 
 odb::dbNet* SequentialUnmapper::makeInverter(odb::dbNet* input)

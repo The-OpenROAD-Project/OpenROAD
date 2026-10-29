@@ -30,9 +30,9 @@ D-pin load, so a move that changes the load of a gate is costed correctly.
 The result is applied with minimal perturbation: only the register groups
 whose edge weights changed are rebuilt. Every other register and every
 combinational cell keeps its placement. New registers are the base D
-flip-flop that `unmap_sequential_cells` would choose and are left unplaced;
-run `detailed_placement` (or `global_placement -incremental` followed by
-`detailed_placement`) afterwards and re-estimate parasitics.
+flip-flop that `unmap_sequential_cells` would choose. They are placed at
+the centroid of the registers they replace (not legalized); run
+`detailed_placement` afterwards and re-estimate parasitics.
 
 A register that moves and is not the base cell (for example an enable flop)
 is first unmapped with the same logic as `unmap_sequential_cells`; only the
@@ -83,7 +83,8 @@ unmap_sequential_cells
 This command takes no arguments. New instances are named `unmap_ff_N`,
 `unmap_inv_N`, `unmap_and_N`, `unmap_or_N`, `unmap_tie1_N` and
 `unmap_tie0_N`; new nets are named `unmap_state_N` and `unmap_net_N`. The
-new cells are not placed; run placement afterwards.
+new cells are placed on top of the register they replace (not legalized);
+run `detailed_placement` afterwards.
 
 ## Example scripts
 
