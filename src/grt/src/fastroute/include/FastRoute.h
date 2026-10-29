@@ -78,6 +78,12 @@ struct parent3D
   int x, y;
 };
 
+struct HeapEntry3D
+{
+  int dist;
+  int idx;
+};
+
 struct CostParams
 {
   const float logistic_coef;
@@ -475,23 +481,9 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
-  void addNeighborPoints(int netID,
-                         int n1,
-                         int n2,
-                         std::vector<int*>& points_heap_3D,
-                         multi_array<int, 3>& dist_3D,
-                         multi_array<Direction, 3>& directions_3D,
-                         multi_array<int, 3>& corr_edge_3D,
-                         multi_array<int, 3>& path_len_3D);
+  void addNeighborPoints(int netID, int n1, int n2, bool is_src);
   void setupHeap3D(int netID,
                    int edgeID,
-                   std::vector<int*>& src_heap_3D,
-                   std::vector<int*>& dest_heap_3D,
-                   multi_array<Direction, 3>& directions_3D,
-                   multi_array<int, 3>& corr_edge_3D,
-                   multi_array<int, 3>& d1_3D,
-                   multi_array<int, 3>& d2_3D,
-                   multi_array<int, 3>& path_len_3D,
                    int regionX1,
                    int regionX2,
                    int regionY1,
@@ -919,11 +911,11 @@ class FastRouteCore
   multi_array<Direction, 3> directions_3D_;
   multi_array<int, 3> corr_edge_3D_;
   multi_array<parent3D, 3> pr_3D_;
-  std::vector<bool> pop_heap2_3D_;
-  std::vector<int*> src_heap_3D_;
-  std::vector<int*> dest_heap_3D_;
+  std::vector<uint8_t> pop_heap2_3D_;
+  std::vector<HeapEntry3D> src_heap_3D_;
+  std::vector<int> dest_heap_3D_;
+  std::vector<int> heap_pos_3D_;
   multi_array<int, 3> d1_3D_;
-  multi_array<int, 3> d2_3D_;
   multi_array<int, 3> path_len_3D_;
   // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
   // visited_2D_/queue_2D_ reuse pattern: allocate once, reset the used region

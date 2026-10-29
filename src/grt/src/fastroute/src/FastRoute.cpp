@@ -366,21 +366,21 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   d2_2D_.resize(boost::extents[y_range_][x_range_]);
 
   // maze3D variables
+  grid_hv_ = x_grid_ * y_grid_;
   directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
-  pop_heap2_3D_.resize(total_size, false);
+  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
+  pop_heap2_3D_.assign(total_size, 0);
+  heap_pos_3D_.resize(total_size, -1);
 
   // allocate memory for priority queue
-  total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
   src_heap_3D_.resize(total_size);
   dest_heap_3D_.resize(total_size);
 
-  d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
-  d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
-  path_len_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  d1_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  path_len_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 }
 
 void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
@@ -1205,7 +1205,7 @@ void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
 
-  grid_hv_ = x_range_ * y_range_;
+  grid_hv_ = x_grid_ * y_grid_;
 
   parent_x1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
@@ -2749,11 +2749,12 @@ NetRouteMap FastRouteCore::run()
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
         long_edge_len = BIG_INT;
-        short_edge_len = BIG_INT;
       }
 
       mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-      mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+      if (!enable_resistance_aware_) {
+        mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+      }
     }
 
     // Disable estimate parasitics for grt incremental steps with
