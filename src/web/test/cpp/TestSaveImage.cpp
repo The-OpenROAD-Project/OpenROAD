@@ -826,16 +826,6 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
       << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
-TEST_F(SaveImageTest, ParseFromJsonRoutingCongestionOption)
-{
-  TileVisibility vis;
-  EXPECT_FALSE(vis.routing_congestion);
-  auto json_obj
-      = boost::json::parse("{\"routing_congestion\":true}").as_object();
-  vis.parseFromJson(json_obj);
-  EXPECT_TRUE(vis.routing_congestion);
-}
-
 class TestRoutingCongestionHeatMap : public web::HeatMapDataSource
 {
  public:
@@ -881,13 +871,15 @@ TEST_F(SaveImageTest, RoutingCongestionHeatmapRendersInSavedImage)
 
   const std::string path_no_congestion = tempPng("no_routing_congestion");
   TileVisibility vis_off;
-  vis_off.routing_congestion = false;
+  EXPECT_FALSE(vis_off.routing_congestion);
   tile_gen_->saveImage(
       path_no_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
 
   const std::string path_congestion = tempPng("with_routing_congestion");
   TileVisibility vis_on;
-  vis_on.routing_congestion = true;
+  vis_on.parseFromJson(
+      boost::json::parse("{\"routing_congestion\":true}").as_object());
+  EXPECT_TRUE(vis_on.routing_congestion);
   tile_gen_->saveImage(path_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
 
   ASSERT_TRUE(std::filesystem::exists(path_no_congestion));
