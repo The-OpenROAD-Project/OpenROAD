@@ -58,7 +58,6 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
       if (pin->getIoType() == odb::dbIoType::INPUT
           && bterm->getIoType() == odb::dbIoType::INPUT) {
         pinned_[id] = true;
-        input_fed_[id] = true;
       }
       if (pin->getIoType() == odb::dbIoType::OUTPUT
           && bterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -134,7 +133,6 @@ void RetimingGraph::build()
   adj_.assign(n, {});
   phys_.assign(n, {});
   pinned_.assign(n, false);
-  input_fed_.assign(n, false);
 
   for (int i = 0; i < n; i++) {
     markBoundary(nodes_[i], i);
@@ -145,10 +143,13 @@ void RetimingGraph::build()
   fenceDontTouch();
 }
 
-// Pin every gate that would have to move a don't-touch register, so the
-// search never proposes that slide.
+// Pin every gate that would have to move a don't-touch register, and every
+// gate whose fanin registers sit on different clock nets (a gated and an
+// ungated register cannot be merged into one), so the search never proposes
+// those slides.
 void RetimingGraph::fenceDontTouch()
 {
+  std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
   for (int u = 0; u < static_cast<int>(nodes_.size()); u++) {
     for (int k = 0; k < static_cast<int>(adj_[u].size()); k++) {
       const int target = adj_[u][k].target;
@@ -156,11 +157,17 @@ void RetimingGraph::fenceDontTouch()
         continue;
       }
       for (odb::dbInst* flop : phys_[u][k].flops) {
+        fanin_clocks[target].insert(registerClockNet(flop));
         if (isDontTouchRegister(sta_, flop)) {
           pinned_[target] = true;
           break;
         }
       }
+    }
+  }
+  for (int v = 0; v < static_cast<int>(nodes_.size()); v++) {
+    if (fanin_clocks[v].size() > 1) {
+      pinned_[v] = true;
     }
   }
 }

@@ -29,4 +29,7 @@ odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
 // True for a register (not a latch) clocked on the falling edge.
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst);
 
+// The net on the register's clock pin, or nullptr.
+odb::dbNet* registerClockNet(odb::dbInst* inst);
+
 }  // namespace ret

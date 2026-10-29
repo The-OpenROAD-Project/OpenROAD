@@ -45,9 +45,8 @@ class RetimingGraph
   std::vector<odb::dbInst*> nodes_;          // vertex id -> gate
   std::vector<std::vector<Edge>> adj_;       // out edges of each vertex
   std::vector<std::vector<EdgePhys>> phys_;  // parallel to adj_
-  std::vector<bool> pinned_;     // gate may not move: I/O boundary or fed
-                                 // through a don't-touch register
-  std::vector<bool> input_fed_;  // an input pin is wired to a primary input
+  std::vector<bool> pinned_;  // gate may not move: I/O boundary or fed
+                              // through a don't-touch register
   float clock_period_ = 0.0f;
 
  private:

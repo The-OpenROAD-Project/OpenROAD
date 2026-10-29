@@ -23,11 +23,11 @@ namespace ret {
 //
 // Delays are read once from STA: per-edge wire delay (arrival difference
 // between driver and sink pin) and per-gate arcs.  Only register-to-register
-// paths form the objective; a path that starts at a primary input cannot be
-// shortened by a forward move, so it is excluded from the worst arrival but
-// kept as a constraint: a move that would push an input-rooted path past the
-// clock period (or past its starting value when it already violates) is
-// rejected.  Each
+// paths form the objective; a path that starts at a pinned gate (fed by a
+// primary input, driving an output, or fenced) cannot be shortened by a
+// forward move, so it is excluded from the worst arrival but kept as a
+// constraint: a move that would push such a path past the clock period (or
+// past its starting value when it already violates) is rejected.  Each
 // gate arc is characterized twice from the liberty table model, under its
 // combinational output load and under the register D-pin load, and the arrival
 // sweep picks the variant matching the current register configuration (a gate
@@ -90,7 +90,6 @@ class Retime
   double markCriticalCone();
   double estimateSlideDelta(int v);
   bool forwardMovable(int v) const;
-  void reportWorstPathStart();
 
   RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -99,8 +98,8 @@ class Retime
   std::vector<int> r_;
   std::vector<double> gate_floor_;
   std::vector<double> arrivals_;     // register-rooted, the objective
-  std::vector<double> arrivals_pi_;  // input-rooted, the constraint
-  std::vector<float> pi_source_;     // STA arrival at an input-fed gate
+  std::vector<double> arrivals_pi_;  // pinned-rooted, the constraint
+  std::vector<float> pi_source_;     // STA arrival at a pinned source gate
   std::vector<std::vector<FaninEdge>> fanin_;
   std::vector<char> in_critical_cone_;
 
@@ -129,8 +128,8 @@ class Retime
   odb::dbMaster* flop_master_ = nullptr;
   float flop_d_cap_ = 0.0f;
   double critical_threshold_ = 0.0;
-  double worst_pi_ = 0.0;  // worst input-rooted arrival of the last sweep
-  double pi_limit_ = 0.0;  // input-rooted arrivals may not grow past this
+  double worst_pi_ = 0.0;  // worst pinned-rooted arrival of the last sweep
+  double pi_limit_ = 0.0;  // pinned-rooted arrivals may not grow past this
   int dcalc_ap_ = 0;
 };
 

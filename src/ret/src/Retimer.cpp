@@ -145,36 +145,21 @@ void Retimer::retime(int max_moves)
   }
 }
 
-// Single clock domain: every register must hang off the same clock net.
+// Clock net of the first register, the fallback for a rebuilt chain whose
+// group has no register to inherit a clock net from.
 odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
 {
-  std::unordered_set<odb::dbNet*> clock_nets;
-  odb::dbNet* first = nullptr;
   for (odb::dbInst* inst : block->getInsts()) {
     if (!inst->getMaster()->isSequential()) {
       continue;
     }
-    for (odb::dbITerm* iterm : inst->getITerms()) {
-      if (iterm->getSigType() == odb::dbSigType::CLOCK
-          && iterm->getNet() != nullptr) {
-        clock_nets.insert(iterm->getNet());
-        if (first == nullptr) {
-          first = iterm->getNet();
-        }
-      }
+    odb::dbNet* clock = registerClockNet(inst);
+    if (clock != nullptr) {
+      return clock;
     }
   }
-  if (first == nullptr) {
-    logger_->error(utl::RET, 29, "No register with a clock pin found.");
-  }
-  if (clock_nets.size() > 1) {
-    logger_->error(utl::RET,
-                   34,
-                   "Registers are clocked by {} different nets; only "
-                   "single-clock designs can be retimed.",
-                   clock_nets.size());
-  }
-  return first;
+  logger_->error(utl::RET, 29, "No register with a clock pin found.");
+  return nullptr;
 }
 
 // Register kinds the retimer does not handle yet are an error, not a silent
@@ -354,6 +339,7 @@ void Retimer::removeRegister(odb::dbInst* inst)
 // detailed placement skips unplaced instances.
 std::vector<odb::dbNet*> Retimer::buildChain(odb::dbBlock* block,
                                              odb::dbNet* driver_net,
+                                             odb::dbNet* clock_net,
                                              int depth,
                                              const odb::Point* location)
 {
@@ -372,7 +358,7 @@ std::vector<odb::dbNet*> Retimer::buildChain(odb::dbBlock* block,
     }
     for (odb::dbITerm* iterm : ff->getITerms()) {
       if (iterm->getSigType() == odb::dbSigType::CLOCK) {
-        iterm->connect(clock_net_);
+        iterm->connect(clock_net);
       } else if (iterm->getIoType() == odb::dbIoType::INPUT) {
         iterm->connect(cur);
       } else if (iterm->getMTerm() == dff_q_mterm_) {
@@ -403,6 +389,9 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
   std::map<uint, odb::dbNet*> group_nets;
   std::unordered_map<odb::dbNet*, std::vector<SinkWr>> groups;
   std::unordered_map<odb::dbNet*, odb::dbITerm*> group_driver;
+  // Clock net of the registers on each gate's fanin edges, for chains that
+  // appear on a gate whose own registers all moved away.
+  std::unordered_map<odb::dbInst*, odb::dbNet*> gate_clock;
   std::unordered_map<odb::dbNet*, std::unordered_set<odb::dbInst*>> group_flops;
   std::unordered_set<odb::dbNet*> changed;
   std::unordered_set<odb::dbNet*> dont_touch;
@@ -424,6 +413,10 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
       group_nets[driver_net->getId()] = driver_net;
       groups[driver_net].push_back({handles[k].sink, wr});
       group_driver[driver_net] = handles[k].driver;
+      if (!handles[k].flops.empty()) {
+        gate_clock.emplace(graph.nodes_[edges[k].target],
+                           registerClockNet(handles[k].flops.front()));
+      }
       for (odb::dbInst* f : handles[k].flops) {
         group_flops[driver_net].insert(f);
         if (isDontTouchRegister(sta_, f)) {
@@ -455,6 +448,21 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
       continue;
     }
     groups_changed++;
+
+    // The chain keeps the clock net of the registers it replaces; a chain on
+    // a gate whose registers all moved on takes the clock of the registers
+    // that fed that gate.
+    odb::dbNet* chain_clock = nullptr;
+    for (odb::dbInst* f : group_flops[driver_net]) {
+      chain_clock = registerClockNet(f);
+      if (chain_clock != nullptr) {
+        break;
+      }
+    }
+    if (chain_clock == nullptr) {
+      auto it = gate_clock.find(group_driver[driver_net]->getInst());
+      chain_clock = it != gate_clock.end() ? it->second : clock_net_;
+    }
 
     // Start location for the rebuilt chain: centroid of the registers being
     // replaced, else the driving instance.
@@ -496,8 +504,12 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
     if (max_depth == 0) {
       continue;  // purely combinational now
     }
-    const std::vector<odb::dbNet*> depth_net = buildChain(
-        block, driver_net, max_depth, have_location ? &location : nullptr);
+    const std::vector<odb::dbNet*> depth_net
+        = buildChain(block,
+                     driver_net,
+                     chain_clock,
+                     max_depth,
+                     have_location ? &location : nullptr);
     inserted += max_depth;
     for (const SinkWr& s : sinks) {
       if (s.wr > 0) {

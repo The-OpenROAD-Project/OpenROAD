@@ -34,9 +34,9 @@ module top (a,
     .ZN(m1));
  INV_X1 h2 (.A(m1),
     .ZN(m2));
- INV_X1 h3 (.A(ret_net_0),
+ INV_X1 h3 (.A(m2),
     .ZN(m3));
- INV_X1 h4 (.A(m3),
+ INV_X1 h4 (.A(ret_net_0),
     .ZN(m4));
  BUF_X1 o1 (.A(q2),
     .Z(y));
@@ -63,7 +63,7 @@ module top (a,
  DFF_X1 r3 (.D(c6),
     .CK(clk),
     .Q(q3));
- DFF_X1 ret_ff_0 (.D(m2),
+ DFF_X1 ret_ff_0 (.D(m3),
     .CK(clk),
     .Q(ret_net_0));
 endmodule

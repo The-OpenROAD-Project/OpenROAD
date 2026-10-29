@@ -43,8 +43,7 @@ class Retimer
   bool unmapSequentialCells();
 
   // retime: max_moves <= 0 is unlimited.  Errors out on designs it cannot
-  // retime yet: missing base cells, several clocks, registers on different
-  // clock nets, negative-edge registers.
+  // retime yet: missing base cells, several clocks, negative-edge registers.
   void retime(int max_moves);
 
  private:
@@ -70,6 +69,7 @@ class Retimer
   void removeRegister(odb::dbInst* inst);
   std::vector<odb::dbNet*> buildChain(odb::dbBlock* block,
                                       odb::dbNet* driver_net,
+                                      odb::dbNet* clock_net,
                                       int depth,
                                       const odb::Point* location);
 
@@ -80,7 +80,7 @@ class Retimer
 
   odb::dbMaster* dff_master_ = nullptr;
   odb::dbMTerm* dff_q_mterm_ = nullptr;
-  odb::dbNet* clock_net_ = nullptr;
+  odb::dbNet* clock_net_ = nullptr;  // first register's clock net
   int uniquify_ = 0;
 };
 

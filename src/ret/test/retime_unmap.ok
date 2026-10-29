@@ -21,9 +21,9 @@ worst slack max 4.1116
     10 |  1.499e-10 |     0 |     1 |      1 | g10 -> n10
     11 |  1.101e-10 |     0 |     1 |      1 | g11 -> n11
     12 |  7.022e-11 |     0 |     1 |      1 | g12 -> n12
-    13 |  6.142e-11 |     0 |     1 |      1 | g13 -> n13
+    13 |  3.032e-11 |     0 |     1 |      1 | g13 -> n13
 -------+------------+-------+-------+--------+---------------------
-[INFO RET-0023] Final worst arrival 6.142e-11 (model slack 4.939e-09) after 13 slides; 0 candidates rejected for pushing an input path past the clock period
+[INFO RET-0023] Final worst arrival 3.032e-11 (model slack 4.97e-09) after 13 slides; 0 candidates rejected for pushing an input path past the clock period
 [INFO RET-0008] Unmapped 1 registers (0 skipped: next_state not expressible with the available cells).
 [INFO RET-0009]        1 x sky130_fd_sc_hd__edfxtp_1
 [INFO RET-0028] Lag remap is ambiguous after unmapping; re-solving on the new netlist.
@@ -44,9 +44,9 @@ worst slack max 4.1116
     10 |  1.499e-10 |     0 |     1 |      1 | g10 -> n10
     11 |  1.101e-10 |     0 |     1 |      1 | g11 -> n11
     12 |  7.022e-11 |     0 |     1 |      1 | g12 -> n12
-    13 |  6.142e-11 |     0 |     1 |      1 | g13 -> n13
+    13 |  3.032e-11 |     0 |     1 |      1 | g13 -> n13
 -------+------------+-------+-------+--------+---------------------
-[INFO RET-0023] Final worst arrival 6.142e-11 (model slack 4.939e-09) after 13 slides; 0 candidates rejected for pushing an input path past the clock period
+[INFO RET-0023] Final worst arrival 3.032e-11 (model slack 4.97e-09) after 13 slides; 0 candidates rejected for pushing an input path past the clock period
 [INFO RET-0024] Removed 1 registers (2 of 19 register groups changed).
 [INFO RET-0025] Inserted 2 registers.
 worst slack max 3.9474

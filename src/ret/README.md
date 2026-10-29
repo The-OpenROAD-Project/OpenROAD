@@ -23,11 +23,12 @@ arrival at a register data pin. The search builds the retiming graph of
 the design (gates are vertices, registers are edge weights), reads per-gate
 arc delays and per-net wire delays from the current STA results, and
 repeatedly moves one register group forward across a gate when the exact
-recomputed worst arrival improves. Only register-to-register paths form
-the objective: a path that starts at a primary input cannot be shortened by a
-forward move, so it never blocks the search. Such paths are a constraint
-instead: a move that would push an input path past the clock period (or past
-its current length when it already violates) is rejected. The arc delay of a gate whose output
+recomputed worst arrival improves. Only paths a forward move can shorten
+form the objective: a path that starts at a primary input, at a gate driving
+an output, or at a fenced gate cannot be shortened by a forward move, so it
+never blocks the search. Such paths are a constraint instead: a move that
+would push one past the clock period (or past its current length when it
+already violates) is rejected. The arc delay of a gate whose output
 drives a register is recomputed from the liberty table under the register
 D-pin load, so a move that changes the load of a gate is costed correctly.
 
@@ -42,8 +43,11 @@ A register that moves and is not the base cell (for example an enable flop)
 is first unmapped with the same logic as `unmap_sequential_cells`; only the
 registers that move are unmapped. Registers with asynchronous set or reset,
 latches and scan cells never move, and a gate fed through such a register
-or connected to a primary input or output is never crossed. The design must
-have a single clock domain and a clock defined with `create_clock`.
+or connected to a primary input or output is never crossed, and neither is a
+gate fed by registers on different clock nets (a gated and an ungated
+register are never merged). Rebuilt registers keep the clock net of the
+registers they replace. The design must have a single clock (gated copies
+of it are fine) defined with `create_clock`.
 
 ```tcl
 retime
@@ -66,8 +70,7 @@ no slides.` and leaves the design unchanged.
 
 The command stops with an error on designs it cannot retime yet: libraries
 without a usable base register, inverter, AND2 or OR2 cell; more than one
-non-virtual clock; registers on more than one clock net; negative-edge
-registers; or no clock defined.
+non-virtual clock; negative-edge registers; or no clock defined.
 ### Unmap Sequential Cells
 
 Rewrite every synchronous register as a base D flip-flop whose D pin is

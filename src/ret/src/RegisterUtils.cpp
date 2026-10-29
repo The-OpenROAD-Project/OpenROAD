@@ -203,4 +203,14 @@ bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
   return clock != nullptr && clock->op() == sta::FuncExpr::Op::not_;
 }
 
+odb::dbNet* registerClockNet(odb::dbInst* inst)
+{
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getSigType() == odb::dbSigType::CLOCK) {
+      return iterm->getNet();
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace ret

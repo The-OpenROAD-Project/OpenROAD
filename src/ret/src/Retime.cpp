@@ -29,9 +29,10 @@
 namespace ret {
 
 namespace {
-// Arrival given to a path that starts at a primary input.  A forward move can
-// only lengthen such a path, so it must never be the worst arrival the search
-// tries to lower; it stays hugely negative through every max().
+// Arrival given to a path that starts at a pinned gate (fed by a primary
+// input, driving an output, or fenced).  A forward move can only lengthen
+// such a path, so it must never be the worst arrival the search tries to
+// lower; it stays hugely negative through every max().
 constexpr double kExcluded = -1e30;
 }  // namespace
 
@@ -134,7 +135,7 @@ void Retime::computeArcDelays()
   resolveFlopDCap();
   pi_source_.assign(n, 0.0f);
   for (int u = 0; u < n; u++) {
-    if (!graph_->input_fed_[u]) {
+    if (!graph_->pinned_[u]) {
       continue;
     }
     for (odb::dbITerm* iterm : graph_->nodes_[u]->getITerms()) {
@@ -348,8 +349,8 @@ bool Retime::outputRegistered(int v) const
 
 // Longest-path sweep over the w_r == 0 subgraph.  A gate's arrival is the max
 // over its combinational fanins of (fanin arrival + wire + the gate's arc
-// variant for the current configuration).  Paths rooted at a primary input
-// carry kExcluded: only register-to-register paths are measured.
+// variant for the current configuration).  Paths rooted at a pinned gate
+// carry kExcluded: only paths a forward move can shorten are measured.
 void Retime::computeArrivals()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -367,7 +368,7 @@ void Retime::computeArrivals()
   int tail = 0;
   for (int u = 0; u < n; u++) {
     if (scratch_.indeg[u] == 0) {
-      if (graph_->input_fed_[u]) {
+      if (graph_->pinned_[u]) {
         arrivals_[u] = kExcluded;
         arrivals_pi_[u] = pi_source_[u];
       } else {
@@ -461,7 +462,7 @@ double Retime::estimateSlideDelta(int v)
     }
   }
   if (new_v == kNeg) {
-    new_v = graph_->input_fed_[v] ? kExcluded : gate_floor_[v];
+    new_v = graph_->pinned_[v] ? kExcluded : gate_floor_[v];
   }
   const double v_delta = excess(new_v) - excess(arrivals_[v]);
 
@@ -523,7 +524,7 @@ double Retime::estimateSlideDelta(int v)
       a = std::max(a, src + fe.wire + arc);
     }
     if (a == kNeg) {
-      a = graph_->input_fed_[t] ? kExcluded : gate_floor_[t];
+      a = graph_->pinned_[t] ? kExcluded : gate_floor_[t];
     }
     scratch_.local_arr[t] = a;
     for (const Edge& e : graph_->adj_[t]) {
@@ -565,46 +566,6 @@ bool Retime::forwardMovable(int v) const
   return true;
 }
 
-// When nothing can be accepted the usual cause is a worst path whose first
-// gate is pinned; say so instead of reporting zero slides silently.
-void Retime::reportWorstPathStart()
-{
-  const int n = static_cast<int>(graph_->nodes_.size());
-  int t = 0;
-  for (int v = 0; v < n; v++) {
-    if (arrivals_[v] > arrivals_[t]) {
-      t = v;
-    }
-  }
-  for (int step = 0; step < n; step++) {
-    const bool registered = outputRegistered(t);
-    int best_u = -1;
-    double best = -1.0;
-    for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.weight + r_[t] - r_[fe.u] != 0) {
-        continue;
-      }
-      const double arc = registered ? fe.arc_reg : fe.arc_comb;
-      const double cand = arrivals_[fe.u] + fe.wire + arc;
-      if (cand > best) {
-        best = cand;
-        best_u = fe.u;
-      }
-    }
-    if (best_u < 0) {
-      break;
-    }
-    t = best_u;
-  }
-  if (graph_->pinned_[t]) {
-    logger_->info(utl::RET,
-                  22,
-                  "The worst path starts at pinned gate {}; its arrival cannot "
-                  "be lowered by a forward register move.",
-                  graph_->nodes_[t]->getName());
-  }
-}
-
 void Retime::run(int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -632,7 +593,6 @@ void Retime::run(int max_moves)
     logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
     return;
   }
-  reportWorstPathStart();
 
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
   const double eps = 1e-15;
