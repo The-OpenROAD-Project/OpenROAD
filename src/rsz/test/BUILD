@@ -747,6 +747,30 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestSkewBudgetRestore",
+    size = "small",
+    srcs = ["cpp/TestSkewBudgetRestore.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold1.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_library(
     name = "helpers",
     srcs = ["helpers.py"],
