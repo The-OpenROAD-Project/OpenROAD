@@ -338,6 +338,10 @@ void WebServer::installPauseHooks()
   // the script waits, as in the Qt GUI.
   hooks.enter = [this]() {
     tcl_eval_->pauseBegin();
+    // What the script did so far is about to be viewed.
+    if (generator_) {
+      generator_->noticeChipletEdits();
+    }
     if (onScriptThread() && script_holds_gate_) {
       tcl_eval_->script_gate.open();
     }
@@ -438,7 +442,12 @@ void WebServer::serve(int port,
     // hold their redraws while every request would be turned away.  Once it
     // stops, the renderers it turned on or off are settled.
     tcl_eval_->script_gate.setOnChange(
-        [hook = viewer_hook_.get()](bool closed) {
+        [hook = viewer_hook_.get(),
+         weak_gen = std::weak_ptr<TileGenerator>(generator_)](bool closed) {
+          // A script that moved a chiplet leaves it to be viewed now.
+          if (auto gen = weak_gen.lock(); gen && !closed) {
+            gen->noticeChipletEdits();
+          }
           hook->sessions().broadcast(scriptRunningJson(/*running=*/closed));
           if (!closed && hook->takeRenderersChanged()) {
             hook->sessions().broadcast(kRendererControlsChangedJson);
@@ -455,7 +464,13 @@ void WebServer::serve(int port,
     // Once a command is done its renderers are settled: send the clients to
     // re-read the control list if one came or went (that push also redraws),
     // or just to redraw if tiles drawn while it ran left the renderers out.
-    tcl_eval_->command_done = [hook = viewer_hook_.get()](bool draw_skipped) {
+    tcl_eval_->command_done = [hook = viewer_hook_.get(),
+                               weak_gen = std::weak_ptr<TileGenerator>(
+                                   generator_)](bool draw_skipped) {
+      // ODB reports no chiplet moves; a command that made one is an edit.
+      if (auto gen = weak_gen.lock()) {
+        gen->noticeChipletEdits();
+      }
       if (hook->takeRenderersChanged()) {
         hook->sessions().broadcast(kRendererControlsChangedJson);
       } else if (draw_skipped) {
