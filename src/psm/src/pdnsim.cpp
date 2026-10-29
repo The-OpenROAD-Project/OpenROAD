@@ -86,13 +86,19 @@ void PDNSim::setDebugGui(bool enable)
 void PDNSim::setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
-  voltages[corner] = voltage;
+  if (voltages[corner] != voltage) {
+    voltages[corner] = voltage;
+    clearSolutions(corner);
+  }
 }
 
 void PDNSim::setInstPower(odb::dbInst* inst, sta::Scene* corner, float power)
 {
   auto& powers = user_powers_[inst];
-  powers[corner] = power;
+  if (powers[corner] != power) {
+    powers[corner] = power;
+    clearSolutions(corner);
+  }
 }
 
 void PDNSim::analyzePowerGrid(odb::dbNet* net,
@@ -426,6 +432,18 @@ void PDNSim::clearSolvers()
 {
   solvers_.clear();
   assembly_solvers_.clear();
+}
+
+void PDNSim::clearSolutions(sta::Scene* corner)
+{
+  for (auto& [net, solver] : solvers_) {
+    solver->clearSolution(corner);
+  }
+  for (auto& [chip_net, scene_map] : assembly_solvers_) {
+    for (auto& [scene, solver] : scene_map) {
+      solver->clearSolution(corner);
+    }
+  }
 }
 
 void PDNSim::inDbPostMoveInst(odb::dbInst*)
