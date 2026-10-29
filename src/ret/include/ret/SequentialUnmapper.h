@@ -5,6 +5,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "odb/db.h"
 
@@ -103,6 +104,7 @@ class SequentialUnmapper
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;
+  std::vector<odb::dbMaster*> created_;  // cells made for this register
 
   int unmapped_ = 0;
   int skipped_ = 0;

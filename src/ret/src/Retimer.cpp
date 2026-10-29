@@ -4,6 +4,7 @@
 #include "ret/Retimer.h"
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -86,6 +87,20 @@ void Retimer::retime(int max_moves, bool stop_at_period)
   if (movers.empty()) {
     applyRetiming(graph, r);
     return;
+  }
+  std::map<uint, odb::dbInst*> ordered_movers;
+  for (odb::dbInst* mover : movers) {
+    ordered_movers[mover->getId()] = mover;
+  }
+  for (const auto& [id, mover] : ordered_movers) {
+    debugPrint(logger_,
+               utl::RET,
+               "unmap",
+               1,
+               "{} ({}) moves and is not the base cell {}; unmapping it first",
+               mover->getName(),
+               mover->getMaster()->getName(),
+               dff_master_->getName());
   }
 
   // Normalize only the registers that move, then carry the lags over.
@@ -336,6 +351,9 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
     odb::dbITerm* sink;
     int wr;
   };
+  // Keyed by net id so the rebuild order, and with it the names of the new
+  // instances, is the same on every run.
+  std::map<uint, odb::dbNet*> group_nets;
   std::unordered_map<odb::dbNet*, std::vector<SinkWr>> groups;
   std::unordered_map<odb::dbNet*, std::unordered_set<odb::dbInst*>> group_flops;
   std::unordered_set<odb::dbNet*> changed;
@@ -355,6 +373,7 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
       }
       const int w = edges[k].weight;
       const int wr = w + r[edges[k].target] - r[u];
+      group_nets[driver_net->getId()] = driver_net;
       groups[driver_net].push_back({handles[k].sink, wr});
       for (odb::dbInst* f : handles[k].flops) {
         group_flops[driver_net].insert(f);
@@ -373,7 +392,8 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
   int reregistered_ports = 0;
   int groups_changed = 0;
   int skipped_groups = 0;
-  for (auto& [driver_net, sinks] : groups) {
+  for (const auto& [net_id, driver_net] : group_nets) {
+    const std::vector<SinkWr>& sinks = groups[driver_net];
     if (changed.count(driver_net) == 0) {
       continue;  // every sink unchanged: this group's registers stay put
     }

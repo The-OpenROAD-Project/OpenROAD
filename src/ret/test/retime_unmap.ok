@@ -32,6 +32,4 @@ worst slack max 4.1116
 [INFO RET-0024] Removed 1 registers (2 of 19 register groups changed).
 [INFO RET-0025] Inserted 2 registers.
 worst slack max 4.2119
-Differences found at line 27.
- wire ret_net_0;
- wire ret_net_1;
+No differences found.

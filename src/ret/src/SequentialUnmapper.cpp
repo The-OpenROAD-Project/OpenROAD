@@ -485,6 +485,9 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                                    const sta::Sequential* seq)
 {
   in_port_net_.clear();
+  created_.clear();
+  const std::string inst_name = inst->getName();
+  const std::string inst_master = inst->getMaster()->getName();
   out_port_ = seq->output();
   out_inv_port_ = seq->outputInv();
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -515,6 +518,14 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   odb::dbMaster* base = isNegedge(seq) ? negedge_seq_master_ : seq_master_;
   if (base == nullptr || clock_net == nullptr || out_pins.empty()
       || !canSynth(seq->data())) {
+    debugPrint(logger_,
+               utl::RET,
+               "unmap",
+               1,
+               "skip {} ({}): next_state not expressible with the base cell "
+               "and gates found",
+               inst_name,
+               inst_master);
     skipped_++;
     return;
   }
@@ -578,6 +589,30 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     odb::dbNet::destroy(move.old_net);
   }
   unmapped_++;
+
+  // Trace: original register -> base register + gates, by master.
+  std::map<std::string, int> gates;
+  for (odb::dbMaster* master : created_) {
+    if (master != base) {
+      gates[master->getName()]++;
+    }
+  }
+  std::string gate_list;
+  for (const auto& [name, count] : gates) {
+    gate_list
+        += fmt::format("{}{} x {}", gate_list.empty() ? "" : ", ", count, name);
+  }
+  debugPrint(logger_,
+             utl::RET,
+             "unmap",
+             1,
+             "{} ({}) -> {} ({}){}{}",
+             inst_name,
+             inst_master,
+             flop->getName(),
+             base->getName(),
+             gate_list.empty() ? "" : " + ",
+             gate_list);
 }
 
 // Build the net computing `expr` from the register's input nets and state.
@@ -657,6 +692,7 @@ odb::dbNet* SequentialUnmapper::newNet(const char* prefix)
 odb::dbInst* SequentialUnmapper::newInst(const char* prefix,
                                          odb::dbMaster* master)
 {
+  created_.push_back(master);
   return odb::dbInst::create(
       block_,
       master,
