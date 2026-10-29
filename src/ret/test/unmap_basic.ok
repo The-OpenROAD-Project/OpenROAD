@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: sequnmap_basic.lef, created 1 layers, 11 library cells
+[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
+[INFO RET-0008] Unmapped 2 registers (0 skipped: next_state not expressible with the available cells).
+[INFO RET-0009]        1 x DFFE_PP
+[INFO RET-0009]        1 x DFF_P_QN
+[WARNING RET-0010] Left 1 sequential cells untouched (1 with asynchronous controls, 0 latches, 0 scan, 0 other).
+No differences found.

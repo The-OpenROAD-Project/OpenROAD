@@ -1,0 +1,51 @@
+module top (clk,
+    d1,
+    d2,
+    e1,
+    q1,
+    q3,
+    qn2,
+    rst_n);
+ input clk;
+ input d1;
+ input d2;
+ input e1;
+ output q1;
+ output q3;
+ output qn2;
+ input rst_n;
+
+ wire unmap_state_11;
+ wire unmap_state_1;
+ wire unmap_net_3;
+ wire unmap_net_5;
+ wire unmap_net_7;
+ wire unmap_net_9;
+ wire unmap_net_13;
+
+ DFF_PN0 ff3 (.D(d1),
+    .RN(rst_n),
+    .CK(clk),
+    .Q(q3));
+ AND2 unmap_and_2 (.A(d1),
+    .B(e1),
+    .Y(unmap_net_3));
+ AND2 unmap_and_6 (.A(unmap_state_1),
+    .B(unmap_net_5),
+    .Y(unmap_net_7));
+ DFF_P unmap_ff_0 (.D(unmap_net_9),
+    .CK(clk),
+    .Q(unmap_state_1));
+ DFF_P unmap_ff_10 (.D(d2),
+    .CK(clk),
+    .Q(unmap_state_11));
+ INV unmap_inv_12 (.A(unmap_state_11),
+    .Y(unmap_net_13));
+ INV unmap_inv_4 (.A(e1),
+    .Y(unmap_net_5));
+ OR2 unmap_or_8 (.A(unmap_net_3),
+    .B(unmap_net_7),
+    .Y(unmap_net_9));
+ assign q1 = unmap_state_1;
+ assign qn2 = unmap_net_13;
+endmodule
