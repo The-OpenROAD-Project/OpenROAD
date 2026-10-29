@@ -2,12 +2,16 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -30,6 +34,7 @@
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "pa/FlexPA_unique.h"
+#include "pa/ViaAccess.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -37,6 +42,23 @@ using odb::dbTechLayerDir;
 using utl::ThreadException;
 
 namespace drt {
+namespace {
+
+std::optional<odb::Point> subtractOffset(const odb::Point& point,
+                                         const odb::Point& offset)
+{
+  const int64_t x = static_cast<int64_t>(point.x()) - offset.x();
+  const int64_t y = static_cast<int64_t>(point.y()) - offset.y();
+  if (x < std::numeric_limits<frCoord>::min()
+      || x > std::numeric_limits<frCoord>::max()
+      || y < std::numeric_limits<frCoord>::min()
+      || y > std::numeric_limits<frCoord>::max()) {
+    return std::nullopt;
+  }
+  return odb::Point(static_cast<frCoord>(x), static_cast<frCoord>(y));
+}
+
+}  // namespace
 
 /**
  * @details Some functions only use a subset of the vias to test if access
@@ -49,21 +71,45 @@ std::vector<const frViaDef*> FlexPA::getPriorityViaDefs(
     const int max_vias) const
 {
   std::vector<const frViaDef*> priority_via_defs;
-  if (!layer_num_to_via_defs_.contains(layer_num)
+  if (max_vias <= 0 || !layer_num_to_via_defs_.contains(layer_num)
       || !layer_num_to_via_defs_.at(layer_num).contains(1)) {
     return priority_via_defs;
   }
-  for (auto& [tup, via_def] : layer_num_to_via_defs_.at(layer_num).at(1)) {
-    if (inst_term && inst_term->isStubborn()
-        && avoid_via_defs_.contains(via_def)) {
+  for (const auto& [priority, vias] :
+       layer_num_to_via_defs_.at(layer_num).at(1)) {
+    // Preserve the native representative for each priority bucket.
+    const auto* via = *std::ranges::max_element(vias, {}, &frViaDef::getId);
+    if (inst_term && inst_term->isStubborn() && avoid_via_defs_.contains(via)) {
       continue;
     }
-    priority_via_defs.push_back(via_def);
-    if ((int) priority_via_defs.size() >= max_vias) {
+    priority_via_defs.push_back(via);
+    if (static_cast<int>(priority_via_defs.size()) >= max_vias) {
       break;
     }
   }
   return priority_via_defs;
+}
+
+std::vector<const frViaDef*> FlexPA::getViaCatalogue(
+    const frLayerNum layer_num,
+    frInstTerm* inst_term) const
+{
+  std::vector<const frViaDef*> catalogue;
+  if (!layer_num_to_via_defs_.contains(layer_num)
+      || !layer_num_to_via_defs_.at(layer_num).contains(1)) {
+    return catalogue;
+  }
+  for (const auto& [priority, vias] :
+       layer_num_to_via_defs_.at(layer_num).at(1)) {
+    for (const auto* via_def : vias) {
+      if (inst_term && inst_term->isStubborn()
+          && avoid_via_defs_.contains(via_def)) {
+        continue;
+      }
+      catalogue.push_back(via_def);
+    }
+  }
+  return catalogue;
 }
 
 /**
@@ -87,10 +133,9 @@ void FlexPA::genAPOnTrack(
     if (coord > high) {
       break;
     }
-    if (use_nearby_grid) {
-      coords.insert({coord, frAccessPointEnum::NearbyGrid});
-    } else {
-      coords.insert(*it);
+    if (!use_nearby_grid || cost == frAccessPointEnum::OnGrid) {
+      coords.emplace(coord,
+                     use_nearby_grid ? frAccessPointEnum::NearbyGrid : cost);
     }
   }
 }
@@ -125,8 +170,9 @@ void FlexPA::genAPCentered(std::map<frCoord, frAccessPointEnum>& coords,
 
   // If there are less than 3 coords OnGrid will create a Centered Access
   // odb::Point
-  frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
-  frCoord coord = (low + high) / 2 / manu_grid * manu_grid;
+  const frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
+  const int64_t midpoint = (static_cast<int64_t>(low) + high) / 2;
+  const frCoord coord = static_cast<frCoord>(midpoint / manu_grid * manu_grid);
 
   if (coords.find(coord) == coords.end()) {
     coords.insert(std::make_pair(coord, frAccessPointEnum::Center));
@@ -762,7 +808,8 @@ void FlexPA::getViasFromMetalWidthMap(
     const odb::Point& pt,
     const frLayerNum layer_num,
     const gtl::polygon_90_set_data<frCoord>& polyset,
-    std::vector<const frViaDef*>& via_defs)
+    std::vector<const frViaDef*>& via_defs,
+    const std::vector<gtl::rectangle_data<frCoord>>* cached_maxrects)
 {
   const auto tech = getTech();
   if (layer_num == tech->getTopLayerNum()) {
@@ -799,9 +846,13 @@ void FlexPA::getViasFromMetalWidthMap(
     }
 
     if (bottom_width < 0) {  // compute bottom_width once
-      std::vector<gtl::rectangle_data<frCoord>> maxrects;
-      gtl::get_max_rectangles(maxrects, polyset);
-      for (auto& rect : maxrects) {
+      std::vector<gtl::rectangle_data<frCoord>> computed_maxrects;
+      if (cached_maxrects == nullptr) {
+        gtl::get_max_rectangles(computed_maxrects, polyset);
+      }
+      const auto& maxrects
+          = cached_maxrects ? *cached_maxrects : computed_maxrects;
+      for (const auto& rect : maxrects) {
         if (contains(rect, gtl::point_data<frCoord>(pt.x(), pt.y()))) {
           const frCoord width = delta(rect, width_orient);
           bottom_width = std::max(bottom_width, width);
@@ -852,6 +903,10 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   // via ranking criteria: max extension distance beyond pin shape
   std::vector<gtl::rectangle_data<frCoord>> int_rects;
   intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  if (int_rects.empty()) {
+    // Edge-only contact cannot enclose a via landing.
+    return std::max({1, box.dx(), box.dy()});
+  }
   for (const auto& r : int_rects) {
     max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
     max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
@@ -909,21 +964,39 @@ void FlexPA::filterViaAccess(
     const int max_vias
         = try_all_vias ? std::numeric_limits<int>::max() : max_num_via_trial;
 
+    std::vector<frLayerNum> cut_layers;
     // UP Vias
     if (layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER) {
-      std::vector<const frViaDef*> up_vias
-          = getPriorityViaDefs(layer_num + 1, inst_term, max_vias);
-      via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
+      cut_layers.push_back(layer_num + 1);
     }
 
     // DOWN Vias
     if (isIOTerm(inst_term)
         && layer_num > getDesign()->getTech()->getBottomLayerNum()
         && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
-      const int remaining_vias = max_vias - (int) via_defs.size();
-      std::vector<const frViaDef*> down_vias
-          = getPriorityViaDefs(layer_num - 1, inst_term, remaining_vias);
-      via_defs.insert(via_defs.end(), down_vias.begin(), down_vias.end());
+      cut_layers.push_back(layer_num - 1);
+    }
+    // Native UP/DOWN representatives take precedence over supplemental vias.
+    for (const auto cut_layer : cut_layers) {
+      const int remaining_vias = max_vias - static_cast<int>(via_defs.size());
+      const auto representatives
+          = getPriorityViaDefs(cut_layer, inst_term, remaining_vias);
+      via_defs.insert(
+          via_defs.end(), representatives.begin(), representatives.end());
+    }
+    for (const auto cut_layer : cut_layers) {
+      if (static_cast<int>(via_defs.size()) >= max_vias) {
+        break;
+      }
+      for (const auto* via : getViaCatalogue(cut_layer, inst_term)) {
+        if (std::ranges::find(via_defs, via) != via_defs.end()) {
+          continue;
+        }
+        via_defs.push_back(via);
+        if (static_cast<int>(via_defs.size()) >= max_vias) {
+          break;
+        }
+      }
     }
   }
 
@@ -1288,6 +1361,375 @@ bool FlexPA::EnoughAccessPoints(
   return (reqs.sparse_points);
 }
 
+struct FlexPA::ViaAccessSearch
+{
+  static constexpr uint64_t kTrialBudget = 128;
+  static constexpr uint64_t kCoveredTrialReservation = 32;
+  static constexpr uint64_t kGcBudget = 256;
+  enum Queue : size_t
+  {
+    Uncovered,
+    Covered,
+    QueueCount
+  };
+  struct Trial
+  {
+    odb::Point point;
+    frLayerNum layer;
+    const frViaDef* via;
+  };
+  struct Footprint
+  {
+    const frViaDef* via;
+    bool footprint_trigger;
+    std::vector<frCoord> positions;
+  };
+  using Track = std::pair<frLayerNum, frCoord>;
+  using Key = std::tuple<frCoord, frCoord, frLayerNum, const frViaDef*>;
+
+  ViaAccessSearch(
+      FlexPA& pa,
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      frMPin* pin,
+      frInstTerm* inst_term)
+      : pa_(pa),
+        aps_(aps),
+        pin_shapes_(pin_shapes),
+        layer_polys_(layer_polys),
+        pin_(pin),
+        inst_term_(inst_term),
+        layer_rectangles_(pin_shapes.size())
+  {
+  }
+
+  void run()
+  {
+    gatherMetadata();
+    discoverCoverage();
+    prepareQueues();
+    // Reserve covered alternatives and transfer unused trials both ways.
+    runQueue(Uncovered, kTrialBudget - kCoveredTrialReservation);
+    runQueue(Covered, kTrialBudget);
+    runQueue(Uncovered, kTrialBudget);
+    debugPrint(pa_.logger_,
+               utl::DRT,
+               "pa_via_access",
+               1,
+               "Via access {}: trials {} local GC {} admitted {}.",
+               inst_term_->getName(),
+               trials_,
+               gc_checks_,
+               accepted_);
+  }
+
+  void gatherMetadata()
+  {
+    const frCoord grid = pa_.getTech()->getManufacturingGrid();
+    const odb::Rect boundary = inst_term_->getInst()->getBoundaryBBox();
+
+    // Scan every rectangle before bounded trials can favor early rectangles.
+    for (frLayerNum layer = 0; layer + 2 < static_cast<int>(pin_shapes_.size());
+         ++layer) {
+      if (pin_shapes_[layer].empty()
+          || !pa_.getTech()->getLayer(layer)->isRoutable()
+          || layer + 1 > pa_.router_cfg_->TOP_ROUTING_LAYER) {
+        continue;
+      }
+      const auto upper = pa_.getTech()->getLayer(layer + 2);
+      if (!upper->isHorizontal() && !upper->isVertical()) {
+        continue;
+      }
+      const bool upper_horizontal = upper->isHorizontal();
+      auto catalogue = pa_.getViaCatalogue(layer + 1, inst_term_);
+      std::erase_if(catalogue, [layer](const auto* via) {
+        return via->getLayer1Figs().empty() || via->getLayer2Figs().empty()
+               || via->getLayer1Num() != layer
+               || via->getLayer2Num() != layer + 2;
+      });
+      const auto first_two = pa_.getPriorityViaDefs(layer + 1, inst_term_, 2);
+      auto& rectangles = layer_rectangles_[layer];
+      gtl::get_max_rectangles(rectangles, pin_shapes_[layer]);
+      for (const auto& rect : rectangles) {
+        const odb::Rect source(
+            gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
+        if (std::min(source.dx(), source.dy())
+            < pa_.getTech()->getLayer(layer)->getMinWidth()) {
+          continue;
+        }
+        const auto fits = [&](const frViaDef* via) {
+          const auto& box = via->getLayer1ShapeBox();
+          return box.dx() <= source.dx() && box.dy() <= source.dy();
+        };
+        const bool first_two_fail
+            = first_two.size() == 2 && std::ranges::none_of(first_two, fits);
+        const bool footprint_trigger
+            = first_two_fail && std::ranges::any_of(catalogue, fits);
+        for (const auto* via : catalogue) {
+          const auto window = viaAccessOriginWindow(source,
+                                                    via->getLayer1ShapeBox(),
+                                                    via->getLayer2ShapeBox(),
+                                                    boundary);
+          if (!window) {
+            continue;
+          }
+          const frCoord track_low
+              = upper_horizontal ? window->yMin() : window->xMin();
+          const frCoord track_high
+              = upper_horizontal ? window->yMax() : window->xMax();
+          auto positions = sampleViaAccessOrigins(
+              upper_horizontal ? window->xMin() : window->yMin(),
+              upper_horizontal ? window->xMax() : window->yMax(),
+              grid);
+          if (positions.empty()) {
+            continue;
+          }
+          const size_t footprint_index = footprints_.size();
+          footprints_.push_back({via, footprint_trigger, std::move(positions)});
+          const auto& tracks = pa_.track_coords_[layer + 2];
+          for (auto it = tracks.lower_bound(track_low);
+               it != tracks.end() && it->first <= track_high;
+               ++it) {
+            if (it->second != frAccessPointEnum::OnGrid
+                || it->first % grid != 0) {
+              continue;
+            }
+            groups_[{layer, it->first}].push_back(footprint_index);
+          }
+        }
+      }
+    }
+  }
+
+  bool preferredWitness(frAccessPoint* ap, frVia* via)
+  {
+    const bool horizontal
+        = pa_.getTech()->getLayer(ap->getLayerNum() + 2)->isHorizontal();
+    for (const auto dir : horizontal ? std::array{frDirEnum::W, frDirEnum::E}
+                                     : std::array{frDirEnum::S, frDirEnum::N}) {
+      if (gc_checks_ >= kGcBudget) {
+        return false;
+      }
+      ++gc_checks_;
+      if (pa_.checkDirectionalViaAccess(ap,
+                                        via,
+                                        pin_,
+                                        inst_term_,
+                                        layer_polys_[ap->getLayerNum()],
+                                        dir)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void discoverCoverage()
+  {
+    // Preferred-direction witnesses share the trial GC budget.
+    for (const auto& ap : aps_) {
+      if (!ap->hasAccess(frDirEnum::U)
+          || ap->getLayerNum() + 2
+                 >= static_cast<int>(pa_.track_coords_.size())) {
+        continue;
+      }
+      const frLayerNum layer = ap->getLayerNum();
+      const bool horizontal
+          = pa_.getTech()->getLayer(layer + 2)->isHorizontal();
+      const Track track(layer,
+                        horizontal ? ap->getPoint().y() : ap->getPoint().x());
+      if (!groups_.contains(track) || covered_.contains(track)) {
+        continue;
+      }
+      for (const auto& bucket : ap->getAllViaDefs()) {
+        for (const auto* via_def : bucket) {
+          if (via_def->getLayer1Num() != layer
+              || via_def->getLayer2Num() != layer + 2) {
+            continue;
+          }
+          frVia via(via_def, ap->getPoint());
+          if (preferredWitness(ap.get(), &via)) {
+            covered_.insert(track);
+            break;
+          }
+        }
+        if (covered_.contains(track)) {
+          break;
+        }
+      }
+    }
+  }
+
+  void prepareQueues()
+  {
+    // Lazy point/via generation keeps the trial budget independent of metadata.
+    for (const auto& [track, indices] : groups_) {
+      max_footprints_ = std::max(max_footprints_, indices.size());
+      for (const auto index : indices) {
+        const auto& footprint = footprints_[index];
+        max_samples_ = std::max(max_samples_, footprint.positions.size());
+      }
+    }
+    cursors_ = {{{0, 0, groups_.begin()}, {0, 0, groups_.begin()}}};
+  }
+
+  // Visit every track before advancing footprint, then sample, in each queue.
+  std::optional<Trial> nextTrial(const Queue queue)
+  {
+    auto& cursor = cursors_[queue];
+    while (cursor.sample < max_samples_) {
+      if (cursor.track == groups_.end()) {
+        cursor.track = groups_.begin();
+        if (++cursor.footprint == max_footprints_) {
+          cursor.footprint = 0;
+          ++cursor.sample;
+        }
+        continue;
+      }
+      const auto& [track, indices] = *cursor.track++;
+      if (covered_.contains(track) != (queue == Covered)
+          || (queue == Uncovered && accepted_tracks_.contains(track))
+          || cursor.footprint >= indices.size()) {
+        continue;
+      }
+      const auto& footprint = footprints_[indices[cursor.footprint]];
+      if (cursor.sample >= footprint.positions.size()
+          || (queue == Covered && !footprint.footprint_trigger)) {
+        continue;
+      }
+      const bool horizontal
+          = pa_.getTech()->getLayer(track.first + 2)->isHorizontal();
+      const frCoord position = footprint.positions[cursor.sample];
+      const odb::Point point(horizontal ? position : track.second,
+                             horizontal ? track.second : position);
+      const auto [mapped_it, inserted] = width_map_cache_.try_emplace(
+          std::make_tuple(point.x(), point.y(), track.first));
+      if (inserted) {
+        pa_.getViasFromMetalWidthMap(point,
+                                     track.first,
+                                     pin_shapes_[track.first],
+                                     mapped_it->second,
+                                     &layer_rectangles_[track.first]);
+      }
+      const auto& mapped = mapped_it->second;
+      if (!mapped.empty()
+          && std::ranges::find(mapped, footprint.via) == mapped.end()) {
+        continue;
+      }
+      const Key key(point.x(), point.y(), track.first, footprint.via);
+      if (!seen_.insert(key).second) {
+        continue;
+      }
+      return Trial{point, track.first, footprint.via};
+    }
+    return std::nullopt;
+  }
+
+  void runQueue(const Queue queue, const uint64_t limit)
+  {
+    while (trials_ < limit && gc_checks_ < kGcBudget) {
+      const auto next = nextTrial(queue);
+      if (!next) {
+        break;
+      }
+      const Trial& trial = *next;
+      // Existing origins do not suppress a different exact via identity.
+      bool duplicate = false;
+      for (const auto& ap : aps_) {
+        if (ap->getPoint() == trial.point && ap->getLayerNum() == trial.layer) {
+          for (const auto& bucket : ap->getAllViaDefs()) {
+            duplicate |= std::ranges::find(bucket, trial.via) != bucket.end();
+          }
+        }
+      }
+      if (duplicate) {
+        continue;
+      }
+      ++trials_;
+      auto ap = std::make_unique<frAccessPoint>(trial.point, trial.layer);
+      ap->setAllowVia(true);
+      const bool lower_horizontal
+          = pa_.getTech()->getLayer(trial.layer)->isHorizontal();
+      const frCoord lower_coord
+          = lower_horizontal ? trial.point.y() : trial.point.x();
+      const auto found = pa_.track_coords_[trial.layer].find(lower_coord);
+      ap->setType(found != pa_.track_coords_[trial.layer].end()
+                          && found->second == frAccessPointEnum::OnGrid
+                      ? frAccessPointEnum::OnGrid
+                      : frAccessPointEnum::EncOpt,
+                  true);
+      ap->setType(frAccessPointEnum::OnGrid, false);
+      frVia via(trial.via, trial.point);
+      if (!preferredWitness(ap.get(), &via)) {
+        continue;
+      }
+      ap->addViaDef(trial.via);
+      ap->setAccess(frDirEnum::U);
+      const bool horizontal
+          = pa_.getTech()->getLayer(trial.layer + 2)->isHorizontal();
+      accepted_tracks_.insert(
+          {trial.layer, horizontal ? trial.point.y() : trial.point.x()});
+      ++accepted_;
+      // Preserve a planar-only AP as a separate pattern choice.
+      auto existing
+          = std::find_if(aps_.begin(), aps_.end(), [&](const auto& ap) {
+              return ap->getPoint() == trial.point
+                     && ap->getLayerNum() == trial.layer
+                     && ap->hasAccess(frDirEnum::U);
+            });
+      if (existing == aps_.end()) {
+        aps_.push_back(std::move(ap));
+      } else {
+        (*existing)->addViaDef(trial.via);
+        (*existing)->setAccess(frDirEnum::U);
+      }
+    }
+  }
+
+  FlexPA& pa_;
+  std::vector<std::unique_ptr<frAccessPoint>>& aps_;
+  const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes_;
+  const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys_;
+  frMPin* pin_;
+  frInstTerm* inst_term_;
+  std::vector<Footprint> footprints_;
+  std::map<Track, std::vector<size_t>> groups_;
+  std::set<Key> seen_;
+  std::map<std::tuple<frCoord, frCoord, frLayerNum>,
+           std::vector<const frViaDef*>>
+      width_map_cache_;
+  std::vector<std::vector<gtl::rectangle_data<frCoord>>> layer_rectangles_;
+  uint64_t trials_{0};
+  uint64_t gc_checks_{0};
+  uint64_t accepted_{0};
+  std::set<Track> covered_;
+  std::set<Track> accepted_tracks_;
+  size_t max_footprints_{0};
+  size_t max_samples_{0};
+  struct Cursor
+  {
+    size_t sample{0};
+    size_t footprint{0};
+    decltype(groups_)::const_iterator track;
+  };
+  std::array<Cursor, QueueCount> cursors_;
+};
+
+void FlexPA::genViaAccessPoints(
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+    const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys,
+    frMPin* pin,
+    frInstTerm* inst_term)
+{
+  if (inst_term->hasNet() && inst_term->getNet()->hasNDR()) {
+    return;
+  }
+  ViaAccessSearch search(*this, aps, pin_shapes, layer_polys, pin, inst_term);
+  search.run();
+}
+
 template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -1448,12 +1890,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                        frAccessPointEnum::HalfGrid,
                        frAccessPointEnum::Center,
                        frAccessPointEnum::EncOpt}) {
-      if (upper == frAccessPointEnum::NearbyGrid && !aps.empty()) {
-        // Only use NearbyGrid as a last resort (at least until
-        // nangate45/aes is resolved).
-        continue;
-      }
-
       if (enough_access_points) {
         break;
       }
@@ -1467,6 +1903,13 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                                                      lower,
                                                      upper,
                                                      reqs);
+    }
+  }
+
+  if constexpr (std::is_same_v<T, frMPin>) {
+    if (isStdCellTerm(inst_term)) {
+      genViaAccessPoints(aps, pin_shapes, layer_polys, pin, inst_term);
+      enough_access_points = EnoughAccessPoints(aps, inst_term, reqs);
     }
   }
 
@@ -1607,31 +2050,44 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+
+bool FlexPA::revertAccessPoint(frAccessPoint* access_point,
+                               const odb::Point& offset) const
+{
+  const auto point = subtractOffset(access_point->getPoint(), offset);
+  if (!point) {
+    return false;
+  }
+  std::vector<frPathSeg> path_segments = access_point->getPathSegs();
+  for (auto& segment : path_segments) {
+    const auto begin = subtractOffset(segment.getBeginPoint(), offset);
+    const auto end = subtractOffset(segment.getEndPoint(), offset);
+    if (!begin || !end) {
+      return false;
+    }
+    segment.setPoints(*begin, *end);
+  }
+
+  access_point->setPoint(*point);
+  access_point->getPathSegs() = std::move(path_segments);
+  return true;
+}
+
 void FlexPA::revertAccessPoints(frInst* inst)
 {
   const odb::dbTransform xform = inst->getTransform();
   const odb::Point offset(xform.getOffset());
-  odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
 
   const auto pin_access_idx = inst->getPinAccessIdx();
   for (auto& inst_term : inst->getInstTerms()) {
     for (auto& pin : inst_term->getTerm()->getPins()) {
       auto pin_access = pin->getPinAccess(pin_access_idx);
       for (auto& access_point : pin_access->getAccessPoints()) {
-        odb::Point unique_AP_point(access_point->getPoint());
-        revertXform.apply(unique_AP_point);
-        access_point->setPoint(unique_AP_point);
-        for (auto& ps : access_point->getPathSegs()) {
-          odb::Point begin = ps.getBeginPoint();
-          odb::Point end = ps.getEndPoint();
-          revertXform.apply(begin);
-          revertXform.apply(end);
-          if (end < begin) {
-            odb::Point tmp = begin;
-            begin = end;
-            end = tmp;
-          }
-          ps.setPoints(begin, end);
+        if (!revertAccessPoint(access_point.get(), offset)) {
+          logger_->error(DRT,
+                         6012,
+                         "Access-point translation overflows for instance {}.",
+                         inst->getName());
         }
       }
     }
