@@ -19,6 +19,7 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
+    "mbff_activity",
     "mbff_hier",
     "mbff_orig_name",
     "mbff_clock_power_off",

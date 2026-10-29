@@ -162,6 +162,10 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
 
   float slack(const odb::dbNet* net, const MinMax* min_max);
 
+  // Copy the user/SAIF/VCD activity annotated on from to to, for netlist
+  // edits that replace a pin with an equivalent one.
+  void copyUserActivity(odb::dbITerm* from, odb::dbITerm* to);
+
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;

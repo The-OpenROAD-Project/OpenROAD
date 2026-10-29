@@ -39,6 +39,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "power/Power.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -498,6 +499,22 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return slack(net, min_max);
+}
+
+void dbSta::copyUserActivity(odb::dbITerm* from, odb::dbITerm* to)
+{
+// Power::hasUserActivity/userActivity are public only in the OpenROAD
+// fork of OpenSTA; with stock OpenSTA the annotation is not copied.
+#ifdef STA_OPENROAD_FORK
+  const Pin* from_pin = db_network_->dbToSta(from);
+  if (power()->hasUserActivity(from_pin)) {
+    const PwrActivity& activity = power()->userActivity(from_pin);
+    power()->setUserActivity(db_network_->dbToSta(to),
+                             activity.density(),
+                             activity.duty(),
+                             activity.origin());
+  }
+#endif
 }
 
 odb::PtrSet<odb::dbNet> dbSta::findClkNets()

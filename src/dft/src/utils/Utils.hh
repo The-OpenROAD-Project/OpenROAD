@@ -20,7 +20,9 @@ namespace dft::utils {
 // cell will be preserved by using the given port mapping from
 // <old_port_name, new_port_name>. Returns the new instance and deletes the old
 // one. The name of the new instance is going to be the same as the old one.
+// User/SAIF/VCD activity of the old pins is copied to the mapped new pins.
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
