@@ -327,6 +327,9 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }
 
+  bool applyUsefulSkew() const { return usefulSkew_; }
+  void setUsefulSkew(bool value) { usefulSkew_ = value; }
+
   // NDR strategies
   void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
   void resetApplyNDR() { ndrStrategy_ = NdrStrategy::HALF; }
@@ -406,6 +409,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   double sinkBufferMaxCapDerateDefault_ = 0.01;
   double sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
+  bool usefulSkew_ = false;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;
   MasterCount buffer_count_;
