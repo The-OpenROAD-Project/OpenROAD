@@ -23,7 +23,9 @@ arrival at a register data pin. The search builds the retiming graph of
 the design (gates are vertices, registers are edge weights), reads per-gate
 arc delays and per-net wire delays from the current STA results, and
 repeatedly moves one register group forward across a gate when the exact
-recomputed worst arrival improves. The arc delay of a gate whose output
+recomputed worst arrival improves. Only register-to-register paths are
+measured: a path that starts at a primary input cannot be shortened by a
+forward move, so it never blocks the search (STA still reports it). The arc delay of a gate whose output
 drives a register is recomputed from the liberty table under the register
 D-pin load, so a move that changes the load of a gate is costed correctly.
 

@@ -22,11 +22,13 @@ namespace ret {
 // Forward retiming search for the best worst-case arrival.
 //
 // Delays are read once from STA: per-edge wire delay (arrival difference
-// between driver and sink pin) and per-gate arcs.  Each gate arc is
-// characterized twice from the liberty table model, under its combinational
-// output load and under the register D-pin load, and the arrival sweep picks
-// the variant matching the current register configuration (a gate whose
-// output is registered after a slide sees the register load).
+// between driver and sink pin) and per-gate arcs.  Only register-to-register
+// paths are measured; a path that starts at a primary input cannot be
+// shortened by a forward move and is excluded from the worst arrival.  Each
+// gate arc is characterized twice from the liberty table model, under its
+// combinational output load and under the register D-pin load, and the arrival
+// sweep picks the variant matching the current register configuration (a gate
+// whose output is registered after a slide sees the register load).
 //
 // The loop repeatedly slides one register forward across a gate (r[v] -= 1),
 // keeps the slide only if the exact recomputed worst arrival improves, and

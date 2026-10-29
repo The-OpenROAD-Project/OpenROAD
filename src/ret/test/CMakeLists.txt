@@ -7,6 +7,7 @@ or_integration_tests(
   "ret"
   TESTS
     retime_basic
+    retime_input_path
     retime_negedge
     retime_no_base_cell
     retime_no_clock

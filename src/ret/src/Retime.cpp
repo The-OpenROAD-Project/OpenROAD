@@ -28,6 +28,13 @@
 
 namespace ret {
 
+namespace {
+// Arrival given to a path that starts at a primary input.  A forward move can
+// only lengthen such a path, so it must never be the worst arrival the search
+// tries to lower; it stays hugely negative through every max().
+constexpr double kExcluded = -1e30;
+}  // namespace
+
 Retime::Retime(RetimingGraph* graph,
                sta::dbSta* sta,
                utl::Logger* logger,
@@ -330,7 +337,8 @@ bool Retime::outputRegistered(int v) const
 
 // Longest-path sweep over the w_r == 0 subgraph.  A gate's arrival is the max
 // over its combinational fanins of (fanin arrival + wire + the gate's arc
-// variant for the current configuration).
+// variant for the current configuration).  Paths rooted at a primary input
+// carry kExcluded: only register-to-register paths are measured.
 void Retime::computeArrivals()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -347,7 +355,7 @@ void Retime::computeArrivals()
   int tail = 0;
   for (int u = 0; u < n; u++) {
     if (scratch_.indeg[u] == 0) {
-      arrivals_[u] = gate_floor_[u];
+      arrivals_[u] = graph_->input_fed_[u] ? kExcluded : gate_floor_[u];
       scratch_.queue[tail++] = u;
     }
   }
@@ -360,7 +368,7 @@ void Retime::computeArrivals()
       const int s = e.target;
       if (--scratch_.indeg[s] == 0) {
         const bool registered = outputRegistered(s);
-        double a = 0.0;
+        double a = kExcluded;
         for (const FaninEdge& fe : fanin_[s]) {
           if (fe.weight + r_[s] - r_[fe.u] != 0) {
             continue;
@@ -431,7 +439,7 @@ double Retime::estimateSlideDelta(int v)
     }
   }
   if (new_v == kNeg) {
-    new_v = gate_floor_[v];
+    new_v = graph_->input_fed_[v] ? kExcluded : gate_floor_[v];
   }
   const double v_delta = excess(new_v) - excess(arrivals_[v]);
 
@@ -493,7 +501,7 @@ double Retime::estimateSlideDelta(int v)
       a = std::max(a, src + fe.wire + arc);
     }
     if (a == kNeg) {
-      a = gate_floor_[t];
+      a = graph_->input_fed_[t] ? kExcluded : gate_floor_[t];
     }
     scratch_.local_arr[t] = a;
     for (const Edge& e : graph_->adj_[t]) {
@@ -589,12 +597,13 @@ void Retime::run(int max_moves)
   logger_->info(
       utl::RET,
       20,
-      "Start worst arrival {:.4g} (model slack {:.4g} vs period {:.4g})",
+      "Start worst register-to-register arrival {:.4g} (model slack {:.4g} "
+      "vs period {:.4g})",
       cur,
       graph_->clock_period_ - cur,
       graph_->clock_period_);
   if (cur <= 0.0) {
-    logger_->info(utl::RET, 21, "No timing to optimize.");
+    logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
     return;
   }
   reportWorstPathStart();

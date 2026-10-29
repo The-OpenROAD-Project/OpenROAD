@@ -45,11 +45,11 @@ module top (a,
     .Y(n12));
  sky130_fd_sc_hd__inv_1 g13 (.A(n12),
     .Y(n13));
- sky130_fd_sc_hd__inv_1 g14 (.A(n13),
+ sky130_fd_sc_hd__inv_1 g14 (.A(ret_net_0),
     .Y(n14));
  sky130_fd_sc_hd__buf_1 g15 (.A(q2),
     .X(y));
- sky130_fd_sc_hd__inv_1 g2 (.A(ret_net_0),
+ sky130_fd_sc_hd__inv_1 g2 (.A(n1),
     .Y(n2));
  sky130_fd_sc_hd__inv_1 g3 (.A(n2),
     .Y(n3));
@@ -68,7 +68,7 @@ module top (a,
  sky130_fd_sc_hd__dfxtp_1 r2 (.D(n14),
     .Q(q2),
     .CLK(clk));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_0 (.D(n1),
+ sky130_fd_sc_hd__dfxtp_1 ret_ff_0 (.D(n13),
     .Q(ret_net_0),
     .CLK(clk));
  sky130_fd_sc_hd__dfxtp_1 ret_ff_1 (.D(unmap_net_9),

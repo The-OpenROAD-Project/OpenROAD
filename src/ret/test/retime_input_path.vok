@@ -1,0 +1,69 @@
+module top (a,
+    b,
+    c,
+    clk,
+    y,
+    z);
+ input a;
+ input b;
+ input c;
+ input clk;
+ output y;
+ output z;
+
+ wire c1;
+ wire c2;
+ wire c3;
+ wire c4;
+ wire c5;
+ wire c6;
+ wire m1;
+ wire m2;
+ wire m3;
+ wire m4;
+ wire n0;
+ wire q1;
+ wire q2;
+ wire q3;
+ wire ret_net_0;
+
+ AND2_X1 g0 (.A1(a),
+    .A2(b),
+    .ZN(n0));
+ INV_X1 h1 (.A(q1),
+    .ZN(m1));
+ INV_X1 h2 (.A(m1),
+    .ZN(m2));
+ INV_X1 h3 (.A(ret_net_0),
+    .ZN(m3));
+ INV_X1 h4 (.A(m3),
+    .ZN(m4));
+ BUF_X1 o1 (.A(q2),
+    .Z(y));
+ BUF_X1 o2 (.A(q3),
+    .Z(z));
+ INV_X1 p1 (.A(c),
+    .ZN(c1));
+ INV_X1 p2 (.A(c1),
+    .ZN(c2));
+ INV_X1 p3 (.A(c2),
+    .ZN(c3));
+ INV_X1 p4 (.A(c3),
+    .ZN(c4));
+ INV_X1 p5 (.A(c4),
+    .ZN(c5));
+ INV_X1 p6 (.A(c5),
+    .ZN(c6));
+ DFF_X1 r1 (.D(n0),
+    .CK(clk),
+    .Q(q1));
+ DFF_X1 r2 (.D(m4),
+    .CK(clk),
+    .Q(q2));
+ DFF_X1 r3 (.D(c6),
+    .CK(clk),
+    .Q(q3));
+ DFF_X1 ret_ff_0 (.D(m2),
+    .CK(clk),
+    .Q(ret_net_0));
+endmodule

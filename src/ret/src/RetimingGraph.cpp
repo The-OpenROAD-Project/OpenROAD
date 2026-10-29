@@ -58,6 +58,7 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
       if (pin->getIoType() == odb::dbIoType::INPUT
           && bterm->getIoType() == odb::dbIoType::INPUT) {
         pinned_[id] = true;
+        input_fed_[id] = true;
       }
       if (pin->getIoType() == odb::dbIoType::OUTPUT
           && bterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -133,6 +134,7 @@ void RetimingGraph::build()
   adj_.assign(n, {});
   phys_.assign(n, {});
   pinned_.assign(n, false);
+  input_fed_.assign(n, false);
 
   for (int i = 0; i < n; i++) {
     markBoundary(nodes_[i], i);
