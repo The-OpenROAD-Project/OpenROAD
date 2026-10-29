@@ -501,6 +501,7 @@ class PinAccessRepair
             break;
           }
           restorePlacement({move});
+          moves.pop_back();
           pa->updatePinAccessRecovery();
           if (missing() != unresolved) {
             dp_.logger_->error(
@@ -509,7 +510,6 @@ class PinAccessRepair
                 "Pin access recovery could not restore the required-pin access "
                 "state after a rejected trial.");
           }
-          moves.pop_back();
         }
       }
       if (!unresolved.empty()) {
@@ -712,23 +712,22 @@ class PinAccessRepair
       // AP objects may have been replaced by the native dirty-class refresh.
       AccessRound fresh(supply, pa, min_access_points);
       const int count = scan(fresh, true).size();
-      if (count >= remaining) {
-        restore(moves);
-        return remaining;
+      if (count < remaining) {
+        return count;
       }
-      return count;
     } catch (...) {
       try {
         restore(moves);
       } catch (const std::exception& error) {
         dp_.logger_->warn(utl::DPL,
                           513,
-                          "Placement restored, but pin access refresh after "
-                          "rollback failed: {}",
+                          "Pin access repair rollback failed: {}",
                           error.what());
       }
       throw;
     }
+    restore(moves);
+    return remaining;
   }
 
   Opendp& dp_;

@@ -596,6 +596,35 @@ TEST_F(PinAccessRepairTest, FailedRefreshRestoresPlacementAndRefreshes)
   EXPECT_EQ(service_.updates, 2);
 }
 
+TEST_F(PinAccessRepairTest, RejectedBatchRefreshFailureRestoresOnce)
+{
+  stripe(top_);
+  int restores = 0;
+  service_.on_move = [&](odb::dbInst* moved) {
+    if (moved == inst_ && moved->getLocation() == odb::Point(kX, 0)) {
+      ++restores;
+    }
+  };
+  service_.refresh = [&]() {
+    if (service_.updates == 2) {
+      throw std::runtime_error("rollback refresh failure");
+    }
+    odb::dbAccessPoint::destroy(ap_);
+    const int shift = kX - inst_->getLocation().x();
+    ap_ = makeAP({190 + shift, 1400});
+    inst_->findITerm("A")->setAccessPoint(pin_, ap_);
+  };
+  try {
+    repair();
+    FAIL() << "Expected rollback refresh failure";
+  } catch (const std::runtime_error& error) {
+    EXPECT_STREQ(error.what(), "rollback refresh failure");
+  }
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.updates, 2);
+  EXPECT_EQ(restores, 1);
+}
+
 TEST_F(PinAccessRepairTest, RecoveryThirdCandidateSucceeds)
 {
   service_.ready = false;
