@@ -196,7 +196,10 @@ bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
   const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
-  const sta::FuncExpr* clock = seq ? seq->clock() : nullptr;
+  if (seq == nullptr || !seq->isRegister()) {
+    return false;  // latches are don't-touch, not negative-edge registers
+  }
+  const sta::FuncExpr* clock = seq->clock();
   return clock != nullptr && clock->op() == sta::FuncExpr::Op::not_;
 }
 

@@ -9,6 +9,7 @@ TESTS = [
     "retime_basic",
     "retime_input_limit",
     "retime_input_path",
+    "retime_latch",
     "retime_negedge",
     "retime_no_base_cell",
     "retime_no_clock",
