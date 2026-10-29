@@ -329,7 +329,8 @@ void Opendp::detailedPlacementQuiet()
                     /* row_search_window */ -1,
                     /* drc_penalty */ -1.0,
                     /* disable_window_extension */ false,
-                    /* quiet */ true);
+                    /* quiet */ true,
+                    /* pdn_aware */ isPdnAwareForCurrentBlock());
 }
 
 // Compact stand-in for reportLegalizationStats() under -quiet.
