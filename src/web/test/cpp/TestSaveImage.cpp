@@ -874,13 +874,10 @@ class TestRoutingCongestionHeatMap : public web::HeatMapDataSource
 TEST_F(SaveImageTest, RoutingCongestionHeatmapRendersInSavedImage)
 {
   auto logger = getLogger();
-  web::registerHeatMapSource("Routing Congestion",
-                             "Routing",
-                             "RoutingCongestion",
-                             [logger]() {
-                               return std::make_shared<
-                                   TestRoutingCongestionHeatMap>(logger);
-                             });
+  web::registerHeatMapSource(
+      "Routing Congestion", "Routing", "RoutingCongestion", [logger]() {
+        return std::make_shared<TestRoutingCongestionHeatMap>(logger);
+      });
 
   const std::string path_no_congestion = tempPng("no_routing_congestion");
   TileVisibility vis_off;
