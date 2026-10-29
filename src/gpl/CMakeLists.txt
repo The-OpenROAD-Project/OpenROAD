@@ -31,6 +31,7 @@ add_library(gpl_lib
   src/nesterovPlace.cpp
   src/placerBase.cpp
   src/nesterovBase.cpp
+  src/ioPinBase.cpp
   src/fft.cpp
   src/fftsg.cpp
   src/fftsg2d.cpp
@@ -40,6 +41,7 @@ add_library(gpl_lib
   src/routeBase.cpp
   src/timingBase.cpp
   src/clockBase.cpp
+  src/powerBase.cpp
   src/graphicsNone.cpp
   src/solver.cpp
   src/mbff.cpp
@@ -158,6 +160,7 @@ target_link_libraries(gpl_lib
     dbSta_lib
     rsz_lib
     grt_lib
+    ppl
     ortools::ortools
     Threads::Threads
     OpenMP::OpenMP_CXX

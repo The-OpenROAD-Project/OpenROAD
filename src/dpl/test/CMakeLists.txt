@@ -20,6 +20,8 @@ or_integration_tests(
     check7
     check8
     check9
+    check_fixed_only
+    check_placeable_only
     diamond01
     diamond_multi_height
     diamond_one_site_gap
@@ -96,6 +98,12 @@ or_integration_tests(
     edge_spacing-opt
     regions1-opt
     regions2-opt
+  PASSFAIL_TESTS
+    pdn_via
+    pdn_via_array
+    pdn_via_cut
+    pdn_via_euclidean
+    pdn_via_mirror
 )
 
 add_executable(dpl_test dpl_test.cc)
@@ -112,4 +120,3 @@ gtest_discover_tests(dpl_test
 )
 
 add_dependencies(build_and_test dpl_test)
-

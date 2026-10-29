@@ -26,6 +26,7 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/geom.h"
 #include "odb/util.h"
 #include "util/journal.h"
@@ -134,7 +135,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int row_search_window,
                                const double drc_penalty,
                                const bool disable_window_extension,
-                               const bool quiet)
+                               const bool quiet,
+                               const bool pdn_aware)
 {
   utl::Timer timer;
   incremental_ = incremental;
@@ -142,6 +144,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   quiet_ = quiet;
   importDb();
   adjustNodesOrient();
+  pdn_aware_block_observer_.reset();
+  pdn_aware_ = pdn_aware;
+  pdn_aware_block_ = block_;
+  if (pdn_aware_) {
+    pdn_aware_block_observer_ = std::make_unique<odb::dbBlockCallBackObj>();
+    pdn_aware_block_observer_->addOwner(block_);
+  }
   if (!incremental_) {
     for (const auto& node : network_->getNodes()) {
       if (node->getType() == Node::CELL && !node->isFixed()) {
@@ -243,14 +252,14 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         logger_->info(DPL, 35, " {}", cell->name());
       }
 
-      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
       }
       logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
     }
   } else {
-    initGrid();
+    initGrid(pdn_aware_);
     setFixedGridCells();
     // Populate pixel->group for each fence region so diamondRecovery's
     // underlying diamondSearch correctly enforces region constraints.
@@ -287,7 +296,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
       const auto illegal_nodes = negotiation.getIllegalNodes();
-      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {});
+      saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
       }
@@ -474,7 +483,7 @@ void Opendp::optimizeMirroring()
   // DRC engine.
   importDb();
   adjustNodesOrient();
-  initGrid();
+  initGrid(isPdnAwareForCurrentBlock());
   setGridCells();
   OptimizeMirroring opt(
       logger_, db_, network_.get(), grid_.get(), drc_engine_.get());
@@ -568,10 +577,29 @@ int Opendp::padRight(odb::dbInst* inst) const
   return padding_->padRight(inst).v;
 }
 
-void Opendp::initGrid()
+bool Opendp::isPdnAwareForCurrentBlock()
+{
+  odb::dbBlock* current_block
+      = db_->getChip() == nullptr ? nullptr : db_->getChip()->getBlock();
+  // ODB may reuse a destroyed block's address.
+  if (pdn_aware_block_ != current_block
+      || (pdn_aware_ && !pdn_aware_block_observer_->hasOwner())) {
+    pdn_aware_ = false;
+    pdn_aware_block_ = current_block;
+    pdn_aware_block_observer_.reset();
+  }
+  return pdn_aware_;
+}
+
+void Opendp::initGrid(const bool check_fixed_supply_vias)
 {
   grid_->initGrid(
       db_, block_, padding_, max_displacement_x_, max_displacement_y_);
+  if (check_fixed_supply_vias) {
+    drc_engine_->initFixedSupplyVias(block_);
+  } else {
+    drc_engine_->clearFixedSupplyVias();
+  }
 }
 
 void Opendp::deleteGrid()

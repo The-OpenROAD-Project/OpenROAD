@@ -1,0 +1,24 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN pdn_via_cut ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 10000 400 ) ;
+
+ROW ROW_0 CUT_SITE 0 0 N DO 50 BY 1 STEP 200 0 ;
+
+COMPONENTS 4 ;
+  - cut_conflict CUT_CELL + PLACED ( 2000 0 ) N ;
+  - diagonal_below CUT_CELL + PLACED ( 4000 0 ) N ;
+  - diagonal_equal CUT_CELL + PLACED ( 6000 0 ) N ;
+  - diagonal_above CUT_CELL + PLACED ( 8000 0 ) N ;
+END COMPONENTS
+
+SPECIALNETS 1 ;
+  - VSS + USE GROUND
+    + ROUTED metal1 0 + SHAPE STRIPE ( 2050 100 ) cut_case_via
+      NEW metal1 0 + SHAPE STRIPE ( 4286 317 ) cut_case_via
+      NEW metal1 0 + SHAPE STRIPE ( 6286 318 ) cut_case_via
+      NEW metal1 0 + SHAPE STRIPE ( 8286 319 ) cut_case_via ;
+END SPECIALNETS
+END DESIGN

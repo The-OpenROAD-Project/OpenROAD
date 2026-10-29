@@ -81,8 +81,8 @@ class SessionRegistry
 // and redraw even when the Qt GUI is not present.  Also owns the
 // web::Chart factory so addChart() returns WebChart instances.
 //
-// Lifetime: constructed by WebServer before sessions start, destroyed
-// after all sessions are torn down.  The destructor signals any thread
+// Lifetime: constructed by WebServer before sessions start; stop() destroys
+// it, and a session may outlive that.  The destructor signals any thread
 // blocked in pause() so the placer doesn't hang on shutdown.
 class WebViewerHook : public web::GuiBackend
 {
@@ -90,7 +90,9 @@ class WebViewerHook : public web::GuiBackend
   WebViewerHook();
   ~WebViewerHook() override;
 
-  SessionRegistry& sessions() { return sessions_; }
+  SessionRegistry& sessions() { return *sessions_; }
+  // For a session to deregister from, even after this hook is gone.
+  std::shared_ptr<SessionRegistry> sessionsHandle() { return sessions_; }
 
   // Flush accumulated log output to all connected clients.
   void drainLogs();
@@ -99,6 +101,16 @@ class WebViewerHook : public web::GuiBackend
   void redraw() override;
   void pause(int timeout_ms) override;
   bool isPaused() const override;
+
+  // A renderer turned on from Tcl (pdn::set_debug_renderer, say) never
+  // pauses, so the clients must be told to re-read the control list when one
+  // comes or goes.  Gui calls these before it changes its renderer set, and
+  // the command may go on to change more, so they only note the change; the
+  // server tells the clients once the command or script is done.
+  void registerRenderer(Renderer* renderer) override;
+  void unregisterRenderer(Renderer* renderer) override;
+  // Whether a renderer came or went since the last call.
+  bool takeRenderersChanged();
 
   // Per-renderer display controls (issue #10619, the Qt DisplayControls rows
   // built by registerRenderer from Renderer::getDisplayControls()).
@@ -135,8 +147,8 @@ class WebViewerHook : public web::GuiBackend
   void setDrainLogsFn(DrainLogsFn fn);
 
   // Optional hooks around pause(), all run on the pausing thread.
-  // WebServer::serveDuringStartupScripts uses them to let browser requests
-  // in while a startup script is paused.
+  // WebServer uses them to draw the renderers while a command is paused and
+  // to let browser requests in while a startup script is paused.
   struct PauseHooks
   {
     // Runs first.
@@ -262,7 +274,8 @@ class WebViewerHook : public web::GuiBackend
   template <class T>
   void removeCustom(std::vector<T>& vec, const std::string& name);
 
-  SessionRegistry sessions_;
+  std::shared_ptr<SessionRegistry> sessions_
+      = std::make_shared<SessionRegistry>();
 
   mutable std::mutex display_state_mutex_;
   std::string display_state_json_;
@@ -298,6 +311,8 @@ class WebViewerHook : public web::GuiBackend
   mutable std::mutex renderer_controls_mutex_;
   std::map<std::string, bool> renderer_control_visible_;
   std::set<const void*> seeded_renderers_;
+  // Set by (un)registerRenderer, taken once the change has settled.
+  std::atomic<bool> renderers_changed_{false};
 };
 
 // Installs each registered renderer's own control defaults into `hook`, once

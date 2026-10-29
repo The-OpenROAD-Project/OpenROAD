@@ -248,7 +248,7 @@ class RepairDesign : sta::dbStaState
   sta::dbNetwork* db_network_ = nullptr;
   std::unique_ptr<PreChecks> pre_checks_ = nullptr;
   Resizer* resizer_;
-  est::EstimateParasitics* estimate_parasitics_;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   int dbu_ = 0;
   double initial_design_area_ = 0;
   est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::kNone;

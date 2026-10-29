@@ -523,15 +523,21 @@ class TileGeneratorTest : public tst::Nangate45Fixture
                            const unsigned h,
                            const odb::Rect& rect)
   {
-    const int left = colOf(bounds, w, rect.xMin()) - 1;
-    const int right = colOf(bounds, w, rect.xMax()) + 1;
-    const int top = rowOf(bounds, w, h, rect.yMax()) - 1;
-    const int bottom = rowOf(bounds, w, h, rect.yMin()) + 1;
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // A tile must have its fixed dimensions before indexing its RGBA pixels.
+    if (w != kSize || h != kSize || rgba.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return 0;
+    }
+    const int left = colOf(bounds, kSize, rect.xMin()) - 1;
+    const int right = colOf(bounds, kSize, rect.xMax()) + 1;
+    const int top = rowOf(bounds, kSize, kSize, rect.yMax()) - 1;
+    const int bottom = rowOf(bounds, kSize, kSize, rect.yMin()) + 1;
     int outside = 0;
-    for (int y = 0; y < static_cast<int>(h); ++y) {
-      for (int x = 0; x < static_cast<int>(w); ++x) {
+    for (int y = 0; y < kTileSize; ++y) {
+      for (int x = 0; x < kTileSize; ++x) {
         const bool inside = x >= left && x <= right && y >= top && y <= bottom;
-        if (!inside && rgba[4UL * (y * w + x) + 3] > 0) {
+        if (!inside && rgba[4UL * (y * kSize + x) + 3] > 0) {
           ++outside;
         }
       }
@@ -608,10 +614,24 @@ class TileGeneratorTest : public tst::Nangate45Fixture
       EXPECT_EQ(tile_gen_->getBounds(), bounds);
       const TileVisibility vis
           = pin_name ? pinNamesOnlyVis() : TileVisibility{};
-      const auto left = decodePng(
-          tile_gen_->generateTile("_inst_labels", 2, 1, 2, vis), w, h);
-      const auto right = decodePng(
-          tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis), w, h);
+      unsigned left_w = 0, left_h = 0, right_w = 0, right_h = 0;
+      const auto left
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 1, 2, vis),
+                      left_w,
+                      left_h);
+      const auto right
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis),
+                      right_w,
+                      right_h);
+      constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+      // Both decoded tiles must fit the fixed-size stitched image.
+      if (left_w != kSize || left_h != kSize || right_w != kSize
+          || right_h != kSize || left.size() != 4UL * kSize * kSize
+          || right.size() != 4UL * kSize * kSize) {
+        ADD_FAILURE() << "invalid decoded tile dimensions";
+        return std::vector<unsigned char>{};
+      }
+      w = h = kSize;
       std::vector<unsigned char> out(8UL * w * h);
       for (unsigned y = 0; y < h; ++y) {
         std::memcpy(&out[8UL * y * w], &left[4UL * y * w], 4UL * w);
@@ -642,6 +662,11 @@ class TileGeneratorTest : public tst::Nangate45Fixture
       inst->setLocation(x0 + half_tile, y0);
       const auto inside = stitch(w, h);
       odb::dbInst::destroy(inst);
+      if (across.size() != 8UL * kTileSize * kTileSize
+          || inside.size() != 8UL * kTileSize * kTileSize) {
+        ADD_FAILURE() << "invalid stitched tile size";
+        return;
+      }
       ASSERT_EQ(w, 256u);
 
       int lit = 0;
@@ -659,11 +684,12 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     }
   }
 
-  LabelWash measureLabelWash(bool TileVisibility::*cover
+  LabelWash measureLabelWash(bool TileVisibility::* cover
                              = &TileVisibility::placement_blockages,
-                             TileVisibility vis = labelOnlyVis())
+                             const TileVisibility& base_vis = labelOnlyVis())
   {
     LabelWash out;
+    TileVisibility vis = base_vis;
     vis.inst_names = true;
 
     unsigned pw = 0, ph = 0;
@@ -1442,7 +1468,13 @@ TEST_F(TileGeneratorTest, ObstructionsUseQtLighterColour)
   unsigned w = 0, h = 0;
   const auto px = decodePng(
       tile_gen_->generateTile("metal4", 0, 0, 0, TileVisibility{}), w, h);
-  const size_t centre = 4UL * ((h / 2) * w + w / 2);
+  constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+  // The fixed tile dimensions must match the decoded RGBA buffer.
+  if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+    ADD_FAILURE() << "invalid decoded tile dimensions";
+    return;
+  }
+  const size_t centre = 4UL * ((kTileSize / 2) * kTileSize + kTileSize / 2);
   EXPECT_EQ(px[centre], 235);
   EXPECT_EQ(px[centre + 1], 255);
   EXPECT_EQ(px[centre + 2], 196);
@@ -2206,6 +2238,13 @@ TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
     tile_gen_->eagerInit();
     unsigned w = 0, h = 0;
     const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // The crop loops index a fixed-size tile decoded from the PNG.
+    if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return std::pair{0U, std::vector<unsigned char>{}};
+    }
+    w = h = kSize;
     unsigned x0 = w, y0 = h, x1 = 0, y1 = 0;
     for (unsigned y = 0; y < h; ++y) {
       for (unsigned x = 0; x < w; ++x) {
@@ -2493,7 +2532,7 @@ TEST_F(TileGeneratorTest, CollectChipletsAgreesWithTheUnfoldedModel)
       << "the unfolded and fallback traversals disagree on chiplet paths, "
          "which are persisted in user cookies";
   EXPECT_EQ(paths(unfolded),
-            (std::set<std::string>{"top", "top/die0", "top/die1"}));
+            (std::set<std::string>{"root", "root/die0", "root/die1"}));
 }
 
 // A face-down chiplet is MZ: {orient_2d=R0, mirror_z=true}.  Reading only the
@@ -2508,8 +2547,8 @@ TEST_F(TileGeneratorTest, ChipletReportsMirrorZAsFlipped)
   getDb()->constructUnfoldedModel();
 
   const std::vector<ChipletNode> chiplets = collectChiplets(root);
-  const ChipletNode* up = findChiplet(chiplets, "top/" + die0->getName());
-  const ChipletNode* down = findChiplet(chiplets, "top/" + die1->getName());
+  const ChipletNode* up = findChiplet(chiplets, "root/" + die0->getName());
+  const ChipletNode* down = findChiplet(chiplets, "root/" + die1->getName());
   ASSERT_NE(up, nullptr);
   ASSERT_NE(down, nullptr);
   EXPECT_FALSE(up->isFlipped());
@@ -2538,7 +2577,7 @@ TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
   getDb()->constructUnfoldedModel();
 
   const std::vector<ChipletNode> chiplets = collectChiplets(root);
-  const ChipletNode* leaf = findChiplet(chiplets, "top/outer/inner");
+  const ChipletNode* leaf = findChiplet(chiplets, "root/outer/inner");
   ASSERT_NE(leaf, nullptr) << "the HIER ancestor's leaf is missing: the "
                               "unfolded model skips HIER chips, so its "
                               "descendants have to be rebuilt from the path";
@@ -2546,7 +2585,7 @@ TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
       << "MZ inside MZ is face-up again, but the chiplet reports face-down";
 
   // The HIER node itself owns no block but still groups the UI trees.
-  const ChipletNode* group = findChiplet(chiplets, "top/outer");
+  const ChipletNode* group = findChiplet(chiplets, "root/outer");
   ASSERT_NE(group, nullptr) << "HIER grouping node dropped from the tree";
   EXPECT_TRUE(group->isFlipped());
 }
@@ -2561,14 +2600,14 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   makeTileGen();
 
   const ChipletNode* before
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(before, nullptr);
   ASSERT_FALSE(before->isFlipped());
 
   die0->setOrient(odb::dbOrientType3D("MZ"));
 
   const ChipletNode* after
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(after, nullptr);
   EXPECT_TRUE(after->isFlipped())
       << "the chiplet cache did not notice setOrient, so the viewer keeps "
@@ -2579,7 +2618,7 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
   // the edit has to stay visible on later calls too — not just the one that
   // detected it.
   const ChipletNode* later
-      = findChiplet(tile_gen_->chiplets(), "top/" + die0->getName());
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
   ASSERT_NE(later, nullptr);
   EXPECT_TRUE(later->isFlipped())
       << "the reorient was reported once and then lost, which means a stale "
@@ -4053,7 +4092,7 @@ TEST_F(TileGeneratorTest, OverlayFlagsParsedFromJson)
   struct FlagCase
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
   const FlagCase cases[] = {
