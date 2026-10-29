@@ -126,6 +126,12 @@ TEST(TestScanReplace, IsMatchingFootprint)
   EXPECT_FALSE(IsMatchingFootprint("dfxtp", "sdfbbp"));
 }
 
+bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs)
+{
+  return SelectBestCandidateRankIndex({lhs, rhs}) == 0
+         && SelectBestCandidateRankIndex({rhs, lhs}) == 1;
+}
+
 // Verify footprint match takes highest priority, followed by same
 // LibertyLibrary (VT family) affinity.
 TEST(TestScanReplace, IsBetterCandidateRankPrioritizesFootprintAndLibrary)

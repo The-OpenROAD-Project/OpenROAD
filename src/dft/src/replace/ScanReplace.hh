@@ -45,10 +45,6 @@ bool IsMatchingFootprint(std::string_view ns, std::string_view s);
 // `ranks` is empty) by successively filtering candidates across ranking tiers.
 size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks);
 
-// Returns true if `lhs` strictly outranks `rhs` under
-// `SelectBestCandidateRankIndex`.
-bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs);
-
 // A scan cell that can be use to replace a non-scan cell
 // It contains the LibertyCell that we can use to instantiate a new cell and a
 // port map to store the equivalence non-scan and scan ports.

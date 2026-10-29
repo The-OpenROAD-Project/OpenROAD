@@ -334,12 +334,6 @@ size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks)
   });
 }
 
-bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs)
-{
-  return SelectBestCandidateRankIndex({lhs, rhs}) == 0
-         && SelectBestCandidateRankIndex({rhs, lhs}) == 1;
-}
-
 namespace {
 
 CandidateRank ComputeCandidateRank(const sta::LibertyCell* non_scan_cell,
