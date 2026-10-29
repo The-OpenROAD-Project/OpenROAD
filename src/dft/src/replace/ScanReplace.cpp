@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <numeric>
+#include <ranges>
 #include <set>
 #include <string>
 #include <string_view>
@@ -281,100 +283,61 @@ bool IsMatchingFootprint(std::string_view ns, std::string_view s)
   return s == ns || IsSingleCharScanInsertion(ns, s);
 }
 
-bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs)
-{
-  // 1. Prefer matching Liberty cell_footprint (e.g. "dfxtp" -> "sdfxtp").
-  if (lhs.footprint_match != rhs.footprint_match) {
-    return lhs.footprint_match;
-  }
-
-  // 2. Prefer scan cells from the same LibertyLibrary (VT family).
-  if (lhs.same_library != rhs.same_library) {
-    return lhs.same_library;
-  }
-
-  // 3. Compare relative output drive resistance outside the 1% tolerance band.
-  if (std::abs(lhs.rel_drive_diff - rhs.rel_drive_diff)
-      > kDriveResistanceRelTolerance) {
-    return lhs.rel_drive_diff < rhs.rel_drive_diff;
-  }
-
-  // 4. Within the same drive-strength band, prefer smaller cell area.
-  const float max_area = std::max(std::abs(lhs.area), std::abs(rhs.area));
-  if (std::abs(lhs.area - rhs.area) > kAreaRelTolerance * max_area) {
-    return lhs.area < rhs.area;
-  }
-
-  // 5. Tie-break by single-char scan insertion match, then cell name.
-  if (lhs.direct_name_match != rhs.direct_name_match) {
-    return lhs.direct_name_match;
-  }
-  return lhs.name < rhs.name;
-}
-
 size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks)
 {
   if (ranks.empty()) {
     return 0;
   }
 
-  // Pass 1: Find the winning (footprint_match, same_library) tier and its
-  // minimum relative drive-resistance difference to anchor the 1% band.
-  bool best_footprint_match = false;
-  bool best_same_library = false;
-  double min_rel_drive_diff = std::numeric_limits<double>::max();
-  for (size_t i = 0; i < ranks.size(); ++i) {
-    const CandidateRank& r = ranks[i];
-    if (i == 0
-        || (r.footprint_match != best_footprint_match
-                ? r.footprint_match
-                : (r.same_library != best_same_library && r.same_library))) {
-      best_footprint_match = r.footprint_match;
-      best_same_library = r.same_library;
-      min_rel_drive_diff = r.rel_drive_diff;
-    } else if (r.footprint_match == best_footprint_match
-               && r.same_library == best_same_library) {
-      min_rel_drive_diff = std::min(min_rel_drive_diff, r.rel_drive_diff);
-    }
-  }
+  std::vector<size_t> survivors(ranks.size());
+  std::iota(survivors.begin(), survivors.end(), 0);
 
-  // Pass 2: Find the minimum area within the anchored 1% drive-resistance band.
-  float min_area = std::numeric_limits<float>::max();
-  for (const CandidateRank& r : ranks) {
-    if (r.footprint_match == best_footprint_match
-        && r.same_library == best_same_library
-        && r.rel_drive_diff - min_rel_drive_diff
-               <= kDriveResistanceRelTolerance) {
-      min_area = std::min(min_area, r.area);
+  auto filter_by_flag = [&](auto predicate) {
+    if (std::ranges::any_of(survivors, predicate)) {
+      std::erase_if(survivors, [&](size_t i) { return !predicate(i); });
     }
-  }
-
-  // Pass 3: Snap values within the anchored bands and compare via
-  // IsBetterCandidateRank for order-invariant selection.
-  auto anchor_rank = [&](CandidateRank r) {
-    if (r.footprint_match == best_footprint_match
-        && r.same_library == best_same_library
-        && r.rel_drive_diff - min_rel_drive_diff
-               <= kDriveResistanceRelTolerance) {
-      r.rel_drive_diff = min_rel_drive_diff;
-      const float max_area = std::max(std::abs(r.area), std::abs(min_area));
-      if (r.area - min_area <= kAreaRelTolerance * max_area) {
-        r.area = min_area;
-      }
-    }
-    return r;
   };
 
-  size_t best_idx = 0;
-  CandidateRank best_rank = anchor_rank(ranks[0]);
-  for (size_t i = 1; i < ranks.size(); ++i) {
-    const CandidateRank candidate_rank = anchor_rank(ranks[i]);
-    if (IsBetterCandidateRank(candidate_rank, best_rank)) {
-      best_rank = candidate_rank;
-      best_idx = i;
-    }
-  }
-  return best_idx;
+  // 1. Prefer matching Liberty cell_footprint (e.g. "dfxtp" -> "sdfxtp").
+  filter_by_flag([&](size_t i) { return ranks[i].footprint_match; });
+
+  // 2. Prefer scan cells from the same LibertyLibrary (VT family).
+  filter_by_flag([&](size_t i) { return ranks[i].same_library; });
+
+  // 3. Keep candidates within 1% relative output drive resistance of the best.
+  const double min_rel_drive_diff
+      = std::ranges::min(survivors | std::views::transform([&](size_t i) {
+                           return ranks[i].rel_drive_diff;
+                         }));
+  std::erase_if(survivors, [&](size_t i) {
+    return (ranks[i].rel_drive_diff - min_rel_drive_diff)
+           > kDriveResistanceRelTolerance;
+  });
+
+  // 4. Within the drive-strength band, keep candidates within 0.01% of the
+  // smallest cell area.
+  const float min_area
+      = std::ranges::min(survivors | std::views::transform([&](size_t i) {
+                           return ranks[i].area;
+                         }));
+  std::erase_if(survivors, [&](size_t i) {
+    const float max_area
+        = std::max(std::abs(ranks[i].area), std::abs(min_area));
+    return (ranks[i].area - min_area) > kAreaRelTolerance * max_area;
+  });
+
+  // 5. Tie-break by single-char ('s'/'S') scan insertion match, then cell name.
+  filter_by_flag([&](size_t i) { return ranks[i].direct_name_match; });
+
+  return *std::ranges::min_element(survivors, [&](size_t a, size_t b) {
+    return ranks[a].name < ranks[b].name;
+  });
+}
+
+bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs)
+{
+  return SelectBestCandidateRankIndex({lhs, rhs}) == 0
+         && SelectBestCandidateRankIndex({rhs, lhs}) == 1;
 }
 
 namespace {

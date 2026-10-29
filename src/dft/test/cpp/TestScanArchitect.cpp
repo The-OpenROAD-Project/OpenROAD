@@ -399,5 +399,80 @@ TEST_F(Sky130ScanReplaceTest, SelectBestScanCellMatchesSky130Cells)
   EXPECT_EQ(SelectBestScanCell(nullptr, non_empty_candidates), nullptr);
 }
 
+class Asap7ScanReplaceTest : public tst::Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    rvt_library_ = readLiberty(
+        "_main/src/dft/test/asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib");
+    lvt_library_ = readLiberty(
+        "_main/src/dft/test/asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib");
+    ASSERT_NE(rvt_library_, nullptr);
+    ASSERT_NE(lvt_library_, nullptr);
+  }
+
+  sta::LibertyLibrary* rvt_library_ = nullptr;
+  sta::LibertyLibrary* lvt_library_ = nullptr;
+};
+
+// Verify `SelectBestScanCell` resolves the inverted sequential output `QN` on
+// ASAP7 `DFFHQNx*` cells (which have no `Q` port) and selects the drive- and
+// VT-matched `SDFHx*` scan cell across all candidate permutations.
+TEST_F(Asap7ScanReplaceTest, SelectBestScanCellMatchesAsap7QnOnlyCells)
+{
+  sta::LibertyCell* dffhqn_x1_rvt
+      = rvt_library_->findLibertyCell("DFFHQNx1_ASAP7_75t_R");
+  sta::LibertyCell* dffhqn_x2_rvt
+      = rvt_library_->findLibertyCell("DFFHQNx2_ASAP7_75t_R");
+  sta::LibertyCell* sdfh_x1_rvt
+      = rvt_library_->findLibertyCell("SDFHx1_ASAP7_75t_R");
+  sta::LibertyCell* sdfh_x2_rvt
+      = rvt_library_->findLibertyCell("SDFHx2_ASAP7_75t_R");
+  sta::LibertyCell* sdfh_x4_rvt
+      = rvt_library_->findLibertyCell("SDFHx4_ASAP7_75t_R");
+  sta::LibertyCell* sdfh_x1_lvt
+      = lvt_library_->findLibertyCell("SDFHx1_ASAP7_75t_L");
+  ASSERT_NE(dffhqn_x1_rvt, nullptr);
+  ASSERT_NE(dffhqn_x2_rvt, nullptr);
+  ASSERT_NE(sdfh_x1_rvt, nullptr);
+  ASSERT_NE(sdfh_x2_rvt, nullptr);
+  ASSERT_NE(sdfh_x4_rvt, nullptr);
+  ASSERT_NE(sdfh_x1_lvt, nullptr);
+
+  // Confirm that ASAP7 DFFHQNx* and SDFHx* cells only expose QN (no Q port).
+  EXPECT_EQ(dffhqn_x1_rvt->findLibertyPort("Q"), nullptr);
+  EXPECT_NE(dffhqn_x1_rvt->findLibertyPort("QN"), nullptr);
+  EXPECT_EQ(dffhqn_x2_rvt->findLibertyPort("Q"), nullptr);
+  EXPECT_NE(dffhqn_x2_rvt->findLibertyPort("QN"), nullptr);
+
+  const std::unordered_map<std::string, std::string> qn_port_map
+      = {{"CLK", "CLK"}, {"D", "D"}, {"QN", "QN"}};
+  const std::vector<sta::LibertyCell*> candidate_cells
+      = {sdfh_x1_lvt, sdfh_x4_rvt, sdfh_x2_rvt, sdfh_x1_rvt};
+  std::vector<size_t> perm(candidate_cells.size());
+  std::iota(perm.begin(), perm.end(), 0);
+  do {
+    std::vector<std::unique_ptr<ScanCandidate>> candidates_x1;
+    std::vector<std::unique_ptr<ScanCandidate>> candidates_x2;
+    for (size_t idx : perm) {
+      candidates_x1.push_back(
+          std::make_unique<ScanCandidate>(candidate_cells[idx], qn_port_map));
+      candidates_x2.push_back(
+          std::make_unique<ScanCandidate>(candidate_cells[idx], qn_port_map));
+    }
+
+    std::unique_ptr<ScanCandidate> best_for_x1
+        = SelectBestScanCell(dffhqn_x1_rvt, candidates_x1);
+    ASSERT_NE(best_for_x1, nullptr);
+    EXPECT_EQ(best_for_x1->getScanCell(), sdfh_x1_rvt);
+
+    std::unique_ptr<ScanCandidate> best_for_x2
+        = SelectBestScanCell(dffhqn_x2_rvt, candidates_x2);
+    ASSERT_NE(best_for_x2, nullptr);
+    EXPECT_EQ(best_for_x2->getScanCell(), sdfh_x2_rvt);
+  } while (std::next_permutation(perm.begin(), perm.end()));
+}
+
 }  // namespace
 }  // namespace dft

@@ -41,15 +41,13 @@ bool IsSingleCharScanInsertion(std::string_view non_scan_str,
 // via a single-character 's'/'S' insertion.
 bool IsMatchingFootprint(std::string_view ns, std::string_view s);
 
-// Returns true if `lhs` outranks `rhs` under the candidate ranking hierarchy.
-// Note: `rel_drive_diff` and `area` tolerance bands are evaluated pairwise;
-// callers selecting from a collection should use `SelectBestCandidateRankIndex`
-// (which anchors tolerance bands to the tier minimum for strict weak ordering).
-bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs);
-
-// Returns the index of the best `CandidateRank` in `ranks` (must be non-empty),
-// anchoring tolerance bands to the tier minimum for order-invariant selection.
+// Returns the index of the best `CandidateRank` in `ranks` (returns 0 if
+// `ranks` is empty) by successively filtering candidates across ranking tiers.
 size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks);
+
+// Returns true if `lhs` strictly outranks `rhs` under
+// `SelectBestCandidateRankIndex`.
+bool IsBetterCandidateRank(const CandidateRank& lhs, const CandidateRank& rhs);
 
 // A scan cell that can be use to replace a non-scan cell
 // It contains the LibertyCell that we can use to instantiate a new cell and a
