@@ -15,6 +15,7 @@
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/architecture.h"
@@ -496,13 +497,18 @@ void NegotiationLegalizer::buildGrid()
   // Blockade each fixed cell and record its usage in one pass.  Footprint
   // only: padding is left to PlacementDRC, which knows both masters and so
   // can apply the class-pair rules that a plain capacity cannot express.
+  // Block every site the instance overlaps, as checkPlacement does: the
+  // rounded NegCell footprint can leave the edge column/row of an off-grid
+  // fixed cell open to movable cells.
   for (const NegCell& cell : cells_) {
     if (!cell.fixed) {
       continue;
     }
-    for (int dy = 0; dy < cell.height; ++dy) {
-      const int gy = cell.y + dy;
-      for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
+    odb::Rect bbox = cell.db_inst->getBBox()->getBox();
+    bbox.moveDelta(-die_xlo_, -die_ylo_);
+    const GridRect cover = dplGrid->gridCovering(bbox);
+    for (int gy = cover.ylo.v; gy < cover.yhi.v; ++gy) {
+      for (int gx = cover.xlo.v; gx < cover.xhi.v; ++gx) {
         if (gridExists(gx, gy)) {
           Pixel& pixel = gridAt(gx, gy);
           pixel.capacity = 0;
@@ -826,17 +832,10 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // may have been placed at an overlapping initial position.  Without this,
   // a movable cell painted on top of an endcap overwrites pixel->cell, and
   // the subsequent erasePixel call clears the endcap from the grid, making
-  // checkOneSiteGap blind to it.
-  for (const NegCell& cell : cells_) {
-    if (!cell.fixed || cell.db_inst == nullptr) {
-      continue;
-    }
-    Node* node = cell.node;
-    if (node == nullptr) {
-      continue;
-    }
-    opendp_->grid_->paintPixel(node);
-  }
+  // checkOneSiteGap blind to it.  setFixedGridCells() paints every site a
+  // fixed cell overlaps (plus padding), matching checkPlacement even for
+  // fixed cells that are not aligned to the site grid.
+  opendp_->setFixedGridCells();
 }
 
 // ===========================================================================
