@@ -610,6 +610,7 @@ void NesterovPlace::runTimingDriven(int iter,
           nesterov->updateDensitySize();
         }
         nesterov->checkConsistency();
+        nesterov->resetMinSumOverflow();
       }
       nbc_->resetDeltaArea();
       nbc_->resetNewGcellsCount();
@@ -624,6 +625,9 @@ void NesterovPlace::runTimingDriven(int iter,
             = average_overflow_unscaled_;
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
+      } else {
+        min_hpwl_ = std::numeric_limits<int64_t>::max();
+        is_min_hpwl_ = false;
       }
 
       reset_nesterov_momentum_ = true;
