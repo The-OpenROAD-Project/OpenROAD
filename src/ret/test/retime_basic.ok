@@ -7,7 +7,6 @@ worst slack max 0.8497
 [INFO RET-0014] Retiming graph: 6 gates, 5 edges (2 registered, max weight 1), clock period 1e-09
 [INFO RET-0015] 2 register slots, 2 distinct registers, 2 pinned gates (I/O boundary or fed through a don't-touch register)
 [INFO RET-0018] Load-aware arc on 5/5 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
-[INFO RET-0019] Clock period 1e-09, STA worst slack 8.497e-10, effective period 8.936e-10
 [INFO RET-0020] Start worst arrival 4.392e-11 (model slack 9.561e-10 vs period 1e-09)
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout net

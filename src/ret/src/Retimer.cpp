@@ -45,7 +45,11 @@ bool Retimer::unmapSequentialCells()
 {
   getBlock();
   if (!unmapper_->prepare()) {
-    return false;
+    logger_->error(
+        utl::RET,
+        32,
+        "The loaded libraries lack a usable base register, inverter, 2-input "
+        "AND or 2-input OR cell (see the warnings above).");
   }
   unmapper_->run();
   return true;
@@ -58,18 +62,19 @@ static odb::dbNet* registerDataNet(sta::dbSta* sta, odb::dbInst* inst)
   return d ? d->getNet() : nullptr;
 }
 
-void Retimer::retime(int max_moves, bool stop_at_period)
+void Retimer::retime(int max_moves)
 {
   odb::dbBlock* block = getBlock();
   if (!unmapper_->prepare()) {
-    return;
+    logger_->error(
+        utl::RET,
+        36,
+        "The loaded libraries lack a usable base register, inverter, 2-input "
+        "AND or 2-input OR cell (see the warnings above).");
   }
   dff_master_ = unmapper_->getBaseSequentialMaster();
   dff_q_mterm_ = unmapper_->getBaseSequentialQMTerm();
-  clock_net_ = findClockNet(block);
-  if (clock_net_ == nullptr) {
-    logger_->error(utl::RET, 29, "No register with a clock pin found.");
-  }
+  checkRegisters(block);
 
   RetimingGraph graph(db_, sta_, logger_);
   graph.build();
@@ -78,9 +83,10 @@ void Retimer::retime(int max_moves, bool stop_at_period)
     logger_->error(
         utl::RET, 30, "No clock defined; retiming needs a clock period.");
   }
+  clock_net_ = findClockNet(block);
 
   Retime search(&graph, sta_, logger_, dff_master_);
-  search.run(max_moves, stop_at_period);
+  search.run(max_moves);
   const std::vector<int> r = search.getRetiming();
 
   const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
@@ -128,7 +134,7 @@ void Retimer::retime(int max_moves, bool stop_at_period)
     RetimingGraph g(db_, sta_, logger_);
     g.build();
     Retime s(&g, sta_, logger_, dff_master_);
-    s.run(max_moves, stop_at_period);
+    s.run(max_moves);
     const std::vector<int>& rr = s.getRetiming();
     const std::unordered_set<odb::dbInst*> more = moversToUnmap(g, rr);
     if (more.empty() || round == kMaxRounds - 1) {
@@ -139,9 +145,11 @@ void Retimer::retime(int max_moves, bool stop_at_period)
   }
 }
 
-// Single clock domain: the clock net of the first register in the block.
+// Single clock domain: every register must hang off the same clock net.
 odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
 {
+  std::unordered_set<odb::dbNet*> clock_nets;
+  odb::dbNet* first = nullptr;
   for (odb::dbInst* inst : block->getInsts()) {
     if (!inst->getMaster()->isSequential()) {
       continue;
@@ -149,11 +157,43 @@ odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
     for (odb::dbITerm* iterm : inst->getITerms()) {
       if (iterm->getSigType() == odb::dbSigType::CLOCK
           && iterm->getNet() != nullptr) {
-        return iterm->getNet();
+        clock_nets.insert(iterm->getNet());
+        if (first == nullptr) {
+          first = iterm->getNet();
+        }
       }
     }
   }
-  return nullptr;
+  if (first == nullptr) {
+    logger_->error(utl::RET, 29, "No register with a clock pin found.");
+  }
+  if (clock_nets.size() > 1) {
+    logger_->error(utl::RET,
+                   34,
+                   "Registers are clocked by {} different nets; only "
+                   "single-clock designs can be retimed.",
+                   clock_nets.size());
+  }
+  return first;
+}
+
+// Register kinds the retimer does not handle yet are an error, not a silent
+// no-op.
+void Retimer::checkRegisters(odb::dbBlock* block)
+{
+  int negedge = 0;
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential() && isNegedgeRegister(sta_, inst)) {
+      negedge++;
+    }
+  }
+  if (negedge > 0) {
+    logger_->error(utl::RET,
+                   35,
+                   "{} negative-edge registers found; only positive-edge "
+                   "registers can be retimed.",
+                   negedge);
+  }
 }
 
 struct RegisterGroup
@@ -394,6 +434,10 @@ void Retimer::applyRetiming(RetimingGraph& graph, const std::vector<int>& r)
         changed.insert(driver_net);
       }
     }
+  }
+
+  if (changed.empty()) {
+    return;  // nothing moved; the search already said so
   }
 
   int removed = 0;

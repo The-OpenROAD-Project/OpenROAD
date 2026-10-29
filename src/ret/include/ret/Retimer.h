@@ -42,13 +42,15 @@ class Retimer
   // unmap_sequential_cells
   bool unmapSequentialCells();
 
-  // retime: max_moves <= 0 is unlimited; stop_at_period stops the search as
-  // soon as the model meets the clock period.
-  void retime(int max_moves, bool stop_at_period);
+  // retime: max_moves <= 0 is unlimited.  Errors out on designs it cannot
+  // retime yet: missing base cells, several clocks, registers on different
+  // clock nets, negative-edge registers.
+  void retime(int max_moves);
 
  private:
   odb::dbBlock* getBlock();
   odb::dbNet* findClockNet(odb::dbBlock* block);
+  void checkRegisters(odb::dbBlock* block);
 
   // Registers that move under `r` and are not already the base cell.
   std::unordered_set<odb::dbInst*> moversToUnmap(

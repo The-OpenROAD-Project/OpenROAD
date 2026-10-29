@@ -192,4 +192,12 @@ odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
   return nullptr;
 }
 
+bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
+{
+  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
+  const sta::FuncExpr* clock = seq ? seq->clock() : nullptr;
+  return clock != nullptr && clock->op() == sta::FuncExpr::Op::not_;
+}
+
 }  // namespace ret

@@ -107,6 +107,7 @@ float Retime::getPinSlew(sta::Pin* pin)
 void Retime::computeArcDelays()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
+  sta_->updateTiming(false);  // arc delays and arrivals must be current
   gate_floor_.assign(n, 0.0);
   fanin_.assign(n, {});
 
@@ -514,31 +515,6 @@ double Retime::estimateSlideDelta(int v)
   return v_delta + cone_delta;
 }
 
-// Anchor the model to STA once: the effective period is the model's worst
-// arrival plus the STA worst slack, capped at the clock period.
-void Retime::calibratePeriod()
-{
-  eff_period_ = graph_->clock_period_;
-  computeArrivals();
-  double model_max = 0.0;
-  for (double a : arrivals_) {
-    model_max = std::max(model_max, a);
-  }
-  const float worst_slack
-      = sta::delayAsFloat(sta_->worstSlack(sta::MinMax::max()));
-  if (worst_slack > -1e6f && worst_slack < 1e6f) {
-    eff_period_ = std::min(model_max + static_cast<double>(worst_slack),
-                           static_cast<double>(graph_->clock_period_));
-  }
-  logger_->info(utl::RET,
-                19,
-                "Clock period {:.4g}, STA worst slack {:.4g}, effective period "
-                "{:.4g}",
-                graph_->clock_period_,
-                worst_slack,
-                eff_period_);
-}
-
 // r[v] -= 1 is legal when v is not pinned, no fanout edge already holds a
 // register in the original netlist, and every fanin edge carries one.
 bool Retime::forwardMovable(int v) const
@@ -599,17 +575,15 @@ void Retime::reportWorstPathStart()
   }
 }
 
-void Retime::run(int max_moves, bool stop_at_period)
+void Retime::run(int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes_.size());
-  stop_at_period_ = stop_at_period;
   r_.assign(n, 0);
   arrivals_.assign(n, 0.0);
   in_critical_cone_.assign(n, 0);
   scratch_.init(n);
 
   computeArcDelays();
-  calibratePeriod();
 
   double cur = markCriticalCone();
   logger_->info(
@@ -629,13 +603,7 @@ void Retime::run(int max_moves, bool stop_at_period)
   const double eps = 1e-15;
   int moves = 0;
 
-  logger_->report("");
-  logger_->report(
-      " Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout net");
-  logger_->report(
-      "-------+------------+-------+-------+--------+---------------------");
-
-  while (moves < cap && !(stop_at_period_ && cur <= eff_period_)) {
+  while (moves < cap) {
     bool accepted = false;
     for (int v = 0; v < n; v++) {
       if (!in_critical_cone_[v] || !forwardMovable(v)) {
@@ -673,6 +641,15 @@ void Retime::run(int max_moves, bool stop_at_period)
             }
           }
         }
+        if (moves == 1) {
+          logger_->report("");
+          logger_->report(
+              " Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout "
+              "net");
+          logger_->report(
+              "-------+------------+-------+-------+--------+------------------"
+              "---");
+        }
         logger_->report("{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {} -> {}",
                         moves,
                         cur,
@@ -692,6 +669,10 @@ void Retime::run(int max_moves, bool stop_at_period)
     }
   }
 
+  if (moves == 0) {
+    logger_->info(utl::RET, 16, "Retime found no slides.");
+    return;
+  }
   logger_->report(
       "-------+------------+-------+-------+--------+---------------------");
   logger_->info(

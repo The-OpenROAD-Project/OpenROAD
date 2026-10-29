@@ -24,13 +24,24 @@ RetimingGraph::RetimingGraph(odb::dbDatabase* db,
 {
 }
 
-// Largest period over all defined clocks.
+// The period of the single non-virtual clock; more than one is an error.
 void RetimingGraph::findClockPeriod()
 {
   clock_period_ = 0.0f;
+  int clocks = 0;
   for (sta::Clock* clock : sta_->cmdMode()->sdc()->clocks()) {
-    clock_period_
-        = std::max(clock_period_, static_cast<float>(clock->period()));
+    if (clock->isVirtual()) {
+      continue;
+    }
+    clocks++;
+    clock_period_ = static_cast<float>(clock->period());
+  }
+  if (clocks > 1) {
+    logger_->error(
+        utl::RET,
+        33,
+        "{} clocks defined; only single-clock designs can be retimed.",
+        clocks);
   }
 }
 

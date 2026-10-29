@@ -7,6 +7,12 @@ or_integration_tests(
   "ret"
   TESTS
     retime_basic
+    retime_negedge
+    retime_no_base_cell
+    retime_no_clock
+    retime_no_moves
+    retime_two_clock_nets
+    retime_two_clocks
     retime_unmap
     unmap_basic
 )

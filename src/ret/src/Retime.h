@@ -40,9 +40,8 @@ class Retime
          utl::Logger* logger,
          odb::dbMaster* flop_master);
 
-  // max_moves <= 0 means unlimited.  With stop_at_period the loop stops as
-  // soon as the model's worst arrival meets the clock period.
-  void run(int max_moves, bool stop_at_period);
+  // max_moves <= 0 means unlimited.
+  void run(int max_moves);
   const std::vector<int>& getRetiming() const { return r_; }
 
  private:
@@ -85,7 +84,6 @@ class Retime
   void computeArrivals();
   double markCriticalCone();
   double estimateSlideDelta(int v);
-  void calibratePeriod();
   bool forwardMovable(int v) const;
   void reportWorstPathStart();
 
@@ -123,10 +121,8 @@ class Retime
 
   odb::dbMaster* flop_master_ = nullptr;
   float flop_d_cap_ = 0.0f;
-  double eff_period_ = 0.0;
   double critical_threshold_ = 0.0;
   int dcalc_ap_ = 0;
-  bool stop_at_period_ = false;
 };
 
 }  // namespace ret

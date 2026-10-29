@@ -44,7 +44,6 @@ have a single clock domain and a clock defined with `create_clock`.
 ```tcl
 retime
     [-max_moves count]
-    [-objective min|period]
 ```
 
 #### Options
@@ -52,13 +51,19 @@ retime
 | Switch Name | Description |
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. Default unlimited. |
-| `-objective` | `min` (default) keeps moving while the worst arrival improves; `period` stops as soon as the model meets the clock period. |
 
 New instances are named `ret_ff_N` and new nets `ret_net_N`. The log shows
 one line per accepted move with the worst arrival of the delay model after
 the move, the number of registers in the moved group, the number of sinks
 of the output net of the gate and the maximum register count on those edges.
 
+When no move improves the worst arrival the command reports `Retime found
+no slides.` and leaves the design unchanged.
+
+The command stops with an error on designs it cannot retime yet: libraries
+without a usable base register, inverter, AND2 or OR2 cell; more than one
+non-virtual clock; registers on more than one clock net; negative-edge
+registers; or no clock defined.
 ### Unmap Sequential Cells
 
 Rewrite every synchronous register as a base D flip-flop whose D pin is

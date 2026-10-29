@@ -26,4 +26,7 @@ bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);
 // The register's data input pin, or nullptr.
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
 
+// True for a register clocked on the falling edge.
+bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst);
+
 }  // namespace ret

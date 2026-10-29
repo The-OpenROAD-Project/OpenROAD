@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING RET-0007] Using multi-output register cell DFF_X1 as the positive-edge base cell.
+[WARNING RET-0005] No tie-high cell found.
+[WARNING RET-0006] No tie-low cell found.
+[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
+[INFO RET-0014] Retiming graph: 2 gates, 1 edges (1 registered, max weight 1), clock period 1e-09
+[INFO RET-0015] 1 register slots, 1 distinct registers, 2 pinned gates (I/O boundary or fed through a don't-touch register)
+[INFO RET-0018] Load-aware arc on 1/1 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
+[INFO RET-0020] Start worst arrival 2.632e-11 (model slack 9.737e-10 vs period 1e-09)
+[INFO RET-0022] The worst path starts at pinned gate g0; its arrival cannot be lowered by a forward register move.
+[INFO RET-0016] Retime found no slides.
+No differences found.

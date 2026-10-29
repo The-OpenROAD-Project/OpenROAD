@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING RET-0007] Using multi-output register cell DFF_X1 as the positive-edge base cell.
+[WARNING RET-0005] No tie-high cell found.
+[WARNING RET-0006] No tie-low cell found.
+[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
+[ERROR RET-0033] 2 clocks defined; only single-clock designs can be retimed.
+RET-0033

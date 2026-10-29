@@ -19,9 +19,9 @@ unmap_sequential_cells_cmd()
 }
 
 void
-retime_cmd(int max_moves, bool stop_at_period)
+retime_cmd(int max_moves)
 {
-  ord::OpenRoad::openRoad()->getRetimer()->retime(max_moves, stop_at_period);
+  ord::OpenRoad::openRoad()->getRetimer()->retime(max_moves);
 }
 
 } // namespace ret
