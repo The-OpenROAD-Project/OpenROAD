@@ -20,6 +20,8 @@
 //   model applied to the same geometry by the reference evaluator.
 // - e11 diagonal: a parallel wire on a nearby layer beside the wire rather
 //   than over it, which the lateral and crossing tables do not see.
+// - e12 far covers: each layer past the depth the builder would not
+//   tabulate against the tabulated covers it resolves to.
 //
 // bazelisk run starts it in its runfiles, where the default files are:
 //   bazelisk run //src/pex/test:Experiments -- [--groups e1,e2,...]
@@ -30,6 +32,8 @@
 //       [--lef FILE]... [--def FILE | --odb FILE] [--model FILE]
 //       [--nets a,b,... | --sample N] [--halo UM] [--margin UM]
 //       [--depth N] [--model_tol X]
+// and for e12 the layers that may cover (default: every conductor):
+//       [--layers a,b,...]
 // Every row prints as it is measured; --csv also writes them as
 // experiment,stack,layer,case,quantity,truth,sigma,model,error, where model
 // is the simplification's value and error = model / truth - 1.
@@ -59,6 +63,7 @@
 #include "odb/db.h"
 #include "odb/defin.h"
 #include "odb/lefin.h"
+#include "pex/CoverMap.h"
 #include "pex/Model.h"
 #include "pex/ModelBuilder.h"
 #include "pex/ModelJson.h"
@@ -69,8 +74,17 @@ namespace {
 
 struct Options
 {
-  std::vector<std::string>
-      groups{"e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e11"};
+  std::vector<std::string> groups{"e1",
+                                  "e2",
+                                  "e3",
+                                  "e4",
+                                  "e5",
+                                  "e6",
+                                  "e7",
+                                  "e8",
+                                  "e9",
+                                  "e11",
+                                  "e12"};
   std::string itf = "src/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -89,11 +103,12 @@ struct Options
   int sample = 50;
   double halo = 10;
   double margin = 2;
-  // The model's covering depth each way and its solver tolerance; 0 means
-  // the run's.
-  int depth = 99;
+  // The model's covering depth each way (the builder's default) and its
+  // solver tolerance; 0 means the run's.
+  int depth = 2;
   double model_tol = 0;
-  bool dump = false;  // print every box of each e9 window
+  bool dump = false;                // print every box of each e9 window
+  std::vector<std::string> layers;  // e12: the layers that may cover
 };
 
 std::vector<std::string> split(const std::string& list)
@@ -151,6 +166,8 @@ Options parse(const int argc, char** argv)
       o.model = value();
     } else if (arg == "--nets") {
       o.nets = split(value());
+    } else if (arg == "--layers") {
+      o.layers = split(value());
     } else if (arg == "--sample") {
       o.sample = std::stoi(value());
     } else if (arg == "--halo") {
@@ -1206,8 +1223,9 @@ Design readDesign(const Options& o, utl::Logger& logger)
 }
 
 // The model for e9: read from --model when the file exists and was built
-// from this stack with these settings, else built for every routing layer
-// of the design that the stack has, and saved there.
+// from this stack with these settings, then built for every routing layer
+// of the design that the stack has that it lacks, and saved there after
+// each layer, so a build that stops resumes where it was.
 pex::Model netsModel(const Lab& lab, const Design& design)
 {
   const Options& o = lab.options();
@@ -1217,6 +1235,7 @@ pex::Model netsModel(const Lab& lab, const Design& design)
     b.width_factors = {1};
     b.spacing_factors = {1};
     b.below_depth = b.above_depth = 0;
+    b.far_cover_factors = {};
     b.end_length = 1;
     b.diagonal_width_factors = {1};
     b.diagonal_gap_factors = {0, 2};
@@ -1236,11 +1255,12 @@ pex::Model netsModel(const Lab& lab, const Design& design)
   }
   const pex::ModelSource expected{
       lab.stack().technology(), o.itf, pex::buildFingerprint(lab.stack(), b)};
+  pex::Model model;
   if (!o.model.empty()) {
     std::ifstream in(o.model);
     if (in.good()) {
       pex::ModelSource source;
-      pex::Model model = pex::readModel(in, &source);
+      model = pex::readModel(in, &source);
       if (source.fingerprint != expected.fingerprint) {
         throw std::runtime_error(
             o.model + " was built from " + source.file + " ("
@@ -1249,14 +1269,14 @@ pex::Model netsModel(const Lab& lab, const Design& design)
               "delete it or name another file");
       }
       std::printf("# reading the model from %s\n", o.model.c_str());
-      return model;
     }
   }
   const std::vector<std::string>& layers = b.layers;
-  pex::Model model;
   const auto start = std::chrono::steady_clock::now();
   for (const std::string& layer : layers) {
+    int solves = 0;
     b.progress = [&](const int done, const int total) {
+      solves++;
       if (done == total) {
         const double seconds = std::chrono::duration<double>(
                                    std::chrono::steady_clock::now() - start)
@@ -1267,12 +1287,96 @@ pex::Model netsModel(const Lab& lab, const Design& design)
       }
     };
     pex::buildLayer(lab.stack(), lab.layer(layer), b, model);
-  }
-  if (!o.model.empty()) {
-    pex::writeModelFile(model, expected, o.model);
-    std::printf("# model written to %s\n", o.model.c_str());
+    if (solves > 0 && !o.model.empty()) {
+      pex::writeModelFile(model, expected, o.model);
+      std::printf("# model written to %s\n", o.model.c_str());
+    }
   }
   return model;
+}
+
+// e12: the far cover state. Past the context depth every cover shares one
+// context, solved with the nearest of those layers in place. For each
+// farther layer: a wire alone under or over a plane on it, against the far
+// state's plane and against the open context, which is what a lookup
+// falls back to without the far state.
+void farCovers(Lab& lab)
+{
+  const Options& o = lab.options();
+  const double w = lab.wmin();
+  pex::BuildOptions b;
+  b.layers = o.layers;
+  b.below_depth = b.above_depth = o.depth;
+  if (o.smoke) {
+    // Depth 1 and no far layers, so every layer past the nearest resolves
+    // to it; one such layer per side keeps the run short.
+    b.below_depth = b.above_depth = 1;
+    b.far_cover_factors = {};
+  }
+  // A model with the contexts the builder would pick, empty tables and
+  // all, so the cover map resolves every other layer the way the
+  // reference evaluator will.
+  pex::Model model;
+  for (const pex::Layer below : pex::coversBelow(lab.stack(), lab.layer(), b)) {
+    for (const pex::Layer above :
+         pex::coversAbove(lab.stack(), lab.layer(), b)) {
+      const std::string b_name = below.valid() ? lab.stack().name(below) : "";
+      const std::string a_name = above.valid() ? lab.stack().name(above) : "";
+      model.addLateral({lab.stack().name(lab.layer()), b_name, a_name},
+                       pex::LateralTable({w}, {lab.smin()}));
+    }
+  }
+  const pex::CoverMap map(lab.stack(), model, lab.layer());
+  std::map<std::string, PerLength> solved;
+  auto per_length = [&](const bool above, const std::string& cover) {
+    const auto it = solved.find(cover);
+    if (it != solved.end()) {
+      return it->second;
+    }
+    const Context ctx = above ? Context{"", cover} : Context{cover, ""};
+    return solved[cover] = perLength(lab, ctx, w, o.tol);
+  };
+  for (const bool above : {false, true}) {
+    int measured = 0;
+    for (const std::string& name : above ? lab.above() : lab.below()) {
+      if (o.smoke && measured > 0) {
+        break;
+      }
+      const pex::Layer cover = lab.layer(name);
+      if (lab.conductor(name).bottom <= 0
+          || (!o.layers.empty()
+              && std::find(o.layers.begin(), o.layers.end(), name)
+                     == o.layers.end())) {
+        continue;
+      }
+      const std::vector<pex::CoverMap::Part> parts = map.resolve(cover);
+      if (parts.size() == 1 && parts[0].key == name) {
+        continue;  // tabulated: exact
+      }
+      measured++;
+      const PerLength truth = per_length(above, name);
+      PerLength mapped{0, 0, 0};
+      std::string how;
+      for (const pex::CoverMap::Part& part : parts) {
+        const PerLength p = per_length(above, part.key);
+        mapped.total += part.weight * p.total;
+        mapped.below += part.weight * p.below;
+        mapped.above += part.weight * p.above;
+        how += (how.empty() ? "" : "+") + part.key;
+      }
+      const PerLength open = per_length(above, "");
+      const std::string label
+          = std::string(above ? "over " : "under ") + name + " (" + how + ")";
+      lab.row("e12", label, "total", truth.total, 0, mapped.total);
+      lab.row("e12", label + " open", "total", truth.total, 0, open.total);
+      lab.row("e12",
+              label,
+              "plane",
+              above ? truth.above : truth.below,
+              0,
+              above ? mapped.above : mapped.below);
+    }
+  }
 }
 
 // e9: nets of a routed design, each solved within a halo, against the
@@ -1499,6 +1603,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e11")) {
       diagonal(lab);
+    }
+    if (wanted(o, "e12")) {
+      farCovers(lab);
     }
   } catch (const std::exception& e) {
     std::fprintf(stderr, "error: %s\n", e.what());

@@ -29,6 +29,18 @@ fsv::Stack::ZExtent layerExtent(const fsv::Stack& stack, Layer layer);
 std::vector<Layer> layersBelow(const fsv::Stack& stack, Layer layer);
 std::vector<Layer> layersAbove(const fsv::Stack& stack, Layer layer);
 
+// The distance between a conductor and one that covers it, face to face:
+// the cover's bottom above the layer's top, or the layer's bottom above
+// the cover's top. Negative when the two overlap in height, so neither
+// covers the other.
+double coverDistance(const fsv::Stack& stack, Layer layer, Layer cover);
+
+// Cover distances are compared and interpolated in their logarithms; a
+// cover touching the layer (distance 0) counts as this far, µm, so the
+// logarithm stays finite.
+inline constexpr double kMinCoverDistance = 1e-4;
+double logCoverDistance(double distance);
+
 // A net in a fsv::Geometry or fsv::Geometry2D, numbered as addNet does.
 using NetIndex = int;
 // No net: a pattern element that was not built.

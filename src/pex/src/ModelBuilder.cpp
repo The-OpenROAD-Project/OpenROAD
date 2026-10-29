@@ -73,17 +73,56 @@ bool usable(const fsv::Stack& stack,
 
 std::vector<Layer> covers(const fsv::Stack& stack,
                           const BuildOptions& options,
+                          const Layer layer,
                           const std::vector<Layer>& layers,
                           const int depth)
 {
   requireLayers(stack, options);
-  std::vector<Layer> out{Layer()};
-  for (const Layer layer : layers) {
-    if (static_cast<int>(out.size()) > depth) {
-      break;
+  for (const double factor : options.far_cover_factors) {
+    if (!(factor > 0) || !std::isfinite(factor)) {
+      throw std::invalid_argument("the far cover factor "
+                                  + std::to_string(factor)
+                                  + " is not positive");
     }
-    if (usable(stack, options, layer)) {
-      out.push_back(layer);
+  }
+  std::vector<Layer> out{Layer()};
+  std::vector<Layer> far;  // usable layers past the depth, nearest first
+  for (const Layer cover : layers) {
+    if (!usable(stack, options, cover)) {
+      continue;
+    }
+    if (static_cast<int>(out.size()) <= depth) {
+      out.push_back(cover);
+    } else {
+      far.push_back(cover);
+    }
+  }
+  if (far.empty() || options.far_cover_factors.empty()) {
+    return out;
+  }
+  // The far layers nearest in distance to the factors' targets, and the
+  // farthest, each once, nearest first.
+  const double first = coverDistance(stack, layer, far.front());
+  std::vector<Layer> picked{far.back()};
+  for (const double factor : options.far_cover_factors) {
+    const double target = logCoverDistance(first) + std::log(factor);
+    Layer best;
+    double best_error = 0;
+    for (const Layer cover : far) {
+      const double error = std::abs(
+          logCoverDistance(coverDistance(stack, layer, cover)) - target);
+      if (!best.valid() || error < best_error) {
+        best = cover;
+        best_error = error;
+      }
+    }
+    if (std::find(picked.begin(), picked.end(), best) == picked.end()) {
+      picked.push_back(best);
+    }
+  }
+  for (const Layer cover : far) {
+    if (std::find(picked.begin(), picked.end(), cover) != picked.end()) {
+      out.push_back(cover);
     }
   }
   return out;
@@ -94,6 +133,29 @@ std::vector<Layer> covers(const fsv::Stack& stack,
 std::string keyName(const fsv::Stack& stack, const Layer layer)
 {
   return layer.valid() ? stack.name(layer) : std::string();
+}
+
+// A table the model holds already is reused by a resumed build, as long
+// as it is on the grid the options would build; one on another grid came
+// from another build and would make the model inconsistent.
+// Grids are compared at the model file's precision (seven significant
+// digits), so a table read back from a saved model matches the grid the
+// same options compute.
+void requireGrid(const std::string& what,
+                 const std::vector<double>& have,
+                 const std::vector<double>& want)
+{
+  bool same = have.size() == want.size();
+  for (size_t i = 0; same && i < have.size(); i++) {
+    same = std::abs(have[i] - want[i])
+           <= 1e-6 * std::max(std::abs(have[i]), std::abs(want[i]));
+  }
+  if (!same) {
+    throw std::invalid_argument("the model holds a " + what
+                                + " built on another grid; a build resumes "
+                                  "only from a model built with the same "
+                                  "options");
+  }
 }
 
 fsv::SolveOptions solveOptions(const double tol)
@@ -120,6 +182,9 @@ void runJobs(const BuildOptions& options,
              const int count,
              const std::function<void(int job, fsv::Solver& solver)>& run)
 {
+  if (count == 0) {
+    return;  // a resumed build with nothing left
+  }
   int done = 0;
   std::mutex progress_mutex;
   // The caller only waits, so every requested thread is a worker.
@@ -209,6 +274,7 @@ std::string buildFingerprint(const fsv::Stack& stack,
   list("dg", options.diagonal_gap_factors);
   list("ds", options.diagonal_spacing_factors);
   list("df", options.diagonal_far_spacing_factors);
+  list("fc", options.far_cover_factors);
   text << options.below_depth << ' ' << options.above_depth << ' '
        << options.diagonal_depth << ' ' << options.crossing_length << ' '
        << options.crossing_length_long << ' ' << options.end_length << ' '
@@ -228,14 +294,16 @@ std::vector<Layer> coversBelow(const fsv::Stack& stack,
                                const Layer layer,
                                const BuildOptions& options)
 {
-  return covers(stack, options, layersBelow(stack, layer), options.below_depth);
+  return covers(
+      stack, options, layer, layersBelow(stack, layer), options.below_depth);
 }
 
 std::vector<Layer> coversAbove(const fsv::Stack& stack,
                                const Layer layer,
                                const BuildOptions& options)
 {
-  return covers(stack, options, layersAbove(stack, layer), options.above_depth);
+  return covers(
+      stack, options, layer, layersAbove(stack, layer), options.above_depth);
 }
 
 void buildLateral(const fsv::Stack& stack,
@@ -266,6 +334,12 @@ void buildLateral(const fsv::Stack& stack,
       std::vector<double> spacings;
       for (const double f : options.spacing_factors) {
         spacings.push_back(f * conductor.min_spacing);
+      }
+      if (const LateralTable* built = model.lateral(key)) {
+        requireGrid("lateral table of " + key.layer, built->widths(), widths);
+        requireGrid(
+            "lateral table of " + key.layer, built->spacings(), spacings);
+        continue;
       }
       LateralTable& table
           = model.addLateral(key, LateralTable(widths, spacings));
@@ -334,6 +408,10 @@ void buildCrossing(const fsv::Stack& stack,
   if (!over && cover_conductor.top > conductor.bottom) {
     throw std::invalid_argument(cover_conductor.name + " is beside "
                                 + conductor.name + ", not over or under");
+  }
+  const CrossingKey key{conductor.name, cover_conductor.name};
+  if (model.crossing(key) != nullptr) {
+    return;  // built before
   }
   const double w = conductor.min_width;
   // One 3D solve per (crossing width, coverage, length), then the two
@@ -434,8 +512,7 @@ void buildCrossing(const fsv::Stack& stack,
     values.push_back(share);
     counts.push_back(1);
   }
-  model.addCrossing({conductor.name, cover_conductor.name},
-                    CrossingTable(gaps, values));
+  model.addCrossing(key, CrossingTable(gaps, values));
 }
 
 void buildEnds(const fsv::Stack& stack,
@@ -459,8 +536,13 @@ void buildEnds(const fsv::Stack& stack,
   std::vector<LateralKey> keys;
   for (const Layer below : coversBelow(stack, layer, options)) {
     for (const Layer above : coversAbove(stack, layer, options)) {
-      keys.push_back(
-          {conductor.name, keyName(stack, below), keyName(stack, above)});
+      const LateralKey key{
+          conductor.name, keyName(stack, below), keyName(stack, above)};
+      if (const EndTable* built = model.end(key)) {
+        requireGrid("end table of " + key.layer, built->widths(), widths);
+        continue;
+      }
+      keys.push_back(key);
       for (int w = 0; w < static_cast<int>(widths.size()); w++) {
         jobs.push_back({below, above, w});
       }
@@ -532,6 +614,7 @@ void buildDiagonal(const fsv::Stack& stack,
 {
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
   const fsv::Stack::Conductor& other_conductor = requireConductor(stack, other);
+  const DiagonalKey key{conductor.name, other_conductor.name};
   const double w = conductor.min_width;
   std::vector<double> widths;
   for (const double f : options.diagonal_width_factors) {
@@ -549,9 +632,16 @@ void buildDiagonal(const fsv::Stack& stack,
   for (const double f : options.diagonal_far_spacing_factors) {
     far_spacings.push_back(f * conductor.min_spacing);
   }
-  DiagonalTable& table
-      = model.addDiagonal({conductor.name, other_conductor.name},
-                          DiagonalTable(widths, gaps, spacings, far_spacings));
+  if (const DiagonalTable* built = model.diagonal(key)) {
+    const std::string what = "diagonal table of " + key.layer;
+    requireGrid(what, built->widths(), widths);
+    requireGrid(what, built->gaps(), gaps);
+    requireGrid(what, built->spacings(), spacings);
+    requireGrid(what, built->farSpacings(), far_spacings);
+    return;
+  }
+  DiagonalTable& table = model.addDiagonal(
+      key, DiagonalTable(widths, gaps, spacings, far_spacings));
   const int ns = table.spacingCount();
   const int nf = table.farCount();
   const int ng = table.gapCount();
