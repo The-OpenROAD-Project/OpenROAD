@@ -134,6 +134,7 @@ messages_txt(
     extra_srcs = [
         "//src/syn/src/elab:message_srcs",
         "//src/syn/src/ir:message_srcs",
+        "//src/syn/src/lir:message_srcs",
     ],
     visibility = ["//docs:__pkg__"],
 )
