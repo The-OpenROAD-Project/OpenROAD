@@ -39,15 +39,18 @@ struct Shape
   double hi[2];
 };
 
+// The conductors of the stack ascending by bottom; shapes carry an index
+// into them.
 struct Layers
 {
-  std::vector<std::string> names;  // ascending by bottom
+  std::vector<fsv::Stack::Layer> layers;
+  std::vector<std::string> names;  // the layers' names, for the model keys
   int index(const fsv::Stack& stack, const fsv::Box& box) const
   {
-    for (int i = 0; i < static_cast<int>(names.size()); i++) {
-      const fsv::Stack::Conductor* c = stack.findConductor(names[i]);
-      if (std::abs(c->bottom - box.lo[2]) < kEps
-          && std::abs(c->top - box.hi[2]) < kEps) {
+    for (int i = 0; i < static_cast<int>(layers.size()); i++) {
+      const fsv::Stack::Conductor& c = stack.conductor(layers[i]);
+      if (std::abs(c.bottom - box.lo[2]) < kEps
+          && std::abs(c.top - box.hi[2]) < kEps) {
         return i;
       }
     }
@@ -57,19 +60,16 @@ struct Layers
 
 Layers layersByHeight(const fsv::Stack& stack)
 {
-  std::vector<const fsv::Stack::Conductor*> conductors;
-  for (const fsv::Stack::Conductor& c : stack.conductors) {
-    conductors.push_back(&c);
-  }
-  std::stable_sort(
-      conductors.begin(),
-      conductors.end(),
-      [](const fsv::Stack::Conductor* a, const fsv::Stack::Conductor* b) {
-        return a->bottom < b->bottom;
-      });
   Layers layers;
-  for (const fsv::Stack::Conductor* c : conductors) {
-    layers.names.push_back(c->name);
+  layers.layers = stack.conductorLayers();
+  std::stable_sort(layers.layers.begin(),
+                   layers.layers.end(),
+                   [&](const fsv::Stack::Layer a, const fsv::Stack::Layer b) {
+                     return stack.conductor(a).bottom
+                            < stack.conductor(b).bottom;
+                   });
+  for (const fsv::Stack::Layer layer : layers.layers) {
+    layers.names.push_back(stack.name(layer));
   }
   return layers;
 }
@@ -89,10 +89,12 @@ std::vector<Shape> shapesOf(const fsv::Geometry& geometry,
     if (layer < 0) {
       // A via spans from one conductor's top to another's bottom.
       bool via = false;
-      for (const fsv::Stack::Via& v : stack.vias) {
-        const fsv::Stack::ZExtent z = stack.zExtent(v.name);
-        if (z.status == fsv::Stack::ZExtent::kFound
-            && std::abs(z.bottom - box.lo[2]) < kEps
+      for (const fsv::Stack::Layer v : stack.viaLayers()) {
+        if (!stack.via(v).lower.valid()) {
+          continue;  // a substrate via would ground the net
+        }
+        const fsv::Stack::ZExtent z = stack.zExtent(v);
+        if (std::abs(z.bottom - box.lo[2]) < kEps
             && std::abs(z.top - box.hi[2]) < kEps) {
           via = true;
         }

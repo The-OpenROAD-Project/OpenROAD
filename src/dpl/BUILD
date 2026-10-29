@@ -94,6 +94,7 @@ cc_library(
         "//src/drt:pin_access_service",
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.container_hash",
         "@boost.format",
         "@boost.geometry",
         "@boost.icl",

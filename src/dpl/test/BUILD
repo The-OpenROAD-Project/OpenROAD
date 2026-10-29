@@ -105,6 +105,11 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "pdn_via",
+    "pdn_via_array",
+    "pdn_via_cut",
+    "pdn_via_euclidean",
+    "pdn_via_mirror",
     "repair_pin_access",
     "repair_pin_access_failure",
     "repair_pin_access_phase",
@@ -357,8 +362,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
-        check_log = test_name not in PASSFAIL_TESTS,
-        check_passfail = test_name in PASSFAIL_TESTS,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],

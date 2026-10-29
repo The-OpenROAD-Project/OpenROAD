@@ -171,7 +171,9 @@ class Grid
 
   odb::Rect getCore() const { return core_; }
 
-  // Tests spacing to another net's via/patch metal (core relative).
+  // True if rect (core relative) is within min spacing of power via or
+  // patch metal outside the stripes on the given routing level that belongs
+  // to a net other than pin_net
   bool overlapsPinBlockage(int level,
                            const odb::Rect& rect,
                            const odb::dbNet* pin_net) const;
@@ -240,7 +242,8 @@ class Grid
   // Indexed by row (GridY)
   std::vector<RowSitesMap> row_sites_;
 
-  // Core-relative special-net via/patch shapes outside stripes, with owners.
+  // Power via/patch metal outside the stripes (core relative) and its net,
+  // by level
   std::array<NetRectTree, kMaxPinLevel + 1> pin_blockages_;
 
   bool has_hybrid_rows_ = false;
