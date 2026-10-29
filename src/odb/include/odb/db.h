@@ -7366,6 +7366,8 @@ class dbChip : public dbObject
 
   dbChipInst* findChipInst(const std::string& name) const;
 
+  dbChipNet* findChipNet(const std::string& name) const;
+
   dbChipRegion* findChipRegion(const std::string& name) const;
 
   dbTech* getTech() const;
