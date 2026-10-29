@@ -130,6 +130,10 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void resetRunState();
   // Capture initial QoR and reset checkpoint, stall, and work references.
   void saveInitialCheckpoint();
+  // The shortest period of a clock with source pins in any mode, else of a
+  // virtual clock, else the shortest set_max_delay; without any of them, the
+  // magnitude of the initial WNS.
+  float referencePeriod(sta::Slack initial_wns) const;
   void buildMoveGenerators(const std::vector<MoveType>& move_types,
                            const GeneratorContext& context) override;
   // A move type runs only when its -skip_* option and the library allow it.
@@ -308,6 +312,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   sta::Slack checkpoint_tns_{0.0f};
   // Best WNS among saved checkpoints; bounds the tolerated WNS drift.
   sta::Slack best_checkpoint_wns_{0.0f};
+  // Scales the WNS thresholds of the stall rules, the checkpoint tolerance
+  // and the tail; fixed for the run (see OptimizationPolicyConfig.hh).
+  float reference_period_{0.0f};
   // Endpoints a batch may target under -repair_tns.
   size_t max_end_repairs_{std::numeric_limits<size_t>::max()};
   // An unbuffer move in -sequence runs in every batch, not only in the tail's

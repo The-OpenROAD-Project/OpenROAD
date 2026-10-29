@@ -297,6 +297,8 @@ TESTS = [
     "repair_setup_parallel_eval_threads",
     "repair_setup_parallel_eval_max_util",
     "repair_setup_parallel_eval_path_group",
+    "repair_setup_parallel_eval_reference_period",
+    "repair_setup_parallel_eval_reference_period_modes",
     "repair_setup_vt_swap2",
     "global_sizing",
     "global_sizing_threads",

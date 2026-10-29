@@ -21,17 +21,17 @@ req_msg[28] (input)                  _877_/D (DFF_X1)                       -0.1
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.112 |       -2.5 |     32 | _869_/D
-    final |      51 |      77 |       13 |      0 |     3 |    +2.1% |   -0.004 |       -0.0 |     10 | _875_/D
+    final |      52 |      76 |       12 |      0 |     2 |    +2.0% |   -0.005 |       -0.0 |     13 | _875_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 51 buffers.
-[INFO RSZ-0040] Inserted 13 buffers.
-[INFO RSZ-0051] Resized 77 instances: 72 up, 0 up match, 5 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 3 instances.
+[INFO RSZ-0059] Removed 52 buffers.
+[INFO RSZ-0040] Inserted 12 buffers.
+[INFO RSZ-0051] Resized 76 instances: 72 up, 0 up match, 4 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- reg2reg after
 Startpoint                           Endpoint                                 Slack
 ----------------------------------------------------------------------------------
-_872_/Q (DFF_X1)                     _875_/D (DFF_X1)                       -0.0041
+_872_/Q (DFF_X1)                     _875_/D (DFF_X1)                       -0.0045
 
 -- in2reg after
 Startpoint                           Endpoint                                 Slack
