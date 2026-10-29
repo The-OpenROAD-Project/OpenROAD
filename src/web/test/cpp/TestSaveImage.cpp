@@ -159,6 +159,7 @@ class SaveImageTest : public tst::Nangate45Fixture
     vis.access_points = false;
     vis.gcell_grid = false;
     vis.rudy = false;
+    vis.routing_congestion = false;
     vis.inst_names = false;
     return vis;
   }
@@ -692,10 +693,11 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.regions = true;
   vis.gcell_grid = true;
   vis.rudy = true;
+  vis.routing_congestion = true;
 
   // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
   // _inst_labels 999, _access_points 1000, _regions 1001, _gcell_grid 1002,
-  // _rudy 1003.
+  // _rudy 1003, _routing_congestion 1004.
   const std::vector<std::string> expected = {"_instances",
                                              "_pins",
                                              "_mfg_grid",
@@ -705,7 +707,8 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
                                              "_access_points",
                                              "_regions",
                                              "_gcell_grid",
-                                             "_rudy"};
+                                             "_rudy",
+                                             "_routing_congestion"};
   EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
 }
 
@@ -821,6 +824,89 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
   EXPECT_GT(countNonTransparentPixels(pixels_rudy),
             countNonTransparentPixels(pixels_no_rudy))
       << "Enabling rudy heatmap should render additional heatmap pixels";
+}
+
+TEST_F(SaveImageTest, ParseFromJsonRoutingCongestionOption)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.routing_congestion);
+  auto json_obj
+      = boost::json::parse("{\"routing_congestion\":true}").as_object();
+  vis.parseFromJson(json_obj);
+  EXPECT_TRUE(vis.routing_congestion);
+}
+
+class TestRoutingCongestionHeatMap : public web::HeatMapDataSource
+{
+ public:
+  explicit TestRoutingCongestionHeatMap(utl::Logger* logger)
+      : web::HeatMapDataSource(logger,
+                               "Routing Congestion",
+                               "Routing",
+                               "RoutingCongestion")
+  {
+  }
+
+  odb::Rect getBounds() const override
+  {
+    return getBlock() ? getBlock()->getDieArea()
+                      : odb::Rect(0, 0, 100000, 100000);
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(odb::Rect(20000, 20000, 80000, 80000), 10.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+};
+
+TEST_F(SaveImageTest, RoutingCongestionHeatmapRendersInSavedImage)
+{
+  auto logger = getLogger();
+  web::registerHeatMapSource("Routing Congestion",
+                             "Routing",
+                             "RoutingCongestion",
+                             [logger]() {
+                               return std::make_shared<
+                                   TestRoutingCongestionHeatMap>(logger);
+                             });
+
+  const std::string path_no_congestion = tempPng("no_routing_congestion");
+  TileVisibility vis_off;
+  vis_off.routing_congestion = false;
+  tile_gen_->saveImage(
+      path_no_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  const std::string path_congestion = tempPng("with_routing_congestion");
+  TileVisibility vis_on;
+  vis_on.routing_congestion = true;
+  tile_gen_->saveImage(path_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  ASSERT_TRUE(std::filesystem::exists(path_no_congestion));
+  ASSERT_TRUE(std::filesystem::exists(path_congestion));
+
+  unsigned w1 = 0, h1 = 0;
+  auto pixels_no_congestion = decodePngFile(path_no_congestion, w1, h1);
+  unsigned w2 = 0, h2 = 0;
+  auto pixels_congestion = decodePngFile(path_congestion, w2, h2);
+
+  EXPECT_EQ(w1, 512u);
+  EXPECT_EQ(w2, 512u);
+  EXPECT_GT(countNonTransparentPixels(pixels_congestion),
+            countNonTransparentPixels(pixels_no_congestion))
+      << "Enabling routing_congestion heatmap should render additional "
+         "heatmap pixels";
 }
 
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)

@@ -180,6 +180,7 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `routing_congestion` | false | Global routing congestion heatmap overlay |
 
 #### Examples
 
@@ -206,6 +207,9 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Save with global routing congestion heatmap overlay
+save_image -web -display_option {routing_congestion true} layout_congestion.png
 ```
 
 ### Save Animated GIF
