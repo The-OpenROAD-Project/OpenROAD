@@ -77,7 +77,13 @@ cc_library(
         "-layering_check",
         "-parse_headers",
     ],
-    includes = ["include"],
+    # "src" lets the GPU sources include the gpl src/ headers listed above
+    # by bare name (nesterovBase.h, fftBackend.h, ...). :gpl_impl also
+    # exports this path but cannot be a dep here (cycle).
+    includes = [
+        "include",
+        "src",
+    ],
     local_defines = ["ENABLE_GPU"],
     # Keep wildcard builds (bazel build //...) CPU-clean; this target is
     # only reachable through :gpl under --//:gpu=cuda.
@@ -117,16 +123,17 @@ cc_library(
         "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
+        "src/ioPinBase.cpp",
         "src/mbff.cpp",
         "src/nesterovBase.cpp",
         "src/nesterovPlace.cpp",
         "src/placerBase.cpp",
+        "src/powerBase.cpp",
         "src/replace.cpp",
         "src/routeBase.cpp",
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
-        "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
@@ -151,12 +158,15 @@ cc_library(
         "src/fft.h",
         "src/fftBackend.h",
         "src/graphicsNone.h",
+        "src/ioPinBase.h",
         "src/mbff.h",
         "src/nesterovBase.h",
         "src/nesterovPlace.h",
         "src/placerBase.h",
         "src/point.h",
+        "src/powerBase.h",
         "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = [
         "-fopenmp",
@@ -177,6 +187,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/odb/src/db",
+        "//src/ppl",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",

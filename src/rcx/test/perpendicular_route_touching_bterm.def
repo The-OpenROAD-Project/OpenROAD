@@ -1,0 +1,17 @@
+VERSION 5.8 ;
+DESIGN top ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 10000 8000 ) ;
+PINS 3 ;
+    - in1 + NET n1 + DIRECTION INPUT + USE SIGNAL
+      + LAYER metal3 ( -70 -70 ) ( 70 70 ) + PLACED ( 70 7000 ) N ;
+    - out1 + NET n1 + DIRECTION OUTPUT + USE SIGNAL
+      + LAYER metal3 ( -70 -465 ) ( 70 465 ) + PLACED ( 6000 7535 ) N ;
+    - out2 + NET n1 + DIRECTION OUTPUT + USE SIGNAL
+      + LAYER metal3 ( -70 -70 ) ( 70 70 ) + PLACED ( 9930 6000 ) N ;
+END PINS
+NETS 1 ;
+    - n1 ( PIN in1 ) ( PIN out1 ) ( PIN out2 )
+      + ROUTED metal3 ( 70 7000 ) ( 9930 * ) ( * 6000 ) ;
+END NETS
+END DESIGN

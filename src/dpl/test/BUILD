@@ -25,6 +25,8 @@ COMPULSORY_TESTS = [
     "check7",
     "check8",
     "check9",
+    "check_fixed_only",
+    "check_placeable_only",
     "diamond01",
     "diamond_multi_height",
     "diamond_one_site_gap",
@@ -102,7 +104,15 @@ COMPULSORY_TESTS = [
     "regions2-opt",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+PASSFAIL_TESTS = [
+    "pdn_via",
+    "pdn_via_array",
+    "pdn_via_cut",
+    "pdn_via_euclidean",
+    "pdn_via_mirror",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -161,6 +171,13 @@ filegroup(
                 "extra.lef",
             ],
             "check9": [
+                "extra.lef",
+            ],
+            "check_fixed_only": [
+                "extra.lef",
+            ],
+            "check_placeable_only": [
+                "check_fixed_only.def",
                 "extra.lef",
             ],
             "diamond01": [
@@ -320,6 +337,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],
@@ -330,11 +349,13 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
+    data = ["extra.lef"],
     deps = [
         "//src/dpl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",
+        "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

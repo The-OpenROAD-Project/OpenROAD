@@ -8,11 +8,12 @@ set(GTEST_LIBS
         GTest::gtest_main
 )
 
-add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestOrderWires.cpp)
+add_executable(OdbGTests TestDbWire.cc TestDbNet.cpp TestDesignIsRouted.cpp TestAbstractLef.cc TestPolygonalFloorplan.cc TestWireNormalizer.cpp)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestShapeDestroy TestShapeDestroy.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
+add_executable(TestLefIn TestLefIn.cpp)
 add_executable(TestLef58Properties TestLef58Properties.cpp)
 add_executable(TestGroup TestGroup.cpp)
 add_executable(TestDbSet TestDbSet.cpp)
@@ -37,6 +38,7 @@ add_executable(TestDbStream TestDbStream.cpp)
 
 target_link_libraries(OdbGTests
         db
+        wireNormalizer
         defin
         lefin
         lefout
@@ -61,11 +63,19 @@ target_link_libraries(TestShapeDestroy
 target_link_libraries(TestGeom
         db
         Boost::boost
+        GTest::gmock
         ${GTEST_LIBS}
 )
 target_link_libraries(TestModule
         db
         odb_test_helper
+        ${GTEST_LIBS}
+)
+target_link_libraries(TestLefIn
+        db
+        lefin
+        tst_base
+        utl_lib
         ${GTEST_LIBS}
 )
 target_link_libraries(TestLef58Properties
@@ -210,6 +220,7 @@ add_dependencies(build_and_test
         TestGCellGrid
         TestGCellTileSize
         TestGuide
+        TestLefIn
         TestNetTrack
         TestMaster
         TestChips

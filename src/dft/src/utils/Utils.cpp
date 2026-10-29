@@ -90,6 +90,36 @@ odb::dbInst* ReplaceCell(
     group->addInst(new_instance);
   }
 
+  for (odb::dbProperty* prop : odb::dbProperty::getProperties(old_instance)) {
+    const std::string name = prop->getName();
+    switch (prop->getType()) {
+      case odb::dbProperty::STRING_PROP:
+        odb::dbStringProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbStringProperty*>(prop)->getValue().c_str());
+        break;
+      case odb::dbProperty::BOOL_PROP:
+        odb::dbBoolProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbBoolProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::INT_PROP:
+        odb::dbIntProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbIntProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::DOUBLE_PROP:
+        odb::dbDoubleProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbDoubleProperty*>(prop)->getValue());
+        break;
+    }
+  }
+
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
 

@@ -22,11 +22,19 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/beast/core/string.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/rfc7230.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/array.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
@@ -54,6 +62,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 
 namespace web {
 
@@ -324,6 +333,74 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+bool acceptsGzip(const std::string_view accept_encoding)
+{
+  namespace beast = boost::beast;
+  // A trailing comma, which the grammar allows: ext_list gives a last coding
+  // with no parameters those of the coding before it (fixed in Beast f8805c6).
+  const std::string list = std::string(accept_encoding) + ',';
+  // Every entry is read before deciding, so the answer does not depend on
+  // their order: a q=0 on gzip or its alias x-gzip refuses it outright, even
+  // beside an entry that accepts it.  The same holds for repeated wildcards.
+  bool gzip_accepted = false;
+  bool gzip_refused = false;
+  bool wildcard_accepted = false;
+  bool wildcard_refused = false;
+  for (const auto& [coding, params] : beast::http::ext_list(list)) {
+    // A q-value lies in [0, 1], so it is zero exactly when no digit is
+    // nonzero; a malformed one counts as a refusal too.
+    bool acceptable = true;
+    for (const auto& [name, value] : params) {
+      if (beast::iequals(name, "q")) {
+        const std::string_view q = value;
+        acceptable = q.find_first_of("123456789") != std::string_view::npos;
+      }
+    }
+    if (beast::iequals(coding, "gzip") || beast::iequals(coding, "x-gzip")) {
+      (acceptable ? gzip_accepted : gzip_refused) = true;
+    } else if (coding == "*") {
+      (acceptable ? wildcard_accepted : wildcard_refused) = true;
+    }
+  }
+  if (gzip_accepted || gzip_refused) {
+    return !gzip_refused;
+  }
+  return wildcard_accepted && !wildcard_refused;
+}
+
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    const std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res)
+{
+  namespace http = boost::beast::http;
+  res.set(http::field::content_type, asset.content_type);
+  // The assets are compiled into the binary, so their URLs carry no version
+  // and never change.  Without this a browser is free to heuristically cache
+  // them, and a tab reloaded against a rebuilt OpenROAD keeps running the old
+  // JavaScript -- the change appears to have done nothing until someone
+  // thinks to hard-reload.  They are served from memory, so re-fetching them
+  // costs nothing.
+  res.set(http::field::cache_control, "no-store");
+  // Stored gzipped: browsers get those bytes as they are, and curl without
+  // --compressed gets them inflated.
+  res.set(http::field::vary, "Accept-Encoding");
+  if (asset.gzipped && acceptsGzip(accept_encoding)) {
+    res.set(http::field::content_encoding, "gzip");
+    res.body() = std::string(asset.content());
+    return;
+  }
+  // assetText() throws if a blob and its recorded size disagree; an exception
+  // escaping the asio handler would stop the server.
+  try {
+    res.body() = assetText(asset);
+  } catch (const std::exception& e) {
+    res.result(http::status::internal_server_error);
+    res.set(http::field::content_type, "text/plain");
+    res.body() = e.what();
+  }
+}
+
 bool webSocketOriginAllowed(const std::string_view origin,
                             const std::string_view host)
 {
@@ -357,18 +434,8 @@ bool webSocketOriginAllowed(const std::string_view origin,
   //
   // The comparison ignores case: a host is case-insensitive (RFC 3986 3.2.2)
   // and a proxy or non-browser client may vary it, which would otherwise 403 a
-  // legitimate handshake.  Hosts are ASCII (IDNs arrive punycoded), so lower
-  // without std::tolower and its locale.
-  const auto ascii_lower = [](const char c) {
-    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
-  };
-  return std::equal(authority.begin(),
-                    authority.end(),
-                    host.begin(),
-                    host.end(),
-                    [&ascii_lower](const char a, const char b) {
-                      return ascii_lower(a) == ascii_lower(b);
-                    });
+  // legitimate handshake.
+  return boost::beast::iequals(authority, host);
 }
 
 BindAddressKind classifyBindAddress(const std::string_view address)
@@ -410,6 +477,206 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+void joinUnlessSelf(std::thread& t)
+{
+  if (!t.joinable()) {
+    return;
+  }
+  if (t.get_id() == std::this_thread::get_id()) {
+    t.detach();
+    return;
+  }
+  t.join();
+}
+
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger)
+{
+  for (;;) {
+    try {
+      ioc.run();
+      return;
+    } catch (const std::exception& e) {
+      logger->warn(utl::WEB, 119, "Web server thread error: {}", e.what());
+    }
+  }
+}
+
+namespace {
+
+// sshd's X11DisplayOffset: the displays it forwards are numbered from here.
+constexpr unsigned kSshDisplayOffset = 10;
+
+// The display number of "N" or "N.S", screen dropped; false when there is none.
+bool parseDisplayNumber(const std::string_view rest, unsigned& number)
+{
+  return parseIntExact(rest.substr(0, rest.find('.')), number);
+}
+
+}  // namespace
+
+bool displayIsRemote(
+    const std::string_view display,
+    const std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses)
+{
+  const std::size_t colon = display.rfind(':');
+  if (colon == std::string_view::npos) {
+    return false;  // no display, or not one we understand; do not guess
+  }
+  std::string_view host = display.substr(0, colon);
+  if (host.size() >= 2 && host.front() == '[' && host.back() == ']') {
+    host = host.substr(1, host.size() - 2);
+  }
+  // No host, or "unix", is this machine's socket.
+  if (host.empty() || boost::beast::iequals(host, "unix")) {
+    return false;
+  }
+  // A local X server is reached through its socket; a TCP display on this
+  // machine numbered like sshd's is one ssh -X forwards from elsewhere.
+  unsigned number = 0;
+  const bool forwarded = parseDisplayNumber(display.substr(colon + 1), number)
+                         && number >= kSshDisplayOffset;
+  if (boost::beast::iequals(host, "localhost")) {
+    return forwarded;
+  }
+  boost::system::error_code ec;
+  const boost::asio::ip::address ip = boost::asio::ip::make_address(host, ec);
+  if (!ec) {
+    const bool here
+        = ip.is_loopback()
+          || std::find(local_addresses.begin(), local_addresses.end(), ip)
+                 != local_addresses.end();
+    return !here || forwarded;
+  }
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  const auto short_name = [](const std::string_view name) {
+    const std::size_t dot = name.find('.');
+    return dot == std::string_view::npos ? name : name.substr(0, dot);
+  };
+  return !boost::beast::iequals(short_name(host), short_name(host_name))
+         || forwarded;
+}
+
+std::string localDisplaySocket(const std::string_view display)
+{
+  std::string_view rest = display;
+  if (rest.starts_with("unix:")) {
+    rest.remove_prefix(4);
+  }
+  if (!rest.starts_with(':')) {
+    return {};
+  }
+  rest.remove_prefix(1);
+  unsigned number = 0;
+  if (!parseDisplayNumber(rest, number)) {
+    return {};
+  }
+  return "/tmp/.X11-unix/X" + std::to_string(number);
+}
+
+bool launchesThroughBrowserEnv(const BrowserEnv& env)
+{
+  // Only VS Code's own helper: a $BROWSER from a profile is a browser here.
+  return !env.vscode_ipc_hook.empty()
+         && env.browser.ends_with("/helpers/browser.sh");
+}
+
+LaunchSkip browserLaunchSkipReason(const BrowserLaunch mode,
+                                   const BrowserEnv& env)
+{
+  if (mode == BrowserLaunch::kAlways) {
+    return LaunchSkip::kNone;
+  }
+  if (mode == BrowserLaunch::kNever) {
+    return LaunchSkip::kFlag;
+  }
+  if (env.no_browser) {
+    return LaunchSkip::kOptOut;
+  }
+  // A scheduler chose this host and copied the submitting shell's
+  // environment, $DISPLAY and the VS Code variables included.
+  if (env.batch_job) {
+    return LaunchSkip::kBatchJob;
+  }
+  if (launchesThroughBrowserEnv(env)) {
+    return LaunchSkip::kNone;
+  }
+  // Over ssh the user looks at another machine, unless it is their own X
+  // server here (a VNC or x2go desktop).
+  if (env.ssh_session) {
+    return env.own_local_display ? LaunchSkip::kNone : LaunchSkip::kSshSession;
+  }
+  // WSL's browser is the Windows one, which needs no X server here.
+  if (env.wsl) {
+    return LaunchSkip::kNone;
+  }
+  if (displayIsRemote(env.display, env.host_name, env.local_addresses)) {
+    return LaunchSkip::kRemoteDisplay;
+  }
+  return env.has_display ? LaunchSkip::kNone : LaunchSkip::kNoDisplay;
+}
+
+std::string_view browserSkipReasonText(const LaunchSkip reason)
+{
+  switch (reason) {
+    case LaunchSkip::kNone:
+      return "";
+    case LaunchSkip::kFlag:
+      return "-no_browser";
+    case LaunchSkip::kOptOut:
+      return "OPENROAD_NO_BROWSER is set";
+    case LaunchSkip::kSshSession:
+      return "this is an ssh session";
+    case LaunchSkip::kBatchJob:
+      return "this is a batch job";
+    case LaunchSkip::kRemoteDisplay:
+      return "$DISPLAY belongs to another machine";
+    case LaunchSkip::kNoDisplay:
+      return "no display";
+  }
+  return "";
+}
+
+BrowserLaunch browserLaunchFromString(const std::string_view mode)
+{
+  if (mode == "never") {
+    return BrowserLaunch::kNever;
+  }
+  if (mode == "always") {
+    return BrowserLaunch::kAlways;
+  }
+  return BrowserLaunch::kAuto;
+}
+
+std::string reachabilityHint(const BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             const std::string_view host,
+                             const uint16_t port)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // The far end of the tunnel is the address the listener is actually on:
+    // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
+    const std::string far_end = browserHostForBind(address);
+    std::string hint
+        = "To reach it from another machine, forward the port: ssh -L "
+          + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
+    // ssh listens on localhost there, not on the address in the url above.
+    if (far_end != "localhost") {
+      hint += ", then open http://localhost:" + port_str;
+    }
+    return hint;
+  }
+  if (address.is_unspecified()) {
+    // Bound to every interface, but browserHostForBind() had no address to
+    // name and said "localhost", which is this machine only.
+    return "From another machine, reach it at http://" + std::string(host) + ":"
+           + port_str;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
