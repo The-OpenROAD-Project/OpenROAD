@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Builds fsv geometries from a process stack by layer name: the patterns
+// Builds fsv geometries from a process stack by layer handle: the patterns
 // behind the model tables and the experiments.
 
 #pragma once
@@ -16,24 +16,18 @@
 
 namespace pex {
 
-struct ZRange
-{
-  double bottom;
-  double top;
-};
+using Layer = fsv::Stack::Layer;
 
-// The z extent of a conductor or via layer. Throws std::invalid_argument for
-// a layer the stack does not have, or a via without a conductor on both
-// sides.
-ZRange zRange(const fsv::Stack& stack, std::string_view layer);
+// The z extent of a conductor or via layer. Throws std::invalid_argument
+// for a handle that names no layer, or a via that lands on the ground
+// plane.
+fsv::Stack::ZExtent layerExtent(const fsv::Stack& stack, Layer layer);
 
-// The conductor layers below (or above) a layer, nearest first, by their z
-// extents: a layer counts as below when its top is at or under the layer's
-// bottom.
-std::vector<std::string> layersBelow(const fsv::Stack& stack,
-                                     std::string_view layer);
-std::vector<std::string> layersAbove(const fsv::Stack& stack,
-                                     std::string_view layer);
+// The conductor layers below (or above) a conductor, nearest first, by
+// their z extents: a layer counts as below when its top is at or under the
+// layer's bottom.
+std::vector<Layer> layersBelow(const fsv::Stack& stack, Layer layer);
+std::vector<Layer> layersAbove(const fsv::Stack& stack, Layer layer);
 
 // A net in a fsv::Geometry or fsv::Geometry2D, numbered as addNet does.
 using NetIndex = int;
@@ -54,7 +48,7 @@ class PatternBuilder
   // The index of a net, added on first use.
   NetIndex net(std::string_view name);
   // Adds a box of `layer` over [x0, x1] x [y0, y1] to a net.
-  void add(std::string_view layer,
+  void add(Layer layer,
            NetIndex net,
            double x0,
            double y0,
@@ -79,7 +73,7 @@ class SectionBuilder
 
   NetIndex net(std::string_view name);
   // Adds a rectangle of `layer` over [x0, x1] to a net.
-  void add(std::string_view layer, NetIndex net, double x0, double x1);
+  void add(Layer layer, NetIndex net, double x0, double x1);
 
   const fsv::Stack& stack() const { return stack_; }
   fsv::Geometry2D& geometry() { return geometry_; }
@@ -92,17 +86,17 @@ class SectionBuilder
 
 // The cross section behind the lateral table: a wire centered at x = 0, a
 // neighbor on each side at a spacing (none when negative), and a plane on
-// the covering layer below and above (none when empty), reaching `extent`
-// past the outermost wire on each side.
+// the covering layer below and above (none when the handle names no
+// layer), reaching `extent` past the outermost wire on each side.
 struct LateralPattern
 {
-  std::string layer;
+  Layer layer;
   double width;
   double left = -1;           // spacing to the left neighbor, µm
   double right = -1;          // spacing to the right neighbor, µm
   double neighbor_width = 0;  // 0: the layer's minimum width
-  std::string below;          // "" for the substrate alone
-  std::string above;          // "" for none
+  Layer below;                // none: the substrate alone
+  Layer above;                // none: open above
   double extent = 10;         // the planes' reach past the wires, µm
 
   // The geometry, with the net index of each part (-1 when absent).
@@ -119,15 +113,15 @@ struct LateralPattern
 };
 
 // The pattern behind the end table: a wire along y over [0, length] with
-// a plane on the covering layer below and above (none when empty),
-// reaching `extent` sideways and `margin` past both ends.
+// a plane on the covering layer below and above (none when the handle
+// names no layer), reaching `extent` sideways and `margin` past both ends.
 struct EndPattern
 {
-  std::string layer;
+  Layer layer;
   double width;
   double length;
-  std::string below;  // "" for the substrate alone
-  std::string above;  // "" for none
+  Layer below;  // none: the substrate alone
+  Layer above;  // none: open above
   double extent = 10;
   double margin = 2;
 
@@ -149,14 +143,14 @@ struct EndPattern
 // on the other side of the wire, reaching `extent` sideways.
 struct CrossingPattern
 {
-  std::string layer;
-  std::string cover;
+  Layer layer;
+  Layer cover;
   double width;
   double crossing_width;
   double pitch;
   double length;
   double spacing = -1;  // to the neighbors; none when negative
-  std::string other;    // "" for none
+  Layer other;          // none when the handle names no layer
   double extent = 10;
   double margin = 2;
 
@@ -180,8 +174,8 @@ struct CrossingPattern
 // negative), of `other_width` (none when 0).
 struct DiagonalPattern
 {
-  std::string layer;
-  std::string other;
+  Layer layer;
+  Layer other;
   double width;
   double other_width = 0;
   double gap = 0;

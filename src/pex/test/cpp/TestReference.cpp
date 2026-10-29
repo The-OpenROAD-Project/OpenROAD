@@ -12,16 +12,30 @@
 namespace pex {
 namespace {
 
+// A conductor of a hand-built stack, by its name and z extent.
+fsv::Stack::Conductor conductorAt(const char* name,
+                                  const double bottom,
+                                  const double top)
+{
+  fsv::Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  return c;
+}
+
 // Two layers, m1 at [1, 2] and m2 at [3, 4], a via between them.
 fsv::Stack twoLayers()
 {
   fsv::Stack stack;
-  stack.dielectrics = {{"d", 0, 10, 1}};
-  stack.conductors.push_back(
-      {.name = "m1", .bottom = 1, .top = 2, .conformals = {}});
-  stack.conductors.push_back(
-      {.name = "m2", .bottom = 3, .top = 4, .conformals = {}});
-  stack.vias.push_back({.name = "v1", .upper = "m2", .lower = "m1"});
+  stack.addDielectric({"d", 0, 10, 1});
+  stack.addConductor(conductorAt("m1", 1, 2));
+  stack.addConductor(conductorAt("m2", 3, 4));
+  fsv::Stack::Via via;
+  via.name = "v1";
+  via.upper = stack.layer("m2");
+  via.lower = stack.layer("m1");
+  stack.addVia(via);
   return stack;
 }
 
