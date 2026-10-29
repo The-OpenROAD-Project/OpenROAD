@@ -17,7 +17,6 @@ endif (LOAD_CPLEX)
 find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(OpenMP REQUIRED)
 
 add_library(par_lib
   src/PartitionMgr.cpp
