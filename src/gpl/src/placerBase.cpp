@@ -732,7 +732,8 @@ PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
       padRight(options.padRight),
       skipIoMode(options.skipIoMode),
       placeIosMode(options.placeIosMode),
-      disablePinDensityAdjust(options.disablePinDensityAdjust)
+      disablePinDensityAdjust(options.disablePinDensityAdjust),
+      unplacedMacrosAsFixed(options.unplacedMacrosAsFixed)
 {
 }
 
@@ -1136,6 +1137,18 @@ void PlacerBase::init(bool check_density)
 
     odb::dbInst* db_inst = inst->dbInst();
     if (!db_inst) {
+      continue;
+    }
+
+    // The region it lands in is unknown, so only the top level counts it.
+    if (pbCommon_->unplacedMacrosAsFixed() && inst->isMacro()
+        && !db_inst->isPlaced()) {
+      if (!region) {
+        odb::dbMaster* master = db_inst->getMaster();
+        nonPlaceInstsArea_
+            += static_cast<int64_t>(master->getWidth()) * master->getHeight();
+      }
+
       continue;
     }
 

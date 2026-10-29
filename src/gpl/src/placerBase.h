@@ -280,6 +280,7 @@ struct PlacerBaseVars
   const bool skipIoMode;
   const bool placeIosMode;
   const bool disablePinDensityAdjust;
+  const bool unplacedMacrosAsFixed;
 };
 
 // Class includes everything from PlacerBase that is not region specific
@@ -311,6 +312,7 @@ class PlacerBaseCommon
   int getPadLeft() const { return pbVars_.padLeft; }
   int getPadRight() const { return pbVars_.padRight; }
   bool isSkipIoMode() const { return pbVars_.skipIoMode; }
+  bool unplacedMacrosAsFixed() const { return pbVars_.unplacedMacrosAsFixed; }
 
   int64_t getHpwl() const;
   void printInfo() const;
