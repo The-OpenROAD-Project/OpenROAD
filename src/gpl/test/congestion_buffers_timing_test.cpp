@@ -145,6 +145,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         rb_,
         tb_,
         nullptr,
+        nullptr,
         std::make_unique<GraphicsNone>(),
         &logger_);
   }

@@ -13,6 +13,7 @@
 
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
+#include "pex/CoverMap.h"
 #include "pex/Model.h"
 
 namespace pex {
@@ -39,15 +40,18 @@ struct Shape
   double hi[2];
 };
 
+// The conductors of the stack ascending by bottom; shapes carry an index
+// into them.
 struct Layers
 {
-  std::vector<std::string> names;  // ascending by bottom
+  std::vector<fsv::Stack::Layer> layers;
+  std::vector<std::string> names;  // the layers' names, for the model keys
   int index(const fsv::Stack& stack, const fsv::Box& box) const
   {
-    for (int i = 0; i < static_cast<int>(names.size()); i++) {
-      const fsv::Stack::Conductor* c = stack.findConductor(names[i]);
-      if (std::abs(c->bottom - box.lo[2]) < kEps
-          && std::abs(c->top - box.hi[2]) < kEps) {
+    for (int i = 0; i < static_cast<int>(layers.size()); i++) {
+      const fsv::Stack::Conductor& c = stack.conductor(layers[i]);
+      if (std::abs(c.bottom - box.lo[2]) < kEps
+          && std::abs(c.top - box.hi[2]) < kEps) {
         return i;
       }
     }
@@ -57,19 +61,16 @@ struct Layers
 
 Layers layersByHeight(const fsv::Stack& stack)
 {
-  std::vector<const fsv::Stack::Conductor*> conductors;
-  for (const fsv::Stack::Conductor& c : stack.conductors) {
-    conductors.push_back(&c);
-  }
-  std::stable_sort(
-      conductors.begin(),
-      conductors.end(),
-      [](const fsv::Stack::Conductor* a, const fsv::Stack::Conductor* b) {
-        return a->bottom < b->bottom;
-      });
   Layers layers;
-  for (const fsv::Stack::Conductor* c : conductors) {
-    layers.names.push_back(c->name);
+  layers.layers = stack.conductorLayers();
+  std::stable_sort(layers.layers.begin(),
+                   layers.layers.end(),
+                   [&](const fsv::Stack::Layer a, const fsv::Stack::Layer b) {
+                     return stack.conductor(a).bottom
+                            < stack.conductor(b).bottom;
+                   });
+  for (const fsv::Stack::Layer layer : layers.layers) {
+    layers.names.push_back(stack.name(layer));
   }
   return layers;
 }
@@ -89,10 +90,12 @@ std::vector<Shape> shapesOf(const fsv::Geometry& geometry,
     if (layer < 0) {
       // A via spans from one conductor's top to another's bottom.
       bool via = false;
-      for (const fsv::Stack::Via& v : stack.vias) {
-        const fsv::Stack::ZExtent z = stack.zExtent(v.name);
-        if (z.status == fsv::Stack::ZExtent::kFound
-            && std::abs(z.bottom - box.lo[2]) < kEps
+      for (const fsv::Stack::Layer v : stack.viaLayers()) {
+        if (!stack.via(v).lower.valid()) {
+          continue;  // a substrate via would ground the net
+        }
+        const fsv::Stack::ZExtent z = stack.zExtent(v);
+        if (std::abs(z.bottom - box.lo[2]) < kEps
             && std::abs(z.top - box.hi[2]) < kEps) {
           via = true;
         }
@@ -114,7 +117,9 @@ std::vector<Shape> shapesOf(const fsv::Geometry& geometry,
   return shapes;
 }
 
-// The lateral table for a context, falling back to fewer covers.
+// The lateral table for a context, falling back to fewer covers. The
+// covers come resolved onto tabulated ones (CoverMap), so this only meets
+// a pair the builder did not tabulate together.
 const LateralKey& fallback(const Model& model, LateralKey& key)
 {
   if (model.lateral(key) != nullptr) {
@@ -163,14 +168,17 @@ struct Lateral
 // The share of a layer's crossings over a piece [x0, x1] that no run
 // covers: from the nearest run before and after, through the one-sided
 // shares integrated over the piece.
+// The crossing table is `key`'s, the cover of the tabulated layer
+// standing in for `layer` when that one has none (CoverMap).
 Cover partialCover(const Model& model,
+                   const std::string& layer,
                    const CrossingKey& key,
                    const std::vector<Run>& runs,
                    const double x0,
                    const double x1)
 {
   Cover cover;
-  cover.layer = key.cover;
+  cover.layer = layer;
   if (model.crossing(key) == nullptr) {
     return cover;
   }
@@ -230,14 +238,18 @@ class Wire
  public:
   Wire(const Shape& shape,
        const std::vector<Shape>& shapes,
+       const fsv::Stack& stack,
        const Layers& layers,
        const Model& model,
+       const CoverMap& map,
        const ReferenceOptions& options)
       : shape_(shape),
         shapes_(shapes),
+        stack_(stack),
         layers_(layers),
         model_(model),
         options_(options),
+        map_(map),
         name_(layers.names[shape.layer]),
         a_(shape.hi[0] - shape.lo[0] >= shape.hi[1] - shape.lo[1] ? 0 : 1),
         p_(1 - a_),
@@ -372,7 +384,12 @@ class Wire
         }
       }
       const Cover partial
-          = partialCover(model_, {name_, layers_.names[l]}, it->second, x0, x1);
+          = partialCover(model_,
+                         layers_.names[l],
+                         {name_, map_.crossingCover(layers_.layers[l])},
+                         it->second,
+                         x0,
+                         x1);
       if (partial.share > best.share) {
         best = partial;
       }
@@ -381,22 +398,36 @@ class Wire
   }
 
   // The weighted cover states of a piece: ("", 1 - share) and (layer,
-  // share) on each side.
+  // share) on each side, the layer resolved onto the model's tabulated
+  // covers. f gets the state's key, its weight, and whether each side is
+  // covered in it.
   template <class F>
   void forStates(const Cover& below, const Cover& above, F&& f) const
   {
+    const std::vector<CoverMap::Part> none{{"", 1}};
+    const std::vector<CoverMap::Part> covered_below
+        = below.share > 0 ? map_.resolve(stack_.layer(below.layer)) : none;
+    const std::vector<CoverMap::Part> covered_above
+        = above.share > 0 ? map_.resolve(stack_.layer(above.layer)) : none;
     for (const bool b : {false, true}) {
       const double wb = b ? below.share : 1 - below.share;
       if (wb == 0) {
         continue;
       }
+      const std::vector<CoverMap::Part>& parts_below = b ? covered_below : none;
       for (const bool t : {false, true}) {
         const double wt = t ? above.share : 1 - above.share;
         if (wt == 0) {
           continue;
         }
-        LateralKey key{name_, b ? below.layer : "", t ? above.layer : ""};
-        f(key, wb, wt, b, t);
+        const std::vector<CoverMap::Part>& parts_above
+            = t ? covered_above : none;
+        for (const CoverMap::Part& pb : parts_below) {
+          for (const CoverMap::Part& pt : parts_above) {
+            LateralKey key{name_, pb.key, pt.key};
+            f(key, wb * pb.weight * wt * pt.weight, b, t);
+          }
+        }
       }
     }
   }
@@ -420,25 +451,24 @@ class Wire
     double cr = 0;
     double plane_below = 0;  // the plane's coupling in the covered state
     double plane_above = 0;
-    forStates(below,
-              above,
-              [&](LateralKey& key,
-                  const double wb,
-                  const double wt,
-                  const bool b,
-                  const bool t) {
-                const LateralCap cap
-                    = model_.lateral(fallback(model_, key), w_, sl, sr);
-                total += wb * wt * cap.total();
-                cl += wb * wt * cap.left;
-                cr += wb * wt * cap.right;
-                if (b && !key.below.empty()) {
-                  plane_below += wt * cap.below;
-                }
-                if (t && !key.above.empty()) {
-                  plane_above += wb * cap.above;
-                }
-              });
+    // The plane couplings are per covered state, so they divide out the
+    // share of that side.
+    forStates(
+        below,
+        above,
+        [&](LateralKey& key, const double weight, const bool b, const bool t) {
+          const LateralCap cap
+              = model_.lateral(fallback(model_, key), w_, sl, sr);
+          total += weight * cap.total();
+          cl += weight * cap.left;
+          cr += weight * cap.right;
+          if (b && !key.below.empty()) {
+            plane_below += weight / below.share * cap.below;
+          }
+          if (t && !key.above.empty()) {
+            plane_above += weight / above.share * cap.above;
+          }
+        });
     const double to_below = below.cross * plane_below;
     const double to_above = above.cross * plane_above;
     out.ground += len * (total - cl - cr - to_below - to_above);
@@ -541,22 +571,22 @@ class Wire
     }
     out.ends++;
     forStates(
-        below,
-        above,
-        [&](LateralKey& key, const double wb, const double wt, bool, bool) {
+        below, above, [&](LateralKey& key, const double weight, bool, bool) {
           fallback(model_, key);
           if (model_.end(key) == nullptr) {
             key = {name_, "", ""};
           }
-          out.ground += wb * wt * model_.endExcess(key, w_);
+          out.ground += weight * model_.endExcess(key, w_);
         });
   }
 
   const Shape& shape_;
   const std::vector<Shape>& shapes_;
+  const fsv::Stack& stack_;
   const Layers& layers_;
   const Model& model_;
   const ReferenceOptions& options_;
+  const CoverMap& map_;
   const std::string& name_;
   const int a_;
   const int p_;
@@ -583,12 +613,17 @@ NetEstimate estimate(const fsv::Geometry& geometry,
   NetEstimate out;
   const std::vector<Shape> shapes
       = shapesOf(geometry, stack, layers, target, out);
+  // One cover map per layer the net has wires on.
+  std::map<int, CoverMap> maps;
   for (const Shape& shape : shapes) {
     if (shape.net != target || shape.layer < 0) {
       continue;
     }
     out.wires++;
-    Wire(shape, shapes, layers, model, options).estimate(target, out);
+    const auto it = maps.try_emplace(
+        shape.layer, stack, model, layers.layers[shape.layer]);
+    Wire(shape, shapes, stack, layers, model, it.first->second, options)
+        .estimate(target, out);
   }
   return out;
 }

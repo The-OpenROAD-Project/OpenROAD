@@ -109,7 +109,10 @@ cc_test(
 cc_test(
     name = "TestItf",
     srcs = ["cpp/TestItf.cpp"],
-    data = ["sky130.itf"],
+    data = [
+        "GT2.itf",
+        "sky130.itf",
+    ],
     deps = [
         "//src/fsv:stack",
         "@googletest//:gtest",

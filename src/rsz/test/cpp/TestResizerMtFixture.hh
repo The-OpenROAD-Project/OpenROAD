@@ -203,6 +203,20 @@ class ResizerTestPeer
     return policy.stall_;
   }
   static WnsTail& tail(SetupParallelEvalPolicy& policy) { return policy.tail_; }
+  static float referencePeriod(const SetupParallelEvalPolicy& policy)
+  {
+    return policy.reference_period_;
+  }
+  static float findReferencePeriod(const SetupParallelEvalPolicy& policy,
+                                   const sta::Slack initial_wns)
+  {
+    return policy.referencePeriod(initial_wns);
+  }
+  static sta::Slack checkpointWnsTolerance(
+      const SetupParallelEvalPolicy& policy)
+  {
+    return policy.checkpointWnsTolerance();
+  }
   static MissTabu& tabu(SetupParallelEvalPolicy& policy)
   {
     return policy.tabu_;

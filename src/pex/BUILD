@@ -28,6 +28,19 @@ cc_library(
     includes = ["include"],
 )
 
+# How a piece's covers map onto the model's contexts.
+cc_library(
+    name = "cover_map",
+    srcs = ["src/CoverMap.cpp"],
+    hdrs = ["include/pex/CoverMap.h"],
+    includes = ["include"],
+    deps = [
+        ":model",
+        ":patterns",
+        "//src/fsv:stack",
+    ],
+)
+
 # Builds the tables by solving patterns with fsv.
 cc_library(
     name = "model_builder",

@@ -13,6 +13,7 @@
 
 #include "fsv/Stack.h"
 #include "pex/Model.h"
+#include "pex/Patterns.h"
 
 namespace pex {
 
@@ -27,9 +28,18 @@ struct BuildOptions
   std::vector<double> width_factors{1, 1.5, 2, 3, 5, 10};
   std::vector<double> spacing_factors{1, 1.25, 1.5, 2, 3, 5, 7, 10};
   // Covering layers tabulated below the layer (plus the substrate alone)
-  // and above it (plus none).
+  // and above it (plus none), nearest first.
   int below_depth = 2;
   int above_depth = 2;
+  // Past the depth, a few far layers get contexts too, at spaced
+  // distances: for each factor, the usable layer whose distance from the
+  // wire is nearest (in the logarithm) to the factor times the distance
+  // of the first usable layer past the depth, and with any factor at all
+  // the farthest usable layer, each layer once. A lookup for a cover
+  // between two tabulated ones interpolates (CoverMap), never past the
+  // farthest, so the table count grows with this list, not with the
+  // layer count. Empty: no far layer gets a context.
+  std::vector<double> far_cover_factors{1, 2, 4};
   // The crossing patterns: crossing widths as multiples of the cover
   // layer's minimum width, coverage fractions, and the two wire lengths
   // whose difference cancels the ends.
@@ -70,23 +80,28 @@ struct BuildOptions
 std::string buildFingerprint(const fsv::Stack& stack,
                              const BuildOptions& options);
 
-// The covering contexts of a layer within the options' depths: the layers
-// below nearest first with "" (the substrate) first, and likewise above
-// with "" (none) first. A conductor sitting on the ground plane is the
-// ground and does not count, nor does one outside the options' layers.
-std::vector<std::string> coversBelow(const fsv::Stack& stack,
-                                     std::string_view layer,
-                                     const BuildOptions& options);
-std::vector<std::string> coversAbove(const fsv::Stack& stack,
-                                     std::string_view layer,
-                                     const BuildOptions& options);
+// The covering contexts of a layer: no layer first (the substrate below,
+// open above), then the usable layers within the depth nearest first,
+// then the far layers the options' factors pick and the farthest, nearest
+// first. A conductor sitting on the ground plane is the ground and does
+// not count, nor does one outside the options' layers.
+std::vector<Layer> coversBelow(const fsv::Stack& stack,
+                               Layer layer,
+                               const BuildOptions& options);
+std::vector<Layer> coversAbove(const fsv::Stack& stack,
+                               Layer layer,
+                               const BuildOptions& options);
 
 // Builds the lateral tables of a conductor layer, one per covering context,
 // into the model. Each table point is its own single-threaded solve, seeded
-// by its position, so the tables do not depend on the thread count. Throws
-// std::invalid_argument for a layer the stack does not have.
+// by its position, so the tables do not depend on the thread count. A
+// table the model already holds is left alone, as every builder here
+// does, so a build resumes from a saved model; one on a grid other than
+// the options' is an error, since it came from another build. Throws
+// std::invalid_argument for that, or for a handle that is not a conductor
+// of the stack.
 void buildLateral(const fsv::Stack& stack,
-                  std::string_view layer,
+                  Layer layer,
                   const BuildOptions& options,
                   Model& model);
 
@@ -95,8 +110,8 @@ void buildLateral(const fsv::Stack& stack,
 // every crossing width and coverage of the options; each array gives the
 // share kept over the gap between its crossings.
 void buildCrossing(const fsv::Stack& stack,
-                   std::string_view layer,
-                   std::string_view cover,
+                   Layer layer,
+                   Layer cover,
                    const BuildOptions& options,
                    Model& model);
 
@@ -105,21 +120,21 @@ void buildCrossing(const fsv::Stack& stack,
 // wire on the other layer beside it on the right, at every width, gap and
 // pair of spacings of the options.
 void buildDiagonal(const fsv::Stack& stack,
-                   std::string_view layer,
-                   std::string_view other,
+                   Layer layer,
+                   Layer other,
                    const BuildOptions& options,
                    Model& model);
 
 // The layers within the diagonal depth of a layer, below and above, that
 // do not sit on the ground plane.
-std::vector<std::string> diagonalLayers(const fsv::Stack& stack,
-                                        std::string_view layer,
-                                        const BuildOptions& options);
+std::vector<Layer> diagonalLayers(const fsv::Stack& stack,
+                                  Layer layer,
+                                  const BuildOptions& options);
 
 // Builds the end tables of a layer for the same contexts as its lateral
 // tables: what one line end adds, over the lateral grid's widths.
 void buildEnds(const fsv::Stack& stack,
-               std::string_view layer,
+               Layer layer,
                const BuildOptions& options,
                Model& model);
 
@@ -127,7 +142,7 @@ void buildEnds(const fsv::Stack& stack,
 // every cover within the depths, and a diagonal table for every layer
 // within the diagonal depth.
 void buildLayer(const fsv::Stack& stack,
-                std::string_view layer,
+                Layer layer,
                 const BuildOptions& options,
                 Model& model);
 

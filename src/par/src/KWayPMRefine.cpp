@@ -8,7 +8,6 @@
 #include <map>
 #include <memory>
 #include <ranges>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -248,24 +247,11 @@ float KWayPMRefine::PerformPairFM(
     // find the neighbors of vertex in partition_pair blocks
     const std::vector<int> neighbors = FindNeighbors(
         hgraph, vertex, visited_vertices_flag, solution, partition_pair);
-    // update the neighbors of v for all gain buckets in parallel
-    std::vector<std::thread> threads;
-    threads.reserve(blocks.size());
-    for (auto& to_pid : blocks) {
-      threads.emplace_back(&KWayFMRefine::UpdateSingleGainBucket,
-                           this,
-                           to_pid,
-                           std::ref(buckets),
-                           hgraph,
-                           std::ref(neighbors),
-                           std::ref(net_degs),
-                           std::ref(paths_cost),
-                           std::ref(solution));
+    // update the neighbors of v for all gain buckets
+    for (const auto to_pid : blocks) {
+      UpdateSingleGainBucket(
+          to_pid, buckets, hgraph, neighbors, net_degs, paths_cost, solution);
     }
-    for (auto& t : threads) {
-      t.join();  // wait for all threads to finish
-    }
-    threads.clear();
     if (total_delta_gain >= best_gain) {
       best_gain = total_delta_gain;
       best_vertex_id = vertex;
@@ -309,26 +295,16 @@ void KWayPMRefine::InitializeGainBucketsPM(
     const std::pair<int, int>& partition_pair) const
 {
   std::vector<int> blocks_id{partition_pair.first, partition_pair.second};
-  std::vector<std::thread> threads;  // for parallel updating
-  threads.reserve(blocks_id.size());
-
-  // parallel initialize the num_parts gain_buckets
+  // initialize the two gain_buckets
   for (const auto to_pid : blocks_id) {
-    threads.emplace_back(
-        &KWayFMRefine::InitializeSingleGainBucket,
-        this,
-        std::ref(buckets),
-        to_pid,
-        hgraph,
-        std::ref(boundary_vertices),  // we only consider boundary vertices
-        std::ref(net_degs),
-        std::ref(cur_paths_cost),
-        std::ref(solution));
+    InitializeSingleGainBucket(buckets,
+                               to_pid,
+                               hgraph,
+                               boundary_vertices,  // only boundary vertices
+                               net_degs,
+                               cur_paths_cost,
+                               solution);
   }
-  for (auto& t : threads) {
-    t.join();  // wait for all threads to finish
-  }
-  threads.clear();
 }
 
 }  // namespace par

@@ -28,41 +28,8 @@ constexpr double kLayerTolerance = 1e-9;
 
 double baseEps(const Stack& stack)
 {
-  return stack.dielectrics.empty() ? stack.background_eps
-                                   : stack.dielectrics.front().eps;
-}
-
-void checkEps(const double eps, const std::string& what)
-{
-  if (!(eps > 0) || !std::isfinite(eps)) {
-    throw std::invalid_argument("fsv: permittivity of " + what
-                                + " must be positive");
-  }
-}
-
-// The checks every stack passes before a scene uses it. The interface
-// lookups need strictly increasing interfaces.
-void checkStack(const Stack& stack)
-{
-  double bottom = 0;
-  for (const Stack::Dielectric& d : stack.dielectrics) {
-    checkEps(d.eps, "dielectric " + d.name);
-    if (!(d.top > bottom)) {
-      throw std::invalid_argument("fsv: dielectric " + d.name
-                                  + " must lie above the one below it");
-    }
-    bottom = d.top;
-  }
-  checkEps(stack.background_eps, "the background");
-  for (const Stack::Conductor& c : stack.conductors) {
-    for (const Stack::ConformalDielectric& cf : c.conformals) {
-      checkEps(cf.eps, "conformal dielectric " + cf.name);
-      if (!(cf.side_thickness >= 0 && cf.top_thickness >= 0)) {
-        throw std::invalid_argument("fsv: conformal dielectric " + cf.name
-                                    + " has a negative thickness");
-      }
-    }
-  }
+  return stack.dielectrics().empty() ? stack.backgroundEps()
+                                     : stack.dielectrics().front().eps;
 }
 
 template <int D>
@@ -150,7 +117,6 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
     const SpatialIndex<D>& box_index,
     const Stack& stack)
 {
-  checkStack(stack);
   constexpr int kZ = D - 1;
   std::map<std::string, int> materials;
   std::map<std::pair<int, int>, int> groups;
@@ -158,9 +124,9 @@ std::unique_ptr<Dielectric<D>> stackDielectric(
   std::vector<Shell<D>> shells;
   for (int b = 0; b < static_cast<int>(boxes.size()); b++) {
     const AlignedBox<D>& box = boxes[b];
-    for (int layer = 0; layer < static_cast<int>(stack.conductors.size());
+    for (int layer = 0; layer < static_cast<int>(stack.conductors().size());
          layer++) {
-      const Stack::Conductor& c = stack.conductors[layer];
+      const Stack::Conductor& c = stack.conductors()[layer];
       if (std::abs(box.lo[kZ] - c.bottom) > kLayerTolerance
           || std::abs(box.hi[kZ] - c.top) > kLayerTolerance) {
         continue;

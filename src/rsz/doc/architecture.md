@@ -743,7 +743,7 @@ The slack deficit of a vertex is `slack_margin - slack`. `BottleneckAnalysis` wa
 
 The batch commits inside a journal that stays open after the latest checkpoint. After the timing update (under `-path_group`, WNS and TNS are the group's, and an endpoint's slack is its group slack, as in `LEGACY`):
 
-- **Save.** WNS improved, or TNS improved while WNS stayed within `checkpoint_wns_tolerance_pct` of the best checkpoint WNS. With `-max_utilization`, the design area must also stay below that limit; the first batch over it prints warning RSZ-2033.
+- **Save.** WNS improved, or TNS improved while WNS stayed within `checkpoint_wns_tolerance_period_pct` percent of the reference clock period below the best checkpoint WNS. With `-max_utilization`, the design area must also stay below that limit; the first batch over it prints warning RSZ-2033.
 - **Salvage.** A missed batch finds its culprits: moves whose guarded side pins fell below the pre-batch design WNS, or whose own endpoint got worse. A cell swap is a culprit only if its own stage delays grew. Culprit swaps go back to their old cells in place; a batch with a buffer culprit rolls back and re-commits the rest.
 - **Speculate.** In the WNS tail, a missed batch may stay for up to `wns_tail_speculate` batches. A later save keeps all of them; otherwise they all roll back.
 - **Undo.** Otherwise the batch rolls back. Its instances are skipped for `miss_tabu_batches` batches, and an instance in `max_undos_per_instance` or more undone batches is excluded for the rest of the run.
@@ -752,7 +752,9 @@ The batches end after `max_checkpoint_misses` missed batches in a row, or on one
 
 ### Stop Rules
 
-The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_pct` percent of the initial WNS nor TNS by `progress_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved neither WNS nor the failing endpoint count by `stall_rel_pct` percent and TNS did not progress.
+The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_period_pct` percent of the reference clock period nor TNS by `progress_tns_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved WNS by less than `stall_wns_period_pct` percent of the reference clock period and the failing endpoint count by less than `stall_failing_endpoint_pct` percent per batch, and TNS did not progress.
+
+The reference clock period is the shortest period of a clock with source pins in any mode, fixed for the run; a virtual clock counts only when no clock has pins, without clocks the shortest `set_max_delay` is the scale, and without either the initial WNS is. A share of the WNS itself would vanish as WNS approaches zero, so tiny gains near closure would never stall the batches.
 
 The stall window and the tail budget count **work**, not wall time. Work is a weighted count of timing updates, pending nets, estimates, buffer-tree plans and evaluated endpoints (`work_*` weights), in seconds of a reference machine. So a run makes the same decisions on every machine and under any load.
 
@@ -763,7 +765,7 @@ When the batches stall, the WNS tail works on the worst `wns_tail_endpoints` end
 - may also try candidates that the estimator rejected but whose own gain is positive, because the batch STA judges them;
 - adds `SwapPinsMt`, `UnbufferMt` (single-move batches only) and `SizeDownFanoutMt` when the run has no `-sequence`;
 - rejects a batch that costs more TNS than `wns_tail_tns_ratio` times its WNS gain;
-- widens by `wns_tail_grow` up to `wns_tail_max_endpoints` endpoints when it stalls, and ends after `wns_tail_stall` batches without a better WNS.
+- widens by `wns_tail_grow` up to `wns_tail_max_endpoints` endpoints when it stalls, and ends after `wns_tail_stall` batches that do not raise the best WNS by `wns_tail_min_gain_period_pct` percent of the reference clock period.
 
 The tail may spend `wns_tail_work_pct` percent of the work of the batch stage, and at least `wns_tail_min_work`.
 
