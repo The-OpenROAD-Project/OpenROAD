@@ -87,7 +87,8 @@ class NameInterner
     // 32-bit hash goes in both halves.
     static size_t expand(uint32_t h)
     {
-      return (static_cast<size_t>(h) << 32u) | h;
+      // Shifted in 64 bits, so a 32-bit size_t just keeps the low half.
+      return static_cast<size_t>((uint64_t{h} << 32u) | h);
     }
     size_t operator()(uint32_t id) const ABSL_NO_THREAD_SAFETY_ANALYSIS
     {
