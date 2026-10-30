@@ -616,7 +616,7 @@ TEST_F(TestResizerMtSequential, FlipFlopCandidateUsesActiveScaledCheckModel)
             = findMatchingTimingArc(arc, scaled_set);
         if (scaled_arc != nullptr) {
           scaled_arc->model()->setIsScaled(true);
-          arc->addScaledModel(op_cond, scaled_arc->model());
+          ScaledTimingArc::addModel(arc, op_cond, scaled_arc->model());
           ASSERT_NE(arc->checkModel(target.scene, sta::MinMax::max()),
                     arc->model());
           ++scaled_checks;
@@ -674,8 +674,8 @@ TEST_F(TestResizerMtSequential,
   ASSERT_NE(nominal, nullptr);
   ASSERT_TRUE(nominal->estimate(candidate).legal);
   EXPECT_FLOAT_EQ(nominal->estimate(candidate).weighted_side_slack_loss, 0.0f);
-  candidate->findLibertyPort("D")->addScaledPort(op_cond,
-                                                 scaled->findLibertyPort("D"));
+  ScaledLibertyPort::addPort(
+      candidate->findLibertyPort("D"), op_cond, scaled->findLibertyPort("D"));
 
   const std::shared_ptr<const SequentialTimingEstimator> estimator
       = SequentialTimingEstimator::prepare(resizer_, target);

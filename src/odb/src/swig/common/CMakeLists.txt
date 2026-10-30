@@ -17,5 +17,6 @@ target_link_libraries(odb_swig_common
     lefin
     defout
     lefout
+    wireNormalizer
     utl_lib
 )

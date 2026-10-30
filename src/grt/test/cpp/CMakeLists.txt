@@ -100,3 +100,24 @@ gtest_discover_tests(TestRoutingCongestion
 )
 
 add_dependencies(build_and_test TestRoutingCongestion)
+
+add_executable(TestGlobalRouter TestGlobalRouter.cpp)
+
+target_link_libraries(TestGlobalRouter
+    OpenSTA
+    GTest::gtest
+    GTest::gtest_main
+    dbSta_lib
+    grt_lib
+    stt_lib
+    utl_lib
+    odb
+    tst_integrated_fixture
+    ${TCL_LIBRARY}
+)
+
+gtest_discover_tests(TestGlobalRouter
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestGlobalRouter)

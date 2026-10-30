@@ -215,6 +215,15 @@ int OptimizeMirroring::mirrorCandidates(
                  inst->getConstName());
       continue;
     }
+    if (!isFixedSupplyViasLegal(cell, orient_my)) {
+      debugPrint(logger_,
+                 DPL,
+                 "opt_mirror",
+                 1,
+                 "reject {} fixed supply vias",
+                 inst->getConstName());
+      continue;
+    }
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);
@@ -326,6 +335,14 @@ void OptimizeMirroring::restoreNetBoxes(odb::dbInst* inst)
       net_box_map_[net].restoreBox();
     }
   }
+}
+
+bool OptimizeMirroring::isFixedSupplyViasLegal(
+    const Node* cell,
+    const odb::dbOrientType& orient) const
+{
+  return drc_engine_->checkFixedSupplyVias(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), orient);
 }
 
 }  // namespace dpl

@@ -30,7 +30,7 @@ jobs:
         # runners do not. Install it explicitly so the workflow works on
         # both runner types. bazel-contrib/setup-bazel's default uses a
         # pre-installed bazelisk; passing bazelisk-version forces install.
-        uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # 0.19.0
+        uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3  # 0.19.1
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true

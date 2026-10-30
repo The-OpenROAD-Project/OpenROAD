@@ -44,6 +44,7 @@ target_link_libraries(psm
     dbSta
     dpl_lib
     est_lib
+    rcx_lib
     Eigen3::Eigen
     gui_core
     Boost::boost

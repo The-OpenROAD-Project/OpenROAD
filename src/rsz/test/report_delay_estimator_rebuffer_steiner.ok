@@ -62,7 +62,7 @@ Stage window detail
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)             33.838       30.552       +3.286
     pre-ECO output slew(ps)                  -            -            -
-    post-ECO output slew(ps)            17.156       17.442       -0.287
+    post-ECO output slew(ps)            18.323       17.442       +0.881
     pre-ECO wire delay(ps)                   -            -            -
     post-ECO wire delay(ps)                  -            -            -
     pre-ECO load cap(fF)                     -            -            -
@@ -77,7 +77,7 @@ Stage window detail
 
     metric                           estimated       golden        error
     pre-ECO input slew(ps)              87.611       87.611       +0.000
-    post-ECO input slew(ps)             17.156       17.442       -0.287
+    post-ECO input slew(ps)             18.323       17.442       +0.881
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)                  -            -            -
     pre-ECO output slew(ps)                  -            -            -
@@ -141,7 +141,7 @@ Stage window detail
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)             33.838       30.552       +3.286
     pre-ECO output slew(ps)                  -            -            -
-    post-ECO output slew(ps)            17.156       17.442       -0.287
+    post-ECO output slew(ps)            18.323       17.442       +0.881
     pre-ECO wire delay(ps)                   -            -            -
     post-ECO wire delay(ps)                  -            -            -
     pre-ECO load cap(fF)                     -            -            -
@@ -156,7 +156,7 @@ Stage window detail
 
     metric                           estimated       golden        error
     pre-ECO input slew(ps)              87.611       87.611       +0.000
-    post-ECO input slew(ps)             17.156       17.442       -0.287
+    post-ECO input slew(ps)             18.323       17.442       +0.881
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)                  -            -            -
     pre-ECO output slew(ps)                  -            -            -
@@ -209,7 +209,7 @@ Stage window detail
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)             33.838       30.552       +3.286
     pre-ECO output slew(ps)                  -            -            -
-    post-ECO output slew(ps)            17.156       17.442       -0.287
+    post-ECO output slew(ps)            18.323       17.442       +0.881
     pre-ECO wire delay(ps)                   -            -            -
     post-ECO wire delay(ps)                  -            -            -
     pre-ECO load cap(fF)                     -            -            -
@@ -224,7 +224,7 @@ Stage window detail
 
     metric                           estimated       golden        error
     pre-ECO input slew(ps)              87.611       87.611       +0.000
-    post-ECO input slew(ps)             17.156       17.442       -0.287
+    post-ECO input slew(ps)             18.323       17.442       +0.881
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)                  -            -            -
     pre-ECO output slew(ps)                  -            -            -
@@ -277,7 +277,7 @@ Stage window detail
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)             33.838       30.552       +3.286
     pre-ECO output slew(ps)                  -            -            -
-    post-ECO output slew(ps)            17.156       17.442       -0.287
+    post-ECO output slew(ps)            18.323       17.442       +0.881
     pre-ECO wire delay(ps)                   -            -            -
     post-ECO wire delay(ps)                  -            -            -
     pre-ECO load cap(fF)                     -            -            -
@@ -292,7 +292,7 @@ Stage window detail
 
     metric                           estimated       golden        error
     pre-ECO input slew(ps)              87.611       87.611       +0.000
-    post-ECO input slew(ps)             17.156       17.442       -0.287
+    post-ECO input slew(ps)             18.323       17.442       +0.881
     pre-ECO cell delay(ps)                   -            -            -
     post-ECO cell delay(ps)                  -            -            -
     pre-ECO output slew(ps)                  -            -            -

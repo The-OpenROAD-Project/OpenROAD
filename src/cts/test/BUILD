@@ -57,6 +57,7 @@ COMPULSORY_TESTS = [
     "sink_clustering_single_sink",
     "skip_nets",
     "twice",
+    "useful_skew",
     "virtual_clock_latency",
 ]
 
@@ -66,6 +67,7 @@ PASSFAIL_TESTS = [
     "dont_touch_sink",
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
+    "hier_dummy_load",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -204,6 +206,10 @@ filegroup(
                 "cts-helpers.tcl",
                 "gated_clock2.def",
             ],
+            "hier_dummy_load": [
+                "simple_test_hier.def",
+                "simple_test_hier.v",
+            ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
@@ -252,6 +258,10 @@ filegroup(
             ],
             "twice": [
                 "16sinks.def",
+            ],
+            "useful_skew": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
             ],
             "virtual_clock_latency": [
                 "16sinks.def",

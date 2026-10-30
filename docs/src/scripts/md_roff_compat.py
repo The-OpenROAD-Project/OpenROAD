@@ -73,6 +73,7 @@ tools = [
     "est",
     "exa",
     "fin",
+    "fsv",
     "gpl",
     "grt",
     "gui",

@@ -15,7 +15,6 @@ Caught expected empty phase error: RSZ-0223
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.278 |       -0.5 |      2 | y2
       10* |       0 |       6 |        1 |      0 |     2 |  +307.7% |   -0.129 |       -0.2 |      2 | y2
-      20* |       4 |       6 |        5 |      0 |     3 |  +307.7% |   -0.129 |       -0.2 |      2 | y2
-      26* |       0 |       6 |        2 |      0 |     3 |  +407.7% |   -0.118 |       -0.2 |      2 | y2
+      18* |       0 |       6 |        2 |      0 |     3 |  +407.7% |   -0.118 |       -0.2 |      2 | y2
 [ERROR RSZ-0217] Unknown phase name 'BAD_PHASE'. Valid phase names are: LEGACY, WNS, WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING, PARALLEL_EVAL (experimental)
 Caught expected invalid phase error: RSZ-0217

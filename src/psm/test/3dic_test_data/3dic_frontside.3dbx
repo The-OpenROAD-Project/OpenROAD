@@ -1,0 +1,43 @@
+# YAML format
+# 2 space indentation
+
+Header:
+  version: "1.0"
+  unit: micron
+  precision: 2000
+  include:
+    - 3dic_frontside.3dbv
+
+Design:
+  name: "top"
+  external:
+    verilog_file: "3dic_frontside_assembly.v"
+
+ChipletInst:
+  chipA:
+    reference: chiplet_a
+  chipB:
+    reference: chiplet_b
+
+Stack:
+  chipA:
+    loc: [0.0, 0.0]  # supports decimal values; rounded to 0.0005 um steps with precision: 2000
+    z: 0.0
+    orient: R0
+  
+  chipB:
+    loc: [0.0, 0.0]
+    z: 100.0  # supports decimal values; rounded to 0.0005 um steps with precision: 2000
+    orient: MZ  # MZ turns chiplet b's front face downward
+
+
+Connection:
+  chipA_to_chipB:
+    top: chipB.regions.front_reg  # top chip
+    bot: chipA.regions.front_reg  # bottom chip
+    thickness: 0.0  # space between 2 chiplets, and is due to chip interconnect
+
+  chipA_to_virtual:  # chipA to package connection, form where external voltage enters the chip
+    top: chipA.regions.back_reg
+    bot: ~  # the other side is outside our modeled assembly
+    thickness: 0.0

@@ -26,7 +26,44 @@
 
     <div id="menu-bar"></div>
     <div id="toolbar"></div>
-    <div id="gl-container"></div>
+    <div id="gl-container" class="ide-layout">
+        <!-- Gutter expand buttons (visible when a panel is collapsed) -->
+        <button id="gutter-expand-left" class="ide-gutter-expand ide-gutter-left" title="Restore Display Controls">
+            <span>▶ Display Controls</span>
+        </button>
+        <button id="gutter-expand-right" class="ide-gutter-expand ide-gutter-right" title="Restore Right Panel">
+            <span>◀ Tools &amp; Inspector</span>
+        </button>
+
+        <!-- Left Pane: Display Controls -->
+        <ide-pane id="pane-left" name="left"></ide-pane>
+
+        <!-- Left Splitter -->
+        <ide-splitter id="splitter-left" for="left" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+
+        <!-- Center Area -->
+        <main id="pane-center" class="ide-center">
+            <!-- Center Top Pane: Main Viewer (Layout, Schematic, 3D) -->
+            <ide-pane id="pane-main" name="main" maximizable></ide-pane>
+
+            <!-- Bottom Splitter -->
+            <ide-splitter id="splitter-bottom" for="bottom" orientation="horizontal" title="Drag to resize console"></ide-splitter>
+
+            <!-- Gutter expand button for console -->
+            <button id="gutter-expand-bottom" class="ide-gutter-expand ide-gutter-bottom" title="Restore Tcl Console">
+                <span>▲ Tcl Console</span>
+            </button>
+
+            <!-- Center Bottom Pane: Console -->
+            <ide-pane id="pane-bottom" name="bottom" maximizable collapsible></ide-pane>
+        </main>
+
+        <!-- Right Splitter -->
+        <ide-splitter id="splitter-right" for="right" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+
+        <!-- Right Pane: Inspector, Hierarchy, Timing, DRC, etc. -->
+        <ide-pane id="pane-right" name="right" maximizable collapsible></ide-pane>
+    </div>
     <div id="websocket-status"></div>
     <div id="loading-overlay">
         <div class="loading-overlay-content">

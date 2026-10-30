@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -19,6 +18,7 @@
 #include "DelayEstimatorInternal.hh"
 #include "OptimizerTypes.hh"
 #include "RepairSetupProfiler.hh"
+#include "boost/functional/hash.hpp"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
@@ -987,11 +987,6 @@ float maxTargetInputCapDelta(Resizer& resizer,
   return std::max(max_input_cap - current_input_cap, 0.0f);
 }
 
-uint32_t floatBits(const float value)
-{
-  return std::bit_cast<uint32_t>(value);
-}
-
 void prepareFaninNeighborSlewBias(Resizer& resizer,
                                   EstimatorContext& context,
                                   DelayEstimatorCache* cache)
@@ -1047,6 +1042,29 @@ float DelayEstimatorCache::maxEquivalentInputCapIncrease(
   return cached->second;
 }
 
+size_t DelayEstimatorCache::SlewBiasModelKey::Hash::operator()(
+    const SlewBiasModelKey& key) const
+{
+  size_t seed = 0;
+  boost::hash_combine(seed, key.driver_pin);
+  boost::hash_combine(seed, key.ref_arc);
+  boost::hash_combine(seed, key.scene);
+  boost::hash_combine(seed, key.min_max);
+  boost::hash_combine(seed, key.current_cell);
+  boost::hash_combine(seed, key.input_slew);
+  boost::hash_combine(seed, key.load_cap);
+  boost::hash_combine(seed, key.max_load_delta);
+  boost::hash_combine(seed, key.pi_c2);
+  boost::hash_combine(seed, key.pi_r);
+  boost::hash_combine(seed, key.pi_c1);
+  boost::hash_combine(seed, key.merge_arcs.size());
+  for (const MergeArc& arc : key.merge_arcs) {
+    boost::hash_combine(seed, arc.ref_arc);
+    boost::hash_combine(seed, arc.input_slew);
+  }
+  return seed;
+}
+
 // Every input read by buildSlewBiasModel(): the stage identity and slews, the
 // sampled load range, and the live reduced Pi model of the driver net. A
 // missing Pi model disables memoization because sampling would fail anyway.
@@ -1082,18 +1100,17 @@ DelayEstimatorCache::makeSlewBiasModelKey(Resizer& resizer,
       .scene = stage.arc.scene,
       .min_max = stage.arc.min_max,
       .current_cell = stage.arc.currentCell(),
-      .input_slew_bits = floatBits(stage.input_slew),
-      .load_cap_bits = floatBits(stage.load_cap),
-      .max_load_delta_bits = floatBits(max_load_delta),
-      .pi_c2_bits = floatBits(c2),
-      .pi_r_bits = floatBits(rpi),
-      .pi_c1_bits = floatBits(c1),
+      .input_slew = stage.input_slew,
+      .load_cap = stage.load_cap,
+      .max_load_delta = max_load_delta,
+      .pi_c2 = c2,
+      .pi_r = rpi,
+      .pi_c1 = c1,
       .merge_arcs = {},
   };
   key.merge_arcs.reserve(stage.output_slew_merge_arcs.size());
   for (const OutputSlewMergeArc& merge_arc : stage.output_slew_merge_arcs) {
-    key.merge_arcs.push_back(
-        {merge_arc.ref_arc, floatBits(merge_arc.input_slew)});
+    key.merge_arcs.push_back({merge_arc.ref_arc, merge_arc.input_slew});
   }
 
   return key;

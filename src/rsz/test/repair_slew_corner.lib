@@ -1,0 +1,16 @@
+library (macro_tt) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  cell (macro) {
+    area : 400;
+    pin (A) {
+      direction : input;
+      capacitance : 0.005;
+      max_transition : 0.04;
+    }
+  }
+}

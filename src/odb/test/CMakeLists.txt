@@ -60,6 +60,7 @@ or_integration_tests(
     rounding
     row_no_step
     row_settings
+    row_site_overlap
     set_halo
     sky130hd_multi_patterned
     smash_vias

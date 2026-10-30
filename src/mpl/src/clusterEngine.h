@@ -200,15 +200,15 @@ class ClusteringEngine
   void createOneClusterForEachMacro(Cluster* mixed_leaf_parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
-  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
-                            std::vector<int>& size_class);
+  void classifyMacrosByMaster(const std::vector<HardMacro*>& hard_macros,
+                              std::vector<int>& master_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
                                  std::vector<int>& interconn_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
-                                const std::vector<int>& size_class,
+                                const std::vector<int>& master_class,
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);

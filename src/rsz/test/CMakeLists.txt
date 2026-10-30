@@ -39,6 +39,7 @@ or_integration_tests(
     swap_pins_dont_touch
     rebuffer1
     rebuffer1_hier
+    rebuffer_size_driver
     recover_power_verbose
     remove_buffers_hier1
     remove_buffers1
@@ -169,6 +170,7 @@ or_integration_tests(
     repair_setup_phases_order
     repair_setup_undo1
     repair_setup_undo2
+    repair_timing_option_errors
     repair_timing_path_group1
     repair_timing_path_group2
     repair_timing_path_group3
@@ -265,6 +267,7 @@ or_integration_tests(
     report_buffers_gf180
     report_buffers_no_lef
     report_delay_estimator_sizing_accuracy
+    report_delay_estimator_rebuffer_driver_pin
     report_delay_estimator_rebuffer_fanout8
     report_delay_estimator_rebuffer_minimal
     report_delay_estimator_rebuffer_prebuffered
@@ -281,6 +284,8 @@ or_integration_tests(
     repair_setup_parallel_eval_threads
     repair_setup_parallel_eval_max_util
     repair_setup_parallel_eval_path_group
+    repair_setup_parallel_eval_reference_period
+    repair_setup_parallel_eval_reference_period_modes
     repair_setup_vt_swap2
     repair_fanout7_skip_pin_swap
     global_sizing

@@ -18,7 +18,8 @@ TEST_F(TestResizerMt, CollectorEndpointScanMatchesStaSlack)
   size_t violating = 0;
   for (sta::Vertex* endpoint : sta_->endpoints()) {
     const sta::Slack expected = sta_->slack(endpoint, max);
-    EXPECT_FLOAT_EQ(collector.endpointPathSlack(endpoint), expected);
+    EXPECT_FLOAT_EQ(ResizerTestPeer::endpointPathSlack(collector, endpoint),
+                    expected);
     if (sta::fuzzyLess(expected, 1.0f)) {
       ++violating;
     }
@@ -38,7 +39,7 @@ TEST_F(TestResizerMt, CollectorParallelScanMatchesSerialScan)
   resizer_.runRepairSetupPreamble();
   RepairTargetCollector serial(&resizer_);
   serial.init(1.0f);
-  ASSERT_EQ(serial.scan_thread_pool_, nullptr);
+  ASSERT_EQ(ResizerTestPeer::scanThreadPool(serial), nullptr);
 
   // Force the worker path on the small test design.
   utl::ThreadPool scan_pool(3);
@@ -46,7 +47,7 @@ TEST_F(TestResizerMt, CollectorParallelScanMatchesSerialScan)
   parallel.setScanThreadPool(&scan_pool, 0);
   parallel.init(1.0f);
 
-  ASSERT_NE(parallel.scan_thread_pool_, nullptr);
+  ASSERT_NE(ResizerTestPeer::scanThreadPool(parallel), nullptr);
   ASSERT_EQ(parallel.getViolatingEndpoints().size(),
             serial.getViolatingEndpoints().size());
   for (size_t index = 0; index < serial.getViolatingEndpoints().size();

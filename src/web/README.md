@@ -14,15 +14,18 @@ designs without a native GUI.
 
 ### Web Server
 
-Start the web viewer server. This opens a WebSocket server and launches the
-viewer in the default browser. The command blocks until the server stops, so
-the design can be explored interactively; Tcl commands typed in the browser
-console run on the server.
+Start the web viewer server. This opens a WebSocket server, reports the viewer
+url and, when the browser would open on this machine, launches the viewer in
+the default browser (see *Running on a remote machine*). The command blocks
+until the server stops, so the design can be explored interactively; Tcl
+commands typed in the browser console run on the server.
 
 ```tcl
 web_server
     [-port port]
     [-bind address]
+    [-browser]
+    [-no_browser]
     [-stop]
 ```
 
@@ -32,6 +35,8 @@ web_server
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
 | `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
+| `-no_browser` | Do not launch a browser; just report the viewer url. |
+| `-browser` | Launch a browser even where it is skipped by default (see below). |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
 
@@ -42,22 +47,85 @@ bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
 network you trust; the server has no authentication.
 ```
 
-Because the default is loopback, a viewer started inside a container or on a
-remote host is not reachable from outside it — the connection is refused with no
-message from the server. Bind explicitly in that case, and publish the port:
+#### Running on a remote machine
+
+By default no browser is launched from an ssh session, from a batch job, or
+where there is no display: the browser the user is looking at runs on another
+machine, and a second one started here cannot open the profile that one
+already holds. Open the reported url there instead; `WEB-0001` always says how
+to reach it:
+
+```shell
+$ ssh farm-42 "openroad -web design.tcl"
+[INFO WEB-0001] Server started on http://localhost:39217
+To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+[INFO WEB-0120] Not launching a browser here (this is an ssh session); open the url above.
+Pass -browser (-web_browser) to launch one anyway.
+```
+
+Run that `ssh -L` line locally, then open the url in the browser already
+running there. Setting `OPENROAD_NO_BROWSER` (`1`, `true`, `on`, `yes`)
+suppresses the launch everywhere; `-browser` (or `-web_browser`) forces it
+back on.
+
+This includes `ssh -X`: a forwarded display is not enough, because the browser
+started on the remote host still wants the profile in `$HOME` that the browser
+on the workstation already holds — with a shared home it refuses to start at
+all. Pass `-browser` to try anyway. The forwarded display is recognised even
+where the ssh variables did not follow, as inside `docker_shell` or under
+`sudo`: sshd numbers it from `localhost:10`.
+
+Two kinds of ssh session do launch, because the browser they reach is the
+user's own:
+
+- a VS Code terminal (`VSCODE_IPC_HOOK_CLI` set and `$BROWSER` pointing at
+  VS Code's `helpers/browser.sh`): the url goes to that helper, which opens it
+  where the editor runs and forwards the port. A `$BROWSER` set by a shell
+  profile does not count;
+- a desktop of your own on this host, such as VNC or x2go started over ssh: a
+  bare `:N` display whose X socket belongs to you. Someone else's display never
+  counts.
+
+A batch job is skipped before either: `LSB_JOBID`, `SLURM_JOB_ID`, `JOB_ID` or
+`PBS_JOBID` means a scheduler picked the host this runs on, and schedulers copy
+the submitting shell's environment — `$DISPLAY` and the VS Code variables
+included. So is any session whose `$DISPLAY` names another machine, which is
+the same situation reached without a scheduler. The Windows side of a WSL
+session, which launches with or without an X server, is the user's own, not
+another machine. `WEB-0120` says which of these decided.
+
+Inside a `tmux` or `screen` session that outlived the connection that started
+it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
+connection. With no display, or a forwarded one, the launch is still skipped;
+with a stale local one it is attempted and usually fails: `WEB-0003` reports that, and the url and the
+tunnel are in `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
+the shell profile used on those hosts, or pass `-no_browser`.
+
+With `-bind` on a routable address the viewer is reachable without a tunnel,
+and `WEB-0001` says so instead of printing an `ssh -L` line that would point
+at a loopback port nobody is listening on.
+
+Binding past loopback is the other way to be reachable, and the one to avoid
+unless the network is trusted — the server has no authentication. With
+`--network host`, as ORFS's `docker_shell` runs, a container needs none of
+this: the default bind is reachable from the host. On its own network
+(Docker's default bridge) the loopback bind cannot be reached from the host —
+the connection is refused with no message from the server — and an ssh tunnel
+does not reach inside. Bind past loopback and publish the port:
 
 ```tcl
 web_server -port 8080 -bind 0.0.0.0
 ```
 
 ```shell
-docker run -p 8080:8080 ...        # then browse to http://localhost:8080
+docker run -p 8080:8080 ...        # then browse to the url openroad printed
 ```
 
-The same applies to the command-line entry point, which takes `-web_bind`:
+The command-line entry point takes the same options as `-web_*`:
 
 ```shell
 openroad -web -web_port 8080 -web_bind 0.0.0.0
+openroad -web -web_no_browser
 ```
 
 ### Save Image

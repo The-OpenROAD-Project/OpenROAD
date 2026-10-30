@@ -1,4 +1,7 @@
-# Critical-path slice extracted from nangate45.  Drives LEGACY repair_setup.
+# LEGACY repair_setup on a critical-path slice of Nangate45 aes_cipher_top with
+# 28 violating endpoints. The golden log covers buffer removal, sizing up, pin
+# swaps, buffering and cloning, and its worst path runs from an input port to a
+# flip-flop.
 
 source "helpers.tcl"
 

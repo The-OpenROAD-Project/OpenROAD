@@ -3,7 +3,7 @@
 ################################################################################
 
 # https://github.com/moby/moby/issues/38379#issuecomment-448445652
-ARG fromImage=ubuntu:24.04
+ARG fromImage=ubuntu:26.04
 ARG devImage=dev
 
 FROM $fromImage AS dev

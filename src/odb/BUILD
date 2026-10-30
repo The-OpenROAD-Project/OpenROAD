@@ -104,6 +104,7 @@ messages_txt(
         "//src/odb/src/lefin:message_srcs",
         "//src/odb/src/lefout:message_srcs",
         "//src/odb/src/swig:message_srcs",
+        "//src/odb/src/wireNormalizer:message_srcs",
     ],
     src_patterns = [
         "include/odb/*.h",

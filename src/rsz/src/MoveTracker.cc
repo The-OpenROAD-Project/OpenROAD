@@ -2400,7 +2400,7 @@ void MoveTracker::printCriticalEndpointPathHistogram(const string& title)
       global_max_slack_ns = std::max(slack_ns, global_max_slack_ns);
     }
 
-    all_endpoint_path_slacks[ep_idx] = path_slacks_ns;
+    all_endpoint_path_slacks[ep_idx] = std::move(path_slacks_ns);
   }
 
   // Cap max at 0 for better binning (since we're focused on negative slack)
