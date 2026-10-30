@@ -547,6 +547,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -605,6 +607,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -1447,6 +1451,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
                                               logger_,
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa->enableEnhancements();
       sa->setFences(fences);
       sa->setGuides(guides);
@@ -2003,6 +2009,8 @@ void HierRTLMP::placeMacros(Cluster* cluster)
                                               logger_,
                                               block_);
       sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa->setNets(nets);
       sa->setFences(fences);
       sa->setGuides(guides);

@@ -128,6 +128,21 @@ void SimulatedAnnealingCore<T>::saveSequencePairState()
   }
   std::copy(pos_seq_.begin(), pos_seq_.end(), pre_pos_seq_.begin());
   std::copy(neg_seq_.begin(), neg_seq_.end(), pre_neg_seq_.begin());
+
+  if (anneal_end_acceptance_ > 0.0f && core_weights_.wirelength > 0.0f
+      && !nets_.empty()) {
+    if (pre_pin_x_.size() < macros_.size()) {
+      pre_pin_x_.resize(macros_.size(), 0);
+      pre_pin_y_.resize(macros_.size(), 0);
+    }
+    for (const int macro_id : pos_seq_) {
+      pre_pin_x_[macro_id] = macros_[macro_id].getPinX();
+      pre_pin_y_[macro_id] = macros_[macro_id].getPinY();
+    }
+    has_pre_pin_snapshot_ = true;
+    can_undo_net_wl_ = false;
+    undo_net_wl_.clear();
+  }
 }
 
 template <class T>
@@ -141,6 +156,20 @@ void SimulatedAnnealingCore<T>::restoreSequencePairState()
     std::copy(pre_pos_seq_.begin(), pre_pos_seq_.end(), pos_seq_.begin());
     std::copy(pre_neg_seq_.begin(), pre_neg_seq_.end(), neg_seq_.begin());
   }
+
+  if (anneal_end_acceptance_ > 0.0f && wirelength_cache_valid_) {
+    if (can_undo_net_wl_) {
+      for (const auto& [net_idx, old_wl] : undo_net_wl_) {
+        net_wl_[net_idx] = old_wl;
+      }
+      raw_wirelength_sum_ = pre_raw_wirelength_sum_;
+      undo_net_wl_.clear();
+      can_undo_net_wl_ = false;
+    } else {
+      wirelength_cache_valid_ = false;
+    }
+  }
+  has_pre_pin_snapshot_ = false;
 }
 
 template <class T>
@@ -179,6 +208,32 @@ void SimulatedAnnealingCore<T>::setNets(const BundledNetList& nets)
   for (const auto& net : nets_) {
     nets_weight_sum_ += net.weight;
   }
+  buildMacroNetIndex();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::buildMacroNetIndex()
+{
+  macro_to_nets_.assign(macros_.size(), {});
+  for (int net_idx = 0; net_idx < static_cast<int>(nets_.size()); ++net_idx) {
+    const int src = nets_[net_idx].terminals.first;
+    const int dst = nets_[net_idx].terminals.second;
+    if (src >= 0 && static_cast<size_t>(src) < macro_to_nets_.size()) {
+      macro_to_nets_[src].push_back(net_idx);
+    }
+    if (dst != src && dst >= 0
+        && static_cast<size_t>(dst) < macro_to_nets_.size()) {
+      macro_to_nets_[dst].push_back(net_idx);
+    }
+  }
+  net_wl_.assign(nets_.size(), 0.0f);
+  net_touched_flags_.assign(nets_.size(), 0);
+  raw_wirelength_sum_ = 0.0;
+  pre_raw_wirelength_sum_ = 0.0;
+  wirelength_cache_valid_ = false;
+  has_pre_pin_snapshot_ = false;
+  can_undo_net_wl_ = false;
+  undo_net_wl_.clear();
 }
 
 template <class T>
@@ -333,7 +388,19 @@ void SimulatedAnnealingCore<T>::calWirelength()
     return;
   }
 
-  wirelength_ = computeNetsWireLength(nets_);
+  if (anneal_end_acceptance_ > 0.0f) {
+    if (wirelength_cache_valid_ && has_pre_pin_snapshot_) {
+      has_pre_pin_snapshot_ = false;
+      wirelength_ = computeIncrementalNetsWireLength();
+    } else {
+      has_pre_pin_snapshot_ = false;
+      can_undo_net_wl_ = false;
+      undo_net_wl_.clear();
+      wirelength_ = computeFullNetsWireLength();
+    }
+  } else {
+    wirelength_ = computeNetsWireLength(nets_);
+  }
 
   if (graphics_) {
     graphics_->setWirelengthPenalty({.name = "Wire Length",
@@ -344,6 +411,105 @@ void SimulatedAnnealingCore<T>::calWirelength()
 }
 
 template <class T>
+float SimulatedAnnealingCore<T>::computeSingleNetWL(const BundledNet& net) const
+{
+  const T& source = macros_[net.terminals.first];
+  const T& target = macros_[net.terminals.second];
+
+  if (target.isClusterOfUnplacedIOPins()) {
+    return static_cast<float>(
+        computeWLForClusterOfUnplacedIOPins(source, target, net.weight));
+  }
+  const int x1 = source.getPinX();
+  const int y1 = source.getPinY();
+  const int x2 = target.getPinX();
+  const int y2 = target.getPinY();
+
+  return net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
+}
+
+template <class T>
+float SimulatedAnnealingCore<T>::computeFullNetsWireLength()
+{
+  raw_wirelength_sum_ = 0.0;
+  if (nets_weight_sum_ != 0.0f) {
+    if (net_wl_.size() != nets_.size()) {
+      net_wl_.resize(nets_.size(), 0.0f);
+    }
+    for (size_t i = 0; i < nets_.size(); ++i) {
+      const float wl = computeSingleNetWL(nets_[i]);
+      net_wl_[i] = wl;
+      raw_wirelength_sum_ += static_cast<double>(wl);
+    }
+  }
+  wirelength_cache_valid_ = true;
+  if (nets_weight_sum_ == 0.0f) {
+    return 0.0f;
+  }
+  return static_cast<float>(raw_wirelength_sum_) / nets_weight_sum_
+         / (outline_.dx() + outline_.dy());
+}
+
+template <class T>
+float SimulatedAnnealingCore<T>::computeIncrementalNetsWireLength()
+{
+  if (nets_weight_sum_ == 0.0f || nets_.empty()) {
+    pre_raw_wirelength_sum_ = raw_wirelength_sum_;
+    can_undo_net_wl_ = true;
+    undo_net_wl_.clear();
+    return 0.0f;
+  }
+
+  moved_macros_.clear();
+  for (const int macro_id : pos_seq_) {
+    if (macros_[macro_id].getPinX() != pre_pin_x_[macro_id]
+        || macros_[macro_id].getPinY() != pre_pin_y_[macro_id]) {
+      moved_macros_.push_back(macro_id);
+    }
+  }
+
+  if (moved_macros_.empty()) {
+    pre_raw_wirelength_sum_ = raw_wirelength_sum_;
+    can_undo_net_wl_ = true;
+    undo_net_wl_.clear();
+    return wirelength_;
+  }
+
+  if (moved_macros_.size() > pos_seq_.size() / 2) {
+    can_undo_net_wl_ = false;
+    undo_net_wl_.clear();
+    return computeFullNetsWireLength();
+  }
+
+  touched_nets_.clear();
+  for (const int macro_id : moved_macros_) {
+    for (const int net_idx : macro_to_nets_[macro_id]) {
+      if (!net_touched_flags_[net_idx]) {
+        net_touched_flags_[net_idx] = 1;
+        touched_nets_.push_back(net_idx);
+      }
+    }
+  }
+
+  pre_raw_wirelength_sum_ = raw_wirelength_sum_;
+  undo_net_wl_.clear();
+  undo_net_wl_.reserve(touched_nets_.size());
+  for (const int net_idx : touched_nets_) {
+    net_touched_flags_[net_idx] = 0;
+    const float old_wl = net_wl_[net_idx];
+    const float new_wl = computeSingleNetWL(nets_[net_idx]);
+    undo_net_wl_.emplace_back(net_idx, old_wl);
+    net_wl_[net_idx] = new_wl;
+    raw_wirelength_sum_
+        += static_cast<double>(new_wl) - static_cast<double>(old_wl);
+  }
+  can_undo_net_wl_ = true;
+
+  return static_cast<float>(raw_wirelength_sum_) / nets_weight_sum_
+         / (outline_.dx() + outline_.dy());
+}
+
+template <class T>
 float SimulatedAnnealingCore<T>::computeNetsWireLength(
     const BundledNetList& nets) const
 {
@@ -351,21 +517,7 @@ float SimulatedAnnealingCore<T>::computeNetsWireLength(
 
   if (nets_weight_sum_ != 0.0) {
     for (const auto& net : nets) {
-      const T& source = macros_[net.terminals.first];
-      const T& target = macros_[net.terminals.second];
-
-      if (target.isClusterOfUnplacedIOPins()) {
-        nets_wire_length
-            += computeWLForClusterOfUnplacedIOPins(source, target, net.weight);
-      } else {
-        const int x1 = source.getPinX();
-        const int y1 = source.getPinY();
-        const int x2 = target.getPinX();
-        const int y2 = target.getPinY();
-
-        nets_wire_length
-            += net.weight * (std::abs(x2 - x1) + std::abs(y2 - y1));
-      }
+      nets_wire_length += computeSingleNetWL(net);
     }
 
     nets_wire_length
@@ -768,32 +920,44 @@ void SimulatedAnnealingCore<T>::reportLocations() const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::fastSA()
+bool SimulatedAnnealingCore<T>::shouldReplaceBestResult(
+    const float cost,
+    const bool is_valid) const
 {
-  float cost = calNormCost();
-  float pre_cost = cost;
-  int step = 1;
-  float temperature = init_temperature_;
-  const float min_t = 1e-10;
-  const float t_factor
-      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  if (useRelativeScheduleOrPatience()) {
+    return (is_best_result_valid_ == is_valid && cost < best_result_.cost)
+           || (!is_best_result_valid_ && is_valid);
+  }
+  return (!is_best_result_valid_ || is_valid) && cost < best_result_.cost;
+}
 
-  updateBestResult(cost);
+template <class T>
+void SimulatedAnnealingCore<T>::updateMinTemperature()
+{
+  min_temperature_
+      = (anneal_end_acceptance_ > 0.0f)
+            ? init_temperature_
+                  * (std::log(0.9f) / std::log(anneal_end_acceptance_))
+            : 1e-10f;
+}
 
-  while (step <= max_num_step_) {
-    for (int i = 0; i < num_perturb_per_step_; i++) {
-      saveState();
-      perturb();
-      cost = calNormCost();
+template <class T>
+void SimulatedAnnealingCore<T>::fastSAStep(const float temperature,
+                                           float& pre_cost,
+                                           const int step,
+                                           int& best_step)
+{
+  for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
+    perturb();
+    const float cost = calNormCost();
 
-      const bool is_valid = isValid();
-      if (!invalid_states_allowed_ && !is_valid) {
-        restoreState();
-        continue;
-      }
-
-      const bool found_new_best_result = cost < best_result_.cost;
-      if ((!is_best_result_valid_ || is_valid) && found_new_best_result) {
+    const bool is_valid = isValid();
+    if (!invalid_states_allowed_ && !is_valid) {
+      restoreState();
+    } else {
+      const bool should_update_best = shouldReplaceBestResult(cost, is_valid);
+      if (should_update_best) {
         updateBestResult(cost);
         is_best_result_valid_ = is_valid;
       }
@@ -802,6 +966,9 @@ void SimulatedAnnealingCore<T>::fastSA()
       if (delta_cost <= 0) {
         // always accept improvements
         pre_cost = cost;
+        if (should_update_best) {
+          best_step = step;
+        }
       } else {
         // probabilistically accept degradations for hill climbing
         const float num = distribution_(generator_);
@@ -813,12 +980,43 @@ void SimulatedAnnealingCore<T>::fastSA()
         }
       }
     }
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::fastSA()
+{
+  float cost = calNormCost();
+  float pre_cost = cost;
+  int step = 1;
+  float temperature = init_temperature_;
+  updateMinTemperature();
+  const float min_t = min_temperature_;
+  const float t_factor
+      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  const float t_freeze = init_temperature_ * (std::log(0.9f) / std::log(0.01f));
+  const int patience_limit
+      = static_cast<int>(std::ceil(anneal_patience_ * max_num_step_));
+  int best_step = 0;
+
+  if (useRelativeScheduleOrPatience()) {
+    is_best_result_valid_ = isValid();
+  }
+  updateBestResult(cost);
+
+  while (step <= max_num_step_) {
+    fastSAStep(temperature, pre_cost, step, best_step);
 
     temperature *= t_factor;
     step++;
 
     cost_list_.push_back(pre_cost);
     T_list_.push_back(temperature);
+
+    if (anneal_patience_ > 0.0f && temperature < t_freeze
+        && (step - best_step > patience_limit)) {
+      break;
+    }
   }
 
   packFloorplan();
@@ -828,8 +1026,7 @@ void SimulatedAnnealingCore<T>::fastSA()
   calPenalty();
   cost = calNormCost();
 
-  const bool found_new_best_result = cost < best_result_.cost;
-  if ((is_best_result_valid_ && !isValid()) || !found_new_best_result) {
+  if (!shouldReplaceBestResult(cost, isValid())) {
     useBestResult();
   }
 }
@@ -847,9 +1044,18 @@ void SimulatedAnnealingCore<T>::updateBestResult(const float cost)
   best_result_.sequence_pair.neg_sequence = neg_seq_;
 
   if constexpr (std::is_same_v<T, SoftMacro>) {
+    const bool relative_or_patience = useRelativeScheduleOrPatience();
+    if (relative_or_patience) {
+      best_result_.widths.resize(macros_.size(), 0);
+      best_result_.heights.resize(macros_.size(), 0);
+    }
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
       best_result_.macro_id_to_width[macro_id] = macro.getWidth();
+      if (relative_or_patience) {
+        best_result_.widths[macro_id] = macro.getWidth();
+        best_result_.heights[macro_id] = macro.getHeight();
+      }
     }
   }
 
@@ -863,16 +1069,23 @@ void SimulatedAnnealingCore<T>::useBestResult()
   neg_seq_ = best_result_.sequence_pair.neg_sequence;
 
   if constexpr (std::is_same_v<T, SoftMacro>) {
+    const bool relative_or_patience = useRelativeScheduleOrPatience();
     for (const int macro_id : pos_seq_) {
       SoftMacro& macro = macros_[macro_id];
-      const int valid_result_width
-          = best_result_.macro_id_to_width.at(macro_id);
-
-      if (macro.isMacroCluster()) {
-        const int valid_result_height = macro.getArea() / valid_result_width;
-        macro.setShapeF(valid_result_width, valid_result_height);
+      if (relative_or_patience
+          && static_cast<size_t>(macro_id) < best_result_.widths.size()) {
+        macro.setShapeF(best_result_.widths[macro_id],
+                        best_result_.heights[macro_id]);
       } else {
-        macro.setWidth(valid_result_width);
+        const int valid_result_width
+            = best_result_.macro_id_to_width.at(macro_id);
+
+        if (macro.isMacroCluster()) {
+          const int valid_result_height = macro.getArea() / valid_result_width;
+          macro.setShapeF(valid_result_width, valid_result_height);
+        } else {
+          macro.setWidth(valid_result_width);
+        }
       }
     }
   }

@@ -28,6 +28,8 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_util   target_util \
                                           -min_ar  min_ar \
                                           -random_seed random_seed \
+                                          -anneal_end_acceptance anneal_end_acceptance \
+                                          -anneal_patience anneal_patience \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
@@ -46,6 +48,8 @@ proc rtl_macro_placer { args } {
          -soft_blockage_weight -target_util \
          -min_ar \
          -random_seed \
+         -anneal_end_acceptance \
+         -anneal_patience \
          -report_directory \
          -write_macro_placement } \
     flags {-keep_clustering_data -pin_aware_channels}
@@ -216,6 +220,14 @@ proc rtl_macro_placer { args } {
     set random_seed $keys(-random_seed)
   }
   mpl::set_random_seed $random_seed
+  if { [info exists keys(-anneal_end_acceptance)] } {
+    sta::check_float_arg "-anneal_end_acceptance" $keys(-anneal_end_acceptance)
+    mpl::set_anneal_end_acceptance $keys(-anneal_end_acceptance)
+  }
+  if { [info exists keys(-anneal_patience)] } {
+    sta::check_float_arg "-anneal_patience" $keys(-anneal_patience)
+    mpl::set_anneal_patience $keys(-anneal_patience)
+  }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)
   }

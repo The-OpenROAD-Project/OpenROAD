@@ -33,6 +33,25 @@ rtl_macro_placer -report_directory [make_result_dir]
 check "-random_seed resets to default when omitted on subsequent call" \
   { $macro getOrigin } $default_seed_origin
 
+$macro setPlacementStatus PLACED
+rtl_macro_placer -anneal_end_acceptance 0.0001 -anneal_patience 0.2 \
+  -report_directory [make_result_dir]
+check "placed with explicit -anneal_end_acceptance and -anneal_patience" \
+  { $macro getPlacementStatus } LOCKED
+
+$macro setPlacementStatus PLACED
+rtl_macro_placer -report_directory [make_result_dir]
+check "-anneal_end_acceptance and -anneal_patience reset when omitted on subsequent call" \
+  { $macro getOrigin } $default_seed_origin
+
+check_error "MPL-0081 thrown when -anneal_end_acceptance is out of (0.0, 0.9)" {
+  rtl_macro_placer -anneal_end_acceptance 0.95 -report_directory [make_result_dir]
+} "MPL-0081"
+
+check_error "MPL-0082 thrown when -anneal_patience is out of \[0.0, 1.0\]" {
+  rtl_macro_placer -anneal_patience 1.2 -report_directory [make_result_dir]
+} "MPL-0082"
+
 # Verify MPL-0003 reports child macro minimum area as a percentage of outline
 # area when coarse shaping finds no valid tilings.
 set macro1 [[ord::get_db_block] findInst MACRO_1]

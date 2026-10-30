@@ -92,6 +92,7 @@ void SACoreSoftMacro::run()
     graphics_->startSA("soft", max_num_step_, num_perturb_per_step_);
   }
 
+  updateMinTemperature();
   fastSA();
 
   if (enhancements_on_) {

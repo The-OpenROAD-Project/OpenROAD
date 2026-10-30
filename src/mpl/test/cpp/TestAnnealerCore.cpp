@@ -587,6 +587,19 @@ TEST_F(TestAnnealerCore, RandomSeedChangesPlacementAndResetsAcrossCalls)
   const std::vector<odb::Point> locs_default_after_reset = captureLocations();
   EXPECT_EQ(locs_default_1, locs_default_after_reset);
 
+  // Run 5: set explicit anneal_end_acceptance and anneal_patience, run place(),
+  // then omit both on Run 6 and verify they reset to defaults (matching Run 1).
+  unfixAll();
+  placer.setAnnealEndAcceptance(0.0001f);
+  placer.setAnnealPatience(0.2f);
+  runPlace();
+
+  unfixAll();
+  runPlace();
+  const std::vector<odb::Point> locs_after_anneal_opts_reset
+      = captureLocations();
+  EXPECT_EQ(locs_default_1, locs_after_anneal_opts_reset);
+
   // Also verify that changing random_seed changes the annealing trajectory on
   // a multi-macro SACoreHardMacro instance.
   auto c1 = std::make_unique<Cluster>(1, "c1", &logger_);
@@ -696,6 +709,26 @@ TEST_F(TestAnnealerCore, Mpl0003ReportsMacroAreaPercentageOfOutline)
   const std::string output = testing::internal::GetCapturedStdout();
   EXPECT_NE(output.find("[ERROR MPL-0003]"), std::string::npos);
   EXPECT_NE(output.find("72.0%"), std::string::npos) << "Actual: " << output;
+}
+
+// Verifies MacroPlacer::setAnnealEndAcceptance and setAnnealPatience validate
+// bounds with MPL-0081 and MPL-0082.
+TEST_F(TestAnnealerCore, AnnealEndAcceptanceAndPatienceValidation)
+{
+  MacroPlacer placer(db_.get(), nullptr, &logger_, nullptr);
+
+  EXPECT_NO_THROW(placer.setAnnealEndAcceptance(0.0001f));
+  EXPECT_NO_THROW(placer.setAnnealEndAcceptance(0.5f));
+  EXPECT_LOGGER_ERROR(placer.setAnnealEndAcceptance(0.0f), "MPL-0081");
+  EXPECT_LOGGER_ERROR(placer.setAnnealEndAcceptance(-0.1f), "MPL-0081");
+  EXPECT_LOGGER_ERROR(placer.setAnnealEndAcceptance(0.9f), "MPL-0081");
+  EXPECT_LOGGER_ERROR(placer.setAnnealEndAcceptance(1.0f), "MPL-0081");
+
+  EXPECT_NO_THROW(placer.setAnnealPatience(0.0f));
+  EXPECT_NO_THROW(placer.setAnnealPatience(0.2f));
+  EXPECT_NO_THROW(placer.setAnnealPatience(1.0f));
+  EXPECT_LOGGER_ERROR(placer.setAnnealPatience(-0.01f), "MPL-0082");
+  EXPECT_LOGGER_ERROR(placer.setAnnealPatience(1.01f), "MPL-0082");
 }
 
 }  // namespace

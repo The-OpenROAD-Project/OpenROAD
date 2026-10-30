@@ -84,6 +84,10 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
   hier_rtlmp_->setRandomSeed(random_seed_);
   random_seed_ = 0;
+  hier_rtlmp_->setAnnealEndAcceptance(anneal_end_acceptance_);
+  anneal_end_acceptance_ = 0.0f;
+  hier_rtlmp_->setAnnealPatience(anneal_patience_);
+  anneal_patience_ = 0.0f;
 
   hier_rtlmp_->run();
   logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
@@ -232,6 +236,26 @@ void MacroPlacer::setRandomSeed(const int seed)
 {
   random_seed_ = seed;
   hier_rtlmp_->setRandomSeed(seed);
+}
+
+void MacroPlacer::setAnnealEndAcceptance(const float end_acceptance)
+{
+  if (end_acceptance <= 0.0f || end_acceptance >= 0.9f) {
+    logger_->error(
+        MPL, 81, "-anneal_end_acceptance must be in the range (0.0, 0.9).");
+  }
+  anneal_end_acceptance_ = end_acceptance;
+  hier_rtlmp_->setAnnealEndAcceptance(end_acceptance);
+}
+
+void MacroPlacer::setAnnealPatience(const float patience)
+{
+  if (patience < 0.0f || patience > 1.0f) {
+    logger_->error(
+        MPL, 82, "-anneal_patience must be in the range [0.0, 1.0].");
+  }
+  anneal_patience_ = patience;
+  hier_rtlmp_->setAnnealPatience(patience);
 }
 
 void MacroPlacer::blockMacroChannels()

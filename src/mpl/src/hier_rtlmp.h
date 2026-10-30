@@ -116,6 +116,11 @@ class HierRTLMP
 
   void setNumThreads(int threads) { num_threads_ = threads; }
   void setRandomSeed(int seed) { random_seed_ = seed; }
+  void setAnnealEndAcceptance(float end_acceptance)
+  {
+    anneal_end_acceptance_ = end_acceptance;
+  }
+  void setAnnealPatience(float patience) { anneal_patience_ = patience; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
 
@@ -318,6 +323,8 @@ class HierRTLMP
   float init_prob_ = 0.9;
   const int max_num_step_ = 2000;
   const int num_perturb_per_step_ = 500;
+  float anneal_end_acceptance_ = 0.0f;
+  float anneal_patience_ = 0.0f;
 
   // probability of each action
   float pos_swap_prob_ = 0.2;

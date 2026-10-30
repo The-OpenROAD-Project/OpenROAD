@@ -80,6 +80,8 @@ class MacroPlacer
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
   void setRandomSeed(int seed);
+  void setAnnealEndAcceptance(float end_acceptance);
+  void setAnnealPatience(float patience);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -93,6 +95,8 @@ class MacroPlacer
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   int random_seed_ = 0;
+  float anneal_end_acceptance_ = 0.0f;
+  float anneal_patience_ = 0.0f;
 
   odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };

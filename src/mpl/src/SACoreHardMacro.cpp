@@ -62,6 +62,7 @@ void SACoreHardMacro::run()
     graphics_->startSA("hard", max_num_step_, num_perturb_per_step_);
   }
 
+  updateMinTemperature();
   fastSA();
 
   if (graphics_) {

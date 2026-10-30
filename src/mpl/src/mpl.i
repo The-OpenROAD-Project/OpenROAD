@@ -154,6 +154,18 @@ set_random_seed(int seed)
 }
 
 void
+set_anneal_end_acceptance(float end_acceptance)
+{
+  getMacroPlacer()->setAnnealEndAcceptance(end_acceptance);
+}
+
+void
+set_anneal_patience(float patience)
+{
+  getMacroPlacer()->setAnnealPatience(patience);
+}
+
+void
 block_macro_channels()
 {
   getMacroPlacer()->blockMacroChannels();
