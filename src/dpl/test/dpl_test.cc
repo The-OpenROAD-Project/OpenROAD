@@ -339,8 +339,7 @@ TEST_F(CheckPlacementTest, HybridRowWithBlockMacro)
                                odb::dbPlacementStatus::PLACED);
   dp_.detailedPlacement(0, 0);
   EXPECT_EQ(runCheck(), "");
-  EXPECT_FALSE(
-      cell->getBBox()->getBox().overlaps(macro->getBBox()->getBox()));
+  EXPECT_FALSE(cell->getBBox()->getBox().overlaps(macro->getBBox()->getBox()));
 }
 
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
