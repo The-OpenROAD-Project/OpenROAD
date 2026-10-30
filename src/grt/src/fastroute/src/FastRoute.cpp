@@ -373,7 +373,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
   pop_heap2_3D_.assign(total_size, 0);
-  heap_pos_3D_.resize(total_size, -1);
 
   // allocate memory for priority queue
   src_heap_3D_.resize(total_size);
@@ -2748,8 +2747,8 @@ NetRouteMap FastRouteCore::run()
     if (past_cong == 0) {
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
-        short_edge_len = BIG_INT;
         long_edge_len = BIG_INT;
+        short_edge_len = BIG_INT;
       }
 
       mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);

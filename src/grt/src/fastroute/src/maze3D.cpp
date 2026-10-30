@@ -17,78 +17,6 @@ namespace grt {
 
 using utl::GRT;
 
-static int parent_index(int i)
-{
-  return (i - 1) / 2;
-}
-
-static int left_index(int i)
-{
-  return 2 * i + 1;
-}
-
-static int right_index(int i)
-{
-  return 2 * i + 2;
-}
-
-// non recursive version of heapify-
-static void heapify3D(std::vector<HeapEntry3D>& array, int* heap_pos)
-{
-  bool stop = false;
-  const int heapSize = array.size();
-  int i = 0;
-
-  const HeapEntry3D tmp = array[i];
-  do {
-    const int l = left_index(i);
-    const int r = right_index(i);
-
-    int smallest;
-    if (l < heapSize && array[l].dist < tmp.dist) {
-      smallest = l;
-      if (r < heapSize && array[r].dist < array[l].dist) {
-        smallest = r;
-      }
-    } else {
-      smallest = i;
-      if (r < heapSize && array[r].dist < tmp.dist) {
-        smallest = r;
-      }
-    }
-    if (smallest != i) {
-      array[i] = array[smallest];
-      heap_pos[array[i].idx] = i;
-      i = smallest;
-    } else {
-      array[i] = tmp;
-      heap_pos[tmp.idx] = i;
-      stop = true;
-    }
-  } while (!stop);
-}
-
-static void updateHeap3D(std::vector<HeapEntry3D>& array, int* heap_pos, int i)
-{
-  const HeapEntry3D tmpi = array[i];
-  while (i > 0 && array[parent_index(i)].dist > tmpi.dist) {
-    const int parent = parent_index(i);
-    array[i] = array[parent];
-    heap_pos[array[i].idx] = i;
-    i = parent;
-  }
-  array[i] = tmpi;
-  heap_pos[tmpi.idx] = i;
-}
-
-// extract the entry with minimum distance from Priority queue
-static void removeMin3D(std::vector<HeapEntry3D>& array, int* heap_pos)
-{
-  array[0] = array.back();
-  heapify3D(array, heap_pos);
-  array.pop_back();
-}
-
 void FastRouteCore::addNeighborPoints(const int netID,
                                       const int n1,
                                       const int n2,
@@ -106,7 +34,6 @@ void FastRouteCore::addNeighborPoints(const int netID,
   int* path_len_base = path_len_3D_.data();
   Direction* directions_base = directions_3D_.data();
   int* corr_edge_base = corr_edge_3D_.data();
-  int* heap_pos_base = heap_pos_3D_.data();
 
   const int numNodes = sttrees_[netID].num_nodes();
   // Reuse member scratch buffers instead of allocating per call (mirrors the
@@ -130,8 +57,7 @@ void FastRouteCore::addNeighborPoints(const int netID,
       d1_base[idx] = 0;
       path_len_base[idx] = 0;
       directions_base[idx] = Direction::Origin;
-      heap_pos_base[idx] = src_heap_3D_.size();
-      src_heap_3D_.push_back({0, idx});
+      src_heap_3D_.pushSeed(idx);
     } else {
       dest_heap_3D_.push_back(idx);
     }
@@ -173,8 +99,7 @@ void FastRouteCore::addNeighborPoints(const int netID,
               d1_base[idx] = 0;
               path_len_base[idx] = 0;
               directions_base[idx] = Direction::Origin;
-              heap_pos_base[idx] = src_heap_3D_.size();
-              src_heap_3D_.push_back({0, idx});
+              src_heap_3D_.pushSeed(idx);
             } else {
               dest_heap_3D_.push_back(idx);
             }
@@ -195,8 +120,7 @@ void FastRouteCore::addNeighborPoints(const int netID,
               if (is_src) {
                 d1_base[idx] = 0;
                 path_len_base[idx] = 0;
-                heap_pos_base[idx] = src_heap_3D_.size();
-                src_heap_3D_.push_back({0, idx});
+                src_heap_3D_.pushSeed(idx);
                 directions_base[idx] = Direction::Origin;
               } else {
                 dest_heap_3D_.push_back(idx);
@@ -254,8 +178,7 @@ void FastRouteCore::setupHeap3D(int netID,
     d1_3D_.data()[idx1] = 0;
     path_len_3D_.data()[idx1] = 0;
     directions_3D_.data()[idx1] = Direction::Origin;
-    heap_pos_3D_.data()[idx1] = 0;
-    src_heap_3D_.push_back({0, idx1});
+    src_heap_3D_.pushSeed(idx1);
     dest_heap_3D_.push_back(idx2);
   } else {  // net with more than 2 pins
     for (int i = regionY1; i <= regionY2; i++) {
@@ -757,7 +680,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   const Edge3D* h_edges_base = h_edges_3D_.data();
   const Edge3D* v_edges_base = v_edges_3D_.data();
   uint8_t* pop_heap2_base = pop_heap2_3D_.data();
-  int* heap_pos_base = heap_pos_3D_.data();
   const int x_grid = x_grid_;
   const int layer_stride = grid_hv_;
 
@@ -886,7 +808,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         setupHeap3D(netID, edgeID, regionX1, regionX2, regionY1, regionY2);
 
         // while loop to find shortest path
-        int ind1 = src_heap_3D_[0].idx;
+        int ind1 = src_heap_3D_.topIdx();
 
         for (const int i : dest_heap_3D_) {
           pop_heap2_base[i] = 1;
@@ -905,7 +827,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           const int remd = ind1 % layer_stride;
           const int curX = remd % x_grid;
           const int curY = remd / x_grid;
-          removeMin3D(src_heap_3D_, heap_pos_base);
+          src_heap_3D_.removeMin();
 
           const int cur_d1 = d1_base[ind1];
           const int cur_path_len = path_len_base[ind1];
@@ -939,9 +861,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::West;
-                    const int pos = src_heap_3D_.size();
-                    src_heap_3D_.push_back({tmp_int, nbr_idx});
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
                     path_len_base[nbr_idx] = new_len;
@@ -949,9 +869,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::West;
-                    const int pos = heap_pos_base[nbr_idx];
-                    src_heap_3D_[pos].dist = tmp_int;
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
@@ -967,9 +885,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::East;
-                    const int pos = src_heap_3D_.size();
-                    src_heap_3D_.push_back({tmp_int, nbr_idx});
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
                     path_len_base[nbr_idx] = new_len;
@@ -977,9 +893,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::East;
-                    const int pos = heap_pos_base[nbr_idx];
-                    src_heap_3D_[pos].dist = tmp_int;
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
@@ -996,9 +910,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::North;
-                    const int pos = src_heap_3D_.size();
-                    src_heap_3D_.push_back({tmp_int, nbr_idx});
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
                     path_len_base[nbr_idx] = new_len;
@@ -1006,9 +918,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::North;
-                    const int pos = heap_pos_base[nbr_idx];
-                    src_heap_3D_[pos].dist = tmp_int;
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
@@ -1024,9 +934,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::South;
-                    const int pos = src_heap_3D_.size();
-                    src_heap_3D_.push_back({tmp_int, nbr_idx});
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
                     path_len_base[nbr_idx] = new_len;
@@ -1034,9 +942,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::South;
-                    const int pos = heap_pos_base[nbr_idx];
-                    src_heap_3D_[pos].dist = tmp_int;
-                    updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
@@ -1056,9 +962,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Down;
-              const int pos = src_heap_3D_.size();
-              src_heap_3D_.push_back({tmp_int, nbr_idx});
-              updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+              src_heap_3D_.insert(nbr_idx, tmp_int);
             } else if (d1_base[nbr_idx] > tmp) {
               d1_base[nbr_idx] = tmp_int;
               path_len_base[nbr_idx] = cur_path_len;
@@ -1066,9 +970,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Down;
-              const int pos = heap_pos_base[nbr_idx];
-              src_heap_3D_[pos].dist = tmp_int;
-              updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+              src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
             }
           }
 
@@ -1085,9 +987,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Up;
-              const int pos = src_heap_3D_.size();
-              src_heap_3D_.push_back({tmp_int, nbr_idx});
-              updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+              src_heap_3D_.insert(nbr_idx, tmp_int);
             } else if (d1_base[nbr_idx] > tmp) {
               d1_base[nbr_idx] = tmp_int;
               path_len_base[nbr_idx] = cur_path_len;
@@ -1095,9 +995,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Up;
-              const int pos = heap_pos_base[nbr_idx];
-              src_heap_3D_[pos].dist = tmp_int;
-              updateHeap3D(src_heap_3D_, heap_pos_base, pos);
+              src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
             }
           }
 
@@ -1107,7 +1005,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             break;
           }
           // update ind1 for next loop
-          ind1 = src_heap_3D_[0].idx;
+          ind1 = src_heap_3D_.topIdx();
         }  // while loop
 
         for (const int i : dest_heap_3D_) {

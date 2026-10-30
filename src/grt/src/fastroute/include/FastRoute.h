@@ -78,10 +78,109 @@ struct parent3D
   int x, y;
 };
 
-struct HeapEntry3D
+class MinHeap3D
 {
-  int dist;
-  int idx;
+ public:
+  void resize(size_t max_nodes)
+  {
+    entries_.resize(max_nodes);
+    pos_.resize(max_nodes, -1);
+  }
+
+  void clear() { entries_.clear(); }
+
+  bool empty() const { return entries_.empty(); }
+
+  int topIdx() const { return entries_[0].idx; }
+
+  void pushSeed(int idx)
+  {
+    pos_[idx] = entries_.size();
+    entries_.push_back({0, idx});
+  }
+
+  void insert(int idx, int dist)
+  {
+    const int i = entries_.size();
+    entries_.push_back({dist, idx});
+    siftUp(i);
+  }
+
+  void decreaseKey(int idx, int dist)
+  {
+    const int i = pos_[idx];
+    entries_[i].dist = dist;
+    siftUp(i);
+  }
+
+  void removeMin()
+  {
+    entries_[0] = entries_.back();
+    siftDown();
+    entries_.pop_back();
+  }
+
+ private:
+  struct Entry
+  {
+    int dist;
+    int idx;
+  };
+
+  static int parentIndex(int i) { return (i - 1) / 2; }
+  static int leftIndex(int i) { return 2 * i + 1; }
+  static int rightIndex(int i) { return 2 * i + 2; }
+
+  void siftUp(int i)
+  {
+    const Entry tmp = entries_[i];
+    while (i > 0 && entries_[parentIndex(i)].dist > tmp.dist) {
+      const int parent = parentIndex(i);
+      entries_[i] = entries_[parent];
+      pos_[entries_[i].idx] = i;
+      i = parent;
+    }
+    entries_[i] = tmp;
+    pos_[tmp.idx] = i;
+  }
+
+  void siftDown()
+  {
+    bool stop = false;
+    const int heap_size = entries_.size();
+    int i = 0;
+
+    const Entry tmp = entries_[i];
+    do {
+      const int l = leftIndex(i);
+      const int r = rightIndex(i);
+
+      int smallest;
+      if (l < heap_size && entries_[l].dist < tmp.dist) {
+        smallest = l;
+        if (r < heap_size && entries_[r].dist < entries_[l].dist) {
+          smallest = r;
+        }
+      } else {
+        smallest = i;
+        if (r < heap_size && entries_[r].dist < tmp.dist) {
+          smallest = r;
+        }
+      }
+      if (smallest != i) {
+        entries_[i] = entries_[smallest];
+        pos_[entries_[i].idx] = i;
+        i = smallest;
+      } else {
+        entries_[i] = tmp;
+        pos_[tmp.idx] = i;
+        stop = true;
+      }
+    } while (!stop);
+  }
+
+  std::vector<Entry> entries_;
+  std::vector<int> pos_;
 };
 
 struct CostParams
@@ -912,9 +1011,8 @@ class FastRouteCore
   multi_array<int, 3> corr_edge_3D_;
   multi_array<parent3D, 3> pr_3D_;
   std::vector<uint8_t> pop_heap2_3D_;
-  std::vector<HeapEntry3D> src_heap_3D_;
+  MinHeap3D src_heap_3D_;
   std::vector<int> dest_heap_3D_;
-  std::vector<int> heap_pos_3D_;
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> path_len_3D_;
   // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
