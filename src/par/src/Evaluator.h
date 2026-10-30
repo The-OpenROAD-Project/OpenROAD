@@ -82,7 +82,14 @@ class GoldenEvaluator
                                 const Partitions& solution) const;
 
   // calculate timing cost of a path
-  float GetPathTimingScore(int path_id, const HGraphPtr& hgraph) const;
+  float GetPathTimingScore(int path_id,
+                           const HGraphPtr& hgraph,
+                           int num_cuts = 0) const;
+
+  bool HasExtraCutDelay() const
+  {
+    return extra_cut_delay_ != 0.0f && path_timing_factor_ != 0.0f;
+  }
 
   // calculate the cost of a path
   float CalculatePathCost(int path_id,
