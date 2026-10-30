@@ -442,6 +442,7 @@ class SoftMacro
   bool isClusterOfUnconstrainedIOPins() const;
   void setLocationF(int x, int y);
   void setShapeF(int width, int height);
+  void restoreState(int x, int y, int width, int height, int64_t area);
   int getNumMacro() const;
   bool isBlockage() const;
   Cluster* getCluster() const;

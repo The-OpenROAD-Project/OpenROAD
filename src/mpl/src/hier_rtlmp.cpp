@@ -630,10 +630,20 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 
   if (tilings_set.empty()) {
+    int64_t total_macro_area = 0;
+    for (const SoftMacro& macro : macros) {
+      total_macro_area += macro.getArea();
+    }
+    const double area_pct = outline.area() > 0
+                                ? (100.0 * static_cast<double>(total_macro_area)
+                                   / static_cast<double>(outline.area()))
+                                : 0.0;
     logger_->error(MPL,
                    3,
-                   "There are no valid tilings for mixed cluster: {}",
-                   parent->getName());
+                   "There are no valid tilings for mixed cluster: {} (child "
+                   "macro minimum area is {:.1f}% of outline area).",
+                   parent->getName(),
+                   area_pct);
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());

@@ -329,6 +329,25 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mpl_annealer_core_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestAnnealerCore.cpp",
+    ],
+    deps = [
+        "//src/mpl",
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],

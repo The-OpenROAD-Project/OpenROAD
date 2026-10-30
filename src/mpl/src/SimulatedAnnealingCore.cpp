@@ -72,6 +72,22 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
       tree->available_regions_for_unconstrained_pins);
 
   io_cluster_to_constraint_ = tree->io_cluster_to_constraint;
+  int max_cluster_id = -1;
+  for (const auto& [cluster, constraint] : io_cluster_to_constraint_) {
+    if (cluster != nullptr) {
+      max_cluster_id = std::max(max_cluster_id, cluster->getId());
+    }
+  }
+  if (max_cluster_id >= 0) {
+    io_cluster_constraints_by_id_.resize(max_cluster_id + 1);
+    has_io_cluster_constraint_.assign(max_cluster_id + 1, 0);
+    for (const auto& [cluster, constraint] : io_cluster_to_constraint_) {
+      if (cluster != nullptr && cluster->getId() >= 0) {
+        io_cluster_constraints_by_id_[cluster->getId()] = constraint;
+        has_io_cluster_constraint_[cluster->getId()] = 1;
+      }
+    }
+  }
 }
 
 template <class T>
@@ -94,9 +110,44 @@ void SimulatedAnnealingCore<T>::setAvailableRegionsForUnconstrainedPins(
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::syncSequencePairBuffers()
+{
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+  neg_seq_pos_.resize(macros_.size());
+  fenwick_tree_.resize(pos_seq_.size() + 1, 0);
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::saveSequencePairState()
+{
+  const size_t movable_count = pos_seq_.size();
+  if (pre_pos_seq_.size() != movable_count) {
+    pre_pos_seq_.resize(movable_count);
+    pre_neg_seq_.resize(movable_count);
+  }
+  std::copy(pos_seq_.begin(), pos_seq_.end(), pre_pos_seq_.begin());
+  std::copy(neg_seq_.begin(), neg_seq_.end(), pre_neg_seq_.begin());
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::restoreSequencePairState()
+{
+  if (action_id_ == 1) {
+    std::copy(pre_pos_seq_.begin(), pre_pos_seq_.end(), pos_seq_.begin());
+  } else if (action_id_ == 2) {
+    std::copy(pre_neg_seq_.begin(), pre_neg_seq_.end(), neg_seq_.begin());
+  } else if (action_id_ == 3 || action_id_ == 4) {
+    std::copy(pre_pos_seq_.begin(), pre_pos_seq_.end(), pos_seq_.begin());
+    std::copy(pre_neg_seq_.begin(), pre_neg_seq_.end(), neg_seq_.begin());
+  }
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::initSequencePair()
 {
   if (has_initial_sequence_pair_) {
+    syncSequencePairBuffers();
     return;
   }
 
@@ -114,6 +165,9 @@ void SimulatedAnnealingCore<T>::initSequencePair()
 
     ++macro_id;
   }
+
+  neg_seq_pos_.resize(macros_.size());
+  fenwick_tree_.resize(sequence_pair_size + 1, 0);
 }
 
 // access functions
@@ -121,6 +175,10 @@ template <class T>
 void SimulatedAnnealingCore<T>::setNets(const BundledNetList& nets)
 {
   nets_ = nets;
+  nets_weight_sum_ = 0.0f;
+  for (const auto& net : nets_) {
+    nets_weight_sum_ += net.weight;
+  }
 }
 
 template <class T>
@@ -148,6 +206,7 @@ void SimulatedAnnealingCore<T>::setInitialSequencePair(
 
   pos_seq_ = sequence_pair.pos_sequence;
   neg_seq_ = sequence_pair.neg_sequence;
+  syncSequencePairBuffers();
 
   has_initial_sequence_pair_ = true;
 }
@@ -289,13 +348,8 @@ float SimulatedAnnealingCore<T>::computeNetsWireLength(
     const BundledNetList& nets) const
 {
   float nets_wire_length = 0.0;
-  float nets_weight_sum = 0.0;
 
-  for (const auto& net : nets_) {
-    nets_weight_sum += net.weight;
-  }
-
-  if (nets_weight_sum != 0.0) {
+  if (nets_weight_sum_ != 0.0) {
     for (const auto& net : nets) {
       const T& source = macros_[net.terminals.first];
       const T& target = macros_[net.terminals.second];
@@ -315,7 +369,7 @@ float SimulatedAnnealingCore<T>::computeNetsWireLength(
     }
 
     nets_wire_length
-        = nets_wire_length / nets_weight_sum / (outline_.dx() + outline_.dy());
+        = nets_wire_length / nets_weight_sum_ / (outline_.dx() + outline_.dy());
   }
 
   return nets_wire_length;
@@ -348,9 +402,16 @@ int64_t SimulatedAnnealingCore<T>::computeWLForClusterOfUnplacedIOPins(
         macro_location, available_regions_for_unconstrained_pins_, nullptr);
   } else {
     Cluster* cluster = unplaced_ios.getCluster();
-    const BoundaryRegion& constraint = io_cluster_to_constraint_.at(cluster);
+    const int cluster_id = cluster->getId();
+    const BoundaryRegion& constraint
+        = (cluster_id >= 0
+           && static_cast<size_t>(cluster_id)
+                  < has_io_cluster_constraint_.size()
+           && has_io_cluster_constraint_[cluster_id])
+              ? io_cluster_constraints_by_id_[cluster_id]
+              : io_cluster_to_constraint_.at(cluster);
     smallest_distance
-        = computeDistToNearestRegion(macro_location, {constraint}, nullptr);
+        = computeDistToNearestRegion(macro_location, constraint, nullptr);
   }
 
   return net_weight * smallest_distance;
@@ -444,79 +505,80 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   }
 }
 
+template <class T>
+int SimulatedAnnealingCore<T>::queryFenwickMax(const int pos) const
+{
+  int max_val = 0;
+  for (int idx = pos + 1; idx > 0; idx -= idx & -idx) {
+    max_val = std::max(max_val, fenwick_tree_[idx]);
+  }
+  return max_val;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::updateFenwickMax(const int pos,
+                                                 const int n,
+                                                 const int val)
+{
+  for (int idx = pos + 1; idx <= n; idx += idx & -idx) {
+    fenwick_tree_[idx] = std::max(fenwick_tree_[idx], val);
+  }
+}
+
 // Determine the positions of macros based on sequence pair
 template <class T>
 void SimulatedAnnealingCore<T>::packFloorplan()
 {
-  // Each index corresponds to a macro id whose pair is:
-  // <Position in Positive Sequence , Position in Negative Sequence>
-  std::vector<std::pair<int, int>> sequence_pair_pos(pos_seq_.size());
-
-  // calculate X position
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    sequence_pair_pos[pos_seq_[i]].first = i;
-    sequence_pair_pos[neg_seq_[i]].second = i;
+  const int n = static_cast<int>(pos_seq_.size());
+  if (n == 0) {
+    width_ = 0;
+    height_ = 0;
+    return;
   }
 
-  std::vector<int> accumulated_length(pos_seq_.size(), 0);
-  for (int macro_id : pos_seq_) {
-    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+  if (neg_seq_pos_.size() < macros_.size()) {
+    neg_seq_pos_.resize(macros_.size());
+  }
+  if (static_cast<int>(fenwick_tree_.size()) < n + 1) {
+    fenwick_tree_.resize(n + 1);
+  }
 
+  for (int i = 0; i < n; i++) {
+    neg_seq_pos_[neg_seq_[i]] = i;
+  }
+
+  // Calculate X position using 1-indexed prefix-maximum Fenwick tree
+  std::fill(fenwick_tree_.begin(), fenwick_tree_.begin() + n + 1, 0);
+  for (int macro_id : pos_seq_) {
+    const int neg_seq_pos = neg_seq_pos_[macro_id];
     T& macro = macros_[macro_id];
 
     if (!macro.isFixed()) {
-      macro.setX(accumulated_length[neg_seq_pos]);
+      macro.setX(queryFenwickMax(neg_seq_pos));
     }
 
     const int current_length = macro.getX() + macro.getWidth();
-
-    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
-      if (current_length > accumulated_length[j]) {
-        accumulated_length[j] = current_length;
-      } else {
-        break;
-      }
-    }
+    updateFenwickMax(neg_seq_pos, n, current_length);
   }
 
-  width_ = accumulated_length[pos_seq_.size() - 1];
+  width_ = queryFenwickMax(n - 1);
 
-  // calulate Y position
-  std::vector<int> reversed_pos_seq(pos_seq_.size());
-  for (int i = 0; i < reversed_pos_seq.size(); i++) {
-    reversed_pos_seq[i] = pos_seq_[reversed_pos_seq.size() - 1 - i];
-  }
-
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    sequence_pair_pos[reversed_pos_seq[i]].first = i;
-    sequence_pair_pos[neg_seq_[i]].second = i;
-
-    // This is actually the accumulated height, but we use the same vector
-    // to avoid more allocation.
-    accumulated_length[i] = 0;
-  }
-
-  for (int i = 0; i < pos_seq_.size(); i++) {
-    const int macro_id = reversed_pos_seq[i];
-    const int neg_seq_pos = sequence_pair_pos[macro_id].second;
+  // Calculate Y position by iterating pos_seq_ backward
+  std::fill(fenwick_tree_.begin(), fenwick_tree_.begin() + n + 1, 0);
+  for (int i = n - 1; i >= 0; --i) {
+    const int macro_id = pos_seq_[i];
+    const int neg_seq_pos = neg_seq_pos_[macro_id];
     T& macro = macros_[macro_id];
 
     if (!macro.isFixed()) {
-      macro.setY(accumulated_length[neg_seq_pos]);
+      macro.setY(queryFenwickMax(neg_seq_pos));
     }
 
     const int current_height = macro.getY() + macro.getHeight();
-
-    for (int j = neg_seq_pos; j < neg_seq_.size(); j++) {
-      if (current_height > accumulated_length[j]) {
-        accumulated_length[j] = current_height;
-      } else {
-        break;
-      }
-    }
+    updateFenwickMax(neg_seq_pos, n, current_height);
   }
 
-  height_ = accumulated_length[pos_seq_.size() - 1];
+  height_ = queryFenwickMax(n - 1);
 
   if (graphics_) {
     graphics_->saStep(macros_);

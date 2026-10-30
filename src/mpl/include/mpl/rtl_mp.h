@@ -79,6 +79,7 @@ class MacroPlacer
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
+  void setRandomSeed(int seed);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -91,6 +92,7 @@ class MacroPlacer
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  int random_seed_ = 0;
 
   odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };

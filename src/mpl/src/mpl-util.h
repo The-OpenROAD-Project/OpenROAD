@@ -188,6 +188,20 @@ inline odb::Point computeNearestPointInRegion(const BoundaryRegion& region,
   return {target.x(), line.pt0().y()};
 }
 
+// The distance in DBU from the source to the nearest point of a single region.
+inline int64_t computeDistToNearestRegion(const odb::Point& source,
+                                          const BoundaryRegion& region,
+                                          odb::Point* nearest_point)
+{
+  const odb::Point nearest_point_in_region
+      = computeNearestPointInRegion(region, source);
+  if (nearest_point) {
+    *nearest_point = nearest_point_in_region;
+  }
+  return std::sqrt(
+      odb::Point::squaredDistance(source, nearest_point_in_region));
+}
+
 // The distance in DBU from the source to the nearest point of the nearest
 // region.
 inline int64_t computeDistToNearestRegion(

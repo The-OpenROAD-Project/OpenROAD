@@ -91,6 +91,7 @@ class SimulatedAnnealingCore
   virtual void initialize() = 0;
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
+  void packFloorplan();
 
  protected:
   struct Result
@@ -110,6 +111,9 @@ class SimulatedAnnealingCore
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
+  void syncSequencePairBuffers();
+  void saveSequencePairState();
+  void restoreSequencePairState();
   void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();
@@ -127,7 +131,8 @@ class SimulatedAnnealingCore
   void calFencePenalty();
 
   // operations
-  void packFloorplan();
+  int queryFenwickMax(int pos) const;
+  void updateFenwickMax(int pos, int n, int val);
   virtual void perturb() = 0;
   virtual void saveState() = 0;
   virtual void restoreState() = 0;
@@ -151,10 +156,13 @@ class SimulatedAnnealingCore
 
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
+  std::vector<BoundaryRegion> io_cluster_constraints_by_id_;
+  std::vector<uint8_t> has_io_cluster_constraint_;
 
   int number_of_sequence_pair_macros_ = 0;
 
   BundledNetList nets_;
+  float nets_weight_sum_ = 0.0f;
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
@@ -178,9 +186,12 @@ class SimulatedAnnealingCore
   // previous solution
   std::vector<int> pre_pos_seq_;
   std::vector<int> pre_neg_seq_;
-  std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
-  int macro_id_ = -1;          // the macro changed in the perturb
-  int action_id_ = -1;         // the action_id of current step
+  int macro_id_ = -1;   // the macro changed in the perturb
+  int action_id_ = -1;  // the action_id of current step
+
+  // Reusable buffers for packFloorplan
+  std::vector<int> neg_seq_pos_;
+  std::vector<int> fenwick_tree_;
 
   // metrics
   int width_ = 0;

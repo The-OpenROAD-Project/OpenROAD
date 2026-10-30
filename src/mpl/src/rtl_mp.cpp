@@ -82,6 +82,8 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
   hier_rtlmp_->setPinAwareChannels(pin_aware_channels);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
+  hier_rtlmp_->setRandomSeed(random_seed_);
+  random_seed_ = 0;
 
   hier_rtlmp_->run();
   logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
@@ -224,6 +226,12 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
 void MacroPlacer::setMinChannelSize(int width, int height)
 {
   hier_rtlmp_->setMinChannelSize(width, height);
+}
+
+void MacroPlacer::setRandomSeed(const int seed)
+{
+  random_seed_ = seed;
+  hier_rtlmp_->setRandomSeed(seed);
 }
 
 void MacroPlacer::blockMacroChannels()

@@ -142,9 +142,15 @@ void SACoreHardMacro::saveState()
     return;
   }
 
-  pre_macros_ = macros_;
-  pre_pos_seq_ = pos_seq_;
-  pre_neg_seq_ = neg_seq_;
+  const size_t movable_count = pos_seq_.size();
+  if (pre_macros_.size() != movable_count) {
+    pre_macros_.resize(movable_count);
+  }
+  for (size_t i = 0; i < movable_count; ++i) {
+    pre_macros_[i] = {macros_[i].getX(), macros_[i].getY()};
+  }
+
+  saveSequencePairState();
 
   pre_width_ = width_;
   pre_height_ = height_;
@@ -164,16 +170,13 @@ void SACoreHardMacro::restoreState()
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 1) {
-    pos_seq_ = pre_pos_seq_;
-  } else if (action_id_ == 2) {
-    neg_seq_ = pre_neg_seq_;
-  } else if (action_id_ == 3 || action_id_ == 4) {
-    pos_seq_ = pre_pos_seq_;
-    neg_seq_ = pre_neg_seq_;
-  }
+  restoreSequencePairState();
 
-  macros_ = pre_macros_;
+  const size_t movable_count = pre_macros_.size();
+  for (size_t i = 0; i < movable_count; ++i) {
+    macros_[i].setX(pre_macros_[i].x);
+    macros_[i].setY(pre_macros_[i].y);
+  }
 
   width_ = pre_width_;
   height_ = pre_height_;
