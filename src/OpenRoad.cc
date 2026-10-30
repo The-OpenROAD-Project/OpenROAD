@@ -705,6 +705,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   if (global_router_ != nullptr) {
     global_router_->setNumThreads(threads_);
   }
+  if (partitionMgr_ != nullptr) {
+    partitionMgr_->setThreadCount(threads_);
+  }
   if (web_server_ != nullptr) {
     web_server_->setThreadCount(threads_);
   }
