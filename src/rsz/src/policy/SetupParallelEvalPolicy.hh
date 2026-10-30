@@ -320,6 +320,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // An unbuffer move in -sequence runs in every batch, not only in the tail's
   // single-move batches.
   bool unbuffer_in_sequence_{false};
+  // One usable VT, but some instances use a dont_use VT that VtSwapMt can
+  // move to it.
+  bool dont_use_vt_swap_{false};
 
   // Moves of the batch under evaluation.  The candidates and the swaps point
   // into the pool of iterate() and are cleared when it returns.

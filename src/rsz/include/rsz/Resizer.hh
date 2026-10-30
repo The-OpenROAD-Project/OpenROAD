@@ -752,6 +752,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   int vtCategoryCount() const;
+  // True when a VT swap can apply to cell: more than one usable VT, or the
+  // cell itself is dont_use and has an equivalent in a usable VT.
+  bool canVtSwap(sta::LibertyCell* cell);
+  // True when an editable instance uses a dont_use cell that has an
+  // equivalent in a usable VT.
+  bool hasDontUseVtSwapInstances();
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).

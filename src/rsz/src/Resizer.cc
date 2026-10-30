@@ -1436,6 +1436,40 @@ int Resizer::vtCategoryCount() const
   return static_cast<int>(lib_data_->sorted_vt_categories.size());
 }
 
+bool Resizer::canVtSwap(sta::LibertyCell* cell)
+{
+  if (vtCategoryCount() >= 2) {
+    return true;
+  }
+  // With one usable VT, only a cell mapped to a dont_use VT can move, to its
+  // equivalent in the usable VT.
+  return dontUse(cell) && getVTEquivCells(cell).size() > 1;
+}
+
+bool Resizer::hasDontUseVtSwapInstances()
+{
+  // Check each master once; designs repeat few masters many times.
+  std::unordered_map<sta::LibertyCell*, bool> swappable;
+  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
+      network_->leafInstanceIterator());
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    sta::LibertyCell* cell = network_->libertyCell(inst);
+    if (cell == nullptr || !dontUse(cell) || dontTouch(inst)
+        || !isLogicStdCell(inst)) {
+      continue;
+    }
+    auto [it, inserted] = swappable.try_emplace(cell, false);
+    if (inserted) {
+      it->second = getVTEquivCells(cell).size() > 1;
+    }
+    if (it->second) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // This should be exported by STA
 float Resizer::cellDriveResistance(const sta::LibertyCell* cell) const
 {
@@ -2273,7 +2307,10 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     (void) buffer_list;
   }
 
-  if (lib_data_->sorted_vt_categories.size() < 2) {
+  // A dont_use cell keeps its equivalents in the one usable VT so that a VT
+  // swap can move it there (e.g. a latch mapped to a slower VT in a flow
+  // that uses only the fastest VT).
+  if (lib_data_->sorted_vt_categories.size() < 2 && !dontUse(source_cell)) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
