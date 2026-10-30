@@ -92,6 +92,7 @@ void WireNormalizer::normalizeWireConnectivity()
     sliceBPinsOverlappingITerms();
 
     populateShapeSearch();
+    mergeCollinearSectionsInsidePins();
     splitSectionsForTerminalConnection();
 
     // Apparent performance trick from the original implementation.
@@ -415,6 +416,161 @@ void WireNormalizer::splitBySj(const int j,
 
     splitWireSection(k, Point(x, y));
   }
+}
+
+// A router can leave vertices on a straight run of wire inside a pin. They
+// add no geometry, but each of them binds the terminal, and the extractor
+// then sees the pin at several points of one run. Merge the sections of such
+// a run into one; the split pass then gives the pin its single point, at the
+// middle of the contact.
+void WireNormalizer::mergeCollinearSectionsInsidePins()
+{
+  MergeState state;
+  state.point_sections.resize(wire_points_.size());
+  for (int k = 0; k < wire_sections_.size(); k++) {
+    state.point_sections[wire_sections_[k].from_idx].push_back(k);
+    state.point_sections[wire_sections_[k].to_idx].push_back(k);
+  }
+  state.removed_points.assign(wire_points_.size(), false);
+  state.removed_sections.assign(wire_sections_.size(), false);
+
+  for (int i = 0; i < terminals_.size(); i++) {
+    identifyCandidateSections(i);
+
+    const std::span<const CandidateSection> candidates(
+        candidate_sections_[i].data(), candidate_section_count_[i]);
+
+    for (const CandidateSection& candidate : candidates) {
+      if (state.removed_sections[candidate.index]) {
+        continue;
+      }
+
+      const int from_idx = wire_sections_[candidate.index].from_idx;
+      const int to_idx = wire_sections_[candidate.index].to_idx;
+
+      for (const int point_index : {from_idx, to_idx}) {
+        const WirePoint& point = wire_points_[point_index];
+
+        if (candidate.routing_level == point.layer->getRoutingLevel()
+            && candidate.terminal_box.intersects(Point(point.x, point.y))) {
+          mergeSectionsAt(point_index, state);
+        }
+      }
+    }
+  }
+
+  const bool merged
+      = std::find(
+            state.removed_points.begin(), state.removed_points.end(), true)
+        != state.removed_points.end();
+  if (merged) {
+    removeMergedSectionsAndPoints(state);
+  }
+}
+
+// Merges the two sections meeting at the point when they run straight
+// through it with the same width and rule, and drops the point.
+void WireNormalizer::mergeSectionsAt(const int point_index, MergeState& state)
+{
+  if (state.removed_points[point_index]) {
+    return;
+  }
+
+  std::vector<int> live_sections;
+  for (const int k : state.point_sections[point_index]) {
+    if (!state.removed_sections[k]) {
+      live_sections.push_back(k);
+    }
+  }
+  if (live_sections.size() != 2) {
+    return;
+  }
+
+  const int a_index = live_sections[0];
+  const int b_index = live_sections[1];
+  const WireSection& a = wire_sections_[a_index];
+  const WireSection& b = wire_sections_[b_index];
+
+  if (a.shape.isVia() || b.shape.isVia() || a.is_vertical != b.is_vertical
+      || a.width != b.width || a.shape.getRule() != b.shape.getRule()) {
+    return;
+  }
+
+  const int a_other = (a.from_idx == point_index) ? a.to_idx : a.from_idx;
+  const int b_other = (b.from_idx == point_index) ? b.to_idx : b.from_idx;
+  const WirePoint& point = wire_points_[point_index];
+  const WirePoint& a_end = wire_points_[a_other];
+  const WirePoint& b_end = wire_points_[b_other];
+
+  // Straight through: along the run, the point lies between the other ends.
+  const int a_coord = a.is_vertical ? a_end.y : a_end.x;
+  const int b_coord = a.is_vertical ? b_end.y : b_end.x;
+  const int coord = a.is_vertical ? point.y : point.x;
+  const bool straight = (a_coord < coord && coord < b_coord)
+                        || (b_coord < coord && coord < a_coord);
+  if (!straight) {
+    return;
+  }
+
+  const Rect merged_rect(std::min(a.shape.xMin(), b.shape.xMin()),
+                         std::min(a.shape.yMin(), b.shape.yMin()),
+                         std::max(a.shape.xMax(), b.shape.xMax()),
+                         std::max(a.shape.yMax(), b.shape.yMax()));
+  const WireSection::Shape merged_shape(
+      merged_rect, a.shape.getTechLayer(), nullptr, nullptr, a.shape.getRule());
+  const bool is_vertical = a.is_vertical;
+  const int width = a.width;
+  const int default_ext = a.default_ext;
+
+  // The references above die here: the vector may grow.
+  wire_sections_.emplace_back(
+      a_other, b_other, merged_shape, is_vertical, width, default_ext);
+  const int merged_index = wire_sections_.size() - 1;
+
+  state.removed_sections[a_index] = true;
+  state.removed_sections[b_index] = true;
+  state.removed_sections.push_back(false);
+  state.removed_points[point_index] = true;
+  state.point_sections[a_other].push_back(merged_index);
+  state.point_sections[b_other].push_back(merged_index);
+}
+
+// Rebuilds the points and sections without the dropped ones, and the shape
+// search with them.
+void WireNormalizer::removeMergedSectionsAndPoints(const MergeState& state)
+{
+  std::vector<int> new_point_index(wire_points_.size(), -1);
+  std::vector<WirePoint> points;
+  points.reserve(wire_points_.capacity());
+  for (int i = 0; i < wire_points_.size(); i++) {
+    if (state.removed_points[i]) {
+      continue;
+    }
+    const WirePoint& point = wire_points_[i];
+    new_point_index[i] = points.size();
+    points.emplace_back(point.x, point.y, point.layer);
+  }
+
+  std::vector<WireSection> sections;
+  sections.reserve(wire_sections_.capacity());
+  for (int k = 0; k < wire_sections_.size(); k++) {
+    if (state.removed_sections[k]) {
+      continue;
+    }
+    const WireSection& section = wire_sections_[k];
+    sections.emplace_back(new_point_index[section.from_idx],
+                          new_point_index[section.to_idx],
+                          section.shape,
+                          section.is_vertical,
+                          section.width,
+                          section.default_ext);
+  }
+
+  wire_points_.swap(points);
+  wire_sections_.swap(sections);
+
+  shape_search_->clear();
+  populateShapeSearch();
 }
 
 // A terminal binds only to wire points, but a route can run along or across

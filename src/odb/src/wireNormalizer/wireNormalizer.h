@@ -179,6 +179,15 @@ class WireNormalizer
   int distance(int fr, int to) const;
 
  private:
+  // Sections and points dropped while merging runs, and the live sections
+  // meeting at each point.
+  struct MergeState
+  {
+    std::vector<std::vector<int>> point_sections;
+    std::vector<bool> removed_points;
+    std::vector<bool> removed_sections;
+  };
+
   void clear();
   void setManufacturingGrid();
   void loadTerminals();
@@ -189,6 +198,9 @@ class WireNormalizer
 
   void splitTtop();
   void splitBySj(int j, int rt, int sjxMin, int sjyMin, int sjxMax, int sjyMax);
+  void mergeCollinearSectionsInsidePins();
+  void mergeSectionsAt(int point_index, MergeState& state);
+  void removeMergedSectionsAndPoints(const MergeState& state);
   void splitSectionsForTerminalConnection();
   std::optional<Point> findSplitPoint(const CandidateSection& candidate) const;
   int computeSnappedCenter(int min, int max) const;
