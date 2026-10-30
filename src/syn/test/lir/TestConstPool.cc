@@ -177,7 +177,8 @@ TEST(ConstPoolTest, ConcurrentInterningAgrees)
   for (int t = 0; t < kThreads; ++t) {
     threads.emplace_back([&, t] {
       for (uint64_t k = 0; k < kCount; ++k) {
-        const uint64_t i = (k * 7919 + t * 104729) % kCount;
+        const uint64_t i
+            = (k * 7919 + static_cast<uint64_t>(t) * 104729) % kCount;
         ids[t].push_back(pool.internUint(40, i));
       }
     });
@@ -189,7 +190,8 @@ TEST(ConstPoolTest, ConcurrentInterningAgrees)
   EXPECT_EQ(pool.size(), kCount);
   for (int t = 0; t < kThreads; ++t) {
     for (uint64_t k = 0; k < kCount; ++k) {
-      const uint64_t i = (k * 7919 + t * 104729) % kCount;
+      const uint64_t i
+          = (k * 7919 + static_cast<uint64_t>(t) * 104729) % kCount;
       ASSERT_EQ(pool.internUint(40, i), ids[t][k]);
       ASSERT_EQ(pool.get(ids[t][k]).toUint64(), i);
     }
@@ -199,7 +201,8 @@ TEST(ConstPoolTest, ConcurrentInterningAgrees)
 TEST(ConstViewTest, SmallViewsHoldTheirValue)
 {
   // 4'b10x1, with junk above the width.
-  const ConstView original = ConstView::small(4, 0xF0 | 0b1001, 0xF0 | 0b0010);
+  const ConstView original
+      = ConstView::small(4, 0xF0u | 0b1001u, 0xF0u | 0b0010u);
   ConstView copy;
   {
     const ConstView temp = original;

@@ -73,6 +73,7 @@ TEST(NameInternerTest, ManyNamesStayValid)
   NameInterner names;
   names.setMode(TableMode::kSingleWrite);
   std::vector<NameId> ids;
+  ids.reserve(kNames);
   for (int i = 0; i < kNames; ++i) {
     ids.push_back(names.intern(absl::StrCat(path, i, "/net")));
   }
@@ -92,6 +93,7 @@ TEST(NameInternerTest, ConcurrentInterningAgrees)
   names.setMode(TableMode::kParallelWrite);
   std::vector<std::vector<NameId>> ids(kThreads);
   std::vector<std::thread> threads;
+  threads.reserve(kThreads);
   for (int t = 0; t < kThreads; ++t) {
     threads.emplace_back([&, t] {
       // Every thread interns the same names, in a different order.
@@ -143,12 +145,15 @@ TEST(NameInternerTest, ParallelLookupsInReadOnlyMode)
   names.setMode(TableMode::kSingleWrite);
   constexpr int kNames = 5000;
   std::vector<NameId> ids;
+  ids.reserve(kNames);
   for (int i = 0; i < kNames; ++i) {
     ids.push_back(names.intern(absl::StrCat("n", i)));
   }
   names.setMode(TableMode::kReadOnly);
+  constexpr int kThreads = 8;
   std::vector<std::thread> threads;
-  for (int t = 0; t < 8; ++t) {
+  threads.reserve(kThreads);
+  for (int t = 0; t < kThreads; ++t) {
     threads.emplace_back([&] {
       for (int i = 0; i < kNames; ++i) {
         const std::string text = absl::StrCat("n", i);
@@ -195,10 +200,11 @@ TEST(NameInternerTest, LengthPrefixesAndChunkBoundaries)
   std::vector<std::string> texts;
   for (const size_t length :
        {0, 1, 127, 128, 129, 1000, 16383, 16384, 16385, 300000}) {
-    texts.push_back(std::string(length, static_cast<char>('a' + length % 26)));
+    texts.emplace_back(length, static_cast<char>('a' + length % 26));
     texts.push_back(absl::StrCat("small", length));
   }
   std::vector<NameId> ids;
+  ids.reserve(texts.size());
   for (const std::string& text : texts) {
     ids.push_back(names.intern(text));
   }

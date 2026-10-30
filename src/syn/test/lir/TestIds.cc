@@ -106,7 +106,7 @@ TEST(IdTest, OtherHandlesStayFourBytes)
 TEST(IdTest, ObjIdsAboveFourBillion)
 {
   if constexpr (kObjIdBits == 64) {
-    const uint64_t big = uint64_t{1} << 33;
+    const uint64_t big = uint64_t{1} << 33u;
     const ObjId id(big + 1);
     EXPECT_TRUE(id.isValid());
     EXPECT_EQ(id.value(), big + 1);
