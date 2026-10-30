@@ -4,6 +4,7 @@
 #pragma once
 
 #include <compare>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
