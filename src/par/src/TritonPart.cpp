@@ -93,8 +93,13 @@ std::vector<odb::dbNet*> getSortedNets(odb::dbBlock* block)
 TritonPart::TritonPart(sta::dbNetwork* network,
                        odb::dbDatabase* db,
                        sta::dbSta* sta,
-                       utl::Logger* logger)
-    : network_(network), db_(db), sta_(sta), logger_(logger)
+                       utl::Logger* logger,
+                       int num_threads)
+    : network_(network),
+      db_(db),
+      sta_(sta),
+      logger_(logger),
+      num_threads_(num_threads)
 {
 }
 
@@ -1981,6 +1986,7 @@ void TritonPart::MultiLevelPartition()
                                                 max_num_vcycle_,
                                                 num_coarsen_solutions_,
                                                 seed_,
+                                                num_threads_,
                                                 tritonpart_coarsener,
                                                 tritonpart_partitioner,
                                                 k_way_fm_refiner,

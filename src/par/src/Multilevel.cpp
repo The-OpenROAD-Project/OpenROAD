@@ -9,7 +9,6 @@
 #include <numeric>
 #include <queue>
 #include <random>
-#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -39,6 +38,7 @@ MultilevelPartitioner::MultilevelPartitioner(
     const int max_num_vcycle,
     const int num_coarsen_solutions,
     const int seed,
+    const int num_threads,
     CoarseningPtr coarsener,
     PartitioningPtr partitioner,
     KWayFMRefinerPtr k_way_fm_refiner,
@@ -54,6 +54,7 @@ MultilevelPartitioner::MultilevelPartitioner(
       max_num_vcycle_(max_num_vcycle),
       num_coarsen_solutions_(num_coarsen_solutions),
       seed_(seed),
+      num_threads_(num_threads),
       v_cycle_flag_(v_cycle_flag)
 {
   coarsener_ = std::move(coarsener);
@@ -504,20 +505,12 @@ void MultilevelPartitioner::RefinePartition(
     }
 
     // Parallel refine all the solutions
-    std::vector<std::thread> threads;
-    threads.reserve(top_solutions.size());
-    for (auto& top_solution : top_solutions) {
-      threads.emplace_back(&par::MultilevelPartitioner::CallRefiner,
-                           this,
-                           hgraph,
-                           std::ref(upper_block_balance),
-                           std::ref(lower_block_balance),
-                           std::ref(top_solution));
+    const int num_solutions = static_cast<int>(top_solutions.size());
+#pragma omp parallel for num_threads(std::min(num_solutions, num_threads_))
+    for (int i = 0; i < num_solutions; i++) {
+      CallRefiner(
+          hgraph, upper_block_balance, lower_block_balance, top_solutions[i]);
     }
-    for (auto& th : threads) {
-      th.join();
-    }
-    threads.clear();
 
     // update the best_solution_id
     float best_cost = std::numeric_limits<float>::max();
