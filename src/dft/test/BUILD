@@ -29,6 +29,8 @@ ALL_TESTS = COMPULSORY_TESTS
 filegroup(
     name = "regression_resources",
     srcs = [
+        "asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
         "helpers.tcl",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
         "sky130hd/sky130_fd_sc_hd_merged.lef",
@@ -82,9 +84,13 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -93,9 +99,13 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
