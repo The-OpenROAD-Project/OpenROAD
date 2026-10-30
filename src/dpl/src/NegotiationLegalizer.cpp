@@ -573,11 +573,33 @@ void NegotiationLegalizer::initialSnap()
 {
   const Grid* dpl_grid = opendp_->grid_.get();
 
+  // Mirrors PlacementDRC::checkOneSiteGap against fixed cells only: the DPL
+  // grid has no cells painted yet, and movable usage is added after the snap,
+  // so usage > 0 here means a fixed cell. Off-grid counts as a wall, as there.
+  auto occupied = [&](int gx, int gy) {
+    return !gridExists(gx, gy) || gridAt(gx, gy).usage > 0;
+  };
+  auto oneSiteGap = [&](const NegCell& cell, int px, int py) {
+    if (!opendp_->disallow_one_site_gaps_) {
+      return false;
+    }
+    const int left = px - 1;
+    const int right = px + cell.width;
+    for (int gy = py; gy < py + cell.height; ++gy) {
+      if ((!occupied(left, gy) && occupied(left - 1, gy))
+          || (!occupied(right, gy) && occupied(right + 1, gy))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Can cell `ci` geometrically occupy (px, py)? True when the body footprint
-  // is in-die, on real sites (capacity 0 = no site or fixed blockage) and
-  // inside the fence. Deliberately ignores row legality (site type,
-  // orientation, power), movable overlap and padding — negotiation handles all
-  // of those; the snap only keeps cells off fixed blockages and off-die.
+  // is in-die, on real sites (capacity 0 = no site or fixed blockage), inside
+  // the fence and leaves no one-site gap to a fixed cell. Deliberately ignores
+  // row legality (site type, orientation, power), movable overlap and padding —
+  // negotiation handles all of those; the snap only keeps cells off fixed
+  // blockages and off-die.
   auto placeable = [&](int ci, int px, int py) -> bool {
     const NegCell& cell = cells_[ci];
     if (!inDie(px, py, cell.width, cell.height)) {
@@ -590,7 +612,7 @@ void NegotiationLegalizer::initialSnap()
         }
       }
     }
-    return respectsFence(ci, px, py);
+    return respectsFence(ci, px, py) && !oneSiteGap(cell, px, py);
   };
 
   for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
