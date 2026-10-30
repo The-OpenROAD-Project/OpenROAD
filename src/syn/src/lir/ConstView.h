@@ -60,7 +60,7 @@ class ConstView
   }
   // A constant of at most kMaxInlineConstWidth bits, held by value. Bits
   // above the width are ignored.
-  static ConstView small(uint32_t width, uint32_t aval, uint32_t bval);
+  static ConstView fromInline(uint32_t width, uint32_t aval, uint32_t bval);
 
   uint32_t width() const { return width_; }
   uint32_t numWords() const { return constNumWords(width_); }

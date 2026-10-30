@@ -41,7 +41,7 @@ class ObjAttributes
   constexpr bool sizeOnly() const { return size_only_; }
   // Referenced by a timing constraint: keeps its name, fanins and readers,
   // but may be resized.
-  constexpr bool constraint() const { return constraint_; }
+  constexpr bool isConstrained() const { return constrained_; }
   // Its value must stay: never removed or replaced, and its readers keep it
   // as driver. Its fanin cone may change, and it may gain readers.
   constexpr bool keepValue() const { return keep_value_; }
@@ -56,7 +56,7 @@ class ObjAttributes
   }
 
   // Setters return *this, so attributes chain:
-  //   ObjAttributes().setSizeOnly().setConstraint()
+  //   ObjAttributes().setSizeOnly().setConstrained()
   constexpr ObjAttributes& setDontTouch(bool on = true)
   {
     dont_touch_ = on;
@@ -67,9 +67,9 @@ class ObjAttributes
     size_only_ = on;
     return *this;
   }
-  constexpr ObjAttributes& setConstraint(bool on = true)
+  constexpr ObjAttributes& setConstrained(bool on = true)
   {
-    constraint_ = on;
+    constrained_ = on;
     return *this;
   }
   constexpr ObjAttributes& setKeepValue(bool on = true)
@@ -103,19 +103,19 @@ class ObjAttributes
   // True if any attribute is set (the object needs a map entry).
   constexpr bool any() const
   {
-    return dont_touch_ || size_only_ || constraint_ || keep_value_
+    return dont_touch_ || size_only_ || constrained_ || keep_value_
            || hier_ != kInlinable;
   }
   // May be removed or replaced, and its readers may be moved to another
   // driver.
   constexpr bool removable() const
   {
-    return !dont_touch_ && !size_only_ && !constraint_ && !keep_value_;
+    return !dont_touch_ && !size_only_ && !constrained_ && !keep_value_;
   }
   // Its fanins (and data other than the master) may change.
   constexpr bool restructurable() const
   {
-    return !dont_touch_ && !size_only_ && !constraint_;
+    return !dont_touch_ && !size_only_ && !constrained_;
   }
   // Its name may change.
   constexpr bool renamable() const { return restructurable(); }
@@ -127,7 +127,7 @@ class ObjAttributes
   {
     dont_touch_ = dont_touch_ || other.dont_touch_;
     size_only_ = size_only_ || other.size_only_;
-    constraint_ = constraint_ || other.constraint_;
+    constrained_ = constrained_ || other.constrained_;
     keep_value_ = keep_value_ || other.keep_value_;
     hier_ = hier_ > other.hier_ ? hier_ : other.hier_;
     return *this;
@@ -142,7 +142,7 @@ class ObjAttributes
     }
     const uint64_t bits
         = (dont_touch_ ? 1ULL : 0ULL) | (size_only_ ? 2ULL : 0ULL)
-          | (constraint_ ? 4ULL : 0ULL) | (keep_value_ ? 8ULL : 0ULL)
+          | (constrained_ ? 4ULL : 0ULL) | (keep_value_ ? 8ULL : 0ULL)
           | (static_cast<uint64_t>(hier_) << 4u);
     return checksumCombine(kChecksumSeed, bits);
   }
@@ -155,7 +155,7 @@ class ObjAttributes
 
   bool dont_touch_ : 1 = false;
   bool size_only_ : 1 = false;
-  bool constraint_ : 1 = false;
+  bool constrained_ : 1 = false;
   bool keep_value_ : 1 = false;
   uint8_t hier_ : 2 = kInlinable;
 };

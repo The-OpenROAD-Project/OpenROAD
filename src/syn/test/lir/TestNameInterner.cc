@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -85,42 +84,6 @@ TEST(NameInternerTest, ManyNamesStayValid)
   EXPECT_GT(names.memoryBytes(), kNames * 10);
 }
 
-TEST(NameInternerTest, ConcurrentInterningAgrees)
-{
-  constexpr int kThreads = 4;
-  constexpr int kNames = 5000;
-  NameInterner names;
-  names.setMode(TableMode::kParallelWrite);
-  std::vector<std::vector<NameId>> ids(kThreads);
-  std::vector<std::thread> threads;
-  threads.reserve(kThreads);
-  for (int t = 0; t < kThreads; ++t) {
-    threads.emplace_back([&, t] {
-      // Every thread interns the same names, in a different order.
-      for (int k = 0; k < kNames; ++k) {
-        const int i = (k * 7919 + t * 104729) % kNames;
-        ids[t].push_back(names.intern(absl::StrCat("n", i)));
-      }
-    });
-  }
-  for (std::thread& thread : threads) {
-    thread.join();
-  }
-  EXPECT_EQ(names.size(), kNames);
-  names.setMode(TableMode::kReadOnly);
-  for (int i = 0; i < kNames; ++i) {
-    const NameId id = names.find(absl::StrCat("n", i));
-    ASSERT_TRUE(id.isValid());
-    EXPECT_EQ(names.name(id), absl::StrCat("n", i));
-  }
-  for (int t = 0; t < kThreads; ++t) {
-    for (int k = 0; k < kNames; ++k) {
-      const int i = (k * 7919 + t * 104729) % kNames;
-      ASSERT_EQ(ids[t][k], names.find(absl::StrCat("n", i)));
-    }
-  }
-}
-
 TEST(NameInternerTest, ReadOnlyModeAllowsLookupsOnly)
 {
   NameInterner names;
@@ -136,37 +99,6 @@ TEST(NameInternerTest, ReadOnlyModeAllowsLookupsOnly)
   names.setMode(TableMode::kSingleWrite);
   EXPECT_TRUE(names.intern("rst").isValid());
   EXPECT_EQ(names.size(), 2u);
-}
-
-// Run under TSan.
-TEST(NameInternerTest, ParallelLookupsInReadOnlyMode)
-{
-  NameInterner names;
-  names.setMode(TableMode::kSingleWrite);
-  constexpr int kNames = 5000;
-  std::vector<NameId> ids;
-  ids.reserve(kNames);
-  for (int i = 0; i < kNames; ++i) {
-    ids.push_back(names.intern(absl::StrCat("n", i)));
-  }
-  names.setMode(TableMode::kReadOnly);
-  constexpr int kThreads = 8;
-  std::vector<std::thread> threads;
-  threads.reserve(kThreads);
-  for (int t = 0; t < kThreads; ++t) {
-    threads.emplace_back([&] {
-      for (int i = 0; i < kNames; ++i) {
-        const std::string text = absl::StrCat("n", i);
-        ASSERT_EQ(names.name(ids[i]), text);
-        ASSERT_EQ(names.find(text), ids[i]);
-        ASSERT_EQ(names.intern(text), ids[i]);
-      }
-    });
-  }
-  for (std::thread& thread : threads) {
-    thread.join();
-  }
-  names.setMode(TableMode::kSingleWrite);
 }
 
 TEST(NameInternerTest, IdsAreDenseInInsertionOrder)

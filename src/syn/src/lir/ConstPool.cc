@@ -90,7 +90,7 @@ ConstId ConstPool::internFill(uint32_t width, LogicValue value)
   return internNormalized(width, words.data());
 }
 
-absl::StatusOr<ConstId> ConstPool::internBinary(std::string_view msb_first)
+absl::StatusOr<ConstId> ConstPool::internBitString(std::string_view msb_first)
 {
   const uint32_t width = static_cast<uint32_t>(msb_first.size());
   const uint32_t n = constNumWords(width);

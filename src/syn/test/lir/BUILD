@@ -53,6 +53,19 @@ cc_test(
     ],
 )
 
+# The pools' multi-threaded tests; run them with --config=tsan.
+cc_test(
+    name = "pool_concurrency_test",
+    srcs = ["TestPoolConcurrency.cc"],
+    tags = ["tsan"],
+    deps = [
+        "//src/syn/src/lir",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "const_pool_test",
     srcs = ["TestConstPool.cc"],

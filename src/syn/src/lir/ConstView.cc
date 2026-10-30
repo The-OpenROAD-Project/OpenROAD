@@ -29,7 +29,7 @@ char logicValueChar(LogicValue value)
   return '?';
 }
 
-ConstView ConstView::small(uint32_t width, uint32_t aval, uint32_t bval)
+ConstView ConstView::fromInline(uint32_t width, uint32_t aval, uint32_t bval)
 {
   assert(width <= kMaxInlineConstWidth);
   ConstView view;

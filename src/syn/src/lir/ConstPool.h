@@ -4,7 +4,7 @@
 // Design-wide pool of 3-state constants wider than kMaxInlineConstWidth, and
 // of LUT truth tables (encoding: ConstView.h). Each value is stored once, so
 // equal constants have equal ConstIds, and stored words never move. Modes as
-// in Design.h: read-only adds return an invalid id (internBinary():
+// in Design.h: read-only adds return an invalid id (internBitString():
 // FailedPrecondition), which callers must check.
 
 #pragma once
@@ -49,7 +49,7 @@ class ConstPool
   ConstId internFill(uint32_t width, LogicValue value);
   // MSB-first digits 0, 1, x/X; the width is the number of digits.
   // FailedPrecondition for a new constant in read-only mode.
-  absl::StatusOr<ConstId> internBinary(std::string_view msb_first);
+  absl::StatusOr<ConstId> internBitString(std::string_view msb_first);
 
   // The value of a valid id returned by this pool.
   ConstView get(ConstId id) const;
