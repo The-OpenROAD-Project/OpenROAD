@@ -44,8 +44,10 @@ struct ItfWarning
 // Refused with an error naming the keyword: effects on the geometry or the
 // dielectrics the solver does not model (thickness variation with width,
 // spacing or density, ILD, air gaps, dielectric fill, permittivity against
-// spacing, side tangents, fill emulation, drop factors, multiple-mask etch,
-// ETCH_FROM_TOP).
+// spacing, fill emulation, drop factors, multiple-mask etch,
+// ETCH_FROM_TOP). A non-zero SIDE_TANGENT, sloped sidewalls, is not
+// modeled either but only warned about: the conductor is taken with
+// vertical sidewalls.
 //
 // Any other keyword is skipped with a warning: one per statement, so an
 // unknown block ({ ... }) gives one warning for the block and none for
