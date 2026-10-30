@@ -99,9 +99,12 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
                "No timing-critical paths when calling GetPathTimingScore()!");
     return 0.0;
   }
-  return std::pow(
-      1.0 - hgraph->PathTimingSlack(path_id) + extra_cut_delay_ * num_cuts,
-      timing_exp_factor_);
+  const double score
+      = 1.0 - hgraph->PathTimingSlack(path_id) + extra_cut_delay_ * num_cuts;
+  if (timing_exp_factor_ == 1.0f) {
+    return score;
+  }
+  return std::pow(score, timing_exp_factor_);
 }
 
 // calculate the cost of a path : including timing and snaking cost
