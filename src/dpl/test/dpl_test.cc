@@ -313,7 +313,6 @@ TEST_F(CheckPlacementTest, PlaceableReportsOverlapWithMisalignedFixedCell)
   EXPECT_EQ(failureCount("Site_alignment_failures"), 0);
 }
 
-
 TEST_F(CheckPlacementTest, HybridRowWithBlockMacro)
 {
   auto* site_tall = odb::dbSite::create(lib_, "tall");
@@ -342,7 +341,7 @@ TEST_F(CheckPlacementTest, HybridRowWithBlockMacro)
   EXPECT_EQ(runCheck(), "");
   EXPECT_FALSE(cell->getBBox()->getBox().overlaps(macro->getBBox()->getBox()));
 }
-  
+
 TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
 {
   // BLOCK1 is 4000x4000 DBU (10.53 sites x 1.43 rows). Placed off-grid at
