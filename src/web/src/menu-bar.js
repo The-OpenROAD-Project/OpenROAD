@@ -64,6 +64,10 @@ export function eventShortcut(e) {
 // Builds the bar and returns nothing; call app.rebuildMenuBar() after
 // updating app.customMenu to re-render live.
 export function createMenuBar(app) {
+    // Picking a window from a menu must show it, even behind a maximized pane.
+    const show = (componentType) =>
+        () => app.focusComponent(componentType, { reveal: true });
+
     const staticMenus = [
         { label: 'File', items: [
             { label: 'Open DB...', action: () => showPathDialog(app, 'Open DB', 'read_db'),
@@ -135,24 +139,23 @@ export function createMenuBar(app) {
               enabledWhen: () => !!app.designScale },
         ]},
         { label: 'Windows', items: [
-            { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
-            { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
-            { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
-            { label: 'Inspector', action: () => app.focusComponent('Inspector') },
-            { label: 'Selection Browser',
-              action: () => app.focusComponent('SelectHighlight') },
-            { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
-            { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
-            { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
-            { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
-            { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },
-            { label: 'Charts', action: () => app.focusComponent('ChartsWidget') },
-            { label: 'Help', action: () => app.focusComponent('HelpWidget') },
+            { label: 'Layout Viewer', action: show('LayoutViewer') },
+            { label: '3D Viewer', action: show('3DViewer') },
+            { label: 'Display Controls', action: show('DisplayControls') },
+            { label: 'Inspector', action: show('Inspector') },
+            { label: 'Selection Browser', action: show('SelectHighlight') },
+            { label: 'Tcl Console', action: show('TclConsole') },
+            { label: 'Hierarchy Browser', action: show('Browser') },
+            { label: 'Timing', action: show('TimingWidget') },
+            { label: 'DRC Viewer', action: show('DRCWidget') },
+            { label: 'Clock Tree', action: show('ClockWidget') },
+            { label: 'Charts', action: show('ChartsWidget') },
+            { label: 'Help', action: show('HelpWidget') },
             { type: 'separator' },
             { label: 'Reset to Default Layout', action: () => app.resetLayout() },
         ]},
         { label: 'Help', items: [
-            { label: 'Keyboard Shortcuts', action: () => app.focusComponent('HelpWidget') },
+            { label: 'Keyboard Shortcuts', action: show('HelpWidget') },
         ]},
     ];
 

@@ -442,6 +442,13 @@ describe('installWheelPanning', () => {
         assert.deepEqual(calls.zoom, []);
     });
 
+    it('pans a page-mode notch by the map\'s height', () => {
+        const { map, calls, fire } = makeWheelMap({ clientHeight: 600 });
+        installWheelPanning(map, () => false);
+        fire({ deltaY: 1, deltaMode: 2 });
+        assert.deepEqual(calls.pan, [[0, 600]]);
+    });
+
     it('zooms on Ctrl+wheel when the preference is off', () => {
         const { map, calls, fire } = makeWheelMap({ zoom: 3 });
         installWheelPanning(map, () => false);

@@ -9,6 +9,38 @@ import {
     TabIcon, COMPONENT_CONFIG
 } from '../../src/grid-layout.js';
 
+const PointerEvt = window.PointerEvent || window.MouseEvent;
+
+// jsdom has no layout: give a tab strip the geometry a browser would.
+function stubTabStrip(tabsEl, { scrollWidth, clientWidth }) {
+    let scrollLeft = 0;
+    Object.defineProperty(tabsEl, 'scrollWidth', { value: scrollWidth, configurable: true });
+    Object.defineProperty(tabsEl, 'clientWidth', { value: clientWidth, configurable: true });
+    Object.defineProperty(tabsEl, 'scrollLeft', {
+        get: () => scrollLeft,
+        set: (v) => { scrollLeft = v; },
+        configurable: true,
+    });
+    tabsEl.dispatchEvent(new Event('scroll'));
+}
+
+// A keydown that crosses into the pane's shadow DOM; returns the event.
+function pressKey(target, key) {
+    const e = new window.KeyboardEvent('keydown', {
+        key, bubbles: true, composed: true, cancelable: true,
+    });
+    target.dispatchEvent(e);
+    return e;
+}
+
+// Lets MutationObserver and slotchange callbacks run.
+const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+
+const menuOf = (pane) => pane.shadowRoot.querySelector('.ide-tab-menu');
+const menuItems = (pane) => [...pane.shadowRoot.querySelectorAll('.ide-tab-menu-item')];
+const focusedTitle = (pane) => pane.shadowRoot.activeElement
+    ?.querySelector('.ide-tab-menu-title')?.textContent;
+
 describe('GridLayoutManager', () => {
     let containerEl;
     let layout;
@@ -19,6 +51,29 @@ describe('GridLayoutManager', () => {
         localStorage.clear();
         layout = new GridLayoutManager(containerEl);
     });
+
+    async function mountRightPane() {
+        for (const type of ['Inspector', 'Browser', 'TimingWidget', 'ChartsWidget']) {
+            layout.registerComponentFactoryFunction(type, () => {});
+        }
+        layout.loadLayout({});
+        const pane = layout.panes.right;
+        await pane.updateComplete;
+        return { pane, tabsEl: pane.shadowRoot.querySelector('.ide-tabs') };
+    }
+
+    // The right pane with its tabs overflowing; with `open`, the ▾ menu too.
+    async function mountOverflowingPane({ open = false } = {}) {
+        const { pane, tabsEl } = await mountRightPane();
+        stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
+        await pane.updateComplete;
+        const btn = pane.shadowRoot.querySelector('.ide-btn-overflow');
+        if (open) {
+            btn.click();
+            await pane.updateComplete;
+        }
+        return { pane, tabsEl, btn };
+    }
 
     it('initializes the CSS Grid DOM structure when empty', () => {
         assert.ok(containerEl.classList.contains('ide-layout'));
@@ -296,6 +351,350 @@ describe('GridLayoutManager', () => {
         assert.ok(!bottomPane.collapsed);
     });
 
+    it('focusComponent with reveal restores a maximized pane that hides the target', () => {
+        layout.registerComponentFactoryFunction('LayoutViewer', () => {});
+        layout.registerComponentFactoryFunction('TimingWidget', () => {});
+        layout.registerComponentFactoryFunction('ChartsWidget', () => {});
+        layout.loadLayout({});
+
+        // Programmatic focus leaves the user's maximized pane alone.
+        layout.maximizePane('main');
+        layout.focusComponent('ChartsWidget');
+        assert.ok(containerEl.classList.contains('maximized-main'));
+
+        layout.focusComponent('ChartsWidget', { reveal: true });
+        assert.ok(!layout.isPaneMaximized());
+        assert.ok(!containerEl.classList.contains('maximized-main'));
+        assert.equal(layout.activeTabs.right, 'ChartsWidget');
+
+        // The target is in the maximized pane itself: nothing to restore.
+        layout.maximizePane('right');
+        layout.focusComponent('TimingWidget', { reveal: true });
+        assert.ok(containerEl.classList.contains('maximized-right'));
+        assert.equal(layout.activeTabs.right, 'TimingWidget');
+
+        layout.focusComponent('ChartsWidget', null);
+        assert.equal(layout.activeTabs.right, 'ChartsWidget');
+    });
+
+    it('shows the overflow button and edge fades only while the tabs overflow', async () => {
+        const { pane, tabsEl } = await mountRightPane();
+        const btn = pane.shadowRoot.querySelector('.ide-btn-overflow');
+        assert.ok(btn.classList.contains('idle'), 'laid out, but hidden until the tabs overflow');
+        assert.ok(!tabsEl.classList.contains('fade-end'));
+
+        stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
+        await pane.updateComplete;
+        assert.ok(!btn.classList.contains('idle'));
+        assert.ok(!tabsEl.classList.contains('fade-start'));
+        assert.ok(tabsEl.classList.contains('fade-end'));
+
+        tabsEl.scrollLeft = 200;
+        tabsEl.dispatchEvent(new Event('scroll'));
+        await pane.updateComplete;
+        assert.ok(tabsEl.classList.contains('fade-start'));
+        assert.ok(tabsEl.classList.contains('fade-end'));
+
+        tabsEl.scrollLeft = 400;
+        tabsEl.dispatchEvent(new Event('scroll'));
+        await pane.updateComplete;
+        assert.ok(tabsEl.classList.contains('fade-start'));
+        assert.ok(!tabsEl.classList.contains('fade-end'));
+
+        stubTabStrip(tabsEl, { scrollWidth: 300, clientWidth: 300 });
+        await pane.updateComplete;
+        assert.ok(btn.classList.contains('idle'));
+        assert.ok(!tabsEl.classList.contains('fade-start'));
+        assert.ok(!tabsEl.classList.contains('fade-end'));
+    });
+
+    it('lists the open tabs in the overflow menu and activates the chosen one', async () => {
+        const { pane, btn } = await mountOverflowingPane();
+        layout.closeComponent('Browser');
+        assert.equal(btn.getAttribute('aria-expanded'), 'false');
+        btn.click();
+        await pane.updateComplete;
+        assert.equal(btn.getAttribute('aria-expanded'), 'true');
+
+        const items = menuItems(pane);
+        assert.deepEqual(
+            items.map(item => item.querySelector('.ide-tab-menu-title').textContent),
+            ['Inspector', 'Timing', 'Charts']);
+        assert.deepEqual(
+            items.map(item => item.getAttribute('aria-checked')),
+            ['true', 'false', 'false']);
+        assert.ok(items[2].querySelector('.ide-tab-icon svg'));
+
+        // Opening focuses the active tab's item; arrows, Home and End move
+        // between items, which stay out of the Tab order.
+        assert.ok(items.every(item => item.getAttribute('tabindex') === '-1'));
+        assert.equal(pane.shadowRoot.activeElement, items[0]);
+        const key = (k) => pressKey(pane.shadowRoot.activeElement, k);
+        key('ArrowUp');
+        assert.equal(pane.shadowRoot.activeElement, items[2]);
+        key('ArrowDown');
+        assert.equal(pane.shadowRoot.activeElement, items[0]);
+        key('End');
+        assert.equal(pane.shadowRoot.activeElement, items[2]);
+        key('Home');
+        assert.equal(pane.shadowRoot.activeElement, items[0]);
+        key('End');
+
+        items[2].click();
+        await pane.updateComplete;
+        assert.equal(layout.activeTabs.right, 'ChartsWidget');
+        assert.equal(menuOf(pane), null);
+        assert.equal(btn.getAttribute('aria-expanded'), 'false');
+        assert.equal(pane.shadowRoot.activeElement, btn, 'focus returns to the ▾');
+    });
+
+    it('lets a click on the overflow button reach document listeners', async () => {
+        const { btn } = await mountOverflowingPane();
+
+        // The menu bar and the layer context menu close on a document click.
+        let clicks = 0;
+        const onClick = () => { clicks++; };
+        document.addEventListener('click', onClick);
+        try {
+            btn.click();
+            assert.equal(clicks, 1);
+        } finally {
+            document.removeEventListener('click', onClick);
+        }
+    });
+
+    it('keeps keyboard focus and Escape within the overflow menu', async () => {
+        const { pane, btn } = await mountOverflowingPane();
+        const focused = () => pane.shadowRoot.activeElement;
+        const open = async () => {
+            btn.click();
+            await pane.updateComplete;
+            assert.ok(menuOf(pane));
+        };
+
+        // Like main.js's shortcuts: registered first, in document capture.
+        const seen = [];
+        const onKeydown = (e) => seen.push(e.key);
+        document.addEventListener('keydown', onKeydown, true);
+        try {
+            await open();
+            assert.ok(!pressKey(document, 'Escape').defaultPrevented);
+            await pane.updateComplete;
+            assert.ok(menuOf(pane), 'an Escape outside the menu leaves it open');
+            assert.equal(seen.length, 1);
+
+            const e = pressKey(focused(), 'Escape');
+            await pane.updateComplete;
+            assert.ok(e.defaultPrevented);
+            assert.equal(menuOf(pane), null);
+            assert.equal(focused(), btn);
+            assert.equal(seen.length, 1, 'the menu\'s Escape stops at the menu');
+
+            // A letter jumps to the next item starting with it, and is no
+            // shortcut ('t' toggles the theme, 'k' the ruler).
+            await open();
+            assert.ok(pressKey(focused(), 't').defaultPrevented);
+            assert.equal(focusedTitle(pane), 'Timing');
+            pressKey(focused(), 'h');
+            assert.equal(focusedTitle(pane), 'Hierarchy', 'wraps past the end');
+            assert.ok(pressKey(focused(), 'x').defaultPrevented, 'no match');
+            assert.equal(focusedTitle(pane), 'Hierarchy');
+            assert.equal(seen.length, 1);
+
+            // Enter is left to the button.
+            assert.ok(!pressKey(focused(), 'Enter').defaultPrevented);
+            assert.equal(seen.length, 2);
+            pressKey(focused(), 'Escape');
+            await pane.updateComplete;
+        } finally {
+            document.removeEventListener('keydown', onKeydown, true);
+        }
+
+        // Focus moving between items keeps it open; leaving the menu closes it.
+        await open();
+        const focusout = (relatedTarget) => menuItems(pane)[0].dispatchEvent(
+            new window.FocusEvent('focusout', { bubbles: true, composed: true, relatedTarget }));
+        focusout(menuItems(pane)[1]);
+        await pane.updateComplete;
+        assert.ok(menuOf(pane));
+        focusout(document.body);
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null);
+
+        // A press on an item must not move focus off the menu first.
+        await open();
+        const press = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        menuItems(pane)[1].dispatchEvent(press);
+        assert.ok(press.defaultPrevented);
+
+        menuItems(pane)[0].dispatchEvent(
+            new PointerEvt('pointerdown', { bubbles: true, composed: true }));
+        await pane.updateComplete;
+        assert.ok(menuOf(pane), 'a pointerdown inside the menu keeps it open');
+        document.body.dispatchEvent(new PointerEvt('pointerdown', { bubbles: true }));
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null);
+
+        // Maximizing the pane closes it too.
+        await open();
+        layout.maximizePane('right');
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null);
+    });
+
+    it('updates the open overflow menu when the active tab changes', async () => {
+        const { pane } = await mountOverflowingPane({ open: true });
+
+        // E.g. a selection response focusing another tab while the menu is open.
+        layout.activateTab('TimingWidget');
+        await layout.components.get('TimingWidget').tabEl.updateComplete;
+        await tick();
+        await pane.updateComplete;
+
+        const checked = menuItems(pane)
+            .filter(item => item.getAttribute('aria-checked') === 'true')
+            .map(item => item.querySelector('.ide-tab-menu-title').textContent);
+        assert.deepEqual(checked, ['Timing']);
+    });
+
+    it('closes the overflow menu from the button that opened it', async () => {
+        const { pane, btn } = await mountOverflowingPane({ open: true });
+
+        // Pressing the ▾ must not take focus out of the menu: the focusout
+        // would close it, and the click would then open it again.
+        const press = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        btn.dispatchEvent(press);
+        assert.ok(press.defaultPrevented);
+
+        btn.click();
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null);
+        assert.equal(pane.shadowRoot.activeElement, btn);
+    });
+
+    it('keeps focus in the overflow menu when the focused item goes away', async () => {
+        const { pane, btn } = await mountOverflowingPane({ open: true });
+        pressKey(pane.shadowRoot.activeElement, 'End');
+        assert.equal(focusedTitle(pane), 'Charts');
+
+        // Chrome blurs a focused node as it removes it; jsdom does not.
+        const focused = pane.shadowRoot.activeElement;
+        const remove = focused.remove.bind(focused);
+        focused.remove = () => {
+            focused.dispatchEvent(new window.FocusEvent('focusout', {
+                bubbles: true, composed: true, relatedTarget: null,
+            }));
+            remove();
+        };
+
+        // E.g. a Tcl command closing the window while the menu is open.
+        layout.closeComponent('ChartsWidget');
+        await tick();
+        await pane.updateComplete;
+        assert.ok(menuOf(pane));
+        assert.equal(focusedTitle(pane), 'Inspector', 'back on the active tab\'s item');
+
+        // A close the user did not ask for still hands focus back to the ▾.
+        layout.maximizePane('right');
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null);
+        assert.equal(pane.shadowRoot.activeElement, btn);
+    });
+
+    it('lists a tab added while the overflow menu is open', async () => {
+        const { pane } = await mountOverflowingPane({ open: true });
+
+        const extra = document.createElement('ide-tab');
+        extra.slot = 'tabs';
+        extra.title = 'Extra';
+        pane.appendChild(extra);
+        await tick();
+        await pane.updateComplete;
+
+        const titles = menuItems(pane)
+            .map(item => item.querySelector('.ide-tab-menu-title').textContent);
+        assert.ok(titles.includes('Extra'), titles.join());
+    });
+
+    it('observes the strip and the tabs\' full width, not each tab', async () => {
+        const observers = [];
+        const RealResizeObserver = globalThis.ResizeObserver;
+        globalThis.ResizeObserver = class {
+            constructor(callback) {
+                this.callback = callback;
+                this.observed = new Set();
+                observers.push(this);
+            }
+            observe(el) { this.observed.add(el); }
+            disconnect() { this.observed.clear(); }
+        };
+        try {
+            // A fresh layout, so its panes are built with the fake observer.
+            document.body.innerHTML = '<div id="gl-container"></div>';
+            containerEl = document.getElementById('gl-container');
+            layout = new GridLayoutManager(containerEl);
+            const { pane, tabsEl } = await mountRightPane();
+            const track = pane.shadowRoot.querySelector('.ide-tabs-track');
+
+            const ro = observers.find(o => o.observed.has(tabsEl));
+            assert.ok(ro, 'the tab strip is observed');
+            assert.deepEqual([...ro.observed], [tabsEl, track]);
+
+            // A tab mounted later resizes the track; nothing new to observe.
+            layout.registerComponentFactoryFunction('ClockWidget', () => {});
+            layout.focusComponent('ClockWidget');
+            await tick();
+            assert.deepEqual([...ro.observed], [tabsEl, track]);
+
+            // Without dispatching scroll: only the observer can notice this.
+            Object.defineProperty(tabsEl, 'scrollWidth', { value: 700, configurable: true });
+            Object.defineProperty(tabsEl, 'clientWidth', { value: 300, configurable: true });
+            // A narrower strip brings the active tab back into view.
+            const scrolls = [];
+            layout.components.get('ClockWidget').tabEl.scrollIntoView = (opts) => scrolls.push(opts);
+            ro.callback([]);
+            await pane.updateComplete;
+            assert.ok(!pane.shadowRoot.querySelector('.ide-btn-overflow').classList.contains('idle'));
+            assert.deepEqual(scrolls, [{ inline: 'nearest', block: 'nearest' }]);
+        } finally {
+            globalThis.ResizeObserver = RealResizeObserver;
+        }
+    });
+
+    it('scrolls an overflowing tab strip horizontally with a vertical wheel', async () => {
+        const { pane, tabsEl } = await mountRightPane();
+        const spin = (init) => {
+            const e = new window.WheelEvent('wheel', { bubbles: true, cancelable: true, ...init });
+            tabsEl.dispatchEvent(e);
+            return e;
+        };
+
+        stubTabStrip(tabsEl, { scrollWidth: 300, clientWidth: 300 });
+        await pane.updateComplete;
+        assert.ok(!spin({ deltaY: 100 }).defaultPrevented);
+        assert.equal(tabsEl.scrollLeft, 0);
+
+        stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
+        await pane.updateComplete;
+        assert.ok(spin({ deltaY: 100 }).defaultPrevented);
+        assert.equal(tabsEl.scrollLeft, 100);
+
+        spin({ deltaY: 3, deltaMode: 1 });
+        assert.equal(tabsEl.scrollLeft, 148);
+
+        // The strip scrolls sideways, so a page is its width (300).
+        spin({ deltaY: 1, deltaMode: 2 });
+        assert.equal(tabsEl.scrollLeft, 448);
+
+        // Horizontal gestures are left to the browser.
+        assert.ok(!spin({ deltaX: 50, deltaY: 10 }).defaultPrevented);
+        assert.equal(tabsEl.scrollLeft, 448);
+
+        // So are Ctrl+wheel and trackpad pinch, which zoom the page.
+        assert.ok(!spin({ deltaY: 100, ctrlKey: true }).defaultPrevented);
+        assert.equal(tabsEl.scrollLeft, 448);
+    });
+
     it('persists and restores layout dimensions and active tabs', () => {
         layout.registerComponentFactoryFunction('DisplayControls', () => {});
         layout.registerComponentFactoryFunction('LayoutViewer', () => {});
@@ -369,13 +768,15 @@ describe('GridLayoutManager', () => {
         await pane.updateComplete;
         assert.ok(pane.hasAttribute('maximized'));
         assert.ok(pane.maximized);
-        assert.equal(maxBtn.textContent, '⧉');
+        assert.equal(maxBtn.textContent.trim(), '⧉ Restore layout');
+        assert.ok(maxBtn.classList.contains('ide-btn-restore'));
 
         pane.setMaximized(false);
         await pane.updateComplete;
         assert.ok(!pane.hasAttribute('maximized'));
         assert.ok(!pane.maximized);
         assert.equal(maxBtn.textContent, '⤢');
+        assert.ok(!maxBtn.classList.contains('ide-btn-restore'));
 
         pane.remove();
     });
@@ -412,7 +813,6 @@ describe('GridLayoutManager', () => {
             dragDetail = e.detail;
         });
 
-        const PointerEvt = window.PointerEvent || window.MouseEvent;
         splitter.dispatchEvent(new PointerEvt('pointerdown', { bubbles: true, clientX: 100, clientY: 50 }));
         assert.ok(splitter.classList.contains('dragging'));
         assert.ok(document.body.classList.contains('is-resizing'));
@@ -520,17 +920,17 @@ describe('GridLayoutManager', () => {
         // Test TabIcon enum rendering
         tab.icon = TabIcon.LAYOUT;
         await tab.updateComplete;
-        assert.ok(tab.shadowRoot.querySelector('.or-tab-icon svg'));
+        assert.ok(tab.shadowRoot.querySelector('.ide-tab-icon svg'));
 
         // Test updating to another TabIcon
         tab.icon = TabIcon.TCL_CONSOLE;
         await tab.updateComplete;
-        assert.ok(tab.shadowRoot.querySelector('.or-tab-icon svg'));
+        assert.ok(tab.shadowRoot.querySelector('.ide-tab-icon svg'));
 
         // Tabs without an icon do not render an icon container
         tab.icon = null;
         await tab.updateComplete;
-        assert.equal(tab.shadowRoot.querySelector('.or-tab-icon'), null);
+        assert.equal(tab.shadowRoot.querySelector('.ide-tab-icon'), null);
 
         tab.remove();
     });

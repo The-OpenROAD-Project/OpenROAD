@@ -4,6 +4,9 @@
 import { LitElement, html, css, svg, nothing } from 'lit';
 import { when } from 'lit/directives/when.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { repeat } from 'lit/directives/repeat.js';
+import { wheelDeltaPx } from './ui-utils.js';
 
 // ─── Native CSS Grid IDE Layout Manager & Custom Elements ────────────────────
 
@@ -51,6 +54,24 @@ export function emitEvent(host, type, detail = {}) {
     }));
 }
 
+// A tab icon's box, shared by the tab strip and the overflow menu.
+const tabIconStyles = css`
+    .ide-tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 13px;
+        height: 13px;
+    }
+
+    .ide-tab-icon svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+`;
+
 /**
  * <ide-pane> - Encapsulated IDE window pane custom element using Lit.
  * Manages its header (tab bar and action controls) and content viewport.
@@ -62,9 +83,13 @@ export class IdePaneElement extends LitElement {
         collapsible: { type: Boolean, reflect: true },
         maximized: { type: Boolean, reflect: true },
         collapsed: { type: Boolean, reflect: true },
+        _overflowing: { state: true },
+        _fadeStart: { state: true },
+        _fadeEnd: { state: true },
+        _menuOpen: { state: true },
     };
 
-    static styles = css`
+    static styles = [tabIconStyles, css`
         :host {
             display: flex;
             flex-direction: column;
@@ -101,10 +126,36 @@ export class IdePaneElement extends LitElement {
             min-width: 0;
             overflow-x: auto;
             scrollbar-width: none;
+            --tab-fade: 24px;
+            /* Scrolling a tab into view keeps it clear of the faded edge. */
+            scroll-padding-inline: var(--tab-fade);
+            -webkit-mask-image: var(--tab-mask, none);
+            mask-image: var(--tab-mask, none);
         }
 
         .ide-tabs::-webkit-scrollbar {
             display: none;
+        }
+
+        /* The tabs at their full width: its size is the strip's scrollWidth. */
+        .ide-tabs-track {
+            display: flex;
+            flex: none;
+            height: 100%;
+        }
+
+        /* Fade the edge that has tabs scrolled past it. */
+        .ide-tabs.fade-start {
+            --tab-mask: linear-gradient(to left, #000 calc(100% - var(--tab-fade)), transparent);
+        }
+
+        .ide-tabs.fade-end {
+            --tab-mask: linear-gradient(to right, #000 calc(100% - var(--tab-fade)), transparent);
+        }
+
+        .ide-tabs.fade-start.fade-end {
+            --tab-mask: linear-gradient(to right, transparent, #000 var(--tab-fade),
+                                        #000 calc(100% - var(--tab-fade)), transparent);
         }
 
         .ide-controls {
@@ -130,9 +181,27 @@ export class IdePaneElement extends LitElement {
             transition: background-color 120ms ease, color 120ms ease;
         }
 
-        .ide-btn:hover {
+        .ide-btn:hover,
+        .ide-btn-overflow[aria-expanded="true"] {
             background: var(--bg-hover);
             color: var(--fg-primary);
+        }
+
+        /* Always laid out, so whether the tabs overflow never depends on it showing. */
+        .ide-btn-overflow.idle {
+            visibility: hidden;
+        }
+
+        .ide-btn.ide-btn-restore {
+            width: auto;
+            padding: 0 6px;
+            border: 1px solid var(--border-strong);
+            color: var(--fg-primary);
+        }
+
+        .ide-btn.ide-btn-restore:hover {
+            color: var(--accent);
+            border-color: var(--accent);
         }
 
         .ide-content {
@@ -140,17 +209,290 @@ export class IdePaneElement extends LitElement {
             position: relative;
             overflow: hidden;
         }
-    `;
+
+        /* Above Leaflet's controls (z-index 1000), below .context-menu. */
+        .ide-tab-menu {
+            position: absolute;
+            top: 28px;
+            right: 4px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            min-width: min(160px, 100% - 8px);
+            max-width: calc(100% - 8px);
+            max-height: calc(100% - 32px);
+            overflow-y: auto;
+            padding: 4px 0;
+            background: var(--bg-context);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 2px 8px var(--shadow);
+            box-sizing: border-box;
+        }
+
+        .ide-tab-menu-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm, 6px);
+            padding: 5px 12px 5px 6px;
+            background: transparent;
+            border: none;
+            color: var(--fg-primary);
+            font-family: var(--font-sans);
+            font-size: var(--fs-12);
+            text-align: left;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .ide-tab-menu-item:hover,
+        .ide-tab-menu-item:focus-visible {
+            background: var(--bg-hover);
+            color: var(--fg-bright);
+            outline: none;
+        }
+
+        .ide-tab-menu-item[aria-checked="true"] {
+            color: var(--accent-tab);
+        }
+
+        .ide-tab-menu-check {
+            flex: none;
+            width: 12px;
+            text-align: center;
+        }
+
+        .ide-tab-menu-title {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    `];
 
     constructor() {
         super();
-        this._onMaximizeClick = this._onMaximizeClick.bind(this);
-        this._onCollapseClick = this._onCollapseClick.bind(this);
+        this._overflowing = false;
+        this._fadeStart = false;
+        this._fadeEnd = false;
+        this._menuOpen = false;
+        this._tabsEl = null;
+        this._tabsTrack = null;
+        this._tabsSlot = null;
+        this._tabsObserver = null;
+        this._tabsMutations = null;
+        this._menuAbort = null;
+        this._menuHadFocus = false;
+        this._inUpdate = false;
     }
 
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('ide-pane', `ide-pane-${this.paneName}`);
+        if (this.hasUpdated) this._observeStrip();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this._tabsObserver?.disconnect();
+        this._closeMenu();
+    }
+
+    firstUpdated() {
+        this._tabsEl = this.renderRoot.querySelector('.ide-tabs');
+        this._tabsTrack = this.renderRoot.querySelector('.ide-tabs-track');
+        this._tabsSlot = this.renderRoot.querySelector('slot[name="tabs"]');
+        // Its first callback takes the first measurement.
+        this._tabsObserver = new ResizeObserver(() => {
+            this._updateOverflow();
+            // A narrower strip must not leave the active tab out of view.
+            this._tabs.find(tab => tab.active)
+                ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+        });
+        // The open menu shows the tabs' state, which is not the pane's.
+        this._tabsMutations = new MutationObserver(() => this.requestUpdate());
+        this._observeStrip();
+    }
+
+    willUpdate(changedProperties) {
+        this._menuHadFocus = this._menuOpen && this._menuHasFocus();
+        this._inUpdate = true;
+        if (this._menuOpen && (!this._overflowing || this.collapsed
+                               || changedProperties.has('maximized'))) {
+            this._closeMenu(this._menuHadFocus);
+        }
+    }
+
+    updated(changedProperties) {
+        this._inUpdate = false;
+        // On opening, or when the focused item's tab went away in this render.
+        if (this._menuOpen && (changedProperties.has('_menuOpen')
+                               || (this._menuHadFocus && !this._menuHasFocus()))) {
+            this._focusMenuItem();
+        }
+    }
+
+    get _tabs() {
+        return this._tabsSlot?.assignedElements() || [];
+    }
+
+    // The strip's box and its tabs' full width bound its scroll range.
+    _observeStrip() {
+        this._tabsObserver.observe(this._tabsEl);
+        this._tabsObserver.observe(this._tabsTrack);
+    }
+
+    _observeTabs() {
+        this._tabsMutations.disconnect();
+        for (const tab of this._tabs) {
+            this._tabsMutations.observe(tab, {
+                attributes: true, attributeFilter: ['active', 'hidden', 'title'],
+            });
+        }
+    }
+
+    _onTabsSlotChange() {
+        if (!this._menuOpen) return;
+        this._observeTabs();
+        this.requestUpdate();
+    }
+
+    _updateOverflow() {
+        const el = this._tabsEl;
+        if (!el) return;
+        const max = el.scrollWidth - el.clientWidth;
+        this._overflowing = max > 1;
+        this._fadeStart = this._overflowing && el.scrollLeft > 1;
+        this._fadeEnd = this._overflowing && el.scrollLeft < max - 1;
+    }
+
+    _onTabsWheel(e) {
+        // Ctrl+wheel and trackpad pinch zoom the page.
+        if (e.ctrlKey || !this._overflowing
+            || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        // The vertical delta scrolls sideways, so a page is the strip's width.
+        this._tabsEl.scrollLeft += wheelDeltaPx(e, () => this._tabsEl.clientWidth)[1];
+    }
+
+    _onOverflowClick() {
+        if (this._menuOpen) {
+            this._closeMenu(true);
+        } else {
+            this._openMenu();
+        }
+    }
+
+    _openMenu() {
+        this._menuOpen = true;
+        this._observeTabs();
+        this._menuAbort = new AbortController();
+        const { signal } = this._menuAbort;
+
+        document.addEventListener('pointerdown', (e) => {
+            const path = e.composedPath();
+            const inside = ['.ide-tab-menu', '.ide-btn-overflow'].some(
+                sel => path.includes(this.renderRoot.querySelector(sel)));
+            if (!inside) this._closeMenu();
+        }, { signal });
+
+        // Window capture: main.js reads Escape and single letters as shortcuts
+        // in document capture, which runs before any listener on the menu.
+        window.addEventListener('keydown', (e) => this._onMenuKey(e), { capture: true, signal });
+    }
+
+    _closeMenu(restoreFocus = false) {
+        this._menuAbort?.abort();
+        this._menuAbort = null;
+        this._tabsMutations?.disconnect();
+        this._menuOpen = false;
+        if (restoreFocus) this.renderRoot.querySelector('.ide-btn-overflow')?.focus();
+    }
+
+    _menuHasFocus() {
+        return !!this.renderRoot?.activeElement?.closest('.ide-tab-menu');
+    }
+
+    // The active tab's item, else the first.
+    _focusMenuItem() {
+        const items = [...this.renderRoot.querySelectorAll('.ide-tab-menu-item')];
+        (items.find(item => item.getAttribute('aria-checked') === 'true') || items[0])?.focus();
+    }
+
+    _onMenuFocusout(e) {
+        // Chrome blurs a focused item as a render removes it; updated() then
+        // focuses another one, so this is not focus leaving the menu.
+        if (this._inUpdate) return;
+        if (this._menuOpen && !e.currentTarget.contains(e.relatedTarget)) this._closeMenu();
+    }
+
+    // A press must not move focus off the menu before the click: on the ▾ the
+    // focusout would close it, and Safari does not focus a clicked item.
+    _keepMenuFocus(e) {
+        e.preventDefault();
+    }
+
+    _onMenuKey(e) {
+        const menu = this.renderRoot.querySelector('.ide-tab-menu');
+        if (!menu || !e.composedPath().includes(menu)) return;
+        const items = [...menu.querySelectorAll('.ide-tab-menu-item')];
+        const n = items.length;
+        const i = items.indexOf(this.renderRoot.activeElement);
+        let target = null;
+        if (e.key === 'ArrowDown') {
+            target = items[(i + 1) % n];
+        } else if (e.key === 'ArrowUp') {
+            target = items[i <= 0 ? n - 1 : i - 1];
+        } else if (e.key === 'Home') {
+            target = items[0];
+        } else if (e.key === 'End') {
+            target = items[n - 1];
+        } else if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            // Type-ahead: the next item whose title starts with the letter.
+            const letter = e.key.toLowerCase();
+            target = [...items.slice(i + 1), ...items.slice(0, i + 1)].find(item =>
+                item.querySelector('.ide-tab-menu-title').textContent.toLowerCase().startsWith(letter));
+        } else if (e.key !== 'Escape') {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+            this._closeMenu(true);
+        } else {
+            target?.focus();
+        }
+    }
+
+    _selectFromMenu(tab) {
+        this._closeMenu(true);
+        tab.select();
+    }
+
+    _renderTabMenu() {
+        const tabs = this._tabs.filter(tab => !tab.hidden);
+        return html`
+            <div
+                class="ide-tab-menu"
+                role="menu"
+                @focusout=${this._onMenuFocusout}
+                @mousedown=${this._keepMenuFocus}
+            >
+                ${repeat(tabs, tab => tab, tab => html`
+                    <button
+                        class="ide-tab-menu-item"
+                        role="menuitemradio"
+                        tabindex="-1"
+                        aria-checked=${tab.active ? 'true' : 'false'}
+                        @click=${() => this._selectFromMenu(tab)}
+                    >
+                        <span class="ide-tab-menu-check">${tab.active ? '✓' : ''}</span>
+                        ${tab.icon ? html`<span class="ide-tab-icon">${tab.icon}</span>` : nothing}
+                        <span class="ide-tab-menu-title">${tab.title || ''}</span>
+                    </button>
+                `)}
+            </div>
+        `;
     }
 
     get paneName() {
@@ -200,17 +542,45 @@ export class IdePaneElement extends LitElement {
 
         return html`
             <div class="ide-header" id="${prefix}-header">
-                <div class="ide-tabs" id="${prefix}-tabs">
-                    <slot name="tabs"></slot>
+                <div
+                    class=${classMap({
+                        'ide-tabs': true,
+                        'fade-start': this._fadeStart,
+                        'fade-end': this._fadeEnd,
+                    })}
+                    id="${prefix}-tabs"
+                    @scroll=${this._updateOverflow}
+                    @wheel=${this._onTabsWheel}
+                >
+                    <div class="ide-tabs-track">
+                        <slot name="tabs" @slotchange=${this._onTabsSlotChange}></slot>
+                    </div>
                 </div>
                 <div class="ide-controls" id="${prefix}-controls">
+                    <button
+                        class=${classMap({
+                            'ide-btn': true,
+                            'ide-btn-overflow': true,
+                            idle: !this._overflowing,
+                        })}
+                        id="btn-overflow-${name}"
+                        title="List all tabs"
+                        aria-haspopup="menu"
+                        aria-expanded=${this._menuOpen ? 'true' : 'false'}
+                        @mousedown=${this._keepMenuFocus}
+                        @click=${this._onOverflowClick}
+                    >▾</button>
                     ${when(hasMax, () => html`
                         <button
-                            class="ide-btn ide-btn-maximize"
+                            class=${classMap({
+                                'ide-btn': true,
+                                'ide-btn-maximize': true,
+                                'ide-btn-restore': !!this.maximized,
+                            })}
                             id="btn-maximize-${name}"
                             title=${ifDefined(this.maximized ? 'Restore' : 'Maximize')}
                             @click=${this._onMaximizeClick}
-                        >${this.maximized ? '⧉' : '⤢'}</button>
+                        >${this.maximized ? '⧉ Restore layout' : '⤢'}</button>
                     `)}
                     ${when(hasCol, () => html`
                         <button
@@ -222,6 +592,7 @@ export class IdePaneElement extends LitElement {
                     `)}
                 </div>
             </div>
+            ${this._menuOpen ? this._renderTabMenu() : nothing}
             <div class="ide-content" id="${prefix}-content">
                 <slot></slot>
             </div>
@@ -389,7 +760,7 @@ export class IdeTabElement extends LitElement {
         icon: { attribute: false },
     };
 
-    static styles = css`
+    static styles = [tabIconStyles, css`
         :host {
             display: inline-flex;
             align-items: center;
@@ -425,31 +796,13 @@ export class IdeTabElement extends LitElement {
             border-bottom: 2px solid var(--accent-tab);
         }
 
-        .ide-tab-icon,
-        ::slotted([slot="icon"]),
-        .or-tab-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: none;
-            width: 13px;
-            height: 13px;
+        .ide-tab-icon {
             opacity: 0.7;
         }
 
-        :host([active]) .ide-tab-icon,
-        :host([active]) ::slotted([slot="icon"]),
-        :host([active]) .or-tab-icon {
+        :host([active]) .ide-tab-icon {
             color: var(--accent-tab);
             opacity: 1;
-        }
-
-        .ide-tab-icon svg,
-        ::slotted([slot="icon"]) svg,
-        .or-tab-icon svg {
-            width: 100%;
-            height: 100%;
-            display: block;
         }
 
         .ide-tab-title {
@@ -477,7 +830,7 @@ export class IdeTabElement extends LitElement {
             background: var(--bg-hover);
             color: var(--sem-error);
         }
-    `;
+    `];
 
     constructor() {
         super();
@@ -508,6 +861,11 @@ export class IdeTabElement extends LitElement {
     _onClick(e) {
         const path = e.composedPath ? e.composedPath() : [e.target];
         if (path.some(el => el.classList?.contains('ide-tab-close'))) return;
+        this.select();
+    }
+
+    // Asks the layout to activate this tab.
+    select() {
         emitEvent(this, 'tab-select', { componentType: this.targetComponent });
     }
 
@@ -533,7 +891,7 @@ export class IdeTabElement extends LitElement {
 
     render() {
         return html`
-            ${this.icon ? html`<span class="ide-tab-icon or-tab-icon">${this.icon}</span>` : nothing}
+            ${this.icon ? html`<span class="ide-tab-icon">${this.icon}</span>` : nothing}
             <span class="ide-tab-title">${this.title || ''}</span>
             ${this.closable ? html`<span class="ide-tab-close" title="Close" @click=${this._onCloseClick}>✕</span>` : nothing}
         `;
@@ -1062,15 +1420,20 @@ export class GridLayoutManager extends EventEmitter {
         this.emit('stateChanged');
     }
 
-    focusComponent(componentType) {
-        const comp = this.components.get(componentType);
-        if (!comp) {
+    /**
+     * Activates a component's tab, mounting it first if needed.  With reveal,
+     * also restores a maximized pane that hides the component's pane.
+     */
+    focusComponent(componentType, options) {
+        if (!this.components.has(componentType)) {
             const factory = this.factories.get(componentType);
-            if (factory) {
-                this._mountComponent(componentType, factory);
-            } else {
-                return;
-            }
+            if (!factory) return;
+            this._mountComponent(componentType, factory);
+        }
+        const comp = this.components.get(componentType);
+        if (options?.reveal && comp && this.isPaneMaximized()
+            && !this.isPaneMaximized(comp.paneName)) {
+            this.restoreMaximized();
         }
         this.activateTab(componentType);
     }

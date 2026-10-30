@@ -340,3 +340,70 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
     });
 });
+
+describe('TimingWidget cone target', () => {
+    const nodes = [{ pin: 'in1' }, { pin: '_12_/A' }, { pin: '_12_/Z' }];
+
+    // One setup path, selected, so its detail table lists `nodes`.
+    function makeWidget(app) {
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(-0.1, '_12_/Z', { data_nodes: nodes })]);
+        widget._selectPathRow(0);
+        return widget;
+    }
+
+    // Presses Cone with "Sync schematic" ticked.
+    async function applyCone(widget, app) {
+        const synced = [];
+        const onSync = (e) => synced.push(e.detail.inst_name);
+        document.addEventListener('openroad-cone-sync', onSync);
+        try {
+            app.requests.length = 0;
+            widget._coneSyncSchematic.checked = true;
+            await widget._applyCone();
+        } finally {
+            document.removeEventListener('openroad-cone-sync', onSync);
+        }
+        return { cone: app.requests.find(r => r.type === 'timing_cone'), synced };
+    }
+
+    it('targets the pin of the picked path row and syncs its instance', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, '_12_/Z');
+        assert.equal(cone.inst_name, '_12_');
+        assert.deepEqual(synced, ['_12_']);
+    });
+
+    it('targets an instance selected after the row instead', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        app.selectedInstanceName = 'u9';
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, undefined);
+        assert.equal(cone.inst_name, 'u9');
+        assert.deepEqual(synced, ['u9']);
+    });
+
+    it('cones a port row without syncing the schematic', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(0);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'in1');
+        assert.equal(cone.inst_name, '');
+        assert.deepEqual(synced, []);
+    });
+
+    it('asks for a target when there is none', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone, undefined);
+        assert.deepEqual(synced, []);
+        assert.equal(widget._coneStatus.textContent, 'select an instance or a path pin first');
+    });
+});

@@ -378,3 +378,21 @@ describe('Options menu', () => {
         assert.ok(row.classList.contains('disabled'));
     });
 });
+
+describe('Windows menu', () => {
+    it('reveals the window it opens, even behind a maximized pane', () => {
+        document.body.innerHTML = '<div id="menu-bar"></div>';
+        const focused = [];
+        createMenuBar(optionsApp({
+            focusComponent(...args) { focused.push(args); },
+        }));
+
+        rowByLabel(openMenu('Windows'), 'Charts').click();
+        rowByLabel(openMenu('Help'), 'Keyboard Shortcuts').click();
+
+        assert.deepEqual(focused, [
+            ['ChartsWidget', { reveal: true }],
+            ['HelpWidget', { reveal: true }],
+        ]);
+    });
+});

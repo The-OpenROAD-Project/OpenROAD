@@ -1285,9 +1285,10 @@ app.syncLayoutSize = syncLayoutSize;
 
 window.addEventListener('resize', syncLayoutSize);
 
-// Focus a component tab, or re-create it if it was closed.
-function focusComponent(componentType) {
-    app.goldenLayout.focusComponent(componentType);
+// Focus a component tab, or re-create it if it was closed.  `options.reveal`
+// also restores a maximized pane that hides it (see GridLayoutManager).
+function focusComponent(componentType, options) {
+    app.goldenLayout.focusComponent(componentType, options);
 }
 
 app.focusComponent = focusComponent;
