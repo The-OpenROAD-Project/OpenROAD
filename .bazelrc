@@ -230,6 +230,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:profile --copt=-gz=zlib --host_copt=-gz=zlib
 build:profile --linkopt=-gz=zlib
+# Links //:openroad with --no-rosegment on Linux so VTune resolves symbols
+# (see OPENROAD_LINKOPTS in BUILD.bazel).
+build:profile --//:profile
 
 # Settings for --config=coverage C++ coverage build (LLVM source-based).
 # Usage: bazel coverage --config=coverage //...
