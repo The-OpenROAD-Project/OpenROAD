@@ -8,6 +8,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "FastRoute.h"
@@ -101,6 +102,18 @@ class OverflowTestPeer
   static void corruptNDRDeficitTotal(FastRouteCore& router)
   {
     router.graph2d_.ndr_deficit_total_++;
+  }
+  static void setTree(FastRouteCore& router, int net_id, StTree tree)
+  {
+    router.sttrees_[net_id] = std::move(tree);
+  }
+  static const StTree& tree(const FastRouteCore& router, int net_id)
+  {
+    return router.sttrees_[net_id];
+  }
+  static void routeLInMaze(FastRouteCore& router, int net_id)
+  {
+    router.newrouteLInMaze(net_id);
   }
   static constexpr int kNdrDeficitCost = FastRouteCore::kNdrDeficitCost;
 };
@@ -655,6 +668,54 @@ TEST_F(NDRDeficitTest, DebugCheckDetectsNDRDeficitDrift)
                std::runtime_error);
   EXPECT_THROW(OverflowTestPeer::query2D(*router_, true, false),
                std::runtime_error);
+}
+
+// The L-shapes the maze routing falls back to when it rebuilds the tree of a
+// net keep the NDR nets out of the edges where they fit no layer, as the
+// L-shapes of the initial routing do.
+TEST_F(NDRDeficitTest, MazeFallbackLShapeAvoidsTheNDRDeficit)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  // Both L-shapes from (0, 0) to (1, 1) have a layer for the NDR net on
+  // every edge but the bottom horizontal one.
+  const std::array<int, kLayers> fit{2, 2, 3};
+  const std::array<int, kLayers> no_fit{2, 2, 2};
+  for (int layer = 0; layer < kLayers; layer++) {
+    router_->setEdgeCapacity(0, 0, 1, 0, layer + 1, no_fit[layer]);
+    router_->setEdgeCapacity(0, 1, 1, 1, layer + 1, fit[layer]);
+    router_->setEdgeCapacity(0, 0, 0, 1, layer + 1, fit[layer]);
+    router_->setEdgeCapacity(1, 0, 1, 1, layer + 1, fit[layer]);
+  }
+  router_->initEdgesCapacityPerLayer();
+  OverflowTestPeer::setUsageLimits(*router_, 7);
+
+  int net_id;
+  bool exists;
+  router_->getNetId(ndr_net_->getDbNet(), net_id, exists);
+  ASSERT_TRUE(exists);
+  StTree tree;
+  tree.num_terminals = 2;
+  for (const auto [x, y] : {std::pair{0, 0}, std::pair{1, 1}}) {
+    TreeNode node{};
+    node.x = x;
+    node.y = y;
+    tree.nodes.push_back(node);
+  }
+  TreeEdge edge;
+  edge.n1 = edge.n1a = 0;
+  edge.n2 = edge.n2a = 1;
+  edge.len = 2;
+  tree.edges.push_back(edge);
+  OverflowTestPeer::setTree(*router_, net_id, tree);
+
+  // Without the deficit both L-shapes cost the same, and the tie goes to the
+  // one through the bottom horizontal edge.
+  OverflowTestPeer::routeLInMaze(*router_, net_id);
+  const Route& route = OverflowTestPeer::tree(*router_, net_id).edges[0].route;
+  EXPECT_EQ(route.type, RouteType::LRoute);
+  EXPECT_FALSE(route.xFirst);
+  EXPECT_FALSE(graph.hasNDRDeficit(0, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
 }
 
 }  // namespace

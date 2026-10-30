@@ -1168,20 +1168,30 @@ void FastRouteCore::newrouteLInMaze(const int netID)
       graph2d_.updateUsageH({x1, x2}, y1, net, edgeCost);
       treeedge->route.xFirst = true;
     } else {  // L-routing
-      float costL1 = 0;
-      float costL2 = 0;
+      double costL1 = 0;
+      double costL2 = 0;
 
       for (int j = ymin; j < ymax; j++) {
-        const auto usageV1 = graph2d_.getUsageRedV(x1, j);
-        costL1 += std::max(0.0f, usageV1 - v_capacity_lb_);
-        const auto usageV2 = graph2d_.getUsageRedV(x2, j);
-        costL2 += std::max(0.0f, usageV2 - v_capacity_lb_);
+        const auto usageV1 = getUsageNDRAware(
+            net, x1, j, EdgeDirection::Vertical, graph2d_.getUsageRedV(x1, j));
+        costL1 += std::max(0.0, usageV1 - v_capacity_lb_);
+        const auto usageV2 = getUsageNDRAware(
+            net, x2, j, EdgeDirection::Vertical, graph2d_.getUsageRedV(x2, j));
+        costL2 += std::max(0.0, usageV2 - v_capacity_lb_);
       }
       for (int j = x1; j < x2; j++) {
-        const auto usageH1 = graph2d_.getUsageRedH(j, y2);
-        costL1 += std::max(0.0f, usageH1 - h_capacity_lb_);
-        const auto usageH2 = graph2d_.getUsageRedH(j, y1);
-        costL2 += std::max(0.0f, usageH2 - h_capacity_lb_);
+        const auto usageH1 = getUsageNDRAware(net,
+                                              j,
+                                              y2,
+                                              EdgeDirection::Horizontal,
+                                              graph2d_.getUsageRedH(j, y2));
+        costL1 += std::max(0.0, usageH1 - h_capacity_lb_);
+        const auto usageH2 = getUsageNDRAware(net,
+                                              j,
+                                              y1,
+                                              EdgeDirection::Horizontal,
+                                              graph2d_.getUsageRedH(j, y1));
+        costL2 += std::max(0.0, usageH2 - h_capacity_lb_);
       }
 
       if (costL1 < costL2) {
