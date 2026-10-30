@@ -70,6 +70,8 @@ class PartitionMgr
                sta::dbSta* sta,
                utl::Logger* logger);
 
+  void setThreadCount(int threads) { num_threads_ = threads; }
+
   // The function for partitioning a hypergraph
   // This is used for replacing hMETIS
   // Key supports:
@@ -308,6 +310,7 @@ class PartitionMgr
   sta::dbNetwork* db_network_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  int num_threads_ = 1;
 };
 
 }  // namespace par

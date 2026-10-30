@@ -73,6 +73,20 @@ std::vector<Layer> layersAbove(const fsv::Stack& stack, const Layer layer)
   return layersBeside(stack, layer, false);
 }
 
+double coverDistance(const fsv::Stack& stack,
+                     const Layer layer,
+                     const Layer cover)
+{
+  const fsv::Stack::Conductor& wire = stack.conductor(layer);
+  const fsv::Stack::Conductor& c = stack.conductor(cover);
+  return std::max(c.bottom - wire.top, wire.bottom - c.top);
+}
+
+double logCoverDistance(const double distance)
+{
+  return std::log(std::max(distance, kMinCoverDistance));
+}
+
 NetIndex PatternBuilder::net(const std::string_view name)
 {
   return findOrAddNet(geometry_, name);

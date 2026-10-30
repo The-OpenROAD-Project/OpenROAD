@@ -16,6 +16,7 @@
   Layer via4
     default via: M4M5_PR
 [INFO GRT-0012] Found 5 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19607.4 -> 19607.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 5 diodes.
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0

@@ -155,7 +155,8 @@ class WebViewerHook : public web::GuiBackend
     std::function<void()> enter;
     // Runs as pause() returns.
     std::function<void()> leave;
-    // Runs before leave when requestExit() ended the pause.
+    // Runs after leave and pause-state completion when requestExit() ends
+    // the pause. May destroy this hook.
     std::function<void()> exit;
   };
   void setPauseHooks(PauseHooks hooks);

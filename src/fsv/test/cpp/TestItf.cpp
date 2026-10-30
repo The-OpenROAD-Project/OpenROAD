@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <clocale>
+#include <cmath>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -17,10 +18,11 @@ namespace {
 
 constexpr double kTol = 1e-9;
 
-Stack parse(const std::string& text)
+Stack parse(const std::string& text,
+            std::vector<ItfWarning>* warnings = nullptr)
 {
   std::istringstream in(text);
-  return readItf(in);
+  return readItf(in, warnings);
 }
 
 // Expects parsing to fail with a message containing `fragment`.
@@ -256,6 +258,45 @@ TEST(Itf, ZExtent)
   v9.name = "v9";
   v9.lower = m1;
   EXPECT_THROW(broken.addVia(v9), std::invalid_argument);
+  // The stack checks the resistance and etch fields of a hand-built layer.
+  Stack::Conductor odd;
+  odd.name = "M3";
+  odd.bottom = 2;
+  odd.top = 3;
+  odd.rpsq_vs_width_spacing.widths = {0.1, 0.2};
+  odd.rpsq_vs_width_spacing.spacings = {0.1};
+  odd.rpsq_vs_width_spacing.values = {1};  // one short
+  Stack fresh;
+  fresh.addDielectric({"d", 0, 10, 4});
+  EXPECT_THROW(fresh.addConductor(odd), std::invalid_argument);
+  odd.rpsq_vs_width_spacing.values = {1, -2};
+  EXPECT_THROW(fresh.addConductor(odd), std::invalid_argument);
+  odd.rpsq_vs_width_spacing = {};
+  Stack::EtchTable directional;
+  directional.direction = Stack::EtchTable::Direction::kParallelToReference;
+  directional.table = {{0.1}, {0.1}, {0.01}};
+  odd.etch_tables.push_back(directional);
+  EXPECT_THROW(fresh.addConductor(odd), std::invalid_argument);
+  fresh.setReferenceDirection(Stack::ReferenceDirection::kVertical);
+  const Stack::Layer m3 = fresh.addConductor(odd);
+  Stack::Via half;
+  half.name = "v";
+  half.upper = m3;
+  half.rpv = 4;  // without an area
+  EXPECT_THROW(fresh.addVia(half), std::invalid_argument);
+  half.area = 0.01;
+  half.rho = 1;  // a second form
+  EXPECT_THROW(fresh.addVia(half), std::invalid_argument);
+  half.rho = 0;
+  half.crt.crt1 = std::nan("");
+  EXPECT_THROW(fresh.addVia(half), std::invalid_argument);
+  half.crt.crt1 = 0;
+  EXPECT_TRUE(fresh.isVia(fresh.addVia(half)));
+  Stack::Conductor two_forms = odd;
+  two_forms.name = "M4";
+  two_forms.rpsq = 1;
+  two_forms.rho = 1;
+  EXPECT_THROW(fresh.addConductor(two_forms), std::invalid_argument);
   // A conductor after the vias would shift their handles.
   Stack::Conductor late;
   late.name = "M3";
@@ -329,15 +370,9 @@ TEST(Itf, Errors)
 {
   const std::string head = "TECHNOLOGY = t\n";
   const std::string sub = "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n";
-  expectError(head + "FOO = 1\n" + sub, "unsupported ITF statement FOO");
-  expectError(head + "DIELECTRIC D { THICKNESS=1 ER=4 DAMAGE_ER=3 }\n" + sub,
-              "unsupported keyword DAMAGE_ER");
   expectError(head + "CONDUCTOR M { THICKNESS=1 ETCH_VS_WIDTH_AND_SPACING { "
                      "} }\n" + sub,
-              "unsupported table ETCH_VS_WIDTH_AND_SPACING");
-  expectError(
-      head + "CONDUCTOR M { THICKNESS=1 CAPACITIVE_ONLY_ETCH=0.01 }\n" + sub,
-      "non-zero CAPACITIVE_ONLY_ETCH");
+              "ETCH_VS_WIDTH_AND_SPACING is missing SPACINGS");
   expectError(
       head + "DIELECTRIC D { THICKNESS=1 ER=4 MEASURED_FROM=X }\n" + sub,
       "MEASURED_FROM X of D is not a planar dielectric below it");
@@ -395,6 +430,380 @@ TEST(Itf, Errors)
                   + "CONDUCTOR M1 { THICKNESS=0.2 }\n" + sub
                   + "VIA v { FROM=M1 TO=M2 }\n",
               "which overlap in height");
+}
+
+// The sky130 file's resistance, etch and temperature values.
+TEST(Itf, Sky130Resistance)
+{
+  const Stack stack = readItfFile("src/fsv/test/sky130.itf");
+  EXPECT_EQ(stack.globalTemperature(), 25);
+  EXPECT_EQ(stack.halfNodeScaleFactor(), 1);
+  EXPECT_EQ(stack.referenceDirection(), Stack::ReferenceDirection::kNone);
+  const Stack::Conductor& met1 = stack.conductor(stack.layer("met1"));
+  EXPECT_EQ(met1.rpsq, 0.125);
+  EXPECT_EQ(met1.rho, 0);
+  EXPECT_TRUE(met1.rpsq_vs_width.empty());
+  EXPECT_EQ(met1.crt.crt1, 0.003179);
+  EXPECT_EQ(met1.crt.crt2, 3.094e-7);
+  EXPECT_EQ(met1.t0, 25);
+  EXPECT_EQ(met1.capacitive_etch, 0);
+  EXPECT_EQ(met1.resistive_etch, -0.0195);
+  EXPECT_TRUE(met1.etch_tables.empty());
+  EXPECT_EQ(met1.layer_type, "");
+  EXPECT_EQ(stack.conductor(stack.layer("DIFF")).rpsq, 197);
+  const Stack::Via& via = stack.via(stack.layer("mcon"));
+  EXPECT_EQ(via.rpv, 9.3);
+  EXPECT_EQ(via.area, 0.0289);
+  EXPECT_EQ(via.rho, 0);
+  EXPECT_EQ(via.t0, 25);
+}
+
+// The GT2 file reads, with its layer types and via resistances.
+TEST(Itf, Gt2Stack)
+{
+  const Stack stack = readItfFile("src/fsv/test/GT2.itf");
+  EXPECT_EQ(stack.technology(), "GT2");
+  EXPECT_EQ(stack.conductors().size(), 24u);
+  EXPECT_EQ(stack.vias().size(), 22u);
+  const Stack::Conductor& m1 = stack.conductor(stack.layer("M1"));
+  EXPECT_GT(m1.rpsq, 0);
+  EXPECT_EQ(m1.layer_type, "");
+  for (const Stack::Via& via : stack.vias()) {
+    EXPECT_GT(via.rpv, 0) << via.name;
+    EXPECT_GT(via.area, 0) << via.name;
+  }
+}
+
+// Every table form and header keyword in scope, read into the stack.
+TEST(Itf, ResistanceEtchAndTemperature)
+{
+  const Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "GLOBAL_TEMPERATURE = 85\n"
+      "HALF_NODE_SCALE_FACTOR = 0.9\n"
+      "REFERENCE_DIRECTION = HORIZONTAL\n"
+      "DIELECTRIC D3 { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M3 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 LAYER_TYPE=BUMP\n"
+      "  RHO_VS_WIDTH_AND_SPACING { WIDTHS { 0.1 0.2 } SPACINGS { 0.1 }\n"
+      "    VALUES { 0.03 0.02 } }\n"
+      "  ETCH=0.01 T0=50 CRT1=0.002\n"
+      "  ETCH_VS_WIDTH_AND_SPACING CAPACITIVE_ONLY PERPENDICULAR_TO_REFERENCE "
+      "{\n"
+      "    SPACINGS { 0.1 0.2 0.4 } WIDTHS { 0.1 1 }\n"
+      "    VALUES { 0.01 0.02 0.03 -0.01, -0.02, -0.03 } }\n"
+      "}\n"
+      "DIELECTRIC D2 { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M2 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1\n"
+      "  RPSQ_VS_WIDTH_AND_SPACING { SPACINGS { 0.1 0.2 } WIDTHS { 0.1 }\n"
+      "    VALUES { 0.5 0.4 } }\n"
+      "  CAPACITIVE_ONLY_ETCH=0.02 RESISTIVE_ONLY_ETCH=-0.01\n"
+      "  CRT_VS_SI_WIDTH { (0.1, 0.003, 1e-7) (1, 0.002, 2e-7) }\n"
+      "}\n"
+      "DIELECTRIC D1 { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M1 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1\n"
+      "  RPSQ_VS_SI_WIDTH { (0.1, 0.6) (0.5, 0.5) (2, 0.45) }\n"
+      "  ETCH_VS_WIDTH_AND_SPACING RESISTIVE_ONLY {\n"
+      "    WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.005 } }\n"
+      "  ETCH_VS_WIDTH_AND_SPACING PARALLEL_TO_GATE {\n"
+      "    WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.005 } }\n"
+      "}\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n"
+      "VIA V1 { FROM=M1 TO=M2 RPV=4 AREA=0.01 CRT1=0.001 CRT2=-1e-7 }\n"
+      "VIA V2 { FROM=M2 TO=M3 RHO=0.3 T0=60\n"
+      "  CRT_VS_AREA { (0.01, 0.001, 0) (0.04, 0.002, 0) } }\n"
+      "VIA V3 { FROM=M3 TO=M2 RPV_VS_AREA { (0.01, 5) (0.04, 2) } }\n");
+  EXPECT_EQ(stack.globalTemperature(), 85);
+  EXPECT_EQ(stack.halfNodeScaleFactor(), 0.9);
+  EXPECT_EQ(stack.referenceDirection(), Stack::ReferenceDirection::kHorizontal);
+
+  const Stack::Conductor& m1 = stack.conductor(stack.layer("M1"));
+  ASSERT_EQ(m1.rpsq_vs_width.x.size(), 3u);
+  EXPECT_EQ(m1.rpsq_vs_width.x[1], 0.5);
+  EXPECT_EQ(m1.rpsq_vs_width.y[2], 0.45);
+  EXPECT_EQ(m1.rpsq, 0);
+  EXPECT_EQ(m1.t0, 85);  // the global temperature
+  // Two tables are two etch steps; a PARALLEL_TO_GATE one is device-level
+  // and dropped.
+  ASSERT_EQ(m1.etch_tables.size(), 1u);
+  EXPECT_EQ(m1.etch_tables[0].affects, Stack::EtchTable::Affects::kResistance);
+  EXPECT_EQ(m1.etch_tables[0].direction, Stack::EtchTable::Direction::kAll);
+  EXPECT_EQ(m1.etch_tables[0].table.at(0, 0), 0.005);
+
+  const Stack::Conductor& m2 = stack.conductor(stack.layer("M2"));
+  EXPECT_EQ(m2.capacitive_etch, 0.02);
+  EXPECT_EQ(m2.resistive_etch, -0.01);
+  ASSERT_EQ(m2.rpsq_vs_width_spacing.widths.size(), 1u);
+  ASSERT_EQ(m2.rpsq_vs_width_spacing.spacings.size(), 2u);
+  EXPECT_EQ(m2.rpsq_vs_width_spacing.at(0, 1), 0.4);
+  ASSERT_EQ(m2.crt_vs_width.x.size(), 2u);
+  EXPECT_EQ(m2.crt_vs_width.crt[1].crt1, 0.002);
+  EXPECT_EQ(m2.crt_vs_width.crt[1].crt2, 2e-7);
+  EXPECT_EQ(m2.crt.crt1, 0);
+
+  const Stack::Conductor& m3 = stack.conductor(stack.layer("M3"));
+  EXPECT_EQ(m3.layer_type, "BUMP");
+  EXPECT_EQ(m3.capacitive_etch, 0.01);  // ETCH sets both
+  EXPECT_EQ(m3.resistive_etch, 0.01);
+  EXPECT_EQ(m3.t0, 50);
+  EXPECT_EQ(m3.crt.crt1, 0.002);
+  EXPECT_EQ(m3.rho_vs_width_spacing.at(1, 0), 0.02);
+  ASSERT_EQ(m3.etch_tables.size(), 1u);
+  const Stack::EtchTable& etch = m3.etch_tables[0];
+  EXPECT_EQ(etch.affects, Stack::EtchTable::Affects::kCapacitance);
+  EXPECT_EQ(etch.direction,
+            Stack::EtchTable::Direction::kPerpendicularToReference);
+  EXPECT_EQ(etch.table.widths, (std::vector<double>{0.1, 1}));
+  EXPECT_EQ(etch.table.spacings, (std::vector<double>{0.1, 0.2, 0.4}));
+  EXPECT_EQ(etch.table.at(1, 2), -0.03);  // commas separate like spaces
+
+  const Stack::Via& v1 = stack.via(stack.layer("V1"));
+  EXPECT_EQ(v1.rpv, 4);
+  EXPECT_EQ(v1.area, 0.01);
+  EXPECT_EQ(v1.crt.crt1, 0.001);
+  EXPECT_EQ(v1.crt.crt2, -1e-7);
+  EXPECT_EQ(v1.t0, 85);
+  const Stack::Via& v2 = stack.via(stack.layer("V2"));
+  EXPECT_EQ(v2.rho, 0.3);
+  EXPECT_EQ(v2.t0, 60);
+  ASSERT_EQ(v2.crt_vs_area.x.size(), 2u);
+  EXPECT_EQ(v2.crt_vs_area.crt[1].crt1, 0.002);
+  const Stack::Via& v3 = stack.via(stack.layer("V3"));
+  EXPECT_EQ(v3.rpv, 0);
+  ASSERT_EQ(v3.rpv_vs_area.x.size(), 2u);
+  EXPECT_EQ(v3.rpv_vs_area.y[1], 2);
+  EXPECT_EQ(stack.name(v3.upper), "M3");
+}
+
+// Blocks the reader parses without using: devices, TSVs, variation and the
+// electromigration section, which no braces delimit.
+TEST(Itf, SkipsDeviceAndVariationBlocks)
+{
+  const Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "USE_SI_DENSITY = YES\n"
+      "DROP_FACTOR_LATERAL_SPACING = 1\n"
+      "DIELECTRIC D1 { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M1 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 RPSQ=1\n"
+      "  LAYER_TYPE=DIFFUSION DEVICE_TYPE { nmos pmos } IS_PLANAR\n"
+      "  GATE_TO_CONTACT_SMIN=0.05 RAISED_DIFFUSION_THICKNESS=0.03\n"
+      "  GATE_TO_DIFFUSION_CAP { CONTACT_TO_CONTACT_SPACINGS { 0.1 }\n"
+      "    GATE_TO_CONTACT_SPACINGS { 0.1 } CAPS_PER_MICRON { 0.05 } }\n"
+      "}\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n"
+      "VIA C1 { FROM=SUBSTRATE TO=M1 RPV=10 AREA=0.01\n"
+      "  ETCH_VS_CONTACT_AND_GATE_SPACINGS CAPACITIVE_ONLY {\n"
+      "    CONTACT_TO_CONTACT_SPACINGS { 0.1 } GATE_TO_CONTACT_SPACINGS { 0.1 "
+      "}\n"
+      "    VALUES { 0.001 } } }\n"
+      "MULTIGATE fin { FIN_WIDTH=0.01 GATE_DIFFUSION_LAYER_PAIR { (M1 M1) } "
+      "}\n"
+      "TSV t1 { FROM=M1 TO=M1 RHO=1 AREA=1 THICKNESS=10\n"
+      "  CSUB_VS_SPACING { (1, 2) } }\n"
+      "VARIATION_PARAMETERS { thick = { (M1, THICKNESS, 0.1) } }\n"
+      "EM_INFORMATION\n"
+      "COMMON_INFO { ITF_EM_VERSION = 1 REFERENCE_TEMPERATURE = 110 }\n"
+      "LAYER M1 { stray } brace { without end\n"
+      "END_OF_EM_INFORMATION\n");
+  EXPECT_EQ(stack.conductors().size(), 1u);
+  EXPECT_EQ(stack.conductor(stack.layer("M1")).layer_type, "DIFFUSION");
+  EXPECT_EQ(stack.conductor(stack.layer("M1")).rpsq, 1);
+  ASSERT_EQ(stack.vias().size(), 1u);
+  EXPECT_FALSE(stack.vias()[0].lower.valid());
+  EXPECT_EQ(stack.vias()[0].rpv, 10);
+}
+
+// Keywords whose effect the solver cannot model are refused by name, and
+// the forms the format makes exclusive are checked.
+TEST(Itf, RefusesAndChecksResistanceForms)
+{
+  const std::string head
+      = "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n";
+  const std::string sub = "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n";
+  auto conductor = [&](const std::string& body) {
+    return head + "CONDUCTOR M { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 " + body
+           + " }\n" + sub;
+  };
+  const std::string table
+      = "{ WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.01 } }";
+  expectError(conductor("THICKNESS_VS_WIDTH_AND_SPACING " + table),
+              "THICKNESS_VS_WIDTH_AND_SPACING in CONDUCTOR M is not "
+              "supported");
+  expectError(conductor("FILL_RATIO=0.2"),
+              "FILL_RATIO in CONDUCTOR M is not supported");
+  expectError(conductor("THICKNESS_VS_DENSITY { (0.1, 0.01) }"),
+              "THICKNESS_VS_DENSITY in CONDUCTOR M is not supported");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING ETCH_FROM_TOP " + table),
+              "ETCH_FROM_TOP");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING { NUMBER_OF_MASKS=2 "
+                        "MASKS(1,2) WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { "
+                        "0.01 } }"),
+              "multiple-mask etch tables (NUMBER_OF_MASKS)");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING SIDEWAYS " + table),
+              "unsupported option SIDEWAYS of ETCH_VS_WIDTH_AND_SPACING");
+  expectError(
+      conductor("ETCH_VS_WIDTH_AND_SPACING PARALLEL_TO_REFERENCE " + table),
+      "names the reference direction, which the file does not give");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING { WIDTHS { 0.1 0.2 } "
+                        "SPACINGS { 0.1 } VALUES { 0.01 } }"),
+              "has 1 values for 2 widths by 1 spacings");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING { WIDTHS { 0.2 0.1 } "
+                        "SPACINGS { 0.1 } VALUES { 0.01 0.02 } }"),
+              "WIDTHS must be ascending");
+  expectError(conductor("ETCH=0.01 CAPACITIVE_ONLY_ETCH=0.01"),
+              "ETCH of M cannot be combined");
+  expectError(conductor("RPSQ=1 RHO=1"),
+              "gives its resistance in more than one form");
+  expectError(conductor("RPSQ=1 RPSQ_VS_SI_WIDTH { (0.1, 1) }"),
+              "gives its resistance in more than one form");
+  expectError(conductor("RPSQ=-1"), "has a negative resistance");
+  expectError(conductor("RPSQ_VS_SI_WIDTH { (0.1, -1) }"),
+              "has a negative resistance");
+  expectError(conductor("RPSQ_VS_SI_WIDTH { (0.1, 1, 2) }"),
+              "RPSQ_VS_SI_WIDTH expects 2 numbers per ( )");
+  expectError(conductor("RPSQ_VS_SI_WIDTH { 0.1 1 }"),
+              "RPSQ_VS_SI_WIDTH expects { (2 numbers) ... }");
+  expectError(conductor("CRT1=0.001 CRT_VS_SI_WIDTH { (0.1, 0.001, 0) }"),
+              "CRT_VS_SI_WIDTH of M cannot be combined with CRT1 or CRT2");
+  expectError(conductor("LAYER_TYPE"), "LAYER_TYPE needs a value");
+  expectError(conductor("RPSQ_VS_SI_WIDTH foo { (0.1, 1) }"),
+              "RPSQ_VS_SI_WIDTH expects { (2 numbers) ... }");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING { WIDTHS foo { 0.1 } "
+                        "SPACINGS { 0.1 } VALUES { 0.01 } }"),
+              "WIDTHS expects { numbers }");
+  expectError(
+      head + "DIELECTRIC C { THICKNESS=0 ER=4 IS_CONFORMAL(1, 2) }\n" + sub,
+      "IS_CONFORMAL takes no value");
+  expectError(head + "DIELECTRIC C { THICKNESS=0 ER=4 IS_CONFORMAL=1 }\n" + sub,
+              "IS_CONFORMAL takes no value");
+  expectError(conductor("RPSQ=1 RPSQ=2"), "RPSQ given twice in CONDUCTOR M");
+  expectError(head + "DIELECTRIC E { THICKNESS=1 ER=4 ER_VS_SI_SPACING { "
+                     "(0.1, 4) } }\n" + sub,
+              "ER_VS_SI_SPACING in DIELECTRIC E is not supported");
+  expectError(head + "DROP_FACTOR_LATERAL_SPACING = 1\n"
+                     "DROP_FACTOR_LATERAL_SPACING = 2\n" + sub,
+              "DROP_FACTOR_LATERAL_SPACING is given twice");
+  expectError(head + "REFERENCE_DIRECTION = UP\n" + sub,
+              "REFERENCE_DIRECTION must be VERTICAL or HORIZONTAL");
+  expectError(head + "HALF_NODE_SCALE_FACTOR = 0\n" + sub,
+              "HALF_NODE_SCALE_FACTOR must be positive");
+
+  const std::string two = head + "CONDUCTOR M2 { THICKNESS=0.2 }\n"
+                          + "DIELECTRIC D0 { THICKNESS=0.5 ER=4 }\n"
+                          + "CONDUCTOR M1 { THICKNESS=0.2 }\n" + sub;
+  expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 }\n",
+              "VIA v needs both RPV and AREA");
+  expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 AREA=0 }\n",
+              "VIA v needs a non-negative resistance and a positive area");
+  // A zero resistance per via with an area is a zero-ohm via, in both the
+  // reader and the stack.
+  EXPECT_EQ(
+      parse(two + "VIA v { FROM=M1 TO=M2 RPV=0 AREA=0.01 }\n").vias()[0].area,
+      0.01);
+  expectError(two + "VIA v { FROM=M1 TO=M2 RPV_VS_AREA { (1, -1) } }\n",
+              "VIA v has a negative resistance");
+  expectError(two + "VIA M1 { FROM=M1 TO=M2 }\n",
+              "VIA M1 has the name of a conductor");
+  expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 AREA=1 RHO=1 }\n",
+              "VIA v gives its resistance in more than one form");
+  expectError(two + "VIA v { FROM=M1 TO=M2 RHO=1 RPV_VS_AREA { (1, 1) } }\n",
+              "VIA v gives its resistance in more than one form");
+  expectError(two + "VIA v { FROM=M1 TO=M2 CRT1=1 CRT_VS_AREA { (1, 1, 1) } "
+                    "}\n",
+              "CRT_VS_AREA of v cannot be combined");
+  expectError(two + "VIA v { FROM=M1 TO=M2 RPV_VS_AREA { (2, 1) (1, 1) } }\n",
+              "RPV_VS_AREA areas must be ascending");
+  std::vector<ItfWarning> warnings;
+  parse(two + "VIA v { FROM=M1 TO=M2 BOGUS=1 }\n", &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message, "unknown keyword BOGUS in VIA v, skipped");
+}
+
+// Unknown keywords are skipped with one warning each, with the line; an
+// unknown block gets one warning, whatever it holds.
+TEST(Itf, SkipsUnknownKeywordsWithAWarning)
+{
+  std::vector<ItfWarning> warnings;
+  const Stack stack = parse(
+      "TECHNOLOGY = t\n"
+      "FOO = 1\n"
+      "NEW_SECTION bar { DEPTH=3 TABLE { (1, 2) } INNER { X=1 } }\n"
+      "DIELECTRIC D { THICKNESS=1 ER=4 DAMAGE_ER=3\n"
+      "  DAMAGE { WIDTHS { 1 } VALUES { 2 } } }\n"
+      "CONDUCTOR M { THICKNESS=0.2 WMIN=0.1 SMIN=0.1\n"
+      "  RPSQ_VS_WIDTH_AND_SPACING { SPACINGS { 0.1 } WIDTHS { 0.1 }\n"
+      "    VALUES { 0.5 } EXTRA=1 } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  EXPECT_EQ(stack.conductor(stack.layer("M")).rpsq_vs_width_spacing.at(0, 0),
+            0.5);
+  ASSERT_EQ(warnings.size(), 5u);
+  EXPECT_EQ(warnings[0].line, 2);
+  EXPECT_EQ(warnings[0].message, "unknown keyword FOO, skipped");
+  EXPECT_EQ(warnings[1].line, 3);
+  EXPECT_EQ(warnings[1].message, "unknown keyword NEW_SECTION bar, skipped");
+  EXPECT_EQ(warnings[2].line, 4);
+  EXPECT_EQ(warnings[2].message,
+            "unknown keyword DAMAGE_ER in DIELECTRIC D, skipped");
+  EXPECT_EQ(warnings[3].line, 5);
+  EXPECT_EQ(warnings[3].message,
+            "unknown keyword DAMAGE in DIELECTRIC D, skipped");
+  EXPECT_EQ(warnings[4].line, 8);
+  EXPECT_EQ(warnings[4].message,
+            "unknown keyword EXTRA in RPSQ_VS_WIDTH_AND_SPACING, skipped");
+  // An unknown flag before a known block cannot be told from a block
+  // name, so it is an error rather than a silent loss of the block.
+  expectError(
+      "TECHNOLOGY = t\nNEW_FLAG DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      "unknown keyword NEW_FLAG before DIELECTRIC { ... }");
+  expectError(
+      "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 NEW_FLAG RPSQ_VS_SI_WIDTH { (0.1, 1) } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      "unknown keyword NEW_FLAG before RPSQ_VS_SI_WIDTH { ... } in "
+      "CONDUCTOR M");
+  // Without a sink the warnings are dropped, not raised.
+  EXPECT_NO_THROW(
+      parse("TECHNOLOGY = t\nFOO = 1\n"
+            "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n"));
+}
+
+// The syntax pass: malformed structure is reported with its line.
+TEST(Itf, SyntaxErrors)
+{
+  const std::string head = "TECHNOLOGY = t\n";
+  const std::string sub = "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n";
+  expectError(head + "DIELECTRIC D { THICKNESS=1 ER=4 \n",
+              "line 2: unexpected end of file");
+  // Numbers and tuples belong in tables, not among a layer's keywords.
+  expectError(head + "DIELECTRIC D { THICKNESS=1 0.5 ER=4 }\n" + sub,
+              "unexpected number '0.5' in DIELECTRIC D");
+  expectError(head + "DIELECTRIC D { THICKNESS=1 (1, 2) ER=4 }\n" + sub,
+              "unexpected ( ) in DIELECTRIC D");
+  expectError(head + "DIELECTRIC D { THICKNESS=1 ER=4 } }\n" + sub,
+              "line 2: expected a keyword, got '}'");
+  expectError(head + "DIELECTRIC D { THICKNESS= ER=4 }\n" + sub,
+              "unexpected '=' in DIELECTRIC D");
+  expectError(head + "DIELECTRIC D { THICKNESS= }\n" + sub,
+              "expected a value for THICKNESS, got '}'");
+  expectError(head + "DIELECTRIC { THICKNESS=1 ER=4 }\n" + sub,
+              "DIELECTRIC expects a name and { ... }");
+  expectError(head + "DIELECTRIC D E { THICKNESS=1 ER=4 }\n" + sub,
+              "DIELECTRIC expects a name and { ... }");
+  expectError(head + "DIELECTRIC D { THICKNESS=1 ER=4 ) }\n" + sub,
+              "unexpected ')' in DIELECTRIC D");
+  expectError(head + "DIELECTRIC D { THICKNESS=1 ER=4 THICKNESS=2 }\n" + sub,
+              "THICKNESS given twice in DIELECTRIC D");
+  // A flag never opens a block: the table after it is its own statement.
+  const Stack planar = parse(
+      head + "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      + "CONDUCTOR M { THICKNESS=0.2 IS_PLANAR ETCH_VS_WIDTH_AND_SPACING { "
+        "WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.01 } } }\n"
+      + sub);
+  EXPECT_EQ(planar.conductor(planar.layer("M")).etch_tables.size(), 1u);
+  expectError(head + "EM_INFORMATION\nLAYER M1 { }\n" + sub,
+              "EM_INFORMATION without END_OF_EM_INFORMATION");
+  expectError(head + "TSV t = 1\n" + sub, "TSV expects { ... }");
 }
 
 }  // namespace

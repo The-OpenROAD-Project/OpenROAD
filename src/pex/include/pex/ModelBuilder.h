@@ -28,9 +28,18 @@ struct BuildOptions
   std::vector<double> width_factors{1, 1.5, 2, 3, 5, 10};
   std::vector<double> spacing_factors{1, 1.25, 1.5, 2, 3, 5, 7, 10};
   // Covering layers tabulated below the layer (plus the substrate alone)
-  // and above it (plus none).
+  // and above it (plus none), nearest first.
   int below_depth = 2;
   int above_depth = 2;
+  // Past the depth, a few far layers get contexts too, at spaced
+  // distances: for each factor, the usable layer whose distance from the
+  // wire is nearest (in the logarithm) to the factor times the distance
+  // of the first usable layer past the depth, and with any factor at all
+  // the farthest usable layer, each layer once. A lookup for a cover
+  // between two tabulated ones interpolates (CoverMap), never past the
+  // farthest, so the table count grows with this list, not with the
+  // layer count. Empty: no far layer gets a context.
+  std::vector<double> far_cover_factors{1, 2, 4};
   // The crossing patterns: crossing widths as multiples of the cover
   // layer's minimum width, coverage fractions, and the two wire lengths
   // whose difference cancels the ends.
@@ -71,11 +80,11 @@ struct BuildOptions
 std::string buildFingerprint(const fsv::Stack& stack,
                              const BuildOptions& options);
 
-// The covering contexts of a layer within the options' depths: the layers
-// below nearest first with no layer (the substrate) first, and likewise
-// above with no layer (open) first. A conductor sitting on the ground
-// plane is the ground and does not count, nor does one outside the
-// options' layers.
+// The covering contexts of a layer: no layer first (the substrate below,
+// open above), then the usable layers within the depth nearest first,
+// then the far layers the options' factors pick and the farthest, nearest
+// first. A conductor sitting on the ground plane is the ground and does
+// not count, nor does one outside the options' layers.
 std::vector<Layer> coversBelow(const fsv::Stack& stack,
                                Layer layer,
                                const BuildOptions& options);
@@ -85,8 +94,12 @@ std::vector<Layer> coversAbove(const fsv::Stack& stack,
 
 // Builds the lateral tables of a conductor layer, one per covering context,
 // into the model. Each table point is its own single-threaded solve, seeded
-// by its position, so the tables do not depend on the thread count. Throws
-// std::invalid_argument for a handle that is not a conductor of the stack.
+// by its position, so the tables do not depend on the thread count. A
+// table the model already holds is left alone, as every builder here
+// does, so a build resumes from a saved model; one on a grid other than
+// the options' is an error, since it came from another build. Throws
+// std::invalid_argument for that, or for a handle that is not a conductor
+// of the stack.
 void buildLateral(const fsv::Stack& stack,
                   Layer layer,
                   const BuildOptions& options,

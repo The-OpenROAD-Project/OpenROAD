@@ -52,6 +52,7 @@ cc_test(
         "//src/fsv:stack",
         "//src/pex:model",
         "//src/pex:model_builder",
+        "//src/pex:model_json",
         "//src/pex:patterns",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -68,8 +69,23 @@ cc_library(
     deps = [
         "//src/fsv:geometry",
         "//src/fsv:stack",
+        "//src/pex:cover_map",
         "//src/pex:model",
         "//src/pex:patterns",
+    ],
+)
+
+cc_test(
+    name = "TestCoverMap",
+    srcs = ["cpp/TestCoverMap.cpp"],
+    data = ["//src/fsv/test:sky130.itf"],
+    deps = [
+        "//src/fsv",
+        "//src/fsv:stack",
+        "//src/pex:cover_map",
+        "//src/pex:model",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -97,6 +113,7 @@ EXPERIMENT_DEPS = [
     "//src/pex:model_json",
     "//src/fsv:geometry",
     "//src/fsv:stack",
+    "//src/pex:cover_map",
     "//src/pex:model",
     "//src/pex:model_builder",
     "//src/pex:patterns",
