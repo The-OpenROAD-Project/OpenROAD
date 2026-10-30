@@ -230,6 +230,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:profile --copt=-gz=zlib --host_copt=-gz=zlib
 build:profile --linkopt=-gz=zlib
+# Keep one load segment for code and rodata so profilers that assume a single
+# load bias (e.g. VTune) resolve symbols correctly.
+build:profile --linkopt=-Wl,--no-rosegment
 
 # Settings for --config=coverage C++ coverage build (LLVM source-based).
 # Usage: bazel coverage --config=coverage //...
