@@ -12,7 +12,7 @@ set block [ord::get_db_block]
 set inst [$block findInst u]
 set second_inst [$block findInst v]
 
-proc full_pin_access {} {
+proc full_pin_access { } {
   pin_access -via_access_layer M1 -via_in_pin_bottom_layer M1 \
     -via_in_pin_top_layer M1 -min_access_points 1 -verbose 0
 }

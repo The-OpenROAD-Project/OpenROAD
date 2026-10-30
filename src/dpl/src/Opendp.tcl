@@ -127,10 +127,10 @@ proc repair_pin_access { args } {
     set min_access_points $keys(-min_access_points)
   }
   foreach {option value} [list \
-      -max_displacement $max_displacement_x \
-      -max_displacement $max_displacement_y \
-      -max_rounds $max_rounds \
-      -min_access_points $min_access_points] {
+    -max_displacement $max_displacement_x \
+    -max_displacement $max_displacement_y \
+    -max_rounds $max_rounds \
+    -min_access_points $min_access_points] {
     if { ![string is integer -strict $value] || $value <= 0 } {
       utl::error DPL 349 "$option requires positive integers."
     }

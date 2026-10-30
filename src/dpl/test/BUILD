@@ -121,9 +121,9 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 filegroup(
     name = "pin_access_service_fixture",
     srcs = [
-        "repair_pin_access_tech.lef",
         "repair_pin_access_failure.def",
         "repair_pin_access_failure.lef",
+        "repair_pin_access_tech.lef",
     ],
     visibility = ["//src/drt/test:__pkg__"],
 )
@@ -145,17 +145,6 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
-            "repair_pin_access": ["repair_pin_access_tech.lef"],
-            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
-            "repair_pin_access_phase": [
-                "repair_pin_access_tech.lef",
-                "repair_pin_access_failure.def",
-            ],
-            "repair_pin_access_zero_ap": [
-                "repair_pin_access_tech.lef",
-                "repair_pin_access_failure.def",
-                "repair_pin_access_failure.lef",
-            ],
             "aes": [
                 "aes_cipher_top_replace.def",
             ],
@@ -354,6 +343,17 @@ filegroup(
             "regions3": [
                 "Nangate45/fake_macros.lef",
             ],
+            "repair_pin_access": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_phase": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
+            "repair_pin_access_zero_ap": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+                "repair_pin_access_failure.lef",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -373,7 +373,10 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc", "PinAccessRepairTest.cc"],
+    srcs = [
+        "PinAccessRepairTest.cc",
+        "dpl_test.cc",
+    ],
     data = ["extra.lef"],
     deps = [
         "//src/dpl",

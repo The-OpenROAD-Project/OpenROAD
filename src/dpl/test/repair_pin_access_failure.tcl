@@ -11,10 +11,10 @@ check_placement
 pin_access -via_access_layer M1 -via_in_pin_bottom_layer M1 \
   -via_in_pin_top_layer M1 -min_access_points 1 -verbose 0
 set block [ord::get_db_block]
-proc pin_points {block} {
+proc pin_points { block } {
   set points {}
   foreach ap [$block getAccessPoints] {
-    if {[$ap getMPin] ne "NULL"} {
+    if { [$ap getMPin] ne "NULL" } {
       lappend points [$ap getPoint]
     }
   }
