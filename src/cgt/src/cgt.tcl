@@ -5,11 +5,12 @@ sta::define_cmd_args "clock_gating" { \
                                       [-min_instances min_instances]\
                                       [-max_cover max_cover]\
                                       [-dump_dir dump_dir]\
+                                      [-corner corner]\
                                     }
 
 proc clock_gating { args } {
   sta::parse_key_args "clock_gating" args \
-    keys {-min_instances -max_cover -dump_dir} flags {}
+    keys {-min_instances -max_cover -dump_dir -corner} flags {}
 
   set dump_dir ""
 
@@ -23,5 +24,7 @@ proc clock_gating { args } {
     set dump_dir $keys(-dump_dir)
   }
 
-  cgt::clock_gating_cmd $dump_dir
+  set corner [sta::parse_scene keys]
+
+  cgt::clock_gating_cmd $corner $dump_dir
 }
