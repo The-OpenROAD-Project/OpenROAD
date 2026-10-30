@@ -272,11 +272,6 @@ void SACoreHardMacro::initialize()
   }
 }
 
-void SACoreHardMacro::setWeights(const SACoreWeights& weights)
-{
-  core_weights_ = weights;
-}
-
 void SACoreHardMacro::printResults() const
 {
   reportCoreWeights();

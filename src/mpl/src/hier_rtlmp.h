@@ -121,6 +121,7 @@ class HierRTLMP
     anneal_end_acceptance_ = end_acceptance;
   }
   void setAnnealPatience(float patience) { anneal_patience_ = patience; }
+  void setPlacementSeeds(int seeds) { placement_seeds_ = seeds; }
   void setMacroPlacementFile(const std::string& file_name);
   void writeMacroPlacement(const std::string& file_name);
 
@@ -192,6 +193,78 @@ class HierRTLMP
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustSoftBlockageWeight();
   void placeChildren(Cluster* parent);
+  void mergeChildFencesAndGuides(const Cluster* cluster,
+                                 const odb::Rect& outline,
+                                 int macro_id,
+                                 std::map<int, odb::Rect>& fences,
+                                 std::map<int, odb::Rect>& guides) const;
+  int populateChildClusterSoftMacros(const Cluster* parent,
+                                     const odb::Rect& outline,
+                                     SoftMacroNameToIdMap& soft_macro_id_map,
+                                     std::map<int, odb::Rect>& fences,
+                                     std::map<int, odb::Rect>& guides,
+                                     std::vector<SoftMacro>& macros);
+  void reportClusterPlacementFailure(
+      const Cluster* parent,
+      const std::vector<float>& utilization_list,
+      const std::set<int>& skipped_utilization_indices) const;
+  std::vector<int> collectValidUtilizationIndices(
+      const Cluster* parent,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& macros,
+      const std::vector<float>& utilization_list,
+      std::set<int>& skipped_utilization_indices) const;
+  std::unique_ptr<SACoreSoftMacro> createClusterPlacementSA(
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& macros,
+      float utilization,
+      float action_sum,
+      int num_perturb_per_step,
+      int number_of_sequence_pair_macros,
+      unsigned seed,
+      const std::map<int, odb::Rect>& fences,
+      const std::map<int, odb::Rect>& guides,
+      const BundledNetList& nets,
+      const RectList& soft_blockages);
+  void runSoftSABatch(SoftSAVector& sa_batch);
+  void warnIfAdjustedUtilization(
+      int utilization_index,
+      const std::vector<float>& utilization_list) const;
+  std::unique_ptr<SACoreSoftMacro> runSingleSeedClusterPlacement(
+      const Cluster* parent,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& macros,
+      const std::vector<float>& utilization_list,
+      int number_of_sequence_pair_macros,
+      const std::map<int, odb::Rect>& fences,
+      const std::map<int, odb::Rect>& guides,
+      const BundledNetList& nets,
+      const RectList& soft_blockages,
+      std::set<int>& skipped_utilization_indices);
+  std::unique_ptr<SACoreSoftMacro> evaluateMultiSeedLevel(
+      SoftSAVector& level_candidates,
+      int utilization_index,
+      const std::vector<float>& utilization_list,
+      SoftSAVector& all_candidates) const;
+  std::unique_ptr<SACoreSoftMacro> runMultiSeedClusterPlacement(
+      const std::vector<int>& valid_utilization_indices,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& macros,
+      const std::vector<float>& utilization_list,
+      int number_of_sequence_pair_macros,
+      const std::map<int, odb::Rect>& fences,
+      const std::map<int, odb::Rect>& guides,
+      const BundledNetList& nets,
+      const RectList& soft_blockages);
+  std::unique_ptr<SACoreSoftMacro> runClusterPlacementAnnealing(
+      const Cluster* parent,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& macros,
+      int number_of_sequence_pair_macros,
+      const std::map<int, odb::Rect>& fences,
+      const std::map<int, odb::Rect>& guides,
+      const BundledNetList& nets,
+      const RectList& soft_blockages);
   RectList findOffsetIntersections(const RectList& candidate_blockages,
                                    const odb::Rect& outline) const;
   void eliminateOverlaps(std::vector<odb::Rect>& blockages) const;
@@ -214,6 +287,37 @@ class HierRTLMP
 
   // Hierarchical Macro Placement 2nd stage: Macro Placement
   void placeMacros(Cluster* cluster);
+  void configureMacroPlacementParameters(Cluster* cluster,
+                                         int masters_count,
+                                         int number_of_sequence_pair_macros,
+                                         float& pos_swap_prob,
+                                         float& neg_swap_prob,
+                                         float& double_swap_prob,
+                                         float& exchange_swap_prob,
+                                         int& perturbations_per_step,
+                                         SequencePair& initial_seq_pair,
+                                         bool& invalid_states_allowed);
+  void runHardSABatch(HardSAVector& sa_batch);
+  HardSAVector runMacroPlacementAttempts(
+      const odb::Rect& outline,
+      const std::vector<HardMacro>& sa_macros,
+      int number_of_sequence_pair_macros,
+      float pos_swap_prob,
+      float neg_swap_prob,
+      float double_swap_prob,
+      float exchange_swap_prob,
+      int perturbations_per_step,
+      const BundledNetList& nets,
+      const std::map<int, odb::Rect>& fences,
+      const std::map<int, odb::Rect>& guides,
+      const SequencePair& initial_seq_pair,
+      bool invalid_states_allowed);
+  void applyBestMacroPlacement(Cluster* cluster,
+                               const odb::Rect& outline,
+                               SACoreHardMacro* best_sa,
+                               const HardSAVector& sa_containers,
+                               std::vector<HardMacro*>& hard_macros);
+  SACoreHardMacro* selectBestMacroPlacement(HardSAVector& sa_containers) const;
   void computeFencesAndGuides(const std::vector<HardMacro*>& hard_macros,
                               const odb::Rect& outline,
                               std::map<int, odb::Rect>& fences,
@@ -290,6 +394,7 @@ class HierRTLMP
   const int num_runs_ = 10;  // number of runs for SA
   int num_threads_ = 10;     // number of threads
   int random_seed_ = 0;      // random seed for deterministic
+  int placement_seeds_ = 1;
 
   float target_utilization_{0.0};
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1

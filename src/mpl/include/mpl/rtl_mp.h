@@ -82,6 +82,7 @@ class MacroPlacer
   void setRandomSeed(int seed);
   void setAnnealEndAcceptance(float end_acceptance);
   void setAnnealPatience(float patience);
+  void setPlacementSeeds(int seeds);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
@@ -97,6 +98,7 @@ class MacroPlacer
   int random_seed_ = 0;
   float anneal_end_acceptance_ = 0.0f;
   float anneal_patience_ = 0.0f;
+  int placement_seeds_ = 1;
 
   odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };

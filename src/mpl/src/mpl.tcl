@@ -30,6 +30,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -random_seed random_seed \
                                           -anneal_end_acceptance anneal_end_acceptance \
                                           -anneal_patience anneal_patience \
+                                          -placement_seeds placement_seeds \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
@@ -50,6 +51,7 @@ proc rtl_macro_placer { args } {
          -random_seed \
          -anneal_end_acceptance \
          -anneal_patience \
+         -placement_seeds \
          -report_directory \
          -write_macro_placement } \
     flags {-keep_clustering_data -pin_aware_channels}
@@ -215,18 +217,24 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
+  mpl::set_random_seed 0
+  mpl::set_anneal_patience 0.0
+  mpl::set_placement_seeds 1
   if { [info exists keys(-random_seed)] } {
-    sta::check_cardinal_arg "-random_seed" $keys(-random_seed)
-    set random_seed $keys(-random_seed)
+    sta::check_integer "-random_seed" $keys(-random_seed)
+    mpl::set_random_seed $keys(-random_seed)
   }
-  mpl::set_random_seed $random_seed
   if { [info exists keys(-anneal_end_acceptance)] } {
-    sta::check_float_arg "-anneal_end_acceptance" $keys(-anneal_end_acceptance)
+    sta::check_float "-anneal_end_acceptance" $keys(-anneal_end_acceptance)
     mpl::set_anneal_end_acceptance $keys(-anneal_end_acceptance)
   }
   if { [info exists keys(-anneal_patience)] } {
-    sta::check_float_arg "-anneal_patience" $keys(-anneal_patience)
+    sta::check_float "-anneal_patience" $keys(-anneal_patience)
     mpl::set_anneal_patience $keys(-anneal_patience)
+  }
+  if { [info exists keys(-placement_seeds)] } {
+    sta::check_integer "-placement_seeds" $keys(-placement_seeds)
+    mpl::set_placement_seeds $keys(-placement_seeds)
   }
   if { [info exists keys(-report_directory)] } {
     set report_directory $keys(-report_directory)

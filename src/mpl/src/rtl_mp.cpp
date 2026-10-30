@@ -88,6 +88,8 @@ bool MacroPlacer::place(const int num_threads,
   anneal_end_acceptance_ = 0.0f;
   hier_rtlmp_->setAnnealPatience(anneal_patience_);
   anneal_patience_ = 0.0f;
+  hier_rtlmp_->setPlacementSeeds(placement_seeds_);
+  placement_seeds_ = 1;
 
   hier_rtlmp_->run();
   logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
@@ -256,6 +258,15 @@ void MacroPlacer::setAnnealPatience(const float patience)
   }
   anneal_patience_ = patience;
   hier_rtlmp_->setAnnealPatience(patience);
+}
+
+void MacroPlacer::setPlacementSeeds(const int seeds)
+{
+  if (seeds < 1) {
+    logger_->error(MPL, 83, "-placement_seeds must be >= 1.");
+  }
+  placement_seeds_ = seeds;
+  hier_rtlmp_->setPlacementSeeds(seeds);
 }
 
 void MacroPlacer::blockMacroChannels()

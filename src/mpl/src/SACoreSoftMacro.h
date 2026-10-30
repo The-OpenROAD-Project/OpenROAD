@@ -57,6 +57,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float getNormNotchPenalty() const;
   float getSoftBlockagePenalty() const;
   float getNormSoftBlockagePenalty() const;
+  float getNormFixedMacrosPenalty() const { return norm_fixed_macros_penalty_; }
+  void copyNormalizationFactorsFrom(const SACoreSoftMacro& ref);
 
   void printResults() const;  // just for test
 

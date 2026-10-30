@@ -101,6 +101,7 @@ class TestAnnealerCore : public MplTest
   void SetUp() override
   {
     MplTest::SetUp();
+    db_->setDbuPerMicron(1000);
     db_->getTech()->setLefUnits(1000);
     db_->getTech()->setManufacturingGrid(10);
 
@@ -729,6 +730,172 @@ TEST_F(TestAnnealerCore, AnnealEndAcceptanceAndPatienceValidation)
   EXPECT_NO_THROW(placer.setAnnealPatience(1.0f));
   EXPECT_LOGGER_ERROR(placer.setAnnealPatience(-0.01f), "MPL-0082");
   EXPECT_LOGGER_ERROR(placer.setAnnealPatience(1.01f), "MPL-0082");
+
+  EXPECT_NO_THROW(placer.setPlacementSeeds(1));
+  EXPECT_NO_THROW(placer.setPlacementSeeds(5));
+  EXPECT_LOGGER_ERROR(placer.setPlacementSeeds(0), "MPL-0083");
+  EXPECT_LOGGER_ERROR(placer.setPlacementSeeds(-3), "MPL-0083");
+}
+
+// Verifies copyNormalizationFactorsFrom and selectBestCandidateByCommonCost on
+// SACoreSoftMacro across differently normalized candidates.
+TEST_F(TestAnnealerCore, CopyNormalizationFactorsAndCommonCostSoftMacro)
+{
+  auto c0 = std::make_unique<Cluster>(1, "c0", &logger_);
+  c0->setClusterType(MixedCluster);
+  c0->setMetrics(Metrics(10, 2, 50000, 100000));
+  auto c1 = std::make_unique<Cluster>(2, "c1", &logger_);
+  c1->setClusterType(HardMacroCluster);
+  c1->setMetrics(Metrics(0, 2, 0, 120000));
+
+  SoftMacro m0(c0.get());
+  m0.setShapes({Interval(200, 500)}, 150000);
+  SoftMacro m1(c1.get());
+  m1.setShapes({Tiling(300, 400), Tiling(400, 300)}, /*force=*/true);
+  SoftMacro fixed_blk(odb::Rect(250, 0, 600, 250), "fixed_blk");
+
+  const odb::Rect outline(0, 0, 2000, 2000);
+  SACoreWeights weights{1.0f, 10.0f, 5.0f, 3.0f, 4.0f};
+  SASoftWeights soft_weights{2.0f, 3.0f, 4.0f};
+  const BundledNetList nets = {BundledNet(0, 1, 2.0f)};
+  const std::map<int, odb::Rect> fences = {{0, odb::Rect(0, 0, 800, 800)}};
+  const std::map<int, odb::Rect> guides = {{1, odb::Rect(100, 100, 900, 900)}};
+  const RectList blockages = {odb::Rect(0, 0, 500, 500)};
+
+  auto makeSoftCandidate = [&](unsigned seed) {
+    auto sa = std::make_unique<SACoreSoftMacro>(
+        tree_.get(),
+        outline,
+        std::vector<SoftMacro>{m0, m1, fixed_blk},
+        weights,
+        soft_weights,
+        10.0f,
+        10.0f,
+        0.2f,
+        0.2f,
+        0.2f,
+        0.2f,
+        0.2f,
+        0.9f,
+        20,
+        30,
+        seed,
+        nullptr,
+        &logger_,
+        block_);
+    sa->setNets(nets);
+    sa->setFences(fences);
+    sa->setGuides(guides);
+    sa->setSoftBlockages(blockages);
+    sa->initialize();
+    sa->run();
+    return sa;
+  };
+
+  std::vector<std::unique_ptr<SACoreSoftMacro>> candidates;
+  candidates.push_back(makeSoftCandidate(1));
+  candidates.push_back(makeSoftCandidate(101));
+
+  EXPECT_NE(candidates[1]->getNormFixedMacrosPenalty(),
+            candidates[0]->getNormFixedMacrosPenalty());
+  candidates[1]->copyNormalizationFactorsFrom(*candidates[0]);
+  EXPECT_FLOAT_EQ(candidates[1]->getNormAreaPenalty(),
+                  candidates[0]->getNormAreaPenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormOutlinePenalty(),
+                  candidates[0]->getNormOutlinePenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormWirelength(),
+                  candidates[0]->getNormWirelength());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormGuidancePenalty(),
+                  candidates[0]->getNormGuidancePenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormFencePenalty(),
+                  candidates[0]->getNormFencePenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormBoundaryPenalty(),
+                  candidates[0]->getNormBoundaryPenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormSoftBlockagePenalty(),
+                  candidates[0]->getNormSoftBlockagePenalty());
+  EXPECT_GT(candidates[0]->getNormFixedMacrosPenalty(), 0.0f);
+  EXPECT_FLOAT_EQ(candidates[1]->getNormFixedMacrosPenalty(),
+                  candidates[0]->getNormFixedMacrosPenalty());
+  EXPECT_FLOAT_EQ(candidates[1]->getNormNotchPenalty(),
+                  candidates[0]->getNormNotchPenalty());
+
+  const int best_idx = selectBestCandidateByCommonCost(
+      candidates, *candidates[0], weights, /*require_valid=*/true);
+  ASSERT_GE(best_idx, 0);
+  EXPECT_LE(candidates[best_idx]->getNormCost(),
+            candidates[1 - best_idx]->getNormCost());
+}
+
+// Verifies copyNormalizationFactorsFrom and common-cost selection on
+// SACoreHardMacro when candidates are initialized under different seeds and
+// outline/wirelength weights (as in HierRTLMP::placeMacros).
+TEST_F(TestAnnealerCore, CopyNormalizationFactorsAndCommonCostHardMacro)
+{
+  auto c0 = std::make_unique<Cluster>(1, "c0", &logger_);
+  auto c1 = std::make_unique<Cluster>(2, "c1", &logger_);
+  auto c2 = std::make_unique<Cluster>(3, "c2", &logger_);
+
+  std::vector<HardMacro> macros = {
+      HardMacro(odb::Point(0, 0), "hm0", 300, 400, c0.get()),
+      HardMacro(odb::Point(0, 0), "hm1", 400, 300, c1.get()),
+      HardMacro(odb::Point(0, 0), "hm2", 250, 250, c2.get()),
+  };
+
+  const odb::Rect outline(0, 0, 1500, 1500);
+  const SACoreWeights base_weights{1.0f, 10.0f, 8.0f, 2.0f, 3.0f};
+  const BundledNetList nets = {BundledNet(0, 1, 2.0f), BundledNet(1, 2, 3.0f)};
+  const std::map<int, odb::Rect> fences = {{0, odb::Rect(0, 0, 600, 600)}};
+  const std::map<int, odb::Rect> guides = {{1, odb::Rect(100, 100, 800, 800)}};
+
+  std::vector<std::unique_ptr<SACoreHardMacro>> candidates;
+  for (int run_id = 0; run_id < 3; ++run_id) {
+    SACoreWeights run_weights = base_weights;
+    run_weights.outline *= (run_id + 1) * 10;
+    run_weights.wirelength /= (run_id + 1);
+    auto sa
+        = std::make_unique<SACoreHardMacro>(tree_.get(),
+                                            outline,
+                                            macros,
+                                            run_weights,
+                                            0.25f,
+                                            0.25f,
+                                            0.25f,
+                                            0.25f,
+                                            0.9f,
+                                            25,
+                                            20,
+                                            static_cast<unsigned>(run_id + 1),
+                                            nullptr,
+                                            &logger_,
+                                            block_);
+    sa->setNets(nets);
+    sa->setFences(fences);
+    sa->setGuides(guides);
+    sa->initialize();
+    sa->run();
+    candidates.push_back(std::move(sa));
+  }
+
+  const int best_idx = selectBestCandidateByCommonCost(
+      candidates, *candidates[0], base_weights, /*require_valid=*/true);
+  ASSERT_GE(best_idx, 0);
+
+  for (int i = 0; i < static_cast<int>(candidates.size()); ++i) {
+    EXPECT_FLOAT_EQ(candidates[i]->getNormAreaPenalty(),
+                    candidates[0]->getNormAreaPenalty());
+    EXPECT_FLOAT_EQ(candidates[i]->getNormOutlinePenalty(),
+                    candidates[0]->getNormOutlinePenalty());
+    EXPECT_FLOAT_EQ(candidates[i]->getNormWirelength(),
+                    candidates[0]->getNormWirelength());
+    EXPECT_FLOAT_EQ(candidates[i]->getNormGuidancePenalty(),
+                    candidates[0]->getNormGuidancePenalty());
+    EXPECT_FLOAT_EQ(candidates[i]->getNormFencePenalty(),
+                    candidates[0]->getNormFencePenalty());
+    if (candidates[i]->isValid()) {
+      EXPECT_LE(candidates[best_idx]->getNormCost(),
+                candidates[i]->getNormCost());
+    }
+  }
 }
 
 }  // namespace

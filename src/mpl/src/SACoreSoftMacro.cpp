@@ -147,6 +147,15 @@ float SACoreSoftMacro::getNormNotchPenalty() const
   return norm_notch_penalty_;
 }
 
+void SACoreSoftMacro::copyNormalizationFactorsFrom(const SACoreSoftMacro& ref)
+{
+  SimulatedAnnealingCore<SoftMacro>::copyNormalizationFactorsFrom(ref);
+  norm_boundary_penalty_ = ref.norm_boundary_penalty_;
+  norm_soft_blockage_penalty_ = ref.norm_soft_blockage_penalty_;
+  norm_fixed_macros_penalty_ = ref.norm_fixed_macros_penalty_;
+  norm_notch_penalty_ = ref.norm_notch_penalty_;
+}
+
 // Operations
 float SACoreSoftMacro::calNormCost() const
 {

@@ -778,5 +778,80 @@ TEST_F(AnnealerPackingTest, RelativeScheduleReducesMissesOnCpSatCorpus)
       << legacy_misses << ", relative_misses=" << relative_misses << ")";
 }
 
+void evaluateMultiSeedCandidateSelection(const PackingProblem& problem,
+                                         odb::dbBlock* block,
+                                         utl::Logger* logger,
+                                         int& multi_seed_solved_count)
+{
+  const SACoreWeights default_weights{1.0f, 100.0f, 0.0f, 0.0f, 0.0f};
+  if (problem.stage == PackingStage::MacroPlacement) {
+    std::vector<std::unique_ptr<HardPackingHarness>> harnesses;
+    std::vector<std::unique_ptr<SACoreHardMacro>> candidates;
+    for (int s = 0; s < 3; ++s) {
+      auto h = buildHardPackingHarness(problem, block, logger, 1 + s * 100);
+      h->annealer->setAnnealEndAcceptance(0.0001f);
+      runSA<SACoreHardMacro>(h->annealer.get());
+      candidates.push_back(std::move(h->annealer));
+      harnesses.push_back(std::move(h));
+    }
+    const int best_idx = selectBestCandidateByCommonCost(
+        candidates, *candidates[0], default_weights, /*require_valid=*/true);
+    ASSERT_GE(best_idx, 0) << "No valid candidate on " << problem.name;
+    ++multi_seed_solved_count;
+    for (int s = 0; s < 3; ++s) {
+      if (candidates[s]->isValid()) {
+        EXPECT_LE(candidates[best_idx]->getNormCost(),
+                  candidates[s]->getNormCost());
+      }
+    }
+    return;
+  }
+
+  std::vector<std::unique_ptr<SoftPackingHarness>> harnesses;
+  std::vector<std::unique_ptr<SACoreSoftMacro>> candidates;
+  for (int s = 0; s < 3; ++s) {
+    auto h = buildSoftPackingHarness(problem, block, logger, 1 + s * 100);
+    h->annealer->setAnnealEndAcceptance(0.0001f);
+    runSA<SACoreSoftMacro>(h->annealer.get());
+    candidates.push_back(std::move(h->annealer));
+    harnesses.push_back(std::move(h));
+  }
+  const int best_idx = selectBestCandidateByCommonCost(
+      candidates, *candidates[0], default_weights, /*require_valid=*/true);
+  ASSERT_GE(best_idx, 0) << "No valid candidate on " << problem.name;
+  ++multi_seed_solved_count;
+  for (int s = 0; s < 3; ++s) {
+    if (candidates[s]->isValid()) {
+      EXPECT_LE(candidates[best_idx]->getNormCost(),
+                candidates[s]->getNormCost());
+    }
+  }
+}
+
+TEST_F(AnnealerPackingTest,
+       MultiSeedCommonCostSelectionRescuesAndRanksCandidates)
+{
+  const std::string corpus_path = getFilePath(
+      "_main/src/mpl/test/testcases/"
+      "packing_corpus.txt");
+  const std::vector<PackingProblem> corpus
+      = loadPackingProblemCorpus(corpus_path);
+  ASSERT_GE(corpus.size(), 9U);
+
+  int feasible_count = 0;
+  int multi_seed_solved_count = 0;
+
+  for (const PackingProblem& problem : corpus) {
+    const PackingOracleResult oracle = solveWithCpSat(problem);
+    if (oracle.status == PackingStatus::Feasible) {
+      ++feasible_count;
+      evaluateMultiSeedCandidateSelection(
+          problem, block_, &logger_, multi_seed_solved_count);
+    }
+  }
+
+  EXPECT_EQ(multi_seed_solved_count, feasible_count);
+}
+
 }  // namespace
 }  // namespace mpl

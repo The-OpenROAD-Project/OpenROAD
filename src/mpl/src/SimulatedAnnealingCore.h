@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <memory>
 #include <random>
 #include <string>
 #include <vector>
@@ -74,6 +75,8 @@ class SimulatedAnnealingCore
     anneal_end_acceptance_ = end_acceptance;
   }
   void setAnnealPatience(float patience) { anneal_patience_ = patience; }
+  void setWeights(const SACoreWeights& weights) { core_weights_ = weights; }
+  void copyNormalizationFactorsFrom(const SimulatedAnnealingCore<T>& ref);
 
   virtual bool isValid() const;
   bool fitsIn(const odb::Rect& outline) const;
@@ -83,6 +86,7 @@ class SimulatedAnnealingCore
   int getHeight() const;
   int64_t getArea() const;
   float getAreaPenalty() const;
+  float getNormAreaPenalty() const { return norm_area_penalty_; }
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;
   float getWirelength() const;
@@ -285,6 +289,32 @@ void runSA(T* sa_core)
 {
   sa_core->initialize();
   sa_core->run();
+}
+
+template <class SACore>
+int selectBestCandidateByCommonCost(
+    const std::vector<std::unique_ptr<SACore>>& candidates,
+    const SACore& norm_reference,
+    const SACoreWeights& weights,
+    bool require_valid)
+{
+  int best_index = -1;
+  float best_cost = std::numeric_limits<float>::max();
+
+  for (int i = 0; i < static_cast<int>(candidates.size()); ++i) {
+    if (candidates[i] != nullptr
+        && (!require_valid || candidates[i]->isValid())) {
+      candidates[i]->copyNormalizationFactorsFrom(norm_reference);
+      candidates[i]->setWeights(weights);
+      const float cost = candidates[i]->getNormCost();
+      if (best_index < 0 || cost < best_cost) {
+        best_cost = cost;
+        best_index = i;
+      }
+    }
+  }
+
+  return best_index;
 }
 
 }  // namespace mpl

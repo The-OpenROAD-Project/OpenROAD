@@ -166,6 +166,12 @@ set_anneal_patience(float patience)
 }
 
 void
+set_placement_seeds(int seeds)
+{
+  getMacroPlacer()->setPlacementSeeds(seeds);
+}
+
+void
 block_macro_channels()
 {
   getMacroPlacer()->blockMacroChannels();

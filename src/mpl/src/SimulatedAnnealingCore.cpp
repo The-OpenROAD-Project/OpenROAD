@@ -237,6 +237,17 @@ void SimulatedAnnealingCore<T>::buildMacroNetIndex()
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::copyNormalizationFactorsFrom(
+    const SimulatedAnnealingCore<T>& ref)
+{
+  norm_area_penalty_ = ref.norm_area_penalty_;
+  norm_outline_penalty_ = ref.norm_outline_penalty_;
+  norm_wirelength_ = ref.norm_wirelength_;
+  norm_guidance_penalty_ = ref.norm_guidance_penalty_;
+  norm_fence_penalty_ = ref.norm_fence_penalty_;
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::setFences(
     const std::map<int, odb::Rect>& fences)
 {
