@@ -427,6 +427,22 @@ TEST_F(Graph2DTest, SameExtentInitDropsTheNDRNetsOfThePreviousRun)
   EXPECT_EQ(graph_.getTotalNDRDeficit(), 0);
 }
 
+TEST_F(Graph2DTest, ClearingTheNDRNetsClearsTheEdgeDeficits)
+{
+  FrNet ndr_net;
+  ndr_net.reset(nullptr, false, 0, 2, 0, 1, 0, nullptr);
+  graph_.updateUsageH(1, 1, &ndr_net, 2);
+  ASSERT_TRUE(graph_.hasNDRDeficit(1, 1, EdgeDirection::Horizontal));
+  ASSERT_EQ(graph_.getTotalNDRDeficit(), 1);
+
+  // Without a new init, the edges keep their state: their deficits must be
+  // dropped with the records they are made of, or they would outlive the
+  // total and could never be released.
+  graph_.clearNDRnets();
+  EXPECT_FALSE(graph_.hasNDRDeficit(1, 1, EdgeDirection::Horizontal));
+  EXPECT_EQ(graph_.getTotalNDRDeficit(), 0);
+}
+
 TEST_F(Graph2DTest, DeduplicatesAndReusesPendingListsAcrossManyRuns)
 {
   for (int run = 0; run < 2000; run++) {

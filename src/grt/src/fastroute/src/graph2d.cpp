@@ -229,7 +229,6 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
     // for NDR nets for the rest of the run.
     clearNDRnets();
     resetNDRCap();
-    foreachEdge([](Edge& edge) { edge.ndr_deficit = 0; });
     clearCongestedNDRnets();
     congestion_nets_.clear();
   }
@@ -507,7 +506,8 @@ bool Graph2D::usedGridsMatchUsage() const
   return matches(h_edges_, h_used_ggrid_) && matches(v_edges_, v_used_ggrid_);
 }
 
-// Clears the NDR lists
+// Clears the NDR lists. The per edge NDR deficits are the sum of the deficits
+// recorded in these lists, so they are cleared with them and with their total.
 void Graph2D::clearNDRnets()
 {
   for (auto row : v_ndr_nets_) {
@@ -520,6 +520,7 @@ void Graph2D::clearNDRnets()
       ndr_nets.clear();
     }
   }
+  foreachEdge([](Edge& edge) { edge.ndr_deficit = 0; });
   ndr_deficit_total_ = 0;
 }
 
