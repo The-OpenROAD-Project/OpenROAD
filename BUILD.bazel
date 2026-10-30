@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
@@ -57,6 +58,35 @@ config_setting(
         ":platform": "gui",
     },
 )
+
+# Set by --config=profile (see .bazelrc).
+bool_flag(
+    name = "profile",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "profile_enabled",
+    flag_values = {
+        ":profile": "true",
+    },
+)
+
+selects.config_setting_group(
+    name = "profile_linux",
+    match_all = [
+        ":profile_enabled",
+        "@platforms//os:linux",
+    ],
+)
+
+# LLD gives rodata and code different vaddr-offset deltas; profilers that
+# assume a single load bias (e.g. VTune) then misresolve every symbol.
+# --no-rosegment merges the two into one segment. ELF-only, so Linux only.
+OPENROAD_LINKOPTS = select({
+    ":profile_linux": ["-Wl,--no-rosegment"],
+    "//conditions:default": [],
+})
 
 # Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
 # A string flag rather than a bool leaves room for a "hip" value, mirroring
@@ -245,6 +275,7 @@ cc_binary(
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
+    linkopts = OPENROAD_LINKOPTS,
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
@@ -283,6 +314,7 @@ cc_binary(
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
+    linkopts = OPENROAD_LINKOPTS,
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
