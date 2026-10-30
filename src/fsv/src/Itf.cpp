@@ -960,8 +960,10 @@ void Reader::readGlobal(const Node& n, Stack& stack)
       stack.setReferenceDirection(Stack::ReferenceDirection::kVertical);
     } else if (value.text == "HORIZONTAL") {
       stack.setReferenceDirection(Stack::ReferenceDirection::kHorizontal);
+    } else if (value.text == "GATE") {
+      stack.setReferenceDirection(Stack::ReferenceDirection::kGate);
     } else {
-      fail(n.line, "REFERENCE_DIRECTION must be VERTICAL or HORIZONTAL");
+      fail(n.line, "REFERENCE_DIRECTION must be VERTICAL, HORIZONTAL or GATE");
     }
   }
   // USE_SI_DENSITY and DROP_FACTOR_LATERAL_SPACING only qualify effects
