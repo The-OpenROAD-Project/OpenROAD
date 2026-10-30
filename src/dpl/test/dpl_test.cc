@@ -313,6 +313,32 @@ TEST_F(CheckPlacementTest, PlaceableReportsOverlapWithMisalignedFixedCell)
   EXPECT_EQ(failureCount("Site_alignment_failures"), 0);
 }
 
+TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
+{
+  // BLOCK1 is 4000x4000 DBU (10.53 sites x 1.43 rows). Placed off-grid at
+  // (+350, +2000) from core origin, it physically spans columns [0, 12) and
+  // rows [0, 3) even though gridRoundX/Y snaps to (1, 1) and gridHeight is 2.
+  makeCell("BLOCK1",
+           "macro",
+           {kCoreX + 350, kCoreY + 2000},
+           odb::dbPlacementStatus::FIRM);
+  makeCell(
+      "BUF_X1", "buf_bl", {kCoreX, kCoreY}, odb::dbPlacementStatus::PLACED);
+  makeCell("BUF_X1",
+           "buf_top",
+           {kCoreX, kCoreY + 2 * kRowHeight},
+           odb::dbPlacementStatus::PLACED);
+  makeCell("BUF_X1",
+           "buf_right",
+           {kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight},
+           odb::dbPlacementStatus::PLACED);
+
+  dp_.detailedPlacement(/*max_displacement_x=*/0, /*max_displacement_y=*/0);
+
+  EXPECT_EQ(runCheck(/*check_fixed=*/false, /*check_placeable=*/true), "");
+  EXPECT_EQ(failureCount("Overlap_failures"), 0);
+}
+
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
 class FixedSupplyViaTest : public tst::Nangate45Fixture
 {

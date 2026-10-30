@@ -17,15 +17,10 @@
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 4 cells
 [INFO DPL-0393]   height 36 row(s): 1 cells
-          |      Total |  Illegal |  Illegal
-Iteration | Violations |    Cells |    Sites
----------------------------------------------
-        0 |          0 |         0 |         0
-Negotiation phase 1 converged at iteration 0.
 Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
-total moves                   1
+total moves                   0
 total displacement         64.0 u
 average displacement       12.8 u
 max displacement           17.1 u
