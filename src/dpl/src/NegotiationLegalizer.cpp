@@ -429,6 +429,13 @@ bool NegotiationLegalizer::initFromDb()
     // footprint stays within the grid (matches Opendp::legalPt behaviour).
     cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
     cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    if (dpl_grid->hasHybridRows() && cell.node && !master->getSite()) {
+      const GridRect r = dpl_grid->gridCovering(cell.node);
+      cell.init_x = r.xlo.v;
+      cell.init_y = r.ylo.v;
+      cell.width = (r.xhi - r.xlo).v;
+      cell.height = (r.yhi - r.ylo).v;
+    }
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 

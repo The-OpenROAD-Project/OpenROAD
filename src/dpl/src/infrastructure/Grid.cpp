@@ -602,7 +602,7 @@ GridY Grid::gridHeight(odb::dbMaster* master) const
     return GridY{max(1, divCeil(bbox.dy(), row_height.v))};
   }
   auto site = master->getSite();
-  if (!site->hasRowPattern()) {
+  if (!site || !site->hasRowPattern()) {
     return GridY{1};
   }
 
@@ -619,6 +619,9 @@ GridY Grid::gridHeight(const Node* cell) const
     return GridY{1};
   }
   auto site = cell->getDbInst()->getMaster()->getSite();
+  if (!site) {
+    return GridY{max(1, (gridEndY(cell) - gridSnapDownY(cell)).v)};
+  }
   if (!site->hasRowPattern()) {
     return GridY{1};
   }
@@ -862,7 +865,7 @@ bool Grid::isMultiHeight(odb::dbMaster* master) const
     return master->getHeight() > uniform_row_height_.value();
   }
 
-  return master->getSite()->hasRowPattern();
+  return master->getSite() && master->getSite()->hasRowPattern();
 }
 
 DbuY Grid::rowHeight(GridY index)
