@@ -750,22 +750,158 @@ TEST(Itf, SkipsUnknownKeywordsWithAWarning)
   EXPECT_EQ(warnings[4].line, 8);
   EXPECT_EQ(warnings[4].message,
             "unknown keyword EXTRA in RPSQ_VS_WIDTH_AND_SPACING, skipped");
-  // An unknown flag before a known block cannot be told from a block
-  // name, so it is an error rather than a silent loss of the block.
-  expectError(
+  // An unknown flag ends at a keyword the reader handles, so the
+  // statement after it is read as usual: a layer, a table, settings, and
+  // a refused keyword, which stays an error.
+  warnings.clear();
+  const Stack flagged = parse(
       "TECHNOLOGY = t\nNEW_FLAG DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { NEW_FLAG THICKNESS=0.2 WMIN=0.1 NEW_FLAG\n"
+      "  RPSQ_VS_SI_WIDTH { (0.1, 1) } }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
-      "unknown keyword NEW_FLAG before DIELECTRIC { ... }");
+      &warnings);
+  EXPECT_EQ(flagged.dielectrics().size(), 1u);
+  EXPECT_EQ(flagged.conductor(flagged.layer("M")).min_width, 0.1);
+  EXPECT_EQ(flagged.conductor(flagged.layer("M")).rpsq_vs_width.x.size(), 1u);
+  EXPECT_EQ(warnings.size(), 3u);
   expectError(
       "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
-      "CONDUCTOR M { THICKNESS=0.2 NEW_FLAG RPSQ_VS_SI_WIDTH { (0.1, 1) } }\n"
+      "CONDUCTOR M { THICKNESS=0.2 NEW_FLAG FILL_RATIO = 0.5 "
+      "THICKNESS_VS_DENSITY { (0.1, 0.01) } }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
-      "unknown keyword NEW_FLAG before RPSQ_VS_SI_WIDTH { ... } in "
-      "CONDUCTOR M");
+      "FILL_RATIO in CONDUCTOR M is not supported");
+  // Tuples among a group's options, alone or mixed with words and
+  // settings, are skipped with the group.
+  warnings.clear();
+  const Stack tupled = parse(
+      "TECHNOLOGY = t\nNEW_TABLE (1,1) (2,2) { X { 1 } }\n"
+      "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 RPSQ=0.5\n"
+      "  NEW_TABLE A (1, 1) B=2 (2, 2) { (3, 3) Y = 1 { 4 } } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  EXPECT_EQ(tupled.conductor(tupled.layer("M")).rpsq, 0.5);
+  ASSERT_EQ(warnings.size(), 2u);
+  EXPECT_EQ(warnings[0].message, "unknown keyword NEW_TABLE, skipped");
+  EXPECT_EQ(warnings[1].message,
+            "unknown keyword NEW_TABLE A in CONDUCTOR M, skipped");
+  // Without a '{' the tuples are the keyword's own, and a known table
+  // given one as an option is an error.
+  warnings.clear();
+  parse(
+      "TECHNOLOGY = t\nNEW_PAIRS (1, 1) (2, 2)\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message, "unknown keyword NEW_PAIRS, skipped");
+  expectError(
+      "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 ETCH_VS_WIDTH_AND_SPACING (1, 2) { "
+      "WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.01 } } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      "unsupported option ( ) of ETCH_VS_WIDTH_AND_SPACING");
+  // A layer may be named like a keyword.
+  const Stack named = parse(
+      "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR WMIN { THICKNESS=0.2 RPSQ=0.5 }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n");
+  EXPECT_EQ(named.conductor(named.layer("WMIN")).rpsq, 0.5);
+  // A setting directly before an unknown group's '{' is its option, on
+  // any line and even when named like a keyword, since no keyword takes
+  // a group after its value.
+  warnings.clear();
+  const Stack multiline = parse(
+      "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 NEW_TABLE FIRST\n"
+      "  THICKNESS=2 { VALUES { 1 } } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  EXPECT_NEAR(multiline.conductor(multiline.layer("M")).top
+                  - multiline.conductor(multiline.layer("M")).bottom,
+              0.2,
+              1e-12);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "unknown keyword NEW_TABLE FIRST in CONDUCTOR M, skipped");
+  // Other settings belong to the keyword's line, so unknown statements on
+  // separate lines are warned about one by one.
+  warnings.clear();
+  parse(
+      "TECHNOLOGY = t\nNEW_FLAG\nNEW_SETTING = 1\nOTHER = 2\n"
+      "NEW_TABLE X { }\nDIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  ASSERT_EQ(warnings.size(), 4u);
+  EXPECT_EQ(warnings[3].message, "unknown keyword NEW_TABLE X, skipped");
   // Without a sink the warnings are dropped, not raised.
   EXPECT_NO_THROW(
       parse("TECHNOLOGY = t\nFOO = 1\n"
             "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n"));
+}
+
+// An unknown block whose options mix words and NAME = value settings, and
+// whose contents nest groups given a value (GROUP = value { ... }), is skipped
+// whole with one warning, inside a layer and at the top level.
+TEST(Itf, SkipsUnknownBlocksWithOptionSettings)
+{
+  const std::string table
+      = "NEW_TABLE FIRST SECOND=2 THIRD {\n"
+        "  SIDE_A {\n"
+        "    COUNT = 2\n"
+        "    KEY = 0.1 {\n"
+        "      SPACINGS { 0.1 0.2 }\n"
+        "      OTHER { 0.1 0.3 }\n"
+        "      VALUES { 1 2\n"
+        "               3 4 }\n"
+        "    }\n"
+        "    KEY = 0.2 { SPACINGS { 0.1 } OTHER { 0.1 } VALUES { 5 } }\n"
+        "  }\n"
+        "}\n";
+  std::vector<ItfWarning> warnings;
+  const Stack stack = parse("TECHNOLOGY = t\n" + table
+                                + "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+                                  "CONDUCTOR M { THICKNESS=0.2 WMIN=0.1 "
+                                  "SMIN=0.1 RPSQ=0.5\n"
+                                + table
+                                + "}\n"
+                                  "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+                            &warnings);
+  EXPECT_EQ(stack.conductor(stack.layer("M")).rpsq, 0.5);
+  ASSERT_EQ(warnings.size(), 2u);
+  EXPECT_EQ(warnings[0].line, 2);
+  EXPECT_EQ(warnings[0].message, "unknown keyword NEW_TABLE FIRST, skipped");
+  EXPECT_EQ(warnings[1].line, 16);
+  EXPECT_EQ(warnings[1].message,
+            "unknown keyword NEW_TABLE FIRST in CONDUCTOR M, skipped");
+
+  // A group given a value in a known block is skipped by its name and
+  // value, which tell siblings apart.
+  warnings.clear();
+  parse(
+      "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 KEY = 0.1 { VALUES { 1 } } }\n"
+      "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
+      &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "unknown keyword KEY = 0.1 in CONDUCTOR M, skipped");
+
+  // The same shapes on known keywords are errors, not silently read.
+  const std::string head
+      = "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n";
+  const std::string sub = "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n";
+  auto conductor = [&](const std::string& body) {
+    return head + "CONDUCTOR M { THICKNESS=0.2 " + body + " }\n" + sub;
+  };
+  expectError(conductor("RPSQ = 1 { 2 }"), "RPSQ takes a value, not a block");
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING MASKS=2 { WIDTHS { 0.1 } "
+                        "SPACINGS { 0.1 } VALUES { 0.01 } }"),
+              "unsupported option MASKS of ETCH_VS_WIDTH_AND_SPACING");
+  expectError(head + "DIELECTRIC E X=1 { THICKNESS=1 ER=4 }\n" + sub,
+              "DIELECTRIC expects a name and { ... }");
+  // A table given a value is named as such, not as its own option.
+  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING = 0.1 { WIDTHS { 0.1 } "
+                        "SPACINGS { 0.1 } VALUES { 0.01 } }"),
+              "ETCH_VS_WIDTH_AND_SPACING takes no value");
 }
 
 // The syntax pass: malformed structure is reported with its line.
@@ -803,6 +939,8 @@ TEST(Itf, SyntaxErrors)
   EXPECT_EQ(planar.conductor(planar.layer("M")).etch_tables.size(), 1u);
   expectError(head + "EM_INFORMATION\nLAYER M1 { }\n" + sub,
               "EM_INFORMATION without END_OF_EM_INFORMATION");
+  expectError(head + "TSV t\n", "TSV expects { ... }");
+  // Options do not reach past a keyword the reader handles.
   expectError(head + "TSV t = 1\n" + sub, "TSV expects { ... }");
 }
 
