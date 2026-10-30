@@ -50,7 +50,7 @@ clock_gating
     [-min_instances min_instances]
     [-max_cover max_cover]
     [-dump_dir dump_dir]
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
@@ -60,7 +60,7 @@ clock_gating
 | `-min_instances` | Minimum number of instances that should be gated by a single clock gate. |
 | `-max_cover` | Maximum number of initial gate condition candidate nets per instance. |
 | `-dump_dir` | Directory for debug dumps. |
-| `-corner` | Corner whose Liberty libraries are used for logic analysis. Required when more than one corner is defined. |
+| `-scene` | Scene whose Liberty libraries are used for logic analysis. Defaults to the current command scene. |
 
 ## Example scripts
 

@@ -1,6 +1,9 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
-[ERROR STA-0103] -scene keyword required with multi-scene analysis.
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary_fast" with 92 gates.
+[INFO CGT-0003] Clock gating instance 0/2
 [WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
 [WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
 Derived GENLIB library "NangateOpenCellLibrary_fast" with 92 gates.

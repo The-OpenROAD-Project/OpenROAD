@@ -40,11 +40,11 @@ set_max_cover_cmd(int max_cover)
 }
 
 void
-clock_gating_cmd(Scene* corner, const char* dump_dir)
+clock_gating_cmd(Scene* scene, const char* dump_dir)
 {
   cgt::ClockGating* cgt = getClockGating();
   cgt->setDumpDir(dump_dir);
-  cgt->run(corner);
+  cgt->run(scene);
 }
 
 %}
