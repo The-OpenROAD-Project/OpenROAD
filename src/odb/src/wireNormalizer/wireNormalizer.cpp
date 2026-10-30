@@ -459,11 +459,7 @@ void WireNormalizer::mergeCollinearSectionsInsidePins()
     }
   }
 
-  const bool merged
-      = std::find(
-            state.removed_points.begin(), state.removed_points.end(), true)
-        != state.removed_points.end();
-  if (merged) {
+  if (state.merged) {
     removeMergedSectionsAndPoints(state);
   }
 }
@@ -533,6 +529,7 @@ void WireNormalizer::mergeSectionsAt(const int point_index, MergeState& state)
   state.removed_points[point_index] = true;
   state.point_sections[a_other].push_back(merged_index);
   state.point_sections[b_other].push_back(merged_index);
+  state.merged = true;
 }
 
 // Rebuilds the points and sections without the dropped ones, and the shape

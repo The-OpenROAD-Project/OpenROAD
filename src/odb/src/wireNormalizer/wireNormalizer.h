@@ -186,6 +186,7 @@ class WireNormalizer
     std::vector<std::vector<int>> point_sections;
     std::vector<bool> removed_points;
     std::vector<bool> removed_sections;
+    bool merged{false};
   };
 
   void clear();
