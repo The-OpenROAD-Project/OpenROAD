@@ -683,7 +683,17 @@ TEST(Itf, RefusesAndChecksResistanceForms)
                      "DROP_FACTOR_LATERAL_SPACING = 2\n" + sub,
               "DROP_FACTOR_LATERAL_SPACING is given twice");
   expectError(head + "REFERENCE_DIRECTION = UP\n" + sub,
-              "REFERENCE_DIRECTION must be VERTICAL or HORIZONTAL");
+              "REFERENCE_DIRECTION must be VERTICAL, HORIZONTAL or GATE");
+  // GATE: the design's gate direction, which a directional etch table may
+  // refer to like the others.
+  const Stack gate = parse(head + "REFERENCE_DIRECTION = GATE\n"
+                           + "CONDUCTOR M { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 "
+                             "ETCH_VS_WIDTH_AND_SPACING PARALLEL_TO_REFERENCE "
+                             "{ WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.01 "
+                             "} } }\n"
+                           + sub);
+  EXPECT_EQ(gate.referenceDirection(), Stack::ReferenceDirection::kGate);
+  EXPECT_EQ(gate.conductor(gate.layer("M")).etch_tables.size(), 1u);
   expectError(head + "HALF_NODE_SCALE_FACTOR = 0\n" + sub,
               "HALF_NODE_SCALE_FACTOR must be positive");
 
