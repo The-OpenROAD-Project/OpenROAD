@@ -59,6 +59,14 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+regression_test(
+    name = "read_upf_errors",
+    check_log = False,
+    check_passfail = True,
+    data = [":regression_resources"],
+    visibility = ["//visibility:public"],
+)
+
 cc_test(
     name = "TestPowerSwitch",
     size = "small",
