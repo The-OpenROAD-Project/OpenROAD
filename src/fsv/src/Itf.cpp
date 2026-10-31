@@ -131,8 +131,10 @@ std::vector<Token> tokenize(std::istream& in)
 }
 
 // The keywords the semantic pass refuses or skips inside a layer block.
-const std::vector<const char*> kRefusedDielectric
-    = {"ER_VS_SI_SPACING", "SPACER_ER_VS_WIDTH_AND_SPACING"};
+const std::vector<const char*> kRefusedDielectric = {"ER_VS_SI_SPACING"};
+// A gate spacer's permittivity table: device-level, so skipped, but only
+// where the format allows it (readDielectric checks).
+constexpr const char* kSpacerTable = "SPACER_ER_VS_WIDTH_AND_SPACING";
 // Effects on the geometry or the dielectrics the solver does not model.
 const std::vector<const char*> kRefusedConductor
     = {"AIR_GAP_VS_SPACING",
@@ -229,6 +231,7 @@ const std::set<std::string_view>& statementKeywords()
         "WIDTHS",
         "VALUES",
     };
+    all.insert(kSpacerTable);
     for (const std::vector<const char*>* list : {&kRefusedDielectric,
                                                  &kRefusedConductor,
                                                  &kSkippedConductor,
@@ -1014,6 +1017,16 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
   const std::string name = blockName(b.node()).text;
   const int line = b.node().line;
   b.refuse(kRefusedDielectric);
+  // The spacer table belongs to a conformal dielectric wrapping a gate,
+  // which gate-level extraction never meets; it is skipped there and
+  // refused anywhere else, where the file would be malformed.
+  const Node* spacer = b.take(kSpacerTable);
+  if (spacer != nullptr
+      && (!b.has("IS_CONFORMAL") || !b.has("ASSOCIATED_CONDUCTOR"))) {
+    fail(spacer->line,
+         std::string(kSpacerTable) + " in " + b.label()
+             + " needs IS_CONFORMAL and an ASSOCIATED_CONDUCTOR");
+  }
   const double eps = b.required("ER");
   if (!(eps > 0)) {
     fail(b.lineOf("ER"), "ER of " + name + " must be positive");
@@ -1050,6 +1063,12 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
                               ? c.name == associated
                               : outer_top > planar_top + kHeightTolerance;
       if (target) {
+        if (spacer != nullptr && c.layer_type != "GATE") {
+          fail(spacer->line,
+               std::string(kSpacerTable) + " in " + b.label()
+                   + " needs its ASSOCIATED_CONDUCTOR " + c.name
+                   + " to be a GATE layer");
+        }
         c.conformals.push_back(conformal);
         wrapped = true;
       }
