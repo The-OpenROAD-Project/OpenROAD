@@ -191,6 +191,17 @@ class RamGen
   // its own buffer: the first is the select itself. Keyed by the select,
   // only ever looked up, never walked.
   std::unordered_map<odb::dbNet*, std::vector<odb::dbNet*>> select_groups_;
+  // Where a read select's group buffers come from: the buffer column's
+  // prefix, the select's word and the decoder output its buffers take.
+  // Each group's buffer is made in the bit cell of the group's first bit,
+  // beside the bits it selects.
+  struct SelectSource
+  {
+    std::string prefix;
+    int word;
+    odb::dbNet* decoder_output;
+  };
+  std::unordered_map<odb::dbNet*, SelectSource> select_sources_;
   // An address literal's cells for a group of kDriveGroup words: a buffer
   // or an inverter from the address, made in the decoder cell of the
   // group's first word. Keyed by the port's decoder prefix and that word.

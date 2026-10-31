@@ -934,20 +934,7 @@ void RamGen::makeBufferColumn(const std::string& prefix,
           {{buffer_ports_[{PortRoleType::DataIn, 0}],
             decoder_output_nets[word]},
            {buffer_ports_[{PortRoleType::DataOut, 0}], select_nets[word]}});
-      // a read select's other groups, each its own buffer
-      auto groups = select_groups_.find(select_nets[word]);
-      if (groups != select_groups_.end()) {
-        for (size_t g = 1; g < groups->second.size(); ++g) {
-          makeInst(
-              buf_cell.get(),
-              prefix,
-              fmt::format("sel_buf_{}_g{}", word, g),
-              buffer_cell_,
-              {{buffer_ports_[{PortRoleType::DataIn, 0}],
-                decoder_output_nets[word]},
-               {buffer_ports_[{PortRoleType::DataOut, 0}], groups->second[g]}});
-        }
-      }
+      // a read select's other groups' buffers are in their bit cells
     }
     buffer_layout->addCell(std::move(buf_cell));
     for (int f = 1; f < bit_folds_; ++f) {
@@ -2551,6 +2538,7 @@ void RamGen::generate(const int mask_size,
   word_write_.clear();
   super_nets_.clear();
   select_groups_.clear();
+  select_sources_.clear();
   literal_cells_.clear();
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
@@ -2973,6 +2961,9 @@ void RamGen::generate(const int mask_size,
           dbNet* select = read_select_nets[r_sel_idx - 1][slot];
           auto& copies = select_groups_[select];
           copies.push_back(select);
+          select_sources_[select] = {fmt::format("sel_buf_r_p{}", p),
+                                     slot,
+                                     decoder_output_nets[p][slot]};
           for (int g = 1; g < groups; ++g) {
             copies.push_back(makeNet(fmt::format("r_sel_p{}", p),
                                      fmt::format("select_r{}_g{}", slot, g)));
@@ -2991,6 +2982,7 @@ void RamGen::generate(const int mask_size,
               dbNet::destroy(groups->second[g]);
             }
             select_groups_.erase(groups);
+            select_sources_.erase(read_select_nets[r_sel_idx - 1][slot]);
           }
           dbNet::destroy(decoder_output_nets[p][slot]);
           dbNet::destroy(read_select_nets[r_sel_idx - 1][slot]);
@@ -3181,6 +3173,25 @@ void RamGen::generate(const int mask_size,
             auto groups = select_groups_.find(term.select);
             if (groups != select_groups_.end()) {
               term.select = groups->second[bit / kDriveGroup];
+            }
+          }
+          // a group's buffer, in its first bit's cell of each word
+          if (bit % kDriveGroup == 0 && bit > 0) {
+            const size_t g = bit / kDriveGroup;
+            for (const Term& term : terms) {
+              auto groups = select_groups_.find(term.select);
+              if (groups == select_groups_.end()) {
+                continue;
+              }
+              const SelectSource& source = select_sources_.at(term.select);
+              tree_nodes_[{term.row, term.word_idx, bit}].push_back(
+                  {buffer_cell_,
+                   source.prefix,
+                   fmt::format("sel_buf_{}_g{}", source.word, g),
+                   {{buffer_ports_[{PortRoleType::DataIn, 0}],
+                     source.decoder_output},
+                    {buffer_ports_[{PortRoleType::DataOut, 0}],
+                     groups->second[g]}}});
             }
           }
           const TreeEnd root = planReadTree(

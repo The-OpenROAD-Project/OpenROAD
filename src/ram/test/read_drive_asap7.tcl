@@ -4,7 +4,8 @@
 # word's bits through a buffer per group of eight bits. No net the
 # address literals or the read selects drive has more than a group's
 # sinks (an address inverter drove half the words' decoders, a read
-# select a whole word's read gates). The array still reads back what was
+# select a whole word's read gates), and each group's select buffer is
+# placed among the bits it selects. The array still reads back what was
 # written.
 source "helpers.tcl"
 source "ram_sim.tcl"
@@ -48,6 +49,37 @@ foreach net [[ord::get_db_block] getNets] {
   ram_sim::check { ![dict exists $cells [$net getName]] } \
     "net [$net getName] has a cell's name"
 }
+
+# a read select's group buffer sits among the bits it selects, not in the
+# buffer column beside the decoder
+set buffers 0
+foreach inst [[ord::get_db_block] getInsts] {
+  if { ![regexp {^sel_buf_r_p[0-9]+\.sel_buf_[0-9]+_g[1-9]} [$inst getName]] } {
+    continue
+  }
+  incr buffers
+  set x [lindex [$inst getLocation] 0]
+  set w [[$inst getMaster] getWidth]
+  set lo ""
+  set hi ""
+  foreach iterm [[[$inst findITerm Y] getNet] getITerms] {
+    if { ![$iterm isInputSignal] } {
+      continue
+    }
+    set sx [lindex [[$iterm getInst] getLocation] 0]
+    if { $lo eq "" || $sx < $lo } {
+      set lo $sx
+    }
+    if { $hi eq "" || $sx > $hi } {
+      set hi $sx
+    }
+  }
+  # within a bit's pitch of its sinks: the buffer column is a word away
+  set pitch [expr { ($hi - $lo) / 8 }]
+  ram_sim::check { $x + $w >= $lo - $pitch && $x <= $hi + $pitch } \
+    "[$inst getName] at x $x is outside its bits, $lo to $hi"
+}
+ram_sim::check { $buffers > 0 } "no read select group buffers"
 
 ram_sim::load
 ram_sim::exercise {
