@@ -1,0 +1,32 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+SITE core_site
+  CLASS CORE ;
+  SYMMETRY Y ;
+  SIZE 0.1 BY 1.0 ;
+END core_site
+MACRO phase_cell
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.2 BY 1.0 ;
+  SYMMETRY X Y ;
+  SITE core_site ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER M1 ;
+        RECT 0.35 0.4 0.45 0.6 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER M1 ;
+        RECT 0.75 0.2 1.05 0.4 ;
+    END
+  END B
+END phase_cell
+END LIBRARY

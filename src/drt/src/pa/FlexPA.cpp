@@ -3,6 +3,7 @@
 
 #include "pa/FlexPA.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -121,6 +122,10 @@ void FlexPA::removeDirtyInst(frInst* inst)
 
 void FlexPA::updateDirtyInsts()
 {
+  if (recovery_active_) {
+    updateDirtyRecoveryInsts();
+    return;
+  }
   auto cmp = [](UniqueClass* a, UniqueClass* b) { return a->key() < b->key(); };
   std::set<UniqueClass*, decltype(cmp)> dirty_unique_classes(cmp);
   frOrderedIdSet<frInst*>
@@ -163,17 +168,29 @@ void FlexPA::updateDirtyInsts()
   for (auto& unique_class : dirty_unique_classes_vec) {
     unique_inst_patterns_[unique_class]
         = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
-  }
-#pragma omp parallel for schedule(dynamic)
-  for (auto& unique_class : dirty_unique_classes_vec) {
-    initSkipInstTerm(unique_class);
-    auto candidate_inst = unique_class->getFirstInst();
-    genInstAccessPoints(candidate_inst);
-    revertAccessPoints(candidate_inst);
-    if (isStdCell(candidate_inst)) {
-      prepPatternInst(candidate_inst);
+    // Regeneration produces chip coordinates; discard the old local catalogue.
+    for (const auto& term : unique_class->getMaster()->getTerms()) {
+      for (const auto& pin : term->getPins()) {
+        pin->getPinAccess(unique_class->getPinAccessIdx())->clearAccessPoints();
+      }
     }
   }
+  ThreadException unique_class_exception;
+#pragma omp parallel for schedule(dynamic)
+  for (auto& unique_class : dirty_unique_classes_vec) {
+    try {
+      initSkipInstTerm(unique_class);
+      auto candidate_inst = unique_class->getFirstInst();
+      genInstAccessPoints(candidate_inst);
+      revertAccessPoints(candidate_inst);
+      if (isStdCell(candidate_inst)) {
+        prepPatternInst(candidate_inst);
+      }
+    } catch (...) {
+      unique_class_exception.capture();
+    }
+  }
+  unique_class_exception.rethrow();
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
   }
@@ -205,6 +222,121 @@ void FlexPA::updateDirtyInsts()
   }
   exception.rethrow();
   dirty_insts_.clear();
+}
+
+void FlexPA::beginRecovery(int min_access_points)
+{
+  recovery_min_access_points_ = min_access_points;
+  recovery_active_ = true;
+  // Imported preferred points belong to the previous catalogue.
+  for (const auto& inst : design_->getTopBlock()->getInsts()) {
+    for (const auto& term : inst->getInstTerms()) {
+      term->clearAccessPoints();
+      term->setAPSize(term->getTerm()->getPins().size());
+    }
+  }
+  init();
+  genAllAccessPoints();
+  revertAccessPoints();
+}
+
+std::vector<odb::dbITerm*> FlexPA::getMissingPinAccess() const
+{
+  std::vector<odb::dbITerm*> missing;
+  for (const auto& inst : design_->getTopBlock()->getInsts()) {
+    if (inst->isToBeDeleted()) {
+      continue;
+    }
+    const auto unique_class = unique_insts_.getUniqueClass(inst.get());
+    if (unique_class == nullptr || !unique_class->isInitialized()) {
+      continue;
+    }
+    for (const auto& term : inst->getInstTerms()) {
+      // Only connected members need placement recovery for a shared failure.
+      if (isSkipInstTermLocal(term.get())) {
+        continue;
+      }
+      const auto min_points = static_cast<size_t>(recovery_min_access_points_);
+      size_t num_points = 0;
+      for (const auto& pin : term->getTerm()->getPins()) {
+        const auto& points = pin->getPinAccess(unique_class->getPinAccessIdx())
+                                 ->getAccessPoints();
+        // Multiple physical pins contribute alternatives for one terminal.
+        num_points += points.size();
+        if (num_points >= min_points) {
+          break;
+        }
+      }
+      if (num_points < min_points) {
+        missing.push_back(
+            inst->getDBInst()->findITerm(term->getTerm()->getName().c_str()));
+      }
+    }
+  }
+  return missing;
+}
+
+void FlexPA::updateDirtyRecoveryInsts()
+{
+  auto cmp = [](UniqueClass* a, UniqueClass* b) { return a->key() < b->key(); };
+  std::set<UniqueClass*, decltype(cmp)> affected(cmp);
+  for (auto inst : dirty_insts_) {
+    auto old_class = unique_insts_.getUniqueClass(inst);
+    auto new_class = unique_insts_.computeUniqueClass(inst);
+    if (old_class != nullptr) {
+      affected.insert(old_class);
+    }
+    if (old_class != new_class) {
+      unique_insts_.deleteInst(inst);
+      unique_insts_.addInst(inst);
+    }
+    affected.insert(new_class);
+  }
+
+  // Membership changes can add or remove either class's required terminals.
+  for (auto unique_class : affected) {
+    unique_class->resetSkipTerms();
+    initSkipInstTerm(unique_class);
+    if (!unique_class->isInitialized()) {
+      unique_insts_.initUniqueInstPinAccess(unique_class);
+    }
+    if (!unique_class->isInitialized()) {
+      continue;
+    }
+    unique_class->getMaster()->setHasPinAccessUpdate(
+        unique_class->getPinAccessIdx());
+    for (const auto& term : unique_class->getMaster()->getTerms()) {
+      for (const auto& pin : term->getPins()) {
+        pin->getPinAccess(unique_class->getPinAccessIdx())->clearAccessPoints();
+      }
+    }
+  }
+
+  std::vector<UniqueClass*> classes(affected.begin(), affected.end());
+  ThreadException exception;
+#pragma omp parallel for schedule(dynamic)
+  for (auto unique_class : classes) {
+    try {
+      if (unique_class->getInsts().empty()) {
+        continue;
+      }
+      auto candidate = unique_class->getFirstInst();
+      if (isStdCell(candidate) || isMacroCell(candidate)) {
+        genInstAccessPoints(candidate);
+        revertAccessPoints(candidate);
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  dirty_insts_.clear();
+}
+
+void FlexPA::finishRecovery()
+{
+  prepPattern();
+  recovery_active_ = false;
 }
 
 void FlexPA::deleteInst(frInst* inst)
@@ -378,7 +510,7 @@ void FlexPA::setDistributed(const std::string& rhost,
 //
 // Checks only this inst_term and not an equivalent ones.  This
 // is a helper to isSkipInstTerm and initSkipInstTerm.
-bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
+bool FlexPA::isSkipInstTermLocal(frInstTerm* in) const
 {
   auto term = in->getTerm();
   if (term->getType().isSupply()) {
@@ -394,7 +526,7 @@ bool FlexPA::isSkipInstTermLocal(frInstTerm* in)
   return true;
 }
 
-bool FlexPA::isSkipInstTerm(frInstTerm* in)
+bool FlexPA::isSkipInstTerm(frInstTerm* in) const
 {
   auto unique_class = unique_insts_.getUniqueClass(in->getInst());
   if (unique_class == nullptr) {
@@ -403,6 +535,11 @@ bool FlexPA::isSkipInstTerm(frInstTerm* in)
 
   // This should be already computed in initSkipInstTerm()
   return unique_class->isSkipTerm(in->getTerm());
+}
+
+bool FlexPA::isPinAccessRequired(frInstTerm* term) const
+{
+  return !isSkipInstTerm(term);
 }
 
 bool FlexPA::isSkipInst(frInst* inst)

@@ -10,6 +10,12 @@
 
 namespace drt {
 
+void DesignCallBack::inDbBlockClear(odb::dbBlock*)
+{
+  // Preserve registration while dbBlock::clear iterates its callbacks.
+  router_->clearDesign(/*detach_callback=*/false);
+}
+
 void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();
