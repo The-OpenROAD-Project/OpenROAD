@@ -298,6 +298,37 @@ class LazyMetadataHeatMap : public web::HeatMapDataSource
   int* populate_calls_;
 };
 
+// Unlike LazyMetadataHeatMap its data builds, so only an invalidated map is
+// built again.
+class OptionHeatMap : public web::HeatMapDataSource
+{
+ public:
+  explicit OptionHeatMap(utl::Logger* logger)
+      : web::HeatMapDataSource(logger, "Option Heat Map", "Option", "Option")
+  {
+    addMultipleChoiceSetting(
+        "Layer",
+        "Layer:",
+        []() { return std::vector<std::string>{"metal1", "metal2"}; },
+        [this]() { return layer_; },
+        [this](const std::string& value) { layer_ = value; });
+  }
+
+  int populate_calls = 0;
+
+ protected:
+  bool populateMap() override
+  {
+    ++populate_calls;
+    return true;
+  }
+
+  void combineMapData(bool, double&, double, double, double, double) override {}
+
+ private:
+  std::string layer_ = "metal1";
+};
+
 // Helper to extract payload as string.
 std::string payloadStr(const WebSocketResponse& resp)
 {
@@ -2510,6 +2541,40 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
   EXPECT_EQ(active_resp.type, WebSocketResponse::kJson);
   EXPECT_EQ(populate_calls, 1);
+}
+
+// A new value for one of the source's own options rebuilds the map without
+// "rebuild"; a setting that only recolors it does not.
+TEST_F(TileHandlerTest, HeatMapOptionChangeRebuildsMap)
+{
+  auto source = std::make_shared<OptionHeatMap>(getLogger());
+  source->setChip(chip_);
+  {
+    // Not registered: the registry outlives this fixture and its logger.
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    state_.heatmaps["Option"] = source;
+  }
+
+  WebSocketRequest active_req;
+  active_req.type = WebSocketRequest::kSetActiveHeatmap;
+  active_req.json = parseObj(R"({"name":"Option"})");
+  auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
+  EXPECT_EQ(active_resp.type, WebSocketResponse::kJson)
+      << payloadStr(active_resp);
+  EXPECT_EQ(source->populate_calls, 1);
+
+  WebSocketRequest set_req;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json
+      = parseObj(R"({"name":"Option","option":"Layer","value":"metal2"})");
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  EXPECT_EQ(source->populate_calls, 2);
+
+  set_req.json = parseObj(R"({"name":"Option","option":"Alpha","value":200})");
+  set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  EXPECT_EQ(source->populate_calls, 2);
 }
 
 //------------------------------------------------------------------------------
