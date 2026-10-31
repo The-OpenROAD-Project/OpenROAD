@@ -279,7 +279,7 @@ describe('SchematicWidget.syncCone', () => {
         const stub = {
             controls,
             refreshed: 0,
-            refresh() { this.refreshed++; },
+            refresh(inst) { this.refreshed++; this.refreshedFor = inst; },
             appState: {},
         };
         return stub;
@@ -317,6 +317,18 @@ describe('SchematicWidget.syncCone', () => {
             fanin_depth: 2, fanout_depth: 50,
         });
         assert.deepEqual(depths(s), ['2', '10']);
+    });
+
+    // The timing panel's Apply asks to see the schematic, which a maximized
+    // right pane would otherwise hide.
+    it('reveals the schematic it synced', () => {
+        const s = makeStub();
+        const focused = [];
+        s.appState.focusComponent = (...args) => focused.push(args);
+        SchematicWidget.prototype.syncCone.call(s, { inst_name: 'b0', fanin: true });
+        assert.deepEqual(focused, [['SchematicWidget', { reveal: true }]]);
+        // The cone's instance, which a timing path pin can pick unselected.
+        assert.equal(s.refreshedFor, 'b0');
     });
 });
 

@@ -675,7 +675,7 @@ export function installWheelPanning(map, wheelZoomEnabled) {
     map.getContainer().addEventListener('wheel', (e) => {
         e.preventDefault();
         if (wheelZoomEnabled() === e.ctrlKey) {
-            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
+            const [dx, dy] = wheelDeltaPx(e, () => map.getContainer().clientHeight);
             map.panBy([dx, dy], { animate: false });
             return;
         }
@@ -688,14 +688,16 @@ export function installWheelPanning(map, wheelZoomEnabled) {
 // A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
 // Firefox reports lines, and a page-mode event (rare, but produced by some
 // remote-desktop stacks) means a viewport at a time.  Treating either as pixels
-// would make one notch pan by a couple of pixels.
-function wheelDeltaPx(e, container) {
+// would make one notch pan by a couple of pixels.  `pagePx()` gives the
+// viewport's size along the direction the caller scrolls; it is called only
+// for page-mode events, keeping the layout read off the common path.
+export function wheelDeltaPx(e, pagePx) {
     const kLineHeightPx = 16;
     let scale = 1;
     if (e.deltaMode === 1) {
         scale = kLineHeightPx;
     } else if (e.deltaMode === 2) {
-        scale = container.clientHeight || kLineHeightPx;
+        scale = pagePx() || kLineHeightPx;
     }
     return [e.deltaX * scale, e.deltaY * scale];
 }

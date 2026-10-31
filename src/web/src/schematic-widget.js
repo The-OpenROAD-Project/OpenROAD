@@ -339,21 +339,22 @@ export class SchematicWidget {
         };
         apply(faninEl, detail.fanin, detail.fanin_depth);
         apply(fanoutEl, detail.fanout, detail.fanout_depth);
-        this.refresh();
+        // The cone's instance, which a path pin picks without selecting it.
+        this.refresh(detail.inst_name);
+        // Applying with "sync schematic" asks to see it, past a maximized pane.
         if (this.appState.focusComponent) {
-            this.appState.focusComponent('SchematicWidget');
+            this.appState.focusComponent('SchematicWidget', { reveal: true });
         }
     }
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
-    refresh() {
+    refresh(instName = this.appState.selectedInstanceName) {
         if (!this._netlistsvgReady) {
             this.setStatus(this._unreadyStatus());
             return;
         }
 
-        const instName = this.appState.selectedInstanceName;
         if (!instName) {
             this.setStatus(kIdleStatus);
             return;
