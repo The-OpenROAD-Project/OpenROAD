@@ -39,6 +39,9 @@ class Logger;
 
 namespace pad {
 
+inline constexpr char kRdlRouteTargetProperty[] = "PAD_RDL_ROUTE_TARGET";
+inline constexpr char kRdlDontRouteProperty[] = "PAD_RDL_DONT_ROUTE";
+
 struct DbNetPtrLess
 {
   bool operator()(const odb::dbNet* lhs, const odb::dbNet* rhs) const
