@@ -33,6 +33,9 @@ CUDA_TOOLKIT_COPTS = [
     # The hermetic LLVM toolchain uses libc++; CUDA's host header requires
     # this opt-out on x86_64.
     "-D_ALLOW_UNSUPPORTED_LIBCPP",
+    # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+    # it so embedded Boost containers have the same layout as in C++ TUs.
+    "-DBOOST_DETAIL_EMPTY_VALUE_BASE",
 ]
 
 CUDA_ARCH_COPTS = select(

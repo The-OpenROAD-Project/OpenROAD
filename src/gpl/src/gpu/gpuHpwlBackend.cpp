@@ -27,6 +27,7 @@
 #include "deviceState.h"
 #include "deviceState_kokkos.h"
 #include "gpuRuntime.h"
+#include "kokkosRuntime.h"
 #include "nesterovBase.h"
 
 namespace gpl {
@@ -46,8 +47,8 @@ using PinnedIntView = Kokkos::View<int*, Kokkos::SharedHostPinnedSpace>;
 
 struct GpuHpwlBackend::Impl
 {
-  DeviceState* device_state;  // borrowed
-  int num_threads;            // host fan-out for applyNetBoxesParallel
+  DeviceState* device_state;        // borrowed
+  const KokkosContext* kokkos_ctx;  // borrowed
   Kokkos::View<int*> d_lx;
   Kokkos::View<int*> d_ly;
   Kokkos::View<int*> d_ux;
@@ -58,11 +59,11 @@ struct GpuHpwlBackend::Impl
   PinnedIntView h_uy;
 };
 
-GpuHpwlBackend::GpuHpwlBackend(DeviceState* device_state, int num_threads)
+GpuHpwlBackend::GpuHpwlBackend(const BackendContext& ctx)
     : impl_(std::make_unique<Impl>())
 {
-  impl_->device_state = device_state;
-  impl_->num_threads = num_threads;
+  impl_->device_state = ctx.device_state;
+  impl_->kokkos_ctx = &ctx.nbc->getKokkosContext();
 }
 
 GpuHpwlBackend::~GpuHpwlBackend() = default;
@@ -242,7 +243,7 @@ void GpuHpwlBackend::mirrorNetBoxesToHost(std::vector<GNet>& gNetStor)
                         s.h_ly.data(),
                         s.h_ux.data(),
                         s.h_uy.data(),
-                        s.num_threads);
+                        *s.kokkos_ctx);
 }
 
 }  // namespace gpl

@@ -485,6 +485,14 @@ filegroup(
     urls = ["https://github.com/jgm/pandoc/releases/download/3.9/pandoc-3.9-arm64-macOS.zip"],
 )
 
+http_archive(
+    name = "kokkos_host",
+    build_file = "//bazel/kokkos:BUILD.kokkos_host.bazel",
+    sha256 = "d6557aaef39302282a15f9c770433d1fcdf4e961dfd6d9ed726b9d0d0f546b9f",
+    strip_prefix = "kokkos-5.2.2",
+    urls = ["https://github.com/kokkos/kokkos/releases/download/5.2.2/kokkos-5.2.2.tar.gz"],
+)
+
 # --- GPU build (opt-in) ---
 #
 # Kokkos and KokkosFFT are not available from BCR at these versions and do not
