@@ -242,13 +242,14 @@ bazelisk test //src/MODULE/test:TestName
 # Run all tests of the module
 bazelisk test //src/MODULE/test/...
 
+# Run the tests whose label matches a regex (from src/MODULE/test)
+./regression -R 'TEST_NAME' --test_output=errors
+
 # Verify Bazel sees the test
 bazelisk query //src/MODULE/test:all | grep TEST_NAME
 ```
 
-Legacy (CMake only, deprecated): `./regression -R TEST_NAME` in
-`src/MODULE/test` runs `ctest` in `build/`. It does not see Bazel
-targets.
+See `docs/agents/testing.md` for the `./regression` options.
 
 ## 7. Format and commit
 
