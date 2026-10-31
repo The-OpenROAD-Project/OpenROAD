@@ -332,6 +332,11 @@ class CUGR
   // the default slack/bbox order.
   void sortNetIndices(std::vector<int>& net_indices,
                       bool res_aware_order) const;
+  // Order for passes that reroute one net at a time against all others:
+  // non-critical nets largest first, then critical nets, worst slack last.
+  void sortRerouteIndices(std::vector<int>& net_indices) const;
+  // Res-aware order when it is enabled, else sortRerouteIndices.
+  void sortForReroute(std::vector<int>& net_indices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   // Append net's routing tree to route as GRoute segments.
