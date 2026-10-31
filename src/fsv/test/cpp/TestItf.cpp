@@ -691,6 +691,36 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   expectError(head + "DIELECTRIC C { THICKNESS=0 ER=4 IS_CONFORMAL=1 }\n" + sub,
               "IS_CONFORMAL takes no value");
   expectError(conductor("RPSQ=1 RPSQ=2"), "RPSQ given twice in CONDUCTOR M");
+  // A gate spacer's permittivity table is skipped; anywhere but on a
+  // conformal dielectric wrapping a GATE layer it is malformed.
+  const std::string spacer
+      = "SPACER_ER_VS_WIDTH_AND_SPACING { SPACINGS { 0.1 } WIDTHS { 0.1 } "
+        "VALUES { 5 } }";
+  std::vector<ItfWarning> spacer_warnings;
+  const Stack gated = parse(
+      "TECHNOLOGY = t\n"
+      "DIELECTRIC S { THICKNESS=0 ER=4 IS_CONFORMAL SW_T=0.01 "
+      "ASSOCIATED_CONDUCTOR=G "
+          + spacer
+          + " }\n"
+            "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+            "CONDUCTOR G { THICKNESS=0.1 LAYER_TYPE=GATE }\n"
+          + sub,
+      &spacer_warnings);
+  EXPECT_EQ(gated.conductor(gated.layer("G")).conformals.size(), 1u);
+  EXPECT_TRUE(spacer_warnings.empty());
+  expectError(
+      "TECHNOLOGY = t\n"
+      "DIELECTRIC S { THICKNESS=0 ER=4 IS_CONFORMAL SW_T=0.01 "
+      "ASSOCIATED_CONDUCTOR=M "
+          + spacer
+          + " }\n"
+            "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+            "CONDUCTOR M { THICKNESS=0.1 }\n"
+          + sub,
+      "needs its ASSOCIATED_CONDUCTOR M to be a GATE layer");
+  expectError(head + "DIELECTRIC E { THICKNESS=1 ER=4 " + spacer + " }\n" + sub,
+              "needs IS_CONFORMAL and an ASSOCIATED_CONDUCTOR");
   expectError(head + "DIELECTRIC E { THICKNESS=1 ER=4 ER_VS_SI_SPACING { "
                      "(0.1, 4) } }\n" + sub,
               "ER_VS_SI_SPACING in DIELECTRIC E is not supported");

@@ -36,9 +36,10 @@ struct ItfWarning
 // spaces, and a '$' starts a comment that runs to the end of the line.
 //
 // Parsed and skipped: device-level modeling (DEVICE_TYPE, gate and
-// diffusion keywords, PARALLEL_TO_GATE etch tables, contact and trench
-// contact via tables, MULTIGATE), TSV blocks, VARIATION_PARAMETERS and the
-// EM_INFORMATION section, and the header's USE_SI_DENSITY and
+// diffusion keywords, PARALLEL_TO_GATE etch tables, a gate spacer's
+// SPACER_ER_VS_WIDTH_AND_SPACING, contact and trench contact via tables,
+// MULTIGATE), TSV blocks, VARIATION_PARAMETERS and the EM_INFORMATION
+// section, and the header's USE_SI_DENSITY and
 // DROP_FACTOR_LATERAL_SPACING.
 //
 // Refused with an error naming the keyword: effects on the geometry or the
