@@ -339,15 +339,18 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum upper_type)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
-  bool allow_via = true;
-  bool allow_planar = true;
-  //  only VIA_ACCESS_LAYERNUM layer can have via access
+  bool allow_planar = isRoutableLayer(layer_num);
+  bool allow_via
+      = hasRoutableLayerAbove(layer_num) || hasRoutableLayerBelow(layer_num);
   if (isStdCellTerm(inst_term)) {
-    if ((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
-         && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
-        || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
-      allow_planar = false;
-    }
+    //  only VIA_ACCESS_LAYERNUM layer can have via access
+    allow_planar = !((layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
+                      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM)
+                     || layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
+    allow_via = true;
+  } else if (isMacroCellTerm(inst_term) || isIOTerm(inst_term)) {
+    allow_planar = true;
+    allow_via = true;
   }
   const int aps_size_before = aps.size();
   // build points;
@@ -909,17 +912,18 @@ void FlexPA::filterViaAccess(
     const int max_vias
         = try_all_vias ? std::numeric_limits<int>::max() : max_num_via_trial;
 
+    const bool allow_up = hasRoutableLayerAbove(layer_num);
+    const bool allow_down = hasRoutableLayerBelow(layer_num);
+
     // UP Vias
-    if (layer_num + 1 <= router_cfg_->TOP_ROUTING_LAYER) {
+    if (allow_up) {
       std::vector<const frViaDef*> up_vias
           = getPriorityViaDefs(layer_num + 1, inst_term, max_vias);
       via_defs.insert(via_defs.end(), up_vias.begin(), up_vias.end());
     }
 
     // DOWN Vias
-    if (isIOTerm(inst_term)
-        && layer_num > getDesign()->getTech()->getBottomLayerNum()
-        && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
+    if (allow_down) {
       const int remaining_vias = max_vias - (int) via_defs.size();
       std::vector<const frViaDef*> down_vias
           = getPriorityViaDefs(layer_num - 1, inst_term, remaining_vias);
@@ -1279,13 +1283,12 @@ bool FlexPA::EnoughAccessPoints(
     frInstTerm* inst_term,
     pa_requirements_met& reqs)
 {
-  if (isIOTerm(inst_term)) {
-    return !aps.empty();
+  if (isStdCellTerm(inst_term) || isMacroCellTerm(inst_term)) {
+    reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
+    return reqs.sparse_points;
   }
 
-  reqs.sparse_points = EnoughSparsePoints(aps, inst_term);
-
-  return (reqs.sparse_points);
+  return !aps.empty();
 }
 
 template <typename T>
@@ -1547,11 +1550,6 @@ void FlexPA::genAllAccessPoints()
   for (const auto& unique_class : unique) {  // NOLINT
     try {
       auto candidate_inst = unique_class->getFirstInst();
-      // only do for core and block cells
-      if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)) {
-        continue;
-      }
-
       genInstAccessPoints(candidate_inst);
       if (router_cfg_->VERBOSE <= 0) {
         continue;
