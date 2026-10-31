@@ -2,16 +2,23 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
 #include "color.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/SdcClass.hh"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 
@@ -71,6 +78,138 @@ TEST_F(TimingConeTest, EmptyDirectionsReturnEmptyCone)
   EXPECT_TRUE(result.ok);
   EXPECT_TRUE(result.nodes.empty());
   EXPECT_FALSE(result.constrained);
+}
+
+class UnconstrainedTimingReportTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+
+    odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buffer, nullptr);
+    tst::InstOptions options;
+    options.iterms = {{"in", "A"}, {"out", "Z"}};
+    makeInst(block_, buffer, "buffer", options);
+    makeBTerm(block_, "in", {});
+    tst::BTermOptions output_options;
+    output_options.io_type = odb::dbIoType::OUTPUT;
+    makeBTerm(block_, "out", output_options);
+
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+  }
+};
+
+TEST_F(UnconstrainedTimingReportTest, IncludesAndSerializesPathsWithoutSdc)
+{
+  TimingReport report(getSta());
+  EXPECT_TRUE(report
+                  .getReport(/*is_setup=*/true,
+                             /*max_paths=*/10,
+                             -std::numeric_limits<float>::max(),
+                             std::numeric_limits<float>::max(),
+                             /*include_unconstrained=*/false)
+                  .empty());
+
+  const std::vector<TimingPathSummary> paths
+      = report.getReport(/*is_setup=*/true,
+                         /*max_paths=*/10,
+                         -std::numeric_limits<float>::max(),
+                         std::numeric_limits<float>::max(),
+                         /*include_unconstrained=*/true);
+  ASSERT_FALSE(paths.empty());
+  EXPECT_TRUE(std::isinf(paths.front().slack));
+  EXPECT_TRUE(std::isinf(paths.front().required));
+
+  bool saw_port = false;
+  bool saw_instance = false;
+  for (const TimingPathSummary& path : paths) {
+    for (const TimingNode& node : path.data_nodes) {
+      if (node.pin_name == "in" || node.pin_name == "out") {
+        saw_port = true;
+        EXPECT_TRUE(node.inst_name.empty());
+      } else {
+        saw_instance = true;
+        EXPECT_EQ(node.inst_name, "buffer");
+      }
+    }
+  }
+  EXPECT_TRUE(saw_port);
+  EXPECT_TRUE(saw_instance);
+
+  const std::string json = boost::json::serialize(serializeTimingPaths(paths));
+  const boost::json::value serialized = boost::json::parse(json);
+  const boost::json::object& serialized_path
+      = serialized.as_object().at("paths").as_array().front().as_object();
+  EXPECT_TRUE(std::isinf(serialized_path.at("slack").to_number<double>()));
+  EXPECT_TRUE(std::isinf(serialized_path.at("required").to_number<double>()));
+}
+
+TEST_F(UnconstrainedTimingReportTest, ChipletInstancesMatchTheirPinPrefixes)
+{
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  tst::InstOptions buffer_options;
+  buffer_options.iterms = {{"in", "A"}, {"out", "Z"}};
+  makeInst(other_block, lib_->findMaster("BUF_X1"), "buffer", buffer_options);
+
+  // Clocked launch/capture flops give both chiplets real timing paths even
+  // though a 3DBlox top has no block ports from which to seed arrivals.
+  odb::dbMaster* flop = lib_->findMaster("DFF_X1");
+  ASSERT_NE(flop, nullptr);
+  std::vector<odb::dbInst*> flops;
+  for (odb::dbBlock* block : {block_, other_block}) {
+    tst::InstOptions launch_options;
+    launch_options.iterms = {{"launch_in", "D"}, {"clk", "CK"}, {"in", "Q"}};
+    flops.push_back(makeInst(block, flop, "launch", launch_options));
+    tst::InstOptions capture_options;
+    capture_options.iterms
+        = {{"out", "D"}, {"clk", "CK"}, {"capture_out", "Q"}};
+    flops.push_back(makeInst(block, flop, "capture", capture_options));
+  }
+
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst::create(root, chip_, "die0");
+  odb::dbChipInst::create(root, other, "die1");
+  getDb()->setTopChip(root);
+  sta_->postRead3Dbx(root);
+  auto* network = sta_->getDbNetwork();
+  ASSERT_TRUE(network->has3DicChip());
+
+  sta::PinSet clock_pins(network);
+  for (odb::dbInst* inst : flops) {
+    clock_pins.insert(network->dbToSta(inst->findITerm("CK")));
+  }
+  sta::FloatSeq waveform{0.0f, 0.5e-9f};
+  sta_->makeClock(
+      "clk", clock_pins, false, 1.0e-9f, waveform, "", sta_->cmdMode());
+
+  TimingReport report(getSta());
+  const auto paths = report.getReport(/*is_setup=*/true,
+                                      /*max_paths=*/10,
+                                      -std::numeric_limits<float>::max(),
+                                      std::numeric_limits<float>::max(),
+                                      /*include_unconstrained=*/true);
+  ASSERT_FALSE(paths.empty());
+  std::set<std::string> buffers;
+  for (const TimingPathSummary& path : paths) {
+    for (const TimingNode& node : path.data_nodes) {
+      ASSERT_FALSE(node.inst_name.empty()) << node.pin_name;
+      EXPECT_TRUE(node.inst_name.starts_with("die0/")
+                  || node.inst_name.starts_with("die1/"))
+          << node.inst_name;
+      EXPECT_TRUE(node.pin_name.starts_with(node.inst_name + "/"))
+          << node.pin_name << " instance=" << node.inst_name;
+      if (node.inst_name.ends_with("/buffer")) {
+        buffers.insert(node.inst_name);
+      }
+    }
+  }
+  EXPECT_EQ(buffers, (std::set<std::string>{"die0/buffer", "die1/buffer"}));
 }
 
 //------------------------------------------------------------------------------

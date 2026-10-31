@@ -4,12 +4,7 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { TimingWidget } from '../../src/timing-widget.js';
-
-// jsdom does not implement scrollIntoView; stub it so _selectPathRow runs.
-if (!window.HTMLElement.prototype.scrollIntoView) {
-    window.HTMLElement.prototype.scrollIntoView = function () {};
-}
+import { TimingWidget, fmtTime } from '../../src/timing-widget.js';
 
 // Build an app stub that records every websocketManager.request call and
 // lets each test control the response per message type.
@@ -26,6 +21,14 @@ function createMockApp(responses = {}) {
             },
         },
     };
+}
+
+function deferred() {
+    let resolve;
+    const promise = new Promise((resolvePromise) => {
+        resolve = resolvePromise;
+    });
+    return { promise, resolve };
 }
 
 function makePath(slack, endPin, extra = {}) {
@@ -58,6 +61,27 @@ describe('TimingWidget._selectPathRow', () => {
         assert.ok(highlight, 'timing_highlight was requested');
         assert.equal(highlight.path_index, 1);
         assert.equal(highlight.is_setup, true);
+        assert.equal(highlight.start_pin, 'start');
+        assert.equal(highlight.end_pin, 'b');
+    });
+
+    it('sends the row\'s clocks, which tell paths with the same pins apart', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        // A register two clocks capture has a path per clock, same pins.
+        widget.showPaths('setup', [
+            makePath(-0.2, 'q', { end_clk: 'clk_a' }),
+            makePath(-0.1, 'q', { end_clk: 'clk_b' }),
+        ]);
+
+        for (const [row, clock] of [[0, 'clk_a'], [1, 'clk_b']]) {
+            app.requests.length = 0;
+            widget._selectPathRow(row);
+            const highlight = app.requests.find(r => r.type === 'timing_highlight');
+            assert.equal(highlight.end_pin, 'q');
+            assert.equal(highlight.start_clk, 'clk');
+            assert.equal(highlight.end_clk, clock);
+        }
     });
 
     it('sends timing_highlight with _originalIndex when paths were filtered', () => {
@@ -338,5 +362,284 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
         move(1);
         assert.equal(tip.style.display, 'none');
+    });
+});
+
+describe('TimingWidget unconstrained paths', () => {
+    it('sends the checkbox state, and refetches when it is toggled', async () => {
+        const app = createMockApp({ timing_report: () => ({ paths: [] }) });
+        const widget = new TimingWidget(app, () => {});
+
+        await widget.update();
+        assert.deepEqual(
+            app.requests.filter(r => r.type === 'timing_report')
+                        .map(r => r.unconstrained), [false, false]);
+
+        app.requests.length = 0;
+        widget._unconstrainedBox.checked = true;
+        widget._unconstrainedBox.dispatchEvent(
+            new window.Event('change', { bubbles: true }));
+
+        assert.ok(app.requests.some(
+            r => r.type === 'timing_report' && r.unconstrained === true));
+    });
+
+    it('carries the loaded report flag on timing_highlight', async () => {
+        const app = createMockApp({
+            timing_report: (msg) => ({
+                paths: msg.is_setup ? [makePath(0.0, 'a'), makePath(0.1, 'b')] : [],
+            }),
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        await widget.update();
+        app.requests.length = 0;
+
+        widget._selectPathRow(1);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, true);
+    });
+
+    it('carries the loaded report flag on detail-row highlights too', async () => {
+        const path = makePath(0.0, 'a', {
+            data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+        });
+        const app = createMockApp({
+            timing_report: (msg) => ({ paths: msg.is_setup ? [path] : [] }),
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        await widget.update();
+        widget._selectPathRow(0);
+        app.requests.length = 0;
+
+        widget._selectDetailRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, true);
+        assert.equal(highlight.pin_name, 'u1/A');
+        assert.equal(highlight.end_clk, 'clk');
+    });
+
+    it('uses the displayed report options while a refetch is pending', async () => {
+        const pending = [];
+        const app = createMockApp({
+            timing_report: () => {
+                const request = deferred();
+                pending.push(request);
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'old')]);
+        widget._unconstrainedBox.checked = true;
+
+        const update = widget.update();
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+        pending.forEach(request => request.resolve({ paths: [] }));
+        await update;
+    });
+
+    it('keeps the displayed report options after a refetch fails', async () => {
+        const app = createMockApp({
+            timing_report: () => Promise.reject(new Error('failed')),
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'old')]);
+        widget._unconstrainedBox.checked = true;
+
+        assert.equal(await widget.update(), false);
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+    });
+
+    it('does not let an older report response replace a newer one', async () => {
+        const reports = [];
+        const app = createMockApp({
+            timing_report: (msg) => {
+                const request = deferred();
+                reports.push({ msg, request });
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+
+        widget._unconstrainedBox.checked = true;
+        const older = widget.update();
+        widget._unconstrainedBox.checked = false;
+        const newer = widget.update();
+
+        for (const report of reports.filter(r => !r.msg.unconstrained)) {
+            report.request.resolve({
+                paths: report.msg.is_setup ? [makePath(0.0, 'newer')] : [],
+            });
+        }
+        assert.equal(await newer, true);
+        for (const report of reports.filter(r => r.msg.unconstrained)) {
+            report.request.resolve({
+                paths: report.msg.is_setup ? [makePath(0.0, 'older')] : [],
+            });
+        }
+        assert.equal(await older, false);
+
+        const endPin = widget._pathTable.querySelector('tbody tr')
+            .cells[TimingWidget.PATH_COLS.length - 1].textContent;
+        assert.equal(endPin, 'newer');
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+        assert.equal(widget._updateBtn.disabled, false);
+        assert.equal(widget._updateBtn.textContent, 'Update');
+    });
+
+    it('keeps histogram paths when an earlier Update finishes later', async () => {
+        const pending = [];
+        const app = createMockApp({
+            timing_report: () => {
+                const request = deferred();
+                pending.push(request);
+                return request.promise;
+            },
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget._unconstrainedBox.checked = true;
+        const update = widget.update();
+        assert.equal(widget._updateBtn.disabled, true);
+
+        widget.showPaths('setup', [makePath(0.0, 'histogram')]);
+        assert.equal(widget._updateBtn.disabled, false);
+        assert.equal(widget._updateBtn.textContent, 'Update');
+        pending.forEach(request => request.resolve({
+            paths: [makePath(0.0, 'stale-update')],
+        }));
+        assert.equal(await update, false);
+
+        assert.equal(widget._setupPaths[0].end_pin, 'histogram');
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.unconstrained, false);
+    });
+
+    it('scales slack bars by finite slacks and shows infinite ones as ∞', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        // An unconstrained path has an infinite slack and required time.
+        widget.showPaths('setup', [
+            makePath(Infinity, 'u', { required: Infinity }),
+            makePath(0.25, 'b'),
+            makePath(-0.5, 'a'),
+        ]);
+
+        const col = key => TimingWidget.PATH_COLS.findIndex(c => c.key === key);
+        const rows = Array.from(widget._pathTable.querySelectorAll('tbody tr'));
+        const slackCells = rows.map(row => row.cells[col('slack')]);
+        assert.deepEqual(
+            slackCells.map(td => td.style.getPropertyValue('--slack-frac')),
+            ['1', '0.5', '']);
+        assert.equal(slackCells[2].classList.contains('slack-cell'), false);
+        assert.equal(slackCells[2].textContent, '∞');
+        assert.equal(rows[2].cells[col('required')].textContent, '∞');
+    });
+});
+
+describe('fmtTime', () => {
+    it('formats times to four places and infinities as ∞', () => {
+        assert.equal(fmtTime(0.5), '0.5000');
+        assert.equal(fmtTime(-0.125), '-0.1250');
+        assert.equal(fmtTime(Infinity), '∞');
+        assert.equal(fmtTime(-Infinity), '-∞');
+        assert.equal(fmtTime(null), '');
+        assert.equal(fmtTime(undefined), '');
+    });
+});
+
+describe('TimingWidget schematic hand-off', () => {
+    function appWithSchematic() {
+        const app = createMockApp();
+        app.schematicPaths = [];
+        app.schematicNodes = [];
+        app.schematicWidget = {
+            showTimingPath(path, nodes) {
+                app.schematicPaths.push(path);
+                app.schematicNodes.push(nodes);
+            },
+        };
+        return app;
+    }
+
+    it('clears the schematic overlay when the selection is cleared', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'a')]);
+        widget._selectPathRow(0);
+        app.schematicPaths.length = 0;
+
+        // Switching tabs drops the selection and clears the highlight.
+        widget._holdTab.dispatchEvent(new window.Event('click'));
+
+        assert.deepEqual(app.schematicPaths, [null]);
+    });
+
+    it('sends the sorted row, not the pre-sort row, to the schematic', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        // Default sort is slack ascending, so this reorders to b, a.
+        widget.showPaths('setup', [makePath(0.5, 'a'), makePath(-0.5, 'b')]);
+        app.schematicPaths.length = 0;
+
+        widget._selectPathRow(0);
+
+        assert.equal(app.schematicPaths[0].end_pin, 'b');
+    });
+
+    function pathWithBothLegs() {
+        return makePath(-0.1, 'a', {
+            data_nodes: [{ pin: 'u1/A', inst: 'u1', clk: false }],
+            capture_nodes: [{ pin: 'cap1/A', inst: 'cap1', clk: true }],
+        });
+    }
+
+    it('sends the displayed node list, following the detail tab', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithBothLegs()]);
+        app.schematicNodes.length = 0;
+
+        widget._selectPathRow(0);
+        assert.equal(app.schematicNodes[0][0].inst, 'u1');
+
+        app.schematicNodes.length = 0;
+        widget._captureTab.dispatchEvent(new window.Event('click'));
+        assert.equal(app.schematicNodes.length, 1);
+        assert.equal(app.schematicNodes[0][0].inst, 'cap1');
+    });
+
+    it('does not push to the schematic on a tab switch with no path selected', () => {
+        const app = appWithSchematic();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithBothLegs()]);
+        app.schematicPaths.length = 0;
+
+        widget._captureTab.dispatchEvent(new window.Event('click'));
+
+        assert.deepEqual(app.schematicPaths, []);
+    });
+
+    it('works when no schematic panel exists', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'a')]);
+
+        assert.doesNotThrow(() => widget._selectPathRow(0));
     });
 });

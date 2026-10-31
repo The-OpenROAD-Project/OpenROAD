@@ -28,6 +28,7 @@
 #include "boost/json/value_to.hpp"
 #include "color.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -318,6 +319,7 @@ struct WebSocketRequest
     kSnap,
     kSchematicCone,
     kSchematicFull,
+    kSchematicPath,
     kSchematicInspect,
     kDrcCategories,
     kDrcMarkers,
@@ -461,7 +463,19 @@ struct SessionState
   std::vector<web::Selected> selectables;
 
   web::Selected current_inspected;
-  std::vector<web::Selected> navigation_history;
+  // World transform of the chiplet placement current_inspected was inspected
+  // in; every highlight of it maps its shapes through this, or they land in
+  // die-local coordinates.  Only a schematic inspect sets one, as only it
+  // names an instance by its chiplet path.  Change the two together through
+  // setCurrentInspected.
+  odb::dbTransform current_inspected_xfm;
+  // Where the inspector's Back returns to, each with its transform.
+  struct NavigationEntry
+  {
+    web::Selected sel;
+    odb::dbTransform xfm;
+  };
+  std::vector<NavigationEntry> navigation_history;
 
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   web::SelectionSet selection_set;
@@ -690,6 +704,7 @@ class SelectHandler
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicPath(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
