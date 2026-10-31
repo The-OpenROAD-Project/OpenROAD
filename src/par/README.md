@@ -149,9 +149,9 @@ set to 2). The refinement phase is conducted as per step 3.
 
 ## Timing Aware Algorithm
 
-`par` can also be used as a timing-aware partitioning framework. A slack
-propagation methodology is used that optimizes cuts for both timing-critical
-and timing-noncritical paths.
+`par` can also be used as a timing-aware partitioning framework. Timing
+weights guide coarsening and refinement using path and hyperedge slacks
+obtained from OpenSTA.
 
 1. Extraction of Timing Paths and Slack Information
 
@@ -161,13 +161,17 @@ timing cost of each path is then calculated:
 
 $$t_p = (1- \frac{slack_p - \Delta}{clock\_period})^\mu$$
 
-where a fixed extra delay $\Delta$ is introduced for timing guardband,
-and $\mu$ (default 2) is the exponent.
+where $clock\_period$ is the maximum clock period of the extracted timing
+paths, and $\mu$ is the `-timing_exp_factor` exponent (default `1.0`). With
+`-guardband_flag true`, $\Delta$ is `-extra_delay`, in seconds; otherwise,
+$\Delta = 0$. The guardband is subtracted once from each path's slack,
+regardless of how many partition boundaries the path crosses.
 
 The snaking factor of a path $SF(p)$ is defined as the maximum number
 of block reentries along the path $p$. The timing cost of a hyperedge is
 computed using the timing weight corresponding to hyperedge slack $slack_e$
 and the accumulated timing cost of all paths traversing the hyperedge.
+The same guardband is applied to constrained hyperedge slacks.
 
 $$t_e = (1- \frac{slack_e -\Delta}{clock\_period})^\mu + \sum_{\{p|e\in p\}}t_p$$
 
@@ -182,9 +186,23 @@ $$r_t(u,v) = \hat{r}(u,v) + \sum_{e\in\{I(v) \cap I(u)\}} \frac{\beta t_e}{|e| -
 
 3. Timing-aware Refinement
 
-Timing-aware refinement is based on a similar cost function as the main
-algorithm. Instead, an additional slack propagation step is performed at
-the end of each PM/FM/HER pass.
+Timing-aware refinement accounts for the estimated delay of each partition
+boundary on a timing path. For a candidate solution $S$, let $c_p(S)$ be the
+number of partition boundaries crossed by path $p$, and $d$ be `-extra_delay`
+in seconds. The path timing weight used to evaluate the solution and compute
+move gains is:
+
+$$t_p(S) = (1 - \frac{slack_p - \Delta - c_p(S)d}{clock\_period})^\mu$$
+
+The path cost is $c_p(S)t_p(S)$ weighted by `-path_timing_factor`, plus
+the snaking penalty. The estimated cut delay is included with or without
+guardbanding. With `-guardband_flag true`, the fixed guardband $\Delta$ is
+also applied before coarsening. Path costs are computed for each candidate
+solution without changing the original slacks.
+
+Both `triton_part_design` and `evaluate_part_design_solution` use
+`-extra_delay` in their timing-cut statistics to count initially noncritical
+paths that become critical after partitioning.
 
 ## Commands
 
@@ -389,8 +407,8 @@ triton_part_design
 | `-path_timing_factor` | Cutting critical timing path weight factor (default 1.0, float). |
 | `-path_snaking_factor` | Snaking a critical path weight factor (default 1.0, float). |
 | `-timing_exp_factor` | Timing exponential factor for normalized slack (default 1.0, float). |
-| `-extra_delay` | Extra delay introduced by a cut (default 1e-9, float). |
-| `-guardband_flag` | Enable timing guardband option (default false, bool). |
+| `-extra_delay` | Estimated delay per cut in seconds, used in path costs and timing-cut statistics (default 1e-9, float). Also used as a fixed slack guardband when enabled. |
+| `-guardband_flag` | Subtract `-extra_delay` from path and constrained hyperedge slacks before computing timing weights (default false, bool). |
 | `-e_wt_factors` | Hyperedge weight factor. |
 | `-v_wt_factors` | Vertex weight factor. |
 | `-placement_wt_factors` | Placement weight factor. |
@@ -471,8 +489,8 @@ evaluate_part_design_solution
 | `-path_timing_factor` | Cutting critical timing path weight factor. The default value is `1.0`, and the allowed values are floats. |
 | `-path_snaking_factor` | Snaking a critical path weight factor. The default value is `1.0`, and the allowed values are floats. |
 | `-timing_exp_factor` | Timing exponential factor for normalized slack. The default value is `1.0`, and the allowed values are floats. |
-| `-extra_delay` | Extra delay introduced by a cut. The default value is `1e-9`, and the allowed values are floats. |
-| `-guardband_flag` | Enable timing guardband option. The default value is 1`false`, and the allowed values are booleans. |
+| `-extra_delay` | Estimated delay per cut in seconds, used in path costs and timing-cut statistics. The default value is `1e-9`, and the allowed values are floats. |
+| `-guardband_flag` | Subtract `-extra_delay` from path and constrained hyperedge slacks before computing timing weights. The default value is `false`, and the allowed values are booleans. |
 | `-e_wt_factors` | Hyperedge weight factors. |
 | `-v_wt_factors` | Vertex weight factors. |
 
@@ -567,17 +585,16 @@ set num_parts 5
 set balance_constraint 2
 set seed 0
 set top_n 100000
-# set the extra_delay_cut to 20% of the clock period
-# the extra_delay_cut is introduced for each cut hyperedge
+# estimate the delay per cut as 20% of the clock period
 set extra_delay_cut 9.2e-10  
 set timing_aware_flag true
 set timing_guardband true
 set part_design_solution_file "${design}_part_design.hgr.part.${num_parts}"
 
 ##############################################################################################
-## TritonPart with slack progagation
+## TritonPart with timing guardbanding
 ##############################################################################################
-puts "Start TritonPart with slack propagation"
+puts "Start TritonPart with timing guardbanding"
 # call triton_part to partition the netlist
 triton_part_design -num_parts $num_parts -balance_constraint $balance_constraint \
                    -seed $seed -top_n $top_n \

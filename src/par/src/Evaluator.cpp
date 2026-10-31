@@ -86,7 +86,8 @@ Matrix<float> GoldenEvaluator::GetBlockBalance(const HGraphPtr& hgraph,
 
 // calculate timing cost of a path
 float GoldenEvaluator::GetPathTimingScore(int path_id,
-                                          const HGraphPtr& hgraph) const
+                                          const HGraphPtr& hgraph,
+                                          int num_cuts) const
 {
   if (hgraph->GetNumTimingPaths() <= 0
       || hgraph->GetTimingPathSlackSize() < hgraph->GetNumTimingPaths()
@@ -98,7 +99,12 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
                "No timing-critical paths when calling GetPathTimingScore()!");
     return 0.0;
   }
-  return std::pow(1.0 - hgraph->PathTimingSlack(path_id), timing_exp_factor_);
+  const double score
+      = 1.0 - hgraph->PathTimingSlack(path_id) + extra_cut_delay_ * num_cuts;
+  if (timing_exp_factor_ == 1.0f) {
+    return score;
+  }
+  return std::pow(score, timing_exp_factor_);
 }
 
 // calculate the cost of a path : including timing and snaking cost
@@ -137,8 +143,11 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
     return cost;  // the path is fully within the block
   }
   // timing-related cost (basic path_cost * number of cut on the path)
-  cost = path_timing_factor_ * (path.size() - 1)
-         * hgraph->PathTimingCost(path_id);
+  const int num_cuts = path.size() - 1;
+  const float timing_cost = HasExtraCutDelay()
+                                ? GetPathTimingScore(path_id, hgraph, num_cuts)
+                                : hgraph->PathTimingCost(path_id);
+  cost = path_timing_factor_ * num_cuts * timing_cost;
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto& [block_id, count] : block_counter) {
