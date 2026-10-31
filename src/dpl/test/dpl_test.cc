@@ -313,6 +313,35 @@ TEST_F(CheckPlacementTest, PlaceableReportsOverlapWithMisalignedFixedCell)
   EXPECT_EQ(failureCount("Site_alignment_failures"), 0);
 }
 
+TEST_F(CheckPlacementTest, HybridRowWithBlockMacro)
+{
+  auto* site_tall = odb::dbSite::create(lib_, "tall");
+  site_tall->setWidth(kSiteWidth);
+  site_tall->setHeight(3600);
+  site_tall->setClass(odb::dbSiteClass::CORE);
+  site_tall->setRowPattern({{site_, odb::dbOrientType::R0}});
+  odb::dbRow::create(block_,
+                     "ROW_TALL",
+                     site_tall,
+                     kCoreX,
+                     kCoreY + kNumRows * kRowHeight,
+                     odb::dbOrientType::R0,
+                     odb::dbRowDir::HORIZONTAL,
+                     kNumSites,
+                     kSiteWidth);
+  block_->setCoreArea(block_->computeCoreArea());
+
+  odb::dbInst* macro = makeCell(
+      "BLOCK1", "macro", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
+  odb::dbInst* cell = makeCell("BUF_X1",
+                               "cell",
+                               {kCoreX, kCoreY + kRowHeight},
+                               odb::dbPlacementStatus::PLACED);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_EQ(runCheck(), "");
+  EXPECT_FALSE(cell->getBBox()->getBox().overlaps(macro->getBBox()->getBox()));
+}
+
 TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
 {
   // BLOCK1 is 4000x4000 DBU (10.53 sites x 1.43 rows). Placed off-grid at
