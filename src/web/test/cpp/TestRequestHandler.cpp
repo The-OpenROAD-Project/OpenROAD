@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -1099,7 +1100,7 @@ TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
 
 TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
 {
-  // Another user's X server would get our browser.
+  // Another user's X server would get our browser and the live ticket.
   BrowserEnv foreign = sshEnv();
   foreign.display = ":0";
   foreign.has_display = true;
@@ -1196,7 +1197,8 @@ TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.1"),
                              "farm-42",
-                             8080),
+                             8080,
+                             "/?token=abc"),
             "To reach it from another machine, forward the port: ssh -L "
             "8080:localhost:8080 farm-42");
 }
@@ -1209,9 +1211,11 @@ TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.2"),
                              "farm-42",
-                             8080),
+                             8080,
+                             "/?token=abc"),
             "To reach it from another machine, forward the port: ssh -L "
-            "8080:127.0.0.2:8080 farm-42, then open http://localhost:8080");
+            "8080:127.0.0.2:8080 farm-42, then open "
+            "http://localhost:8080/?token=abc");
 }
 
 TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
@@ -1222,8 +1226,11 @@ TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("0.0.0.0"),
                          "farm-42",
-                         8080);
-  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
+                         8080,
+                         "/?token=abc");
+  // The url the user is told to open elsewhere has to carry the token, or it
+  // is refused on arrival.
+  EXPECT_NE(hint.find("http://farm-42:8080/?token=abc"), std::string::npos);
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
 }
 
@@ -1234,9 +1241,205 @@ TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("10.0.0.5"),
                          "farm-42",
-                         8080);
+                         8080,
+                         "/?token=abc");
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
   EXPECT_EQ(hint.find("farm-42"), std::string::npos);
+}
+
+TEST(OtherMachineUrl, IsTheUrlTheHintNames)
+{
+  // serve() prints these with the token, and the hint only with it redacted.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.2"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://localhost:8080/?token=abc");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("0.0.0.0"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://farm-42:8080/?token=abc");
+}
+
+TEST(OtherMachineUrl, IsEmptyWhenTheReportedUrlServes)
+{
+  // Through a tunnel to localhost, or at an address already in the url.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.1"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("10.0.0.5"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+}
+
+TEST(GenerateAuthToken, IsHexAndUnpredictable)
+{
+  const std::string token = generateAuthToken();
+  EXPECT_EQ(token.size(), 32u);  // 128 bits
+  EXPECT_TRUE(std::all_of(token.begin(), token.end(), [](const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  }));
+  // Not proof of entropy, but a token minted from a clock-free source must
+  // not repeat between two calls in the same process.
+  EXPECT_NE(token, generateAuthToken());
+}
+
+TEST(RequestTokenAllowed, AcceptsTheExactToken)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=abc123", "abc123"));
+  EXPECT_TRUE(requestTokenAllowed("/?token=abc123", "abc123"));
+  // Other parameters may sit on either side of it.
+  EXPECT_TRUE(requestTokenAllowed("/?mergetiles=0&token=abc123&x=1", "abc123"));
+}
+
+TEST(RequestTokenAllowed, RejectsAnythingElse)
+{
+  EXPECT_FALSE(requestTokenAllowed("/ws", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=wrong", "abc123"));
+  // A prefix and an extension of the real token are both wrong: a length
+  // check is part of the comparison, not an optimization skipped for it.
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc12", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc1234", "abc123"));
+  // The parameter name is exact; "tokens" is not "token".
+  EXPECT_FALSE(requestTokenAllowed("/ws?tokens=abc123", "abc123"));
+}
+
+TEST(RequestTokenAllowed, DecodesThePercentEncodedValue)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=a%2Bb", "a+b"));
+}
+
+TEST(RequestTokenAllowed, AnEmptyExpectedTokenMatchesNothing)
+{
+  // Fail closed: with no token minted there is nothing to present.
+  EXPECT_FALSE(requestTokenAllowed("/ws", ""));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", ""));
+}
+
+TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
+{
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc", "tok"), "/?token=tok");
+  EXPECT_EQ(authRedirectTarget("/index.html?ticket=abc", "tok"),
+            "/index.html?token=tok");
+}
+
+TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
+{
+  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
+  // in the redirect would silently ignore what the user asked for.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
+            "/?token=tok&mergetiles=0");
+  EXPECT_EQ(
+      authRedirectTarget("/?mergetiles=0&ticket=abc&tilebudget=500", "tok"),
+      "/?token=tok&mergetiles=0&tilebudget=500");
+}
+
+TEST(AuthRedirectTarget, PassesEncodedValuesThroughUntouched)
+{
+  // The query is copied byte for byte; decoding and re-encoding here would
+  // be a chance to mangle a value for no gain.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&vis=%7B%22a%22%3A1%7D", "tok"),
+            "/?token=tok&vis=%7B%22a%22%3A1%7D");
+}
+
+TEST(AuthRedirectTarget, HandlesATargetWithNoQueryAtAll)
+{
+  EXPECT_EQ(authRedirectTarget("/", "tok"), "/?token=tok");
+}
+
+TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.token(), "tok");
+  EXPECT_EQ(auth.ticket(), "tik");
+
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // The whole point: what `ps` saw on the browser's command line stops
+  // working as soon as the browser has used it, and says it was used.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.token(), "tok");
+}
+
+TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket(""), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("ti"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("tikk"), TicketUse::kRefused);
+  // None of those consumed it.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // Nor does a wrong one pass for a reuse afterwards.
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RejectsAnExpiredTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(0));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokedTicketIsRefused)
+{
+  // Not kReused: a launch reported as failed may still have opened a browser,
+  // and that one is not someone else.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokingARedeemedTicketKeepsItRedeemed)
+{
+  // The browser can redeem it before launchBrowser() reports a failure.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstReuse)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstReuse());
+  EXPECT_FALSE(auth.firstReuse());
+  // Independent of the WebSocket rejections.
+  EXPECT_TRUE(auth.firstRejection());
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstRejection)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+}
+
+TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)
+{
+  const auto params = parseQuery("/download/image?type=entire&filename=a%20b");
+  EXPECT_EQ(params.at("type"), "entire");
+  EXPECT_EQ(params.at("filename"), "a b");
+
+  EXPECT_TRUE(parseQuery("/index.html").empty());
+  EXPECT_TRUE(parseQuery("/ws?flag").empty());
+}
+
+TEST(UrlDecode, ASignIsNotAHexDigit)
+{
+  // Read as signed hex these would turn into a NUL byte and 0xff.
+  EXPECT_EQ(urlDecode("%-0"), "%-0");
+  EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)

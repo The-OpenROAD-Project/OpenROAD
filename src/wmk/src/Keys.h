@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 //
-// The watermark's secret key: drawing it, and deriving the per-stage keys
-// from it.
+// The watermark's secret key: deriving the per-stage keys from it.
 //
 // One secret key is held by the owner.  Each stage gets its own key derived
 // from it, so a key that leaks -- or is disclosed to prove one stage in court
@@ -22,12 +21,6 @@
 
 namespace wmk {
 
-// Draw ``n`` bytes from the system's cryptographic random source.  Returns
-// false if that source cannot be read, which is a hard failure: a key drawn
-// from a predictable source is not secret, and quietly falling back to an
-// ordinary generator would produce watermarks anyone could reproduce.
-bool randomBytes(std::size_t n, std::vector<std::uint8_t>& out);
-
 // The per-stage key of the PDMarks scheme:
 //
 //     K_s = HMAC-SHA256(K, ID(D_0), nu, "stage=" || s)
@@ -43,8 +36,5 @@ std::array<std::uint8_t, 32> deriveStageKey(
 
 // Is this one of the three stages a key can be derived for?
 bool isWatermarkStage(const std::string& stage);
-
-// Lowercase hex.  The inverse is hexToBytes in HmacSha256.h.
-std::string toHex(const std::uint8_t* data, std::size_t len);
 
 }  // namespace wmk
