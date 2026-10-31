@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         1
+    final |     -2.7% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 1 drivers while rebuffering.
+drv_ha sky130_fd_sc_hd__ha_1
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.

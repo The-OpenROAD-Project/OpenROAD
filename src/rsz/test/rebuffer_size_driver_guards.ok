@@ -1,0 +1,39 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+*******************************************
+Optimization config:
+-limit_sizing_area:                 undefined
+-limit_sizing_leakage:              undefined
+-keep_sizing_site:                  false
+-keep_sizing_vt:                    false
+-set_early_sizing_cap_ratio:        unset
+-set_early_buffer_sizing_cap_ratio: unset
+-disable_buffer_pruning:            false
+-rebuffer_size_driver:              true
+*******************************************
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       393
+       39 |     -4.1% |      26 |        0 |       354
+       78 |     -6.2% |      35 |        5 |       315
+      117 |     -4.8% |      36 |       17 |       276
+      156 |     -4.8% |      39 |       20 |       237
+      195 |     -4.4% |      39 |       24 |       198
+      234 |     -3.1% |      39 |       35 |       159
+      273 |     -1.4% |      41 |       53 |       120
+      312 |     -2.6% |      67 |       71 |        81
+      351 |     -2.9% |      90 |       91 |        42
+      390 |     -3.8% |      99 |       94 |         3
+    final |     -3.8% |      99 |       94 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 14 drivers while rebuffering.
+_488_ NOR3_X1 FIRM
+_490_ INV_X1 FIRM
+flops: 35 resized: 0
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
