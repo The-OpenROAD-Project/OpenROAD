@@ -99,10 +99,10 @@ class LatencyBalancer
                                  double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
-  float getVertexClkArrival(sta::Vertex* sinkVertex,
-                            odb::dbNet* topNet,
-                            odb::dbITerm* iterm);
-  float computeAveSinkArrivals(TreeBuilder* builder);
+  std::optional<float> getVertexClkArrival(sta::Vertex* sinkVertex,
+                                           odb::dbNet* topNet,
+                                           odb::dbITerm* iterm);
+  std::optional<float> computeAveSinkArrivals(TreeBuilder* builder);
   void computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                                odb::dbITerm* iterm,
                                float& sumArrivals,
