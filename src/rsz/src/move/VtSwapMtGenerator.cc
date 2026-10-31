@@ -4,6 +4,7 @@
 #include "VtSwapMtGenerator.hh"
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -30,12 +31,13 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  // The arc holds the cell of its scene.  The Resizer caches, warmed before
-  // the workers start, key on the link cell.
+  // Reuse the VT alternatives cached for this target's link cell.
+  // The timing arc holds a scene cell, while the cache key uses the link cell
+  // captured before workers start.
   sta::LibertyCell* current_cell
       = resizer_.network()->libertyCell(target.inst(resizer_));
-  const std::vector<sta::LibertyCell*> candidate_cells
-      = selectCandidateCells(current_cell);
+  const std::vector<sta::LibertyCell*>& candidate_cells
+      = candidate_cells_cache_.at(current_cell).cells;
 
   // Fanin max-cap headroom is instance-level, captured once per target.
   const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
@@ -87,26 +89,27 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
     return false;
   }
 
-  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr
-      || resizer_.getVTEquivCells(current_cell).size() <= 1) {
+  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr) {
     return false;
   }
-  return true;
-}
 
-std::vector<sta::LibertyCell*> VtSwapMtGenerator::selectCandidateCells(
-    sta::LibertyCell* current_cell) const
-{
-  // Enumerate all VT-equivalent cells except the current implementation.
-  sta::LibertyCellSeq equiv_cells = resizer_.getVTEquivCells(current_cell);
-  std::vector<sta::LibertyCell*> candidates;
-  candidates.reserve(equiv_cells.size());
-  for (sta::LibertyCell* cell : equiv_cells) {
-    if (cell != nullptr && cell != current_cell) {
-      candidates.push_back(cell);
+  // Populate the candidate cache once for each current link cell.
+  const std::pair<std::map<sta::LibertyCell*, CandidateCells>::iterator, bool>
+      cached = candidate_cells_cache_.try_emplace(current_cell);
+  if (cached.second) {  // New cache entry.
+    const sta::LibertyCellSeq equiv_cells
+        = resizer_.getVTEquivCells(current_cell);
+    CandidateCells& entry = cached.first->second;  // Map iterator's value.
+    entry.cells.reserve(equiv_cells.size());
+    // Enumerate all VT-equivalent cells except the current implementation.
+    for (sta::LibertyCell* cell : equiv_cells) {
+      if (cell != nullptr && cell != current_cell) {
+        entry.cells.push_back(cell);
+      }
     }
+    entry.applicable = !entry.cells.empty();
   }
-  return candidates;
+  return cached.first->second.applicable;  // Cached CandidateCells flag.
 }
 
 }  // namespace rsz
