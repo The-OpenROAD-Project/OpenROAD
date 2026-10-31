@@ -34,6 +34,8 @@ namespace {
 
 using utl::RSZ;
 
+// The fanout limit of the LEGACY buffer removal (UnbufferGenerator), for an
+// upstream driver without a max-fanout limit of its own.
 constexpr int kBufferRemovalMaxFanout = 10;
 
 // The buffer, its upstream driver and the scene the removal checks read.
@@ -58,8 +60,9 @@ struct UnbufferSelectionContext
   sta::Pin* drvr_input_pin{nullptr};
   const sta::Path* prev_drvr_path{nullptr};
   const sta::Scene* scene{nullptr};
-  // The scene of the upstream driver's worst capacitance check; isEligible()
-  // sets it for the slack guard and the gain estimate.
+  // The scene of the upstream driver's worst capacitance check, or the path
+  // scene when the driver has no capacitance limit; isEligible() sets it for
+  // the slack guard and the gain estimate.
   const sta::Scene* slack_scene{nullptr};
   const sta::MinMax* min_max{nullptr};
 };
@@ -318,8 +321,9 @@ bool isEligible(UnbufferSelectionContext& ctx)
     return false;
   }
   // The slack guard and the gain estimate read the scene of the upstream
-  // driver's worst capacitance check.
-  ctx.slack_scene = cap_corner;
+  // driver's worst capacitance check.  Without a limit there is none, and
+  // estimatedSlackOK() would reject every removal on a null scene.
+  ctx.slack_scene = cap_corner != nullptr ? cap_corner : ctx.scene;
   if (!passesSlackGuard(ctx)) {
     debugPrint(ctx.resizer.logger(),
                RSZ,

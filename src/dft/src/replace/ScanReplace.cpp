@@ -5,11 +5,14 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstring>
+#include <cstddef>
 #include <limits>
 #include <memory>
+#include <numeric>
+#include <ranges>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -20,10 +23,10 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
-#include "sta/EquivCells.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
@@ -155,40 +158,88 @@ bool IsScanEquivalent(
   return true;
 }
 
-// We calculate the difference between drive resistance of the Q pins to find
-// the most similar scan cell to the non-scan one
-double DifferencePerformanceCells(const sta::LibertyCell* non_scan_cell,
-                                  const sta::LibertyCell* scan_cell)
+// 1% relative tolerance on output drive resistance so sub-percent SPICE
+// characterization differences defer to smaller cell area.
+constexpr double kDriveResistanceRelTolerance = 0.01;
+
+// 0.01% relative tolerance on cell area when drive resistance is tied.
+constexpr float kAreaRelTolerance = 1e-4f;
+
+// Finds the primary sequential output port, preferring the non-inverted state
+// output (seq.output()) before inverted state outputs or general output ports.
+const sta::LibertyPort* FindPrimaryOutputPort(const sta::LibertyCell* cell)
 {
-  sta::LibertyPort* non_scan_q = non_scan_cell->findLibertyPort("Q");
-  sta::LibertyPort* scan_q = scan_cell->findLibertyPort("Q");
-
-  if (!non_scan_q || !scan_q) {
-    // Use double's max so this is moved to the end of the vector when sorting
-    return std::numeric_limits<double>::max();
+  if (!cell) {
+    return nullptr;
   }
-
-  return std::abs(non_scan_q->driveResistance() - scan_q->driveResistance());
+  const sta::LibertyPort* seq_inv_port = nullptr;
+  const sta::LibertyPort* func_port = nullptr;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (port->isPwrGnd() || !port->direction()
+        || !port->direction()->isAnyOutput()) {
+      continue;
+    }
+    const sta::FuncExpr* func = port->function();
+    if (func && !func_port) {
+      func_port = port;
+    }
+    for (const sta::Sequential& seq : cell->sequentials()) {
+      if (port == seq.output()
+          || (func && func->port() && func->port() == seq.output())) {
+        return port;
+      }
+      if (!seq_inv_port
+          && (port == seq.outputInv()
+              || (func
+                  && ((seq.output() && func->hasPort(seq.output()))
+                      || (seq.outputInv()
+                          && func->hasPort(seq.outputInv())))))) {
+        seq_inv_port = port;
+      }
+    }
+  }
+  if (seq_inv_port) {
+    return seq_inv_port;
+  }
+  if (func_port) {
+    return func_port;
+  }
+  return cell->findLibertyPort("Q");
 }
 
-// We select the scan_cell that is most similar to the non_scan_cell in
-// performance
-std::unique_ptr<ScanCandidate> SelectBestScanCell(
-    const sta::LibertyCell* non_scan_cell,
-    std::vector<std::unique_ptr<ScanCandidate>>& scan_candidates)
+// Computes `|R_non_scan - R_scan| / max(|R_non_scan|, |R_scan|)` so comparisons
+// are invariant to library resistance units (ohms vs. kohms).
+double RelativeDriveResistanceDiff(const sta::LibertyPort* non_scan_out,
+                                   const ScanCandidate& candidate)
 {
-  std::ranges::sort(
-      scan_candidates, [&non_scan_cell](const auto& lhs, const auto& rhs) {
-        // We want to keep the difference as close as possible to
-        // the non_scan_cell
-        const double difference_lhs
-            = DifferencePerformanceCells(non_scan_cell, lhs->getScanCell());
-        const double difference_rhs
-            = DifferencePerformanceCells(non_scan_cell, rhs->getScanCell());
-        return difference_lhs < difference_rhs;
-      });
-
-  return std::move(scan_candidates.at(0));
+  if (!non_scan_out) {
+    return std::numeric_limits<double>::max();
+  }
+  const sta::LibertyCell* scan_cell = candidate.getScanCell();
+  const sta::LibertyPort* scan_out = nullptr;
+  const auto& port_mapping = candidate.getPortMapping();
+  if (auto it = port_mapping.find(non_scan_out->name());
+      it != port_mapping.end()) {
+    scan_out = scan_cell->findLibertyPort(it->second.c_str());
+  }
+  if (!scan_out) {
+    scan_out = FindEquivalentPortInScanCell(non_scan_out, scan_cell);
+  }
+  if (!scan_out) {
+    scan_out = scan_cell->findLibertyPort(non_scan_out->name());
+  }
+  if (!scan_out) {
+    return std::numeric_limits<double>::max();
+  }
+  const double r_non_scan = non_scan_out->driveResistance();
+  const double r_scan = scan_out->driveResistance();
+  const double max_r = std::max(std::abs(r_non_scan), std::abs(r_scan));
+  if (max_r == 0.0) {
+    return 0.0;
+  }
+  return std::abs(r_non_scan - r_scan) / max_r;
 }
 
 // Returns true if the instance is connected to don't touch nets, false
@@ -205,6 +256,123 @@ bool HaveDontTouchNets(odb::dbInst* inst)
 }
 
 }  // namespace
+
+bool IsSingleCharScanInsertion(std::string_view non_scan_str,
+                               std::string_view scan_str)
+{
+  if (scan_str.size() != non_scan_str.size() + 1) {
+    return false;
+  }
+  size_t prefix_len = 0;
+  while (prefix_len < non_scan_str.size()
+         && non_scan_str[prefix_len] == scan_str[prefix_len]) {
+    ++prefix_len;
+  }
+  const char inserted = scan_str[prefix_len];
+  if (inserted != 's' && inserted != 'S') {
+    return false;
+  }
+  return scan_str.substr(prefix_len + 1) == non_scan_str.substr(prefix_len);
+}
+
+bool IsMatchingFootprint(std::string_view ns, std::string_view s)
+{
+  if (ns.empty() || s.empty()) {
+    return false;
+  }
+  return s == ns || IsSingleCharScanInsertion(ns, s);
+}
+
+size_t SelectBestCandidateRankIndex(const std::vector<CandidateRank>& ranks)
+{
+  if (ranks.empty()) {
+    return 0;
+  }
+
+  std::vector<size_t> survivors(ranks.size());
+  std::iota(survivors.begin(), survivors.end(), 0);
+
+  auto filter_by_flag = [&](auto predicate) {
+    if (std::ranges::any_of(survivors, predicate)) {
+      std::erase_if(survivors, [&](size_t i) { return !predicate(i); });
+    }
+  };
+
+  // 1. Prefer matching Liberty cell_footprint (e.g. "dfxtp" -> "sdfxtp").
+  filter_by_flag([&](size_t i) { return ranks[i].footprint_match; });
+
+  // 2. Prefer scan cells from the same LibertyLibrary (VT family).
+  filter_by_flag([&](size_t i) { return ranks[i].same_library; });
+
+  // 3. Keep candidates within 1% relative output drive resistance of the best.
+  const double min_rel_drive_diff
+      = std::ranges::min(survivors | std::views::transform([&](size_t i) {
+                           return ranks[i].rel_drive_diff;
+                         }));
+  std::erase_if(survivors, [&](size_t i) {
+    return (ranks[i].rel_drive_diff - min_rel_drive_diff)
+           > kDriveResistanceRelTolerance;
+  });
+
+  // 4. Within the drive-strength band, keep candidates within 0.01% of the
+  // smallest cell area.
+  const float min_area
+      = std::ranges::min(survivors | std::views::transform([&](size_t i) {
+                           return ranks[i].area;
+                         }));
+  std::erase_if(survivors, [&](size_t i) {
+    const float max_area
+        = std::max(std::abs(ranks[i].area), std::abs(min_area));
+    return (ranks[i].area - min_area) > kAreaRelTolerance * max_area;
+  });
+
+  // 5. Tie-break by single-char ('s'/'S') scan insertion match, then cell name.
+  filter_by_flag([&](size_t i) { return ranks[i].direct_name_match; });
+
+  return *std::ranges::min_element(survivors, [&](size_t a, size_t b) {
+    return ranks[a].name < ranks[b].name;
+  });
+}
+
+namespace {
+
+CandidateRank ComputeCandidateRank(const sta::LibertyCell* non_scan_cell,
+                                   const sta::LibertyPort* non_scan_out,
+                                   const ScanCandidate& candidate)
+{
+  const sta::LibertyCell* scan_cell = candidate.getScanCell();
+  return CandidateRank{
+      .footprint_match
+      = IsMatchingFootprint(non_scan_cell->footprint(), scan_cell->footprint()),
+      .same_library
+      = (scan_cell->libertyLibrary() == non_scan_cell->libertyLibrary()),
+      .rel_drive_diff = RelativeDriveResistanceDiff(non_scan_out, candidate),
+      .area = scan_cell->area(),
+      .direct_name_match
+      = IsSingleCharScanInsertion(non_scan_cell->name(), scan_cell->name()),
+      .name = scan_cell->name(),
+  };
+}
+
+}  // namespace
+
+std::unique_ptr<ScanCandidate> SelectBestScanCell(
+    const sta::LibertyCell* non_scan_cell,
+    std::vector<std::unique_ptr<ScanCandidate>>& scan_candidates)
+{
+  if (!non_scan_cell || scan_candidates.empty()) {
+    return nullptr;
+  }
+  const sta::LibertyPort* non_scan_out = FindPrimaryOutputPort(non_scan_cell);
+  std::vector<CandidateRank> ranks;
+  ranks.reserve(scan_candidates.size());
+  for (const auto& candidate : scan_candidates) {
+    ranks.push_back(
+        ComputeCandidateRank(non_scan_cell, non_scan_out, *candidate));
+  }
+  const size_t best_idx = SelectBestCandidateRankIndex(ranks);
+  return std::move(scan_candidates.at(best_idx));
+}
 
 ScanCandidate::ScanCandidate(
     sta::LibertyCell* scan_cell,

@@ -10,24 +10,28 @@ namespace rsz {
 // The tunables of the setup repair policies and their moves; estimator and
 // planner calibration constants stay in their files.  The default member
 // initializer is the shipped value; forParallelEval() sets the PARALLEL_EVAL
-// values.  Times are seconds and "pct" fields are percent.
+// values.  Times are seconds and "pct" fields are percent.  "period_pct"
+// fields are percent of the reference clock period of a PARALLEL_EVAL run:
+// the shortest period of a clock with source pins in any mode, fixed for the
+// run.  A share of |WNS| would vanish as WNS approaches zero.
 
 // Controls how stalled batches favor targets in shared violating cones.
-// The rank is score * (1 + alpha * w^gamma), where w is relative cone need.
+// The rank is score * (1 + bottleneck_scale *
+// severity_ratio^bottleneck_exponent).
 struct BatchPriorityConfig
 {
-  // Strength of the cone-need bonus.
-  float alpha{2.0f};
+  // Strength of the shared-bottleneck priority bonus.
+  float bottleneck_scale{2.0f};
   // Emphasis on the most shared bottlenecks.
-  float gamma{2.0f};
-  // The weight applies only after a saved batch left WNS unchanged, and for at
+  float bottleneck_exponent{2.0f};
+  // The bonus applies only after a saved batch left WNS unchanged, and for at
   // most this many such batches in a row.  Undone batches do not count.
-  int weight_max_wns_stall_batches{8};
+  int bottleneck_max_wns_stall_batches{8};
   // Maximum endpoints weighed, worst slack first; each costs one bit per
   // cone vertex.
   int bottleneck_max_endpoints{1024};
-  // Maximum distinct cone sources weighed, with the same per-vertex cost.
-  int bottleneck_max_sources{1024};
+  // Maximum distinct cone startpoints analyzed, with the same per-vertex cost.
+  int bottleneck_max_startpoints{1024};
   // Batches one analysis serves; the start of the WNS tail refreshes it.
   int bottleneck_refresh_batches{4};
 };
@@ -96,8 +100,8 @@ struct ParallelEvalPolicyConfig
   // untouched arcs by a hair.
   float culprit_delay_ratio{0.01f};
   // A batch that improves TNS is also saved while its WNS stays within this
-  // percent of the best checkpoint WNS.
-  float checkpoint_wns_tolerance_pct{1.0f};
+  // percent of the reference clock period below the best checkpoint WNS.
+  float checkpoint_wns_tolerance_period_pct{0.02f};
   // Batches that skip the instances of an undone batch.
   int miss_tabu_batches{8};
 
@@ -108,22 +112,30 @@ struct ParallelEvalPolicyConfig
 
   // The batches stop after stall_max_batches batches without progress, or
   // once those batches spent stall_batches times the current cap in moves.
-  // Progress is a saved checkpoint that improves WNS by progress_wns_pct or
-  // TNS by progress_pct percent of its initial value.
+  // Progress is a saved checkpoint that improves WNS by
+  // progress_wns_period_pct percent of the reference clock period or TNS by
+  // progress_tns_pct percent of its initial value.
   int stall_batches{6};
   // Absolute cap on consecutive stalled batches.
   int stall_max_batches{24};
   // Minimum TNS improvement relative to the initial magnitude.
-  float progress_pct{0.5f};
-  // Minimum WNS improvement relative to the initial magnitude.
-  float progress_wns_pct{0.1f};
+  float progress_tns_pct{0.5f};
+  // Minimum WNS improvement in percent of the reference clock period.
+  float progress_wns_period_pct{0.04f};
 
   // The batches also stop when the last stall_window saved batches, after
-  // spending stall_window_min_work, moved neither WNS nor the failing
-  // endpoint count by stall_rel_pct percent and TNS did not progress.
+  // spending stall_window_min_work, moved neither WNS by stall_wns_period_pct
+  // nor the failing endpoint count by stall_failing_endpoint_pct percent per
+  // batch and TNS did not progress.
   int stall_window{6};
-  // Relative WNS/FEP change needed to reset the window stall check.
-  float stall_rel_pct{1.0f};
+  // Average WNS gain per saved batch, in percent of the reference clock
+  // period, that keeps the window moving.  The rule also needs a flat TNS
+  // and failing endpoint count, so it ends only batch stages that barely move
+  // WNS.
+  float stall_wns_period_pct{0.2f};
+  // Average failing endpoint drop per saved batch, in percent of the current
+  // count, that keeps the window moving.
+  float stall_failing_endpoint_pct{1.0f};
   // Minimum reference work before the window stall check applies.
   float stall_window_min_work{30.0f};
 
@@ -146,8 +158,8 @@ struct ParallelEvalPolicyConfig
   // A tail batch may cost at most this multiple of its WNS gain in TNS.
   float wns_tail_tns_ratio{10.0f};
   // A tail batch is WNS progress only when it raises the best WNS by this
-  // percent of it.
-  float wns_tail_min_gain_pct{0.5f};
+  // percent of the reference clock period.
+  float wns_tail_min_gain_period_pct{0.1f};
   // Tail work budget: this percent of the batch stage's work, at least
   // wns_tail_min_work.
   float wns_tail_work_pct{400.0f};
@@ -168,10 +180,10 @@ struct ParallelEvalPolicyConfig
   //   + work_per_plan * buffer_tree_plan_requests
   //   + work_per_endpoint * endpoints_evaluated
   // A timing update is each parasitics-and-timing update the policy asks
-  // for, and each batch undo or checkpoint restore.  The pending nets are
-  // read before the update or the rollback, so an undo or restore after the
-  // batch STA adds none; a salvage that re-commits a batch rolls back without
-  // a count.
+  // for, and each batch undo, checkpoint restore or salvage rollback.  The
+  // pending nets are read before the update or the rollback, so a rollback
+  // after the batch STA adds none.  The weights are a non-negative
+  // least-squares fit of profiled batch wall times on the reference machine.
   float work_sta_per_vertex{5.0e-7f};
   float work_per_pending_net{1.93e-3f};
   float work_per_estimate{1.35e-5f};
@@ -197,6 +209,9 @@ struct OptimizationPolicyConfig
   // Charge the slower fanin driver of a larger input pin to the other loads
   // of the fanin net.  PARALLEL_EVAL turns it on.
   bool fanin_side_loss{false};
+  // The side loss counts this many times against the gain.  Empirically
+  // tuned: a smaller weight lets through moves that degrade the side paths,
+  // which costs QoR overall.
   float fanin_side_loss_weight{3.0f};
   // Weight of fanin loads off every violating worst path.
   float fanin_side_offpath_weight{0.0f};
@@ -214,6 +229,9 @@ struct OptimizationPolicyConfig
   bool dual_rf_drive_guard{true};
 
   // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.
+  // Empirically tuned.  A size-up costs more than a VT swap of similar gain
+  // (area, input pin cap, legalizer displacement, side paths), so it ranks
+  // lower.
   float size_up_mt_score_scale{0.75f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;

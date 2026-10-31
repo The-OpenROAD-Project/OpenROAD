@@ -6,18 +6,38 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 
+namespace sta {
+class dbNetwork;
+}  // namespace sta
+
 namespace rsz {
 
 // Run state of SetupParallelEvalPolicy.  These classes hold counters and
 // decisions only; the policy owns the journal, the STA and the generators.
+
+// An instance and its OpenDB name, read while the instance exists.  A journal
+// rollback deletes the instances the journal created, and OpenDB gives the
+// address of a deleted instance to the next instance it creates or restores,
+// so the name tells whether the instance at the address is the same one.
+struct InstanceRecord
+{
+  sta::Instance* inst{nullptr};
+  std::string name;
+};
+
+// The instances of `records` that are still there after a rollback.  The
+// recorded addresses are compared, never dereferenced.
+std::vector<sta::Instance*> keptInstances(
+    const sta::dbNetwork* network,
+    const std::vector<InstanceRecord>& records);
 
 // The work the run spent, in reference seconds (see "Work meter" in
 // ParallelEvalPolicyConfig).  The stall rules read it instead of the wall
@@ -47,7 +67,8 @@ class WorkMeter
 };
 
 // Stall detection of the batch stage.  A saved checkpoint is progress when
-// it moves WNS or TNS by a visible part of its initial value.
+// it moves WNS by a visible part of the reference clock period or TNS by a
+// visible part of its initial value.
 class StallMonitor
 {
  public:
@@ -63,13 +84,14 @@ class StallMonitor
   {
   }
 
-  // Set the initial QoR against which progress thresholds are measured.
-  void reset(sta::Slack initial_wns, sta::Slack initial_tns);
+  // Set the initial TNS and the reference clock period against which
+  // progress thresholds are measured.
+  void reset(sta::Slack initial_tns, float reference_period);
   // A new batch: its cap and the failing endpoint count it started with.
-  void beginBatch(int batch_cap, size_t fep)
+  void beginBatch(int batch_cap, size_t failing_endpoints)
   {
     last_cap_ = batch_cap;
-    fep_ = fep;
+    failing_endpoints_ = failing_endpoints;
   }
   void endBatch(int committed_moves) { last_batch_moves_ = committed_moves; }
   // A missed batch spent its moves without progress.  A later salvage of the
@@ -95,11 +117,14 @@ class StallMonitor
   int moveBudget() const;
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // QoR and work at one saved checkpoint of the stall window.
   struct SavedCheckpoint
   {
     float wns{0.0f};
-    size_t fep{0};
+    size_t failing_endpoints{0};
     double work{0.0};
   };
 
@@ -107,8 +132,9 @@ class StallMonitor
   void updateWindow(sta::Slack wns, bool tns_progressed, double work);
 
   const ParallelEvalPolicyConfig& config_;
-  sta::Slack initial_wns_{0.0f};
   sta::Slack initial_tns_{0.0f};
+  // Scales the WNS thresholds; see OptimizationPolicyConfig.hh.
+  float reference_period_{0.0f};
   // Batches without progress and the moves they spent.
   int stalled_batches_{0};
   int stalled_moves_{0};
@@ -117,7 +143,7 @@ class StallMonitor
   // Saved batches in a row that did not move WNS.
   int wns_stall_batches_{0};
   // Failing endpoints at the last collection and the last saved checkpoints.
-  size_t fep_{0};
+  size_t failing_endpoints_{0};
   std::deque<SavedCheckpoint> window_;
   bool window_stalled_{false};
 };
@@ -140,8 +166,9 @@ class WnsTail
 
   // Clear all tail and speculative state for a new policy run.
   void reset();
-  // Starts the tail once; false when it is off or already ran.
-  bool start(double work);
+  // Starts the tail once; false when it is off or already ran.  WNS gains
+  // count against the reference clock period.
+  bool start(double work, float reference_period);
   void stop() { active_ = false; }
   bool active() const { return active_; }
   int endpoints() const { return endpoints_; }
@@ -150,7 +177,9 @@ class WnsTail
   double workStart() const { return work_start_; }
   double workBudget() const { return budget_work_; }
   // Buffer removal runs only in the single-move batches of a stalled greedy
-  // stage, because a removal cannot be salvaged in place.
+  // stage.  A salvage cannot undo a removal alone: a cell swap goes back with
+  // replaceCell(), but the removed buffer and net come back only through the
+  // journal restore, which undoes the whole batch.
   bool unbufferAllowed() const
   {
     return active_ && batch_cap_ == 1 && greedy_stalled_;
@@ -174,13 +203,16 @@ class WnsTail
 
   // Missed batches kept in the open journal since the last checkpoint.
   bool maySpeculate() const;
-  void keepSpeculative(const std::vector<sta::Instance*>& instances);
+  void keepSpeculative(const std::vector<InstanceRecord>& instances);
   bool speculating() const { return speculative_batches_ > 0; }
   int speculativeBatches() const { return speculative_batches_; }
   // Ends the speculative run and returns the instances it committed.
-  std::vector<sta::Instance*> endSpeculation();
+  std::vector<InstanceRecord> endSpeculation();
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   const ParallelEvalPolicyConfig& config_;
   bool active_{false};
   bool started_{false};
@@ -195,22 +227,27 @@ class WnsTail
   // Work when the tail started and the work it may spend.
   double work_start_{0.0};
   double budget_work_{0.0};
+  // Smallest best-WNS gain that counts as tail progress.
+  float min_gain_{0.0f};
   // Missed tail batches retained until a later checkpoint or rollback.
   int speculative_batches_{0};
-  std::vector<sta::Instance*> speculative_instances_;
+  std::vector<InstanceRecord> speculative_instances_;
   bool greedy_stalled_{false};
 };
 
 // Instances the batches skip.  An undone batch puts its instances on the
 // tabu for a few batches; an instance in too many undone batches is excluded
-// for the rest of the run.
+// for the rest of the run.  Each entry keeps the instance name: a deleted
+// instance's address can go to a new instance, which must not inherit the
+// entry.  A rollback restores a deleted instance at its old address with its
+// old name, so it keeps its entry.
 class MissTabu
 {
  public:
   explicit MissTabu(const ParallelEvalPolicyConfig& config) : config_(config) {}
 
-  // Clear the tabu and the exclusions for a new policy run.
-  void reset();
+  // Clear the tabu and the exclusions for a new policy run on network.
+  void reset(const sta::dbNetwork* network);
   // Skip `inst` for miss_tabu_batches batches after batch `now`.
   void addTabu(sta::Instance* inst, int now);
   // addTabu() plus the undo count.  True once `inst` was in
@@ -220,23 +257,31 @@ class MissTabu
   void expire(int now);
   // Drop the tabu; the exclusions stay.
   void clearTemporary() { until_.clear(); }
-  bool isExcluded(sta::Instance* inst) const
-  {
-    return !excluded_.empty() && excluded_.contains(inst);
-  }
-  bool isTabu(sta::Instance* inst) const
-  {
-    return !until_.empty() && until_.contains(inst);
-  }
+  bool isExcluded(sta::Instance* inst) const;
+  bool isTabu(sta::Instance* inst) const;
 
  private:
+  // A per-instance value and the name of the instance it was recorded for.
+  struct Entry
+  {
+    std::string name;
+    int value{0};
+  };
+
+  // The name of a live instance.
+  std::string name(sta::Instance* inst) const;
+  // Whether the entry of `inst` in entries was recorded for this instance.
+  bool hasEntry(const std::unordered_map<sta::Instance*, Entry>& entries,
+                sta::Instance* inst) const;
+
   const ParallelEvalPolicyConfig& config_;
+  const sta::dbNetwork* network_{nullptr};
   // Batch index until which each instance is temporarily skipped.
-  std::unordered_map<sta::Instance*, int> until_;
+  std::unordered_map<sta::Instance*, Entry> until_;
   // Number of missed batches containing each instance.
-  std::unordered_map<sta::Instance*, int> undo_counts_;
+  std::unordered_map<sta::Instance*, Entry> undo_counts_;
   // Instances excluded for the remainder of the policy run.
-  std::unordered_set<sta::Instance*> excluded_;
+  std::unordered_map<sta::Instance*, Entry> excluded_;
 };
 
 }  // namespace rsz

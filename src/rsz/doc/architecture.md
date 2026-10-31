@@ -71,7 +71,7 @@ PARALLEL_EVAL / SetupParallelEvalPolicy (EXPERIMENTAL):
     select a score-ordered conflict-free batch      <- [ST]
   commit the batch into the open journal            <- [ST]
   update parasitics and timing once                 <- [ST]
-  save, salvage, keep or undo the batch             <- [ST]
+  save, salvage, speculate or undo the batch        <- [ST]
 ```
 
 **Key components**
@@ -685,7 +685,7 @@ flowchart TD
     J --> K[One parasitics and timing update]
     K --> L{Beats the checkpoint?}
     L -->|yes| M[Save the checkpoint]
-    L -->|no| N[Salvage, keep on speculation, or undo]
+    L -->|no| N[Salvage, speculate or undo]
     M --> O[Stop rules and WNS tail]
     N --> O
 ```
@@ -703,7 +703,7 @@ The policy owns the journal, the STA queries, the generators and the batch outco
 
 `-sequence` is the move set. `vt_swap`, `sizeup`, `buffer`, `split`, `size_down`, `unbuffer` and `swap` map to `VtSwapMt`, `SizeUpMt`, `RebufferMt`, `SplitLoadMt`, `SizeDownFanoutMt`, `UnbufferMt` and `SwapPinsMt`. `clone`, `sizeup_match`, `reroute` and `buffer_to_inverters` have no `PARALLEL_EVAL` form and are skipped with a warning.
 
-An omitted sequence runs `vt_swap sizeup buffer split`. `VtSwapMt` runs first because it keeps the cell footprint, so it takes the slack it can before `SizeUpMt` spends area on the same path. The default goes through the same filter as an explicit sequence: `-skip_vt_swap` or a single-VT library drops `VtSwapMt`, and `-skip_buffering` drops `RebufferMt` and `SplitLoadMt`.
+An omitted sequence runs `unbuffer vt_swap sizeup buffer split`. `VtSwapMt` runs before `SizeUpMt` because it keeps the cell footprint, so it takes the slack it can before `SizeUpMt` spends area on the same path. The default goes through the same filter as an explicit sequence: `-skip_buffer_removal` drops `UnbufferMt`, `-skip_vt_swap` or a single-VT library drops `VtSwapMt`, and `-skip_buffering` drops `RebufferMt` and `SplitLoadMt`.
 
 ### Evaluation Funnel
 
@@ -716,34 +716,34 @@ The cap is the failing endpoint count, clamped to `min_batch_cap` and `max_batch
 Each target keeps its best candidate by score, and the score alone ranks the targets against each other. Once a saved batch left WNS where it was, the targets are weighted by their share of the violating cone instead:
 
 ```
-priority = score * (1 + alpha * w^gamma)
+priority = score * (1 + bottleneck_scale * severity_ratio^bottleneck_exponent)
 ```
 
-`w` is the target's cone need relative to the largest one in the cone. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and, for each cone vertex, sums the slack need of the endpoints behind it and of the sources in front of it.
+The slack deficit of a vertex is `slack_margin - slack`. `BottleneckAnalysis` walks the fanin cone of the worst violating endpoints and sums the deficits of distinct downstream endpoints and upstream startpoints at each vertex. Their geometric mean is the bottleneck severity; `severity_ratio` divides it by the largest severity in the cone (or is zero outside the cone). This prioritizes shared violating paths while WNS is stalled, not only the single worst path.
 
 `parallel_eval.priority` (`BatchPriorityConfig`) holds the ranking options:
 
 | Field | Default | Effect |
 |---|---|---|
-| `alpha` | `2` | Strength of the cone-need bonus. `0` ranks by score alone. |
-| `gamma` | `2` | Emphasis on the most shared bottlenecks. |
-| `weight_max_wns_stall_batches` | `8` | The weight applies to at most this many stalled batches in a row. `0` ranks by score alone. |
+| `bottleneck_scale` | `2` | Strength of the bottleneck priority factor. `0` ranks by score alone. |
+| `bottleneck_exponent` | `2` | Emphasis on the most shared bottlenecks. |
+| `bottleneck_max_wns_stall_batches` | `8` | The bonus applies to at most this many WNS-stalled saved batches in a row. `0` ranks by score alone. |
 | `bottleneck_refresh_batches` | `4` | Batches one analysis serves. The start of the WNS tail refreshes it. |
 | `bottleneck_max_endpoints` | `1024` | Violating endpoints one analysis weighs, worst slack first. |
-| `bottleneck_max_sources` | `1024` | Distinct cone sources one analysis weighs. |
+| `bottleneck_max_startpoints` | `1024` | Distinct cone startpoints one analysis weighs. |
 
 ### Batch Selection
 
 `BatchSelector` walks the ranked targets and admits a candidate unless it conflicts with one already in the batch:
 
 - Structural conflicts are always checked: two moves may not write the same instance or net, reconnect the same pin, or write an instance that the other reconnects. A `RebufferMt` candidate reserves both its driver instance and the net it rewrites.
-- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path.
+- A candidate whose timing depends on a move already in the batch is deferred: the instances or nets the earlier move changes feed the candidate's own path. The check is one way, so a candidate that changes what a member's estimate read is still admitted. Every estimate reads the pre-batch timing either way, and the batch outcome below catches a batch that misses.
 
 ### Batch Outcome
 
 The batch commits inside a journal that stays open after the latest checkpoint. After the timing update (under `-path_group`, WNS and TNS are the group's, and an endpoint's slack is its group slack, as in `LEGACY`):
 
-- **Save.** WNS improved, or TNS improved while WNS stayed within `checkpoint_wns_tolerance_pct` of the best checkpoint WNS. With `-max_utilization`, the design area must also stay below that limit; the first batch over it prints warning RSZ-2033.
+- **Save.** WNS improved, or TNS improved while WNS stayed within `checkpoint_wns_tolerance_period_pct` percent of the reference clock period below the best checkpoint WNS. With `-max_utilization`, the design area must also stay below that limit; the first batch over it prints warning RSZ-2033.
 - **Salvage.** A missed batch finds its culprits: moves whose guarded side pins fell below the pre-batch design WNS, or whose own endpoint got worse. A cell swap is a culprit only if its own stage delays grew. Culprit swaps go back to their old cells in place; a batch with a buffer culprit rolls back and re-commits the rest.
 - **Speculate.** In the WNS tail, a missed batch may stay for up to `wns_tail_speculate` batches. A later save keeps all of them; otherwise they all roll back.
 - **Undo.** Otherwise the batch rolls back. Its instances are skipped for `miss_tabu_batches` batches, and an instance in `max_undos_per_instance` or more undone batches is excluded for the rest of the run.
@@ -752,7 +752,9 @@ The batches end after `max_checkpoint_misses` missed batches in a row, or on one
 
 ### Stop Rules
 
-The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_pct` percent of the initial WNS nor TNS by `progress_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved neither WNS nor the failing endpoint count by `stall_rel_pct` percent and TNS did not progress.
+The batches stop after `stall_max_batches` batches whose checkpoints moved neither WNS by `progress_wns_period_pct` percent of the reference clock period nor TNS by `progress_tns_pct` percent of the initial TNS, or sooner once those batches spent `stall_batches` full batches of moves. A windowed rule also stops them when the last `stall_window` saved batches moved WNS by less than `stall_wns_period_pct` percent of the reference clock period and the failing endpoint count by less than `stall_failing_endpoint_pct` percent per batch, and TNS did not progress.
+
+The reference clock period is the shortest period of a clock with source pins in any mode, fixed for the run; a virtual clock counts only when no clock has pins, without clocks the shortest `set_max_delay` is the scale, and without either the initial WNS is. A share of the WNS itself would vanish as WNS approaches zero, so tiny gains near closure would never stall the batches.
 
 The stall window and the tail budget count **work**, not wall time. Work is a weighted count of timing updates, pending nets, estimates, buffer-tree plans and evaluated endpoints (`work_*` weights), in seconds of a reference machine. So a run makes the same decisions on every machine and under any load.
 
@@ -763,7 +765,7 @@ When the batches stall, the WNS tail works on the worst `wns_tail_endpoints` end
 - may also try candidates that the estimator rejected but whose own gain is positive, because the batch STA judges them;
 - adds `SwapPinsMt`, `UnbufferMt` (single-move batches only) and `SizeDownFanoutMt` when the run has no `-sequence`;
 - rejects a batch that costs more TNS than `wns_tail_tns_ratio` times its WNS gain;
-- widens by `wns_tail_grow` up to `wns_tail_max_endpoints` endpoints when it stalls, and ends after `wns_tail_stall` batches without a better WNS.
+- widens by `wns_tail_grow` up to `wns_tail_max_endpoints` endpoints when it stalls, and ends after `wns_tail_stall` batches that do not raise the best WNS by `wns_tail_min_gain_period_pct` percent of the reference clock period.
 
 The tail may spend `wns_tail_work_pct` percent of the work of the batch stage, and at least `wns_tail_min_work`.
 
@@ -792,7 +794,7 @@ The tail may spend `wns_tail_work_pct` percent of the work of the batch stage, a
 | `2` | adds `events.csv` | Pass and batch events: commits, checkpoints, undo and stop reasons. |
 | `3` | adds `analysis/` | Per-move observations and reports. |
 
-Mode 3 measures every applied move with `RepairSetupAnalysis`, a main-thread timing observer, and writes:
+Mode 3 measures every applied move with `RepairSetupMoveSampler`, a main-thread timing observer, and writes:
 
 | File | Content |
 |---|---|
@@ -835,7 +837,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 | Target collection | `RepairTargetCollector.*` |
 | Estimation | `DelayEstimator.*`, `DelayEstimatorBufferTree.cc`, `DelayEstimatorInternal.hh`, `SequentialTimingEstimator.*`, `Rebuffer.*`, `BufferedNet.*` |
 | Estimator reports | `DelayEstimatorReporter.*` |
-| Profiler | `RepairSetupProfiler.*`, `RepairSetupAnalysis.*`, `RepairSetupAnalysisSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
+| Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupMoveSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
 | Thread pool | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` |
 
 ## Future Work

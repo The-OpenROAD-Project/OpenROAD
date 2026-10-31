@@ -128,12 +128,12 @@ cc_library(
         "src/nesterovBase.cpp",
         "src/nesterovPlace.cpp",
         "src/placerBase.cpp",
+        "src/powerBase.cpp",
         "src/replace.cpp",
         "src/routeBase.cpp",
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
-        "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
@@ -164,7 +164,9 @@ cc_library(
         "src/nesterovPlace.h",
         "src/placerBase.h",
         "src/point.h",
+        "src/powerBase.h",
         "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = [
         "-fopenmp",

@@ -60,6 +60,19 @@ filegroup(
 ]
 
 cc_test(
+    name = "TestPowerSwitch",
+    size = "small",
+    srcs = ["cpp/TestPowerSwitch.cc"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/upf",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestPowerDomainRegions",
     size = "small",
     srcs = ["cpp/TestPowerDomainRegions.cc"],

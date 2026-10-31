@@ -98,7 +98,7 @@ check "global sizing still sizes PLACED instances" \
 
 set snap [snapshot]
 run {repair_timing -setup -skip_last_gasp -max_iterations 20 \
-  -sequence sizeup,sizeup_match,size_down,swap}
+  -sequence sizeup,sizeup_match,sizedown,swap}
 check "repair_timing sizes no FIRM instance" { changed $snap width FIRM } 0
 check "repair_timing moves no FIRM instance" { changed $snap location FIRM } 0
 check "repair_timing keeps every FIRM instance FIRM" \
@@ -151,7 +151,7 @@ foreach inst [$block getInsts] {
 }
 set snap [snapshot]
 run {repair_timing -setup -skip_last_gasp -max_iterations 20 \
-  -sequence sizeup,sizeup_match,size_down,swap}
+  -sequence sizeup,sizeup_match,sizedown,swap}
 check "legalization moves no FIRM instance" { changed $snap location FIRM } 0
 check "routed repair_timing still VT swaps FIRM instances" \
   { expr { [changed $snap master FIRM] > 0 } } 1

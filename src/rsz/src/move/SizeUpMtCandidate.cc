@@ -65,7 +65,8 @@ MoveResult SizeUpMtCandidate::apply()
   // Candidates were screened on a pre-batch snapshot, so two accepted
   // size-ups on different sinks of the same fanin net could each pass
   // independently yet combine past the driver's max-cap limit.
-  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)) {
+  if (!resizer_.replacementPreservesMaxCap(
+          inst_, replacement_, target().mode(resizer_))) {
     debugPrint(resizer_.logger(),
                RSZ,
                "opt_moves",

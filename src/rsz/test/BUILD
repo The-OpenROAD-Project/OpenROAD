@@ -48,6 +48,7 @@ TESTS = [
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
+    "rebuffer_size_driver",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",
@@ -191,6 +192,7 @@ TESTS = [
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
     "repair_setup_undo2",
+    "repair_timing_option_errors",
     "repair_timing_path_group1",
     "repair_timing_path_group2",
     "repair_timing_path_group3",
@@ -250,6 +252,7 @@ TESTS = [
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
     "report_buffers_no_lef",
+    "report_delay_estimator_rebuffer_driver_pin",
     "report_delay_estimator_rebuffer_fanout8",
     "report_delay_estimator_rebuffer_minimal",
     "report_delay_estimator_rebuffer_prebuffered",
@@ -294,6 +297,8 @@ TESTS = [
     "repair_setup_parallel_eval_threads",
     "repair_setup_parallel_eval_max_util",
     "repair_setup_parallel_eval_path_group",
+    "repair_setup_parallel_eval_reference_period",
+    "repair_setup_parallel_eval_reference_period_modes",
     "repair_setup_vt_swap2",
     "global_sizing",
     "global_sizing_threads",
@@ -313,6 +318,7 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
@@ -322,6 +328,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # as CMake runs every PASSFAIL test.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
@@ -395,6 +402,7 @@ test_suite(
     tests = [
         ":TestBufRem1",
         ":TestResizer",
+        ":TestSkewBudget",
     ],
 )
 
@@ -545,6 +553,26 @@ cc_test(
 )
 
 cc_test(
+    name = "TestPreChecks",
+    srcs = ["cpp/TestPreChecks.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_slow.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/rsz:rsz_impl",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
@@ -564,6 +592,22 @@ cc_test(
         "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Standalone unit tests for the LP-based useful-skew solver
+# (SkewLPSolver). No STA / dbSta deps; pure synthetic LP cases.
+cc_test(
+    name = "TestSkewBudget",
+    size = "small",
+    srcs = ["cpp/TestSkewBudget.cc"],
+    copts = ["-Isrc/rsz/src"],
+    features = ["-layering_check"],  # includes private SkewBudget.hh
+    deps = [
+        "//src/rsz",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -688,6 +732,30 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "repair_hold_shared_driver.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSkewBudgetRestore",
+    size = "small",
+    srcs = ["cpp/TestSkewBudgetRestore.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold1.def",
     ],
     deps = [
         "//src/dbSta",
