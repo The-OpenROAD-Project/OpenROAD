@@ -230,13 +230,13 @@ describe('TimingWidget path table sorting', () => {
         const widget = new TimingWidget(app, () => {});
         widget.showPaths('setup', [makePath(0.0, 'a'), makePath(0.1, 'b')]);
 
-        // All columns except the last get a resize grip.
+        // Every column gets a resize grip, the last one included.
         const gripCount = () =>
             widget._pathTable.querySelectorAll('thead .col-resize-grip').length;
-        assert.equal(gripCount(), TimingWidget.PATH_COLS.length - 1);
+        assert.equal(gripCount(), TimingWidget.PATH_COLS.length);
 
         headerByLabel(widget, 'Fanout').click();
-        assert.equal(gripCount(), TimingWidget.PATH_COLS.length - 1);
+        assert.equal(gripCount(), TimingWidget.PATH_COLS.length);
     });
 
     it('does not change the sort when a column resize drag ends', () => {
