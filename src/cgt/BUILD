@@ -64,10 +64,14 @@ tcl_wrap_cc(
     srcs = [
         "src/cgt.i",
         "//:error_swig",
+        "//src/sta:sta_swig_files",
     ],
     module = "cgt",
     namespace_prefix = "cgt",
     root_swig_src = "src/cgt.i",
+    swig_includes = [
+        "../sta",
+    ],
 )
 
 python_wrap_cc(
