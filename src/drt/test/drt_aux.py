@@ -32,7 +32,8 @@ def detailed_route(
     no_pin_access=False,
     single_step_dr=False,
     min_access_points=-1,
-    save_guide_updates=False
+    save_guide_updates=False,
+    adaptive_strategy=False,
 ):
     if os.environ.get("TEST_SRCDIR", ""):
         cmd = ["detailed_route"]
@@ -69,6 +70,8 @@ def detailed_route(
             cmd.extend(["-min_access_points", str(min_access_points)])
         if save_guide_updates:
             cmd.append("-save_guide_updates")
+        if adaptive_strategy:
+            cmd.append("-adaptive_strategy")
 
         design.evalTclString(" ".join(cmd))
         return
@@ -94,6 +97,7 @@ def detailed_route(
     params.singleStepDR = single_step_dr
     params.minAccessPoints = min_access_points
     params.saveGuideUpdates = save_guide_updates
+    params.adaptiveStrategy = adaptive_strategy
     params.num_threads = openroad.thread_count()
 
     router.setParams(params)
