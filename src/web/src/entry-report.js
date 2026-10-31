@@ -4,5 +4,5 @@
 // The saved report's bundle leaves out vendor-globals.js; the schematic and 3D
 // panels need a live server and say so when their libraries are missing.
 
-import './leaflet-global.js';
+import './deck-global.js';
 import './main.js';

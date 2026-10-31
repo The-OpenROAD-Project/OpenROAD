@@ -94,8 +94,8 @@ canonical JSON type; sending any other type for a present field yields a
   on the wire, which the server tolerates for double-typed fields only.
 - Strings are JSON strings; arrays are JSON arrays.
 - Two narrow exceptions documented inline:
-  - `select.zoom` accepts `int` or `double` (Leaflet's `zoomSnap: 0`
-    permits fractional zoom values).
+  - `select.zoom` accepts `int` or `double` (a client may send a
+    fractional zoom value).
   - `set_heatmap.value` for `int`-typed settings accepts `int` or
     `double` and rounds (the JS frontend always uses `parseFloat`).
 
@@ -111,12 +111,15 @@ simply listening on the WebSocket; there's no opt-in.
 
 | `type` field   | Trigger                                                                 | Body                            |
 | -------------- | ----------------------------------------------------------------------- | ------------------------------- |
+| `config`       | Once per connection, before any reply to a request.                     | `{"type":"config","max_in_flight":16}` |
 | `refresh`      | Initial spatial-index build finished after a connection / `web_server`. | `{"type":"refresh"}`            |
 | `log`          | Buffered server log lines being flushed to clients.                     | `{"type":"log","text":"<lines>"}` |
 | `debug_paused` | The graphics-debug pause hook entered (e.g. placer breakpoint).         | `{"type":"debug_paused"}`       |
 | `debug_resumed`| Pause hook exited.                                                      | `{"type":"debug_resumed"}`      |
 | `debug_refresh`| Debug overlay needs a re-render.                                        | `{"type":"debug_refresh"}`      |
 | `shutdown`     | Server is exiting; client should not auto-reconnect.                    | `{"type":"shutdown"}`           |
+
+`config.max_in_flight` is how many requests the client keeps on the wire.
 
 ---
 
@@ -145,27 +148,37 @@ Render a single 256×256 PNG tile of the layout.
 | Field            | Type     | Required | Description |
 | ---------------- | -------- | :------: | ----------- |
 | `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_pins`, or `_overlay`. |
-| `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
+| `z`              | `int`    |    ✓     | Tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
 | `visible_layers` | `string[]` | ✓ | Tech layers currently visible on the *pins* synthetic layer; empty array means hide all pin markers. |
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
+| `pattern`        | `int`    |    —     | Fill pattern for the layer's shapes: `0` none, `1` solid (default), `2` diagonal, `3` cross, `4` dots. Out-of-range values mean solid. |
 
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when the layer has nothing to draw in this tile.
+
+**Caching:** the server caches the response under the tile, the rendered
+`dpr` and `tile_px`, the design revision, and the parsed fields that can
+change this layer's pixels. Selectability fields, keys the server does not
+parse, and flags that only another layer draws (for example `pin_markers`
+outside `_pins`, or `visible_layers` outside `_pins`, `_access_points` and,
+while pin names are shown, `_inst_labels`) do not split the cache.
+Tiles that depend on per-session state (module colors, focused nets, debug
+renderers) are not cached.
 
 ### `overlay_tile`
 
 Render one tile of the highlight overlay — selection, hover, timing paths,
 DRC markers, route guides, flight lines and user labels — on a transparent
 background, on the same tile grid as `tile`. Kept separate from the layer
-tiles so a selection change repaints one pane instead of re-rendering every
+tiles so a selection change repaints the overlay instead of re-rendering every
 layer's geometry.
 
 | Field                 | Type       | Required | Description |
 | --------------------- | ---------- | :------: | ----------- |
-| `z`                   | `int`      |    ✓     | Leaflet tile zoom level, as for `tile`. |
+| `z`                   | `int`      |    ✓     | Tile zoom level, as for `tile`. |
 | `x`                   | `int`      |    ✓     | Tile column at zoom `z`. |
 | `y`                   | `int`      |    ✓     | Tile row at zoom `z`. |
 | `visible_layers`      | `string[]` |    —     | Tech layers currently visible. Consulted so route guides respect layer visibility; omitted means draw guides on every layer. |
@@ -307,7 +320,7 @@ overlapping objects on repeated calls at the same point.
 | ---------------- | -------- | :------: | ----------- |
 | `dbu_x`          | `int`    |    ✓     | X coordinate in DBU. |
 | `dbu_y`          | `int`    |    ✓     | Y coordinate in DBU. |
-| `zoom`           | `int` or `double` | ✓ | Current Leaflet zoom level. Server truncates fractional values. |
+| `zoom`           | `int` or `double` | ✓ | Current view zoom level. Server truncates fractional values. |
 | `visible_layers` | `string[]`|    ✓    | Same semantics as `tile`. |
 | *visibility flags* | `bool` |  per-flag default | Same as `tile`. |
 | `site_<name>`    | `bool`   |    —     | Same as `tile`. |
@@ -1005,7 +1018,9 @@ request gets a `kError` response, the rest of the session continues.
   conversion failure, internal `runtime_error`, …): `kError` body
   `server error: <exception what()>`.
 
-Every `kError` response logs a server-side warning:
+Every `kError` response logs a server-side warning, except the routine ones:
+the busy reply while a script runs and `cancelled` for a request the client
+cancelled:
 
 ```
 [WARNING WEB-0043] request id=<id> type=<type> failed: <body>

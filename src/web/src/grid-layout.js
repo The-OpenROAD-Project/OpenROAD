@@ -1105,9 +1105,6 @@ export class GridLayoutManager extends EventEmitter {
                     comp.container.fire('resize');
                 }
             }
-            if (typeof app !== 'undefined' && app && app.map) {
-                app.map.invalidateSize({ animate: false });
-            }
             window.dispatchEvent(new Event('resize'));
         });
     }

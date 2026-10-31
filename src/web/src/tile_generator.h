@@ -130,7 +130,7 @@ std::string dbuToMicronString(int dbu, double dbu_per_micron);
 //
 // The tile grid step is maxDXDY / 2^z — a FRACTIONAL number of DBU — so a
 // tile's lower-left corner is fractional too, and `origin_x/origin_y` keep it
-// that way.  The client lays the tiles out on that exact grid (the DBU↔latLng
+// that way.  The client lays the tiles out on that exact grid (the DBU↔world
 // transform in coordinates.js), so rounding the corner here would shift a
 // tile's content by its own fractional part, a different amount in each tile.
 // Neighbours then disagree about where the shared edge is and a hairline seam
@@ -465,7 +465,12 @@ struct TileVisibility
   std::set<std::string> selectable_layers;
   bool has_selectable_layers = false;
 
+  // A field read here that can change a tile's pixels must also reach
+  // TileGenerator::tileCacheKey().
   void parseFromJson(const boost::json::object& json);
+
+  // JSON keys of every visibility flag parseFromJson reads.
+  static std::vector<std::string_view> flagKeys();
 
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
@@ -490,6 +495,8 @@ class TileGenerator
   ~TileGenerator();
 
   void eagerInit();
+  // eagerInit() after a design load; otherwise only an empty tile cache.
+  void ensureInit();
   bool shapesReady() const;
 
   bool hasSta() const { return sta_ != nullptr; }
@@ -497,7 +504,6 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
 
-  int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
 
   // The tile grid's georeference: getFitBounds() grown by the pin-label
@@ -521,9 +527,10 @@ class TileGenerator
   std::vector<std::string> getSites() const;
 
   // Per-layer colors matching web::DisplayControls layer palette.  Computed
-  // lazily and cached; the cache is rebuilt only if the tech changes.
-  const odb::PtrMap<odb::dbTechLayer, Color>& getLayerColorMap(odb::dbTech* tech
-                                                               = nullptr) const;
+  // lazily and cached; the cache is rebuilt only if the tech changes.  Shared,
+  // so eagerInit() can't free a map a renderer is still reading.
+  std::shared_ptr<const odb::PtrMap<odb::dbTechLayer, Color>> getLayerColorMap(
+      odb::dbTech* tech = nullptr) const;
 
   // Geometry one dbMaster contributes to one tech layer, in master-local
   // coordinates; the render pass applies each instance's transform.  Bucketing
@@ -695,7 +702,9 @@ class TileGenerator
   // next call.  Hot-path call-sites (renderTileBuffer, getBounds,
   // selectAt) read it on every tile / click; the free function
   // `collectChiplets` is kept for tests and one-shot callers.
-  const std::vector<ChipletNode>& chiplets() const;
+  // Shared, so a rebuild can't free a list a renderer is still walking.  Hold
+  // it in a local: `for (... : *chiplets())` drops it before the loop body.
+  std::shared_ptr<const std::vector<ChipletNode>> chiplets() const;
 
   // The distinct blocks holding the design's geometry: every chiplet's block,
   // deduplicated (one node per dbChipInst, so a master placed N times reports
@@ -866,7 +875,7 @@ class TileGenerator
 
   // The layers saveImage composites, bottom to top, from `tech_layers` in
   // paintOrderLayers() order.  Public so a test can pin the order down:
-  // it has to match the zIndex the client gives each layer in
+  // it has to match the draw order the client gives each layer in
   // display-controls.js, or the saved PNG is not the view on screen.
   static std::vector<std::string> saveImageLayerOrder(
       const TileVisibility& vis,
@@ -929,18 +938,36 @@ class TileGenerator
   // PNG-encoded "clean" tiles (no per-session overlays) keyed by a string
   // fingerprint of the full render determinant.  Re-rendering tiles at
   // 256*dpr*S is expensive, so pan/zoom-back and visibility toggles reuse
-  // the cached bytes.  LRU eviction at kTileCacheCap; cleared on design
-  // reload via eagerInit().  Thread-safe (mirrors chiplets_mutex_).
+  // the cached bytes.  LRU eviction at kTileCacheCap entries or
+  // kTileCacheBytesCap bytes, whichever comes first; cleared on design
+  // reload via eagerInit() and on edits via onDesignChanged().  Thread-safe
+  // (mirrors chiplets_mutex_).
   bool tileCacheGet(const std::string& key,
                     std::vector<unsigned char>& out) const;
-  void tileCachePut(std::string key, std::vector<unsigned char> png) const;
+  // `epoch` is tileCacheEpoch() from before the render: a tile rendered
+  // across a clear is from the old design and is not kept.
+  void tileCachePut(std::string key,
+                    std::vector<unsigned char> png,
+                    uint64_t epoch) const;
+  // Bumped whenever the cache is cleared.
+  uint64_t tileCacheEpoch() const;
+
+  // Entries vary widely in size, so the bytes are bounded as well.
+  static constexpr size_t kTileCacheCap = 2048;
+  static constexpr size_t kTileCacheBytesCap = size_t{64} << 20;
+
+  // The visibility part of `layer`'s tile-cache key: the parsed fields that
+  // can change its pixels, and none of the others.
+  static std::string tileCacheKey(const TileVisibility& vis,
+                                  std::string_view layer);
 
   // Install (or clear with `{}`) a callback invoked after a design edit has
   // invalidated the tile cache — WebServer wires this to broadcast a
   // {"type":"refresh"} push so clients re-request tiles (mirrors the Qt GUI's
   // Search::modified → LayoutViewer::fullRepaint).  Set at serve() startup.
   void setDesignChangedCallback(std::function<void()> cb);
-  size_t tileCacheSize() const;  // for tests
+  size_t tileCacheSize() const;   // for tests
+  size_t tileCacheBytes() const;  // for tests
 
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
@@ -1048,10 +1075,10 @@ class TileGenerator
                       const TileFrame& frame) const;
 
   // Raw (un-encoded) RGBA tile with only the user labels drawn on a
-  // transparent background, for the given Leaflet z/x/y.  Used to composite
-  // labels into save_image.  `labels` is passed in (snapshot once per image)
-  // so the mutex isn't locked and copied per tile.  Returns empty if `labels`
-  // is empty.
+  // transparent background, for the given client z/x/y (y top-down).  Used to
+  // composite labels into save_image.  `labels` is passed in (snapshot once
+  // per image) so the mutex isn't locked and copied per tile.  Returns empty
+  // if `labels` is empty.
   std::vector<unsigned char> renderLabelTile(
       int z,
       int x,
@@ -1144,13 +1171,15 @@ class TileGenerator
   utl::Logger* logger_;
   int num_threads_ = 0;
   std::unique_ptr<Search> search_;
-  int pin_label_margin_dbu_ = 0;  // cached by computePinLabelMargin()
+  // Cached by computePinLabelMargin(), which eagerInit() runs under readers.
+  std::atomic<int> pin_label_margin_dbu_{0};
 
   // Cached layer-color map keyed by tech (see getLayerColorMap).  Each tech is
-  // computed once and kept; std::map reference stability means a returned ref
-  // stays valid even if another tech is added later.
+  // computed once and kept until eagerInit() drops them all.
   mutable std::mutex layer_colors_mutex_;
-  mutable odb::PtrMap<odb::dbTech, odb::PtrMap<odb::dbTechLayer, Color>>
+  mutable odb::PtrMap<
+      odb::dbTech,
+      std::shared_ptr<const odb::PtrMap<odb::dbTechLayer, Color>>>
       layer_colors_by_tech_;
 
   // Layer-bucketed master and via-master geometry.  See geomCache(); built on
@@ -1177,12 +1206,13 @@ class TileGenerator
   // setLoc/setOrient between eagerInit calls, which dbBlockCallBackObj
   // does not surface.
   mutable std::mutex chiplets_mutex_;
-  mutable std::vector<ChipletNode> chiplets_cache_;
-  mutable bool chiplets_cache_valid_ = false;
+  mutable std::shared_ptr<const std::vector<ChipletNode>> chiplets_cache_;
   mutable odb::dbChip* chiplets_cache_root_ = nullptr;
   mutable size_t chiplets_cache_inst_hash_ = 0;
   // See chipletsGeneration().
   mutable uint64_t chiplets_cache_generation_ = 0;
+  // Rebuilds chiplets_cache_ if the hierarchy changed; chiplets_mutex_ held.
+  void refreshChipletsLocked() const;
 
   // LRU cache of PNG-encoded clean tiles (see tileCacheGet/Put).  The list
   // holds (key, png) most-recent-first; the index maps key → list iterator.
@@ -1191,7 +1221,9 @@ class TileGenerator
   mutable std::list<TileCacheEntry> tile_cache_lru_;
   mutable std::unordered_map<std::string, std::list<TileCacheEntry>::iterator>
       tile_cache_index_;
-  static constexpr size_t kTileCacheCap = 512;
+  mutable size_t tile_cache_bytes_ = 0;    // sum of the cached PNG sizes
+  mutable uint64_t tile_cache_epoch_ = 0;  // see tileCacheEpoch()
+  void clearTileCache();
 
   // Design-change → invalidation wiring.  search_ fires on_modified (see
   // Search::setOnModified) on any geometry edit; onDesignChanged() drops the
@@ -1203,6 +1235,22 @@ class TileGenerator
   std::function<void()> design_changed_cb_;
   mutable std::mutex design_changed_cb_mutex_;
   std::atomic_bool suppress_design_changed_{false};
+
+  // Counts design loads, through the hooks Qt's MainWindow listens to.
+  struct LoadCounter : public odb::dbDatabaseObserver
+  {
+    std::atomic<uint64_t> loads{0};
+    void postReadLef(odb::dbTech*, odb::dbLib*) override { ++loads; }
+    void postReadDef(odb::dbBlock*) override { ++loads; }
+    void postReadFloorplanDef(odb::dbBlock*) override { ++loads; }
+    void postReadDb(odb::dbDatabase*) override { ++loads; }
+    void postRead3Dbx(odb::dbChip*) override { ++loads; }
+  };
+  // Registered with db_, so this generator must not outlive it.
+  LoadCounter load_counter_;
+  std::mutex init_mutex_;
+  std::optional<uint64_t> init_loads_;  // loads seen by the last ensureInit()
+  odb::dbChip* init_chip_ = nullptr;    // top chip at the last ensureInit()
 
   // Per-block caches for the grid/access-point overlay layers, so tiles
   // don't rescan all BTerms / copy the full gcell vectors on every tile.

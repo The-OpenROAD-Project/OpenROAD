@@ -4,43 +4,23 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// ─── Minimal Leaflet mock ────────────────────────────────────────────────────
-function makeFakeLayer() {
-    return {
-        addTo() { return this; },
-        addLayer() {},
-        removeLayer() {},
-        clearLayers() {},
-        on() { return this; },
-        getLatLng() { return { lat: 0, lng: 0 }; },
-    };
-}
+import './setup-dom.js';
+import { makeFakeView } from './fake-view.js';
 
-globalThis.L = {
-    layerGroup() { return makeFakeLayer(); },
-    marker() { return makeFakeLayer(); },
-    divIcon() { return {}; },
-    DomEvent: { stopPropagation() {} },
-};
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 
 const { LabelManager } = await import('../../src/label-manager.js');
+const { beginSelection, onSelectionReset } = await import('../../src/ui-utils.js');
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 function makeManager(responses = {}, promptValue = 'note') {
-    globalThis.window = { prompt: () => promptValue };
+    window.prompt = () => promptValue;
     const requests = [];
     const overlayRefreshes = { n: 0 };
     const app = {
-        map: {
-            createPane() { return { style: {} }; },
-            getContainer() {
-                return { style: {}, classList: { toggle() {} } };
-            },
-        },
+        view: makeFakeView(),
         designScale: 1e-6,
-        designMaxDXDY: 1000000,
         designOriginX: 0,
         designOriginY: 0,
         refreshOverlay() { overlayRefreshes.n++; },
@@ -118,15 +98,10 @@ describe('LabelManager', () => {
 
     it('Anchor is a choice property built from the server list', async () => {
         let captured = null;
-        globalThis.window = { prompt: () => 'note' };
+        window.prompt = () => 'note';
         const app = {
-            map: {
-                createPane() { return { style: {} }; },
-                getContainer() {
-                    return { style: {}, classList: { toggle() {} } };
-                },
-            },
-            designScale: 1e-6, designMaxDXDY: 1000000,
+            view: makeFakeView(),
+            designScale: 1e-6,
             designOriginX: 0, designOriginY: 0,
             refreshOverlay() {}, formatDbu(v) { return String(v); },
             inspectorEl: null,
@@ -160,16 +135,11 @@ describe('LabelManager', () => {
     it('Font size edits the label size and is not unit-converted',
        async () => {
         let captured = null;
-        globalThis.window = { prompt: () => 'note' };
+        window.prompt = () => 'note';
         const requests = [];
         const app = {
-            map: {
-                createPane() { return { style: {} }; },
-                getContainer() {
-                    return { style: {}, classList: { toggle() {} } };
-                },
-            },
-            designScale: 1e-6, designMaxDXDY: 1000000,
+            view: makeFakeView(),
+            designScale: 1e-6,
             designOriginX: 0, designOriginY: 0,
             refreshOverlay() {},
             // Whatever the display-unit switch is doing to x/y, it must not
@@ -225,15 +195,10 @@ describe('LabelManager', () => {
     it('applyRemoteLabels clears a selection whose label was removed',
        async () => {
         let inspected = 'unset';
-        globalThis.window = { prompt: () => 'note' };
+        window.prompt = () => 'note';
         const app = {
-            map: {
-                createPane() { return { style: {} }; },
-                getContainer() {
-                    return { style: {}, classList: { toggle() {} } };
-                },
-            },
-            designScale: 1e-6, designMaxDXDY: 1000000,
+            view: makeFakeView(),
+            designScale: 1e-6,
             designOriginX: 0, designOriginY: 0,
             refreshOverlay() {}, formatDbu(v) { return String(v); },
             inspectorEl: null,
@@ -320,5 +285,169 @@ describe('LabelManager', () => {
         assert.equal(upd.size, 14);
         assert.equal(upd.anchor, 'top left');
         assert.equal(requests.filter(r => r.type === 'delete_label').length, 0);
+    });
+});
+
+// ─── Handles on the view ─────────────────────────────────────────────────────
+
+function pointer(type, x, y, extra = {}) {
+    const e = new window.MouseEvent(type, { bubbles: true, cancelable: true,
+                                            clientX: x, clientY: y,
+                                            button: 0, ...extra });
+    e.pointerId = 1;
+    return e;
+}
+
+async function makeHandleManager(labels) {
+    const ctx = makeManager({ list_labels: { labels } });
+    // 256 world units over 1e6 DBU: the fake view shows the whole square.
+    ctx.app.designScale = 256 / 1e6;
+    ctx.app.view.getContainer().getBoundingClientRect = () => ({
+        left: 0, top: 0, width: 1000, height: 800 });
+    await ctx.mgr.reload();
+    return ctx;
+}
+
+describe('LabelManager handles', () => {
+    it('pins a centred handle at each label position', async () => {
+        const { app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        const [h] = app.view.markersIn('label-handles');
+        assert.deepEqual(h.world, [128, 64]);
+        assert.equal(h.center, true);
+        assert.ok(h.el.classList.contains('label-handle'));
+        assert.equal(h.el.title, 'a');
+    });
+
+    it('a press and release without moving selects the label', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        el.dispatchEvent(pointer('pointerdown', 500, 464));
+        el.dispatchEvent(pointer('pointerup', 501, 465));
+        assert.equal(mgr._selectedName, 'L0');
+        const sel = app.view.markersIn('label-handles')[0].el;
+        assert.ok(sel.classList.contains('label-handle-selected'));
+    });
+
+    it('a drag moves the handle and commits one update_label', async () => {
+        const { app, requests } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a', size: 0 }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        // The handle sits at screen (500, 464); drag it 64 px right.
+        el.dispatchEvent(pointer('pointerdown', 500, 464));
+        el.dispatchEvent(pointer('pointermove', 564, 464));
+        assert.deepEqual(app.view.markersIn('label-handles')[0].world,
+                         [192, 64]);
+        el.dispatchEvent(pointer('pointerup', 564, 464));
+        await flush();
+        const upd = requests.filter((r) => r.type === 'update_label');
+        assert.equal(upd.length, 1);
+        assert.equal(upd[0].x, 750000);
+        assert.equal(upd[0].y, 250000);
+    });
+
+    it('a press on a handle does not reach the view as a click', async () => {
+        const { app } = await makeHandleManager([
+            { name: 'L0', x: 0, y: 0, text: 'a' }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        let reached = false;
+        app.view.getContainer().addEventListener('pointerdown',
+                                                 () => { reached = true; });
+        el.dispatchEvent(pointer('pointerdown', 0, 0));
+        assert.equal(reached, false);
+    });
+
+    // resyncBounds can change the design's scale and origin, then redraws.
+    it('re-places the handles when the visibility is updated', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        app.designScale = 512 / 1e6;
+        mgr.updateVisibility();
+        assert.deepEqual(app.view.markersIn('label-handles')[0].world, [256, 128]);
+    });
+
+    it('unmarks the label when another object takes the selection', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        assert.ok(app.view.markersIn('label-handles')[0].el
+            .classList.contains('label-handle-selected'));
+        beginSelection(app);
+        assert.equal(mgr._selectedName, null);
+        assert.ok(!app.view.markersIn('label-handles')[0].el
+            .classList.contains('label-handle-selected'));
+    });
+
+    it('takes the selection from other panels when selected', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        mgr._select('L0');
+        assert.equal(resets, 1);
+        assert.equal(mgr._selectedName, 'L0');
+    });
+
+    it('draws the handles once when selected again', async () => {
+        const { mgr } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        let renders = 0;
+        const render = mgr._renderHandles.bind(mgr);
+        mgr._renderHandles = () => { renders++; render(); };
+        mgr._select('L0');
+        assert.equal(renders, 1);
+    });
+
+    it('shows the label in the Inspector again without the selection',
+       async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        mgr._select('L0');
+        const shown = [];
+        let focused = 0;
+        mgr._updateInspector = (d) => shown.push(d.name);
+        mgr._focusComponent = () => focused++;
+        const token = app.selectionToken;
+        mgr.refreshInspector('L0');
+        assert.deepEqual(shown, ['L0']);
+        assert.equal(focused, 0);
+        assert.equal(app.selectionToken, token);
+    });
+
+    it('leaves the handles alone when nothing moved', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        mgr.updateVisibility();
+        assert.equal(app.view.markersIn('label-handles')[0].el, el);
+    });
+
+    it('keeps the dragged handle through a resync', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 500000, y: 250000, text: 'a', size: 0 }]);
+        const { el } = app.view.markersIn('label-handles')[0];
+        el.dispatchEvent(pointer('pointerdown', 500, 464));
+        el.dispatchEvent(pointer('pointermove', 564, 464));
+        app.designScale = 512 / 1e6;
+        mgr.updateVisibility();
+        assert.equal(app.view.markersIn('label-handles')[0].el, el);
+    });
+
+    it('follows the Labels visibility', async () => {
+        const { mgr, app } = await makeHandleManager([
+            { name: 'L0', x: 0, y: 0, text: 'a' }]);
+        mgr._visibility.labels = false;
+        mgr.updateVisibility();
+        assert.equal(app.view.markers.get('label-handles').visible, false);
+    });
+
+    it('placement mode holds the crosshair cursor', () => {
+        const { mgr, app } = makeManager();
+        mgr.toggleLabelMode();
+        assert.ok(app.view.cursorModes.has('label'));
+        mgr.cancelLabelMode();
+        assert.ok(!app.view.cursorModes.has('label'));
     });
 });

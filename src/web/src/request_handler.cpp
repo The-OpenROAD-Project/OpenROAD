@@ -725,8 +725,8 @@ bool parseTileCoords(const boost::json::object& json,
     error = "\"z\" is outside [0, " + std::to_string(kMaxTileZoom) + "]";
     return false;
   }
-  // x and y are deliberately NOT range-checked against the 2^z grid.  Leaflet
-  // routinely asks for tiles off the edge of the world -- whenever the design
+  // x and y are deliberately NOT range-checked against the 2^z grid.  A client
+  // may ask for tiles off the edge of the world -- whenever the design
   // is smaller than the viewport, or while panning at the border -- and the
   // renderers answer those with a transparent tile.  Rejecting them turns
   // ordinary panning into a stream of errors: a first cut of this check
@@ -1916,7 +1916,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     consumeStaleSelection(state);
     TileVisibility vis;
     vis.parseFromJson(req.json);
-    // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
+    // A client may send a fractional zoom; accept either int or
     // double on the wire and truncate to selectAt's integer zoom level.
     const auto& zoom_v = req.json.at("zoom");
     const int zoom = zoom_v.is_int64() ? static_cast<int>(zoom_v.get_int64())
@@ -3338,7 +3338,8 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
 
     odb::dbTech* tech = nullptr;
     if (!chiplet_path.empty()) {
-      for (const ChipletNode& node : gen_->chiplets()) {
+      const auto nodes = gen_->chiplets();
+      for (const ChipletNode& node : *nodes) {
         if (node.path == chiplet_path && node.chip != nullptr) {
           tech = node.chip->getTech();
           break;
@@ -4429,7 +4430,8 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     constexpr int kDefaultChipHeight = 100000;
     constexpr int kDefaultChipThickness = 10000;
 
-    for (const ChipletNode& node : gen_->chiplets()) {
+    const auto nodes = gen_->chiplets();
+    for (const ChipletNode& node : *nodes) {
       // Leaves only: a chip that holds chip insts is a grouping node with no
       // geometry of its own, and the root has no dbChipInst at all.
       if (node.inst == nullptr || node.chip == nullptr
@@ -4738,7 +4740,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       if (path_index < static_cast<int>(paths.size())) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
-        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        const auto chiplet_list = gen_->chiplets();
+        const std::vector<ChipletNode>& chiplets = *chiplet_list;
         collectTimingPathShapes(
             chiplets, paths[path_index], new_rects, new_lines);
 
@@ -5359,12 +5362,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  z,
                  x,
                  y);
-      WebSocketResponse resp;
-      resp.id = req.id;
-      resp.type = WebSocketResponse::kError;
-      const std::string msg = "cancelled";
-      resp.payload.assign(msg.begin(), msg.end());
-      return resp;
+      return errorResponse(req.id, kCancelledMsg);
     }
   }
 
@@ -5408,30 +5406,23 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                          && !vis.debug_live;
 
   std::string cache_key;
+  uint64_t cache_epoch = 0;
   if (cacheable) {
-    // Key = the full render determinant: the request JSON minus the per-call
-    // id, with dpr pinned to the quantized value actually rendered.
-    // Selectability (the s_* flags and selectable_layers) does NOT affect the
-    // rendered tile, so it is excluded — toggling "selectable" must not
-    // invalidate the cache.
-    boost::json::object key_obj = req.json;
-    key_obj.erase("id");
-    key_obj.erase("selectable_layers");
-    std::vector<std::string> sel_keys;
-    for (const auto& kv : key_obj) {
-      const std::string_view k = kv.key();
-      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
-        sel_keys.emplace_back(k);
-      }
-    }
-    for (const std::string& k : sel_keys) {
-      key_obj.erase(k);
-    }
-    key_obj["dpr"] = dpr;
-    // Pinned like dpr: two clients on different displays ask for different
-    // pixel counts of the same tile, and they are different images.
-    key_obj["tile_px"] = tile_px;
-    cache_key = boost::json::serialize(key_obj);
+    // Read before rendering: a design edit meanwhile makes the result stale.
+    cache_epoch = gen_->tileCacheEpoch();
+    // Key = what the render reads: the tile, its dpr and pixel count, the
+    // design and chiplet revisions and the visibility this layer depends on.
+    const boost::json::object tile_obj{
+        {"layer", layer},
+        {"z", z},
+        {"x", x},
+        {"y", y},
+        {"dpr", dpr},
+        {"tile_px", tile_px},
+        {"rev", gen_->searchRevision()},
+        {"chiplets", gen_->chipletsGeneration()}};
+    cache_key = boost::json::serialize(tile_obj)
+                + TileGenerator::tileCacheKey(vis, layer);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
@@ -5483,7 +5474,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       = resp.type == WebSocketResponse::kEmpty
         || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
   if (cacheable && worth_caching) {
-    gen_->tileCachePut(std::move(cache_key), resp.payload);
+    gen_->tileCachePut(std::move(cache_key), resp.payload, cache_epoch);
   }
 
   debugPrint(gen_->getLogger(),

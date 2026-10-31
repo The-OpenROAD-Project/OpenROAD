@@ -1,29 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Client-side tile merging: collapse many single-layer tile panes into N
-// composited panes, chosen from a decoded-image-memory budget.
-//
-// WHY
-//
-// The viewer keeps one Leaflet pane per (tech layer x chiplet instance).  On a
-// multi-die design that is ~97 panes, each holding a full grid of tiles, each
-// tile decoding to (256*dpr)^2 * 4 bytes — 582 MB at dpr 1 in a 1240x999
-// window.  Measured on that machine, Chrome starts discarding decoded images
-// somewhere around 458 MB, and the discarded regions paint white and stay white
-// until something forces a full invalidation.  Established by measurement: the
-// symptom is monotonic in decoded image bytes and indifferent to how they are
-// distributed — at a matched 516 vs 517 MB, 86 and 97 content-bearing panes
-// fail identically, which rules out pane count and stack depth.
+// Client-side tile merging: composite the visible layout layers of one tile
+// into a single image, so the view holds and draws one texture per tile
+// instead of one per layer.
 //
 // WHY THE MERGE IS ON THE CLIENT
 //
-// The client already knows the exact stacking order and per-pane opacity, so
-// merging here reproduces precisely what the browser does today — one
-// rasterization instead of K live layers — with no change to the renderer, no
-// new wire format, and no decision about how chiplets should be ordered
-// relative to each other.  It also keeps the server's per-layer tile cache
-// intact, which a server-side composite would coarsen.
+// The client already knows the exact stacking order and per-layer opacity, so
+// merging here is one rasterization instead of K live layers, and the server
+// keeps one cached tile per layer, which a layer toggle reuses.
 //
 // The mechanism that makes it work is `ImageBitmap.close()`: an <img> gives no
 // control over when its decoded bitmap is released, which is the whole problem.
@@ -31,115 +17,13 @@
 // draw them, release them immediately, and keep only the merged result.
 //
 // What it does NOT buy: bandwidth.  The same K images are still fetched per
-// tile.  Only a server-side composite fixes that.
-
-// ─── Opacity ────────────────────────────────────────────────────────────────
-//
-// Each layer's opacity is applied by Leaflet to the layer's CONTAINER div, not
-// to the individual tile images: GridLayer._updateOpacity() calls
-// setOpacity(this._container, this.options.opacity).  Every layer is created at
-// 1 — layer transparency lives in the tile pixels themselves, painted with the
-// palette alpha the Qt GUI uses — but the merge still carries opacity per item
-// rather than assuming one value, so a pane that does want partial opacity
-// composites correctly.
-//
-// Group opacity on a container is NOT generally the same thing as per-image
-// alpha: a group is rasterized at full alpha and then blended once, so anywhere
-// two images inside the group overlap, group opacity blends the overlap once
-// while per-image alpha blends it twice.  It is safe here only because a
-// layer's own tiles tile the plane without overlapping, which makes the two
-// equivalent for a single layer — and that equivalence is what lets this module
-// apply each source's opacity per-image with globalAlpha.
-//
-// (One transient exception: mid zoom-animation Leaflet keeps the outgoing zoom
-// level's tiles alongside the incoming ones inside the same container, and those
-// DO overlap.  That is pre-existing behaviour at the layer level and applies
-// equally to a merged pane, so it is not made worse here.)
-//
-// The trap: the merged result is itself a tile inside a pane.  If that pane
-// carried a source's opacity too, every source would be multiplied by it twice
-// — 0.7 becomes 0.49 — and the view would wash out.  The per-layer opacities
-// live INSIDE the canvas, so the pane holding it must be fully opaque.
-export const MERGED_PANE_OPACITY = 1;
-
-// Build the Leaflet options for a merged pane, so a caller cannot forget the
-// above and silently double-apply opacity.
-export function mergedPaneOptions({ zIndex = 0, tileSize } = {}) {
-    const opts = { opacity: MERGED_PANE_OPACITY, zIndex };
-    if (tileSize !== undefined) {
-        opts.tileSize = tileSize;
-    }
-    return opts;
-}
-
-// Bytes of decoded bitmap for one tile.  Straight RGBA, which is what the
-// browser holds regardless of the PNG's own bit depth — an 8-bit palette PNG
-// still decodes to 32 bits per pixel, so compressing harder saves nothing here.
-export const BYTES_PER_PIXEL = 4;
-
-// Default budget for decoded tile images. Chosen from the measurement, not from
-// taste: ~458 MB was where the failure started on the machine that was profiled,
-// 462 MB already showed flicker, and 456 MB was clean. 350 MB leaves ~23% margin
-// under that, which matters because the real ceiling varies with the machine, the
-// Chrome build and whatever else the renderer is holding.
-//
-// Deliberately not derived from `navigator.deviceMemory`: no API reports the
-// image-cache budget, and the failure cannot be probed for without triggering
-// it. A fixed conservative cap that is *enforced* beats a discovered number that
-// might be wrong. Callers may scale this if they have better information.
-export const DEFAULT_BUDGET_BYTES = 350 * 1024 * 1024;
-
-export function tileBytes(tileSizePx, dpr = 1) {
-    const side = Math.round(tileSizePx * Math.max(0, dpr));
-    return side * side * BYTES_PER_PIXEL;
-}
-
-// Tiles one pane holds for a viewport of this size.
-//
-// Leaflet covers the viewport and keeps a ring of tiles outside it, so this is
-// (cols+1) x (rows+1) — deliberately an estimate, because the real count is only
-// knowable once tiles exist and the budget has to be decided before then.  It
-// tracks window area, which is the factor that would otherwise make any fixed
-// group count fail on a maximised 4K window.
-export function estimateTilesPerPane(width, height, tileSizePx = 256) {
-    if (!(width > 0) || !(height > 0) || !(tileSizePx > 0)) {
-        return 1;
-    }
-    return (Math.ceil(width / tileSizePx) + 1)
-           * (Math.ceil(height / tileSizePx) + 1);
-}
-
-// Viewport to size the budget against, with fallbacks.
-//
-// A container that is hidden or not yet laid out reports clientWidth 0, and a
-// zero viewport is the dangerous direction: estimateTilesPerPane returns 1,
-// computeGroupCount then divides the whole budget by one tile and comes back
-// with groupCount == paneCount — one pane per layer, no merging at all, and the
-// log cheerfully reports "merged 94 layers into 94 panes".  The failure this
-// exists to prevent then happens as soon as the panel is shown.
-//
-// Falling back to the window over-estimates (the map is a panel inside a
-// layout, not the whole window), and over-estimating is safe: more tiles per
-// pane means fewer panes, which is the conservative side of the budget.
-export function measureViewport(container, win) {
-    const w = win || (typeof window !== 'undefined' ? window : null);
-    const width = (container && container.clientWidth > 0)
-        ? container.clientWidth
-        : ((w && w.innerWidth > 0) ? w.innerWidth : 1024);
-    const height = (container && container.clientHeight > 0)
-        ? container.clientHeight
-        : ((w && w.innerHeight > 0) ? w.innerHeight : 768);
-    return { width, height };
-}
+// tile.
 
 // Set a draw item's visibility, returning whether it actually changed.
 //
 // The return value is the point.  The layer tree's onChange walks EVERY node
-// and asserts the desired state on each one, so a caller that marks its pane
-// dirty unconditionally re-requests every tile in every pane on any checkbox
-// click — roughly 2300 requests on the 97-layer design that motivated this.
-// The per-layer panes never had that problem because Leaflet's addTo() is a
-// no-op for a layer already on the map; this restores the same property.
+// and asserts the desired state on each one, so a caller that marks its tiles
+// dirty unconditionally re-requests every tile on any checkbox click.
 export function setItemVisible(item, visible) {
     if (!item) {
         return false;
@@ -152,90 +36,17 @@ export function setItemVisible(item, visible) {
     return true;
 }
 
-// Panes that stay unmerged and so are not counted by the grouping, but do hold
-// a full grid of tiles each: _instances, _pins, _inst_labels (on with the
-// instance names, the default) and the always-on highlight overlay.  (_modules
-// and the heatmap are only mounted when enabled, so they are not reserved for;
-// they will push the total up when switched on.)
+// ─── Opacity ────────────────────────────────────────────────────────────────
 //
-// At dpr 1 these are ~6 MB each and hardly matter.  At dpr 3 a tile is 2.25 MB,
-// so a pane is ~54 MB and the four together are ~216 MB — enough that a budget
-// which ignored them would report a comfortable fit while the real total sat
-// above the ceiling.
-export const UNMERGED_PANE_COUNT = 4;
-
-// Budget left for the merged panes once the unmerged ones are charged for.
-//
-// Never returns less than one group's worth: the viewer has to render
-// something, and a budget so small that no group fits would be a blank map
-// rather than a slow one.
-export function reserveForUnmergedPanes(budgetBytes, tilesPerPane,
-                                        bytesPerTile,
-                                        unmergedPanes = UNMERGED_PANE_COUNT) {
-    const perPane = tilesPerPane * bytesPerTile;
-    if (!(perPane > 0)) {
-        return budgetBytes;
-    }
-    return Math.max(perPane, budgetBytes - unmergedPanes * perPane);
-}
-
-// How many merged panes fit in the budget.
-//
-// `tilesPerPane` must come from what Leaflet actually holds, not from the
-// viewport size, because it includes the retained ring outside the view and
-// grows with window area — the factor that would otherwise make any fixed N
-// fail on a maximised 4K window (97 panes at 2560x1440 is ~1.9 GB).
-export function computeGroupCount({
-    budgetBytes = DEFAULT_BUDGET_BYTES,
-    tilesPerPane,
-    bytesPerTile,
-    paneCount,
-} = {}) {
-    if (!(tilesPerPane > 0) || !(bytesPerTile > 0) || !(paneCount > 0)) {
-        return 1;
-    }
-    const perGroup = tilesPerPane * bytesPerTile;
-    // Never more groups than there are panes to put in them: merging cannot
-    // help past one pane per group, and asking for more would just recreate the
-    // situation this exists to avoid.
-    return Math.max(1, Math.min(paneCount, Math.floor(budgetBytes / perGroup)));
-}
-
-// Split z-ordered draw items into `n` groups.
-//
-// Groups MUST be contiguous runs of the z-order. Each group is rasterized into
-// a single image, and two images can only be stacked to reproduce the original
-// if neither interleaves with the other: given z-order [1,2,3,4], the grouping
-// {1,3},{2,4} has no stacking that yields the original, whereas {1,2},{3,4}
-// does. So this slices the ordered list rather than distributing round-robin,
-// even though round-robin would balance sizes better.
-//
-// `items` must already be sorted by ascending z-index (bottom-most first).
-export function partitionIntoGroups(items, n) {
-    if (!Array.isArray(items) || items.length === 0) {
-        return [];
-    }
-    const groups = Math.max(1, Math.min(Math.floor(n) || 1, items.length));
-    const base = Math.floor(items.length / groups);
-    let remainder = items.length % groups;
-    const out = [];
-    let at = 0;
-    for (let g = 0; g < groups; g++) {
-        let size = base;
-        if (remainder > 0) {
-            size++;
-            remainder--;
-        }
-        out.push(items.slice(at, at + size));
-        at += size;
-    }
-    return out;
-}
+// Each source carries its own opacity, applied per image with globalAlpha.  A
+// layer's own tiles never overlap, so that equals opacity on the whole layer.
+// The merged tile already holds those opacities and must be drawn at 1, or
+// every source would be multiplied twice.
 
 // Draw `sources` onto a 2D context in order, each at its own opacity.
 //
-// Straight src-over at the given alpha, which is what stacking the panes does
-// today. Not bit-identical to CSS compositing — colour-space and rounding
+// Straight src-over at the given alpha, which is what stacking the layers
+// would do. Not bit-identical to GPU compositing — colour-space and rounding
 // details differ — so assert on visual equivalence, never on byte equality.
 //
 // `sources` is [{ image, opacity }], bottom-most first. A null image is skipped
@@ -266,11 +77,11 @@ export function mergeOntoContext(ctx, sources, size) {
 
 // ─── Reference compositor ───────────────────────────────────────────────────
 //
-// Why grouping is exact at all: src-over is associative, so
+// Why merging is exact at all: src-over is associative, so
 // (A over B) over C == A over (B over C).  Rasterizing a contiguous run into one
 // image and compositing that image is therefore identical to compositing the run
 // member by member — PROVIDED the intermediate keeps its alpha (a transparent
-// canvas does) and is composited at alpha 1 (hence MERGED_PANE_OPACITY).
+// canvas does) and is composited at alpha 1.
 //
 // These helpers exist so that invariant is checked with numbers instead of
 // asserted in a comment.  They are not used by the merge itself, which delegates
@@ -327,11 +138,13 @@ export function closeAll(images) {
 // from scratch on every arrival, always walking the item list in order, so the
 // stacking cannot depend on the order responses happen to land in.
 //
-// Incremental: the tile paints as soon as anything arrives rather than waiting
-// for the slowest of its K layers, and keeps repainting as the rest land.  A
-// request that never settles therefore costs one missing layer instead of a
-// blank tile — with the per-layer panes a stuck request blanked one layer, and
-// waiting for the whole group would have made that a whole group.
+// Incremental (the default): the tile paints as soon as anything arrives rather
+// than waiting for the slowest of its K layers, and keeps repainting as the rest
+// land.  A request that never settles therefore costs one missing layer instead
+// of a blank tile; waiting for the whole group would blank the whole tile.
+//
+// `incremental: false` (Options > "Double buffering") paints once, after every
+// request has settled, so a refreshed tile swaps whole, not layer by layer.
 //
 // Lifetime: every decoded image is released in a finally, including on a draw
 // failure or a stale abort.  Explicit release is the entire reason for
@@ -352,11 +165,11 @@ export async function renderMergedTile({
     draw,
     release = closeAll,
     isStale = () => false,
-    onFirstDraw,
+    incremental = true,
 } = {}) {
     const list = Array.isArray(items) ? items : [];
     const stats = { requested: list.length, arrived: 0, decoded: 0, drawn: 0,
-                    paints: 0, stale: false };
+                    paints: 0, failed: 0, stale: false };
     if (list.length === 0) {
         // An empty group still has to paint: the canvas is reused across
         // refreshes, so skipping the draw would leave the previous content.
@@ -389,15 +202,7 @@ export async function renderMergedTile({
             opacity: item.opacity,
         }))) || 0;
         stats.paints++;
-        if (!painted) {
-            painted = true;
-            // Leaflet hides a tile until done() marks it loaded
-            // (.leaflet-tile { visibility: hidden }), so without this the
-            // incremental paints would not be visible at all.
-            if (onFirstDraw) {
-                onFirstDraw();
-            }
-        }
+        painted = true;
     }
 
     try {
@@ -406,6 +211,7 @@ export async function renderMergedTile({
             try {
                 payload = await request(item);
             } catch (e) {
+                stats.failed++;
                 return;  // cancelled or dropped: leave the slot transparent
             }
             if (payload == null) {
@@ -425,11 +231,14 @@ export async function renderMergedTile({
             // even when this render has been superseded.
             images[i] = image;
             stats.decoded++;
-            paint();
+            if (incremental) {
+                paint();
+            }
         }));
 
-        // Nothing arrived at all — paint the empty composite anyway, so the
-        // tile resolves as blank rather than staying invisible forever.
+        // The only paint when buffering; otherwise the case where nothing
+        // arrived at all, so the tile resolves as blank rather than staying
+        // invisible forever.
         if (!painted) {
             paint();
         }
@@ -437,29 +246,8 @@ export async function renderMergedTile({
         // Held until the tile is complete rather than released per draw: a
         // later arrival belongs UNDERNEATH layers already drawn, so the canvas
         // is recomposited from scratch each time and every source has to still
-        // be available.  Peak is the same K bitmaps the batch version held.
+        // be available.
         release(images);
     }
     return stats;
-}
-
-// Summary of what a grouping costs, for logging and for the HUD.
-export function describePlan({ paneCount, groupCount, tilesPerPane,
-                               bytesPerTile }) {
-    const mb = (bytes) => Math.round(bytes / (1024 * 1024));
-    const before = paneCount * tilesPerPane * bytesPerTile;
-    const after = groupCount * tilesPerPane * bytesPerTile;
-    return {
-        paneCount,
-        groupCount,
-        tilesPerPane,
-        beforeMB: mb(before),
-        afterMB: mb(after),
-        // Peak extra while a group is being merged: its sources are decoded
-        // together, then closed. Worth reporting because a very small
-        // groupCount means very large groups, and the transient is what would
-        // bite if the merge held every source at once.
-        transientMB: mb(Math.ceil(paneCount / Math.max(1, groupCount))
-                        * bytesPerTile),
-    };
 }

@@ -548,6 +548,22 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   EXPECT_EQ(first[3].as_int64(), 100);
 }
 
+// A new connection starts from an empty tile cache, without a reindex.
+TEST_F(TileHandlerTest, EnsureInitEmptiesTheTileCache)
+{
+  gen_->ensureInit();
+  const auto colors = gen_->getLayerColorMap();
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0})");
+  handler_->handleTile(req, state_);
+  ASSERT_EQ(gen_->tileCacheSize(), 1u);
+  gen_->ensureInit();
+  EXPECT_EQ(gen_->tileCacheSize(), 0u);
+  EXPECT_EQ(gen_->getLayerColorMap().get(), colors.get());
+}
+
 // PNG dimensions live in the IHDR chunk: 8-byte signature, 4-byte length,
 // 4-byte type, then width and height as big-endian uint32.  Read directly so
 // this test needs no PNG decoder dependency.
@@ -748,7 +764,7 @@ TEST_F(TileHandlerTest, DrawnTileIsStillAPngResponse)
   EXPECT_FALSE(resp.payload.empty());
 }
 
-// The highlight overlay is one of the panes that never merges, and it holds
+// The highlight overlay is a slot of its own that never merges, and it holds
 // nothing at all until something is selected -- so it is the single tile layer
 // most worth not sending an image for.
 TEST_F(TileHandlerTest, OverlayTileWithNothingSelectedIsEmpty)
@@ -1389,6 +1405,88 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// Requests `layer` and returns the cache size afterwards, so a hit shows as no
+// growth.
+size_t requestAndCount(TileHandler& handler,
+                       SessionState& state,
+                       const TileGenerator& gen,
+                       const std::string& fields)
+{
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(R"({"z":0,"x":0,"y":0,)" + fields + "}");
+  handler.handleTile(req, state);
+  return gen.tileCacheSize();
+}
+
+TEST_F(TileHandlerTest, ClientOnlyKeysHitTheCache)
+{
+  // The client sends its display options (scale bar, rulers...) with every
+  // tile; they draw nothing on the server and must not split the cache.
+  const size_t first = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"metal1","scale_bar":true)");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"metal1","scale_bar":false,)"
+                            R"("rulers":true)"),
+            first);
+}
+
+TEST_F(TileHandlerTest, VisibleLayersOnlyKeyThePinsLayer)
+{
+  const size_t metal1 = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"metal1","visible_layers":["m1"])");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"metal1","visible_layers":["m2"])"),
+            metal1);
+  const size_t pins = requestAndCount(
+      *handler_, state_, *gen_, R"("layer":"_pins","visible_layers":["m1"])");
+  EXPECT_EQ(requestAndCount(*handler_,
+                            state_,
+                            *gen_,
+                            R"("layer":"_pins","visible_layers":["m2"])"),
+            pins + 1);
+}
+
+TEST_F(TileHandlerTest, AnEditOnAnUnbuiltIndexStillMissesTheCache)
+{
+  // No row index is built yet, so this edit clears no cache; the revision in
+  // the key is what keeps the old tile from being served.
+  const size_t first
+      = requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")");
+  odb::dbSite* site = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+  ASSERT_NE(site, nullptr);
+  odb::dbRow::create(block_,
+                     "row0",
+                     site,
+                     0,
+                     0,
+                     odb::dbOrientType::R0,
+                     odb::dbRowDir::HORIZONTAL,
+                     20,
+                     site->getWidth());
+  EXPECT_EQ(requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")"),
+            first + 1);
+}
+
+TEST_F(TileHandlerTest, AMovedChipletMissesTheCache)
+{
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  getDb()->setTopChip(root);
+  odb::dbChipInst* die = odb::dbChipInst::create(root, chip_, "die0");
+  const size_t first
+      = requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")");
+  // No ODB hook reports this.
+  die->setOrient(odb::dbOrientType3D("MZ"));
+  EXPECT_EQ(requestAndCount(*handler_, state_, *gen_, R"("layer":"metal1")"),
+            first + 1);
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -2219,7 +2317,7 @@ TEST_F(TileHandlerTest, TileRejectsNonIntegerZoomInsteadOfThrowing)
   }
 }
 
-// Leaflet asks for tiles beyond the 2^z grid whenever the design is smaller
+// A client may ask for tiles beyond the 2^z grid when the design is smaller
 // than the viewport or while panning at the border, and the renderers answer
 // those with a transparent tile.  A range check here would turn ordinary
 // panning into a stream of errors, so off-grid coordinates must still render.
@@ -2608,9 +2706,9 @@ TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
   EXPECT_NE(json.find("\"selected\":[]"), std::string::npos);
 }
 
-// Leaflet's zoomSnap=0 lets the client send fractional zoom values; the
-// handler must accept them without erroring out.  Regression test for the
-// click-to-select breakage after strict-typing the request fields.
+// A client may send fractional zoom values; the handler must accept them
+// without erroring out.  Regression test for the click-to-select breakage
+// after strict-typing the request fields.
 TEST_F(SelectHandlerTest, SelectAcceptsFractionalZoom)
 {
   WebSocketRequest req;
@@ -5395,6 +5493,7 @@ TEST_F(TileHandlerTest, CancelSkipsQueuedTileRender)
       = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":[]})");
   auto resp = handler_->handleTile(tile, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_EQ(payloadStr(resp), kCancelledMsg);
 
   // The cancellation is consumed: re-issuing the same id now renders.  metal1
   // holds nothing in this fixture, so a completed render is an empty tile --

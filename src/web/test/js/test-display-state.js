@@ -79,6 +79,36 @@ describe('serializeDisplayState', () => {
     });
 });
 
+describe('renderPrefs', () => {
+    it('jumps without smoothing and double-buffers by default', async () => {
+        const { mod, getCookie } = await loadDisplayState();
+        assert.deepEqual(mod.renderPrefs(getCookie), {
+            controlSmoothing: false,
+            doubleBuffer: true,
+            deferTileUpdates: false,
+        });
+    });
+
+    it('keeps what the user chose', async () => {
+        const { mod, getCookie } = await loadDisplayState({
+            cookie: { or_control_smoothing: '1', or_double_buffer: '0',
+                      or_defer_tile_updates: '1' },
+        });
+        assert.deepEqual(mod.renderPrefs(getCookie), {
+            controlSmoothing: true,
+            doubleBuffer: false,
+            deferTileUpdates: true,
+        });
+    });
+
+    it('reads smoothing turned off as off', async () => {
+        const { mod, getCookie } = await loadDisplayState({
+            cookie: { or_control_smoothing: '0' },
+        });
+        assert.equal(mod.renderPrefs(getCookie).controlSmoothing, false);
+    });
+});
+
 describe('applyDisplayStateEntries', () => {
     it('round-trips every key through its own store', async () => {
         const all = {
@@ -99,6 +129,10 @@ describe('applyDisplayStateEntries', () => {
             or_arrow_step: '120',
             or_font_family: 'monospace',
             or_font_scale: '125',
+            // Rendering preferences (#11340).
+            or_control_smoothing: '1',
+            or_double_buffer: '0',
+            or_defer_tile_updates: '0',
         };
         const { dom, mod } = await loadDisplayState();
         mod.applyDisplayStateEntries(all);

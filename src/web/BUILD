@@ -42,8 +42,10 @@ npm_link_all_packages(name = "node_modules")
 # What the bundle carries, with their dependencies, and so whose licences ship
 # with it.
 _BUNDLED_PACKAGES = [":node_modules/" + p for p in [
+    "@deck.gl/core",
+    "@deck.gl/extensions",
+    "@deck.gl/layers",
     "golden-layout",
-    "leaflet",
     "lit",
     "netlistsvg",
     "three",
@@ -58,13 +60,12 @@ js_library(
     deps = _BUNDLED_PACKAGES,
 )
 
-# The stylesheets import Golden Layout's and Leaflet's CSS.
+# The stylesheets import Golden Layout's CSS.
 js_library(
     name = "css",
     srcs = glob(["src/*.css"]),
     deps = [
         ":node_modules/golden-layout",
-        ":node_modules/leaflet",
     ],
 )
 
