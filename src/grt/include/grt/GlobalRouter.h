@@ -711,10 +711,12 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets. Returns every net it rerouted.
-  // Pin access is not updated here because the changed instances are
-  // not legalized yet; pins without access points route from the center
-  // of their shapes until endIncremental updates pin access.
-  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
+  // Pass update_pin_access only once the changed instances are legalized;
+  // until then pins without access points route from the center of their
+  // shapes.  Updating pin access marks the nets whose access points changed
+  // dirty, so they are rerouted in the same call.
+  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true,
+                                        bool update_pin_access = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

@@ -301,7 +301,7 @@ void EstimateParasitics::setVWireSignalRC(odb::dbTech* tech,
 // Defined outside the header; all instantiations live in this file.
 template <typename T>
 const std::vector<T>& EstimateParasitics::resolveWireRC(
-    std::vector<T> WireRC::* category) const
+    std::vector<T> WireRC::*category) const
 {
   static const std::vector<T> empty;
   odb::dbTech* tech = currentTech();
@@ -1737,6 +1737,17 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
   }
 }
 
+void EstimateParasitics::finishIncrementalRoutes()
+{
+  if (incr_groute_ == nullptr) {
+    return;
+  }
+  for (odb::dbNet* db_net : incr_groute_->updateRoutes(
+           /*save_guides=*/true, /*update_pin_access=*/true)) {
+    parasiticsInvalid(db_net);
+  }
+}
+
 void IncrementalParasiticsGuard::update()
 {
   estimate_parasitics_->updateParasitics();
@@ -1747,6 +1758,7 @@ IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
   if (need_unregister_) {
     try {
       estimate_parasitics_->removeDbCbkOwner();
+      estimate_parasitics_->finishIncrementalRoutes();
       estimate_parasitics_->updateParasitics();
     } catch (const std::exception& e) {
       // Exceptions must not escape destructors (implicitly noexcept).
