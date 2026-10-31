@@ -2400,6 +2400,9 @@ NetRouteMap FastRouteCore::run()
   float overflow_reduction_percent = -1;
   // Iterations since the minimum overflow last improved.
   int minofl_stagnant = 0;
+  const int initial_thresh_m = THRESH_M;
+  const int initial_via = VIA;
+  const float initial_logistic_coef = logistic_coef;
   {
     const DebugScopedTimer timer(timings.overflow_iterations,
                                  logger_,
@@ -2407,6 +2410,13 @@ NetRouteMap FastRouteCore::run()
                                  "timer",
                                  1,
                                  "Congestion iterations: {}");
+    // Restored by the first soft-NDR demotion, discarding the detours found
+    // while the NDR nets were congested
+    std::vector<StTree> initial_sttrees;
+    if (has_non_soft_ndr_nets_ && total_overflow_ > 0
+        && overflow_iterations_ > 0) {
+      initial_sttrees = saveInitialRoutes();
+    }
     while (total_overflow_ > 0 && i <= overflow_iterations_
            && overflow_increases <= max_overflow_increases) {
       if (verbose_) {
@@ -2654,18 +2664,50 @@ NetRouteMap FastRouteCore::run()
           applySoftNDR(net_ids);
 
           // Reset loop parameters
-          overflow_increases = 0;
           minofl_stagnant = 0;
           i = 1;
           costheight_ = COSHEIGHT;
           enlarge_ = ENLARGE;
           ripup_threshold = Ripvalue;
-          minofl = total_overflow_;
-          bmfl = minofl;
           stopDEC = false;
 
           slope = 20;
           L = 1;
+
+          if (!initial_sttrees.empty()) {
+            // Only the first demotion restores the initial routing, so later
+            // demotions keep the progress made since the first one
+            restoreInitialRoutes(std::move(initial_sttrees));
+            past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+            debugPrint(logger_,
+                       GRT,
+                       "softNDR",
+                       1,
+                       "Overflow iterations restarted from the initial "
+                       "routing. Total overflow: {} before the restart, {} "
+                       "after.",
+                       last_total_overflow,
+                       total_overflow_);
+
+            // The best routing saved by copyRS predates the restart
+            freeRR();
+
+            THRESH_M = initial_thresh_m;
+            VIA = initial_via;
+            logistic_coef = initial_logistic_coef;
+            upType = 1;
+            minofl = total_overflow_;
+            minoflrnd = 0;
+            bmfl = BIG_INT;
+            bwcnt = 0;
+            slack_th = std::numeric_limits<float>::lowest();
+            overflow_increases = -1;
+            last_total_overflow = 0;
+          } else {
+            overflow_increases = 0;
+            minofl = total_overflow_;
+            bmfl = minofl;
+          }
 
           // Increase maze route 3D threshold to fix bad routes
           long_edge_len = BIG_INT;
@@ -2814,6 +2856,36 @@ void FastRouteCore::setSoftNDR(const int net_id)
 {
   nets_[net_id]->setIsSoftNDR(true);
   nets_[net_id]->setEdgeCost(1);
+}
+
+std::vector<StTree> FastRouteCore::saveInitialRoutes() const
+{
+  std::vector<StTree> initial_sttrees;
+  initial_sttrees.reserve(net_ids_.size());
+  for (const int net_id : net_ids_) {
+    initial_sttrees.push_back(sttrees_[net_id]);
+  }
+  return initial_sttrees;
+}
+
+void FastRouteCore::restoreInitialRoutes(std::vector<StTree> initial_sttrees)
+{
+  // Remove the usage of every net before re-adding any, so the NDR nets
+  // reserve capacity against the restored routes only
+  for (const int net_id : net_ids_) {
+    updatePlanarNetUsage(
+        sttrees_[net_id], nets_[net_id], -nets_[net_id]->getEdgeCost());
+  }
+
+  for (size_t idx = 0; idx < net_ids_.size(); idx++) {
+    const int net_id = net_ids_[idx];
+    sttrees_[net_id] = std::move(initial_sttrees[idx]);
+    updatePlanarNetUsage(
+        sttrees_[net_id], nets_[net_id], nets_[net_id]->getEdgeCost());
+    nets_[net_id]->setIsCritical(false);
+  }
+
+  graph2d_.InitLastUsage(1);
 }
 
 void FastRouteCore::computeCongestedNDRnets()

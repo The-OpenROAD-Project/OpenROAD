@@ -1098,7 +1098,7 @@ double Graph2D::getCostNDRAware(FrNet* net,
     return edge_cost;
   }
 
-  constexpr double OVERFLOW_COST_MULTIPLIER = 100.0;
+  constexpr double OVERFLOW_COST_MULTIPLIER = 50.0;
 
   // Get references to the appropriate edge data based on direction
   auto& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]
