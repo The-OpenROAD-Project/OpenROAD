@@ -2746,14 +2746,7 @@ NetRouteMap FastRouteCore::run()
     via_cost_ = 1;
 
     if (past_cong == 0) {
-      // Increase ripup threshold if res-aware is enabled
-      if (enable_resistance_aware_) {
-        long_edge_len = BIG_INT;
-        short_edge_len = BIG_INT;
-      }
-
-      mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-      mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+      finalMazeRoute3D(enlarge_, long_edge_len, short_edge_len);
     }
 
     // Disable estimate parasitics for grt incremental steps with
@@ -2788,6 +2781,27 @@ NetRouteMap FastRouteCore::run()
   NetRouteMap routes = getRoutes();
   net_ids_.clear();
   return routes;
+}
+
+// The 3D reroute after a 2D route without overflow: edges shorter than
+// long_edge_len, then edges shorter than short_edge_len. With
+// resistance-aware routing both thresholds are lifted, so both passes
+// reroute every edge of every net with negative slack; the second only
+// widens the resistance-aware set to all of them. It runs one pass, on
+// the nets resistance-aware routing selected: the others are rerouted
+// with the legacy cost on a route that has no overflow to relieve.
+void FastRouteCore::finalMazeRoute3D(const int expand,
+                                     const int long_edge_len,
+                                     const int short_edge_len)
+{
+  if (enable_resistance_aware_) {
+    res_aware_nets_only_ = true;
+    mazeRouteMSMDOrder3D(expand, 0, BIG_INT);
+    res_aware_nets_only_ = false;
+  } else {
+    mazeRouteMSMDOrder3D(expand, 0, long_edge_len);
+    mazeRouteMSMDOrder3D(expand, 0, short_edge_len);
+  }
 }
 
 void FastRouteCore::applySoftNDR(const std::vector<int>& net_ids)

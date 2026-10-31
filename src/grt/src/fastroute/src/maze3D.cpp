@@ -765,6 +765,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         continue;
       }
     }
+    if (res_aware_nets_only_ && !resistance_aware_) {
+      continue;
+    }
 
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;

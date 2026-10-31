@@ -475,6 +475,7 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  void finalMazeRoute3D(int expand, int long_edge_len, int short_edge_len);
   void addNeighborPoints(int netID,
                          int n1,
                          int n2,
@@ -827,6 +828,8 @@ class FastRouteCore
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;
+  // The 3D maze reroutes only the nets resistance-aware routing selected.
+  bool res_aware_nets_only_ = false;
   static constexpr float kInitialResAwareNetsPercentage = 15.0f;
   static constexpr float kMidResAwareNetsPercentage = 30.0f;
   static constexpr float kFinalResAwareNetsPercentage = 100.0f;

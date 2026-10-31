@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <memory>
@@ -88,6 +89,18 @@ class ResistanceModeTestPeer
                            router.worst_slack_,
                            router.worst_net_length_,
                            router.worst_fanout_);
+  }
+
+  static void finalMaze3D(FastRouteCore& router)
+  {
+    router.tree_order_pv_.clear();
+    for (const int id : router.net_ids_) {
+      OrderNetPin order{};
+      order.treeIndex = id;
+      router.tree_order_pv_.push_back(order);
+    }
+    router.finalMazeRoute3D(
+        /*expand=*/10, /*long_edge_len=*/40, /*short_edge_len=*/12);
   }
 
   static void visitMazeScopes(FastRouteCore& router)
@@ -189,6 +202,81 @@ class ResistanceModeTest : public tst::Fixture
     ResistanceModeTestPeer::setTree(*router_, netId(net), std::move(tree));
     ResistanceModeTestPeer::updateWorst(*router_, net);
     return net;
+  }
+
+  // A two-pin net from (0, 0) to (kLength, 0) on layer 0, routed on
+  // `layer` with vias at both ends, its usage on the grid.
+  FrNet* addRoutedNet(const char* name, bool selected, int layer)
+  {
+    auto* db_net = odb::dbNet::create(block_, name);
+    auto* net = router_->addNet(db_net,
+                                /*is_clock=*/false,
+                                /*is_local=*/false,
+                                /*driver_idx=*/0,
+                                /*cost=*/1,
+                                /*min_layer=*/0,
+                                /*max_layer=*/kNumLayers - 1,
+                                /*slack=*/-10,
+                                /*edge_cost_per_layer=*/nullptr);
+    net->setIsResAware(selected);
+    net->addPin(0, 0, 0);
+    net->addPin(kLength, 0, 0);
+
+    std::vector<GPoint3D> grids;
+    for (int l = 0; l < layer; l++) {
+      grids.push_back({0, 0, static_cast<int16_t>(l)});
+    }
+    for (int x = 0; x <= kLength; x++) {
+      grids.push_back(
+          {static_cast<int16_t>(x), 0, static_cast<int16_t>(layer)});
+    }
+    for (int l = layer - 1; l >= 0; l--) {
+      grids.push_back({kLength, 0, static_cast<int16_t>(l)});
+    }
+
+    StTree tree;
+    tree.num_terminals = 2;
+    for (int id = 0; id < 2; id++) {
+      TreeNode node{};
+      node.x = id * kLength;
+      node.y = 0;
+      node.botL = 0;
+      node.topL = 0;
+      node.stackAlias = id;
+      node.assigned = true;
+      std::ranges::fill(node.nbr, -1);
+      std::ranges::fill(node.edge, -1);
+      node.nbr[0] = 1 - id;
+      node.edge[0] = 0;
+      node.nbr_count = 1;
+      node.eID[0] = 0;
+      node.heights[0] = 0;
+      node.conCNT = 1;
+      tree.nodes.push_back(node);
+      tree.node_to_pin_idx[id] = id;
+    }
+    TreeEdge edge{};
+    edge.n1 = edge.n1a = 0;
+    edge.n2 = edge.n2a = 1;
+    edge.assigned = true;
+    edge.len = kLength;
+    edge.route.type = RouteType::MazeRoute;
+    edge.route.grids = grids;
+    edge.route.routelen = grids.size() - 1;
+    tree.edges.push_back(std::move(edge));
+    for (int x = 0; x < kLength; x++) {
+      router_->updateEdge2DAnd3DUsage(x, 0, x + 1, 0, layer + 1, 1, db_net);
+    }
+    ResistanceModeTestPeer::setTree(*router_, netId(net), std::move(tree));
+    ResistanceModeTestPeer::updateWorst(*router_, net);
+    return net;
+  }
+
+  int routedLayer(FrNet* net)
+  {
+    const auto& tree = ResistanceModeTestPeer::tree(*router_, netId(net));
+    const auto& grids = tree.edges.front().route.grids;
+    return grids[grids.size() / 2].layer;
   }
 
   int netId(FrNet* net)
@@ -467,6 +555,32 @@ TEST_P(ResistanceModeAssignmentTest, PublicModesRespectSelectionOnReuse)
 INSTANTIATE_TEST_SUITE_P(BothDirections,
                          ResistanceModeAssignmentTest,
                          testing::Bool());
+
+// After a 2D route without overflow, resistance-aware routing reroutes in
+// 3D only the nets it selected. An unselected net, routed on M3 where its
+// legacy cost is higher than M1's, keeps its route.
+TEST_F(ResistanceModeTest, FinalMaze3DReroutesOnlySelectedNets)
+{
+  auto* ordinary = addRoutedNet("ordinary", false, 2);
+  addRoutedNet("filler", false, 0);
+  router_->setResistanceAware(true);
+  ResistanceModeTestPeer::finalMaze3D(*router_);
+  EXPECT_EQ(routedLayer(ordinary), 2);
+}
+
+// The control: without resistance-aware routing the same net is rerouted
+// onto M1 (12 against M3's 12 plus four vias), so the test above would see
+// a reroute.
+TEST_F(ResistanceModeTest, FinalMaze3DReroutesEveryNetWhenDisabled)
+{
+  auto* ordinary = addRoutedNet("ordinary", false, 2);
+  // The legacy pass reroutes the first 90 % of the nets: the second is
+  // left out.
+  addRoutedNet("filler", false, 0);
+  router_->setResistanceAware(false);
+  ResistanceModeTestPeer::finalMaze3D(*router_);
+  EXPECT_EQ(routedLayer(ordinary), 0);
+}
 
 }  // namespace
 }  // namespace grt
