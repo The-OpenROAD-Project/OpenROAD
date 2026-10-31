@@ -22,6 +22,8 @@
 //   than over it, which the lateral and crossing tables do not see.
 // - e12 far covers: each layer past the depth the builder would not
 //   tabulate against the tabulated covers it resolves to.
+// - e13 probed covers: the covers chosen from probes, checked at widths
+//   and spacings the probes did not use.
 //
 // bazelisk run starts it in its runfiles, where the default files are:
 //   bazelisk run //src/pex/test:Experiments -- [--groups e1,e2,...]
@@ -31,9 +33,11 @@
 // not exist:
 //       [--lef FILE]... [--def FILE | --odb FILE] [--model FILE]
 //       [--nets a,b,... | --sample N] [--halo UM] [--margin UM]
-//       [--depth N] [--model_tol X]
-// and for e12 the layers that may cover (default: every conductor):
-//       [--layers a,b,...]
+//       [--cover_tol X | --depth N] [--model_tol X]
+// and for e12 and e13 the layers that may cover (default: every
+// conductor), and for e13 the cover tolerance:
+//       [--layers a,b,...] [--cover_tol X]
+// --depth applies when --cover_tol is 0.
 // Every row prints as it is measured; --csv also writes them as
 // experiment,stack,layer,case,quantity,truth,sigma,model,error, where model
 // is the simplification's value and error = model / truth - 1.
@@ -84,7 +88,8 @@ struct Options
                                   "e8",
                                   "e9",
                                   "e11",
-                                  "e12"};
+                                  "e12",
+                                  "e13"};
   std::string itf = "src/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -108,7 +113,8 @@ struct Options
   int depth = 2;
   double model_tol = 0;
   bool dump = false;                // print every box of each e9 window
-  std::vector<std::string> layers;  // e12: the layers that may cover
+  std::vector<std::string> layers;  // e12, e13: the layers that may cover
+  double cover_tol = 0.02;          // e9, e13; 0 uses --depth
 };
 
 std::vector<std::string> split(const std::string& list)
@@ -168,6 +174,8 @@ Options parse(const int argc, char** argv)
       o.nets = split(value());
     } else if (arg == "--layers") {
       o.layers = split(value());
+    } else if (arg == "--cover_tol") {
+      o.cover_tol = std::stod(value());
     } else if (arg == "--sample") {
       o.sample = std::stoi(value());
     } else if (arg == "--halo") {
@@ -888,6 +896,7 @@ pex::Model buildTables(const Lab& lab)
 {
   const Options& o = lab.options();
   pex::BuildOptions b;
+  b.cover_tolerance = 0;  // the contexts below, by depth
   if (o.smoke) {
     b.width_factors = {1};
     b.spacing_factors = {1, 3};
@@ -1231,11 +1240,13 @@ pex::Model netsModel(const Lab& lab, const Design& design)
   const Options& o = lab.options();
   pex::BuildOptions b;
   b.below_depth = b.above_depth = o.depth;
+  b.cover_tolerance = o.cover_tol;
   if (o.smoke) {
     b.width_factors = {1};
     b.spacing_factors = {1};
     b.below_depth = b.above_depth = 0;
     b.far_cover_factors = {};
+    b.cover_tolerance = 0;
     b.end_length = 1;
     b.diagonal_width_factors = {1};
     b.diagonal_gap_factors = {0, 2};
@@ -1286,7 +1297,16 @@ pex::Model netsModel(const Lab& lab, const Design& design)
         std::fflush(stdout);
       }
     };
-    pex::buildLayer(lab.stack(), lab.layer(layer), b, model);
+    // The model read above matches these options (its fingerprint did), so
+    // a layer it holds keeps its plan without probing again.
+    const std::optional<pex::CoverPlan> held
+        = pex::heldCovers(lab.stack(), model, lab.layer(layer));
+    pex::buildLayer(
+        lab.stack(),
+        lab.layer(layer),
+        held ? *held : pex::planCovers(lab.stack(), lab.layer(layer), b),
+        b,
+        model);
     if (solves > 0 && !o.model.empty()) {
       pex::writeModelFile(model, expected, o.model);
       std::printf("# model written to %s\n", o.model.c_str());
@@ -1307,6 +1327,7 @@ void farCovers(Lab& lab)
   pex::BuildOptions b;
   b.layers = o.layers;
   b.below_depth = b.above_depth = o.depth;
+  b.cover_tolerance = 0;  // the ladder, which e12 measures
   if (o.smoke) {
     // Depth 1 and no far layers, so every layer past the nearest resolves
     // to it; one such layer per side keeps the run short.
@@ -1375,6 +1396,119 @@ void farCovers(Lab& lab)
               above ? truth.above : truth.below,
               0,
               above ? mapped.above : mapped.below);
+    }
+  }
+}
+
+// e13: the covers planCovers chooses from probes, checked where the probes
+// did not look. For every usable layer it left out, a wire under or over a
+// plane on that layer, at widths and neighbor spacings off the probes'
+// grid, against what the chosen covers it resolves to give for the same
+// wire: the total and the plane coupling.
+void probedCovers(Lab& lab)
+{
+  const Options& o = lab.options();
+  pex::BuildOptions b;
+  b.layers = o.layers;
+  b.below_depth = b.above_depth = o.depth;
+  b.cover_tolerance = o.cover_tol;
+  b.tol = o.tol;
+  b.threads = o.threads;
+  b.extent = o.extent;
+  const pex::CoverPlan plan = pex::planCovers(lab.stack(), lab.layer(), b);
+  const std::string name = lab.stack().name(lab.layer());
+  pex::Model model;
+  for (const pex::Layer below : plan.below) {
+    for (const pex::Layer above : plan.above) {
+      model.addLateral({name,
+                        below.valid() ? lab.stack().name(below) : "",
+                        above.valid() ? lab.stack().name(above) : ""},
+                       pex::LateralTable({lab.wmin()}, {lab.smin()}));
+    }
+  }
+  const pex::CoverMap map(lab.stack(), model, lab.layer());
+  struct Variant
+  {
+    double width;  // multiples of the minimum width
+    double left;   // multiples of the minimum spacing; none when negative
+    double right;
+  };
+  std::vector<Variant> variants{{1.5, 1.25, 1.25}, {3, 2, 5}, {1, -1, 1.5}};
+  if (o.smoke) {
+    variants.resize(1);
+  }
+  // A wire with a plane on `cover` on one side and the other side's
+  // nearest kept cover, or none.
+  auto solve = [&](const Variant& v,
+                   const bool above,
+                   const pex::Layer cover,
+                   const pex::Layer opposite) {
+    pex::LateralPattern p;
+    p.layer = lab.layer();
+    p.width = v.width * lab.wmin();
+    p.left = v.left < 0 ? -1 : v.left * lab.smin();
+    p.right = v.right < 0 ? -1 : v.right * lab.smin();
+    p.below = above ? opposite : cover;
+    p.above = above ? cover : opposite;
+    p.extent = o.extent;
+    const pex::LateralPattern::Section s = p.build(lab.stack());
+    const fsv::CapRow row = lab.solve(s.geometry, s.wire, o.tol);
+    return std::make_pair(row.total(), row.coupling(above ? s.above : s.below));
+  };
+  for (const bool above : {false, true}) {
+    const std::vector<pex::Layer>& kept = above ? plan.above : plan.below;
+    const std::vector<pex::Layer>& others = above ? plan.below : plan.above;
+    std::string kept_names;
+    for (const pex::Layer l : kept) {
+      if (l.valid()) {
+        kept_names += (kept_names.empty() ? "" : " ") + lab.stack().name(l);
+      }
+    }
+    std::printf(
+        "# e13 %s: kept %s\n", above ? "above" : "below", kept_names.c_str());
+    const std::vector<pex::Layer> candidates
+        = above ? pex::layersAbove(lab.stack(), lab.layer())
+                : pex::layersBelow(lab.stack(), lab.layer());
+    for (const pex::Layer cover : candidates) {
+      const std::string cover_name = lab.stack().name(cover);
+      if (std::find(kept.begin(), kept.end(), cover) != kept.end()
+          || lab.stack().conductor(cover).bottom <= 0
+          || (!o.layers.empty()
+              && std::find(o.layers.begin(), o.layers.end(), cover_name)
+                     == o.layers.end())) {
+        continue;
+      }
+      const std::vector<pex::CoverMap::Part> parts = map.resolve(cover);
+      for (const bool with_other : {false, true}) {
+        const pex::Layer opposite
+            = with_other && others.size() > 1 ? others[1] : pex::Layer();
+        for (const Variant& v : variants) {
+          const auto [total, plane] = solve(v, above, cover, opposite);
+          double mapped_total = 0;
+          double mapped_plane = 0;
+          std::string how;
+          for (const pex::CoverMap::Part& part : parts) {
+            const auto [t, pl]
+                = solve(v, above, lab.stack().layer(part.key), opposite);
+            mapped_total += part.weight * t;
+            mapped_plane += part.weight * pl;
+            how += (how.empty() ? "" : "+") + part.key;
+          }
+          char label[160];
+          std::snprintf(label,
+                        sizeof label,
+                        "%s %s (%s) w=%g s=%g/%g%s",
+                        above ? "over" : "under",
+                        cover_name.c_str(),
+                        how.c_str(),
+                        v.width,
+                        v.left,
+                        v.right,
+                        with_other ? " other" : "");
+          lab.row("e13", label, "total", total, 0, mapped_total);
+          lab.row("e13", label, "plane", plane, 0, mapped_plane);
+        }
+      }
     }
   }
 }
@@ -1606,6 +1740,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e12")) {
       farCovers(lab);
+    }
+    if (wanted(o, "e13")) {
+      probedCovers(lab);
     }
   } catch (const std::exception& e) {
     std::fprintf(stderr, "error: %s\n", e.what());
