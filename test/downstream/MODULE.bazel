@@ -81,3 +81,15 @@ python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
+
+bazel_dep(name = "rules_pycross", version = "0.8.1")
+
+pycross = use_extension("@rules_pycross//pycross/extensions:pycross.bzl", "pycross")
+pycross.configure_environments(python_versions = ["3.13"])
+
+# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk).
+# Older versions attempt to override the environment vector.
+single_version_override(
+    module_name = "gawk",
+    version = "5.4.0.bcr.2",
+)
