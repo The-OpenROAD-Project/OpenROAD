@@ -808,8 +808,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   // (2d) direction -> x -> y -> has overflow?
   GridGraphView<bool> congestion_view;
   grid_graph_->extractCongestionView(congestion_view);
-  sortNetIndices(net_indices,
-                 resistance_aware_ && critical_nets_percentage_ != 0);
+  sortForReroute(net_indices);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -855,8 +854,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   GridGraphView<CostT> full_view;
   int view_mismatches = 0;
   double view_max_drift = 0.0;
-  sortNetIndices(net_indices,
-                 resistance_aware_ && critical_nets_percentage_ != 0);
+  sortForReroute(net_indices);
   SparseGrid grid(10, 10, 0, 0);
   // A reroute that adds overflow beyond float noise is rolled back and
   // retried next pass.
@@ -1761,6 +1759,35 @@ void CUGR::sortNetIndices(std::vector<int>& net_indices,
            < std::make_tuple(gr_nets_[rhs]->getSlack(),
                              gr_nets_[rhs]->getBoundingBox().hp());
   });
+}
+
+void CUGR::sortRerouteIndices(std::vector<int>& net_indices) const
+{
+  // Each reroute sees every other net in place, so a net routed later finds
+  // the capacity that earlier nets vacated. Non-critical nets go first,
+  // largest bounding box first, since they have the most room to detour.
+  // Critical nets go last, worst slack last.
+  auto key = [&](const int index) {
+    const GRNet* net = gr_nets_[index].get();
+    const float slack = net->getSlack();
+    return std::make_tuple(
+        slack < kDemotedSlack, -slack, -net->getBoundingBox().hp());
+  };
+  std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
+      return false;
+    }
+    return key(lhs) < key(rhs);
+  });
+}
+
+void CUGR::sortForReroute(std::vector<int>& net_indices) const
+{
+  if (resistance_aware_ && critical_nets_percentage_ != 0) {
+    sortNetIndices(net_indices, /*res_aware_order=*/true);
+  } else {
+    sortRerouteIndices(net_indices);
+  }
 }
 
 void CUGR::getGuides(const GRNet* net,
