@@ -17,88 +17,23 @@ namespace grt {
 
 using utl::GRT;
 
-static int parent_index(int i)
-{
-  return (i - 1) / 2;
-}
-
-static int left_index(int i)
-{
-  return 2 * i + 1;
-}
-
-static int right_index(int i)
-{
-  return 2 * i + 2;
-}
-
-// non recursive version of heapify-
-static void heapify3D(std::vector<int*>& array)
-{
-  bool stop = false;
-  const int heapSize = array.size();
-  int i = 0;
-
-  int* tmp = array[i];
-  do {
-    const int l = left_index(i);
-    const int r = right_index(i);
-
-    int smallest;
-    if (l < heapSize && *(array[l]) < *tmp) {
-      smallest = l;
-      if (r < heapSize && *(array[r]) < *(array[l])) {
-        smallest = r;
-      }
-    } else {
-      smallest = i;
-      if (r < heapSize && *(array[r]) < *tmp) {
-        smallest = r;
-      }
-    }
-    if (smallest != i) {
-      array[i] = array[smallest];
-      i = smallest;
-    } else {
-      array[i] = tmp;
-      stop = true;
-    }
-  } while (!stop);
-}
-
-static void updateHeap3D(std::vector<int*>& array, int i)
-{
-  int* tmpi = array[i];
-  while (i > 0 && *(array[parent_index(i)]) > *tmpi) {
-    const int parent = parent_index(i);
-    array[i] = array[parent];
-    i = parent;
-  }
-  array[i] = tmpi;
-}
-
-// extract the entry with minimum distance from Priority queue
-static void removeMin3D(std::vector<int*>& array)
-{
-  array[0] = array.back();
-  heapify3D(array);
-  array.pop_back();
-}
-
 void FastRouteCore::addNeighborPoints(const int netID,
                                       const int n1,
                                       const int n2,
-                                      std::vector<int*>& points_heap_3D,
-                                      multi_array<int, 3>& dist_3D,
-                                      multi_array<Direction, 3>& directions_3D,
-                                      multi_array<int, 3>& corr_edge_3D,
-                                      multi_array<int, 3>& path_len_3D)
+                                      const bool is_src)
 {
   const auto& treeedges = sttrees_[netID].edges;
   const auto& treenodes = sttrees_[netID].nodes;
 
   const int x1 = treenodes[n1].x;
   const int y1 = treenodes[n1].y;
+  const int x_grid = x_grid_;
+  const int layer_stride = grid_hv_;
+
+  int* d1_base = d1_3D_.data();
+  int* path_len_base = path_len_3D_.data();
+  Direction* directions_base = directions_3D_.data();
+  int* corr_edge_base = corr_edge_3D_.data();
 
   const int numNodes = sttrees_[netID].num_nodes();
   // Reuse member scratch buffers instead of allocating per call (mirrors the
@@ -114,12 +49,18 @@ void FastRouteCore::addNeighborPoints(const int netID,
 
   int nt = treenodes[n1].stackAlias;
 
-  // add n1 into heap1_3D
+  // add n1 into heap
+  const int n1_xy = y1 * x_grid + x1;
   for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-    dist_3D[l][y1][x1] = 0;
-    path_len_3D[l][y1][x1] = 0;
-    directions_3D[l][y1][x1] = Direction::Origin;
-    points_heap_3D.push_back(&dist_3D[l][y1][x1]);
+    const int idx = l * layer_stride + n1_xy;
+    if (is_src) {
+      d1_base[idx] = 0;
+      path_len_base[idx] = 0;
+      directions_base[idx] = Direction::Origin;
+      src_heap_3D_.pushSeed(idx);
+    } else {
+      dest_heap_3D_.push_back(idx);
+    }
     heapVisited[n1] = true;
   }
 
@@ -127,7 +68,7 @@ void FastRouteCore::addNeighborPoints(const int netID,
   heapQueue[queuetail] = n1;
   queuetail++;
 
-  // loop to find all the edges in subtree t1
+  // loop to find all the edges in subtree
   while (queuetail > queuehead) {
     // get cur node from the queuehead
     const int cur = heapQueue[queuehead];
@@ -143,21 +84,26 @@ void FastRouteCore::addNeighborPoints(const int netID,
       if (heapVisited[nbr]) {
         continue;
       }
-      // put all the grids of the adjacent tree edges into
-      // points_heap_3D
+      // put all the grids of the adjacent tree edges into heap
       if (treeedges[edge].route.routelen > 0) {
         // not a degraded edge
-        // put nbr into points_heap_3D if in enlarged region
+        // put nbr into heap if in enlarged region
         if (in_region_[treenodes[nbr].y][treenodes[nbr].x]) {
           const int nbrX = treenodes[nbr].x;
           const int nbrY = treenodes[nbr].y;
+          const int nbr_xy = nbrY * x_grid + nbrX;
           nt = treenodes[nbr].stackAlias;
           for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
-            dist_3D[l][nbrY][nbrX] = 0;
-            path_len_3D[l][nbrY][nbrX] = 0;
-            directions_3D[l][nbrY][nbrX] = Direction::Origin;
-            points_heap_3D.push_back(&dist_3D[l][nbrY][nbrX]);
-            corr_edge_3D[l][nbrY][nbrX] = edge;
+            const int idx = l * layer_stride + nbr_xy;
+            if (is_src) {
+              d1_base[idx] = 0;
+              path_len_base[idx] = 0;
+              directions_base[idx] = Direction::Origin;
+              src_heap_3D_.pushSeed(idx);
+            } else {
+              dest_heap_3D_.push_back(idx);
+            }
+            corr_edge_base[idx] = edge;
           }
         }
 
@@ -166,15 +112,20 @@ void FastRouteCore::addNeighborPoints(const int netID,
         const Route* route = &(treeedges[edge].route);
         if (route->type == RouteType::MazeRoute) {
           for (int j = 1; j < route->routelen; j++) {
-            // don't put edge_n1 and edge_n2 into points_heap_3D
+            // don't put edge_n1 and edge_n2 into heap
             const GPoint3D& pt = route->grids[j];
 
             if (in_region_[pt.y][pt.x]) {
-              dist_3D[pt.layer][pt.y][pt.x] = 0;
-              path_len_3D[pt.layer][pt.y][pt.x] = 0;
-              points_heap_3D.push_back(&dist_3D[pt.layer][pt.y][pt.x]);
-              directions_3D[pt.layer][pt.y][pt.x] = Direction::Origin;
-              corr_edge_3D[pt.layer][pt.y][pt.x] = edge;
+              const int idx = pt.layer * layer_stride + pt.y * x_grid + pt.x;
+              if (is_src) {
+                d1_base[idx] = 0;
+                path_len_base[idx] = 0;
+                src_heap_3D_.pushSeed(idx);
+                directions_base[idx] = Direction::Origin;
+              } else {
+                dest_heap_3D_.push_back(idx);
+              }
+              corr_edge_base[idx] = edge;
             }
           }
 
@@ -191,13 +142,6 @@ void FastRouteCore::addNeighborPoints(const int netID,
 
 void FastRouteCore::setupHeap3D(int netID,
                                 int edgeID,
-                                std::vector<int*>& src_heap_3D,
-                                std::vector<int*>& dest_heap_3D,
-                                multi_array<Direction, 3>& directions_3D,
-                                multi_array<int, 3>& corr_edge_3D,
-                                multi_array<int, 3>& d1_3D,
-                                multi_array<int, 3>& d2_3D,
-                                multi_array<int, 3>& path_len_3D,
                                 int regionX1,
                                 int regionX2,
                                 int regionY1,
@@ -215,8 +159,8 @@ void FastRouteCore::setupHeap3D(int netID,
   const int x2 = treenodes[n2].x;
   const int y2 = treenodes[n2].y;
 
-  src_heap_3D.clear();
-  dest_heap_3D.clear();
+  src_heap_3D_.clear();
+  dest_heap_3D_.clear();
 
   if (num_terminals == 2) {  // 2-pin net
     const int node1_alias = treenodes[n1].stackAlias;
@@ -228,14 +172,14 @@ void FastRouteCore::setupHeap3D(int netID,
     const int node1_access_layer = nets_[netID]->getPinL()[pin_idx1];
     const int node2_access_layer = nets_[netID]->getPinL()[pin_idx2];
 
-    d1_3D[node1_access_layer][y1][x1] = 0;
-    path_len_3D[node1_access_layer][y1][x1] = 0;
-    directions_3D[node1_access_layer][y1][x1] = Direction::Origin;
-    src_heap_3D.push_back(&d1_3D[node1_access_layer][y1][x1]);
-    d2_3D[node2_access_layer][y2][x2] = 0;
-    path_len_3D[node2_access_layer][y2][x2] = 0;
-    directions_3D[node2_access_layer][y2][x2] = Direction::Origin;
-    dest_heap_3D.push_back(&d2_3D[node2_access_layer][y2][x2]);
+    const int idx1 = node1_access_layer * grid_hv_ + y1 * x_grid_ + x1;
+    const int idx2 = node2_access_layer * grid_hv_ + y2 * x_grid_ + x2;
+
+    d1_3D_.data()[idx1] = 0;
+    path_len_3D_.data()[idx1] = 0;
+    directions_3D_.data()[idx1] = Direction::Origin;
+    src_heap_3D_.pushSeed(idx1);
+    dest_heap_3D_.push_back(idx2);
   } else {  // net with more than 2 pins
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -243,26 +187,12 @@ void FastRouteCore::setupHeap3D(int netID,
       }
     }
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
-    // them into src_heap_3D
-    addNeighborPoints(netID,
-                      n1,
-                      n2,
-                      src_heap_3D,
-                      d1_3D,
-                      directions_3D,
-                      corr_edge_3D,
-                      path_len_3D);
+    // them into src_heap_3D_
+    addNeighborPoints(netID, n1, n2, /*is_src=*/true);
 
     // find all the grids on tree edges in subtree t2 (connecting
-    // to n2) and put them into dest_heap_3D
-    addNeighborPoints(netID,
-                      n2,
-                      n1,
-                      dest_heap_3D,
-                      d2_3D,
-                      directions_3D,
-                      corr_edge_3D,
-                      path_len_3D);
+    // to n2) and put them into dest_heap_3D_
+    addNeighborPoints(netID, n2, n1, /*is_src=*/false);
 
     for (int i = regionY1; i <= regionY2; i++) {
       for (int j = regionX1; j <= regionX2; j++) {
@@ -743,6 +673,20 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
   int recovered_nets = 0;
 
+  int* d1_base = d1_3D_.data();
+  int* path_len_base = path_len_3D_.data();
+  Direction* directions_base = directions_3D_.data();
+  parent3D* pr_base = pr_3D_.data();
+  const Edge3D* h_edges_base = h_edges_3D_.data();
+  const Edge3D* v_edges_base = v_edges_3D_.data();
+  uint8_t* pop_heap2_base = pop_heap2_3D_.data();
+  const int x_grid = x_grid_;
+  const int layer_stride = grid_hv_;
+
+  std::vector<float> wire_step_cost(num_layers_);
+  std::vector<float> down_via_cost(num_layers_, 0.0f);
+  std::vector<float> up_via_cost(num_layers_, 0.0f);
+
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
@@ -766,11 +710,24 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
     }
 
+    for (int l = 0; l < num_layers_; l++) {
+      wire_step_cost[l] = getMazeRouteCost3D(netID, l, l, 0, 0, 1, 0, false);
+      if (l > 0) {
+        down_via_cost[l]
+            = getMazeRouteCost3D(netID, l, l - 1, 0, 0, 0, 0, true);
+      }
+      if (l < num_layers_ - 1) {
+        up_via_cost[l] = getMazeRouteCost3D(netID, l, l + 1, 0, 0, 0, 0, true);
+      }
+    }
+
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
+    const int min_layer = net->getMinLayer();
+    const int max_layer = net->getMaxLayer();
 
     // First pass processes all edges; subsequent passes retry only the edges
     // whose content was overwritten by a node shift (updateRouteType1/2).
@@ -828,7 +785,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         enlarge = std::min(origEng, treeedge->route.routelen);
 
         const int regionX1 = std::max(0, xmin - enlarge);
-        const int regionX2 = std::min(x_grid_ - 1, xmax + enlarge);
+        const int regionX2 = std::min(x_grid - 1, xmax + enlarge);
         const int regionY1 = std::max(0, ymin - enlarge);
         const int regionY2 = std::min(y_grid_ - 1, ymax + enlarge);
 
@@ -837,276 +794,155 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
-        // initialize pop_src_heap_3D_[] and pop_heap2_3D[] as false (for
-        // detecting the shortest path is found or not)
-
+        const int region_width = regionX2 - regionX1 + 1;
         for (int k = 0; k < num_layers_; k++) {
+          int* d1_layer = d1_base + k * layer_stride;
           for (int i = regionY1; i <= regionY2; i++) {
-            for (int j = regionX1; j <= regionX2; j++) {
-              d1_3D_[k][i][j] = BIG_INT;
-              d2_3D_[k][i][j] = BIG_INT;
-              path_len_3D_[k][i][j] = BIG_INT;
-            }
+            std::fill_n(
+                d1_layer + i * x_grid + regionX1, region_width, BIG_INT);
           }
         }
 
-        // setup src_heap_3D, dest_heap_3D and initialize d1_3D[][] and
-        // d2_3D[][] for all the grids on the two subtrees
-        setupHeap3D(netID,
-                    edgeID,
-                    src_heap_3D_,
-                    dest_heap_3D_,
-                    directions_3D_,
-                    corr_edge_3D_,
-                    d1_3D_,
-                    d2_3D_,
-                    path_len_3D_,
-                    regionX1,
-                    regionX2,
-                    regionY1,
-                    regionY2);
+        // setup src_heap_3D_, dest_heap_3D_ and initialize d1_3D_ for all the
+        // grids on the two subtrees
+        setupHeap3D(netID, edgeID, regionX1, regionX2, regionY1, regionY2);
 
         // while loop to find shortest path
-        int ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
+        int ind1 = src_heap_3D_.topIdx();
 
-        for (auto& i : dest_heap_3D_) {
-          pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
+        for (const int i : dest_heap_3D_) {
+          pop_heap2_base[i] = 1;
         }
 
         // Track searches that cannot reach the destination subtree.
         bool heap_underflow = false;
 
-        while (
-            !pop_heap2_3D_[ind1])  // stop until the grid position been popped
-                                   // out from both src_heap_3D and dest_heap_3D
+        while (!pop_heap2_base[ind1])  // stop until the grid position been
+                                       // popped out from both src_heap_3D and
+                                       // dest_heap_3D
         {
           // relax all the adjacent grids within the enlarged region for
           // source subtree
-          const int curL = ind1 / (grid_hv_);
-          const int remd = ind1 % (grid_hv_);
-          const int curX = remd % x_range_;
-          const int curY = remd / x_range_;
-          removeMin3D(src_heap_3D_);
+          const int curL = ind1 / layer_stride;
+          const int remd = ind1 % layer_stride;
+          const int curX = remd % x_grid;
+          const int curY = remd / x_grid;
+          src_heap_3D_.removeMin();
 
-          // Cache the current cell's state. During relaxation of this popped
-          // node only its neighbors (tmpX/tmpY/tmpL) are written, never the
-          // current [curL][curY][curX] cell, so these values are loop-invariant
-          // across the six direction blocks below. Hoisting them avoids ~5
-          // redundant boost::multi_array 3D index computations per popped node.
-          const int cur_d1 = d1_3D_[curL][curY][curX];
-          const int cur_path_len = path_len_3D_[curL][curY][curX];
-          const Direction cur_dir = directions_3D_[curL][curY][curX];
+          const int cur_d1 = d1_base[ind1];
+          const int cur_path_len = path_len_base[ind1];
+          const Direction cur_dir = directions_base[ind1];
 
           // If the net has more than 1 cost, use its cost as extra cost when
           // trying to find a new route
           edge_cost = net->getLayerEdgeCost(curL);
 
-          const bool Horizontal
-              = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
+          if (min_layer <= curL && curL <= max_layer) {
+            const int new_len = cur_path_len + 1;
+            const float penalty = (new_len > original_len && resistance_aware_)
+                                      ? detour_penalty_
+                                      : 0;
+            const float tmp = cur_d1 + wire_step_cost[curL] + penalty;
+            const int tmp_int = static_cast<int>(tmp);
 
-          if (Horizontal) {
-            // left
-            if (curX > regionX1 && cur_dir != Direction::East) {
-              const float cost = getMazeRouteCost3D(
-                  netID, curL, curL, curX, curY, curX - 1, curY, false);
-              const int new_len = cur_path_len + 1;
-              const float penalty
-                  = (new_len > original_len && resistance_aware_)
-                        ? detour_penalty_
-                        : 0;
-              const float tmp = cur_d1 + cost + penalty;
-              if (h_edges_3D_[curL][curY][curX - 1].usage + edge_cost
-                      <= h_edges_3D_[curL][curY][curX - 1].cap
-                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-                const int tmpX = curX - 1;  // the left neighbor
+            const bool Horizontal
+                = layer_directions_[curL] == odb::dbTechLayerDir::HORIZONTAL;
 
-                if (d1_3D_[curL][curY][tmpX]
-                    >= BIG_INT)  // left neighbor not been
-                                 // put into src_heap_3D
-                {
-                  d1_3D_[curL][curY][tmpX] = tmp;
-                  path_len_3D_[curL][curY][tmpX] = new_len;
-                  pr_3D_[curL][curY][tmpX].layer = curL;
-                  pr_3D_[curL][curY][tmpX].x = curX;
-                  pr_3D_[curL][curY][tmpX].y = curY;
-                  directions_3D_[curL][curY][tmpX] = Direction::West;
-                  src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
-                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-                } else if (d1_3D_[curL][curY][tmpX]
-                           > tmp)  // left neighbor been put into src_heap_3D
-                                   // but needs update
-                {
-                  d1_3D_[curL][curY][tmpX] = tmp;
-                  path_len_3D_[curL][curY][tmpX] = new_len;
-                  pr_3D_[curL][curY][tmpX].layer = curL;
-                  pr_3D_[curL][curY][tmpX].x = curX;
-                  pr_3D_[curL][curY][tmpX].y = curY;
-                  directions_3D_[curL][curY][tmpX] = Direction::West;
-                  const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                  if (it != src_heap_3D_.end()) {
-                    const int pos = it - src_heap_3D_.begin();
-                    updateHeap3D(src_heap_3D_, pos);
-                  } else {
-                    logger_->error(GRT,
-                                   601,
-                                   "Unable to update: position not found in 3D "
-                                   "heap for net {}.",
-                                   net->getName());
+            if (Horizontal) {
+              // left
+              if (curX > regionX1 && cur_dir != Direction::East) {
+                const int nbr_idx = ind1 - 1;
+                if (h_edges_base[nbr_idx].usage + edge_cost
+                    <= h_edges_base[nbr_idx].cap) {
+                  if (d1_base[nbr_idx] >= BIG_INT) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::West;
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
+                  } else if (d1_base[nbr_idx] > tmp) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::West;
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
-            }
-            // right
-            if (Horizontal && curX < regionX2 && cur_dir != Direction::West) {
-              const float cost = getMazeRouteCost3D(
-                  netID, curL, curL, curX, curY, curX + 1, curY, false);
-              const int new_len = cur_path_len + 1;
-              const float penalty
-                  = (new_len > original_len && resistance_aware_)
-                        ? detour_penalty_
-                        : 0;
-              const float tmp = cur_d1 + cost + penalty;
-              const int tmpX = curX + 1;  // the right neighbor
-
-              if (h_edges_3D_[curL][curY][curX].usage + edge_cost
-                      <= h_edges_3D_[curL][curY][curX].cap
-                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-                if (d1_3D_[curL][curY][tmpX]
-                    >= BIG_INT)  // right neighbor not been put into
-                                 // src_heap_3D
-                {
-                  d1_3D_[curL][curY][tmpX] = tmp;
-                  path_len_3D_[curL][curY][tmpX] = new_len;
-                  pr_3D_[curL][curY][tmpX].layer = curL;
-                  pr_3D_[curL][curY][tmpX].x = curX;
-                  pr_3D_[curL][curY][tmpX].y = curY;
-                  directions_3D_[curL][curY][tmpX] = Direction::East;
-                  src_heap_3D_.push_back(&d1_3D_[curL][curY][tmpX]);
-                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-                } else if (d1_3D_[curL][curY][tmpX]
-                           > tmp)  // right neighbor been put into src_heap_3D
-                                   // but needs update
-                {
-                  d1_3D_[curL][curY][tmpX] = tmp;
-                  path_len_3D_[curL][curY][tmpX] = new_len;
-                  pr_3D_[curL][curY][tmpX].layer = curL;
-                  pr_3D_[curL][curY][tmpX].x = curX;
-                  pr_3D_[curL][curY][tmpX].y = curY;
-                  directions_3D_[curL][curY][tmpX] = Direction::East;
-                  const int* dtmp = &d1_3D_[curL][curY][tmpX];
-                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                  if (it != src_heap_3D_.end()) {
-                    const int pos = it - src_heap_3D_.begin();
-                    updateHeap3D(src_heap_3D_, pos);
-                  } else {
-                    logger_->error(GRT,
-                                   602,
-                                   "Unable to update: position not found in 3D "
-                                   "heap for net {}.",
-                                   net->getName());
+              // right
+              if (curX < regionX2 && cur_dir != Direction::West) {
+                if (h_edges_base[ind1].usage + edge_cost
+                    <= h_edges_base[ind1].cap) {
+                  const int nbr_idx = ind1 + 1;
+                  if (d1_base[nbr_idx] >= BIG_INT) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::East;
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
+                  } else if (d1_base[nbr_idx] > tmp) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::East;
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
-            }
-          } else {
-            // bottom
-            if (!Horizontal && curY > regionY1 && cur_dir != Direction::South) {
-              const float cost = getMazeRouteCost3D(
-                  netID, curL, curL, curX, curY, curX, curY - 1, false);
-              const int new_len = cur_path_len + 1;
-              const float penalty
-                  = (new_len > original_len && resistance_aware_)
-                        ? detour_penalty_
-                        : 0;
-              const float tmp = cur_d1 + cost + penalty;
-              const int tmpY = curY - 1;  // the bottom neighbor
-              if (v_edges_3D_[curL][curY - 1][curX].usage + edge_cost
-                      <= v_edges_3D_[curL][curY - 1][curX].cap
-                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-                if (d1_3D_[curL][tmpY][curX]
-                    >= BIG_INT)  // bottom neighbor not been put into
-                                 // src_heap_3D
-                {
-                  d1_3D_[curL][tmpY][curX] = tmp;
-                  path_len_3D_[curL][tmpY][curX] = new_len;
-                  pr_3D_[curL][tmpY][curX].layer = curL;
-                  pr_3D_[curL][tmpY][curX].x = curX;
-                  pr_3D_[curL][tmpY][curX].y = curY;
-                  directions_3D_[curL][tmpY][curX] = Direction::North;
-                  src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
-                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-                } else if (d1_3D_[curL][tmpY][curX]
-                           > tmp)  // bottom neighbor been put into
-                                   // src_heap_3D but needs update
-                {
-                  d1_3D_[curL][tmpY][curX] = tmp;
-                  path_len_3D_[curL][tmpY][curX] = new_len;
-                  pr_3D_[curL][tmpY][curX].layer = curL;
-                  pr_3D_[curL][tmpY][curX].x = curX;
-                  pr_3D_[curL][tmpY][curX].y = curY;
-                  directions_3D_[curL][tmpY][curX] = Direction::North;
-                  const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                  if (it != src_heap_3D_.end()) {
-                    const int pos = it - src_heap_3D_.begin();
-                    updateHeap3D(src_heap_3D_, pos);
-                  } else {
-                    logger_->error(GRT,
-                                   603,
-                                   "Unable to update: position not found in 3D "
-                                   "heap for net {}.",
-                                   net->getName());
+            } else {
+              // bottom
+              if (curY > regionY1 && cur_dir != Direction::South) {
+                const int nbr_idx = ind1 - x_grid;
+                if (v_edges_base[nbr_idx].usage + edge_cost
+                    <= v_edges_base[nbr_idx].cap) {
+                  if (d1_base[nbr_idx] >= BIG_INT) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::North;
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
+                  } else if (d1_base[nbr_idx] > tmp) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::North;
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
-            }
-            // top
-            if (!Horizontal && curY < regionY2 && cur_dir != Direction::North) {
-              const float cost = getMazeRouteCost3D(
-                  netID, curL, curL, curX, curY, curX, curY + 1, false);
-              const int new_len = cur_path_len + 1;
-              const float penalty
-                  = (new_len > original_len && resistance_aware_)
-                        ? detour_penalty_
-                        : 0;
-              const float tmp = cur_d1 + cost + penalty;
-              const int tmpY = curY + 1;  // the top neighbor
-              if (v_edges_3D_[curL][curY][curX].usage + edge_cost
-                      <= v_edges_3D_[curL][curY][curX].cap
-                  && net->getMinLayer() <= curL && curL <= net->getMaxLayer()) {
-                if (d1_3D_[curL][tmpY][curX]
-                    >= BIG_INT)  // top neighbor not been put into src_heap_3D
-                {
-                  d1_3D_[curL][tmpY][curX] = tmp;
-                  path_len_3D_[curL][tmpY][curX] = new_len;
-                  pr_3D_[curL][tmpY][curX].layer = curL;
-                  pr_3D_[curL][tmpY][curX].x = curX;
-                  pr_3D_[curL][tmpY][curX].y = curY;
-                  directions_3D_[curL][tmpY][curX] = Direction::South;
-                  src_heap_3D_.push_back(&d1_3D_[curL][tmpY][curX]);
-                  updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-                } else if (d1_3D_[curL][tmpY][curX]
-                           > tmp)  // top neighbor been put into src_heap_3D
-                                   // but needs update
-                {
-                  d1_3D_[curL][tmpY][curX] = tmp;
-                  path_len_3D_[curL][tmpY][curX] = new_len;
-                  pr_3D_[curL][tmpY][curX].layer = curL;
-                  pr_3D_[curL][tmpY][curX].x = curX;
-                  pr_3D_[curL][tmpY][curX].y = curY;
-                  directions_3D_[curL][tmpY][curX] = Direction::South;
-                  const int* dtmp = &d1_3D_[curL][tmpY][curX];
-                  const auto it = std::ranges::find(src_heap_3D_, dtmp);
-                  if (it != src_heap_3D_.end()) {
-                    const int pos = it - src_heap_3D_.begin();
-                    updateHeap3D(src_heap_3D_, pos);
-                  } else {
-                    logger_->error(GRT,
-                                   604,
-                                   "Unable to update: position not found in 3D "
-                                   "heap for net {}.",
-                                   net->getName());
+              // top
+              if (curY < regionY2 && cur_dir != Direction::North) {
+                if (v_edges_base[ind1].usage + edge_cost
+                    <= v_edges_base[ind1].cap) {
+                  const int nbr_idx = ind1 + x_grid;
+                  if (d1_base[nbr_idx] >= BIG_INT) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::South;
+                    src_heap_3D_.insert(nbr_idx, tmp_int);
+                  } else if (d1_base[nbr_idx] > tmp) {
+                    d1_base[nbr_idx] = tmp_int;
+                    path_len_base[nbr_idx] = new_len;
+                    pr_base[nbr_idx].layer = curL;
+                    pr_base[nbr_idx].x = curX;
+                    pr_base[nbr_idx].y = curY;
+                    directions_base[nbr_idx] = Direction::South;
+                    src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
                   }
                 }
               }
@@ -1115,90 +951,51 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
           // down
           if (curL > 0 && cur_dir != Direction::Up) {
-            // Via cost
-            const float cost = getMazeRouteCost3D(
-                netID, curL, curL - 1, curX, curY, curX, curY, true);
-            const int new_len = cur_path_len;
-            const float tmp = cur_d1 + cost;
-            const int tmpL = curL - 1;  // the bottom neighbor
+            const float tmp = cur_d1 + down_via_cost[curL];
+            const int tmp_int = static_cast<int>(tmp);
+            const int nbr_idx = ind1 - layer_stride;
 
-            if (d1_3D_[tmpL][curY][curX]
-                >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
-            {
-              d1_3D_[tmpL][curY][curX] = tmp;
-              path_len_3D_[tmpL][curY][curX] = new_len;
-              pr_3D_[tmpL][curY][curX].layer = curL;
-              pr_3D_[tmpL][curY][curX].x = curX;
-              pr_3D_[tmpL][curY][curX].y = curY;
-              directions_3D_[tmpL][curY][curX] = Direction::Down;
-              src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
-              updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-            } else if (d1_3D_[tmpL][curY][curX]
-                       > tmp)  // bottom neighbor been put into src_heap_3D
-                               // but needs update
-            {
-              d1_3D_[tmpL][curY][curX] = tmp;
-              path_len_3D_[tmpL][curY][curX] = new_len;
-              pr_3D_[tmpL][curY][curX].layer = curL;
-              pr_3D_[tmpL][curY][curX].x = curX;
-              pr_3D_[tmpL][curY][curX].y = curY;
-              directions_3D_[tmpL][curY][curX] = Direction::Down;
-              const int* dtmp = &d1_3D_[tmpL][curY][curX];
-              const auto it = std::ranges::find(src_heap_3D_, dtmp);
-              if (it != src_heap_3D_.end()) {
-                const int pos = it - src_heap_3D_.begin();
-                updateHeap3D(src_heap_3D_, pos);
-              } else {
-                logger_->error(GRT,
-                               605,
-                               "Unable to update: position not found in 3D "
-                               "heap for net {}.",
-                               net->getName());
-              }
+            if (d1_base[nbr_idx] >= BIG_INT) {
+              d1_base[nbr_idx] = tmp_int;
+              path_len_base[nbr_idx] = cur_path_len;
+              pr_base[nbr_idx].layer = curL;
+              pr_base[nbr_idx].x = curX;
+              pr_base[nbr_idx].y = curY;
+              directions_base[nbr_idx] = Direction::Down;
+              src_heap_3D_.insert(nbr_idx, tmp_int);
+            } else if (d1_base[nbr_idx] > tmp) {
+              d1_base[nbr_idx] = tmp_int;
+              path_len_base[nbr_idx] = cur_path_len;
+              pr_base[nbr_idx].layer = curL;
+              pr_base[nbr_idx].x = curX;
+              pr_base[nbr_idx].y = curY;
+              directions_base[nbr_idx] = Direction::Down;
+              src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
             }
           }
 
           // up
           if (curL < num_layers_ - 1 && cur_dir != Direction::Down) {
-            // Via cost
-            const float cost = getMazeRouteCost3D(
-                netID, curL, curL + 1, curX, curY, curX, curY, true);
-            const int new_len = cur_path_len;
-            const float tmp = cur_d1 + cost;
-            const int tmpL = curL + 1;  // the bottom neighbor
-            if (d1_3D_[tmpL][curY][curX]
-                >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
-            {
-              d1_3D_[tmpL][curY][curX] = tmp;
-              path_len_3D_[tmpL][curY][curX] = new_len;
-              pr_3D_[tmpL][curY][curX].layer = curL;
-              pr_3D_[tmpL][curY][curX].x = curX;
-              pr_3D_[tmpL][curY][curX].y = curY;
-              directions_3D_[tmpL][curY][curX] = Direction::Up;
-              src_heap_3D_.push_back(&d1_3D_[tmpL][curY][curX]);
-              updateHeap3D(src_heap_3D_, src_heap_3D_.size() - 1);
-            } else if (d1_3D_[tmpL][curY][curX]
-                       > tmp)  // bottom neighbor been put into src_heap_3D
-                               // but needs update
-            {
-              d1_3D_[tmpL][curY][curX] = tmp;
-              path_len_3D_[tmpL][curY][curX] = new_len;
-              pr_3D_[tmpL][curY][curX].layer = curL;
-              pr_3D_[tmpL][curY][curX].x = curX;
-              pr_3D_[tmpL][curY][curX].y = curY;
-              directions_3D_[tmpL][curY][curX] = Direction::Up;
-              const int* dtmp = &d1_3D_[tmpL][curY][curX];
-              const auto it = std::ranges::find(src_heap_3D_, dtmp);
-              if (it != src_heap_3D_.end()) {
-                const int pos = it - src_heap_3D_.begin();
-                updateHeap3D(src_heap_3D_, pos);
-              } else {
-                logger_->error(GRT,
-                               606,
-                               "Unable to update: position not found in 3D "
-                               "heap for net {}.",
-                               net->getName());
-              }
+            const float tmp = cur_d1 + up_via_cost[curL];
+            const int tmp_int = static_cast<int>(tmp);
+            const int nbr_idx = ind1 + layer_stride;
+
+            if (d1_base[nbr_idx] >= BIG_INT) {
+              d1_base[nbr_idx] = tmp_int;
+              path_len_base[nbr_idx] = cur_path_len;
+              pr_base[nbr_idx].layer = curL;
+              pr_base[nbr_idx].x = curX;
+              pr_base[nbr_idx].y = curY;
+              directions_base[nbr_idx] = Direction::Up;
+              src_heap_3D_.insert(nbr_idx, tmp_int);
+            } else if (d1_base[nbr_idx] > tmp) {
+              d1_base[nbr_idx] = tmp_int;
+              path_len_base[nbr_idx] = cur_path_len;
+              pr_base[nbr_idx].layer = curL;
+              pr_base[nbr_idx].x = curX;
+              pr_base[nbr_idx].y = curY;
+              directions_base[nbr_idx] = Direction::Up;
+              src_heap_3D_.decreaseKey(nbr_idx, tmp_int);
             }
           }
 
@@ -1208,11 +1005,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
             break;
           }
           // update ind1 for next loop
-          ind1 = (src_heap_3D_[0] - &d1_3D_[0][0][0]);
+          ind1 = src_heap_3D_.topIdx();
         }  // while loop
 
-        for (auto& i : dest_heap_3D_) {
-          pop_heap2_3D_[i - &d2_3D_[0][0][0]] = false;
+        for (const int i : dest_heap_3D_) {
+          pop_heap2_base[i] = 0;
         }
 
         if (heap_underflow) {
@@ -1231,9 +1028,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         // get the new route for the edge and store it in gridsX[] and
         // gridsY[] temporarily
 
-        const int16_t crossL = ind1 / (grid_hv_);
-        const int16_t crossX = (ind1 % (grid_hv_)) % x_range_;
-        const int16_t crossY = (ind1 % (grid_hv_)) / x_range_;
+        const int16_t crossL = ind1 / layer_stride;
+        const int16_t crossX = (ind1 % layer_stride) % x_grid;
+        const int16_t crossY = (ind1 % layer_stride) / x_grid;
 
         int cnt = 0;
         int16_t curX = crossX;
