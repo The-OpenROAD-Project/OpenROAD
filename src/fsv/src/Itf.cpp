@@ -149,7 +149,6 @@ const std::vector<const char*> kRefusedConductor
        "ILD_VS_WIDTH_AND_SPACING",
        "POLYNOMIAL_BASED_THICKNESS_VARIATION",
        "RHO_VS_SI_WIDTH_AND_THICKNESS",
-       "SIDE_TANGENT",
        "THICKNESS_VS_DENSITY",
        "THICKNESS_VS_WIDTH_AND_SPACING",
        "TVF_FILE",
@@ -211,6 +210,7 @@ const std::set<std::string_view>& statementKeywords()
         "RESISTIVE_ONLY_ETCH",
         "ETCH_VS_WIDTH_AND_SPACING",
         "RPSQ",
+        "SIDE_TANGENT",
         "RHO",
         "RPSQ_VS_SI_WIDTH",
         "RPSQ_VS_WIDTH_AND_SPACING",
@@ -1100,6 +1100,16 @@ void Reader::readConductor(Fields& b, const Stack& stack, Stack::Conductor& c)
   const int line = b.node().line;
   b.refuse(kRefusedConductor);
   b.skip(kSkippedConductor);
+  // Sloped sidewalls are not modeled yet: the conductor is solved with
+  // vertical ones, which is said rather than refused.
+  if (const Node* tangent = b.take("SIDE_TANGENT")) {
+    const Token& value = Fields::valueOf(*tangent);
+    if (parseNumber(value, "SIDE_TANGENT") != 0) {
+      warn()(tangent->line,
+             "SIDE_TANGENT = " + value.text + " in " + b.label()
+                 + " is not modeled; its sidewalls are taken as vertical");
+    }
+  }
   c.min_width = b.number("WMIN", 0);
   c.min_spacing = b.number("SMIN", 0);
   c.layer_type = b.text("LAYER_TYPE");

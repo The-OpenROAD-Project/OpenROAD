@@ -628,6 +628,21 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   expectError(conductor("THICKNESS_VS_WIDTH_AND_SPACING " + table),
               "THICKNESS_VS_WIDTH_AND_SPACING in CONDUCTOR M is not "
               "supported");
+  // Sloped sidewalls are warned about, not refused; vertical ones are
+  // simply read.
+  std::vector<ItfWarning> warnings;
+  const Stack sloped
+      = parse(conductor("RPSQ=1 SIDE_TANGENT=0.06992"), &warnings);
+  EXPECT_EQ(sloped.conductor(sloped.layer("M")).rpsq, 1);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "SIDE_TANGENT = 0.06992 in CONDUCTOR M is not modeled; its "
+            "sidewalls are taken as vertical");
+  warnings.clear();
+  parse(conductor("SIDE_TANGENT=0"), &warnings);
+  EXPECT_TRUE(warnings.empty());
+  expectError(conductor("SIDE_TANGENT=x"),
+              "SIDE_TANGENT expects a finite number");
   expectError(conductor("FILL_RATIO=0.2"),
               "FILL_RATIO in CONDUCTOR M is not supported");
   expectError(conductor("THICKNESS_VS_DENSITY { (0.1, 0.01) }"),
@@ -722,7 +737,7 @@ TEST(Itf, RefusesAndChecksResistanceForms)
               "CRT_VS_AREA of v cannot be combined");
   expectError(two + "VIA v { FROM=M1 TO=M2 RPV_VS_AREA { (2, 1) (1, 1) } }\n",
               "RPV_VS_AREA areas must be ascending");
-  std::vector<ItfWarning> warnings;
+  warnings.clear();
   parse(two + "VIA v { FROM=M1 TO=M2 BOGUS=1 }\n", &warnings);
   ASSERT_EQ(warnings.size(), 1u);
   EXPECT_EQ(warnings[0].message, "unknown keyword BOGUS in VIA v, skipped");
