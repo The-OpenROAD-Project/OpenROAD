@@ -3815,15 +3815,17 @@ void dbNetwork::staToDb(const Instance* instance,
 
 dbNet* dbNetwork::staToDb(const Net* net) const
 {
-  dbNet* db_net = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
-  // net(pin) returns a dbChipNet on a chiplet boundary, so a caller expecting
-  // a flat net can arrive here with one. Return null rather than casting it:
-  // the assert below is compiled out under NDEBUG, leaving a garbage pointer.
-  if (db_net != nullptr && db_net->getObjectType() != odb::dbNetObj) {
+  if (net == nullptr) {
     return nullptr;
   }
-  assert(!db_net || db_net->getObjectType() == odb::dbNetObj);
-  return db_net;
+  // net(pin) returns a dbChipNet on a chiplet boundary, so a caller expecting
+  // a flat net can arrive here with one. Check the type through the common
+  // base before casting.
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+  if (obj->getObjectType() != odb::dbNetObj) {
+    return nullptr;
+  }
+  return reinterpret_cast<dbNet*>(obj);
 }
 
 dbNet* dbNetwork::flatNet(const Net* net) const
