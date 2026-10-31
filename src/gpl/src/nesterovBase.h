@@ -793,6 +793,12 @@ class BinGrid
   int binCntY_ = 0;
   double binSizeX_ = 0;
   double binSizeY_ = 0;
+  std::vector<int> binLx_;
+  std::vector<int> binUx_;
+  std::vector<int> binLy_;
+  std::vector<int> binUy_;
+  std::vector<std::vector<int64_t>> per_thread_inst_area_buffers_;
+  std::vector<std::vector<int64_t>> per_thread_filler_area_buffers_;
   float targetDensity_ = 0;
   int64_t sumOverflowArea_ = 0;
   int64_t sumOverflowAreaUnscaled_ = 0;
@@ -934,6 +940,14 @@ class NesterovBaseCommon
   void getAllWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
                                    std::vector<FloatPoint>& out);
 
+  // Bulk wirelength gradient routine that iterates and accumulates over pins.
+  // Called by CpuWirelengthGradientBackend::getCellGradients. Defined in
+  // nesterovBase.cpp.
+  void getWireLengthGradientsWA(const std::vector<GCellHandle>& gCells,
+                                std::vector<FloatPoint>& out,
+                                float wlCoeffX,
+                                float wlCoeffY);
+
   // GPU path: run the per-inst gradient gather on device only (no host
   // copy) so the NB-level device scatter can consume it. No-op on the CPU
   // backend. Defined in wirelengthGradient.cpp.
@@ -1067,6 +1081,7 @@ class NesterovBaseCommon
   int new_gcells_count_;
   int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
+  std::vector<FloatPoint> pin_grads_;
 };
 
 // Stores instances belonging to a specific power domain
