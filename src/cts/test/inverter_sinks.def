@@ -1,0 +1,61 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN inverter_sinks ;
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 200000 200000 ) ;
+
+COMPONENTS 12 ;
+- inv_multi INV_X1 + PLACED ( 20000 20000 ) N
+ ;
+- inv_gater INV_X1 + PLACED ( 20000 60000 ) N
+ ;
+- inv_single INV_X1 + PLACED ( 20000 100000 ) N
+ ;
+- gater CLKGATE_X1 + PLACED ( 60000 60000 ) N
+ ;
+- ff_m0 DFF_X1 + PLACED ( 60000 10000 ) N
+ ;
+- ff_m1 DFF_X1 + PLACED ( 60000 30000 ) N
+ ;
+- ff_g0 DFF_X1 + PLACED ( 100000 60000 ) N
+ ;
+- ff_s0 DFF_X1 + PLACED ( 60000 100000 ) N
+ ;
+- ff0 DFF_X1 + PLACED ( 140000 20000 ) N
+ ;
+- ff1 DFF_X1 + PLACED ( 140000 60000 ) N
+ ;
+- ff2 DFF_X1 + PLACED ( 140000 100000 ) N
+ ;
+- ff3 DFF_X1 + PLACED ( 140000 140000 ) N
+ ;
+END COMPONENTS
+
+PINS 1 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 )
+  + FIXED ( 100000 200000 ) S ;
+END PINS
+
+NETS 5 ;
+- clk
+  ( PIN clk ) ( inv_multi A ) ( inv_gater A ) ( inv_single A )
+  ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK )
+ ;
+- inv_multi_out
+  ( inv_multi ZN ) ( ff_m0 CK ) ( ff_m1 CK )
+ ;
+- inv_gater_out
+  ( inv_gater ZN ) ( gater CK )
+ ;
+- gated_clk
+  ( gater GCK ) ( ff_g0 CK )
+ ;
+- inv_single_out
+  ( inv_single ZN ) ( ff_s0 CK )
+ ;
+END NETS
+
+END DESIGN
