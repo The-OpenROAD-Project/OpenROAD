@@ -1851,7 +1851,6 @@ void WebServer::saveReport(const std::string& filename,
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
       = boost::json::serialize(serializeBoundsResponse(*generator_, true));
-  const auto tech_layers = generator_->getLayers();
 
   // ── Serialize module hierarchy ──
 
@@ -1903,19 +1902,47 @@ void WebServer::saveReport(const std::string& filename,
 
   // Every pane the viewer mounts by default, the same stack save_image draws,
   // plus the module coloring.
-  std::vector<std::string> all_layers
-      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
-  all_layers.emplace_back("_modules");
+  std::vector<PaintLayer> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, generator_->paintOrderLayers());
+  all_layers.push_back({.layer = "_modules", .chiplet = ""});
 
-  // Collect non-empty tiles as "layer/z/x/y" -> base64.
+  // Collect non-empty tiles as "[chiplet|]layer/z/x/y" -> base64.  Must match
+  // the key WebSocketManager._cacheRequest builds.
   std::vector<std::pair<std::string, std::string>> tile_entries;
-  for (const auto& layer : all_layers) {
+  TileVisibility scoped_vis = vis;
+  const auto extents = generator_->layerExtents();
+  // World rect of each tile, indexed [ty][tx] with ty as Leaflet counts it.
+  const odb::Rect bounds = generator_->getBounds();
+  std::vector<std::vector<odb::Rect>> tile_rects(num_tiles);
+  for (int ty = 0; ty < num_tiles; ++ty) {
+    for (int tx = 0; tx < num_tiles; ++tx) {
+      tile_rects[ty].push_back(
+          TileGenerator::tileWorldRect(bounds, kZ, tx, num_tiles - 1 - ty));
+    }
+  }
+  for (const PaintLayer& entry : all_layers) {
+    scoped_vis.chiplet = entry.chiplet;
+    const std::string prefix = entry.chiplet.empty()
+                                   ? entry.layer
+                                   : entry.chiplet + "|" + entry.layer;
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
+        if (!TileGenerator::rowMayDraw(
+                *extents, entry, tile_rects[ty][tx], scoped_vis)) {
+          continue;
+        }
+        auto png = generator_->generateTile(entry.layer,
+                                            kZ,
+                                            tx,
+                                            ty,
+                                            scoped_vis,
+                                            {},
+                                            {},
+                                            {},
+                                            {},
+                                            mod_colors_ptr);
         if (!is_blank(png)) {
-          std::string key = layer + "/" + std::to_string(kZ) + "/"
+          std::string key = prefix + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
         }
