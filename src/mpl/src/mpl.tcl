@@ -52,9 +52,7 @@ proc rtl_macro_placer { args } {
 
   #
   # Check for valid design
-  if { [ord::get_db_block] == "NULL" } {
-    utl::error MPL 1 "No block found for Macro Placement."
-  }
+  mpl::check_block_exists
 
   # Set the default parameters for the macro_placer
   # Set auto defaults for min/max std cells and macros based on design
@@ -132,29 +130,13 @@ proc rtl_macro_placer { args } {
   }
 
   if { [info exists keys(-min_channel_size)] } {
-    set min_channel_size $keys(-min_channel_size)
-    set length [llength $min_channel_size]
-
-    if { $length != 1 && $length != 2 } {
-      utl::error MPL 80 "-min_channel_size must have 1 or 2 values."
-    }
-
-    if { $length == 1 } {
-      set min_channel_width [lindex $min_channel_size 0]
-      set min_channel_height $min_channel_width
-    } else {
-      lassign $min_channel_size min_channel_width min_channel_height
-    }
-
+    lassign [mpl::parse_min_channel $keys(-min_channel_size)] \
+      min_channel_width min_channel_height
     mpl::set_min_channel $min_channel_width $min_channel_height
   }
 
-  if {
-    [info exists flags(-pin_aware_channels)]
-    && ![info exists keys(-min_channel_size)]
-  } {
-    utl::error MPL 79 "-pin_aware_channels requires -min_channel_size to be set."
-  }
+  mpl::check_pin_aware_channels [info exists flags(-pin_aware_channels)] \
+    [info exists keys(-min_channel_size)]
 
   if { [info exists keys(-fence_lx)] } {
     set fence_lx $keys(-fence_lx)
@@ -240,6 +222,50 @@ proc rtl_macro_placer { args } {
     return false
   }
 
+  return true
+}
+
+sta::define_cmd_args "check_macro_placement" {[-min_channel_size {width [height]}] \
+                                            [-fence_lx fence_lx] \
+                                            [-fence_ly fence_ly] \
+                                            [-fence_ux fence_ux] \
+                                            [-fence_uy fence_uy] \
+                                            [-pin_aware_channels]}
+proc check_macro_placement { args } {
+  sta::parse_key_args "check_macro_placement" args \
+    keys {-min_channel_size -fence_lx -fence_ly -fence_ux -fence_uy} \
+    flags {-pin_aware_channels}
+  sta::check_argc_eq0 "check_macro_placement" $args
+  mpl::check_block_exists
+
+  set min_channel_width 0.0
+  set min_channel_height 0.0
+  if { [info exists keys(-min_channel_size)] } {
+    lassign [mpl::parse_min_channel $keys(-min_channel_size)] \
+      min_channel_width min_channel_height
+  }
+  mpl::check_pin_aware_channels [info exists flags(-pin_aware_channels)] \
+    [info exists keys(-min_channel_size)]
+
+  set fence_coordinates {}
+  foreach coordinate {lx ly ux uy} {
+    if { [info exists keys(-fence_$coordinate)] } {
+      lappend fence_coordinates $keys(-fence_$coordinate)
+    }
+  }
+  set has_fence [expr { [llength $fence_coordinates] != 0 }]
+  if { $has_fence && [llength $fence_coordinates] != 4 } {
+    utl::error MPL 81 "Specify all four -fence_lx, -fence_ly, -fence_ux and\
+                      -fence_uy coordinates, or omit them all."
+  }
+  if { !$has_fence } {
+    set fence_coordinates {0.0 0.0 0.0 0.0}
+  }
+  lassign $fence_coordinates fence_lx fence_ly fence_ux fence_uy
+
+  mpl::check_macro_placement_cmd $fence_lx $fence_ly $fence_ux $fence_uy \
+    $min_channel_width $min_channel_height \
+    [info exists flags(-pin_aware_channels)] $has_fence
   return true
 }
 
@@ -356,6 +382,29 @@ proc block_macro_channels { args } {
 }
 
 namespace eval mpl {
+proc check_block_exists { } {
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 1 "No block found for Macro Placement."
+  }
+}
+
+proc parse_min_channel { min_channel_size } {
+  set length [llength $min_channel_size]
+  if { $length != 1 && $length != 2 } {
+    utl::error MPL 80 "-min_channel_size must have 1 or 2 values."
+  }
+  if { $length == 1 } {
+    return [lrepeat 2 [lindex $min_channel_size 0]]
+  }
+  return $min_channel_size
+}
+
+proc check_pin_aware_channels { pin_aware_channels has_min_channel } {
+  if { $pin_aware_channels && !$has_min_channel } {
+    utl::error MPL 79 "-pin_aware_channels requires -min_channel_size to be set."
+  }
+}
+
 proc parse_halo { halo } {
   set length [llength $halo]
 
