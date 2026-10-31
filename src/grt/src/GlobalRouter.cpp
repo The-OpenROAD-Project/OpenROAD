@@ -6397,8 +6397,13 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
       }
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
-    // Save position where the net's wires reduced resources
-    savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+    // Save position where the net's wires reduced resources, for
+    // getCongestionNets to reroute the nets there. It never reroutes a
+    // supply net, and a power grid's rails and vias touch most GCells on
+    // their layers.
+    if (!db_net->getSigType().isSupply()) {
+      savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+    }
   }
 }
 
