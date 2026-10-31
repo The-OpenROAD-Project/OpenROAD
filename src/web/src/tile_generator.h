@@ -324,6 +324,8 @@ struct TileVisibility
   bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
   bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
   bool rudy = false;        // RUDY congestion heatmap, off by default
+  bool routing_congestion
+      = false;  // Routing congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -860,7 +862,7 @@ class TileGenerator
     // Whether this design gives the overlay anything to draw; null is always.
     bool (TileGenerator::*present)() const = nullptr;
   };
-  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 7>& pseudoLayerDefs();
   static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
                          const TileVisibility& vis);
 
@@ -1266,6 +1268,11 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis,
                      const TextSink& emit) const;
+  void drawRoutingCongestionLayer(std::vector<unsigned char>& image,
+                                  odb::dbBlock* block,
+                                  const TileFrame& frame,
+                                  const TileVisibility& vis,
+                                  const TextSink& emit) const;
   void drawInstLabelsLayer(std::vector<unsigned char>& image,
                            odb::dbBlock* block,
                            const TileFrame& frame,

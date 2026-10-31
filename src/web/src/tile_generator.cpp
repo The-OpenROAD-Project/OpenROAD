@@ -1124,6 +1124,7 @@ const BoolField kBoolFields[] = {
   {"mfg_grid",           &TileVisibility::mfg_grid,           false},
   {"gcell_grid",         &TileVisibility::gcell_grid,         false},
   {"rudy",               &TileVisibility::rudy,               false},
+  {"routing_congestion", &TileVisibility::routing_congestion, false},
   {"inst_names",         &TileVisibility::inst_names,         true},
   {"inst_pins",          &TileVisibility::inst_pins,          true},
   {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
@@ -4225,6 +4226,19 @@ void TileGenerator::drawRudyLayer(std::vector<unsigned char>& image,
   }
 }
 
+void TileGenerator::drawRoutingCongestionLayer(
+    std::vector<unsigned char>& image,
+    odb::dbBlock* /*block*/,
+    const TileFrame& frame,
+    const TileVisibility& /*vis*/,
+    const TextSink& /*emit*/) const
+{
+  auto routing = getHeatMapSource("Routing");
+  if (routing) {
+    drawHeatMap(image, *routing, frame);
+  }
+}
+
 /* static */
 std::vector<std::string> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
@@ -4274,14 +4288,14 @@ std::vector<std::string> TileGenerator::saveImageLayerOrder(
   return names;
 }
 
-const std::array<TileGenerator::PseudoLayerDef, 6>&
+const std::array<TileGenerator::PseudoLayerDef, 7>&
 TileGenerator::pseudoLayerDefs()
 {
   // z_index follows the GUI's paint order (renderThread.cpp:1201-1298), where
   // the manufacturing grid goes down before the routing layers, the instance
   // names right after them, and access points, regions and the gcell grid on
   // top.
-  static const std::array<PseudoLayerDef, 6> defs = {{
+  static const std::array<PseudoLayerDef, 7> defs = {{
       {.name = "_access_points",
        .shown_by = {{"access_points"}},
        .layers_by = {{}},
@@ -4308,6 +4322,11 @@ TileGenerator::pseudoLayerDefs()
        .layers_by = {},
        .painter = &TileGenerator::drawRudyLayer,
        .z_index = 1003},
+      {.name = "_routing_congestion",
+       .shown_by = {{"routing_congestion"}},
+       .layers_by = {},
+       .painter = &TileGenerator::drawRoutingCongestionLayer,
+       .z_index = 1004},
       {.name = kInstLabelsLayer,
        .shown_by = {{"inst_names"}, {"inst_pins", "inst_pin_names"}},
        .layers_by = {{"inst_pins", "inst_pin_names"}},
