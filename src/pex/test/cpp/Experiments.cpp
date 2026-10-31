@@ -24,6 +24,8 @@
 //   tabulate against the tabulated covers it resolves to.
 // - e13 probed covers: the covers chosen from probes, checked at widths
 //   and spacings the probes did not use.
+// - model, only when named: build the model for --layers (or every
+//   conductor off the ground plane) into --model, timing each layer.
 //
 // bazelisk run starts it in its runfiles, where the default files are:
 //   bazelisk run //src/pex/test:Experiments -- [--groups e1,e2,...]
@@ -1231,11 +1233,11 @@ Design readDesign(const Options& o, utl::Logger& logger)
   return d;
 }
 
-// The model for e9: read from --model when the file exists and was built
-// from this stack with these settings, then built for every routing layer
-// of the design that the stack has that it lacks, and saved there after
-// each layer, so a build that stops resumes where it was.
-pex::Model netsModel(const Lab& lab, const Design& design)
+// The model for the given layers: read from --model when the file exists
+// and was built from this stack with these settings, then built for the
+// layers it lacks, and saved there after each layer, so a build that stops
+// resumes where it was. Each layer's solves and time are printed.
+pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
 {
   const Options& o = lab.options();
   pex::BuildOptions b;
@@ -1257,13 +1259,7 @@ pex::Model netsModel(const Lab& lab, const Design& design)
   b.tol = o.model_tol > 0 ? o.model_tol : o.tol;
   b.threads = o.threads;
   b.extent = o.extent;
-  // The technology's routing layers that the stack has.
-  for (odb::dbTechLayer* layer : design.block->getTech()->getLayers()) {
-    if (layer->getType() == odb::dbTechLayerType::ROUTING
-        && lab.stack().isConductor(lab.stack().layer(layer->getName()))) {
-      b.layers.push_back(layer->getName());
-    }
-  }
+  b.layers = layers;
   const pex::ModelSource expected{
       lab.stack().technology(), o.itf, pex::buildFingerprint(lab.stack(), b)};
   pex::Model model;
@@ -1282,21 +1278,16 @@ pex::Model netsModel(const Lab& lab, const Design& design)
       std::printf("# reading the model from %s\n", o.model.c_str());
     }
   }
-  const std::vector<std::string>& layers = b.layers;
   const auto start = std::chrono::steady_clock::now();
+  auto seconds_since = [](const auto t) {
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - t)
+        .count();
+  };
+  int all_solves = 0;
   for (const std::string& layer : layers) {
     int solves = 0;
-    b.progress = [&](const int done, const int total) {
-      solves++;
-      if (done == total) {
-        const double seconds = std::chrono::duration<double>(
-                                   std::chrono::steady_clock::now() - start)
-                                   .count();
-        std::printf(
-            "# %s: %d solves, %.0f s so far\n", layer.c_str(), total, seconds);
-        std::fflush(stdout);
-      }
-    };
+    b.progress = [&](int, int) { solves++; };
+    const auto layer_start = std::chrono::steady_clock::now();
     // The model read above matches these options (its fingerprint did), so
     // a layer it holds keeps its plan without probing again.
     const std::optional<pex::CoverPlan> held
@@ -1307,6 +1298,14 @@ pex::Model netsModel(const Lab& lab, const Design& design)
         held ? *held : pex::planCovers(lab.stack(), lab.layer(layer), b),
         b,
         model);
+    all_solves += solves;
+    std::printf("# %s: %d solves, %.0f s; %d solves, %.0f s in all\n",
+                layer.c_str(),
+                solves,
+                seconds_since(layer_start),
+                all_solves,
+                seconds_since(start));
+    std::fflush(stdout);
     if (solves > 0 && !o.model.empty()) {
       pex::writeModelFile(model, expected, o.model);
       std::printf("# model written to %s\n", o.model.c_str());
@@ -1511,6 +1510,42 @@ void probedCovers(Lab& lab)
       }
     }
   }
+}
+
+// The model for e9: every routing layer of the design that the stack has.
+pex::Model netsModel(const Lab& lab, const Design& design)
+{
+  std::vector<std::string> layers;
+  for (odb::dbTechLayer* layer : design.block->getTech()->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::ROUTING
+        && lab.stack().isConductor(lab.stack().layer(layer->getName()))) {
+      layers.push_back(layer->getName());
+    }
+  }
+  return buildModel(lab, layers);
+}
+
+// model: build (or finish building) the model for --layers, or for every
+// conductor off the ground plane, into --model, timing each layer.
+void modelOnly(Lab& lab)
+{
+  const Options& o = lab.options();
+  std::vector<std::string> layers = o.layers;
+  if (layers.empty()) {
+    for (const fsv::Stack::Conductor& c : lab.stack().conductors()) {
+      if (c.bottom > 0) {
+        layers.push_back(c.name);
+      }
+    }
+  }
+  const pex::Model model = buildModel(lab, layers);
+  std::printf(
+      "# model: %zu lateral, %zu end, %zu crossing, %zu diagonal "
+      "tables\n",
+      model.laterals().size(),
+      model.ends().size(),
+      model.crossings().size(),
+      model.diagonals().size());
 }
 
 // e9: nets of a routed design, each solved within a halo, against the
@@ -1743,6 +1778,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e13")) {
       probedCovers(lab);
+    }
+    if (wanted(o, "model")) {  // not among the default groups
+      modelOnly(lab);
     }
   } catch (const std::exception& e) {
     std::fprintf(stderr, "error: %s\n", e.what());
