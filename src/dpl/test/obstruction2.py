@@ -1,4 +1,4 @@
-# ram with obstruction
+# Check placement beside a macro that extends beyond the core.
 from openroad import Design, Tech
 import helpers
 import dpl_aux
@@ -11,7 +11,5 @@ tech.readLef("Nangate45/fakeram45_64x7.lef")
 design = helpers.make_design(tech)
 design.readDef("obstruction2.def")
 
-try:
-    dpl_aux.detailed_placement(design)
-except Exception as inst:
-    print(inst.args[0])
+dpl_aux.detailed_placement(design)
+design.getOpendp().checkPlacement(False)
