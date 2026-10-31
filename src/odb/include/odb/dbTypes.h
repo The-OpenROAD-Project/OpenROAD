@@ -1469,4 +1469,16 @@ class dbHierSearchDir
   Value _value = Value::FANOUT;
 };
 
+///
+/// Whether a cut enclosure/overhang row applies to the routing layer above
+/// the cut, below it, or both. Used by
+/// dbTechLayerCutEnclosureTableDefRule::DefaultRow/WidthRow.
+///
+enum class dbCutEnclosureAboveBelow
+{
+  kBoth = 0,
+  kAbove = 1,
+  kBelow = 2
+};
+
 }  // namespace odb
