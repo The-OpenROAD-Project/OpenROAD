@@ -268,3 +268,77 @@ describe('LayerExtents.mayHaveContent for a sized layer', () => {
         assert.equal(at(extents, { x: 0, y: 0, z: 0 }), true);
     });
 });
+
+// Two dies side by side, as a multi-die response gives them: die0 on the left
+// half of the grid, die1 on the right.  Each die's metal1 sits in its lower
+// half; die1's outline runs along the right half's edges.
+const MULTI_DIE = {
+    supported: true,
+    layers: {},
+    gated: {},
+    chiplets: {
+        'top/die0': {
+            outline: [[0, 0, 0.5, 0], [0.5, 0, 0.5, 1], [0, 1, 0.5, 1],
+                      [0, 0, 0, 1]],
+            layers: { metal1: [0.1, 0.6, 0.4, 0.9], metal9: null },
+            gated: { inst_pins: { metal9: [0.1, 0.1, 0.2, 0.2] } },
+        },
+        'top/die1': {
+            outline: [[0.5, 0, 1, 0], [1, 0, 1, 1], [0.5, 1, 1, 1],
+                      [0.5, 0, 0.5, 1]],
+            layers: { metal1: [0.6, 0.6, 0.9, 0.9] },
+            gated: {},
+        },
+    },
+};
+
+describe('LayerExtents.mayHaveContent for a die\'s rows', () => {
+    // z=3: eight columns and rows; column/row 2 is well inside die0's left
+    // half and clear of every outline edge.
+    const inside = (x, y) => ({ x, y, z: 3 });
+
+    it('skips a die\'s row everywhere outside that die', () => {
+        const extents = adopted(MULTI_DIE);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die0'), false);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die1'), true);
+    });
+
+    it('requests a tile on the die outline, which every layer draws', () => {
+        const extents = adopted(MULTI_DIE);
+        // Column 0 runs along die0's left edge; metal9 has nothing there.
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(0, 2), {}, 256, 'top/die0'), true);
+        // Inside the die, off the edges and off metal9, nothing draws...
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(2, 4), {}, 256, 'top/die0'), false);
+        // ...unless a gated source of that die reaches it.
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(1, 1), {}, 256, 'top/die0'), true);
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(1, 1), { inst_pins: false }, 256, 'top/die0'),
+                     false);
+    });
+
+    it('requests what it cannot place: an unknown die or layer', () => {
+        const extents = adopted(MULTI_DIE);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/nope'), true);
+        assert.equal(extents.mayHaveContent(
+            'metal5', inside(2, 4), {}, 256, 'top/die0'), true);
+    });
+
+    it('keeps the single-die extents for a row with no per-die entry', () => {
+        const extents = adopted();
+        assert.equal(extents.mayHaveContent(
+            'metal9', { x: 0, y: 0, z: 0 }, {}, 256, 'top'), false);
+    });
+
+    it('invalidate() drops the per-die extents', () => {
+        const extents = adopted(MULTI_DIE);
+        extents.invalidate();
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die0'), true);
+    });
+});

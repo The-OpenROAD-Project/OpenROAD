@@ -5427,6 +5427,17 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     for (const std::string& k : sel_keys) {
       key_obj.erase(k);
     }
+    // Only the tiles that filter by layer name read these; in every other key
+    // one layer toggle would miss the cache for all the rest.
+    if (!TileGenerator::readsLayerVisibility(layer, vis)) {
+      key_obj.erase("visible_layers");
+      key_obj.erase("chiplet_hidden_layers");
+    }
+    // A tile scoped to a die depends on that die being shown, not the others.
+    if (!vis.chiplet.empty()) {
+      key_obj.erase("visible_chiplets");
+      key_obj["chiplet_visible"] = vis.isChipletVisible(vis.chiplet);
+    }
     key_obj["dpr"] = dpr;
     // Pinned like dpr: two clients on different displays ask for different
     // pixel counts of the same tile, and they are different images.
@@ -5446,10 +5457,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  utl::WEB,
                  "tile",
                  1,
-                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
-                 "cache=hit bytes={}",
+                 "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} "
+                 "tile_px={} cache=hit bytes={}",
                  req.id,
                  layer,
+                 vis.chiplet,
                  z,
                  x,
                  y,
@@ -5490,10 +5502,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              utl::WEB,
              "tile",
              1,
-             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
-             "module_colors={} focus_nets={} detailed={} bytes={}",
+             "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} tile_px={} "
+             "cache={} module_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
+             vis.chiplet,
              z,
              x,
              y,
