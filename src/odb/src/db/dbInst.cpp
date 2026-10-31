@@ -1178,27 +1178,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     block->journal_->pushParam(old_master_->getId());
     block->journal_->pushParam(new_lib->getId());
     block->journal_->pushParam(new_master_->getId());
-    // The preferred access points are cleared below; record them so undo
-    // can restore them along with the master.
-    block->journal_->pushParam(inst->pin_access_idx_);
-    block->journal_->pushParam(static_cast<uint32_t>(inst->iterms_.size()));
-    for (const uint32_t iterm_id : inst->iterms_) {
-      _dbITerm* iterm = block->iterm_tbl_->getPtr(iterm_id);
-      uint32_t ap_count = 0;
-      for (const auto& [pin_id, ap_id] : iterm->aps_) {
-        if (ap_id.isValid()) {
-          ++ap_count;
-        }
-      }
-      block->journal_->pushParam(iterm_id);
-      block->journal_->pushParam(ap_count);
-      for (const auto& [pin_id, ap_id] : iterm->aps_) {
-        if (ap_id.isValid()) {
-          block->journal_->pushParam(pin_id.id());
-          block->journal_->pushParam(ap_id.id());
-        }
-      }
-    }
+    block->journal_->pushAccessPoints(dbJournal::getAccessPoints(this));
     block->journal_->endAction();
   }
 
@@ -1560,6 +1540,12 @@ void dbInst::destroy(dbInst* inst_)
         inst->name_);
   }
 
+  // The iterms and their preferred access points are destroyed before the
+  // journal entry is written, so capture the access points first.
+  const dbJournal::InstAccessPoints access_points
+      = block->journal_ ? dbJournal::getAccessPoints(inst_)
+                        : dbJournal::InstAccessPoints{};
+
   uint32_t i;
   uint32_t n = inst->iterms_.size();
 
@@ -1612,6 +1598,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(inst->group_);
     block->journal_->pushParam(inst->module_);
     block->journal_->pushParam(inst->region_);
+    block->journal_->pushAccessPoints(access_points);
     block->journal_->endAction();
   }
 
