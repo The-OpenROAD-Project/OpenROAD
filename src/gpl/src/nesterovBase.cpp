@@ -3757,6 +3757,12 @@ bool NesterovBase::nesterovUpdateStepLength()
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
+  if (gradDistance_ == 0.0f && coordiDistance_ > 0.0f) {
+    // A sub-DBU step can leave integer-truncated gradients unchanged; keep
+    // stepLength_ and accept the step instead of flagging 1/0 as divergence.
+    return false;
+  }
+
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
     return false;
