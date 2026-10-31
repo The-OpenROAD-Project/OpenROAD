@@ -11,7 +11,7 @@ MACRO BUMP
     DIRECTION INOUT ;
     USE SIGNAL ;
     PORT
-      LAYER metal5 ;
+      LAYER metal1 ;
         RECT -5 -5 5 5 ;
     END
   END PAD
