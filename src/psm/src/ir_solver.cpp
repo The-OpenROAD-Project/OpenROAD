@@ -2129,10 +2129,7 @@ void IRSolver::solve(sta::Scene* corner,
   }
 
   if (!network_->hasNodes()) {
-    voltages_.erase(corner);
-    currents_.erase(corner);
-    solution_voltages_.erase(corner);
-    solution_power_.erase(corner);
+    clearSolution(corner);
     return;
   }
 
@@ -2509,10 +2506,8 @@ void IRSolver::solveAssembly(sta::Scene* corner, const std::string& source_file)
   assembly_->sta_currents.clear();
   assembly_->nominal_voltages.clear();
   assembly_->total_power = 0.0;
-  voltages_.erase(corner);
-  currents_.erase(corner);
-  solution_voltages_.erase(corner);
-  solution_power_.erase(corner);
+
+  clearSolution(corner);
 
   if (!source_file.empty()) {
     addAssemblyVoltageSourcesFromFile(source_file);
@@ -3154,6 +3149,14 @@ std::optional<IRSolver::Voltage> IRSolver::getVoltage(sta::Scene* corner,
   }
 
   return find_n->second;
+}
+
+void IRSolver::clearSolution(sta::Scene* corner)
+{
+  voltages_.erase(corner);
+  currents_.erase(corner);
+  solution_voltages_.erase(corner);
+  solution_power_.erase(corner);
 }
 
 }  // namespace psm
