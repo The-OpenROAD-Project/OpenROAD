@@ -582,11 +582,12 @@ overlay redraw on the next `tile` request.
 
 Histogram of endpoint slacks for one side of the timing report.
 
-| Field        | Type     | Required | Description                                                |
-| ------------ | -------- | :------: | ---------------------------------------------------------- |
-| `is_setup`   | `bool`   |    ✓     | Setup vs hold endpoints.                                    |
-| `path_group` | `string` |          | If non-empty, restrict to this path group. Default: all.    |
-| `clock_name` | `string` |          | If non-empty, restrict to this clock. Default: all.         |
+| Field         | Type       | Required | Description                                                                                       |
+| ------------- | ---------- | :------: | ------------------------------------------------------------------------------------------------- |
+| `is_setup`    | `bool`     |    ✓     | Setup vs hold endpoints.                                                                          |
+| `path_group`  | `string`   |          | If non-empty, restrict to this path group. Default: all. Ignored when `path_groups` is non-empty. |
+| `path_groups` | `string[]` |          | If non-empty, restrict to these path groups; see `series` below.                                  |
+| `clock_name`  | `string`   |          | If non-empty, restrict to this clock. Default: all.                                               |
 
 **Response (JSON):**
 ```json
@@ -594,9 +595,17 @@ Histogram of endpoint slacks for one side of the timing report.
   "bins": [{"lower": -1.0, "upper": 0.0, "count": 12, "negative": true}, ...],
   "unconstrained_count": 5,
   "total_endpoints":    1234,
-  "time_unit":          "ns"
+  "time_unit":          "ns",
+  "series": [{"name": "grp_a", "counts": [7, ...]}, ...]
 }
 ```
+
+`series` is present only when `path_groups` has two or more names: one
+entry per group, in request order, with `counts` parallel to `bins`. An
+endpoint in several of the groups is counted once, in the group where
+its slack is worst (ties go to the earlier group), so the `counts` of a
+bin sum to its `bins[i].count` and `total_endpoints` counts distinct
+endpoints. `clock_name` applies within each group.
 
 ### `chart_filters`
 
