@@ -3,8 +3,9 @@
 # Keys prefixed with STABLE_ cause downstream rebuilds when their value changes.
 # With --nostamp (default), Bazel substitutes empty strings, keeping the cache intact.
 
-# OPENROAD_VERSION sets the version explicitly. Use it when the tree has no git metadata, for example in a Docker
-# build, because .dockerignore keeps .git out of the build context.
+# OPENROAD_VERSION sets the version explicitly. Use it when the tree has no
+# git metadata, for example in a Docker build, because .dockerignore keeps
+# .git out of the build context.
 # Bazel gives this command the environment of the client, but each server
 # caches that environment. Set the value before the first build, or run
 # `bazelisk clean` after you change it.

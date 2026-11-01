@@ -23,6 +23,10 @@ __pycache__
 venv/
 .abc_history
 
+# Old CMake build trees left in existing checkouts.
+build
+debug/
+
 test/results
 
 docs/main

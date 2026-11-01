@@ -394,7 +394,6 @@ openroad [-help] [-version] [-no_init] [-exit] [-gui]
   -no_splash         do not show the license splash at startup
   -exit              exit after reading cmd_file
   -gui               start in gui mode
-  -python            start with python interpreter [limited to db operations]
   -log <file_name>   write a log in <file_name>
   -db <file_name>    open a .odb database at startup
   cmd_file           source cmd_file

@@ -1,3 +1,7 @@
+# Old CMake build trees left in existing checkouts.
+build/
+debug/
+
 # standalone workspace for downstream consumer tests
 test/downstream/
 

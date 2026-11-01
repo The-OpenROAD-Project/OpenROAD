@@ -11,7 +11,7 @@ openroad - OpenROAD command-line-interface.
 
 openroad [-help] [-version] [-no_init] [-no_splash]
        [-exit] [-gui] [-threads count|max]
-       [-log file_name] [-metrics file_name] [-python]
+       [-log file_name] [-metrics file_name]
        cmd_file
 
 
@@ -40,8 +40,6 @@ use (or use max available).
 
 `-metrics file_name`: Save  performance  metrics  to  the
 specified file.
-
-`-python`: Execute the cmd_file as a Python script.
 
 # ARGUMENTS
 

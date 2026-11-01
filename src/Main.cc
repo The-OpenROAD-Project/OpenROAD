@@ -140,6 +140,13 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  if (findCmdLineFlag(argc, argv, "-python")) {
+    fprintf(stderr,
+            "Error: -python is not supported. For the Python API, install "
+            "the openroad wheel: see docs/user/Bazel.md.\n");
+    return 1;
+  }
+
   log_filename = findCmdLineKey(argc, argv, "-log");
   if (log_filename) {
     std::error_code err_ignore;

@@ -187,6 +187,29 @@ on downstream projects via MVS:
 
 The downstream test at `test/downstream/` verifies these invariants.
 
+## Python API (the openroad wheel)
+
+OpenROAD's Python API ships as a wheel rather than an `openroad -python`
+mode. Build it and install it into a virtualenv (CPython 3.10 or later,
+Linux x86_64):
+
+```shell
+bazelisk build //python/openroad:openroad_wheel
+pip install bazel-bin/python/openroad/openroad-*.whl
+```
+
+Then import it from any Python interpreter:
+
+```python
+from openroad import Tech, Design
+import odb
+
+tech = Tech()
+```
+
+`import openroad` also loads the per-tool modules (`odb`, `grt`, `rsz`, ...).
+Keep each `Tech` alive while its `Design` is in use.
+
 ## Build without testing
 
     bazelisk build :openroad

@@ -121,6 +121,9 @@ while [ "$#" -gt 0 ]; do
         -bazel)
             echo "[WARNING] -bazel is deprecated: Bazel is the only build system." >&2
             ;;
+        -no-tests | -build-man | -no-warnings | -coverage | -compiler=* | -deps-prefixes-file=* )
+            echo "[WARNING] ${1%%=*} has no effect with Bazel and is ignored." >&2
+            ;;
         *)
             echo "unknown option: ${1}" >&2
             _help
