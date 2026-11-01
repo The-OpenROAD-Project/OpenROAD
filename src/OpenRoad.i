@@ -305,7 +305,7 @@ openroad_git_describe()
 bool
 openroad_gpu_compiled()
 {
-  return ord::OpenRoad::getGUICompileOption();
+  return ord::OpenRoad::getGPUCompileOption();
 }
 
 bool
