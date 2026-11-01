@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "helper.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "src/odb/test/cpp/helper/helper.h"
 #include "tst/db_fixture.h"
 
 namespace odb {
