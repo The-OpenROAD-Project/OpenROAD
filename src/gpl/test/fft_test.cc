@@ -1,8 +1,11 @@
 #include "src/gpl/src/fft.h"
 
+#include <cmath>
 #include <iostream>
 #include <memory>
+#include <numbers>
 #include <sstream>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "spdlog/fmt/fmt.h"
@@ -143,6 +146,28 @@ TEST(FloatFFTTest, Basic)
       EXPECT_EQ(eField.second, output_data_eField_second[x + y * Y_MAX]);
       EXPECT_EQ(electroPhi, output_data_electroPhi[x + y * Y_MAX]);
     }
+  }
+}
+
+TEST(FloatFFTTest, RectangularBins)
+{
+  constexpr int n = 8;
+  constexpr float pi = std::numbers::pi_v<float>;
+  for (const auto [dx, dy] :
+       {std::pair{1.0F, 1.0F}, {3.0F, 1.0F}, {1.0F, 3.0F}}) {
+    gpl::FFT fft(n, n, dx, dy);
+    for (int x = 0; x < n; ++x) {
+      for (int y = 0; y < n; ++y) {
+        fft.updateDensity(
+            x,
+            y,
+            std::cos(pi * (x + 0.5F) / n) * std::cos(pi * (y + 0.5F) / n));
+      }
+    }
+    fft.doFFT();
+    const auto [ex, ey] = fft.getElectroField(0, 0);
+    // Equal phase factors leave the physical wave-number ratio.
+    EXPECT_NEAR(ey / ex, dx / dy, 1e-5F);
   }
 }
 

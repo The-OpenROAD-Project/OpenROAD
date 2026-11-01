@@ -108,10 +108,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0000 |  1.040973e+03 |   +0.00% |  1.93e-13 |      
-        0 |   0.0000 |  1.040973e+03 |   +0.00% |  2.57e-12 |  (PD_D1)
-        0 |   0.0393 |  1.040973e+03 |   +0.00% |  2.50e-12 |  (PD_D2)
-        0 |   0.0000 |  1.040973e+03 |          |  2.00e-13 |      
+        0 |   0.0000 |  1.040973e+03 |   +0.00% |  1.95e-13 |      
+        0 |   0.0000 |  1.040973e+03 |   +0.00% |  3.59e-12 |  (PD_D1)
+        0 |   0.0393 |  1.040973e+03 |   +0.00% |  3.51e-12 |  (PD_D2)
+        0 |   0.0000 |  1.040973e+03 |          |  2.03e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area              103.9499
@@ -121,7 +121,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0170
 [INFO GPL-1008]     - For 80% usage of free space: 0.0192
 [INFO GPL-1009]     - For 50% usage of free space: 0.0307
-        0 |   0.0000 |  1.040973e+03 |          |  2.67e-12 | PD_D1
+        0 |   0.0000 |  1.040973e+03 |          |  3.73e-12 | PD_D1
 ---------------------------------------------------------------
 [INFO GPL-1016] Region 'PD_D1' placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               23.2282
@@ -131,7 +131,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.0286
 [INFO GPL-1008]     - For 80% usage of free space: 0.0322
 [INFO GPL-1009]     - For 50% usage of free space: 0.0516
-        0 |   0.0393 |  1.040973e+03 |          |  2.60e-12 | PD_D2
+        0 |   0.0393 |  1.040973e+03 |          |  3.65e-12 | PD_D2
 ---------------------------------------------------------------
 [INFO GPL-1016] Region 'PD_D2' placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               47.8688
