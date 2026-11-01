@@ -930,6 +930,7 @@ void dbNetwork::clear()
   chip_master_cells_.clear();
   chip_master_lib_ = nullptr;
   bump_to_chip_net_.clear();
+  net_to_chip_net_.clear();
   chip_inst_to_unfolded_.clear();
   chip_net_to_unfolded_.clear();
 }
@@ -1073,6 +1074,7 @@ void dbNetwork::setTopChip(odb::dbChip* chip)
   block_to_chip_inst_.clear();
   block_disc_.clear();
   bump_to_chip_net_.clear();
+  net_to_chip_net_.clear();
   chip_inst_to_unfolded_.clear();
   chip_net_to_unfolded_.clear();
   unfolded_built_ = false;
@@ -1197,6 +1199,19 @@ odb::dbChipInst* dbNetwork::chipInstOf(odb::dbBlock* block) const
 
 // ---- chip-object <-> STA-handle encode/decode ----
 
+// The single dbITerm of a chip bump's pad instance, or nullptr if the bump
+// has no pad inst or the pad inst has no iterm. Does not check for a bound
+// bterm; callers that need a logical endpoint do.
+static odb::dbITerm* padITerm(odb::dbChipBump* chip_bump)
+{
+  odb::dbInst* pad_inst = chip_bump ? chip_bump->getInst() : nullptr;
+  if (pad_inst == nullptr) {
+    return nullptr;
+  }
+  dbSet<dbITerm> iterms = pad_inst->getITerms();
+  return iterms.empty() ? nullptr : *iterms.begin();
+}
+
 // Resolve an unfolded bump to its pad inst's single dbITerm -- the bump's
 // timing pin (flat model: the pad iterm is the real leaf pin; it carries the
 // vertex id, its MTerm carries direction, and it sits directly on the
@@ -1205,15 +1220,36 @@ odb::dbChipInst* dbNetwork::chipInstOf(odb::dbBlock* block) const
 odb::dbITerm* dbNetwork::bumpPadITerm(odb::dbUnfoldedChipBumpInst* bump) const
 {
   odb::dbChipBump* cb = bump->getChipBumpInst()->getChipBump();
-  if (cb->getBTerm() == nullptr) {
+  return cb->getBTerm() == nullptr ? nullptr : padITerm(cb);
+}
+
+odb::dbChipNet* dbNetwork::chipNetOfPadITerm(dbITerm* iterm) const
+{
+  if (iterm == nullptr) {
     return nullptr;
   }
-  odb::dbInst* pad_inst = cb->getInst();
-  if (pad_inst == nullptr) {
+  ensureUnfoldedMapsFresh();
+  auto it = bump_to_chip_net_.find(iterm);
+  return it == bump_to_chip_net_.end() ? nullptr : it->second;
+}
+
+odb::dbChipNet* dbNetwork::chipNetAbove(dbBTerm* bterm) const
+{
+  return chipNetOfPadITerm(bterm ? padITerm(bterm->getChipBump()) : nullptr);
+}
+
+odb::dbChipNet* dbNetwork::chipNetAboveNet(const Net* net) const
+{
+  dbNet* db_net = flatNet(net);
+  if (db_net == nullptr) {
     return nullptr;
   }
-  dbSet<dbITerm> iterms = pad_inst->getITerms();
-  return iterms.empty() ? nullptr : *iterms.begin();
+  // Uses an index built in buildUnfoldedMaps. Delay calculation calls this per
+  // driver pin, so scanning the net's iterms would be O(fanout) every time --
+  // including on big nets that never reach a bump.
+  ensureUnfoldedMapsFresh();
+  auto it = net_to_chip_net_.find(db_net);
+  return it == net_to_chip_net_.end() ? nullptr : it->second;
 }
 
 void dbNetwork::buildUnfoldedMaps() const
@@ -1221,6 +1257,7 @@ void dbNetwork::buildUnfoldedMaps() const
   chip_inst_to_unfolded_.clear();
   chip_net_to_unfolded_.clear();
   bump_to_chip_net_.clear();
+  net_to_chip_net_.clear();
   //   raw chip-inst -> unfolded chip-inst (single-level: path is one element)
   for (odb::dbUnfoldedChipInst* uci : db_->getUnfoldedChipInsts()) {
     std::vector<odb::dbChipInst*> path = uci->getChipInstPath();
@@ -1240,6 +1277,9 @@ void dbNetwork::buildUnfoldedMaps() const
     for (odb::dbUnfoldedChipBumpInst* ub : ucn->getConnectedBumps()) {
       if (odb::dbITerm* pad_iterm = bumpPadITerm(ub)) {
         bump_to_chip_net_[pad_iterm] = chip_net;
+        if (dbNet* die_net = pad_iterm->getNet()) {
+          net_to_chip_net_[die_net] = chip_net;
+        }
       }
     }
   }
@@ -2092,11 +2132,20 @@ Net* dbNetwork::net(const Pin* pin) const
       return dbToSta(dnet);
     }
   }
-  // only pins which act as bterms are top levels and have no net
+  // A bterm pin is a top-level port and has no net, except on a chiplet
+  // boundary.
   if (bterm) {
-    //    dbNet* dnet = bterm -> getNet();
-    //    return dbToSta(dnet);
-    ;
+    // Return the chip-net above the boundary, not the die-side net below it.
+    // SpefReader::dspfBegin climbs term -> pin -> net to find which net owns a
+    // parasitic network, so this has to move up a level. Returning the die-side
+    // net would make that climb return where it started, and the unguarded
+    // recursions in ReportPath::hierPinsAbove and Network::hierarchyLevel then
+    // overflow the stack.
+    if (has3DicChip()) {
+      if (odb::dbChipNet* chip_net = chipNetAbove(bterm)) {
+        return dbToSta(chip_net);
+      }
+    }
   }
   if (moditerm) {
     if (odb::dbModNet* mnet = moditerm->getModNet()) {
@@ -2748,15 +2797,25 @@ void dbNetwork::visitConnectedPins(const Net* net,
 // Caution:
 //- Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
 // net connected to the given net.
-// - But `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
-// flat net for the given net.
+// - `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
+// flat net for the given net. On a 3DIC design it returns the dbChipNet above
+// a bonded die-side net instead, which is neither a dbNet nor a dbModNet.
 // - It behaves differently to cope with the issue 9724.
 // - This redefinition may cause another issue later when
 // `Network::highestConnectedNet(Net *net)` is used elsewhere.
 const Net* dbNetwork::highestConnectedNet(const Net* net) const
 {
   const Net* flat = findFlatNet(net);
-  return flat ? flat : net;
+  const Net* highest = flat ? flat : net;
+  // A cross-die net's parasitics are merged into one network keyed on the
+  // chip-net. Parasitics::findParasiticNet looks parasitics up through here, so
+  // returning the chip-net is what lets a driver on either die find them.
+  if (has3DicChip()) {
+    if (odb::dbChipNet* chip_net = chipNetAboveNet(highest)) {
+      return dbToSta(chip_net);
+    }
+  }
+  return highest;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3756,9 +3815,17 @@ void dbNetwork::staToDb(const Instance* instance,
 
 dbNet* dbNetwork::staToDb(const Net* net) const
 {
-  dbNet* db_net = reinterpret_cast<dbNet*>(const_cast<Net*>(net));
-  assert(!db_net || db_net->getObjectType() == odb::dbNetObj);
-  return db_net;
+  if (net == nullptr) {
+    return nullptr;
+  }
+  // net(pin) returns a dbChipNet on a chiplet boundary, so a caller expecting
+  // a flat net can arrive here with one. Check the type through the common
+  // base before casting.
+  dbObject* obj = reinterpret_cast<dbObject*>(const_cast<Net*>(net));
+  if (obj->getObjectType() != odb::dbNetObj) {
+    return nullptr;
+  }
+  return reinterpret_cast<dbNet*>(obj);
 }
 
 dbNet* dbNetwork::flatNet(const Net* net) const
@@ -4678,9 +4745,7 @@ bool dbNetwork::isConnected(const Net* net, const Pin* pin) const
     if (iterm == nullptr) {
       return false;
     }
-    ensureUnfoldedMapsFresh();
-    auto it = bump_to_chip_net_.find(iterm);
-    return it != bump_to_chip_net_.end() && it->second == chip_net;
+    return chipNetOfPadITerm(iterm) == chip_net;
   }
 
   dbNet* dbnet;
@@ -6025,6 +6090,16 @@ const Net* dbNetwork::highestNetAbove(const Net* net) const
   staToDb(net, dbnet, modnet);
 
   if (dbnet) {
+    // Must return the same net as highestConnectedNet. ensureParasiticNode
+    // marks a node external when highestNetAbove(net(pin)) differs from the
+    // network's net, so returning the die-side net here would mark every node
+    // of a merged cross-die network external -- the node_count_ = 0 crash
+    // described below, reproducible with -delay_calculator arnoldi.
+    if (has3DicChip()) {
+      if (odb::dbChipNet* chip_net = chipNetAboveNet(net)) {
+        return dbToSta(chip_net);
+      }
+    }
     // If a flat net, return it.
     // - We should not return the highest modnet related to the flat net.
     // - Otherwise, it breaks estimate_parasitics function.

@@ -1,0 +1,27 @@
+// chipB side of the bond net: bump pad in to the receiver.
+*SPEF "IEEE 1481-1999"
+*DESIGN "flop_chip_b"
+*DATE "Tue Aug 19 00:00:00 2026"
+*VENDOR "The OpenROAD Project"
+*PROGRAM "OpenROAD"
+*VERSION "test"
+*DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER []
+*T_UNIT 1 NS
+*C_UNIT 1 FF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*D_NET d 100
+*CONN
+*I bump_d:PAD I
+*I buf:A I
+*CAP
+1 d:1 50
+2 buf:A 50
+*RES
+1 bump_d:PAD d:1 10
+2 d:1 buf:A 10
+*END
