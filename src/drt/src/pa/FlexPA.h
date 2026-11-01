@@ -196,6 +196,9 @@ class FlexPA
   bool isMacroCell(frInst* unique_inst);
   bool isMacroCellTerm(frInstTerm* inst_term);
   bool isIOTerm(frInstTerm* inst_term);
+  bool isRoutableLayer(frLayerNum layer_num);
+  bool hasRoutableLayerAbove(frLayerNum layer_num);
+  bool hasRoutableLayerBelow(frLayerNum layer_num);
 
   /**
    * @brief generates all access points of a single unique instance
