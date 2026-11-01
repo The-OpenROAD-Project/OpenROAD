@@ -40,7 +40,7 @@
 
 // Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
 // unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
-// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
+// destructors see a complete type on CPU-only builds (without --config=gpu).
 #include "gpu/deviceState.h"
 #include "gpu/nesterovDeviceContext.h"
 #include "gpu/regionDensityField.h"

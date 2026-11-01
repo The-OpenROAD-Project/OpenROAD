@@ -3,7 +3,7 @@
 
 // GpuHpwlBackend — the Kokkos GPU implementation of HpwlBackend.
 //
-// Compiled only when ENABLE_GPU=ON. makeHpwlBackend() (in ../hpwl.cpp)
+// Compiled only in the GPU build (--config=gpu). makeHpwlBackend() (in ../hpwl.cpp)
 // constructs a GpuHpwlBackend when the GPU path is selected at run time
 // (gpl::gpuEnabled()); CpuHpwlBackend stays the default. Both backends coexist
 // in an ENABLE_GPU build — the choice is a runtime one.

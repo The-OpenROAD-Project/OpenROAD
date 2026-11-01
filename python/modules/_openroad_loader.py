@@ -6,8 +6,7 @@
 Each SWIG module has its own init function (PyInit__ord_py, PyInit__odb_py,
 PyInit__ant_py, ...), and all of them are linked into _openroad.so. The
 dynamic loader maps that file once, so the modules keep separate
-namespaces while sharing one copy of the C++ state, as the modules linked
-into the CMake `openroad` executable do.
+namespaces while sharing one copy of the C++ state.
 """
 
 import importlib.abc

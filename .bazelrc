@@ -240,9 +240,8 @@ build:profile --//:profile
 # only adds the coverage-specific bits. --combined_report=lcov merges every
 # test's per-target lcov into one file at
 # bazel-out/_coverage/_coverage_report.dat, which CI renders with genhtml
-# (lcov is installed in bazel/Dockerfile). The instrumentation_filter mirrors
-# the exclusions of the retired cmake/lcov flow (etc/CodeCoverage.sh _lcov):
-# instrument OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
+# (lcov is installed in bazel/Dockerfile). The instrumentation_filter
+# instruments OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
 # its own private test suite) and drt's unused global-routing code. Third-party
 # deps live under external repos / //third-party and are simply never matched
 # by //src, so they need no explicit exclusion.

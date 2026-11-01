@@ -4,7 +4,6 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "make_7x7_2r1w_nangate45",
     "make_7x7_nangate45",

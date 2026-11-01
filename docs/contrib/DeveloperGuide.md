@@ -16,11 +16,8 @@ minimizes the overhead of invoking each tool in the flow.
 ## Tool File Organization
 
 :::{Note}
-Bazel is the supported build system for OpenROAD. The CMake build is
-deprecated and will be removed on Nov. 1, 2026. Register new tests in Bazel
-only; CMake test registration is not required. New source files and new tools
-still need their CMake entries until CMake is removed, because the macOS CI job
-builds with CMake on every pull request.
+Bazel is the only build system for OpenROAD. Register new source files, tools
+and tests in Bazel `BUILD` files.
 :::
 
 Every tool follows the following file structure, grouping sources, tests
@@ -36,9 +33,6 @@ and headers together.
 | `tool/src`       | sources and private headers |
 | `tool/include/tool` | exported headers |
 | `tool/test`       | tool tests |
-| `tool/regression` | tool unit tests|
-| `CMakeLists.txt` (deprecated) | `add_subdirectory` for each tool|
-| `tool/src/CMakeLists.txt` (deprecated) | tool specific CMake file |
 
 - OpenROAD repository:
   This folder contains the top-level files for overall compilation. OpenROAD uses [swig](https://swig.org/) that acts as a wrapper for C/C++ programs to be callable in higher-level languages, such as Python and Tcl.
@@ -51,7 +45,6 @@ and headers together.
 | `src/OpenRoad.i`  | top-level swig, includes, tool swig files |
 | `src/OpenRoad.tcl` | basic read/write lef/def/db commands |
 | `include/ord/OpenRoad.hh` | OpenROAD top-level class, has instances of tools |
-| `CMakeLists.txt` (deprecated) | top-level CMake file |
 
 Some tools such as OpenSTA are submodules, which are simply
 subdirectories in `src/` that are pointers to the git submodule. They are
@@ -70,14 +63,7 @@ depends on the nature of the dependency.
 
 Add each library as a `bazel_dep` in `MODULE.bazel` and list it in the
 `deps` of the tool target that uses it. Document these dependencies in the
-top-level `README.md` file. For CMake builds (deprecated), the library must
-also be installed in the build environment, and the `Dockerfile` should be
-updated to illustrate where to find the library and how to install it.
-Adding libraries to the build environment requires
-coordination with system administrators, so that continuous integration hosts ensure
-that environments include the dependency. Advance notification
-should also be given to the development team so that their private build
-environments can be updated.
+top-level `README.md` file.
 
 Each tool `BUILD` file defines a `cc_library` that is linked by the OpenROAD
 application. The tools should not define a `main()` function.
@@ -85,14 +71,6 @@ Global compiler flags live in `.bazelrc`, so a tool `BUILD` file should not
 repeat them. `OPENROAD_COPTS` in the top-level `BUILD.bazel` applies to the
 top-level targets only. A tool may add per-target `copts` for a local need,
 for example `-Wno-missing-braces` for SWIG-generated code in `src/pdn/BUILD`.
-
-Tool CMake files (deprecated) should **not** include the following:
-
-- `cmake_minimum_required`
-- `GCC_COVERAGE_COMPILE_FLAGS`
-- `GCC_COVERAGE_LINK_FLAGS`
-- `CMAKE_CXX_FLAGS`
-- `CMAKE_EXE_LINKER_FLAGS`
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files. For consistency, these functions are all provided by the OpenROAD
@@ -150,8 +128,9 @@ examples. Use swig to define internal functions to C++ functionality.
 
 Tcl files can be included by encoding them into a string that
 is evaluated at run time. Bazel does this with the `tcl_encode` rule
-(for example, the `tcl` target in `src/rsz/BUILD`); CMake does the same
-(see [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
+(for example, the `tcl` target in `src/rsz/BUILD`), and the tool evaluates
+the string with `utl::evalTclInit` (see
+[`initResizer()`](../main/src/rsz/src/MakeResizer.cc)).
 
 :::{Note}
 Please refer to the top-level Tcl formatting [guide](TclFormat.md).
@@ -201,8 +180,8 @@ Completing the flow allows autotuners to collect final metrics and extract actio
 ## Test
 
 Each "tool" has a `/test` directory with its tests. Tests are registered
-in `src/<tool>/test/BUILD` and run with Bazel. CMake test registration is
-not required (see [Adding a Tool, Source File or Test in Bazel](#adding-a-tool-source-file-or-test-in-bazel)).
+in `src/<tool>/test/BUILD` and run with Bazel (see
+[Adding a Tool, Source File or Test in Bazel](#adding-a-tool-source-file-or-test-in-bazel)).
 
 ``` shell
 # all tests of one tool
@@ -212,28 +191,8 @@ bazelisk test //src/<tool>/test/...
 bazelisk test --test_output=errors //src/<tool>/test:<test name>-tcl_test
 ```
 
-The rules below describe the `regression` script of a tool, the legacy
-CMake test runner (deprecated). With no arguments it should run
-default unit tests.
-
 No database files should be in tests. Read LEF/DEF/Verilog to make a
 database.
-
-The regression script should not depend on the current working
-directory. It should be able to be run from any directory. Use filenames
-relative to the script name rather the current working directory.
-
-Regression scripts should print a concise summary of test failures. The
-regression script should return an exit code of 0 if there are no
-errors and 1 if there are errors. The script should **not** print
-thousands of lines of internal tool information.
-
-Regression scripts should pass the `-no_init` option to `openroad` so that
-a user's `init` file is not sourced before the tests runs.
-
-Regression scripts should add output files or directories to
-`.gitignore` so that running does not leave the source repository
-"dirty".
 
 The Nangate45 open-source library data used by many tests is in
 `test/Nangate45`. Use the following command to add a link in the tool command:
@@ -257,15 +216,9 @@ The Bazel binary is `bazel-bin/openroad`.
 
 ## Adding a Tool, Source File or Test in Bazel
 
-Tests are registered in Bazel `BUILD` files only. CMake is deprecated and will
-be removed on Nov. 1, 2026, so a test needs no `CMakeLists.txt` entry. A test
-that is missing from a `BUILD` file does not run in CI.
-
-Sources and tools are different. The macOS CI job builds with CMake on every
-pull request, and the CMake source lists are explicit. Until CMake is removed or
-that job moves to Bazel, a new source file or tool needs both its Bazel and its
-CMake entry. The macOS job runs no `ctest`, so it does not need the test
-registered. Copy a nearby target and keep visibility minimal.
+Tools, source files and tests are registered in Bazel `BUILD` files. A test
+that is missing from a `BUILD` file does not run in CI. Copy a nearby target
+and keep visibility minimal.
 
 ### Add a test
 
@@ -346,12 +299,7 @@ Add a header that other tools include to `hdrs`. For example, `src/pdn/BUILD`
 lists `src/via_repair.cpp` and `src/via_repair.h` in `srcs` of the `pdn`
 target, and `include/pdn/PdnGen.hh` in `hdrs`. Add a new Tcl file to the `srcs`
 of the tool `tcl_encode` target (`src/pdn.tcl` in the `tcl` target of
-`src/pdn/BUILD`).
-
-Also add the file to the CMake source list of the tool, until CMake is removed.
-For `pdn` that is the `target_sources` block in `src/pdn/src/CMakeLists.txt`
-(`src/pdn/src/via_repair.cpp` is listed there), and `swig_lib` `SCRIPTS` for a
-Tcl file. Then build with Bazel:
+`src/pdn/BUILD`). Then build:
 
 ``` shell
 bazelisk build //:openroad
@@ -389,14 +337,6 @@ list. Then wire the tool into the build and the binary:
    `python/modules/_openroad_loader.py`, and import it in
    `python/openroad/__init__.py`.
 7. Add the tool README to `docs/toc.yml` (see the `main/src/exa/README` entry).
-
-Until CMake is removed, the tool also needs its CMake entry, because the macOS
-CI job builds with CMake: `src/<tool>/CMakeLists.txt`, `add_subdirectory(<tool>)`
-and the tool name in the `openroad` link list in `src/CMakeLists.txt`, and
-`<tool>_py` in the Python module list there. If you copy
-`src/exa/CMakeLists.txt`, delete its final `if(ENABLE_TESTS)` block. That block
-calls `add_subdirectory(test)`, and CMake configure fails when
-`src/<tool>/test/CMakeLists.txt` does not exist.
 
 ## Example of Adding a Tool to OpenROAD
 
@@ -467,7 +407,6 @@ dependencies make this vastly more complicated.
 1. OpenROAD submodules reference tool `openroad` branch head. No git `develop`, `openroad_app`, or `openroad_build` branches.
 1. Submodules used by more than one tool belong in `src/`, not duplicated in each tool repo.
 1. Tool `BUILD` files do not set global compiler flags. Global flags live in `.bazelrc`; `OPENROAD_COPTS` in the top-level `BUILD.bazel` covers only the top-level targets. A tool may add per-target `copts` for a local need (for example, SWIG warnings).
-1. CMake (deprecated): `CMakeLists.txt` uses `target_` commands, explicit lists of source files and headers, and does not define `CFLAGS` or `CMAKE_CXX_FLAGS`. A new source file or tool still needs its CMake entry until CMake is removed. CMake test registration is not required.
 1. No `main.cpp` or main procedure.
 1. No compiler warnings for GCC or Clang with optimization enabled.
 1. Does not call `flute::readLUT` (called once by `openroad`).
@@ -477,11 +416,8 @@ dependencies make this vastly more complicated.
 1. Does not read configuration files. Use command arguments or support commands.
 1. `.clang-format` at tool root directory to aid foreign programmers.
 1. No `jenkins/`, `Jenkinsfile`, `Dockerfile` in tool directory.
-1. `regression` script named `test/regression` with no arguments that runs tests. Not `tests/regression-tcl.sh`, not `test/run_tests.py` etc.
-1. `regression` script should run independent of current directory. For example, `../test/regression` should work.
-1. `regression` should only print test results or summary, not belch 1000s of lines of output.
+1. Tests registered in `src/<tool>/test/BUILD` and run with `bazelisk test //src/<tool>/test/...`.
 1. Test scripts use OpenROAD tcl commands (not `itcl`, not internal accessors).
-1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
 1. Ensure the top-level README and Tcl format are compliant.
@@ -497,9 +433,8 @@ required, and the toolchain matches what CI will use:
 # Single module:
 bazelisk build --config=lint //src/<module>/...
 
-# Full lint scope (excludes upstream submodules):
-bazelisk build --config=lint -- //src/... //third-party/... \
-    -//src/sta/... -//third-party/abc/...
+# Full lint scope (excludes the upstream OpenSTA submodule):
+bazelisk build --config=lint -- //src/... //third-party/... -//src/sta/...
 ```
 
 Reports land under `bazel-bin/<pkg>/<target>_rules_lint/` as
@@ -526,25 +461,6 @@ Use absolute file paths because Bazel can change the working directory:
 
 ```shell
 bazelisk run @llvm//tools:clang-format -- -i "$PWD/source_file.cpp"
-```
-
-### CMake (deprecated)
-
-If you use the CMake build, set up Clang Tooling using this
-[guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Then run
-`clang-tidy` on a single file:
-
-```shell
-cmake . -B build  # generate build files
-clang-tidy -p ./build source_file.cpp
-```
-
-To run `clang-tidy` on all files with the CMake compilation database:
-
-```shell
-cmake . -B build  # generate build files
-ln -sf build/compile_commands.json .  # make compilation db visible
-/bin/sh etc/run-clang-tidy-cached.cc
 ```
 
 ## Doxygen

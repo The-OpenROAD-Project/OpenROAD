@@ -223,7 +223,7 @@ could opt back into the old behavior if desired.
 ## Regression Test
 
 `src/gpl/test/mbff_hier.{v,tcl,ok}`, registered in
-`BUILD` and, for the legacy CMake build, `CMakeLists.txt`.
+`BUILD`.
 
 The Verilog defines a 3-level hierarchy (`top → mid → leaf`) with
 two `leaf` instances under one `mid`, four flops per leaf:
@@ -276,5 +276,4 @@ src/gpl/test/mbff_hier.v              regression (new hier design)
 src/gpl/test/mbff_hier.tcl            regression driver
 src/gpl/test/mbff_hier.ok             regression golden
 src/gpl/test/BUILD                    register mbff_hier
-src/gpl/test/CMakeLists.txt           register mbff_hier (legacy CMake)
 ```

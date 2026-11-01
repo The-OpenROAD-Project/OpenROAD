@@ -16,8 +16,7 @@
 
 namespace tst {
 
-// Resolves a test data path. Under bazel this goes through the runfiles
-// machinery; under cmake it strips leading directories until the path exists.
+// Resolves a test data path through the bazel runfiles machinery.
 // Free function rather than a fixture method so non-fixture helpers
 // (LoadedDesign, and anything that has to locate a tool binary) can use it.
 std::string getRunfilePath(const std::string& file_path);

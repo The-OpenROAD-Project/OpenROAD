@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // GpuWirelengthGradientBackend — Kokkos GPU implementation of
-// WirelengthGradientBackend. Compiled only when ENABLE_GPU=ON; constructed
+// WirelengthGradientBackend. Compiled only in the GPU build (--config=gpu); constructed
 // by makeWirelengthGradientBackend() when the GPU path is selected at run time.
 //
 // Header is Kokkos-free (PIMPL); the kernel pipeline lives in

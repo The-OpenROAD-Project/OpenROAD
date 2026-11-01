@@ -1,9 +1,6 @@
 [submodule "module/OpenSTA"]
 	path = src/sta
 	url = ../../The-OpenROAD-Project/OpenSTA.git
-[submodule "src/abc"]
-	path = third-party/abc
-	url = ../../The-OpenROAD-Project/abc.git
 [submodule "third-party/sv-elab"]
 	path = third-party/sv-elab
 	url = ../../povik/sv-elab.git

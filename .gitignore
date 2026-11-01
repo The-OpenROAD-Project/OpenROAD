@@ -23,11 +23,6 @@ __pycache__
 venv/
 .abc_history
 
-include/ord/Version.hh
-
-build
-build_linux
-build_mac
 test/results
 
 docs/main
@@ -38,8 +33,6 @@ Messages.md
 MessagesFinal.md
 
 .idea/
-cmake-build-debug/
-debug/
 
 coverage-output
 .metals/

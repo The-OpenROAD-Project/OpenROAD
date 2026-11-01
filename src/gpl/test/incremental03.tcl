@@ -9,8 +9,8 @@
 # This is a passfail test, not a log_compare one: the scenario drives the
 # solver into a numerically chaotic regime by design (that is the whole
 # point), so the exact iteration-by-iteration HPWL/overflow numbers are not
-# bit-reproducible across compilers/build systems (observed to differ
-# between the CMake and Bazel builds here) even though the qualitative log
+# bit-reproducible across compilers and build configurations even though
+# the qualitative log
 # messages this test actually checks for are. with_output_to_variable
 # captures the run's utl::Logger output so those messages can be checked by
 # fixed substring, independent of the numbers around them.

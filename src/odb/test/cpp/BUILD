@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-# Test Parity Note: All C++ tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(

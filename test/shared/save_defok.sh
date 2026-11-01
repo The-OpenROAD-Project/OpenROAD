@@ -3,24 +3,10 @@
 ## SPDX-License-Identifier: BSD-3-Clause
 ## Copyright (c) 2024-2026, The OpenROAD Authors
 
+# Usage: save_defok.sh <test_name>...
+# Copies each test's .def from bazel-testlogs to <test_name>.defok.
+
 set -e
 
 script_dir="$(dirname "$(readlink -f "$0")")"
-bazel_pending=()
-
-for test_name in "${@:1}"
-do
-    if [ -f "results/${test_name}-tcl.def" ]; then
-        cp "results/${test_name}-tcl.def" "${test_name}.defok"
-        echo "${test_name}"
-    elif [ -f "results/${test_name}-py.def" ]; then
-        cp "results/${test_name}-py.def" "${test_name}.defok"
-        echo "${test_name}"
-    else
-        bazel_pending+=("${test_name}")
-    fi
-done
-
-if [ ${#bazel_pending[@]} -gt 0 ]; then
-    "${script_dir}/bazel_save.sh" defok def "${bazel_pending[@]}"
-fi
+exec "${script_dir}/bazel_save.sh" defok def "$@"

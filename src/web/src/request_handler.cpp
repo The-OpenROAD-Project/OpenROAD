@@ -1189,8 +1189,8 @@ static void addSelectionTypeFlags(boost::json::object& root,
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
 // instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
-// the plain net for input pins too: NetWithSink lives in a gui-private
-// header under CMake, so the driver->sink flight line is a follow-up.
+// the plain net for input pins too; the driver->sink flight line
+// (NetWithSink) is a follow-up.
 static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,

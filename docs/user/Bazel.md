@@ -1,9 +1,8 @@
 # Building and testing with Bazel
 
 ```{note}
-Bazel is the supported build system for OpenROAD.
+Bazel is the only supported build system for OpenROAD.
 For installation steps, see [Installing OpenROAD](Build.md).
-The deprecated CMake build will be removed on Nov. 1, 2026.
 ```
 
 First [install Bazelisk](https://bazel.build/install/bazelisk) or run `sudo ./etc/DependencyInstaller.sh -bazel`, then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:

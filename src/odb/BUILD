@@ -9,8 +9,7 @@ package(
     features = ["layering_check"],
 )
 
-# Public headers live physically in src/odb/include/odb/ (preserving the
-# CMake layout). They are exported so each per-subdir Bazel package can
+# Public headers live physically in src/odb/include/odb/. They are exported so each per-subdir Bazel package can
 # reference the headers it owns via cross-package labels.
 exports_files(
     glob(

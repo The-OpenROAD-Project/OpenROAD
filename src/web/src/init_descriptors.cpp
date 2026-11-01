@@ -3,8 +3,7 @@
 
 // Implements DescriptorRegistry::initDescriptors().
 // This is in a separate file from descriptor_registry.cpp so that
-// gui_descriptors (the lightweight CMake library used by web) does not
-// pull in dbDescriptors / staDescriptors and their heavy dependencies.
+// descriptor_registry.cpp does not depend on dbDescriptors / staDescriptors.
 
 #include <set>
 
@@ -22,9 +21,6 @@
 
 namespace web {
 
-// Defined here (rather than in descriptor_registry.cpp) because the "Zoom to"
-// action references Gui::get() / Gui::zoomTo(), which are not available in the
-// lightweight gui_descriptors CMake library.
 Descriptor::Actions Selected::getActions() const
 {
   auto actions = descriptor_->getActions(object_);

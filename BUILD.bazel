@@ -89,8 +89,8 @@ OPENROAD_LINKOPTS = select({
 })
 
 # Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
-# A string flag rather than a bool leaves room for a "hip" value, mirroring
-# the backend branches in cmake/KokkosBackend.cmake.
+# A string flag rather than a bool leaves room for other backends such as
+# "hip".
 string_flag(
     name = "gpu",
     build_setting_default = "none",
@@ -214,7 +214,6 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
-    "BAZEL_BUILD",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
 ] + select({
@@ -435,7 +434,7 @@ tcl_wrap_cc(
 )
 
 # The Python bindings: every module (ord_py, odb, utl, ant_py, cts_py, ...)
-# keeps its own namespace, as in the CMake build, and all of them are linked
+# keeps its own namespace, and all of them are linked
 # into one library, _openroad.so, so they share a single copy of the C++
 # state. python/modules/_openroad_loader.py loads each module's init
 # function from that library.

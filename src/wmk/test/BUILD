@@ -64,9 +64,8 @@ filegroup(
     name = "test_resources",
     srcs = glob(
         ["**/*"],
-        # Native build and test outputs must not become Bazel inputs.
+        # Local test outputs must not become Bazel inputs.
         exclude = [
-            "**/CMakeFiles/**",
             "**/__pycache__/**",
             "results/**",
         ] + [

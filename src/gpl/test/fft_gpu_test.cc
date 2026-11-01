@@ -5,7 +5,7 @@
 //
 // This test exercises the GPU FFT backend (src/gpl/src/gpu/gpuFftBackend.cpp,
 // the Kokkos/KokkosFFT PoissonSolver) through the gpl::FFT public API -- it is
-// only built when ENABLE_GPU=ON (see src/gpl/test/CMakeLists.txt). With the
+// only built in the GPU build (--config=gpu; see src/gpl/test/BUILD). With the
 // default environment gpl::gpuEnabled() is true, so gpl::FFT's makeFftBackend()
 // selects GpuFftBackend. It runs the GPU FFT on a fixed 16x16 Gaussian density
 // input and checks the resulting electroPhi / electroField against a baked-in

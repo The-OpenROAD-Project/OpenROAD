@@ -12,7 +12,7 @@ extern int Wmk_Init(Tcl_Interp* interp);
 
 namespace wmk {
 
-// Tcl files encoded into strings by CMake.
+// Tcl files encoded into strings by the tcl_encode rule in src/wmk/BUILD.
 extern const char* wmk_tcl_inits[];
 
 void initWatermark(Tcl_Interp* tcl_interp)

@@ -1,17 +1,5 @@
-# Build outputs from CMake
-build/
-debug/
-src/sta/build/
-src/sta/debug/
-
 # standalone workspace for downstream consumer tests
 test/downstream/
-
-# Various things from third-party/ that might be used by CMake, but
-# we have in MODULE.bazel.
-# Goal: no sub-modules, only bazel-managed dependencies.
-third-party/abc/
-third-party/lemon/
 
 # Prevent //... from walking into sv-elab as its BUILD files expect
 # sv-elab is the root

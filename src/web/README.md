@@ -650,14 +650,7 @@ To add or upgrade a library:
 # edit the version in src/web/package.json, then
 bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
 bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
-bazelisk run //src/web/dist:dist           # rebuild the checked-in bundle
 ```
-
-**Changing what the bundle is built from needs that last step too** (the
-JavaScript, CSS, HTML or skin under `src/web/src/`, or `esbuild.config.mjs`),
-then commit what it changed: the CMake build cannot run the bundler, and embeds
-the copy in [`dist/`](dist/README.md) as it stands. CI fails a PR whose copy is
-stale.
 
 ## Server API
 

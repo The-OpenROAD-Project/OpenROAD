@@ -22,19 +22,8 @@
 #include <system_error>
 
 #include "absl/base/no_destructor.h"
+#include "bazel/tcl_library_init.h"
 #include "boost/stacktrace/stacktrace.hpp"
-#include "tcl.h"
-#include "tclDecls.h"
-
-#ifdef ENABLE_PYTHON3
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-#endif
-
-#ifdef ENABLE_TCLX
-#include <tclExtend.h>
-#endif
-
 #include "cut/abc_init.h"
 #include "gui/gui.h"
 #include "ord/Design.h"
@@ -43,59 +32,16 @@
 #include "ord/Tech.h"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
-#include "utl/Logger.h"
-#include "utl/decode.h"
-#include "web/web.h"
-
-#ifdef BAZEL_BUILD
-#include "bazel/tcl_library_init.h"
-#endif
-
+#include "tcl.h"
+#include "tclDecls.h"
 #include "tcl_readline_setup.h"
+#include "utl/Logger.h"
+#include "web/web.h"
 
 using sta::findCmdLineFlag;
 using sta::findCmdLineKey;
 using sta::stringEq;
 using std::string;
-
-#ifdef ENABLE_PYTHON3
-
-#define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
-  X(ifp)                                 \
-  X(utl)                                 \
-  X(ant)                                 \
-  X(grt)                                 \
-  X(gpl)                                 \
-  X(dpl)                                 \
-  X(exa)                                 \
-  X(web)                                 \
-  X(wmk)                                 \
-  X(ppl)                                 \
-  X(tap)                                 \
-  X(cts)                                 \
-  X(drt)                                 \
-  X(fin)                                 \
-  X(fsv)                                 \
-  X(par)                                 \
-  X(rcx)                                 \
-  X(rmp)                                 \
-  X(cgt)                                 \
-  X(stt)                                 \
-  X(syn)                                 \
-  X(psm)                                 \
-  X(pdn)                                 \
-  X(rsz)                                 \
-  X(odb)                                 \
-  X(ord)
-
-#define FOREACH_TOOL(X) FOREACH_TOOL_WITHOUT_OPENROAD(X)
-
-extern "C" {
-#define X(name) extern PyObject* PyInit__##name##_py();
-FOREACH_TOOL(X)
-#undef X
-}
-#endif
 
 int cmd_argc;
 char** cmd_argv;
@@ -128,80 +74,6 @@ static std::string tclCommand(std::initializer_list<const char*> words)
   Tcl_DecrRefCount(list);
   return cmd;
 }
-
-#ifdef ENABLE_PYTHON3
-#define X(name)                                \
-  namespace name {                             \
-  extern const char* name##_py_python_inits[]; \
-  }
-FOREACH_TOOL(X)
-#undef X
-
-#if PY_VERSION_HEX >= 0x03080000
-static void initPython(int argc, char* argv[], const bool exit_after_cmd_file)
-#else
-static void initPython()
-#endif
-{
-#define X(name)                                                             \
-  if (PyImport_AppendInittab("_" #name "_py", PyInit__##name##_py) == -1) { \
-    fprintf(stderr, "Error: could not add module _" #name "_py\n");         \
-    exit(1);                                                                \
-  }
-  FOREACH_TOOL(X)
-#undef X
-#if PY_VERSION_HEX >= 0x03080000
-  PyConfig config;
-  PyConfig_InitPythonConfig(&config);
-  PyConfig_SetBytesArgv(&config, argc, argv);
-  config.inspect = !exit_after_cmd_file;
-  Py_InitializeFromConfig(&config);
-  PyConfig_Clear(&config);
-#else
-  Py_Initialize();
-#endif
-#define X(name)                                                               \
-  {                                                                           \
-    std::string unencoded = utl::base64_decode(name::name##_py_python_inits); \
-    PyObject* code                                                            \
-        = Py_CompileString(unencoded.c_str(), #name "_py.py", Py_file_input); \
-    if (code == nullptr) {                                                    \
-      PyErr_Print();                                                          \
-      fprintf(stderr, "Error: could not compile " #name "_py\n");             \
-      exit(1);                                                                \
-    }                                                                         \
-    if (PyImport_ExecCodeModule(#name, code) == nullptr) {                    \
-      PyErr_Print();                                                          \
-      fprintf(stderr, "Error: could not add module " #name "\n");             \
-      exit(1);                                                                \
-    }                                                                         \
-  }
-  FOREACH_TOOL_WITHOUT_OPENROAD(X)
-#undef X
-#undef FOREACH_TOOL
-#undef FOREACH_TOOL_WITHOUT_OPENROAD
-#undef FOREACH_SYN_PYTHON_TOOL
-
-  // Need to separately handle openroad here because we need both
-  // the names "openroad_swig" and "openroad".
-  {
-    std::string unencoded = utl::base64_decode(ord::ord_py_python_inits);
-    PyObject* code
-        = Py_CompileString(unencoded.c_str(), "openroad.py", Py_file_input);
-    if (code == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not compile openroad.py\n");
-      exit(1);
-    }
-
-    if (PyImport_ExecCodeModule("openroad", code) == nullptr) {
-      PyErr_Print();
-      fprintf(stderr, "Error: could not add module openroad\n");
-      exit(1);
-    }
-  }
-}
-#endif
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
 
@@ -311,56 +183,6 @@ int main(int argc, char* argv[])
   cmd_argc = argc;
   cmd_argv = argv;
 
-#ifdef ENABLE_PYTHON3
-  if (findCmdLineFlag(cmd_argc, cmd_argv, "-python")) {
-    // Setup the app with tcl
-    auto* interp = Tcl_CreateInterp();
-    Tcl_Init(interp);
-    the_tech_and_design->tech = std::make_unique<ord::Tech>(interp);
-    the_tech_and_design->design
-        = std::make_unique<ord::Design>(the_tech_and_design->tech.get());
-    const bool exit = findCmdLineFlag(cmd_argc, cmd_argv, "-exit");
-    ord::initOpenRoad(interp, log_filename, metrics_filename, exit);
-    const bool no_splash = findCmdLineFlag(cmd_argc, cmd_argv, "-no_splash");
-    if (!no_splash) {
-      showSplash();
-    }
-
-    utl::Logger* logger = ord::OpenRoad::openRoad()->getLogger();
-    if (findCmdLineFlag(cmd_argc, cmd_argv, "-gui")) {
-      logger->warn(utl::ORD, 38, "-gui is not yet supported with -python");
-    }
-
-    if (!findCmdLineFlag(cmd_argc, cmd_argv, "-no_init")) {
-      logger->warn(utl::ORD, 39, ".openroad ignored with -python");
-    }
-
-    // Default to all available hardware threads; an invalid -threads value
-    // leaves this default in place.
-    ord::OpenRoad::openRoad()->setThreadCount(-1, false);
-    const char* threads = findCmdLineKey(cmd_argc, cmd_argv, "-threads");
-    if (threads) {
-      ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
-    }
-
-#if PY_VERSION_HEX >= 0x03080000
-    initPython(cmd_argc, cmd_argv, exit);
-    return Py_RunMain();
-#else
-    initPython();
-    std::vector<wchar_t*> args;
-    args.push_back(Py_DecodeLocale(cmd_argv[0], nullptr));
-    if (!exit) {
-      args.push_back(Py_DecodeLocale("-i", nullptr));
-    }
-    for (int i = 1; i < cmd_argc; i++) {
-      args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
-    }
-    return Py_Main(args.size(), args.data());
-#endif  // PY_VERSION_HEX >= 0x03080000
-  }
-#endif  // ENABLE_PYTHON3
-
   // Set argc to 1 so Tcl_Main doesn't source any files.
   // Tcl_Main never returns.
   Tcl_Main(1, argv, ord::tclAppInit);
@@ -425,21 +247,13 @@ static int tclAppInit(int& argc,
     // Initialize tcl interpreter and readline.
     exit_after_cmd_file = findCmdLineFlag(argc, argv, "-exit");
 
-#ifdef BAZEL_BUILD
     if (in_bazel::SetupTclEnvironment(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
-#endif
 
     if (Tcl_Init(interp) == TCL_ERROR) {
       return TCL_ERROR;
     }
-
-#ifdef ENABLE_TCLX
-    if (Tclx_Init(interp) == TCL_ERROR) {
-      return TCL_ERROR;
-    }
-#endif
 
     // Register the ::tclreadline namespace shim unconditionally: it's
     // cheap, and Tcl scripts (including non-interactive ones) may probe
@@ -670,11 +484,6 @@ static void showUsage(const char* prog, const char* init_filename)
   printf("  -web_browser          launch a browser even in an ssh session\n");
   printf("  -minimize             start the gui minimized\n");
   printf("  -no_settings          do not load the previous gui settings\n");
-#ifdef ENABLE_PYTHON3
-  printf(
-      "  -python               start with python interpreter [limited to db "
-      "operations]\n");
-#endif
   printf("  -log <file_name>      write a log in <file_name>\n");
   printf(
       "  -metrics <file_name>  write metrics in <file_name> in JSON format\n");
@@ -694,13 +503,8 @@ static void showSplash()
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
       ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
-#ifdef BAZEL_BUILD
-      strcasecmp(BUILD_TYPE, "opt") == 0
-#else
-      strcasecmp(BUILD_TYPE, "release") == 0
-#endif
-          ? ""
-          : fmt::format(" : {}", BUILD_TYPE));
+      strcasecmp(BUILD_TYPE, "opt") == 0 ? ""
+                                         : fmt::format(" : {}", BUILD_TYPE));
   logger->report(
       "This program is licensed under the BSD-3 license. See the LICENSE file "
       "for details.");

@@ -63,7 +63,7 @@ jobs:
           bazel build \
             "${REMOTE_FLAGS[@]}" \
             --config=lint \
-            -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+            -- //src/... //third-party/... -//src/sta/...
 
       - name: Collect clang-tidy diagnostics
         run: |

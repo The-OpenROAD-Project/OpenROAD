@@ -27,7 +27,7 @@ ord::set_thread_count "3"
 # Private work_dir: restructure names its ABC scratch files
 # <work_dir>/<block_name>[<mode>]_crit_path*.blif, so this test and
 # gcd_restructure.tcl (same block "gcd") would clobber each other's temp files
-# when ctest runs them in parallel.
+# when Bazel runs them in parallel.
 restructure -liberty_file Nangate45/Nangate45_typ.lib -target timing \
   -slack_threshold 1 -depth_threshold 2 \
   -abc_logfile [make_result_file abc_delay.log] \

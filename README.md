@@ -293,10 +293,7 @@ To skip the build, use one of these options:
 - [Docker](docs/user/Build.md#build-with-docker).
 
 See [Building and testing with Bazel](docs/user/Bazel.md) for tests and build configurations.
-
-> **The CMake build is deprecated and will be removed on Nov. 1, 2026.**
-> The CMake configure step prints a warning to this effect.
-> Existing CMake setups can follow [Building with CMake](docs/user/Build-CMake.md).
+Bazel is the only supported build system.
 
 ### Third-party dependencies
 
@@ -315,15 +312,7 @@ Bazel sources third-party code in this order of preference:
    submodule; Bazel then references it via its local path.
 
 The rule of thumb: if Bazel can get it from BCR or directly from the
-upstream repo, do not add a submodule just for Bazel.
-
-Legacy (CMake build, deprecated): CMake has no central registry of
-versioned dependencies, so it uses third-party sources vendored as git
-submodules (see `.gitmodules` and the nested `.gitmodules` files under
-each submodule). Some of these submodules look like forks but are really
-just pinned upstream trees, kept so CMake has a directory to point at.
-Submodules are the CMake-side compromise, not the source of truth for
-Bazel builds.
+upstream repo, do not add a submodule for it.
 
 There is a third source, for browser code only: the web viewer's
 JavaScript libraries come from **npm**, pinned in `src/web/package.json`
@@ -331,9 +320,6 @@ and `src/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
 embedded in the binary (see `src/web/README.md`). Do not add a submodule
 or a BCR module for one of these, and do not add an npm dependency for
 anything that is not browser code.
-
-That bundling runs only under Bazel; the CMake build embeds a copy checked
-in under `src/web/dist/`, whose README says how to regenerate it.
 
 ## Regression Tests
 
@@ -360,33 +346,19 @@ Use `bazelisk query 'kind(test, //src/<tool>/...)'` to list the test targets of 
 
 The flow tests check results such as worst slack against reference values.
 
-### Legacy regression scripts (CMake build)
+### Running the tests in `./test/` outside Bazel
 
-The scripts below run `build/bin/openroad`, the CMake binary.
-Set `OPENROAD_EXE` to use another binary.
+`./test/regression` is a Tcl driver for the tests in `./test/`.
+Set `OPENROAD_EXE` to the binary to test:
 
 ``` shell
-# run tests for all tools
-./test/regression
+bazelisk build //:openroad
 
 # run all flow tests
-./test/regression flow
+OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression flow
 
-# run <tool> tests
-./test/regression <tool>
-```
-
-`./test/regression` is a Tcl driver in the repository root.
-The script in a tool directory is a separate wrapper that runs `ctest` in `build/`:
-
-``` shell
-# run all <tool>-specific unit tests
-cd src/<tool>
-./test/regression
-
-# run only <TEST_NAME> for <tool>
-cd src/<tool>
-./test/regression <TEST_NAME>
+# run only <TEST_NAME>
+OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression <TEST_NAME>
 ```
 
 Use `report_flow_metrics [test]...` to see all of the flow test metrics.

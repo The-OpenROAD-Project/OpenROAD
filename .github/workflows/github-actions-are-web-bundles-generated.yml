@@ -1,23 +1,12 @@
-name: Check That Web Bundles Are Generated
-# Only what can make the bundles stale: the job pulls a node toolchain and the
-# npm tree, and runs the bundler.
+name: Check That The Web npm Lock Matches package.json
+# Only what can make the lock and package.json disagree.
 on:
   push:
     branches:
       - master
     paths:
-      - src/web/src/*.js
-      - src/web/src/*.css
-      - src/web/src/*.html
-      - src/web/src/*.svg
-      - src/web/src/collect_licenses.py
-      - src/web/src/inline_styles.py
-      - src/web/esbuild.config.mjs
       - src/web/package.json
       - src/web/pnpm-lock.yaml
-      - src/web/.npmrc
-      - src/web/BUILD
-      - src/web/dist/**
       - src/web/test/npm_lock_test.py
       - src/web/test/BUILD
       - MODULE.bazel
@@ -27,18 +16,8 @@ on:
     branches:
       - master
     paths:
-      - src/web/src/*.js
-      - src/web/src/*.css
-      - src/web/src/*.html
-      - src/web/src/*.svg
-      - src/web/src/collect_licenses.py
-      - src/web/src/inline_styles.py
-      - src/web/esbuild.config.mjs
       - src/web/package.json
       - src/web/pnpm-lock.yaml
-      - src/web/.npmrc
-      - src/web/BUILD
-      - src/web/dist/**
       - src/web/test/npm_lock_test.py
       - src/web/test/BUILD
       - MODULE.bazel
@@ -64,7 +43,5 @@ jobs:
           bazelisk-version: 1.x
           bazelisk-cache: true
 
-      # The dist tests diff src/web/dist, which the CMake build embeds, against
-      # the bundler's output and print the fix, without writing to the checkout.
-      - name: Check the web bundle and the npm lock against their sources
-        run: bazelisk test //src/web/dist:all //src/web/test:npm_lock_test
+      - name: Check the npm lock against package.json
+        run: bazelisk test //src/web/test:npm_lock_test

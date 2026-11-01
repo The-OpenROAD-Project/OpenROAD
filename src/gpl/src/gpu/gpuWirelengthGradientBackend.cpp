@@ -6,7 +6,7 @@
 // (gpl2/src/wirelengthOp.cu); maps naturally to Kokkos
 // parallel_for + KOKKOS_LAMBDA.
 //
-// Compiled only when ENABLE_GPU=ON; the kernel bodies live in wirelengthOp.cpp
+// Compiled only in the GPU build (--config=gpu); the kernel bodies live in wirelengthOp.cpp
 // (also a CUDA TU).
 //
 // Determinism: no atomics. K3 (per-net BC) and K5 (per-inst gather) use

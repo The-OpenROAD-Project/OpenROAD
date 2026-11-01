@@ -41,7 +41,7 @@ using sta::Instance;
 %include "sdc/Sdc.i"
 %include "sdf/Sdf.i"
 %include "search/Property.i"
-// Set by CMakeLists.txt/BUILD when the OpenSTA submodule is the
+// Set by src/dbSta/BUILD when the OpenSTA submodule is the
 // OpenROAD fork rather than stock (parallaxsw) OpenSTA.
 #ifdef STA_OPENROAD_FORK
 %include "search/AnalysisCorner.i"
