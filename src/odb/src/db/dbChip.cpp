@@ -709,6 +709,16 @@ dbChipInst* dbChip::findChipInst(const std::string& name) const
   return nullptr;
 }
 
+dbChipNet* dbChip::findChipNet(const std::string& name) const
+{
+  for (dbChipNet* net : getChipNets()) {
+    if (net->getName() == name) {
+      return net;
+    }
+  }
+  return nullptr;
+}
+
 dbChipRegion* dbChip::findChipRegion(const std::string& name) const
 {
   _dbChip* chip = (_dbChip*) this;

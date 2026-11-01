@@ -14,6 +14,7 @@
   using namespace upf;
 %}
 
+%include "../../Exception.i"
 
 
 %inline %{

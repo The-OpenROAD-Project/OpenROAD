@@ -561,6 +561,11 @@ void FlexPA::genAPsFromPinShapes(
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   frLayerNum layer_num = 0;
   for (const auto& layer_shapes : pin_shapes) {
+    // The detailed-route grid graph stops at TOP_ROUTING_LAYER, so an
+    // instance pin access point above it can never be reached.
+    if (inst_term && layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+      break;
+    }
     if (!layer_shapes.empty()
         && getDesign()->getTech()->getLayer(layer_num)->isRoutable()) {
       genAPsFromLayerShapes(layer_rect_to_coords,

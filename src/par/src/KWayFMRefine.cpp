@@ -8,7 +8,6 @@
 #include <memory>
 #include <ranges>
 #include <set>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -116,24 +115,16 @@ float KWayFMRefine::Pass(
                    solution);
     std::vector<int> neighbors
         = FindNeighbors(hgraph, vertex, visited_vertices_flag);
-    // update the neighbors of v for all gain buckets in parallel
-    std::vector<std::thread> threads;
-    threads.reserve(num_parts_);
+    // update the neighbors of v for all gain buckets
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-      threads.emplace_back(&KWayFMRefine::UpdateSingleGainBucket,
-                           this,
-                           to_pid,
-                           std::ref(buckets),
-                           hgraph,
-                           std::ref(neighbors),
-                           std::ref(net_degs),
-                           std::ref(cur_paths_cost),
-                           std::ref(solution));
+      UpdateSingleGainBucket(to_pid,
+                             buckets,
+                             hgraph,
+                             neighbors,
+                             net_degs,
+                             cur_paths_cost,
+                             solution);
     }
-    for (auto& t : threads) {
-      t.join();  // wait for all threads to finish
-    }
-    threads.clear();
     if (total_delta_gain >= best_gain) {
       best_gain = total_delta_gain;
       best_vertex_id = vertex;
@@ -177,25 +168,16 @@ void KWayFMRefine::InitializeGainBucketsKWay(
     const std::vector<float>& cur_paths_cost,
     const Partitions& solution) const
 {
-  std::vector<std::thread> threads;  // for parallel updating
-  threads.reserve(num_parts_);
-  // parallel initialize the num_parts gain_buckets
+  // initialize the num_parts gain_buckets
   for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-    threads.emplace_back(
-        &KWayFMRefine::InitializeSingleGainBucket,
-        this,
-        std::ref(buckets),
-        to_pid,
-        hgraph,
-        std::ref(boundary_vertices),  // we only consider boundary vertices
-        std::ref(net_degs),
-        std::ref(cur_paths_cost),
-        std::ref(solution));
+    InitializeSingleGainBucket(buckets,
+                               to_pid,
+                               hgraph,
+                               boundary_vertices,  // only boundary vertices
+                               net_degs,
+                               cur_paths_cost,
+                               solution);
   }
-  for (auto& t : threads) {
-    t.join();  // wait for all threads to finish
-  }
-  threads.clear();
 }
 
 // Initialize the single bucket
@@ -304,17 +286,8 @@ void KWayFMRefine::AcceptKWayMove(const std::shared_ptr<VertexGain>& gain_cell,
                    curr_block_balance,
                    net_degs);
   // Remove vertex from all buckets where vertex is present
-  std::vector<std::thread> deletion_threads;
-  deletion_threads.reserve(num_parts_);
   for (int i = 0; i < num_parts_; ++i) {
-    deletion_threads.emplace_back(&par::KWayFMRefine::HeapEleDeletion,
-                                  this,
-                                  vertex_id,
-                                  i,
-                                  std::ref(gain_buckets));
-  }
-  for (auto& th : deletion_threads) {
-    th.join();
+    HeapEleDeletion(vertex_id, i, gain_buckets);
   }
 }
 

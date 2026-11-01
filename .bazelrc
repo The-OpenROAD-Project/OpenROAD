@@ -230,6 +230,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:profile --copt=-gz=zlib --host_copt=-gz=zlib
 build:profile --linkopt=-gz=zlib
+# Links //:openroad with --no-rosegment on Linux so VTune resolves symbols
+# (see OPENROAD_LINKOPTS in BUILD.bazel).
+build:profile --//:profile
 
 # Settings for --config=coverage C++ coverage build (LLVM source-based).
 # Usage: bazel coverage --config=coverage //...
@@ -266,6 +269,12 @@ test --build_tests_only
 # --- Performance Optimizations ---
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
+
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
 
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache

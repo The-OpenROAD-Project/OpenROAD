@@ -109,6 +109,8 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_clock_as_data",
+    "repair_hold_clock_as_data_clk_tree",
     "repair_hold_multi_output_load",
     "repair_setup_max_iter",
     "repair_setup_path1",
@@ -297,6 +299,8 @@ TESTS = [
     "repair_setup_parallel_eval_threads",
     "repair_setup_parallel_eval_max_util",
     "repair_setup_parallel_eval_path_group",
+    "repair_setup_parallel_eval_reference_period",
+    "repair_setup_parallel_eval_reference_period_modes",
     "repair_setup_vt_swap2",
     "global_sizing",
     "global_sizing_threads",
@@ -730,6 +734,30 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "repair_hold_shared_driver.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSkewBudgetRestore",
+    size = "small",
+    srcs = ["cpp/TestSkewBudgetRestore.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold1.def",
     ],
     deps = [
         "//src/dbSta",

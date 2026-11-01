@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -27,23 +29,21 @@ namespace pex {
 
 namespace {
 
+// A conductor a wire can be on: the stack's, with a minimum width and
+// spacing, and off the ground plane.
 const fsv::Stack::Conductor& requireConductor(const fsv::Stack& stack,
-                                              const std::string_view layer)
+                                              const Layer layer)
 {
-  const fsv::Stack::Conductor* conductor = stack.findConductor(layer);
-  if (conductor == nullptr) {
-    throw std::invalid_argument("the stack has no conductor "
-                                + std::string(layer));
-  }
-  if (conductor->min_width <= 0 || conductor->min_spacing <= 0) {
-    throw std::invalid_argument("conductor " + std::string(layer)
+  const fsv::Stack::Conductor& conductor = stack.conductor(layer);
+  if (conductor.min_width <= 0 || conductor.min_spacing <= 0) {
+    throw std::invalid_argument("conductor " + conductor.name
                                 + " needs a minimum width and spacing");
   }
-  if (conductor->bottom <= 0) {
-    throw std::invalid_argument("conductor " + std::string(layer)
+  if (conductor.bottom <= 0) {
+    throw std::invalid_argument("conductor " + conductor.name
                                 + " sits on the ground plane");
   }
-  return *conductor;
+  return conductor;
 }
 
 // The options' layers, when given, must all be in the stack: a misspelled
@@ -51,7 +51,7 @@ const fsv::Stack::Conductor& requireConductor(const fsv::Stack& stack,
 void requireLayers(const fsv::Stack& stack, const BuildOptions& options)
 {
   for (const std::string& name : options.layers) {
-    if (stack.findConductor(name) == nullptr) {
+    if (!stack.isConductor(stack.layer(name))) {
       throw std::invalid_argument("the stack has no conductor " + name);
     }
   }
@@ -61,33 +61,97 @@ void requireLayers(const fsv::Stack& stack, const BuildOptions& options)
 // options' layers when those are given.
 bool usable(const fsv::Stack& stack,
             const BuildOptions& options,
-            const std::string& name)
+            const Layer layer)
 {
-  const fsv::Stack::Conductor* conductor = stack.findConductor(name);
-  if (conductor == nullptr || conductor->bottom <= 0) {
+  const fsv::Stack::Conductor& conductor = stack.conductor(layer);
+  if (conductor.bottom <= 0) {
     return false;
   }
   return options.layers.empty()
-         || std::find(options.layers.begin(), options.layers.end(), name)
+         || std::find(
+                options.layers.begin(), options.layers.end(), conductor.name)
                 != options.layers.end();
 }
 
-std::vector<std::string> covers(const fsv::Stack& stack,
-                                const BuildOptions& options,
-                                const std::vector<std::string>& layers,
-                                const int depth)
+// The covers by depth and far factors.
+std::vector<Layer> fixedCovers(const fsv::Stack& stack,
+                               const BuildOptions& options,
+                               const Layer layer,
+                               const std::vector<Layer>& layers,
+                               const int depth)
 {
   requireLayers(stack, options);
-  std::vector<std::string> out{""};
-  for (const std::string& name : layers) {
-    if (static_cast<int>(out.size()) > depth) {
-      break;
+  std::vector<Layer> out{Layer()};
+  std::vector<Layer> far;  // usable layers past the depth, nearest first
+  for (const Layer cover : layers) {
+    if (!usable(stack, options, cover)) {
+      continue;
     }
-    if (usable(stack, options, name)) {
-      out.push_back(name);
+    if (static_cast<int>(out.size()) <= depth) {
+      out.push_back(cover);
+    } else {
+      far.push_back(cover);
+    }
+  }
+  if (far.empty() || options.far_cover_factors.empty()) {
+    return out;
+  }
+  // The far layers nearest in distance to the factors' targets, and the
+  // farthest, each once, nearest first.
+  const double first = coverDistance(stack, layer, far.front());
+  std::vector<Layer> picked{far.back()};
+  for (const double factor : options.far_cover_factors) {
+    const double target = logCoverDistance(first) + std::log(factor);
+    Layer best;
+    double best_error = 0;
+    for (const Layer cover : far) {
+      const double error = std::abs(
+          logCoverDistance(coverDistance(stack, layer, cover)) - target);
+      if (!best.valid() || error < best_error) {
+        best = cover;
+        best_error = error;
+      }
+    }
+    if (std::find(picked.begin(), picked.end(), best) == picked.end()) {
+      picked.push_back(best);
+    }
+  }
+  for (const Layer cover : far) {
+    if (std::find(picked.begin(), picked.end(), cover) != picked.end()) {
+      out.push_back(cover);
     }
   }
   return out;
+}
+
+// The name a model key holds for a layer: "" for none (the substrate
+// below, open above).
+std::string keyName(const fsv::Stack& stack, const Layer layer)
+{
+  return layer.valid() ? stack.name(layer) : std::string();
+}
+
+// A table the model holds already is reused by a resumed build, as long
+// as it is on the grid the options would build; one on another grid came
+// from another build and would make the model inconsistent.
+// Grids are compared at the model file's precision (seven significant
+// digits), so a table read back from a saved model matches the grid the
+// same options compute.
+void requireGrid(const std::string& what,
+                 const std::vector<double>& have,
+                 const std::vector<double>& want)
+{
+  bool same = have.size() == want.size();
+  for (size_t i = 0; same && i < have.size(); i++) {
+    same = std::abs(have[i] - want[i])
+           <= 1e-6 * std::max(std::abs(have[i]), std::abs(want[i]));
+  }
+  if (!same) {
+    throw std::invalid_argument("the model holds a " + what
+                                + " built on another grid; a build resumes "
+                                  "only from a model built with the same "
+                                  "options");
+  }
 }
 
 fsv::SolveOptions solveOptions(const double tol)
@@ -114,6 +178,9 @@ void runJobs(const BuildOptions& options,
              const int count,
              const std::function<void(int job, fsv::Solver& solver)>& run)
 {
+  if (count == 0) {
+    return;  // a resumed build with nothing left
+  }
   int done = 0;
   std::mutex progress_mutex;
   // The caller only waits, so every requested thread is a worker.
@@ -132,28 +199,40 @@ void runJobs(const BuildOptions& options,
   });
 }
 
-// A wire of the layer alone in a context: its per-unit-length ground and
-// couplings to the planes.
-LateralCap wireAlone(const fsv::Stack& stack,
-                     const LateralKey& key,
-                     const double width,
-                     const BuildOptions& options,
-                     fsv::Solver& solver,
-                     const double tol)
+// The per-unit-length capacitances of the lateral pattern: a wire of the
+// layer at a width, its neighbors at spacings (none when negative), and a
+// plane on each cover (none when no layer).
+LateralCap solveSection(const fsv::Stack& stack,
+                        const Layer layer,
+                        const double width,
+                        const double left,
+                        const double right,
+                        const Layer below,
+                        const Layer above,
+                        const BuildOptions& options,
+                        fsv::Solver& solver,
+                        const double tol)
 {
   LateralPattern pattern;
-  pattern.layer = key.layer;
+  pattern.layer = layer;
   pattern.width = width;
-  pattern.below = key.below;
-  pattern.above = key.above;
+  pattern.left = left;
+  pattern.right = right;
+  pattern.below = below;
+  pattern.above = above;
   pattern.extent = options.extent;
   const LateralPattern::Section section = pattern.build(stack);
   const fsv::Scene2D scene(section.geometry, stack);
   const fsv::CapRow row = solver.solve(scene, section.wire, solveOptions(tol));
+  auto coupling = [&](const NetIndex net) {
+    return net != kNullNetIndex ? row.coupling(net) : 0.0;
+  };
   LateralCap cap;
-  cap.below = section.below != kNullNetIndex ? row.coupling(section.below) : 0;
-  cap.above = section.above != kNullNetIndex ? row.coupling(section.above) : 0;
-  cap.ground = row.total() - cap.below - cap.above;
+  cap.left = coupling(section.left);
+  cap.right = coupling(section.right);
+  cap.below = coupling(section.below);
+  cap.above = coupling(section.above);
+  cap.ground = row.total() - cap.left - cap.right - cap.below - cap.above;
   return cap;
 }
 
@@ -165,15 +244,15 @@ std::string buildFingerprint(const fsv::Stack& stack,
   // A canonical text of the inputs, hashed.
   std::ostringstream text;
   text.precision(17);
-  text << stack.technology << '|' << stack.background_eps << '|';
+  text << stack.technology() << '|' << stack.backgroundEps() << '|';
   for (const std::string& name : options.layers) {
     text << 'l' << name << '|';
   }
-  for (const fsv::Stack::Dielectric& d : stack.dielectrics) {
+  for (const fsv::Stack::Dielectric& d : stack.dielectrics()) {
     text << 'd' << d.name << ' ' << d.bottom << ' ' << d.top << ' ' << d.eps
          << '|';
   }
-  for (const fsv::Stack::Conductor& c : stack.conductors) {
+  for (const fsv::Stack::Conductor& c : stack.conductors()) {
     text << 'c' << c.name << ' ' << c.bottom << ' ' << c.top << ' '
          << c.min_width << ' ' << c.min_spacing;
     for (const fsv::Stack::ConformalDielectric& f : c.conformals) {
@@ -182,8 +261,9 @@ std::string buildFingerprint(const fsv::Stack& stack,
     }
     text << '|';
   }
-  for (const fsv::Stack::Via& v : stack.vias) {
-    text << 'v' << v.name << ' ' << v.upper << ' ' << v.lower << '|';
+  for (const fsv::Stack::Via& v : stack.vias()) {
+    text << 'v' << v.name << ' ' << stack.name(v.upper) << ' '
+         << (v.lower.valid() ? stack.name(v.lower) : "SUBSTRATE") << '|';
   }
   auto list = [&](const char* name, const std::vector<double>& values) {
     text << name;
@@ -200,8 +280,15 @@ std::string buildFingerprint(const fsv::Stack& stack,
   list("dg", options.diagonal_gap_factors);
   list("ds", options.diagonal_spacing_factors);
   list("df", options.diagonal_far_spacing_factors);
-  text << options.below_depth << ' ' << options.above_depth << ' '
-       << options.diagonal_depth << ' ' << options.crossing_length << ' '
+  // Only the cover settings in use: the tolerance, or the depths and far
+  // factors.
+  if (options.cover_tolerance > 0) {
+    text << 'c' << options.cover_tolerance << '|';
+  } else {
+    list("fc", options.far_cover_factors);
+    text << 'd' << options.below_depth << ' ' << options.above_depth << '|';
+  }
+  text << options.diagonal_depth << ' ' << options.crossing_length << ' '
        << options.crossing_length_long << ' ' << options.end_length << ' '
        << options.tol << ' ' << options.seed << ' ' << options.extent;
   // FNV-1a, so the fingerprint is the same on every platform and standard
@@ -215,29 +302,243 @@ std::string buildFingerprint(const fsv::Stack& stack,
   return hex.str();
 }
 
-std::vector<std::string> coversBelow(const fsv::Stack& stack,
-                                     const std::string_view layer,
-                                     const BuildOptions& options)
+std::vector<int> pickCovers(const std::vector<double>& distances,
+                            const std::vector<ProbeCurve>& curves,
+                            const double tol)
 {
-  return covers(stack, options, layersBelow(stack, layer), options.below_depth);
+  const int n = static_cast<int>(distances.size());
+  if (n <= 2) {
+    std::vector<int> all(n);
+    for (int i = 0; i < n; i++) {
+      all[i] = i;
+    }
+    return all;
+  }
+  std::vector<double> logs(n);
+  for (int i = 0; i < n; i++) {
+    logs[i] = logCoverDistance(distances[i]);
+  }
+  // Whether consecutive picks i and j predict every candidate between.
+  auto spans = [&](const int i, const int j) {
+    for (int k = i + 1; k < j; k++) {
+      const double t
+          = logs[j] > logs[i] ? (logs[k] - logs[i]) / (logs[j] - logs[i]) : 0;
+      for (const ProbeCurve& c : curves) {
+        const double predicted = (1 - t) * c.value[i] + t * c.value[j];
+        if (std::abs(predicted - c.value[k]) > tol * c.scale[k]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  // The fewest picks reaching each candidate from the first.
+  std::vector<int> count(n, n + 1);
+  std::vector<int> before(n, -1);
+  count[0] = 1;
+  for (int j = 1; j < n; j++) {
+    for (int i = 0; i < j; i++) {
+      if (count[i] + 1 < count[j] && spans(i, j)) {
+        count[j] = count[i] + 1;
+        before[j] = i;
+      }
+    }
+  }
+  std::vector<int> picks;
+  for (int j = n - 1; j >= 0; j = before[j]) {
+    picks.push_back(j);
+  }
+  std::reverse(picks.begin(), picks.end());
+  return picks;
 }
 
-std::vector<std::string> coversAbove(const fsv::Stack& stack,
-                                     const std::string_view layer,
-                                     const BuildOptions& options)
+CoverPlan planCovers(const fsv::Stack& stack,
+                     const Layer layer,
+                     const BuildOptions& options)
 {
-  return covers(stack, options, layersAbove(stack, layer), options.above_depth);
+  if (!(options.cover_tolerance >= 0)
+      || !std::isfinite(options.cover_tolerance)) {
+    throw std::invalid_argument(
+        "the cover tolerance must be finite and not negative");
+  }
+  for (const double factor : options.far_cover_factors) {
+    if (!(factor > 0) || !std::isfinite(factor)) {
+      throw std::invalid_argument("the far cover factor "
+                                  + std::to_string(factor)
+                                  + " is not positive");
+    }
+  }
+  if (options.cover_tolerance == 0) {
+    return {fixedCovers(stack,
+                        options,
+                        layer,
+                        layersBelow(stack, layer),
+                        options.below_depth),
+            fixedCovers(stack,
+                        options,
+                        layer,
+                        layersAbove(stack, layer),
+                        options.above_depth)};
+  }
+  const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
+  requireLayers(stack, options);
+  // Every usable layer on each side, nearest first.
+  std::vector<Layer> sides[2];
+  for (const int side : {0, 1}) {
+    for (const Layer cover :
+         side == 0 ? layersBelow(stack, layer) : layersAbove(stack, layer)) {
+      if (usable(stack, options, cover)) {
+        sides[side].push_back(cover);
+      }
+    }
+  }
+  // The probe variants: the grid's narrowest and widest width, neighbors
+  // or none, and the other side open or with its nearest cover (when it
+  // has one).
+  const auto [narrowest, widest] = std::minmax_element(
+      options.width_factors.begin(), options.width_factors.end());
+  if (narrowest == options.width_factors.end()) {
+    throw std::invalid_argument("the width grid is empty");
+  }
+  struct Variant
+  {
+    double width;
+    double spacing;  // to both neighbors; none when negative
+    bool other;      // the other side's nearest cover present
+  };
+  auto variants = [&](const int side) {
+    std::vector<Variant> out;
+    std::vector<double> factors{*narrowest};
+    if (*widest != *narrowest) {
+      factors.push_back(*widest);
+    }
+    for (const double f : factors) {
+      for (const double spacing : {-1.0, conductor.min_spacing}) {
+        for (const bool other : {false, true}) {
+          if (!other || !sides[1 - side].empty()) {
+            out.push_back({f * conductor.min_width, spacing, other});
+          }
+        }
+      }
+    }
+    return out;
+  };
+  struct Job
+  {
+    int side;
+    int cover;
+    Variant variant;
+    int index;  // the variant's
+    LateralCap cap;
+  };
+  std::vector<Job> jobs;
+  for (const int side : {0, 1}) {
+    if (sides[side].size() <= 2) {
+      continue;  // all of them are picked
+    }
+    const std::vector<Variant> list = variants(side);
+    for (int c = 0; c < static_cast<int>(sides[side].size()); c++) {
+      for (int v = 0; v < static_cast<int>(list.size()); v++) {
+        jobs.push_back({side, c, list[v], v, {}});
+      }
+    }
+  }
+  runJobs(options, jobs.size(), [&](const int i, fsv::Solver& solver) {
+    Job& job = jobs[i];
+    const Layer cover = sides[job.side][job.cover];
+    const Layer opposite
+        = job.variant.other ? sides[1 - job.side].front() : Layer();
+    job.cap = solveSection(stack,
+                           layer,
+                           job.variant.width,
+                           job.variant.spacing,
+                           job.variant.spacing,
+                           job.side == 0 ? cover : opposite,
+                           job.side == 0 ? opposite : cover,
+                           options,
+                           solver,
+                           options.tol / 3);
+  });
+  CoverPlan plan{{Layer()}, {Layer()}};
+  for (const int side : {0, 1}) {
+    const std::vector<Layer>& candidates = sides[side];
+    std::vector<Layer>& picked = side == 0 ? plan.below : plan.above;
+    if (candidates.size() <= 2) {
+      // Nothing was probed: the nearest and the farthest are all there is.
+      picked.insert(picked.end(), candidates.begin(), candidates.end());
+      continue;
+    }
+    std::vector<double> distances;
+    for (const Layer cover : candidates) {
+      distances.push_back(coverDistance(stack, layer, cover));
+    }
+    // Per variant, every part CoverMap interpolates: the total, the plane
+    // coupling, the ground and the neighbor coupling, all against the
+    // total.
+    constexpr int kParts = 4;
+    std::vector<ProbeCurve> curves;
+    for (const Job& job : jobs) {
+      if (job.side != side) {
+        continue;
+      }
+      const size_t first = kParts * job.index;
+      if (curves.size() < first + kParts) {
+        curves.resize(first + kParts);
+        for (ProbeCurve& c : curves) {
+          c.value.resize(candidates.size(), 0);
+          c.scale.resize(candidates.size(), 0);
+        }
+      }
+      const LateralCap& cap = job.cap;
+      const double parts[kParts] = {cap.total(),
+                                    side == 0 ? cap.below : cap.above,
+                                    cap.ground,
+                                    cap.left + cap.right};
+      for (int q = 0; q < kParts; q++) {
+        curves[first + q].value[job.cover] = parts[q];
+        curves[first + q].scale[job.cover] = cap.total();
+      }
+    }
+    for (const int k : pickCovers(distances, curves, options.cover_tolerance)) {
+      picked.push_back(candidates[k]);
+    }
+  }
+  return plan;
+}
+
+std::vector<Layer> coversBelow(const fsv::Stack& stack,
+                               const Layer layer,
+                               const BuildOptions& options)
+{
+  return planCovers(stack, layer, options).below;
+}
+
+std::vector<Layer> coversAbove(const fsv::Stack& stack,
+                               const Layer layer,
+                               const BuildOptions& options)
+{
+  return planCovers(stack, layer, options).above;
 }
 
 void buildLateral(const fsv::Stack& stack,
-                  const std::string_view layer,
+                  const Layer layer,
+                  const BuildOptions& options,
+                  Model& model)
+{
+  buildLateral(stack, layer, planCovers(stack, layer, options), options, model);
+}
+
+void buildLateral(const fsv::Stack& stack,
+                  const Layer layer,
+                  const CoverPlan& plan,
                   const BuildOptions& options,
                   Model& model)
 {
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
   struct Job
   {
-    LateralKey key;
+    Layer below;
+    Layer above;
     LateralTable* table;
     int width;
     int left;  // spacing indices; spacings.size() is open
@@ -245,9 +546,10 @@ void buildLateral(const fsv::Stack& stack,
   };
   // A point and its mirror share one solve; the table stores both.
   std::vector<Job> jobs;
-  for (const std::string& below : coversBelow(stack, layer, options)) {
-    for (const std::string& above : coversAbove(stack, layer, options)) {
-      const LateralKey key{std::string(layer), below, above};
+  for (const Layer below : plan.below) {
+    for (const Layer above : plan.above) {
+      const LateralKey key{
+          conductor.name, keyName(stack, below), keyName(stack, above)};
       std::vector<double> widths;
       for (const double f : options.width_factors) {
         widths.push_back(f * conductor.min_width);
@@ -256,13 +558,19 @@ void buildLateral(const fsv::Stack& stack,
       for (const double f : options.spacing_factors) {
         spacings.push_back(f * conductor.min_spacing);
       }
+      if (const LateralTable* built = model.lateral(key)) {
+        requireGrid("lateral table of " + key.layer, built->widths(), widths);
+        requireGrid(
+            "lateral table of " + key.layer, built->spacings(), spacings);
+        continue;
+      }
       LateralTable& table
           = model.addLateral(key, LateralTable(widths, spacings));
       const int n = table.spacingCount();
       for (int w = 0; w < table.widthCount(); w++) {
         for (int l = 0; l < n; l++) {
           for (int r = l; r < n; r++) {
-            jobs.push_back({key, &table, w, l, r});
+            jobs.push_back({below, above, &table, w, l, r});
           }
         }
       }
@@ -272,27 +580,17 @@ void buildLateral(const fsv::Stack& stack,
     const Job& job = jobs[i];
     LateralTable& table = *job.table;
     const int open = static_cast<int>(table.spacings().size());
-    LateralPattern pattern;
-    pattern.layer = job.key.layer;
-    pattern.width = table.widths()[job.width];
-    pattern.left = job.left == open ? -1 : table.spacings()[job.left];
-    pattern.right = job.right == open ? -1 : table.spacings()[job.right];
-    pattern.below = job.key.below;
-    pattern.above = job.key.above;
-    pattern.extent = options.extent;
-    const LateralPattern::Section section = pattern.build(stack);
-    const fsv::Scene2D scene(section.geometry, stack);
-    const fsv::CapRow row
-        = solver.solve(scene, section.wire, solveOptions(options.tol));
-    LateralCap cap;
-    cap.left = section.left != kNullNetIndex ? row.coupling(section.left) : 0;
-    cap.right
-        = section.right != kNullNetIndex ? row.coupling(section.right) : 0;
-    cap.below
-        = section.below != kNullNetIndex ? row.coupling(section.below) : 0;
-    cap.above
-        = section.above != kNullNetIndex ? row.coupling(section.above) : 0;
-    cap.ground = row.total() - cap.left - cap.right - cap.below - cap.above;
+    LateralCap cap
+        = solveSection(stack,
+                       layer,
+                       table.widths()[job.width],
+                       job.left == open ? -1 : table.spacings()[job.left],
+                       job.right == open ? -1 : table.spacings()[job.right],
+                       job.below,
+                       job.above,
+                       options,
+                       solver,
+                       options.tol);
     if (job.left == job.right) {
       // One quantity estimated twice.
       cap.left = cap.right = (cap.left + cap.right) / 2;
@@ -303,8 +601,8 @@ void buildLateral(const fsv::Stack& stack,
 }
 
 void buildCrossing(const fsv::Stack& stack,
-                   const std::string_view layer,
-                   const std::string_view cover,
+                   const Layer layer,
+                   const Layer cover,
                    const BuildOptions& options,
                    Model& model)
 {
@@ -321,14 +619,14 @@ void buildCrossing(const fsv::Stack& stack,
   const fsv::Stack::Conductor& cover_conductor = requireConductor(stack, cover);
   const bool over = cover_conductor.bottom >= conductor.top;
   if (!over && cover_conductor.top > conductor.bottom) {
-    throw std::invalid_argument(std::string(cover) + " is beside "
-                                + std::string(layer) + ", not over or under");
+    throw std::invalid_argument(cover_conductor.name + " is beside "
+                                + conductor.name + ", not over or under");
+  }
+  const CrossingKey key{conductor.name, cover_conductor.name};
+  if (model.crossing(key) != nullptr) {
+    return;  // built before
   }
   const double w = conductor.min_width;
-  const LateralKey open_key{std::string(layer), "", ""};
-  const LateralKey plane_key{std::string(layer),
-                             over ? "" : std::string(cover),
-                             over ? std::string(cover) : ""};
   // One 3D solve per (crossing width, coverage, length), then the two
   // per-length references. The two lengths are whole pitches and differ
   // by at least one, so their difference is never zero.
@@ -361,12 +659,19 @@ void buildCrossing(const fsv::Stack& stack,
     if (i >= count) {
       const bool is_open = i == count;
       LateralCap& cap = is_open ? open_cap : plane_cap;
-      cap = wireAlone(stack,
-                      is_open ? open_key : plane_key,
-                      w,
-                      options,
-                      solver,
-                      options.tol / 3);
+      // The plane sits where the cover is; the open wire has none.
+      const Layer below = !is_open && !over ? cover : Layer();
+      const Layer above = !is_open && over ? cover : Layer();
+      cap = solveSection(stack,
+                         layer,
+                         w,
+                         -1,
+                         -1,
+                         below,
+                         above,
+                         options,
+                         solver,
+                         options.tol / 3);
       return;
     }
     Job& job = jobs[i];
@@ -391,9 +696,8 @@ void buildCrossing(const fsv::Stack& stack,
   // The shares are relative to what the plane adds; a plane that adds
   // nothing has no shares to tabulate.
   if (!(plane_total > open_cap.total()) || !(plane_cross > 0)) {
-    throw std::runtime_error("a plane on " + std::string(cover)
-                             + " adds nothing to a wire on "
-                             + std::string(layer));
+    throw std::runtime_error("a plane on " + cover_conductor.name
+                             + " adds nothing to a wire on " + conductor.name);
   }
   // Pairs of lengths give per-length values, then the share over the gap.
   std::vector<std::pair<double, CrossingShare>> points;
@@ -429,12 +733,20 @@ void buildCrossing(const fsv::Stack& stack,
     values.push_back(share);
     counts.push_back(1);
   }
-  model.addCrossing({std::string(layer), std::string(cover)},
-                    CrossingTable(gaps, values));
+  model.addCrossing(key, CrossingTable(gaps, values));
 }
 
 void buildEnds(const fsv::Stack& stack,
-               const std::string_view layer,
+               const Layer layer,
+               const BuildOptions& options,
+               Model& model)
+{
+  buildEnds(stack, layer, planCovers(stack, layer, options), options, model);
+}
+
+void buildEnds(const fsv::Stack& stack,
+               const Layer layer,
+               const CoverPlan& plan,
                const BuildOptions& options,
                Model& model)
 {
@@ -445,33 +757,47 @@ void buildEnds(const fsv::Stack& stack,
   }
   struct Job
   {
-    LateralKey key;
+    Layer below;
+    Layer above;
     int width;
     double excess = 0;
   };
   std::vector<Job> jobs;
   std::vector<LateralKey> keys;
-  for (const std::string& below : coversBelow(stack, layer, options)) {
-    for (const std::string& above : coversAbove(stack, layer, options)) {
-      const LateralKey key{std::string(layer), below, above};
+  for (const Layer below : plan.below) {
+    for (const Layer above : plan.above) {
+      const LateralKey key{
+          conductor.name, keyName(stack, below), keyName(stack, above)};
+      if (const EndTable* built = model.end(key)) {
+        requireGrid("end table of " + key.layer, built->widths(), widths);
+        continue;
+      }
       keys.push_back(key);
       for (int w = 0; w < static_cast<int>(widths.size()); w++) {
-        jobs.push_back({key, w});
+        jobs.push_back({below, above, w});
       }
     }
   }
   runJobs(options, jobs.size(), [&](const int i, fsv::Solver& solver) {
     Job& job = jobs[i];
     const double w = widths[job.width];
-    const double per_length
-        = wireAlone(stack, job.key, w, options, solver, options.tol / 3)
-              .total();
+    const double per_length = solveSection(stack,
+                                           layer,
+                                           w,
+                                           -1,
+                                           -1,
+                                           job.below,
+                                           job.above,
+                                           options,
+                                           solver,
+                                           options.tol / 3)
+                                  .total();
     EndPattern pattern;
     pattern.layer = layer;
     pattern.width = w;
     pattern.length = std::max(options.end_length, 5 * w);
-    pattern.below = job.key.below;
-    pattern.above = job.key.above;
+    pattern.below = job.below;
+    pattern.above = job.above;
     pattern.extent = options.extent;
     pattern.margin = options.extent;
     const EndPattern::Wire wire = pattern.build(stack);
@@ -489,23 +815,23 @@ void buildEnds(const fsv::Stack& stack,
   }
 }
 
-std::vector<std::string> diagonalLayers(const fsv::Stack& stack,
-                                        const std::string_view layer,
-                                        const BuildOptions& options)
+std::vector<Layer> diagonalLayers(const fsv::Stack& stack,
+                                  const Layer layer,
+                                  const BuildOptions& options)
 {
   requireLayers(stack, options);
-  std::vector<std::string> out;
-  for (const std::vector<std::string>& side :
+  std::vector<Layer> out;
+  for (const std::vector<Layer>& side :
        {layersBelow(stack, layer), layersAbove(stack, layer)}) {
     int depth = 0;
-    for (const std::string& name : side) {
+    for (const Layer other : side) {
       if (depth >= options.diagonal_depth) {
         break;
       }
-      if (!usable(stack, options, name)) {
+      if (!usable(stack, options, other)) {
         continue;
       }
-      out.push_back(name);
+      out.push_back(other);
       depth++;
     }
   }
@@ -513,13 +839,14 @@ std::vector<std::string> diagonalLayers(const fsv::Stack& stack,
 }
 
 void buildDiagonal(const fsv::Stack& stack,
-                   const std::string_view layer,
-                   const std::string_view other,
+                   const Layer layer,
+                   const Layer other,
                    const BuildOptions& options,
                    Model& model)
 {
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
   const fsv::Stack::Conductor& other_conductor = requireConductor(stack, other);
+  const DiagonalKey key{conductor.name, other_conductor.name};
   const double w = conductor.min_width;
   std::vector<double> widths;
   for (const double f : options.diagonal_width_factors) {
@@ -537,9 +864,16 @@ void buildDiagonal(const fsv::Stack& stack,
   for (const double f : options.diagonal_far_spacing_factors) {
     far_spacings.push_back(f * conductor.min_spacing);
   }
-  DiagonalTable& table
-      = model.addDiagonal({std::string(layer), std::string(other)},
-                          DiagonalTable(widths, gaps, spacings, far_spacings));
+  if (const DiagonalTable* built = model.diagonal(key)) {
+    const std::string what = "diagonal table of " + key.layer;
+    requireGrid(what, built->widths(), widths);
+    requireGrid(what, built->gaps(), gaps);
+    requireGrid(what, built->spacings(), spacings);
+    requireGrid(what, built->farSpacings(), far_spacings);
+    return;
+  }
+  DiagonalTable& table = model.addDiagonal(
+      key, DiagonalTable(widths, gaps, spacings, far_spacings));
   const int ns = table.spacingCount();
   const int nf = table.farCount();
   const int ng = table.gapCount();
@@ -603,24 +937,59 @@ void buildDiagonal(const fsv::Stack& stack,
   }
 }
 
+std::optional<CoverPlan> heldCovers(const fsv::Stack& stack,
+                                    const Model& model,
+                                    const Layer layer)
+{
+  std::set<std::string> held[2];
+  const std::string& name = stack.conductor(layer).name;
+  for (const auto& [key, table] : model.laterals()) {
+    if (key.layer == name) {
+      held[0].insert(key.below);
+      held[1].insert(key.above);
+    }
+  }
+  if (held[0].empty()) {
+    return std::nullopt;
+  }
+  CoverPlan plan;
+  for (const int side : {0, 1}) {
+    std::vector<Layer>& covers = side == 0 ? plan.below : plan.above;
+    covers.push_back(Layer());
+    for (const Layer cover :
+         side == 0 ? layersBelow(stack, layer) : layersAbove(stack, layer)) {
+      if (held[side].count(stack.name(cover))) {
+        covers.push_back(cover);
+      }
+    }
+  }
+  return plan;
+}
+
 void buildLayer(const fsv::Stack& stack,
-                const std::string_view layer,
+                const Layer layer,
                 const BuildOptions& options,
                 Model& model)
 {
-  buildLateral(stack, layer, options, model);
-  buildEnds(stack, layer, options, model);
-  for (const std::string& cover : coversBelow(stack, layer, options)) {
-    if (!cover.empty()) {
-      buildCrossing(stack, layer, cover, options, model);
+  buildLayer(stack, layer, planCovers(stack, layer, options), options, model);
+}
+
+void buildLayer(const fsv::Stack& stack,
+                const Layer layer,
+                const CoverPlan& plan,
+                const BuildOptions& options,
+                Model& model)
+{
+  buildLateral(stack, layer, plan, options, model);
+  buildEnds(stack, layer, plan, options, model);
+  for (const std::vector<Layer>* side : {&plan.below, &plan.above}) {
+    for (const Layer cover : *side) {
+      if (cover.valid()) {
+        buildCrossing(stack, layer, cover, options, model);
+      }
     }
   }
-  for (const std::string& cover : coversAbove(stack, layer, options)) {
-    if (!cover.empty()) {
-      buildCrossing(stack, layer, cover, options, model);
-    }
-  }
-  for (const std::string& other : diagonalLayers(stack, layer, options)) {
+  for (const Layer other : diagonalLayers(stack, layer, options)) {
     buildDiagonal(stack, layer, other, options, model);
   }
 }

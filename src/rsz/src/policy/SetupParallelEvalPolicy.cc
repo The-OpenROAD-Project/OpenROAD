@@ -40,10 +40,15 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
+#include "sta/Clock.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
+#include "sta/Sdc.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 
@@ -129,6 +134,14 @@ std::unique_ptr<MoveGenerator> makeParallelEvalGenerator(
   }
 
   return nullptr;
+}
+
+// Keeps the shortest positive value seen so far in shortest.
+void keepShortest(float& shortest, const float value)
+{
+  if (value > 0.0f && (shortest == 0.0f || value < shortest)) {
+    shortest = value;
+  }
 }
 
 }  // namespace
@@ -244,15 +257,63 @@ void SetupParallelEvalPolicy::saveInitialCheckpoint()
   checkpoint_wns_ = qor.wns;
   checkpoint_tns_ = qor.tns;
   best_checkpoint_wns_ = checkpoint_wns_;
-  stall_.reset(checkpoint_wns_, checkpoint_tns_);
+  reference_period_ = referencePeriod(checkpoint_wns_);
+  stall_.reset(checkpoint_tns_, reference_period_);
   work_.reset(graph_->vertexCount());
   if (RepairSetupProfiler::enabled()) {
     RepairSetupProfiler::current()->metadata(
         "graph_vertices", std::to_string(graph_->vertexCount()));
+    RepairSetupProfiler::current()->metadata(
+        "reference_period", fmt::format("{:.6e}", reference_period_));
   }
+  debugPrint(logger_,
+             utl::RSZ,
+             "repair_setup",
+             1,
+             "PARALLEL_EVAL reference clock period {:.3e}",
+             reference_period_);
 
   RepairSetupProfiler::qor(
       "checkpoint_initial", checkpoint_wns_, checkpoint_tns_);
+}
+
+float SetupParallelEvalPolicy::referencePeriod(
+    const sta::Slack initial_wns) const
+{
+  // Every mode times the design, so the shortest clock of any mode sets the
+  // scale.  A virtual clock times only IO constraints, whose budgets are often
+  // rough, so it sets the scale only when no clock has source pins.
+  float real_period = 0.0f;
+  float virtual_period = 0.0f;
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::Clock* clk : mode->sdc()->clocks()) {
+      keepShortest(clk->isVirtual() ? virtual_period : real_period,
+                   clk->period());
+    }
+  }
+  if (real_period > 0.0f) {
+    return real_period;
+  }
+  if (virtual_period > 0.0f) {
+    return virtual_period;
+  }
+
+  // set_max_delay sets the scale only when no mode has a clock.
+  float max_delay = 0.0f;
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      if (exception->isPathDelay()
+          && exception->minMax()->matches(sta::MinMax::max())) {
+        keepShortest(max_delay, exception->delay());
+      }
+    }
+  }
+  if (max_delay > 0.0f) {
+    return max_delay;
+  }
+
+  // Without clocks or max delays the initial WNS is the only time scale.
+  return std::abs(sta::delayAsFloat(initial_wns));
 }
 
 void SetupParallelEvalPolicy::buildMoveGenerators(
@@ -1085,8 +1146,9 @@ sta::Slack SetupParallelEvalPolicy::checkpointWnsTolerance() const
   if (tail_.active()) {
     return 0.0f;
   }
-  return std::abs(sta::delayAsFloat(best_checkpoint_wns_))
-         * policy_config_.parallel_eval.checkpoint_wns_tolerance_pct / 100.0f;
+  return reference_period_
+         * policy_config_.parallel_eval.checkpoint_wns_tolerance_period_pct
+         / 100.0f;
 }
 
 int SetupParallelEvalPolicy::adaptiveBatchSize(
@@ -1111,7 +1173,7 @@ void SetupParallelEvalPolicy::startSmallBatchRetry()
   // The missed batches spent the stall budget at the full cap, and the small
   // budget of the retry would end it after one batch.  The retry also tries
   // again the targets that the undone batches left on the tabu list.
-  stall_.reset(checkpoint_wns_, checkpoint_tns_);
+  stall_.reset(checkpoint_tns_, reference_period_);
   tabu_.clearTemporary();
 
   // The retry keeps the conflict rules but drops the score floor and the
@@ -1604,7 +1666,8 @@ void SetupParallelEvalPolicy::startTailOrFinish(const char* reason)
 
 bool SetupParallelEvalPolicy::startWnsTail(const char* reason)
 {
-  if (!tail_.start(work_.seconds(policy_config_.parallel_eval))) {
+  if (!tail_.start(work_.seconds(policy_config_.parallel_eval),
+                   reference_period_)) {
     return false;
   }
 

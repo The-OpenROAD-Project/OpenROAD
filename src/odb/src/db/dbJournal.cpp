@@ -3,21 +3,27 @@
 
 #include "dbJournal.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <string>
+#include <vector>
 
+#include "dbAccessPoint.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
 #include "dbCapNode.h"
 #include "dbITerm.h"
 #include "dbInst.h"
+#include "dbMPin.h"
+#include "dbMaster.h"
 #include "dbModNet.h"
 #include "dbModule.h"
 #include "dbNet.h"
 #include "dbRSeg.h"
+#include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
@@ -527,6 +533,7 @@ void dbJournal::redo_deleteObject()
       log_.pop(group_id);
       log_.pop(module_id);
       log_.pop(region_id);
+      popAccessPoints(nullptr, /*restore=*/false);
       dbInst* inst = dbInst::getInst(block_, inst_id);
       debugPrint(logger_,
                  utl::ODB,
@@ -881,6 +888,7 @@ void dbJournal::redo_swapObject()
           lib_id,
           master_id);
       inst->swapMaster(master);
+      popAccessPoints(inst, /*restore=*/false);
       break;
     }
 
@@ -2021,6 +2029,7 @@ void dbJournal::undo_deleteObject()
         auto region = dbRegion::getRegion(block_, region_id);
         region->addInst(inst);
       }
+      popAccessPoints(inst, /*restore=*/true);
       debugPrint(logger_,
                  utl::ODB,
                  "DB_ECO",
@@ -2390,6 +2399,126 @@ void dbJournal::undo_disconnectObject()
   }
 }
 
+dbJournal::InstAccessPoints dbJournal::getAccessPoints(dbInst* inst)
+{
+  _dbInst* inst_impl = (_dbInst*) inst;
+  _dbBlock* block = (_dbBlock*) inst_impl->getOwner();
+  InstAccessPoints aps;
+  aps.pin_access_idx = inst_impl->pin_access_idx_;
+  // Iterms are recorded by position, which follows the master's mterms, as
+  // undoing a destroy recreates them with new ids.
+  for (const uint32_t iterm_id : inst_impl->iterms_) {
+    const _dbITerm* iterm = block->iterm_tbl_->getPtr(iterm_id);
+    std::vector<std::pair<uint32_t, uint32_t>>& iterm_aps
+        = aps.iterm_aps.emplace_back();
+    for (const auto& [pin_id, ap_id] : iterm->aps_) {
+      if (ap_id.isValid()) {
+        iterm_aps.emplace_back(pin_id.id(), ap_id.id());
+      }
+    }
+  }
+  return aps;
+}
+
+void dbJournal::pushAccessPoints(const InstAccessPoints& aps)
+{
+  pushParam(aps.pin_access_idx);
+  pushParam(static_cast<uint32_t>(aps.iterm_aps.size()));
+  for (const auto& iterm_aps : aps.iterm_aps) {
+    pushParam(static_cast<uint32_t>(iterm_aps.size()));
+    for (const auto& [pin_id, ap_id] : iterm_aps) {
+      pushParam(pin_id);
+      pushParam(ap_id);
+    }
+  }
+}
+
+void dbJournal::popAccessPoints(dbInst* inst, const bool restore)
+{
+  struct SavedAccessPoint
+  {
+    uint32_t iterm_idx;
+    uint32_t pin_id;
+    uint32_t ap_id;
+  };
+
+  uint32_t pin_access_idx;
+  log_.pop(pin_access_idx);
+  uint32_t iterm_count;
+  log_.pop(iterm_count);
+  std::vector<SavedAccessPoint> saved;
+  for (uint32_t i = 0; i < iterm_count; ++i) {
+    uint32_t ap_count;
+    log_.pop(ap_count);
+    for (uint32_t j = 0; j < ap_count; ++j) {
+      SavedAccessPoint ap{.iterm_idx = i, .pin_id = 0, .ap_id = 0};
+      log_.pop(ap.pin_id);
+      log_.pop(ap.ap_id);
+      saved.push_back(ap);
+    }
+  }
+  if (!restore || saved.empty()) {
+    return;
+  }
+
+  // Pin access may have regenerated the access points since they were
+  // recorded, so an id can be gone or reused.  Restore only if every saved
+  // access point is still in its pin's pattern for the saved index;
+  // otherwise leave the instance without preferred access points, as
+  // swapMaster and create leave it, so pin access recomputes them.
+  _dbBlock* block = (_dbBlock*) block_;
+  _dbInst* inst_impl = (_dbInst*) inst;
+  dbMaster* master = inst->getMaster();
+  _dbMaster* master_impl = (_dbMaster*) master;
+  const uint32_t lib_id = master->getLib()->getId();
+  if (iterm_count != inst_impl->iterms_.size()) {
+    return;
+  }
+  for (const SavedAccessPoint& ap : saved) {
+    if (!block->ap_tbl_->validId(ap.ap_id)
+        || !master_impl->mpin_tbl_->validId(ap.pin_id)) {
+      return;
+    }
+    const _dbAccessPoint* ap_impl = block->ap_tbl_->getPtr(ap.ap_id);
+    const _dbMPin* mpin = master_impl->mpin_tbl_->getPtr(ap.pin_id);
+    dbITerm* iterm = (dbITerm*) block->iterm_tbl_->getPtr(
+        inst_impl->iterms_[ap.iterm_idx]);
+    if (ap_impl->lib_ != lib_id || ap_impl->master_ != master->getId()
+        || ap_impl->mpin_ != ap.pin_id
+        || mpin->mterm_ != iterm->getMTerm()->getId()) {
+      return;
+    }
+    if (pin_access_idx >= mpin->aps_.size()
+        || std::ranges::find(mpin->aps_[pin_access_idx],
+                             dbId<_dbAccessPoint>(ap.ap_id))
+               == mpin->aps_[pin_access_idx].end()) {
+      return;
+    }
+  }
+
+  inst_impl->pin_access_idx_ = pin_access_idx;
+  std::vector<_dbITerm*> restored_iterms;
+  for (const SavedAccessPoint& ap : saved) {
+    _dbITerm* iterm
+        = block->iterm_tbl_->getPtr(inst_impl->iterms_[ap.iterm_idx]);
+    iterm->aps_[dbId<_dbMPin>(ap.pin_id)] = dbId<_dbAccessPoint>(ap.ap_id);
+    auto& ap_iterms = block->ap_tbl_->getPtr(ap.ap_id)->iterms_;
+    auto pos
+        = std::lower_bound(ap_iterms.begin(), ap_iterms.end(), iterm->getOID());
+    if (pos == ap_iterms.end() || *pos != iterm->getOID()) {
+      ap_iterms.insert(pos, iterm->getOID());
+    }
+    if (restored_iterms.empty() || restored_iterms.back() != iterm) {
+      restored_iterms.push_back(iterm);
+    }
+  }
+  for (_dbITerm* iterm : restored_iterms) {
+    for (dbBlockCallBackObj* callback : block->callbacks_) {
+      callback->inDbITermPostSetAccessPoints((dbITerm*) iterm);
+    }
+  }
+}
+
 void dbJournal::undo_swapObject()
 {
   auto obj_type = popObjectType();
@@ -2458,6 +2587,7 @@ void dbJournal::undo_swapObject()
                  "UNDO ECO: swap {}",
                  inst->getDebugName());
       inst->swapMaster(master);
+      popAccessPoints(inst, /*restore=*/true);
       break;
     }
 

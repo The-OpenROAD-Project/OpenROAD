@@ -105,7 +105,8 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
                               const std::string& error_file,
                               const std::string& voltage_source_file)
 {
-  if (!sta::dbNetwork::is3DicTopChip(db_->getChip())) {
+  odb::dbChip* top_chip = db_->getChip();
+  if (!sta::dbNetwork::is3DicTopChip(top_chip)) {
     if (!checkConnectivity(net, false, error_file, false)) {
       return;
     }
@@ -134,7 +135,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   }
 
   if (!sta_->getDbNetwork()->has3DicChip()
-      || sta_->getDbNetwork()->topChip() != db_->getChip()) {
+      || sta_->getDbNetwork()->topChip() != top_chip) {
     logger_->error(utl::PSM, 151, "The loaded assembly has no timing network.");
   }
 
@@ -207,29 +208,6 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
         utl::PSM, 69, "Check connectivity failed on {}.", net->getName());
   }
   return check;
-}
-
-odb::dbChipNet* PDNSim::findChipNet(const std::string& chip_net_name) const
-{
-  odb::dbChip* top_chip = db_->getChip();
-  if (top_chip == nullptr) {
-    logger_->error(utl::PSM, 101, "No chip is loaded.");
-  }
-
-  odb::dbChipNet* chip_net = nullptr;
-  for (odb::dbChipNet* candidate : top_chip->getChipNets()) {
-    if (candidate->getName() == chip_net_name) {
-      chip_net = candidate;
-      break;
-    }
-  }
-  if (chip_net == nullptr) {
-    logger_->error(utl::PSM,
-                   102,
-                   "The loaded assembly does not contain net {}.",
-                   chip_net_name);
-  }
-  return chip_net;
 }
 
 odb::dbChipNet* PDNSim::findChipNet(odb::dbNet* local_net) const

@@ -496,20 +496,18 @@ void NegotiationLegalizer::buildGrid()
   // Blockade each fixed cell and record its usage in one pass.  Footprint
   // only: padding is left to PlacementDRC, which knows both masters and so
   // can apply the class-pair rules that a plain capacity cannot express.
+  // Block the same pixels checkPlacement checks for overlap, so an off-grid
+  // fixed cell's partially covered edge sites are blocked too.  Fixed cells
+  // without a Node lie outside the rows, where capacity is already 0.
   for (const NegCell& cell : cells_) {
-    if (!cell.fixed) {
+    if (!cell.fixed || cell.node == nullptr) {
       continue;
     }
-    for (int dy = 0; dy < cell.height; ++dy) {
-      const int gy = cell.y + dy;
-      for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
-        if (gridExists(gx, gy)) {
-          Pixel& pixel = gridAt(gx, gy);
-          pixel.capacity = 0;
-          pixel.usage = 1;
-        }
-      }
-    }
+    dplGrid->visitCellPixels(
+        *cell.node, /*padded=*/false, [](Pixel* pixel, bool /*padded*/) {
+          pixel->capacity = 0;
+          pixel->usage = 1;
+        });
   }
 }
 
@@ -575,11 +573,33 @@ void NegotiationLegalizer::initialSnap()
 {
   const Grid* dpl_grid = opendp_->grid_.get();
 
+  // Mirrors PlacementDRC::checkOneSiteGap against fixed cells only: the DPL
+  // grid has no cells painted yet, and movable usage is added after the snap,
+  // so usage > 0 here means a fixed cell. Off-grid counts as a wall, as there.
+  auto occupied = [&](int gx, int gy) {
+    return !gridExists(gx, gy) || gridAt(gx, gy).usage > 0;
+  };
+  auto oneSiteGap = [&](const NegCell& cell, int px, int py) {
+    if (!opendp_->disallow_one_site_gaps_) {
+      return false;
+    }
+    const int left = px - 1;
+    const int right = px + cell.width;
+    for (int gy = py; gy < py + cell.height; ++gy) {
+      if ((!occupied(left, gy) && occupied(left - 1, gy))
+          || (!occupied(right, gy) && occupied(right + 1, gy))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Can cell `ci` geometrically occupy (px, py)? True when the body footprint
-  // is in-die, on real sites (capacity 0 = no site or fixed blockage) and
-  // inside the fence. Deliberately ignores row legality (site type,
-  // orientation, power), movable overlap and padding — negotiation handles all
-  // of those; the snap only keeps cells off fixed blockages and off-die.
+  // is in-die, on real sites (capacity 0 = no site or fixed blockage), inside
+  // the fence and leaves no one-site gap to a fixed cell. Deliberately ignores
+  // row legality (site type, orientation, power), movable overlap and padding —
+  // negotiation handles all of those; the snap only keeps cells off fixed
+  // blockages and off-die.
   auto placeable = [&](int ci, int px, int py) -> bool {
     const NegCell& cell = cells_[ci];
     if (!inDie(px, py, cell.width, cell.height)) {
@@ -592,7 +612,7 @@ void NegotiationLegalizer::initialSnap()
         }
       }
     }
-    return respectsFence(ci, px, py);
+    return respectsFence(ci, px, py) && !oneSiteGap(cell, px, py);
   };
 
   for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {
@@ -826,17 +846,10 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // may have been placed at an overlapping initial position.  Without this,
   // a movable cell painted on top of an endcap overwrites pixel->cell, and
   // the subsequent erasePixel call clears the endcap from the grid, making
-  // checkOneSiteGap blind to it.
-  for (const NegCell& cell : cells_) {
-    if (!cell.fixed || cell.db_inst == nullptr) {
-      continue;
-    }
-    Node* node = cell.node;
-    if (node == nullptr) {
-      continue;
-    }
-    opendp_->grid_->paintPixel(node);
-  }
+  // checkOneSiteGap blind to it.  setFixedGridCells() paints every site a
+  // fixed cell overlaps (plus padding), matching checkPlacement even for
+  // fixed cells that are not aligned to the site grid.
+  opendp_->setFixedGridCells();
 }
 
 // ===========================================================================
