@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <functional>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "helper.h"
@@ -157,6 +159,66 @@ TEST_F(JournalFixture, test_undo_inst_swap)
   auto inst = dbInst::create(block, and2, "a");
   in_eco([&]() { inst->swapMaster(or2); });
   EXPECT_EQ(inst->getMaster(), and2);
+}
+
+TEST_F(JournalFixture, test_undo_inst_swap_restores_access_points)
+{
+  dbMPin* pin = dbMPin::create(and2->findMTerm("a"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  dbITerm* iterm = inst->findITerm("a");
+  inst->setPinAccessIdx(0);
+  iterm->setAccessPoint(pin, ap);
+
+  in_eco([&]() { inst->swapMaster(or2); });
+
+  EXPECT_EQ(inst->getMaster(), and2);
+  EXPECT_EQ(inst->getPinAccessIdx(), 0);
+  const std::vector<dbAccessPoint*> aps
+      = inst->findITerm("a")->getPrefAccessPoints();
+  ASSERT_EQ(aps.size(), 1);
+  EXPECT_EQ(aps[0], ap);
+}
+
+TEST_F(JournalFixture, test_undo_inst_destroy_restores_access_points)
+{
+  dbMPin* pin = dbMPin::create(and2->findMTerm("a"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  inst->setPinAccessIdx(0);
+  inst->findITerm("a")->setAccessPoint(pin, ap);
+
+  in_eco([&]() { dbInst::destroy(inst); });
+
+  dbInst* restored = block->findInst("i1");
+  ASSERT_NE(restored, nullptr);
+  EXPECT_EQ(restored->getPinAccessIdx(), 0);
+  const std::vector<dbAccessPoint*> aps
+      = restored->findITerm("a")->getPrefAccessPoints();
+  ASSERT_EQ(aps.size(), 1);
+  EXPECT_EQ(aps[0], ap);
+}
+
+TEST_F(JournalFixture, test_undo_inst_swap_skips_stale_access_points)
+{
+  dbMPin* pin_a = dbMPin::create(and2->findMTerm("a"));
+  dbMPin* pin_b = dbMPin::create(and2->findMTerm("b"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin_a, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  inst->setPinAccessIdx(0);
+  inst->findITerm("a")->setAccessPoint(pin_a, ap);
+
+  // Regenerating pin access while the swap is pending can free the access
+  // point and reuse its id for another pin.
+  in_eco([&]() {
+    inst->swapMaster(or2);
+    dbAccessPoint::destroy(ap);
+    dbAccessPoint::create(block, pin_b, 0);
+  });
+
+  EXPECT_EQ(inst->getMaster(), and2);
+  EXPECT_EQ(inst->getPinAccessIdx(), static_cast<uint32_t>(-1));
+  EXPECT_TRUE(inst->findITerm("a")->getPrefAccessPoints().empty());
 }
 
 TEST_F(JournalFixture, test_undo_inst_place)

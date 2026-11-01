@@ -11,6 +11,7 @@ or_integration_tests(
     ndr_vias3
     ndr_no_auto_taper
     obstruction
+    pa_above_top_layer
     pa_single_pin
     single_cut_minimumcut
     single_step

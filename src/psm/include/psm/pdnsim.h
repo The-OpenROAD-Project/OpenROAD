@@ -138,7 +138,6 @@ class PDNSim : public odb::dbBlockCallBackObj
   // Functions of decap cells
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
   odb::dbNet* findPowerNet(const char* net_name);
-  odb::dbChipNet* findChipNet(const std::string& chip_net_name) const;
   odb::dbChipNet* findChipNet(odb::dbNet* local_net) const;
   std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net,
                                                sta::Scene* scene);

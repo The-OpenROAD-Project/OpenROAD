@@ -270,6 +270,12 @@ test --build_tests_only
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
 
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
+
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache

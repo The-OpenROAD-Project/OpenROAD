@@ -177,11 +177,14 @@ class Stack
     CrtCurve crt_vs_area;
   };
 
+  // kGate is the direction of the design's gates, which the stack does
+  // not know; whoever applies the etch tables resolves it from the design.
   enum class ReferenceDirection
   {
     kNone,
     kVertical,
     kHorizontal,
+    kGate,
   };
 
   // Building. Each add throws std::invalid_argument for a layer that

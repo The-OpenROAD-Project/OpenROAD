@@ -342,6 +342,40 @@ describe('layer extents: tiles that would come back empty', () => {
         }
     });
 
+    // Two dies can share a layer name; each item asks for its own die's tile,
+    // and only where that die has the layer.
+    it('skips an item outside its own die', async () => {
+        const layerExtents = new LayerExtents();
+        layerExtents.apply(layerExtents.invalidate(), {
+            supported: true,
+            layers: {},
+            chiplets: {
+                'top/die0': { outline: [], layers: { metal1: [0, 0, 0.5, 1] } },
+                'top/die1': { outline: [], layers: { metal1: [0.5, 0, 1, 1] } },
+            },
+        });
+        const mgr = fakeManager();
+        const stub = stubCanvas2d();
+        try {
+            const layer = makeLayer(mgr, [
+                { layer: 'metal1', chiplet: 'top/die0', visible: true },
+                { layer: 'metal1', chiplet: 'top/die1', visible: true },
+            ], { ctx: { ...CTX, app: { layerExtents } } });
+            layer._map = {};
+            const tileAt = x => new Promise((resolve) => {
+                layer.createTile({ x, y: 0, z: 2 }, () => resolve());
+            });
+            await tileAt(0);
+            assert.deepEqual(mgr.sent.map(m => [m.layer, m.chiplet]),
+                             [['metal1', 'top/die0']]);
+            await tileAt(3);
+            assert.deepEqual(mgr.sent.map(m => [m.layer, m.chiplet]),
+                             [['metal1', 'top/die0'], ['metal1', 'top/die1']]);
+        } finally {
+            stub.restore();
+        }
+    });
+
     it('completes a tile whose layers are all skipped, with no backing store',
        async () => {
         const mgr = fakeManager();
