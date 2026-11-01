@@ -51,7 +51,7 @@ using utl::GRT;
 
 namespace grt {
 
-// Sentinel demoteNonCriticalNets writes so a net sorts last; not a slack.
+// Sentinel demoteNonCriticalNets writes on non-critical nets; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
 // Overflow relief rounds; each grows the candidates and reruns the RRR loop.
 constexpr int kReliefRounds = 5;
@@ -1242,7 +1242,7 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
           sta_slack * 1e12);
     } else if (cugr_slack >= kDemotedSlack) {
       detail = fmt::format(
-          "slack = {:.2f} ps (cugr entered stage demoted, sorts last)",
+          "slack = {:.2f} ps (cugr entered stage demoted as non-critical)",
           sta_slack * 1e12);
     } else {
       detail = fmt::format(
