@@ -6,6 +6,7 @@ or_integration_tests(
     ext_pattern
     gcd
     generate_pattern
+    hier_spef_names
     names
     net_name_consistency
     coordinates

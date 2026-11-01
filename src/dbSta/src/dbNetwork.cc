@@ -1699,6 +1699,58 @@ bool dbNetwork::isLeaf(const Instance* instance) const
   return instance != top_instance_;
 }
 
+// Objects that a tool creates after linking (e.g. CTS clock buffers and
+// clock nets) can be owned by a sub-module while their db name has no module
+// path ("clkbuf_0" in module u_sub, not "u_sub/clkbuf_0"). write_spef names
+// them by the full path (u_sub/clkbuf_0); these helpers let the path lookups
+// below find them, as a fallback after the full-path names.
+static odb::dbInst* findBareInstInModule(odb::dbBlock* block,
+                                         const odb::dbModule* module,
+                                         const char* name)
+{
+  odb::dbInst* inst = block->findInst(name);
+  return (inst != nullptr && inst->getModule() == module) ? inst : nullptr;
+}
+
+// Deepest module that holds every pin of "net" (top if the net has a port).
+static const odb::dbModule* netScopeModule(odb::dbNet* net)
+{
+  odb::dbModule* top = net->getBlock()->getTopModule();
+  if (!net->getBTerms().empty()) {
+    return top;
+  }
+  std::vector<odb::dbModule*> common;
+  bool first = true;
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    std::vector<odb::dbModule*> chain;  // top first
+    for (odb::dbModule* m = iterm->getInst()->getModule(); m != nullptr;) {
+      chain.push_back(m);
+      odb::dbModInst* mod_inst = m->getModInst();
+      m = mod_inst ? mod_inst->getParent() : nullptr;
+    }
+    std::reverse(chain.begin(), chain.end());
+    if (first) {
+      common = chain;
+      first = false;
+    } else {
+      size_t n = 0;
+      while (n < common.size() && n < chain.size() && common[n] == chain[n]) {
+        n++;
+      }
+      common.resize(n);
+    }
+  }
+  return common.empty() ? top : common.back();
+}
+
+static odb::dbNet* findBareNetInModule(odb::dbBlock* block,
+                                       const odb::dbModule* module,
+                                       const char* name)
+{
+  odb::dbNet* net = block->findNet(name);
+  return (net != nullptr && netScopeModule(net) == module) ? net : nullptr;
+}
+
 Instance* dbNetwork::findInstance(std::string_view path_name) const
 {
   std::string path_name_str(path_name);
@@ -1750,6 +1802,11 @@ Instance* dbNetwork::findInstance(std::string_view path_name) const
           dbInst* ret = module_defn->findDbInst(leaf_inst_name.c_str());
           if (ret) {
             return (Instance*) ret;
+          }
+          ret = findBareInstInModule(
+              block_, module_defn, leaf_inst_name.c_str());
+          if (ret) {
+            return dbToSta(ret);
           }
         }
       }
@@ -1807,6 +1864,9 @@ Instance* dbNetwork::findChild(const Instance* parent,
   std::string full_name = mod_inst->getHierarchicalName();
   full_name += pathDivider() + name_str;
   dbInst* inst = block_->findInst(full_name.c_str());
+  if (inst == nullptr) {
+    inst = findBareInstInModule(block_, master_module, name_cstr);
+  }
   return dbToSta(inst);
 }
 
@@ -1968,6 +2028,11 @@ Net* dbNetwork::findNet(const Instance* instance,
     odb::dbModNet* modnet = scope->getModNet(net_cname);
     if (modnet) {
       return dbToSta(modnet);
+    }
+    if (block_ != nullptr) {
+      if (dbNet* dnet = findBareNetInModule(block_, scope, net_cname)) {
+        return dbToSta(dnet);
+      }
     }
   }
   return nullptr;
