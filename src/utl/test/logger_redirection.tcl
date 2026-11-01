@@ -21,10 +21,10 @@ sta::test_redirect_utl "FILE1" > $rpt3
 sta::test_redirect_utl "FILE2" > $rpt4
 sta::test_redirect_utl "FILE3" >> $rpt4
 
-diff_file logger_redirection_1.rptok $rpt1
-diff_file logger_redirection_2.rptok $rpt2
-diff_file logger_redirection_3.rptok $rpt3
-diff_file logger_redirection_4.rptok $rpt4
+diff_files logger_redirection_1.rptok $rpt1
+diff_files logger_redirection_2.rptok $rpt2
+diff_files logger_redirection_3.rptok $rpt3
+diff_files logger_redirection_4.rptok $rpt4
 
 puts "string redirect start"
 with_output_to_variable puts_redirect {puts "PUTS REDIRECT"}

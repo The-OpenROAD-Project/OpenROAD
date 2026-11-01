@@ -36,19 +36,30 @@ COMPULSORY_TESTS = [
     "io_constraints8",
     "io_constraints9",
     "io_pads1",
-    "keep_clustering_data",
+    "keep_clustering_data1",
+    "keep_clustering_data2",
     "macro_only",
     "macros_without_pins1",
     "mixed_ios1",
     "no_unfixed_macros",
+    "no_unfixed_macros_and_fixed_cells",
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_already_placed_overlap",
+    "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "rerun1",
     "unfixed_cells_dont_fit_in_core",
+    "write_macro_placement",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
+
+# Self-checking: the script reports pass/fail, no golden log.
+PASSFAIL_TESTS = [
+    "rerun1",
+]
 
 filegroup(
     name = "regression_resources",
@@ -126,7 +137,7 @@ filegroup(
                     "testcases/orientation_improve1.lef",
                 ],
                 "halos4": [
-                    "testcases/halo3.def",
+                    "testcases/halos1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
@@ -184,9 +195,13 @@ filegroup(
                     "testcases/io_pads1.def",
                     "testcases/macro_only.lef",
                 ],
-                "keep_clustering_data": [
+                "keep_clustering_data1": [
                     "Nangate45/Nangate45_fast.lib",
                     "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "keep_clustering_data2": [
+                    "testcases/keep_clustering_data2.v",
                     "testcases/macro_only.lef",
                 ],
                 "macro_only": [
@@ -212,6 +227,10 @@ filegroup(
                     "testcases/macro_only.v",
                     "testcases/no_unfixed_macros.def",
                 ],
+                "no_unfixed_macros_and_fixed_cells": [
+                    "testcases/macro_only.lef",
+                    "testcases/no_unfixed_macros.def",
+                ],
                 "orientation_improve1": [
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
@@ -224,13 +243,29 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "place_macro_already_placed_overlap": [
+                    "testcases/place_macro_already_placed_overlap.def",
+                    "testcases/macro_only.lef",
+                ],
+                "place_macro_right_angle_rotation": [
+                    "testcases/place_macro_right_angle_rotation.def",
+                    "testcases/place_macro_right_angle_rotation.lef",
+                ],
                 "placement_blockages1": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "rerun1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
+                "write_macro_placement": [
+                    "testcases/io_constraints1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
             }.get(test_name, []),
         ),
@@ -241,6 +276,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
@@ -300,7 +337,10 @@ py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],
     data = ["//src/mpl:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

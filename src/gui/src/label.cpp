@@ -19,8 +19,8 @@ namespace gui {
 
 Label::Label(const odb::Point& pt,
              const std::string& text,
-             const Painter::Anchor& anchor,
-             const Painter::Color& color,
+             const web::Painter::Anchor& anchor,
+             const web::Painter::Color& color,
              std::optional<int> size,
              std::optional<std::string> name)
     : pt_(pt), text_(text), color_(color), size_(size), anchor_(anchor)
@@ -61,7 +61,8 @@ bool LabelDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   return false;
 }
 
-void LabelDescriptor::highlight(const std::any& object, Painter& painter) const
+void LabelDescriptor::highlight(const std::any& object,
+                                web::Painter& painter) const
 {
   auto label = std::any_cast<Label*>(object);
 
@@ -72,29 +73,30 @@ void LabelDescriptor::highlight(const std::any& object, Painter& painter) const
   painter.drawRect(label->getOutline());
 }
 
-Descriptor::Properties LabelDescriptor::getProperties(
+web::Descriptor::Properties LabelDescriptor::getProperties(
     const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
-  Descriptor::Properties props{
+  web::Descriptor::Properties props{
       {"Text", label->getText()},
       {"x", Property::convert_dbu(label->getPt().x(), true)},
       {"y", Property::convert_dbu(label->getPt().y(), true)}};
 
   props.push_back({"Size", label->getSize().value_or(-1)});
-  props.push_back({"Anchor", Painter::anchorToString(label->getAnchor())});
-  props.push_back({"Color", Painter::colorToString(label->getColor())});
+  props.push_back({"Anchor", web::Painter::anchorToString(label->getAnchor())});
+  props.push_back({"Color", web::Painter::colorToString(label->getColor())});
 
   return props;
 }
 
-Descriptor::Editors LabelDescriptor::getEditors(const std::any& object) const
+web::Descriptor::Editors LabelDescriptor::getEditors(
+    const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
-  std::vector<Descriptor::EditorOption> anchor_options;
-  for (const auto& [name, anchor] : Painter::anchors()) {
+  std::vector<web::Descriptor::EditorOption> anchor_options;
+  for (const auto& [name, anchor] : web::Painter::anchors()) {
     anchor_options.push_back({name, anchor});
   }
 
@@ -134,13 +136,13 @@ Descriptor::Editors LabelDescriptor::getEditors(const std::any& object) const
           {"Anchor",
            makeEditor(
                [label](const std::any& value) {
-                 auto anchor = std::any_cast<Painter::Anchor>(value);
+                 auto anchor = std::any_cast<web::Painter::Anchor>(value);
                  label->setAnchor(anchor);
                  return true;
                },
                anchor_options)},
           {"Color", makeEditor([this, label](const std::any& value) {
-             label->setColor(Painter::stringToColor(
+             label->setColor(web::Painter::stringToColor(
                  std::any_cast<const std::string>(value), logger_));
              return true;
            })},
@@ -157,7 +159,7 @@ bool LabelDescriptor::editPoint(const std::any& value,
                                 bool is_x)
 {
   bool accept;
-  const int new_val = Descriptor::Property::convert_string(
+  const int new_val = web::Descriptor::Property::convert_string(
       std::any_cast<std::string>(value), &accept);
   if (!accept) {
     return false;
@@ -170,22 +172,23 @@ bool LabelDescriptor::editPoint(const std::any& value,
   return true;
 }
 
-Descriptor::Actions LabelDescriptor::getActions(const std::any& object) const
+web::Descriptor::Actions LabelDescriptor::getActions(
+    const std::any& object) const
 {
   auto label = std::any_cast<Label*>(object);
 
   return {{"Delete", [label]() {
-             gui::Gui::get()->deleteLabel(label->getName());
-             return Selected();  // unselect since this object is now gone
+             web::Gui::get()->deleteLabel(label->getName());
+             return web::Selected();  // unselect since this object is now gone
            }}};
 }
 
-Selected LabelDescriptor::makeSelected(const std::any& object) const
+web::Selected LabelDescriptor::makeSelected(const std::any& object) const
 {
   if (auto label = std::any_cast<Label*>(&object)) {
-    return Selected(*label, this);
+    return web::Selected(*label, this);
   }
-  return Selected();
+  return web::Selected();
 }
 
 bool LabelDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -197,7 +200,7 @@ bool LabelDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void LabelDescriptor::visitAllObjects(
-    const std::function<void(const Selected&)>& func) const
+    const std::function<void(const web::Selected&)>& func) const
 {
   for (auto& label : labels_) {
     func({label.get(), this});

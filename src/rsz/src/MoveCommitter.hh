@@ -65,6 +65,11 @@ class MoveCommitter
 
   void init();
   MoveResult commit(MoveCandidate& candidate);
+  // Brings parasitics and required times up to date for the profile mode 3
+  // observation of a move.  The estimated nets stay pending (see
+  // EstimateParasitics::updateParasiticsForObserver()), so the observation
+  // leaves the work a policy counts unchanged.
+  void updateTimingForObserver();
 
   // === MoveTracker reporting ===============================================
   // Tracker-style reporting is enabled by the existing RSZ move_tracker debug
@@ -84,7 +89,6 @@ class MoveCommitter
                                    sta::Vertex* vertex,
                                    float endpoint_slack,
                                    RepairTargetCollector& violator_collector);
-  void trackPreparedViolator(const Target& target);
   void trackMove(const sta::Pin* pin,
                  MoveType move_type,
                  TrackedMoveStateType state);
@@ -107,16 +111,15 @@ class MoveCommitter
   void printSlackDistribution(const std::string& title);
   void printTopBinEndpoints(const std::string& title, int max_endpoints = 20);
   void printCriticalEndpointPathHistogram(const std::string& title);
-  void captureInitialSlackDistribution();
-  void captureOriginalEndpointSlack();
-  void capturePrePhaseSlack();
+  // The move tracker; while its report is off it ignores the capture calls.
+  MoveTracker& tracker() { return *move_tracker_; }
   int getVisitCount(const sta::Pin* pin) const;
   void clearTrackedMoves();
 
   // === ECO journal lifecycle ===============================================
   // ECO journal lifecycle for setup-repair endpoint loops.
   void beginJournal();
-  void commitJournal();
+  void commitJournal(bool update_timing = true);
   void restoreJournal();
 
   // === Move accounting ======================================================
@@ -124,11 +127,22 @@ class MoveCommitter
   // applied.
   void acceptPendingMoves();
   void rejectPendingMoves();
+  // Remove one native cell move from the current pending level after the
+  // caller swapped the cell back inside the open journal. Does not edit the
+  // database or settle the profiler; returns false if the result is
+  // unsupported or not pending.
+  bool rejectPendingCellMove(const MoveResult& result,
+                             const sta::Pin* driver_pin);
 
   int pendingMoves(MoveType type) const;
   int committedMoves(MoveType type) const;
   int summaryCommittedMoves(MoveType type) const;
   int totalMoves(MoveType type) const;
+  // Count of netlist edits through this committer: every accepted move
+  // and every reverted one. Monotonic, so a caller can tell whether the
+  // design changed between two points even when a revert and a new
+  // accept leave the per-type totals where they were.
+  int netlistEdits() const { return netlist_edits_; }
   bool hasPendingMoves(MoveType type, sta::Instance* inst) const;
   bool hasMoves(MoveType type, sta::Instance* inst) const;
   bool hasBlockingBufferRemovalMove(sta::Instance* inst,
@@ -164,6 +178,7 @@ class MoveCommitter
   // the parent's vector (mirroring odb's commitEco append-to-parent semantics).
   std::stack<std::vector<MoveResult>> pending_move_results_;
   std::array<int, kTypeCount> pending_by_type_{};
+  int netlist_edits_ = 0;
   std::array<int, kTypeCount> committed_by_type_{};
   std::array<int, kTypeCount> summary_carried_by_type_{};
   std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>

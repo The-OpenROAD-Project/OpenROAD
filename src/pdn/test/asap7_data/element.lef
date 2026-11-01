@@ -1,0 +1,4286 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO Element
+    CLASS BLOCK ;
+    SIZE 17.28 BY 17.28 ;
+    PIN clock
+        DIRECTION INPUT ; 
+        USE CLOCK ; 
+        PORT
+            LAYER M5 ;
+              RECT  4.032 17.196 4.056 17.28 ;
+        END
+    END clock
+    PIN io_ins_down[0]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.088 17.196 5.112 17.28 ;
+        END
+    END io_ins_down[0]
+    PIN io_ins_down[10]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.84 17.243 6.858 17.28 ;
+        END
+    END io_ins_down[10]
+    PIN io_ins_down[11]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.512 17.243 10.53 17.28 ;
+        END
+    END io_ins_down[11]
+    PIN io_ins_down[12]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.848 17.196 10.872 17.28 ;
+        END
+    END io_ins_down[12]
+    PIN io_ins_down[13]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.504 17.243 9.522 17.28 ;
+        END
+    END io_ins_down[13]
+    PIN io_ins_down[14]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.656 17.196 10.68 17.28 ;
+        END
+    END io_ins_down[14]
+    PIN io_ins_down[15]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.872 17.243 10.89 17.28 ;
+        END
+    END io_ins_down[15]
+    PIN io_ins_down[16]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.72 17.243 9.738 17.28 ;
+        END
+    END io_ins_down[16]
+    PIN io_ins_down[17]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.232 17.243 11.25 17.28 ;
+        END
+    END io_ins_down[17]
+    PIN io_ins_down[18]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.984 17.196 10.008 17.28 ;
+        END
+    END io_ins_down[18]
+    PIN io_ins_down[19]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.952 17.243 11.97 17.28 ;
+        END
+    END io_ins_down[19]
+    PIN io_ins_down[1]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.112 17.243 5.13 17.28 ;
+        END
+    END io_ins_down[1]
+    PIN io_ins_down[20]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.264 17.243 6.282 17.28 ;
+        END
+    END io_ins_down[20]
+    PIN io_ins_down[21]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.328 17.243 5.346 17.28 ;
+        END
+    END io_ins_down[21]
+    PIN io_ins_down[22]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.704 17.243 7.722 17.28 ;
+        END
+    END io_ins_down[22]
+    PIN io_ins_down[23]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.424 17.243 8.442 17.28 ;
+        END
+    END io_ins_down[23]
+    PIN io_ins_down[24]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.624 17.243 6.642 17.28 ;
+        END
+    END io_ins_down[24]
+    PIN io_ins_down[25]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.24 17.243 12.258 17.28 ;
+        END
+    END io_ins_down[25]
+    PIN io_ins_down[26]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.568 17.243 8.586 17.28 ;
+        END
+    END io_ins_down[26]
+    PIN io_ins_down[27]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.272 17.243 7.29 17.28 ;
+        END
+    END io_ins_down[27]
+    PIN io_ins_down[28]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.76 17.243 5.778 17.28 ;
+        END
+    END io_ins_down[28]
+    PIN io_ins_down[29]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.448 17.243 11.466 17.28 ;
+        END
+    END io_ins_down[29]
+    PIN io_ins_down[2]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  4.968 17.243 4.986 17.28 ;
+        END
+    END io_ins_down[2]
+    PIN io_ins_down[30]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.592 17.243 11.61 17.28 ;
+        END
+    END io_ins_down[30]
+    PIN io_ins_down[31]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.544 17.196 8.568 17.28 ;
+        END
+    END io_ins_down[31]
+    PIN io_ins_down[32]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.376 17.243 11.394 17.28 ;
+        END
+    END io_ins_down[32]
+    PIN io_ins_down[33]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.664 17.243 11.682 17.28 ;
+        END
+    END io_ins_down[33]
+    PIN io_ins_down[34]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.08 17.243 10.098 17.28 ;
+        END
+    END io_ins_down[34]
+    PIN io_ins_down[35]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.096 17.196 12.12 17.28 ;
+        END
+    END io_ins_down[35]
+    PIN io_ins_down[36]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.072 17.243 9.09 17.28 ;
+        END
+    END io_ins_down[36]
+    PIN io_ins_down[37]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.52 17.243 11.538 17.28 ;
+        END
+    END io_ins_down[37]
+    PIN io_ins_down[38]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.6 17.196 9.624 17.28 ;
+        END
+    END io_ins_down[38]
+    PIN io_ins_down[39]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.144 17.243 9.162 17.28 ;
+        END
+    END io_ins_down[39]
+    PIN io_ins_down[3]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  4.992 17.196 5.016 17.28 ;
+        END
+    END io_ins_down[3]
+    PIN io_ins_down[40]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.488 17.196 7.512 17.28 ;
+        END
+    END io_ins_down[40]
+    PIN io_ins_down[41]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.712 17.196 11.736 17.28 ;
+        END
+    END io_ins_down[41]
+    PIN io_ins_down[42]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.808 17.243 11.826 17.28 ;
+        END
+    END io_ins_down[42]
+    PIN io_ins_down[43]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.48 17.196 12.504 17.28 ;
+        END
+    END io_ins_down[43]
+    PIN io_ins_down[44]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.504 17.196 9.528 17.28 ;
+        END
+    END io_ins_down[44]
+    PIN io_ins_down[45]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.12 17.196 9.144 17.28 ;
+        END
+    END io_ins_down[45]
+    PIN io_ins_down[46]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.128 17.243 7.146 17.28 ;
+        END
+    END io_ins_down[46]
+    PIN io_ins_down[47]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.52 17.196 11.544 17.28 ;
+        END
+    END io_ins_down[47]
+    PIN io_ins_down[48]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.408 17.196 9.432 17.28 ;
+        END
+    END io_ins_down[48]
+    PIN io_ins_down[49]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.848 17.243 7.866 17.28 ;
+        END
+    END io_ins_down[49]
+    PIN io_ins_down[4]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.728 17.243 10.746 17.28 ;
+        END
+    END io_ins_down[4]
+    PIN io_ins_down[50]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.912 17.196 6.936 17.28 ;
+        END
+    END io_ins_down[50]
+    PIN io_ins_down[51]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.28 17.243 8.298 17.28 ;
+        END
+    END io_ins_down[51]
+    PIN io_ins_down[52]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.2 17.243 7.218 17.28 ;
+        END
+    END io_ins_down[52]
+    PIN io_ins_down[53]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.92 17.243 7.938 17.28 ;
+        END
+    END io_ins_down[53]
+    PIN io_ins_down[54]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.792 17.196 9.816 17.28 ;
+        END
+    END io_ins_down[54]
+    PIN io_ins_down[55]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.64 17.243 8.658 17.28 ;
+        END
+    END io_ins_down[55]
+    PIN io_ins_down[56]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.56 17.243 7.578 17.28 ;
+        END
+    END io_ins_down[56]
+    PIN io_ins_down[57]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.432 17.243 9.45 17.28 ;
+        END
+    END io_ins_down[57]
+    PIN io_ins_down[58]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.656 17.243 10.674 17.28 ;
+        END
+    END io_ins_down[58]
+    PIN io_ins_down[59]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.296 17.196 7.32 17.28 ;
+        END
+    END io_ins_down[59]
+    PIN io_ins_down[5]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.256 17.196 8.28 17.28 ;
+        END
+    END io_ins_down[5]
+    PIN io_ins_down[60]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.744 17.243 12.762 17.28 ;
+        END
+    END io_ins_down[60]
+    PIN io_ins_down[61]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.552 17.243 6.57 17.28 ;
+        END
+    END io_ins_down[61]
+    PIN io_ins_down[62]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.928 17.243 8.946 17.28 ;
+        END
+    END io_ins_down[62]
+    PIN io_ins_down[63]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.448 17.196 8.472 17.28 ;
+        END
+    END io_ins_down[63]
+    PIN io_ins_down[6]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.152 17.243 10.17 17.28 ;
+        END
+    END io_ins_down[6]
+    PIN io_ins_down[7]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.496 17.243 8.514 17.28 ;
+        END
+    END io_ins_down[7]
+    PIN io_ins_down[8]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.224 17.243 10.242 17.28 ;
+        END
+    END io_ins_down[8]
+    PIN io_ins_down[9]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.16 17.196 8.184 17.28 ;
+        END
+    END io_ins_down[9]
+    PIN io_ins_left[0]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.888 17.28 9.912 ;
+        END
+    END io_ins_left[0]
+    PIN io_ins_left[10]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.424 17.28 11.448 ;
+        END
+    END io_ins_left[10]
+    PIN io_ins_left[11]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 4.8 17.28 4.824 ;
+        END
+    END io_ins_left[11]
+    PIN io_ins_left[12]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.368 17.28 10.392 ;
+        END
+    END io_ins_left[12]
+    PIN io_ins_left[13]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 4.896 17.28 4.914 ;
+        END
+    END io_ins_left[13]
+    PIN io_ins_left[14]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.872 17.28 10.89 ;
+        END
+    END io_ins_left[14]
+    PIN io_ins_left[15]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.624 17.28 6.642 ;
+        END
+    END io_ins_left[15]
+    PIN io_ins_left[16]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.668 17.28 7.686 ;
+        END
+    END io_ins_left[16]
+    PIN io_ins_left[17]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.928 17.28 8.952 ;
+        END
+    END io_ins_left[17]
+    PIN io_ins_left[18]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.528 17.28 6.552 ;
+        END
+    END io_ins_left[18]
+    PIN io_ins_left[19]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.16 17.28 8.184 ;
+        END
+    END io_ins_left[19]
+    PIN io_ins_left[1]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.792 17.28 9.816 ;
+        END
+    END io_ins_left[1]
+    PIN io_ins_left[20]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.361 17.28 8.379 ;
+        END
+    END io_ins_left[20]
+    PIN io_ins_left[21]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 12.141 17.28 12.159 ;
+        END
+    END io_ins_left[21]
+    PIN io_ins_left[22]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.872 17.28 7.896 ;
+        END
+    END io_ins_left[22]
+    PIN io_ins_left[23]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.488 17.28 7.512 ;
+        END
+    END io_ins_left[23]
+    PIN io_ins_left[24]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 12.096 17.28 12.114 ;
+        END
+    END io_ins_left[24]
+    PIN io_ins_left[25]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.324 17.28 9.342 ;
+        END
+    END io_ins_left[25]
+    PIN io_ins_left[26]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.376 17.28 11.394 ;
+        END
+    END io_ins_left[26]
+    PIN io_ins_left[27]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.912 17.28 6.936 ;
+        END
+    END io_ins_left[27]
+    PIN io_ins_left[28]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.736 17.28 8.76 ;
+        END
+    END io_ins_left[28]
+    PIN io_ins_left[29]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.504 17.28 9.528 ;
+        END
+    END io_ins_left[29]
+    PIN io_ins_left[2]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.792 17.28 9.81 ;
+        END
+    END io_ins_left[2]
+    PIN io_ins_left[30]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 12.192 17.28 12.216 ;
+        END
+    END io_ins_left[30]
+    PIN io_ins_left[31]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.696 17.28 9.72 ;
+        END
+    END io_ins_left[31]
+    PIN io_ins_left[32]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.104 17.28 7.128 ;
+        END
+    END io_ins_left[32]
+    PIN io_ins_left[33]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.256 17.28 8.28 ;
+        END
+    END io_ins_left[33]
+    PIN io_ins_left[34]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.316 17.28 8.334 ;
+        END
+    END io_ins_left[34]
+    PIN io_ins_left[35]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.368 17.28 10.386 ;
+        END
+    END io_ins_left[35]
+    PIN io_ins_left[36]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.048 17.28 6.066 ;
+        END
+    END io_ins_left[36]
+    PIN io_ins_left[37]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.244 17.28 8.262 ;
+        END
+    END io_ins_left[37]
+    PIN io_ins_left[38]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.216 17.28 9.234 ;
+        END
+    END io_ins_left[38]
+    PIN io_ins_left[39]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.776 17.28 7.794 ;
+        END
+    END io_ins_left[39]
+    PIN io_ins_left[3]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.984 17.28 10.008 ;
+        END
+    END io_ins_left[3]
+    PIN io_ins_left[40]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.556 17.28 11.574 ;
+        END
+    END io_ins_left[40]
+    PIN io_ins_left[41]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.441 17.28 9.459 ;
+        END
+    END io_ins_left[41]
+    PIN io_ins_left[42]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.52 17.28 11.538 ;
+        END
+    END io_ins_left[42]
+    PIN io_ins_left[43]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.064 17.28 8.088 ;
+        END
+    END io_ins_left[43]
+    PIN io_ins_left[44]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.04 17.28 11.064 ;
+        END
+    END io_ins_left[44]
+    PIN io_ins_left[45]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 4.224 17.28 4.248 ;
+        END
+    END io_ins_left[45]
+    PIN io_ins_left[46]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.332 17.28 10.35 ;
+        END
+    END io_ins_left[46]
+    PIN io_ins_left[47]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.74 17.28 7.758 ;
+        END
+    END io_ins_left[47]
+    PIN io_ins_left[48]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 12.384 17.28 12.408 ;
+        END
+    END io_ins_left[48]
+    PIN io_ins_left[49]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.236 17.28 7.254 ;
+        END
+    END io_ins_left[49]
+    PIN io_ins_left[4]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.516 17.28 6.534 ;
+        END
+    END io_ins_left[4]
+    PIN io_ins_left[50]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 5.436 17.28 5.454 ;
+        END
+    END io_ins_left[50]
+    PIN io_ins_left[51]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.828 17.28 9.846 ;
+        END
+    END io_ins_left[51]
+    PIN io_ins_left[52]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.864 17.28 9.882 ;
+        END
+    END io_ins_left[52]
+    PIN io_ins_left[53]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.408 17.28 9.432 ;
+        END
+    END io_ins_left[53]
+    PIN io_ins_left[54]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.856 17.28 8.874 ;
+        END
+    END io_ins_left[54]
+    PIN io_ins_left[55]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.232 17.28 11.256 ;
+        END
+    END io_ins_left[55]
+    PIN io_ins_left[56]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.616 17.28 11.64 ;
+        END
+    END io_ins_left[56]
+    PIN io_ins_left[57]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.136 17.28 11.16 ;
+        END
+    END io_ins_left[57]
+    PIN io_ins_left[58]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.201 17.28 6.219 ;
+        END
+    END io_ins_left[58]
+    PIN io_ins_left[59]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.521 17.28 10.539 ;
+        END
+    END io_ins_left[59]
+    PIN io_ins_left[5]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.296 17.28 10.314 ;
+        END
+    END io_ins_left[5]
+    PIN io_ins_left[60]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.28 17.28 8.298 ;
+        END
+    END io_ins_left[60]
+    PIN io_ins_left[61]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.136 17.28 8.154 ;
+        END
+    END io_ins_left[61]
+    PIN io_ins_left[62]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.584 17.28 7.608 ;
+        END
+    END io_ins_left[62]
+    PIN io_ins_left[63]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.084 17.28 6.102 ;
+        END
+    END io_ins_left[63]
+    PIN io_ins_left[6]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.088 17.28 5.112 ;
+        END
+    END io_ins_left[6]
+    PIN io_ins_left[7]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 5.121 17.28 5.139 ;
+        END
+    END io_ins_left[7]
+    PIN io_ins_left[8]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.821 17.28 7.839 ;
+        END
+    END io_ins_left[8]
+    PIN io_ins_left[9]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.52 17.28 11.544 ;
+        END
+    END io_ins_left[9]
+    PIN io_ins_right[0]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.252 0.037 9.27 ;
+        END
+    END io_ins_right[0]
+    PIN io_ins_right[10]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 4.464 0.037 4.482 ;
+        END
+    END io_ins_right[10]
+    PIN io_ins_right[11]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.944 0.084 10.968 ;
+        END
+    END io_ins_right[11]
+    PIN io_ins_right[12]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.816 0.084 6.84 ;
+        END
+    END io_ins_right[12]
+    PIN io_ins_right[13]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 5.58 0.037 5.598 ;
+        END
+    END io_ins_right[13]
+    PIN io_ins_right[14]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 12.06 0.037 12.078 ;
+        END
+    END io_ins_right[14]
+    PIN io_ins_right[15]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.208 0.037 8.226 ;
+        END
+    END io_ins_right[15]
+    PIN io_ins_right[16]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.64 0.084 8.664 ;
+        END
+    END io_ins_right[16]
+    PIN io_ins_right[17]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.9 0.037 9.918 ;
+        END
+    END io_ins_right[17]
+    PIN io_ins_right[18]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.632 0.037 7.65 ;
+        END
+    END io_ins_right[18]
+    PIN io_ins_right[19]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.352 0.084 8.376 ;
+        END
+    END io_ins_right[19]
+    PIN io_ins_right[1]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.08 0.084 10.104 ;
+        END
+    END io_ins_right[1]
+    PIN io_ins_right[20]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.808 0.084 11.832 ;
+        END
+    END io_ins_right[20]
+    PIN io_ins_right[21]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.741 0.037 6.759 ;
+        END
+    END io_ins_right[21]
+    PIN io_ins_right[22]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.601 0.037 11.619 ;
+        END
+    END io_ins_right[22]
+    PIN io_ins_right[23]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.72 0.084 6.744 ;
+        END
+    END io_ins_right[23]
+    PIN io_ins_right[24]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 12.456 0.037 12.474 ;
+        END
+    END io_ins_right[24]
+    PIN io_ins_right[25]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.544 0.084 8.568 ;
+        END
+    END io_ins_right[25]
+    PIN io_ins_right[26]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.484 0.037 11.502 ;
+        END
+    END io_ins_right[26]
+    PIN io_ins_right[27]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.24 0.084 6.264 ;
+        END
+    END io_ins_right[27]
+    PIN io_ins_right[28]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.432 0.084 6.456 ;
+        END
+    END io_ins_right[28]
+    PIN io_ins_right[29]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.376 0.084 5.4 ;
+        END
+    END io_ins_right[29]
+    PIN io_ins_right[2]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.176 0.084 10.2 ;
+        END
+    END io_ins_right[2]
+    PIN io_ins_right[30]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 12.024 0.037 12.042 ;
+        END
+    END io_ins_right[30]
+    PIN io_ins_right[31]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.901 0.037 8.919 ;
+        END
+    END io_ins_right[31]
+    PIN io_ins_right[32]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.936 0.037 9.954 ;
+        END
+    END io_ins_right[32]
+    PIN io_ins_right[33]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.6 0.084 9.624 ;
+        END
+    END io_ins_right[33]
+    PIN io_ins_right[34]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.288 0.037 9.306 ;
+        END
+    END io_ins_right[34]
+    PIN io_ins_right[35]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.68 0.084 7.704 ;
+        END
+    END io_ins_right[35]
+    PIN io_ins_right[36]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.448 0.037 11.466 ;
+        END
+    END io_ins_right[36]
+    PIN io_ins_right[37]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.216 0.084 9.24 ;
+        END
+    END io_ins_right[37]
+    PIN io_ins_right[38]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.336 0.084 6.36 ;
+        END
+    END io_ins_right[38]
+    PIN io_ins_right[39]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 4.536 0.037 4.554 ;
+        END
+    END io_ins_right[39]
+    PIN io_ins_right[3]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.756 0.037 9.774 ;
+        END
+    END io_ins_right[3]
+    PIN io_ins_right[40]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.184 0.084 5.208 ;
+        END
+    END io_ins_right[40]
+    PIN io_ins_right[41]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 12.096 0.084 12.12 ;
+        END
+    END io_ins_right[41]
+    PIN io_ins_right[42]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.66 0.037 6.678 ;
+        END
+    END io_ins_right[42]
+    PIN io_ins_right[43]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.748 0.037 8.766 ;
+        END
+    END io_ins_right[43]
+    PIN io_ins_right[44]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.696 0.037 6.714 ;
+        END
+    END io_ins_right[44]
+    PIN io_ins_right[45]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 12.288 0.084 12.312 ;
+        END
+    END io_ins_right[45]
+    PIN io_ins_right[46]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.656 0.084 10.68 ;
+        END
+    END io_ins_right[46]
+    PIN io_ins_right[47]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.784 0.037 8.802 ;
+        END
+    END io_ins_right[47]
+    PIN io_ins_right[48]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.172 0.037 8.19 ;
+        END
+    END io_ins_right[48]
+    PIN io_ins_right[49]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.36 0.037 9.378 ;
+        END
+    END io_ins_right[49]
+    PIN io_ins_right[4]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.024 0.084 9.048 ;
+        END
+    END io_ins_right[4]
+    PIN io_ins_right[50]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.128 0.037 7.146 ;
+        END
+    END io_ins_right[50]
+    PIN io_ins_right[51]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.272 0.084 10.296 ;
+        END
+    END io_ins_right[51]
+    PIN io_ins_right[52]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 5.472 0.037 5.49 ;
+        END
+    END io_ins_right[52]
+    PIN io_ins_right[53]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.981 0.037 9.999 ;
+        END
+    END io_ins_right[53]
+    PIN io_ins_right[54]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.008 0.084 7.032 ;
+        END
+    END io_ins_right[54]
+    PIN io_ins_right[55]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.28 0.084 5.304 ;
+        END
+    END io_ins_right[55]
+    PIN io_ins_right[56]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.776 0.084 7.8 ;
+        END
+    END io_ins_right[56]
+    PIN io_ins_right[57]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.312 0.084 9.336 ;
+        END
+    END io_ins_right[57]
+    PIN io_ins_right[58]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.952 0.084 5.976 ;
+        END
+    END io_ins_right[58]
+    PIN io_ins_right[59]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.396 0.037 9.414 ;
+        END
+    END io_ins_right[59]
+    PIN io_ins_right[5]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.12 0.084 9.144 ;
+        END
+    END io_ins_right[5]
+    PIN io_ins_right[60]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.712 0.084 11.736 ;
+        END
+    END io_ins_right[60]
+    PIN io_ins_right[61]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.061 0.037 11.079 ;
+        END
+    END io_ins_right[61]
+    PIN io_ins_right[62]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.56 0.084 10.584 ;
+        END
+    END io_ins_right[62]
+    PIN io_ins_right[63]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.448 0.084 8.472 ;
+        END
+    END io_ins_right[63]
+    PIN io_ins_right[6]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.476 0.037 10.494 ;
+        END
+    END io_ins_right[6]
+    PIN io_ins_right[7]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.472 0.084 5.496 ;
+        END
+    END io_ins_right[7]
+    PIN io_ins_right[8]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.676 0.037 8.694 ;
+        END
+    END io_ins_right[8]
+    PIN io_ins_right[9]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.968 0.084 7.992 ;
+        END
+    END io_ins_right[9]
+    PIN io_ins_up[0]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.184 0 5.208 0.084 ;
+        END
+    END io_ins_up[0]
+    PIN io_ins_up[10]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9 0 9.018 0.037 ;
+        END
+    END io_ins_up[10]
+    PIN io_ins_up[11]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.192 0 12.216 0.084 ;
+        END
+    END io_ins_up[11]
+    PIN io_ins_up[12]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.216 0 9.234 0.037 ;
+        END
+    END io_ins_up[12]
+    PIN io_ins_up[13]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.056 0 7.074 0.037 ;
+        END
+    END io_ins_up[13]
+    PIN io_ins_up[14]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  13.104 0 13.122 0.037 ;
+        END
+    END io_ins_up[14]
+    PIN io_ins_up[15]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.296 0 10.314 0.037 ;
+        END
+    END io_ins_up[15]
+    PIN io_ins_up[16]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.008 0 10.026 0.037 ;
+        END
+    END io_ins_up[16]
+    PIN io_ins_up[17]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.376 0 5.4 0.084 ;
+        END
+    END io_ins_up[17]
+    PIN io_ins_up[18]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.064 0 8.082 0.037 ;
+        END
+    END io_ins_up[18]
+    PIN io_ins_up[19]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.136 0 11.16 0.084 ;
+        END
+    END io_ins_up[19]
+    PIN io_ins_up[1]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.256 0 5.274 0.037 ;
+        END
+    END io_ins_up[1]
+    PIN io_ins_up[20]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.736 0 11.754 0.037 ;
+        END
+    END io_ins_up[20]
+    PIN io_ins_up[21]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.016 0 11.034 0.037 ;
+        END
+    END io_ins_up[21]
+    PIN io_ins_up[22]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.616 0 11.64 0.084 ;
+        END
+    END io_ins_up[22]
+    PIN io_ins_up[23]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.672 0 12.696 0.084 ;
+        END
+    END io_ins_up[23]
+    PIN io_ins_up[24]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  13.056 0 13.08 0.084 ;
+        END
+    END io_ins_up[24]
+    PIN io_ins_up[25]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.864 0 12.888 0.084 ;
+        END
+    END io_ins_up[25]
+    PIN io_ins_up[26]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.624 0 6.648 0.084 ;
+        END
+    END io_ins_up[26]
+    PIN io_ins_up[27]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.68 0 7.704 0.084 ;
+        END
+    END io_ins_up[27]
+    PIN io_ins_up[28]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.944 0 10.962 0.037 ;
+        END
+    END io_ins_up[28]
+    PIN io_ins_up[29]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.904 0 11.928 0.084 ;
+        END
+    END io_ins_up[29]
+    PIN io_ins_up[2]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.04 0 5.058 0.037 ;
+        END
+    END io_ins_up[2]
+    PIN io_ins_up[30]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.488 0 7.506 0.037 ;
+        END
+    END io_ins_up[30]
+    PIN io_ins_up[31]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.944 0 10.968 0.084 ;
+        END
+    END io_ins_up[31]
+    PIN io_ins_up[32]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.272 0 10.296 0.084 ;
+        END
+    END io_ins_up[32]
+    PIN io_ins_up[33]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.696 0 6.714 0.037 ;
+        END
+    END io_ins_up[33]
+    PIN io_ins_up[34]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.968 0 7.992 0.084 ;
+        END
+    END io_ins_up[34]
+    PIN io_ins_up[35]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.752 0 10.776 0.084 ;
+        END
+    END io_ins_up[35]
+    PIN io_ins_up[36]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.064 0 8.088 0.084 ;
+        END
+    END io_ins_up[36]
+    PIN io_ins_up[37]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.528 0 6.552 0.084 ;
+        END
+    END io_ins_up[37]
+    PIN io_ins_up[38]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.576 0 9.594 0.037 ;
+        END
+    END io_ins_up[38]
+    PIN io_ins_up[39]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.216 0 9.24 0.084 ;
+        END
+    END io_ins_up[39]
+    PIN io_ins_up[3]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.184 0 5.202 0.037 ;
+        END
+    END io_ins_up[3]
+    PIN io_ins_up[40]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.2 0 7.224 0.084 ;
+        END
+    END io_ins_up[40]
+    PIN io_ins_up[41]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.08 0 10.104 0.084 ;
+        END
+    END io_ins_up[41]
+    PIN io_ins_up[42]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.352 0 8.376 0.084 ;
+        END
+    END io_ins_up[42]
+    PIN io_ins_up[43]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.696 0 9.72 0.084 ;
+        END
+    END io_ins_up[43]
+    PIN io_ins_up[44]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.856 0 8.874 0.037 ;
+        END
+    END io_ins_up[44]
+    PIN io_ins_up[45]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.288 0 9.306 0.037 ;
+        END
+    END io_ins_up[45]
+    PIN io_ins_up[46]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.088 0 11.106 0.037 ;
+        END
+    END io_ins_up[46]
+    PIN io_ins_up[47]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.168 0 12.186 0.037 ;
+        END
+    END io_ins_up[47]
+    PIN io_ins_up[48]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.808 0 11.832 0.084 ;
+        END
+    END io_ins_up[48]
+    PIN io_ins_up[49]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.424 0 11.448 0.084 ;
+        END
+    END io_ins_up[49]
+    PIN io_ins_up[4]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.792 0 9.81 0.037 ;
+        END
+    END io_ins_up[4]
+    PIN io_ins_up[50]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.368 0 10.386 0.037 ;
+        END
+    END io_ins_up[50]
+    PIN io_ins_up[51]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.88 0 11.898 0.037 ;
+        END
+    END io_ins_up[51]
+    PIN io_ins_up[52]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.904 0 5.922 0.037 ;
+        END
+    END io_ins_up[52]
+    PIN io_ins_up[53]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.12 0 6.138 0.037 ;
+        END
+    END io_ins_up[53]
+    PIN io_ins_up[54]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.928 0 8.952 0.084 ;
+        END
+    END io_ins_up[54]
+    PIN io_ins_up[55]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.312 0 9.336 0.084 ;
+        END
+    END io_ins_up[55]
+    PIN io_ins_up[56]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.288 0 12.312 0.084 ;
+        END
+    END io_ins_up[56]
+    PIN io_ins_up[57]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.584 0 10.602 0.037 ;
+        END
+    END io_ins_up[57]
+    PIN io_ins_up[58]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.96 0 12.978 0.037 ;
+        END
+    END io_ins_up[58]
+    PIN io_ins_up[59]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.8 0 10.818 0.037 ;
+        END
+    END io_ins_up[59]
+    PIN io_ins_up[5]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.368 0 10.392 0.084 ;
+        END
+    END io_ins_up[5]
+    PIN io_ins_up[60]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.36 0 9.378 0.037 ;
+        END
+    END io_ins_up[60]
+    PIN io_ins_up[61]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.024 0 9.048 0.084 ;
+        END
+    END io_ins_up[61]
+    PIN io_ins_up[62]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.16 0 11.178 0.037 ;
+        END
+    END io_ins_up[62]
+    PIN io_ins_up[63]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.24 0 6.264 0.084 ;
+        END
+    END io_ins_up[63]
+    PIN io_ins_up[6]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.312 0 12.33 0.037 ;
+        END
+    END io_ins_up[6]
+    PIN io_ins_up[7]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.712 0 8.73 0.037 ;
+        END
+    END io_ins_up[7]
+    PIN io_ins_up[8]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.736 0 8.76 0.084 ;
+        END
+    END io_ins_up[8]
+    PIN io_ins_up[9]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.136 0 8.154 0.037 ;
+        END
+    END io_ins_up[9]
+    PIN io_lsbIns[0]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.988 0.037 12.006 ;
+        END
+    END io_lsbIns[0]
+    PIN io_lsbIns[1]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.908 0.037 10.926 ;
+        END
+    END io_lsbIns[1]
+    PIN io_lsbIns[2]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.144 0.084 6.168 ;
+        END
+    END io_lsbIns[2]
+    PIN io_lsbIns[3]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 5.976 0.037 5.994 ;
+        END
+    END io_lsbIns[3]
+    PIN io_lsbIns[4]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.464 0.084 10.488 ;
+        END
+    END io_lsbIns[4]
+    PIN io_lsbIns[5]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.752 0.084 10.776 ;
+        END
+    END io_lsbIns[5]
+    PIN io_lsbIns[6]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.164 0.037 7.182 ;
+        END
+    END io_lsbIns[6]
+    PIN io_lsbIns[7]
+        DIRECTION INPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.2 0.084 7.224 ;
+        END
+    END io_lsbIns[7]
+    PIN io_lsbOuts[0]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.988 17.28 12.006 ;
+        END
+    END io_lsbOuts[0]
+    PIN io_lsbOuts[1]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.908 17.28 10.926 ;
+        END
+    END io_lsbOuts[1]
+    PIN io_lsbOuts[2]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.144 17.28 6.168 ;
+        END
+    END io_lsbOuts[2]
+    PIN io_lsbOuts[3]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 5.976 17.28 5.994 ;
+        END
+    END io_lsbOuts[3]
+    PIN io_lsbOuts[4]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.464 17.28 10.488 ;
+        END
+    END io_lsbOuts[4]
+    PIN io_lsbOuts[5]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.752 17.28 10.776 ;
+        END
+    END io_lsbOuts[5]
+    PIN io_lsbOuts[6]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.164 17.28 7.182 ;
+        END
+    END io_lsbOuts[6]
+    PIN io_lsbOuts[7]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.2 17.28 7.224 ;
+        END
+    END io_lsbOuts[7]
+    PIN io_outs_down[0]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.088 0 5.112 0.084 ;
+        END
+    END io_outs_down[0]
+    PIN io_outs_down[10]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.84 0 6.858 0.037 ;
+        END
+    END io_outs_down[10]
+    PIN io_outs_down[11]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.512 0 10.53 0.037 ;
+        END
+    END io_outs_down[11]
+    PIN io_outs_down[12]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.848 0 10.872 0.084 ;
+        END
+    END io_outs_down[12]
+    PIN io_outs_down[13]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.504 0 9.522 0.037 ;
+        END
+    END io_outs_down[13]
+    PIN io_outs_down[14]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.656 0 10.68 0.084 ;
+        END
+    END io_outs_down[14]
+    PIN io_outs_down[15]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.872 0 10.89 0.037 ;
+        END
+    END io_outs_down[15]
+    PIN io_outs_down[16]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.72 0 9.738 0.037 ;
+        END
+    END io_outs_down[16]
+    PIN io_outs_down[17]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.232 0 11.25 0.037 ;
+        END
+    END io_outs_down[17]
+    PIN io_outs_down[18]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.984 0 10.008 0.084 ;
+        END
+    END io_outs_down[18]
+    PIN io_outs_down[19]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.952 0 11.97 0.037 ;
+        END
+    END io_outs_down[19]
+    PIN io_outs_down[1]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.112 0 5.13 0.037 ;
+        END
+    END io_outs_down[1]
+    PIN io_outs_down[20]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.264 0 6.282 0.037 ;
+        END
+    END io_outs_down[20]
+    PIN io_outs_down[21]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.328 0 5.346 0.037 ;
+        END
+    END io_outs_down[21]
+    PIN io_outs_down[22]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.704 0 7.722 0.037 ;
+        END
+    END io_outs_down[22]
+    PIN io_outs_down[23]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.424 0 8.442 0.037 ;
+        END
+    END io_outs_down[23]
+    PIN io_outs_down[24]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.624 0 6.642 0.037 ;
+        END
+    END io_outs_down[24]
+    PIN io_outs_down[25]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.24 0 12.258 0.037 ;
+        END
+    END io_outs_down[25]
+    PIN io_outs_down[26]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.568 0 8.586 0.037 ;
+        END
+    END io_outs_down[26]
+    PIN io_outs_down[27]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.272 0 7.29 0.037 ;
+        END
+    END io_outs_down[27]
+    PIN io_outs_down[28]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.76 0 5.778 0.037 ;
+        END
+    END io_outs_down[28]
+    PIN io_outs_down[29]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.448 0 11.466 0.037 ;
+        END
+    END io_outs_down[29]
+    PIN io_outs_down[2]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  4.968 0 4.986 0.037 ;
+        END
+    END io_outs_down[2]
+    PIN io_outs_down[30]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.592 0 11.61 0.037 ;
+        END
+    END io_outs_down[30]
+    PIN io_outs_down[31]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.544 0 8.568 0.084 ;
+        END
+    END io_outs_down[31]
+    PIN io_outs_down[32]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.376 0 11.394 0.037 ;
+        END
+    END io_outs_down[32]
+    PIN io_outs_down[33]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.664 0 11.682 0.037 ;
+        END
+    END io_outs_down[33]
+    PIN io_outs_down[34]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.08 0 10.098 0.037 ;
+        END
+    END io_outs_down[34]
+    PIN io_outs_down[35]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.096 0 12.12 0.084 ;
+        END
+    END io_outs_down[35]
+    PIN io_outs_down[36]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.072 0 9.09 0.037 ;
+        END
+    END io_outs_down[36]
+    PIN io_outs_down[37]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.52 0 11.538 0.037 ;
+        END
+    END io_outs_down[37]
+    PIN io_outs_down[38]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.6 0 9.624 0.084 ;
+        END
+    END io_outs_down[38]
+    PIN io_outs_down[39]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.144 0 9.162 0.037 ;
+        END
+    END io_outs_down[39]
+    PIN io_outs_down[3]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  4.992 0 5.016 0.084 ;
+        END
+    END io_outs_down[3]
+    PIN io_outs_down[40]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.488 0 7.512 0.084 ;
+        END
+    END io_outs_down[40]
+    PIN io_outs_down[41]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.712 0 11.736 0.084 ;
+        END
+    END io_outs_down[41]
+    PIN io_outs_down[42]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.808 0 11.826 0.037 ;
+        END
+    END io_outs_down[42]
+    PIN io_outs_down[43]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.48 0 12.504 0.084 ;
+        END
+    END io_outs_down[43]
+    PIN io_outs_down[44]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.504 0 9.528 0.084 ;
+        END
+    END io_outs_down[44]
+    PIN io_outs_down[45]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.12 0 9.144 0.084 ;
+        END
+    END io_outs_down[45]
+    PIN io_outs_down[46]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.128 0 7.146 0.037 ;
+        END
+    END io_outs_down[46]
+    PIN io_outs_down[47]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.52 0 11.544 0.084 ;
+        END
+    END io_outs_down[47]
+    PIN io_outs_down[48]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.408 0 9.432 0.084 ;
+        END
+    END io_outs_down[48]
+    PIN io_outs_down[49]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.848 0 7.866 0.037 ;
+        END
+    END io_outs_down[49]
+    PIN io_outs_down[4]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.728 0 10.746 0.037 ;
+        END
+    END io_outs_down[4]
+    PIN io_outs_down[50]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.912 0 6.936 0.084 ;
+        END
+    END io_outs_down[50]
+    PIN io_outs_down[51]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.28 0 8.298 0.037 ;
+        END
+    END io_outs_down[51]
+    PIN io_outs_down[52]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.2 0 7.218 0.037 ;
+        END
+    END io_outs_down[52]
+    PIN io_outs_down[53]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.92 0 7.938 0.037 ;
+        END
+    END io_outs_down[53]
+    PIN io_outs_down[54]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.792 0 9.816 0.084 ;
+        END
+    END io_outs_down[54]
+    PIN io_outs_down[55]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.64 0 8.658 0.037 ;
+        END
+    END io_outs_down[55]
+    PIN io_outs_down[56]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.56 0 7.578 0.037 ;
+        END
+    END io_outs_down[56]
+    PIN io_outs_down[57]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.432 0 9.45 0.037 ;
+        END
+    END io_outs_down[57]
+    PIN io_outs_down[58]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.656 0 10.674 0.037 ;
+        END
+    END io_outs_down[58]
+    PIN io_outs_down[59]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.296 0 7.32 0.084 ;
+        END
+    END io_outs_down[59]
+    PIN io_outs_down[5]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.256 0 8.28 0.084 ;
+        END
+    END io_outs_down[5]
+    PIN io_outs_down[60]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.744 0 12.762 0.037 ;
+        END
+    END io_outs_down[60]
+    PIN io_outs_down[61]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.552 0 6.57 0.037 ;
+        END
+    END io_outs_down[61]
+    PIN io_outs_down[62]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.928 0 8.946 0.037 ;
+        END
+    END io_outs_down[62]
+    PIN io_outs_down[63]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.448 0 8.472 0.084 ;
+        END
+    END io_outs_down[63]
+    PIN io_outs_down[6]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.152 0 10.17 0.037 ;
+        END
+    END io_outs_down[6]
+    PIN io_outs_down[7]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.496 0 8.514 0.037 ;
+        END
+    END io_outs_down[7]
+    PIN io_outs_down[8]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.224 0 10.242 0.037 ;
+        END
+    END io_outs_down[8]
+    PIN io_outs_down[9]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.16 0 8.184 0.084 ;
+        END
+    END io_outs_down[9]
+    PIN io_outs_left[0]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.888 0.084 9.912 ;
+        END
+    END io_outs_left[0]
+    PIN io_outs_left[10]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.424 0.084 11.448 ;
+        END
+    END io_outs_left[10]
+    PIN io_outs_left[11]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 4.8 0.084 4.824 ;
+        END
+    END io_outs_left[11]
+    PIN io_outs_left[12]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 10.368 0.084 10.392 ;
+        END
+    END io_outs_left[12]
+    PIN io_outs_left[13]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 4.896 0.037 4.914 ;
+        END
+    END io_outs_left[13]
+    PIN io_outs_left[14]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.872 0.037 10.89 ;
+        END
+    END io_outs_left[14]
+    PIN io_outs_left[15]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.624 0.037 6.642 ;
+        END
+    END io_outs_left[15]
+    PIN io_outs_left[16]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.668 0.037 7.686 ;
+        END
+    END io_outs_left[16]
+    PIN io_outs_left[17]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.928 0.084 8.952 ;
+        END
+    END io_outs_left[17]
+    PIN io_outs_left[18]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.528 0.084 6.552 ;
+        END
+    END io_outs_left[18]
+    PIN io_outs_left[19]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.16 0.084 8.184 ;
+        END
+    END io_outs_left[19]
+    PIN io_outs_left[1]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.792 0.084 9.816 ;
+        END
+    END io_outs_left[1]
+    PIN io_outs_left[20]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.361 0.037 8.379 ;
+        END
+    END io_outs_left[20]
+    PIN io_outs_left[21]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 12.141 0.037 12.159 ;
+        END
+    END io_outs_left[21]
+    PIN io_outs_left[22]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.872 0.084 7.896 ;
+        END
+    END io_outs_left[22]
+    PIN io_outs_left[23]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.488 0.084 7.512 ;
+        END
+    END io_outs_left[23]
+    PIN io_outs_left[24]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 12.096 0.037 12.114 ;
+        END
+    END io_outs_left[24]
+    PIN io_outs_left[25]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.324 0.037 9.342 ;
+        END
+    END io_outs_left[25]
+    PIN io_outs_left[26]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.376 0.037 11.394 ;
+        END
+    END io_outs_left[26]
+    PIN io_outs_left[27]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 6.912 0.084 6.936 ;
+        END
+    END io_outs_left[27]
+    PIN io_outs_left[28]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.736 0.084 8.76 ;
+        END
+    END io_outs_left[28]
+    PIN io_outs_left[29]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.504 0.084 9.528 ;
+        END
+    END io_outs_left[29]
+    PIN io_outs_left[2]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.792 0.037 9.81 ;
+        END
+    END io_outs_left[2]
+    PIN io_outs_left[30]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 12.192 0.084 12.216 ;
+        END
+    END io_outs_left[30]
+    PIN io_outs_left[31]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.696 0.084 9.72 ;
+        END
+    END io_outs_left[31]
+    PIN io_outs_left[32]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.104 0.084 7.128 ;
+        END
+    END io_outs_left[32]
+    PIN io_outs_left[33]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.256 0.084 8.28 ;
+        END
+    END io_outs_left[33]
+    PIN io_outs_left[34]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.316 0.037 8.334 ;
+        END
+    END io_outs_left[34]
+    PIN io_outs_left[35]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.368 0.037 10.386 ;
+        END
+    END io_outs_left[35]
+    PIN io_outs_left[36]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.048 0.037 6.066 ;
+        END
+    END io_outs_left[36]
+    PIN io_outs_left[37]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.244 0.037 8.262 ;
+        END
+    END io_outs_left[37]
+    PIN io_outs_left[38]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.216 0.037 9.234 ;
+        END
+    END io_outs_left[38]
+    PIN io_outs_left[39]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.776 0.037 7.794 ;
+        END
+    END io_outs_left[39]
+    PIN io_outs_left[3]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.984 0.084 10.008 ;
+        END
+    END io_outs_left[3]
+    PIN io_outs_left[40]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.556 0.037 11.574 ;
+        END
+    END io_outs_left[40]
+    PIN io_outs_left[41]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.441 0.037 9.459 ;
+        END
+    END io_outs_left[41]
+    PIN io_outs_left[42]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 11.52 0.037 11.538 ;
+        END
+    END io_outs_left[42]
+    PIN io_outs_left[43]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 8.064 0.084 8.088 ;
+        END
+    END io_outs_left[43]
+    PIN io_outs_left[44]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.04 0.084 11.064 ;
+        END
+    END io_outs_left[44]
+    PIN io_outs_left[45]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 4.224 0.084 4.248 ;
+        END
+    END io_outs_left[45]
+    PIN io_outs_left[46]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.332 0.037 10.35 ;
+        END
+    END io_outs_left[46]
+    PIN io_outs_left[47]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.74 0.037 7.758 ;
+        END
+    END io_outs_left[47]
+    PIN io_outs_left[48]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 12.384 0.084 12.408 ;
+        END
+    END io_outs_left[48]
+    PIN io_outs_left[49]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.236 0.037 7.254 ;
+        END
+    END io_outs_left[49]
+    PIN io_outs_left[4]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.516 0.037 6.534 ;
+        END
+    END io_outs_left[4]
+    PIN io_outs_left[50]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 5.436 0.037 5.454 ;
+        END
+    END io_outs_left[50]
+    PIN io_outs_left[51]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.828 0.037 9.846 ;
+        END
+    END io_outs_left[51]
+    PIN io_outs_left[52]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 9.864 0.037 9.882 ;
+        END
+    END io_outs_left[52]
+    PIN io_outs_left[53]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 9.408 0.084 9.432 ;
+        END
+    END io_outs_left[53]
+    PIN io_outs_left[54]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.856 0.037 8.874 ;
+        END
+    END io_outs_left[54]
+    PIN io_outs_left[55]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.232 0.084 11.256 ;
+        END
+    END io_outs_left[55]
+    PIN io_outs_left[56]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.616 0.084 11.64 ;
+        END
+    END io_outs_left[56]
+    PIN io_outs_left[57]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.136 0.084 11.16 ;
+        END
+    END io_outs_left[57]
+    PIN io_outs_left[58]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.201 0.037 6.219 ;
+        END
+    END io_outs_left[58]
+    PIN io_outs_left[59]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.521 0.037 10.539 ;
+        END
+    END io_outs_left[59]
+    PIN io_outs_left[5]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 10.296 0.037 10.314 ;
+        END
+    END io_outs_left[5]
+    PIN io_outs_left[60]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.28 0.037 8.298 ;
+        END
+    END io_outs_left[60]
+    PIN io_outs_left[61]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 8.136 0.037 8.154 ;
+        END
+    END io_outs_left[61]
+    PIN io_outs_left[62]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 7.584 0.084 7.608 ;
+        END
+    END io_outs_left[62]
+    PIN io_outs_left[63]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 6.084 0.037 6.102 ;
+        END
+    END io_outs_left[63]
+    PIN io_outs_left[6]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 5.088 0.084 5.112 ;
+        END
+    END io_outs_left[6]
+    PIN io_outs_left[7]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 5.121 0.037 5.139 ;
+        END
+    END io_outs_left[7]
+    PIN io_outs_left[8]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  0 7.821 0.037 7.839 ;
+        END
+    END io_outs_left[8]
+    PIN io_outs_left[9]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  0 11.52 0.084 11.544 ;
+        END
+    END io_outs_left[9]
+    PIN io_outs_right[0]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.252 17.28 9.27 ;
+        END
+    END io_outs_right[0]
+    PIN io_outs_right[10]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 4.464 17.28 4.482 ;
+        END
+    END io_outs_right[10]
+    PIN io_outs_right[11]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.944 17.28 10.968 ;
+        END
+    END io_outs_right[11]
+    PIN io_outs_right[12]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.816 17.28 6.84 ;
+        END
+    END io_outs_right[12]
+    PIN io_outs_right[13]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 5.58 17.28 5.598 ;
+        END
+    END io_outs_right[13]
+    PIN io_outs_right[14]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 12.06 17.28 12.078 ;
+        END
+    END io_outs_right[14]
+    PIN io_outs_right[15]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.208 17.28 8.226 ;
+        END
+    END io_outs_right[15]
+    PIN io_outs_right[16]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.64 17.28 8.664 ;
+        END
+    END io_outs_right[16]
+    PIN io_outs_right[17]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.9 17.28 9.918 ;
+        END
+    END io_outs_right[17]
+    PIN io_outs_right[18]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.632 17.28 7.65 ;
+        END
+    END io_outs_right[18]
+    PIN io_outs_right[19]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.352 17.28 8.376 ;
+        END
+    END io_outs_right[19]
+    PIN io_outs_right[1]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.08 17.28 10.104 ;
+        END
+    END io_outs_right[1]
+    PIN io_outs_right[20]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.808 17.28 11.832 ;
+        END
+    END io_outs_right[20]
+    PIN io_outs_right[21]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.741 17.28 6.759 ;
+        END
+    END io_outs_right[21]
+    PIN io_outs_right[22]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.601 17.28 11.619 ;
+        END
+    END io_outs_right[22]
+    PIN io_outs_right[23]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.72 17.28 6.744 ;
+        END
+    END io_outs_right[23]
+    PIN io_outs_right[24]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 12.456 17.28 12.474 ;
+        END
+    END io_outs_right[24]
+    PIN io_outs_right[25]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.544 17.28 8.568 ;
+        END
+    END io_outs_right[25]
+    PIN io_outs_right[26]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.484 17.28 11.502 ;
+        END
+    END io_outs_right[26]
+    PIN io_outs_right[27]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.24 17.28 6.264 ;
+        END
+    END io_outs_right[27]
+    PIN io_outs_right[28]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.432 17.28 6.456 ;
+        END
+    END io_outs_right[28]
+    PIN io_outs_right[29]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.376 17.28 5.4 ;
+        END
+    END io_outs_right[29]
+    PIN io_outs_right[2]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.176 17.28 10.2 ;
+        END
+    END io_outs_right[2]
+    PIN io_outs_right[30]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 12.024 17.28 12.042 ;
+        END
+    END io_outs_right[30]
+    PIN io_outs_right[31]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.901 17.28 8.919 ;
+        END
+    END io_outs_right[31]
+    PIN io_outs_right[32]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.936 17.28 9.954 ;
+        END
+    END io_outs_right[32]
+    PIN io_outs_right[33]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.6 17.28 9.624 ;
+        END
+    END io_outs_right[33]
+    PIN io_outs_right[34]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.288 17.28 9.306 ;
+        END
+    END io_outs_right[34]
+    PIN io_outs_right[35]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.68 17.28 7.704 ;
+        END
+    END io_outs_right[35]
+    PIN io_outs_right[36]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.448 17.28 11.466 ;
+        END
+    END io_outs_right[36]
+    PIN io_outs_right[37]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.216 17.28 9.24 ;
+        END
+    END io_outs_right[37]
+    PIN io_outs_right[38]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 6.336 17.28 6.36 ;
+        END
+    END io_outs_right[38]
+    PIN io_outs_right[39]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 4.536 17.28 4.554 ;
+        END
+    END io_outs_right[39]
+    PIN io_outs_right[3]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.756 17.28 9.774 ;
+        END
+    END io_outs_right[3]
+    PIN io_outs_right[40]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.184 17.28 5.208 ;
+        END
+    END io_outs_right[40]
+    PIN io_outs_right[41]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 12.096 17.28 12.12 ;
+        END
+    END io_outs_right[41]
+    PIN io_outs_right[42]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.66 17.28 6.678 ;
+        END
+    END io_outs_right[42]
+    PIN io_outs_right[43]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.748 17.28 8.766 ;
+        END
+    END io_outs_right[43]
+    PIN io_outs_right[44]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 6.696 17.28 6.714 ;
+        END
+    END io_outs_right[44]
+    PIN io_outs_right[45]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 12.288 17.28 12.312 ;
+        END
+    END io_outs_right[45]
+    PIN io_outs_right[46]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.656 17.28 10.68 ;
+        END
+    END io_outs_right[46]
+    PIN io_outs_right[47]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.784 17.28 8.802 ;
+        END
+    END io_outs_right[47]
+    PIN io_outs_right[48]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.172 17.28 8.19 ;
+        END
+    END io_outs_right[48]
+    PIN io_outs_right[49]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.36 17.28 9.378 ;
+        END
+    END io_outs_right[49]
+    PIN io_outs_right[4]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.024 17.28 9.048 ;
+        END
+    END io_outs_right[4]
+    PIN io_outs_right[50]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 7.128 17.28 7.146 ;
+        END
+    END io_outs_right[50]
+    PIN io_outs_right[51]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.272 17.28 10.296 ;
+        END
+    END io_outs_right[51]
+    PIN io_outs_right[52]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 5.472 17.28 5.49 ;
+        END
+    END io_outs_right[52]
+    PIN io_outs_right[53]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.981 17.28 9.999 ;
+        END
+    END io_outs_right[53]
+    PIN io_outs_right[54]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.008 17.28 7.032 ;
+        END
+    END io_outs_right[54]
+    PIN io_outs_right[55]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.28 17.28 5.304 ;
+        END
+    END io_outs_right[55]
+    PIN io_outs_right[56]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.776 17.28 7.8 ;
+        END
+    END io_outs_right[56]
+    PIN io_outs_right[57]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.312 17.28 9.336 ;
+        END
+    END io_outs_right[57]
+    PIN io_outs_right[58]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.952 17.28 5.976 ;
+        END
+    END io_outs_right[58]
+    PIN io_outs_right[59]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 9.396 17.28 9.414 ;
+        END
+    END io_outs_right[59]
+    PIN io_outs_right[5]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 9.12 17.28 9.144 ;
+        END
+    END io_outs_right[5]
+    PIN io_outs_right[60]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 11.712 17.28 11.736 ;
+        END
+    END io_outs_right[60]
+    PIN io_outs_right[61]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 11.061 17.28 11.079 ;
+        END
+    END io_outs_right[61]
+    PIN io_outs_right[62]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 10.56 17.28 10.584 ;
+        END
+    END io_outs_right[62]
+    PIN io_outs_right[63]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 8.448 17.28 8.472 ;
+        END
+    END io_outs_right[63]
+    PIN io_outs_right[6]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 10.476 17.28 10.494 ;
+        END
+    END io_outs_right[6]
+    PIN io_outs_right[7]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 5.472 17.28 5.496 ;
+        END
+    END io_outs_right[7]
+    PIN io_outs_right[8]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M2 ;
+              RECT  17.243 8.676 17.28 8.694 ;
+        END
+    END io_outs_right[8]
+    PIN io_outs_right[9]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M4 ;
+              RECT  17.196 7.968 17.28 7.992 ;
+        END
+    END io_outs_right[9]
+    PIN io_outs_up[0]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.184 17.196 5.208 17.28 ;
+        END
+    END io_outs_up[0]
+    PIN io_outs_up[10]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9 17.243 9.018 17.28 ;
+        END
+    END io_outs_up[10]
+    PIN io_outs_up[11]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.192 17.196 12.216 17.28 ;
+        END
+    END io_outs_up[11]
+    PIN io_outs_up[12]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.216 17.243 9.234 17.28 ;
+        END
+    END io_outs_up[12]
+    PIN io_outs_up[13]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.056 17.243 7.074 17.28 ;
+        END
+    END io_outs_up[13]
+    PIN io_outs_up[14]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  13.104 17.243 13.122 17.28 ;
+        END
+    END io_outs_up[14]
+    PIN io_outs_up[15]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.296 17.243 10.314 17.28 ;
+        END
+    END io_outs_up[15]
+    PIN io_outs_up[16]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.008 17.243 10.026 17.28 ;
+        END
+    END io_outs_up[16]
+    PIN io_outs_up[17]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  5.376 17.196 5.4 17.28 ;
+        END
+    END io_outs_up[17]
+    PIN io_outs_up[18]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.064 17.243 8.082 17.28 ;
+        END
+    END io_outs_up[18]
+    PIN io_outs_up[19]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.136 17.196 11.16 17.28 ;
+        END
+    END io_outs_up[19]
+    PIN io_outs_up[1]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.256 17.243 5.274 17.28 ;
+        END
+    END io_outs_up[1]
+    PIN io_outs_up[20]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.736 17.243 11.754 17.28 ;
+        END
+    END io_outs_up[20]
+    PIN io_outs_up[21]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.016 17.243 11.034 17.28 ;
+        END
+    END io_outs_up[21]
+    PIN io_outs_up[22]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.616 17.196 11.64 17.28 ;
+        END
+    END io_outs_up[22]
+    PIN io_outs_up[23]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.672 17.196 12.696 17.28 ;
+        END
+    END io_outs_up[23]
+    PIN io_outs_up[24]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  13.056 17.196 13.08 17.28 ;
+        END
+    END io_outs_up[24]
+    PIN io_outs_up[25]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.864 17.196 12.888 17.28 ;
+        END
+    END io_outs_up[25]
+    PIN io_outs_up[26]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.624 17.196 6.648 17.28 ;
+        END
+    END io_outs_up[26]
+    PIN io_outs_up[27]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.68 17.196 7.704 17.28 ;
+        END
+    END io_outs_up[27]
+    PIN io_outs_up[28]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.944 17.243 10.962 17.28 ;
+        END
+    END io_outs_up[28]
+    PIN io_outs_up[29]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.904 17.196 11.928 17.28 ;
+        END
+    END io_outs_up[29]
+    PIN io_outs_up[2]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.04 17.243 5.058 17.28 ;
+        END
+    END io_outs_up[2]
+    PIN io_outs_up[30]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  7.488 17.243 7.506 17.28 ;
+        END
+    END io_outs_up[30]
+    PIN io_outs_up[31]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.944 17.196 10.968 17.28 ;
+        END
+    END io_outs_up[31]
+    PIN io_outs_up[32]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.272 17.196 10.296 17.28 ;
+        END
+    END io_outs_up[32]
+    PIN io_outs_up[33]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.696 17.243 6.714 17.28 ;
+        END
+    END io_outs_up[33]
+    PIN io_outs_up[34]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.968 17.196 7.992 17.28 ;
+        END
+    END io_outs_up[34]
+    PIN io_outs_up[35]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.752 17.196 10.776 17.28 ;
+        END
+    END io_outs_up[35]
+    PIN io_outs_up[36]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.064 17.196 8.088 17.28 ;
+        END
+    END io_outs_up[36]
+    PIN io_outs_up[37]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.528 17.196 6.552 17.28 ;
+        END
+    END io_outs_up[37]
+    PIN io_outs_up[38]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.576 17.243 9.594 17.28 ;
+        END
+    END io_outs_up[38]
+    PIN io_outs_up[39]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.216 17.196 9.24 17.28 ;
+        END
+    END io_outs_up[39]
+    PIN io_outs_up[3]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.184 17.243 5.202 17.28 ;
+        END
+    END io_outs_up[3]
+    PIN io_outs_up[40]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  7.2 17.196 7.224 17.28 ;
+        END
+    END io_outs_up[40]
+    PIN io_outs_up[41]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.08 17.196 10.104 17.28 ;
+        END
+    END io_outs_up[41]
+    PIN io_outs_up[42]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.352 17.196 8.376 17.28 ;
+        END
+    END io_outs_up[42]
+    PIN io_outs_up[43]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.696 17.196 9.72 17.28 ;
+        END
+    END io_outs_up[43]
+    PIN io_outs_up[44]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.856 17.243 8.874 17.28 ;
+        END
+    END io_outs_up[44]
+    PIN io_outs_up[45]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.288 17.243 9.306 17.28 ;
+        END
+    END io_outs_up[45]
+    PIN io_outs_up[46]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.088 17.243 11.106 17.28 ;
+        END
+    END io_outs_up[46]
+    PIN io_outs_up[47]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.168 17.243 12.186 17.28 ;
+        END
+    END io_outs_up[47]
+    PIN io_outs_up[48]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.808 17.196 11.832 17.28 ;
+        END
+    END io_outs_up[48]
+    PIN io_outs_up[49]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  11.424 17.196 11.448 17.28 ;
+        END
+    END io_outs_up[49]
+    PIN io_outs_up[4]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.792 17.243 9.81 17.28 ;
+        END
+    END io_outs_up[4]
+    PIN io_outs_up[50]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.368 17.243 10.386 17.28 ;
+        END
+    END io_outs_up[50]
+    PIN io_outs_up[51]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.88 17.243 11.898 17.28 ;
+        END
+    END io_outs_up[51]
+    PIN io_outs_up[52]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  5.904 17.243 5.922 17.28 ;
+        END
+    END io_outs_up[52]
+    PIN io_outs_up[53]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  6.12 17.243 6.138 17.28 ;
+        END
+    END io_outs_up[53]
+    PIN io_outs_up[54]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.928 17.196 8.952 17.28 ;
+        END
+    END io_outs_up[54]
+    PIN io_outs_up[55]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.312 17.196 9.336 17.28 ;
+        END
+    END io_outs_up[55]
+    PIN io_outs_up[56]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  12.288 17.196 12.312 17.28 ;
+        END
+    END io_outs_up[56]
+    PIN io_outs_up[57]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.584 17.243 10.602 17.28 ;
+        END
+    END io_outs_up[57]
+    PIN io_outs_up[58]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.96 17.243 12.978 17.28 ;
+        END
+    END io_outs_up[58]
+    PIN io_outs_up[59]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  10.8 17.243 10.818 17.28 ;
+        END
+    END io_outs_up[59]
+    PIN io_outs_up[5]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  10.368 17.196 10.392 17.28 ;
+        END
+    END io_outs_up[5]
+    PIN io_outs_up[60]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  9.36 17.243 9.378 17.28 ;
+        END
+    END io_outs_up[60]
+    PIN io_outs_up[61]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  9.024 17.196 9.048 17.28 ;
+        END
+    END io_outs_up[61]
+    PIN io_outs_up[62]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  11.16 17.243 11.178 17.28 ;
+        END
+    END io_outs_up[62]
+    PIN io_outs_up[63]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  6.24 17.196 6.264 17.28 ;
+        END
+    END io_outs_up[63]
+    PIN io_outs_up[6]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  12.312 17.243 12.33 17.28 ;
+        END
+    END io_outs_up[6]
+    PIN io_outs_up[7]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.712 17.243 8.73 17.28 ;
+        END
+    END io_outs_up[7]
+    PIN io_outs_up[8]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M5 ;
+              RECT  8.736 17.196 8.76 17.28 ;
+        END
+    END io_outs_up[8]
+    PIN io_outs_up[9]
+        DIRECTION OUTPUT ; 
+        USE SIGNAL ; 
+        PORT
+            LAYER M3 ;
+              RECT  8.136 17.243 8.154 17.28 ;
+        END
+    END io_outs_up[9]
+    PIN VSS
+        DIRECTION INOUT ; 
+        USE GROUND ; 
+        PORT
+            LAYER M5 ;
+              RECT  14.424 0.684 14.544 16.596 ;
+              RECT  11.448 0.684 11.568 16.596 ;
+              RECT  8.472 0.684 8.592 16.596 ;
+              RECT  5.496 0.684 5.616 16.596 ;
+              RECT  2.52 0.684 2.64 16.596 ;
+              RECT  16.284 0.876 16.404 16.404 ;
+              RECT  0.876 0.876 0.996 16.404 ;
+        END
+    END VSS
+    PIN VDD
+        DIRECTION INOUT ; 
+        USE POWER ; 
+        PORT
+            LAYER M5 ;
+              RECT  14.616 0.684 14.736 16.596 ;
+              RECT  11.64 0.684 11.76 16.596 ;
+              RECT  8.664 0.684 8.784 16.596 ;
+              RECT  5.688 0.684 5.808 16.596 ;
+              RECT  2.712 0.684 2.832 16.596 ;
+              RECT  16.476 0.684 16.596 16.596 ;
+              RECT  0.684 0.684 0.804 16.596 ;
+        END
+    END VDD
+    OBS
+      LAYER RVTN ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER RVTP ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER M1 ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER M2 ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER M3 ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER M4 ;
+        RECT  0 0 17.28 17.28 ;
+      LAYER M5 ;
+        RECT  0 0 17.28 17.28 ;
+    END
+END Element
+
+END LIBRARY

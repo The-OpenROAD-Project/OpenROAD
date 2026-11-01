@@ -66,6 +66,9 @@ class RepairHold : public sta::dbStaState
   void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
                         sta::Delay delays[sta::RiseFall::index_count]);
+  // Hold slack at `end` of the paths being repaired: the selected path
+  // group's under `repair_timing -path_group`, every path's otherwise.
+  sta::Slack holdSlack(sta::Vertex* end) const;
   void findHoldViolations(sta::VertexSeq& ends,
                           double hold_margin,
                           // Return values.
@@ -98,11 +101,17 @@ class RepairHold : public sta::dbStaState
                      double setup_margin,
                      double hold_margin,
                      bool allow_setup_violations);
-  void makeHoldDelay(sta::Vertex* drvr,
-                     sta::PinSeq& load_pins,
-                     bool loads_have_out_port,
-                     sta::LibertyCell* buffer_cell,
-                     const odb::Point& loc);
+  // Buffers/resizes from one hold-fix attempt; committed by repairEndHold.
+  struct HoldMoveStats
+  {
+    int buffers = 0;
+    int resizes = 0;
+  };
+  HoldMoveStats makeHoldDelay(sta::Vertex* drvr,
+                              sta::PinSeq& load_pins,
+                              bool loads_have_out_port,
+                              sta::LibertyCell* buffer_cell,
+                              const odb::Point& loc);
   bool checkMaxSlewCap(const sta::Pin* drvr_pin);
   void mergeInit(Slacks& slacks);
   void mergeInto(Slacks& from, Slacks& result);
@@ -112,7 +121,7 @@ class RepairHold : public sta::dbStaState
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  est::EstimateParasitics* estimate_parasitics_;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
 
   // Clock-network pins that drive a clock sink.  Computed lazily.
   std::unordered_set<const sta::Pin*> clk_tree_pins_;

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -104,8 +105,7 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
+  void setChannel(Channel min_channel, bool pin_aware_channels);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -148,7 +148,7 @@ class ClusteringEngine
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
-  void reportDesignData();
+  void reportDesignData(size_t num_macros_to_place);
   void createRoot();
   void setBaseThresholds();
   void createIOClusters();
@@ -200,15 +200,15 @@ class ClusteringEngine
   void createOneClusterForEachMacro(Cluster* mixed_leaf_parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
-  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
-                            std::vector<int>& size_class);
+  void classifyMacrosByMaster(const std::vector<HardMacro*>& hard_macros,
+                              std::vector<int>& master_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
                                  std::vector<int>& interconn_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
-                                const std::vector<int>& size_class,
+                                const std::vector<int>& master_class,
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
@@ -225,6 +225,14 @@ class ClusteringEngine
   int64_t computeArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
+
+  HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
+  HardMacro::Halo buildPinAwareHalo(odb::dbInst* inst,
+                                    int minimum_spacing) const;
+  int getMinimumSpacing() const;
+  bool isEquidistantDifferentDirections(
+      std::pair<int, Boundary> candidate,
+      std::pair<int, Boundary> second_candidate) const;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;
@@ -253,8 +261,8 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
-  HardMacro::Halo base_halo_;
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
+  Channel min_channel_;
+  bool pin_aware_channels_{false};
 };
 
 }  // namespace mpl

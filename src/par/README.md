@@ -20,7 +20,7 @@ to partition a hypergraph or a gate-level netlist.
 
 We use Google OR-Tools as our ILP solver. 
 
-Our recommendation is to follow the OpenROAD [DependencyInstaller](../etc/DependencyInstaller.sh) for installation of this requirement.
+Our recommendation is to follow the OpenROAD [DependencyInstaller](../../etc/DependencyInstaller.sh) for installation of this requirement.
 
 Alternatively, you may also install Google OR-Tools 
 following these [instructions](https://developers.google.com/optimization/install).
@@ -592,10 +592,10 @@ You can find the provided example [here](./examples/timing-aware-partitioning/ru
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/par/...
 ```
 
 # ArtNet Spec File Generation Flow

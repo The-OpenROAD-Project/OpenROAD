@@ -42,6 +42,9 @@ All parameters for clock gating are optional, as indicated by square brackets: `
 
 ### Clock gating
 
+The `clock_gating` command inserts clock gates on registers that share a
+provable gating condition, reducing switching power.
+
 ```tcl
 clock_gating
     [-min_instances min_instances]
@@ -52,7 +55,7 @@ clock_gating
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ------------- | ----------------------------------------------- |
 | `-min_instances` | Minimum number of instances that should be gated by a single clock gate. |
 | `-max_cover` | Maximum number of initial gate condition candidate nets per instance. |
 | `-dump_dir` | Directory for debug dumps. |
@@ -69,20 +72,15 @@ Example script on running `cgt` for a sample design of `aes` can be found here:
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/cgt/...
 ```
 
 ## Limitations
 
 Clock gating is currently not available for designs that contain HA and FA cells which are not supported by ABC.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+clock-gating)
-about this tool.
 
 ## References
 

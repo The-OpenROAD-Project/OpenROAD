@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -161,6 +162,16 @@ class FlexGCWorker::Impl
   bool ignoreCornerSpacing_;
   bool surgicalFixEnabled_;
 
+  // Scratch buffers reused across the DRC checks below.  A FlexGCWorker is
+  // processed by a single thread, so per-worker members are safe and avoid
+  // re-allocating on every call (results are bit-identical).  Each site gets
+  // its own buffer so nested calls cannot alias one another.
+  std::vector<std::pair<segment_t, gcSegment*>> prl_has_poly_edge_result_;
+  std::vector<rq_box_value_t<gcRect*>> skip_same_net_result_;
+  std::vector<rq_box_value_t<gcRect*>> metal_spacing_result_;
+  std::vector<rq_box_value_t<gcRect>> metal_spacing_result_shapes_;
+  std::vector<rq_box_value_t<gcRect*>> corner_spacing_result_;
+
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
   void modifyMarkers();
@@ -200,7 +211,12 @@ class FlexGCWorker::Impl
       const std::vector<std::set<std::pair<odb::Point, odb::Point>>>&
           fixedPolygonEdges);
   void initNet_pins_polygonCorners(gcNet* net);
-  void initNet_pins_polygonCorners_helper(gcNet* net, gcPin* pin);
+  // fixed_corner_cache is keyed by layer and owned by the caller so the
+  // materialized fixed-polygon vertex set is shared across the net's pins.
+  void initNet_pins_polygonCorners_helper(
+      gcNet* net,
+      gcPin* pin,
+      std::map<frLayerNum, std::unordered_set<odb::Point>>& fixed_corner_cache);
   void initNet_pins_maxRectangles(gcNet* net);
   void initNet_pins_maxRectangles_getFixedMaxRectangles(
       gcNet* net,
@@ -256,7 +272,8 @@ class FlexGCWorker::Impl
   void checkMetalSpacing_short_obs(
       gcRect* rect1,
       gcRect* rect2,
-      const gtl::rectangle_data<frCoord>& markerRect);
+      const gtl::rectangle_data<frCoord>& markerRect,
+      const bool rects_abut);
   frCoord checkMetalSpacing_prl_getReqSpcVal(gcRect* rect1,
                                              gcRect* rect2,
                                              frCoord prl,
@@ -534,14 +551,16 @@ class FlexGCWorker::Impl
                               frMinimumcutConstraint* con);
   void checkMinimumCut_main(gcRect* rect);
   void checkMinimumCut();
-  void checkMetalShape_lef58Area(gcPin* pin);
+  void checkMetalShape_lef58Area(gcPin* pin, bool allow_patching);
   bool checkMetalShape_lef58Area_exceptRectangle(
       gcPolygon* poly,
       odb::dbTechLayerAreaRule* db_rule);
   bool checkMetalShape_lef58Area_rectWidth(gcPolygon* poly,
-                                           odb::dbTechLayerAreaRule* db_rule,
-                                           bool& check_rect_width);
+                                           odb::dbTechLayerAreaRule* db_rule);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
+  void checkMetalShape_addMarker(gcPin* pin,
+                                 frConstraint* con,
+                                 const odb::Rect& bbox);
   void checkMetalShape_patchOwner_helper(drPatchWire* patch,
                                          const std::vector<drNet*>* dr_nets);
 

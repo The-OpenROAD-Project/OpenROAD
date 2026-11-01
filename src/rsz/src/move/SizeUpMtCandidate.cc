@@ -3,8 +3,8 @@
 
 #include "SizeUpMtCandidate.hh"
 
+#include <optional>
 #include <string>
-#include <utility>
 
 #include "DelayEstimator.hh"
 #include "MoveCandidate.hh"
@@ -21,16 +21,14 @@ using utl::RSZ;
 
 SizeUpMtCandidate::SizeUpMtCandidate(Resizer& resizer,
                                      const Target& target,
-                                     sta::Pin* drvr_pin,
                                      sta::Instance* inst,
                                      sta::LibertyCell* replacement,
-                                     const ArcDelayState& arc_delay)
+                                     float score_scale)
     : MoveCandidate(resizer, target),
-      drvr_pin_(drvr_pin),
       inst_(inst),
       current_cell_(resizer.network()->libertyCell(inst)),
       replacement_(replacement),
-      arc_delay_(arc_delay)
+      score_scale_(score_scale)
 {
 }
 
@@ -38,9 +36,27 @@ Estimate SizeUpMtCandidate::estimate()
 {
   // Score one size-up replacement from immutable inputs prepared before the
   // worker pool runs candidate estimation.
-  const DelayEstimate delay_est
-      = DelayEstimator::estimate(arc_delay_, replacement_);
-  return {.legal = delay_est.legal, .score = delay_est.arrival_impr};
+  const DelayEstimate delay_est = DelayEstimator::estimate(
+      target().estimator_context.value(), replacement_);
+  Estimate estimate{.legal = delay_est.legal,
+                    .raw_gain = delay_est.arrival_impr,
+                    .reason = failReasonName(delay_est.reason)};
+  estimate.score = delay_est.arrival_impr * score_scale_;
+  if (!delay_est.legal) {
+    // The opposite-transition reject carries the target gain in its score.
+    return {
+        .legal = false,
+        .score = estimate.score,
+        .raw_gain = delay_est.reason == FailReason::kEstimateNonImproving
+                        ? std::optional<float>(delay_est.arrival_impr)
+                        : std::nullopt,
+        .reason = failReasonName(delay_est.reason),
+        .tail_admissible = delay_est.reason == FailReason::kDualRfNonImproving
+                           && estimate.score > 0.0f};
+  }
+
+  chargeCellSwapSideCosts(delay_est, replacement_, score_scale_, estimate);
+  return estimate;
 }
 
 MoveResult SizeUpMtCandidate::apply()
@@ -49,12 +65,13 @@ MoveResult SizeUpMtCandidate::apply()
   // Candidates were screened on a pre-batch snapshot, so two accepted
   // size-ups on different sinks of the same fanin net could each pass
   // independently yet combine past the driver's max-cap limit.
-  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)) {
+  if (!resizer_.replacementPreservesMaxCap(
+          inst_, replacement_, target().mode(resizer_))) {
     debugPrint(resizer_.logger(),
                RSZ,
                "opt_moves",
                1,
-               "REJECT size_up_mt1 {}: {} -> {} max-cap re-check failed",
+               "REJECT size_up_mt {}: {} -> {} max-cap re-check failed",
                logName(),
                current_cell_->name(),
                replacement_->name());
@@ -73,7 +90,7 @@ MoveResult SizeUpMtCandidate::apply()
                RSZ,
                "opt_moves",
                1,
-               "ACCEPT size_up_mt1 {}: {} -> {}",
+               "ACCEPT size_up_mt {}: {} -> {}",
                logName(),
                current_cell_name,
                replacement_name);
@@ -89,7 +106,7 @@ MoveResult SizeUpMtCandidate::apply()
              RSZ,
              "opt_moves",
              1,
-             "REJECT size_up_mt1 {}: {} -> {} replace failed",
+             "REJECT size_up_mt {}: {} -> {} replace failed",
              logName(),
              current_cell_->name(),
              replacement_->name());
@@ -100,9 +117,14 @@ MoveResult SizeUpMtCandidate::apply()
   };
 }
 
+MoveImpact SizeUpMtCandidate::impact() const
+{
+  return cellSwapImpact(inst_);
+}
+
 std::string SizeUpMtCandidate::logName() const
 {
-  return drvr_pin_ != nullptr ? resizer_.network()->pathName(drvr_pin_) : "";
+  return resizer_.network()->pathName(target().driver_pin);
 }
 
 }  // namespace rsz

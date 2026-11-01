@@ -18,6 +18,7 @@ COMPULSORY_TESTS = [
     "scan_architect_clock_mix_sky130",
     "scan_architect_no_mix_sky130",
     "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
     "sub_modules_sky130",
@@ -28,6 +29,8 @@ ALL_TESTS = COMPULSORY_TESTS
 filegroup(
     name = "regression_resources",
     srcs = [
+        "asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
         "helpers.tcl",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
         "sky130hd/sky130_fd_sc_hd_merged.lef",
@@ -51,6 +54,9 @@ filegroup(
             ],
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
+            ],
+            "scan_replace_dont_use_sky130": [
+                "one_cell_sky130.def",
             ],
             "scandef_core_sky130": [
                 "register_bank_cores.lef",
@@ -78,10 +84,13 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -90,10 +99,13 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -106,7 +118,6 @@ cc_test(
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -127,7 +138,6 @@ cc_test(
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/cells",
@@ -145,7 +155,10 @@ py_test(
     name = "dft_man_tcl_check",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

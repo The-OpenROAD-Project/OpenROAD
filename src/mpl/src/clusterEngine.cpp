@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -31,6 +32,8 @@
 
 namespace mpl {
 using utl::MPL;
+
+inline constexpr int kMaxNumOfMasters = 15;
 
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
                                    utl::Logger* logger,
@@ -83,12 +86,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-void ClusteringEngine::setHalos(
-    const HardMacro::Halo& base_halo,
-    const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo)
+void ClusteringEngine::setChannel(const Channel min_channel,
+                                  const bool pin_aware_channels)
 {
-  base_halo_ = base_halo;
-  macro_to_halo_ = macro_to_halo;
+  min_channel_ = min_channel;
+  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -100,19 +102,22 @@ void ClusteringEngine::init()
   setFloorplanShape();
   createHardMacros();
 
-  if (!movableCellsFitInMacroPlacementArea()) {
-    logger_->error(
-        MPL, 65, "The movable cells do not fit in the macro placement area.");
-  }
-
-  design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
+  // With no macro to place there is nothing to cluster or check: the
+  // checks below guard the placement, and a design whose macros are all
+  // fixed may legitimately hold fixed standard cells in the core.
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
   if (unfixed_macros.empty()) {
     tree_->has_unfixed_macros = false;
     logger_->info(MPL, 17, "No unfixed macros.");
     return;
   }
+
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
+
+  design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
   const float inst_area_with_halos
@@ -130,7 +135,7 @@ void ClusteringEngine::init()
 
   tree_->io_pads = getIOPads();
 
-  reportDesignData();
+  reportDesignData(unfixed_macros.size());
 }
 
 bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
@@ -280,7 +285,7 @@ std::vector<odb::dbInst*> ClusteringEngine::getIOPads() const
   return io_pads;
 }
 
-void ClusteringEngine::reportDesignData()
+void ClusteringEngine::reportDesignData(size_t num_macros_to_place)
 {
   const odb::Rect& die = block_->getDieArea();
   logger_->report(
@@ -306,8 +311,9 @@ void ClusteringEngine::reportDesignData()
       "\tNumber of std cell instances: {}\n"
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
+      "\tMacros to be placed: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tMinimum channel (Width, Height): ({:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -317,11 +323,10 @@ void ClusteringEngine::reportDesignData()
       design_metrics_->getNumStdCell(),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
+      num_macros_to_place,
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(base_halo_.left),
-      block_->dbuToMicrons(base_halo_.bottom),
-      block_->dbuToMicrons(base_halo_.right),
-      block_->dbuToMicrons(base_halo_.top),
+      block_->dbuToMicrons(min_channel_.width),
+      block_->dbuToMicrons(min_channel_.height),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -354,19 +359,13 @@ void ClusteringEngine::setBaseThresholds()
 
   if (tree_->base_max_macro <= 0 || tree_->base_min_macro <= 0
       || tree_->base_max_std_cell <= 0 || tree_->base_min_std_cell <= 0) {
-    // From original implementation: Reset maximum level based on number
-    // of macros.
-    const int min_num_macros_for_multilevel = 150;
-    if (design_metrics_->getNumMacro() <= min_num_macros_for_multilevel) {
+    odb::PtrSet<odb::dbMaster> masters;
+    for (const auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+      masters.insert(inst->getMaster());
+    }
+
+    if (masters.size() < kMaxNumOfMasters) {
       tree_->max_level = 1;
-      debugPrint(
-          logger_,
-          MPL,
-          "multilevel_autoclustering",
-          1,
-          "Number of macros is below {}. Resetting number of levels to {}",
-          min_num_macros_for_multilevel,
-          tree_->max_level);
     }
 
     // Set base values for std cell lower/upper thresholds
@@ -1722,7 +1721,7 @@ void ClusteringEngine::breakMixedLeaves(
 
 // "Split" mixed leaf by replacing it for standard-cell and macro
 // clusters. Macro clusters are formed by grouping the macros in
-// the mixed leaf according to footprint, connection signature and
+// the mixed leaf according to master, connection signature and
 // interconnectivity.
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
@@ -1753,7 +1752,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 
   const int number_of_movable_macros
       = static_cast<int>(movable_hard_macros.size());
-  std::vector<int> size_class(number_of_movable_macros, -1);
+  std::vector<int> master_class(number_of_movable_macros, -1);
   std::vector<int> signature_class(number_of_movable_macros, -1);
   std::vector<int> interconn_class(number_of_movable_macros, -1);
   std::vector<int> macro_class(number_of_movable_macros, -1);
@@ -1764,11 +1763,11 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
     interconn_class.front() = -1;
     macro_class.front() = 0;
   } else {
-    classifyMacrosBySize(movable_hard_macros, size_class);
+    classifyMacrosByMaster(movable_hard_macros, master_class);
     classifyMacrosByConnSignature(movable_macro_clusters, signature_class);
     classifyMacrosByInterconn(movable_macro_clusters, interconn_class);
     groupSingleMacroClusters(movable_macro_clusters,
-                             size_class,
+                             master_class,
                              signature_class,
                              interconn_class,
                              macro_class);
@@ -1883,22 +1882,24 @@ void ClusteringEngine::createOneClusterForEachMacro(
   }
 }
 
-void ClusteringEngine::classifyMacrosBySize(
+void ClusteringEngine::classifyMacrosByMaster(
     const std::vector<HardMacro*>& hard_macros,
-    std::vector<int>& size_class)
+    std::vector<int>& master_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
-    if (size_class[i] == -1) {
+    if (master_class[i] == -1) {
       for (int j = i + 1; j < hard_macros.size(); j++) {
-        if ((size_class[j] == -1) && ((*hard_macros[i]) == (*hard_macros[j]))) {
-          size_class[j] = i;
+        if (master_class[j] == -1
+            && hard_macros[i]->getInst()->getMaster()
+                   == hard_macros[j]->getInst()->getMaster()) {
+          master_class[j] = i;
         }
       }
     }
   }
 
   for (int i = 0; i < hard_macros.size(); i++) {
-    size_class[i] = (size_class[i] == -1) ? i : size_class[i];
+    master_class[i] = (master_class[i] == -1) ? i : master_class[i];
   }
 }
 
@@ -1960,13 +1961,13 @@ void ClusteringEngine::classifyMacrosByInterconn(
 }
 
 // We determine if the macros belong to the same class based on:
-// 1. Size && and Interconnection (Directly connected macro clusters
+// 1. Master && Interconnection (Directly connected macro clusters
 //    should be grouped)
-// 2. Size && Connection Signature (Macros with same connection
+// 2. Master && Connection Signature (Macros with same connection
 //    signature should be grouped)
 void ClusteringEngine::groupSingleMacroClusters(
     const std::vector<Cluster*>& macro_clusters,
-    const std::vector<int>& size_class,
+    const std::vector<int>& master_class,
     const std::vector<int>& signature_class,
     std::vector<int>& interconn_class,
     std::vector<int>& macro_class)
@@ -1982,7 +1983,7 @@ void ClusteringEngine::groupSingleMacroClusters(
         continue;
       }
 
-      if (size_class[i] == size_class[j]) {
+      if (master_class[i] == master_class[j]) {
         if (interconn_class[i] == interconn_class[j]) {
           debugPrint(logger_,
                      MPL,
@@ -2060,6 +2061,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
+  const int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2079,18 +2081,7 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo;
-      if (macro_to_halo_.contains(inst)) {
-        halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
-        const HardMacro::Halo inst_halo(inst->getHalo());
-        halo = inst_halo;
-        if (!inst->getHalo()->isSoft()) {
-          halo = inst_halo.floorTo(base_halo_);
-        }
-      } else {
-        halo = base_halo_;
-      }
+      HardMacro::Halo halo = buildMacroHalo(inst, minimum_spacing);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
@@ -2158,6 +2149,141 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
     }
   }
   return number_of_ios;
+}
+
+HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
+                                                 int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  if (inst->getHalo() != nullptr) {
+    const HardMacro::Halo inst_halo(inst->getHalo());
+    halo = halo.flooredToHalo(inst_halo);
+  } else if (pin_aware_channels_) {
+    halo = buildPinAwareHalo(inst, minimum_spacing);
+  }
+
+  // Adjust halo orientation for fixed macros here, since those
+  // are skipped during orientation improve and thus never properly adjusted
+  if (inst->getPlacementStatus().isFixed()) {
+    auto orient = inst->getOrient();
+    if (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180) {
+      std::swap(halo.bottom, halo.top);
+    }
+    if (orient == odb::dbOrientType::MY || orient == odb::dbOrientType::R180) {
+      std::swap(halo.left, halo.right);
+    }
+  }
+
+  return halo;
+}
+
+HardMacro::Halo ClusteringEngine::buildPinAwareHalo(odb::dbInst* inst,
+                                                    int minimum_spacing) const
+{
+  HardMacro::Halo halo(minimum_spacing);
+  halo = halo.flooredToChannel(min_channel_);
+
+  HardMacro::Halo min_halo(minimum_spacing);
+
+  odb::dbMaster* master = inst->getMaster();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::Rect pin_rect = box->getBox();
+
+        std::vector<std::pair<int, Boundary>> dist_to_boundary{
+            {pin_rect.xMin(), Boundary::L},
+            {pin_rect.yMin(), Boundary::B},
+            {master->getWidth() - pin_rect.xMax(), Boundary::R},
+            {master->getHeight() - pin_rect.yMax(), Boundary::T}};
+
+        std::ranges::sort(dist_to_boundary);
+
+        Boundary closest = dist_to_boundary[0].second;
+
+        auto& candidate = dist_to_boundary[0];
+        auto& second_candidate = dist_to_boundary[1];
+
+        // When a pin is equally distant from two or more edges (i.e. in the
+        // corner) the pin's layer direction is used to choose between
+        // candidates
+        if (isEquidistantDifferentDirections(candidate, second_candidate)) {
+          auto direction
+              = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+          if (direction == odb::dbTechLayerDir::VERTICAL) {
+            closest = isVertical(candidate.second) ? second_candidate.second
+                                                   : candidate.second;
+          } else {
+            closest = isVertical(candidate.second) ? candidate.second
+                                                   : second_candidate.second;
+          }
+        }
+
+        switch (closest) {
+          case Boundary::B:
+            min_halo.bottom = halo.bottom;
+            break;
+          case Boundary::L:
+            min_halo.left = halo.left;
+            break;
+          case Boundary::T:
+            min_halo.top = halo.top;
+            break;
+          case Boundary::R:
+            min_halo.right = halo.right;
+            break;
+        }
+      }
+    }
+  }
+
+  return min_halo;
+}
+
+int ClusteringEngine::getMinimumSpacing() const
+{
+  int spacing = 0;
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      odb::dbMaster* master = inst->getMaster();
+
+      for (odb::dbBox* obs : master->getObstructions()) {
+        if (auto layer = obs->getTechLayer()) {
+          spacing = std::max(spacing, layer->getSpacing());
+        }
+      }
+
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* geom : mpin->getGeometry()) {
+            if (auto layer = geom->getTechLayer()) {
+              spacing = std::max(spacing, layer->getSpacing());
+            }
+          }
+        }
+      }
+    }
+  }
+  return spacing;
+}
+
+bool ClusteringEngine::isEquidistantDifferentDirections(
+    std::pair<int, Boundary> candidate,
+    std::pair<int, Boundary> second_candidate) const
+{
+  return (candidate.first == second_candidate.first)
+         && ((isVertical(candidate.second)
+              && !isVertical(second_candidate.second))
+             || (!isVertical(candidate.second)
+                 && isVertical(second_candidate.second)));
 }
 
 ///////////////////////////////////////////////

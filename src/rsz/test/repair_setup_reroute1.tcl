@@ -40,7 +40,7 @@ estimate_parasitics -global_routing
 report_worst_slack -max
 report_tns -digits 3
 
-repair_timing -setup -sequence "reroute" -repair_tns 10
+repair_timing -phases "LEGACY" -setup -sequence "reroute" -repair_tns 10
 
 report_worst_slack -max
 report_tns -digits 3

@@ -29,6 +29,7 @@
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMPin.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
@@ -602,6 +603,11 @@ void io::Parser::getSBoxCoords(odb::dbSBox* box,
 
 void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 {
+  // Mirror the watermark property for both imported and reused nets so the
+  // maze router sees tag changes made after pin access, including removals.
+  auto* wm_prop = odb::dbBoolProperty::find(net, "watermark");
+  netIn->setIsWatermark(wm_prop != nullptr && wm_prop->getValue());
+
   for (auto term : net->getBTerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
       logger_->error(DRT,
@@ -1053,6 +1059,7 @@ frNet* io::Parser::addNet(odb::dbNet* db_net)
   }
   net_in->setHasJumpers(has_jumpers);
   net_in->setIsConnectedByAbutment(is_abuted);
+  net_in->setAutoTaperEnabled(db_net->isAutoTaperEnabled());
   updateNetRouting(net_in.get(), db_net);
   net_in->setType(db_net->getSigType());
   frNet* raw_net_in = net_in.get();
@@ -1344,6 +1351,61 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
   }
 }
 
+void io::Parser::setMarkers(odb::dbBlock* block)
+{
+  static constexpr const char* kDrcMarkerCategory = "DRC";
+  odb::dbMarkerCategory* drc_category
+      = block->findMarkerCategory(kDrcMarkerCategory);
+  if (drc_category == nullptr) {
+    return;
+  }
+  int num_markers = 0;
+  for (auto db_marker : drc_category->getAllMarkers()) {
+    odb::dbTechLayer* db_layer = db_marker->getTechLayer();
+    if (db_layer == nullptr) {
+      continue;
+    }
+    frLayer* layer = getTech()->getLayer(db_layer->getName());
+    if (layer == nullptr) {
+      continue;
+    }
+    // Use the layer recheck constraint so the detailed router re-runs its own
+    // DRC engine over the marked region and reroutes it, instead of trusting
+    // the imported violation geometry directly. Cut layers have no recheck
+    // constraint, so fall back to their short constraint.
+    frConstraint* constraint = layer->getRecheckConstraint();
+    if (constraint == nullptr) {
+      constraint = layer->getShortConstraint();
+    }
+    if (constraint == nullptr) {
+      continue;
+    }
+    auto marker = std::make_unique<frMarker>();
+    marker->setBBox(db_marker->getBBox());
+    marker->setLayerNum(layer->getLayerNum());
+    marker->setConstraint(constraint);
+    for (auto src : db_marker->getSources()) {
+      if (src->getObjectType() != odb::dbNetObj) {
+        continue;
+      }
+      frNet* net
+          = getBlock()->findNet(static_cast<odb::dbNet*>(src)->getName());
+      if (net != nullptr) {
+        marker->addSrc(net);
+      }
+    }
+    getBlock()->addMarker(std::move(marker));
+    ++num_markers;
+  }
+  if (num_markers > 0 && router_cfg_->VERBOSE > 0) {
+    logger_->info(DRT,
+                  628,
+                  "Read {} marker(s) from the '{}' category in the database.",
+                  num_markers,
+                  kDrcMarkerCategory);
+  }
+}
+
 void io::Parser::readDesign(odb::dbDatabase* db)
 {
   if (getBlock() != nullptr) {
@@ -1376,6 +1438,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   setNets(block);
   getBlock()->setId(0);
   addFakeNets();
+  setMarkers(block);
 
   auto numLefVia = getTech()->vias_.size();
   if (router_cfg_->VERBOSE > 0) {
@@ -1688,8 +1751,64 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerAreaRules()) {
+    if (rule->getExceptMinWidth() != 0) {
+      logger_->warn(
+          DRT,
+          311,
+          "Unsupported branch EXCEPTMINWIDTH in PROPERTY LEF58_AREA for "
+          "layer {}, skipping rule.",
+          layer->getName());
+      continue;
+    }
+    if (rule->getExceptEdgeLength() != 0
+        || rule->getExceptEdgeLengths() != std::pair<int, int>(0, 0)) {
+      logger_->warn(
+          DRT,
+          312,
+          "Unsupported branch EXCEPTEDGELENGTH in PROPERTY LEF58_AREA for "
+          "layer {}, skipping rule.",
+          layer->getName());
+      continue;
+    }
+    if (rule->getExceptMinSize() != std::pair<int, int>(0, 0)) {
+      logger_->warn(
+          DRT,
+          313,
+          "Unsupported branch EXCEPTMINSIZE in PROPERTY LEF58_AREA for "
+          "layer {}, skipping rule.",
+          layer->getName());
+      continue;
+    }
+    if (rule->getExceptStep() != std::pair<int, int>(0, 0)) {
+      logger_->warn(DRT,
+                    314,
+                    "Unsupported branch EXCEPTSTEP in PROPERTY LEF58_AREA for "
+                    "layer {}, skipping rule.",
+                    layer->getName());
+      continue;
+    }
+    if (rule->getMask() != 0) {
+      logger_->warn(DRT,
+                    315,
+                    "Unsupported branch MASK in PROPERTY LEF58_AREA for "
+                    "layer {}, skipping rule.",
+                    layer->getName());
+      continue;
+    }
+    if (rule->getTrimLayer() != nullptr) {
+      logger_->warn(DRT,
+                    316,
+                    "Unsupported branch LAYER in PROPERTY LEF58_AREA for "
+                    "layer {}, skipping rule.",
+                    layer->getName());
+      continue;
+    }
     auto con = std::make_unique<frLef58AreaConstraint>(rule);
-    tmpLayer->addLef58AreaConstraint(con.get());
+    if (rule->getRectWidth() > 0) {
+      tmpLayer->addLef58AreaConstraintRectWidth(con.get());
+    } else {
+      tmpLayer->addLef58AreaConstraint(con.get());
+    }
     getTech()->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerTwoWiresForbiddenSpcRules()) {
@@ -1793,6 +1912,50 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingRules()) {
     switch (rule->getType()) {
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS: {
+        if (rule->isExactAligned()) {
+          logger_->warn(
+              DRT,
+              45,
+              "Unsupported branch EXACTALIGNED in LEF58_SPACING ADJACENTCUTS "
+              "for layer {}, skipping rule.",
+              layer->getName());
+          continue;
+        }
+        if (rule->isExceptSamePgnet()) {
+          logger_->warn(DRT,
+                        46,
+                        "Unsupported branch EXCEPTSAMEPGNET in LEF58_SPACING "
+                        "ADJACENTCUTS for layer {}, skipping rule.",
+                        layer->getName());
+          continue;
+        }
+        if (rule->isCutClassToAll()) {
+          logger_->warn(
+              DRT,
+              48,
+              "Unsupported branch TO ALL in LEF58_SPACING ADJACENTCUTS "
+              "for layer {}, skipping rule.",
+              layer->getName());
+          continue;
+        }
+        if (rule->isSideParallelOverlap()) {
+          logger_->warn(
+              DRT,
+              51,
+              "Unsupported branch SIDEPARALLELOVERLAP in LEF58_SPACING "
+              "ADJACENTCUTS for layer {}, skipping rule.",
+              layer->getName());
+          continue;
+        }
+        if (rule->isSameMask()) {
+          logger_->warn(
+              DRT,
+              52,
+              "Unsupported branch SAMEMASK in LEF58_SPACING ADJACENTCUTS "
+              "for layer {}, skipping rule.",
+              layer->getName());
+          continue;
+        }
         auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
@@ -1800,15 +1963,11 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         con->setSameMetal(rule->isSameMetal());
         con->setSameVia(rule->isSameVia());
         con->setAdjacentCuts(rule->getAdjacentCuts());
-        if (rule->isExactAligned()) {
-          con->setExactAlignedCut(rule->getNumCuts());
-        }
         if (rule->isTwoCutsValid()) {
           con->setTwoCuts(rule->getTwoCuts());
         }
         con->setSameCut(rule->isSameCut());
         con->setCutWithin(rule->getWithin());
-        con->setExceptSamePGNet(rule->isExceptSamePgnet());
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
           con->setCutClassName(className);
@@ -1818,11 +1977,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
           } else {
             continue;
           }
-          con->setToAll(rule->isCutClassToAll());
         }
         con->setNoPrl(rule->isNoPrl());
-        con->setSideParallelOverlap(rule->isSideParallelOverlap());
-        con->setSameMask(rule->isSameMask());
 
         tmpLayer->addLef58CutSpacingConstraint(con.get());
         getTech()->addUConstraint(std::move(con));
@@ -1843,6 +1999,97 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                         rule->getSecondLayer()->getName());
           continue;
         }
+        if (rule->isStack()) {
+          logger_->warn(DRT,
+                        54,
+                        "Unsupported branch STACK in LEF58_SPACING LAYER "
+                        "for layer {}, skipping rule.",
+                        layer->getName());
+          continue;
+        }
+        if (rule->isOrthogonalSpacingValid()) {
+          logger_->warn(
+              DRT,
+              55,
+              "Unsupported branch ORTHOGONALSPACING in LEF58_SPACING LAYER "
+              "for layer {}, skipping rule.",
+              layer->getName());
+          continue;
+        }
+        if (rule->getCutClass() != nullptr) {
+          if (rule->isShortEdgeOnly()) {
+            logger_->warn(
+                DRT,
+                56,
+                "Unsupported branch SHORTEDGEONLY in LEF58_SPACING LAYER "
+                "for layer {}, skipping rule.",
+                layer->getName());
+            continue;
+          }
+          if (rule->isConcaveCorner()) {
+            if (rule->isConcaveCornerWidth()) {
+              logger_->warn(DRT,
+                            57,
+                            "Unsupported branch WIDTH in LEF58_SPACING LAYER "
+                            "for layer {}, skipping rule.",
+                            layer->getName());
+              continue;
+            }
+            if (rule->isConcaveCornerParallel()) {
+              logger_->warn(
+                  DRT,
+                  58,
+                  "Unsupported branch PARALLEL in LEF58_SPACING LAYER "
+                  "for layer {}, skipping rule.",
+                  layer->getName());
+              continue;
+            }
+            if (rule->isConcaveCornerEdgeLength()) {
+              logger_->warn(
+                  DRT,
+                  59,
+                  "Unsupported branch EDGELENGTH in LEF58_SPACING LAYER "
+                  "for layer {}, skipping rule.",
+                  layer->getName());
+              continue;
+            }
+          }
+          if (rule->isExtensionValid()) {
+            logger_->warn(DRT,
+                          60,
+                          "Unsupported branch EXTENSION in LEF58_SPACING LAYER "
+                          "for layer {}, skipping rule.",
+                          layer->getName());
+            continue;
+          }
+          if (rule->isAboveWidthValid()) {
+            logger_->warn(
+                DRT,
+                61,
+                "Unsupported branch ABOVEWIDTH in LEF58_SPACING LAYER "
+                "for layer {}, skipping rule.",
+                layer->getName());
+            continue;
+          }
+          if (rule->isMaskOverlap()) {
+            logger_->warn(
+                DRT,
+                62,
+                "Unsupported branch MASKOVERLAP in LEF58_SPACING LAYER "
+                "for layer {}, skipping rule.",
+                layer->getName());
+            continue;
+          }
+          if (rule->isWrongDirection()) {
+            logger_->warn(
+                DRT,
+                63,
+                "Unsupported branch WRONGDIRECTION in LEF58_SPACING LAYER "
+                "for layer {}, skipping rule.",
+                layer->getName());
+            continue;
+          }
+        }
         auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
@@ -1850,10 +2097,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
         con->setSameMetal(rule->isSameMetal());
         con->setSameVia(rule->isSameVia());
         con->setSecondLayerName(rule->getSecondLayer()->getName());
-        con->setStack(rule->isStack());
-        if (rule->isOrthogonalSpacingValid()) {
-          con->setOrthogonalSpacing(rule->getOrthogonalSpacing());
-        }
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
           con->setCutClassName(className);
@@ -1863,41 +2106,16 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
           } else {
             continue;
           }
-          con->setShortEdgeOnly(rule->isShortEdgeOnly());
           if (rule->isPrlValid()) {
             con->setPrl(rule->getPrl());
           }
           con->setConcaveCorner(rule->isConcaveCorner());
-          if (rule->isConcaveCornerWidth()) {
-            con->setWidth(rule->getWidth());
-            con->setEnclosure(rule->getEnclosure());
-            con->setEdgeLength(rule->getEdgeLength());
-          } else if (rule->isConcaveCornerParallel()) {
-            con->setParLength(rule->getParLength());
-            con->setParWithin(rule->getParWithin());
-            con->setEnclosure(rule->getParEnclosure());
-          } else if (rule->isConcaveCornerEdgeLength()) {
-            con->setEdgeLength(rule->getEdgeLength());
-            con->setEdgeEnclosure(rule->getEdgeEnclosure());
-            con->setAdjEnclosure(rule->getAdjEnclosure());
-          }
-          if (rule->isExtensionValid()) {
-            con->setExtension(rule->getExtension());
-          }
           if (rule->isNonEolConvexCorner()) {
             con->setEolWidth(rule->getEolWidth());
             if (rule->isMinLengthValid()) {
               con->setMinLength(rule->getMinLength());
             }
           }
-          if (rule->isAboveWidthValid()) {
-            rule->setWidth(rule->getAboveWidth());
-            if (rule->isAboveWidthEnclosureValid()) {
-              rule->setEnclosure(rule->getAboveEnclosure());
-            }
-          }
-          con->setMaskOverlap(rule->isMaskOverlap());
-          con->setWrongDirection(rule->isWrongDirection());
         }
         tmpLayer->addLef58CutSpacingConstraint(con.get());
         getTech()->addUConstraint(std::move(con));
@@ -2463,6 +2681,10 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     if (!rule->getMinimumCuts(numCuts, width)) {
       continue;
     }
+    // Every via has at least one cut, so a single-cut rule can't be violated.
+    if (numCuts <= 1) {
+      continue;
+    }
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
@@ -2844,7 +3066,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
             }
           }
         }
-        if (obs->getDesignRuleWidth() == -1) {
+        if (obs->getDesignRuleWidth() == -1 && obs->getMinSpacing() == -1) {
           gtl::rectangle_data<frCoord> rect(xl, yl, xh, yh);
           using gtl::operators::operator+=;
           layerPolys[layerNum] += rect;
@@ -2852,6 +3074,7 @@ void io::Parser::setMasters(odb::dbDatabase* db)
           auto blkIn = std::make_unique<frBlockage>();
           blkIn->setId(num_blockages++);
           blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
+          blkIn->setMinSpacing(obs->getMinSpacing());
           auto pinIn = std::make_unique<frBPin>();
           pinIn->setId(0);
           // pinFig
@@ -3165,17 +3388,19 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   }
 
   const int max_routing_layer = block->getMaxRoutingLayer();
+  frLayer* top_layer = nullptr;
   if (max_routing_layer > 0) {
     odb::dbTechLayer* tech_layer = tech->findRoutingLayer(max_routing_layer);
-    frLayer* layer = fr_tech->getLayer(tech_layer->getName());
-    if (layer) {
-      router_cfg_->TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
+    top_layer = fr_tech->getLayer(tech_layer->getName());
+    if (!top_layer) {
       logger_->warn(utl::DRT,
                     273,
                     "topRoutingLayer {} not found.",
                     tech_layer->getName());
     }
+  }
+  if (top_layer) {
+    router_cfg_->TOP_ROUTING_LAYER = top_layer->getLayerNum();
   } else {
     for (frLayerNum layer_num = fr_tech->getTopLayerNum();
          layer_num >= fr_tech->getBottomLayerNum();
@@ -3752,7 +3977,6 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
         }
       }
       _wire_encoder.end();
-      net->setWireOrdered(false);
     }
   }
 }

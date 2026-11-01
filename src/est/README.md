@@ -15,6 +15,9 @@ The `set_wire_rc` command sets the resistance and capacitance used to estimate
 delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
+In 3D designs the values can be targeted at a technology with the `-tech` and
+`-redistribution_layer` selectors; without a selector the values are the
+defaults used by chips whose technology has no specific values.
 
 ```
 # Either run 
@@ -31,6 +34,8 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layers layers_list]
+    [-tech tech]
+    [-redistribution_layer]
 
 or 
 set_wire_rc
@@ -38,6 +43,8 @@ set_wire_rc
     [-h_capacitance cap]
     [-v_resistance res]
     [-v_capacitance cap]
+    [-tech tech]
+    [-redistribution_layer]
 
 or
 set_wire_rc 
@@ -46,16 +53,20 @@ set_wire_rc
     [-data]
     [-corner corner]
     [-layer layer_name]
+    [-tech tech]
+    [-redistribution_layer]
 or 
 set_wire_rc
     [-resistance res]
     [-capacitance cap]
+    [-tech tech]
+    [-redistribution_layer]
 ```
 
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ------------- | ----------------------------------------------- |
 | `-clock` | Enable setting of RC for clock nets. |
 | `-signal` | Enable setting of RC for signal nets. |
 | `-layers` | Use the LEF technology resistance and area/edge capacitance values for the layers. The values for each layers will be used for wires with the prefered layer direction, if 2 or more layers have the same prefered direction the avarege value is used for wires with that direction. This is used for a default width wire on the layer. |
@@ -66,6 +77,13 @@ set_wire_rc
 | `-h_capacitance` | Capacitance per unit length for horizontal wires, units are from the first Liberty file read. |
 | `-v_resistance` | Resistance per unit length for vertical wires, units are from the first Liberty file read. |
 | `-v_capacitance` | Capacitance per unit length for vertical wires, units are from the first Liberty file read. |
+| `-tech` | Apply the values to the named technology (3D designs). Layers given with `-layer`/`-layers` are looked up in this technology. |
+| `-redistribution_layer` | Apply the values to the technology of every RDL chip in the design. Warns and does nothing when the design has none, so shared scripts work across designs. `-layer`/`-layers` require the RDL chips to share one technology; with mixed RDL technologies set each one separately with `-tech`. |
+
+Without `-tech` or `-redistribution_layer` the values are the defaults used by
+every chip whose technology has no specific values. Signal values, clock values
+and routing layers fall back to the defaults independently, so a technology with
+only specific signal values still uses the default clock values.
 
 ### Set Layer RC
 
@@ -85,7 +103,7 @@ set_layer_rc
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
+| ----------- | ------------------------------------------------- |
 | `-layer` | Set layer name to modify. Note that the layer must be a routing layer. |
 | `-via` | Select via layer name. Note that via resistance is per cut/via, not area-based. |
 | `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
@@ -128,25 +146,34 @@ Standard Parasitic Exchange Format.
 
 ```tcl
 estimate_parasitics
-    -placement|-global_routing
+    [-placement|-global_routing]
     [-spef_file spef_file]
 ```
+
+Without `-placement` or `-global_routing`, `estimate_parasitics` estimates
+from what the design has: from the global routes when there are any, else
+from placement. It does nothing once `read_spef` has read parasitics, until
+`estimate_parasitics -placement` or `-global_routing` replaces them. An
+unplaced design, global routes that are congested and were not accepted with
+`global_route -allow_congestion`, and a placement estimate without wire RC
+are errors.
 
 #### Options
 
 | Switch Name | Description |
-| ----- | ----- |
-| `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| -------------- | ---------------------------------------------- |
+| `-placement` or `-global_routing` | Optional. Parasitics are estimated from placement or from global routing. Without either, the design decides. |
 | `-spef_file` | Optional. File name to write SPEF files. If more than one corner is available for the design, the files will be written as filename_corner.spef. |
 
 
 ## Useful Developer Commands
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/EstimateParasitics.cpp) or the [swig file](./src/EstimateParasitics.i).
 
 | Command Name | Description |
 | ----- | ----- |
 | `check_parasitics` | Check if the `estimate_parasitics` command has been called. |
+| `parasitics_source` | Where the parasitics came from: `spef`, `placement`, `global_routing` or `none`. |
 | `check_corner_wire_caps` | Check wire capacitance for corner. |
 | `dblayer_wire_rc` | Get layer RC values. |
 | `set_dblayer_wire_rc` | Set layer RC values. |
@@ -163,18 +190,13 @@ Examples scripts demonstrating how to run parasitics estimation on a sample desi
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/est/...
 ```
 
 ## Limitations
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
-about this tool.
 
 ## License
 

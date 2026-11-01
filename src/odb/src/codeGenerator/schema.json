@@ -227,6 +227,24 @@
       "orderReversed": "true",
       "sequential": 0,
       "includes": ["dbUnfoldedChipBumpInst.h", "dbUnfoldedChipRegionInst.h"]
+    },
+    {
+      "name": "dbChipNetCapNodeItr",
+      "parentObject": "dbChipCapNode",
+      "tableName": "chip_cap_node_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipCapNode.h", "dbChipNet.h"]
+    },
+    {
+      "name": "dbChipNetRSegItr",
+      "parentObject": "dbChipRSeg",
+      "tableName": "chip_r_seg_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0,
+      "includes": ["dbChipRSeg.h", "dbChipNet.h"]
     }
   ],
   "relations":[
@@ -481,9 +499,23 @@
     {
       "parent":"dbChip",
       "child":"dbChipRegion",
-      "type":"1_n", 
+      "type":"1_n",
       "schema":"kSchemaChipRegion",
       "tbl_name":"chip_region_tbl_"
+    },
+    {
+      "parent":"dbChip",
+      "child":"dbChipCapNode",
+      "type":"1_n",
+      "schema":"kSchemaChipParasitics",
+      "tbl_name":"chip_cap_node_tbl_"
+    },
+    {
+      "parent":"dbChip",
+      "child":"dbChipRSeg",
+      "type":"1_n",
+      "schema":"kSchemaChipParasitics",
+      "tbl_name":"chip_r_seg_tbl_"
     },
     {
       "parent":"dbChip",

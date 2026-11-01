@@ -6,19 +6,33 @@
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
+
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
 
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
     "ispd18_sample",
     "ispd18_sample_incr",
+    "ispd18_sample_reroute",
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
+    "ndr_no_auto_taper",
     "obstruction",
+    "pa_above_top_layer",
+    "pa_single_pin",
+    "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
@@ -36,6 +50,7 @@ ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 BIG_TESTS = [
     "ndr_vias1",
     "ndr_vias2",
+    "ndr_no_auto_taper",
 ]
 
 PY_TESTS = [
@@ -109,7 +124,9 @@ filegroup(
         ] if test_name in [
             "ispd18_sample_incr",
             "single_step",
-        ] else []),
+        ] else []) + ([
+            "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
+        ] if test_name == "pa_single_pin" else []),
     )
     for test_name in ALL_TESTS
 ]
@@ -142,6 +159,7 @@ py_library(
         name = test_name,
         srcs = [test_name + ".py"],
         data = [":" + test_name + "_resources"],
+        tags = ["py"],
         deps = [
             ":helpers",
             "//python/openroad:openroadpy",
@@ -162,14 +180,12 @@ cc_test(
         "fixture.h",
         "gcTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",  # build_cleaner: keep for private headers
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -189,14 +205,12 @@ cc_test(
         "fixture.h",
         "taTest.cpp",
     ],
-    features = ["-layering_check"],  # TODO: acceses private headers
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -208,7 +222,10 @@ py_test(
     name = "drt_man_tcl_check",
     srcs = ["drt_man_tcl_check.py"],
     data = ["//src/drt:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
@@ -221,19 +238,25 @@ doc_check_test(
     visibility = ["//visibility:public"],
 )
 
-regression_rule_test(
-    name = "aes_nangate45-py_test",
-    bazel_test_sh = "//test:bazel_test.sh",
+regression_test(
+    name = "aes_nangate45",
+    timeout = "long",
     check_log = False,
     data = [
         "aes_nangate45.route_guide",
         "aes_nangate45_preroute.def",
         ":regression_resources",
     ],
-    openroad = "//:openroad",
-    regression_test = "//test:regression_test.sh",
     tags = ["manual"],
-    test_file = "aes_nangate45.py",
-    test_name = "aes_nangate45",
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "WatermarkCostTest",
+    srcs = ["WatermarkCostTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

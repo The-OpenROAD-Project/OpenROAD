@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -32,14 +33,15 @@ class EstimateParasitics;
 namespace dpl {
 class Opendp;
 }
-namespace gui {
+namespace web {
 class HeatMapSourceRegistration;
 using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
-}  // namespace gui
+}  // namespace web
 
 namespace psm {
 class IRDropDataSource;
 class IRSolver;
+class IRNetwork;
 
 enum class GeneratedSourceType
 {
@@ -77,6 +79,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   ~PDNSim() override;
 
   void setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage);
+  void setInterchipResistance(sta::Scene* scene, double resistance);
   void setInstPower(odb::dbInst* inst, sta::Scene* corner, float power);
   void analyzePowerGrid(odb::dbNet* net,
                         sta::Scene* corner,
@@ -118,6 +121,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   void inDbSWireAddSBox(odb::dbSBox*) override;
   void inDbSWireRemoveSBox(odb::dbSBox*) override;
   void inDbSWirePostDestroySBoxes(odb::dbSWire*) override;
+  void inDbFillCreate(odb::dbFill*) override;
 
   void getIRDropForLayer(odb::dbNet* net,
                          odb::dbTechLayer* layer,
@@ -134,6 +138,14 @@ class PDNSim : public odb::dbBlockCallBackObj
   // Functions of decap cells
   odb::dbTechLayer* getLowestLayer(odb::dbNet* db_net);
   odb::dbNet* findPowerNet(const char* net_name);
+  odb::dbChipNet* findChipNet(odb::dbNet* local_net) const;
+  std::unique_ptr<IRSolver> makeAssemblySolver(odb::dbChipNet* net,
+                                               sta::Scene* scene);
+
+  void checkAssemblyConnectivity(IRNetwork& network,
+                                 bool floorplanning,
+                                 bool require_bterm,
+                                 const std::string& error_file);
 
   IRSolver* getIRSolver(odb::dbNet* net, bool floorplanning);
 
@@ -143,13 +155,15 @@ class PDNSim : public odb::dbBlockCallBackObj
   dpl::Opendp* opendp_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
-  gui::HeatMapSourceHandle heatmap_source_;
+  web::HeatMapSourceHandle heatmap_source_;
 
   bool debug_gui_enabled_ = false;
 
   GeneratedSourceSettings generated_source_settings_;
-
+  std::map<sta::Scene*, double> interchip_resistances_;
   odb::PtrMap<odb::dbNet, std::unique_ptr<IRSolver>> solvers_;
+  odb::PtrMap<odb::dbChipNet, std::map<sta::Scene*, std::unique_ptr<IRSolver>>>
+      assembly_solvers_;
   odb::PtrMap<odb::dbNet, std::map<sta::Scene*, double>> user_voltages_;
   odb::PtrMap<odb::dbInst, std::map<sta::Scene*, float>> user_powers_;
 

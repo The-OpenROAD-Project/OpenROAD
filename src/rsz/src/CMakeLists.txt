@@ -3,6 +3,8 @@
 
 include("openroad")
 
+find_package(ortools REQUIRED)
+
 swig_lib(NAME      rsz
          NAMESPACE rsz
          I_FILE    Resizer.i
@@ -12,47 +14,66 @@ swig_lib(NAME      rsz
 
 add_library(rsz_lib
     BufferedNet.cc
+    PathGroupFilter.cc
     PreChecks.cc
     RecoverPower.cc
     RepairDesign.cc
     RepairHold.cc
     Rebuffer.cc
-    policy/SetupLegacyMtPolicy.cc
     policy/SetupLegacyBase.cc
     MoveCommitter.cc
+    RepairSetupProfiler.cc
+    RepairSetupMoveSampler.cc
+    RepairSetupMoveSnapshot.cc
+    RepairSetupAnalysisReport.cc
+    RepairSetupAnalysisTarget.cc
     MoveTracker.cc
     policy/OptimizationPolicy.cc
     policy/OptimizationPolicy.hh
+    policy/ProgressReporter.cc
     Optimizer.cc
     OptimizerTypes.cc
-    policy/MeasuredVtSwapPolicy.cc
+    OptimizationPolicyConfig.cc
     DelayEstimator.cc
+    DelayEstimatorBufferTree.cc
     DelayEstimatorReporter.cc
+    SequentialTimingEstimator.cc
+    LRSubproblem.cc
     policy/SetupCritVtSwapPolicy.cc
     policy/SetupDirectionalPolicy.cc
     policy/SetupLastGaspPolicy.cc
     policy/SetupLegacyPolicy.cc
     policy/SetupTnsPolicy.cc
     policy/SetupWnsPolicy.cc
-    policy/SetupMt1Policy.cc
+    policy/BottleneckAnalysis.cc
+    policy/BatchSelector.cc
+    policy/ParallelEvalState.cc
+    policy/SetupParallelEvalPolicy.cc
     policy/SetupReroutePolicy.cc
+    policy/GlobalSizingPolicy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
     RepairTargetCollector.cc
+    SkewBudget.cc
 
     move/BufferCandidate.cc
     move/BufferGenerator.cc
+    move/BufferToInvertersCandidate.cc
+    move/BufferToInvertersGenerator.cc
     move/CloneCandidate.cc
     move/CloneGenerator.cc
-    move/MeasuredVtSwapCandidate.cc
-    move/MeasuredVtSwapGenerator.cc
     move/MoveCandidate.cc
     move/MoveGenerator.cc
+    move/RebufferMtCandidate.cc
+    move/RebufferMtGenerator.cc
+    move/RebufferPlannerPool.cc
     move/RerouteCandidate.cc
     move/RerouteGenerator.cc
     move/SizeDownFanoutCandidate.cc
     move/SizeDownFanoutGenerator.cc
+    move/SizeDownFanoutMtCandidate.cc
+    move/SizeDownFanoutMtGenerator.cc
     move/SizeUpCandidate.cc
     move/SizeUpGenerator.cc
     move/SizeUpMatchCandidate.cc
@@ -61,10 +82,16 @@ add_library(rsz_lib
     move/SizeUpMtGenerator.cc
     move/SplitLoadCandidate.cc
     move/SplitLoadGenerator.cc
+    move/SplitLoadMtCandidate.cc
+    move/SplitLoadMtGenerator.cc
     move/SwapPinsCandidate.cc
     move/SwapPinsGenerator.cc
+    move/SwapPinsMtCandidate.cc
+    move/SwapPinsMtGenerator.cc
     move/UnbufferCandidate.cc
     move/UnbufferGenerator.cc
+    move/UnbufferMtCandidate.cc
+    move/UnbufferMtGenerator.cc
     move/VtSwapCandidate.cc
     move/VtSwapGenerator.cc
     move/VtSwapMtCandidate.cc
@@ -99,6 +126,7 @@ target_include_directories(rsz_lib
 
 target_link_libraries(rsz_lib
   PUBLIC
+    absl::flat_hash_map
     est_lib
     stt_lib
     odb
@@ -106,6 +134,7 @@ target_link_libraries(rsz_lib
     dbSta_lib
     grt_lib
     utl_lib
+    ortools::ortools
 )
 
 target_link_libraries(rsz
@@ -117,7 +146,7 @@ target_link_libraries(rsz
     OpenSTA
     dbSta
     grt
-    gui
+    gui_core
     utl_lib
 )
 

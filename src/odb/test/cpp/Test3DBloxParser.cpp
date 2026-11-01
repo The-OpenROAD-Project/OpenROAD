@@ -8,14 +8,14 @@
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "tst/fixture.h"
+#include "tst/db_fixture.h"
 
 namespace odb {
 namespace {
 
 static const std::string prefix("_main/src/odb/test/");
 
-class DbvFixture : public tst::Fixture
+class DbvFixture : public tst::DbFixture
 {
  protected:
   DbvFixture()
@@ -441,7 +441,7 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
 // Path Assertion Parser Tests
 // ---------------------------------------------------------------------------
 
-class PathAssertionFixture : public tst::Fixture
+class PathAssertionFixture : public tst::DbFixture
 {
  protected:
   ThreeDBlox parser_{&logger_, db_.get()};

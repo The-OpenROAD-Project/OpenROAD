@@ -168,7 +168,7 @@ std::optional<bool> orientFlipsY(const odb::dbOrientType& orient)
 
 }  // namespace
 
-void Opendp::importDb()
+void Opendp::importDb(const bool fixed_only)
 {
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
@@ -184,9 +184,25 @@ void Opendp::importDb()
   importClear();
   grid_->examineRows(block_);
   initPlacementDRC();
-  createNetwork();
+  createNetwork(fixed_only);
   createArchitecture();
   setUpPlacementGroups();
+
+  if (logger_->debugCheck(utl::DPL, "hybrid", 1)) {
+    std::map<int, int> height_counts;
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() != Node::CELL) {
+        continue;
+      }
+      height_counts[node->getHeight().v]++;
+    }
+    logger_->report("Cell height distribution ({} unique micron height(s)):",
+                    height_counts.size());
+    for (const auto& [height, count] : height_counts) {
+      logger_->report(
+          "  height {:.3f} um: {} cells", block_->dbuToMicrons(height), count);
+    }
+  }
 }
 
 void Opendp::importClear()
@@ -241,7 +257,7 @@ Rect Opendp::getBbox(odb::dbInst* inst)
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
-void Opendp::createNetwork()
+void Opendp::createNetwork(const bool fixed_only)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   network_->setCore(core_);
@@ -262,45 +278,94 @@ void Opendp::createNetwork()
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "cell_init",
+                 2,
+                 "Skipping instance {} with master {} of type {} (not core "
+                 "auto placeable)",
+                 inst->getName(),
+                 inst->getMaster()->getName(),
+                 inst->getMaster()->getType().getString());
       continue;
     }
     if (inst->isFixed()
         && !bboxIntersectsOuterShell(inst->getBBox()->getBox(),
                                      row_outer_shell_rects)) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "cell_init",
+                 2,
+                 "Skipping fixed instance {} with master {} of type {} "
+                 "(outside outer shell)",
+                 inst->getName(),
+                 inst->getMaster()->getName(),
+                 inst->getMaster()->getType().getString());
       continue;
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
+    // Fixed-only mode keeps fixed instances and macros; a placed but unfixed
+    // macro is forced fixed below and must still be checked.  The master of
+    // a skipped movable cell is still registered so that row power inference
+    // sees the CORE masters.
+    if (fixed_only && !inst->isFixed() && !inst->isBlock()) {
+      continue;
+    }
     network_->addNode(inst);
+    // A placed-but-not-fixed macro must be treated as an obstacle, not a
+    // movable cell.  Force it fixed here so both detailed_placement and
+    // improve_placement see it as a blockage instead of trying to legalize it.
+    Node* node = network_->getNode(inst);
+    if (node->isBlock() && !node->isFixed()) {
+      if (!inst->isPlaced()) {
+        logger_->error(utl::DPL,
+                       405,
+                       "Macro {} is neither placed nor fixed. Place and fix "
+                       "macros before detailed placement.",
+                       inst->getName());
+      }
+      logger_->warn(
+          utl::DPL,
+          404,
+          "Macro {} is placed but not fixed; treating it as fixed during "
+          "legalization. Mark it FIXED to silence this warning.",
+          inst->getName());
+      node->setFixed(true);
+    }
     if (isFiller(inst)) {
       have_fillers_ = true;
     }
   }
-  for (odb::dbBTerm* bterm : block->getBTerms()) {
-    // Skip supply nets.
-    odb::dbNet* net = bterm->getNet();
-    if (!net || net->getSigType().isSupply()) {
-      continue;
-    }
-    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
-      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
-      // skip unplaced terminals
-      continue;
-    }
-    if (bterm->getBBox().isInverted()) {
-      logger_->error(
-          utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());
+  // Connectivity is not needed to check fixed instances.  Skipping it also
+  // avoids warnings about IO pins that are not placed yet at floorplan.
+  if (!fixed_only) {
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      // Skip supply nets.
+      odb::dbNet* net = bterm->getNet();
+      if (!net || net->getSigType().isSupply()) {
+        continue;
+      }
+      if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+        logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
+        // skip unplaced terminals
+        continue;
+      }
+      if (bterm->getBBox().isInverted()) {
+        logger_->error(
+            utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());
+      }
+
+      network_->addNode(bterm);
     }
 
-    network_->addNode(bterm);
-  }
-
-  auto nets = block->getNets();
-  for (odb::dbNet* net : nets) {
-    // Skip supply nets.
-    if (net->getSigType().isSupply()) {
-      continue;
+    auto nets = block->getNets();
+    for (odb::dbNet* net : nets) {
+      // Skip supply nets.
+      if (net->getSigType().isSupply()) {
+        continue;
+      }
+      network_->addEdge(net);
     }
-    network_->addEdge(net);
   }
 
   for (odb::dbBlockage* blockage : block->getBlockages()) {

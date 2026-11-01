@@ -3,10 +3,92 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
 
 package(features = ["layering_check"])
+
+# True under --stamp (e.g. --config=release), for rules that read the
+# workspace status only when stamping.
+config_setting(
+    name = "stamp",
+    values = {"stamp": "1"},
+    visibility = ["//visibility:public"],
+)
+
+# The Bazel replacement for the CMake-generated ord/Version.hh. The version
+# is written into the linked binary by stamped_binary.bzl.
+cc_library(
+    name = "openroad_version",
+    srcs = ["version/version.cc"],
+    hdrs = ["version/ord/Version.hh"],
+    includes = ["version"],
+    visibility = ["//:__pkg__"],
+)
+
+# Writes the version into a linked binary for stamped_binary.bzl.
+py_binary(
+    name = "stamp_version",
+    srcs = ["stamp_version.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "stamp_version_test",
+    size = "small",
+    srcs = [
+        "stamp_version.py",
+        "stamp_version_test.py",
+    ],
+    imports = ["."],
+)
+
+# Stamps the real linked binary, so the slot layout in version/version.cc and
+# stamp_version.py stay in sync. Runs without --stamp.
+py_test(
+    name = "stamp_version_binary_test",
+    size = "small",
+    srcs = ["stamp_version_binary_test.py"],
+    args = [
+        "$(rootpath :stamp_version)",
+        "$(rootpath //:openroad_unstamped)",
+    ] + select({
+        "@platforms//os:macos": ["--codesign"],
+        "//conditions:default": [],
+    }),
+    data = [
+        ":stamp_version",
+        "//:openroad_unstamped",
+    ],
+)
+
+config_setting(
+    name = "_macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+# pandoc for //docs:man_pages. man_pages.bzl takes it with cfg = "exec", so
+# this select() matches the platform that runs pandoc. The wheel's macOS
+# arm64 pandoc is an x86_64 binary; see pandoc_macos_arm64 in MODULE.bazel.
+filegroup(
+    name = "pandoc",
+    srcs = select({
+        ":_macos_aarch64": ["@pandoc_macos_arm64//:pandoc"],
+        "//conditions:default": ["@openroad-pip//pypandoc_binary:extracted_whl_files"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# Driver script that orchestrates man page generation inside Bazel's sandbox.
+py_binary(
+    name = "manpages_impl",
+    srcs = ["manpages_impl.py"],
+    visibility = ["//visibility:public"],
+)
 
 exports_files(
     [
@@ -14,15 +96,21 @@ exports_files(
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
         "fix_lint.sh",
+        "git_ls_files.sh",
         "install.sh",
+        "py_fmt_test.sh",
+        "py_tidy.sh",
         "tcl_fmt_test.sh",
         "tcl_lint_test.sh",
         "tcl_tidy.sh",
+        "yaml_fmt_test.sh",
+        "yaml_tidy.sh",
     ],
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt binaries from pip — version pinned in requirements.in
+# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
@@ -35,11 +123,30 @@ py_console_script_binary(
     visibility = ["//visibility:public"],
 )
 
+py_console_script_binary(
+    name = "yamlfix",
+    pkg = "@openroad-pip//yamlfix",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "black",
+    pkg = "@openroad-black-pip//black",
+    visibility = ["//visibility:public"],
+)
+
 compile_pip_requirements(
     name = "requirements",
     src = "requirements.in",
     python_version = "3.13",
     requirements_txt = "requirements_lock_3_13.txt",
+)
+
+compile_pip_requirements(
+    name = "requirements_black",
+    src = "requirements_black.in",
+    python_version = "3.13",
+    requirements_txt = "requirements_black_lock_3_13.txt",
 )
 
 # Various tcl libraries that we want to embed into the binary.

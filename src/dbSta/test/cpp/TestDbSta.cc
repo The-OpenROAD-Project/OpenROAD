@@ -4,16 +4,22 @@
 #include <cassert>
 #include <cstdio>
 #include <string>
+#include <vector>
 
+#include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
 #include "sta/Graph.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PatternMatch.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
+#include "sta/TimingArc.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace sta {
@@ -27,6 +33,141 @@ class TestDbSta : public tst::IntegratedFixture
   {
   }
 };
+
+namespace {
+
+InstanceSeq findLiteralInstances(dbSdcNetwork* network, const std::string& path)
+{
+  PatternMatch pattern(path);
+  return network->findInstancesMatching(nullptr, &pattern);
+}
+
+class RemovalLookupObserver : public odb::dbBlockCallBackObj
+{
+ public:
+  explicit RemovalLookupObserver(dbSdcNetwork* network) : network_(network) {}
+
+  void inDbPostInstParentChange(odb::dbInst* inst) override
+  {
+    EXPECT_EQ(parent_changes, destroys);
+    ++parent_changes;
+    EXPECT_EQ(inst->getModule(), nullptr);
+    EXPECT_TRUE(inst->getITerms().empty());
+    EXPECT_TRUE(findLiteralInstances(network_, removed_path).empty());
+  }
+
+  void inDbInstDestroy(odb::dbInst*) override
+  {
+    ++destroys;
+    EXPECT_EQ(parent_changes, destroys);
+  }
+
+  std::string removed_path;
+  int parent_changes = 0;
+  int destroys = 0;
+
+ private:
+  dbSdcNetwork* network_;
+};
+
+}  // namespace
+
+TEST_F(TestDbSta, DeletionKeepsLiteralCacheIncremental)
+{
+  readVerilogAndSetup("TestDbSta_0.v");
+  auto* sdc_network = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
+  ASSERT_NE(sdc_network, nullptr);
+  odb::dbModule* child = odb::dbModule::create(block_, "cache_child");
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(
+      odb::dbModInst::create(block_->getTopModule(), child, R"(cache\/parent)"),
+      nullptr);
+  odb::dbMaster* master = db_->findMaster("BUF_X1");
+  ASSERT_NE(master, nullptr);
+
+  constexpr int count = 1024;
+  std::vector<odb::dbInst*> victims;
+  victims.reserve(count);
+  for (int i = 0; i < count; ++i) {
+    const std::string name = "victim_" + std::to_string(i);
+    odb::dbInst* inst
+        = odb::dbInst::create(block_, master, name.c_str(), false, child);
+    ASSERT_NE(inst, nullptr);
+    victims.push_back(inst);
+  }
+  odb::dbInst* survivor
+      = odb::dbInst::create(block_, master, "survivor", false, child);
+  ASSERT_NE(survivor, nullptr);
+  ASSERT_EQ(findLiteralInstances(sdc_network, "cache/parent/survivor").size(),
+            1);
+  sta_->ensureGraph();
+  const size_t initial_builds = sdc_network->sdcPathCacheBuildCount();
+  ASSERT_GT(initial_builds, 0);
+
+  // Registered after dbSta: inspect its cache before final destruction.
+  RemovalLookupObserver observer(sdc_network);
+  observer.addOwner(block_);
+  for (int i = 0; i < count; ++i) {
+    SCOPED_TRACE(i);
+    observer.removed_path = "cache/parent/victim_" + std::to_string(i);
+    odb::dbInst::destroy(victims[i]);
+    EXPECT_TRUE(
+        findLiteralInstances(sdc_network, observer.removed_path).empty());
+    PatternMatch pin_pattern("cache/parent/survivor/A");
+    const PinSeq pins = sdc_network->findPinsMatching(nullptr, &pin_pattern);
+    ASSERT_EQ(pins.size(), 1);
+    EXPECT_EQ(pins.front(), db_network_->dbToSta(survivor->findITerm("A")));
+  }
+  EXPECT_EQ(observer.parent_changes, count);
+  EXPECT_EQ(observer.destroys, count);
+  const size_t final_builds = sdc_network->sdcPathCacheBuildCount();
+  RecordProperty("deleted_instances", count);
+  RecordProperty("initial_cache_builds", std::to_string(initial_builds));
+  RecordProperty("final_cache_builds", std::to_string(final_builds));
+  EXPECT_EQ(final_builds, initial_builds);
+
+  odb::dbInst* replacement
+      = odb::dbInst::create(block_, master, "victim_0", false, child);
+  ASSERT_NE(replacement, nullptr);
+  const InstanceSeq matches
+      = findLiteralInstances(sdc_network, "cache/parent/victim_0");
+  ASSERT_EQ(matches.size(), 1);
+  EXPECT_EQ(matches.front(), db_network_->dbToSta(replacement));
+}
+
+TEST_F(TestDbSta, PinlessReparentUpdatesLiteralCache)
+{
+  readVerilogAndSetup("TestDbSta_0.v");
+  auto* sdc_network = dynamic_cast<dbSdcNetwork*>(sta_->sdcNetwork());
+  ASSERT_NE(sdc_network, nullptr);
+  odb::dbLib* pinless_lib
+      = odb::dbLib::create(db_.get(), "pinless_lib", block_->getTech());
+  ASSERT_NE(pinless_lib, nullptr);
+  odb::dbMaster* master = odb::dbMaster::create(pinless_lib, "PINLESS");
+  ASSERT_NE(master, nullptr);
+  master->setFrozen();
+  db_network_->readLefAfter(pinless_lib);
+  odb::dbModule* child = odb::dbModule::create(block_, "cache_child");
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(
+      odb::dbModInst::create(block_->getTopModule(), child, R"(cache\/parent)"),
+      nullptr);
+  odb::dbInst* inst
+      = odb::dbInst::create(block_, master, "pinless", false, child);
+  ASSERT_NE(inst, nullptr);
+  ASSERT_TRUE(inst->getITerms().empty());
+  ASSERT_EQ(findLiteralInstances(sdc_network, "cache/parent/pinless").size(),
+            1);
+  const size_t initial_builds = sdc_network->sdcPathCacheBuildCount();
+
+  block_->getTopModule()->addInst(inst);
+  EXPECT_TRUE(
+      findLiteralInstances(sdc_network, "cache/parent/pinless").empty());
+  const InstanceSeq matches = findLiteralInstances(sdc_network, "pinless");
+  ASSERT_EQ(matches.size(), 1);
+  EXPECT_EQ(matches.front(), db_network_->dbToSta(inst));
+  EXPECT_GT(sdc_network->sdcPathCacheBuildCount(), initial_builds);
+}
 
 TEST_F(TestDbSta, TestHierarchyConnectivity)
 {
@@ -71,7 +212,7 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(dbnet_out2, nullptr);
   Net* sta_dbnet_out2 = db_network_->dbToSta(dbnet_out2);
   ASSERT_NE(sta_dbnet_out2, nullptr);
-  Net* sta_highest_net = db_network_->highestNetAbove(sta_dbnet_out2);
+  const Net* sta_highest_net = db_network_->highestNetAbove(sta_dbnet_out2);
   ASSERT_EQ(sta_highest_net, sta_dbnet_out2);
 
   odb::dbModNet* modnet_mod_out = block_->findModNet("sub_inst/mod_out");
@@ -84,7 +225,7 @@ TEST_F(TestDbSta, TestHierarchyConnectivity)
   ASSERT_NE(sta_modnet_out2, nullptr);
   // highestNetAbove on a mod net now returns the associated flat dbNet, not the
   // highest mod net, so that parasitic externality checks work correctly.
-  Net* sta_highest_modnet_out
+  const Net* sta_highest_modnet_out
       = db_network_->highestNetAbove(sta_modnet_mod_out);
   ASSERT_EQ(sta_highest_modnet_out, sta_dbnet_out2);
 
@@ -264,20 +405,34 @@ TEST_F(TestDbSta, ReassociateModITermPin)
   db_network_->checkAxioms();
 }
 
-// Regression for #10210 (stale Path* dereference in rsz).
+// Driver-path resolution stays consistent across incremental netlist edits.
 //
-// Topology (TestDbSta_StalePrevPath.v):
+// Topology (TestDbSta_DriverInputPortAcrossNetlistEdits.v):
 //   clk -> b1(BUF) -> inv1(INV) -> nd1(NAND2) -> out1
 //                                   nd1/A2 <- in2
 //
-// Flow:
-//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin name
-//   2. Delete upstream b1 + updateTiming -> free
-//   3. Add a fresh BUF + clock + updateTiming -> recycle
-//   4. Assert the captured Path's prev slot has been recycled: pin()
-//      decodes to data that belongs to a different instance than nd1's
-//      real input.
-TEST_F(TestDbSta, StalePrevPath)
+// A Path* is only valid until the next netlist edit: updateTiming() runs
+// Search::arrivalsInvalid() -> Search::deletePaths() -> Vertex::deletePaths(),
+// which frees the per-vertex Path arena.  Holding a Path* across an edit and
+// dereferencing it afterwards is a use-after-free that asan traps (#10833);
+// this test therefore re-queries the driver path after every edit.
+//
+// What it checks, on freshly queried paths only:
+//   1. Baseline: drvr_path->prevArc()->from() resolves on nd1's own
+//      LibertyCell and round-trips through findLibertyPort(), and the
+//      critical path into nd1/ZN arrives through A1 (the clk cone).
+//   2. Delete upstream b1 + updateTiming: the A1 cone loses its driver, so a
+//      fresh query must show the critical path now arriving through A2.
+//   3. Add a fresh BUF + clock + updateTiming: both still hold and the
+//      network stays self-consistent.
+//
+// Scope note: this exercises dbSta/OpenSTA path queries only.  It is not a
+// regression test for #10210 -- it does not drive any rsz consumer, so
+// reverting rsz to the faulty prevPath()->pin() lookup leaves it green.  The
+// two expressions coincide on a healthy path and diverge only under a stale
+// Path or PathExpanded pin-collapsing, so real #10210 coverage needs an
+// rsz-side test; none exists today.
+TEST_F(TestDbSta, DriverInputPortAcrossNetlistEdits)
 {
   const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::string test_name
@@ -287,21 +442,72 @@ TEST_F(TestDbSta, StalePrevPath)
 
   Network* network = sta_->network();
 
-  Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
-  Path* drvr_path = sta_->vertexWorstArrivalPath(
-      sta_->ensureGraph()->pinDrvrVertex(network->findPin(nd1, "ZN")),
-      MinMax::max());
-  ASSERT_NE(drvr_path, nullptr);
-  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
-  const Path* pre_addr = drvr_path->prevPath();
-  ASSERT_NE(pre_addr, nullptr);
-  const std::string pre_pin_name = network->pathName(pre_addr->pin(sta_.get()));
+  // Re-query nd1's driver path from the live graph.  The result is only valid
+  // until the next netlist edit, so it is used immediately and never stored.
+  auto nd1_drvr_path = [&]() -> Path* {
+    Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
+    EXPECT_NE(nd1, nullptr);
+    if (nd1 == nullptr) {
+      return nullptr;
+    }
+    Pin* zn = network->findPin(nd1, "ZN");
+    EXPECT_NE(zn, nullptr);
+    if (zn == nullptr) {
+      return nullptr;
+    }
+    return sta_->vertexWorstArrivalPath(sta_->ensureGraph()->pinDrvrVertex(zn),
+                                        MinMax::max());
+  };
 
-  // 2. Free upstream Path[] slots.
+  // The invariant rsz depends on: the driver's input port comes from the
+  // path's own timing arc, so it always resolves on the driver's cell -- which
+  // is exactly the lookup upsizeCell()/downsizeCell() perform by name on the
+  // candidate replacement cells.  Returns the port name for the caller.
+  auto drvr_in_port_name = [&](Path* drvr_path) -> std::string {
+    EXPECT_NE(drvr_path, nullptr);
+    if (drvr_path == nullptr) {
+      return {};
+    }
+    const Pin* drvr_pin = drvr_path->pin(sta_.get());
+    EXPECT_EQ(network->pathName(drvr_pin), "nd1/ZN");
+
+    const TimingArc* in_arc = drvr_path->prevArc(sta_.get());
+    EXPECT_NE(in_arc, nullptr);
+    if (in_arc == nullptr) {
+      return {};
+    }
+    const LibertyPort* in_port = in_arc->from();
+    EXPECT_NE(in_port, nullptr);
+    if (in_port == nullptr) {
+      return {};
+    }
+
+    const LibertyCell* drvr_cell
+        = network->libertyCell(network->instance(drvr_pin));
+    EXPECT_NE(drvr_cell, nullptr);
+    if (drvr_cell != nullptr) {
+      EXPECT_EQ(in_port->libertyCell(), drvr_cell);
+      EXPECT_EQ(drvr_cell->findLibertyPort(in_port->name()), in_port);
+    }
+    return in_port->name();
+  };
+
+  // 1. Baseline: the clk cone through b1/inv1 wins, so the arc is A1 -> ZN.
+  const std::string pre_in_port = drvr_in_port_name(nd1_drvr_path());
+  EXPECT_EQ(pre_in_port, "A1");
+
+  // 2. Delete the driver of the A1 cone and rebuild timing.
   sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
   sta_->updateTiming(true);
 
-  // 3. Recycle freed slots via a single fresh BUF driven by a new clock.
+  const std::string post_in_port = drvr_in_port_name(nd1_drvr_path());
+  EXPECT_EQ(post_in_port, "A2")
+      << "critical path into nd1/ZN should move to the in2 cone once b1 is "
+         "deleted";
+  EXPECT_NE(pre_in_port, post_in_port);
+
+  // 3. Add a fresh BUF driven by a new clock; the arena slots freed in step 2
+  //    get reused here.  A freshly queried path must still be self-consistent.
   odb::dbNet* in3_net = odb::dbNet::create(block_, "in3");
   odb::dbBTerm* new_bt = odb::dbBTerm::create(in3_net, "in3");
   new_bt->setIoType(odb::dbIoType::INPUT);
@@ -318,17 +524,8 @@ TEST_F(TestDbSta, StalePrevPath)
       "clk2", clk2_pins, false, 0.2f, clk2_waveform, "", sta_->cmdMode());
   sta_->updateTiming(true);
 
-  // 4. Staleness evidence. Pointer address is same but pin name has changed.
-  const Path* post_addr = drvr_path->prevPath();
-  const std::string post_pin_name
-      = post_addr ? network->pathName(post_addr->pin(sta_.get()))
-                  : std::string("<null>");
-
-  EXPECT_EQ(pre_addr, post_addr)
-      << "stale-pointer signature: prev_path_ address unchanged";
-  EXPECT_NE(pre_pin_name, post_pin_name)
-      << "but slot content should differ after free+reuse. before="
-      << pre_pin_name << " after=" << post_pin_name;
+  EXPECT_EQ(drvr_in_port_name(nd1_drvr_path()), "A2");
+  db_network_->checkAxioms();
 }
 
 }  // namespace sta

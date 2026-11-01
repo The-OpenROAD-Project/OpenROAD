@@ -4,20 +4,22 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon.hpp"
 #include "connection.h"
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
 
@@ -30,6 +32,13 @@ struct RectIndexableGetter
   odb::Rect operator()(const T* t) const { return t->getShape(); }
 };
 
+template <>
+struct RectIndexableGetter<TerminalNode>
+{
+  using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
+  odb::Rect operator()(const TerminalNode* t) const { return t->getBBox(); }
+};
+
 template <typename T>
 struct PointIndexableGetter
 {
@@ -40,6 +49,7 @@ struct PointIndexableGetter
 class IRNetwork
 {
  public:
+  using Nodes = std::vector<Node*>;
   template <typename T>
   using NodePtrMap = std::map<Node*, std::vector<T*>>;
 
@@ -60,12 +70,18 @@ class IRNetwork
       = boost::geometry::index::rtree<Node*,
                                       boost::geometry::index::quadratic<16>,
                                       PointIndexableGetter<Node>>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 
   IRNetwork(odb::dbNet* net, utl::Logger* logger, bool floorplanning);
+  IRNetwork(odb::dbChipNet* chip_net,
+            utl::Logger* logger,
+            bool floorplanning = false,
+            std::optional<double> interchip_resistance = std::nullopt,
+            bool connectivity_only = false);
+  ~IRNetwork();
 
   odb::dbNet* getNet() const { return net_; };
+  odb::dbChipNet* getChipNet() const { return chip_net_; }
+  bool isAssembly() const { return chip_net_ != nullptr; }
 
   void construct();
 
@@ -102,13 +118,39 @@ class IRNetwork
   odb::PtrSet<odb::dbTechLayer> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
+  std::size_t getConnectionCount() const;
+  std::size_t getChipletNetworkCount() const
+  {
+    return chiplet_networks_.size();
+  }
+  std::size_t getInterDieConnectionCount() const
+  {
+    return interdie_connections_.size();
+  }
 
   void clearVisitedNodes();
 
   const Connections& getConnections() const { return connections_; }
+  Nodes getAllNodes() const;
+  std::vector<Connection*> getAllConnections() const;
+  const Connections& getInterDieConnections() const
+  {
+    return interdie_connections_;
+  }
   NodePtrMap<Connection> getConnectionMap() const;
 
   odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping() const;
+  odb::PtrMap<odb::dbInst, Node::NodeSet> getInstanceNodeMapping(
+      odb::dbNet* net) const;
+  std::vector<odb::dbNet*> getNets() const;
+  std::vector<std::pair<odb::dbChipInst*, odb::dbNet*>> getChipletNets() const;
+  IRNetwork* getChipletNetwork(odb::dbChipInst* chip_inst) const;
+  std::vector<std::pair<odb::dbChipInst*, ITermNode*>> getChipletITermNodes()
+      const;
+  std::map<Node*, odb::dbChipInst*> getNodeChiplets() const;
+  bool hasSameBonds() const;
+  bool isConnected() const;
+  Nodes getDisconnectedNodes() const;
   ShapeTree getShapeTree(odb::dbTechLayer* layer) const;
 
   bool hasNodes() const;
@@ -119,6 +161,31 @@ class IRNetwork
   void dumpNodes(const std::string& name = "nodes") const;
 
  private:
+  struct BondState
+  {
+    uint32_t id;
+    uint32_t source_id;
+    uint32_t target_id;
+    uint32_t source_bump_id;
+    uint32_t target_bump_id;
+    float resistance;
+
+    bool operator==(const BondState&) const = default;
+  };
+
+  struct ChipletNetwork
+  {
+    odb::dbChipInst* chip_inst;
+    odb::dbNet* net;
+    std::unique_ptr<IRNetwork> network;
+  };
+
+  // Shapes with 45 degree edges, which the rectilinear (polygon_90) sets
+  // the network is built from cannot hold
+  using Polygon45 = boost::polygon::polygon_45_data<int>;
+  using Polygon45WithHoles = boost::polygon::polygon_45_with_holes_data<int>;
+  using Polygon45Set = boost::polygon::polygon_45_set_data<int>;
+
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
 
@@ -153,15 +220,28 @@ class IRNetwork
 
   std::set<Node*> getSharedShapeNodes() const;
 
-  Polygon90 rectToPolygon(const odb::Rect& rect) const;
-  LayerMap<Polygon90Set> generatePolygonsFromSWire(odb::dbSWire* wire);
-  LayerMap<Polygon90Set> generatePolygonsFromITerms(
-      std::vector<TerminalNode*>& terminals);
-  LayerMap<Polygon90Set> generatePolygonsFromBTerms(
+  // The shapes with 45 degree edges are added to shapes_45 instead of being
+  // returned with the others
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromSWire(
+      odb::dbSWire* wire,
+      LayerMap<Polygon45Set>& shapes_45);
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromITerms(
+      std::vector<TerminalNode*>& terminals,
+      LayerMap<Polygon45Set>& shapes_45);
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromBTerms(
       std::vector<TerminalNode*>& terminals);
   void processPolygonToRectangles(
       odb::dbTechLayer* layer,
-      const Polygon90& polygon,
+      const odb::geom::BoostPolygon90WithHoles& polygon,
+      const TerminalTree& terminals,
+      std::vector<std::unique_ptr<Shape>>& new_shapes,
+      std::vector<std::unique_ptr<Node>>& new_nodes,
+      std::map<Shape*, std::set<Node*>>& terminal_connections);
+  // Slices a polygon with 45 degree edges into trapezoids, each of which
+  // becomes a shape
+  void processPolygonToTrapezoids(
+      odb::dbTechLayer* layer,
+      const Polygon45WithHoles& polygon,
       const TerminalTree& terminals,
       std::vector<std::unique_ptr<Shape>>& new_shapes,
       std::vector<std::unique_ptr<Node>>& new_nodes,
@@ -170,7 +250,7 @@ class IRNetwork
                                bool single_via,
                                std::vector<std::unique_ptr<Node>>& new_nodes,
                                Connections& new_connections);
-  LayerMap<Polygon90Set> generatePolygonsFromBox(
+  LayerMap<odb::geom::BoostPolygon90Set> generatePolygonsFromBox(
       odb::dbBox* box,
       const odb::dbTransform& transform) const;
 
@@ -179,12 +259,22 @@ class IRNetwork
   NodeTree getNodeTree(odb::dbTechLayer* layer) const;
 
   void initMinimumNodePitch();
+  void constructAssembly();
+  void addChipletNetwork(odb::dbChipBumpInst* bump_inst,
+                         odb::dbChipInst* chip_inst);
+  void addInterDieConnection(odb::dbChipRSeg* rseg);
+  void createMatchedInterDieConnections(std::optional<double> resistance);
+  std::vector<BondState> getBondState() const;
+  ChipletNetwork* findChipletNetwork(odb::dbChipBumpInst* bump_inst);
+  Node* findBondEndpoint(odb::dbChipCapNode* cap_node);
+  Node* findBondEndpoint(odb::dbChipBumpInst* bump_inst);
 
   void recoverMemory();
 
   void reset();
 
   odb::dbNet* net_;
+  odb::dbChipNet* chip_net_ = nullptr;
 
   utl::Logger* logger_;
 
@@ -199,6 +289,12 @@ class IRNetwork
   std::vector<std::unique_ptr<BPinNode>> bpin_nodes_;
 
   odb::PtrMap<odb::dbTechLayer, int> min_node_pitch_;
+
+  std::vector<ChipletNetwork> chiplet_networks_;
+  Connections interdie_connections_;
+  std::vector<BondState> bond_state_;
+  std::optional<double> interchip_resistance_;
+  bool connectivity_only_ = false;
 
   static constexpr int kMinNodePitchMultiplier = 10;
   static constexpr double kMinNodePitchInUm = 10.0;

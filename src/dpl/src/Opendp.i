@@ -28,12 +28,20 @@ detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
                        bool incremental,
-                       bool use_negotiation,
-                       bool run_abacus){
+                       bool use_diamond_legalizer,
+                       int site_search_window,
+                       int row_search_window,
+                       double drc_penalty,
+                       bool disable_window_extension,
+                       bool pdn_aware,
+                       bool quiet){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, use_negotiation, run_abacus);
+                            incremental, use_diamond_legalizer,
+                            site_search_window, row_search_window,
+                            drc_penalty, disable_window_extension,
+                            quiet, pdn_aware);
 }
 
 void
@@ -44,10 +52,14 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose, const char* report_file_name)
+check_placement_cmd(bool verbose,
+                    const char* report_file_name,
+                    bool check_fixed,
+                    bool check_placeable)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose, std::string(report_file_name));
+  opendp->checkPlacement(
+      verbose, std::string(report_file_name), check_fixed, check_placeable);
 }
 
 
@@ -118,6 +130,18 @@ set_debug_cmd(float min_displacement,
           opendp, debug_instance, paint_pixels, paint_negotiation_pixels);
       opendp->setDebug(graphics);
   }
+}
+
+void set_negotiation_debug_interval_cmd(int iterative_jump)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugInterval(iterative_jump);
+}
+
+void set_negotiation_debug_start_cmd(int iterative_start)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugStart(iterative_start);
 }
 
 void improve_placement_cmd(int seed,

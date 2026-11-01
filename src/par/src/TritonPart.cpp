@@ -93,8 +93,13 @@ std::vector<odb::dbNet*> getSortedNets(odb::dbBlock* block)
 TritonPart::TritonPart(sta::dbNetwork* network,
                        odb::dbDatabase* db,
                        sta::dbSta* sta,
-                       utl::Logger* logger)
-    : network_(network), db_(db), sta_(sta), logger_(logger)
+                       utl::Logger* logger,
+                       int num_threads)
+    : network_(network),
+      db_(db),
+      sta_(sta),
+      logger_(logger),
+      num_threads_(num_threads)
 {
 }
 
@@ -1292,7 +1297,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         vertex_weights_.emplace_back(vwts);
         if (master->isBlock()) {
           vertex_types_.emplace_back(kMacro);
-        } else if (liberty_cell->hasSequentials()) {
+        } else if (liberty_cell->isSequential()) {
           vertex_types_.emplace_back(kSeqStdCell);
         } else {
           vertex_types_.emplace_back(kCombStdCell);
@@ -1336,7 +1341,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       vertex_weights_.emplace_back(vwts);
       if (master->isBlock()) {
         vertex_types_.emplace_back(kMacro);
-      } else if (liberty_cell->hasSequentials()) {
+      } else if (liberty_cell->isSequential()) {
         vertex_types_.emplace_back(kSeqStdCell);
       } else {
         vertex_types_.emplace_back(kCombStdCell);
@@ -1981,6 +1986,7 @@ void TritonPart::MultiLevelPartition()
                                                 max_num_vcycle_,
                                                 num_coarsen_solutions_,
                                                 seed_,
+                                                num_threads_,
                                                 tritonpart_coarsener,
                                                 tritonpart_partitioner,
                                                 k_way_fm_refiner,

@@ -8,12 +8,17 @@
 #include <vector>
 
 namespace odb {
+class dbBTerm;
 class dbDatabase;
 class dbInst;
 
 }  // namespace odb
 namespace sta {
 class dbSta;
+}
+
+namespace ppl {
+class IOPlacer;
 }
 
 namespace grt {
@@ -38,6 +43,7 @@ class NesterovBase;
 class RouteBase;
 class TimingBase;
 class ClockBase;
+class PowerBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -62,6 +68,8 @@ struct PlaceOptions
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  bool powerDrivenMode = false;
+  float powerDrivenNetWeight = 1;
   float timingDrivenNetsPercentage = 10;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
@@ -80,10 +88,16 @@ struct PlaceOptions
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
   float initWireLengthCoef = 0.25;
-  float referenceHpwl = 446000000;
+  // Scale the density-penalty controller measures a wirelength change
+  // against, in DBU. The controller eases the penalty ramp in proportion to
+  // (delta HPWL / referenceHpwl), so a fixed value only suits designs whose
+  // HPWL happens to be near it. 0 derives it from the design's own HPWL.
+  float referenceHpwl = 0;
   int binGridCntX = 0;
   int binGridCntY = 0;
   float density = 0.7;
+  int initialPlacePerturbationSeed = 1;
+  float initialPlacePerturbationDist = -1.0f;
 
   float routabilityCheckOverflow = 0.3;
   float routabilitySnapshotOverflow = 0.6;
@@ -91,6 +105,26 @@ struct PlaceOptions
   float routabilityTargetRcMetric = 1.01;
   float routabilityInflationRatioCoef = 2;
   float routabilityMaxInflationRatio = 3;
+  float routabilityMinCongestionForInflation = 0.95;
+
+  // Ceiling on the artificial area routability may add, as a fraction of the
+  // movable area it started from. Inflation is the only thing in the loop that
+  // grows the design, and past some point the density penalty is handed more
+  // area than the floorplan can absorb.
+  float routabilityMaxInflationTotal = 0.30;
+  // Wirelength weight applied to the nets that put the most wire into the
+  // congested tiles, and the share of those nets that gets weighted. A net
+  // deposits demand in proportion to its own length, so pulling the worst
+  // offenders shorter takes demand out of the region they cross - unlike
+  // inflating cells, which adds wirelength everywhere.
+  //
+  // Off by default at 1.0. The weight multiplies onto the timing weight, so a
+  // net can be pulled for congestion and criticality at once, and shortening a
+  // net packs its cells tighter into the region that was already congested.
+  // Measured on the flow tests it costs setup slack and clock skew without
+  // buying congestion back, so it stays opt-in until it earns its default.
+  float routabilityNetWeightMax = 1.0;
+  float routabilityCongestedNetsPercentage = 1.0;
 
   // routability RC metric coefficients
   float routabilityRcK1 = 1.0;
@@ -101,6 +135,9 @@ struct PlaceOptions
   // OpenDB should have these values.
   int padLeft = 0;
   int padRight = 0;
+
+  // Concurrent IO pin + cell placement
+  bool placeIosMode = false;
 
   void skipIo();
   void validate(utl::Logger* log);
@@ -114,6 +151,7 @@ class Replace
           sta::dbSta* sta,
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
+          ppl::IOPlacer* pin_placer,
           utl::Logger* logger);
 
   ~Replace();
@@ -133,18 +171,25 @@ class Replace
                       const PlaceOptions& options = {},
                       int start_iter = 0);
 
-  void runMBFF(int max_sz, float alpha, float beta, int threads, int num_paths);
+  void runMBFF(int max_sz,
+               float alpha,
+               float beta,
+               int threads,
+               int num_paths,
+               float clock_power_weight);
 
   void addPlacementCluster(const Cluster& cluster);
 
   // Query for uniform density value
   float getUniformTargetDensity(const PlaceOptions& options, int threads);
+  float estimateTargetDensity(const PlaceOptions& options, int threads);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
                 bool draw_bins,
                 bool initial,
                 odb::dbInst* inst,
+                odb::dbBTerm* pin,
                 int start_iter,
                 int start_rudy,
                 int rudy_stride,
@@ -156,11 +201,17 @@ class Replace
                          int threads,
                          bool check_density);
   void checkHasCoreRows();
+  void checkPlaceIosSupported(const PlaceOptions& options);
+  void reportHpwlMetric();
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
+  void initIoPinPlace();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
+  ppl::IOPlacer* pin_placer_ = nullptr;
   utl::Logger* log_ = nullptr;
 
   std::unique_ptr<AbstractGraphics> graphics_;
@@ -172,6 +223,7 @@ class Replace
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   std::shared_ptr<ClockBase> cb_;
+  std::shared_ptr<PowerBase> pwb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;
@@ -186,6 +238,7 @@ class Replace
   int gui_debug_draw_bins_ = false;
   int gui_debug_initial_ = false;
   odb::dbInst* gui_debug_inst_ = nullptr;
+  odb::dbBTerm* gui_debug_pin_ = nullptr;
   int gui_debug_start_iter_ = 0;
   int gui_debug_rudy_start_ = 0;
   int gui_debug_rudy_stride_ = 0;

@@ -14,12 +14,18 @@ global_placement
     [-initial_place_max_iter max_iter]
     [-initial_place_max_fanout max_fanout]
     [-verbose_level verbose_level]
-
+    [-random_seed random_seed]
+    [-perturb_dist perturb_dist]
 ```
 
 ## Flow Control
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
 * __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
+
+When timing-driven and routability-driven placement are both enabled, retained
+timing-repair cells in congested areas are inflated after routability refinement
+finishes. This uses the shared inflation allowance and available fillers without
+raising density or restarting routability.
 
 ## Tuning Parameters
 * __bin_grid_count__ : Set bin grid's count manually. Default: Defined by internal algorithm. [64,128,256,512,..., int]
@@ -31,6 +37,8 @@ global_placement
 
 ## Other Options
 * __verbose_level__ [0-10, int] : Set verbose level for RePlAce. Default: 1
+* __random_seed__ [int] : Set random seed for placement perturbation. Perturbation shifts standard cells by random offsets drawn from a 2D circular Gaussian distribution at the start of global placement. Default is 1.
+* __perturb_dist__ [float] : Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller.
 
 Note that all of the TCL commands are defined in the
 [../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.tcl)

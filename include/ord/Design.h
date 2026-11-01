@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,10 @@ namespace exa {
 class Example;
 }
 
+namespace wmk {
+class Watermark;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -79,6 +84,10 @@ class TritonRoute;
 
 namespace fin {
 class Finale;
+}
+
+namespace fsv {
+class FieldSolver;
 }
 
 namespace par {
@@ -138,7 +147,8 @@ class Design
   void readDb(std::istream& stream);
   void readDb(const std::string& file_name);
   void writeDb(std::ostream& stream);
-  void writeDb(const std::string& file_name);
+  void writeDb(const std::string& file_name,
+               std::optional<int> compression_level = std::nullopt);
   void writeDef(const std::string& file_name);
 
   odb::dbBlock* getBlock();
@@ -169,6 +179,7 @@ class Design
   exa::Example* getExample();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
+  fsv::FieldSolver* getFieldSolver();
   gpl::Replace* getReplace();
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();
@@ -184,6 +195,7 @@ class Design
   rsz::Resizer* getResizer();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   tap::Tapcell* getTapcell();
+  wmk::Watermark* getWatermark();
 
   // Needed by standalone startup, not for general use.
   ord::OpenRoad* getOpenRoad();

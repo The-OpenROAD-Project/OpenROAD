@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -70,6 +71,10 @@ namespace exa {
 class Example;
 }
 
+namespace fsv {
+class FieldSolver;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -134,6 +139,10 @@ namespace syn {
 class Synthesis;
 }
 
+namespace wmk {
+class Watermark;
+}
+
 namespace ord {
 
 class dbVerilogNetwork;
@@ -170,6 +179,7 @@ class OpenRoad
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
+  fsv::FieldSolver* getFieldSolver() { return field_solver_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -189,6 +199,7 @@ class OpenRoad
   }
   web::WebServer* getWebServer() { return web_server_; }
   syn::Synthesis* getSynthesis() { return synthesis_; }
+  wmk::Watermark* getWatermark() { return watermark_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -240,7 +251,8 @@ class OpenRoad
   void readDb(std::istream& stream);
   void readDb(const char* filename, bool hierarchy = false);
   void writeDb(std::ostream& stream);
-  void writeDb(const char* filename);
+  void writeDb(const char* filename,
+               std::optional<int> compression_level = std::nullopt);
 
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);
@@ -275,6 +287,7 @@ class OpenRoad
   ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
+  fsv::FieldSolver* field_solver_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   cgt::ClockGating* clock_gating_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;
@@ -294,6 +307,7 @@ class OpenRoad
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
   syn::Synthesis* synthesis_ = nullptr;
+  wmk::Watermark* watermark_ = nullptr;
   utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;

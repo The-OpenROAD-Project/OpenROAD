@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -23,6 +24,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -33,17 +35,21 @@
 #include "DelayEstimatorReporter.hh"
 #include "Optimizer.hh"
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "PreChecks.hh"
 #include "Rebuffer.hh"
 #include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
+#include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
+#include "SkewBudget.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -52,16 +58,19 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Bfs.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
+#include "sta/EquivCells.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Hash.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -73,11 +82,14 @@
 #include "sta/NetworkCmp.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
@@ -88,6 +100,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "utl/histogram.h"
 #include "utl/scope.h"
 #include "utl/timer.h"
 
@@ -202,7 +215,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
                                 sta::LibertyPort* input_port,
                                 LibertyPortVec& ports)
 {
-  if (cell->hasSequentials() || cell->isIsolationCell()) {
+  if (cell->isSequential() || cell->isIsolationCell()) {
     ports.clear();
     return;
   }
@@ -277,17 +290,22 @@ bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
     return false;
   }
 
-  const bool input_modnet_has_input_port = std::ranges::any_of(
-      input_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::INPUT;
-      });
+  return input_modnet->isConnectedToInputPort()
+         && output_modnet->isConnectedToOutputPort();
+}
 
-  const bool output_modnet_has_output_port = std::ranges::any_of(
-      output_modnet->getModBTerms(), [](odb::dbModBTerm* mod_bterm) {
-        return mod_bterm->getIoType() == odb::dbIoType::OUTPUT;
-      });
-
-  return input_modnet_has_input_port && output_modnet_has_output_port;
+// The eligibility check and removal must choose the same surviving flat net.
+// Preserve the input ModNet if removing the buffer creates a feedthrough.
+bool bufferRemovalKeepsOutputNet(const sta::dbNetwork* network,
+                                 const sta::Pin* input_pin,
+                                 const sta::Pin* output_pin)
+{
+  if (bufferRemovalCreatesFeedthrough(network->hierNet(input_pin),
+                                      network->hierNet(output_pin))) {
+    return false;
+  }
+  return !network->hasPort(network->dbToSta(network->flatNet(input_pin)))
+         && network->hasPort(network->dbToSta(network->flatNet(output_pin)));
 }
 
 float inputPinCapacitance(sta::Network* network,
@@ -312,6 +330,20 @@ float inputPinCapacitance(sta::Network* network,
   return cap;
 }
 
+// The incremental RC update of the invalid nets, then the required times.
+// The repair setup profiler times the two steps.
+void updateIncrementalTiming(est::EstimateParasitics* parasitics,
+                             sta::dbSta* sta)
+{
+  {
+    const ProfileScope scope("incremental_rc");
+    parasitics->updateParasitics();
+  }
+
+  const ProfileScope scope("incremental_sta");
+  sta->findRequireds();
+}
+
 }  // namespace
 
 using std::abs;
@@ -328,9 +360,11 @@ using odb::dbBoolProperty;
 using odb::dbBox;
 using odb::dbDoubleProperty;
 using odb::dbInst;
+using odb::dbIntProperty;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 using odb::dbSet;
+using odb::dbStringProperty;
 
 Resizer::Resizer(utl::Logger* logger,
                  odb::dbDatabase* db,
@@ -352,7 +386,7 @@ Resizer::Resizer(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = sta::InstanceSet(db_network_);
-  db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+  db_cbk_ = std::make_unique<OdbCallBack>(this, db_network_);
 
   db_network_->addObserver(this);
 
@@ -556,6 +590,60 @@ void Resizer::initBlock()
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
+  }
+
+  // Global sizing knobs from `set_global_sizing_config`. Reset to struct
+  // defaults and apply each dbProperty as an override; an absent property
+  // leaves the default in place. GlobalSizingPolicy reads these via
+  // globalSizingConfig().
+  global_sizing_config_ = GlobalSizingConfig{};
+  if (dbStringProperty* p = dbStringProperty::find(block_, "gs_presize_mode")) {
+    const std::string v = p->getValue();
+    if (v == "disabled") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kDisabled;
+    } else if (v == "min_size_max_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMinSizeMaxVt;
+    } else if (v == "max_size_min_vt") {
+      global_sizing_config_.presize_mode
+          = GlobalSizingConfig::PresizeMode::kMaxSizeMinVt;
+    } else {
+      logger_->warn(RSZ,
+                    413,
+                    "Ignoring invalid gs_presize_mode value '{}'; expected "
+                    "disabled, min_size_max_vt, or max_size_min_vt.",
+                    v);
+    }
+  }
+  if (dbBoolProperty* p
+      = dbBoolProperty::find(block_, "gs_include_clock_network")) {
+    global_sizing_config_.include_clock_network = p->getValue();
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_setup_slack_margin")) {
+    global_sizing_config_.setup_slack_margin
+        = static_cast<float>(p->getValue());
+  }
+  if (dbIntProperty* p = dbIntProperty::find(block_, "gs_max_iterations")) {
+    global_sizing_config_.max_iterations = p->getValue();
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_beta")) {
+    global_sizing_config_.beta = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_mu_exponent")) {
+    global_sizing_config_.mu_exponent = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_lambda_floor")) {
+    global_sizing_config_.lambda_floor = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p = dbDoubleProperty::find(block_, "gs_timing_bias")) {
+    global_sizing_config_.timing_bias = static_cast<float>(p->getValue());
+  }
+  if (dbDoubleProperty* p
+      = dbDoubleProperty::find(block_, "gs_budget_safety_factor")) {
+    global_sizing_config_.budget_safety_factor
+        = static_cast<float>(p->getValue());
   }
 }
 
@@ -1125,13 +1213,41 @@ void Resizer::findBuffers()
   if (buffer_cells_.empty()) {
     logger_->error(RSZ, 22, "no buffers found.");
   } else {
-    // find the buffer with the largest drive resistance
+    // Keep the repair candidate unchanged because it is coupled to the
+    // pruned buffer list and timing-repair heuristics.
     buffer_lowest_drive_ = buffer_cells_.back();
+
+    // Select a fast cell from the weakest drive-strength bucket.  Using the
+    // final pruned cell for port buffering can select a delay cell because
+    // pruning scores cells by input RC and does not preserve drive-resistance
+    // order.
+    const size_t weakest_bucket_size
+        = std::max<size_t>(1, static_cast<size_t>(bucket_size));
+    const size_t weakest_bucket_start
+        = new_buffer_list.size() - weakest_bucket_size;
+    port_buffer_ = new_buffer_list[weakest_bucket_start];
+    sta::LibertyPort *input, *output;
+    port_buffer_->bufferPorts(input, output);
+    float lowest_intrinsic_delay = output->intrinsicDelay(sta_);
+
+    for (size_t i = weakest_bucket_start + 1; i < new_buffer_list.size(); i++) {
+      sta::LibertyCell* buffer = new_buffer_list[i];
+      buffer->bufferPorts(input, output);
+      const float intrinsic_delay = output->intrinsicDelay(sta_);
+      if (intrinsic_delay < lowest_intrinsic_delay) {
+        port_buffer_ = buffer;
+        lowest_intrinsic_delay = intrinsic_delay;
+      }
+    }
   }
 }
 
 void Resizer::findBuffersNoPruning()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
   if (buffer_cells_.empty()) {
     sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
 
@@ -1166,6 +1282,7 @@ void Resizer::findBuffersNoPruning()
            });
 
       buffer_lowest_drive_ = buffer_cells_[0];
+      port_buffer_ = buffer_lowest_drive_;
     }
   }
 }
@@ -1177,15 +1294,15 @@ sta::LibertyCell* Resizer::selectBufferCell(sta::LibertyCell* user_buffer_cell)
     return user_buffer_cell;
   }
 
-  // Otherwise, find the weakest buffer with the lowest drive resistance.
-  findBuffers();  // updates buffer_lowest_drive_
+  // Otherwise, find a fast buffer from the weakest drive-strength group.
+  findBuffers();  // updates port_buffer_
 
   // No buffer?
-  if (buffer_lowest_drive_ == nullptr) {
+  if (port_buffer_ == nullptr) {
     logger_->error(RSZ, 41, "No buffers found.");
   }
 
-  return buffer_lowest_drive_;
+  return port_buffer_;
 }
 
 bool Resizer::isLinkCell(sta::LibertyCell* cell) const
@@ -1517,7 +1634,7 @@ bool Resizer::isCombinational(sta::LibertyCell* cell) const
     return false;
   }
   return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
-          && !cell->hasSequentials());
+          && !cell->isSequential());
 }
 
 std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
@@ -1660,6 +1777,7 @@ void Resizer::resizePreamble()
   findBuffers();
   findTargetLoads();
   findFastBuffers();
+  computeSlewShapeFactor();
 }
 
 void Resizer::runRepairSetupPreamble()
@@ -2007,6 +2125,15 @@ void Resizer::reportDelayEstimatorAccuracy(sta::Instance* inst,
   reporter.reportAccuracyForSizing(inst, replacement, estimator, delay_levels);
 }
 
+void Resizer::reportDelayEstimatorAccuracyForRebufferTree(
+    sta::Instance* inst,
+    sta::Pin* driver_pin,
+    const int delay_levels)
+{
+  DelayEstimatorReporter reporter(*this);
+  reporter.reportAccuracyForRebufferTree(inst, driver_pin, delay_levels);
+}
+
 bool Resizer::isValidDelayEstimatorName(const std::string& name)
 {
   return DelayEstimatorReporter::parseEstimatorKind(name).has_value();
@@ -2141,8 +2268,16 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     return {};
   }
 
+  // An instance of a dont_use cell is left alone rather than sized.  Its
+  // target load is not in target_load_map_, which findTargetLoads builds
+  // without dont_use cells, so it has no usable baseline to size against.
+  if (dontUse(source_cell)) {
+    swappable_cells_cache_[source_cell] = {source_cell};
+    return {source_cell};
+  }
+
   sta::LibertyCellSeq swappable_cells;
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
 
   if (equiv_cells) {
     int64_t source_cell_area = master->getArea();
@@ -2150,6 +2285,13 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     if (sizing_leakage_limit_) {
       source_cell_leakage = cellLeakage(source_cell);
     }
+    // Smallest larger cell that passes every restriction except the leakage
+    // limit, and its position in swappable_cells to preserve the equivalent
+    // cell order.
+    sta::LibertyCell* next_larger = nullptr;
+    int64_t next_larger_area = 0;
+    size_t next_larger_pos = 0;
+    bool has_larger_cell = false;
     for (sta::LibertyCell* equiv_cell : *equiv_cells) {
       if (dontUse(equiv_cell) || !isLinkCell(equiv_cell)) {
         continue;
@@ -2167,13 +2309,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         continue;
       }
 
+      bool exceeds_leakage_limit = false;
       if (sizing_leakage_limit_ && source_cell_leakage) {
         std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
-        if (equiv_cell_leakage
-            && (*equiv_cell_leakage / *source_cell_leakage
-                > sizing_leakage_limit_.value())) {
-          continue;
-        }
+        exceeds_leakage_limit = equiv_cell_leakage
+                                && (*equiv_cell_leakage / *source_cell_leakage
+                                    > sizing_leakage_limit_.value());
       }
 
       if (sizing_keep_site_) {
@@ -2206,7 +2347,28 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      const int64_t equiv_cell_area = equiv_cell_master->getArea();
+      if (exceeds_leakage_limit) {
+        if (equiv_cell_area > source_cell_area
+            && (next_larger == nullptr || equiv_cell_area < next_larger_area)) {
+          next_larger = equiv_cell;
+          next_larger_area = equiv_cell_area;
+          next_larger_pos = swappable_cells.size();
+        }
+        continue;
+      }
+
+      has_larger_cell |= equiv_cell_area > source_cell_area;
       swappable_cells.push_back(equiv_cell);
+    }
+
+    // The leakage limit is relative to the source cell, so a cell with
+    // unusually low leakage can lose every larger size and become impossible
+    // to upsize.  Keep the smallest larger cell in that case so there is
+    // always at least one upsizing step.
+    if (!has_larger_cell && next_larger != nullptr) {
+      swappable_cells.insert(swappable_cells.begin() + next_larger_pos,
+                             next_larger);
     }
   } else {
     swappable_cells.push_back(source_cell);
@@ -2255,7 +2417,7 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
-  sta::LibertyCellSeq* equiv_cells = sta_->equivCells(source_cell);
+  sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
@@ -2305,9 +2467,22 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     vt_equiv_cells.emplace_back(equiv_cell);
   }
 
-  // Sort the list in ascending order of leakage
+  // Group by VT category (and ascending leakage within each category) so that
+  // same-VT cells are contiguous during adjacent deduplication.
   std::ranges::stable_sort(
       vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        dbMaster* master1 = db_network_->staToDb(cell1);
+        dbMaster* master2 = db_network_->staToDb(cell2);
+        if ((master1 == nullptr) != (master2 == nullptr)) {
+          return master1 == nullptr;
+        }
+        if (master1 && master2) {
+          const VTCategory vt1 = cellVTType(master1);
+          const VTCategory vt2 = cellVTType(master2);
+          if (vt1 != vt2) {
+            return vt1 < vt2;
+          }
+        }
         std::optional<float> leak1 = this->cellLeakage(cell1);
         std::optional<float> leak2 = this->cellLeakage(cell2);
         // Treat missing leakage as 0
@@ -2340,6 +2515,14 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       ++it;
     }
   }
+
+  // Sort the deduplicated list in ascending order of leakage
+  std::ranges::stable_sort(
+      vt_equiv_cells, [this](sta::LibertyCell* cell1, sta::LibertyCell* cell2) {
+        std::optional<float> leak1 = this->cellLeakage(cell1);
+        std::optional<float> leak2 = this->cellLeakage(cell2);
+        return leak1.value_or(0.0) < leak2.value_or(0.0);
+      });
 
   // Map all equivalent cells to the same list
   // BUF_X1_RVT  : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
@@ -2382,26 +2565,102 @@ void Resizer::checkLibertyForAllCorners()
   }
 }
 
+// Bucket key, same shape as the port term of sta::hashCell.  Equivalent cells
+// always share a key because sta::equivCellPorts requires matching port names
+// and directions.  Unrelated cells may too; sta::equivCells separates them.
+static unsigned equivCellKey(const sta::LibertyCell* cell)
+{
+  unsigned key = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    key += sta::hashString(port->name()) * 3 + port->direction()->index() * 5;
+  }
+  return key;
+}
+
+// Group the link cells into equivalence classes.
+//
+// Not sta::Sta::makeEquivCells, which skips cells with the liberty dont_use
+// attribute.  Liberty dont_use only seeds dont_use_ (copyDontUseFromLiberty);
+// unset_dont_use clears dont_use_ but not liberty, and those cells must stay
+// sizing candidates.  So nothing is filtered here; callers apply dont_use_.
 void Resizer::makeEquivCells()
 {
-  if (!equiv_cells_made_) {
-    sta::LibertyLibrarySeq libs;
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      // massive kludge until makeEquivCells is fixed to only incldue link cells
-      sta::LibertyCellIterator cell_iter(lib);
-      if (cell_iter.hasNext()) {
-        sta::LibertyCell* cell = cell_iter.next();
-        if (isLinkCell(cell)) {
-          libs.emplace_back(lib);
-        }
+  if (equiv_cells_made_) {
+    return;
+  }
+  clearEquivCells();
+
+  std::unordered_map<unsigned, sta::LibertyCellSeq> buckets;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network_->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* lib = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(lib);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      // Only link cells can be swapped in; the other corners' copies would
+      // multiply every class by the corner count.
+      if (isLinkCell(cell)) {
+        buckets[equivCellKey(cell)].emplace_back(cell);
       }
     }
-    delete lib_iter;
-    sta_->makeEquivCells(&libs, nullptr);
-    equiv_cells_made_ = true;
   }
+
+  for (sta::LibertyCellSeq& cells : std::views::values(buckets)) {
+    // One member per class is enough to compare against, sta::equivCells
+    // being transitive.
+    std::vector<sta::LibertyCellSeq> classes;
+    for (sta::LibertyCell* cell : cells) {
+      auto equivs = std::ranges::find_if(
+          classes, [cell](const sta::LibertyCellSeq& members) {
+            return sta::equivCells(members.front(), cell);
+          });
+      if (equivs == classes.end()) {
+        classes.emplace_back(1, cell);
+      } else {
+        equivs->emplace_back(cell);
+      }
+    }
+
+    for (sta::LibertyCellSeq& members : classes) {
+      // Cells with no equivalents stay out of equiv_cells_.
+      if (members.size() < 2) {
+        continue;
+      }
+      // Callers rely on decreasing drive resistance.
+      std::ranges::stable_sort(
+          members,
+          [this](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+            return cellDriveResistance(cell1) > cellDriveResistance(cell2);
+          });
+      sta::LibertyCellSeq& equivs
+          = equiv_cell_groups_.emplace_back(std::move(members));
+      for (sta::LibertyCell* cell : equivs) {
+        equiv_cells_[cell] = &equivs;
+      }
+    }
+  }
+
+  equiv_cells_made_ = true;
+}
+
+// Cells equivalent to cell, sorted in decreasing drive resistance, or nullptr
+// if the cell has no equivalents.  The build is lazy, so the first call must
+// be on the main thread; that is why resizePreamble and balanceRowUsage call
+// makeEquivCells up front.
+sta::LibertyCellSeq* Resizer::equivCells(sta::LibertyCell* cell)
+{
+  makeEquivCells();
+  return sta::findKey(equiv_cells_, cell);
+}
+
+void Resizer::clearEquivCells()
+{
+  equiv_cells_.clear();
+  equiv_cell_groups_.clear();
+  equiv_cells_made_ = false;
 }
 
 // When there are multiple VT layers, create a composite name
@@ -2539,8 +2798,8 @@ int Resizer::resizeToTargetSlew(const sta::Pin* drvr_pin,
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = network_->libertyCell(inst);
-  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && !dontTouch(inst) && !isFixed(inst)
+      && cell && isLogicStdCell(inst)) {
     bool revisiting_inst = false;
     if (hasMultipleOutputs(inst)) {
       revisiting_inst = resized_multi_output_insts_.contains(inst);
@@ -2609,8 +2868,8 @@ int Resizer::resizeToCapRatio(const sta::Pin* drvr_pin, bool upsize_only)
 {
   sta::Instance* inst = network_->instance(drvr_pin);
   sta::LibertyCell* cell = inst ? network_->libertyCell(inst) : nullptr;
-  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst) && cell
-      && isLogicStdCell(inst)) {
+  if (!network_->isTopLevelPort(drvr_pin) && inst && !dontTouch(inst)
+      && !isFixed(inst) && cell && isLogicStdCell(inst)) {
     float cin, load_cap;
     estimate_parasitics_->ensureWireParasitic(drvr_pin);
 
@@ -2682,9 +2941,19 @@ bool Resizer::removeBufferIfPossible(sta::Instance* buffer,
                                      const bool honor_dont_touch_fixed)
 {
   if (canRemoveBuffer(buffer, honor_dont_touch_fixed)) {
-    return removeBuffer(buffer);
+    return removeBuffer(buffer, honor_dont_touch_fixed);
   }
   return false;
+}
+
+bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  network_->libertyCell(buffer)->bufferPorts(input_port, output_port);
+  return bufferRemovalKeepsOutputNet(db_network_,
+                                     db_network_->findPin(buffer, input_port),
+                                     db_network_->findPin(buffer, output_port));
 }
 
 bool Resizer::canRemoveBuffer(sta::Instance* buffer,
@@ -2704,17 +2973,8 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   getBufferPins(buffer, buffer_ip_pin, buffer_op_pin);
 
   odb::dbInst* db_inst = db_network_->staToDb(buffer);
-  if (db_inst->isDoNotTouch()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setDoNotTouch(false);
-  }
-  if (db_inst->isFixed()) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  if (db_inst == nullptr) {
+    return false;
   }
 
   sta::LibertyPort* input_port = nullptr;
@@ -2724,48 +2984,155 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
   sta::Net* input_net = db_network_->net(input_pin);
   sta::Net* output_net = db_network_->net(output_pin);
-  odb::dbNet* input_db_net = db_network_->findFlatDbNet(input_net);
-  odb::dbNet* output_db_net = db_network_->findFlatDbNet(output_net);
-  if ((input_db_net != nullptr && input_db_net->isDoNotTouch())
-      || (output_db_net != nullptr && output_db_net->isDoNotTouch())) {
-    if (honor_dont_touch_fixed) {
-      return false;
-    }
-    if (input_db_net != nullptr) {
-      input_db_net->setDoNotTouch(false);
-    }
-    if (output_db_net != nullptr) {
-      output_db_net->setDoNotTouch(false);
-    }
+  // Inspect the same flat nets that removeBuffer() will merge.
+  odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
+  odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
+  if (input_db_net == nullptr) {
+    return false;
   }
-
-  const bool out_net_ports = db_network_->hasPort(output_net);
-  sta::Net* removed = nullptr;
-  odb::dbNet* db_net_survivor = nullptr;
-  odb::dbNet* db_net_removed = nullptr;
-  if (out_net_ports) {
-    removed = input_net;
-    db_net_survivor = output_db_net;
-    db_net_removed = input_db_net;
-  } else {
-    removed = output_net;
-    db_net_survivor = input_db_net;
-    db_net_removed = output_db_net;
+  if (honor_dont_touch_fixed
+      && (db_inst->isDoNotTouch() || db_inst->isFixed()
+          || input_db_net->isDoNotTouch()
+          || (output_db_net != nullptr && output_db_net->isDoNotTouch()))) {
+    return false;
   }
+  const bool keep_output_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
+  sta::Net* removed = keep_output_net ? input_net : output_net;
+  odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
+  odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
   sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (!sdc->isConstrained(input_pin) && !sdc->isConstrained(output_pin)
-      && (removed == nullptr || !sdc->isConstrained(removed))
-      && !sdc->isConstrained(buffer)) {
-    return db_net_removed == nullptr
-           || (db_net_survivor != nullptr
-               && db_net_survivor->canMergeNet(db_net_removed));
+  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+      || (removed != nullptr && sdc->isConstrained(removed))
+      || sdc->isConstrained(buffer)) {
+    return false;
   }
 
-  return false;
+  // A disconnected output is removable: removeBuffer() destroys the
+  // dangling buffer without merging nets. Do not reject that valid case.
+  if (db_net_removed == nullptr) {
+    return true;
+  }
+  if (honor_dont_touch_fixed) {
+    return db_net_survivor->canMergeNet(db_net_removed);
+  }
+  // Explicit removal (remove_buffers <insts>) overrides protection on the
+  // buffer and its two nets only. mergeNet() still reconnects every other
+  // sink of the removed net, which OpenDB refuses for dont_touch instances,
+  // so those must keep rejecting the removal.
+  for (odb::dbITerm* iterm : db_net_removed->getITerms()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (inst != db_inst && inst->isDoNotTouch()) {
+      return false;
+    }
+  }
+  return true;
 }
 
-bool Resizer::removeBuffer(sta::Instance* buffer)
+namespace {
+
+// Temporarily unprotects a buffer and its nets, then restores the survivor.
+class BufferRemovalProtection
+{
+ public:
+  BufferRemovalProtection(odb::dbInst* db_inst,
+                          odb::dbNet* survivor,
+                          odb::dbNet* removed)
+      : survivor_(survivor), restore_survivor_(survivor->isDoNotTouch())
+  {
+    // Release the buffer's dont_touch for pin disconnect and deletion.
+    // OpenDB does not enforce a fixed placement status on either operation,
+    // so the placement status is left untouched.
+    if (db_inst->isDoNotTouch()) {
+      db_inst->setDoNotTouch(false);
+    }
+    // Restore the survivor on scope exit; the removed net, when present,
+    // stays unprotected because mergeNet() destroys it.
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(false);
+    }
+    if (removed != nullptr && removed->isDoNotTouch()) {
+      removed->setDoNotTouch(false);
+    }
+  }
+
+  BufferRemovalProtection(const BufferRemovalProtection&) = delete;
+  BufferRemovalProtection& operator=(const BufferRemovalProtection&) = delete;
+
+  ~BufferRemovalProtection()
+  {
+    if (restore_survivor_) {
+      survivor_->setDoNotTouch(true);
+    }
+  }
+
+ private:
+  odb::dbNet* survivor_;
+  const bool restore_survivor_;
+};
+
+struct BufferRemovalNames
+{
+  std::optional<std::string> net_name;
+  std::optional<std::string> modnet_name;
+};
+
+BufferRemovalNames chooseBufferRemovalNames(odb::dbNet* survivor,
+                                            odb::dbNet* removed,
+                                            odb::dbModNet* survivor_modnet,
+                                            odb::dbModNet* removed_modnet)
+{
+  BufferRemovalNames names;
+  if (!survivor->isDeeperThan(removed)) {
+    return names;
+  }
+
+  const bool preserve_port_name
+      = survivor_modnet != nullptr && survivor_modnet->isConnectedToInputPort();
+  if (!preserve_port_name) {
+    // Normally both names follow the shallower removed net.
+    names.net_name = removed->getName();
+    if (removed_modnet != nullptr) {
+      names.modnet_name = removed_modnet->getName();
+    }
+  } else {
+    // Keep input/inout port names so write_verilog retains required
+    // feedthrough assigns. Use the shallower flat name only if it remains
+    // represented after the ModNet merge.
+    const bool shallower_name_survives
+        = removed_modnet == nullptr
+          || removed_modnet->getHierarchicalName() != removed->getName();
+    if (shallower_name_survives) {
+      names.net_name = removed->getName();
+    }
+  }
+  return names;
+}
+
+odb::dbModNet* mergeBufferModNets(odb::dbModNet* survivor_modnet,
+                                  odb::dbModNet* removed_modnet,
+                                  odb::dbNet* db_survivor,
+                                  odb::dbNet* db_removed,
+                                  BufferRemovalNames& names)
+{
+  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
+    survivor_modnet->mergeModNet(removed_modnet);
+  } else if (survivor_modnet != nullptr) {
+    survivor_modnet->connectTermsOf(db_removed);
+  } else if (removed_modnet != nullptr) {
+    survivor_modnet = removed_modnet;
+    survivor_modnet->connectTermsOf(db_survivor);
+    names.modnet_name
+        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
+  }
+  return survivor_modnet;
+}
+
+}  // namespace
+
+bool Resizer::removeBuffer(sta::Instance* buffer,
+                           const bool honor_dont_touch_fixed)
 {
   if (buffer == nullptr) {
     return false;
@@ -2798,8 +3165,16 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
     return false;
   }
 
+  odb::dbInst* db_inst = db_network_->staToDb(buffer);
+  // Both paths below delete the buffer, so its area leaves the tracked area
+  // that overMaxArea() reads.
+  designAreaIncr(-area(db_inst->getMaster()));
   if (output_db_net == nullptr) {
-    odb::dbInst::destroy(db_network_->staToDb(buffer));
+    std::optional<BufferRemovalProtection> protection;
+    if (!honor_dont_touch_fixed) {
+      protection.emplace(db_inst, input_db_net, nullptr);
+    }
+    odb::dbInst::destroy(db_inst);
     return true;
   }
 
@@ -2813,8 +3188,7 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
   odb::dbModNet* removed_modnet = output_modnet;
   // Preserve the input ModNet on feedthrough removal so write_verilog can
   // emit the assign between distinct port and net names.
-  if (!bufferRemovalCreatesFeedthrough(input_modnet, output_modnet)
-      && !db_network_->hasPort(input_net) && db_network_->hasPort(output_net)) {
+  if (bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)) {
     survivor = output_net;
     removed_net = input_net;
     survivor_modnet = output_modnet;
@@ -2833,44 +3207,30 @@ bool Resizer::removeBuffer(sta::Instance* buffer)
 
   odb::dbNet* db_survivor = db_network_->staToDb(survivor);
   odb::dbNet* db_removed = db_network_->staToDb(removed_net);
-  std::optional<std::string> new_net_name;
-  std::optional<std::string> new_modnet_name;
-  if (db_survivor->isDeeperThan(db_removed)) {
-    new_net_name = db_removed->getName();
-    if (removed_modnet != nullptr) {
-      new_modnet_name = removed_modnet->getName();
-    }
+  BufferRemovalNames names = chooseBufferRemovalNames(
+      db_survivor, db_removed, survivor_modnet, removed_modnet);
+  std::optional<BufferRemovalProtection> protection;
+  if (!honor_dont_touch_fixed) {
+    protection.emplace(db_inst, db_survivor, db_removed);
   }
 
   sta_->disconnectPin(input_pin);
   sta_->disconnectPin(output_pin);
-  if (survivor_modnet != nullptr && removed_modnet != nullptr) {
-    survivor_modnet->mergeModNet(removed_modnet);
-  } else if (survivor_modnet != nullptr) {
-    survivor_modnet->connectTermsOf(db_removed);
-  } else if (removed_modnet != nullptr) {
-    survivor_modnet = removed_modnet;
-    removed_modnet = nullptr;
-    survivor_modnet->connectTermsOf(db_survivor);
-    new_modnet_name
-        = db_survivor->getBlock()->getBaseName(db_survivor->getName().c_str());
-  }
+  survivor_modnet = mergeBufferModNets(
+      survivor_modnet, removed_modnet, db_survivor, db_removed, names);
 
   db_survivor->mergeNet(db_removed);
   sta_->deleteInstance(buffer);
 
-  if (new_net_name.has_value()) {
-    db_survivor->rename(new_net_name->c_str());
+  if (names.net_name.has_value()) {
+    db_survivor->rename(names.net_name->c_str());
   }
-  if (survivor_modnet != nullptr && new_modnet_name.has_value()) {
-    survivor_modnet->rename(new_modnet_name->c_str());
+  if (survivor_modnet != nullptr && names.modnet_name.has_value()) {
+    survivor_modnet->rename(names.modnet_name->c_str());
   }
 
-  const bool removed_buffer = true;
-  if (removed_buffer) {
-    invalidateVertexOrdering();
-  }
-  return removed_buffer;
+  invalidateVertexOrdering();
+  return true;
 }
 
 sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
@@ -3054,12 +3414,14 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
         /*verbose=*/false,
         /*sequence=*/parseMoveSequence(""),
         /*phases=*/"",
+        /*path_group=*/"",
         /*skip_pin_swap=*/true,  // avoid changing connectivity during placement
         /*skip_gate_cloning=*/true,  // cloning adds instances, complicates
                                      // density
         /*skip_size_down=*/false,
         /*skip_buffering=*/false,
         /*skip_buffer_removal=*/false,
+        /*skip_buffer_to_inverters=*/false,
         /*skip_last_gasp=*/true,  // skip aggressive last-resort passes
         /*skip_vt_swap=*/true,    // post-placement optimization
         /*skip_crit_vt_swap=*/true);
@@ -3084,6 +3446,10 @@ void Resizer::findResizeSlacks1()
   const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
+    // Skip loadless drivers, whose required times may be unset.
+    if (!drvr->hasFanout()) {
+      continue;
+    }
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = db_network_->dbToSta(db_network_->flatNet(drvr_pin));
     if (net
@@ -3091,7 +3457,11 @@ void Resizer::findResizeSlacks1()
         // Hands off special nets.
         && !db_network_->isSpecial(net)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())) {
-      net_slack_map_[net] = sta_->slack(drvr, max_);
+      const sta::Slack slack = sta_->slack(drvr, max_);
+      // Exclude unconstrained nets from ranking and weighting.
+      if (!sta::fuzzyInf(slack)) {
+        net_slack_map_[net] = slack;
+      }
     }
   }
 }
@@ -3188,6 +3558,81 @@ class SearchPredCombLogic : public sta::SearchPred1
   }
 };
 
+// Iterative DFS over the timing graph, replacing pull-style
+// sta::BfsFwdIterator/BfsBkwdIterator usage.
+// Adjacency matches Bfs{Fwd,Bkwd}Iterator::enqueueAdjacentVertices:
+// fanout: searchFrom(vertex) gates expansion; each out-edge requires
+//         searchThru(edge) && searchTo(to_vertex);
+// fanin:  searchTo(vertex) gates expansion; each in-edge requires
+//         searchFrom(from_vertex) && searchThru(edge).
+// The mode-less SearchPred methods are used, which OR across all modes.
+// visit_seeds=false starts from the pred-filtered adjacency of each seed
+// (BfsIterator::enqueueAdjacentVertices seeding); visit_seeds=true visits
+// the seeds themselves first (BfsIterator::enqueue seeding).
+// visit(vertex) returns true if the search should expand through vertex.
+enum class DfsDirection
+{
+  kFanin,
+  kFanout
+};
+
+static void dfsSearch(sta::Graph* graph,
+                      const sta::SearchPred& pred,
+                      DfsDirection dir,
+                      const std::vector<sta::Vertex*>& seeds,
+                      bool visit_seeds,
+                      const std::function<bool(sta::Vertex*)>& visit)
+{
+  std::vector<sta::Vertex*> stack;
+  sta::VertexSet visited(graph);
+
+  auto expand = [&](sta::Vertex* vertex) {
+    if (dir == DfsDirection::kFanout) {
+      if (pred.searchFrom(vertex)) {
+        sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* to_vertex = edge->to(graph);
+          if (pred.searchThru(edge) && pred.searchTo(to_vertex)
+              && visited.insert(to_vertex).second) {
+            stack.push_back(to_vertex);
+          }
+        }
+      }
+    } else {
+      if (pred.searchTo(vertex)) {
+        sta::VertexInEdgeIterator edge_iter(vertex, graph);
+        while (edge_iter.hasNext()) {
+          sta::Edge* edge = edge_iter.next();
+          sta::Vertex* from_vertex = edge->from(graph);
+          if (pred.searchFrom(from_vertex) && pred.searchThru(edge)
+              && visited.insert(from_vertex).second) {
+            stack.push_back(from_vertex);
+          }
+        }
+      }
+    }
+  };
+
+  for (sta::Vertex* seed : seeds) {
+    if (visit_seeds) {
+      if (visited.insert(seed).second) {
+        stack.push_back(seed);
+      }
+    } else {
+      expand(seed);
+    }
+  }
+
+  while (!stack.empty()) {
+    sta::Vertex* vertex = stack.back();
+    stack.pop_back();
+    if (visit(vertex)) {
+      expand(vertex);
+    }
+  }
+}
+
 // Find source pins for logic fanin of ends.
 sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 {
@@ -3202,20 +3647,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
   }
 
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::PinSet fanins(db_network_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      continue;
-    }
-    iter.enqueueAdjacentVertices(vertex);
-    fanins.insert(vertex->pin());
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          return false;
+        }
+        fanins.insert(vertex->pin());
+        return true;
+      });
   return fanins;
 }
 
@@ -3223,20 +3669,21 @@ sta::PinSet Resizer::findFanins(sta::PinSet& end_pins)
 sta::VertexSet Resizer::findFaninRoots(sta::VertexSet& ends)
 {
   SearchPredCombLogic pred(sta_);
-  sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* vertex : ends) {
-    iter.enqueueAdjacentVertices(vertex);
-  }
-
   sta::VertexSet roots(graph_);
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
-      roots.insert(vertex);
-    } else {
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(ends.begin(), ends.end());
+  dfsSearch(
+      graph_,
+      pred,
+      DfsDirection::kFanin,
+      seeds,
+      /*visit_seeds=*/false,
+      [&](sta::Vertex* vertex) {
+        if (isRegOutput(vertex) || network_->isTopLevelPort(vertex->pin())) {
+          roots.insert(vertex);
+          return false;
+        }
+        return true;
+      });
   return roots;
 }
 
@@ -3258,18 +3705,19 @@ sta::VertexSet Resizer::findFanouts(sta::VertexSet& reg_outs)
 {
   sta::VertexSet fanouts(graph_);
   SearchPredCombLogic pred(sta_);
-  sta::BfsFwdIterator iter(sta::BfsIndex::other, &pred, this);
-  for (sta::Vertex* reg_out : reg_outs) {
-    iter.enqueueAdjacentVertices(reg_out);
-  }
-
-  while (iter.hasNext()) {
-    sta::Vertex* vertex = iter.next();
-    if (!isRegister(vertex)) {
-      fanouts.insert(vertex);
-      iter.enqueueAdjacentVertices(vertex);
-    }
-  }
+  const std::vector<sta::Vertex*> seeds(reg_outs.begin(), reg_outs.end());
+  dfsSearch(graph_,
+            pred,
+            DfsDirection::kFanout,
+            seeds,
+            /*visit_seeds=*/false,
+            [&](sta::Vertex* vertex) {
+              if (isRegister(vertex)) {
+                return false;
+              }
+              fanouts.insert(vertex);
+              return true;
+            });
   return fanouts;
 }
 
@@ -3278,7 +3726,7 @@ bool Resizer::isRegister(sta::Vertex* vertex)
   sta::LibertyPort* port = network_->libertyPort(vertex->pin());
   if (port) {
     sta::LibertyCell* cell = port->libertyCell();
-    return cell && cell->hasSequentials();
+    return cell && cell->isSequential();
   }
   return false;
 }
@@ -3338,7 +3786,12 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  // findTargetLoads skips dont_use cells, so a cell re-enabled with
+  // unset_dont_use would otherwise keep a target load of zero and be ranked
+  // worst by findTargetCell.
+  target_load_map_ = nullptr;
 }
 
 void Resizer::resetDontUse()
@@ -3349,7 +3802,9 @@ void Resizer::resetDontUse()
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
@@ -3396,17 +3851,27 @@ bool Resizer::dontTouch(const sta::Instance* inst) const
   return db_inst->isDoNotTouch();
 }
 
+bool Resizer::isFixed(const sta::Instance* inst) const
+{
+  dbInst* db_inst = db_network_->staToDb(inst);
+  return db_inst && db_inst->isFixed();
+}
+
 void Resizer::setDontTouch(const sta::Net* net, bool dont_touch)
 {
-  odb::dbNet* db_net = db_network_->staToDb(net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
+  if (db_net == nullptr) {
+    logger_->error(RSZ,
+                   224,
+                   "Cannot find the flat net associated with {}.",
+                   db_network_->pathName(net));
+  }
   db_net->setDoNotTouch(dont_touch);
 }
 
 bool Resizer::dontTouch(const sta::Net* net) const
 {
-  odb::dbNet* db_net = nullptr;
-  odb::dbModNet* db_mod_net = nullptr;
-  db_network_->staToDb(net, db_net, db_mod_net);
+  odb::dbNet* db_net = db_network_->findFlatDbNet(net);
   if (db_net == nullptr) {
     return false;
   }
@@ -4293,6 +4758,51 @@ float Resizer::portFanoutLoad(sta::LibertyPort* port) const
   return 0.0;
 }
 
+bool Resizer::checkFanout(const sta::Pin* drvr_pin,
+                          const sta::Mode* mode,
+                          const sta::MinMax* min_max,
+                          // Return values.
+                          float& fanout,
+                          float& max_fanout,
+                          float& fanout_slack) const
+{
+  sta_->checkFanout(drvr_pin, mode, min_max, fanout, max_fanout, fanout_slack);
+
+  // Preserve the library and SDC fanout-load semantics when a constraint
+  // exists. The default is an RSZ-only load-pin backstop.
+  if (min_max != sta::MinMax::max() || max_fanout < sta::INF) {
+    return false;
+  }
+
+  // Match the pins OpenSTA excludes from fanout checking.
+  if (!network_->isDriver(drvr_pin) || sta_->isConstant(drvr_pin, mode)
+      || mode->sdc()->isDisabledConstraint(drvr_pin)
+      || mode->clkNetwork()->isIdealClock(drvr_pin)) {
+    return false;
+  }
+
+  const int load_count = fanoutLoadCount(drvr_pin);
+  if (load_count == 0) {
+    return false;
+  }
+
+  fanout = load_count;
+  max_fanout = kDefaultMaxFanout;
+  fanout_slack = max_fanout - fanout;
+  return true;
+}
+
+int Resizer::fanoutLoadCount(const sta::Pin* drvr_pin) const
+{
+  sta::PinSeq loads;
+  sta::PinSeq drvrs;
+  sta::PinSet visited_drvrs(db_network_);
+  sta::FindNetDrvrLoads visitor(
+      drvr_pin, visited_drvrs, loads, drvrs, network_);
+  network_->visitConnectedPins(drvr_pin, visitor);
+  return static_cast<int>(loads.size());
+}
+
 float Resizer::bufferDelay(sta::LibertyCell* buffer_cell,
                            const sta::RiseFall* rf,
                            float load_cap,
@@ -4344,6 +4854,19 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
                          sta::ArcDelay delays[sta::RiseFall::index_count],
                          sta::Slew slews[sta::RiseFall::index_count])
 {
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc_, delays, slews);
+}
+
+void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
+                         const float load_cap,
+                         const sta::Scene* scene,
+                         const sta::MinMax* min_max,
+                         sta::ArcDelayCalc* arc_delay_calc,
+                         // Return values.
+                         sta::ArcDelay delays[sta::RiseFall::index_count],
+                         sta::Slew slews[sta::RiseFall::index_count])
+{
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = -sta::INF;
     slews[rf_index] = -sta::INF;
@@ -4366,14 +4889,14 @@ void Resizer::gateDelays(const sta::LibertyPort* drvr_port,
         }
         sta::LoadPinIndexMap load_pin_index_map(network_);
         sta::ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         scene,
-                                         min_max);
+            = arc_delay_calc->gateDelay(nullptr,
+                                        arc,
+                                        in_slew,
+                                        load_cap,
+                                        nullptr,
+                                        load_pin_index_map,
+                                        scene,
+                                        min_max);
 
         const sta::ArcDelay& gate_delay = dcalc_result.gateDelay();
         const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
@@ -4442,9 +4965,19 @@ sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
                                  const sta::Scene* scene,
                                  const sta::MinMax* min_max)
 {
+  return gateDelay(drvr_port, load_cap, scene, min_max, arc_delay_calc_);
+}
+
+sta::ArcDelay Resizer::gateDelay(const sta::LibertyPort* drvr_port,
+                                 const float load_cap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
+                                 sta::ArcDelayCalc* arc_delay_calc)
+{
   sta::ArcDelay delays[sta::RiseFall::index_count];
   sta::Slew slews[sta::RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, scene, min_max, delays, slews);
+  gateDelays(
+      drvr_port, load_cap, scene, min_max, arc_delay_calc, delays, slews);
   return max(delays[sta::RiseFall::riseIndex()],
              delays[sta::RiseFall::fallIndex()]);
 }
@@ -4731,6 +5264,7 @@ void Resizer::repairDesign(double max_wire_length,
                            double cap_margin,
                            double buffer_gain,
                            bool match_cell_footprint,
+                           bool reroute,
                            bool verbose)
 {
   utl::Timer timer;
@@ -4743,6 +5277,7 @@ void Resizer::repairDesign(double max_wire_length,
              == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->initMacrosAndGrid();
   }
+  utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
   repair_design_->repairDesign(
       max_wire_length, slew_margin, cap_margin, buffer_gain, verbose);
   logger_->info(RSZ, 504, "Runtime: {:.2f}s", timer.elapsed());
@@ -4751,6 +5286,90 @@ void Resizer::repairDesign(double max_wire_length,
 int Resizer::repairDesignBufferCount() const
 {
   return repair_design_->insertedBufferCount();
+}
+
+float Resizer::getRerouteResistanceReduction()
+{
+  return kMinResistanceReduction;
+}
+
+bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
+{
+  // Res-aware rerouting only makes sense with global-routing parasitics.
+  if (estimate_parasitics_->getParasiticsSrc()
+      != est::ParasiticsSrc::kGlobalRouting) {
+    return false;
+  }
+
+  sta::Net* net = network_->net(drvr_pin);
+  if (net == nullptr || dontTouch(drvr_pin)) {
+    return false;
+  }
+
+  odb::dbNet* db_net = db_network_->flatNet(net);
+  if (db_net == nullptr || db_net->isSpecial()) {
+    return false;
+  }
+
+  // Already scheduled for res-aware routing in a prior iteration.
+  if (global_router_->isNetResAware(db_net)) {
+    return false;
+  }
+
+  // Unconstrained nets have no timing path; res-aware routing will waste
+  // valuable resources.
+  const sta::Slack slack = sta_->slack(graph_->pinDrvrVertex(drvr_pin), max_);
+  if (slack == sta::INF) {
+    return false;
+  }
+
+  // Short nets (<=3 gcells) have negligible resistance; skip the reroute.
+  const int kShortNetGCellThreshold = 3;
+  const int tile_size = global_router_->getTileSize();
+  if (tile_size > 0) {
+    const grt::NetRouteMap& routes = global_router_->getRoutes();
+    auto it = routes.find(db_net);
+    if (it != routes.end()) {
+      int gcell_length = 0;
+      for (const grt::GSegment& seg : it->second) {
+        if (!seg.isVia()) {
+          gcell_length += seg.length() / tile_size;
+        }
+      }
+      if (gcell_length <= kShortNetGCellThreshold) {
+        return false;
+      }
+    }
+  }
+
+  // Only reroute if moving to the lowest-resistance layer saves enough
+  // resistance to justify the disruption.
+  const float resistance = global_router_->getFRNetResistance(db_net);
+  const float estimated_resistance
+      = global_router_->getFRNetResistanceOnMinResistanceLayer(db_net);
+  float reduction_ratio = 0.0f;
+  if (resistance > 0.0f) {
+    reduction_ratio = (resistance - estimated_resistance) / resistance;
+  }
+
+  if (reduction_ratio < kMinResistanceReduction) {
+    return false;
+  }
+
+  global_router_->setResistanceAware(true);
+  global_router_->addDirtyNet(db_net);
+  global_router_->setNetIsResAware(db_net, true);
+  estimate_parasitics_->parasiticsInvalid(db_net);
+
+  debugPrint(logger_,
+             utl::RSZ,
+             "reroute",
+             1,
+             "RepairDesign rerouting net {} (resistance {} -> {} estimated)",
+             db_net->getName(),
+             resistance,
+             estimated_resistance);
+  return true;
 }
 
 void Resizer::repairNet(sta::Net* net,
@@ -4806,32 +5425,47 @@ class ClkArrivalSearchPred : public sta::EvalPred
 
 sta::InstanceSeq Resizer::findClkInverters()
 {
-  sta::InstanceSeq clk_inverters;
+  std::vector<std::pair<sta::Level, sta::Instance*>> inverters;
   ClkArrivalSearchPred srch_pred(this);
-  sta::BfsFwdIterator bfs(sta::BfsIndex::other, &srch_pred, this);
+  std::vector<sta::Vertex*> seeds;
   for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
     for (const sta::Pin* pin : clk->leafPins()) {
-      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-      bfs.enqueue(vertex);
+      seeds.push_back(graph_->pinDrvrVertex(pin));
     }
   }
-  while (bfs.hasNext()) {
-    sta::Vertex* vertex = bfs.next();
-    const sta::Pin* pin = vertex->pin();
-    sta::Instance* inst = network_->instance(pin);
-    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
-    if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
-      clk_inverters.emplace_back(inst);
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_clk_inverters",
-                 2,
-                 "inverter {}",
-                 network_->pathName(inst));
-    }
-    if (!vertex->isRegClk()) {
-      bfs.enqueueAdjacentVertices(vertex);
-    }
+  dfsSearch(
+      graph_,
+      srch_pred,
+      DfsDirection::kFanout,
+      seeds,
+      /*visit_seeds=*/true,
+      [&](sta::Vertex* vertex) {
+        const sta::Pin* pin = vertex->pin();
+        sta::Instance* inst = network_->instance(pin);
+        sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+        if (vertex->isDriver(network_) && lib_cell && lib_cell->isInverter()) {
+          inverters.emplace_back(vertex->level(), inst);
+          debugPrint(logger_,
+                     RSZ,
+                     "repair_clk_inverters",
+                     2,
+                     "inverter {}",
+                     network_->pathName(inst));
+        }
+        return !vertex->isRegClk();
+      });
+  // cloneClkInverter moves an inverter's loads onto its input net, so an
+  // upstream inverter must be cloned before the inverters it drives or it
+  // gets cloned once per downstream clone instead of once per load.
+  std::stable_sort(inverters.begin(),
+                   inverters.end(),
+                   [](const std::pair<sta::Level, sta::Instance*>& lhs,
+                      const std::pair<sta::Level, sta::Instance*>& rhs) {
+                     return lhs.first < rhs.first;
+                   });
+  sta::InstanceSeq clk_inverters;
+  for (const auto& [level, inst] : inverters) {
+    clk_inverters.emplace_back(inst);
   }
   return clk_inverters;
 }
@@ -4901,6 +5535,11 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 
 ////////////////////////////////////////////////////////////////
 
+std::string Resizer::resolvePathGroup(const char* path_group)
+{
+  return rsz::resolvePathGroupName(this, path_group);
+}
+
 bool Resizer::repairSetup(double setup_margin,
                           double repair_tns_end_percent,
                           int max_passes,
@@ -4910,15 +5549,25 @@ bool Resizer::repairSetup(double setup_margin,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
                           const char* phases,
+                          const char* path_group,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down_fanout,
                           bool skip_buffering,
                           bool skip_buffer_removal,
+                          bool skip_buffer_to_inverters,
                           bool skip_last_gasp,
                           bool skip_vt_swap,
-                          bool skip_crit_vt_swap)
+                          bool skip_crit_vt_swap,
+                          RepairEffort effort,
+                          int profile_mode,
+                          const char* profile_dir)
 {
+  // Checked here, so every command that reaches repairSetup() is covered.
+  if (profile_mode < 0 || profile_mode > 3) {
+    logger_->error(RSZ, 3243, "-profile_mode must be 0, 1, 2 or 3.");
+  }
+
   utl::Timer timer;
   OptimizerRunConfig config;
   // Freeze Tcl-facing repair setup knobs before policy dispatch.
@@ -4936,9 +5585,17 @@ bool Resizer::repairSetup(double setup_margin,
   config.skip_size_down_fanout = skip_size_down_fanout;
   config.skip_buffering = skip_buffering;
   config.skip_buffer_removal = skip_buffer_removal;
+  config.skip_buffer_to_inverters = skip_buffer_to_inverters;
   config.skip_last_gasp = skip_last_gasp;
   config.skip_vt_swap = skip_vt_swap;
   config.skip_crit_vt_swap = skip_crit_vt_swap;
+  config.effort = effort;
+  config.profile_mode = profile_mode;
+  config.profile_dir = profile_dir != nullptr ? profile_dir : "";
+
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
 
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
@@ -5001,11 +5658,15 @@ bool Resizer::repairHold(
     int max_passes,
     int max_iterations,
     bool match_cell_footprint,
-    bool verbose)
+    bool verbose,
+    const char* path_group)
 {
   utl::Timer timer;
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
+  // Scoped so a -path_group restriction never leaks past this command.
+  utl::SetAndRestore<std::string> path_group_override(
+      path_group_, path_group != nullptr ? path_group : "");
   // Some technologies such as nangate45 don't have delay cells. Hence,
   // until we have a better approach, it's better to consider clock buffers
   // for hold violation repairing as these buffers' delay may be slighty
@@ -5107,20 +5768,921 @@ void Resizer::swapArithModules(int path_count,
 }
 
 ////////////////////////////////////////////////////////////////
+// Useful-skew budgeting. STA→LP glue: enumerate register CK pins on ideal
+// clocks, walk endpoint paths to collect setup/hold edges with initial
+// slacks, hand to the min-perturbation LP, and emit set_clock_latency on
+// the resulting schedule. See doc/useful_skew.md.
+void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
+{
+  initBlock();
+  sta_->findRequireds();
+
+  // 1. Enumerate registers. Each register contributes one schedule
+  // variable indexed by its CK pin. Both clocking regimes work:
+  //   - ideal: set_clock_latency on the pin defines the flop's clock
+  //     arrival outright (pre-CTS budgeting);
+  //   - propagated: a pin-level set_clock_latency *replaces* the
+  //     propagated arrival, so seeding initial_latency with the measured
+  //     arrival (step 3) makes the annotation a faithful "+t_i on top of
+  //     the real tree" (post-CTS budgeting — the regime CTS uses, since
+  //     only there do tree insertion delay and natural skew appear in
+  //     the slacks the LP optimizes).
+  std::vector<const sta::Pin*> ck_pins;
+  std::vector<sta::Clock*> ck_clocks;
+  std::vector<bool> ck_propagated;
+  std::unordered_map<const sta::Pin*, int> ck_to_idx;
+  std::unordered_map<const sta::Instance*, int> inst_to_idx;
+
+  std::unique_ptr<sta::LeafInstanceIterator> inst_iter{
+      network_->leafInstanceIterator()};
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    sta::LibertyCell* lib_cell = network_->libertyCell(inst);
+    if (!lib_cell || !lib_cell->hasSequentials()) {
+      continue;
+    }
+    // Locate a register clock pin on this instance.
+    const sta::Pin* ck_pin = nullptr;
+    std::unique_ptr<sta::InstancePinIterator> pin_iter{
+        network_->pinIterator(inst)};
+    while (pin_iter->hasNext()) {
+      const sta::Pin* p = pin_iter->next();
+      sta::LibertyPort* port = network_->libertyPort(p);
+      if (port && port->isRegClk()) {
+        ck_pin = p;
+        break;
+      }
+    }
+    if (!ck_pin) {
+      continue;
+    }
+    sta::ClockSet clks = sta_->clocks(ck_pin, sta_->cmdMode());
+    sta::Clock* pin_clk = nullptr;
+    bool propagated = true;
+    for (sta::Clock* clk : clks) {
+      if (!clk->isPropagated()) {
+        pin_clk = clk;
+        propagated = false;
+        break;
+      }
+      if (pin_clk == nullptr) {
+        pin_clk = clk;
+      }
+    }
+    if (!pin_clk) {
+      continue;
+    }
+    const int idx = static_cast<int>(ck_pins.size());
+    ck_pins.push_back(ck_pin);
+    ck_clocks.push_back(pin_clk);
+    ck_propagated.push_back(propagated);
+    ck_to_idx[ck_pin] = idx;
+    inst_to_idx[inst] = idx;
+  }
+
+  if (ck_pins.empty()) {
+    logger_->info(utl::RSZ,
+                  600,
+                  "compute_skew_budget: no clocked registers; "
+                  "nothing to do.");
+    return;
+  }
+
+  // 2. Configure the LP.
+  SkewLPSolver::Options solver_opts;
+  // 0 ⇒ default Δ_max := 15% of the minimum clock period.
+  if (opts.max_skew > 0.0f) {
+    solver_opts.max_skew = opts.max_skew;
+  } else {
+    float min_period = 0.0f;
+    for (sta::Clock* clk : ck_clocks) {
+      const float p = clk->period();
+      if (p > 0.0f && (min_period == 0.0f || p < min_period)) {
+        min_period = p;
+      }
+    }
+    solver_opts.max_skew = (min_period > 0.0f) ? 0.15f * min_period : 200e-12f;
+  }
+  solver_opts.hold_margin = opts.hold_margin;
+  solver_opts.one_sided = opts.one_sided;
+  solver_opts.target_wns = 0.0f;
+  solver_opts.wns_tolerance = 1e-12f;
+
+  // Sentinel "ground" register pinned at t = 0, used for fixed-time path
+  // boundaries: input-port launches (set_input_delay), output-port captures
+  // (set_output_delay), and any clock seed pin that isn't a register CK in
+  // our index. Without this, port-touching paths would be invisible to the
+  // LP and the LP would happily shift register clocks in ways that worsen
+  // their slacks.
+  const int kGround = static_cast<int>(ck_pins.size());
+
+  // 3. Save initial (pre-LP) clock latencies. Final emission writes
+  //    (initial + LP shift) so we preserve the design's nominal clock
+  //    arrival on top of the LP's per-register adjustment.
+  //
+  //    Propagated pins: a pre-existing pin annotation is a stale fiction
+  //    from an earlier (pre-CTS) budgeting run — remove it so the
+  //    measured arrival below reflects the real tree, and seed
+  //    initial_latency with that arrival (the pin annotation *replaces*
+  //    the propagated value when applied).
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  const sta::RiseFall* rf_rise = sta::RiseFall::rise();
+  const sta::MinMax* mm_max = sta::MinMax::max();
+  bool removed_stale = false;
+  for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    if (!ck_propagated[i]) {
+      continue;
+    }
+    float val = 0.0f;
+    bool exists = false;
+    sdc->clockLatency(ck_clocks[i], ck_pins[i], rf_rise, mm_max, val, exists);
+    if (exists) {
+      sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+      removed_stale = true;
+    }
+  }
+  if (removed_stale) {
+    sta_->findRequireds();
+  }
+  std::vector<float> initial_latency(ck_pins.size(), 0.0f);
+  // Full original pin-level latency per (rise/fall, min/max) so an asymmetric
+  // annotation is restored exactly instead of being collapsed to one value.
+  // initial_latency[] keeps only the rise/max baseline the LP shifts.
+  using PinLatency = std::array<std::array<float, 2>, 2>;
+  using PinLatencySet = std::array<std::array<bool, 2>, 2>;
+  std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
+  std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
+                                                  PinLatencySet{});
+  for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    if (ck_propagated[i]) {
+      // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
+      // would take the max over every tag, including non-clock paths
+      // (e.g. through a clock gate's enable), which can sit a full data
+      // path later than the real clock arrival.
+      float clk_arrival = 0.0f;
+      sta::Vertex* ck_vertex = sta_->graph()->pinLoadVertex(ck_pins[i]);
+      if (ck_vertex != nullptr) {
+        sta::VertexPathIterator path_iter(
+            ck_vertex, sta::RiseFall::rise(), mm_max, sta_);
+        while (path_iter.hasNext()) {
+          sta::Path* path = path_iter.next();
+          if (path->isClock(sta_)) {
+            clk_arrival
+                = std::max(clk_arrival, static_cast<float>(path->arrival()));
+          }
+        }
+      }
+      initial_latency[i] = clk_arrival;
+      debugPrint(logger_,
+                 utl::RSZ,
+                 "skew_budget",
+                 1,
+                 "propagated initial latency {} = {}",
+                 network_->pathName(ck_pins[i]),
+                 delayAsString(initial_latency[i], 3, sta_));
+      continue;
+    }
+    float val = 0.0f;
+    bool exists = false;
+    sdc->clockLatency(ck_clocks[i], ck_pins[i], rf_rise, mm_max, val, exists);
+    if (!exists) {
+      sdc->clockLatency(ck_clocks[i], rf_rise, mm_max, val, exists);
+    }
+    initial_latency[i] = val;
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        float lat = 0.0f;
+        bool lat_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, lat, lat_exists);
+        orig_pin_latency_set[i][rf->index()][mm->index()] = lat_exists;
+        orig_pin_latency[i][rf->index()][mm->index()] = lat;
+      }
+    }
+  }
+
+  // 4. Cutting-plane iteration.
+  //
+  // Per-iteration:
+  //   a. Apply current_t as set_clock_latency on every register CK pin.
+  //   b. Re-run findRequireds() so STA's path ends reflect the new
+  //      arrival times.
+  //   c. Enumerate worst endpoint paths cheaply with VertexPathIterator.
+  //      Optionally run bounded endpoint-local findPathEnds on the worst
+  //      setup endpoints to expose near-critical alternatives without a
+  //      full-design path-enumeration pass. Recover slack_initial =
+  //      slack_now − Δ(t) and dedup into the global edge set.
+  //   d. Build the LP from the full edge set and solve.
+  //   e. Record the iteration as a row in the progress table.
+  //   f. Stop when an iteration adds no new edges (the LP has seen every
+  //      path the design holds) — or after max_iterations.
+  //
+  // Launch register identification walks the data path back through
+  // Path::prevPath() and matches the first vertex whose pin's instance
+  // is a known register other than the capture's. The depth cap guards
+  // against pathological topologies (or path representations) that
+  // could loop indefinitely; real register-to-register hop counts are
+  // in the tens, so 4 k is a safe ceiling.
+  constexpr int kMaxPrevWalk = 4096;
+  auto find_launch_idx = [&](const sta::Path* p, int cap_idx) -> int {
+    const sta::Path* cur = p->prevPath();
+    for (int depth = 0; cur != nullptr && depth < kMaxPrevWalk; ++depth) {
+      const sta::Pin* pin = cur->pin(this);
+      if (pin) {
+        const sta::Instance* inst = network_->instance(pin);
+        if (inst) {
+          auto it = inst_to_idx.find(inst);
+          if (it != inst_to_idx.end() && it->second != cap_idx) {
+            return it->second;
+          }
+        }
+      }
+      cur = cur->prevPath();
+    }
+    return kGround;
+  };
+
+  // (launch, capture, is_setup, frozen) — frozen only ever true for setup
+  using EdgeKey = std::tuple<int, int, bool, bool>;
+  std::map<EdgeKey, float> edge_slacks;  // → slack_initial (at t=0)
+
+  std::vector<float> current_t(ck_pins.size(), 0.0f);
+  std::vector<float> final_t = current_t;
+  SkewLPSolver::Result final_result;
+  final_result.status = SkewLPSolver::Status::kOptimal;
+  int total_ends_seen = 0;
+  int total_augment_ends_seen = 0;
+  int total_augment_endpoints = 0;
+
+  // Snapshot the pre-LP STA WNS / TNS so we can compare convergence
+  // against reality at the end and roll back if the LP made the design
+  // worse — useful skew is supposed to *improve* QoR, so degrading
+  // shifts should be silently rejected rather than annotated.
+  sta_->findRequireds();
+  const float initial_sta_wns
+      = static_cast<float>(sta_->worstSlack(sta::MinMax::max()));
+  const float initial_sta_tns
+      = static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::max()));
+  const float initial_sta_hold_wns
+      = static_cast<float>(sta_->worstSlack(sta::MinMax::min()));
+  const float initial_sta_hold_tns
+      = static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::min()));
+
+  const int max_iters = std::max(1, opts.max_iterations);
+  // One batched findPathEnds augmentation pass at iter 0, restricted to
+  // the critical endpoint set discovered by the VertexPathIterator walk
+  // (via setup_endpoint_slacks). Caps:
+  //   - augment_paths_per_endpoint: per-endpoint depth (from opts).
+  //   - kAugmentGroupCap: global PathEnd materialisation cap.
+  // Disabled when opts.paths_per_endpoint == 0.
+  constexpr int kAugmentGroupCap = 50000;
+  constexpr int kAugmentMaxPathsPerEndpoint = 200;
+  const int augment_paths_per_endpoint
+      = std::clamp(opts.paths_per_endpoint, 0, kAugmentMaxPathsPerEndpoint);
+  if (opts.paths_per_endpoint > kAugmentMaxPathsPerEndpoint) {
+    logger_->warn(
+        utl::RSZ,
+        601,
+        "compute_skew_budget: -paths_per_endpoint {} clamped to {} (the "
+        "augmentation pass cap).",
+        opts.paths_per_endpoint,
+        kAugmentMaxPathsPerEndpoint);
+  }
+  logger_->report("compute_skew_budget cutting-plane:");
+  logger_->report(
+      " iter | new edges | total edges |   LP WNS |   LP TNS |  STA WNS |  STA "
+      "TNS");
+  logger_->report(
+      "------+-----------+-------------+----------+----------+----------+------"
+      "----");
+
+  int total_skipped_slack = 0;
+  for (int iter = 0; iter < max_iters; ++iter) {
+    // a/b: apply current_t and refresh STA.
+    for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+      sta_->setClockLatency(ck_clocks[i],
+                            const_cast<sta::Pin*>(ck_pins[i]),
+                            sta::RiseFallBoth::riseFall(),
+                            sta::MinMaxAll::all(),
+                            initial_latency[i] + current_t[i],
+                            sdc);
+    }
+    sta_->findRequireds();
+
+    // Pre-iter STA state. Used both for the slack filter in this
+    // iteration's enumeration and for the diagnostic row printed below.
+    const sta::Slack sta_wns_iter = sta_->worstSlack(sta::MinMax::max());
+    const sta::Slack sta_tns_iter
+        = sta_->totalNegativeSlack(sta::MinMax::max());
+
+    // Adaptive slack filter: a path with slack_now > S_now cannot bind
+    // the LP (its slack_initial > max(0, WNS) + 2·max_skew, beyond the
+    // union of WNS-bounding and TNS-opportunity regions even under the
+    // worst-case |t_j − t_i| envelope of 2·max_skew). Drop it.
+    //
+    // With VertexPathIterator this is a post-walk filter — STA still
+    // iterates over comfortable paths, we just skip the dedup and LP
+    // append. Cheap enough that empirically it doesn't materially
+    // change runtime, but it shrinks the LP edge set on heavily
+    // over-met endpoints.
+    const float max_skew_iter = solver_opts.max_skew;
+    const float S_now = std::max(0.0f, static_cast<float>(sta_wns_iter))
+                        + 4.0f * max_skew_iter;
+    const float setup_enum_threshold = std::min(
+        S_now,
+        std::max(0.0f, static_cast<float>(sta_wns_iter) + opts.edge_threshold));
+    const float hold_enum_threshold
+        = opts.hold_margin + 2.0f * max_skew_iter + opts.edge_threshold;
+    std::unordered_map<const sta::Pin*, float> setup_endpoint_slacks;
+    std::unordered_map<const sta::Pin*, float> hold_endpoint_slacks;
+
+    // c: enumerate and dedup using VertexPathIterator at each endpoint.
+    // VertexPathIterator gives one path per (endpoint, tag) — the worst
+    // arrival under the current t shifts. Across iterations, as shifts
+    // move which launch is the "worst" at each endpoint, the cutting
+    // plane naturally discovers a diverse set of (launch, capture)
+    // pairs.
+    //
+    // A full-design findPathEnds pass at iter 0 with wide slack_max was
+    // tried and proved intractable (~7 h on a 37 k-register design); the
+    // iter-0 augmentation pass below uses findPathEnds restricted to the
+    // critical endpoint set discovered by this walk, capping enumeration
+    // cost while still exposing near-critical alternative launches that
+    // VertexPathIterator's worst-per-tag rule hides.
+    //
+    // Hold-preservation invariant: paths with slack_now > S_now are
+    // dropped here, but S_now = max(0, WNS) + 4·max_skew bounds how far
+    // any LP shift can degrade hold slack (the LP envelope of
+    // |t_i − t_j| is 2·max_skew). So a hold edge with slack > S_now
+    // cannot be pushed below S_now − 2·max_skew ≥ 2·max_skew > 0 — it
+    // cannot become a violation, and dropping it from the LP is safe.
+    int new_edges = 0;
+    int iter_skipped_slack = 0;
+    // Per-endpoint worst setup/hold slack, computed via Sta::slack before
+    // any stored-path walk. The call matters beyond the filter below: it
+    // runs findRequired(vertex), materializing per-path required times —
+    // without it, tags skipped by bulk required propagation hold
+    // required = 0 and report slack = −arrival.
+    std::unordered_map<const sta::Vertex*, std::pair<sta::Slack, sta::Slack>>
+        endpoint_worst_slack;
+    auto record_path = [&](const sta::Path* path, bool is_setup) {
+      total_ends_seen++;
+      const sta::Slack slack_now = path->slack(this);
+      if (slack_now >= sta::INF) {
+        return;
+      }
+      if (static_cast<float>(slack_now) > S_now) {
+        ++iter_skipped_slack;
+        return;
+      }
+      // Genuineness filter. No genuine path lies below its endpoint's
+      // worst slack (the worst is the min over valid paths), so anything
+      // below it is a stale-required artifact — drop it rather than let
+      // it drive phase-1 ε hundreds of ps below the real WNS (1 ps
+      // tolerance for recompute noise).
+      sta::Vertex* end_vertex = path->vertex(this);
+      const auto worst_it = endpoint_worst_slack.find(end_vertex);
+      if (worst_it != endpoint_worst_slack.end()) {
+        const sta::Slack end_worst
+            = is_setup ? worst_it->second.first : worst_it->second.second;
+        if (static_cast<float>(slack_now)
+            < static_cast<float>(end_worst) - 1e-12f) {
+          return;
+        }
+      }
+      const sta::Pin* end_pin = path->pin(this);
+      if (!end_pin) {
+        return;
+      }
+      if (is_setup && static_cast<float>(slack_now) <= setup_enum_threshold) {
+        auto [cand_it, inserted] = setup_endpoint_slacks.emplace(
+            end_pin, static_cast<float>(slack_now));
+        if (!inserted && static_cast<float>(slack_now) < cand_it->second) {
+          cand_it->second = static_cast<float>(slack_now);
+        }
+      }
+      if (!is_setup && static_cast<float>(slack_now) <= hold_enum_threshold) {
+        auto [cand_it, inserted] = hold_endpoint_slacks.emplace(
+            end_pin, static_cast<float>(slack_now));
+        if (!inserted && static_cast<float>(slack_now) < cand_it->second) {
+          cand_it->second = static_cast<float>(slack_now);
+        }
+      }
+      const sta::Instance* end_inst = network_->instance(end_pin);
+      int cap_idx = kGround;
+      if (end_inst) {
+        auto it = inst_to_idx.find(end_inst);
+        if (it != inst_to_idx.end()) {
+          cap_idx = it->second;
+        }
+      }
+      const int launch_idx = find_launch_idx(path, cap_idx);
+      if (launch_idx == kGround && cap_idx == kGround) {
+        return;
+      }
+      if (launch_idx != kGround && cap_idx != kGround) {
+        const sta::ClockEdge* ce = path->clkEdge(this);
+        if (!ce || ce->clock() != ck_clocks[cap_idx]) {
+          return;
+        }
+      }
+      // Recover slack_initial from the current (shifted) slack:
+      //   setup: slack_new = slack_initial + (t[j] − t[i])
+      //   hold : slack_new = slack_initial + (t[i] − t[j])
+      const float ti = (launch_idx < static_cast<int>(current_t.size()))
+                           ? current_t[launch_idx]
+                           : 0.0f;
+      const float tj = (cap_idx < static_cast<int>(current_t.size()))
+                           ? current_t[cap_idx]
+                           : 0.0f;
+      const float adj = is_setup ? (tj - ti) : (ti - tj);
+      const float slack_initial = static_cast<float>(slack_now) - adj;
+      // Setup endpoints that are neither ports nor sequential-cell pins
+      // are clock-network integrity checks (clock-gating setup at a
+      // combinational gate input). Their slack sits in a path group
+      // worstSlack doesn't report and no register schedule can fix it —
+      // freeze such edges to a don't-worsen constraint instead of
+      // letting one drag phase-1 ε hundreds of ps below the real WNS.
+      bool frozen = false;
+      if (is_setup) {
+        const bool is_port = network_->isTopLevelPort(end_pin);
+        sta::LibertyCell* end_cell
+            = end_inst ? network_->libertyCell(end_inst) : nullptr;
+        const bool is_seq = end_cell && end_cell->hasSequentials();
+        frozen = !is_port && !is_seq;
+      }
+      EdgeKey key{launch_idx, cap_idx, is_setup, frozen};
+      auto it = edge_slacks.find(key);
+      if (it == edge_slacks.end()) {
+        edge_slacks.emplace(key, slack_initial);
+        ++new_edges;
+      } else if (slack_initial < it->second) {
+        it->second = slack_initial;
+      }
+    };
+
+    auto enumerate_paths_batched = [&](sta::PinSet* to_pins,
+                                       bool is_setup,
+                                       int group_path_count,
+                                       int endpoint_path_count,
+                                       float slack_max) {
+      sta::ExceptionTo* to = nullptr;
+      if (to_pins != nullptr) {
+        to = sdc->makeExceptionTo(to_pins,
+                                  nullptr,
+                                  nullptr,
+                                  sta::RiseFallBoth::riseFall(),
+                                  sta::RiseFallBoth::riseFall());
+      }
+      sta::StringSeq group_names;
+      sta::PathEndSeq path_ends = sta_->search()->findPathEnds(
+          nullptr,
+          nullptr,
+          to,
+          false,
+          sta_->scenes(),
+          is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+          group_path_count,
+          endpoint_path_count,
+          /*unique_pins=*/true,
+          false,
+          -sta::INF,
+          slack_max,
+          true,
+          group_names,
+          is_setup,
+          !is_setup,
+          false,
+          false,
+          false,
+          false);
+      total_augment_ends_seen += static_cast<int>(path_ends.size());
+      for (const sta::PathEnd* path_end : path_ends) {
+        if (path_end && path_end->path()) {
+          record_path(path_end->path(), is_setup);
+        }
+      }
+    };
+
+    const sta::MinMax* setup_mm = sta::MinMax::max();
+    const sta::MinMax* hold_mm = sta::MinMax::min();
+    sta::VertexSet& endpoints = sta_->search()->endpoints();
+    for (sta::Vertex* end : endpoints) {
+      // Sta::slack runs findRequired(vertex) first — call it before
+      // creating any VertexPathIterator on this vertex (mid-iteration it
+      // invalidates the path table) and cache the worst slacks for the
+      // genuineness filter in record_path.
+      const sta::Slack worst_setup = sta_->slack(end, setup_mm);
+      const sta::Slack worst_hold = sta_->slack(end, hold_mm);
+      endpoint_worst_slack[end] = {worst_setup, worst_hold};
+      for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+        sta::VertexPathIterator pit_setup(end, rf, setup_mm, this);
+        while (pit_setup.hasNext()) {
+          record_path(pit_setup.next(), /*is_setup=*/true);
+        }
+        sta::VertexPathIterator pit_hold(end, rf, hold_mm, this);
+        while (pit_hold.hasNext()) {
+          record_path(pit_hold.next(), /*is_setup=*/false);
+        }
+      }
+    }
+
+    // Iter-0 augmentation: one batched findPathEnds per check-type
+    // over critical endpoints (those the VertexPathIterator walk
+    // flagged in {setup,hold}_endpoint_slacks). Surfaces near-critical
+    // launches that VertexPathIterator's one-per-(endpoint,tag) limit
+    // hides, so the LP sees the full constraint set before phase 1
+    // picks ε.
+    auto augment_from_set
+        = [&](const std::unordered_map<const sta::Pin*, float>& critical,
+              bool is_setup,
+              float slack_max) {
+            if (critical.empty()) {
+              return;
+            }
+            // PinSet is owned by the ExceptionTo we hand to
+            // findPathEnds (via Sdc::makeExceptionTo). Per the
+            // sta::Search::findPathEnds contract, the ExceptionTo (and
+            // its PinSet) is deleted by Search on the next call. So
+            // raw new here is paired with a callee-owned delete; do
+            // not free it locally.
+            auto critical_pins = std::make_unique<sta::PinSet>(network_);
+            for (const auto& [pin, slack] : critical) {
+              critical_pins->insert(pin);
+            }
+            const int critical_count = static_cast<int>(critical_pins->size());
+            total_augment_endpoints += critical_count;
+            const int group_path_count = std::min(
+                kAugmentGroupCap, critical_count * augment_paths_per_endpoint);
+            enumerate_paths_batched(critical_pins.release(),
+                                    is_setup,
+                                    group_path_count,
+                                    augment_paths_per_endpoint,
+                                    slack_max);
+          };
+    if (iter == 0 && augment_paths_per_endpoint > 0) {
+      augment_from_set(setup_endpoint_slacks, /*is_setup=*/true, S_now);
+      augment_from_set(
+          hold_endpoint_slacks, /*is_setup=*/false, hold_enum_threshold);
+    }
+
+    // d: build LP from the full edge set and solve.
+    SkewLPSolver solver(kGround + 1, solver_opts);
+    solver.pinRegister(kGround);
+    for (const auto& [key, slack] : edge_slacks) {
+      const int i = std::get<0>(key);
+      const int j = std::get<1>(key);
+      const bool is_setup = std::get<2>(key);
+      if (is_setup) {
+        solver.addSetupEdge(
+            {.i = i, .j = j, .slack = slack, .frozen = std::get<3>(key)});
+      } else {
+        solver.addHoldEdge({.i = i, .j = j, .slack = slack});
+      }
+    }
+    const SkewLPSolver::Result result = solver.solve();
+
+    // e: print row. STA's WNS/TNS reflect the state BEFORE this iter's
+    // LP shifts were applied (= the state we just enumerated under).
+    total_skipped_slack += iter_skipped_slack;
+    logger_->report(
+        " {:4d} | {:9d} | {:11d} | {:>8s} | {:>8s} | {:>8s} | {:>8s}",
+        iter,
+        new_edges,
+        static_cast<int>(edge_slacks.size()),
+        delayAsString(result.wns, 2, sta_),
+        delayAsString(result.tns, 2, sta_),
+        delayAsString(sta_wns_iter, 2, sta_),
+        delayAsString(sta_tns_iter, 2, sta_));
+
+    if (result.status == SkewLPSolver::Status::kHoldInfeasible
+        || result.status == SkewLPSolver::Status::kSolverFailure) {
+      final_result = result;
+      break;
+    }
+    final_result = result;
+    final_t = result.t;
+    current_t = result.t;
+
+    // f: converged when no new constraint was discovered this round.
+    if (new_edges == 0 && iter > 0) {
+      break;
+    }
+  }
+
+  // Restore the design's initial clock latencies before aborting so a failed
+  // budget never leaves the cutting-plane's tentative set_clock_latency
+  // annotations in the SDC. Without this, an abort would corrupt downstream
+  // timing with skew that was computed but never realized.
+  // Put one CK pin back to its exact pre-LP SDC state: drop the clock/pin
+  // latency the LP wrote, then re-apply each original per-(rise/fall, min/max)
+  // value only if removing the LP's annotation also dropped it. A
+  // clock-agnostic pin latency survives removeClockLatency, so re-applying it
+  // would duplicate the original as a clock-specific annotation.
+  auto restore_pin_latency = [&](int i) {
+    sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        const size_t ri = rf->index();
+        const size_t mi = mm->index();
+        if (!orig_pin_latency_set[i][ri][mi]) {
+          continue;
+        }
+        float cur = 0.0f;
+        bool cur_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, cur, cur_exists);
+        if (!cur_exists || cur != orig_pin_latency[i][ri][mi]) {
+          sta_->setClockLatency(ck_clocks[i],
+                                const_cast<sta::Pin*>(ck_pins[i]),
+                                rf->asRiseFallBoth(),
+                                mm->asMinMaxAll(),
+                                orig_pin_latency[i][ri][mi],
+                                sdc);
+        }
+      }
+    }
+  };
+  auto restore_initial_latencies = [&]() {
+    for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+      restore_pin_latency(i);
+    }
+    sta_->findRequireds();
+  };
+
+  if (final_result.status == SkewLPSolver::Status::kHoldInfeasible) {
+    logger_->warn(utl::RSZ,
+                  602,
+                  "compute_skew_budget: hold-infeasible — skew alone "
+                  "cannot satisfy hold guardband.");
+    restore_initial_latencies();
+    return;
+  }
+  if (final_result.status == SkewLPSolver::Status::kSolverFailure) {
+    logger_->warn(utl::RSZ, 1225, "compute_skew_budget: LP solver failure.");
+    restore_initial_latencies();
+    return;
+  }
+  if (final_result.status == SkewLPSolver::Status::kSetupInfeasible) {
+    logger_->info(utl::RSZ,
+                  603,
+                  "compute_skew_budget: closure infeasible by skew alone; "
+                  "achievable WNS = {}.",
+                  delayAsString(final_result.wns, 3, sta_));
+  }
+
+  // Snap the schedule to the realization quantum (the CTS delay-buffer
+  // delay) so the verification below — and the rollback decision — see
+  // exactly the schedule CTS will physically build. Without this, the LP
+  // promises arbitrary-valued targets and CTS rounds them to buffer
+  // counts, putting up to ±quantum/2 of unverified error on every sink.
+  //
+  // Two snapping candidates are evaluated with STA: round-to-nearest
+  // (least total error, but overshoots — risky when the WNS-critical
+  // launch lands late) and floor (never delays a sink past its LP
+  // target). Keep whichever measures better, hold first, then WNS, then
+  // TNS.
+  auto apply_schedule = [&](const std::vector<float>& ts) {
+    for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+      const float ti = ts.empty() ? 0.0f : ts[i];
+      sta_->setClockLatency(ck_clocks[i],
+                            const_cast<sta::Pin*>(ck_pins[i]),
+                            sta::RiseFallBoth::riseFall(),
+                            sta::MinMaxAll::all(),
+                            initial_latency[i] + ti,
+                            sdc);
+    }
+    sta_->findRequireds();
+  };
+  struct StaMetrics
+  {
+    float wns;
+    float tns;
+    float hold_wns;
+    float hold_tns;
+  };
+  auto measure_sta = [&]() -> StaMetrics {
+    return {static_cast<float>(sta_->worstSlack(sta::MinMax::max())),
+            static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::max())),
+            static_cast<float>(sta_->worstSlack(sta::MinMax::min())),
+            static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::min()))};
+  };
+  if (opts.quantum > 0.0f && !final_t.empty()) {
+    auto snap = [&](float ti, bool to_floor) {
+      const double q = opts.quantum;
+      double snapped
+          = to_floor ? std::floor(ti / q) * q : std::lround(ti / q) * q;
+      if (opts.one_sided && snapped < 0.0) {
+        snapped = 0.0;
+      }
+      return std::clamp(static_cast<float>(snapped),
+                        -solver_opts.max_skew,
+                        solver_opts.max_skew);
+    };
+    std::vector<float> nearest_t = final_t;
+    std::vector<float> floor_t = final_t;
+    for (size_t i = 0; i < final_t.size(); ++i) {
+      nearest_t[i] = snap(final_t[i], /*to_floor=*/false);
+      floor_t[i] = snap(final_t[i], /*to_floor=*/true);
+    }
+    apply_schedule(nearest_t);
+    const StaMetrics m_nearest = measure_sta();
+    apply_schedule(floor_t);
+    const StaMetrics m_floor = measure_sta();
+    const float tol = opts.emit_threshold;
+    auto rank = [&](const StaMetrics& m) {
+      const bool hold_ok
+          = m.hold_wns >= -tol || m.hold_wns >= initial_sta_hold_wns - tol;
+      return std::make_tuple(hold_ok, m.wns, m.tns);
+    };
+    final_t = (rank(m_nearest) > rank(m_floor)) ? nearest_t : floor_t;
+  }
+
+  // Sanity check: cutting-plane can fail to converge on dense-fanin
+  // designs (each iteration adds ~K new edges indefinitely because too
+  // many launches share each endpoint to discover in finite iterations
+  // via VertexPathIterator). When that happens the LP's chosen shifts
+  // may leave STA worse than the initial state. Useful skew is an
+  // optimization, not a degradation, so apply the final shifts only if
+  // STA actually improves; otherwise blank them out.
+  //
+  // Re-run findRequireds at the post-LP state (the cutting-plane loop
+  // left the latencies at current_t from the last iteration's apply
+  // step; we want the final_t values now, which equal current_t since
+  // we copy final_t = result.t at end of each non-failing iter).
+  for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    const float ti = final_t.empty() ? 0.0f : final_t[i];
+    sta_->setClockLatency(ck_clocks[i],
+                          const_cast<sta::Pin*>(ck_pins[i]),
+                          sta::RiseFallBoth::riseFall(),
+                          sta::MinMaxAll::all(),
+                          initial_latency[i] + ti,
+                          sdc);
+  }
+  sta_->findRequireds();
+  const float final_sta_wns
+      = static_cast<float>(sta_->worstSlack(sta::MinMax::max()));
+  const float final_sta_tns
+      = static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::max()));
+  const float final_sta_hold_wns
+      = static_cast<float>(sta_->worstSlack(sta::MinMax::min()));
+  const float final_sta_hold_tns
+      = static_cast<float>(sta_->totalNegativeSlack(sta::MinMax::min()));
+
+  // wns_tolerance is "1 ps in user time"; we use a slightly looser
+  // tolerance (10 × that) to absorb STA recompute noise.
+  const float degrade_tol = 10.0f * opts.emit_threshold;
+  const bool wns_degraded = final_sta_wns < initial_sta_wns - degrade_tol;
+  const bool tns_degraded = final_sta_tns < initial_sta_tns - degrade_tol;
+  // Hold "degraded" means we created (or worsened) an actual violation
+  // — reducing margin on a still-comfortable edge is by design, since
+  // the LP's hold constraint preserves slack ≥ hold_margin not slack ≥
+  // initial_slack.
+  const bool hold_wns_degraded
+      = final_sta_hold_wns < -degrade_tol
+        && final_sta_hold_wns < initial_sta_hold_wns - degrade_tol;
+  const bool hold_tns_degraded
+      = final_sta_hold_tns < -degrade_tol
+        && final_sta_hold_tns < initial_sta_hold_tns - degrade_tol;
+  const bool rolled_back
+      = wns_degraded || tns_degraded || hold_wns_degraded || hold_tns_degraded;
+  if (rolled_back) {
+    logger_->warn(
+        utl::RSZ,
+        604,
+        "compute_skew_budget: LP shifts degraded timing (STA WNS {} -> {}, "
+        "TNS {} -> {}, hold WNS {} -> {}, hold TNS {} -> {}); rolling back "
+        "all annotations.",
+        delayAsString(initial_sta_wns, 3, sta_),
+        delayAsString(final_sta_wns, 3, sta_),
+        delayAsString(initial_sta_tns, 3, sta_),
+        delayAsString(final_sta_tns, 3, sta_),
+        delayAsString(initial_sta_hold_wns, 3, sta_),
+        delayAsString(final_sta_hold_wns, 3, sta_),
+        delayAsString(initial_sta_hold_tns, 3, sta_),
+        delayAsString(final_sta_hold_tns, 3, sta_));
+    std::ranges::fill(final_t, 0.0f);
+  }
+
+  // 5. Final emission. Restore registers that didn't move; rewrite the
+  // others as initial + final_t. removeClockLatency when there was no
+  // pin-level latency originally so the clock-level latency takes back
+  // over (rather than leaving a stale 0-shift pin annotation that still
+  // overrides).
+  //
+  // The schedule is also emitted as a "useful_skew_target" double
+  // property on each shifted register instance. CTS realization reads
+  // the properties (annotations are a report-time fiction that CTS
+  // strips); clear stale targets from any previous run first.
+  constexpr const char* kUsefulSkewTargetProp = "useful_skew_target";
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (odb::dbDoubleProperty* prop
+        = odb::dbDoubleProperty::find(inst, kUsefulSkewTargetProp)) {
+      odb::dbProperty::destroy(prop);
+    }
+  }
+  int n_emitted = 0;
+  for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    const float ti = final_t.empty() ? 0.0f : final_t[i];
+
+    // Never leave the schedule as a set_clock_latency annotation.
+    // Restore every CK pin to its pre-LP state so STA does not model skew
+    // that CTS has not physically built yet (which would bias repair_timing
+    // and double-count once CTS inserts the delay buffers). The schedule
+    // survives only as the useful_skew_target property — a timing-inert
+    // signal CTS reads to decide whether to realize the skew.
+    restore_pin_latency(i);
+
+    if (std::fabs(ti) >= opts.emit_threshold) {
+      odb::dbITerm* ck_iterm = nullptr;
+      odb::dbBTerm* ck_bterm = nullptr;
+      odb::dbModITerm* ck_moditerm = nullptr;
+      db_network_->staToDb(ck_pins[i], ck_iterm, ck_bterm, ck_moditerm);
+      if (ck_iterm) {
+        odb::dbDoubleProperty::create(
+            ck_iterm->getInst(), kUsefulSkewTargetProp, ti);
+      }
+      n_emitted++;
+    }
+  }
+  // Refresh STA so downstream commands (and any subsequent
+  // report_wns / report_tns the user runs) see the emitted state, not
+  // the cutting-plane's last intermediate.
+  sta_->findRequireds();
+
+  logger_->info(
+      utl::RSZ,
+      605,
+      "compute_skew_budget: {} registers, {} annotated, WNS = {}, TNS = {}.",
+      ck_pins.size(),
+      n_emitted,
+      delayAsString(final_result.wns, 3, sta_),
+      delayAsString(final_result.tns, 3, sta_));
+  logger_->info(utl::RSZ,
+                606,
+                "compute_skew_budget: {} edges in final LP, {} path ends seen, "
+                "{} pruned by slack gate, across all iterations.",
+                edge_slacks.size(),
+                total_ends_seen,
+                total_skipped_slack);
+  logger_->info(utl::RSZ,
+                607,
+                "compute_skew_budget: augmentation pass enumerated {} path "
+                "ends over {} critical endpoints (cap {} paths/endpoint).",
+                total_augment_ends_seen,
+                total_augment_endpoints,
+                augment_paths_per_endpoint);
+
+  // Histogram of annotated skew targets. Reports in the design's time
+  // units (via Sta::units()->timeUnit()->staToUser), and only counts
+  // registers we actually emitted set_clock_latency for — zero-shift
+  // registers would otherwise dominate the +0 bin with nothing to
+  // learn from.
+  if (n_emitted > 0) {
+    utl::Histogram<float> hist(logger_);
+    sta::Unit* time_unit = sta_->units()->timeUnit();
+    for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+      const float ti = final_t.empty() ? 0.0f : final_t[i];
+      if (std::fabs(ti) >= opts.emit_threshold) {
+        hist.addData(time_unit->staToUser(ti));
+      }
+    }
+    logger_->report("Skew target distribution (annotated registers only):");
+    hist.generateBins(20);
+    hist.report(3);
+  }
+}
+
+////////////////////////////////////////////////////////////////
 // Journal to roll back changes
 void Resizer::initForJournalRestore()
 {
   init();
 }
 
+void Resizer::recountDesignAreaAfterUndo()
+{
+  // init() counts the area before the undo, so overMaxArea() would still see
+  // the undone edits.  Only overMaxArea() reads the tracked area, so the
+  // walk runs only under a -max_utilization limit.
+  if (max_area_) {
+    initDesignArea();
+  }
+}
+
 void Resizer::updateParasiticsAndTiming()
 {
   if (estimate_parasitics_->isIncrementalParasiticsEnabled()) {
-    estimate_parasitics_->updateParasitics();
-  } else {
+    updateIncrementalTiming(estimate_parasitics_, sta_);
+    return;
+  }
+
+  {
+    const ProfileScope scope("full_rc");
+    RepairSetupProfiler::event("full_rc_requests");
     estimate_parasitics_->estimateParasitics(
         estimate_parasitics_->getParasiticsSrc());
   }
+
+  const ProfileScope scope("incremental_sta");
   sta_->findRequireds();
 }
 
@@ -5151,18 +6713,21 @@ int Resizer::rejectedLegacyMoveCount() const
 
 void Resizer::journalBegin()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   odb::dbDatabase::beginEco(block_);
+  RepairSetupProfiler::journalBegin();
 }
 
 void Resizer::journalEnd()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   if (!odb::dbDatabase::ecoEmpty(block_)) {
-    estimate_parasitics_->updateParasitics();
-    sta_->findRequireds();
+    updateIncrementalTiming(estimate_parasitics_, sta_);
   }
   odb::dbDatabase::commitEco(block_);
+  RepairSetupProfiler::journalEnd(false);
 }
 
 void Resizer::journalMakeBuffer(sta::Instance* buffer)
@@ -5181,11 +6746,15 @@ void Resizer::journalMakeBuffer(sta::Instance* buffer)
 // STA findRequireds() is performed also.
 void Resizer::journalRestore()
 {
+  const ProfileScope scope("journal");
   debugPrint(logger_, RSZ, "journal", 1, "journal restore starts >>>");
   init();
 
   if (odb::dbDatabase::ecoEmpty(block_)) {
+    RepairSetupProfiler::event("journal_undo_begin",
+                               {.count = std::nullopt, .trace = true});
     odb::dbDatabase::undoEco(block_);
+    RepairSetupProfiler::journalEnd(true);
     debugPrint(logger_,
                RSZ,
                "journal",
@@ -5195,9 +6764,11 @@ void Resizer::journalRestore()
   }
 
   // Odb callbacks invalidate parasitics on the touched nets during undo.
+  RepairSetupProfiler::event("journal_undo_begin",
+                             {.count = std::nullopt, .trace = true});
   odb::dbDatabase::undoEco(block_);
-  estimate_parasitics_->updateParasitics();
-  sta_->findRequireds();
+  RepairSetupProfiler::journalEnd(true);
+  updateIncrementalTiming(estimate_parasitics_, sta_);
 
   // ECO undo can change the graph topology seen by later passes.
   invalidateVertexOrdering();
@@ -5747,26 +7318,17 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
   delete pin_iter;
 }
 
-void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
-                                   sta::LibertyPort* drvr_port,
-                                   const sta::LibertyPortSeq& equiv_ports,
-                                   const float load_cap,
-                                   const sta::Scene* scene,
-                                   const sta::MinMax* min_max,
-                                   sta::LibertyPort** swap_port,
-                                   sta::ArcDelay* base_delay_out,
-                                   sta::ArcDelay* candidate_delay_out)
+void Resizer::swapPinDelays(
+    sta::LibertyPort* input_port,
+    sta::LibertyPort* drvr_port,
+    const float load_cap,
+    const sta::Scene* scene,
+    const sta::MinMax* min_max,
+    sta::ArcDelay& base_delay,
+    std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays)
 {
   sta::LibertyCell* cell = drvr_port->libertyCell();
-  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
-  sta::ArcDelay base_delay = -sta::INF;
-  if (base_delay_out != nullptr) {
-    *base_delay_out = 0.0;
-  }
-  if (candidate_delay_out != nullptr) {
-    *candidate_delay_out = 0.0;
-  }
-
+  base_delay = -sta::INF;
   for (sta::TimingArcSet* arc_set : cell->timingArcSets()) {
     if (arc_set->to() != drvr_port || arc_set->role()->isTimingCheck()) {
       continue;
@@ -5796,13 +7358,37 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
       const sta::ArcDelay gate_delay = dcalc_result.gateDelay();
       if (port == input_port) {
         base_delay = std::max(base_delay, gate_delay);
-      } else if (!port_delays.contains(port)) {
-        port_delays.emplace(port, gate_delay);
       } else {
-        port_delays[input_port] = std::max(port_delays[port], gate_delay);
+        auto [it, inserted] = port_delays.try_emplace(port, gate_delay);
+        if (!inserted) {
+          it->second = std::max(it->second, gate_delay);
+        }
       }
     }
   }
+}
+
+void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
+                                   sta::LibertyPort* drvr_port,
+                                   const sta::LibertyPortSeq& equiv_ports,
+                                   const float load_cap,
+                                   const sta::Scene* scene,
+                                   const sta::MinMax* min_max,
+                                   sta::LibertyPort** swap_port,
+                                   sta::ArcDelay* base_delay_out,
+                                   sta::ArcDelay* candidate_delay_out)
+{
+  if (base_delay_out != nullptr) {
+    *base_delay_out = 0.0;
+  }
+  if (candidate_delay_out != nullptr) {
+    *candidate_delay_out = 0.0;
+  }
+
+  std::map<sta::LibertyPort*, sta::ArcDelay> port_delays;
+  sta::ArcDelay base_delay;
+  swapPinDelays(
+      input_port, drvr_port, load_cap, scene, min_max, base_delay, port_delays);
 
   const sta::ArcDelay reference_delay = base_delay;
   for (sta::LibertyPort* port : equiv_ports) {
@@ -6049,7 +7635,8 @@ void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
   swappable_cells_cache_.clear();
-  equiv_cells_made_ = false;
+  target_load_map_ = nullptr;
+  clearEquivCells();
 }
 
 void Resizer::copyDontUseFromLiberty()
@@ -6105,7 +7692,8 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "sizeup") {
     return MoveType::kSizeUp;
   }
-  if (lower == "size_down_fanout" || lower == "size_down") {
+  if (lower == "size_down_fanout" || lower == "size_down"
+      || lower == "sizedown") {
     return MoveType::kSizeDownFanout;
   }
   if (lower == "clone") {
@@ -6122,6 +7710,9 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   }
   if (lower == "reroute") {
     return MoveType::kReroute;
+  }
+  if (lower == "buffer_to_inverters") {
+    return MoveType::kBufferToInverters;
   }
   throw std::invalid_argument("Invalid move type: " + s);
 }
@@ -6147,6 +7738,23 @@ std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
   return result;
 }
 
+RepairEffort Resizer::repairEffortFromString(const std::string& effort) const
+{
+  if (effort == "low") {
+    return RepairEffort::kLow;
+  }
+
+  if (effort == "medium") {
+    return RepairEffort::kMedium;
+  }
+
+  // The Tcl and Python commands both parse -effort here.
+  if (effort != "high") {
+    logger_->error(RSZ, 3242, "-effort must be low, medium or high.");
+  }
+  return RepairEffort::kHigh;
+}
+
 bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 {
   if (isTristateDriver(driver_pin)) {
@@ -6166,6 +7774,60 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
   odb::dbNet* db_net = db_network_->staToDb(net);
 
   return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+}
+
+sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
+    sta::LibertyCell* curr_cell)
+{
+  if (!curr_cell) {
+    return nullptr;
+  }
+  const sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_cell);
+  auto it = std::ranges::find(equiv_cells, curr_cell);
+  if (it == equiv_cells.end()) {
+    return nullptr;
+  }
+  sta::LibertyCell* running_best = curr_cell;
+  for (++it; it != equiv_cells.end(); ++it) {
+    sta::LibertyCell* cand_cell = *it;
+    bool weakens_drive = false;
+    for (sta::Scene* scene : sta_->scenes()) {
+      const int lib_ap = scene->libertyIndex(max_);
+      sta::LibertyCell* best_corner = running_best->sceneCell(lib_ap);
+      if (best_corner == nullptr) {
+        continue;
+      }
+      sta::LibertyCell* cand_corner = cand_cell->sceneCell(lib_ap);
+      if (cand_corner == nullptr) {
+        weakens_drive = true;
+        break;
+      }
+      sta::LibertyCellPortIterator port_iter(best_corner);
+      while (port_iter.hasNext()) {
+        sta::LibertyPort* best_port = port_iter.next();
+        if (!best_port->direction()->isAnyOutput()) {
+          continue;
+        }
+        sta::LibertyPort* cand_port
+            = cand_corner->findLibertyPort(best_port->name());
+        if (cand_port == nullptr
+            || cand_port->driveResistance(sta::RiseFall::rise(), max_)
+                   > best_port->driveResistance(sta::RiseFall::rise(), max_)
+            || cand_port->driveResistance(sta::RiseFall::fall(), max_)
+                   > best_port->driveResistance(sta::RiseFall::fall(), max_)) {
+          weakens_drive = true;
+          break;
+        }
+      }
+      if (weakens_drive) {
+        break;
+      }
+    }
+    if (!weakens_drive) {
+      running_best = cand_cell;
+    }
+  }
+  return running_best != curr_cell ? running_best : nullptr;
 }
 
 // Check if current instance can be swapped to the
@@ -6189,18 +7851,8 @@ bool Resizer::checkAndMarkVTSwappable(
     return false;
   }
   sta::LibertyCell* curr_lib_cell = network_->libertyCell(cell);
-  if (!curr_lib_cell) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  sta::LibertyCellSeq equiv_cells = getVTEquivCells(curr_lib_cell);
-  if (equiv_cells.empty()) {
-    notSwappable.insert(inst);
-    return false;
-  }
-  best_lib_cell = equiv_cells.back();
-  if (best_lib_cell == curr_lib_cell) {
-    best_lib_cell = nullptr;
+  best_lib_cell = selectBetterRfDriveVtCell(curr_lib_cell);
+  if (best_lib_cell == nullptr) {
     notSwappable.insert(inst);
     return false;
   }
@@ -6459,9 +8111,50 @@ void Resizer::inferClockBufferList(const char* lib_name,
   }
 }
 
-float Resizer::getSlewRCFactor() const
+// Compute a slew shape factor for Elmore approximation
+void Resizer::computeSlewShapeFactor()
 {
-  return repair_design_->getSlewRCFactor();
+  using sta::RiseFall;
+  const sta::LibertyLibrary* library = network_->defaultLibertyLibrary();
+  float factor = 0.0;
+  for (auto rf : RiseFall::range()) {
+    // cast both rise and fall into 1->0 transition
+    float th_low, th_high;
+    if (rf == RiseFall::rise()) {
+      // flip
+      th_low = 1.0 - library->slewUpperThreshold(rf);
+      th_high = 1.0 - library->slewLowerThreshold(rf);
+    } else {
+      th_low = library->slewLowerThreshold(rf);
+      th_high = library->slewUpperThreshold(rf);
+    }
+    // compute crossing times assuming RC=1 where R is driving resistance and C
+    // is load
+    float t_high = -log(th_high);
+    float t_low = -log(th_low);
+    // scale by slew derate
+    float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
+    // check the factor has the right order of magnitude
+    if (!(rf_factor >= 0.1 && rf_factor <= 10.0)) {
+      logger_->error(
+          RSZ,
+          101,
+          "Elmore slew modeling shape factor is out of range: {:.3e} for {}",
+          rf_factor,
+          rf->name());
+    }
+    debugPrint(logger_,
+               RSZ,
+               "lib_preprocessing",
+               1,
+               "transition {} shape factor {:.3e}",
+               rf->name(),
+               rf_factor);
+    factor = std::max(factor, rf_factor);
+  }
+  // Apply 10% modeling pessmism
+  const float pessimism = 0.10;
+  slew_shape_factor_ = factor * (1 + pessimism);
 }
 
 sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
@@ -6565,8 +8258,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const sta::Scene* corner,
     std::map<const sta::Pin*, float>& load_pin_slew)
 {
-  repair_design_->init();
-
   using BnetPtr = BufferedNetPtr;
 
   sta::LibertyCell* cell = network_->libertyCell(buffer_instance);
@@ -6585,6 +8276,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
 
   BnetPtr tree1 = makeBufferedNet(drvr_pin, corner);
   BnetPtr tree2 = makeBufferedNet(buffer_drvr_pin, corner);
+  if (!tree1 || !tree2) {
+    return false;
+  }
   BnetPtr stitched_tree = stitchTrees(tree1, buffer_load_pin, tree2);
 
   if (stitched_tree == tree1) {
@@ -6733,8 +8427,7 @@ bool Resizer::estimateSlewsInTree(
           case BnetType::via: {
             double r_via
                 = node->viaResistance(corner, this, estimate_parasitics_);
-            double t_via = r_via * node->ref()->cap()
-                           * repair_design_->slew_rc_factor_.value();
+            double t_via = r_via * node->ref()->cap() * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -6756,7 +8449,7 @@ bool Resizer::estimateSlewsInTree(
                 corner, this, estimate_parasitics_, unit_res, unit_cap);
             double t_wire = length * unit_res
                             * (node->ref()->cap() + length * unit_cap / 2)
-                            * repair_design_->slew_rc_factor_.value();
+                            * slew_shape_factor_;
             debugPrint(logger_,
                        RSZ,
                        "slew_check",
@@ -6839,7 +8532,7 @@ void Resizer::findSwapPinCandidate(sta::LibertyPort* input_port,
                        swap_port);
 }
 
-bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
+float Resizer::maxCapIncrease(const sta::Pin* drvr_pin)
 {
   float cap;
   float max_cap;
@@ -6850,17 +8543,23 @@ bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
       drvr_pin, sta_->scenes(), max_, cap, max_cap, cap_slack, tr, corner);
 
   if (max_cap > 0.0 && corner != nullptr) {
-    const float new_cap = cap + cap_delta;
+    // A violating driver may not get worse.
     if (cap_slack < 0.0) {
-      return new_cap <= cap;
+      return 0.0f;
     }
-    return new_cap <= max_cap;
+    return max_cap - cap;
   }
-  return true;
+  return std::numeric_limits<float>::infinity();
+}
+
+bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
+{
+  return cap_delta <= maxCapIncrease(drvr_pin);
 }
 
 bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
-                                         const sta::LibertyCell* replacement)
+                                         const sta::LibertyCell* replacement,
+                                         const sta::Mode* mode)
 {
   if (replacement == nullptr) {
     return false;
@@ -6885,6 +8584,27 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
+    // Skip the max-cap check on a register clock pin only when its clock is
+    // ideal: the clock net's capacitance is irrelevant to timing then.
+    if (network_->isRegClkPin(pin) && mode != nullptr
+        && mode->clkNetwork()->isIdealClock(pin)) {
+      continue;
+    }
+
+    // Skip the max-cap check on scan-enable/scan-in pins because they
+    // tend to be high fanout pins
+    if (db_network_ != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      db_network_->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm != nullptr
+          && (db_network_->isScanEnable(iterm)
+              || db_network_->isScanIn(iterm))) {
+        continue;
+      }
+    }
+
     const float old_cap
         = inputPinCapacitance(network_, pin, current_cell, max_);
     const float new_cap = inputPinCapacitance(network_, pin, replacement, max_);
@@ -6899,6 +8619,73 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       }
     }
   }
+  return true;
+}
+
+std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
+    sta::Instance* inst)
+{
+  std::vector<InputCapBudget> budgets;
+  sta::LibertyCell* current_cell = network_->libertyCell(inst);
+  if (current_cell == nullptr) {
+    return budgets;
+  }
+
+  // One STA capacitance check per fanin driver, shared by every replacement.
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    sta::Pin* pin = pin_iter->next();
+    if (!network_->direction(pin)->isAnyInput()) {
+      continue;
+    }
+
+    sta::PinSet* drivers = network_->drivers(pin);
+    sta::LibertyPort* port = network_->libertyPort(pin);
+    if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+
+    InputCapBudget budget;
+    budget.port = port;
+    budget.current_cap = inputPinCapacitance(network_, pin, current_cell, max_);
+    for (const sta::Pin* driver_pin : *drivers) {
+      budget.max_cap_increase
+          = std::min(budget.max_cap_increase, maxCapIncrease(driver_pin));
+    }
+
+    budgets.push_back(std::move(budget));
+  }
+
+  return budgets;
+}
+
+bool Resizer::replacementFitsInputCapBudgets(
+    const std::vector<InputCapBudget>& budgets,
+    const sta::LibertyCell* replacement) const
+{
+  if (replacement == nullptr) {
+    return false;
+  }
+
+  for (const InputCapBudget& budget : budgets) {
+    const sta::LibertyPort* cell_port
+        = replacement->findLibertyPort(budget.port->name());
+
+    float new_cap = 0.0f;
+    if (cell_port != nullptr) {
+      for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+        new_cap = std::max(new_cap, cell_port->capacitance(rf, max_));
+      }
+    }
+
+    const float cap_delta = new_cap - budget.current_cap;
+    // Same acceptance rule as checkMaxCapOK() for every driver.
+    if (cap_delta > 0.0f && cap_delta > budget.max_cap_increase) {
+      return false;
+    }
+  }
+
   return true;
 }
 

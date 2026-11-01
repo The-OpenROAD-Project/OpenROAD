@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -12,31 +12,8 @@ package(
     features = ["layering_check"],
 )
 
-# Headers owned by :dpl but also consumed by :ui. Kept package-private so
-# nothing outside //src/dpl can depend on them.
 cc_library(
-    name = "dpl_private_hdrs",
-    hdrs = [
-        "src/graphics/DplObserver.h",
-        "src/infrastructure/Coordinates.h",
-        "src/infrastructure/Grid.h",
-        "src/infrastructure/Objects.h",
-        "src/infrastructure/architecture.h",
-        "src/infrastructure/network.h",
-    ],
-    includes = ["src"],
-    visibility = ["//visibility:private"],
-    deps = [
-        # note: cyclic dependency, headers include things provided by :dpl
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.icl",
-        "@boost.utility",
-    ],
-)
-
-cc_library(
-    name = "dpl",
+    name = "dpl_impl",
     srcs = [
         "src/CheckPlacement.cpp",
         "src/DecapPlacement.cpp",
@@ -98,21 +75,49 @@ cc_library(
     hdrs = [
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
+        "src/graphics/DplObserver.h",
+        "src/infrastructure/Coordinates.h",
+        "src/infrastructure/Grid.h",
+        "src/infrastructure/Objects.h",
+        "src/infrastructure/architecture.h",
+        "src/infrastructure/network.h",
     ],
     includes = [
         "include",
         "src",
     ],
+    visibility = [
+        "//src/dpl:__subpackages__",
+    ],
     deps = [
-        ":dpl_private_hdrs",
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.container_hash",
         "@boost.format",
         "@boost.geometry",
+        "@boost.icl",
         "@boost.polygon",
         "@boost.random",
         "@boost.tokenizer",
+        "@boost.utility",
         "@coin-or-lemon//:lemon",
+    ],
+)
+
+cc_library(
+    name = "dpl",
+    hdrs = [
+        "include/dpl/Opendp.h",
+        "include/dpl/OptMirror.h",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.geometry",
     ],
 )
 
@@ -133,13 +138,13 @@ cc_library(
         "src",
     ],
     deps = [
-        ":dpl",
-        ":dpl_private_hdrs",
+        ":dpl_impl",
         "//:ord",
-        "//src/gui",
         "//src/odb/src/db",
         "//src/utl",
+        "//src/web:core",
         "@boost.icl",
+        "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
         "@tcl_lang//:tcl",
@@ -204,4 +209,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/dpl/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":dpl"],
 )

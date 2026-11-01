@@ -1,59 +1,34 @@
 # Detailed Placement
 
-The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or
-Open-Source Detailed Placement Engine. Its key features are:
+The detailed placement module in OpenROAD (`dpl`) legalizes the result of
+global placement: it moves instances to legal sites on rows while
+minimizing displacement. It is also used to re-legalize the design after
+incremental changes such as resizing and buffer insertion. It originated from OpenDP (Open-Source Detailed
+Placement Engine) and now uses a negotiation-based legalizer (NBLG) by
+default, with the original OpenDP diamond search available as a legacy
+engine. It supports:
 
--   Fence region support
--   Fragmented row support
--   Mixed-cell-height (1x–4x) legalization
--   Two placement engines selectable at runtime
+-   Mixed-cell-height (1x–4x) designs
+-   Fence regions
+-   Fragmented rows
+-   Placement padding and filler insertion
 
 ## Placement Engines
 
-#### Diamond Search
-
-The default engine performs a BFS-style diamond search from each cell's
-global placement position, expanding outward in Manhattan order until a
-legal site is found.
+DPL provides two options for legalization. Negotiation legalizer is the default and is slightly slower, but can handle dense designs. Diamond search is faster (linear runtime), although it is not able to handle dense designs. Diamond search is also used at the end of Negotiation for handling potential failed corner cases.
 
 #### NegotiationLegalizer
 
-An optional two-pass legalizer based on the NBLG paper. Enabled with
-`-use_negotiation` on the `detailed_placement` command.
+The default two-pass legalizer based on the NBLG paper. Used on
+the `detailed_placement` command. The legacy diamond search engine can be
+selected with `-use_diamond_legalizer`.
 
-```
-Global Placement result
-        │
-        ▼
-┌───────────────────┐
-│   Abacus Pass     │  Fast DP sweep, row-by-row.
-│   (Skipped)       │  Near-optimal for uncongested cells.
-│                   │  Mixed-cell-height via row assignment.
-│  Handles:         │  Power-rail alignment enforced.
-│  - 1x/2x/3x/4x    │  Fence violations → skipped (→ negotiation).
-│  - Fence regions  │
-└────────┬──────────┘
-         │ illegal cells (overlap / fence violated)
-         ▼
-┌───────────────────┐
-│ Negotiation Pass  │  Iterative rip-up & replace (from NBLG paper).
-│                   │  Illegal cells + spatial neighbors compete for
-│  NBLG components: │  grid resources.  History cost penalises
-│  - Adaptive pf    │  persistent congestion.  Isolation point skips
-│  - Isolation pt   │  already-legal cells in phase 2.
-│  - History cost   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Post-optimisation │  Greedy displacement improvement (5 passes).
-│     (Skipped)     │  Cell swap via bipartite matching within groups.
-│                   │  
-└────────┬──────────┘
-         │
-         ▼
-   Legal placement written back to OpenDB
-```
+#### Diamond Search
+
+Former engine performs a BFS-style diamond search from each cell's
+global placement position, expanding outward in Manhattan order until a
+legal site is found.
+
 # Commands
 
 ```{note}
@@ -71,8 +46,13 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
-    [-use_negotiation]
-    [-abacus]
+    [-use_diamond_legalizer]
+    [-pdn_aware]
+    [-site_search_window sites]
+    [-row_search_window rows]
+    [-drc_penalty penalty]
+    [-disable_window_extension]
+    [-quiet]
 ```
 
 #### Options
@@ -84,8 +64,23 @@ detailed_placement
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
-| `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
-| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
+| `-pdn_aware` | Check cell pins and obstructions against fixed vias on special power and ground nets. This check is disabled by default and works with both legalization engines. Supply pins must be connected to their special nets for same-net exemptions. The mode remains active for subsequent `optimize_mirroring` and `check_placement` commands until the next `detailed_placement` call. |
+| `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
+| `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
+| `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |
+| `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
+| `-quiet` | Less verbose, shows: number of instances moves, displacement, HPWL, and runtime at logs and json. Use it when dpl is called by other stages (e.g. after clock tree synthesis or antenna repair). |
+
+The PDN-aware check covers overlap, conservative width/parallel-run-length
+routing spacing, and default cut spacing, with same-net pin exemptions.
+It does not check end-of-line rules, conditional cut-spacing rules, or
+geometry added during pin access.
+The existing pin-blockage check also exempts same-net pin geometry,
+with or without `-pdn_aware`.
+Run `global_connect` after buffer insertion or resizing and before
+`detailed_placement -pdn_aware` when global connection rules define the
+supply bindings.
 
 ### Set Placement Padding
 
@@ -158,10 +153,17 @@ remove_fillers
 The `check_placement` command checks the placement legality. It returns
 `0` if the placement is legal.
 
+With `-fixed`, only fixed instances (e.g., tapcells and endcaps) and macros
+are checked, which validates the floorplan before the standard cells are
+placed. With `-placeable`, only the movable cells are checked. Without either
+option, both are checked.
+
 ```tcl
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
+    [-fixed]
+    [-placeable]
     [-report_file_name filename]
 ```
 
@@ -171,6 +173,8 @@ check_placement
 | ----- | ----- |
 | `-verbose` | Enable verbose logging. |
 | `-disallow_one_site_gaps` | Option is deprecated. |
+| `-fixed` | Check fixed instances and macros. |
+| `-placeable` | Check movable cells. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 
 ### Optimize Mirroring
@@ -218,37 +222,27 @@ Examples scripts demonstrating how to run `dpl` on a sample design of `aes` as f
 
 There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/dpl/...
 ```
 
 ## Limitations
 
-The following limitations apply when using the NegotiationLegalizer (`-use_negotiation`):
+The following limitations apply when using the NegotiationLegalizer (default):
 
-1. **Abacus cluster chain**: The current Abacus implementation uses a
-   simplified cluster structure. A production version should maintain an
-   explicit doubly-linked list of cells within each cluster, as in the
-   original Spindler et al. paper.
-
-2. **Multithreading**: The negotiation pass is single-threaded.
+1. **Multithreading**: The negotiation pass is single-threaded.
    Extend with the inter-region parallelism from NBLG (Algorithm 2, dynamic
    region adjustment) using OpenMP or std::thread.
 
-3. **Fence region R-tree**: Replace linear scan in `FenceRegion::nearestRect()`
+2. **Fence region R-tree**: Replace linear scan in `FenceRegion::nearestRect()`
    with a spatial index (Boost.Geometry rtree or OpenROAD's existing RTree)
    for large designs with many fence sub-rectangles.
 
-4. **Row rail inference**: Currently uses row-index parity as a proxy for
+3. **Row rail inference**: Currently uses row-index parity as a proxy for
    VDD/VSS. Replace with actual LEF pg_pin parsing once available in the
    build context.
-
-## FAQs
-
-Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+opendp+in%3Atitle)
-about this tool.
 
 ## Authors
 
@@ -259,9 +253,8 @@ about this tool.
 ## References
 
 1. Do, S., Woo, M., & Kang, S. (2019, May). Fence-region-aware mixed-height standard cell legalization. In Proceedings of the 2019 on Great Lakes Symposium on VLSI (pp. 259-262). [(.pdf)](https://dl.acm.org/doi/10.1145/3299874.3318012)
-2. P. Spindler et al., "Abacus: Fast legalization of standard cell circuits with minimal movement," ISPD 2008.
-3. J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern Design," IEEE TCAD, vol. 41, no. 11, 2022.
-4. L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based performance-driven router for FPGAs," 1995.
+2. J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern Design," IEEE TCAD, vol. 41, no. 11, 2022.
+3. L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based performance-driven router for FPGAs," 1995.
 
 ## License
 

@@ -7,10 +7,30 @@ on:
 
 jobs:
   Check-Bazel-Lock:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # MODULE.bazel overrides sv-elab to the third-party/sv-elab
+          # submodule, so module resolution needs it checked out.
+          submodules: 'recursive'
 
-      - name: Verify lock file is up to date
-        run: bazelisk mod deps --lockfile_mode=error
+      - name: Set up bazel
+        uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3  # 0.19.1
+        with:
+          bazelisk-version: 1.x
+          bazelisk-cache: true
+
+      - name: Update lock file to check for differences
+        run: bazel mod deps --lockfile_mode=update
+
+      - name: Differences to be addressed
+        run: |
+          if ! git diff --exit-code -- MODULE.bazel.lock ; then
+            msg="MODULE.bazel.lock is out of date. Regenerate with:"
+            msg="$msg  bazel mod deps --lockfile_mode=update"
+            msg="$msg  then commit the updated MODULE.bazel.lock."
+            echo "::error file=MODULE.bazel.lock::$msg"
+            exit 1
+          fi

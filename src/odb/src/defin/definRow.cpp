@@ -10,13 +10,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <optional>
 #include <vector>
 
 #include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -71,7 +74,7 @@ void definRow::begin(const char* name,
                      dbOrientType orient,
                      defRow direction,
                      int num_sites,
-                     int spacing)
+                     std::optional<int> spacing)
 {
   dbSite* site = getSite(site_name);
 
@@ -86,6 +89,29 @@ void definRow::begin(const char* name,
     return;
   }
 
+  // When STEP is omitted the sites abut (DEF 5.8 ROW, Example 4-25), so
+  // the pitch is the oriented site extent along the row direction.
+  Rect site_box(0, 0, site->getWidth(), site->getHeight());
+  dbTransform(orient).apply(site_box);
+  const int site_extent
+      = direction == DEF_VERTICAL ? site_box.dy() : site_box.dx();
+  const int db_spacing = spacing ? dbdist(*spacing) : site_extent;
+
+  // Rows with a site spacing smaller than the site extent declare
+  // overlapping sites.  Reject them here so the issue is surfaced at read
+  // time instead of later.
+  if (num_sites > 1 && db_spacing < site_extent) {
+    _logger->warn(utl::ODB,
+                  478,
+                  "Row {} has site spacing ({}) smaller than the site extent "
+                  "along the row ({}); the row's sites overlap.  Row ignored.",
+                  name,
+                  db_spacing,
+                  site_extent);
+    ++_errors;
+    return;
+  }
+
   if (direction == DEF_VERTICAL) {
     _cur_row = dbRow::create(_block,
                              name,
@@ -95,7 +121,7 @@ void definRow::begin(const char* name,
                              orient,
                              dbRowDir::VERTICAL,
                              num_sites,
-                             dbdist(spacing));
+                             db_spacing);
   } else {
     _cur_row = dbRow::create(_block,
                              name,
@@ -105,7 +131,7 @@ void definRow::begin(const char* name,
                              orient,
                              dbRowDir::HORIZONTAL,
                              num_sites,
-                             dbdist(spacing));
+                             db_spacing);
   }
 }
 void definRow::property(const char* name, const char* value)

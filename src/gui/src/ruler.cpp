@@ -120,7 +120,8 @@ bool RulerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
   return true;
 }
 
-void RulerDescriptor::highlight(const std::any& object, Painter& painter) const
+void RulerDescriptor::highlight(const std::any& object,
+                                web::Painter& painter) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   if (ruler->isEuclidian()) {
@@ -132,7 +133,7 @@ void RulerDescriptor::highlight(const std::any& object, Painter& painter) const
   }
 }
 
-Descriptor::Properties RulerDescriptor::getProperties(
+web::Descriptor::Properties RulerDescriptor::getProperties(
     const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
@@ -151,7 +152,8 @@ Descriptor::Properties RulerDescriptor::getProperties(
           {"Euclidian", ruler->isEuclidian()}};
 }
 
-Descriptor::Editors RulerDescriptor::getEditors(const std::any& object) const
+web::Descriptor::Editors RulerDescriptor::getEditors(
+    const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
   return {{"Name", makeEditor([this, ruler](const std::any& value) {
@@ -195,7 +197,7 @@ bool RulerDescriptor::editPoint(const std::any& value,
                                 bool is_x)
 {
   bool accept;
-  const int new_val = Descriptor::Property::convert_string(
+  const int new_val = web::Descriptor::Property::convert_string(
       std::any_cast<std::string>(value), &accept);
   if (!accept) {
     return false;
@@ -208,22 +210,23 @@ bool RulerDescriptor::editPoint(const std::any& value,
   return true;
 }
 
-Descriptor::Actions RulerDescriptor::getActions(const std::any& object) const
+web::Descriptor::Actions RulerDescriptor::getActions(
+    const std::any& object) const
 {
   auto ruler = std::any_cast<Ruler*>(object);
 
   return {{"Delete", [ruler]() {
-             gui::Gui::get()->deleteRuler(ruler->getName());
-             return Selected();  // unselect since this object is now gone
+             web::Gui::get()->deleteRuler(ruler->getName());
+             return web::Selected();  // unselect since this object is now gone
            }}};
 }
 
-Selected RulerDescriptor::makeSelected(const std::any& object) const
+web::Selected RulerDescriptor::makeSelected(const std::any& object) const
 {
   if (auto ruler = std::any_cast<Ruler*>(&object)) {
-    return Selected(*ruler, this);
+    return web::Selected(*ruler, this);
   }
-  return Selected();
+  return web::Selected();
 }
 
 bool RulerDescriptor::lessThan(const std::any& l, const std::any& r) const
@@ -235,7 +238,7 @@ bool RulerDescriptor::lessThan(const std::any& l, const std::any& r) const
 }
 
 void RulerDescriptor::visitAllObjects(
-    const std::function<void(const Selected&)>& func) const
+    const std::function<void(const web::Selected&)>& func) const
 {
   for (auto& ruler : rulers_) {
     func({ruler.get(), this});

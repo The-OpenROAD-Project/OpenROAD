@@ -15,26 +15,47 @@
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <random>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "backendContext.h"
 #include "boost/polygon/polygon.hpp"
+#include "boost/random/normal_distribution.hpp"
+#include "boost/random/uniform_int_distribution.hpp"
+#include "densityGradientBackend.h"
 #include "fft.h"
 #include "gpl/Replace.h"
+#include "hpwlBackend.h"
+#include "ioPinBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "omp.h"
 #include "placerBase.h"
 #include "point.h"
 #include "utl/Logger.h"
+#include "wirelengthGradientBackend.h"
+
+// Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
+// unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
+// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
+#include "gpu/deviceState.h"
+#include "gpu/nesterovDeviceContext.h"
+#include "gpu/regionDensityField.h"
+#ifdef ENABLE_GPU
+#include "gpu/gpuRuntime.h"
+#endif
 
 #define REPLACE_SQRT2 1.414213562373095048801L
 
 namespace gpl {
+
+// Defined out-of-line so the std::unique_ptr<DeviceState> member can be
+// destroyed where DeviceState is a complete type (the gpu/deviceState.h
+// include above) without leaking that include into nesterovBase.h.
+NesterovBaseCommon::~NesterovBaseCommon() = default;
 
 using odb::dbBlock;
 using utl::GPL;
@@ -163,6 +184,23 @@ void GCell::setCenterLocation(int cx, int cy)
   for (auto& gPin : gPins_) {
     gPin->updateLocation(this);
   }
+}
+
+int64_t GCell::getInflationArea() const
+{
+  if (isFiller()) {
+    return 0;
+  }
+  // Instance geometry carries current master dimensions, placement padding
+  // and pin-density extension. A move callback can make the GCell unpadded;
+  // it must not change this reference or turn padding into congestion area.
+  int64_t physical_area = insts_.front()->getArea();
+  if (insts_.size() > 1) {
+    const GCell physical(insts_);
+    physical_area = static_cast<int64_t>(physical.dx()) * physical.dy();
+  }
+  return std::max<int64_t>(0,
+                           static_cast<int64_t>(dx()) * dy() - physical_area);
 }
 
 // changing size and preserve center coordinates
@@ -327,6 +365,11 @@ void GNet::setCustomWeight(float customWeight)
   customWeight_ = customWeight;
 }
 
+void GNet::setPowerWeight(float powerWeight)
+{
+  powerWeight_ = powerWeight;
+}
+
 void GNet::addGPin(GPin* gPin)
 {
   gPins_.push_back(gPin);
@@ -343,6 +386,14 @@ void GNet::updateBox()
     ux_ = std::max(gPin->cx(), ux_);
     uy_ = std::max(gPin->cy(), uy_);
   }
+}
+
+void GNet::setBox(int lx, int ly, int ux, int uy)
+{
+  lx_ = lx;
+  ly_ = ly;
+  ux_ = ux;
+  uy_ = uy;
 }
 
 int64_t GNet::getHpwl() const
@@ -897,16 +948,24 @@ void BinGrid::updateBinsNonPlaceArea()
   // overlapping macros cannot exceed a single-macro contribution.
   const int dbu_per_micron
       = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
+  std::vector<int64_t> nonPlaceAreaRaw(bins_.size(), 0);
   for (auto& inst : pb_->nonPlaceInsts()) {
     std::pair<int, int> pairX = getMinMaxIdxX(inst);
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int y = pairY.first; y < pairY.second; y++) {
       for (int x = pairX.first; x < pairX.second; x++) {
         Bin& bin = bins_[y * binCntX_ + x];
-        bin.addNonPlaceArea(getOverlapArea(&bin, inst, dbu_per_micron)
-                            * bin.getTargetDensity());
+        nonPlaceAreaRaw[y * binCntX_ + x]
+            += getOverlapArea(&bin, inst, dbu_per_micron);
       }
     }
+  }
+  for (size_t i = 0; i < bins_.size(); ++i) {
+    if (nonPlaceAreaRaw[i] == 0) {
+      continue;
+    }
+    bins_[i].addNonPlaceArea(
+        static_cast<int64_t>(nonPlaceAreaRaw[i] * bins_[i].getTargetDensity()));
   }
   for (size_t i = 0; i < bins_.size(); ++i) {
     if (bin_insts[i].empty()) {
@@ -921,8 +980,52 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 }
 
+// The per-cell density scatter, in place. The bin accumulators are int64_t and
+// each addend is truncated before it is added, so the total is a sum over a
+// fixed multiset of integers -- associative and commutative, hence independent
+// of the order threads reach it, and bit-identical at any thread count.
+//
+// schedule(dynamic) because per-cell cost is its bin-overlap count, which
+// varies by an order of magnitude between a std cell and a macro.
+void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
+                                        int parallel_threads)
+{
+#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+  for (const GCellHandle& cell : cells) {
+    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+
+    if (cell->isInstance()) {
+      const bool macro = cell->isMacroInstance();
+      if (!macro && !cell->isStdInstance()) {
+        continue;
+      }
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          float scaledArea
+              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+          if (macro) {
+            scaledArea *= bin.getTargetDensity();
+          }
+          bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
+        }
+      }
+    } else if (cell->isFiller()) {
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
+          bin.atomicAddFillerArea(static_cast<int64_t>(
+              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+        }
+      }
+    }
+  }
+}
+
 // Core Part
-void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
+void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
+                                         int parallel_threads)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -930,49 +1033,61 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
     bin.setFillerArea(0);
   }
 
-  for (auto& cell : cells) {
-    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-    // The following function is critical runtime hotspot
-    // for global placer.
-    //
-    if (cell->isInstance()) {
-      // macro should have
-      // scale-down with target-density
-      if (cell->isMacroInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-
-            const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                     * cell->getDensityScale()
-                                     * bin.getTargetDensity();
-            bin.addInstPlacedAreaUnscaled(scaledAvea);
-          }
+  // A single scatter implementation for every CPU case, threaded or not, so
+  // that every existing test exercises the code that threaded runs use.
+#ifdef ENABLE_GPU
+  // The device build keeps its pre-existing flat-buffer scatter for threaded
+  // runs: that one is thread-order-dependent, and this change cannot
+  // re-verify the device path.
+  if (parallel_threads > 1) {
+    const int nbins = static_cast<int>(bins_.size());
+    std::vector<float> inst_area(nbins, 0.0f);
+    std::vector<float> filler_area(nbins, 0.0f);
+#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+    for (const GCellHandle& cell : cells) {
+      const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+      if (cell->isInstance()) {
+        const bool macro = cell->isMacroInstance();
+        if (!macro && !cell->isStdInstance()) {
+          continue;
         }
-      }
-      // normal cells
-      else if (cell->isStdInstance()) {
         for (int y = pairY.first; y < pairY.second; y++) {
           for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-            const float scaledArea
+            const int bi = y * binCntX_ + x;
+            Bin& bin = bins_[bi];
+            float v
                 = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-            bin.addInstPlacedAreaUnscaled(scaledArea);
+            if (macro) {
+              v *= bin.getTargetDensity();
+            }
+#pragma omp atomic
+            inst_area[bi] += v;
           }
         }
-      }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                            * cell->getDensityScale());
+      } else if (cell->isFiller()) {
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            const int bi = y * binCntX_ + x;
+            const float v = getOverlapDensityArea(bins_[bi], cell)
+                            * cell->getDensityScale();
+#pragma omp atomic
+            filler_area[bi] += v;
+          }
         }
       }
     }
+#pragma omp parallel for num_threads(parallel_threads)
+    for (int b = 0; b < nbins; b++) {
+      bins_[b].setInstPlacedAreaUnscaled(inst_area[b]);
+      bins_[b].setFillerArea(filler_area[b]);
+    }
+  } else {
+    scatterDensityAreaInPlace(cells, 1);
   }
+#else
+  scatterDensityAreaInPlace(cells, parallel_threads);
+#endif
 
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
   sumOverflowArea_ = 0;
@@ -1076,22 +1191,30 @@ std::pair<int, int> BinGrid::getMinMaxIdxY(const Instance* inst) const
 NesterovBaseVars::NesterovBaseVars(const PlaceOptions& options)
     : isSetBinCnt(options.binGridCntX != 0 && options.binGridCntY != 0),
       useUniformTargetDensity(options.uniformTargetDensityMode),
+      placeIosMode(options.placeIosMode),
       targetDensity(options.density),
       binCntX(isSetBinCnt ? options.binGridCntX : 0),
       binCntY(isSetBinCnt ? options.binGridCntY : 0),
       minPhiCoef(options.minPhiCoef),
-      maxPhiCoef(options.maxPhiCoef)
+      maxPhiCoef(options.maxPhiCoef),
+      initialPlacePerturbationSeed(options.initialPlacePerturbationSeed),
+      initialPlacePerturbationDist(options.initialPlacePerturbationDist)
 {
 }
 
 ////////////////////////////////////////////////
 // NesterovPlaceVars
-NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
+NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
+                                     int64_t design_hpwl)
     : maxNesterovIter(options.nesterovPlaceMaxIter),
       initDensityPenalty(options.initDensityPenaltyFactor),
       initWireLengthCoef(options.initWireLengthCoef),
       targetOverflow(options.overflow),
-      referenceHpwl(options.referenceHpwl),
+      referenceHpwl(options.referenceHpwl > 0
+                        ? options.referenceHpwl
+                        : std::max(kReferenceHpwlFloor,
+                                   kReferenceHpwlFraction
+                                       * static_cast<float>(design_hpwl))),
       routability_end_overflow(options.routabilityCheckOverflow),
       routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
@@ -1116,6 +1239,10 @@ NesterovBaseCommon::NesterovBaseCommon(
     const Clusters& clusters)
     : nbVars_(nbVars), num_threads_{num_threads}
 {
+  // hpwl_backend_ and device_state_ are constructed at the end of this ctor
+  // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU
+  // backend needs the device state, and the device state initializer reads
+  // those storage vectors.
   assert(omp_get_thread_num() == 0);
   pbc_ = std::move(pbc);
   log_ = log;
@@ -1241,6 +1368,34 @@ NesterovBaseCommon::NesterovBaseCommon(
       gNet.addGPin(pbToNb(pin));
     }
   }
+
+  // Construct the device-side coordinate pool (instance coords, per-pin
+  // offsets, net→pin CSR) only when the GPU path is selected at run time.
+  // The HPWL backend factory then takes a pointer to it; the GPU backend
+  // borrows the pool, the CPU backend ignores it.
+#ifdef ENABLE_GPU
+  if (gpuEnabled()) {
+    device_state_
+        = std::make_unique<DeviceState>(gCellStor_, gPinStor_, gNetStor_);
+  }
+#endif
+  BackendContext nbc_ctx;
+  nbc_ctx.nbc = this;
+  nbc_ctx.device_state = device_state_.get();
+  nbc_ctx.num_threads = num_threads_;
+  nbc_ctx.place_ios_mode = nbVars_.placeIosMode;
+  hpwl_backend_ = makeHpwlBackend(nbc_ctx);
+  debugPrint(log_, GPL, "init", 1, "HPWL backend: {}", hpwl_backend_->name());
+
+  // WA wirelength gradient dispatcher. Same factory pattern as
+  // hpwl_backend_; routes through device_state_ on the GPU path.
+  wl_grad_backend_ = makeWirelengthGradientBackend(nbc_ctx);
+  debugPrint(log_,
+             GPL,
+             "init",
+             1,
+             "WA wirelength gradient backend: {}",
+             wl_grad_backend_->name());
 }
 
 GCell* NesterovBaseCommon::pbToNb(Instance* inst) const
@@ -1290,7 +1445,13 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 //
 // * Note that wlCoeffX and wlCoeffY is 1/gamma
 // in ePlace paper.
-void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
+//
+// _native is the CPU OMP loop body; the public updateWireLengthForceWA
+// dispatcher lives in wirelengthGradient.cpp and routes through
+// wl_grad_backend_ (CPU or GPU). CpuWirelengthGradientBackend calls into
+// this method.
+void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
+                                                        float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
   // clear all WA variables.
@@ -1554,18 +1715,8 @@ void NesterovBaseCommon::updateDbGCells()
   }
 }
 
-int64_t NesterovBaseCommon::getHpwl()
-{
-  assert(omp_get_thread_num() == 0);
-  int64_t hpwl = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : hpwl)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
-    gNet->updateBox();
-    hpwl += gNet->getHpwl();
-  }
-  return hpwl;
-}
+// NesterovBaseCommon::getHpwl() is defined out-of-line in src/hpwl.cpp, where
+// it delegates to the HpwlBackend (CPU or GPU) chosen at construction.
 
 void NesterovBaseCommon::resetMinRcCellSize()
 {
@@ -1752,9 +1903,11 @@ void NesterovBaseCommon::fixPointers()
         if (it != db_bterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
-          if (gPinStor_[gpin_index].getGCell()) {
-            gPinStor_[gpin_index].getGCell()->addGPin(&gPinStor_[gpin_index]);
-          }
+          // Re-point the BTerm pin's net like the ITerm loop above does —
+          // destroyCbkGNet's swap-remove moves GNet objects between storage
+          // slots, so the pin's old pointer may now reference a different
+          // net (or a popped slot).
+          gPinStor_[gpin_index].setGNet(&gNet);
         } else {
           debugPrint(log_,
                      GPL,
@@ -1766,6 +1919,37 @@ void NesterovBaseCommon::fixPointers()
       }
     }
   }
+
+#ifdef ENABLE_GPU
+  // gCellStor_ contents were rebuilt — any device coord copy is stale.
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
+}
+
+void NesterovBaseCommon::rebuildDeviceState()
+{
+#ifdef ENABLE_GPU
+  // The TD repair callbacks created, destroyed (swap-remove permutes
+  // storage indices), and resized instances; every construction-time view
+  // and CSR in the DeviceState is invalid. Rebuild in place — backends
+  // borrow the DeviceState by pointer and re-fetch views per call, so the
+  // object identity must survive. fixPointers() must have run first so the
+  // host-side gPin→gCell/gNet wiring this reads is consistent.
+  if (device_state_) {
+    device_state_->rebuild(gCellStor_, gPinStor_, gNetStor_);
+  }
+#endif
+}
+
+void NesterovBaseCommon::refreshDeviceNetWeights()
+{
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->refreshNetWeights(gNetStor_);
+  }
+#endif
 }
 
 void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
@@ -1941,6 +2125,58 @@ void NesterovBaseCommon::reportInstanceExtensionByPinDensity() const
   }
 }
 
+// Calculate a random initial placement perturbation offset.
+// Standard cells are shifted by random offsets drawn from a 2D circular
+// Gaussian distribution.
+//
+// The displacement is generated by sampling independent normal distributions
+// in X and Y with standard deviation sigma:
+//   sigma = r_dbu * sqrt(-1 / (2 * ln(1 - P)))
+//
+// where r_dbu is the target perturbation radius in DBUs, and P is the target
+// probability (99.5%) of a cell falling within the circle of radius r_dbu.
+// This Rayleigh-distributed radius has:
+//   sigma \approx 0.3071963263271184 * r_dbu.
+//
+// The target perturbation radius defaults to min(site_y, 0.5 micron) if not
+// explicitly set by -perturb_dist.
+std::pair<int, int> NesterovBase::calculatePlacementPerturbationOffset(
+    int dbu_per_micron) const
+{
+  int site_y = pb_->getSiteSizeY();
+  if (site_y <= 0) {
+    return {0, 0};
+  }
+
+  // If perturbation distance is explicitly set to 0, skip perturbation.
+  if (nbVars_.initialPlacePerturbationDist == 0.0f) {
+    return {0, 0};
+  }
+
+  double r_dbu = 0.0;
+  if (nbVars_.initialPlacePerturbationDist > 0.0f) {
+    r_dbu = nbVars_.initialPlacePerturbationDist * (dbu_per_micron / 1000.0);
+  } else {
+    r_dbu = std::min(0.5 * dbu_per_micron, static_cast<double>(site_y));
+  }
+
+  // To ensure that 99.5% of the perturbations fall within a circle of radius
+  // r_dbu, we use a Rayleigh distribution for the radial distance R = sqrt(X^2
+  // + Y^2). CDF(r) = 1 - exp(-r^2 / (2 * sigma^2)) = 0.995 => sigma = r_dbu *
+  // sqrt(-1 / (2 * ln(0.005))) sigma \approx 0.3071963263271184 * r_dbu.
+  const double sigma = r_dbu * 0.3071963263271184;
+
+  boost::random::normal_distribution<double> dist(0.0, sigma);
+
+  double dx = dist(generator_);
+  double dy = dist(generator_);
+
+  int x_offset = std::round(dx);
+  int y_offset = std::round(dy);
+
+  return {x_offset, y_offset};
+}
+
 ////////////////////////////////////////////////
 // NesterovBase
 
@@ -1951,18 +2187,22 @@ NesterovBase::NesterovBase(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<NesterovBaseCommon> nbc,
     utl::Logger* log)
-    : nbVars_(nbVars)
+    : nbVars_(nbVars), generator_(nbVars.initialPlacePerturbationSeed)
 {
   pb_ = std::move(pb);
   nbc_ = std::move(nbc);
   log_ = log;
+  // Touch the GPU-path bookkeeping fields: only ENABLE_GPU code reads them,
+  // and this no-op use keeps CPU-only clang builds (-Wunused-private-field)
+  // quiet without [[maybe_unused]], which gcc ignores on non-static data
+  // members and escalates under -Werror=attributes.
+  (void) host_coords_fresh_;
+  (void) use_device_density_;
   log_->info(GPL,
              33,
              "---- Initialize Nesterov Region: {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
-  // Set a fixed seed
-  srand(42);
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea();
@@ -1976,8 +2216,8 @@ NesterovBase::NesterovBase(
 
   // add place instances
   for (auto& pb_inst : pb_->placeInsts()) {
-    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    auto [x_offset, y_offset]
+        = calculatePlacementPerturbationOffset(dbu_per_micron);
 
     GCell* gCell = nbc_->pbToNb(pb_inst);
     if (pb_inst != gCell->insts()[0]) {
@@ -2042,16 +2282,72 @@ NesterovBase::NesterovBase(
   // update binGrid info
   bg_.initBins();
 
+  // Publish the bin size so the GUI placement density heat map can default its
+  // grid to the one the placer optimized on. Region groups cover only part of
+  // the core, so only the top-level region is representative.
+  if (pb_->getGroup() == nullptr) {
+    odb::dbBlock* block = pb_->db()->getChip()->getBlock();
+    auto set_bin_size = [block](const char* name, int value) {
+      auto* prop = odb::dbIntProperty::find(block, name);
+      if (prop == nullptr) {
+        odb::dbIntProperty::create(block, name, value);
+      } else {
+        prop->setValue(value);
+      }
+    };
+    set_bin_size("gpl_bin_size_x", std::lround(bg_.getBinSizeX()));
+    set_bin_size("gpl_bin_size_y", std::lround(bg_.getBinSizeY()));
+  }
+
+#ifdef ENABLE_GPU
+  // Per-region FFT field Views. One per placement region so concurrent
+  // regions in the Nesterov loop never clobber each other's bin buffers.
+  // Created only on the GPU path (device_state non-null iff gpuEnabled()).
+  if (nbc_->getDeviceState()) {
+    region_density_field_ = std::make_unique<RegionDensityField>(bg_);
+    // The GPU density-gradient / FFT factories select the GPU backend only
+    // when a region field with numBins() > 0 is present; otherwise they fall
+    // back to CPU. On the GPU path that fallback would be a silent
+    // half-on-CPU misconfiguration, so fail loudly if the region's bin grid
+    // came out empty.
+    if (region_density_field_->numBins() == 0) {
+      const std::string region_name
+          = pb_->getGroup() ? pb_->getGroup()->getName() : "top-level";
+      log_->error(GPL,
+                  331,
+                  "GPU placement is enabled but region '{}' has an empty bin "
+                  "grid; the density solve cannot run on the device.",
+                  region_name);
+    }
+  }
+#endif
+
   // initialize fft structrue based on bins
   std::unique_ptr<FFT> fft(new FFT(bg_.getBinCntX(),
                                    bg_.getBinCntY(),
                                    bg_.getBinSizeX(),
-                                   bg_.getBinSizeY()));
+                                   bg_.getBinSizeY(),
+                                   region_density_field_.get()));
 
   fft_ = std::move(fft);
+  debugPrint(log_, GPL, "init", 1, "FFT backend: {}", fft_->getBackendName());
 
-  // update densitySize and densityScale in each gCell
+  // update densitySize and densityScale in each gCell. With the GPU path on,
+  // this also pushes the per-inst density params to the (now construction-time
+  // allocated) DeviceState views.
   updateDensitySize();
+
+  BackendContext nb_ctx;
+  nb_ctx.nb = this;
+  nb_ctx.device_state = nbc_->getDeviceState();
+  nb_ctx.region_field = region_density_field_.get();
+  density_grad_backend_ = makeDensityGradientBackend(nb_ctx);
+  debugPrint(log_,
+             GPL,
+             "init",
+             1,
+             "Density gradient backend: {}",
+             density_grad_backend_->name());
 
   checkConsistency();
 }
@@ -2244,7 +2540,7 @@ void NesterovBase::initFillerGCells()
   // mt19937 supports huge range of random values.
   // rand()'s RAND_MAX is only 32767.
   //
-  std::mt19937 randVal(0);
+  boost::random::mt19937 randVal(0);
   for (int i = 0; i < fillerCnt; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();
@@ -2270,6 +2566,25 @@ void NesterovBase::initFillerGCells()
   initial_filler_area_ = totalFillerArea_;
 }
 
+void NesterovBase::setIoPins(std::unique_ptr<IoPinBase> io_pins)
+{
+  io_ = std::move(io_pins);
+}
+
+void NesterovBase::updateDbIoPins()
+{
+  if (io_) {
+    io_->updateDb();
+  }
+}
+
+void NesterovBase::refreshIoPins()
+{
+  if (io_) {
+    io_->refreshGPins();
+  }
+}
+
 NesterovBase::~NesterovBase() = default;
 
 // gcell update
@@ -2279,6 +2594,11 @@ void NesterovBase::updateGCellCenterLocation(
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
+#ifdef ENABLE_GPU
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->invalidateCoords();
+  }
+#endif
 }
 
 void NesterovBase::updateGCellDensityCenterLocation(
@@ -2287,7 +2607,31 @@ void NesterovBase::updateGCellDensityCenterLocation(
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
-  bg_.updateBinsGCellDensityArea(nb_gcells_);
+  if (io_) {
+    io_->placeGPins(&coordis == &prevSLPCoordi_   ? IoPinBase::Iterate::kPrev
+                    : &coordis == &nextSLPCoordi_ ? IoPinBase::Iterate::kNext
+                                                  : IoPinBase::Iterate::kCur);
+  }
+#ifdef ENABLE_GPU
+  int scatter_threads = 1;
+  // Host coords changed — the device copy is no longer authoritative until
+  // the next commitCoordsToDeviceState (sticky-freshness contract).
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->invalidateCoords();
+  }
+  // Only the device build takes the flat-buffer scatter, which is
+  // thread-order-dependent; without a device it stays serial.
+  if (nb_device_ctx_ != nullptr) {
+    scatter_threads = static_cast<int>(nbc_->getNumThreads());
+  }
+#else
+  // Order-independent in place (integer accumulators, truncated addends), so
+  // threading it does not change the result. nbc_ is the thread count every
+  // other parallel loop in gpl uses; BinGrid::num_threads_ is not it --
+  // BinGrid::setNumThreads() has no callers, so it is always 1.
+  const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
+#endif
+  bg_.updateBinsGCellDensityArea(nb_gcells_, scatter_threads);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -2448,6 +2792,20 @@ int64_t NesterovBase::getNesterovInstsArea() const
              std::round(pb_->macroInstsArea() * targetDensity_));
 }
 
+int64_t NesterovBase::getInflationArea() const
+{
+  int64_t area = 0;
+  for (const auto& cell : nb_gcells_) {
+    if (cell->isStdInstance()) {
+      area += cell->getInflationArea();
+    } else if (cell->isMacroInstance()) {
+      area += static_cast<int64_t>(
+          std::round(cell->getInflationArea() * targetDensity_));
+    }
+  }
+  return area;
+}
+
 float NesterovBase::getSumPhi() const
 {
   return sumPhi_;
@@ -2456,6 +2814,88 @@ float NesterovBase::getSumPhi() const
 float NesterovBase::getUniformTargetDensity() const
 {
   return uniformTargetDensity_;
+}
+
+float NesterovBase::estimateTargetDensity(float overflow)
+{
+  if (getNesterovInstsArea() == 0) {
+    return uniformTargetDensity_;
+  }
+
+  // Populates each bin's placed-instance area
+  bg_.updateBinsGCellDensityArea(nb_gcells_,
+                                 static_cast<int>(nbc_->getNumThreads()));
+
+  // Do a binary search to find the density value that results in the
+  // target overflow.
+  auto bins = bg_.getBinsConst();
+
+  float min_density = uniformTargetDensity_;
+  float max_density = 1.0;
+  float current_density;
+  float current_overflow;
+
+  // 20 iterations should reach an error less than 1/2^20
+  int max_iter = 20;
+  for (int iter = 0; iter < max_iter; iter++) {
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "iter ({:}|{:})",
+               iter,
+               max_iter);
+    current_density = (min_density + max_density) / 2;
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_density {:g} ({:g}, {:g})",
+               current_density,
+               min_density,
+               max_density);
+    float sum_overflow_area_unscaled = 0;
+    for (auto& bin : bins) {
+      float non_place_area_unscaled = bin.getNonPlaceAreaUnscaled()
+                                      / bin.getTargetDensity()
+                                      * current_density;
+      float scaled_bin_area = bin.getBinArea() * current_density;
+
+      sum_overflow_area_unscaled
+          += std::max(0.0f,
+                      static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                          + non_place_area_unscaled - scaled_bin_area);
+    }
+
+    current_overflow = sum_overflow_area_unscaled / getNesterovInstsArea();
+    debugPrint(log_,
+               GPL,
+               "estimateTargetDensity",
+               1,
+               "current_overflow {:10.9f}, sum_overflow_areaUnscaled "
+               "{:13.9e}, getNesterovInstsArea(): {:13.9e}",
+               current_overflow,
+               sum_overflow_area_unscaled,
+               static_cast<float>(getNesterovInstsArea()));
+    if (std::abs(current_overflow - overflow) < 1e-6) {
+      return current_density;
+    }
+
+    if (current_overflow < overflow) {
+      max_density = current_density;
+    } else {
+      min_density = current_density;
+    }
+  }
+  log_->warn(
+      GPL,
+      186,
+      "Binary search didn't converge after {} iterations. The best density "
+      "found was {:g}, with an overflow of {:6.5f}.",
+      max_iter,
+      current_density,
+      current_overflow);
+  return current_density;
 }
 
 float NesterovBase::initTargetDensity() const
@@ -2498,6 +2938,52 @@ void NesterovBase::updateDensitySize()
     gCell->setDensitySize(densitySizeX, densitySizeY);
     gCell->setDensityScale(scaleX * scaleY);
   }
+
+#ifdef ENABLE_GPU
+  // Keep the device-side per-cell density params (NB level and the
+  // DeviceState inst mirror used by the legacy gather) in sync — routability
+  // inflation and TD area changes funnel through this method. The DeviceState
+  // inst-density views are allocated at construction, so this also handles
+  // the first call during NesterovBase::init (which pushes the just-computed
+  // params for this region's cells).
+  if (nb_device_ctx_) {
+    nb_device_ctx_->refreshCellDensityParams(nb_gcells_);
+  }
+  if (nbc_->getDeviceState()) {
+    nbc_->getDeviceState()->refreshDensityParams(nbc_->getGCellStor());
+  }
+#endif
+}
+
+void NesterovBase::updateTimingDrivenDensity()
+{
+  updateAreas();
+  // Macros contribute targetDensity * macro area to the density field.
+  // Solve D * whitespace = std + fillers + D * macros for D.
+  const int64_t available_area = getWhiteSpaceArea() - pb_->macroInstsArea();
+  if (available_area <= 0) {
+    // With only macros filling the region, the density equation holds for
+    // the current density. Any other nonpositive-space case is unsatisfiable.
+    if (available_area < 0 || stdInstsArea_ != 0 || getTotalFillerArea() != 0) {
+      auto* block = pb_->db()->getChip()->getBlock();
+      log_->error(GPL,
+                  334,
+                  "Cannot update timing-driven density in region '{}': "
+                  "non-macro available area is {:.3f} um^2, standard-cell area "
+                  "is {:.3f} um^2, and filler area is {:.3f} um^2.",
+                  pb_->getGroup() ? pb_->getGroup()->getName() : "top-level",
+                  block->dbuAreaToMicrons(available_area),
+                  block->dbuAreaToMicrons(stdInstsArea_),
+                  block->dbuAreaToMicrons(getTotalFillerArea()));
+    }
+  } else {
+    // Preserve the placer's existing float rounding when no macros are present.
+    // A one-ULP target change perturbs the subsequent optimization trajectory.
+    setTargetDensity(static_cast<float>(stdInstsArea_ + getTotalFillerArea())
+                     / static_cast<float>(available_area));
+  }
+  setMovableArea(getNesterovInstsArea() + getTotalFillerArea());
+  updateDensitySize();
 }
 
 void NesterovBase::updateAreas()
@@ -2586,11 +3072,14 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 
   FloatPoint electroForce;
 
+  const int bin_cnt_x = getBinCntX();
+  const auto& bins = bg_.getBinsConst();
+  const float scale = gCell->getDensityScale();
+
   for (int i = pairX.first; i < pairX.second; i++) {
     for (int j = pairY.first; j < pairY.second; j++) {
-      const Bin& bin = bg_.getBinsConst()[j * getBinCntX() + i];
-      float overlapArea
-          = getOverlapDensityArea(bin, gCell) * gCell->getDensityScale();
+      const Bin& bin = bins[j * bin_cnt_x + i];
+      float overlapArea = getOverlapDensityArea(bin, gCell) * scale;
 
       electroForce.x += overlapArea * bin.electroFieldX();
       electroForce.y += overlapArea * bin.electroFieldY();
@@ -2598,6 +3087,24 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
   }
 
   return electroForce;
+}
+
+void NesterovBase::fillFillerDensityGradients(
+    const std::vector<GCellHandle>& gCells,
+    std::vector<FloatPoint>& out) const
+{
+  // Bins' electrostatic fields are read-only here (updateDensityFieldBin ran
+  // earlier this iteration) and each cell writes a distinct out[] slot, so the
+  // loop is trivially parallel. Only fillers are computed; instance entries are
+  // supplied by the caller from the device gather.
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t i = 0; i < gCells.size(); ++i) {
+    if (gCells[i].isNesterovBaseCommon()) {
+      continue;  // instance — caller already filled it
+    }
+    const GCell* gc = gCells[i];
+    out[i] = getDensityGradient(gc);
+  }
 }
 
 // Density field calls
@@ -2660,6 +3167,7 @@ void NesterovBase::initDensity1()
   snapshotCoordi_.resize(gCellSize, FloatPoint());
   snapshotSLPCoordi_.resize(gCellSize, FloatPoint());
   snapshotSLPSumGrads_.resize(gCellSize, FloatPoint());
+  snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
@@ -2668,15 +3176,6 @@ void NesterovBase::initDensity1()
     int idx = it - nb_gcells_.begin();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
-
-    std::string type = "Uknown";
-    if (gCell->isInstance()) {
-      type = "StdCell";
-    } else if (gCell->isMacroInstance()) {
-      type = "Macro";
-    } else if (gCell->isFiller()) {
-      type = "Filler";
-    }
   }
 
   // bin
@@ -2696,6 +3195,120 @@ void NesterovBase::initDensity1()
 
   sum_overflow_unscaled_ = static_cast<float>(getOverflowAreaUnscaled())
                            / static_cast<float>(getNesterovInstsArea());
+
+  rebuildNbDeviceCtx();
+}
+
+void NesterovBase::rebuildNbDeviceCtx()
+{
+#ifdef ENABLE_GPU
+  if (!nbc_->getDeviceState()) {
+    return;
+  }
+  // The IO pin step reads the host pin positions every iteration. Stay
+  // host-resident.
+  if (io_) {
+    log_->warn(GPL,
+               176,
+               "Concurrent IO placement is not supported on the GPU "
+               "coordinate path; keeping placement coordinates host-resident.");
+    nb_device_ctx_.reset();
+    use_device_density_ = false;
+    host_coords_fresh_ = true;
+    return;
+  }
+  // TD / routability keep coords and grads host-resident (no device context):
+  // their boundary events (repair callbacks, filler cut/restore, single-cell
+  // updates) mutate the host arrays mid-run, and rebuilding a context from them
+  // would have to round-trip every device array at each boundary to avoid
+  // clobbering live momentum state. Heavy kernels (HPWL, WA gradient, density
+  // gather) still run on the GPU via the DeviceState-backed backends.
+  if (npVars_->timingDrivenMode || npVars_->routability_driven_mode) {
+    nb_device_ctx_.reset();
+    use_device_density_ = false;
+    host_coords_fresh_ = true;
+    return;
+  }
+  // Always reconstruct: sized to nb_gcells_.size(). Cheap relative to the
+  // host-side resize work the callers already do, and cutFillerCells /
+  // restoreRemovedFillers depend on the rebuild to keep the GPU path live
+  // (otherwise the next nb_device_ctx_ guard falls through to CPU silently).
+  nb_device_ctx_ = std::make_unique<NesterovDeviceContext>(nb_gcells_, bg_);
+  nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                     prevSLPCoordi_,
+                                     curCoordi_,
+                                     curSLPSumGrads_,
+                                     prevSLPSumGrads_);
+  commitCoordsToDeviceState(SlpSlot::Cur);
+  host_coords_fresh_ = true;
+
+  // Device-resident density pipeline (scatter + Poisson + gather on
+  // device, no per-iteration host round-trip). The TD / routability modes
+  // still rely on host-side grads and bins (single-cell callback updates,
+  // filler cut/restore), so they keep the host-staged pipeline.
+  const char* host_density_env = std::getenv("GPL_GPU_HOST_DENSITY");
+  use_device_density_ = !npVars_->timingDrivenMode
+                        && !npVars_->routability_driven_mode
+                        && !(host_density_env && host_density_env[0] == '1');
+#endif
+}
+
+void NesterovBase::pullCoordsFromDevice()
+{
+#ifdef ENABLE_GPU
+  if (!nb_device_ctx_ || host_coords_fresh_) {
+    return;
+  }
+  // The hot loop's rotateForNextIter has already run, so the device "cur"
+  // slots hold the latest accepted iteration. prevSLP is pulled too —
+  // revertToSnapshot pushes it back to device and CPU semantics expect the
+  // live (pre-revert) values there, not stale ones.
+  nb_device_ctx_->syncCurCoordsToHost(curSLPCoordi_, curCoordi_);
+  nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
+  // Host GCell density centers follow the last scattered coords, which on
+  // the CPU path are the curSLP coords after rotation.
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
+  for (size_t idx = 0; idx < nb_gcells_.size(); ++idx) {
+    nb_gcells_[idx]->setDensityCenterLocation(curSLPCoordi_[idx].x,
+                                              curSLPCoordi_[idx].y);
+  }
+  host_coords_fresh_ = true;
+#endif
+}
+
+void NesterovBase::pullSlpFromDevice()
+{
+#ifdef ENABLE_GPU
+  // On the GPU path updateGradients writes sum-grads only to device; the
+  // host vectors stay at zero. With the device-resident density pipeline the
+  // coord vectors are stale too — refresh them first.
+  if (nb_device_ctx_) {
+    pullCoordsFromDevice();
+    nb_device_ctx_->syncCurSumGradsToHost(curSLPSumGrads_);
+    nb_device_ctx_->syncPrevSumGradsToHost(prevSLPSumGrads_);
+  }
+#endif
+}
+
+void NesterovBase::commitCoordsToDeviceState(SlpSlot source)
+{
+#ifdef ENABLE_GPU
+  if (!nb_device_ctx_) {
+    return;
+  }
+  nb_device_ctx_->scatterToDeviceState(nbc_->getDeviceState(), source);
+  nbc_->getDeviceState()->updatePinLocations();
+  nbc_->getDeviceState()->markCoordsFresh();
+#else
+  (void) source;
+#endif
+}
+
+void NesterovBase::updateDensityPenaltyFromRatio(float factor)
+{
+  densityPenalty_ = (densityGradSum_ != 0)
+                        ? (wireLengthGradSum_ / densityGradSum_) * factor
+                        : factor;
 }
 
 float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
@@ -2706,8 +3319,7 @@ float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
   }
 
   if (wireLengthGradSum_ != 0) {
-    densityPenalty_
-        = (wireLengthGradSum_ / densityGradSum_) * npVars_->initDensityPenalty;
+    updateDensityPenaltyFromRatio(npVars_->initDensityPenalty);
   }
 
   sum_overflow_ = static_cast<float>(getOverflowArea())
@@ -2728,6 +3340,29 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPCoordi_,
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    const bool a_is_prev = (&prevSLPCoordi_ == &this->prevSLPCoordi_);
+    const SlpSlot coord_a = a_is_prev ? SlpSlot::Prev : SlpSlot::Cur;
+    const SumGradSlot grad_a = a_is_prev ? SumGradSlot::Prev : SumGradSlot::Cur;
+    const bool b_is_cur = (&curSLPCoordi_ == &this->curSLPCoordi_);
+    const SlpSlot coord_b = b_is_cur ? SlpSlot::Cur : SlpSlot::Next;
+    const SumGradSlot grad_b = b_is_cur ? SumGradSlot::Cur : SumGradSlot::Next;
+
+    coordiDistance_ = nb_device_ctx_->getDistance(coord_a, coord_b);
+    gradDistance_ = nb_device_ctx_->getDistance(grad_a, grad_b);
+    debugPrint(log_,
+               GPL,
+               "getStepLength",
+               1,
+               "CoordinateDis {:g}, GradientDist {:g}, StepLength: {:g}",
+               coordiDistance_,
+               gradDistance_,
+               stepLength_);
+    return coordiDistance_ / gradDistance_;
+  }
+#endif
+
   coordiDistance_ = getDistance(prevSLPCoordi_, curSLPCoordi_);
   gradDistance_ = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
   debugPrint(log_,
@@ -2769,18 +3404,69 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
+  (void) wlCoeffX;
+  (void) wlCoeffY;
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    SumGradSlot target = SumGradSlot::Cur;
+    SlpSlot coord_slot = SlpSlot::Cur;
+    if (&sumGrads == &prevSLPSumGrads_) {
+      target = SumGradSlot::Prev;
+      coord_slot = SlpSlot::Prev;
+    } else if (&sumGrads == &nextSLPSumGrads_) {
+      target = SumGradSlot::Next;
+      coord_slot = SlpSlot::Next;
+    }
+
+    if (use_device_density_) {
+      // Fully device-resident: K5 WL gather (no host copy), NB-level
+      // density gather over all cells (fillers included) straight into
+      // d_density_grad_*. The host wireLengthGrads/densityGrads vectors
+      // stay untouched — their only GPU-path consumers are the
+      // TD/routability callbacks, and those modes disable this pipeline.
+      nbc_->prepareDeviceWlGradients();
+      nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
+      nb_device_ctx_->densityGatherToNB(region_density_field_.get(),
+                                        coord_slot);
+    } else {
+      // Host-staged: bulk-fetch into the host vectors (also keeps the
+      // TD/routability single-cell callbacks fed), then push back.
+      nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
+      density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
+      nb_device_ctx_->scatterWLGradsToNB(nbc_->getDeviceState());
+      nb_device_ctx_->pushDensityGradsFromHost(densityGrads);
+    }
+    nb_device_ctx_->gradCombine(densityPenalty_,
+                                NesterovPlaceVars::minPreconditioner,
+                                target,
+                                wireLengthGradSum_,
+                                densityGradSum_);
+
+    debugPrint(log_,
+               GPL,
+               "updateGrad",
+               1,
+               "WireLengthGradSum: {:g}",
+               wireLengthGradSum_);
+    debugPrint(
+        log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+    return;
+  }
+#endif
+
+  // Bulk-fetch all per-cell wirelength gradients in one backend call.
+  // CPU backend: sequential per-cell pass. updateWireLengthForceWA is
+  // expected to have already run.
+  nbc_->getAllWireLengthGradientsWA(nb_gcells_, wireLengthGrads);
+  density_grad_backend_->getCellGradients(nb_gcells_, densityGrads);
+
   // Two-phase: parallel per-cell compute, then deterministic serial reduce.
-  // The previous single-phase loop used `reduction(+: ...)`, whose combine
-  // order across threads is unspecified for floats, producing non-deterministic
-  // sums. Splitting the reduction out keeps results bit-identical regardless
-  // of thread count while still parallelizing the expensive gradient work.
+
   const size_t numGCells = nb_gcells_.size();
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < numGCells; i++) {
     GCell* gCell = nb_gcells_[i];
-    wireLengthGrads[i]
-        = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
-    densityGrads[i] = getDensityGradient(gCell);
 
     sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
     sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
@@ -2801,11 +3487,7 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     sumGrads[i].y /= sumPrecondi.y;
   }
 
-  // Different compiler has different results on the following formula.
-  // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-  //
-  // To prevent instability problem,
-  // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
+  // Serial reduce for determinism (float addition order).
   for (size_t i = 0; i < numGCells; i++) {
     wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
     wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
@@ -2854,76 +3536,20 @@ void NesterovBase::nbUpdateNextGradient(float wlCoeffX, float wlCoeffY)
                   wlCoeffY);
 }
 
-void NesterovBase::updateSinglePrevGradient(size_t gCellIndex,
-                                            float wlCoeffX,
-                                            float wlCoeffY)
-{
-  updateSingleGradient(gCellIndex,
-                       prevSLPSumGrads_,
-                       prevSLPWireLengthGrads_,
-                       prevSLPDensityGrads_,
-                       wlCoeffX,
-                       wlCoeffY);
-}
-
-void NesterovBase::updateSingleCurGradient(size_t gCellIndex,
-                                           float wlCoeffX,
-                                           float wlCoeffY)
-{
-  updateSingleGradient(gCellIndex,
-                       curSLPSumGrads_,
-                       curSLPWireLengthGrads_,
-                       curSLPDensityGrads_,
-                       wlCoeffX,
-                       wlCoeffY);
-}
-
-void NesterovBase::updateSingleGradient(
-    size_t gCellIndex,
-    std::vector<FloatPoint>& sumGrads,
-    std::vector<FloatPoint>& wireLengthGrads,
-    std::vector<FloatPoint>& densityGrads,
-    float wlCoeffX,
-    float wlCoeffY)
-{
-  if (gCellIndex >= nb_gcells_.size()) {
-    return;
-  }
-
-  GCell* gCell = nb_gcells_.at(gCellIndex);
-  if (gCell->isLocked()) {
-    wireLengthGrads[gCellIndex] = FloatPoint(0, 0);
-    densityGrads[gCellIndex] = FloatPoint(0, 0);
-    sumGrads[gCellIndex] = FloatPoint(0, 0);
-    return;
-  }
-
-  wireLengthGrads[gCellIndex]
-      = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
-  densityGrads[gCellIndex] = getDensityGradient(gCell);
-
-  sumGrads[gCellIndex].x = wireLengthGrads[gCellIndex].x
-                           + densityPenalty_ * densityGrads[gCellIndex].x;
-  sumGrads[gCellIndex].y = wireLengthGrads[gCellIndex].y
-                           + densityPenalty_ * densityGrads[gCellIndex].y;
-
-  FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
-  FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
-
-  FloatPoint sumPrecondi(
-      wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
-      wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
-
-  sumPrecondi.x = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
-  sumPrecondi.y = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
-
-  sumGrads[gCellIndex].x /= sumPrecondi.x;
-  sumGrads[gCellIndex].y /= sumPrecondi.y;
-}
-
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
   assert(omp_get_thread_num() == 0);
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->updateInitialPrevSLPCoordi(
+        npVars_->initialPrevCoordiUpdateCoef);
+    nb_device_ctx_->syncPrevSLPToHost(prevSLPCoordi_);
+    commitCoordsToDeviceState(SlpSlot::Prev);
+    return;
+  }
+#endif
+
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < nb_gcells_.size(); i++) {
     GCell* curGCell = nb_gcells_[i];
@@ -3016,6 +3642,15 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(curSLPSumGrads_, nextSLPSumGrads_);
 
   std::swap(curCoordi_, nextCoordi_);
+  if (io_) {
+    io_->commitNext(iter);
+  }
+
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->rotateForNextIter();
+  }
+#endif
 
   // In a macro dominated design like mock-array you may be placing
   // very few std cells in a sea of fixed macros.  The overflow denominator
@@ -3085,18 +3720,25 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prev_hpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
-  debugPrint(log_,
-             GPL,
-             "updateNextIter",
-             1,
-             "Gradient: {:g}",
-             getSecondNorm(curSLPSumGrads_));
+  // curSLPSumGrads_ is host-stale on the device-resident path (grads live on
+  // the GPU and are pulled back only at snapshot boundaries), so the norm
+  // would read as 0 there — print it only when the host vector is live.
+  if (!nb_device_ctx_) {
+    debugPrint(log_,
+               GPL,
+               "updateNextIter",
+               1,
+               "Gradient: {:g}",
+               getSecondNorm(curSLPSumGrads_));
+  }
   debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", getSumPhi());
   debugPrint(
       log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sum_overflow_unscaled_);
 
   densityPenalty_ *= phiCoef;
   prev_hpwl_ = hpwl;
+
+  peak_coordi_distance_ = std::max(peak_coordi_distance_, coordiDistance_);
 
   if (iter > 50 && minSumOverflow_ > sum_overflow_unscaled_) {
     minSumOverflow_ = sum_overflow_unscaled_;
@@ -3140,6 +3782,32 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
     return;
   }
 
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->nesterovCoordUpdate(stepLength_, coeff);
+    if (use_device_density_) {
+      // Device-resident density pipeline: scatter + Poisson stay on device;
+      // only the overflow scalars (and optionally sumPhi) come back. Host
+      // coords/bins go stale — cold paths refresh via pullCoordsFromDevice.
+      const bool want_sum_phi = log_->debugCheck(GPL, "updateNextIter", 1);
+      const NesterovDeviceContext::DensityIterResult r
+          = nb_device_ctx_->densitySolveIteration(
+              region_density_field_.get(), SlpSlot::Next, want_sum_phi);
+      bg_.setOverflowAreas(static_cast<int64_t>(r.overflow_area),
+                           static_cast<int64_t>(r.overflow_area_unscaled));
+      sumPhi_ = r.sum_phi;
+      commitCoordsToDeviceState(SlpSlot::Next);
+      host_coords_fresh_ = false;
+      return;
+    }
+    nb_device_ctx_->syncCoordsToHost(nextSLPCoordi_, nextCoordi_);
+    updateGCellDensityCenterLocation(nextSLPCoordi_);
+    updateDensityFieldBin();
+    commitCoordsToDeviceState(SlpSlot::Next);
+    return;
+  }
+#endif
+
   // fill in nextCoordinates with given stepLength_
   // Independent writes to nextCoordi_[k] / nextSLPCoordi_[k] — trivially
   // parallel, bit-identical to the serial version.
@@ -3168,6 +3836,10 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
     nextSLPCoordi_[k]
         = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextSLPCoordi.x),
                      getDensityCoordiLayoutInsideY(curGCell, nextSLPCoordi.y));
+  }
+
+  if (io_) {
+    io_->computeNext();
   }
 
   // Update Density
@@ -3199,12 +3871,21 @@ void NesterovBase::saveSnapshot()
   if (isConverged_) {
     return;
   }
+
+  // Pull from device so the subsequent revertToSnapshot pushes back real
+  // values, not zeros.
+  pullSlpFromDevice();
+
   // save snapshots for routability-driven
   snapshotCoordi_ = curCoordi_;
   snapshotSLPCoordi_ = curSLPCoordi_;
   snapshotSLPSumGrads_ = curSLPSumGrads_;
+  snapshotPrevSLPSumGrads_ = prevSLPSumGrads_;
   snapshotDensityPenalty_ = densityPenalty_;
   snapshotStepLength_ = stepLength_;
+  if (io_) {
+    io_->saveSnapshot();
+  }
 }
 
 bool NesterovBase::checkConvergence(int gpl_iter_count,
@@ -3240,21 +3921,25 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     } else {
       log_->info(
           GPL, 1001, "Global placement finished at iteration {}", final_iter);
+      log_->metric("gpl__convergence__iteration", final_iter);
       if (npVars_->routability_driven_mode) {
         log_->info(GPL,
                    1017,
                    "Routability mode iteration count: {}",
                    routability_gpl_iter_count);
+        log_->metric("gpl__routability__iteration", routability_gpl_iter_count);
       }
     }
 
     if (npVars_->routability_driven_mode) {
+      updateDbIoPins();
       rb->calculateRudyTiles();
       rb->updateRudyAverage(false);
       log_->info(GPL,
                  1005,
                  "Routability final weighted congestion: {:.4f}",
                  rb->getRudyAverage());
+      log_->metric("gpl__routability__congestion", rb->getRudyAverage());
     }
 
     log_->info(GPL,
@@ -3325,6 +4010,28 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   return false;
 }
 
+// Displacement is not monotone over a run: it is small while the penalty is
+// still weak, peaks as the cells spread, and falls again as the placement
+// settles. So "settled" cannot mean "small" - it has to mean "down from the
+// peak". The quiet opening stretch also reads as settled by that test, which
+// is harmless because every caller conjoins this with an overflow gate that
+// the opening stretch cannot pass.
+bool NesterovBase::isSettled() const
+{
+  if (peak_coordi_distance_ <= 0) {
+    return false;
+  }
+  return coordiDistance_ <= kSettleFraction * peak_coordi_distance_;
+}
+
+float NesterovBase::getSettleRatio() const
+{
+  if (peak_coordi_distance_ <= 0) {
+    return 1.0f;
+  }
+  return coordiDistance_ / peak_coordi_distance_;
+}
+
 bool NesterovBase::checkDivergence()
 {
   if (sum_overflow_unscaled_ < 0.2f
@@ -3334,9 +4041,16 @@ bool NesterovBase::checkDivergence()
     log_->warn(GPL, 323, "Divergence detected between consecutive iterations");
   }
 
-  // Check if both overflow and HPWL increase
-  if (minSumOverflow_ < 0.2f && prev_reported_overflow_unscaled_ > 0
-      && prev_reported_hpwl_ > 0) {
+  // Check if both overflow and HPWL increase.
+  //
+  // This holds at any overflow. It used to be gated on the descent having
+  // reached 0.2, which was standing in for "not across a routability revert" -
+  // a revert resets minSumOverflow_, so the gate stayed shut until overflow
+  // came back down. revertToSnapshot() now clears the reported baseline
+  // itself, so the gate is no longer load bearing, and a design whose overflow
+  // stalls above 0.2 is no longer left with divergence detection switched off
+  // for the rest of the run.
+  if (prev_reported_overflow_unscaled_ > 0 && prev_reported_hpwl_ > 0) {
     float overflow_change
         = sum_overflow_unscaled_ - prev_reported_overflow_unscaled_;
     float hpwl_increase = (static_cast<float>(prev_hpwl_ - prev_reported_hpwl_))
@@ -3364,17 +4078,45 @@ bool NesterovBase::revertToSnapshot()
   if (isConverged_) {
     return true;
   }
+  // CPU semantics keep the pre-revert prevSLP coords (they are NOT part of
+  // the snapshot) and push them back to device below. With the
+  // device-resident pipeline the host copies are stale — refresh first.
+  pullCoordsFromDevice();
   // revert back the current density penality
   curCoordi_ = snapshotCoordi_;
   curSLPCoordi_ = snapshotSLPCoordi_;
   curSLPSumGrads_ = snapshotSLPSumGrads_;
+  prevSLPSumGrads_ = snapshotPrevSLPSumGrads_;
   densityPenalty_ = snapshotDensityPenalty_;
   stepLength_ = snapshotStepLength_;
+  if (io_) {
+    io_->revertToSnapshot();
+  }
 
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
 
+#ifdef ENABLE_GPU
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+    commitCoordsToDeviceState(SlpSlot::Cur);
+    host_coords_fresh_ = true;
+  }
+#endif
+
   isDiverged_ = false;
+
+  // A revert moves overflow and HPWL discontinuously, so the reported values
+  // carried over from before it describe a placement that no longer exists.
+  // Divergence is a claim about a trend, and there is no trend across a jump:
+  // clear the baseline so the next comparison starts from where the revert
+  // landed.
+  prev_reported_hpwl_ = 0;
+  prev_reported_overflow_unscaled_ = 0;
 
   return true;
 }
@@ -3396,6 +4138,11 @@ void NesterovBaseCommon::moveGCell(odb::dbInst* db_inst)
   odb::dbBox* bbox = db_inst->getBBox();
   gcell->setAllLocations(
       bbox->xMin(), bbox->yMin(), bbox->xMax(), bbox->yMax());
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
 }
 
 void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
@@ -3432,6 +4179,11 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   // update gcell
   gcell->updateLocations();
   gcell->setAreaChangeType(GCell::GCellChange::kTimingDriven);
+#ifdef ENABLE_GPU
+  if (device_state_) {
+    device_state_->invalidateCoords();
+  }
+#endif
 
   int64_t newCellArea
       = static_cast<int64_t>(gcell->dx()) * static_cast<int64_t>(gcell->dy());
@@ -3446,7 +4198,22 @@ void NesterovBaseCommon::resizeGCell(odb::dbInst* db_inst)
   }
 }
 
-void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
+std::optional<NesterovBase::SlpState> NesterovBase::getSlpState(
+    odb::dbInst* db_inst)
+{
+  const auto it = db_inst_to_nb_index_.find(db_inst);
+  if (it == db_inst_to_nb_index_.end()) {
+    return std::nullopt;
+  }
+  pullSlpFromDevice();
+  const size_t k = it->second;
+  return SlpState{prevSLPCoordi_[k],
+                  prevSLPSumGrads_[k],
+                  curSLPCoordi_[k],
+                  curSLPSumGrads_[k]};
+}
+
+void NesterovBase::updateGCellState()
 {
   for (auto& db_inst : new_instances_) {
     auto db_it = db_inst_to_nb_index_.find(db_inst);
@@ -3490,32 +4257,14 @@ void NesterovBase::updateGCellState(float wlCoeffX, float wlCoeffY)
           = curCoordi_[gcells_index] = initCoordi_[gcells_index]
           = FloatPoint(gcell->dCx(), gcell->dCy());
 
-      // analogous to updateCurGradient()
-      updateSingleCurGradient(gcells_index, wlCoeffX, wlCoeffY);
-
-      // analogous to NesterovBase::updateInitialPrevSLPCoordi()
-      GCell* curGCell = nb_gcells_[gcells_index];
-      float prevCoordiX = curSLPCoordi_[gcells_index].x
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].x;
-      float prevCoordiY = curSLPCoordi_[gcells_index].y
-                          - npVars_->initialPrevCoordiUpdateCoef
-                                * curSLPSumGrads_[gcells_index].y;
-      FloatPoint newCoordi(
-          getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
-          getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
-      prevSLPCoordi_[gcells_index] = newCoordi;
-
-      // analogous to
-      // NesterovBase::updateGCellDensityCenterLocation(prevSLPCoordi_)
-      nb_gcells_[gcells_index]->setDensityCenterLocation(
-          prevSLPCoordi_[gcells_index].x, prevSLPCoordi_[gcells_index].y);
-
-      // analogous to updatePrevGradient()
-      updateSinglePrevGradient(gcells_index, wlCoeffX, wlCoeffY);
+      // Gradients are left to NesterovPlace::refreshCurGradients(), which
+      // evaluates every GCell once the whole repair has landed. The prev slot
+      // needs no seeding: only init() reads it, and updateNextIter() rotates
+      // it out before the next read.
     } else {
       // Not finding a db_inst in the map should not be a problem. Just ignore
       // Occurs when instance created and destroyed in same iteration.
+      // destroyCbkGCell() now drops such entries, so this is not expected.
       debugPrint(log_,
                  GPL,
                  "callbacks",
@@ -3538,7 +4287,7 @@ void NesterovBase::createCbkGCell(odb::dbInst* db_inst, size_t stor_index)
              db_inst->getName());
   auto gcell = nbc_->getGCellByIndex(stor_index);
   if (gcell != nullptr) {
-    new_instances_.push_back(db_inst);
+    new_instances_.insert(db_inst);
     nb_gcells_.emplace_back(nbc_.get(), stor_index);
     size_t gcells_index = nb_gcells_.size() - 1;
     debugPrint(log_,
@@ -3618,6 +4367,10 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
              "NesterovBase {}: destroyCbkGCell {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level",
              db_inst->getName());
+  // An instance created and destroyed before updateGCellState() runs must not
+  // be seeded later through a stale pointer.
+  new_instances_.erase(db_inst);
+
   auto db_it = db_inst_to_nb_index_.find(db_inst);
   if (db_it == db_inst_to_nb_index_.end()) {
     // not found
@@ -3659,14 +4412,7 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
   // element)
   size_t replacer_index = gcell_index;
   if (replacer_index != last_index) {
-    if (!nb_gcells_[replacer_index]->isFiller()) {
-      odb::dbInst* replacer_inst
-          = nb_gcells_[replacer_index]->insts()[0]->dbInst();
-      db_inst_to_nb_index_[replacer_inst] = replacer_index;
-    } else {
-      size_t filler_stor_index = nb_gcells_[replacer_index].getStorageIndex();
-      filler_stor_index_to_nb_index_[filler_stor_index] = replacer_index;
-    }
+    rebindHandleIndex(replacer_index);
   }
 
   return nbc_->destroyCbkGCell(db_inst);
@@ -3734,6 +4480,8 @@ NesterovBaseCommon::destroyCbkGCell(odb::dbInst* db_inst)
 
 void NesterovBase::cutFillerCells(int64_t inflation_area)
 {
+  // Snapshots per-filler host vector state below — must be fresh.
+  pullCoordsFromDevice();
   dbBlock* block = pb_->db()->getChip()->getBlock();
   if (inflation_area < 0) {
     log_->warn(GPL,
@@ -3783,7 +4531,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
 
           .snapshotCoordi = snapshotCoordi_[i],
           .snapshotSLPCoordi = snapshotSLPCoordi_[i],
-          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i]});
+          .snapshotSLPSumGrads = snapshotSLPSumGrads_[i],
+          .snapshotPrevSLPSumGrads = snapshotPrevSLPSumGrads_[i]});
 
       destroyFillerGCell(i);
       availableFillerArea -= single_filler_area;
@@ -3803,8 +4552,10 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                block->dbuAreaToMicrons(totalFillerArea_));
   }
 
-  log_->info(GPL,
-             76,
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Removing fillers, count: Before: {}, After: {} ({:+.2f}%)",
              num_filler_before_removal,
              fillerStor_.size(),
@@ -3815,9 +4566,11 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
                     / num_filler_before_removal * 100.0)
                  : 0.0);
 
-  log_->info(
+  debugPrint(
+      log_,
       GPL,
-      77,
+      "routability",
+      1,
       "Filler area (um^2)     : Before: {:.3f}, After: {:.3f} ({:+.2f}%)",
       block->dbuAreaToMicrons(filler_area_before_removal),
       block->dbuAreaToMicrons(totalFillerArea_),
@@ -3829,8 +4582,10 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
   int64_t removedFillerArea = single_filler_area * removed_count;
   int64_t remainingInflationArea = originalInflationArea - removedFillerArea;
 
-  log_->info(GPL,
-             78,
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Removed fillers count: {}, area removed: {:.3f} um^2. Remaining "
              "area to be "
              "compensated by modifying density: {:.3f} um^2",
@@ -3844,8 +4599,14 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
     setTargetDensity(static_cast<float>(totalGCellArea)
                      / static_cast<float>(getWhiteSpaceArea()));
     movableArea_ = whiteSpaceArea_ * targetDensity_;
-    log_->info(GPL, 79, "New target density: {}", targetDensity_);
+    debugPrint(
+        log_, GPL, "routability", 1, "New target density: {}", targetDensity_);
   }
+
+  // nb_gcells_ has shrunk; rebuild the GPU device context against the new
+  // size so subsequent Nesterov iterations keep running on the GPU instead
+  // of silently falling through the nb_device_ctx_ guards on the CPU path.
+  rebuildNbDeviceCtx();
 }
 
 void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
@@ -3883,27 +4644,14 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
   size_t nb_last_index = nb_gcells_.size() - 1;
   if (nb_index_remove != nb_last_index) {
-    GCellHandle& gcell_replace = nb_gcells_[nb_last_index];
-    if (!gcell_replace->isFiller()) {
-      odb::dbInst* db_inst = gcell_replace->insts()[0]->dbInst();
-      auto it = db_inst_to_nb_index_.find(db_inst);
-      if (it != db_inst_to_nb_index_.end()) {
-        it->second = nb_index_remove;
-      } else {
-        debugPrint(log_,
-                   GPL,
-                   "callbacks",
-                   1,
-                   "Warning: gcell_replace dbInst {} not found in "
-                   "db_inst_to_nb_index_ map",
-                   db_inst->getName());
-      }
-    }
     std::swap(nb_gcells_[nb_index_remove], nb_gcells_[nb_last_index]);
   }
   swapAndPopParallelVectors(nb_index_remove, nb_last_index);
   nb_gcells_.pop_back();
   filler_stor_index_to_nb_index_.erase(stor_index_remove);
+  if (nb_index_remove != nb_last_index) {
+    rebindHandleIndex(nb_index_remove);
+  }
 
   if (stor_index_remove != stor_last_index) {
     size_t replacer_index
@@ -3917,8 +4665,11 @@ void NesterovBase::destroyFillerGCell(size_t nb_index_remove)
 
 void NesterovBase::restoreRemovedFillers()
 {
-  log_->info(GPL,
-             80,
+  pullCoordsFromDevice();
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Restoring {} previously removed fillers.",
              removed_fillers_.size());
 
@@ -3961,6 +4712,7 @@ void NesterovBase::restoreRemovedFillers()
     snapshotCoordi_[idx] = filler.snapshotCoordi;
     snapshotSLPCoordi_[idx] = filler.snapshotSLPCoordi;
     snapshotSLPSumGrads_[idx] = filler.snapshotSLPSumGrads;
+    snapshotPrevSLPSumGrads_[idx] = filler.snapshotPrevSLPSumGrads;
 
     totalFillerArea_ += getFillerCellArea();
   }
@@ -3985,16 +4737,20 @@ void NesterovBase::restoreRemovedFillers()
   double area_before_um = block->dbuAreaToMicrons(area_before);
   double area_after_um = block->dbuAreaToMicrons(area_after);
 
-  log_->info(GPL,
-             81,
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Number of fillers before restoration {} and after {} . Relative "
              "change: {:+.2f}%%",
              num_fill_before,
              num_fill_after,
              rel_count_change);
 
-  log_->info(GPL,
-             82,
+  debugPrint(log_,
+             GPL,
+             "routability",
+             1,
              "Total filler area before restoration {:.2f} and after {:.2f} "
              "(um^2). Relative change: {:+.2f}%%",
              area_before_um,
@@ -4002,6 +4758,172 @@ void NesterovBase::restoreRemovedFillers()
              rel_area_change);
 
   removed_fillers_.clear();
+
+  // Symmetric with cutFillerCells: nb_gcells_ has grown back; rebuild the
+  // GPU device context against the new size.
+  rebuildNbDeviceCtx();
+}
+
+void NesterovBase::redistributeFillerCells()
+{
+  // Reads and overwrites the per-filler host vectors below directly; they
+  // must be fresh first. Mirrors the very first line of cutFillerCells().
+  pullCoordsFromDevice();
+
+  if (fillerStor_.empty()) {
+    return;
+  }
+
+  dbBlock* block = pb_->db()->getChip()->getBlock();
+
+  // Free capacity per bin (filler area is excluded)
+  std::vector<Bin>& bins = getBins();
+  std::vector<double> free_capacity(bins.size(), 0.0);
+  double total_free_capacity = 0.0;
+  for (size_t b = 0; b < bins.size(); ++b) {
+    const Bin& bin = bins[b];
+    const double scaled_bin_area
+        = static_cast<double>(bin.getBinArea()) * bin.getTargetDensity();
+    const double free = scaled_bin_area
+                        - static_cast<double>(bin.instPlacedArea())
+                        - static_cast<double>(bin.getNonPlaceArea());
+    free_capacity[b] = std::max(0.0, free);
+    total_free_capacity += free_capacity[b];
+  }
+
+  const size_t num_fillers = fillerStor_.size();
+  const double free_capacity_um2
+      = block->dbuAreaToMicrons(static_cast<int64_t>(total_free_capacity));
+  const double filler_area_um2 = block->dbuAreaToMicrons(totalFillerArea_);
+  if (total_free_capacity <= 0.0
+      || total_free_capacity < static_cast<double>(totalFillerArea_)) {
+    log_->warn(GPL,
+               332,
+               "Not enough free bin capacity ({:.3f} um^2) to redistribute "
+               "{} filler cells ({:.3f} um^2); leaving filler positions "
+               "unchanged.",
+               free_capacity_um2,
+               num_fillers,
+               filler_area_um2);
+    return;
+  }
+
+  // Give every bin an integer filler quota proportional to its free
+  // capacity (largest-remainder method, so the quotas sum to exactly
+  // num_fillers instead of drifting from independent rounding).
+  std::vector<size_t> quota(bins.size(), 0);
+  std::vector<double> remainder(bins.size(), 0.0);
+  size_t assigned = 0;
+  for (size_t b = 0; b < bins.size(); ++b) {
+    const double exact = free_capacity[b] / total_free_capacity
+                         * static_cast<double>(num_fillers);
+    quota[b] = static_cast<size_t>(exact);
+    remainder[b] = exact - static_cast<double>(quota[b]);
+    assigned += quota[b];
+  }
+  assigned = std::min(assigned, num_fillers);
+  const size_t leftover = num_fillers - assigned;
+  if (leftover > 0) {
+    std::vector<size_t> order;
+    order.reserve(bins.size());
+    for (size_t b = 0; b < bins.size(); ++b) {
+      order.push_back(b);
+    }
+    std::partial_sort(
+        order.begin(),
+        order.begin() + leftover,
+        order.end(),
+        [&](size_t a, size_t b) { return remainder[a] > remainder[b]; });
+    for (size_t k = 0; k < leftover; ++k) {
+      quota[order[k]]++;
+    }
+  }
+
+  // Walk the fillers once, handing them out to bins in quota order.
+  size_t bin_idx = 0;
+  size_t remaining_in_bin = quota[0];
+  size_t repositioned = 0;
+  for (size_t i = 0; i < nb_gcells_.size(); ++i) {
+    if (!nb_gcells_[i]->isFiller()) {
+      continue;
+    }
+    while (remaining_in_bin == 0 && bin_idx + 1 < bins.size()) {
+      ++bin_idx;
+      remaining_in_bin = quota[bin_idx];
+    }
+    if (remaining_in_bin == 0) {
+      // Quotas sum to num_fillers, so this should not happen; leave any
+      // stragglers where they are rather than crash.
+      break;
+    }
+
+    const Bin& bin = bins[bin_idx];
+    GCell* gcell = nb_gcells_[i];
+    const int half_dx = gcell->dx() / 2;
+    const int half_dy = gcell->dy() / 2;
+
+    // Jitter within the bin instead of always landing on its exact center
+    const int range_x = std::max(0, bin.dx() / 2 - half_dx);
+    const int range_y = std::max(0, bin.dy() / 2 - half_dy);
+    int jitter_x = 0;
+    int jitter_y = 0;
+    if (range_x > 0) {
+      jitter_x = boost::random::uniform_int_distribution<int>(
+          -range_x, range_x)(generator_);
+    }
+    if (range_y > 0) {
+      jitter_y = boost::random::uniform_int_distribution<int>(
+          -range_y, range_y)(generator_);
+    }
+    const int cx = bin.cx() + jitter_x;
+    const int cy = bin.cy() + jitter_y;
+    gcell->setCenterLocation(cx, cy);
+
+    // Update location in NesterovBase
+    const FloatPoint pos(static_cast<float>(cx), static_cast<float>(cy));
+    curCoordi_[i] = pos;
+    curSLPCoordi_[i] = pos;
+    prevSLPCoordi_[i] = pos;
+    nextCoordi_[i] = pos;
+    nextSLPCoordi_[i] = pos;
+    initCoordi_[i] = pos;
+    snapshotCoordi_[i] = pos;
+    snapshotSLPCoordi_[i] = pos;
+
+    // Reset the gradients
+    curSLPWireLengthGrads_[i] = FloatPoint();
+    curSLPDensityGrads_[i] = FloatPoint();
+    curSLPSumGrads_[i] = FloatPoint();
+
+    --remaining_in_bin;
+    ++repositioned;
+  }
+  updateGCellDensityCenterLocation(curCoordi_);
+  updateDensityFieldBin();
+
+#ifdef ENABLE_GPU
+  // The loop above wrote the new filler positions to the host vectors only;
+  // push them to the device context (built earlier, before this call, by
+  // Replace::initNesterovPlace) so the Nesterov loop does not start from the
+  // pre-redistribution filler positions. Mirrors revertToSnapshot().
+  if (nb_device_ctx_) {
+    nb_device_ctx_->syncCoordsToDevice(curSLPCoordi_,
+                                       prevSLPCoordi_,
+                                       curCoordi_,
+                                       curSLPSumGrads_,
+                                       prevSLPSumGrads_);
+    commitCoordsToDeviceState(SlpSlot::Cur);
+    host_coords_fresh_ = true;
+  }
+#endif
+
+  log_->info(GPL,
+             333,
+             "Redistributed {} filler cells into free bin capacity ({:.3f} "
+             "um^2 available, {:.3f} um^2 needed).",
+             repositioned,
+             free_capacity_um2,
+             filler_area_um2);
 }
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)
@@ -4116,6 +5038,7 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
     swapAndPop(snapshotCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPCoordi_, remove_index, last_index);
     swapAndPop(snapshotSLPSumGrads_, remove_index, last_index);
+    swapAndPop(snapshotPrevSLPSumGrads_, remove_index, last_index);
   }
   swapAndPop(curSLPCoordi_, remove_index, last_index);
   swapAndPop(curSLPWireLengthGrads_, remove_index, last_index);
@@ -4134,12 +5057,53 @@ void NesterovBase::swapAndPopParallelVectors(size_t remove_index,
   swapAndPop(initCoordi_, remove_index, last_index);
 }
 
+void NesterovBase::rebindHandleIndex(size_t nb_index)
+{
+  // Which map to touch follows from the storage the handle names, not from what
+  // the GCell happens to hold. The handle is already registered, so a missing
+  // key is a bug: report it instead of inserting a second entry, which would
+  // later resolve to a popped nb_gcells_ slot.
+  GCellHandle& handle = nb_gcells_[nb_index];
+  const size_t stor_index = handle.getStorageIndex();
+
+  if (handle.isNesterovBaseCommon()) {
+    odb::dbInst* db_inst = handle->insts()[0]->dbInst();
+    auto it = db_inst_to_nb_index_.find(db_inst);
+    if (it == db_inst_to_nb_index_.end()) {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "rebindHandleIndex: dbInst {} missing from "
+                 "db_inst_to_nb_index_",
+                 db_inst->getName());
+      return;
+    }
+    it->second = nb_index;
+    return;
+  }
+
+  auto it = filler_stor_index_to_nb_index_.find(stor_index);
+  if (it == filler_stor_index_to_nb_index_.end()) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "rebindHandleIndex: filler storage index {} missing from "
+               "filler_stor_index_to_nb_index_",
+               stor_index);
+    return;
+  }
+  it->second = nb_index;
+}
+
 void NesterovBase::appendParallelVectors()
 {
   if (curSLPCoordi_.size() == snapshotCoordi_.size()) {
     snapshotCoordi_.emplace_back();
     snapshotSLPCoordi_.emplace_back();
     snapshotSLPSumGrads_.emplace_back();
+    snapshotPrevSLPSumGrads_.emplace_back();
   }
   curSLPCoordi_.emplace_back();
   curSLPWireLengthGrads_.emplace_back();
@@ -4243,6 +5207,7 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
     add_header("snapshotCoordi");
     add_header("snapshotSLPCoordi");
     add_header("snapshotSLPSumGrads");
+    add_header("snapshotPrevSLPSumGrads");
 
     file << "\n";
   }
@@ -4283,6 +5248,7 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
       add_value(snapshotCoordi_);
       add_value(snapshotSLPCoordi_);
       add_value(snapshotSLPSumGrads_);
+      add_value(snapshotPrevSLPSumGrads_);
     }
 
     file << "\n";
@@ -4353,8 +5319,8 @@ static int64_t getOverlapArea(const Bin* bin,
     // at the outer sides of the macro.
     return original;
   }
-  return static_cast<float>(rectUx - rectLx)
-         * static_cast<float>(rectUy - rectLy);
+  return static_cast<int64_t>(rectUx - rectLx)
+         * static_cast<int64_t>(rectUy - rectLy);
 }
 
 // A function that does 2D integration to the density function of a

@@ -71,6 +71,11 @@ void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net, odb::dbITerm* termin
   ord::getICeWall()->assignBump(inst, net, terminal, dont_route);
 }
 
+void make_bterm_pins_from_bumps(odb::dbBlock* block)
+{
+  ord::getICeWall()->makeBTermPinsFromBumps(block);
+}
+
 void make_fake_site(const char* name, int width, int height)
 {
   ord::getICeWall()->makeFakeSite(name, width, height);

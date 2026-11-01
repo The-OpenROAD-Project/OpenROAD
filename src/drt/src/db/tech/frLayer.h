@@ -4,10 +4,12 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
@@ -629,7 +631,16 @@ class frLayer
   }
   void addLef58AreaConstraint(frLef58AreaConstraint* in)
   {
-    lef58AreaConstraints_.push_back(in);
+    // This vector should be sorted by area in a descending order
+    auto area = in->getODBRule()->getArea();
+    auto it = std::ranges::lower_bound(lef58AreaConstraints_.begin(),
+                                       lef58AreaConstraints_.end(),
+                                       area,
+                                       std::ranges::greater{},
+                                       [](const frLef58AreaConstraint* a) {
+                                         return a->getODBRule()->getArea();
+                                       });
+    lef58AreaConstraints_.insert(it, in);
   }
 
   const std::vector<frLef58AreaConstraint*>& getLef58AreaConstraints() const
@@ -637,7 +648,36 @@ class frLayer
     return lef58AreaConstraints_;
   }
 
-  bool hasLef58AreaConstraint() const { return !lef58AreaConstraints_.empty(); }
+  bool hasLef58AreaConstraint() const
+  {
+    return !lef58AreaConstraints_.empty()
+           || !lef58AreaConstraintsRectWidth_.empty();
+  }
+
+  void addLef58AreaConstraintRectWidth(frLef58AreaConstraint* in)
+  {
+    // This vector should be sorted by rectwidth in an ascending order,
+    // tie-broken by area in an ascending order so that for equal rectwidth the
+    // smallest area constraint takes preference
+    auto rule = in->getODBRule();
+    auto key = std::make_pair(rule->getRectWidth(), rule->getArea());
+    auto it = std::ranges::lower_bound(lef58AreaConstraintsRectWidth_.begin(),
+                                       lef58AreaConstraintsRectWidth_.end(),
+                                       key,
+                                       std::ranges::less{},
+                                       [](const frLef58AreaConstraint* a) {
+                                         return std::make_pair(
+                                             a->getODBRule()->getRectWidth(),
+                                             a->getODBRule()->getArea());
+                                       });
+    lef58AreaConstraintsRectWidth_.insert(it, in);
+  }
+
+  const std::vector<frLef58AreaConstraint*>& getLef58AreaConstraintsRectWidth()
+      const
+  {
+    return lef58AreaConstraintsRectWidth_;
+  }
 
   void addKeepOutZoneConstraint(frLef58KeepOutZoneConstraint* in)
   {
@@ -937,6 +977,7 @@ class frLayer
   std::vector<frLef58EolKeepOutConstraint*> lef58EolKeepOutConstraints_;
   std::vector<frMetalWidthViaConstraint*> metalWidthViaConstraints_;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints_;
+  std::vector<frLef58AreaConstraint*> lef58AreaConstraintsRectWidth_;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints_;
   std::vector<frSpacingRangeConstraint*> spacingRangeConstraints_;
   std::vector<frLef58TwoWiresForbiddenSpcConstraint*>

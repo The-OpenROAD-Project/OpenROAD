@@ -151,9 +151,11 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
+    const bool resistance_aware
+        = enable_resistance_aware_ && nets_[netID]->isResAware();
     // Prioritize nets with worst slack first
     const float res_aware_score
-        = nets_[netID]->isResAware() ? -getResAwareScore(nets_[netID]) : 0;
+        = resistance_aware ? -getResAwareScore(nets_[netID]) : 0;
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
@@ -163,7 +165,7 @@ void FastRouteCore::netpinOrderInc()
     tree_order_pv_.push_back(
         {netID, xmin, length_per_pin, ndr_priority, res_aware_score, is_clock});
 
-    if (nets_[netID]->isResAware()) {
+    if (resistance_aware) {
       res_aware_nets++;
     }
   }
@@ -175,6 +177,29 @@ void FastRouteCore::netpinOrderInc()
         static_cast<float>(res_aware_nets) / net_ids_.size() * 100);
   }
   std::ranges::stable_sort(tree_order_pv_, compareNetPins);
+
+  // One-shot dump of the res-aware nets in routing order (their
+  // layer-assignment priority). Enable with -debug_level GRT resAware 2.
+  if (enable_resistance_aware_ && !is_incremental_grt_ && !res_aware_logged_
+      && logger_->debugCheck(GRT, "resAware", 2)) {
+    res_aware_logged_ = true;
+    logger_->report(
+        "FastRoute res-aware nets in layer-assignment priority order:");
+    int rank = 0;
+    for (const OrderNetPin& order : tree_order_pv_) {
+      FrNet* net = nets_[order.treeIndex];
+      if (!net->isResAware()) {
+        continue;
+      }
+      logger_->report("  {}: {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                      rank++,
+                      net->getName(),
+                      net->getSlack() * 1e12,
+                      net->getResistance(),
+                      net->getNumPins(),
+                      net->getNetLength());
+    }
+  }
 }
 
 void FastRouteCore::fillVIA()
@@ -496,10 +521,18 @@ void FastRouteCore::fixEdgeAssignment(int& net_layer,
 // Optimize performance
 void FastRouteCore::preProcessTechLayers()
 {
+  dbu_per_micron_
+      = db_->getChip()->getBlock()->getTech()->getDbUnitsPerMicron();
+  layer_res_per_micron_.assign(num_layers_, 0.0f);
+
   for (int layer = 0; layer < num_layers_; layer++) {
     odb::dbTech* tech = db_->getTech();
     odb::dbTechLayer* db_layer = tech->findRoutingLayer(layer + 1);
     db_layers_.emplace_back(db_layer);
+
+    // Keep layer_width as float: other rounding perturbs getWireCost() results
+    const float layer_width = dbuToMicrons(db_layer->getWidth());
+    layer_res_per_micron_[layer] = db_layer->getResistance() / layer_width;
 
     // Via
     db_layer = tech->findRoutingLayer(layer + 1)->getUpperLayer();
@@ -520,25 +553,25 @@ float FastRouteCore::getWireResistance(const int layer,
                                        const int length,
                                        FrNet* net)
 {
-  odb::dbTechLayer* db_layer = getTechLayer(layer, false);
+  if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
+    return BIG_INT;
+  }
 
-  int width = db_layer->getWidth();
-  double resistance = db_layer->getResistance();
+  // Default-width value cached by preProcessTechLayers()
+  float res_ohm_per_micron = layer_res_per_micron_[layer];
 
   // If net has NDR, get the correct width value
   odb::dbTechNonDefaultRule* ndr = net->getDbNet()->getNonDefaultRule();
   if (ndr != nullptr) {
+    odb::dbTechLayer* db_layer = getTechLayer(layer, false);
     odb::dbTechLayerRule* layerRule = ndr->getLayerRule(db_layer);
-    width = layerRule->getWidth();
+    if (layerRule != nullptr) {
+      const float layer_width = dbuToMicrons(layerRule->getWidth());
+      res_ohm_per_micron = db_layer->getResistance() / layer_width;
+    }
   }
 
-  const float layer_width = dbuToMicrons(width);
-  const float res_ohm_per_micron = resistance / layer_width;
-  float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
-
-  if (layer < net->getMinLayer() || layer > net->getMaxLayer()) {
-    return BIG_INT;
-  }
+  const float final_resistance = res_ohm_per_micron * dbuToMicrons(length);
 
   return final_resistance;
 }
@@ -671,7 +704,7 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
 
 // Update and sort the critical nets. Finally pick a percentage of the
 // nets to use the resistance-aware strategy
-void FastRouteCore::updateSlacks(float percentage)
+void FastRouteCore::updateSlacks()
 {
   // Check if liberty file was loaded before calculating slack
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
@@ -681,7 +714,9 @@ void FastRouteCore::updateSlacks(float percentage)
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
     if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-      estimator->estimateAllGlobalRouteParasitics();
+      // The router is idle here: nothing else reads or writes
+      // parasitics or delays until the estimate returns.
+      estimator->estimateAllGlobalRouteParasitics(num_threads_);
     }
   }
 
@@ -737,6 +772,8 @@ void FastRouteCore::updateSlacks(float percentage)
 
   std::ranges::stable_sort(res_aware_list, compareSlack);
 
+  float percentage = res_aware_nets_percentage_ / 100.0;
+
   // During incremental grt, enable res-aware for all nets in the list
   if (is_incremental_grt_) {
     percentage = 1;
@@ -758,6 +795,40 @@ void FastRouteCore::updateSlacks(float percentage)
           res_aware_list[i].second);
     }
     nets_[res_aware_list[i].first]->setIsResAware(true);
+  }
+
+  // Res-aware set-growth instrumentation (-debug_level GRT resAware 2); reports
+  // per-call delta and running total, level 3 lists newly-marked nets.
+  if (logger_->debugCheck(GRT, "resAware", 2) && !is_incremental_grt_) {
+    int total = 0;
+    for (const int id : net_ids_) {
+      if (nets_[id]->isResAware()) {
+        total++;
+      }
+    }
+    const int newly = std::min<int>(
+        static_cast<int>(std::ceil(res_aware_list.size() * percentage)),
+        static_cast<int>(res_aware_list.size()));
+    logger_->report(
+        "Res-aware growth (updateSlacks): +{} marked of {} candidates -> {} "
+        "total ({:.2f}%)",
+        newly,
+        res_aware_list.size(),
+        total,
+        net_ids_.empty()
+            ? 0.0f
+            : 100.0f * total / static_cast<float>(net_ids_.size()));
+    if (logger_->debugCheck(GRT, "resAware", 3)) {
+      for (int i = 0; i < newly; i++) {
+        FrNet* net = nets_[res_aware_list[i].first];
+        logger_->report("  + {} slack={:.2f}ps R={:.2f} fanout={} len={}",
+                        net->getName(),
+                        net->getSlack() * 1e12,
+                        net->getResistance(),
+                        net->getNumPins(),
+                        net->getNetLength());
+      }
+    }
   }
 }
 
@@ -799,9 +870,7 @@ void FastRouteCore::assignEdge(const int netID,
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
   // Enable resistance aware layer assignment only if the net needs it
-  if (enable_resistance_aware_) {
-    resistance_aware_ = net->isResAware();
-  }
+  resistance_aware_ = enable_resistance_aware_ && net->isResAware();
 
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
@@ -1144,13 +1213,19 @@ void FastRouteCore::assignEdge(const int netID,
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
 
-      v_edges_3D_[grids[k].layer][min_y][grids[k].x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(grids[k].x,
+                        min_y,
+                        grids[k].layer,
+                        EdgeDirection::Vertical,
+                        net->getLayerEdgeCost(grids[k].layer));
     } else {
       const int min_x = std::min(grids[k].x, grids[k + 1].x);
 
-      h_edges_3D_[grids[k].layer][grids[k].y][min_x].usage
-          += net->getLayerEdgeCost(grids[k].layer);
+      updateEdge3DUsage(min_x,
+                        grids[k].y,
+                        grids[k].layer,
+                        EdgeDirection::Horizontal,
+                        net->getLayerEdgeCost(grids[k].layer));
     }
   }
 }
@@ -1289,7 +1364,13 @@ void FastRouteCore::layerAssignmentV4()
 void FastRouteCore::layerAssignment()
 {
   is_3d_step_ = false;
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kInitialResAwareNetsPercentage;
+  }
   updateSlacks();
+  if (!is_fixed_nets_percentage_) {
+    res_aware_nets_percentage_ = kMidResAwareNetsPercentage;
+  }
   is_3d_step_ = true;
 
   for (const int& netID : net_ids_) {
@@ -1587,7 +1668,7 @@ float FastRouteCore::CalculatePartialSlack()
   std::vector<float> slacks;
   slacks.reserve(netCount());
   if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
-    estimator->estimateAllGlobalRouteParasitics();
+    estimator->estimateAllGlobalRouteParasitics(num_threads_);
   }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
@@ -1679,14 +1760,20 @@ void FastRouteCore::recoverEdge(const int netID, const int edgeID)
       {
         const int ymin = std::min(grids[i].y, grids[i + 1].y);
         graph2d_.updateUsageV(grids[i].x, ymin, net, net->getEdgeCost());
-        v_edges_3D_[grids[i].layer][ymin][grids[i].x].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(grids[i].x,
+                          ymin,
+                          grids[i].layer,
+                          EdgeDirection::Vertical,
+                          net->getLayerEdgeCost(grids[i].layer));
       } else if (grids[i].y == grids[i + 1].y)  // a horizontal edge
       {
         const int xmin = std::min(grids[i].x, grids[i + 1].x);
         graph2d_.updateUsageH(xmin, grids[i].y, net, net->getEdgeCost());
-        h_edges_3D_[grids[i].layer][grids[i].y][xmin].usage
-            += net->getLayerEdgeCost(grids[i].layer);
+        updateEdge3DUsage(xmin,
+                          grids[i].y,
+                          grids[i].layer,
+                          EdgeDirection::Horizontal,
+                          net->getLayerEdgeCost(grids[i].layer));
       }
     }
   }
@@ -1927,31 +2014,64 @@ void FastRouteCore::check2DEdgesUsage()
   int max_h_edge_usage = max_usage_multiplier * h_capacity_;
   int max_v_edge_usage = max_usage_multiplier * v_capacity_;
 
+  if (!logger_->debugCheck(GRT, "overflowcheck", 1)
+      && graph2d_.maxUsage(EdgeDirection::Horizontal) <= max_h_edge_usage
+      && graph2d_.maxUsage(EdgeDirection::Vertical) <= max_v_edge_usage) {
+    return;
+  }
+
+  // Stops global route early, unless the route accepts congestion
+  // (-allow_congestion), as the end of routing does (GRT-0115/0116).
+  // Separate warn/error ids: find_messages.py allows one call site per id.
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
-    if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {
-      logger_->error(GRT,
-                     228,
-                     "Horizontal edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageH(x, y),
-                     max_h_edge_usage);
+    const int usage = graph2d_.getUsageH(x, y);
+    if (usage > max_h_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      251,
+                      "Horizontal edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_h_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       228,
+                       "Horizontal edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_h_edge_usage);
+      }
     }
   }
 
   // check vertical edges
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-    if (graph2d_.getUsageV(x, y) > max_v_edge_usage) {
-      logger_->error(GRT,
-                     229,
-                     "Vertical edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageV(x, y),
-                     max_v_edge_usage);
+    const int usage = graph2d_.getUsageV(x, y);
+    if (usage > max_v_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      299,
+                      "Vertical edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_v_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       229,
+                       "Vertical edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_v_edge_usage);
+      }
     }
   }
 }
@@ -2723,7 +2843,7 @@ odb::Rect FastRouteCore::globalRoutingToBox(const GSegment& route)
 
 double FastRouteCore::dbuToMicrons(const int dbu)
 {
-  return db_->getChip()->getBlock()->dbuToMicrons(dbu);
+  return dbu / dbu_per_micron_;
 }
 
 void FastRouteCore::saveCongestion(const int iter)
@@ -2937,6 +3057,18 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
   auto& treenodes = sttrees_[netID].nodes;
 
   // Setting the values needed for each TreeNode
+  //
+  // Coordinate deduplication: non-terminal nodes that share a grid (x,y)
+  // position with an earlier node are aliased (stackAlias) to that earlier
+  // node. The original implementation found the earliest matching node with an
+  // O(numpoints) linear scan, making the whole loop O(numpoints^2). For large
+  // multi-pin nets this dominates global routing runtime. We replace the scan
+  // with a hash-map keyed by the packed (x,y) position, mapping to the dcor
+  // index of the FIRST node inserted at that position. This yields identical
+  // results (same first-match semantics, same xcor_/ycor_/dcor_ contents)
+  // with O(1) average lookups.
+  auto& coord_map = tree_node_coord_dedup_;
+  coord_map.clear();
   for (int d = 0; d < sttrees_[netID].num_nodes(); d++) {
     treenodes[d].topL = -1;
     treenodes[d].botL = num_layers_;
@@ -2947,6 +3079,12 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
     treenodes[d].lID = BIG_INT;
     treenodes[d].status = 0;
 
+    // Pack the int16_t grid coordinates into a single unsigned 32-bit key.
+    // Unsigned avoids undefined behavior from shifting into the sign bit.
+    const uint32_t key
+        = (static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].x)) << 16)
+          | static_cast<uint32_t>(static_cast<uint16_t>(treenodes[d].y));
+
     if (d < num_terminals) {
       const int pin_idx = sttrees_[netID].node_to_pin_idx[d];
       treenodes[d].botL = nets_[netID]->getPinL()[pin_idx];
@@ -2954,20 +3092,21 @@ void FastRouteCore::setTreeNodesVariables(const int netID)
       treenodes[d].assigned = true;
       treenodes[d].status = 1;
 
+      // Terminals are always appended (they are never aliased away), matching
+      // the original behavior. Record only the first dcor per position so
+      // later lookups resolve to the earliest insertion, as the linear scan
+      // did.
+      coord_map.try_emplace(key, d);
       xcor_[numpoints] = treenodes[d].x;
       ycor_[numpoints] = treenodes[d].y;
       dcor_[numpoints] = d;
       numpoints++;
     } else {
-      bool redundant = false;
-      for (int k = 0; k < numpoints; k++) {
-        if ((treenodes[d].x == xcor_[k]) && (treenodes[d].y == ycor_[k])) {
-          treenodes[d].stackAlias = dcor_[k];
-          redundant = true;
-          break;
-        }
-      }
-      if (!redundant) {
+      const auto it = coord_map.find(key);
+      if (it != coord_map.end()) {
+        treenodes[d].stackAlias = it->second;
+      } else {
+        coord_map.emplace(key, d);
         xcor_[numpoints] = treenodes[d].x;
         ycor_[numpoints] = treenodes[d].y;
         dcor_[numpoints] = d;

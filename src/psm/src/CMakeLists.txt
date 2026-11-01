@@ -19,6 +19,7 @@ target_sources(psm
     heatMap.cpp
     ir_solver.cpp
     ir_network.cpp
+    ir_short.cpp
     connection.cpp
     shape.cpp
     node.cpp
@@ -43,9 +44,9 @@ target_link_libraries(psm
     dbSta
     dpl_lib
     est_lib
+    rcx_lib
     Eigen3::Eigen
-    gui
-    gui_heatmap_core
+    gui_core
     Boost::boost
 )
 

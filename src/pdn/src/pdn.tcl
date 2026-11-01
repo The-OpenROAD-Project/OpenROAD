@@ -260,8 +260,11 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
                                        [-pitch pitch_value] \
                                        [-spacing spacing_value] \
                                        [-offset offset_value] \
+                                       [-offset_type (START|FIRST|CENTER|LAST|END)] \
                                        [-starts_with (POWER|GROUND)]
                                        [-extend_to_boundary] \
+                                       [-extend_to_pad_ring] \
+                                       [-extend_by distance] \
                                        [-snap_to_grid] \
                                        [-number_of_straps count] \
                                        [-nets list_of_nets]\
@@ -270,8 +273,10 @@ sta::define_cmd_args "add_pdn_stripe" {[-grid grid_name] \
 
 proc add_pdn_stripe { args } {
   sta::parse_key_args "add_pdn_stripe" args \
-    keys {-grid -layer -width -pitch -spacing -offset -starts_with -number_of_straps -nets} \
-    flags {-followpins -extend_to_core_ring -extend_to_boundary -snap_to_grid -allow_out_of_core}
+    keys {-grid -layer -width -pitch -spacing -offset -offset_type -starts_with \
+      -number_of_straps -nets -extend_by} \
+    flags {-followpins -extend_to_core_ring -extend_to_boundary -extend_to_pad_ring \
+      -snap_to_grid -allow_out_of_core}
 
   sta::check_argc_eq0 "add_pdn_stripe" $args
 
@@ -313,6 +318,20 @@ proc add_pdn_stripe { args } {
     set offset $keys(-offset)
   }
 
+  set offset_type FIRST
+  if { [info exists keys(-offset_type)] } {
+    set offset_type [string toupper $keys(-offset_type)]
+    if { [lsearch -exact {START FIRST CENTER LAST END} $offset_type] == -1 } {
+      utl::error PDN 1198 "Unknown -offset_type option: $keys(-offset_type)"
+    }
+  }
+
+  set extend_by 0
+  if { [info exists keys(-extend_by)] } {
+    set extend_by $keys(-extend_by)
+    sta::check_positive_float "-extend_by" $extend_by
+  }
+
   set number_of_straps 0
   if { [info exists keys(-number_of_straps)] } {
     set number_of_straps $keys(-number_of_straps)
@@ -339,15 +358,22 @@ proc add_pdn_stripe { args } {
   set pitch [ord::microns_to_dbu $pitch]
   set spacing [ord::microns_to_dbu $spacing]
   set offset [ord::microns_to_dbu $offset]
+  set extend_by [ord::microns_to_dbu $extend_by]
 
   set extend "Core"
-  if { [info exists flags(-extend_to_core_ring)] && [info exists flags(-extend_to_boundary)] } {
-    utl::error PDN 1010 "Options -extend_to_core_ring and\
-      -extend_to_boundary are mutually exclusive."
-  } elseif { [info exists flags(-extend_to_core_ring)] } {
-    set extend "Rings"
-  } elseif { [info exists flags(-extend_to_boundary)] } {
-    set extend "Boundary"
+  set extend_flags {}
+  foreach {flag mode} {
+    -extend_to_core_ring Rings
+    -extend_to_boundary Boundary
+    -extend_to_pad_ring PadRing
+  } {
+    if { [info exists flags($flag)] } {
+      lappend extend_flags $flag
+      set extend $mode
+    }
+  }
+  if { [llength $extend_flags] > 1 } {
+    utl::error PDN 1010 "Options [join $extend_flags { and }] are mutually exclusive."
   }
 
   set use_grid_power_order 1
@@ -361,7 +387,10 @@ proc add_pdn_stripe { args } {
     if { [info exists keys(-starts_with)] } {
       utl::warn PDN 211 "Option -starts_with cannot be used with -followpins and will be ignored."
     }
-    pdn::make_followpin $grid $layer $width $extend
+    if { [info exists keys(-offset_type)] } {
+      utl::warn PDN 1199 "Option -offset_type cannot be used with -followpins and will be ignored."
+    }
+    pdn::make_followpin $grid $layer $width $extend $extend_by
   } else {
     pdn::make_strap \
       $grid \
@@ -376,7 +405,9 @@ proc add_pdn_stripe { args } {
       $start_with_power \
       $extend \
       $nets \
-      [info exists flags(-allow_out_of_core)]
+      [info exists flags(-allow_out_of_core)] \
+      $offset_type \
+      $extend_by
   }
 }
 
@@ -1020,7 +1051,10 @@ proc define_pdn_grid_macro { args } {
     utl::error PDN 1029 "-name is required"
   }
   if { [has_grid $keys(-name)] } {
-    utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    remove_dummy_grid $keys(-name)
+    if { [has_grid $keys(-name)] } {
+      utl::error PDN 1044 "Grid named \"$keys(-name)\" already defined."
+    }
   }
 
   set start_with_power 0
@@ -1056,8 +1090,8 @@ proc define_pdn_grid_macro { args } {
 
   set is_bump [info exists flags(-bump)]
 
+  set insts {}
   if { [info exists keys(-instances)] } {
-    set insts {}
     foreach inst_pattern $keys(-instances) {
       set sub_insts [get_insts $inst_pattern]
       if { [llength $sub_insts] == 0 } {
@@ -1074,23 +1108,6 @@ proc define_pdn_grid_macro { args } {
     }
 
     set insts [lsort -unique -command name_cmp $insts]
-    foreach inst $insts {
-      # must match orientation, if provided
-      if { [match_orientation $orients [$inst getOrient]] != 0 } {
-        foreach domain $domains {
-          pdn::make_instance_grid \
-            $domain \
-            $keys(-name) \
-            $start_with_power \
-            $inst \
-            {*}$halo \
-            $pg_pins_to_boundary \
-            $default_grid \
-            $obstructions \
-            $is_bump
-        }
-      }
-    }
   } else {
     set cells {}
     foreach cell_pattern $keys(-cells) {
@@ -1115,22 +1132,38 @@ proc define_pdn_grid_macro { args } {
       foreach inst [[ord::get_db_block] getInsts] {
         # inst must match cells
         if { [$inst getMaster] == $cell } {
-          # must match orientation, if provided
-          if { [match_orientation $orients [$inst getOrient]] != 0 } {
-            foreach domain $domains {
-              pdn::make_instance_grid \
-                $domain $keys(-name) \
-                $start_with_power \
-                $inst \
-                {*}$halo \
-                $pg_pins_to_boundary \
-                $default_grid \
-                $obstructions \
-                $is_bump
-            }
-          }
+          lappend insts $inst
         }
       }
+    }
+  }
+
+  set created false
+  foreach inst $insts {
+    # must match orientation, if provided
+    if { [match_orientation $orients [$inst getOrient]] != 0 } {
+      foreach domain $domains {
+        pdn::make_instance_grid \
+          $domain \
+          $keys(-name) \
+          $start_with_power \
+          $inst \
+          {*}$halo \
+          $pg_pins_to_boundary \
+          $default_grid \
+          $obstructions \
+          $is_bump
+        set created true
+      }
+    }
+  }
+
+  if { !$created } {
+    utl::warn PDN 1051 "No instances found for grid (${keys(-name)})."
+    foreach domain $domains {
+      pdn::make_dummy_inst_grid \
+        $domain \
+        $keys(-name)
     }
   }
 }

@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -58,11 +59,50 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+regression_test(
+    name = "read_upf_errors",
+    check_log = False,
+    check_passfail = True,
+    data = [":regression_resources"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestPowerSwitch",
+    size = "small",
+    srcs = ["cpp/TestPowerSwitch.cc"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/upf",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPowerDomainRegions",
+    size = "small",
+    srcs = ["cpp/TestPowerDomainRegions.cc"],
+    deps = [
+        "//src/dbSta",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/upf",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "upf_man_tcl_check",
     srcs = ["upf_man_tcl_check.py"],
     data = ["//src/upf:doc_files"],
-    tags = ["doc_check"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
     deps = ["//docs/src/scripts:extract_utils"],
 )
 

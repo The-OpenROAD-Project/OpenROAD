@@ -77,11 +77,6 @@ add_library(db
     dbNameCache.cpp 
     dbPropertyItr.cpp 
     geom.cpp
-    tmg_conn.cpp
-    tmg_conn_g.cpp
-    tmg_conn_s.cpp
-    tmg_conn_w.cpp
-    wOrder.cpp
     dbGroupPowerNetItr.cpp
     dbGroupGroundNetItr.cpp
     dbGDSLib.cpp
@@ -97,12 +92,14 @@ add_library(db
     dbChip.cpp
     dbChipBump.cpp
     dbChipBumpInst.cpp
+    dbChipCapNode.cpp
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp
     dbChipPath.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
+    dbChipRSeg.cpp
     dbDatabase.cpp
     dbDft.cpp
     dbGCellGrid.cpp
@@ -168,7 +165,9 @@ add_library(db
     dbChipBumpInstItr.cpp
     dbChipConnItr.cpp
     dbChipInstItr.cpp
+    dbChipNetCapNodeItr.cpp
     dbChipNetItr.cpp
+    dbChipNetRSegItr.cpp
     dbChipRegionInstItr.cpp
     dbGroupInstItr.cpp
     dbGroupItr.cpp

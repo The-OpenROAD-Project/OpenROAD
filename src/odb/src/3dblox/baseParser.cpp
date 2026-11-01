@@ -5,12 +5,14 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "objects.h"
+#include "utl/CFileUtils.h"
 #include "utl/Logger.h"
 #include "yaml-cpp/yaml.h"
 namespace odb {
@@ -172,10 +174,44 @@ void BaseParser::resolvePaths(const std::string& path,
   }
 }
 
+std::string BaseParser::extractSinglePathFromList(const YAML::Node& parent,
+                                                  const std::string& key,
+                                                  const std::string& context)
+{
+  const YAML::Node node = parent[key];
+  if (!node) {
+    return "";
+  }
+  std::vector<std::string> values;
+  try {
+    if (node.IsSequence()) {
+      values = node.as<std::vector<std::string>>();
+    } else {
+      values.push_back(node.as<std::string>());
+    }
+  } catch (const YAML::Exception& e) {
+    logError("Error parsing " + key + " for " + context + ": "
+             + std::string(e.what()));
+  }
+  if (values.size() > 1) {
+    logError("Multiple " + key + " entries for " + context
+             + " are currently unsupported.");
+  }
+  if (values.empty()) {
+    return "";
+  }
+  return resolvePath(values[0]);
+}
+
 void BaseParser::logError(const std::string& message)
 {
   logger_->error(
       utl::ODB, 521, "Parser Error in {}: {}", current_file_path_, message);
+}
+
+std::ifstream BaseParser::openInputFile()
+{
+  return utl::OpenInputStream(current_file_path_, logger_);
 }
 
 std::string BaseParser::trim(const std::string& str)

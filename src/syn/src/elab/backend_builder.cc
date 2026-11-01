@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 
 #include "backend_builder.h"
@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "ir.h"
-#include "log_stubs.h"
 #include "slang/ast/expressions/Operator.h"
 #include "slang_frontend.h"
 #include "syn/ir/Bundle.h"
@@ -256,7 +255,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     }
 
     default:
-      log_error("Unsupported unary operator\n");
+      syn::reportError(graph_->logger(), 70, "Unsupported unary operator");
   }
 }
 
@@ -592,7 +591,7 @@ ir::Value BackendGraphBuilder::Biop(ast::BinaryOperator op,
     }
 
     default:
-      log_error("Unsupported binary operator\n");
+      syn::reportError(graph_->logger(), 71, "Unsupported binary operator");
   }
 }
 
@@ -662,8 +661,8 @@ ir::Value BackendGraphBuilder::Bwmux(ir::Value a, ir::Value b, ir::Value s)
 
 ir::Value BackendGraphBuilder::Bmux(ir::Value a, ir::Value s)
 {
-  log_assert(a.size() % (1 << s.size()) == 0);
-  log_assert(a.size() >= 1ull << s.size());
+  assert(a.size() % (1 << s.size()) == 0);
+  assert(a.size() >= 1ull << s.size());
 
   uint64_t width = a.size() >> s.size();
   auto& g = graph();
@@ -707,8 +706,184 @@ void BackendGraphBuilder::add_output(std::string_view name, ir::Value signal)
   g.add<syn::Output>(std::string(name), toBundle(signal));
 }
 
-void BackendGraphBuilder::add_instance(std::string_view cell_type,
-                                       std::vector<PortConnection> ports)
+void BackendGraphBuilder::add_instance(std::string_view,
+                                       std::vector<PortConnection>)
+{
+  syn::reportError(
+      graph_->logger(),
+      97,
+      "Hierarchical (non-dissolved) module instantiation not supported");
+}
+
+void BackendGraphBuilder::connect(ir::Value target, ir::Value source)
+{
+  auto& g = graph();
+  assert(target.size() == source.size());
+  for (uint64_t i = 0; i < target.size(); i++) {
+    syn::Net target_net = ir::Net(target[i]).raw_;
+    auto [inst, offset] = g.resolve(target_net);
+    assert(inst->is<syn::Buffer>());
+    inst->as<syn::Buffer>()->setA(offset, ir::Net(source[i]).raw_);
+  }
+}
+
+void BackendGraphBuilder::set_initialization(ir::Value, ir::Const)
+{
+}
+
+// ============================================================
+// Sequential elements
+// ============================================================
+
+void BackendGraphBuilder::add_dff(std::string_view,
+                                  const ir::Net clk,
+                                  const ir::Value& d,
+                                  const ir::Value& q,
+                                  bool clk_polarity)
+{
+  auto& g = graph();
+  syn::Net clk_net = clk.raw_;
+  syn::Bundle db = toBundle(d);
+  uint32_t w = db.width();
+  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
+                             : syn::ControlNet::neg(clk_net);
+  syn::Bundle dff_out = g.add<syn::Dff>(db,
+                                        clk_cn,
+                                        syn::ControlNet::zero(),
+                                        syn::ControlNet::zero(),
+                                        syn::ControlNet::one(),
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w));
+  connect(q, fromBundle(dff_out));
+}
+
+void BackendGraphBuilder::add_dffe(std::string_view,
+                                   const ir::Net clk,
+                                   const ir::Net en,
+                                   const ir::Value& d,
+                                   const ir::Value& q,
+                                   bool clk_polarity,
+                                   bool en_polarity)
+{
+  auto& g = graph();
+  syn::Net clk_net = clk.raw_;
+  syn::Net en_net = en.raw_;
+  syn::Bundle db = toBundle(d);
+  uint32_t w = db.width();
+
+  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
+                             : syn::ControlNet::neg(clk_net);
+  auto en_cn = en_polarity ? syn::ControlNet::pos(en_net)
+                           : syn::ControlNet::neg(en_net);
+
+  syn::Bundle dff_out = g.add<syn::Dff>(db,
+                                        clk_cn,
+                                        syn::ControlNet::zero(),
+                                        syn::ControlNet::zero(),
+                                        en_cn,
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w));
+  connect(q, fromBundle(dff_out));
+}
+
+void BackendGraphBuilder::add_aldff(std::string_view,
+                                    const ir::Net clk,
+                                    const ir::Net aload,
+                                    const ir::Value& d,
+                                    const ir::Value& q,
+                                    const ir::Value& ad,
+                                    bool clk_polarity,
+                                    bool aload_polarity)
+{
+  auto& g = graph();
+  syn::Net clk_net = clk.raw_;
+  syn::Net aload_net = aload.raw_;
+  syn::Bundle db = toBundle(d);
+  uint32_t w = db.width();
+
+  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
+                             : syn::ControlNet::neg(clk_net);
+  auto clear_cn = aload_polarity ? syn::ControlNet::pos(aload_net)
+                                 : syn::ControlNet::neg(aload_net);
+
+  if (!ad.is_fully_const()) {
+    syn::reportError(graph_->logger(),
+                     91,
+                     "Flops with non-constant asynchronous load unsupported");
+  }
+
+  syn::Bundle dff_out = g.add<syn::Dff>(db,
+                                        clk_cn,
+                                        clear_cn,
+                                        syn::ControlNet::zero(),
+                                        syn::ControlNet::one(),
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w),
+                                        toBundle(ad).toConst());
+  connect(q, fromBundle(dff_out));
+}
+
+void BackendGraphBuilder::add_aldffe(std::string_view,
+                                     const ir::Net clk,
+                                     const ir::Net en,
+                                     const ir::Net aload,
+                                     const ir::Value& d,
+                                     const ir::Value& q,
+                                     const ir::Value& ad,
+                                     bool clk_polarity,
+                                     bool en_polarity,
+                                     bool aload_polarity)
+{
+  auto& g = graph();
+  syn::Net clk_net = clk.raw_;
+  syn::Net en_net = en.raw_;
+  syn::Net aload_net = aload.raw_;
+  syn::Bundle db = toBundle(d);
+  uint32_t w = db.width();
+
+  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
+                             : syn::ControlNet::neg(clk_net);
+  auto clear_cn = aload_polarity ? syn::ControlNet::pos(aload_net)
+                                 : syn::ControlNet::neg(aload_net);
+  auto en_cn = en_polarity ? syn::ControlNet::pos(en_net)
+                           : syn::ControlNet::neg(en_net);
+
+  if (!ad.is_fully_const()) {
+    syn::reportError(graph_->logger(),
+                     91,
+                     "Flops with non-constant asynchronous load unsupported");
+  }
+
+  syn::Bundle dff_out = g.add<syn::Dff>(db,
+                                        clk_cn,
+                                        clear_cn,
+                                        syn::ControlNet::zero(),
+                                        en_cn,
+                                        syn::Const::undef(w),
+                                        syn::Const::undef(w),
+                                        toBundle(ad).toConst());
+  connect(q, fromBundle(dff_out));
+}
+
+void BackendGraphBuilder::add_dual_edge_aldff(const std::string&,
+                                              ir::Net clk,
+                                              ir::Net aload,
+                                              const ir::Value& d,
+                                              const ir::Value& q,
+                                              const ir::Value& ad,
+                                              bool aload_polarity)
+{
+  syn::reportError(graph_->logger(),
+                   72,
+                   "Flops with a dual-edge asynchronous load are unsupported");
+}
+
+void BackendGraphBuilder::instantiate_blackbox(std::string_view cell_type,
+                                               std::string_view,
+                                               std::span<PortConnection> ports,
+                                               std::span<ParameterValue>)
 {
   auto& g = graph();
   std::vector<syn::Other::Port> syn_ports;
@@ -731,7 +906,12 @@ void BackendGraphBuilder::add_instance(std::string_view cell_type,
         val = toBundle(pc.value);
         break;
     }
-    syn_ports.push_back({std::move(pc.name), dir, port_width, std::move(val)});
+    syn::Other::Port port;
+    port.name = std::string(pc.name);
+    port.direction = dir;
+    port.width = port_width;
+    port.value = std::move(val);
+    syn_ports.push_back(std::move(port));
   }
 
   // Create the Other instance.
@@ -750,131 +930,47 @@ void BackendGraphBuilder::add_instance(std::string_view cell_type,
   }
 }
 
-void BackendGraphBuilder::connect(ir::Value target, ir::Value source)
+ir::Memory* BackendGraphBuilder::add_memory(std::string_view,
+                                            uint64_t,
+                                            slang::ConstantRange)
 {
-  auto& g = graph();
-  log_assert(target.size() == source.size());
-  for (uint64_t i = 0; i < target.size(); i++) {
-    syn::Net target_net = ir::Net(target[i]).raw_;
-    auto [inst, offset] = g.resolve(target_net);
-    log_assert(inst->is<syn::Buffer>());
-    inst->as<syn::Buffer>()->setA(offset, ir::Net(source[i]).raw_);
-  }
+  syn::reportError(graph_->logger(), 92, "Memories are unsupported");
 }
 
-void BackendGraphBuilder::set_initialization(ir::Value, ir::Const)
+void BackendGraphBuilder::add_read_port(ir::Memory*, ir::Value, ir::Value)
 {
+  syn::reportError(graph_->logger(), 93, "Memories are unsupported");
 }
 
-// ============================================================
-// Sequential elements
-// ============================================================
-
-void BackendGraphBuilder::add_dff(std::string_view,
-                                  const ir::Value& clk,
-                                  const ir::Value& d,
-                                  const ir::Value& q,
-                                  bool clk_polarity)
+ir::WritePort* BackendGraphBuilder::add_write_port(ir::Memory*,
+                                                   std::span<ir::WritePort*>,
+                                                   bool,
+                                                   bool,
+                                                   ir::Net,
+                                                   const ir::Value&,
+                                                   const ir::Value&,
+                                                   const ir::Value&)
 {
-  auto& g = graph();
-  syn::Net clk_net = clk.as_net().raw_;
-  syn::Bundle db = toBundle(d);
-  uint32_t w = db.width();
-  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
-                             : syn::ControlNet::neg(clk_net);
-  syn::Bundle dff_out = g.add<syn::Dff>(db,
-                                        clk_cn,
-                                        syn::ControlNet::zero(),
-                                        syn::ControlNet::zero(),
-                                        syn::ControlNet::one(),
-                                        syn::Const::undef(w),
-                                        syn::Const::undef(w),
-                                        syn::Const::undef(w));
-  connect(q, fromBundle(dff_out));
+  syn::reportError(graph_->logger(), 94, "Memories are unsupported");
 }
 
-void BackendGraphBuilder::add_dffe(std::string_view,
-                                   const ir::Value& clk,
-                                   const ir::Value& en,
-                                   const ir::Value& d,
-                                   const ir::Value& q,
-                                   bool clk_polarity,
-                                   bool en_polarity)
-{
-  auto& g = graph();
-  syn::Net clk_net = clk.as_net().raw_;
-  syn::Net en_net = en.as_net().raw_;
-  syn::Bundle db = toBundle(d);
-  uint32_t w = db.width();
-
-  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
-                             : syn::ControlNet::neg(clk_net);
-  auto en_cn = en_polarity ? syn::ControlNet::pos(en_net)
-                           : syn::ControlNet::neg(en_net);
-
-  syn::Bundle dff_out = g.add<syn::Dff>(db,
-                                        clk_cn,
-                                        syn::ControlNet::zero(),
-                                        syn::ControlNet::zero(),
-                                        en_cn,
-                                        syn::Const::undef(w),
-                                        syn::Const::undef(w),
-                                        syn::Const::undef(w));
-  connect(q, fromBundle(dff_out));
-}
-
-void BackendGraphBuilder::add_aldff(std::string_view,
-                                    const ir::Value& clk,
-                                    const ir::Value& aload,
-                                    const ir::Value& d,
-                                    const ir::Value& q,
-                                    const ir::Value& ad,
-                                    bool clk_polarity,
-                                    bool aload_polarity)
-{
-  auto& g = graph();
-  syn::Net clk_net = clk.as_net().raw_;
-  syn::Net aload_net = aload.as_net().raw_;
-  syn::Bundle db = toBundle(d);
-  uint32_t w = db.width();
-
-  auto clk_cn = clk_polarity ? syn::ControlNet::pos(clk_net)
-                             : syn::ControlNet::neg(clk_net);
-  auto clear_cn = aload_polarity ? syn::ControlNet::pos(aload_net)
-                                 : syn::ControlNet::neg(aload_net);
-
-  if (!ad.is_fully_const()) {
-    reportError(graph_->logger(),
-                91,
-                "Flops with non-constant asynchronous load unsupported");
-  }
-
-  syn::Bundle dff_out = g.add<syn::Dff>(db,
-                                        clk_cn,
-                                        clear_cn,
-                                        syn::ControlNet::zero(),
-                                        syn::ControlNet::one(),
-                                        syn::Const::undef(w),
-                                        syn::Const::undef(w),
-                                        toBundle(ad).toConst());
-  connect(q, fromBundle(dff_out));
-}
-
-void BackendGraphBuilder::add_dual_edge_aldff(const std::string&,
-                                              ir::Value clk,
-                                              ir::Value aload,
-                                              ir::Value d,
-                                              ir::Value q,
-                                              ir::Value ad,
-                                              bool aload_polarity)
-{
-  log_error("no support\n");
-}
-
-void BackendGraphBuilder::add_memory_init(std::string_view,
+void BackendGraphBuilder::add_memory_init(ir::Memory*,
                                           uint64_t,
                                           bool,
                                           ir::Const)
+{
+  syn::reportError(graph_->logger(), 95, "Memories are unsupported");
+}
+
+void transfer_attrs(NetlistContext&, const ast::Symbol&, AttributeGuard&)
+{
+}
+
+void transfer_attrs(NetlistContext&, const ast::Statement&, AttributeGuard&)
+{
+}
+
+void transfer_attrs(NetlistContext&, const ast::Expression&, AttributeGuard&)
 {
 }
 

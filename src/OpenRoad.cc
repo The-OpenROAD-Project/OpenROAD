@@ -45,6 +45,8 @@
 #include "exa/example.h"
 #include "fin/Finale.h"
 #include "fin/MakeFinale.h"
+#include "fsv/FieldSolver.h"
+#include "fsv/MakeFieldSolver.h"
 #include "gpl/MakeReplace.h"
 #include "gpl/Replace.h"
 #include "grt/GlobalRouter.h"
@@ -94,6 +96,8 @@
 #include "utl/decode.h"
 #include "web/MakeWeb.h"
 #include "web/web.h"
+#include "wmk/MakeWatermark.h"
+#include "wmk/Watermark.h"
 
 namespace ord {
 extern const char* ord_tcl_inits[];
@@ -136,6 +140,7 @@ OpenRoad::~OpenRoad()
   delete tapcell_;
   delete macro_placer_;
   delete example_;
+  delete field_solver_;
   delete extractor_;
   delete detailed_router_;
   // Stop the web server first — its I/O threads access the database
@@ -154,6 +159,7 @@ OpenRoad::~OpenRoad()
   delete stt_builder_;
   delete dft_;
   delete estimate_parasitics_;
+  delete watermark_;
   delete logger_;
   delete verilog_reader_;
   delete service_registry_;
@@ -215,7 +221,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
   ioPlacer_ = new ppl::IOPlacer(db_, logger_);
-  stt_builder_ = new stt::SteinerTreeBuilder(db_, logger_);
+  stt_builder_ = new stt::SteinerTreeBuilder(logger_);
   antenna_checker_ = new ant::AntennaChecker(db_, logger_);
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,
@@ -259,7 +265,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       db_, logger_, service_registry_, distributer_, stt_builder_);
   drt::initGui(detailed_router_);
 
-  replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);
+  replace_ = new gpl::Replace(
+      db_, sta_, resizer_, global_router_, ioPlacer_, logger_);
   pdnsim_ = new psm::PDNSim(logger_, db_, sta_, estimate_parasitics_, opendp_);
   pdngen_ = new pdn::PdnGen(db_, logger_);
   ram_gen_ = new ram::RamGen(getDbNetwork(),
@@ -271,9 +278,12 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                              global_router_,
                              detailed_router_);
   icewall_ = new pad::ICeWall(db_, logger_);
-  dft_ = new dft::Dft(db_, sta_, logger_);
+  dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
+  field_solver_ = new fsv::FieldSolver(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  watermark_
+      = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);
@@ -301,6 +311,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tap::initTapcell(tcl_interp);
   mpl::initMacroPlacer(tcl_interp);
   exa::initExample(tcl_interp);
+  fsv::initFieldSolver(tcl_interp);
   rcx::initOpenRCX(tcl_interp);
   pad::initICeWall(tcl_interp);
   rmp::initRestructure(tcl_interp);
@@ -315,10 +326,16 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft::initDft(tcl_interp);
   est::initTcl(tcl_interp);
   web::initWeb(tcl_interp);
+  wmk::initWatermark(tcl_interp);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");
   Tcl_Eval(tcl_interp, "namespace import sta::*");
+
+  // "$handle method args..." on an odb handle resolves here.  Installed after
+  // OpenSTA's handler, which odb_unknown falls back to for everything that is
+  // not an odb handle.
+  Tcl_Eval(tcl_interp, "odb_install_unknown");
 
   // Initialize tcl history
   if (Tcl_Eval(tcl_interp, "history") == TCL_ERROR) {
@@ -520,6 +537,7 @@ void OpenRoad::read3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox parser(logger_, db_, sta_);
   parser.readDbx(filename);
+  db_->constructUnfoldedModel();
   db_->triggerPostRead3Dbx(db_->getChip());
   check3DBlox();
 }
@@ -579,7 +597,7 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 
 void OpenRoad::readDb(std::istream& stream)
 {
-  if (db_->getChip() && db_->getChip()->getBlock()) {
+  if (!db_->getChips().empty()) {
     logger_->error(
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
@@ -596,9 +614,10 @@ void OpenRoad::writeDb(std::ostream& stream)
   db_->write(stream);
 }
 
-void OpenRoad::writeDb(const char* filename)
+void OpenRoad::writeDb(const char* filename,
+                       std::optional<int> compression_level)
 {
-  utl::OutStreamHandler stream_handler(filename, true);
+  utl::OutStreamHandler stream_handler(filename, true, compression_level);
   writeDb(stream_handler.getStream());
 }
 
@@ -686,6 +705,9 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   if (global_router_ != nullptr) {
     global_router_->setNumThreads(threads_);
   }
+  if (partitionMgr_ != nullptr) {
+    partitionMgr_->setThreadCount(threads_);
+  }
   if (web_server_ != nullptr) {
     web_server_->setThreadCount(threads_);
   }
@@ -698,9 +720,18 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
   if (strcmp(threads, "max") == 0) {
     max_threads = -1;  // -1 is max cores
   } else {
+    bool valid = false;
     try {
-      max_threads = std::stoi(threads);
-    } catch (const std::invalid_argument&) {
+      size_t pos = 0;
+      const int parsed = std::stoi(threads, &pos);
+      // Reject trailing characters such as "4abc" or "8.5".
+      if (threads[pos] == '\0') {
+        max_threads = parsed;
+        valid = true;
+      }
+    } catch (const std::logic_error&) {  // invalid_argument or out_of_range
+    }
+    if (!valid) {
       logger_->warn(
           ORD, 32, "Invalid thread number specification: {}.", threads);
     }
@@ -728,6 +759,20 @@ std::string OpenRoad::getExePath() const
 
 std::string OpenRoad::getDocsPath() const
 {
+#ifdef BAZEL_BUILD
+  // When invoked via 'bazel run', BUILD_WORKSPACE_DIRECTORY is set to the
+  // workspace root. Look for generated man pages in bazel-bin/docs/ so that
+  // 'man' works without a full install step.
+  const char* workspace_dir = std::getenv("BUILD_WORKSPACE_DIRECTORY");
+  if (workspace_dir != nullptr) {
+    auto docs_path
+        = std::filesystem::path(workspace_dir) / "bazel-bin" / "docs";
+    if (std::filesystem::is_directory(docs_path)) {
+      return docs_path;
+    }
+  }
+#endif
+
   const std::string exe = getExePath();
 
   if (exe.empty()) {

@@ -157,7 +157,7 @@ void PartitionMgr::getFromODB(
     if (!lib_cell) {
       logger_->error(PAR, 56, "Liberty cell not found: {}", inst->getName());
     }
-    if (lib_cell->hasSequentials()) {
+    if (lib_cell->isSequential()) {
       num_seq++;
     }
     auto [it, inserted]
@@ -321,8 +321,8 @@ void PartitionMgr::getRents(float& r_ratio, float& p, float& q, float& avg_k)
   SharedClusterVector cv;
   auto c = std::make_shared<Cluster>(0);
   cv.push_back(c);
-  auto triton_part
-      = std::make_shared<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_shared<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   double tot_pins = 0;
   int id = 0;
   std::vector<dbInst*> insts(block->getInsts().begin(),

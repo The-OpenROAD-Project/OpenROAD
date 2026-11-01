@@ -53,17 +53,23 @@ void CellEdgeSpacingTableParser::setString(
 // [OPTIONAL] [SOFT] [EXACT] <spacing> ;
 bool CellEdgeSpacingTableParser::parseEntry(const std::string& s)
 {
+  // Edge-type group names may be any non-blank token, including ones that are
+  // numeric or a single character (e.g. "1"). The shared _string rule requires
+  // an alphabetic first character, so use a dedicated rule here that accepts
+  // any non-blank, non-semicolon token per the LEF/DEF 5.8 reference.
+  qi::rule<std::string::const_iterator, std::string(), space_type> edge_type
+      = lexeme[+(char_ - blank - '\n' - ';')];
   qi::rule<std::string::const_iterator, space_type> ENTRY
       = lit("EDGETYPE")[boost::bind(&CellEdgeSpacingTableParser::createEntry,
                                     this)]
-        >> _string[boost::bind(&CellEdgeSpacingTableParser::setString,
-                               this,
-                               _1,
-                               &dbCellEdgeSpacing::setFirstEdgeType)]
-        >> _string[boost::bind(&CellEdgeSpacingTableParser::setString,
-                               this,
-                               _1,
-                               &dbCellEdgeSpacing::setSecondEdgeType)]
+        >> edge_type[boost::bind(&CellEdgeSpacingTableParser::setString,
+                                 this,
+                                 _1,
+                                 &dbCellEdgeSpacing::setFirstEdgeType)]
+        >> edge_type[boost::bind(&CellEdgeSpacingTableParser::setString,
+                                 this,
+                                 _1,
+                                 &dbCellEdgeSpacing::setSecondEdgeType)]
         >> -lit(
             "EXCEPTABUTTED")[boost::bind(&CellEdgeSpacingTableParser::setBool,
                                          this,

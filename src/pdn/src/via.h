@@ -7,12 +7,12 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "odb/PtrSetMap.h"
@@ -112,8 +112,7 @@ class DbVia
                                  int x,
                                  int y,
                                  const odb::PtrSet<odb::dbTechLayer>& ongrid,
-                                 utl::Logger* logger)
-      = 0;
+                                 utl::Logger* logger) = 0;
 
   virtual bool requiresPatch() const { return false; }
 
@@ -128,6 +127,8 @@ class DbVia
   }
   bool hasGenerator() const { return generator_ != nullptr; }
   ViaGenerator* getGenerator() const { return generator_.get(); }
+
+  virtual bool canCache() const;
 
  protected:
   ViaLayerShape getLayerShapes(odb::dbSBox* box) const;
@@ -148,8 +149,7 @@ class DbBaseVia : public DbVia
   virtual odb::Rect getViaRect(bool include_enclosure,
                                bool include_via_shape,
                                bool include_bottom,
-                               bool include_top) const
-      = 0;
+                               bool include_top) const = 0;
 
   odb::Rect getViaRect(bool include_enclosure,
                        bool include_via_shape,
@@ -368,7 +368,7 @@ class DbArrayVia : public DbVia
 class DbGenerateStackedVia : public DbVia
 {
  public:
-  DbGenerateStackedVia(const std::vector<DbVia*>& vias,
+  DbGenerateStackedVia(std::vector<std::unique_ptr<DbVia>> vias,
                        odb::dbTechLayer* bottom,
                        odb::dbBlock* block);
 
@@ -381,6 +381,8 @@ class DbGenerateStackedVia : public DbVia
                          utl::Logger* logger) override;
 
   ViaReport getViaReport() const override;
+
+  bool canCache() const override;
 
  private:
   std::vector<std::unique_ptr<DbVia>> vias_;
@@ -427,6 +429,12 @@ class ViaGenerator
     bool must_fit_x;
     bool must_fit_y;
     bool intersection_only;
+    // Width of the metal actually drawn on this side when the layer is shared
+    // with the adjacent via of a stack: the union of the pads landing on it
+    // from the cut layer below and the cut layer above.  Width-conditioned
+    // rules are looked up against it, since that merged shape is what a DRC
+    // deck measures.  Unset when nothing else lands on the layer.
+    std::optional<int> shared_width;
   };
 
   ViaGenerator(utl::Logger* logger,
@@ -477,8 +485,7 @@ class ViaGenerator
   virtual DbBaseVia* makeBaseVia(int rows,
                                  int row_pitch,
                                  int cols,
-                                 int col_pitch) const
-      = 0;
+                                 int col_pitch) const = 0;
 
   const odb::Rect& getLowerRect() const { return lower_rect_; }
   const odb::Rect& getUpperRect() const { return upper_rect_; }
@@ -500,6 +507,8 @@ class ViaGenerator
   int getGeneratorHeight(bool bottom) const;
 
   bool recheckConstraints(const odb::Rect& rect, bool bottom);
+
+  bool canCache() const { return can_cache_; }
 
  protected:
   int getMaxRows() const { return max_rows_; }
@@ -547,6 +556,20 @@ class ViaGenerator
                                     std::vector<Enclosure>& top,
                                     bool rules_only) const;
 
+  // Compute the cut rows/columns (and resulting enclosures) for a given
+  // pair of minimum enclosures. Exposed at protected scope so unit tests can
+  // drive a single enclosure combination directly, without going through the
+  // combination search in build().
+  void determineRowsAndColumns(bool use_bottom_min_enclosure,
+                               bool use_top_min_enclosure,
+                               const Enclosure& bottom_min_enclosure,
+                               const Enclosure& top_min_enclosure);
+
+  // Validate the enclosures computed by determineRowsAndColumns against the
+  // cut layer's LEF58 enclosure rules. Protected so unit tests can assert on
+  // the accept/reject decision in isolation.
+  bool checkMinEnclosure(bool check_bottom = true, bool check_top = true) const;
+
  private:
   utl::Logger* logger_;
 
@@ -585,21 +608,18 @@ class ViaGenerator
   std::unique_ptr<Enclosure> bottom_enclosure_;
   std::unique_ptr<Enclosure> top_enclosure_;
 
+  bool can_cache_ = true;
+
+  std::optional<int> getSharedLayerWidth(bool bottom) const;
+
   void determineCutClass();
   bool checkMinCuts() const;
   bool checkMinCuts(odb::dbTechLayer* layer, int width) const;
   bool appliesToLayers(odb::dbTechLayer* lower, odb::dbTechLayer* upper) const;
 
-  bool checkMinEnclosure() const;
-
   std::vector<odb::dbTechLayerCutEnclosureRule*> getCutMinimumEnclosureRules(
       int width,
       bool above) const;
-
-  void determineRowsAndColumns(bool use_bottom_min_enclosure,
-                               bool use_top_min_enclosure,
-                               const Enclosure& bottom_min_enclosure,
-                               const Enclosure& top_min_enclosure);
 
   odb::dbTechLayerDir getRectDirection(const odb::Rect& rect) const;
 
@@ -648,9 +668,6 @@ class GenerateViaGenerator : public ViaGenerator
   std::array<uint32_t, 3> layers_;
 
   bool isLayerValidForWidth(odb::dbTechViaLayerRule*, int width) const;
-  bool getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,
-                             int& dx,
-                             int& dy) const;
   bool isBottomValidForWidth(int width) const;
   bool isTopValidForWidth(int width) const;
 };
@@ -696,6 +713,17 @@ class TechViaGenerator : public ViaGenerator
                             std::vector<Enclosure>& top,
                             bool rules_only) const override;
 
+  // The shape-containment checks behind isSetupValid. Exposed at protected
+  // scope so unit tests can drive a single containment decision directly with
+  // synthetic rects, instead of having to reverse-engineer a tech via whose
+  // generated metal happens to land on the branch under test.
+  bool fitsShapes() const;
+  bool mostlyContains(const odb::Rect& full_shape,
+                      const odb::Rect& intersection,
+                      const odb::Rect& small_shape,
+                      const Constraint& constraint,
+                      odb::dbTechLayer* layer) const;
+
  private:
   odb::dbTechVia* via_;
 
@@ -705,13 +733,6 @@ class TechViaGenerator : public ViaGenerator
   odb::dbTechLayer* bottom_;
   odb::dbTechLayer* cut_ = nullptr;
   odb::dbTechLayer* top_;
-
-  bool fitsShapes() const;
-  bool mostlyContains(const odb::Rect& full_shape,
-                      const odb::Rect& intersection,
-                      const odb::Rect& small_shape,
-                      const Constraint& constraint,
-                      odb::dbTechLayer* layer) const;
 };
 
 class Via

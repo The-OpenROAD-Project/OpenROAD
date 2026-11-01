@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 // Entry point: parse SystemVerilog files and elaborate into a syn::Graph.
 //
@@ -24,6 +24,11 @@ class dbSta;
 
 namespace syn {
 
+// Defined in error.cc to work around fmt version conflict, see error.cc
+[[noreturn]] void reportError(utl::Logger* logger,
+                              int code,
+                              std::string_view message);
+
 // Parse and elaborate SystemVerilog sources into a Graph.
 // Arguments are passed through to slang's command-line parser
 // (file paths, -I, --top, defines, etc.).
@@ -32,6 +37,7 @@ std::unique_ptr<Graph> elaborate(utl::Logger* logger,
                                  const std::vector<std::string>& args,
                                  sta::dbSta* sta = nullptr);
 std::unique_ptr<Graph> elaborateText(const std::string& source,
-                                     const std::vector<std::string>& args = {});
+                                     const std::vector<std::string>& args = {},
+                                     sta::dbSta* sta = nullptr);
 
 }  // namespace syn

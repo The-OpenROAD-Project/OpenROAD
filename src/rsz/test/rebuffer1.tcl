@@ -37,9 +37,9 @@ rsz::fully_rebuffer [get_pins u_mid1/u_leaf2/dff2/Q]
 set verilog_filename "rebuffer1_out.v"
 set rebuffered_verilog_filename [make_result_file $verilog_filename]
 write_verilog $rebuffered_verilog_filename
-diff_file ${verilog_filename}ok $rebuffered_verilog_filename
+diff_files ${verilog_filename}ok $rebuffered_verilog_filename
 
 set def_filename "rebuffer1_out.def"
 set rebuffered_def_filename [make_result_file $def_filename]
 write_def $rebuffered_def_filename
-diff_file ${def_filename}ok $rebuffered_def_filename
+diff_files ${def_filename}ok $rebuffered_def_filename

@@ -243,7 +243,9 @@ void dbModule::addInst(dbInst* inst)
   const bool is_reparent = (_inst->module_ != 0);
   if (is_reparent) {
     dbModule* mod = dbModule::getModule((dbBlock*) block, _inst->module_);
-    ((_dbModule*) mod)->removeInst(inst);
+    // This is the detach half of a reparent, not a standalone removal.
+    // Notify once below, after the new module's index and list are consistent.
+    ((_dbModule*) mod)->removeInst(inst, false);
   }
 
   _inst->module_ = module->getOID();
@@ -267,7 +269,7 @@ void dbModule::addInst(dbInst* inst)
   }
 }
 
-void _dbModule::removeInst(dbInst* inst)
+void _dbModule::removeInst(dbInst* inst, bool notify)
 {
   _dbModule* module = (_dbModule*) this;
   _dbInst* _inst = (_dbInst*) inst;
@@ -286,6 +288,7 @@ void _dbModule::removeInst(dbInst* inst)
   }
 
   _dbBlock* block = (_dbBlock*) getOwner();
+  module->dbinst_hash_.erase(inst->getName());
 
   if (module->insts_ == id) {
     module->insts_ = _inst->module_next_;
@@ -308,6 +311,12 @@ void _dbModule::removeInst(dbInst* inst)
   _inst->module_ = 0;
   _inst->module_next_ = 0;
   _inst->module_prev_ = 0;
+
+  if (notify) {
+    for (dbBlockCallBackObj* callback : block->callbacks_) {
+      callback->inDbPostInstParentChange(inst);
+    }
+  }
 }
 
 dbSet<dbModInst> dbModule::getChildren() const
@@ -565,10 +574,9 @@ dbModBTerm* dbModule::findModBTerm(const char* name) const
   // hierarchical path to a non-hierarchical port name.
   auto it = obj->modbterm_hash_.find(name);
   if (it == obj->modbterm_hash_.end()) {
-    const char hier_delimiter = getOwner()->getHierarchyDelimiter();
-    const char* last_delim = strrchr(name, hier_delimiter);
-    if (last_delim != nullptr) {
-      it = obj->modbterm_hash_.find(last_delim + 1);
+    const char* base_name = getOwner()->getBaseName(name);
+    if (base_name != name) {
+      it = obj->modbterm_hash_.find(base_name);
     }
   }
   if (it != obj->modbterm_hash_.end()) {
