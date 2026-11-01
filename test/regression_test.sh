@@ -83,5 +83,9 @@ if [ "$TEST_CHECK_METRICS" == "True" ]; then
     echo "Metrics:   $METRICS_FILE vs $TEST_NAME.metrics_limits"
     METRICS_FILE="$METRICS_FILE" \
     METRICS_LIMITS_FILE="$TEST_NAME.metrics_limits" \
-        "$OPENROAD_EXE" -no_splash -no_init -exit "$SCRIPT_DIR/check_metrics.tcl"
+        "$OPENROAD_EXE" -no_splash -no_init -exit "$SCRIPT_DIR/check_metrics.tcl" || {
+        metrics_exit=$?
+        cat "$METRICS_FILE" || true
+        exit "$metrics_exit"
+    }
 fi
