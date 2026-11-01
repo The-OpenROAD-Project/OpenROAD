@@ -220,11 +220,12 @@ _install_bazel_libs() {
             if [[ -n "${ubuntu_version}" ]] && _version_compare "${ubuntu_version}" -ge "26.04"; then
                 libxml2_pkg="libxml2-dev"
             fi
+            # git fetches the git_override modules (qt-bazel).
             _execute "Updating package lists..." apt-get -y update
             _execute "Installing bazel required libraries..." \
                 apt-get -y install --no-install-recommends \
                 libc6-dev "${libxml2_pkg}" libtinfo6 zlib1g libstdc++6 \
-                curl ca-certificates
+                curl ca-certificates git
             # lld only uses libxml2 for Windows COFF manifests, never during a
             # Linux link, so the .so.16 -> .so.2 compatibility symlink is safe.
             # Gated to 26.04+ only.
@@ -239,9 +240,10 @@ _install_bazel_libs() {
                 fi
             fi
         elif _command_exists "yum"; then
+            # git fetches the git_override modules (qt-bazel).
             _execute "Installing bazel required libraries..." \
                 yum install -y \
-                glibc-devel libxml2 ncurses-libs zlib libstdc++
+                git glibc-devel libxml2 ncurses-libs zlib libstdc++
             # RHEL 9 ships curl-minimal, which conflicts with the full curl
             # package, so install curl only when no curl is present.
             if ! _command_exists "curl"; then
