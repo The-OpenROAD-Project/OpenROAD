@@ -110,9 +110,23 @@ PASSFAIL_TESTS = [
     "pdn_via_cut",
     "pdn_via_euclidean",
     "pdn_via_mirror",
+    "repair_pin_access",
+    "repair_pin_access_failure",
+    "repair_pin_access_phase",
+    "repair_pin_access_zero_ap",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+filegroup(
+    name = "pin_access_service_fixture",
+    srcs = [
+        "repair_pin_access_failure.def",
+        "repair_pin_access_failure.lef",
+        "repair_pin_access_tech.lef",
+    ],
+    visibility = ["//src/drt/test:__pkg__"],
+)
 
 filegroup(
     name = "regression_resources",
@@ -329,6 +343,17 @@ filegroup(
             "regions3": [
                 "Nangate45/fake_macros.lef",
             ],
+            "repair_pin_access": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_phase": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
+            "repair_pin_access_zero_ap": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+                "repair_pin_access_failure.lef",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -348,10 +373,14 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc"],
+    srcs = [
+        "PinAccessRepairTest.cc",
+        "dpl_test.cc",
+    ],
     data = ["extra.lef"],
     deps = [
         "//src/dpl",
+        "//src/drt:pin_access_service",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",

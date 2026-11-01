@@ -109,6 +109,73 @@ class CheckPlacementTest : public tst::Nangate45Fixture
                     {.location = location, .status = status, .iterms = {}});
   }
 
+  odb::dbInst* makeContactCell(const char* name, const int site)
+  {
+    odb::dbMaster* master = lib_->findMaster("CONTACT_CELL");
+    if (master == nullptr) {
+      master = odb::dbMaster::create(lib_, "CONTACT_CELL");
+      master->setType(odb::dbMasterType::CORE);
+      master->setSite(site_);
+      master->setWidth(kSiteWidth);
+      master->setHeight(kRowHeight);
+      master->setSymmetryX();
+      master->setSymmetryY();
+      odb::dbMTerm* term = odb::dbMTerm::create(
+          master, "A", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+      odb::dbMPin* pin = odb::dbMPin::create(term);
+      for (const char* name : {"metal1", "metal2", "metal3"}) {
+        odb::dbTechLayer* layer = db_->getTech()->findLayer(name);
+        EXPECT_NE(layer, nullptr);
+        odb::dbBox::create(pin, layer, 100, 1200, 280, 1600);
+      }
+      master->setFrozen();
+    }
+    const odb::Point location(kCoreX + site * kSiteWidth, kCoreY + kRowHeight);
+    odb::dbInst* inst = makeInst(block_,
+                                 master,
+                                 name,
+                                 {.location = location,
+                                  .status = odb::dbPlacementStatus::PLACED,
+                                  .iterms = {}});
+    return inst;
+  }
+
+  void addSpecialContact(odb::dbNet* net,
+                         odb::dbInst* inst,
+                         bool use_via = true)
+  {
+    odb::dbTech* tech = db_->getTech();
+    odb::dbTechVia* via = tech->findVia("contact_via");
+    if (via == nullptr) {
+      via = odb::dbTechVia::create(tech, "contact_via");
+      for (const char* name : {"metal1", "via1", "metal2"}) {
+        odb::dbTechLayer* layer = tech->findLayer(name);
+        ASSERT_NE(layer, nullptr);
+        ASSERT_NE(odb::dbBox::create(via, layer, -50, -50, 50, 50), nullptr);
+      }
+    }
+    net->setSpecial();
+    odb::dbSWire* wire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+    const odb::Point location = inst->getLocation();
+    if (use_via) {
+      ASSERT_NE(odb::dbSBox::create(wire,
+                                    via,
+                                    location.x() + 190,
+                                    location.y() + 1400,
+                                    odb::dbWireShapeType::STRIPE),
+                nullptr);
+    } else {
+      ASSERT_NE(odb::dbSBox::create(wire,
+                                    tech->findLayer("metal3"),
+                                    location.x() + 140,
+                                    location.y() + 1350,
+                                    location.x() + 240,
+                                    location.y() + 1450,
+                                    odb::dbWireShapeType::DRCFILL),
+                nullptr);
+    }
+  }
+
   // Run the check and return the logger error id it raised, or "" if none.
   std::string runCheck(const bool check_fixed = true,
                        const bool check_placeable = true)
@@ -264,6 +331,62 @@ TEST_F(CheckPlacementTest, FixedOnlyReportsBlockedPinAccess)
 
   EXPECT_EQ(runCheck(), "DPL-0033");
   EXPECT_EQ(failureCount("Blocked_layers_failures"), 1);
+}
+
+// Keep the small polymorphic base first for UBSAN's base-offset limit.
+class SpecialContactTest : public ::testing::WithParamInterface<bool>,
+                           public CheckPlacementTest
+{
+};
+
+TEST_P(SpecialContactTest, SpecialContactsUseEachInstancesNet)
+{
+  odb::dbInst* same = makeContactCell("same", 2);
+  odb::dbInst* different = makeContactCell("different", 10);
+  odb::dbInst* unconnected = makeContactCell("unconnected", 24);
+  odb::dbNet* signal = odb::dbNet::create(block_, "special_signal");
+  same->findITerm("A")->connect(signal);
+  different->findITerm("A")->connect(odb::dbNet::create(block_, "other"));
+  ASSERT_EQ(runCheck(), "");
+  for (odb::dbInst* inst : {same, different, unconnected}) {
+    addSpecialContact(signal, inst, GetParam());
+  }
+
+  // Shared master geometry must not share the instance's same-net exemption.
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  odb::dbMarkerCategory* failures = findFailures("Blocked_layers_failures");
+  ASSERT_NE(failures, nullptr);
+  ASSERT_EQ(failures->getMarkerCount(), 2);
+  bool found_different = false;
+  bool found_unconnected = false;
+  for (odb::dbMarker* marker : failures->getMarkers()) {
+    EXPECT_FALSE(marker->getSources().contains(same));
+    found_different |= marker->getSources().contains(different);
+    found_unconnected |= marker->getSources().contains(unconnected);
+  }
+  EXPECT_TRUE(found_different);
+  EXPECT_TRUE(found_unconnected);
+}
+
+INSTANTIATE_TEST_SUITE_P(ContactForms, SpecialContactTest, ::testing::Bool());
+
+TEST_F(CheckPlacementTest, SameNetContactDoesNotHideForeignPatch)
+{
+  odb::dbInst* inst = makeContactCell("mixed", 2);
+  odb::dbNet* signal = odb::dbNet::create(block_, "special_signal");
+  inst->findITerm("A")->connect(signal);
+  addSpecialContact(signal, inst, false);
+  ASSERT_EQ(runCheck(), "");
+
+  // Both nets occupy the same pin area; every intersecting net must be checked.
+  odb::dbNet* foreign = odb::dbNet::create(block_, "foreign");
+  addSpecialContact(foreign, inst, false);
+
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  odb::dbMarkerCategory* failures = findFailures("Blocked_layers_failures");
+  ASSERT_NE(failures, nullptr);
+  ASSERT_EQ(failures->getMarkerCount(), 1);
+  EXPECT_TRUE((*failures->getMarkers().begin())->getSources().contains(inst));
 }
 
 TEST_F(CheckPlacementTest, PlaceableIgnoresMisalignedTapcell)

@@ -25,6 +25,7 @@ add_library(dpl_lib
   src/FillerPlacement.cpp
   src/DecapPlacement.cpp
   src/OptMirror.cpp
+  src/PinAccessRepair.cpp
   src/PlacementDRC.cpp
   src/NegotiationLegalizer.cpp
   src/NegotiationLegalizerPass.cpp
@@ -62,6 +63,7 @@ target_include_directories(dpl_lib
     ${LEMON_INCLUDE_DIRS}
   PRIVATE
     src
+    ${PROJECT_SOURCE_DIR}/src/drt/include
 )
 
 target_sources(dpl
@@ -77,6 +79,7 @@ target_include_directories(dpl
     include
   PRIVATE
     src
+    ${PROJECT_SOURCE_DIR}/src/drt/include
 )
 
 target_link_libraries(dpl

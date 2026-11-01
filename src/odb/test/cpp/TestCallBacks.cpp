@@ -14,6 +14,40 @@ class CallbackFixture : public SimpleDbFixture
   CallBack cb_;
 };
 
+TEST_F(CallbackFixture, test_block_clear)
+{
+  class ClearCallback : public dbBlockCallBackObj
+  {
+   public:
+    int clears = 0;
+    int creates = 0;
+    dbBlock* expected_block = nullptr;
+
+    void inDbBlockClear(dbBlock* block) override
+    {
+      ++clears;
+      EXPECT_EQ(block, expected_block);
+      EXPECT_TRUE(hasOwner());
+      EXPECT_NE(block->findNet("before_clear"), nullptr);
+    }
+
+    void inDbNetCreate(dbNet*) override { ++creates; }
+  } callback;
+
+  createSimpleDB();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbNet::create(block, "before_clear");
+  callback.expected_block = block;
+  callback.addOwner(block);
+  block->clear();
+  EXPECT_EQ(callback.clears, 1);
+  EXPECT_EQ(db_->getChip()->getBlock(), block);
+  EXPECT_TRUE(callback.hasOwner());
+  EXPECT_EQ(block->findNet("before_clear"), nullptr);
+  dbNet::create(block, "after_clear");
+  EXPECT_EQ(callback.creates, 1);
+}
+
 TEST_F(CallbackFixture, test_inst_and_iterm)
 {
   createSimpleDB();
