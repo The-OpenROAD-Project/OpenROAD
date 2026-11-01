@@ -92,12 +92,9 @@ proc record_test { test cmd_dir pass_criteria { test_options "" } } {
   if { $test_options != "" } {
     set test_specific_options($test) $test_options
   }
+  # Only Tcl tests run here; Python tests run under Bazel.
   if { [file exists [file join $cmd_dir "$test.tcl"]] } {
     lappend test_langs($test) tcl
-  }
-
-  if { [file exists [file join $cmd_dir "$test.py"]] } {
-    lappend test_langs($test) py
   }
   return $test
 }

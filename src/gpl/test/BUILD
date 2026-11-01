@@ -63,7 +63,7 @@ PASSFAIL_TESTS = [
     "place_ios_td",
 ]
 
-# Longer-running regression tests (see regression_tests_large.tcl). These are
+# Longer-running regression tests. These are
 # tagged "manual" so they are excluded from the default `bazel test //...`
 # wildcard and must be requested explicitly, e.g. via the :large_tests suite.
 LARGE_TESTS = [
