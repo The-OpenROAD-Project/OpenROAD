@@ -1188,9 +1188,9 @@ static void addSelectionTypeFlags(boost::json::object& root,
 
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
-// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
-// the plain net for input pins too; the driver->sink flight line
-// (NetWithSink) is a follow-up.
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  It inserts
+// the plain net for input pins too.  Qt selects NetWithSink there for a
+// driver->sink flight line; see the TODO in the connected-nets handler.
 static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,
@@ -2172,9 +2172,10 @@ web::SelectionSet computeConnectedSet(const std::string& action,
         if (input
             && (dir == odb::dbIoType::INPUT || dir == odb::dbIoType::INOUT)) {
           // TODO: the Qt GUI selects DbNetDescriptor::NetWithSink{net, iterm}
-          // so the input flightline points at this specific sink pin.  That
-          // descriptor lives in a private gui header; until it is exposed the
-          // web selects the plain net (all sinks highlighted).
+          // so the input flightline points at this specific sink pin.  The
+          // web selects the plain net (all sinks highlighted) because
+          // appendHighlightShapes() and the has_guides check handle only
+          // dbNet* payloads; they need NetWithSink support first.
           result.insert(registry->makeSelected(net));
         }
       }
