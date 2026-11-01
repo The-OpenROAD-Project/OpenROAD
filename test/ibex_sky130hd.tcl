@@ -12,6 +12,7 @@ set core_area {10 10 790 790}
 
 set slew_margin 30
 set cap_margin 25
+set antenna_ratio_margin 10
 
 set global_place_density 0.5
 

@@ -183,7 +183,10 @@ write_verilog -remove_cells $filler_cells $verilog_file
 # Repair antennas post-GRT
 
 utl::set_metrics_stage "grt__{}"
-repair_antennas -iterations 5
+if { ![info exists antenna_ratio_margin] } {
+  set antenna_ratio_margin 0
+}
+repair_antennas -iterations 5 -ratio_margin $antenna_ratio_margin
 
 check_antennas
 utl::clear_metrics_stage
@@ -215,7 +218,7 @@ write_def $routed_def
 
 set repair_antennas_iters 0
 utl::set_metrics_stage "drt__repair_antennas__pre_repair__{}"
-while { [check_antennas] && $repair_antennas_iters < 10 } {
+while { [check_antennas] && $repair_antennas_iters < 5 } {
   utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
 
   repair_antennas
