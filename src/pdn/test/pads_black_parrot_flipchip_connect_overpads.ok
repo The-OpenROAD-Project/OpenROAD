@@ -6,29 +6,29 @@
 [INFO ODB-0132]     Created 139 special nets and 4915 connections.
 [INFO ODB-0133]     Created 219 nets and 267 connections.
 [INFO PDN-0001] Inserting grid: Core
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 323.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (191.0350 um, 563.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 603.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 763.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (191.0350 um, 1203.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 1843.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 2523.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (192.0700 um, 2563.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (191.0350 um, 2603.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 283.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 443.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 1163.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 1323.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2123.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2363.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2523.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2563.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2683.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2723.4350 um) for VDD
-[WARNING PDN-0195] Removing 7 via(s) between metal9 and metal10 at (2807.8400 um, 2763.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (2808.9200 um, 203.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (2808.9200 um, 243.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (2808.9200 um, 683.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (2808.9200 um, 2603.4350 um) for VDD
-[WARNING PDN-0195] Removing 6 via(s) between metal9 and metal10 at (2808.9200 um, 2643.4350 um) for VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 323.2700) - (198.0700, 323.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 563.2700) - (196.0000, 563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 603.2700) - (198.0700, 603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 763.2700) - (198.0700, 763.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 1203.2700) - (196.0000, 1203.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 1843.2700) - (198.0700, 1843.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2523.2700) - (198.0700, 2523.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2563.2700) - (198.0700, 2563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2603.2700) - (196.0000, 2603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 283.2700) - (2813.8400, 283.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 443.2700) - (2813.8400, 443.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 1163.2700) - (2813.8400, 1163.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 1323.2700) - (2813.8400, 1323.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2123.2700) - (2813.8400, 2123.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2363.2700) - (2813.8400, 2363.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2523.2700) - (2813.8400, 2523.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2563.2700) - (2813.8400, 2563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2683.2700) - (2813.8400, 2683.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2723.2700) - (2813.8400, 2723.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2763.2700) - (2813.8400, 2763.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 203.2700) - (2813.8400, 203.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 243.2700) - (2813.8400, 243.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 683.2700) - (2813.8400, 683.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 2603.2700) - (2813.8400, 2603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 2643.2700) - (2813.8400, 2643.6000) on VDD
 No differences found.

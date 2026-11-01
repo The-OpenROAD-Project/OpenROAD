@@ -1,0 +1,27 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+MACRO enclosure_macro
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 50 BY 50 ;
+  SYMMETRY X Y ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal4 ;
+      RECT 1 1.915 49 2.085 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER metal4 ;
+      RECT 1 6.915 49 7.085 ;
+      RECT 1 16.385 49 16.555 ;
+    END
+  END VSS
+END enclosure_macro
+END LIBRARY

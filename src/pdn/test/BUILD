@@ -93,6 +93,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_single_layer_rings",
     "design_width",
     "existing",
+    "generated_via_default_edge",
     "gf180_hybrid_followpins",
     "gf180_hybrid_followpins_pitch",
     "gf180_hybrid_followpins_rowpattern",
@@ -393,6 +394,10 @@ filegroup(
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
+            "generated_via_default_edge": [
+                "generated_via_enclosure/edge_macro.lef",
+                "generated_via_enclosure/floorplan.def",
+            ],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
