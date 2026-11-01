@@ -1,6 +1,13 @@
 # Old CMake build trees left in existing checkouts.
 build/
 debug/
+src/sta/build/
+src/sta/debug/
+
+# Former submodules and CMake-only sources. git leaves them on disk in
+# existing checkouts and reused CI runners; Bazel takes these from MODULE.bazel.
+third-party/abc/
+third-party/lemon/
 
 # standalone workspace for downstream consumer tests
 test/downstream/
