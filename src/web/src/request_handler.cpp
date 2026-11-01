@@ -1266,9 +1266,8 @@ static void runDeselectAction(const web::Selected& old_sel,
     return;
   }
   try {
-    // getDescriptorActions(): Selected::getActions() lives in the full
-    // gui library (its "Zoom to" needs Gui::get()); the web only links
-    // gui_descriptors and blocklists "Zoom to" anyway.
+    // getDescriptorActions(): the web zooms on its own, so it skips the
+    // "Zoom to" entry that getActions() adds.
     for (const auto& action : old_sel.getDescriptorActions()) {
       if (action.name == web::Descriptor::kDeselectAction) {
         action.callback();

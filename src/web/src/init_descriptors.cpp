@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025, The OpenROAD Authors
 
-// Implements DescriptorRegistry::initDescriptors().
-// This is in a separate file from descriptor_registry.cpp so that
-// descriptor_registry.cpp does not depend on dbDescriptors / staDescriptors.
+// Implements DescriptorRegistry::initDescriptors(), which registers the
+// concrete odb and STA descriptors. The generic registry and Selected live
+// in descriptor_registry.cpp.
 
 #include <set>
 
@@ -12,7 +12,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "sta/Liberty.hh"
 #include "sta/Scene.hh"
 #include "staDescriptors.h"
@@ -20,24 +19,6 @@
 #include "web/descriptor_registry.h"
 
 namespace web {
-
-Descriptor::Actions Selected::getActions() const
-{
-  auto actions = descriptor_->getActions(object_);
-
-  odb::Rect bbox;
-  if (getBBox(bbox)) {
-    actions.push_back({"Zoom to", [this, bbox]() -> Selected {
-                         auto gui = Gui::get();
-                         if (gui) {
-                           gui->zoomTo(bbox);
-                         }
-                         return *this;
-                       }});
-  }
-
-  return actions;
-}
 
 void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
 {
