@@ -215,7 +215,7 @@ write_def $routed_def
 
 set repair_antennas_iters 0
 utl::set_metrics_stage "drt__repair_antennas__pre_repair__{}"
-while { [check_antennas] && $repair_antennas_iters < 5 } {
+while { [check_antennas] && $repair_antennas_iters < 10 } {
   utl::set_metrics_stage "drt__repair_antennas__iter_${repair_antennas_iters}__{}"
 
   repair_antennas
@@ -230,6 +230,11 @@ while { [check_antennas] && $repair_antennas_iters < 5 } {
 
 utl::set_metrics_stage "drt__{}"
 check_antennas
+if { [ant::antenna_violation_count] > 0 } {
+  set antenna_report [make_result_file "${design}_${platform}_antenna.rpt"]
+  check_antennas -report_file $antenna_report
+  report_file $antenna_report
+}
 
 utl::clear_metrics_stage
 utl::metric "DRT::ANT::errors" [ant::antenna_violation_count]
