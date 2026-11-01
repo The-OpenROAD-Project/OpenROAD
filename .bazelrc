@@ -270,6 +270,12 @@ test --build_tests_only
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
 
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
+
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
@@ -283,11 +289,6 @@ build:ci --remote_download_minimal
 build:ci --remote_upload_local_results=true
 # Disable disk cache for CI builds
 build:ci --disk_cache=
-# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
-# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
-# file in the tree. On a cold or busy disk cache that takes minutes, and every
-# C++ compile waits on it. Run it locally instead.
-build:ci --modify_execution_info=CopyToDirectory=+no-cache
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
 
