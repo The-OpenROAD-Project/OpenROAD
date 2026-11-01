@@ -793,11 +793,6 @@ bool OpenRoad::getGPUCompileOption()
   return GPU;
 }
 
-bool OpenRoad::getPythonCompileOption()
-{
-  return BUILD_PYTHON;
-}
-
 bool OpenRoad::getGUICompileOption()
 {
   return BUILD_GUI;

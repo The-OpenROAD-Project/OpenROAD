@@ -214,7 +214,6 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
-    "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
 ] + select({
     # Reported by the startup banner (+GPU/-GPU).

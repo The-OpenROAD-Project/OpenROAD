@@ -309,12 +309,6 @@ openroad_gpu_compiled()
 }
 
 bool
-openroad_python_compiled()
-{
-  return ord::OpenRoad::getPythonCompileOption();
-}
-
-bool
 openroad_gui_compiled()
 {
   return ord::OpenRoad::getGUICompileOption();

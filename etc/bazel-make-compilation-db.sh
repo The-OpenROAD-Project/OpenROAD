@@ -55,7 +55,6 @@ cat >> compile_flags.txt <<EOF
 -DABC_NAMESPACE=abc
 -DGPU=false
 -DBUILD_TYPE="opt"
--DBUILD_PYTHON=false
 -DBUILD_GUI=true
 -DSLANG_NO_YOSYS
 -DSLANG_MUX_LOWERING

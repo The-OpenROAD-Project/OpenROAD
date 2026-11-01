@@ -506,10 +506,9 @@ static void showSplash()
                  ord::OpenRoad::getGitDescribe());
   logger->report(
       "Features included (+) or not (-): "
-      "{}GPU {}GUI {}Python{}",
+      "{}GPU {}GUI{}",
       ord::OpenRoad::getGPUCompileOption() ? "+" : "-",
       ord::OpenRoad::getGUICompileOption() ? "+" : "-",
-      ord::OpenRoad::getPythonCompileOption() ? "+" : "-",
       strcasecmp(BUILD_TYPE, "opt") == 0 ? ""
                                          : fmt::format(" : {}", BUILD_TYPE));
   logger->report(

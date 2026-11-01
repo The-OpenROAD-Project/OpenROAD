@@ -426,10 +426,9 @@ main() {
                 ;;
             # Bazel fetches these dependencies itself, so the options that
             # selected them have no effect.
-            -eqy | -skip-system-or-tools | -save-deps-prefixes=*)
+            -eqy | -skip-system-or-tools | -save-deps-prefixes=* | -threads=* | -yosys-ver=*)
                 warn "${1%%=*} has no effect: the Bazel build does not use it."
                 ;;
-            -threads=* | -yosys-ver=*) ;;
             *)
                 echo "Unknown option: ${1}" >&2
                 _help
