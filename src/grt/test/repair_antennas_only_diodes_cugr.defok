@@ -107,7 +107,7 @@ VIAS 3 ;
     - via2_960x490 + VIARULE M2M3_PR + CUTSIZE 200 200  + LAYERS met2 via2 met3  + CUTSPACING 200 200  + ENCLOSURE 40 145 180 65  + ROWCOL 1 2  ;
     - via3_960x490 + VIARULE M3M4_PR + CUTSIZE 200 200  + LAYERS met3 via3 met4  + CUTSPACING 200 200  + ENCLOSURE 180 60 180 145  + ROWCOL 1 2  ;
 END VIAS
-COMPONENTS 1381 ;
+COMPONENTS 1384 ;
     - ANTENNA_1 sky130_fd_sc_hs__diode_2 + PLACED ( 127680 146520 ) N ;
     - ANTENNA_10 sky130_fd_sc_hs__diode_2 + PLACED ( 82560 203130 ) FS ;
     - ANTENNA_11 sky130_fd_sc_hs__diode_2 + PLACED ( 104640 56610 ) FS ;
@@ -122,6 +122,9 @@ COMPONENTS 1381 ;
     - ANTENNA_2 sky130_fd_sc_hs__diode_2 + PLACED ( 106560 49950 ) FS ;
     - ANTENNA_20 sky130_fd_sc_hs__diode_2 + PLACED ( 66240 113220 ) N ;
     - ANTENNA_21 sky130_fd_sc_hs__diode_2 + PLACED ( 183360 169830 ) FS ;
+    - ANTENNA_22 sky130_fd_sc_hs__diode_2 + PLACED ( 71040 189810 ) FS ;
+    - ANTENNA_23 sky130_fd_sc_hs__diode_2 + PLACED ( 95520 216450 ) FS ;
+    - ANTENNA_24 sky130_fd_sc_hs__diode_2 + PLACED ( 86880 143190 ) FS ;
     - ANTENNA_3 sky130_fd_sc_hs__diode_2 + PLACED ( 141600 246420 ) N ;
     - ANTENNA_4 sky130_fd_sc_hs__diode_2 + PLACED ( 104640 203130 ) FS ;
     - ANTENNA_5 sky130_fd_sc_hs__diode_2 + PLACED ( 158400 103230 ) FS ;
@@ -3280,9 +3283,9 @@ NETS 411 ;
     - _195_ ( _594_ A ) ( _510_ A1 ) ( _506_ B ) ( _505_ Y ) + USE SIGNAL ;
     - _196_ ( ANTENNA_12 DIODE ) ( ANTENNA_11 DIODE ) ( _590_ A1 ) ( _585_ A1 ) ( _570_ A1 ) ( _551_ A1 ) ( _531_ A1 )
       ( _507_ B ) ( _506_ Y ) + USE SIGNAL ;
-    - _197_ ( ANTENNA_20 DIODE ) ( ANTENNA_13 DIODE ) ( _509_ A ) ( _517_ A ) ( _523_ A ) ( _534_ A ) ( _539_ A )
-      ( _544_ A ) ( _558_ A ) ( _563_ A ) ( _573_ A ) ( _578_ A ) ( _591_ A ) ( _586_ A ) ( _571_ A )
-      ( _554_ A ) ( _552_ A ) ( _532_ A ) ( _507_ Y ) + USE SIGNAL ;
+    - _197_ ( ANTENNA_24 DIODE ) ( ANTENNA_23 DIODE ) ( ANTENNA_22 DIODE ) ( ANTENNA_20 DIODE ) ( ANTENNA_13 DIODE ) ( _509_ A ) ( _517_ A )
+      ( _523_ A ) ( _534_ A ) ( _539_ A ) ( _544_ A ) ( _558_ A ) ( _563_ A ) ( _573_ A ) ( _578_ A )
+      ( _591_ A ) ( _586_ A ) ( _571_ A ) ( _554_ A ) ( _552_ A ) ( _532_ A ) ( _507_ Y ) + USE SIGNAL ;
     - _199_ ( _516_ A ) ( _509_ Y ) + USE SIGNAL ;
     - _200_ ( _515_ A ) ( _521_ A ) ( _526_ A ) ( _537_ A ) ( _542_ A ) ( _556_ A ) ( _561_ A )
       ( _566_ A ) ( _576_ A ) ( _581_ A ) ( _547_ A ) ( _510_ Y ) + USE SIGNAL ;
