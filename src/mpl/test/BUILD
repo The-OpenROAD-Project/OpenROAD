@@ -49,6 +49,7 @@ COMPULSORY_TESTS = [
     "place_macro_already_placed_overlap",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "placement_blockages2",
     "rerun1",
     "unfixed_cells_dont_fit_in_core",
     "write_macro_placement",
@@ -58,6 +59,7 @@ ALL_TESTS = COMPULSORY_TESTS
 
 # Self-checking: the script reports pass/fail, no golden log.
 PASSFAIL_TESTS = [
+    "placement_blockages2",
     "rerun1",
 ]
 
@@ -252,6 +254,10 @@ filegroup(
                     "testcases/place_macro_right_angle_rotation.lef",
                 ],
                 "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
+                ],
+                "placement_blockages2": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],

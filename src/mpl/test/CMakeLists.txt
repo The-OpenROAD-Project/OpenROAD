@@ -40,6 +40,7 @@ or_integration_tests(
     halos4
     write_macro_placement
   PASSFAIL_TESTS
+    placement_blockages2
     rerun1
 )
 
