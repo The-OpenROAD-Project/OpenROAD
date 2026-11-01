@@ -556,6 +556,36 @@ TEST_F(ChipHierarchyFixture, test_chip_net_destroys_parasitics)
   EXPECT_EQ(system_chip->getChipRSegs().size(), 0);
 }
 
+TEST_F(ChipHierarchyFixture, test_chip_find_net)
+{
+  EXPECT_EQ(system_chip->findChipNet("net1"), nullptr);
+
+  dbChipNet* net1 = dbChipNet::create(system_chip, "net1");
+  dbChipNet* net2 = dbChipNet::create(system_chip, "net2");
+  dbChipNet* net3 = dbChipNet::create(system_chip, "net3");
+  EXPECT_EQ(system_chip->findChipNet("net1"), net1);
+  EXPECT_EQ(system_chip->findChipNet("net2"), net2);
+  EXPECT_EQ(system_chip->findChipNet("net3"), net3);
+  EXPECT_EQ(system_chip->findChipNet("net4"), nullptr);
+  EXPECT_EQ(system_chip->findChipNet(""), nullptr);
+
+  // Lookup is scoped to the chip: the same name in another chip is distinct.
+  EXPECT_EQ(cpu_chip->findChipNet("net1"), nullptr);
+  dbChipNet* cpu_net1 = dbChipNet::create(cpu_chip, "net1");
+  EXPECT_EQ(cpu_chip->findChipNet("net1"), cpu_net1);
+  EXPECT_EQ(system_chip->findChipNet("net1"), net1);
+
+  // Destroying a net removes it from lookup without disturbing the others.
+  dbChipNet::destroy(net2);
+  EXPECT_EQ(system_chip->findChipNet("net2"), nullptr);
+  EXPECT_EQ(system_chip->findChipNet("net1"), net1);
+  EXPECT_EQ(system_chip->findChipNet("net3"), net3);
+  dbChipNet::destroy(net3);
+  EXPECT_EQ(system_chip->findChipNet("net3"), nullptr);
+  EXPECT_EQ(system_chip->findChipNet("net1"), net1);
+  EXPECT_EQ(cpu_chip->findChipNet("net1"), cpu_net1);
+}
+
 TEST_F(SimpleDbFixture, test_chip_parasitics_serialization)
 {
   createSimpleDB();

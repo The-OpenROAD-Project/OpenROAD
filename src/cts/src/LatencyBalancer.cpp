@@ -49,23 +49,35 @@ using utl::CTS;
 
 int LatencyBalancer::run()
 {
-  logger_->info(CTS,
-                33,
-                "Balancing latency for clock {}",
-                root_->getClock().getSdcName());
+  if (useful_skew_) {
+    logger_->info(CTS,
+                  544,
+                  "Applying useful skew for clock {}",
+                  root_->getClock().getSdcName());
+  } else {
+    logger_->info(CTS,
+                  33,
+                  "Balancing latency for clock {}",
+                  root_->getClock().getSdcName());
+  }
   initSta();
   findLeafBuilders(root_);
+  // buildGraph branches internally on useful_skew_: the
+  // classic coarse graph vs. the full per-register graph for useful skew.
   buildGraph(root_->getTopInputNet());
   computeBuffersDelay(0);
   if (buffersDelay_.empty()) {
     return 0;
   }
   balanceLatencies(0);
-  logger_->info(CTS,
-                36,
-                " inserted {} delay buffers",
-                delayBufIndex_,
-                root_->getClock().getSdcName());
+  if (useful_skew_) {
+    logger_->info(CTS,
+                  545,
+                  "inserted {} delay buffers for applying useful skew",
+                  delayBufIndex_);
+  } else {
+    logger_->info(CTS, 36, " inserted {} delay buffers", delayBufIndex_);
+  }
   return delayBufIndex_;
 }
 
@@ -184,6 +196,10 @@ void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
 
 void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
 {
+  // Useful-skew mode builds the "full" graph: it descends into every
+  // register instead of aggregating each leaf builder into a single sink,
+  // and it does not maintain worseDelay_ (which only the classic latency
+  // balancing uses).
   std::string rootSrcName;
   odb::dbITerm* rootOutputITerm = clkInputNet->getFirstOutput();
   if (!rootOutputITerm) {
@@ -235,7 +251,8 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         graph_.push_back(std::move(sinkNode));
         graph_[driverId].childrenIds.push_back(sinkId);
 
-        if (inst2builder_.find(sinkName) != inst2builder_.end()) {
+        if (!useful_skew_
+            && inst2builder_.find(sinkName) != inst2builder_.end()) {
           auto builder = inst2builder_[sinkName];
           float builerAvgArrival = computeAveSinkArrivals(builder);
           worseDelay_ = std::max(worseDelay_, builerAvgArrival);
@@ -244,6 +261,15 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
         }
 
         if (sink) {
+          if (useful_skew_) {
+            // Useful-skew balancing only needs arrival.has_value() as a leaf
+            // gate; the value is unused and worseDelay_ is not maintained in
+            // this mode, so skip the STA path query (and its spurious CTS-179).
+            if (network_->dbToSta(sinkIterm)) {
+              graph_[sinkId].arrival = 0.0f;
+            }
+            continue;
+          }
           sta::Pin* pin = network_->dbToSta(sinkIterm);
           if (pin) {
             sta::Vertex* sinkVertex = timingGraph_->pinDrvrVertex(pin);
@@ -714,6 +740,19 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   return dpResult.buffers;
 }
 
+std::optional<double> LatencyBalancer::usefulSkewTarget(odb::dbInst* inst) const
+{
+  if (!useful_skew_ || inst == nullptr) {
+    return std::nullopt;
+  }
+  odb::dbDoubleProperty* prop
+      = odb::dbDoubleProperty::find(inst, "useful_skew_target");
+  if (prop) {
+    return prop->getValue();
+  }
+  return std::nullopt;
+}
+
 void LatencyBalancer::balanceLatencies(int nodeId)
 {
   GraphNode* node = &graph_[nodeId];
@@ -721,7 +760,16 @@ void LatencyBalancer::balanceLatencies(int nodeId)
   // Compute number of buffer needed for leaf node
   if (node->childrenIds.empty()) {
     if (node->arrival.has_value()) {
-      node->dlyNeeded = std::llround((worseDelay_ - *node->arrival) * dpUnit_);
+      if (useful_skew_) {
+        // use useful skew of RSZ; absent target -> baseline (0)
+        odb::dbInst* inst
+            = node->inputTerm ? node->inputTerm->getInst() : nullptr;
+        node->dlyNeeded
+            = std::llround(usefulSkewTarget(inst).value_or(0.0) * dpUnit_);
+      } else {
+        node->dlyNeeded
+            = std::llround((worseDelay_ - *node->arrival) * dpUnit_);
+      }
     }
     return;
   }

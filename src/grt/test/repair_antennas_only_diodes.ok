@@ -8,6 +8,7 @@
 [INFO ANT-0002] Found 8 net violations.
 [INFO ANT-0001] Found 8 pin violations.
 [INFO GRT-0012] Found 8 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 9 moves: displacement total 0.5 u, max 0.5 u; HPWL 19618.1 -> 19618.8 u (+0.0 %).
 [INFO GRT-0015] Inserted 8 diodes.
 [INFO ANT-0002] Found 0 net violations.

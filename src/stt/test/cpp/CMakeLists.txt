@@ -19,3 +19,17 @@ gtest_discover_tests(TestNeighbors
 )
 
 add_dependencies(build_and_test TestNeighbors)
+
+add_executable(TestSteinerTreeBuilder TestSteinerTreeBuilder.cpp)
+target_link_libraries(TestSteinerTreeBuilder
+  GTest::gtest
+  GTest::gtest_main
+  stt_lib
+  utl_lib
+  odb
+)
+gtest_discover_tests(TestSteinerTreeBuilder
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestSteinerTreeBuilder)

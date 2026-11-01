@@ -59,6 +59,27 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+regression_test(
+    name = "read_upf_errors",
+    check_log = False,
+    check_passfail = True,
+    data = [":regression_resources"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "TestPowerSwitch",
+    size = "small",
+    srcs = ["cpp/TestPowerSwitch.cc"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/upf",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "TestPowerDomainRegions",
     size = "small",

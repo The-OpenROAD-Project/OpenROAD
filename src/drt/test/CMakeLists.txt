@@ -5,12 +5,15 @@ or_integration_tests(
     drc_test
     ispd18_sample
     ispd18_sample_incr
+    ispd18_sample_reroute
     ndr_vias1
     ndr_vias2
     ndr_vias3
     ndr_no_auto_taper
     obstruction
+    pa_above_top_layer
     pa_single_pin
+    single_cut_minimumcut
     single_step
     ta_ap_aligned
     ta_pin_aligned

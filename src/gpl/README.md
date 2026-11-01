@@ -31,9 +31,11 @@ When using the `-timing_driven` flag, `gpl` does a virtual `repair_design`
 to find slacks and
 weight nets with low slack. It adjusts the worst slacks (modified with 
 `-timing_driven_nets_percentage`) using a multiplier (modified with 
-`-timing_driven_net_weight_max`). The multiplier
-is scaled from the full value for the worst slack, to 1.0 at the
-`timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
+`-timing_driven_net_weight_max`). The multiplier is at its full value for the
+worst 0.2% of the timing-constrained nets and is scaled down linearly to 1.0 at
+the `timing_driven_nets_percentage` point. That 0.2% is a fraction of the whole
+design, not of the selected set, so `timing_driven_nets_percentage` moves only
+the top of the ramp. Use the `set_wire_rc` command to set
 resistance and capacitance of estimated wires used for timing. 
 
 Timing-driven iterations are triggered based on a list of overflow threshold 
@@ -45,6 +47,13 @@ values to decrease runtime, for example.
 
 You can also set an overflow value for `keep_resize_below_overflow`, when below that, the modifications made by the rsz tool are maintained (non-virtual `repair_design`).
 
+When using the `-power_driven` flag, `gpl` weights nets by their switching
+activity, so that nets that toggle often are kept short and use less switching
+power. The activity is read from `read_saif`, `read_vcd` or
+`set_power_activity` if given, otherwise from the OpenSTA default propagation,
+in the same scene (`set_scene`) that `report_power` uses. The extra weight
+scales with activity. Clock nets are not weighted.
+
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
 will have the area of their logic cells inflated to reduce routing congestion. 
@@ -54,6 +63,11 @@ long during routability-driven execution, consider raising the target RC value
 (`-routability_target_rc_metric`) to alleviate the constraints. The final RC 
 value is calculated based on the weight coefficients. The algorithm will stop 
 if the RC is not decreasing for three consecutive iterations.
+
+With timing-driven and routability-driven placement enabled, retained timing
+repairs also inflate new cells in congested areas after routability refinement
+finishes. This shares the inflation budget and removes fillers to pay for added
+area, without raising density or restarting routability.
 
 Initial-placement arguments
 - They begin with `-initial_place`.
@@ -67,12 +81,16 @@ Timing-driven arguments
 - They begin with `-timing_driven`.
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
+Power-driven arguments
+- `-power_driven_net_weight`
+
 ```tcl
 global_placement
     [-skip_initial_place]\
     [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
+    [-power_driven]\
     [-routability_driven]\
     [-incremental]\
     [-skip_io]\
@@ -101,6 +119,7 @@ global_placement
     [-timing_driven_nets_percentage timing_driven_nets_percentage]\
     [-timing_driven_repair_timing]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
+    [-power_driven_net_weight power_driven_net_weight]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -117,6 +136,7 @@ global_placement
 | Switch Name | Description |
 | ----- | ----- |
 | `-timing_driven` | Enable timing-driven mode. See [link](#timing-driven-arguments) for timing-specific arguments. |
+| `-power_driven` | Enable power-driven mode. See [link](#power-driven-arguments) for power-specific arguments. |
 | `-routability_driven` | Enable routability-driven mode. See [link](#routability-driven-arguments) for routability-specific arguments. |
 | `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
@@ -133,7 +153,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
-| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The resulting pin locations are written to the database but are not legalized to routing tracks or grid positions; `place_pins` must be run afterwards. Not supported on a rectilinear die. Cannot be combined with `-timing_driven`, `-routability_driven`, `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The pin layers and spacing come from `set_place_config`, which must set both the horizontal and the vertical layers. The pins are legalized with the pin placer at the end, so the separate `place_pins` step can be skipped. Not supported on a rectilinear die. Cannot be combined with `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
@@ -173,6 +193,71 @@ global_placement
 | `-keep_resize_below_overflow` | When the overflow is below the value, timing-driven iterations will retain (non-virtual) the resizer changes instead of reverting them (virtual). The default value is `1.0`, making all timing-driven iterations non-virtual. Allowed values are floats `[0, 1]`. |
 | `-timing_driven_repair_timing` | **Experimental.** Enable a conservative `repair_setup` pass during last timing-driven iteration. The intent is to apply minimal buffering and gate sizing so that the placement better correlates with global routing timing. Only the worst setup violators are targeted. Disruptive operations (pin swap, gate cloning, VT swap) are suppressed to avoid topology changes during placement. Not ready for production use. |
 | `-timing_driven_repair_tns_end_percent` | **Experimental.** When `-timing_driven_repair_timing` is enabled, controls the percentage of violating endpoints targeted by the `repair_setup` call. The default value is `1.0` and the allowed values are floats `[0, 100]`. |
+
+#### Power-Driven Arguments
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A net gains this value times its toggles per cycle, capped at one toggle. The default value is `1`, and the allowed values are floats `>= 0`. |
+
+### Placement Configuration
+
+The `set_place_config` command keeps placement settings in the design's block
+properties, so they persist when the design is written and read back. Each call
+changes only the options it is given. The options below set the slots where
+the IO pins are placed: `place_pins` uses them for any switch it is not given,
+and `global_placement -place_ios` reads them to place and legalize the pins.
+Regions and groups of pins are not part of these settings; define them with
+`exclude_io_pin_region` and `set_io_pin_constraint`.
+
+```tcl
+set_place_config
+    [-io_pin_hor_layers h_layers]
+    [-io_pin_ver_layers v_layers]
+    [-io_pin_corner_avoidance distance]
+    [-io_pin_min_distance min_dist]
+    [-io_pin_min_distance_in_tracks]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-io_pin_hor_layers` | The layers to create the metal shapes of pins placed in horizontal tracks. It can be a single layer or a list of layer names. |
+| `-io_pin_ver_layers` | The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names. |
+| `-io_pin_corner_avoidance` | The distance (in microns) from each corner within which pin placement should be avoided. The default value is `1` micron or 15 tracks, whichever is smaller. |
+| `-io_pin_min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. The default value is the length of two routing tracks between each pin. |
+| `-io_pin_min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. It requires `-io_pin_min_distance`. |
+
+### Reset Placement Configuration
+
+The `reset_place_config` command removes the given settings, or all of them
+when no option is given.
+
+```tcl
+reset_place_config
+    [-io_pin_hor_layers]
+    [-io_pin_ver_layers]
+    [-io_pin_corner_avoidance]
+    [-io_pin_min_distance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-io_pin_hor_layers` | Remove the horizontal pin layers. |
+| `-io_pin_ver_layers` | Remove the vertical pin layers. |
+| `-io_pin_corner_avoidance` | Remove the corner avoidance distance. |
+| `-io_pin_min_distance` | Remove the minimum distance between pins, and whether it is in tracks. |
+
+### Report Placement Configuration
+
+The `report_place_config` command reports the current settings.
+
+```tcl
+report_place_config
+```
 
 ### Cluster Flops
 
@@ -216,6 +301,7 @@ global_placement_debug
     [-pause pause]
     [-update update]
     [-inst inst]
+    [-pin pin]
     [-start_iter start_iter]
     [-start_rudy start_rudy]
     [-rudy_stride rudy_stride]
@@ -232,6 +318,7 @@ global_placement_debug
 | `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Allowed values are integers, default is `10`. |
 | `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is `10`. |
 | `-inst` | Targets a specific instance name for debugging focus. The default behavior focuses on no specific instance. |
+| `-pin` | Targets a specific IO pin name for debugging focus under `-place_ios`. The default behavior focuses on no specific pin. |
 | `-start_iter` | Start debug mode from this iteration. |
 | `-start_rudy` | Start RUDY debug from this iteration. |
 | `-rudy_stride` | Stride for RUDY debug iterations. Allowed values are integers, default is `1`. |
@@ -286,10 +373,10 @@ Example scripts demonstrating how to run `gpl` on a sample design on `core01` as
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/gpl/...
 ```
 
 ## Limitations
