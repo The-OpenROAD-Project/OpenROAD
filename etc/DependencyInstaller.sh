@@ -273,16 +273,16 @@ _install_bazel_libs() {
                     libX11-xcb libX11 libSM libICE \
                     dbus-libs fontconfig \
                     libxkbcommon libxkbcommon-x11
-                # On RHEL 8 xcb-util-cursor comes from EPEL rather than the
-                # default repositories (9 ships it in AppStream), so it may be
-                # missing on a bare image.
-                # Probe rather than hard-fail: without it the GUI binary cannot
-                # open a window, but the cli binary links and runs fine.
-                if yum -q info xcb-util-cursor > /dev/null 2>&1; then
-                    _execute "Installing xcb-util-cursor..." yum install -y xcb-util-cursor
-                else
-                    log "xcb-util-cursor unavailable on this release; skipping (the GUI binary will not run here)."
+                # openroad links Qt, which needs libxcb-cursor.so.0 at load
+                # time even without a display. RHEL 9 ships xcb-util-cursor
+                # in AppStream; RHEL 8 has it only in EPEL, so enable EPEL
+                # when the default repositories lack it.
+                if ! yum -q info xcb-util-cursor > /dev/null 2>&1; then
+                    _execute "Enabling EPEL for xcb-util-cursor..." \
+                        yum install -y epel-release
                 fi
+                _execute "Installing xcb-util-cursor..." \
+                    yum install -y xcb-util-cursor
             fi
         fi
     fi
