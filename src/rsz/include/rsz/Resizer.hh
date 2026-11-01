@@ -698,7 +698,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isCombinational(sta::LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(
       sta::LibertyCell* cell) const;
-  float maxLoad(sta::Cell* cell);
+  // Max capacitance limit of the first output of `cell` that has one (SDC
+  // design and cell limits, Liberty port limit or library default) in the
+  // command scene or `scene`; 0 when there is no limit.
+  float outputMaxCap(sta::Cell* cell);
+  float outputMaxCap(sta::Cell* cell, const sta::Scene* scene);
+  // The same limit for the output `port` of a cell with several outputs.
+  float outputMaxCap(const sta::LibertyPort* port, const sta::Scene* scene);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
