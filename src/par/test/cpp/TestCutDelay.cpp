@@ -50,7 +50,9 @@ class CutDelayTest : public ::testing::Test
         &logger_);
   }
 
-  EvaluatorPtr MakeEvaluator(float delay, float exponent = 2)
+  EvaluatorPtr MakeEvaluator(float delay,
+                             float exponent = 2,
+                             bool extra_delay_specified = true)
   {
     auto evaluator = std::make_shared<GoldenEvaluator>(2,
                                                        std::vector<float>{1},
@@ -62,7 +64,8 @@ class CutDelayTest : public ::testing::Test
                                                        exponent,
                                                        delay,
                                                        hgraph_,
-                                                       &logger_);
+                                                       &logger_,
+                                                       extra_delay_specified);
     evaluator->InitializeTiming(hgraph_);
     return evaluator;
   }
@@ -95,6 +98,17 @@ TEST_F(CutDelayTest, DefaultExponentUsesCutDelay)
       evaluator->CalculatePathCost(0, hgraph_, {0, 0, 1, 1}), 0.9, 1e-6);
   EXPECT_NEAR(
       evaluator->CalculatePathCost(0, hgraph_, {0, 1, 0, 1}), 3.3, 1e-6);
+}
+
+TEST_F(CutDelayTest, OmittedDelayOnlyAffectsStatistics)
+{
+  auto evaluator = MakeEvaluator(0.5f, 2, false);
+  const Partitions solution{0, 1, 0, 1};
+  EXPECT_FALSE(evaluator->HasExtraCutDelay());
+  EXPECT_NEAR(evaluator->CalculatePathCost(0, hgraph_, solution), 1.92, 1e-6);
+  EXPECT_NEAR(evaluator->GetPathTimingScore(0, hgraph_, 3), 0.64, 1e-6);
+  EXPECT_EQ(
+      evaluator->GetTimingCuts(hgraph_, solution).number_non2critical_path, 1);
 }
 
 TEST_F(CutDelayTest, MoveGainsMatchPartitionCost)

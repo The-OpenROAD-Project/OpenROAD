@@ -31,7 +31,7 @@ def tritonPartDesign(
     path_timing_factor=1.0,
     path_snaking_factor=1.0,
     timing_exp_factor=1.0,
-    extra_delay=1e-9,
+    extra_delay=None,
     guardband_flag=False,
     e_wt_factors=[1.0],
     v_wt_factors=[1.0],
@@ -79,7 +79,7 @@ def tritonPartDesign(
         path_timing_factor,
         path_snaking_factor,
         timing_exp_factor,
-        extra_delay,
+        1e-9 if extra_delay is None else extra_delay,
         guardband_flag,
         e_wt_factors,
         v_wt_factors,
@@ -102,4 +102,5 @@ def tritonPartDesign(
         num_coarsen_solutions,
         num_vertices_threshold_ilp,
         global_net_threshold,
+        extra_delay is not None,
     )

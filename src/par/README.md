@@ -188,17 +188,19 @@ $$r_t(u,v) = \hat{r}(u,v) + \sum_{e\in\{I(v) \cap I(u)\}} \frac{\beta t_e}{|e| -
 
 Timing-aware refinement accounts for the estimated delay of each partition
 boundary on a timing path. For a candidate solution $S$, let $c_p(S)$ be the
-number of partition boundaries crossed by path $p$, and $d$ be `-extra_delay`
-in seconds. The path timing weight used to evaluate the solution and compute
-move gains is:
+number of partition boundaries crossed by path $p$. If `-extra_delay` is
+provided, $d$ is its value in seconds; otherwise, $d = 0$. The path timing
+weight used to evaluate the solution and compute move gains is:
 
 $$t_p(S) = (1 - \frac{slack_p - \Delta - c_p(S)d}{clock\_period})^\mu$$
 
 The path cost is $c_p(S)t_p(S)$ weighted by `-path_timing_factor`, plus
-the snaking penalty. The estimated cut delay is included with or without
-guardbanding. With `-guardband_flag true`, the fixed guardband $\Delta$ is
-also applied before coarsening. Path costs are computed for each candidate
-solution without changing the original slacks.
+the snaking penalty. An explicitly provided cut delay is included with or
+without guardbanding. Omitting `-extra_delay` preserves the existing path
+costs. The default delay of `1e-9` seconds is still used for timing-cut
+statistics and, with `-guardband_flag true`, the fixed guardband $\Delta$
+before coarsening. Path costs are computed for each candidate solution
+without changing the original slacks.
 
 Both `triton_part_design` and `evaluate_part_design_solution` use
 `-extra_delay` in their timing-cut statistics to count initially noncritical
@@ -407,7 +409,7 @@ triton_part_design
 | `-path_timing_factor` | Cutting critical timing path weight factor (default 1.0, float). |
 | `-path_snaking_factor` | Snaking a critical path weight factor (default 1.0, float). |
 | `-timing_exp_factor` | Timing exponential factor for normalized slack (default 1.0, float). |
-| `-extra_delay` | Estimated delay per cut in seconds, used in path costs and timing-cut statistics (default 1e-9, float). Also used as a fixed slack guardband when enabled. |
+| `-extra_delay` | Estimated delay per cut in seconds (default 1e-9, float). Applied to path costs only when explicitly provided. The default is still used for timing-cut statistics and the optional slack guardband. |
 | `-guardband_flag` | Subtract `-extra_delay` from path and constrained hyperedge slacks before computing timing weights (default false, bool). |
 | `-e_wt_factors` | Hyperedge weight factor. |
 | `-v_wt_factors` | Vertex weight factor. |
@@ -489,7 +491,7 @@ evaluate_part_design_solution
 | `-path_timing_factor` | Cutting critical timing path weight factor. The default value is `1.0`, and the allowed values are floats. |
 | `-path_snaking_factor` | Snaking a critical path weight factor. The default value is `1.0`, and the allowed values are floats. |
 | `-timing_exp_factor` | Timing exponential factor for normalized slack. The default value is `1.0`, and the allowed values are floats. |
-| `-extra_delay` | Estimated delay per cut in seconds, used in path costs and timing-cut statistics. The default value is `1e-9`, and the allowed values are floats. |
+| `-extra_delay` | Estimated delay per cut in seconds. Applied to path costs only when explicitly provided. The default value of `1e-9` is still used for timing-cut statistics and the optional slack guardband. The allowed values are floats. |
 | `-guardband_flag` | Subtract `-extra_delay` from path and constrained hyperedge slacks before computing timing weights. The default value is `false`, and the allowed values are booleans. |
 | `-e_wt_factors` | Hyperedge weight factors. |
 | `-v_wt_factors` | Vertex weight factors. |

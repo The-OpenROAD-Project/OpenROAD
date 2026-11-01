@@ -108,7 +108,8 @@ void TritonPart::SetTimingParams(float net_timing_factor,
                                  float path_snaking_factor,
                                  float timing_exp_factor,
                                  float extra_delay,
-                                 bool guardband_flag)
+                                 bool guardband_flag,
+                                 bool extra_delay_specified)
 {
   // the timing weight for cutting a hyperedge
   net_timing_factor_ = net_timing_factor;
@@ -123,8 +124,9 @@ void TritonPart::SetTimingParams(float net_timing_factor,
   path_snaking_factor_ = path_snaking_factor;
 
   timing_exp_factor_ = timing_exp_factor;  // exponential factor
-  extra_delay_ = extra_delay;              // extra delay introduced by cut
-  guardband_flag_ = guardband_flag;        // timing guardband_flag
+  extra_delay_specified_ = extra_delay_specified;
+  extra_delay_ = extra_delay;        // extra delay introduced by cut
+  guardband_flag_ = guardband_flag;  // timing guardband_flag
 }
 
 void TritonPart::SetFineTuneParams(
@@ -664,7 +666,8 @@ void TritonPart::EvaluateHypergraphSolution(
                                                      timing_exp_factor_,
                                                      extra_delay_,
                                                      original_hypergraph_,
-                                                     logger_);
+                                                     logger_,
+                                                     extra_delay_specified_);
 
   evaluator->ConstraintAndCutEvaluator(original_hypergraph_,
                                        solution_,
@@ -888,7 +891,8 @@ void TritonPart::EvaluatePartDesignSolution(
                                                      timing_exp_factor_,
                                                      extra_delay_,
                                                      original_hypergraph_,
-                                                     logger_);
+                                                     logger_,
+                                                     extra_delay_specified_);
 
   evaluator->InitializeTiming(original_hypergraph_);
 
@@ -1900,7 +1904,8 @@ void TritonPart::MultiLevelPartition()
                                           timing_exp_factor_,
                                           extra_delay_,
                                           original_hypergraph_,
-                                          logger_);
+                                          logger_,
+                                          extra_delay_specified_);
 
   Matrix<float> upper_block_balance
       = original_hypergraph_->GetUpperVertexBalance(

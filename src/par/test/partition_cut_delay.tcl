@@ -11,18 +11,22 @@ set_input_delay 0 -clock core_clock [delete_from_list [all_inputs] [get_ports cl
 set_output_delay 0 -clock core_clock [all_outputs]
 
 set solutions {}
-foreach delay { 0 1e-9 } {
+foreach delay { 1e-9 omitted 0 } {
   set part_file [make_result_file "${test_name}_${delay}.part"]
-  triton_part_design \
-    -solution_file $part_file \
-    -extra_delay $delay \
-    -guardband_flag false
+  set args [list -solution_file $part_file -guardband_flag false]
+  if { $delay ne "omitted" } {
+    lappend args -extra_delay $delay
+  }
+  triton_part_design {*}$args
   set stream [open $part_file r]
   lappend solutions [read $stream]
   close $stream
 }
 
-if { [lindex $solutions 0] eq [lindex $solutions 1] } {
-  error "Cut delay did not change the partition without guardbanding"
+if { [lindex $solutions 1] ne [lindex $solutions 2] } {
+  error "Omitting extra_delay changed the partition compared with zero delay"
+}
+if { [lindex $solutions 0] eq [lindex $solutions 2] } {
+  error "Explicit cut delay did not change the partition without guardbanding"
 }
 puts "pass"

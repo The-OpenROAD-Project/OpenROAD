@@ -41,8 +41,10 @@ GoldenEvaluator::GoldenEvaluator(const int num_parts,
                                  const float timing_exp_factor,
                                  const float extra_cut_delay,
                                  HGraphPtr timing_graph,
-                                 utl::Logger* logger)
-    : num_parts_(num_parts),
+                                 utl::Logger* logger,
+                                 bool extra_delay_specified)
+    : extra_delay_specified_(extra_delay_specified),
+      num_parts_(num_parts),
       extra_cut_delay_(extra_cut_delay),
       e_wt_factors_(e_wt_factors),
       v_wt_factors_(v_wt_factors),
@@ -99,8 +101,9 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
                "No timing-critical paths when calling GetPathTimingScore()!");
     return 0.0;
   }
-  const double score
-      = 1.0 - hgraph->PathTimingSlack(path_id) + extra_cut_delay_ * num_cuts;
+  const float cut_delay
+      = extra_delay_specified_ ? extra_cut_delay_ * num_cuts : 0.0f;
+  const double score = 1.0 - hgraph->PathTimingSlack(path_id) + cut_delay;
   if (timing_exp_factor_ == 1.0f) {
     return score;
   }

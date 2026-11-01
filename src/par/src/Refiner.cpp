@@ -382,7 +382,7 @@ GainCell Refiner::CalculateVertexGain(int v,
   if (hgraph->GetNumTimingPaths() > 0) {
     for (const int path_id : hgraph->TimingPathsThrough(v)) {
       // A coarsened path can visit the same vertex more than once.
-      if (delta_path_cost.contains(path_id)) {
+      if (evaluator_->HasExtraCutDelay() && delta_path_cost.contains(path_id)) {
         continue;
       }
       // Get updated path costs if vertex is moved to a different partition
