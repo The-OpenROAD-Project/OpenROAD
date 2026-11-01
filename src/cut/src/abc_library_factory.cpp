@@ -117,6 +117,19 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
   return false;
 }
 
+static bool HasOutputWithoutFunction(sta::LibertyCell* cell)
+{
+  sta::LibertyCellPortIterator cell_port_iterator(cell);
+  while (cell_port_iterator.hasNext()) {
+    sta::LibertyPort* port = cell_port_iterator.next();
+    if (port->direction()->isOutput() && port->function() == nullptr) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static bool isCompatibleWithAbc(sta::LibertyCell* cell, rsz::Resizer* resizer)
 {
   if (resizer != nullptr && resizer->dontUse(cell)) {
@@ -133,6 +146,12 @@ static bool isCompatibleWithAbc(sta::LibertyCell* cell, rsz::Resizer* resizer)
   }
 
   if (HasNonInputOutputPorts(cell)) {
+    return false;
+  }
+
+  // ABC needs the Boolean function of every output (e.g. power-gating
+  // fillers have none).
+  if (HasOutputWithoutFunction(cell)) {
     return false;
   }
 

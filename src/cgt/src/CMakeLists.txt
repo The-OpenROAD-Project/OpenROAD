@@ -9,6 +9,7 @@ swig_lib(NAME      cgt
          NAMESPACE cgt
          I_FILE    cgt.i
          SCRIPTS   cgt.tcl
+         SWIG_INCLUDES ${OPENSTA_HOME}
 )
 
 target_sources(cgt
