@@ -2,8 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // GpuHpwlBackend — the Kokkos GPU implementation of HpwlBackend (see
-// ../hpwlBackend.h). Compiled only in the GPU build (--config=gpu); constructed by
-// makeHpwlBackend() when the GPU path is selected at run time.
+// ../hpwlBackend.h). Compiled only in the GPU build (--config=gpu); constructed
+// by makeHpwlBackend() when the GPU path is selected at run time.
 //
 // This header carries no Kokkos types — the device kernel lives entirely in
 // gpuHpwlBackend.cpp — so the HPWL factory in ../hpwl.cpp can construct a

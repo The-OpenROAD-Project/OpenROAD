@@ -28,15 +28,16 @@ jobs:
           source venv/bin/activate
           cd src/odb/src/codeGenerator/
           ./generate
-          if [ -z "$(git status --porcelain)" ]; then
+          # Only src/odb: a reused self-hosted checkout can hold stale files elsewhere.
+          if [ -z "$(git status --porcelain -- :/src/odb)" ]; then
             exit 0
           else
             echo ::group::Non-Empty Git Status Oputput
-            git status --porcelain
+            git status --porcelain -- :/src/odb
             echo ::endgroup::
 
             echo ::group::Non-Empty Git Diff Oputput
-            git diff
+            git diff -- :/src/odb
             echo ::endgroup::
 
             printf "Your ODB generated files are out of date\n"

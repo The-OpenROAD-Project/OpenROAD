@@ -2,9 +2,9 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // GpuFftBackend — the Kokkos / KokkosFFT implementation of FftBackend,
-// compiled only in the GPU build (--config=gpu). It owns a persistent Kokkos Poisson
-// solver and device staging Views; solve() packs the host density grid to
-// the device, runs the solve, and unpacks potential + electric field back.
+// compiled only in the GPU build (--config=gpu). It owns a persistent Kokkos
+// Poisson solver and device staging Views; solve() packs the host density grid
+// to the device, runs the solve, and unpacks potential + electric field back.
 // makeFftBackend() (in ../fft.cpp) constructs it when the GPU path is
 // selected at run time.
 

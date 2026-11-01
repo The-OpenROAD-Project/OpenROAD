@@ -43,5 +43,6 @@ jobs:
           bazelisk-version: 1.x
           bazelisk-cache: true
 
+      # setup-bazel installs bazelisk on the PATH as `bazel`.
       - name: Check the npm lock against package.json
-        run: bazelisk test //src/web/test:npm_lock_test
+        run: bazel test //src/web/test:npm_lock_test
