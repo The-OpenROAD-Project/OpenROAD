@@ -41,6 +41,7 @@ COMPULSORY_TESTS = [
     "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
+    "inverter_sinks",
     "inverters",
     "lvt_lib",
     "max_cap",
