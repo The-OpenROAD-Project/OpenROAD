@@ -493,9 +493,12 @@ TEST_F(SaveReportTest, SerializeSlackHistogramRoundTrip)
   h.unconstrained_count = 5;
   h.total_endpoints = 35;
   h.time_unit = "ns";
+  h.clocks.push_back({"core_clock", 0.473f});
 
   const std::string json = boost::json::serialize(serializeSlackHistogram(h));
 
+  EXPECT_TRUE(contains(json, "\"clocks\":"));
+  EXPECT_TRUE(contains(json, "\"core_clock\""));
   EXPECT_TRUE(contains(json, "\"bins\":"));
   EXPECT_TRUE(contains(json, "\"unconstrained_count\":5"));
   EXPECT_TRUE(contains(json, "\"total_endpoints\":35"));
