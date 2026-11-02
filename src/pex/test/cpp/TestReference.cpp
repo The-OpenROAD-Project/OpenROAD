@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <stdexcept>
+#include <utility>
 
 #include "Reference.h"
 #include "fsv/Geometry.h"
@@ -59,8 +60,29 @@ Model constantModel()
         }
       }
     }
-    // An end adds a twentieth of the context's base.
-    model.addEnd(key, EndTable({0.1, 1}, {base / 20, base / 20}));
+    // An end adds a twentieth of the context's base, of which a fiftieth
+    // goes to the plane below and a fortieth to the plane above. Neighbors
+    // at 0.3 on both sides add 0.4 and take 0.6; a wire facing it at 0.2
+    // adds 0.3 and takes all of it, at 0.6 0.1.
+    const double below = key.below.empty() ? 0.0 : base / 50;
+    const double above = key.above.empty() ? 0.0 : base / 40;
+    EndTable& e = model.addEnd(key, EndTable({0.1, 1}, {0.3}, {0.2, 0.6}));
+    for (int w = 0; w < 2; w++) {
+      for (int s = 0; s < 2; s++) {
+        for (int g = 0; g < 3; g++) {
+          const double lateral = s == 0 ? 0.6 : 0.0;
+          const double facing = g == 0 ? 0.3 : g == 1 ? 0.1 : 0.0;
+          e.set(w,
+                s,
+                g,
+                {(base / 20) + (lateral * 2 / 3) + facing,
+                 below,
+                 above,
+                 lateral,
+                 facing});
+        }
+      }
+    }
   };
   add({"m1", "", ""}, 10);
   add({"m1", "", "m2"}, 20);
@@ -132,9 +154,151 @@ TEST(Reference, EndContextSurvivesAZeroLengthFirstPiece)
   EXPECT_EQ(est.pieces, 1);
   EXPECT_EQ(est.ends, 2);
   // Under m2 the base is 20 per µm, the plane takes 4, and each end adds
-  // 1 in that context.
+  // 1 in that context; c reaches no further than the wire, so the ends'
+  // part to the plane stays ground.
   EXPECT_NEAR(est.couplings.at(c), 40, 1e-6);
   EXPECT_NEAR(est.ground, 200 + 2 * 1.0, 1e-6);
+}
+
+// Under the net's own cover the plane's parts, the wire's and the ends',
+// are no capacitance.
+TEST(Reference, OwnCoverTakesNothing)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+  g.addBox(a, {{-1, -5, 3}, {11, 5, 4}});
+  const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
+  EXPECT_TRUE(est.couplings.empty());
+  // m1 under m2: a ground of 20 per µm, its plane's 4 dropped, and per
+  // end 1 less the plane's 0.5. m2, 10 wide, is not covered by the narrow
+  // m1: a ground of 30 per µm over 12 µm and 1.5 per end.
+  EXPECT_EQ(est.ends, 4);
+  EXPECT_NEAR(est.ground, 10 * 20 + 2 * 0.5 + 12 * 30 + 2 * 1.5, 1e-6);
+}
+
+// At a bend the boxes overlap in a corner square, which the longer box
+// counts; the corner has no line end.
+TEST(Reference, BendCountsTheCornerOnce)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+  g.addBox(a, {{9.8, 0, 1}, {10, 5, 2}});
+  const NetEstimate est = estimate(g, stack, model, a);
+  EXPECT_EQ(est.pieces, 2);
+  EXPECT_EQ(est.ends, 2);
+  EXPECT_EQ(est.bends, 1);
+  // 10 per µm over 10 µm and 4.8 µm, and 0.5 per free end.
+  EXPECT_NEAR(est.ground, (10 * 10) + (10 * 4.8) + 1, 1e-9);
+}
+
+// A line end facing another net's wire takes the facing table's total and
+// coupling, by the share of the face the wire overlaps.
+TEST(Reference, FacingEnd)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  for (const double overlap : {1.0, 0.5}) {
+    fsv::Geometry g;
+    const int a = g.addNet("a");
+    const int f = g.addNet("f");
+    g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+    g.addBox(f, {{10.2, 0.2 - (0.2 * overlap), 1}, {12, 0.2, 2}});
+    const NetEstimate est = estimate(g, stack, model, a);
+    EXPECT_EQ(est.ends, 2);
+    EXPECT_EQ(est.facing_ends, 1);
+    // The free end adds 0.5 (m1 alone); the facing one blends 0.8 with
+    // the free 0.5 by the overlap, 0.3 of it to f.
+    const double faced = (overlap * 0.8) + ((1 - overlap) * 0.5);
+    EXPECT_NEAR(est.couplings.at(f), overlap * 0.3, 1e-9);
+    EXPECT_NEAR(est.ground, 100 + 0.5 + faced - (overlap * 0.3), 1e-9);
+  }
+  // Past the widest gap the end is free.
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int f = g.addNet("f");
+  g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+  g.addBox(f, {{10.7, 0, 1}, {12, 0.2, 2}});
+  const NetEstimate est = estimate(g, stack, model, a);
+  EXPECT_EQ(est.facing_ends, 0);
+  EXPECT_FALSE(est.couplings.contains(f));
+  EXPECT_NEAR(est.ground, 100 + 1, 1e-9);
+}
+
+// A neighbor running past a line end takes part of the end, as far as it
+// runs past against its spacing.
+TEST(Reference, NeighborRunsPastTheEnd)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  // Past by 1 (all), 0.15 (half of the 0.3 spacing) and 0 (none).
+  for (const auto& [past, share] :
+       {std::pair{1.0, 1.0}, std::pair{0.15, 0.5}, std::pair{0.0, 0.0}}) {
+    fsv::Geometry g;
+    const int a = g.addNet("a");
+    const int b = g.addNet("b");
+    g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+    g.addBox(b, {{-past, 0.5, 1}, {10 + past, 0.7, 2}});
+    const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
+    // 2 per µm on the right, and per end half of the 0.6 the neighbors
+    // take, of half of the 0.4 they add.
+    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * share * 0.3), 1e-9);
+    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + (share * (0.2 - 0.3)))), 1e-9);
+  }
+}
+
+// A crossing between the wire and a farther plane keeps its coupling: the
+// plane stands for the uncovered rest of the pieces beside it.
+TEST(Reference, CrossingInFrontOfAPlane)
+{
+  fsv::Stack stack;
+  stack.addDielectric({"d", 0, 10, 1});
+  stack.addConductor(conductorAt("m1", 1, 2));
+  stack.addConductor(conductorAt("m2", 3, 4));
+  stack.addConductor(conductorAt("m3", 5, 6));
+  Model model = constantModel();
+  const Model& base = model;
+  LateralTable& t
+      = model.addLateral({"m1", "", "m3"}, LateralTable({0.1, 1}, {0.1, 1}));
+  for (int w = 0; w < 2; w++) {
+    for (int l = 0; l < 3; l++) {
+      for (int r = 0; r < 3; r++) {
+        t.set(w, l, r, {15, 1, 2, 0, 2});
+      }
+    }
+  }
+  model.addEnd({"m1", "", "m3"}, EndTable(*base.end({"m1", "", ""})));
+  auto couplings = [&](const bool plane) {
+    fsv::Geometry g;
+    const int a = g.addNet("a");
+    const int c = g.addNet("c");
+    const int p = g.addNet("p");
+    g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+    g.addBox(c, {{4, -5, 3}, {5, 5, 4}});
+    if (plane) {
+      g.addBox(p, {{-20, -20, 5}, {30, 20, 6}});
+    }
+    const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
+    const auto at = [&](const int n) {
+      return est.couplings.contains(n) ? est.couplings.at(n) : 0.0;
+    };
+    return std::pair{at(c), at(p)};
+  };
+  const auto [alone, none] = couplings(false);
+  const auto [crossing, plane] = couplings(true);
+  EXPECT_EQ(none, 0);
+  // Under the crossing 4 per µm, beside it a share.
+  EXPECT_GT(alone, 4);
+  EXPECT_NEAR(crossing, alone, 1e-9);
+  // The plane takes 2 per µm where the crossing does not cover, less than
+  // over the whole 10 µm.
+  EXPECT_GT(plane, 0);
+  EXPECT_LT(plane, 2 * 10);
 }
 
 // Between two crossings of different nets, each takes the coupling its
@@ -158,9 +322,13 @@ TEST(Reference, CrossingCouplingSplitsByNet)
   // and beyond, and linear between: 0.8 at 2. The plane couples 4 per µm.
   // Over [0, 2], x keeps 0.8 one-sided, so 1.6; over [4, 8], x (1 to 4
   // away) keeps 0.2 and y (0 to 4 away) 0.9, of the 2.2 the piece couples
-  // to the crossings.
-  EXPECT_NEAR(est.couplings.at(x), 1.6 + 4 + 1.4 + 2.2 * 0.2 / 1.1, 1e-9);
-  EXPECT_NEAR(est.couplings.at(y), 2.2 * 0.9 / 1.1 + 4 + 1.4, 1e-9);
+  // to the crossings. The ends take the plane's 0.5 at the share kept at
+  // the end itself: the kept coupling grows 0.1 per µm at 2 from x and
+  // 0.7 per µm at 1 from y, half of it on one side.
+  EXPECT_NEAR(
+      est.couplings.at(x), 1.6 + 4 + 1.4 + 2.2 * 0.2 / 1.1 + 0.05 * 0.5, 1e-9);
+  EXPECT_NEAR(
+      est.couplings.at(y), 2.2 * 0.9 / 1.1 + 4 + 1.4 + 0.35 * 0.5, 1e-9);
   EXPECT_DOUBLE_EQ(est.couplings.at(b), 2);  // on the right: 2 per µm
 }
 

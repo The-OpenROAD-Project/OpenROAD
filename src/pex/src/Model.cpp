@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -146,18 +147,41 @@ void DiagonalTable::set(const int width,
   values_[index(width, gap, spacing, far)] = cap;
 }
 
-EndTable::EndTable(std::vector<double> widths, std::vector<double> excess)
-    : widths_(std::move(widths)), excess_(std::move(excess))
+EndTable::EndTable(std::vector<double> widths,
+                   std::vector<double> spacings,
+                   std::vector<double> gaps)
+    : widths_(std::move(widths)),
+      spacings_(std::move(spacings)),
+      gaps_(std::move(gaps))
 {
   requireGrid("end width", widths_, true);
-  if (excess_.size() != widths_.size()) {
-    throw std::invalid_argument(
-        "end table has " + std::to_string(excess_.size()) + " values for "
-        + std::to_string(widths_.size()) + " widths");
+  if (!spacings_.empty()) {
+    requireGrid("end spacing", spacings_, true);
   }
-  for (const double v : excess_) {
+  if (!gaps_.empty()) {
+    requireGrid("end gap", gaps_, true);
+  }
+  values_.resize(widths_.size() * spacingCount() * gapCount());
+}
+
+int EndTable::index(const int width, const int spacing, const int gap) const
+{
+  return (((width * spacingCount()) + spacing) * gapCount()) + gap;
+}
+
+void EndTable::set(const int width,
+                   const int spacing,
+                   const int gap,
+                   const EndValue& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  requireIndex("end spacing", spacing, spacingCount());
+  requireIndex("end gap", gap, gapCount());
+  for (const double v :
+       {value.total, value.below, value.above, value.lateral, value.facing}) {
     requireFinite("end", v);
   }
+  values_[index(width, spacing, gap)] = value;
 }
 
 LateralTable& Model::addLateral(const LateralKey& key, LateralTable table)
@@ -468,15 +492,58 @@ const EndTable* Model::end(const LateralKey& key) const
   return it == ends_.end() ? nullptr : &it->second;
 }
 
-double Model::endExcess(const LateralKey& key, const double width) const
+EndCap Model::end(const LateralKey& key,
+                  const double width,
+                  const double left,
+                  const double right,
+                  const double gap) const
 {
   const EndTable* t = end(key);
   if (t == nullptr) {
     throw std::out_of_range("no end table for layer " + key.layer + " below "
                             + key.below + " above " + key.above);
   }
-  const Bracket b = bracketLinear(t->widths(), width);
-  return (1 - b.t) * t->excess()[b.lo] + b.t * t->excess()[b.hi];
+  const Bracket w = bracketLinear(t->widths(), width);
+  const Bracket g = bracketSpacing(t->gaps(), gap);
+  auto couple = [](const double a, const double b, const double u) {
+    if (u == 0 || a <= 0 || b <= 0) {
+      return (1 - u) * a + u * b;
+    }
+    return std::exp((1 - u) * std::log(a) + u * std::log(b));
+  };
+  auto mix = [&](const EndValue& a, const EndValue& b, const double u) {
+    return EndValue{(1 - u) * a.total + u * b.total,
+                    (1 - u) * a.below + u * b.below,
+                    (1 - u) * a.above + u * b.above,
+                    couple(a.lateral, b.lateral, u),
+                    couple(a.facing, b.facing, u)};
+  };
+  // The end with a spacing on both sides: over the gap, the spacing, then
+  // linearly over the width.
+  auto both = [&](const double spacing) {
+    const Bracket s = bracketSpacing(t->spacings(), spacing);
+    auto overGap = [&](const int wi, const int si) {
+      return mix(t->at(wi, si, g.lo), t->at(wi, si, g.hi), g.t);
+    };
+    auto overSpacing = [&](const int wi) {
+      return mix(overGap(wi, s.lo), overGap(wi, s.hi), s.t);
+    };
+    const EndValue a = overSpacing(w.lo);
+    const EndValue b = overSpacing(w.hi);
+    return EndValue{(1 - w.t) * a.total + w.t * b.total,
+                    (1 - w.t) * a.below + w.t * b.below,
+                    (1 - w.t) * a.above + w.t * b.above,
+                    (1 - w.t) * a.lateral + w.t * b.lateral,
+                    (1 - w.t) * a.facing + w.t * b.facing};
+  };
+  const EndValue l = both(left);
+  const EndValue r = left == right ? l : both(right);
+  return {(l.total + r.total) / 2,
+          (l.below + r.below) / 2,
+          (l.above + r.above) / 2,
+          l.lateral / 2,
+          r.lateral / 2,
+          (l.facing + r.facing) / 2};
 }
 
 }  // namespace pex

@@ -58,6 +58,11 @@ struct BuildOptions
   // The end patterns: a wire of this length, or five times its width if
   // longer.
   double end_length = 2;
+  // The end tables' spacings to neighbors running past the end on both
+  // sides, and gaps to a wire facing the end, as multiples of the layer's
+  // minimum spacing; with no neighbor and no facing wire besides.
+  std::vector<double> end_spacing_factors{1, 2, 4};
+  std::vector<double> facing_factors{1, 2, 4};
   // The diagonal patterns: the parallel wire's widths as multiples of its
   // layer's minimum width, its edge-to-edge gaps as multiples of the
   // wire's minimum width, the spacings to the wire's own neighbor on the
@@ -188,7 +193,8 @@ std::vector<Layer> diagonalLayers(const fsv::Stack& stack,
                                   const BuildOptions& options);
 
 // Builds the end tables of a layer for the same contexts as its lateral
-// tables: what one line end adds, over the lateral grid's widths.
+// tables: what one line end adds, over the lateral grid's widths, the end
+// spacings and the facing gaps.
 void buildEnds(const fsv::Stack& stack,
                Layer layer,
                const BuildOptions& options,

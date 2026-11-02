@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "fsv/Geometry.h"
@@ -227,6 +228,30 @@ TEST(Patterns, EndWirePlacesThePlanes)
       EXPECT_EQ(b.hi[2], layerExtent(stack, stack.layer("met1")).top);
     }
   }
+  // Facing wires beyond both ends at the gap, as wide and as long; the
+  // plane reaches past them.
+  pattern.facing_gap = 0.5;
+  const EndPattern::Wire f = pattern.build(stack);
+  ASSERT_GE(f.facing, 0);
+  const auto& faced = f.geometry.boxes();
+  ASSERT_EQ(faced.size(), 4u);
+  std::vector<std::pair<double, double>> spans;
+  for (int i = 0; i < 4; i++) {
+    const fsv::Box& b = faced[i];
+    if (f.geometry.boxNet(i) == f.facing) {
+      EXPECT_DOUBLE_EQ(b.lo[0], -0.1);
+      EXPECT_DOUBLE_EQ(b.hi[0], 0.1);
+      spans.emplace_back(b.lo[1], b.hi[1]);
+    } else if (f.geometry.boxNet(i) == f.below) {
+      EXPECT_DOUBLE_EQ(b.lo[1], -3.5 - 1);
+      EXPECT_DOUBLE_EQ(b.hi[1], 6.5 + 1);
+    }
+  }
+  ASSERT_EQ(spans.size(), 2u);
+  EXPECT_DOUBLE_EQ(spans[0].first, -3.5);
+  EXPECT_DOUBLE_EQ(spans[0].second, -0.5);
+  EXPECT_DOUBLE_EQ(spans[1].first, 3.5);
+  EXPECT_DOUBLE_EQ(spans[1].second, 6.5);
   pattern.length = 0;
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
 }

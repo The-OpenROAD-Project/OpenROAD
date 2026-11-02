@@ -9,6 +9,7 @@
 
 #include <compare>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -178,21 +179,66 @@ class DiagonalTable
   std::vector<DiagonalCap> values_;
 };
 
-// What one line end adds to a wire's capacitance, in fF, over its width.
+// What one line end adds, in fF, at a tabulated point: the total, and
+// the parts of it to the planes below and above, to the neighbors on both
+// sides together, and to a wire facing the end.
+struct EndValue
+{
+  double total = 0;
+  double below = 0;
+  double above = 0;
+  double lateral = 0;
+  double facing = 0;
+};
+
+// What one line end adds to a wire's capacitance over its width, the
+// spacing to a neighbor of minimum width on each side running past the end
+// (the same on both), and the gap to a wire as wide facing the end, end to
+// end. The column after the last spacing is no neighbor, and after the
+// last gap no facing wire.
 class EndTable
 {
  public:
-  // Throws std::invalid_argument for an empty grid, widths not ascending
-  // or not positive, a value count that differs, or an excess that is not
-  // finite.
-  EndTable(std::vector<double> widths, std::vector<double> excess);
+  // Throws std::invalid_argument for an empty width grid or a grid not
+  // ascending or not positive; spacings and gaps may be empty.
+  EndTable(std::vector<double> widths,
+           std::vector<double> spacings = {},
+           std::vector<double> gaps = {});
 
   const std::vector<double>& widths() const { return widths_; }
-  const std::vector<double>& excess() const { return excess_; }
+  const std::vector<double>& spacings() const { return spacings_; }
+  const std::vector<double>& gaps() const { return gaps_; }
+  // With the open spacing column and the column of no facing wire.
+  int spacingCount() const { return static_cast<int>(spacings_.size()) + 1; }
+  int gapCount() const { return static_cast<int>(gaps_.size()) + 1; }
+  const std::vector<EndValue>& values() const { return values_; }
+  const EndValue& at(int width, int spacing, int gap) const
+  {
+    return values_[index(width, spacing, gap)];
+  }
+  // Throws std::invalid_argument for an index off the grid or a value
+  // that is not finite.
+  void set(int width, int spacing, int gap, const EndValue& value);
 
  private:
-  std::vector<double> widths_;  // µm, ascending
-  std::vector<double> excess_;
+  int index(int width, int spacing, int gap) const;
+
+  std::vector<double> widths_;    // µm, ascending
+  std::vector<double> spacings_;  // µm, ascending
+  std::vector<double> gaps_;      // µm, ascending
+  std::vector<EndValue> values_;
+};
+
+// What one line end adds, in fF, looked up: the total, and its parts to
+// the planes, to the left and right neighbors, and to the facing wire.
+struct EndCap
+{
+  double total = 0;
+  double below = 0;
+  double above = 0;
+  double left = 0;
+  double right = 0;
+  double facing = 0;
 };
 
 class Model
@@ -262,9 +308,22 @@ class Model
   EndTable& addEnd(const LateralKey& key, EndTable table);
   const EndTable* end(const LateralKey& key) const;
   const std::map<LateralKey, EndTable>& ends() const { return ends_; }
-  // What one line end adds, linear in the width and clamped to the
-  // table's range. Throws std::out_of_range when the context has no table.
-  double endExcess(const LateralKey& key, double width) const;
+  // What one line end adds: linear in the width, and in the logarithms
+  // of the spacings and the gap, where the couplings interpolate in their
+  // own logarithms; clamped to the table's ranges below. A spacing or gap
+  // that is negative, or beyond the last tabulated, means no neighbor or
+  // no facing wire. Each side takes half of the end with that side's
+  // spacing on both. Throws std::out_of_range when the context has no
+  // table.
+  EndCap end(const LateralKey& key,
+             double width,
+             double left = -1,
+             double right = -1,
+             double gap = -1) const;
+  double endExcess(const LateralKey& key, double width) const
+  {
+    return end(key, width).total;
+  }
 
  private:
   std::map<LateralKey, LateralTable> laterals_;

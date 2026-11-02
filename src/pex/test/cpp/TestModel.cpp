@@ -64,8 +64,13 @@ TEST(Model, TableIndexingAndValidation)
   EXPECT_THROW(CrossingTable({1}, {{std::nan(""), 0}}), std::invalid_argument);
   EXPECT_THROW(DiagonalTable({1}, {}, {1}, {1}), std::invalid_argument);
   EXPECT_NO_THROW(DiagonalTable({1}, {-1, 0}, {1}, {1}));
-  EXPECT_THROW(EndTable({1, 2}, {0.1}), std::invalid_argument);
-  EXPECT_THROW(EndTable({1}, {std::nan("")}), std::invalid_argument);
+  EXPECT_THROW(EndTable({}), std::invalid_argument);
+  EXPECT_THROW(EndTable({1}, {0.2, 0.1}), std::invalid_argument);
+  EXPECT_THROW(EndTable({1}, {}, {-1}), std::invalid_argument);
+  EndTable e({1}, {0.1}, {0.2});
+  EXPECT_EQ(e.values().size(), 1u * 2 * 2);
+  EXPECT_THROW(e.set(0, 2, 0, {}), std::invalid_argument);
+  EXPECT_THROW(e.set(0, 0, 0, {std::nan("")}), std::invalid_argument);
 }
 
 TEST(Model, ExactAtGridPoints)
@@ -230,16 +235,74 @@ TEST(Model, DiagonalLookup)
                std::out_of_range);
 }
 
+// An end table with no neighbors and no facing wire.
+EndTable freeEnds(const std::vector<double>& widths,
+                  const std::vector<double>& totals,
+                  const std::vector<double>& below = {},
+                  const std::vector<double>& above = {})
+{
+  EndTable t(widths);
+  for (size_t w = 0; w < widths.size(); w++) {
+    t.set(w,
+          0,
+          0,
+          {totals[w],
+           below.empty() ? 0 : below[w],
+           above.empty() ? 0 : above[w]});
+  }
+  return t;
+}
+
 TEST(Model, EndExcessLinearInWidth)
 {
   Model model;
-  model.addEnd({"m2", "m1", ""}, EndTable({0.1, 0.3}, {0.02, 0.06}));
+  model.addEnd({"m2", "m1", ""}, freeEnds({0.1, 0.3}, {0.02, 0.06}));
   const LateralKey key{"m2", "m1", ""};
   EXPECT_DOUBLE_EQ(model.endExcess(key, 0.1), 0.02);
   EXPECT_DOUBLE_EQ(model.endExcess(key, 0.2), 0.04);
   EXPECT_DOUBLE_EQ(model.endExcess(key, 0.05), 0.02);
   EXPECT_DOUBLE_EQ(model.endExcess(key, 1), 0.06);
   EXPECT_THROW(model.endExcess({"m2", "", ""}, 0.1), std::out_of_range);
+  model.addEnd({"m2", "m1", "m3"},
+               freeEnds({0.1, 0.3}, {0.02, 0.06}, {0.01, 0.03}, {0, 0.02}));
+  const EndCap e = model.end({"m2", "m1", "m3"}, 0.2);
+  EXPECT_DOUBLE_EQ(e.total, 0.04);
+  EXPECT_DOUBLE_EQ(e.below, 0.02);
+  EXPECT_DOUBLE_EQ(e.above, 0.01);
+}
+
+TEST(Model, EndNeighborsAndFacing)
+{
+  Model model;
+  const LateralKey key{"m2", "", ""};
+  EndTable& t = model.addEnd(key, EndTable({0.1}, {0.1, 0.4}, {0.2}));
+  // [spacing][gap], the open spacing and no facing wire last.
+  t.set(0, 0, 0, {0.06, 0, 0, 0.04, 0.02});
+  t.set(0, 0, 1, {0.05, 0, 0, 0.04, 0});
+  t.set(0, 1, 0, {0.05, 0, 0, 0.01, 0.03});
+  t.set(0, 1, 1, {0.04, 0, 0, 0.01, 0});
+  t.set(0, 2, 0, {0.045, 0, 0, 0, 0.035});
+  t.set(0, 2, 1, {0.03, 0, 0, 0, 0});
+  EXPECT_DOUBLE_EQ(model.end(key, 0.1).total, 0.03);
+  // Each side takes half of the end with its spacing on both.
+  const EndCap both = model.end(key, 0.1, 0.1, 0.1);
+  EXPECT_DOUBLE_EQ(both.total, 0.05);
+  EXPECT_DOUBLE_EQ(both.left, 0.02);
+  EXPECT_DOUBLE_EQ(both.right, 0.02);
+  const EndCap one = model.end(key, 0.1, 0.1, -1);
+  EXPECT_DOUBLE_EQ(one.total, 0.04);
+  EXPECT_DOUBLE_EQ(one.left, 0.02);
+  EXPECT_DOUBLE_EQ(one.right, 0);
+  // Halfway in the spacing's logarithm, the coupling geometric.
+  const EndCap mid = model.end(key, 0.1, 0.2, 0.2);
+  EXPECT_DOUBLE_EQ(mid.total, 0.045);
+  EXPECT_NEAR(mid.left, 0.01, 1e-12);
+  // Facing a wire; past the last gap, none.
+  const EndCap faced = model.end(key, 0.1, -1, -1, 0.2);
+  EXPECT_DOUBLE_EQ(faced.total, 0.045);
+  EXPECT_DOUBLE_EQ(faced.facing, 0.035);
+  EXPECT_DOUBLE_EQ(model.end(key, 0.1, -1, -1, 0.3).total, 0.03);
+  EXPECT_DOUBLE_EQ(model.end(key, 0.1, 0.1, 0.1, 0.1).facing, 0.02);
 }
 
 TEST(Model, MissingContextThrows)

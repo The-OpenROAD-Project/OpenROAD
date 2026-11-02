@@ -33,7 +33,15 @@ struct NetEstimate
   std::map<NetIndex, double> couplings;  // by net; the target excluded
   int wires = 0;                         // boxes on conductor layers
   int pieces = 0;
-  int ends = 0;  // line ends
+  int ends = 0;         // line ends
+  int via_ends = 0;     // of them, those the net's via or other layers reach
+  int corners = 0;      // wire ends at a bend, which add nothing
+  int facing_ends = 0;  // line ends facing a shape across a tabulated gap
+  // Perpendicular wires of the net on one layer overlapping: at both
+  // wires' ends, at one's end, and at neither.
+  int bends = 0;
+  int tees = 0;
+  int crosses = 0;
   int vias = 0;  // boxes on via layers, which add nothing yet
 
   double total() const;

@@ -5,10 +5,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "fsv/Geometry.h"
@@ -148,21 +151,35 @@ struct Cover
   double share = 0;                 // of the total
   double cross = 0;                 // of the plane's coupling
   std::map<NetIndex, double> nets;  // weight by net, summing to 1 when any
+  // A box covering the piece: the span along the wire of the layer's runs
+  // joined to it. Unbounded for crossings.
+  double reach0 = -std::numeric_limits<double>::infinity();
+  double reach1 = std::numeric_limits<double>::infinity();
+  // Behind crossings, a farther layer covering the piece: it, not open,
+  // is what the rest of the piece sees.
+  std::string rest;
+  std::map<NetIndex, double> rest_nets;
+  double rest_reach0 = 0;
+  double rest_reach1 = 0;
 };
 
 struct Run
 {
   NetIndex net;
-  double a0;
+  double a0;  // over the wire
   double a1;
+  double e0;  // the whole box
+  double e1;
 };
 
 struct Lateral
 {
   NetIndex net;
   double gap;
-  double a0;
+  double a0;  // over the wire
   double a1;
+  double e0;  // the whole box
+  double e1;
 };
 
 // The share of a layer's crossings over a piece [x0, x1] that no run
@@ -266,29 +283,31 @@ class Wire
   void estimate(const NetIndex target, NetEstimate& out)
   {
     const std::vector<double> edges(cuts_.begin(), cuts_.end());
-    bool first = true;
-    Cover first_below;
-    Cover first_above;
-    Cover last_below;
-    Cover last_above;
     for (size_t i = 0; i + 1 < edges.size(); i++) {
       if (edges[i + 1] - edges[i] <= kEps) {
+        continue;
+      }
+      if (insideOther(edges[i], edges[i + 1])) {
         continue;
       }
       out.pieces++;
       const Cover below = coverOn(true, edges[i], edges[i + 1]);
       const Cover above = coverOn(false, edges[i], edges[i + 1]);
-      if (first) {
-        first_below = below;
-        first_above = above;
-        first = false;
-      }
-      last_below = below;
-      last_above = above;
       addPiece(edges[i], edges[i + 1], below, above, target, out);
     }
-    addEnd(a0_, first_below, first_above, target, out);
-    addEnd(a1_, last_below, last_above, target, out);
+    // An end takes the covers at the end itself, crossings by their share
+    // there rather than over the end piece.
+    const double d = std::min(1e-3, (a1_ - a0_) / 2);
+    addEnd(a0_,
+           coverOn(true, a0_, a0_ + d),
+           coverOn(false, a0_, a0_ + d),
+           target,
+           out);
+    addEnd(a1_,
+           coverOn(true, a1_ - d, a1_),
+           coverOn(false, a1_ - d, a1_),
+           target,
+           out);
   }
 
  private:
@@ -308,9 +327,14 @@ class Wire
       }
       if (s.layer == shape_.layer) {
         if (s.hi[p_] <= p0_ + kEps) {
-          left_.push_back({s.net, p0_ - s.hi[p_], o0, o1});
+          left_.push_back({s.net, p0_ - s.hi[p_], o0, o1, s.lo[a_], s.hi[a_]});
         } else if (s.lo[p_] >= p1_ - kEps) {
-          right_.push_back({s.net, s.lo[p_] - p1_, o0, o1});
+          right_.push_back({s.net, s.lo[p_] - p1_, o0, o1, s.lo[a_], s.hi[a_]});
+        } else if (s.net == shape_.net && s.lo[p_] <= p0_ + kEps
+                   && s.hi[p_] >= p1_ - kEps && dominates(s)) {
+          // A longer box of the net across the wire's whole width: that
+          // box counts the overlap.
+          inside_.emplace_back(o0, o1);
         } else {
           continue;  // overlapping on the same layer: a junction
         }
@@ -323,7 +347,7 @@ class Wire
             continue;
           }
         } else {
-          runs_[s.layer].push_back({s.net, o0, o1});
+          runs_[s.layer].push_back({s.net, o0, o1, s.lo[a_], s.hi[a_]});
         }
       } else {
         continue;
@@ -331,6 +355,28 @@ class Wire
       cuts_.insert(o0);
       cuts_.insert(o1);
     }
+  }
+
+  // Whether a box of the net counts an overlap with this wire rather than
+  // this wire: the longer one, or the first of two as long.
+  bool dominates(const Shape& s) const
+  {
+    auto length = [](const Shape& b) {
+      return std::max(b.hi[0] - b.lo[0], b.hi[1] - b.lo[1]);
+    };
+    const double ls = length(s);
+    const double lw = length(shape_);
+    return ls > lw + kEps || (std::abs(ls - lw) <= kEps && &s < &shape_);
+  }
+
+  bool insideOther(const double x0, const double x1) const
+  {
+    for (const auto& [o0, o1] : inside_) {
+      if (o0 <= x0 + kEps && o1 >= x1 - kEps) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // The nearest neighbor on a side over a piece.
@@ -380,6 +426,26 @@ class Wire
           full.layer = layers_.names[l];
           full.share = full.cross = 1;
           full.nets[r.net] = 1;
+          full.reach0 = r.e0;
+          full.reach1 = r.e1;
+          for (bool grew = true; grew;) {
+            grew = false;
+            for (const Run& q : it->second) {
+              if (q.e0 <= full.reach1 + kEps && q.e1 >= full.reach0 - kEps
+                  && (q.e0 < full.reach0 - kEps || q.e1 > full.reach1 + kEps)) {
+                full.reach0 = std::min(full.reach0, q.e0);
+                full.reach1 = std::max(full.reach1, q.e1);
+                grew = true;
+              }
+            }
+          }
+          if (best.share > 0) {
+            best.rest = full.layer;
+            best.rest_nets = full.nets;
+            best.rest_reach0 = full.reach0;
+            best.rest_reach1 = full.reach1;
+            return best;
+          }
           return full;
         }
       }
@@ -397,31 +463,38 @@ class Wire
     return best;
   }
 
-  // The weighted cover states of a piece: ("", 1 - share) and (layer,
-  // share) on each side, the layer resolved onto the model's tabulated
-  // covers. f gets the state's key, its weight, and whether each side is
-  // covered in it.
+  // The weighted cover states of a piece: (rest, 1 - share) and (layer,
+  // share) on each side, where rest is open unless a farther layer covers
+  // the piece behind crossings; the layers resolved onto the model's
+  // tabulated covers. f gets the state's key, its weight, and whether each
+  // side is covered by the nearer layer in it.
   template <class F>
   void forStates(const Cover& below, const Cover& above, F&& f) const
   {
     const std::vector<CoverMap::Part> none{{"", 1}};
+    auto parts = [&](const std::string& layer) {
+      return layer.empty() ? none : map_.resolve(stack_.layer(layer));
+    };
     const std::vector<CoverMap::Part> covered_below
-        = below.share > 0 ? map_.resolve(stack_.layer(below.layer)) : none;
+        = below.share > 0 ? parts(below.layer) : none;
     const std::vector<CoverMap::Part> covered_above
-        = above.share > 0 ? map_.resolve(stack_.layer(above.layer)) : none;
+        = above.share > 0 ? parts(above.layer) : none;
+    const std::vector<CoverMap::Part> rest_below = parts(below.rest);
+    const std::vector<CoverMap::Part> rest_above = parts(above.rest);
     for (const bool b : {false, true}) {
       const double wb = b ? below.share : 1 - below.share;
       if (wb == 0) {
         continue;
       }
-      const std::vector<CoverMap::Part>& parts_below = b ? covered_below : none;
+      const std::vector<CoverMap::Part>& parts_below
+          = b ? covered_below : rest_below;
       for (const bool t : {false, true}) {
         const double wt = t ? above.share : 1 - above.share;
         if (wt == 0) {
           continue;
         }
         const std::vector<CoverMap::Part>& parts_above
-            = t ? covered_above : none;
+            = t ? covered_above : rest_above;
         for (const CoverMap::Part& pb : parts_below) {
           for (const CoverMap::Part& pt : parts_above) {
             LateralKey key{name_, pb.key, pt.key};
@@ -451,6 +524,8 @@ class Wire
     double cr = 0;
     double plane_below = 0;  // the plane's coupling in the covered state
     double plane_above = 0;
+    double rest_below = 0;  // to the farther cover in the other state
+    double rest_above = 0;
     // The plane couplings are per covered state, so they divide out the
     // share of that side.
     forStates(
@@ -462,16 +537,36 @@ class Wire
           total += weight * cap.total();
           cl += weight * cap.left;
           cr += weight * cap.right;
-          if (b && !key.below.empty()) {
-            plane_below += weight / below.share * cap.below;
+          if (!key.below.empty()) {
+            if (b) {
+              plane_below += weight / below.share * cap.below;
+            } else {
+              rest_below += weight * cap.below;
+            }
           }
-          if (t && !key.above.empty()) {
-            plane_above += weight / above.share * cap.above;
+          if (!key.above.empty()) {
+            if (t) {
+              plane_above += weight / above.share * cap.above;
+            } else {
+              rest_above += weight * cap.above;
+            }
           }
         });
     const double to_below = below.cross * plane_below;
     const double to_above = above.cross * plane_above;
-    out.ground += len * (total - cl - cr - to_below - to_above);
+    out.ground
+        += len
+           * (total - cl - cr - to_below - to_above - rest_below - rest_above);
+    for (const auto& [net, share] : below.rest_nets) {
+      if (net != target) {
+        out.couplings[net] += len * rest_below * share;
+      }
+    }
+    for (const auto& [net, share] : above.rest_nets) {
+      if (net != target) {
+        out.couplings[net] += len * rest_above * share;
+      }
+    }
     addDiagonals(x0, x1, sl, sr, target, cl, cr, out);
     if (l != nullptr && l->net != target) {
       out.couplings[l->net] += len * cl;
@@ -569,15 +664,194 @@ class Wire
         return;
       }
     }
+    // The end's last width along the wire.
+    const double e0 = x == a0_ ? a0_ : a1_ - std::min(w_, a1_ - a0_);
+    const double e1 = x == a0_ ? a0_ + std::min(w_, a1_ - a0_) : a1_;
+    // A shape of the net flush against a side there makes the end the
+    // outer corner of a bend: its face continues that shape's side wall.
+    for (const Shape& s : shapes_) {
+      if (&s == &shape_ || s.net != target || s.layer != shape_.layer) {
+        continue;
+      }
+      const bool flush
+          = std::abs(s.hi[p_] - p0_) < 1e-6 || std::abs(s.lo[p_] - p1_) < 1e-6;
+      if (flush && std::min(e1, s.hi[a_]) - std::max(e0, s.lo[a_]) > kEps) {
+        out.corners++;
+        return;
+      }
+    }
     out.ends++;
+    // Reached by the net's own shape on another layer or a via.
+    for (const Shape& s : shapes_) {
+      if (s.net != target || s.layer == shape_.layer) {
+        continue;
+      }
+      if (std::min(p1_, s.hi[p_]) - std::max(p0_, s.lo[p_]) > kEps
+          && std::min(e1, s.hi[a_]) - std::max(e0, s.lo[a_]) > kEps) {
+        out.via_ends++;
+        break;
+      }
+    }
+    // The nearest shape on the layer beyond the end face, over the part of
+    // the face it overlaps; the end table's facing wire is as wide.
+    const Shape* facing = nullptr;
+    double gap = 0;
+    for (const Shape& s : shapes_) {
+      if (&s == &shape_ || s.layer != shape_.layer
+          || std::min(p1_, s.hi[p_]) - std::max(p0_, s.lo[p_]) <= kEps) {
+        continue;
+      }
+      const double g = x == a0_ ? a0_ - s.hi[a_] : s.lo[a_] - a1_;
+      if (g > kEps && (facing == nullptr || g < gap)) {
+        facing = &s;
+        gap = g;
+      }
+    }
+    const double faced = facing == nullptr
+                             ? 0
+                             : std::min(1.0,
+                                        (std::min(p1_, facing->hi[p_])
+                                         - std::max(p0_, facing->lo[p_]))
+                                            / w_);
+    // The neighbor on each side at the end, by how far it runs past the
+    // end against its spacing: the tables' neighbors run on.
+    const double d = std::min(1e-3, (a1_ - a0_) / 2);
+    const double t0 = x == a0_ ? a0_ : a1_ - d;
+    const Lateral* l = nearest(left_, t0, t0 + d);
+    const Lateral* r = nearest(right_, t0, t0 + d);
+    auto runs_on = [&](const Lateral* n) {
+      if (n == nullptr) {
+        return 0.0;
+      }
+      const double past = x == a0_ ? x - n->e0 : n->e1 - x;
+      return n->gap <= 0 ? 1.0 : std::clamp(past / n->gap, 0.0, 1.0);
+    };
+    const double on_left = runs_on(l);
+    const double on_right = runs_on(r);
+    // The end blended over its neighbors' and facing wire's presence.
+    auto blend = [&](const LateralKey& key) {
+      EndCap c;
+      for (const bool hl : {false, true}) {
+        for (const bool hr : {false, true}) {
+          for (const bool hf : {false, true}) {
+            const double weight = (hl ? on_left : 1 - on_left)
+                                  * (hr ? on_right : 1 - on_right)
+                                  * (hf ? faced : 1 - faced);
+            if (weight == 0) {
+              continue;
+            }
+            const EndCap e = model_.end(
+                key, w_, hl ? l->gap : -1, hr ? r->gap : -1, hf ? gap : -1);
+            c.total += weight * e.total;
+            c.below += weight * e.below;
+            c.above += weight * e.above;
+            c.left += weight * e.left;
+            c.right += weight * e.right;
+            c.facing += weight * e.facing;
+          }
+        }
+      }
+      return c;
+    };
+    // The parts to the planes go to the nets covering the end as the
+    // pieces' plane couplings do (per covered state, scaled by the cover's
+    // kept coupling), nothing to the net's own.
+    double total = 0;
+    double to_facing = 0;
+    double to_left = 0;
+    double to_right = 0;
+    double plane_below = 0;
+    double plane_above = 0;
+    double rest_below = 0;
+    double rest_above = 0;
     forStates(
-        below, above, [&](LateralKey& key, const double weight, bool, bool) {
+        below,
+        above,
+        [&](LateralKey& key, const double weight, const bool b, const bool t) {
           fallback(model_, key);
           if (model_.end(key) == nullptr) {
             key = {name_, "", ""};
           }
-          out.ground += weight * model_.endExcess(key, w_);
+          const EndCap c = blend(key);
+          total += weight * c.total;
+          to_facing += weight * c.facing;
+          to_left += weight * c.left;
+          to_right += weight * c.right;
+          if (!key.below.empty()) {
+            if (b) {
+              plane_below += weight / below.share * c.below;
+            } else {
+              rest_below += weight * c.below;
+            }
+          }
+          if (!key.above.empty()) {
+            if (t) {
+              plane_above += weight / above.share * c.above;
+            } else {
+              rest_above += weight * c.above;
+            }
+          }
         });
+    if (l != nullptr && l->net != target) {
+      out.couplings[l->net] += to_left;
+    }
+    if (r != nullptr && r->net != target) {
+      out.couplings[r->net] += to_right;
+    }
+    if (to_facing > 0) {
+      out.facing_ends++;
+      if (facing->net != target) {
+        out.couplings[facing->net] += to_facing;
+      }
+    }
+    // The tables' planes run on past the end. A cover stopping short of
+    // that takes a part as far as it reaches past the end face, against
+    // its distance from the wire; the rest is ground.
+    auto reach = [&](const std::string& layer,
+                     const double reach0,
+                     const double reach1,
+                     const bool is_below) {
+      if (layer.empty()) {
+        return 0.0;
+      }
+      const double past = x == a0_ ? x - reach0 : reach1 - x;
+      const fsv::Stack::Conductor& c = stack_.conductor(stack_.layer(layer));
+      const fsv::Stack::Conductor& m
+          = stack_.conductor(layers_.layers[shape_.layer]);
+      const double gap = is_below ? m.bottom - c.top : c.bottom - m.top;
+      return gap <= 0 ? 1.0 : std::clamp(past / gap, 0.0, 1.0);
+    };
+    const double to_below
+        = below.cross * plane_below
+          * reach(below.layer, below.reach0, below.reach1, true);
+    const double to_above
+        = above.cross * plane_above
+          * reach(above.layer, above.reach0, above.reach1, false);
+    rest_below *= reach(below.rest, below.rest_reach0, below.rest_reach1, true);
+    rest_above
+        *= reach(above.rest, above.rest_reach0, above.rest_reach1, false);
+    out.ground += total - to_facing - to_left - to_right - to_below - to_above
+                  - rest_below - rest_above;
+    for (const auto& [net, share] : below.rest_nets) {
+      if (net != target) {
+        out.couplings[net] += rest_below * share;
+      }
+    }
+    for (const auto& [net, share] : above.rest_nets) {
+      if (net != target) {
+        out.couplings[net] += rest_above * share;
+      }
+    }
+    for (const auto& [net, share] : below.nets) {
+      if (net != target) {
+        out.couplings[net] += to_below * share;
+      }
+    }
+    for (const auto& [net, share] : above.nets) {
+      if (net != target) {
+        out.couplings[net] += to_above * share;
+      }
+    }
   }
 
   const Shape& shape_;
@@ -598,6 +872,8 @@ class Wire
   std::vector<Lateral> left_;
   std::vector<Lateral> right_;
   std::map<int, std::vector<Run>> runs_;  // covers by layer
+  // Spans along the wire that a longer box of the net counts.
+  std::vector<std::pair<double, double>> inside_;
   std::set<double> cuts_;
 };
 
@@ -613,6 +889,45 @@ NetEstimate estimate(const fsv::Geometry& geometry,
   NetEstimate out;
   const std::vector<Shape> shapes
       = shapesOf(geometry, stack, layers, target, out);
+  // The junctions: wires (at least twice as long as wide) of the net on one
+  // layer crossing each other.
+  auto axis = [](const Shape& s) {
+    return s.hi[0] - s.lo[0] >= s.hi[1] - s.lo[1] ? 0 : 1;
+  };
+  auto wire = [&](const Shape& s) {
+    const int a = axis(s);
+    return s.hi[a] - s.lo[a] >= 2 * (s.hi[1 - a] - s.lo[1 - a]);
+  };
+  for (size_t i = 0; i < shapes.size(); i++) {
+    const Shape& x = shapes[i];
+    if (x.net != target || x.layer < 0 || !wire(x)) {
+      continue;
+    }
+    for (size_t j = i + 1; j < shapes.size(); j++) {
+      const Shape& y = shapes[j];
+      if (y.net != target || y.layer != x.layer || !wire(y)
+          || axis(x) == axis(y)) {
+        continue;
+      }
+      double o0[2];
+      double o1[2];
+      bool overlap = true;
+      for (int d = 0; d < 2; d++) {
+        o0[d] = std::max(x.lo[d], y.lo[d]);
+        o1[d] = std::min(x.hi[d], y.hi[d]);
+        overlap = overlap && o1[d] - o0[d] > kEps;
+      }
+      if (!overlap) {
+        continue;
+      }
+      auto atEnd = [&](const Shape& s) {
+        const int a = axis(s);
+        return o0[a] <= s.lo[a] + kEps || o1[a] >= s.hi[a] - kEps;
+      };
+      const int ends = atEnd(x) + atEnd(y);
+      (ends == 2 ? out.bends : ends == 1 ? out.tees : out.crosses)++;
+    }
+  }
   // One cover map per layer the net has wires on.
   std::map<int, CoverMap> maps;
   for (const Shape& shape : shapes) {

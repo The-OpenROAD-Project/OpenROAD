@@ -68,6 +68,8 @@ BuildOptions smallBuild(const int threads)
   o.tol = 0.02;
   o.threads = threads;
   o.extent = 3;
+  o.end_spacing_factors = {};  // the end test builds them
+  o.facing_factors = {};
   return o;
 }
 
@@ -166,14 +168,40 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met2"), o, model),
                std::invalid_argument);
 
+  o.end_spacing_factors = {1};
+  o.facing_factors = {1, 4};
   buildEnds(sky130(), L("met2"), o, model);
   EXPECT_EQ(model.ends().size(), 2u);
   const EndTable* e = model.end({"met2", "met1", ""});
   ASSERT_NE(e, nullptr);
-  ASSERT_EQ(e->excess().size(), 1u);
-  // One end of a minimum-width wire adds a few hundredths of a fF.
-  EXPECT_GT(e->excess()[0], 0.01);
-  EXPECT_LT(e->excess()[0], 0.1);
+  ASSERT_EQ(e->values().size(), 1u * 2 * 3);
+  EXPECT_DOUBLE_EQ(e->spacings()[0], 0.14);
+  EXPECT_DOUBLE_EQ(e->gaps()[1], 0.56);
+  // A free end of a minimum-width wire adds a few hundredths of a fF,
+  // part of it to the plane below, none above.
+  const EndValue& free = e->at(0, 1, 2);
+  EXPECT_GT(free.total, 0.01);
+  EXPECT_LT(free.total, 0.1);
+  EXPECT_GT(free.below, 0);
+  EXPECT_LT(free.below, free.total);
+  EXPECT_EQ(free.above, 0);
+  EXPECT_EQ(free.lateral, 0);
+  EXPECT_EQ(free.facing, 0);
+  // Neighbors running past the end take part of it.
+  EXPECT_GT(e->at(0, 0, 2).lateral, 0);
+  EXPECT_LT(e->at(0, 0, 2).lateral, e->at(0, 0, 2).total);
+  // A facing wire takes more across a narrower gap, and less with
+  // neighbors beside the end.
+  EXPECT_GT(e->at(0, 1, 0).facing, e->at(0, 1, 1).facing);
+  EXPECT_GT(e->at(0, 1, 1).facing, 0);
+  EXPECT_LT(e->at(0, 1, 0).facing, e->at(0, 1, 0).total);
+  EXPECT_GT(e->at(0, 1, 0).total, free.total);
+  EXPECT_LT(e->at(0, 0, 0).facing, e->at(0, 1, 0).facing);
+  // Built tables stay; one on another grid is refused.
+  buildEnds(sky130(), L("met2"), o, model);
+  EXPECT_EQ(model.end({"met2", "met1", ""}), e);
+  o.facing_factors = {1};
+  EXPECT_THROW(buildEnds(sky130(), L("met2"), o, model), std::invalid_argument);
 }
 
 TEST(ModelBuilder, DiagonalTable)

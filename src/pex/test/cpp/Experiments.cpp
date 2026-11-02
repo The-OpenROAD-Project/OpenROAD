@@ -24,6 +24,10 @@
 //   tabulate against the tabulated covers it resolves to.
 // - e13 probed covers: the covers chosen from probes, checked at widths
 //   and spacings the probes did not use.
+// - e14 attribution: e9's nets in nested windows (alone, own layers, next
+//   layers, everything) to find the interaction behind the error.
+// - e15 junctions: bends, T, layer changes, landing pads and facing ends
+//   against the reference evaluator.
 // - model, only when named: build the model for --layers (or every
 //   conductor off the ground plane) into --model, timing each layer.
 //
@@ -31,11 +35,13 @@
 //   bazelisk run //src/pex/test:Experiments -- [--groups e1,e2,...]
 //       [--itf FILE] [--layer NAME] [--threads N] [--tol X] [--csv FILE]
 //       [--smoke]
-// and for e9 the design and the model, built and saved when the file does
-// not exist:
+// and for e9 and e14 the design and the model, built and saved when the
+// file does not exist:
 //       [--lef FILE]... [--def FILE | --odb FILE] [--model FILE]
 //       [--nets a,b,... | --sample N] [--halo UM] [--margin UM]
 //       [--cover_tol X | --depth N] [--model_tol X]
+// and for e14, to skip the solves, the truth of an earlier e14 --csv:
+//       [--truth FILE]
 // and for e12 and e13 the layers that may cover (default: every
 // conductor), and for e13 the cover tolerance:
 //       [--layers a,b,...] [--cover_tol X]
@@ -50,8 +56,10 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -91,12 +99,16 @@ struct Options
                                   "e9",
                                   "e11",
                                   "e12",
-                                  "e13"};
+                                  "e13",
+                                  "e14",
+                                  "e15"};
   std::string itf = "src/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
   double tol = 0.003;
   std::string csv;
+  std::string truth;  // e14: truth rows from an earlier --csv
+  pex::ReferenceOptions reference;
   double extent = 10;
   bool smoke = false;
   // e9
@@ -156,6 +168,8 @@ Options parse(const int argc, char** argv)
       o.tol = std::stod(value());
     } else if (arg == "--csv") {
       o.csv = value();
+    } else if (arg == "--truth") {
+      o.truth = value();
     } else if (arg == "--extent") {
       o.extent = std::stod(value());
     } else if (arg == "--smoke") {
@@ -1250,6 +1264,8 @@ pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
     b.far_cover_factors = {};
     b.cover_tolerance = 0;
     b.end_length = 1;
+    b.end_spacing_factors = {1};
+    b.facing_factors = {1};
     b.diagonal_width_factors = {1};
     b.diagonal_gap_factors = {0, 2};
     b.diagonal_spacing_factors = {1};
@@ -1272,8 +1288,10 @@ pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
         throw std::runtime_error(
             o.model + " was built from " + source.file + " ("
             + source.technology
-            + ") with other settings, or the stack has changed since; "
-              "delete it or name another file");
+            + ") with other settings, or the stack has changed since "
+              "(fingerprint "
+            + source.fingerprint + ", these settings "
+            + expected.fingerprint + "); delete it or name another file");
       }
       std::printf("# reading the model from %s\n", o.model.c_str());
     }
@@ -1548,50 +1566,180 @@ void modelOnly(Lab& lab)
       model.diagonals().size());
 }
 
+// The nets e9 and e14 look at: --nets, or --sample routed nets evenly
+// spaced through the block.
+std::vector<odb::dbNet*> targetNets(const Options& o, odb::dbBlock* block)
+{
+  std::vector<odb::dbNet*> targets;
+  if (!o.nets.empty()) {
+    for (const std::string& name : o.nets) {
+      odb::dbNet* net = block->findNet(name.c_str());
+      if (net == nullptr) {
+        throw std::invalid_argument("net " + name + " is not in the design");
+      }
+      targets.push_back(net);
+    }
+    return targets;
+  }
+  std::vector<odb::dbNet*> routed;
+  for (odb::dbNet* net : block->getNets()) {
+    if (!net->isSpecial() && net->getWire() != nullptr) {
+      routed.push_back(net);
+    }
+  }
+  const int want = o.smoke ? 1 : o.sample;
+  const int step = std::max<int>(1, routed.size() / std::max(1, want));
+  for (size_t i = 0;
+       i < routed.size() && static_cast<int>(targets.size()) < want;
+       i += step) {
+    targets.push_back(routed[i]);
+  }
+  return targets;
+}
+
+fsv::NetWindow netWindow(const Lab& lab, odb::dbBlock* block, odb::dbNet* net)
+{
+  const Options& o = lab.options();
+  const fsv::LayerExtent extent = [&](const std::string_view layer) {
+    const fsv::Stack::ZExtent z
+        = pex::layerExtent(lab.stack(), lab.layer(std::string(layer)));
+    return std::make_pair(z.bottom, z.top);
+  };
+  return fsv::readNetWindow(block, {net}, extent, {o.halo, o.margin});
+}
+
+// A net of a geometry solved and estimated: rows for the total, the ground
+// (the plane and the grounded obstructions), the sum of the couplings to
+// other nets, and, when `couplings`, every coupling above 1% of the total.
+void compareNet(Lab& lab,
+                const std::string& experiment,
+                const std::string& name,
+                const fsv::Geometry& g,
+                const pex::NetIndex target,
+                const pex::Model& model,
+                const bool couplings)
+{
+  const Options& o = lab.options();
+  const pex::NetEstimate est
+      = pex::estimate(g, lab.stack(), model, target, o.reference);
+  if (!couplings && !o.truth.empty()) {
+    // The truth from an earlier run: (case, quantity) -> (truth, sigma).
+    static const std::map<std::pair<std::string, std::string>,
+                          std::pair<double, double>>
+        earlier = [&] {
+          std::map<std::pair<std::string, std::string>,
+                   std::pair<double, double>>
+              rows;
+          std::ifstream in(o.truth);
+          if (!in) {
+            throw std::invalid_argument("cannot read " + o.truth);
+          }
+          std::string line;
+          std::getline(in, line);
+          while (std::getline(in, line)) {
+            std::vector<std::string> f;
+            std::stringstream ss(line);
+            std::string cell;
+            while (std::getline(ss, cell, ',')) {
+              f.push_back(cell);
+            }
+            if (f.size() >= 7) {
+              rows[{f[3], f[4]}] = {std::stod(f[5]), std::stod(f[6])};
+            }
+          }
+          return rows;
+        }();
+    double grounded = est.ground;
+    double est_coupled = 0;
+    for (const auto& [n, e] : est.couplings) {
+      (g.grounded(n) ? grounded : est_coupled) += e;
+    }
+    const std::pair<std::string, double> quantities[] = {
+        {"total", est.total()}, {"ground", grounded}, {"coupled", est_coupled}};
+    for (const auto& [quantity, value] : quantities) {
+      const auto it = earlier.find({name, quantity});
+      if (it == earlier.end()) {
+        throw std::invalid_argument(name + " " + quantity + " is not in "
+                                    + o.truth);
+      }
+      lab.row(experiment,
+              name,
+              quantity,
+              it->second.first,
+              it->second.second,
+              value);
+    }
+    std::printf(
+        "#   %s: %d wires, %d pieces, %d ends (%d via), %d vias; %d corners, "
+        "%d bends, %d tees, %d crosses\n",
+        name.c_str(),
+        est.wires,
+        est.pieces,
+        est.ends,
+        est.via_ends,
+        est.vias,
+        est.corners,
+        est.bends,
+        est.tees,
+        est.crosses);
+    return;
+  }
+  const fsv::CapRow row = lab.solve(g, target, o.tol);
+  lab.row(
+      experiment, name, "total", row.total(), row.sigma[target], est.total());
+  double grounded = est.ground;
+  double est_coupled = 0;
+  double coupled = 0;
+  for (pex::NetIndex n = 0; n < g.netCount(); n++) {
+    if (n == target) {
+      continue;
+    }
+    const auto it = est.couplings.find(n);
+    const double e = it == est.couplings.end() ? 0 : it->second;
+    if (g.grounded(n)) {
+      grounded += e;
+      continue;
+    }
+    coupled += row.coupling(n);
+    est_coupled += e;
+    if (couplings && row.coupling(n) > 0.01 * row.total()) {
+      lab.row(experiment,
+              name,
+              "c:" + g.netName(n),
+              row.coupling(n),
+              row.sigma[n],
+              e);
+    }
+  }
+  lab.row(experiment, name, "ground", -row.ground, row.ground_sigma, grounded);
+  lab.row(experiment, name, "coupled", coupled, row.sigma[target], est_coupled);
+  std::printf(
+      "#   %s: %d wires, %d pieces, %d ends (%d via), %d vias; %d corners, %d "
+      "bends, %d tees, %d crosses; leakage %.3g\n",
+      name.c_str(),
+      est.wires,
+      est.pieces,
+      est.ends,
+      est.via_ends,
+      est.vias,
+      est.corners,
+      est.bends,
+      est.tees,
+      est.crosses,
+      row.window_leakage);
+}
+
 // e9: nets of a routed design, each solved within a halo, against the
-// model applied to the same boxes: the total, the ground (the plane and
-// the grounded obstructions), the sum of the couplings to other nets, and
-// every coupling above 1% of the total.
+// model applied to the same boxes.
 void nets(Lab& lab)
 {
   const Options& o = lab.options();
   utl::Logger logger;
   const Design design = readDesign(o, logger);
   const pex::Model model = netsModel(lab, design);
-  std::vector<odb::dbNet*> targets;
-  if (!o.nets.empty()) {
-    for (const std::string& name : o.nets) {
-      odb::dbNet* net = design.block->findNet(name.c_str());
-      if (net == nullptr) {
-        throw std::invalid_argument("net " + name + " is not in the design");
-      }
-      targets.push_back(net);
-    }
-  } else {
-    std::vector<odb::dbNet*> routed;
-    for (odb::dbNet* net : design.block->getNets()) {
-      if (!net->isSpecial() && net->getWire() != nullptr) {
-        routed.push_back(net);
-      }
-    }
-    const int want = o.smoke ? 1 : o.sample;
-    const int step = std::max<int>(1, routed.size() / std::max(1, want));
-    for (size_t i = 0;
-         i < routed.size() && static_cast<int>(targets.size()) < want;
-         i += step) {
-      targets.push_back(routed[i]);
-    }
-  }
-  const fsv::LayerExtent extent = [&](const std::string_view layer) {
-    const fsv::Stack::ZExtent z
-        = pex::layerExtent(lab.stack(), lab.layer(std::string(layer)));
-    return std::make_pair(z.bottom, z.top);
-  };
-  for (odb::dbNet* net : targets) {
-    const fsv::NetWindow window
-        = fsv::readNetWindow(design.block, {net}, extent, {o.halo, o.margin});
+  for (odb::dbNet* net : targetNets(o, design.block)) {
+    const fsv::NetWindow window = netWindow(lab, design.block, net);
     const fsv::Geometry& g = window.geometry;
-    const pex::NetIndex target = window.targets.front();
     if (o.dump) {
       for (int b = 0; b < static_cast<int>(g.boxes().size()); b++) {
         const fsv::Box& box = g.boxes()[b];
@@ -1605,39 +1753,308 @@ void nets(Lab& lab)
                     box.hi[1]);
       }
     }
-    const fsv::CapRow row = lab.solve(g, target, o.tol);
-    const pex::NetEstimate est = pex::estimate(g, lab.stack(), model, target);
-    const std::string name = net->getName();
-    lab.row("e9", name, "total", row.total(), row.sigma[target], est.total());
-    double grounded = est.ground;
-    double est_coupled = 0;
-    double coupled = 0;
-    for (pex::NetIndex n = 0; n < g.netCount(); n++) {
-      if (n == target) {
-        continue;
-      }
-      const auto it = est.couplings.find(n);
-      const double e = it == est.couplings.end() ? 0 : it->second;
-      if (g.grounded(n)) {
-        grounded += e;
-        continue;
-      }
-      coupled += row.coupling(n);
-      est_coupled += e;
-      if (row.coupling(n) > 0.01 * row.total()) {
-        lab.row(
-            "e9", name, "c:" + g.netName(n), row.coupling(n), row.sigma[n], e);
+    compareNet(
+        lab, "e9", net->getName(), g, window.targets.front(), model, true);
+  }
+}
+
+// The conductors ascending by bottom.
+std::vector<pex::Layer> conductorsByHeight(const Lab& lab)
+{
+  std::vector<pex::Layer> layers = lab.stack().conductorLayers();
+  std::stable_sort(layers.begin(),
+                   layers.end(),
+                   [&](const pex::Layer x, const pex::Layer y) {
+                     return pex::layerExtent(lab.stack(), x).bottom
+                            < pex::layerExtent(lab.stack(), y).bottom;
+                   });
+  return layers;
+}
+
+// The conductor a box lies on, by its z extent, as an index into
+// conductorsByHeight; -1 for a via.
+int conductorIndex(const Lab& lab, const fsv::Box& box)
+{
+  const std::vector<pex::Layer> layers = conductorsByHeight(lab);
+  for (int i = 0; i < static_cast<int>(layers.size()); i++) {
+    const fsv::Stack::ZExtent e = pex::layerExtent(lab.stack(), layers[i]);
+    if (std::abs(e.bottom - box.lo[2]) < 1e-6
+        && std::abs(e.top - box.hi[2]) < 1e-6) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// e14: where e9's error comes from. Each net is compared in nested windows:
+// the net alone, with the other shapes on its own layers, with the layers
+// next to those as well, and with everything (e9's window). The step whose
+// error jumps holds the interaction the model gets wrong.
+void attribution(Lab& lab)
+{
+  const Options& o = lab.options();
+  utl::Logger logger;
+  const Design design = readDesign(o, logger);
+  const pex::Model model = netsModel(lab, design);
+  for (odb::dbNet* net : targetNets(o, design.block)) {
+    const fsv::NetWindow window = netWindow(lab, design.block, net);
+    const fsv::Geometry& g = window.geometry;
+    const pex::NetIndex target = window.targets.front();
+    std::vector<int> layer(g.boxes().size());
+    std::set<int> own;
+    for (int b = 0; b < static_cast<int>(g.boxes().size()); b++) {
+      layer[b] = conductorIndex(lab, g.boxes()[b]);
+      if (g.boxNet(b) == target && layer[b] >= 0) {
+        own.insert(layer[b]);
       }
     }
-    lab.row("e9", name, "ground", -row.ground, row.ground_sigma, grounded);
-    lab.row("e9", name, "coupled", coupled, row.sigma[target], est_coupled);
-    std::printf("#   %s: %d wires, %d pieces, %d ends, %d vias; leakage %.3g\n",
-                name.c_str(),
-                est.wires,
-                est.pieces,
-                est.ends,
-                est.vias,
-                row.window_leakage);
+    // The shapes of other nets within `reach` layers of the net's own.
+    auto filtered = [&](const int reach) {
+      fsv::Geometry f;
+      std::vector<int> index(g.netCount(), -1);
+      auto netOf = [&](const int n) {
+        if (index[n] < 0) {
+          index[n] = f.addNet(g.netName(n));
+          if (g.grounded(n)) {
+            f.setGrounded(index[n]);
+          }
+        }
+        return index[n];
+      };
+      netOf(target);
+      for (int b = 0; b < static_cast<int>(g.boxes().size()); b++) {
+        const int n = g.boxNet(b);
+        bool keep = n == target;
+        if (!keep && layer[b] >= 0 && reach >= 0) {
+          for (const int l : own) {
+            keep = keep || std::abs(layer[b] - l) <= reach;
+          }
+        }
+        if (keep) {
+          f.addBox(netOf(n), g.boxes()[b]);
+        }
+      }
+      if (g.window()) {
+        f.setWindow(*g.window());
+      }
+      return f;
+    };
+    const std::string name = net->getName();
+    compareNet(lab, "e14", name + "/alone", filtered(-1), 0, model, false);
+    compareNet(lab, "e14", name + "/layer", filtered(0), 0, model, false);
+    compareNet(lab, "e14", name + "/next", filtered(1), 0, model, false);
+    compareNet(lab, "e14", name + "/all", g, target, model, false);
+  }
+}
+
+// The via between two conductors, or "" when the stack has none.
+std::string viaBetween(const Lab& lab,
+                       const std::string& lower,
+                       const std::string& upper)
+{
+  for (const fsv::Stack::Via& v : lab.stack().vias()) {
+    if (v.lower == lab.layer(lower) && v.upper == lab.layer(upper)) {
+      return v.name;
+    }
+  }
+  return "";
+}
+
+// e15: the pieces of a routed net that are not straight wires, each solved
+// and estimated by the reference evaluator: a bend with the boxes
+// overlapping at the corner and flush, a T, a change to the layer above
+// and below through a via, a landing pad between vias from the layer
+// below to the layer above, a wire of another net crossing from below and
+// from above, short boxes 1-8 widths long, and a line end facing another
+// net's wire. Each coupling is compared too. The
+// wire runs along x on --layer; branches go to +y. Open: nothing else.
+// Dense: a neighbor at minimum spacing on the -y side and a plane two
+// layers up. The model is for --layers (default: the layer and those next
+// to it).
+void junctions(Lab& lab)
+{
+  const Options& o = lab.options();
+  const std::string m = o.layer;
+  const std::string lower = lab.nearestBelow();
+  const std::string upper = lab.nearestAbove();
+  std::vector<std::string> layers = o.layers;
+  if (layers.empty()) {
+    for (const std::string& l : {lower, m, upper}) {
+      if (!l.empty() && lab.conductor(l).bottom > 0) {
+        layers.push_back(l);
+      }
+    }
+  }
+  const pex::Model model = buildModel(lab, layers);
+  const std::string far = lab.above().size() > 1 ? lab.above()[1] : "";
+  const std::string cut_up = upper.empty() ? "" : viaBetween(lab, m, upper);
+  const std::string cut_down = lower.empty() ? "" : viaBetween(lab, lower, m);
+  const double w = lab.wmin();
+  const double s = lab.smin();
+  const double length = 2;
+  auto side = [&](const std::string& other) {
+    return std::min(w, lab.conductor(other).min_width);
+  };
+  struct Case
+  {
+    std::string name;
+    std::function<void(pex::PatternBuilder&, pex::NetIndex)> add;
+  };
+  std::vector<Case> cases;
+  auto straight = [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+    b.add(lab.layer(m), n, 0, 0, length, w);
+  };
+  cases.push_back({"straight", straight});
+  cases.push_back({"bend", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+                     straight(b, n);
+                     b.add(lab.layer(m), n, length - w, 0, length, length);
+                   }});
+  cases.push_back(
+      {"bend_flush", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+         straight(b, n);
+         b.add(lab.layer(m), n, length - w, w, length, length);
+       }});
+  cases.push_back(
+      {"tee", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+         straight(b, n);
+         b.add(lab.layer(m), n, (length - w) / 2, 0, (length + w) / 2, length);
+       }});
+  if (!cut_up.empty()) {
+    cases.push_back(
+        {"via_up", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+           straight(b, n);
+           const double c = side(upper);
+           const double wu = lab.conductor(upper).min_width;
+           const double y = (w - c) / 2;
+           b.add(lab.layer(cut_up), n, length - c, y, length, y + c);
+           b.add(lab.layer(upper),
+                 n,
+                 length - (c + wu) / 2,
+                 -length / 2,
+                 length - (c - wu) / 2,
+                 length / 2);
+         }});
+  }
+  if (!cut_down.empty()) {
+    cases.push_back(
+        {"via_down", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+           straight(b, n);
+           const double c = side(lower);
+           const double wl = lab.conductor(lower).min_width;
+           const double y = (w - c) / 2;
+           b.add(lab.layer(cut_down), n, length - c, y, length, y + c);
+           b.add(lab.layer(lower),
+                 n,
+                 length - (c + wl) / 2,
+                 -length / 2,
+                 length - (c - wl) / 2,
+                 length / 2);
+         }});
+  }
+  if (!cut_up.empty() && !cut_down.empty()) {
+    cases.push_back(
+        {"pad", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+           // From the layer below along x through a pad on the layer to the
+           // layer above along y.
+           const double c = std::max(side(lower), side(upper));
+           const double wl = lab.conductor(lower).min_width;
+           const double wu = lab.conductor(upper).min_width;
+           const double x = length;
+           const double y = (w - c) / 2;
+           b.add(lab.layer(lower), n, 0, (w - wl) / 2, x + c, (w + wl) / 2);
+           b.add(lab.layer(cut_down), n, x, y, x + c, y + c);
+           b.add(
+               lab.layer(m), n, x - 0.06, y - 0.03, x + c + 0.06, y + c + 0.03);
+           b.add(lab.layer(cut_up), n, x, y, x + c, y + c);
+           b.add(lab.layer(upper),
+                 n,
+                 x + (c - wu) / 2,
+                 -length / 2,
+                 x + (c + wu) / 2,
+                 length / 2);
+         }});
+  }
+  // A wire of another net crossing the middle, from below and from above.
+  for (const std::string& other : {lower, upper}) {
+    if (other.empty()) {
+      continue;
+    }
+    cases.push_back({"crossed_" + other,
+                     [&, other](pex::PatternBuilder& b, const pex::NetIndex n) {
+                       straight(b, n);
+                       const double wc = lab.conductor(other).min_width;
+                       b.add(lab.layer(other),
+                             b.net("crossing"),
+                             (length - wc) / 2,
+                             -length,
+                             (length + wc) / 2,
+                             length);
+                     }});
+  }
+  // Short boxes at twice the minimum width, as a landing pad is.
+  for (const double l : {1.0, 2.0, 4.0, 8.0}) {
+    cases.push_back({"short_" + fmt(l) + "w",
+                     [&, l](pex::PatternBuilder& b, const pex::NetIndex n) {
+                       b.add(lab.layer(m), n, 0, 0, l * w, 2 * w);
+                     }});
+  }
+  for (const double f : {1.0, 2.0, 4.0}) {
+    cases.push_back({"facing_" + fmt(f) + "s",
+                     [&, f](pex::PatternBuilder& b, const pex::NetIndex n) {
+                       straight(b, n);
+                       b.add(lab.layer(m),
+                             b.net("facing"),
+                             length + f * s,
+                             0,
+                             2 * length + f * s,
+                             w);
+                     }});
+  }
+  for (const std::string context : {"open", "dense"}) {
+    for (const Case& c : trim(cases, o.smoke)) {
+      pex::PatternBuilder b(lab.stack());
+      const pex::NetIndex n = b.net("wire");
+      c.add(b, n);
+      if (context == "dense") {
+        b.add(lab.layer(m), b.net("neighbor"), -2, -s - w, 2 * length + 2, -s);
+        if (!far.empty()) {
+          b.add(lab.layer(far),
+                b.net("plane"),
+                -2 - length,
+                -2 - length,
+                2 * length + 4,
+                length + 2);
+        }
+      }
+      const fsv::CapRow row = lab.solve(b.geometry(), n, o.tol);
+      const pex::NetEstimate est
+          = pex::estimate(b.geometry(), lab.stack(), model, n, o.reference);
+      const std::string name = c.name + " " + context;
+      lab.row("e15", name, "total", row.total(), row.sigma[n], est.total());
+      for (pex::NetIndex k = 0; k < b.geometry().netCount(); k++) {
+        if (k != n) {
+          const auto it = est.couplings.find(k);
+          lab.row("e15",
+                  name,
+                  "c:" + b.geometry().netName(k),
+                  row.coupling(k),
+                  row.sigma[k],
+                  it == est.couplings.end() ? 0 : it->second);
+        }
+      }
+      std::printf(
+          "#   %s: model - truth %+.4f fF; %d pieces, %d ends (%d via), "
+          "%d corners; %d bends, %d tees, %d crosses\n",
+          name.c_str(),
+          est.total() - row.total(),
+          est.pieces,
+          est.ends,
+          est.via_ends,
+          est.corners,
+          est.bends,
+          est.tees,
+          est.crosses);
+    }
   }
 }
 
@@ -1778,6 +2195,12 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e13")) {
       probedCovers(lab);
+    }
+    if (wanted(o, "e14")) {
+      attribution(lab);
+    }
+    if (wanted(o, "e15")) {
+      junctions(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);

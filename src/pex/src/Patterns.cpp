@@ -170,13 +170,33 @@ EndPattern::Wire EndPattern::build(const fsv::Stack& stack) const
   Wire w;
   w.wire = builder.net("wire");
   builder.add(layer, w.wire, -width / 2, 0, width / 2, length);
+  double y0 = 0;
+  double y1 = length;
+  if (facing_gap >= 0) {
+    w.facing = builder.net("facing");
+    y0 = -facing_gap - length;
+    y1 = 2 * length + facing_gap;
+    builder.add(layer, w.facing, -width / 2, y0, width / 2, -facing_gap);
+    builder.add(
+        layer, w.facing, -width / 2, length + facing_gap, width / 2, y1);
+  }
+  if (neighbor_spacing >= 0) {
+    const double nw = stack.conductor(layer).min_width;
+    if (nw <= 0) {
+      throw std::invalid_argument("the neighbors need a positive width");
+    }
+    w.neighbors = builder.net("neighbors");
+    const double x = width / 2 + neighbor_spacing;
+    builder.add(layer, w.neighbors, -x - nw, y0 - margin, -x, y1 + margin);
+    builder.add(layer, w.neighbors, x, y0 - margin, x + nw, y1 + margin);
+  }
   if (below.valid()) {
     w.below = builder.net("below");
-    builder.add(below, w.below, -extent, -margin, extent, length + margin);
+    builder.add(below, w.below, -extent, y0 - margin, extent, y1 + margin);
   }
   if (above.valid()) {
     w.above = builder.net("above");
-    builder.add(above, w.above, -extent, -margin, extent, length + margin);
+    builder.add(above, w.above, -extent, y0 - margin, extent, y1 + margin);
   }
   w.geometry = std::move(builder.geometry());
   return w;

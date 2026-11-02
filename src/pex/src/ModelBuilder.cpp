@@ -280,6 +280,8 @@ std::string buildFingerprint(const fsv::Stack& stack,
   list("dg", options.diagonal_gap_factors);
   list("ds", options.diagonal_spacing_factors);
   list("df", options.diagonal_far_spacing_factors);
+  list("es", options.end_spacing_factors);
+  list("ff", options.facing_factors);
   // Only the cover settings in use: the tolerance, or the depths and far
   // factors.
   if (options.cover_tolerance > 0) {
@@ -755,12 +757,25 @@ void buildEnds(const fsv::Stack& stack,
   for (const double f : options.width_factors) {
     widths.push_back(f * conductor.min_width);
   }
+  std::vector<double> spacings;
+  for (const double f : options.end_spacing_factors) {
+    spacings.push_back(f * conductor.min_spacing);
+  }
+  std::vector<double> gaps;
+  for (const double f : options.facing_factors) {
+    gaps.push_back(f * conductor.min_spacing);
+  }
+  const int ns = static_cast<int>(spacings.size()) + 1;
+  const int ng = static_cast<int>(gaps.size()) + 1;
+  // One job per context, width and spacing (and none): the per-length
+  // reference, then the end at each gap (and none).
   struct Job
   {
     Layer below;
     Layer above;
     int width;
-    double excess = 0;
+    int spacing;
+    std::vector<EndValue> values;  // by gap
   };
   std::vector<Job> jobs;
   std::vector<LateralKey> keys;
@@ -769,29 +784,34 @@ void buildEnds(const fsv::Stack& stack,
       const LateralKey key{
           conductor.name, keyName(stack, below), keyName(stack, above)};
       if (const EndTable* built = model.end(key)) {
-        requireGrid("end table of " + key.layer, built->widths(), widths);
+        const std::string what = "end table of " + key.layer;
+        requireGrid(what, built->widths(), widths);
+        requireGrid(what, built->spacings(), spacings);
+        requireGrid(what, built->gaps(), gaps);
         continue;
       }
       keys.push_back(key);
       for (int w = 0; w < static_cast<int>(widths.size()); w++) {
-        jobs.push_back({below, above, w});
+        for (int si = 0; si < ns; si++) {
+          jobs.push_back({below, above, w, si, {}});
+        }
       }
     }
   }
   runJobs(options, jobs.size(), [&](const int i, fsv::Solver& solver) {
     Job& job = jobs[i];
     const double w = widths[job.width];
-    const double per_length = solveSection(stack,
-                                           layer,
-                                           w,
-                                           -1,
-                                           -1,
-                                           job.below,
-                                           job.above,
-                                           options,
-                                           solver,
-                                           options.tol / 3)
-                                  .total();
+    const double s = job.spacing < ns - 1 ? spacings[job.spacing] : -1;
+    const LateralCap unit = solveSection(stack,
+                                         layer,
+                                         w,
+                                         s,
+                                         s,
+                                         job.below,
+                                         job.above,
+                                         options,
+                                         solver,
+                                         options.tol / 3);
     EndPattern pattern;
     pattern.layer = layer;
     pattern.width = w;
@@ -800,18 +820,40 @@ void buildEnds(const fsv::Stack& stack,
     pattern.above = job.above;
     pattern.extent = options.extent;
     pattern.margin = options.extent;
-    const EndPattern::Wire wire = pattern.build(stack);
-    const fsv::Scene scene(wire.geometry, stack);
-    const fsv::CapRow row
-        = solver.solve(scene, wire.wire, solveOptions(options.tol));
-    job.excess = (row.total() - per_length * pattern.length) / 2;
-  });
-  for (size_t k = 0; k < keys.size(); k++) {
-    std::vector<double> excess;
-    for (size_t w = 0; w < widths.size(); w++) {
-      excess.push_back(jobs[k * widths.size() + w].excess);
+    pattern.neighbor_spacing = s;
+    for (int gi = 0; gi < ng; gi++) {
+      pattern.facing_gap = gi < ng - 1 ? gaps[gi] : -1;
+      const EndPattern::Wire wire = pattern.build(stack);
+      const fsv::Scene scene(wire.geometry, stack);
+      const fsv::CapRow row
+          = solver.solve(scene, wire.wire, solveOptions(options.tol));
+      // The pattern has two like ends: half of what it holds beyond the
+      // per-length reference.
+      auto excess = [&](const double cap, const double per_length) {
+        return (cap - per_length * pattern.length) / 2;
+      };
+      auto coupling = [&](const NetIndex net) {
+        return net == kNullNetIndex ? 0.0 : row.coupling(net);
+      };
+      EndValue v;
+      v.total = excess(row.total(), unit.total());
+      v.below = excess(coupling(wire.below), unit.below);
+      v.above = excess(coupling(wire.above), unit.above);
+      v.lateral = excess(coupling(wire.neighbors), unit.left + unit.right);
+      v.facing = coupling(wire.facing) / 2;
+      job.values.push_back(v);
     }
-    model.addEnd(keys[k], EndTable(widths, excess));
+  });
+  const size_t per_key = widths.size() * ns;
+  for (size_t k = 0; k < keys.size(); k++) {
+    EndTable table(widths, spacings, gaps);
+    for (size_t j = 0; j < per_key; j++) {
+      const Job& job = jobs[(k * per_key) + j];
+      for (int gi = 0; gi < ng; gi++) {
+        table.set(job.width, job.spacing, gi, job.values[gi]);
+      }
+    }
+    model.addEnd(keys[k], std::move(table));
   }
 }
 

@@ -45,7 +45,15 @@ Model sample()
           i % nf,
           {v, 1.1 * v, -0.1 * v});
   }
-  model.addEnd({"m2", "", ""}, EndTable({0.14, 0.7}, {0.031, 0.09}));
+  EndTable& free = model.addEnd({"m2", "", ""}, EndTable({0.14, 0.7}));
+  free.set(0, 0, 0, {0.031});
+  free.set(1, 0, 0, {0.09});
+  EndTable& e = model.addEnd({"m2", "m1", "m3"},
+                             EndTable({0.14}, {0.14}, {0.14, 0.56}));
+  for (int i = 0; i < static_cast<int>(e.values().size()); i++) {
+    const double v = 0.01 * (i + 1);
+    e.set(0, i / 3, i % 3, {v, v / 2, v / 4, v / 8, v / 16});
+  }
   return model;
 }
 
@@ -91,7 +99,18 @@ TEST(ModelJson, RoundTrip)
   const EndTable* end = back.end({"m2", "", ""});
   ASSERT_NE(end, nullptr);
   EXPECT_EQ(end->widths(), model.end({"m2", "", ""})->widths());
-  EXPECT_EQ(end->excess(), model.end({"m2", "", ""})->excess());
+  EXPECT_TRUE(end->spacings().empty());
+  EXPECT_EQ(end->at(1, 0, 0).total, 0.09);
+  const EndTable* covered = back.end({"m2", "m1", "m3"});
+  ASSERT_NE(covered, nullptr);
+  EXPECT_EQ(covered->gaps(), (std::vector<double>{0.14, 0.56}));
+  ASSERT_EQ(covered->values().size(), 2u * 3);
+  // [spacing][gap] = [1][1] is the fifth value.
+  EXPECT_EQ(covered->at(0, 1, 1).total, 0.05);
+  EXPECT_EQ(covered->at(0, 1, 1).below, 0.025);
+  EXPECT_EQ(covered->at(0, 1, 1).above, 0.0125);
+  EXPECT_EQ(covered->at(0, 1, 1).lateral, 0.00625);
+  EXPECT_EQ(covered->at(0, 1, 1).facing, 0.003125);
 }
 
 // A lateral table is its own mirror image, so the file holds only the
@@ -125,11 +144,11 @@ TEST(ModelJson, WritesHalfTheLateralGrid)
 TEST(ModelJson, RoundsToSevenDigits)
 {
   Model model;
-  model.addEnd({"m2", "", ""}, EndTable({1.0 / 3}, {2.0 / 3}));
+  model.addEnd({"m2", "", ""}, EndTable({1.0 / 3})).set(0, 0, 0, {2.0 / 3});
   std::stringstream text;
   writeModel(model, {}, text);
   EXPECT_NE(text.str().find("\"widths\":[3.333333E-1]"), std::string::npos);
-  EXPECT_NE(text.str().find("\"excess\":[6.666667E-1]"), std::string::npos);
+  EXPECT_NE(text.str().find("\"values\":[[6.666667E-1,"), std::string::npos);
   const Model back = readModel(text);
   EXPECT_NEAR(back.endExcess({"m2", "", ""}, 0.5), 2.0 / 3, 1e-7);
 }
@@ -151,14 +170,18 @@ TEST(ModelJson, FailedWriteKeepsTheFile)
 
 TEST(ModelJson, RejectsOtherFormats)
 {
-  std::stringstream text("{\"format\": \"pex model\", \"version\": 99}");
-  EXPECT_THROW(readModel(text), std::runtime_error);
+  // An earlier version, whose end tables had no neighbors, or a later one.
+  for (const int version : {1, 99}) {
+    std::stringstream text("{\"format\": \"pex model\", \"version\": "
+                           + std::to_string(version) + "}");
+    EXPECT_THROW(readModel(text), std::runtime_error);
+  }
   std::stringstream other("{\"format\": \"something\", \"version\": 1}");
   EXPECT_THROW(readModel(other), std::runtime_error);
   std::stringstream broken("{\"format\": ");
   EXPECT_THROW(readModel(broken), std::runtime_error);
   std::stringstream wrong(
-      "{\"format\": \"pex model\", \"version\": 1, \"lateral\": [{\"layer\": "
+      "{\"format\": \"pex model\", \"version\": 2, \"lateral\": [{\"layer\": "
       "\"m\", \"below\": \"\", \"above\": \"\", \"widths\": [1], "
       "\"spacings\": [1], \"values\": [[1, 2, 3, 4, 5]]}], \"crossing\": [], "
       "\"diagonal\": [], \"end\": []}");
@@ -166,12 +189,13 @@ TEST(ModelJson, RejectsOtherFormats)
   EXPECT_THROW(readModelFile("/nonexistent/model.json"), std::runtime_error);
   // A table the model class rejects is a malformed file.
   std::stringstream bad(
-      "{\"format\": \"pex model\", \"version\": 1, \"end\": [{\"layer\": "
+      "{\"format\": \"pex model\", \"version\": 2, \"end\": [{\"layer\": "
       "\"m\", \"below\": \"\", \"above\": \"\", \"widths\": [2, 1], "
-      "\"excess\": [0.1, 0.2]}]}");
+      "\"spacings\": [], \"gaps\": [], \"values\": [[0.1, 0, 0, 0, 0], "
+      "[0.2, 0, 0, 0, 0]]}]}");
   EXPECT_THROW(readModel(bad), std::runtime_error);
   // A kind of table the file lacks is absent, not an error.
-  std::stringstream bare("{\"format\": \"pex model\", \"version\": 1}");
+  std::stringstream bare("{\"format\": \"pex model\", \"version\": 2}");
   EXPECT_TRUE(readModel(bare).laterals().empty());
 }
 

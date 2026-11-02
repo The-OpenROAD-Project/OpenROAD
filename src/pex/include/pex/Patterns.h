@@ -124,9 +124,11 @@ struct LateralPattern
   Section build(const fsv::Stack& stack) const;
 };
 
-// The pattern behind the end table: a wire along y over [0, length] with
-// a plane on the covering layer below and above (none when the handle
-// names no layer), reaching `extent` sideways and `margin` past both ends.
+// The pattern behind the end and facing tables: a wire along y over
+// [0, length] with a plane on the covering layer below and above (none
+// when the handle names no layer), reaching `extent` sideways and `margin`
+// past both ends, and optionally wires facing its ends and neighbors
+// beside it.
 struct EndPattern
 {
   Layer layer;
@@ -136,6 +138,12 @@ struct EndPattern
   Layer above;  // none: open above
   double extent = 10;
   double margin = 2;
+  // At least zero: a wire of another net, as wide and as long, beyond each
+  // end at this gap, and the planes reaching past those.
+  double facing_gap = -1;
+  // At least zero: a neighbor of minimum width on each side at this
+  // spacing, of one other net, running as far as the planes.
+  double neighbor_spacing = -1;
 
   struct Wire
   {
@@ -143,6 +151,8 @@ struct EndPattern
     NetIndex wire = kNullNetIndex;
     NetIndex below = kNullNetIndex;
     NetIndex above = kNullNetIndex;
+    NetIndex facing = kNullNetIndex;
+    NetIndex neighbors = kNullNetIndex;
   };
   Wire build(const fsv::Stack& stack) const;
 };

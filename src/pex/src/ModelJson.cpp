@@ -215,7 +215,21 @@ json::object end(const LateralKey& key, const EndTable& table)
   o["below"] = key.below;
   o["above"] = key.above;
   o["widths"] = numbers(table.widths());
-  o["excess"] = numbers(table.excess());
+  o["spacings"] = numbers(table.spacings());
+  o["gaps"] = numbers(table.gaps());
+  // Flat, in [width][spacing][gap] order with the open spacing and the
+  // missing facing wire last; each value is [total, to the plane below,
+  // to the plane above, to the neighbors, to the facing wire].
+  json::array values;
+  values.reserve(table.values().size());
+  for (const EndValue& v : table.values()) {
+    values.push_back(json::array{rounded(v.total),
+                                 rounded(v.below),
+                                 rounded(v.above),
+                                 rounded(v.lateral),
+                                 rounded(v.facing)});
+  }
+  o["values"] = std::move(values);
   return o;
 }
 
@@ -224,7 +238,27 @@ void readEnd(const json::object& o, Model& model)
   const LateralKey key{std::string(o.at("layer").as_string()),
                        std::string(o.at("below").as_string()),
                        std::string(o.at("above").as_string())};
-  model.addEnd(key, EndTable(numbers(o.at("widths")), numbers(o.at("excess"))));
+  EndTable table(numbers(o.at("widths")),
+                 numbers(o.at("spacings")),
+                 numbers(o.at("gaps")));
+  const json::array& values = o.at("values").as_array();
+  if (values.size() != table.values().size()) {
+    throw std::runtime_error("end table of " + key.layer
+                             + " has the wrong number of values");
+  }
+  const int ng = table.gapCount();
+  const int ns = table.spacingCount();
+  for (size_t i = 0; i < values.size(); i++) {
+    const std::vector<double> v = numbers(values[i]);
+    if (v.size() != 5) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has a malformed value");
+    }
+    const int k = static_cast<int>(i);
+    table.set(
+        k / ng / ns, (k / ng) % ns, k % ng, {v[0], v[1], v[2], v[3], v[4]});
+  }
+  model.addEnd(key, std::move(table));
 }
 
 }  // namespace
@@ -330,6 +364,7 @@ Model readModel(std::istream& in, ModelSource* source)
     for (const json::value& v : tables("end")) {
       readEnd(v.as_object(), model);
     }
+
   } catch (const std::runtime_error&) {
     throw;
   } catch (const std::exception& e) {
