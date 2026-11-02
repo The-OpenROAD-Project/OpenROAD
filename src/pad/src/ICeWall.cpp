@@ -256,6 +256,15 @@ void ICeWall::assignBump(odb::dbInst* inst,
     if (iterm->getNet() != net) {
       iterm->connect(net);
     }
+
+    routing_map_.erase(iterm);
+    if (auto* prop = odb::dbStringProperty::find(iterm, kRdlRouteTargetProperty)) {
+      odb::dbProperty::destroy(prop);
+    }
+    if (auto* prop = odb::dbBoolProperty::find(iterm, kRdlDontRouteProperty)) {
+      odb::dbProperty::destroy(prop);
+    }
+
     if (terminal) {
       auto already_assigned = std::ranges::find_if(
           routing_map_,
@@ -275,10 +284,16 @@ void ICeWall::assignBump(odb::dbInst* inst,
                        terminal->getNet()->getName());
       }
       routing_map_[iterm] = terminal;
+      const std::string target_name
+          = std::string(terminal->getInst()->getName()) + "/"
+            + terminal->getMTerm()->getName();
+      odb::dbStringProperty::create(
+          iterm, kRdlRouteTargetProperty, target_name.c_str());
       terminal = nullptr;
     }
     if (dont_route) {
       routing_map_[iterm] = nullptr;
+      odb::dbBoolProperty::create(iterm, kRdlDontRouteProperty, true);
     }
   }
 
