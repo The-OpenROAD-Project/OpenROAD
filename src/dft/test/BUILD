@@ -14,6 +14,8 @@ COMPULSORY_TESTS = [
     "scan_architect_clock_mix_sky130",
     "scan_architect_no_mix_sky130",
     "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_opt_edges_sky130",
+    "scan_opt_rebalance_sky130",
     "scan_opt_sky130",
     "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
@@ -51,6 +53,15 @@ filegroup(
             ],
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
+            ],
+            "scan_opt_edges_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+            ],
+            "scan_opt_rebalance_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+                "scan_opt_rebalance_sky130_reload.tcl",
             ],
             "scan_opt_sky130": [
                 "place_sort_sky130.v",
