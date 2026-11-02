@@ -154,10 +154,8 @@ class TimingReport
       float slack_min = -std::numeric_limits<float>::max(),
       float slack_max = std::numeric_limits<float>::max()) const;
 
-  // `path_groups` (optional) requests a per-group stacked breakdown: when it
-  // has entries, `result.series` is populated over the shared bin edges and the
-  // aggregate `bins` cover the union of those groups.  The single `path_group`
-  // arg is kept for the unfiltered / single-group case.
+  // `path_groups` stacks one `series` entry per group over shared bins; an
+  // endpoint in several groups counts once, in the one where it is worst.
   SlackHistogramResult getSlackHistogram(
       bool is_setup,
       const std::string& path_group = "",
