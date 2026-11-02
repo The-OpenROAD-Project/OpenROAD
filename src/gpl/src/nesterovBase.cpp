@@ -41,7 +41,7 @@
 
 // Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
 // unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
-// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
+// destructors see a complete type on CPU-only builds (without --config=gpu).
 #include "gpu/deviceState.h"
 #include "gpu/nesterovDeviceContext.h"
 #include "gpu/regionDensityField.h"
@@ -364,6 +364,11 @@ void GNet::setTimingWeight(float timingWeight)
 void GNet::setCustomWeight(float customWeight)
 {
   customWeight_ = customWeight;
+}
+
+void GNet::setPowerWeight(float powerWeight)
+{
+  powerWeight_ = powerWeight;
 }
 
 void GNet::addGPin(GPin* gPin)
@@ -3020,7 +3025,7 @@ void NesterovBase::updateAreas()
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    auto& gCell = *it;  // Host iteration over the placement data
+    auto& gCell = *it;
     if (!gCell) {
       continue;
     }

@@ -10,7 +10,6 @@
 # Per-module owners
 /src/ant/       @The-OpenROAD-Project/openroad-ant
 /src/cgt/       @The-OpenROAD-Project/openroad-cgt
-/src/cmake/     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /src/cts/       @The-OpenROAD-Project/openroad-cts
 /src/cut/       @The-OpenROAD-Project/openroad-cut
 /src/dbSta/     @The-OpenROAD-Project/openroad-dbsta
@@ -68,18 +67,12 @@
 /bazel/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /tools/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
-# CMake build system, shared with the build maintainers
+# Vestigial CMakeLists.txt that points to the Bazel build
 /CMakeLists.txt                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/CMakeGraphVizOptions.cmake       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/cmake/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/src/CMakeLists.txt               @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
 # Dependency pins and vendored code
 /.gitmodules                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /third-party/                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/flake.nix                        @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/flake.lock                       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/default.nix                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /pyproject.toml                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
 # Documentation build

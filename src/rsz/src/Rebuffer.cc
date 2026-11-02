@@ -3155,7 +3155,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3 && timing_tree; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(
