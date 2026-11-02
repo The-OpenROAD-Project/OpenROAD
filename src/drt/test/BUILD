@@ -22,6 +22,7 @@ COMPULSORY_TESTS = [
     "ispd18_sample",
     "ispd18_sample_incr",
     "ispd18_sample_reroute",
+    "ispd18_sample_reroute_eco",
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
@@ -122,7 +123,10 @@ filegroup(
             "single_step",
         ] else []) + ([
             "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
-        ] if test_name == "pa_single_pin" else []),
+        ] if test_name == "pa_single_pin" else []) + ([
+            "ispd18_sample_reroute.drc.rpt",
+            "ispd18_sample_reroute.input.def",
+        ] if test_name == "ispd18_sample_reroute_eco" else []),
     )
     for test_name in ALL_TESTS
 ]
