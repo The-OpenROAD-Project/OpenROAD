@@ -50,6 +50,7 @@ cc_library(
         "//src/web:core",
         "@boost.container_hash",
         "@boost.random",
+        "@boost.scope_exit",
         "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],

@@ -4,6 +4,7 @@
 #include "ppl/IOPlacer.h"
 
 #include <algorithm>
+#include <boost/scope_exit.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <sstream>
 #include <string>
@@ -116,6 +118,22 @@ PinPlacementSettings IOPlacer::getSettings() const
           block, "place_config_io_pin_min_distance_in_tracks")) {
     settings.min_distance_in_tracks = prop->getValue();
   }
+  if (auto prop = odb::dbStringProperty::find(
+          block, "place_config_io_pin_layer_min_distance")) {
+    std::istringstream values(prop->getValue());
+    std::string layer_name;
+    int min_dist;
+    while (values >> layer_name >> min_dist) {
+      odb::dbTechLayer* layer = getTech()->findLayer(layer_name.c_str());
+      if (layer != nullptr && layer->getRoutingLevel() != 0) {
+        settings.layer_min_distance[layer->getRoutingLevel()] = min_dist;
+      }
+    }
+  }
+  if (auto prop = odb::dbBoolProperty::find(
+          block, "place_config_io_pin_layer_min_distance_in_tracks")) {
+    settings.layer_min_distance_in_tracks = prop->getValue();
+  }
   return settings;
 }
 
@@ -135,6 +153,12 @@ void IOPlacer::applySettings()
   if (parms_->getMinDistance() == 0) {
     parms_->setMinDistance(settings.min_distance);
     parms_->setMinDistanceInTracks(settings.min_distance_in_tracks);
+  }
+  if (parms_->getLayerMinDistances().empty()) {
+    for (const auto& [layer, min_dist] : settings.layer_min_distance) {
+      parms_->setLayerMinDistance(
+          layer, min_dist, settings.layer_min_distance_in_tracks);
+    }
   }
 }
 
@@ -1035,44 +1059,51 @@ void IOPlacer::computeRegionIncrease(const Interval& interval,
 
 int IOPlacer::getMinDistanceForInterval(const Interval& interval)
 {
+  if (interval.getLayer() != -1) {
+    return getSlotPitch(interval.getLayer());
+  }
   const bool vertical_pin = hasVerticalPins(interval.getEdge());
   int min_dist = std::numeric_limits<int>::min();
-
-  if (interval.getLayer() != -1) {
-    const std::vector<int>& min_distances
-        = vertical_pin ? core_->getMinDstPinsX().at(interval.getLayer())
-                       : core_->getMinDstPinsY().at(interval.getLayer());
-    min_dist = *(std::ranges::max_element(min_distances));
-  } else {
-    const std::set<int>& layers = vertical_pin ? ver_layers_ : hor_layers_;
-    for (int layer_idx : layers) {
-      std::vector<int> layer_min_distances
-          = vertical_pin ? core_->getMinDstPinsX().at(layer_idx)
-                         : core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist
-          = *(std::ranges::max_element(layer_min_distances));
-      min_dist = std::max(layer_min_dist, min_dist);
-    }
+  for (int layer_idx : vertical_pin ? ver_layers_ : hor_layers_) {
+    min_dist = std::max(getSlotPitch(layer_idx), min_dist);
   }
-
   return min_dist;
+}
+
+// The distance between the tracks of a pin layer, the largest one when it has
+// several track patterns.
+int IOPlacer::getTechMinDistance(const int layer) const
+{
+  const std::vector<int>& min_dists = ver_layers_.contains(layer)
+                                          ? core_->getMinDstPinsX().at(layer)
+                                          : core_->getMinDstPinsY().at(layer);
+  return *(std::ranges::max_element(min_dists));
+}
+
+// The number of tracks between neighbor slots of a pin layer.
+int IOPlacer::getMinDistanceInTracks(const int layer) const
+{
+  const MinDistance min_dist = parms_->getMinDistance(layer);
+  if (min_dist.distance == 0) {
+    return default_min_dist_;
+  }
+  if (min_dist.in_tracks) {
+    return min_dist.distance;
+  }
+  return std::ceil(static_cast<float>(min_dist.distance)
+                   / getTechMinDistance(layer));
+}
+
+// The distance between neighbor slots of a pin layer.
+int IOPlacer::getSlotPitch(const int layer) const
+{
+  return getMinDistanceInTracks(layer) * getTechMinDistance(layer);
 }
 
 int64_t IOPlacer::computeIncrease(int min_dist,
                                   const int64_t num_pins,
                                   const int64_t curr_length)
 {
-  const bool dist_in_tracks = parms_->getMinDistanceInTracks();
-  const int user_min_dist = parms_->getMinDistance();
-  if (dist_in_tracks && user_min_dist != 0) {
-    min_dist *= user_min_dist;
-  } else if (user_min_dist != 0) {
-    min_dist
-        = std::ceil(static_cast<float>(user_min_dist) / min_dist) * min_dist;
-  } else {
-    min_dist *= default_min_dist_;
-  }
-
   const int64_t increase = (num_pins * min_dist) - curr_length;
   return increase;
 }
@@ -1096,8 +1127,8 @@ void IOPlacer::findSlots(const std::set<int>& layers,
     // This ensures that mirrored positions will exists for every slot.
     int slot_count = 0;
     odb::Point last = slots[0];
-    int min_dst_pins = parms_->getMinDistance();
-    const bool min_dist_in_tracks = parms_->getMinDistanceInTracks();
+    const auto [min_dst_pins, min_dist_in_tracks]
+        = parms_->getMinDistance(layer);
     for (auto it = slots.begin(); it != slots.end();) {
       odb::Point pos = *it;
       bool valid_slot;
@@ -1195,10 +1226,10 @@ std::vector<odb::Point> IOPlacer::findLayerSlots(const int layer,
   for (int l = 0; l < layer_min_distances.size(); l++) {
     int tech_min_dst = layer_min_distances[l];
 
-    // If Parameters::min_distance_ is zero, use the default min distance of 2
-    // tracks. If it is not zero, use the tech min distance to create all
-    // possible slots.
-    int min_dst_pins = parms_->getMinDistance() == 0
+    // If the min distance of the layer is zero, use the default min distance
+    // of 2 tracks. If it is not zero, use the tech min distance to create all
+    // possible slots, which findSlots then thins out.
+    int min_dst_pins = parms_->getMinDistance(layer).distance == 0
                            ? default_min_dist_ * tech_min_dst
                            : tech_min_dst;
 
@@ -1336,18 +1367,10 @@ void IOPlacer::defineSlots()
   if (regular_pin_count > available_slots) {
     int min_dist = std::numeric_limits<int>::min();
     for (int layer_idx : ver_layers_) {
-      std::vector<int> layer_min_distances
-          = core_->getMinDstPinsX().at(layer_idx);
-      const int layer_min_dist
-          = *(std::ranges::max_element(layer_min_distances));
-      min_dist = std::max(layer_min_dist, min_dist);
+      min_dist = std::max(getSlotPitch(layer_idx), min_dist);
     }
     for (int layer_idx : hor_layers_) {
-      std::vector<int> layer_min_distances
-          = core_->getMinDstPinsY().at(layer_idx);
-      const int layer_min_dist
-          = *(std::ranges::max_element(layer_min_distances));
-      min_dist = std::max(layer_min_dist, min_dist);
+      min_dist = std::max(getSlotPitch(layer_idx), min_dist);
     }
 
     const int64_t die_margin = getBlock()->getDieArea().margin();
@@ -1935,6 +1958,40 @@ int IOPlacer::getMirroredPinCost(IOPin& io_pin, const odb::Point& position)
     return netlist_->computeIONetHPWL(io_pin.getMirrorPinIdx(), mirrored_pos);
   }
   return 0;
+}
+
+void IOPlacer::reportMinDistances()
+{
+  const std::map<int, MinDistance>& layer_min_dists
+      = parms_->getLayerMinDistances();
+  if (layer_min_dists.empty()) {
+    if (parms_->getMinDistance() == 0) {
+      logger_->report("Using {} tracks default min distance between IO pins.",
+                      default_min_dist_);
+    }
+    return;
+  }
+  for (const int layer : std::views::keys(layer_min_dists)) {
+    if (!hor_layers_.contains(layer) && !ver_layers_.contains(layer)) {
+      logger_->warn(PPL,
+                    125,
+                    "The min distance of layer {} is unused because it is "
+                    "not an IO pin layer.",
+                    getTech()->findRoutingLayer(layer)->getName());
+    }
+  }
+
+  std::set<int> layers = hor_layers_;
+  layers.insert(ver_layers_.begin(), ver_layers_.end());
+  std::string tracks_per_layer;
+  for (int layer : layers) {
+    if (!tracks_per_layer.empty()) {
+      tracks_per_layer += ", ";
+    }
+    tracks_per_layer += getTech()->findRoutingLayer(layer)->getName() + " "
+                        + std::to_string(getMinDistanceInTracks(layer));
+  }
+  logger_->info(PPL, 126, "Min distance in tracks    {}", tracks_per_layer);
 }
 
 void IOPlacer::printConfig(bool annealing)
@@ -2678,10 +2735,18 @@ std::vector<SlotPosition> IOPlacer::buildSlotGrid()
   top_layer_slots_.clear();
   excluded_intervals_.clear();
 
-  // Not a run: leave the caller's state as it was for the run that follows.
+  // Not a run: leave the caller's state as it was for the run that follows,
+  // even when it fails.
   const Parameters parms = *parms_;
   const std::set<int> hor_layers = hor_layers_;
   const std::set<int> ver_layers = ver_layers_;
+  BOOST_SCOPE_EXIT_ALL(&)
+  {
+    clear();
+    *parms_ = parms;
+    hor_layers_ = hor_layers;
+    ver_layers_ = ver_layers;
+  };
   applySettings();
 
   slots_per_section_ = parms_->getSlotsPerSection();
@@ -2695,15 +2760,16 @@ std::vector<SlotPosition> IOPlacer::buildSlotGrid()
   for (const Slot& slot : slots_) {
     out.push_back({slot.pos, slot.layer, slot.edge, slot.blocked});
   }
-  clear();
-  *parms_ = parms;
-  hor_layers_ = hor_layers;
-  ver_layers_ = ver_layers;
   return out;
 }
 
 void IOPlacer::runHungarianMatching(bool minimize_displacement)
 {
+  // A failed run leaves nothing for the next run, like a finished one.
+  BOOST_SCOPE_EXIT_ALL(this)
+  {
+    clear();
+  };
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
 
   applySettings();
@@ -2711,6 +2777,7 @@ void IOPlacer::runHungarianMatching(bool minimize_displacement)
   netlist_->setMinimizeDisplacement(minimize_displacement);
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
+  reportMinDistances();
   getBlockedRegions();
 
   defineSlots();
@@ -2828,7 +2895,6 @@ void IOPlacer::runHungarianMatching(bool minimize_displacement)
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
-  clear();
 }
 
 void IOPlacer::setAnnealingConfig(float temperature,
@@ -2875,12 +2941,18 @@ void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 
 void IOPlacer::runAnnealing(bool minimize_displacement)
 {
+  // A failed run leaves nothing for the next run, like a finished one.
+  BOOST_SCOPE_EXIT_ALL(this)
+  {
+    clear();
+  };
   bool isPolygon = getBlock()->getDieAreaPolygon().getPoints().size() > 5;
   applySettings();
   slots_per_section_ = parms_->getSlotsPerSection();
   netlist_->setMinimizeDisplacement(minimize_displacement);
   initExcludedIntervals();
   initNetlistAndCore(hor_layers_, ver_layers_);
+  reportMinDistances();
   getBlockedRegions();
 
   defineSlots();
@@ -2914,7 +2986,6 @@ void IOPlacer::runAnnealing(bool minimize_displacement)
   checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   writePinPlacement(parms_->getPinPlacementFile().c_str(), false);
-  clear();
 }
 
 void IOPlacer::checkPinPlacement()
@@ -3048,10 +3119,8 @@ struct IOPlacer::ManualPinBlocking
                     const int height)
       : placer_(placer), num_intervals_(placer->excluded_intervals_.size())
   {
-    // an aborted place_pins run skips clear(), drop whatever it left
-    placer_->layer_fixed_pins_keepouts_.clear();
-    placer_->layer_blocked_shapes_.clear();
-    placer_->pin_size_cache_.clear();
+    // no cache to drop: the runs that fill the keepouts, shapes and pin sizes
+    // clear them when they end, even when they fail
     const bool vertical_pin
         = layer->getDirection() == odb::dbTechLayerDir::VERTICAL;
     PinSize pin_size;

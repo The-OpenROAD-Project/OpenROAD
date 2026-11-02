@@ -3,9 +3,17 @@
 
 #pragma once
 
+#include <map>
 #include <string>
 
 namespace ppl {
+
+// A min distance between pins, in DBU or in tracks.
+struct MinDistance
+{
+  int distance = 0;
+  bool in_tracks = false;
+};
 
 class Parameters
 {
@@ -68,6 +76,23 @@ class Parameters
   }
   bool getMinDistanceInTracks() const { return distance_in_tracks_; }
 
+  void setLayerMinDistance(int layer, int min_dist, bool in_tracks)
+  {
+    layer_min_dist_[layer] = {min_dist, in_tracks};
+  }
+  MinDistance getMinDistance(int layer) const
+  {
+    auto it = layer_min_dist_.find(layer);
+    if (it != layer_min_dist_.end()) {
+      return it->second;
+    }
+    return {min_dist_, distance_in_tracks_};
+  }
+  const std::map<int, MinDistance>& getLayerMinDistances() const
+  {
+    return layer_min_dist_;
+  }
+
   void setPinPlacementFile(const char* file_name)
   {
     pin_placement_file_ = file_name;
@@ -87,6 +112,7 @@ class Parameters
   int corner_avoidance_ = -1;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
+  std::map<int, MinDistance> layer_min_dist_;
   std::string pin_placement_file_;
 };
 

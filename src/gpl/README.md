@@ -198,6 +198,7 @@ set_place_config
     [-io_pin_corner_avoidance distance]
     [-io_pin_min_distance min_dist]
     [-io_pin_min_distance_in_tracks]
+    [-io_pin_layer_min_distance layer_min_dists]
 ```
 
 #### Options
@@ -208,7 +209,8 @@ set_place_config
 | `-io_pin_ver_layers` | The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names. |
 | `-io_pin_corner_avoidance` | The distance (in microns) from each corner within which pin placement should be avoided. The default value is `1` micron or 15 tracks, whichever is smaller. |
 | `-io_pin_min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. The default value is the length of two routing tracks between each pin. |
-| `-io_pin_min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. It requires `-io_pin_min_distance`. |
+| `-io_pin_min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. It applies to the min distances given in the same call, and requires `-io_pin_min_distance` or `-io_pin_layer_min_distance`. |
+| `-io_pin_layer_min_distance` | A list of layer and distance pairs, such as `{M3 2 M5 2}`, that sets the minimum distance between pins on those layers. It replaces the saved list. Layers not in the list use `-io_pin_min_distance`. `place_pins -layer_min_distance` replaces the whole list for its own run. |
 
 ### Reset Placement Configuration
 
@@ -221,6 +223,7 @@ reset_place_config
     [-io_pin_ver_layers]
     [-io_pin_corner_avoidance]
     [-io_pin_min_distance]
+    [-io_pin_layer_min_distance]
 ```
 
 #### Options
@@ -231,10 +234,13 @@ reset_place_config
 | `-io_pin_ver_layers` | Remove the vertical pin layers. |
 | `-io_pin_corner_avoidance` | Remove the corner avoidance distance. |
 | `-io_pin_min_distance` | Remove the minimum distance between pins, and whether it is in tracks. |
+| `-io_pin_layer_min_distance` | Remove the per-layer minimum distances between pins, and whether they are in tracks. |
 
 ### Report Placement Configuration
 
-The `report_place_config` command reports the current settings.
+The `report_place_config` command reports the current settings. With a
+per-layer minimum distance, it also says what the other layers use, and names
+the layers that are not in the saved pin layers of their direction.
 
 ```tcl
 report_place_config
