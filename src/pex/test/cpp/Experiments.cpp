@@ -40,7 +40,10 @@
 //       [--lef FILE]... [--def FILE | --odb FILE] [--model FILE]
 //       [--nets a,b,... | --sample N] [--halo UM] [--margin UM]
 //       [--cover_tol X | --depth N] [--model_tol X]
-// and for e14, to skip the solves, the truth of an earlier e14 --csv:
+// and for e9 and e14 the layers each way whose parallel wires count in
+// the estimate, and to skip the solves, the truth of an earlier run's
+// --csv:
+//       [--diagonal_depth N]
 //       [--truth FILE]
 // and for e12 and e13 the layers that may cover (default: every
 // conductor), and for e13 the cover tolerance:
@@ -170,6 +173,8 @@ Options parse(const int argc, char** argv)
       o.csv = value();
     } else if (arg == "--truth") {
       o.truth = value();
+    } else if (arg == "--diagonal_depth") {
+      o.reference.diagonal_depth = std::stoi(value());
     } else if (arg == "--extent") {
       o.extent = std::stod(value());
     } else if (arg == "--smoke") {
@@ -1622,7 +1627,29 @@ void compareNet(Lab& lab,
   const Options& o = lab.options();
   const pex::NetEstimate est
       = pex::estimate(g, lab.stack(), model, target, o.reference);
-  if (!couplings && !o.truth.empty()) {
+  // The estimate's coupling to a net by source, as a comment.
+  auto printSources = [&](const pex::NetIndex n) {
+    const auto parts = est.sources.find(n);
+    if (parts == est.sources.end()) {
+      return;
+    }
+    static const char* kNames[] = {"lateral",
+                                   "cover",
+                                   "rest",
+                                   "diagonal",
+                                   "end_lateral",
+                                   "end_facing",
+                                   "end_cover",
+                                   "end_rest"};
+    std::string line = "#     by source:";
+    for (size_t k = 0; k < parts->second.size(); k++) {
+      if (parts->second[k] != 0) {
+        line += " " + std::string(kNames[k]) + " " + fmt(parts->second[k]);
+      }
+    }
+    std::printf("%s\n", line.c_str());
+  };
+  if (!o.truth.empty()) {
     // The truth from an earlier run: (case, quantity) -> (truth, sigma).
     static const std::map<std::pair<std::string, std::string>,
                           std::pair<double, double>>
@@ -1669,6 +1696,20 @@ void compareNet(Lab& lab,
               it->second.second,
               value);
     }
+    for (pex::NetIndex n = 0; couplings && n < g.netCount(); n++) {
+      const auto it = earlier.find({name, "c:" + g.netName(n)});
+      if (n == target || g.grounded(n) || it == earlier.end()) {
+        continue;
+      }
+      const auto e = est.couplings.find(n);
+      lab.row(experiment,
+              name,
+              "c:" + g.netName(n),
+              it->second.first,
+              it->second.second,
+              e == est.couplings.end() ? 0 : e->second);
+      printSources(n);
+    }
     std::printf(
         "#   %s: %d wires, %d pieces, %d ends (%d via), %d vias; %d corners, "
         "%d bends, %d tees, %d crosses\n",
@@ -1709,6 +1750,7 @@ void compareNet(Lab& lab,
               row.coupling(n),
               row.sigma[n],
               e);
+      printSources(n);
     }
   }
   lab.row(experiment, name, "ground", -row.ground, row.ground_sigma, grounded);

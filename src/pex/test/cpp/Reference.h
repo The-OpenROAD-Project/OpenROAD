@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <array>
 #include <map>
 
 #include "fsv/Geometry.h"
@@ -27,11 +28,31 @@ struct ReferenceOptions
   int diagonal_depth = 2;
 };
 
+// Where an estimate's coupling comes from: a piece's lateral neighbor, its
+// cover (a crossing's share included), a farther cover behind crossings, a
+// parallel wire on a nearby layer, and at a line end the neighbors, the
+// facing wire, the cover and the farther cover.
+enum class Source
+{
+  kLateral,
+  kCover,
+  kRest,
+  kDiagonal,
+  kEndLateral,
+  kEndFacing,
+  kEndCover,
+  kEndRest,
+  kCount
+};
+
 struct NetEstimate
 {
   double ground = 0;                     // to the ground plane, fF
   std::map<NetIndex, double> couplings;  // by net; the target excluded
-  int wires = 0;                         // boxes on conductor layers
+  // The couplings by source.
+  std::map<NetIndex, std::array<double, static_cast<size_t>(Source::kCount)>>
+      sources;
+  int wires = 0;  // boxes on conductor layers
   int pieces = 0;
   int ends = 0;         // line ends
   int via_ends = 0;     // of them, those the net's via or other layers reach

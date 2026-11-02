@@ -43,6 +43,15 @@ struct Shape
   double hi[2];
 };
 
+void couple(NetEstimate& out,
+            const NetIndex net,
+            const Source source,
+            const double value)
+{
+  out.couplings[net] += value;
+  out.sources[net][static_cast<size_t>(source)] += value;
+}
+
 // The conductors of the stack ascending by bottom; shapes carry an index
 // into them.
 struct Layers
@@ -559,36 +568,37 @@ class Wire
            * (total - cl - cr - to_below - to_above - rest_below - rest_above);
     for (const auto& [net, share] : below.rest_nets) {
       if (net != target) {
-        out.couplings[net] += len * rest_below * share;
+        couple(out, net, Source::kRest, len * rest_below * share);
       }
     }
     for (const auto& [net, share] : above.rest_nets) {
       if (net != target) {
-        out.couplings[net] += len * rest_above * share;
+        couple(out, net, Source::kRest, len * rest_above * share);
       }
     }
     addDiagonals(x0, x1, sl, sr, target, cl, cr, out);
     if (l != nullptr && l->net != target) {
-      out.couplings[l->net] += len * cl;
+      couple(out, l->net, Source::kLateral, len * cl);
     }
     if (r != nullptr && r->net != target) {
-      out.couplings[r->net] += len * cr;
+      couple(out, r->net, Source::kLateral, len * cr);
     }
     for (const auto& [net, share] : below.nets) {
       if (net != target) {
-        out.couplings[net] += len * to_below * share;
+        couple(out, net, Source::kCover, len * to_below * share);
       }
     }
     for (const auto& [net, share] : above.nets) {
       if (net != target) {
-        out.couplings[net] += len * to_above * share;
+        couple(out, net, Source::kCover, len * to_above * share);
       }
     }
   }
 
   // The nearest parallel wire on each nearby layer beside the piece, on
   // each side, where no run of that layer covers it, shielded by the
-  // piece's neighbor on that side and on the other. One of the net's own
+  // piece's neighbor on that side and on the other, and by covers on the
+  // layers between. One of the net's own
   // shields like any other but adds no coupling.
   void addDiagonals(const double x0,
                     const double x1,
@@ -614,6 +624,31 @@ class Wire
         if (model_.diagonal(key) == nullptr) {
           continue;
         }
+        // A layer between covering the piece shields the parallel wire: all
+        // of it under a box, the crossings' share of it otherwise.
+        double open = 1;
+        const int step = k < shape_.layer ? -1 : 1;
+        for (int j = shape_.layer + step; j != k; j += step) {
+          if (coveredOn(j, x0, x1)) {
+            open = 0;
+            break;
+          }
+          const auto runs = runs_.find(j);
+          if (runs != runs_.end()) {
+            open *= 1
+                    - partialCover(
+                          model_,
+                          layers_.names[j],
+                          {name_, map_.crossingCover(layers_.layers[j])},
+                          runs->second,
+                          x0,
+                          x1)
+                          .share;
+          }
+        }
+        if (open <= 0) {
+          continue;
+        }
         const Shape* best = nullptr;
         double best_gap = 0;
         for (const Shape& s : shapes_) {
@@ -630,13 +665,16 @@ class Wire
         if (best == nullptr) {
           continue;
         }
-        const DiagonalCap d = model_.diagonal(key,
-                                              best->hi[p_] - best->lo[p_],
-                                              best_gap,
-                                              spacing,
-                                              right_side ? sl : sr);
+        DiagonalCap d = model_.diagonal(key,
+                                        best->hi[p_] - best->lo[p_],
+                                        best_gap,
+                                        spacing,
+                                        right_side ? sl : sr);
+        d.coupling *= open;
+        d.total_delta *= open;
+        d.lateral_delta *= open;
         if (best->net != target) {
-          out.couplings[best->net] += len * d.coupling;
+          couple(out, best->net, Source::kDiagonal, len * d.coupling);
         }
         out.ground += len * (d.total_delta - d.coupling - d.lateral_delta);
         lateral += d.lateral_delta;
@@ -793,15 +831,15 @@ class Wire
           }
         });
     if (l != nullptr && l->net != target) {
-      out.couplings[l->net] += to_left;
+      couple(out, l->net, Source::kEndLateral, to_left);
     }
     if (r != nullptr && r->net != target) {
-      out.couplings[r->net] += to_right;
+      couple(out, r->net, Source::kEndLateral, to_right);
     }
     if (to_facing > 0) {
       out.facing_ends++;
       if (facing->net != target) {
-        out.couplings[facing->net] += to_facing;
+        couple(out, facing->net, Source::kEndFacing, to_facing);
       }
     }
     // The tables' planes run on past the end. A cover stopping short of
@@ -834,22 +872,22 @@ class Wire
                   - rest_below - rest_above;
     for (const auto& [net, share] : below.rest_nets) {
       if (net != target) {
-        out.couplings[net] += rest_below * share;
+        couple(out, net, Source::kEndRest, rest_below * share);
       }
     }
     for (const auto& [net, share] : above.rest_nets) {
       if (net != target) {
-        out.couplings[net] += rest_above * share;
+        couple(out, net, Source::kEndRest, rest_above * share);
       }
     }
     for (const auto& [net, share] : below.nets) {
       if (net != target) {
-        out.couplings[net] += to_below * share;
+        couple(out, net, Source::kEndCover, to_below * share);
       }
     }
     for (const auto& [net, share] : above.nets) {
       if (net != target) {
-        out.couplings[net] += to_above * share;
+        couple(out, net, Source::kEndCover, to_above * share);
       }
     }
   }
