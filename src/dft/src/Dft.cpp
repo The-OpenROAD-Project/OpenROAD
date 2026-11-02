@@ -672,9 +672,18 @@ void Dft::scanOpt(bool rebalance_chains)
       chains_changed++;
     }
 
+    const int64_t final_length = chainLength(source, chain.cells);
+    const std::string chain_name = chain.chain->getName();
+    logger_->metric(fmt::format("dft__chain_twl__init__chain:{}", chain_name),
+                    block->dbuToMicrons(initial_length[i]));
+    logger_->metric(
+        fmt::format("dft__chain_twl__post_opt__chain:{}", chain_name),
+        block->dbuToMicrons(final_length));
     total_initial += initial_length[i];
-    total_final += chainLength(source, chain.cells);
+    total_final += final_length;
   }
+  logger_->metric("dft__chain_twl__init", block->dbuToMicrons(total_initial));
+  logger_->metric("dft__chain_twl__post_opt", block->dbuToMicrons(total_final));
 
   logger_->info(utl::DFT,
                 16,
