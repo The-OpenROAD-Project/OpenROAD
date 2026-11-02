@@ -375,15 +375,16 @@ TEST_F(OverflowTest, AccountsForNDRPenaltiesAndCancellation)
   router_->initEdgesCapacityPerLayer();
   fr_net_->setEdgeCost(2);
   graph.overflowStatistics(true);
+  // Without NDR capacity, the net is charged 50 times its edge cost
   graph.updateEstUsageH(0, 0, fr_net_, 0.5);
   graph.updateEstUsageH(0, 0, fr_net_, 0.5);
-  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 200);
+  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 100);
   EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
             OverflowTestPeer::query2D(*router_, true, true));
   graph.updateEstUsageH(0, 0, fr_net_, -0.5);
   graph.InitEstUsage();
   graph.updateUsageH(0, 0, fr_net_, 1);
-  EXPECT_EQ(graph.overflowStatistics(false)[0].usage, 200);
+  EXPECT_EQ(graph.overflowStatistics(false)[0].usage, 100);
   graph.updateUsageH(0, 0, fr_net_, -1);
   EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).usage, 0);
   graph.prepareForIncrementalRun();
