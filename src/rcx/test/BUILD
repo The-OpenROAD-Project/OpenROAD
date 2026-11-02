@@ -23,6 +23,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "diff_spef",
     "test_dielectric_epsilon",
 ]
 
@@ -89,6 +90,11 @@ filegroup(
                 test_name + ".*",
             ],
         ) + {
+            "diff_spef": [
+                "ext_pattern.rules",
+                "generate_pattern.defok",
+                "helpers.py",
+            ],
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
             "no_merging": [
