@@ -63,7 +63,7 @@ PASSFAIL_TESTS = [
     "place_ios_td",
 ]
 
-# Longer-running regression tests (see regression_tests_large.tcl). These are
+# Longer-running regression tests. These are
 # tagged "manual" so they are excluded from the default `bazel test //...`
 # wildcard and must be requested explicitly, e.g. via the :large_tests suite.
 LARGE_TESTS = [
@@ -80,8 +80,7 @@ LARGE_TESTS = [
     "large02",
 ]
 
-# GPU-only PASSFAIL regressions, pinned to the GPU code path (mirrors
-# the ENABLE_GPU=1 tests in src/gpl/test/CMakeLists.txt).
+# GPU-only PASSFAIL regressions, pinned to the GPU code path (ENABLE_GPU=1).
 GPU_TESTS = [
     "region01_gpu",
     "region01_gpu_asym",
@@ -235,8 +234,7 @@ cc_test(
 )
 
 # GPU wirelength-kernel correctness test. Includes Kokkos-laden headers
-# directly, so the TU itself is compiled as CUDA (mirrors the
-# set_source_files_properties block in test/CMakeLists.txt).
+# directly, so the TU itself is compiled as CUDA.
 cc_test(
     name = "wl_gpu_test",
     srcs = ["wl_gpu_test.cc"],

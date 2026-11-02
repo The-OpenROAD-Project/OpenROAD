@@ -13,14 +13,6 @@
 #include <thread>
 #include <vector>
 
-#include "ord/Version.hh"
-#include "tcl.h"
-#include "tclDecls.h"
-#ifdef ENABLE_PYTHON3
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-#endif
-
 #include "ant/AntennaChecker.hh"
 #include "ant/MakeAntennaChecker.hh"
 #include "cgt/ClockGating.h"
@@ -64,6 +56,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
+#include "ord/Version.hh"
 #include "pad/MakeICeWall.h"
 #include "par/MakePartitionMgr.h"
 #include "par/PartitionMgr.h"
@@ -87,6 +80,8 @@
 #include "syn/synthesis.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
+#include "tcl.h"
+#include "tclDecls.h"
 #include "upf/MakeUpf.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
@@ -759,7 +754,6 @@ std::string OpenRoad::getExePath() const
 
 std::string OpenRoad::getDocsPath() const
 {
-#ifdef BAZEL_BUILD
   // When invoked via 'bazel run', BUILD_WORKSPACE_DIRECTORY is set to the
   // workspace root. Look for generated man pages in bazel-bin/docs/ so that
   // 'man' works without a full install step.
@@ -771,7 +765,6 @@ std::string OpenRoad::getDocsPath() const
       return docs_path;
     }
   }
-#endif
 
   const std::string exe = getExePath();
 
@@ -781,16 +774,8 @@ std::string OpenRoad::getDocsPath() const
 
   std::filesystem::path path(exe);
 
-  // remove binary name
-  path = path.parent_path();
-
-  if (path.stem() == "src") {
-    // remove build
-    return path.parent_path().parent_path() / "docs";
-  }
-
-  // remove bin
-  return path.parent_path() / "share" / "openroad" / "man";
+  // remove binary name and bin
+  return path.parent_path().parent_path() / "share" / "openroad" / "man";
 }
 
 const char* OpenRoad::getVersion()
@@ -806,11 +791,6 @@ const char* OpenRoad::getGitDescribe()
 bool OpenRoad::getGPUCompileOption()
 {
   return GPU;
-}
-
-bool OpenRoad::getPythonCompileOption()
-{
-  return BUILD_PYTHON;
 }
 
 bool OpenRoad::getGUICompileOption()
