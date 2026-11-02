@@ -253,18 +253,27 @@ void rebalanceChains(std::vector<OptChain>& chains, utl::Logger* logger)
     // Pool every cell but each chain's last one.
     std::vector<std::unique_ptr<OdbScanCellAdapter>> pool;
     std::vector<std::unique_ptr<OdbScanCellAdapter>> lasts;
-    int64_t cap_bits = 0;
+    int64_t max_chain_bits = 0;
+    int64_t max_last_bits = 0;
     for (OptChain* chain : members) {
       int64_t bits = 0;
+      for (auto& cell : chain->cells) {
+        bits += static_cast<int64_t>(cell->getBits());
+      }
+      max_chain_bits = std::max(max_chain_bits, bits);
+      max_last_bits = std::max(
+          max_last_bits, static_cast<int64_t>(chain->cells.back()->getBits()));
+
       lasts.push_back(std::move(chain->cells.back()));
       chain->cells.pop_back();
       for (auto& cell : chain->cells) {
-        bits += static_cast<int64_t>(cell->getBits());
         pool.push_back(std::move(cell));
       }
       chain->cells.clear();
-      cap_bits = std::max(cap_bits, bits);
     }
+    // Leave room for each chain's last cell so no chain ends up longer than
+    // the longest one today. A single cell must still fit somewhere.
+    int64_t cap_bits = max_chain_bits - max_last_bits;
     for (const auto& cell : pool) {
       cap_bits = std::max(cap_bits, static_cast<int64_t>(cell->getBits()));
     }
