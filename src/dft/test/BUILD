@@ -14,6 +14,7 @@ COMPULSORY_TESTS = [
     "scan_architect_clock_mix_sky130",
     "scan_architect_no_mix_sky130",
     "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_opt_sky130",
     "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
@@ -50,6 +51,9 @@ filegroup(
             ],
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
+            ],
+            "scan_opt_sky130": [
+                "place_sort_sky130.v",
             ],
             "scan_replace_dont_use_sky130": [
                 "one_cell_sky130.def",
@@ -113,6 +117,7 @@ cc_test(
         "cpp/ScanCellMock.cpp",
         "cpp/ScanCellMock.hh",
         "cpp/TestScanArchitectHeuristic.cpp",
+        "cpp/TestScanArchitectMaxChains.cpp",
     ],
     deps = [
         "//src/dft/src/architect",
@@ -128,17 +133,12 @@ cc_test(
 )
 
 cc_test(
-    name = "TestScanArchitectHeuristic",
-    srcs = [
-        "cpp/ScanCellMock.cpp",
-        "cpp/ScanCellMock.hh",
-        "cpp/TestScanArchitectHeuristic.cpp",
-    ],
+    name = "dft_scan_optimizer_unittest",
+    srcs = ["cpp/TestScanOptimizer.cpp"],
+    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/dft/src/architect",
-        "//src/dft/src/cells",
-        "//src/dft/src/clock_domain",
-        "//src/dft/src/config",
+        "//src/dft/src/optimizer",  # must precede //src/dft to resolve Opt.hh correctly
+        "//src/dft",
         "//src/dft/src/utils",
         "//src/odb/src/db",
         "//src/utl",
