@@ -2,8 +2,11 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 %{
+#include <optional>
+
 #include "ord/OpenRoad.hh"
 #include "mpl/rtl_mp.h"
+#include "mpl-util.h"
 #include "MplObserver.h"
 #include "graphics.h"
 #include "odb/db.h"
@@ -82,6 +85,34 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              report_directory,
                              keep_clustering_data,
                              pin_aware_channels);
+}
+
+void check_macro_placement_cmd(double fence_lx,
+                               double fence_ly,
+                               double fence_ux,
+                               double fence_uy,
+                               double min_channel_width,
+                               double min_channel_height,
+                               bool pin_aware_channels,
+                               bool fence_provided)
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  auto logger = ord::getLogger();
+  const int channel_width = checkedMicronsToDbu(
+      block, min_channel_width, "-min_channel_size width", logger);
+  const int channel_height = checkedMicronsToDbu(
+      block, min_channel_height, "-min_channel_size height", logger);
+  std::optional<odb::Rect> global_fence;
+  if (fence_provided) {
+    global_fence.emplace();
+    // Preserve corner ordering so malformed bounds are not silently normalized.
+    global_fence->reset(checkedMicronsToDbu(block, fence_lx, "-fence_lx", logger),
+                         checkedMicronsToDbu(block, fence_ly, "-fence_ly", logger),
+                         checkedMicronsToDbu(block, fence_ux, "-fence_ux", logger),
+                         checkedMicronsToDbu(block, fence_uy, "-fence_uy", logger));
+  }
+  getMacroPlacer()->checkMacroPlacement(
+      global_fence, channel_width, channel_height, pin_aware_channels);
 }
 
 void set_debug_cmd(odb::dbBlock* block,

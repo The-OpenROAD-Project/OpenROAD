@@ -1,0 +1,207 @@
+# Check micron/DBU boundaries, option forwarding, and read-only preflight outputs.
+source "helpers.tcl"
+
+check_error "missing design" { check_macro_placement } MPL-0001
+
+set db [ord::get_db]
+$db setDbuPerMicron 2000
+set tech [odb::dbTech_create $db preflight_tech]
+$tech setLefUnits 2000
+set lib [odb::dbLib_create $db preflight_lib $tech /]
+$lib setLefUnits 2000
+set chip [odb::dbChip_create $db $tech]
+set block [odb::dbBlock_create $chip preflight]
+$block setDefUnits 2000
+set rect [odb::Rect]
+$rect init 0 0 80000 100000
+$block setDieArea $rect
+$rect init 20250 40500 44250 64500
+$block setCoreArea $rect
+set master [odb::dbMaster_create $lib macro_master]
+$master setType BLOCK
+$master setWidth 10000
+$master setHeight 10000
+$master setFrozen
+set macro_a [odb::dbInst_create $block $master macro_a]
+set macro_b [odb::dbInst_create $block $master macro_b]
+
+# The 5 x 5 um macros exactly fill a 10 x 5 um fence. Moving any fence
+# coordinate inward by one DBU (0.0005 um) must fail the area check.
+proc run_fence_check { fence args } {
+  lassign $fence lx ly ux uy
+  return [check_macro_placement -fence_lx $lx -fence_ly $ly \
+    -fence_ux $ux -fence_uy $uy {*}$args]
+}
+proc check_malformed_fences { phase } {
+  set names {-fence_lx -fence_ly -fence_ux -fence_uy}
+  set coordinates {10.125 20.25 20.125 25.25}
+  for { set mask 1 } { $mask < 15 } { incr mask } {
+    set args {}
+    for { set i 0 } { $i < 4 } { incr i } {
+      if { $mask & (1 << $i) } {
+        lappend args [lindex $names $i] [lindex $coordinates $i]
+      }
+    }
+    check_error "$phase partial fence $mask" {
+      check_macro_placement {*}$args
+    } MPL-0081
+  }
+  foreach {name fence} {
+    all_zero {0 0 0 0}
+    zero_width {10.125 20.25 10.125 25.25}
+    zero_height {10.125 20.25 20.125 20.25}
+    reversed_x {20.125 20.25 10.125 25.25}
+    reversed_y {10.125 25.25 20.125 20.25}
+    reversed_both {20.125 25.25 10.125 20.25}
+    sub_dbu_width {10.125 20.25 10.1251 25.25}
+    sub_dbu_height {10.125 20.25 20.125 20.2501}
+  } {
+    check_error "$phase malformed fence $name" {
+      run_fence_check $fence
+    } MPL-0082
+  }
+  check "$phase omitted fence still uses core" { check_macro_placement } true
+}
+proc preflight_db_bytes { path } {
+  set file [open $path rb]
+  set bytes [read $file]
+  close $file
+  return $bytes
+}
+proc check_numeric_inputs { phase } {
+  foreach invalid {1e9 -1e9 1e308 -1e308 Inf -Inf} {
+    for { set i 0 } { $i < 4 } { incr i } {
+      set fence {10.125 20.25 20.125 25.25}
+      lset fence $i $invalid
+      check_error "$phase invalid fence coordinate $i: $invalid" {
+        run_fence_check $fence
+      } MPL-0083
+    }
+    foreach channel [list [list $invalid 0] [list 0 $invalid]] {
+      check_error "$phase invalid channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } MPL-0083
+    }
+  }
+  # Tcl/SWIG rejects NaN while parsing doubles, before entering the native check.
+  foreach invalid {NaN nan} {
+    for { set i 0 } { $i < 4 } { incr i } {
+      set fence {10.125 20.25 20.125 25.25}
+      lset fence $i $invalid
+      check_error "$phase NaN fence coordinate $i" {
+        run_fence_check $fence
+      } {TypeError in method 'check_macro_placement_cmd'}
+    }
+    foreach channel [list [list $invalid 0] [list 0 $invalid]] {
+      check_error "$phase NaN channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } {TypeError in method 'check_macro_placement_cmd'}
+    }
+  }
+  set before [make_result_file "${phase}_extreme_channel_before.odb"]
+  set after [make_result_file "${phase}_extreme_channel_after.odb"]
+  write_db $before
+  # All values convert legally. Odd/even DBUs and fractional-DBU rounding must
+  # still reject the overflowing macro-plus-halo width or height, not pass.
+  foreach extreme {1073741.8235 1073741.823 1073741.823625} {
+    foreach channel [list [list $extreme 0] [list 0 $extreme]] {
+      check_error "$phase macro dimensions overflow with channel $channel" {
+        check_macro_placement -min_channel_size $channel
+      } MPL-0006
+      write_db $after
+      check "$phase DB unchanged after extreme channel $channel" {
+        expr { [preflight_db_bytes $before] eq [preflight_db_bytes $after] }
+      } 1
+    }
+  }
+  check "$phase exact DBU limits remain representable" {
+    run_fence_check {-1073741.824 -1073741.824 1073741.8235 1073741.8235}
+  } true
+  check "$phase fractional DBUs round back inside the limits" {
+    run_fence_check {-1073741.824125 -1073741.824125 1073741.823625 1073741.823625}
+  } true
+  check "$phase omitted fence works after numeric errors" {
+    check_macro_placement
+  } true
+}
+set exact_fence {10.125 20.25 20.125 25.25}
+set result_dir [file normalize [make_result_dir]]
+set work_dir [file join $result_dir preflight_artifacts]
+file mkdir $work_dir
+cd $work_dir
+set artifacts_before [lsort [glob -nocomplain * .*]]
+check_malformed_fences initial
+check_numeric_inputs initial
+check "no artifacts from initially malformed fences" {
+  lsort [glob -nocomplain * .*]
+} $artifacts_before
+
+# Seed the actual placer with a smaller fence without clustering or annealing.
+$macro_a setLocation 24250 44500
+$macro_b setLocation 34250 44500
+$macro_a setPlacementStatus FIRM
+$macro_b setPlacementStatus FIRM
+rtl_macro_placer -fence_lx 10.125 -fence_ly 20.25 \
+  -fence_ux 11.125 -fence_uy 21.25 -report_directory previous_placer
+$macro_a setPlacementStatus PLACED
+$macro_b setPlacementStatus PLACED
+set artifacts_before [lsort [glob -nocomplain * .*]]
+mpl::set_macro_placement_file unexpected-placement.tcl
+mpl::set_min_channel 1.0 2.0
+check_malformed_fences configured
+check_numeric_inputs configured
+
+check "default preflight" { check_macro_placement } true
+check "exact fractional-origin fence" { run_fence_check $exact_fence } true
+foreach {coordinate fence} {
+  lx {10.1255 20.25 20.125 25.25}
+  ly {10.125 20.2505 20.125 25.25}
+  ux {10.125 20.25 20.1245 25.25}
+  uy {10.125 20.25 20.125 25.2495}
+} {
+  check_error "one DBU inward at $coordinate" { run_fence_check $fence } MPL-0065
+}
+foreach {axis fence} {
+  x {22.125 20.25 32.125 25.25}
+  y {10.125 32.25 20.125 37.25}
+  xy {22.125 32.25 32.125 37.25}
+} {
+  check_error "fence touches core on $axis" { run_fence_check $fence } MPL-0068
+}
+check "one DBU channel rounds down to zero halo" {
+  run_fence_check $exact_fence -min_channel_size 0.0005
+} true
+check_error "two DBU scalar channel consumes area" {
+  run_fence_check $exact_fence -min_channel_size 0.001
+} MPL-0065
+check_error "two DBU horizontal channel consumes area" {
+  run_fence_check $exact_fence -min_channel_size {0.001 0}
+} MPL-0065
+check_error "two DBU vertical channel consumes area" {
+  run_fence_check $exact_fence -min_channel_size {0 0.001}
+} MPL-0065
+check "pin-aware channels trim a pinless macro" {
+  run_fence_check $exact_fence -min_channel_size 0.001 -pin_aware_channels
+} true
+check_error "channel cardinality" {
+  check_macro_placement -min_channel_size {1 2 3}
+} MPL-0080
+check_error "pin-aware channel requirement" {
+  check_macro_placement -pin_aware_channels
+} MPL-0079
+check "no reports or placement files on success or error" {
+  lsort [glob -nocomplain * .*]
+} $artifacts_before
+
+# Observe the previously configured channel through a subsequent operation.
+# Preflight's per-call overrides must not replace this 1 x 2 um setting.
+$macro_a setLocation 24250 44500
+$macro_a setPlacementStatus FIRM
+block_macro_channels
+check "one fixed-macro blockage" { llength [$block getBlockages] } 1
+set box [[lindex [$block getBlockages] 0] getBBox]
+check "configured channel survives successful and failing preflights" {
+  list [$box xMin] [$box yMin] [$box xMax] [$box yMax]
+} {23250 42500 35250 56500}
+
+exit_summary
