@@ -380,9 +380,16 @@ bool dbInst::rename(const char* name)
 
   std::string old_name(inst->name_);
   block->inst_hash_.remove(inst);
+  dbModule* module = getModule();
+  if (module) {
+    ((_dbModule*) module)->dbinst_hash_.erase(old_name);
+  }
   free((void*) inst->name_);
   inst->name_ = safe_strdup(name);
   block->inst_hash_.insert(inst);
+  if (module) {
+    ((_dbModule*) module)->dbinst_hash_[name] = dbId<_dbInst>(inst->getOID());
+  }
 
   for (dbBlockCallBackObj* cb : block->callbacks_) {
     cb->inDbPostInstRename(this, old_name.c_str());
@@ -1178,6 +1185,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     block->journal_->pushParam(old_master_->getId());
     block->journal_->pushParam(new_lib->getId());
     block->journal_->pushParam(new_master_->getId());
+    block->journal_->pushAccessPoints(dbJournal::getAccessPoints(this));
     block->journal_->endAction();
   }
 
@@ -1539,6 +1547,12 @@ void dbInst::destroy(dbInst* inst_)
         inst->name_);
   }
 
+  // The iterms and their preferred access points are destroyed before the
+  // journal entry is written, so capture the access points first.
+  const dbJournal::InstAccessPoints access_points
+      = block->journal_ ? dbJournal::getAccessPoints(inst_)
+                        : dbJournal::InstAccessPoints{};
+
   uint32_t i;
   uint32_t n = inst->iterms_.size();
 
@@ -1565,9 +1579,6 @@ void dbInst::destroy(dbInst* inst_)
   inst->iterms_.clear();
 
   dbModule* module = inst_->getModule();
-  if (module) {
-    ((_dbModule*) module)->dbinst_hash_.erase(inst_->getName());
-  }
 
   debugPrint(block->getImpl()->getLogger(),
              utl::ODB,
@@ -1591,6 +1602,7 @@ void dbInst::destroy(dbInst* inst_)
     block->journal_->pushParam(inst->group_);
     block->journal_->pushParam(inst->module_);
     block->journal_->pushParam(inst->region_);
+    block->journal_->pushAccessPoints(access_points);
     block->journal_->endAction();
   }
 

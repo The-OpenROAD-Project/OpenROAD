@@ -9,9 +9,9 @@ package(
     features = ["layering_check"],
 )
 
-# Public headers live physically in src/odb/include/odb/ (preserving the
-# CMake layout). They are exported so each per-subdir Bazel package can
-# reference the headers it owns via cross-package labels.
+# Public headers live physically in src/odb/include/odb/. They are exported
+# so each per-subdir Bazel package can reference the headers it owns via
+# cross-package labels.
 exports_files(
     glob(
         include = ["include/odb/*.h"],
@@ -104,6 +104,7 @@ messages_txt(
         "//src/odb/src/lefin:message_srcs",
         "//src/odb/src/lefout:message_srcs",
         "//src/odb/src/swig:message_srcs",
+        "//src/odb/src/wireNormalizer:message_srcs",
     ],
     src_patterns = [
         "include/odb/*.h",

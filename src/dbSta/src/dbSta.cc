@@ -1348,12 +1348,18 @@ void dbStaCbk::inDbPostInstRename(odb::dbInst* inst, const char* /*old_name*/)
   }
 }
 
-void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst* inst)
 {
-  // Reparenting moves a whole subtree at once and can flip descendants'
-  // pathological status. Drop the cache; reparent is rare.
   if (sdc_network_) {
-    sdc_network_->invalidateSdcPathToInstMap();
+    if (inst->getModule() == nullptr) {
+      // Remove the detached leaf's old path before any later observer queries
+      // it. The instance-destroy callback can safely repeat this erase.
+      sdc_network_->onInstDestroyed(network_->dbToSta(inst));
+    } else {
+      // Reparenting moves a whole subtree at once and can flip descendants'
+      // pathological status. Drop the cache; reparent is rare.
+      sdc_network_->invalidateSdcPathToInstMap();
+    }
   }
 }
 
@@ -1531,6 +1537,7 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
+  network_->setTopPortDirection(bterm, bterm->getIoType());
 }
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)

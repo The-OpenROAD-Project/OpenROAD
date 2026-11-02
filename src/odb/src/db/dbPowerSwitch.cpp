@@ -404,6 +404,9 @@ std::vector<dbPowerSwitch::UPFOnState> dbPowerSwitch::getOnStates()
 dbMaster* dbPowerSwitch::getLibCell()
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
+  if (!obj->lib_.isValid()) {
+    return nullptr;
+  }
   return dbMaster::getMaster(
       dbLib::getLib((dbDatabase*) obj->getImpl()->getDatabase(), obj->lib_),
       obj->lib_cell_);

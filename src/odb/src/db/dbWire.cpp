@@ -32,7 +32,7 @@ bool _dbWire::operator==(const _dbWire& rhs) const
     return false;
   }
 
-  if (flags_.ordered != rhs.flags_.ordered) {
+  if (flags_.normalized_connectivity != rhs.flags_.normalized_connectivity) {
     return false;
   }
 
@@ -104,16 +104,16 @@ bool dbWire::isGlobalWire()
   return wire->flags_.is_global == 1;
 }
 
-bool dbWire::isOrdered()
+bool dbWire::hasNormalizedConnectivity()
 {
   _dbWire* wire = (_dbWire*) this;
-  return wire->flags_.ordered == 1;
+  return wire->flags_.normalized_connectivity == 1;
 }
 
-void dbWire::setOrdered(bool ordered)
+void dbWire::setNormalizedConnectivity(bool normalized_connectivity)
 {
   _dbWire* wire = (_dbWire*) this;
-  wire->flags_.ordered = ordered ? 1 : 0;
+  wire->flags_.normalized_connectivity = normalized_connectivity ? 1 : 0;
 }
 
 void dbWire::addOneSeg(unsigned char op,

@@ -1,16 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
     "centralization1",
@@ -46,6 +42,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_already_placed_overlap",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
     "rerun1",
@@ -241,6 +238,10 @@ filegroup(
                 "orientation_improve3": [
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
+                ],
+                "place_macro_already_placed_overlap": [
+                    "testcases/place_macro_already_placed_overlap.def",
+                    "testcases/macro_only.lef",
                 ],
                 "place_macro_right_angle_rotation": [
                     "testcases/place_macro_right_angle_rotation.def",

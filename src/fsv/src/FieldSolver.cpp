@@ -53,13 +53,32 @@ FieldSolver::~FieldSolver() = default;
 void FieldSolver::readItf(const std::string& path)
 {
   Stack stack;
+  std::vector<ItfWarning> warnings;
   try {
-    stack = readItfFile(path);
+    stack = readItfFile(path, &warnings);
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
   }
+  for (const ItfWarning& w : warnings) {
+    logger_->warn(utl::FSV, 26, "ITF line {}: {}", w.line, w.message);
+  }
+  for (const Stack::Conductor& c : stack.conductors()) {
+    bool etched = c.capacitive_etch != 0;
+    for (const Stack::EtchTable& table : c.etch_tables) {
+      etched
+          = etched || table.affects != Stack::EtchTable::Affects::kResistance;
+    }
+    if (etched) {
+      // Solving as drawn would give capacitances of the wrong geometry.
+      logger_->error(utl::FSV,
+                     19,
+                     "Conductor {} has a capacitive etch, which the solver "
+                     "does not apply.",
+                     c.name);
+    }
+  }
   std::set<std::string> conformals;
-  for (const Stack::Conductor& c : stack.conductors) {
+  for (const Stack::Conductor& c : stack.conductors()) {
     for (const Stack::ConformalDielectric& cf : c.conformals) {
       conformals.insert(cf.name);
     }
@@ -68,11 +87,11 @@ void FieldSolver::readItf(const std::string& path)
                 2,
                 "Read ITF {}: {} dielectrics, {} conductors, {} conformal "
                 "dielectrics, {} vias.",
-                stack.technology,
-                stack.dielectrics.size(),
-                stack.conductors.size(),
+                stack.technology(),
+                stack.dielectrics().size(),
+                stack.conductors().size(),
                 conformals.size(),
-                stack.vias.size());
+                stack.vias().size());
   resetScenes();
   stack_ = std::move(stack);
   has_stack_ = true;
@@ -159,42 +178,23 @@ std::pair<double, double> FieldSolver::layerExtent(
     logger_->error(
         utl::FSV, 6, "Read an ITF file before adding shapes by layer.");
   }
-  if (const Stack::Conductor* c = stack_.findConductor(layer)) {
-    return {c->bottom, c->top};
-  }
-  // A via spans from the top of its lower conductor to the bottom of its
-  // upper one.
-  const Stack::Via* via = nullptr;
-  for (const Stack::Via& v : stack_.vias) {
-    if (v.name == layer) {
-      via = &v;
-    }
-  }
-  if (via == nullptr) {
+  const Stack::Layer handle = stack_.layer(layer);
+  if (!handle.valid()) {
     logger_->error(utl::FSV,
                    7,
                    "Layer {} is not a conductor or via of the ITF stack.",
                    layer);
   }
-  const Stack::Conductor* lower = stack_.findConductor(via->lower);
-  const Stack::Conductor* upper = stack_.findConductor(via->upper);
-  if (lower == nullptr) {
-    // A SUBSTRATE via lands on the ground plane: its net is grounded and
-    // has no capacitance to solve.
+  if (stack_.isVia(handle) && !stack_.via(handle).lower.valid()) {
+    // Its net would be grounded, with no capacitance to solve.
     logger_->error(utl::FSV,
                    14,
                    "Via {} lands on the ground plane, which would ground "
                    "its net.",
                    layer);
   }
-  if (upper == nullptr) {
-    logger_->error(utl::FSV,
-                   13,
-                   "Via {} has no upper conductor {} in the ITF stack.",
-                   layer,
-                   via->upper);
-  }
-  return {lower->top, upper->bottom};
+  const Stack::ZExtent extent = stack_.zExtent(handle);
+  return {extent.bottom, extent.top};
 }
 
 void FieldSolver::addLayerRect(const std::string_view net,

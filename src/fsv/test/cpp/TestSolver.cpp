@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 #include "Dielectric.h"
+#include "Structures.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
@@ -53,6 +56,89 @@ TEST(Solver, CubeAboveGround)
       row.ground, -row.total(), 4 * (row.sigma[net] + row.ground_sigma));
 }
 
+// Rounds are sized to the walks the tolerance still needs, so a solve stops
+// just inside its target rather than up to a doubling past it: the error is
+// below the tolerance but close to it, at any tolerance.
+TEST(Solver, StopsNearTheTarget)
+{
+  Geometry geometry;
+  const int net = geometry.addNet("cube");
+  geometry.addBox(net, cube(0, 0, 2, 1));
+  const Scene scene(geometry);
+  Solver solver({.threads = 8});
+  for (const double tol : {0.01, 0.005, 0.002}) {
+    SolveOptions options;
+    options.tol_total = tol;
+    const CapRow row = solver.solve(scene, net, options);
+    const double error = row.sigma[net] / row.total();
+    EXPECT_LT(error, tol);
+    EXPECT_GT(error, 0.8 * tol) << "tolerance " << tol;
+  }
+}
+
+// Unset, tol_coupling follows tol_total, relative to the total: a looser
+// total loosens the couplings and the ground too, and a tighter tol_coupling
+// alone takes more walks.
+TEST(Solver, CouplingToleranceFollowsTheTotal)
+{
+  Geometry geometry;
+  const int a = geometry.addNet("a");
+  const int b = geometry.addNet("b");
+  geometry.addBox(a, cube(0, 0, 1, 1));
+  geometry.addBox(b, cube(1.6, 0, 1, 1));
+  const Scene scene(geometry);
+  Solver solver({.threads = 8});
+  auto worst = [&](const CapRow& row) {
+    return std::max({row.sigma[a], row.sigma[b], row.ground_sigma})
+           / row.total();
+  };
+  SolveOptions options;
+  options.tol_total = 0.02;
+  const CapRow loose = solver.solve(scene, a, options);
+  EXPECT_LT(worst(loose), 0.02);
+  EXPECT_GT(worst(loose), 0.8 * 0.02);
+  options.tol_coupling = 0.005;
+  const CapRow tight = solver.solve(scene, a, options);
+  EXPECT_LT(tight.sigma[b], 0.005 * tight.total());
+  EXPECT_LT(tight.ground_sigma, 0.005 * tight.total());
+  EXPECT_GT(tight.walks, loose.walks);
+}
+
+// Around shells whose first cubes shrink, a trial picks the surface inside
+// them where it is clearly cheaper: on the line ends, whose shells cross a
+// layer boundary. A planar structure, and a solve capped below the trial's
+// budget, run no trial.
+TEST(Solver, TrialPicksTheSurface)
+{
+  Solver solver({.threads = 8});
+  const Structure line_ends = readStructure("conformal_line_ends");
+  const Scene shelled(line_ends.geometry, line_ends.stack);
+  const CapRow chosen = solver.solve(shelled, 0, SolveOptions{});
+  EXPECT_TRUE(chosen.inside_surface);
+  EXPECT_GT(chosen.trial_walks, 0);
+
+  // With the walk count fixed only the hops per walk count, and the inside
+  // surface's walks are shorter here.
+  SolveOptions fixed;
+  fixed.min_walks = fixed.max_walks = 262144;
+  const CapRow fixed_row = solver.solve(shelled, 0, fixed);
+  EXPECT_TRUE(fixed_row.inside_surface);
+  EXPECT_EQ(fixed_row.walks, 262144);
+
+  SolveOptions capped;
+  capped.min_walks = capped.max_walks = 65536;
+  const CapRow quick = solver.solve(shelled, 0, capped);
+  EXPECT_FALSE(quick.inside_surface);
+  EXPECT_EQ(quick.trial_walks, 0);
+  EXPECT_EQ(quick.walks, 65536);
+
+  const Structure planar = readStructure("etch_stop_pair", 10);
+  const CapRow clear
+      = solver.solve(Scene(planar.geometry, planar.stack), 0, SolveOptions{});
+  EXPECT_FALSE(clear.inside_surface);
+  EXPECT_EQ(clear.trial_walks, 0);
+}
+
 // Capacitance scales with the dielectric constant and with size.
 TEST(Solver, Scaling)
 {
@@ -85,7 +171,7 @@ TEST(Solver, TwoCubesSymmetric)
 
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.005;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const Scene scene(geometry);
   const CapRow ra = solver.solve(scene, a, options);
@@ -171,6 +257,16 @@ TEST(Solver, HopGuardFailsSolve)
     EXPECT_THROW(solver.solve(scene, net, {.max_walks = max_walks}),
                  std::invalid_argument);
   }
+  // The stopping test divides by the tolerances.
+  for (const double tol : {0.0,
+                           -0.01,
+                           std::numeric_limits<double>::quiet_NaN(),
+                           std::numeric_limits<double>::infinity()}) {
+    EXPECT_THROW(solver.solve(scene, net, {.tol_total = tol}),
+                 std::invalid_argument);
+    EXPECT_THROW(solver.solve(scene, net, {.tol_coupling = tol}),
+                 std::invalid_argument);
+  }
   // The solver stays usable after a failed solve.
   EXPECT_GT(solver.solve(scene, net, SolveOptions{}).total(), 0);
 }
@@ -181,15 +277,30 @@ Stack planarStack(const std::vector<std::pair<double, double>>& layers,
                   const double background)
 {
   Stack stack;
-  stack.technology = "test";
-  stack.background_eps = background;
+  stack.setTechnology("test");
+  stack.setBackgroundEps(background);
   double bottom = 0;
   for (const auto& [top, eps] : layers) {
-    stack.dielectrics.push_back(
+    stack.addDielectric(
         {.name = "D", .bottom = bottom, .top = top, .eps = eps});
     bottom = top;
   }
   return stack;
+}
+
+// A conductor of a hand-built stack with its conformal dielectrics.
+Stack::Conductor conductorWith(
+    const char* name,
+    const double bottom,
+    const double top,
+    std::vector<Stack::ConformalDielectric> conformals)
+{
+  Stack::Conductor c;
+  c.name = name;
+  c.bottom = bottom;
+  c.top = top;
+  c.conformals = std::move(conformals);
+  return c;
 }
 
 // ILD (2.7) up to 0.8, an etch stop (7.0) to 1.0, then 3.9 above: one wire
@@ -235,7 +346,7 @@ TEST(Solver, ReciprocityAcrossInterfaces)
   ASSERT_EQ(scene.interfaces().size(), 2u);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -299,20 +410,24 @@ TEST(Solver, RejectsPanelsNotMultipleOf16)
   EXPECT_NO_THROW(Solver({.panels = 48}));
 }
 
+// The stack refuses layers a scene could not use, so a scene never sees
+// them.
 TEST(Solver, RejectsBadStacks)
 {
-  const Geometry geometry = wiresAcrossEtchStop();
   for (const double eps : {0.0, -1.0, std::nan("")}) {
     Stack layer = etchStopStack();
-    layer.dielectrics.back().eps = eps;
-    EXPECT_THROW(Scene(geometry, layer), std::invalid_argument) << eps;
-    Stack background = etchStopStack();
-    background.background_eps = eps;
-    EXPECT_THROW(Scene(geometry, background), std::invalid_argument) << eps;
+    EXPECT_THROW(layer.addDielectric({"E", 1.0, 2.0, eps}),
+                 std::invalid_argument)
+        << eps;
+    EXPECT_THROW(layer.setBackgroundEps(eps), std::invalid_argument) << eps;
   }
   Stack unordered = etchStopStack();
-  unordered.dielectrics.back().top = unordered.dielectrics.front().top;
-  EXPECT_THROW(Scene(geometry, unordered), std::invalid_argument);
+  // A dielectric must start where the stack ends, and reach above it.
+  EXPECT_THROW(unordered.addDielectric({"E", 0.5, 2.0, 3.9}),
+               std::invalid_argument);
+  EXPECT_THROW(unordered.addDielectric({"E", 1.0, 1.0, 3.9}),
+               std::invalid_argument);
+  EXPECT_EQ(unordered.dielectrics().size(), 2u);
 }
 
 // The scene's interface lookup agrees with the stack's, on the interfaces
@@ -322,7 +437,7 @@ TEST(Solver, SceneEpsMatchesStack)
   const Stack stack = etchStopStack();
   const Geometry geometry = wiresAcrossEtchStop();
   const Scene scene(geometry, stack);
-  for (const Stack::Dielectric& d : stack.dielectrics) {
+  for (const Stack::Dielectric& d : stack.dielectrics()) {
     for (const double z : {d.bottom, 0.5 * (d.bottom + d.top), d.top}) {
       EXPECT_EQ(scene.epsAt(z), stack.epsAt(z)) << z;
     }
@@ -337,12 +452,8 @@ Stack conformalStack(
     const std::vector<Stack::ConformalDielectric>& m1_conformals)
 {
   Stack stack = etchStopStack();
-  stack.conductors.push_back(
-      {.name = "M1", .bottom = 0.5, .top = 0.7, .conformals = m1_conformals});
-  stack.conductors.push_back({.name = "M2",
-                              .bottom = 1.1,
-                              .top = 1.3,
-                              .conformals = {{"C2", 0.03, 0.02, 4.5}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, m1_conformals));
+  stack.addConductor(conductorWith("M2", 1.1, 1.3, {{"C2", 0.03, 0.02, 4.5}}));
   return stack;
 }
 
@@ -352,10 +463,7 @@ TEST(Solver, EqualPermittivityConformalMatchesPlanar)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 0.05, 0.05, 2.7}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.05, 0.05, 2.7}}));
   SolveOptions options;
   options.tol_total = 0.002;
   Solver solver({.threads = 8});
@@ -374,10 +482,7 @@ TEST(Solver, ConformalFillingLayerMatchesPlanar)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 30, 0.1, 5.0}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 30, 0.1, 5.0}}));
   const Stack split = planarStack({{0.5, 2.7}, {0.8, 5.0}, {1.0, 7.0}}, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
@@ -400,7 +505,7 @@ TEST(Solver, ConformalReciprocityAndDeterminism)
       conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
   SolveOptions options;
   options.tol_total = 0.004;
-  options.tol_coupling = 0.01;
+  options.tol_coupling = 0.004;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -487,7 +592,7 @@ TEST(Solver, MultiBoxReciprocity)
   const Scene scene(geometry, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   expectReciprocal(solver.solve(scene, 0, options),
                    solver.solve(scene, 1, options));
@@ -501,7 +606,7 @@ TEST(Solver, RedundantBoxesChangeNothing)
   const Geometry redundant = wrappedWire(true);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow a = solver.solve(Scene(plain, 3.9), 0, options);
   const CapRow b = solver.solve(Scene(redundant, 3.9), 0, options);
@@ -552,11 +657,9 @@ TEST(Solver, ViaStackReciprocity)
   geometry.addBox(1, {{0, 0.4, 0.5}, {3, 0.6, 0.7}});
   geometry.addBox(2, {{0, -0.6, 1.1}, {3, -0.4, 1.3}});
   const Scene scene(geometry, conformalStack({{"C", 0.03, 0.02, 7.0}}));
-  // The neighbours' small coupling to each other needs no tight tolerance.
   SolveOptions options;
   options.tol_total = 0.005;
-  options.tol_coupling = 0.01;
-  options.coupling_threshold = 0.05;
+  options.tol_coupling = 0.005;
   Solver solver({.threads = 8});
   const CapRow stack = solver.solve(scene, 0, options);
   expectReciprocal(stack, solver.solve(scene, 1, options));
@@ -578,7 +681,7 @@ TEST(Solver, RingAroundNet)
   const Scene2D scene(section, 3.9);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow ring = solver.solve(scene, 0, options);
   const CapRow inner = solver.solve(scene, 1, options);
@@ -685,13 +788,9 @@ TEST(Solver, ConformalWithoutPlanarInterfaces)
 {
   const Geometry geometry = wiresAcrossEtchStop();
   Stack bare = planarStack({{1.0, 3.9}}, 3.9);
-  bare.conductors.push_back({.name = "M1",
-                             .bottom = 0.5,
-                             .top = 0.7,
-                             .conformals = {{"C", 0.05, 0.05, 7.0}}});
-  Stack layered = bare;
-  layered.dielectrics = {{.name = "D", .bottom = 0, .top = 20, .eps = 3.9}};
-  layered.background_eps = 3.9 * (1 + 1e-9);
+  bare.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.05, 0.05, 7.0}}));
+  Stack layered = planarStack({{20, 3.9}}, 3.9 * (1 + 1e-9));
+  layered.addConductor(bare.conductors().front());
   const Scene bare_scene(geometry, bare);
   ASSERT_TRUE(bare_scene.interfaces().empty());
   SolveOptions options;
@@ -759,7 +858,7 @@ TEST(Solver, CrossSectionReciprocityAndDeterminism)
       conformalStack({{"C1a", 0.02, 0.0, 7.0}, {"C1b", 0.03, 0.03, 3.0}}));
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow r0 = solver.solve(scene, 0, options);
   const CapRow r1 = solver.solve(scene, 1, options);
@@ -784,8 +883,7 @@ TEST(Solver, CrossSectionMatchesLongLine3D)
   const Geometry thirty = wiresAlongY(30.0);
   SolveOptions options;
   options.tol_total = 0.002;
-  options.tol_coupling = 0.004;
-  options.coupling_threshold = 0.05;
+  options.tol_coupling = 0.002;
   Solver solver({.threads = 8});
   const CapRow cross = solver.solve(Scene2D(section, stack), 0, options);
   const CapRow a = solver.solve(Scene(ten, stack), 0, options);
@@ -820,15 +918,13 @@ TEST(Solver, RejectsOverlappingConformals)
   geometry.addBox(0, {{0, 0, 0.5}, {2, 0.2, 0.7}});
   geometry.addBox(1, {{0, 0.3, 0.5}, {2, 0.5, 0.7}});
   Stack stack = etchStopStack();
-  stack.conductors.push_back({.name = "M1",
-                              .bottom = 0.5,
-                              .top = 0.7,
-                              .conformals = {{"C", 0.06, 0.02, 4.5}}});
+  stack.addConductor(conductorWith("M1", 0.5, 0.7, {{"C", 0.06, 0.02, 4.5}}));
   EXPECT_NO_THROW(Scene(geometry, stack));
   // Each wire's outer shell D reaches into the other's inner shell C.
-  stack.conductors.back().conformals
-      = {{"C", 0.04, 0.02, 4.5}, {"D", 0.03, 0.02, 3.5}};
-  EXPECT_THROW(Scene(geometry, stack), std::invalid_argument);
+  Stack nested = etchStopStack();
+  nested.addConductor(conductorWith(
+      "M1", 0.5, 0.7, {{"C", 0.04, 0.02, 4.5}, {"D", 0.03, 0.02, 3.5}}));
+  EXPECT_THROW(Scene(geometry, nested), std::invalid_argument);
 }
 
 }  // namespace
