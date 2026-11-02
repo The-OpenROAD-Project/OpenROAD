@@ -144,6 +144,38 @@ MACRO lib_large_input_cap
   END VDD
 END lib_large_input_cap
 
+MACRO lib_large_inout_cap
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_large_inout_cap
+
 MACRO lib_pin_max_transition
   CLASS BLOCK ;
   ORIGIN 0 0 ;
@@ -175,5 +207,174 @@ MACRO lib_pin_max_transition
     END
   END VDD
 END lib_pin_max_transition
+
+MACRO lib_just_above_limit
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_just_above_limit
+
+MACRO lib_rounding_at_limit
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_rounding_at_limit
+
+MACRO lib_scalar_zero
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_scalar_zero
+
+MACRO lib_scalar_long
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_scalar_long
+
+MACRO lib_tristate_disable
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 1.000 BY 1.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.100 0.300 0.300 ;
+    END
+  END A
+  PIN EN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.100 0.500 0.300 0.700 ;
+    END
+  END EN
+  PIN Z
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.500 0.500 0.700 0.700 ;
+    END
+  END Z
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 1.000 0.200 ;
+    END
+  END VDD
+END lib_tristate_disable
 
 END LIBRARY

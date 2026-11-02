@@ -910,9 +910,6 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
   std::set<std::pair<const LibertyPort*, const TableModel*>> checked;
   for (TimingArcSet* arc_set : liberty_cell->timingArcSets()) {
     const TimingRole* role = arc_set->role();
-    // isTimingCheck() covers the async, non-sequential and data checks.
-    // A three-state disable arc describes the output turning off, and its
-    // transition table is commonly a scalar 0.
     if (role->isTimingCheck() || role == TimingRole::tristateDisable()) {
       continue;
     }
@@ -956,8 +953,6 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
         }
       }
 
-      // Without a load axis (a scalar or slew only table) every entry counts
-      // as the smallest load.
       float min_slew = std::numeric_limits<float>::max();
       float min_load_slew = std::numeric_limits<float>::max();
       for (size_t i = 0; i < sizes[0]; i++) {
@@ -990,7 +985,6 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
         warning_count_++;
       }
 
-      // The tolerance absorbs rounding in the written library values.
       const float tolerance = max_slew * transition_tolerance_;
       if (has_max_slew && min_load_slew > max_slew + tolerance) {
         const int digits = time_unit->digits() + 3;

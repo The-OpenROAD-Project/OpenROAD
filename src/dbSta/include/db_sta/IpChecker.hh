@@ -122,7 +122,6 @@ class IpChecker
   float max_transition_ = 0.0;
   float max_capacitance_ = 0.0;
   float max_characterized_load_ = -1.0;
-  // Relative slack allowed over max_transition for rounding in the library.
   static constexpr float transition_tolerance_ = 1e-4;
   bool verbose_ = false;
 
