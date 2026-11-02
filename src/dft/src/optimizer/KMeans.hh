@@ -44,11 +44,11 @@ namespace dft {
 //
 // Degenerate cases:
 //   k <= 1 or n <= k: all cells are assigned to cluster 0.
-inline std::vector<int> KMeansClusters(
-    const std::vector<ScanCell*>& cells,
-    int k,
-    int64_t cap_bits = std::numeric_limits<int64_t>::max(),
-    int max_iters = 100)
+inline std::vector<int> KMeansClusters(const std::vector<ScanCell*>& cells,
+                                       int k,
+                                       int64_t cap_bits
+                                       = std::numeric_limits<int64_t>::max(),
+                                       int max_iters = 100)
 {
   const int n = static_cast<int>(cells.size());
 
@@ -86,9 +86,9 @@ inline std::vector<int> KMeansClusters(
             + std::abs(static_cast<int64_t>(pts[i].y()) - new_cen.y());
       seed_dist[i] = std::min(seed_dist[i], d);
     }
-    const int farthest = static_cast<int>(
-        std::max_element(seed_dist.begin(), seed_dist.end())
-        - seed_dist.begin());
+    const int farthest
+        = static_cast<int>(std::max_element(seed_dist.begin(), seed_dist.end())
+                           - seed_dist.begin());
     centroids.push_back(pts[farthest]);
   }
 
@@ -180,7 +180,7 @@ inline std::vector<int> KMeansClusters(
     for (int c = 0; c < k; c++) {
       if (count[c] > 0) {
         centroids[c] = odb::Point(static_cast<int>(sum_x[c] / count[c]),
-                                   static_cast<int>(sum_y[c] / count[c]));
+                                  static_cast<int>(sum_y[c] / count[c]));
       }
       // Empty cluster: keep previous centroid to avoid degenerate collapse.
     }

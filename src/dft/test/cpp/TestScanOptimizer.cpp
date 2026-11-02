@@ -125,7 +125,7 @@ class UnplacedScanCellMock : public ScanCell
 int64_t manhattanDist(const odb::Point& a, const odb::Point& b)
 {
   return std::abs(static_cast<int64_t>(a.x()) - b.x())
-       + std::abs(static_cast<int64_t>(a.y()) - b.y());
+         + std::abs(static_cast<int64_t>(a.y()) - b.y());
 }
 
 // Total scan chain wirelength: sum of |SO[i] -> SI[i+1]| for i in [0, n-2].
@@ -169,11 +169,7 @@ TEST(TestScanOptimizer, SingleCell)
   utl::Logger logger;
   std::vector<std::unique_ptr<ScanCell>> cells;
   cells.push_back(std::make_unique<PlacedScanCellMock>(
-      "cell0",
-      odb::Point(0, 0),
-      odb::Point(0, 0),
-      odb::Point(5, 0),
-      &logger));
+      "cell0", odb::Point(0, 0), odb::Point(0, 0), odb::Point(5, 0), &logger));
   OptimizeScanWirelength(cells, &logger);
   ASSERT_EQ(cells.size(), 1u);
   EXPECT_EQ(std::string(cells[0]->getName()), "cell0");
@@ -378,8 +374,8 @@ TEST(TestScanOptimizer, SmallChainHandledCorrectly)
 
 // Helper: build a PlacedScanCellMock at the given point (SI == SO == origin).
 std::unique_ptr<PlacedScanCellMock> MakeCell(const std::string& name,
-                                              odb::Point p,
-                                              utl::Logger* logger)
+                                             odb::Point p,
+                                             utl::Logger* logger)
 {
   return std::make_unique<PlacedScanCellMock>(name, p, p, p, logger);
 }
@@ -438,8 +434,7 @@ TEST(TestKMeans, QuadrantRecovery)
     for (int w = 0; w < 4; w++) {
       odb::Point p(qoffsets[q].x() + within[w].x(),
                    qoffsets[q].y() + within[w].y());
-      owned.push_back(
-          MakeCell("c" + std::to_string(q * 4 + w), p, &logger));
+      owned.push_back(MakeCell("c" + std::to_string(q * 4 + w), p, &logger));
       cells.push_back(owned.back().get());
     }
   }

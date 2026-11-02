@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "ClockDomain.hh"
-#include "ScanArchitect.hh"
 #include "NNReorder.hh"
+#include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "utl/Logger.h"

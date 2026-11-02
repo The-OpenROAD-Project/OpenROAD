@@ -316,8 +316,7 @@ int64_t computeHPWL(const std::vector<odb::Point>& pts)
     ymin = std::min(ymin, p.y());
     ymax = std::max(ymax, p.y());
   }
-  return static_cast<int64_t>(xmax - xmin)
-         + static_cast<int64_t>(ymax - ymin);
+  return static_cast<int64_t>(xmax - xmin) + static_cast<int64_t>(ymax - ymin);
 }
 
 // Sum of pairwise Manhattan distances.  O(n²).
@@ -527,8 +526,7 @@ void Dft::scanOpt()
     for (odb::dbScanPartition* part : chain->getScanPartitions()) {
       for (odb::dbScanList* list : part->getScanLists()) {
         for (odb::dbScanInst* si : list->getScanInsts()) {
-          cells.push_back(
-              std::make_unique<OdbScanCellAdapter>(si, logger_));
+          cells.push_back(std::make_unique<OdbScanCellAdapter>(si, logger_));
         }
       }
     }
@@ -575,8 +573,7 @@ void Dft::scanOpt()
     chains_optimized++;
   }
 
-  logger_->info(
-      utl::DFT, 16, "Optimized {} scan chain(s).", chains_optimized);
+  logger_->info(utl::DFT, 16, "Optimized {} scan chain(s).", chains_optimized);
 }
 
 void Dft::reportChainMetrics()
@@ -608,12 +605,8 @@ void Dft::reportChainMetrics()
     total_cells += static_cast<int>(pts.size());
     chain_count++;
 
-    logger_->report("{},{},{},{},{}",
-                    chain->getName(),
-                    pts.size(),
-                    hpwl,
-                    mst,
-                    pw);
+    logger_->report(
+        "{},{},{},{},{}", chain->getName(), pts.size(), hpwl, mst, pw);
   }
 
   logger_->info(utl::DFT,

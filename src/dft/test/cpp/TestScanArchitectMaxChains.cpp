@@ -99,8 +99,8 @@ std::vector<std::unique_ptr<ScanChain>> runArchitect(
 {
   auto bucket = std::make_unique<ScanCellsBucket>(logger);
   bucket->init(config, cells);
-  auto architect
-      = ScanArchitect::ConstructScanScanArchitect(config, std::move(bucket), logger);
+  auto architect = ScanArchitect::ConstructScanScanArchitect(
+      config, std::move(bucket), logger);
   architect->init();
   architect->architect();
   return architect->getScanChains();

@@ -39,8 +39,7 @@ constexpr int kMaxNeighbors = 50;
 // ---------------------------------------------------------------------------
 
 // Weighted Manhattan distance between two points (int64 to avoid overflow).
-int64_t Dist(const odb::Point& a,
-                     const odb::Point& b)
+int64_t Dist(const odb::Point& a, const odb::Point& b)
 {
   const int64_t dx = std::abs(static_cast<int64_t>(a.x()) - b.x());
   const int64_t dy = std::abs(static_cast<int64_t>(a.y()) - b.y());
@@ -100,8 +99,7 @@ struct CandidateEdges
         ranked.emplace_back(Dist(scan_out[i], scan_in[j]), j);
       }
       std::sort(ranked.begin(), ranked.end());
-      const int limit
-          = std::min(keep_k, static_cast<int>(ranked.size()));
+      const int limit = std::min(keep_k, static_cast<int>(ranked.size()));
       neighbors[i].reserve(limit);
       for (int r = 0; r < limit; r++) {
         neighbors[i].push_back(ranked[r].second);
@@ -144,9 +142,7 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
 
   // D(i, j) = weighted distance from scan-out of cell i to scan-in of cell j.
-  auto D = [&](int i, int j) -> int64_t {
-    return Dist(so[i], si[j]);
-  };
+  auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
 
   // Identity ↔ position mapping.  identity[pos] = cell id, pos_of[id] = pos.
   std::vector<int> identity(n), pos_of(n);
@@ -230,9 +226,7 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
     so[i] = cells[i]->getScanOutLocation();
   }
 
-  auto D = [&](int a, int b) -> int64_t {
-    return Dist(so[a], si[b]);
-  };
+  auto D = [&](int a, int b) -> int64_t { return Dist(so[a], si[b]); };
 
   // identity[pos] = original candidate index of cell at this position.
   // pos_of[id]    = current position of the cell with original index id.
@@ -283,12 +277,10 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
             std::rotate(cells.begin() + i + 1,
                         cells.begin() + j + 1,
                         cells.begin() + k + 1);
-            std::rotate(si.begin() + i + 1,
-                        si.begin() + j + 1,
-                        si.begin() + k + 1);
-            std::rotate(so.begin() + i + 1,
-                        so.begin() + j + 1,
-                        so.begin() + k + 1);
+            std::rotate(
+                si.begin() + i + 1, si.begin() + j + 1, si.begin() + k + 1);
+            std::rotate(
+                so.begin() + i + 1, so.begin() + j + 1, so.begin() + k + 1);
             std::rotate(identity.begin() + i + 1,
                         identity.begin() + j + 1,
                         identity.begin() + k + 1);
@@ -307,7 +299,7 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
   }
 }
 
-}  // namespace (anonymous)
+}  // namespace
 
 void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
                             utl::Logger* logger)
