@@ -92,15 +92,41 @@ execute_dft_plan
 
 ### Scan Optimization
 
-**Note: This is currently not implemented and this command currently operates as a
-nop.**
+Reorders the cells of each scan chain to reduce scan wire length using the
+current placement, then rewires the chains and updates their SCANDEF order.
+Run it after `execute_dft_plan` and placement.
 
-Performs scan optimizations on the design reordering the flops of the scan
-chains using the latest placement information.
+Within each chain, falling-edge cells stay ahead of rising-edge cells, and the
+cell that drives the chain's scan-out stays last, since the scan-out is often a
+functional output port. Chains with more than one partition or scan list, and
+chains with unplaced cells, are skipped.
 
+The cost is the distance from each cell's scan output to the next cell's scan
+input. When a scan output also drives functional logic, a shorter scan
+connection may save less routed wire than this estimate suggests.
 
 ```tcl
 scan_opt
+    [-rebalance_chains]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ---- | ---- |
+| `-rebalance_chains` | Before reordering, move cells between chains of the same clock and edge so each chain covers a compact area. Each chain keeps the cell that drives its scan-out. No chain ends up with more bits than the longest chain had, unless multi-bit cells cannot be packed that way. |
+
+### Report Chain Metrics
+
+Reports, for each scan chain, the number of cells and three measures of how
+spread out its cells are: the half-perimeter of their bounding box, the length
+of their Manhattan minimum spanning tree, and the sum of pairwise Manhattan
+distances, all in database units. The output is comma-separated. These
+measures do not depend on the order of cells in the chain, so they show how
+well `scan_opt -rebalance_chains` groups cells.
+
+```tcl
+report_chain_metrics
 ```
 
 ## Example scripts
