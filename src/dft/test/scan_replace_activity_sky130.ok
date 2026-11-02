@@ -5,9 +5,9 @@
 [INFO ODB-0131]     Created 1 components and 6 component-terminals.
 [INFO ODB-0133]     Created 4 nets and 4 connections.
 Instance ff1
- Cell: sky130_fd_sc_hd__sdfsbp_1
+ Cell: sky130_fd_sc_hd__sdfstp_1
  Library: sky130_fd_sc_hd_merged
- Path cells: sky130_fd_sc_hd__sdfsbp_1
+ Path cells: sky130_fd_sc_hd__sdfstp_1
  Input pins:
   D input port1
   SCD input (unconnected)
@@ -16,9 +16,8 @@ Instance ff1
   CLK input clock
  Output pins:
   Q output output1
-  Q_N output (unconnected)
 input           1
-unannotated    10
+unannotated     9
 Annotated pins:
  user ff1/Q
 ff1/Q 2.50000e+07 0.500 user
