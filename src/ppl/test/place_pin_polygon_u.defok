@@ -1,0 +1,57 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN polygon_u ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 0 80000 ) ( 40000 80000 ) ( 40000 30000 ) ( 80000 30000 ) ( 80000 80000 ) ( 120000 80000 ) ( 120000 0 ) ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 286 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 286 STEP 280 LAYER metal3 ;
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 8 ;
+    - bottom + NET bottom + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 59850 70 ) N ;
+    - left + NET left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 70 39900 ) N ;
+    - left_arm_top + NET left_arm_top + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 19950 79930 ) N ;
+    - notch_floor + NET notch_floor + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 59850 29930 ) N ;
+    - notch_left + NET notch_left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 39930 55020 ) N ;
+    - notch_right + NET notch_right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 80070 55020 ) N ;
+    - right + NET right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 119930 39900 ) N ;
+    - right_arm_top + NET right_arm_top + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 100130 79930 ) N ;
+END PINS
+NETS 8 ;
+    - bottom ( PIN bottom ) + USE SIGNAL ;
+    - left ( PIN left ) + USE SIGNAL ;
+    - left_arm_top ( PIN left_arm_top ) + USE SIGNAL ;
+    - notch_floor ( PIN notch_floor ) + USE SIGNAL ;
+    - notch_left ( PIN notch_left ) + USE SIGNAL ;
+    - notch_right ( PIN notch_right ) + USE SIGNAL ;
+    - right ( PIN right ) + USE SIGNAL ;
+    - right_arm_top ( PIN right_arm_top ) + USE SIGNAL ;
+END NETS
+END DESIGN
