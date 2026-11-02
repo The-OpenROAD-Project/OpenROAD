@@ -1783,8 +1783,12 @@ void CUGR::sortRerouteIndices(std::vector<int>& net_indices) const
 
 void CUGR::sortForReroute(std::vector<int>& net_indices) const
 {
-  if (resistance_aware_ && critical_nets_percentage_ != 0) {
-    sortNetIndices(net_indices, /*res_aware_order=*/true);
+  const bool res_aware_order
+      = resistance_aware_ && critical_nets_percentage_ != 0;
+  // Incremental reroutes follow netlist edits rather than congestion and
+  // skip demotion, so they keep the slack-then-size order.
+  if (res_aware_order || incremental_routing_) {
+    sortNetIndices(net_indices, res_aware_order);
   } else {
     sortRerouteIndices(net_indices);
   }
