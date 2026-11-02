@@ -103,12 +103,12 @@ static odb::Point iTermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
 
 odb::Point OneBitScanCell::getScanInLocation() const
 {
-  return iTermLocation(findITerm(getLibertyScanIn(test_cell_)), inst_);
+  return iTermLocation(findITerm(db_network_->getLibertyScanIn(test_cell_)), inst_);
 }
 
 odb::Point OneBitScanCell::getScanOutLocation() const
 {
-  return iTermLocation(findITerm(getLibertyScanOut(test_cell_)), inst_);
+  return iTermLocation(findITerm(db_network_->getLibertyScanOut(test_cell_)), inst_);
 }
 
 }  // namespace dft
