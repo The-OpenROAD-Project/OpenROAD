@@ -5,11 +5,13 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -41,67 +43,155 @@ namespace dft {
 
 namespace {
 
-// Returns the first dbScanInst in a chain, or nullptr if the chain is empty.
-odb::dbScanInst* firstScanInst(odb::dbScanChain* chain)
+// A scan chain that scan_opt can reorder: one partition holding one list.
+struct OptChain
 {
-  for (odb::dbScanPartition* part : chain->getScanPartitions()) {
-    for (odb::dbScanList* list : part->getScanLists()) {
-      for (odb::dbScanInst* si : list->getScanInsts()) {
-        return si;
-      }
-    }
+  odb::dbScanChain* chain;
+  odb::dbScanList* list;
+  // Ordered from scan-in to scan-out.
+  std::vector<std::unique_ptr<OdbScanCellAdapter>> cells;
+  // Set when rebalancing changed which cells the chain holds.
+  bool members_changed = false;
+};
+
+// Returns the chain's only scan list, or nullptr if it has more than one
+// partition or list.
+odb::dbScanList* singleScanList(odb::dbScanChain* chain)
+{
+  odb::dbSet<odb::dbScanPartition> partitions = chain->getScanPartitions();
+  if (partitions.size() != 1) {
+    return nullptr;
   }
-  return nullptr;
+  odb::dbSet<odb::dbScanList> lists = (*partitions.begin())->getScanLists();
+  if (lists.size() != 1) {
+    return nullptr;
+  }
+  return *lists.begin();
 }
 
-// Returns the single dbScanList for a chain (executeDftPlan creates exactly
-// one partition with one list per chain).
-odb::dbScanList* getScanList(odb::dbScanChain* chain)
+std::optional<odb::Point> pinLocation(
+    const std::variant<odb::dbBTerm*, odb::dbITerm*>& pin)
 {
-  for (odb::dbScanPartition* part : chain->getScanPartitions()) {
-    for (odb::dbScanList* list : part->getScanLists()) {
-      return list;
-    }
+  const bool is_null
+      = std::visit([](auto* term) { return term == nullptr; }, pin);
+  if (is_null) {
+    return std::nullopt;
   }
-  return nullptr;
+  int x = 0;
+  int y = 0;
+  if (!ScanPin(pin).getLocation(x, y)) {
+    return std::nullopt;
+  }
+  return odb::Point(x, y);
 }
 
-// Rewires a scan chain to match the given ordered cell list:
-//   chain.scan_in → cells[0].SI
-//   cells[i].SO   → cells[i+1].SI  for i in [0, n-2]
-//   cells[n-1].SO → chain.scan_out  (metadata only — see note below)
-//
-// Safe to call multiple times (idempotent): connect() disconnects from the
-// old net before attaching to the new one.
-//
-// Note on scan_out: the chain-level scan_out BTerm/ITerm is typically a
-// functional Q output that must remain on its original net.  We only update
-// the chain metadata pointer (setScanOut) rather than physically moving nets.
-void RestitchChain(odb::dbScanChain* chain,
-                   const std::vector<OdbScanCellAdapter*>& cells,
-                   odb::dbBlock* block,
-                   utl::Logger* logger)
+int64_t manhattan(const odb::Point& a, const odb::Point& b)
+{
+  return std::abs(int64_t{a.x()} - b.x()) + std::abs(int64_t{a.y()} - b.y());
+}
+
+// Wire length of the chain from its scan-in pin through each cell's SO to
+// the next cell's SI. The wire out of the last cell is not counted; scan_opt
+// never moves it.
+int64_t chainLength(
+    const std::optional<odb::Point>& source,
+    const std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells)
+{
+  int64_t length = 0;
+  if (source && !cells.empty()) {
+    length += manhattan(*source, cells.front()->getScanInLocation());
+  }
+  for (size_t i = 0; i + 1 < cells.size(); i++) {
+    length += manhattan(cells[i]->getScanOutLocation(),
+                        cells[i + 1]->getScanInLocation());
+  }
+  return length;
+}
+
+// Reorders a chain's cells to reduce wire length. The last cell drives the
+// chain's scan-out, which may be a functional port, so it stays last.
+// Falling-edge cells stay ahead of rising-edge cells. Returns false, leaving
+// the order alone, if the chain cannot be reordered under those rules.
+bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
+                  const std::optional<odb::Point>& source,
+                  utl::Logger* logger)
+{
+  if (cells.size() < 3) {
+    return false;
+  }
+  using Edge = odb::dbScanInst::ClockEdge;
+  std::unique_ptr<OdbScanCellAdapter> last = std::move(cells.back());
+  cells.pop_back();
+
+  std::vector<std::unique_ptr<ScanCell>> falling;
+  std::vector<std::unique_ptr<ScanCell>> rising;
+  for (auto& cell : cells) {
+    if (cell->getScanInst()->getClockEdge() == Edge::Falling) {
+      falling.push_back(std::move(cell));
+    } else {
+      rising.push_back(std::move(cell));
+    }
+  }
+  const bool last_falling
+      = last->getScanInst()->getClockEdge() == Edge::Falling;
+
+  auto restore = [&](std::vector<std::unique_ptr<ScanCell>>& group) {
+    for (auto& cell : group) {
+      cells.emplace_back(static_cast<OdbScanCellAdapter*>(cell.release()));
+    }
+  };
+  cells.clear();
+
+  if (last_falling && !rising.empty()) {
+    // A falling-edge cell after rising-edge ones; not a chain scan_opt built.
+    restore(falling);
+    restore(rising);
+    cells.push_back(std::move(last));
+    return false;
+  }
+
+  const odb::Point sink = last->getScanInLocation();
+  OptimizeScanWirelength(
+      falling,
+      logger,
+      source,
+      rising.empty() ? std::optional<odb::Point>(sink) : std::nullopt);
+  std::optional<odb::Point> rising_source = source;
+  if (!falling.empty()) {
+    rising_source = falling.back()->getScanOutLocation();
+  }
+  OptimizeScanWirelength(rising, logger, rising_source, sink);
+
+  restore(falling);
+  restore(rising);
+  cells.push_back(std::move(last));
+  return true;
+}
+
+// Rewires a chain to match the order of `cells`: the chain's scan-in drives
+// cells[0].SI and cells[i].SO drives cells[i + 1].SI. The last cell's SO and
+// the chain's scan-out are left as they are.
+void restitchChain(
+    odb::dbScanChain* chain,
+    const std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
+    odb::dbBlock* block,
+    utl::Logger* logger)
 {
   if (cells.empty()) {
     return;
   }
 
-  // Connect chain scan_in to the first cell's SI.
   odb::dbITerm* first_si = cells.front()->getScanInITerm();
   if (first_si != nullptr) {
     std::visit(
-        [&](auto&& pin) {
-          if (pin != nullptr) {
-            odb::dbNet* net = pin->getNet();
-            if (net != nullptr) {
-              first_si->connect(net);
-            }
+        [&](auto* pin) {
+          if (pin != nullptr && pin->getNet() != nullptr) {
+            first_si->connect(pin->getNet());
           }
         },
         chain->getScanIn());
   }
 
-  // Wire SO[i] → SI[i+1].
   for (size_t i = 0; i + 1 < cells.size(); i++) {
     odb::dbITerm* so_iterm = cells[i]->getScanOutITerm();
     odb::dbITerm* si_iterm = cells[i + 1]->getScanInITerm();
@@ -120,11 +210,116 @@ void RestitchChain(odb::dbScanChain* chain,
     }
     si_iterm->connect(net);
   }
+}
 
-  // Update chain scan_out metadata to the last cell's SO ITerm.
-  odb::dbITerm* last_so = cells.back()->getScanOutITerm();
-  if (last_so != nullptr) {
-    chain->setScanOut(last_so);
+// Rewrites the scan list so it runs from scan-in to scan-out in the order of
+// `cells`.
+void rewriteScanList(
+    odb::dbScanList* list,
+    const std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells)
+{
+  list->clear();
+  for (auto it = cells.rbegin(); it != cells.rend(); ++it) {
+    (*it)->getScanInst()->insertAtFront(list);
+  }
+}
+
+// Moves cells between chains of the same clock domain so each chain holds a
+// spatially compact set. Each chain keeps its last cell, which drives its
+// scan-out. Only chains whose cells all share one clock and edge take part.
+void rebalanceChains(std::vector<OptChain>& chains, utl::Logger* logger)
+{
+  using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
+  std::map<DomainKey, std::vector<OptChain*>> domains;
+  for (OptChain& chain : chains) {
+    const odb::dbScanInst* first = chain.cells.front()->getScanInst();
+    const DomainKey key{first->getScanClock(), first->getClockEdge()};
+    const bool uniform = std::ranges::all_of(chain.cells, [&](const auto& c) {
+      const odb::dbScanInst* inst = c->getScanInst();
+      return inst->getScanClock() == key.first
+             && inst->getClockEdge() == key.second && c->isPlaced();
+    });
+    if (uniform && chain.cells.size() >= 2) {
+      domains[key].push_back(&chain);
+    }
+  }
+
+  for (auto& [key, members] : domains) {
+    const int k = static_cast<int>(members.size());
+    if (k < 2) {
+      continue;
+    }
+
+    // Pool every cell but each chain's last one.
+    std::vector<std::unique_ptr<OdbScanCellAdapter>> pool;
+    std::vector<std::unique_ptr<OdbScanCellAdapter>> lasts;
+    int64_t cap_bits = 0;
+    for (OptChain* chain : members) {
+      int64_t bits = 0;
+      lasts.push_back(std::move(chain->cells.back()));
+      chain->cells.pop_back();
+      for (auto& cell : chain->cells) {
+        bits += static_cast<int64_t>(cell->getBits());
+        pool.push_back(std::move(cell));
+      }
+      chain->cells.clear();
+      cap_bits = std::max(cap_bits, bits);
+    }
+    for (const auto& cell : pool) {
+      cap_bits = std::max(cap_bits, static_cast<int64_t>(cell->getBits()));
+    }
+
+    std::vector<ScanCell*> cell_ptrs;
+    cell_ptrs.reserve(pool.size());
+    for (const auto& cell : pool) {
+      cell_ptrs.push_back(cell.get());
+    }
+    const std::vector<int> assignment = KMeansClusters(cell_ptrs, k, cap_bits);
+
+    // Give each cluster to the chain whose last cell is nearest its center.
+    std::vector<int64_t> sum_x(k, 0);
+    std::vector<int64_t> sum_y(k, 0);
+    std::vector<int64_t> count(k, 0);
+    for (size_t i = 0; i < pool.size(); i++) {
+      const odb::Point p = pool[i]->getOrigin();
+      sum_x[assignment[i]] += p.x();
+      sum_y[assignment[i]] += p.y();
+      count[assignment[i]]++;
+    }
+    std::vector<std::tuple<int64_t, int, int>> pairs;  // dist, cluster, chain
+    for (int c = 0; c < k; c++) {
+      const odb::Point center
+          = count[c] ? odb::Point(sum_x[c] / count[c], sum_y[c] / count[c])
+                     : lasts[c]->getOrigin();
+      for (int m = 0; m < k; m++) {
+        pairs.emplace_back(manhattan(center, lasts[m]->getOrigin()), c, m);
+      }
+    }
+    std::ranges::sort(pairs);
+    std::vector<int> chain_of_cluster(k, -1);
+    std::vector<bool> chain_taken(k, false);
+    for (const auto& [dist, c, m] : pairs) {
+      if (chain_of_cluster[c] < 0 && !chain_taken[m]) {
+        chain_of_cluster[c] = m;
+        chain_taken[m] = true;
+      }
+    }
+
+    for (size_t i = 0; i < pool.size(); i++) {
+      members[chain_of_cluster[assignment[i]]]->cells.push_back(
+          std::move(pool[i]));
+    }
+    for (int m = 0; m < k; m++) {
+      members[m]->cells.push_back(std::move(lasts[m]));
+      members[m]->members_changed = true;
+    }
+
+    logger->info(utl::DFT,
+                 19,
+                 "Rebalanced {} cells across {} chains (bit cap = {}).",
+                 pool.size(),
+                 k,
+                 cap_bits);
   }
 }
 
@@ -397,183 +592,98 @@ std::vector<odb::Point> collectChainOrigins(odb::dbScanChain* chain)
 
 }  // namespace
 
-void Dft::scanOpt()
+void Dft::scanOpt(bool rebalance_chains)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = block->getDft();
 
-  // ---------------------------------------------------------------------------
-  // Spatial pre-clustering: reassign scan cells between chains of the same
-  // clock domain so that each chain holds a spatially compact set of cells.
-  // This runs before per-chain optimization; it updates both dbScanList
-  // membership and SI→SO nets via RestitchChain.
-  // ---------------------------------------------------------------------------
-  {
-    // Group chains by (clock_name, clock_edge).  Only chains with the same
-    // domain can share cells.
-    using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
-    std::map<DomainKey, std::vector<odb::dbScanChain*>> domain_chains;
-    for (odb::dbScanChain* chain : db_dft->getScanChains()) {
-      odb::dbScanInst* si = firstScanInst(chain);
-      if (si == nullptr) {
-        continue;
-      }
-      DomainKey key{std::string(si->getScanClock()), si->getClockEdge()};
-      domain_chains[key].push_back(chain);
-    }
-
-    for (auto& [key, chains] : domain_chains) {
-      const int k = static_cast<int>(chains.size());
-      if (k < 2) {
-        continue;
-      }
-
-      // Collect all scan insts and adapters across chains in this domain.
-      // The adapter provides isPlaced() and getOrigin() for k-means.
-      // The dbScanInst* is needed for insertAtFront reassignment.
-      std::vector<std::unique_ptr<OdbScanCellAdapter>> adapters;
-      std::vector<odb::dbScanInst*> scan_insts;
-      for (odb::dbScanChain* chain : chains) {
-        for (odb::dbScanPartition* part : chain->getScanPartitions()) {
-          for (odb::dbScanList* list : part->getScanLists()) {
-            for (odb::dbScanInst* si : list->getScanInsts()) {
-              adapters.push_back(
-                  std::make_unique<OdbScanCellAdapter>(si, logger_));
-              scan_insts.push_back(si);
-            }
-          }
-        }
-      }
-
-      // Skip this domain if any cell is unplaced.
-      const bool all_placed
-          = std::all_of(adapters.begin(), adapters.end(), [](const auto& a) {
-              return a->isPlaced();
-            });
-      if (!all_placed) {
-        continue;
-      }
-
-      // Run k-means.
-      std::vector<ScanCell*> cell_ptrs;
-      cell_ptrs.reserve(adapters.size());
-      for (const auto& a : adapters) {
-        cell_ptrs.push_back(a.get());
-      }
-
-      // Re-derive the architect's effective per-chain bit cap from the
-      // existing chain composition.  ScanArchitect tightens the user's
-      // max_length to ceil(total_bits / num_chains); the realised maximum
-      // chain bit count after construction equals that cap.  Stage A
-      // must not exceed it, otherwise the architect's max_length contract
-      // is silently broken.
-      int64_t cap_bits = 0;
-      for (odb::dbScanChain* chain : chains) {
-        int64_t chain_bits = 0;
-        for (odb::dbScanPartition* part : chain->getScanPartitions()) {
-          for (odb::dbScanList* list : part->getScanLists()) {
-            for (odb::dbScanInst* si : list->getScanInsts()) {
-              chain_bits += static_cast<int64_t>(si->getBits());
-            }
-          }
-        }
-        cap_bits = std::max(cap_bits, chain_bits);
-      }
-      // Sanity: a single oversized cell must always fit somewhere.
-      for (const auto& a : adapters) {
-        cap_bits = std::max(cap_bits, static_cast<int64_t>(a->getBits()));
-      }
-
-      const std::vector<int> assignments
-          = KMeansClusters(cell_ptrs, k, cap_bits);
-
-      // Partition scan_insts and adapters by cluster index.
-      std::vector<std::vector<odb::dbScanInst*>> cluster_insts(k);
-      std::vector<std::vector<OdbScanCellAdapter*>> cluster_adapters(k);
-      for (size_t i = 0; i < scan_insts.size(); i++) {
-        cluster_insts[assignments[i]].push_back(scan_insts[i]);
-        cluster_adapters[assignments[i]].push_back(adapters[i].get());
-      }
-
-      // Reassign: for each chain c, clear its scan list, repopulate with the
-      // cells assigned to cluster c, then restitch nets.
-      //
-      // insertAtFront prepends, so insert in reverse to keep the list in
-      // cluster order, from scan-in to scan-out.
-      for (int c = 0; c < k; c++) {
-        odb::dbScanList* list = getScanList(chains[c]);
-        if (list == nullptr) {
-          continue;
-        }
-        list->clear();
-        for (auto it = cluster_insts[c].rbegin(); it != cluster_insts[c].rend();
-             ++it) {
-          (*it)->insertAtFront(list);
-        }
-        // Rewire SI→SO nets for the new cell ordering in this chain.
-        RestitchChain(chains[c], cluster_adapters[c], block, logger_);
-      }
-
-      logger_->info(utl::DFT,
-                    19,
-                    "K-means spatial pre-clustering: reassigned {} cells "
-                    "across {} chains (bit cap = {}).",
-                    adapters.size(),
-                    k,
-                    cap_bits);
-    }
+  if (db_dft->getScanChains().empty()) {
+    logger_->warn(utl::DFT,
+                  20,
+                  "No scan chains found. Run execute_dft_plan or read a DEF "
+                  "with SCANCHAINS first.");
+    return;
   }
 
-  int chains_optimized = 0;
+  std::vector<OptChain> chains;
   for (odb::dbScanChain* chain : db_dft->getScanChains()) {
-    // Collect all scan instances from this chain.
-    std::vector<std::unique_ptr<ScanCell>> cells;
-    for (odb::dbScanPartition* part : chain->getScanPartitions()) {
-      for (odb::dbScanList* list : part->getScanLists()) {
-        for (odb::dbScanInst* si : list->getScanInsts()) {
-          cells.push_back(std::make_unique<OdbScanCellAdapter>(si, logger_));
-        }
-      }
-    }
-    if (cells.size() < 2) {
+    odb::dbScanList* list = singleScanList(chain);
+    if (list == nullptr) {
+      logger_->warn(utl::DFT,
+                    22,
+                    "Skipping scan chain {}: scan_opt only reorders chains "
+                    "with one partition and one scan list.",
+                    chain->getName());
       continue;
     }
-
-    // Record the original order to detect if anything changed.
-    std::vector<std::string> original_order;
-    original_order.reserve(cells.size());
-    for (const auto& c : cells) {
-      original_order.push_back(std::string(c->getName()));
+    OptChain opt_chain{.chain = chain, .list = list, .cells = {}};
+    bool placed = true;
+    for (odb::dbScanInst* scan_inst : list->getScanInsts()) {
+      opt_chain.cells.push_back(
+          std::make_unique<OdbScanCellAdapter>(scan_inst, logger_));
+      placed &= opt_chain.cells.back()->isPlaced();
     }
-
-    // Run the wirelength optimizer.
-    OptimizeScanWirelength(cells, logger_);
-
-    // Check if the order actually changed.
-    bool order_changed = false;
-    for (size_t i = 0; i < cells.size(); i++) {
-      if (std::string(cells[i]->getName()) != original_order[i]) {
-        order_changed = true;
-        break;
-      }
-    }
-
-    if (!order_changed) {
+    if (!placed) {
+      logger_->warn(utl::DFT,
+                    23,
+                    "Skipping scan chain {}: not all of its cells are placed.",
+                    chain->getName());
       continue;
     }
-
-    // Restitch: rewire SI→SO nets to match the optimised cell order.
-    std::vector<OdbScanCellAdapter*> ordered_adapters;
-    ordered_adapters.reserve(cells.size());
-    for (const auto& c : cells) {
-      ordered_adapters.push_back(static_cast<OdbScanCellAdapter*>(c.get()));
+    if (!opt_chain.cells.empty()) {
+      chains.push_back(std::move(opt_chain));
     }
-    RestitchChain(chain, ordered_adapters, block, logger_);
-
-    chains_optimized++;
   }
 
-  logger_->info(utl::DFT, 16, "Optimized {} scan chain(s).", chains_optimized);
+  std::vector<int64_t> initial_length;
+  initial_length.reserve(chains.size());
+  for (const OptChain& chain : chains) {
+    initial_length.push_back(
+        chainLength(pinLocation(chain.chain->getScanIn()), chain.cells));
+  }
+
+  if (rebalance_chains) {
+    rebalanceChains(chains, logger_);
+  }
+
+  int chains_changed = 0;
+  int64_t total_initial = 0;
+  int64_t total_final = 0;
+  for (size_t i = 0; i < chains.size(); i++) {
+    OptChain& chain = chains[i];
+    const std::optional<odb::Point> source
+        = pinLocation(chain.chain->getScanIn());
+
+    std::vector<odb::dbScanInst*> before;
+    before.reserve(chain.cells.size());
+    for (const auto& cell : chain.cells) {
+      before.push_back(cell->getScanInst());
+    }
+
+    reorderChain(chain.cells, source, logger_);
+
+    bool changed = chain.members_changed;
+    for (size_t j = 0; j < before.size() && !changed; j++) {
+      changed = before[j] != chain.cells[j]->getScanInst();
+    }
+    if (changed) {
+      restitchChain(chain.chain, chain.cells, block, logger_);
+      rewriteScanList(chain.list, chain.cells);
+      chains_changed++;
+    }
+
+    total_initial += initial_length[i];
+    total_final += chainLength(source, chain.cells);
+  }
+
+  logger_->info(utl::DFT,
+                16,
+                "Reordered {} of {} scan chain(s); scan wire length {:.2f} um "
+                "-> {:.2f} um.",
+                chains_changed,
+                chains.size(),
+                block->dbuToMicrons(total_initial),
+                block->dbuToMicrons(total_final));
 }
 
 void Dft::reportChainMetrics()

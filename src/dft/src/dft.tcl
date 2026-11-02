@@ -98,15 +98,17 @@ proc report_dft_config { args } {
 }
 
 
-sta::define_cmd_args "scan_opt" { }
+sta::define_cmd_args "scan_opt" { [-rebalance_chains] }
 proc scan_opt { args } {
   sta::parse_key_args "scan_opt" args \
-    keys {} flags {}
+    keys {} flags {-rebalance_chains}
+
+  sta::check_argc_eq0 "scan_opt" $args
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error DFT 13 "No design block found."
   }
-  dft::scan_opt
+  dft::scan_opt [info exists flags(-rebalance_chains)]
 }
 
 sta::define_cmd_args "report_chain_metrics" {}

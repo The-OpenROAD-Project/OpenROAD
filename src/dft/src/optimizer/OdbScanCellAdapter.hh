@@ -42,8 +42,10 @@ class OdbScanCellAdapter : public ScanCell
 
   odb::dbITerm* getScanInITerm() const;
   odb::dbITerm* getScanOutITerm() const;
+  odb::dbScanInst* getScanInst() const { return scan_inst_; }
 
  private:
+  odb::dbScanInst* scan_inst_;
   odb::dbInst* inst_;
   uint64_t bits_;
   odb::dbITerm* scan_in_iterm_;

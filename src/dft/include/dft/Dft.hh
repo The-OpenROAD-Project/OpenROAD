@@ -91,8 +91,10 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
-  // Performs scan optimizations on the netlist
-  void scanOpt();
+  // Reorders the cells of each scan chain in odb to reduce scan wire length
+  // and rewires the chains to match. With rebalance_chains, first moves cells
+  // between chains of the same clock domain to make each chain compact.
+  void scanOpt(bool rebalance_chains);
 
   // Reports order-independent spatial metrics per scan chain (HPWL, MST,
   // sum of pairwise Manhattan distances).  Output is CSV-formatted to

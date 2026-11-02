@@ -43,6 +43,7 @@ OdbScanCellAdapter::OdbScanCellAdapter(odb::dbScanInst* scan_inst,
                // Dummy clock domain — the optimizer does not use it.
                std::make_unique<ClockDomain>("__opt__", ClockEdge::Rising),
                logger),
+      scan_inst_(scan_inst),
       inst_(scan_inst->getInst()),
       bits_(scan_inst->getBits()),
       scan_in_iterm_(toITerm(scan_inst->getAccessPins().scan_in)),
