@@ -226,6 +226,12 @@ void Dft::writeToOdb()
           break;
       }
     }
+    // add() inserts at the front; reverse so the list runs from scan-in to
+    // scan-out, as the DEF reader stores it.
+    odb::dbSet<odb::dbScanInst> scan_insts = db_scanlist->getScanInsts();
+    if (scan_insts.reversible() && scan_insts.orderReversed()) {
+      scan_insts.reverse();
+    }
 
     std::optional<ScanDriver> sc_enable_driver = chain->getScanEnable();
     std::optional<ScanDriver> sc_in_driver = chain->getScanIn();
@@ -492,18 +498,17 @@ void Dft::scanOpt()
       // Reassign: for each chain c, clear its scan list, repopulate with the
       // cells assigned to cluster c, then restitch nets.
       //
-      // insertAtFront prepends, so inserting in natural order produces a list
-      // traversed in reverse.  The per-chain loop below calls std::reverse on
-      // collected cells (matching the existing executeDftPlan convention), so
-      // the cells arrive at OptimizeScanWirelength in natural order.
+      // insertAtFront prepends, so insert in reverse to keep the list in
+      // cluster order, from scan-in to scan-out.
       for (int c = 0; c < k; c++) {
         odb::dbScanList* list = getScanList(chains[c]);
         if (list == nullptr) {
           continue;
         }
         list->clear();
-        for (odb::dbScanInst* si : cluster_insts[c]) {
-          si->insertAtFront(list);
+        for (auto it = cluster_insts[c].rbegin(); it != cluster_insts[c].rend();
+             ++it) {
+          (*it)->insertAtFront(list);
         }
         // Rewire SI→SO nets for the new cell ordering in this chain.
         RestitchChain(chains[c], cluster_adapters[c], block, logger_);
@@ -530,11 +535,6 @@ void Dft::scanOpt()
         }
       }
     }
-    // dbScanList::add() uses insertAtFront, so iteration order from odb is
-    // reversed relative to how executeDftPlan inserted them.  Reverse to
-    // recover the original chain order before optimising.
-    std::reverse(cells.begin(), cells.end());
-
     if (cells.size() < 2) {
       continue;
     }
