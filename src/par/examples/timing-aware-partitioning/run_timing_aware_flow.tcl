@@ -52,8 +52,7 @@ set balance_constraint 2
 set seed 0
 set top_n 100000
 set evaluate_top_n 100000
-# set the extra_delay_cut to 20% of the clock period
-# the extra_delay_cut is introduced for each cut hyperedge
+# estimate the delay per cut as 20% of the clock period
 set extra_delay_cut 9.2e-10
 set timing_aware_flag true
 set timing_guardband true
@@ -62,9 +61,9 @@ set part_design_solution_file_update ${part_design_solution_file}.update
 
 
 ##############################################################################################
-### TritonPart with slack progagation
+### TritonPart with timing guardbanding
 ##############################################################################################
-puts "Start TritonPart with slack propagation"
+puts "Start TritonPart with timing guardbanding"
 # call triton_part to partition the netlist
 triton_part_design -num_parts $num_parts -balance_constraint $balance_constraint \
   -seed $seed -top_n $top_n \
@@ -85,5 +84,5 @@ evaluate_part_design_solution -num_parts $num_parts -balance_constraint $balance
   -solution_file ${part_design_solution_file_update}
 
 
-puts "Finish TritonPart with slack propagation"
+puts "Finish TritonPart with timing guardbanding"
 exit

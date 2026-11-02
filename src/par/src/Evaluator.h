@@ -67,7 +67,8 @@ class GoldenEvaluator
       float timing_exp_factor,  // timing exponetial factor for normalized slack
       float extra_cut_delay,    // the extra delay introduced by a cut
       HGraphPtr timing_graph,   // the timing graph needed
-      utl::Logger* logger);
+      utl::Logger* logger,
+      bool extra_delay_specified = true);
 
   GoldenEvaluator(const GoldenEvaluator&) = delete;
   GoldenEvaluator(GoldenEvaluator&) = delete;
@@ -82,7 +83,15 @@ class GoldenEvaluator
                                 const Partitions& solution) const;
 
   // calculate timing cost of a path
-  float GetPathTimingScore(int path_id, const HGraphPtr& hgraph) const;
+  float GetPathTimingScore(int path_id,
+                           const HGraphPtr& hgraph,
+                           int num_cuts = 0) const;
+
+  bool HasExtraCutDelay() const
+  {
+    return extra_delay_specified_ && extra_cut_delay_ != 0.0f
+           && path_timing_factor_ != 0.0f;
+  }
 
   // calculate the cost of a path
   float CalculatePathCost(int path_id,
@@ -205,6 +214,7 @@ class GoldenEvaluator
 
  private:
   // user specified parameters
+  const bool extra_delay_specified_;
   const int num_parts_ = 2;            // number of blocks in the partitioning
   const float extra_cut_delay_ = 1.0;  // the extra delay introduced by a cut
 
