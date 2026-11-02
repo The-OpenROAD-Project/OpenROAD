@@ -165,8 +165,10 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   new_net_base_name_ = new_net_base_name;
   uniquify_ = uniquify;
 
-  // Store original driver pin before buffer insertion modifies net structure
-  orig_drvr_pin_ = net_->getFirstDriverTerm();
+  if (loc == nullptr) {
+    // Store original driver pin before buffer insertion modifies net structure
+    orig_drvr_pin_ = net_->getFirstDriverTerm();
+  }
 
   dlogBeforeLoadsParams(load_pins, loc, loads_on_diff_nets);
 
