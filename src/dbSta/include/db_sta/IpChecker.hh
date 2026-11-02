@@ -33,8 +33,8 @@ namespace sta {
 // LEF/LIB-CHK-011: Pin direction matches Liberty
 // LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
 // LEF/LIB-CHK-013: LEF and Liberty cell areas match
-// LIB-CHK-013: Liberty transition tables hold sane values
-// LIB-CHK-014: Liberty input pin capacitance within the characterized load
+// LIB-CHK-014: Liberty transition tables hold sane values
+// LIB-CHK-015: Liberty input pin capacitance within the characterized load
 
 class IpChecker
 {
@@ -100,7 +100,7 @@ class IpChecker
   // LEF/LIB-CHK-011-013: Check Liberty pin presence, direction, and area
   void checkLibertyPins(odb::dbMaster* master);
 
-  // LIB-CHK-013-014: Check Liberty transition tables and input capacitance
+  // LIB-CHK-014-015: Check Liberty transition tables and input capacitance
   void checkLibertyValues(odb::dbMaster* master);
 
   // Largest output load any loaded Liberty library is characterized for.
@@ -122,6 +122,8 @@ class IpChecker
   float max_transition_ = 0.0;
   float max_capacitance_ = 0.0;
   float max_characterized_load_ = -1.0;
+  // Relative slack allowed over max_transition for rounding in the library.
+  static constexpr float transition_tolerance_ = 1e-4;
   bool verbose_ = false;
 
   // Warning counter

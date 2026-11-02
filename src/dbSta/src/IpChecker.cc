@@ -15,6 +15,7 @@
 #include <numeric>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -201,7 +202,7 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkPinMinDimensions(master);               // LEF-CHK-010a
   checkPinMinArea(master);                     // LEF-CHK-010b
   checkLibertyPins(master);                    // LEF/LIB-CHK-011-012
-  checkLibertyValues(master);                  // LIB-CHK-013-014
+  checkLibertyValues(master);                  // LIB-CHK-014-015
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -863,11 +864,11 @@ void IpChecker::checkLibertyPins(odb::dbMaster* master)
   }
 }
 
-// A transition table that holds a zero or negative value claims the output
-// switches instantaneously, and one above the library's own transition limit
-// claims a switch no cell in that library is allowed to produce. Neither is a
-// value the delay calculator can use, so report the extreme of each table
-// rather than every entry.
+// LIB-CHK-014: A transition table that holds a zero or negative value claims
+// the output switches instantaneously. A table whose smallest load already
+// produces a transition above the pin's max_transition describes a cell that
+// cannot meet its own limit under any load. Libraries are characterized past
+// max_transition on purpose, so entries at larger loads are not checked.
 void IpChecker::checkLibertyValues(odb::dbMaster* master)
 {
   if (sta_ == nullptr) {
@@ -903,14 +904,32 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
     library->defaultMaxSlew(default_max_slew, has_default_max_slew);
   }
 
-  // One model is shared by every arc with the same output edge, so only walk
-  // each table once.
-  std::set<const TableModel*> checked;
+  // The arcs of one Liberty timing group share their models, and a group
+  // inside a bus or a pin group makes arcs to several output pins. Check each
+  // table once per output pin so every pin is held to its own limit.
+  std::set<std::pair<const LibertyPort*, const TableModel*>> checked;
   for (TimingArcSet* arc_set : liberty_cell->timingArcSets()) {
     const TimingRole* role = arc_set->role();
-    if (role->isTimingCheck() || role->isAsyncTimingCheck()
-        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
+    // isTimingCheck() covers the async, non-sequential and data checks.
+    // A three-state disable arc describes the output turning off, and its
+    // transition table is commonly a scalar 0.
+    if (role->isTimingCheck() || role == TimingRole::tristateDisable()) {
       continue;
+    }
+
+    const LibertyPort* from = arc_set->from();
+    const LibertyPort* to = arc_set->to();
+
+    float max_slew = default_max_slew;
+    bool has_max_slew = has_default_max_slew;
+    if (max_transition_ <= 0.0 && to != nullptr) {
+      float pin_max_slew = 0.0;
+      bool has_pin_max_slew = false;
+      to->slewLimit(MinMax::max(), pin_max_slew, has_pin_max_slew);
+      if (has_pin_max_slew) {
+        max_slew = pin_max_slew;
+        has_max_slew = true;
+      }
     }
 
     for (TimingArc* arc : arc_set->arcs()) {
@@ -920,31 +939,40 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
       }
 
       const TableModel* slew_model = gate_model->slewModel();
-      if (slew_model == nullptr || !checked.insert(slew_model).second) {
+      if (slew_model == nullptr || !checked.insert({to, slew_model}).second) {
         continue;
       }
 
-      const TableAxis* axis1 = slew_model->axis1();
-      const TableAxis* axis2 = slew_model->axis2();
-      const TableAxis* axis3 = slew_model->axis3();
-      const size_t size1 = axis1 ? axis1->size() : 1;
-      const size_t size2 = axis2 ? axis2->size() : 1;
-      const size_t size3 = axis3 ? axis3->size() : 1;
+      const TableAxis* axes[3]
+          = {slew_model->axis1(), slew_model->axis2(), slew_model->axis3()};
+      size_t sizes[3];
+      int load_axis = -1;
+      for (int a = 0; a < 3; a++) {
+        sizes[a] = axes[a] ? axes[a]->size() : 1;
+        if (axes[a] != nullptr
+            && axes[a]->variable()
+                   == TableAxisVariable::total_output_net_capacitance) {
+          load_axis = a;
+        }
+      }
 
+      // Without a load axis (a scalar or slew only table) every entry counts
+      // as the smallest load.
       float min_slew = std::numeric_limits<float>::max();
-      float peak_slew = -std::numeric_limits<float>::max();
-      for (size_t i = 0; i < size1; i++) {
-        for (size_t j = 0; j < size2; j++) {
-          for (size_t k = 0; k < size3; k++) {
+      float min_load_slew = std::numeric_limits<float>::max();
+      for (size_t i = 0; i < sizes[0]; i++) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          for (size_t k = 0; k < sizes[2]; k++) {
             const float slew = slew_model->value(i, j, k);
             min_slew = std::min(min_slew, slew);
-            peak_slew = std::max(peak_slew, slew);
+            const size_t index[3] = {i, j, k};
+            if (load_axis < 0 || index[load_axis] == 0) {
+              min_load_slew = std::min(min_load_slew, slew);
+            }
           }
         }
       }
 
-      const LibertyPort* from = arc_set->from();
-      const LibertyPort* to = arc_set->to();
       const std::string arc_name = std::string(from ? from->name() : "?")
                                    + " -> " + std::string(to ? to->name() : "?")
                                    + " "
@@ -952,7 +980,7 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
 
       if (min_slew <= 0.0) {
         logger_->warn(utl::CHK,
-                      130,
+                      140,
                       "Cell {} arc {} has a transition of {} {}, an "
                       "instantaneous switch",
                       master_name,
@@ -962,36 +990,29 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
         warning_count_++;
       }
 
-      float max_slew = default_max_slew;
-      bool has_max_slew = has_default_max_slew;
-      if (max_transition_ <= 0.0 && to != nullptr) {
-        float pin_max_slew = 0.0;
-        bool has_pin_max_slew = false;
-        to->slewLimit(MinMax::max(), pin_max_slew, has_pin_max_slew);
-        if (has_pin_max_slew) {
-          max_slew = pin_max_slew;
-          has_max_slew = true;
-        }
-      }
-
-      if (has_max_slew && peak_slew > max_slew) {
+      // The tolerance absorbs rounding in the written library values.
+      const float tolerance = max_slew * transition_tolerance_;
+      if (has_max_slew && min_load_slew > max_slew + tolerance) {
+        const int digits = time_unit->digits() + 3;
         logger_->warn(utl::CHK,
-                      131,
-                      "Cell {} arc {} has a transition of {} {}, above the "
-                      "limit of {} {}",
+                      141,
+                      "Cell {} arc {} has a transition of {} {} at its "
+                      "smallest load, {} {} above the limit of {} {}",
                       master_name,
                       arc_name,
-                      time_unit->asString(peak_slew),
+                      time_unit->asString(min_load_slew, digits),
                       time_unit->scaleAbbrevSuffix(),
-                      time_unit->asString(max_slew),
+                      time_unit->asString(min_load_slew - max_slew, digits),
+                      time_unit->scaleAbbrevSuffix(),
+                      time_unit->asString(max_slew, digits),
                       time_unit->scaleAbbrevSuffix());
         warning_count_++;
       }
     }
   }
 
-  // OpenSTA does not read default_max_capacitance, so fall back to the
-  // largest load the loaded libraries are characterized for.
+  // LIB-CHK-015: OpenSTA does not read default_max_capacitance, so fall back
+  // to the largest load the loaded libraries are characterized for.
   float max_cap = max_capacitance_;
   if (max_cap <= 0.0) {
     max_cap = maxCharacterizedLoad();
@@ -1000,10 +1021,13 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
     return;
   }
 
-  // An input pin above that load cannot be driven by any characterized cell.
+  // An input or inout pin above that load cannot be driven by any
+  // characterized cell.
   for (odb::dbMTerm* mterm : master->getMTerms()) {
+    const odb::dbIoType io_type = mterm->getIoType();
     if (mterm->getSigType().isSupply()
-        || mterm->getIoType() != odb::dbIoType::INPUT) {
+        || (io_type != odb::dbIoType::INPUT
+            && io_type != odb::dbIoType::INOUT)) {
       continue;
     }
 
@@ -1015,7 +1039,7 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
     const float cap = port->capacitance();
     if (cap > max_cap) {
       logger_->warn(utl::CHK,
-                    132,
+                    150,
                     "Pin {}/{} capacitance {} {} is above the characterized "
                     "load limit of {} {}",
                     master_name,
