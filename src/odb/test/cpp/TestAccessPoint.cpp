@@ -121,5 +121,80 @@ TEST_F(SimpleDbFixture, SwapMasterClearsAndInvalidatesAccessPoints)
   EXPECT_TRUE(swapped_iterm->getAccessPoints().empty());
 }
 
+TEST_F(SimpleDbFixture, BlockClearUnlinksMasterAccessPoints)
+{
+  createSimpleDB();
+  auto block = db_->getChip()->getBlock();
+  auto master = db_->findMaster("and2");
+  auto term = master->findMTerm("a");
+  auto pin = dbMPin::create(term);
+  auto ap = dbAccessPoint::create(block, pin, 0);
+  dbAccessPoint::create(block, pin, 0);
+  auto replacement = dbAccessPoint::create(block, pin, 2);
+  for (const auto* name : {"i1", "i2"}) {
+    auto inst = dbInst::create(block, master, name);
+    inst->setPinAccessIdx(0);
+    inst->getITerm(term)->setAccessPoint(pin, ap);
+    ASSERT_EQ(inst->getITerm(term)->getPrefAccessPoints().size(), 1);
+  }
+  for (const auto* name : {"replaced", "cleared"}) {
+    auto inst = dbInst::create(block, master, name);
+    auto iterm = inst->getITerm(term);
+    iterm->setAccessPoint(pin, ap);
+    iterm->setAccessPoint(pin, replacement);
+    if (std::string(name) == "cleared") {
+      iterm->setAccessPoint(pin, nullptr);
+    }
+    dbInst::destroy(inst);
+  }
+  auto net = dbNet::create(block, "n1");
+  auto port = dbBTerm::create(net, "IN1");
+  auto bpin = dbBPin::create(port);
+  dbAccessPoint::create(bpin);
+  ASSERT_EQ(block->getAccessPoints().size(), 4);
+  ASSERT_EQ(pin->getPinAccess().at(0).size(), 2);
+  ASSERT_EQ(pin->getPinAccess().at(2).size(), 1);
+
+  block->clear();
+
+  EXPECT_EQ(db_->getChip()->getBlock(), block);
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  EXPECT_TRUE(pin->getPinAccess().empty());
+
+  auto inst = dbInst::create(block, master, "i1");
+  auto fresh_ap = dbAccessPoint::create(block, pin, 0);
+  inst->setPinAccessIdx(0);
+  inst->getITerm(term)->setAccessPoint(pin, fresh_ap);
+  const auto fresh_access = pin->getPinAccess();
+  ASSERT_EQ(fresh_access.size(), 1);
+  ASSERT_EQ(fresh_access.at(0).size(), 1);
+  EXPECT_EQ(fresh_access.at(0).front(), fresh_ap);
+  const auto preferred = inst->getITerm(term)->getPrefAccessPoints();
+  ASSERT_EQ(preferred.size(), 1);
+  EXPECT_EQ(preferred.front(), fresh_ap);
+}
+
+TEST_F(SimpleDbFixture, BlockClearIgnoresDeletedAccessPointOwners)
+{
+  createSimpleDB();
+  auto block = db_->getChip()->getBlock();
+  auto master = db_->findMaster("and2");
+  auto pin = dbMPin::create(master->findMTerm("a"));
+  dbAccessPoint::create(block, pin, 0);
+  dbMaster::destroy(master);
+
+  auto lib = dbLib::create(db_.get(), "removed_lib", db_->getTech(), ',');
+  auto removed_master
+      = createMaster1X1(lib, "removed_master", 1000, 1000, "a", "o");
+  auto removed_pin = dbMPin::create(removed_master->findMTerm("a"));
+  dbAccessPoint::create(block, removed_pin, 0);
+  dbLib::destroy(lib);
+  ASSERT_EQ(block->getAccessPoints().size(), 2);
+
+  block->clear();
+
+  EXPECT_TRUE(block->getAccessPoints().empty());
+}
+
 }  // namespace
 }  // namespace odb

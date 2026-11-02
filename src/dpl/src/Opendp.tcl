@@ -95,6 +95,51 @@ proc detailed_placement { args } {
   }
 }
 
+sta::define_cmd_args "repair_pin_access" {[-max_displacement {sites rows}] \
+                                       [-max_rounds count] \
+                                       [-recovery_attempts attempts] \
+                                       [-min_access_points count]}
+
+proc repair_pin_access { args } {
+  sta::parse_key_args "repair_pin_access" args \
+    keys {-max_displacement -max_rounds -recovery_attempts -min_access_points} flags {}
+  sta::check_argc_eq0 "repair_pin_access" $args
+
+  set max_displacement_x 20
+  set max_displacement_y 2
+  if { [info exists keys(-max_displacement)] } {
+    if { [llength $keys(-max_displacement)] != 2 } {
+      utl::error DPL 350 "-max_displacement requires {sites rows}."
+    }
+    lassign $keys(-max_displacement) max_displacement_x max_displacement_y
+  }
+  set max_rounds 3
+  if { [info exists keys(-max_rounds)] } {
+    set max_rounds $keys(-max_rounds)
+  }
+  set recovery_attempts 0
+  if { [info exists keys(-recovery_attempts)] } {
+    set recovery_attempts $keys(-recovery_attempts)
+    sta::check_positive_integer "-recovery_attempts" $recovery_attempts
+  }
+  set min_access_points 1
+  if { [info exists keys(-min_access_points)] } {
+    set min_access_points $keys(-min_access_points)
+  }
+  foreach {option value} [list \
+    -max_displacement $max_displacement_x \
+    -max_displacement $max_displacement_y \
+    -max_rounds $max_rounds \
+    -min_access_points $min_access_points] {
+    if { ![string is integer -strict $value] || $value <= 0 } {
+      utl::error DPL 349 "$option requires positive integers."
+    }
+  }
+  return [dpl::repair_pin_access_cmd \
+    $max_displacement_x $max_displacement_y $max_rounds \
+    $recovery_attempts $min_access_points]
+}
+
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\
                                                  [-right site_count]\
                                                  [-left site_count] \
