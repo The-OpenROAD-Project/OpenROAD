@@ -7900,7 +7900,11 @@ class dbDft : public dbObject
 
   dbSet<dbScanChain> getScanChains() const;
 
+  // User Code Begin dbDft
+  // Destroys all scan chains, scan pins and the scan insts the chains list,
+  // and clears the scan-inserted flag.
   void reset();
+  // User Code End dbDft
 };
 
 class dbGCellGrid : public dbObject
