@@ -878,7 +878,9 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
       for (odb::dbNet* db_net : dirty_nets_) {
         nets_to_repair.push_back(db_net);
       }
-      const std::vector<odb::dbNet*> rerouted = incr_groute.updateRoutes();
+      // repairAntennas legalized the diodes, so pin access can be updated.
+      const std::vector<odb::dbNet*> rerouted = incr_groute.updateRoutes(
+          /*save_guides=*/true, /*update_pin_access=*/true);
       saveGuides(nets_to_repair);
       if (use_cugr_) {
         add_moved_nets(rerouted);
@@ -7329,9 +7331,11 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
   db_cbk_.addOwner(block);
 }
 
-std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides)
+std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides,
+                                                         bool update_pin_access)
 {
-  const std::vector<Net*> nets = groute_->updateDirtyRoutes(save_guides);
+  const std::vector<Net*> nets
+      = groute_->updateDirtyRoutes(save_guides, update_pin_access);
   std::vector<odb::dbNet*> rerouted;
   rerouted.reserve(nets.size());
   for (Net* net : nets) {
@@ -7368,10 +7372,14 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   dirty_nets_.insert(net);
 }
 
-std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
+std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides,
+                                                  bool update_pin_access)
 {
-  if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
-    pa->updateDirtyPinAccess();
+  if (update_pin_access) {
+    if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
+      // New access points mark their nets dirty, so they are rerouted below.
+      pa->updateDirtyPinAccess();
+    }
   }
 
   std::vector<Net*> rerouted = use_cugr_

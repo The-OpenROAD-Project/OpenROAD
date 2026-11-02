@@ -19,6 +19,7 @@
 [WARNING ODB-1003] (met4) layer's width from (RELIEF_NDR) NDR is not defined. Using the default value 0.3
 [WARNING ODB-1003] (met5) layer's width from (RELIEF_NDR) NDR is not defined. Using the default value 1.6
 [INFO GRT-0012] Found 5 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19607.4 -> 19607.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 5 diodes.
 [WARNING GRT-0305] Demoted 5 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).

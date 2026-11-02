@@ -464,6 +464,17 @@ class TileHandlerTest : public tst::Nangate45Fixture
     state_.highlight_source = SessionState::HighlightSource::kInspected;
   }
 
+  // Serves the tile request `json`; returns how many tiles are cached after.
+  size_t cachedAfterTile(const std::string& json)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+    handler_->handleTile(req, state_);
+    return gen_->tileCacheSize();
+  }
+
   // An overlay-tile request with the "Flywires only" toggle in a given
   // position.
   static WebSocketRequest overlayRequest(uint32_t id, bool flywires_only)
@@ -1389,6 +1400,47 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// A tech-layer tile does not read visible_layers, so a toggle of another layer
+// must not cost it its cache entry; the tiles that do read it keep it keyed.
+TEST_F(TileHandlerTest, LayerTileCacheIgnoresVisibleLayers)
+{
+  const auto cached_after
+      = [&](const std::string& layer, const std::string& visible) {
+          return cachedAfterTile(R"({"layer":")" + layer
+                                 + R"(","z":0,"x":0,"y":0,"visible_layers":)"
+                                 + visible + "}");
+        };
+  const size_t after_metal1 = cached_after("metal1", R"(["metal1"])");
+  EXPECT_EQ(cached_after("metal1", R"(["metal1","metal2"])"), after_metal1)
+      << "a metal1 tile missed the cache because another layer was toggled";
+
+  const size_t after_pins = cached_after("_pins", R"(["metal1"])");
+  EXPECT_EQ(cached_after("_pins", R"(["metal1","metal2"])"), after_pins + 1)
+      << "_pins filters by visible_layers, so it must stay in its key";
+}
+
+// Two dies' rows of one layer name differ only in `chiplet`, so it keys the
+// cache; hiding another die must not cost a row its entry, hiding its own must.
+TEST_F(TileHandlerTest, ScopedTileCacheIgnoresOtherChiplets)
+{
+  // Only the key is under test, so the dies need not exist (the fixture's
+  // single chip has an empty path, which scopes nothing).
+  const auto cached_after = [&](const std::string& die,
+                                const std::string& visible_chiplets) {
+    return cachedAfterTile(R"({"layer":"metal1","chiplet":")" + die
+                           + R"(","z":0,"x":0,"y":0,"visible_layers":[],)"
+                           + R"("visible_chiplets":)" + visible_chiplets + "}");
+  };
+  const std::string both = R"(["top/die0","top/die1"])";
+  const size_t first = cached_after("top/die0", both);
+  EXPECT_EQ(cached_after("top/die1", both), first + 1)
+      << "one die's row was served the other die's tile";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die0"])"), first + 1)
+      << "another die's visibility moved this die's cache key";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die1"])"), first + 2)
+      << "the die's own visibility must stay in its key";
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
