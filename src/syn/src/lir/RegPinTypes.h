@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// L-IR register pin types: the semantic inputs of a register (kRegIn).
+// L-IR generic register fanin roles (kRegIn) and extra output roles (kFan).
 
 #pragma once
 
@@ -16,10 +16,12 @@ namespace syn::lir {
 // inactive; flip-flops sample on the rising edge, latches are transparent
 // while kClock is 1.
 //
-// Reset normal form (checkWellFormed): Reset loads 0 (or its value pin), Set
-// all ones. A value pin (kConst) is only for a word with mixed reset bits,
-// with its Reset. When both are active, RegFlags::set_over_reset picks
-// (default: reset), for the sync and the async pair.
+// Reset normal form (checkWellFormed): Reset loads 0 (or its value fanin), Set
+// all ones. A value fanin (kConst) is used only on a multi-bit register with
+// mixed reset bits (with its Reset), so registers with different reset
+// constants share one RegClass; bit-blasting lowers each bit to Reset or Set.
+// When both are active, RegFlags::set_over_reset picks (default: reset), for
+// the sync and the async pair.
 //
 // Next state, with s = SRST/SSET and rs = ARST/ASET applied as above:
 //   g(x) = EN ? x : Q
@@ -63,9 +65,10 @@ constexpr RegPinMask regPinBit(RegPinType type)
 // or "?" for out-of-range values.
 const char* regPinTypeName(RegPinType type);
 
-// Outputs of a generic register. kQ is the state, carried by the kRegOut
-// itself; the others are kFans of the kRegOut with Fan.data = the output.
-// A mapped register numbers its outputs in Liberty order instead.
+// Outputs of a generic register (width W). kQ is the state, carried by the
+// kRegOut itself; the others are width-W kFans of the kRegOut with Fan.data =
+// the output. A mapped register uses 1-bit Liberty outputs in Liberty order
+// instead (mapped multi-bit flops are not implemented yet).
 enum class RegOutput : uint8_t
 {
   kQ,

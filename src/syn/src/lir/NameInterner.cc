@@ -40,6 +40,10 @@ size_t encodeLength(uint32_t length, char* out)
   return n;
 }
 
+// Clipped to 32 bits so `hashes_` costs 4 B per name instead of 8 B;
+// IndexHash::expand() duplicates it into both halves of size_t for
+// SwissTable's H1/H2, and collisions only trigger a string compare in IndexEq.
+// Private to NameInterner, so it can be widened to 64 bits if ever needed.
 uint32_t hashOf(std::string_view text)
 {
   return static_cast<uint32_t>(absl::HashOf(text));
@@ -70,11 +74,11 @@ const char* NameInterner::store(std::string_view text)
 {
   if (text.size() > std::numeric_limits<uint32_t>::max()) [[unlikely]] {
     // L-IR uses message ids SYN 1100-1199.
-    logger_->critical(utl::SYN,
-                      1100,
-                      "A name of {} bytes is too long for the name table "
-                      "(limit 4 GB).",
-                      text.size());
+    logger_->error(utl::SYN,
+                   1100,
+                   "A name of {} bytes is too long for the name table "
+                   "(limit 4 GB).",
+                   text.size());
   }
   std::array<char, kMaxPrefixBytes> prefix;
   const size_t prefix_bytes
@@ -121,10 +125,7 @@ NameId NameInterner::intern(std::string_view name)
     assert(id.isValid() && "NameInterner is read-only: cannot add a name");
     return id;
   }
-  if (!isParallelWrite()) {
-    return internUnlocked(key);
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return internUnlocked(key);
 }
 
@@ -135,7 +136,7 @@ NameId NameInterner::internUnlocked(const Key& key)
   }
   const uint32_t id = static_cast<uint32_t>(strings_.size());
   if (id >= NameId::kInvalidValue) [[unlikely]] {
-    logger_->critical(
+    logger_->error(
         utl::SYN, 1101, "The name table is full ({} names).", strings_.size());
   }
   strings_.push_back(store(key.text));
@@ -162,10 +163,7 @@ NameId NameInterner::internPrefixed(std::string_view prefix, NameId leaf)
     path.append(text(leaf.rawIndex()));
     return intern(path);
   }
-  if (!isParallelWrite()) {
-    return internPrefixedUnlocked(prefix, leaf);
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return internPrefixedUnlocked(prefix, leaf);
 }
 
@@ -174,20 +172,14 @@ NameId NameInterner::find(std::string_view name) const
   // Parallel-write mode would make the result depend on thread order.
   assert(!isParallelWrite()
          && "NameInterner::find() cannot be called in parallel write mode");
-  if (!isParallelWrite()) {
-    return lookup(Key{.text = name, .hash = hashOf(name)});
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return lookup(Key{.text = name, .hash = hashOf(name)});
 }
 
 std::string_view NameInterner::name(NameId id) const
 {
   assert(id.isValid());
-  if (!isParallelWrite()) {
-    return text(id.rawIndex());
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return text(id.rawIndex());
 }
 
@@ -206,10 +198,7 @@ bool NameInterner::contains(NameId id) const
 
 size_t NameInterner::size() const
 {
-  if (!isParallelWrite()) {
-    return count();
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return count();
 }
 

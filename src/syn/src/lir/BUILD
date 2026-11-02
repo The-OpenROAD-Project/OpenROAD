@@ -22,6 +22,7 @@ config_setting(
 cc_library(
     name = "lir",
     srcs = [
+        "Checksum.cc",
         "ConstPool.cc",
         "ConstView.cc",
         "NameInterner.cc",

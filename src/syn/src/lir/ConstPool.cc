@@ -73,9 +73,9 @@ ConstId ConstPool::internUint(uint32_t width, uint64_t value)
   const uint32_t n = constNumWords(width);
   WordBuffer words(2 * size_t{n}, 0);
   if (n > 0) {
-    words[0] = value;
+    // Clear bits of `value` above `width`; `bval` and upper words are 0.
+    words[0] = width < 64 ? (value & constLastWordMask(width)) : value;
   }
-  normalize(width, words.data());
   return internNormalized(width, words.data());
 }
 
@@ -108,6 +108,12 @@ absl::StatusOr<ConstId> ConstPool::internBitString(std::string_view msb_first)
       case 'X':
         b = 1;
         break;
+      case 'z':
+      case 'Z':
+        return absl::InvalidArgumentError(
+            absl::StrCat("z is not a constant value in '",
+                         msb_first,
+                         "' (high-Z is modeled with kTribuf)"));
       default:
         return absl::InvalidArgumentError(
             absl::StrCat("invalid binary digit in '", msb_first, "'"));
@@ -168,7 +174,7 @@ ConstId ConstPool::internUnlocked(const Key& key)
   }
   const uint32_t id = static_cast<uint32_t>(entries_.size());
   if (id == ConstId::kInvalidValue) [[unlikely]] {
-    logger_->critical(
+    logger_->error(
         utl::SYN, 1102, "The constant pool is full ({} constants).", id);
   }
   // `key` may point into the caller's buffer; the index keeps a copy that
@@ -188,29 +194,20 @@ ConstId ConstPool::internNormalized(uint32_t width, const uint64_t* words)
   if (isReadOnly()) {
     return lookup(key);  // invalid if new: callers check
   }
-  if (!isParallelWrite()) {
-    return internUnlocked(key);
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return internUnlocked(key);
 }
 
 ConstView ConstPool::get(ConstId id) const
 {
   assert(id.isValid());
-  if (!isParallelWrite()) {
-    return viewAt(id);
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return viewAt(id);
 }
 
 size_t ConstPool::size() const
 {
-  if (!isParallelWrite()) {
-    return count();
-  }
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLockMaybe lock(lockIfParallel());
   return count();
 }
 

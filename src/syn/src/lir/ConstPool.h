@@ -38,8 +38,9 @@ class ConstPool
 
   // Returns the id of the constant, adding it if needed (write mode only;
   // in read-only mode a new constant yields an invalid id). `aval` and `bval`
-  // hold constNumWords(width) words each; bits above the width are ignored,
-  // and `aval` is cleared wherever `bval` is set.
+  // hold constNumWords(width) words each using the ConstView.h encoding
+  // (0 = (0, 0), 1 = (1, 0), x = (0, 1)); bits above `width` are ignored, and
+  // (1, 1) bits are normalized to x = (0, 1).
   ConstId intern(uint32_t width,
                  std::span<const uint64_t> aval,
                  std::span<const uint64_t> bval);
@@ -47,8 +48,9 @@ class ConstPool
   ConstId internUint(uint32_t width, uint64_t value);
   // Every bit set to `value`.
   ConstId internFill(uint32_t width, LogicValue value);
-  // MSB-first digits 0, 1, x/X; the width is the number of digits.
-  // FailedPrecondition for a new constant in read-only mode.
+  // MSB-first digits 0, 1, x/X (z is not a constant; see ConstView.h); the
+  // width is the number of digits. FailedPrecondition for a new constant in
+  // read-only mode.
   absl::StatusOr<ConstId> internBitString(std::string_view msb_first);
 
   // The value of a valid id returned by this pool.
@@ -97,6 +99,10 @@ class ConstPool
 
   // `words` must be normalized (bits above the width cleared).
   ConstId internNormalized(uint32_t width, const uint64_t* words);
+  absl::Mutex* lockIfParallel() const
+  {
+    return isParallelWrite() ? &mutex_ : nullptr;
+  }
   // Unlocked: the caller holds `mutex_` (in kParallelWrite) or no other
   // thread is writing (kReadOnly / kSingleWrite).
   ConstId lookup(const Key& key) const ABSL_NO_THREAD_SAFETY_ANALYSIS;

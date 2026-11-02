@@ -36,7 +36,7 @@ class NameInterner
   NameInterner& operator=(const NameInterner&) = delete;
 
   // Returns the id of `name`, adding it if needed. In read-only mode `name`
-  // must already exist. A full table is a critical error.
+  // must already exist. A full table reports an error.
   NameId intern(std::string_view name);
   // Returns the id of `name`, or an invalid id. Not allowed in parallel-write
   // mode.
@@ -111,6 +111,10 @@ class NameInterner
     }
   };
 
+  absl::Mutex* lockIfParallel() const
+  {
+    return isParallelWrite() ? &mutex_ : nullptr;
+  }
   // Unlocked: the caller holds `mutex_` or no other thread is writing.
   NameId lookup(const Key& key) const ABSL_NO_THREAD_SAFETY_ANALYSIS;
   std::string_view text(uint32_t id) const ABSL_NO_THREAD_SAFETY_ANALYSIS;

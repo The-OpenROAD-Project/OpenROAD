@@ -13,8 +13,11 @@
 //    width (extension is an explicit Cast); Mul and Pow operands keep their
 //    widths; Eq/Lt operands have equal widths and a 1-bit result. Shift
 //    amounts are unsigned.
-//  - x is unknown, not a don't-care: no pass may rely on its value. The gate
-//    generators give the x results below a fixed value.
+//  - x holds both unknowns and RTL output don't-cares ('x); input wildcards
+//    (casez, casex, ==?) lower to masked comparisons at import. Passes treat
+//    each x bit as an independent unknown by default and refine x only when
+//    opted in (never for kUndriven). The gate generators give the x results
+//    below a fixed value.
 //  - kInst has width 0 and every output is a kFan; kCell and kRegOut are
 //    output 0 (Q) themselves, other outputs kFans. A kFan's fanin 0 is its
 //    owner (fanOwner()); its data is the child port, Liberty pin or
