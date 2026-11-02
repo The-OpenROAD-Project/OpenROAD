@@ -275,16 +275,15 @@ class CUGR
   // How a rip-up and reroute pass treats its nets; the relief alters it.
   struct RerouteOptions
   {
-    // Incremental only: reroute every candidate, not only the congested ones.
-    bool reroute_all_candidates = true;
-    // Per net index, nonzero: keep a reroute only if it lowers overflow.
-    std::vector<char> strict_accept;
+    // Per net index, finite for a relief neighbor: the longest planar route,
+    // in gcells, its reroute may leave; it also must lower overflow.
+    std::vector<double> relief_max_length;
     // Refresh slacks and the critical set before a maze pass.
     bool refresh_critical = true;
   };
   // iterativeRRR re-enters this stage, so the caller labels the debug dump.
-  // Rolls back reroutes that add overflow; returns the accepted reroutes'
-  // total overflow change (<= 0 up to the float slack of the accept test).
+  // Rolls back the reroutes its accept test rejects; returns the accepted
+  // reroutes' total overflow change (<= 0 up to the test's float slack).
   double mazeRoute(std::vector<int>& net_indices,
                    CugrStage stage,
                    int iteration,

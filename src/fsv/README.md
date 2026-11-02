@@ -18,7 +18,12 @@ It provides:
   laterally and above, with no artificial boundary.
 - A uniform dielectric, or the dielectrics of a process stack read from an
   ITF file (`fsv/Itf.h`, `fsv/Stack.h`): planar layers, and conformal
-  dielectrics around the conductors of each layer.
+  dielectrics around the conductors of each layer. The stack also carries
+  each conductor's etch, sheet resistance and temperature coefficients and
+  each via's resistance for the extractor; the solver places wires as
+  drawn, so `read_itf` refuses a stack whose etch would change
+  capacitance. Keywords the reader does not know are skipped with a
+  warning, one per statement.
 - Exact cube Green's-function tables from Fourier series, for a uniform cube
   and for a cube split by one interface plane (`LayeredCubeGreens`), sampled
   with alias tables. A walk sizes each cube to hold at most one interface

@@ -508,7 +508,6 @@ class ODBGenerator:
         general_templates = [
             "db.h",
             "dbObject.h",
-            "CMakeLists.txt",
             "dbObject.cpp",
             "dbCompare.inc",
         ]
@@ -554,8 +553,6 @@ class ODBGenerator:
 
             if target_path.exists():
                 parser = Parser(str(target_path))
-                if item == "CMakeLists.txt":
-                    parser.set_comment_str("#")
                 parser.parse_user_code()
                 parser.clean_code()
                 parser.parse_source_code(str(gen_path))
@@ -563,12 +560,8 @@ class ODBGenerator:
             else:
                 shutil.copy(gen_path, target_path)
 
-            if item != "CMakeLists.txt":
-                if (
-                    subprocess.run(["clang-format", "-i", str(target_path)]).returncode
-                    != 0
-                ):
-                    print(f"Failed to format {target_path}")
+            if subprocess.run(["clang-format", "-i", str(target_path)]).returncode != 0:
+                print(f"Failed to format {target_path}")
             print(f"Generated: {target_path}")
 
 

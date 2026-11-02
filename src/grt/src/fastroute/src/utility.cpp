@@ -151,9 +151,11 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
+    const bool resistance_aware
+        = enable_resistance_aware_ && nets_[netID]->isResAware();
     // Prioritize nets with worst slack first
     const float res_aware_score
-        = nets_[netID]->isResAware() ? -getResAwareScore(nets_[netID]) : 0;
+        = resistance_aware ? -getResAwareScore(nets_[netID]) : 0;
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
@@ -163,7 +165,7 @@ void FastRouteCore::netpinOrderInc()
     tree_order_pv_.push_back(
         {netID, xmin, length_per_pin, ndr_priority, res_aware_score, is_clock});
 
-    if (nets_[netID]->isResAware()) {
+    if (resistance_aware) {
       res_aware_nets++;
     }
   }
@@ -868,9 +870,7 @@ void FastRouteCore::assignEdge(const int netID,
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
   // Enable resistance aware layer assignment only if the net needs it
-  if (enable_resistance_aware_) {
-    resistance_aware_ = net->isResAware();
-  }
+  resistance_aware_ = enable_resistance_aware_ && net->isResAware();
 
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();

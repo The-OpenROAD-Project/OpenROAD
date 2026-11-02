@@ -31,6 +31,7 @@ class Instance;
 class RouteBase;
 class TimingBase;
 class ClockBase;
+class PowerBase;
 
 class NesterovPlace
 {
@@ -44,6 +45,7 @@ class NesterovPlace
                 std::shared_ptr<RouteBase> rb,
                 std::shared_ptr<TimingBase> tb,
                 std::shared_ptr<ClockBase> cb,
+                std::shared_ptr<PowerBase> pwb,
                 std::unique_ptr<AbstractGraphics> graphics,
                 utl::Logger* log);
   ~NesterovPlace();
@@ -181,6 +183,7 @@ class NesterovPlace
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   std::shared_ptr<ClockBase> cb_;
+  std::shared_ptr<PowerBase> pwb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 

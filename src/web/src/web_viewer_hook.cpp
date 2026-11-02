@@ -197,17 +197,27 @@ void WebViewerHook::pause(int timeout_ms)
   if (pause_hooks_.enter) {
     pause_hooks_.enter();
   }
-  // Declared before `lock` so leave runs after the lock is released.
+  // Declared before `lock` so leave and completion run after its release.
   struct LeaveGuard
   {
-    const std::function<void()>& leave;
-    ~LeaveGuard()
+    WebViewerHook& hook;
+    bool finished = false;
+    void finish()
     {
-      if (leave) {
-        leave();
+      if (finished) {
+        return;
       }
+      if (hook.pause_hooks_.leave) {
+        hook.pause_hooks_.leave();
+      }
+      // Destruction must wait until the final unlocked callback has returned.
+      std::lock_guard<std::mutex> lock(hook.pause_mutex_);
+      hook.in_pause_ = false;
+      hook.done_cv_.notify_all();
+      finished = true;
     }
-  } leave_guard{pause_hooks_.leave};
+    ~LeaveGuard() { finish(); }
+  } leave_guard{*this};
 
   std::unique_lock<std::mutex> lock(pause_mutex_);
   in_pause_ = true;
@@ -215,8 +225,6 @@ void WebViewerHook::pause(int timeout_ms)
   if (released_) {
     released_ = false;  // reset for next call
     client_wait_interrupted_.store(false);
-    in_pause_ = false;
-    done_cv_.notify_all();
     return;
   }
   client_wait_interrupted_.store(false);
@@ -233,8 +241,6 @@ void WebViewerHook::pause(int timeout_ms)
       lock.lock();
       released_ = false;
       client_wait_interrupted_.store(false);
-      in_pause_ = false;
-      done_cv_.notify_all();
       return;
     }
     lock.lock();
@@ -243,8 +249,6 @@ void WebViewerHook::pause(int timeout_ms)
     if (released_) {
       released_ = false;
       client_wait_interrupted_.store(false);
-      in_pause_ = false;
-      done_cv_.notify_all();
       return;
     }
   }
@@ -279,12 +283,12 @@ void WebViewerHook::pause(int timeout_ms)
   sessions_->broadcast(R"({"type":"debug_resumed"})");
 
   lock.lock();
-  in_pause_ = false;
-  done_cv_.notify_all();
-  lock.unlock();
-
   if (exit_requested) {
-    pause_hooks_.exit();
+    // Complete the pause before a hook that may destroy this viewer runs.
+    const std::function<void()> exit_hook = pause_hooks_.exit;
+    lock.unlock();
+    leave_guard.finish();
+    exit_hook();
   }
 }
 
@@ -370,8 +374,9 @@ bool WebViewerHook::requestExit()
     }
     exit_requested_ = true;
     released_ = true;
+    // The exit hook may destroy this object as soon as the waiter resumes.
+    pause_cv_.notify_all();
   }
-  pause_cv_.notify_all();
   return true;
 }
 

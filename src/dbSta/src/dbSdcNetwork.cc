@@ -285,6 +285,7 @@ const dbSdcNetwork::SdcPathToInstMap& dbSdcNetwork::sdcPathToInstMap() const
           }
         });
     cache_built_ = true;
+    ++sdc_path_cache_build_count_;
   }
   return sdc_path_to_inst_;
 }

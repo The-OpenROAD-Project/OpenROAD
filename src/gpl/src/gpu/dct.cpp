@@ -30,7 +30,7 @@ namespace {
 // result does not depend on which host backends Kokkos was built with.
 #if !defined(KOKKOS_ENABLE_SERIAL)
 #error \
-    "gpl's GPU FFT needs Kokkos built with the Serial backend (CMake: -DKokkos_ENABLE_SERIAL=ON; Bazel: SERIAL in KOKKOS_HOST_BACKENDS, bazel/gpu/kokkos/configure.bzl) to keep host FFTs single-threaded."
+    "gpl's GPU FFT needs Kokkos built with the Serial backend (SERIAL in KOKKOS_HOST_BACKENDS, bazel/gpu/kokkos/configure.bzl) to keep host FFTs single-threaded."
 #endif
 using HostFftSpace = Kokkos::Serial;
 
