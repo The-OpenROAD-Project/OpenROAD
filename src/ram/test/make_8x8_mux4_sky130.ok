@@ -9,6 +9,7 @@
 [INFO RAM-0016] Selected aoi22 cell sky130_fd_sc_hd__a22oi_1
 [INFO RAM-0024] Behavioral Verilog written for RAM8x8
 [INFO PDN-0001] Inserting grid: ram_grid
+Using 2 tracks default min distance between IO pins.
 [INFO PPL-0067] Restrict pins [ D[0] Q[0] D[1] Q[1] D[2] ... ] to region 0.00u-417.68u at the TOP edge.
 [INFO PPL-0067] Restrict pins [ clk we[0] addr_rw[0] addr_rw[1] addr_rw[2] ... ] to region 0.00u-8.16u at the RIGHT edge.
 [INFO PPL-0001] Number of available slots 830
