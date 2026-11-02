@@ -8696,7 +8696,7 @@ bool Resizer::estimateInputSlewImpact(
     const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
     const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
     const float delay_adjust,
-    const rsz::SlackEstimatorParams& params,
+    const rsz::UnbufferSlackParams& params,
     const bool accept_if_slack_improves)
 {
   auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
@@ -8714,7 +8714,7 @@ bool Resizer::estimateInputSlewImpact(
                  "remove_buffer",
                  1,
                  "buffer {} is not removed because pin {} has no liberty port",
-                 db_network_->name(params.driver),
+                 db_network_->name(params.buffer_instance),
                  db_network_->name(pin));
       return false;
     }
@@ -8757,7 +8757,7 @@ bool Resizer::estimateInputSlewImpact(
           1,
           "buffer {} is not removed because pin {} will have a violating "
           "or worse slack of {}",
-          db_network_->name(params.driver),
+          db_network_->name(params.buffer_instance),
           db_network_->name(pin),
           new_slack);
       return false;
@@ -8767,7 +8767,10 @@ bool Resizer::estimateInputSlewImpact(
   return true;
 }
 
-bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
+// Check the buffer removal's electrical limits and affected setup slack.
+bool Resizer::estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                       float* upstream_delay_delta_out,
+                                       float* buffer_delay_saved_out)
 {
   if (params.scene == nullptr) {
     return false;
@@ -8779,8 +8782,8 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
   sta::Slew new_drvr_slew[sta::RiseFall::index_count];
   float old_cap;
   float new_cap;
-  if (!computeNewDelaysSlews(params.prev_driver_pin,
-                             params.driver,
+  if (!computeNewDelaysSlews(params.upstream_driver_pin,
+                             params.buffer_instance,
                              params.scene,
                              old_delay,
                              new_delay,
@@ -8791,32 +8794,32 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
     return false;
   }
 
-  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
+  if (!checkMaxCapOK(params.upstream_driver_pin, new_cap - old_cap)) {
     debugPrint(logger_,
                utl::RSZ,
                "remove_buffer",
                1,
                "buffer {} is not removed because of max cap violation",
-               db_network_->name(params.driver));
+               db_network_->name(params.buffer_instance));
     return false;
   }
 
-  const sta::RiseFall* prev_driver_rf
-      = params.prev_driver_path->transition(sta_);
-  const float delay_degrad
-      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
-  const float delay_imp
-      = bufferDelay(params.driver_cell,
-                    params.driver_path->transition(sta_),
-                    sta_->graphDelayCalc()->loadCap(
-                        params.driver_pin, params.scene, sta::MinMax::max()),
-                    params.scene,
-                    sta::MinMax::max());
+  // Measure both delay terms while checking the proposed removal.
+  const sta::RiseFall* upstream_rf = params.upstream_path->transition(sta_);
+  const float upstream_delay_delta
+      = new_delay[upstream_rf->index()] - old_delay[upstream_rf->index()];
+  const float buffer_delay_saved = bufferDelay(
+      params.buffer_cell,
+      params.buffer_path->transition(sta_),
+      sta_->graphDelayCalc()->loadCap(
+          params.buffer_output_pin, params.scene, sta::MinMax::max()),
+      params.scene,
+      sta::MinMax::max());
 
   std::map<const sta::Pin*, float> load_pin_slew;
-  if (!estimateSlewsAfterBufferRemoval(params.prev_driver_pin,
-                                       params.driver,
-                                       new_drvr_slew[prev_driver_rf->index()],
+  if (!estimateSlewsAfterBufferRemoval(params.upstream_driver_pin,
+                                       params.buffer_instance,
+                                       new_drvr_slew[upstream_rf->index()],
                                        params.scene,
                                        load_pin_slew)) {
     return false;
@@ -8842,35 +8845,35 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
         "estimated in slew at fanout pin {} is {}, prev drvr out slew={}",
         db_network_->name(load_pin),
         estimated_new_load_slew,
-        new_drvr_slew[prev_driver_rf->index()]);
+        new_drvr_slew[upstream_rf->index()]);
 
     if (!estimateInputSlewImpact(network_->instance(load_pin),
                                  scene,
                                  sta::MinMax::max(),
                                  old_load_slew,
                                  new_load_slew,
-                                 delay_degrad - delay_imp,
+                                 upstream_delay_delta - buffer_delay_saved,
                                  params,
                                  true)) {
       return false;
     }
   }
 
-  sta::Net* input_net = network_->net(params.prev_driver_pin);
+  sta::Net* input_net = network_->net(params.upstream_driver_pin);
   auto pin_iter = std::unique_ptr<sta::NetConnectedPinIterator>(
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const sta::Pin* side_input_pin = pin_iter->next();
     if (network_->isHierarchical(side_input_pin)
-        || side_input_pin == params.prev_driver_pin
-        || side_input_pin == params.driver_input_pin) {
+        || side_input_pin == params.upstream_driver_pin
+        || side_input_pin == params.buffer_input_pin) {
       continue;
     }
 
     const float old_slack
         = sta_->slack(graph_->pinLoadVertex(side_input_pin), max_);
     const float new_slack
-        = old_slack - delay_degrad - params.setup_slack_margin;
+        = old_slack - upstream_delay_delta - params.setup_slack_margin;
     if (new_slack < 0) {
       const float slack_degrad = old_slack - new_slack;
       const float kSlackDegradRatioLimit = 0.1;
@@ -8884,13 +8887,13 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
             1,
             "buffer {} is not removed because side input pin {} will "
             "have a violating slack of {}: old slack={}, slack margin={}, "
-            "delay_degrad={}",
-            db_network_->name(params.driver),
+            "upstream_delay_delta={}",
+            db_network_->name(params.buffer_instance),
             db_network_->name(side_input_pin),
             new_slack,
             old_slack,
             params.setup_slack_margin,
-            delay_degrad);
+            upstream_delay_delta);
         return false;
       }
     }
@@ -8906,7 +8909,7 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
                                  sta::MinMax::max(),
                                  old_slew,
                                  new_slew,
-                                 delay_degrad,
+                                 upstream_delay_delta,
                                  params,
                                  false)) {
       return false;
@@ -8919,7 +8922,14 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
              1,
              "buffer {} can be removed because direct fanouts and side fanouts "
              "can absorb delay/slew degradation",
-             db_network_->name(params.driver));
+             db_network_->name(params.buffer_instance));
+  // Reuse these terms for gain scoring only after the slack guard succeeds.
+  if (upstream_delay_delta_out != nullptr) {
+    *upstream_delay_delta_out = upstream_delay_delta;
+  }
+  if (buffer_delay_saved_out != nullptr) {
+    *buffer_delay_saved_out = buffer_delay_saved;
+  }
   return true;
 }
 
