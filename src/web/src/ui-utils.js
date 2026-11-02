@@ -600,21 +600,81 @@ export function runTclScript(app, script, echo) {
 // widths is an optional array of CSS width strings (e.g. saved from a
 // previous render); when given, it is applied directly instead of
 // measuring natural widths, avoiding a forced reflow.
+// Widening a column widens the table, as Qt's header view does, rather than
+// taking the width from the other columns: a fixed-layout table held at 100 %
+// of its panel shares the panel among its columns, so dragging one long
+// path-name column wider squeezed every other one.  The last column has no
+// width of its own and takes whatever the panel has left over, at least the
+// width it started with or was dragged to (kept on the table, so a re-render
+// that rebuilds the header keeps it); the container scrolls sideways past
+// that.
+//
+// Widths the table measured itself are not kept as a choice: a table first
+// drawn empty ("Click Update") measured its header text alone, and reusing
+// that for the rows that follow left every column cramped.  Until a column
+// is dragged, each render measures the rows it has, a column at most
+// kMaxAutoColumnPx wide (a long path name is elided, not given the panel).
+export const kMaxAutoColumnPx = 480;
+
+// A column's width from its text, not from the layout: a table filled while
+// its panel is hidden (a histogram click fills the timing table, then shows
+// it) has no layout, every offsetWidth is 0, and the last column took the
+// whole panel.  The longest of the header and the first `kMeasureRows` rows,
+// at the table's font size (monospace digits and names are about 0.6 em a
+// character), plus the cell padding and the grip.
+const kMeasureRows = 200;
+export function textColumnWidths(table) {
+    const headers = table.querySelectorAll('thead th');
+    let fontPx = 12;
+    try {
+        fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
+    } catch (e) { /* no styles (tests): 12 px */ }
+    const longest = Array.from(headers, (th) => th.textContent.length);
+    const rows = table.querySelectorAll('tbody tr');
+    for (let r = 0; r < rows.length && r < kMeasureRows; r++) {
+        const cells = rows[r].children;
+        if (cells.length !== headers.length) continue;  // a colspan message
+        for (let i = 0; i < cells.length; i++) {
+            longest[i] = Math.max(longest[i], cells[i].textContent.length);
+        }
+    }
+    return longest.map((n) => Math.min(
+        Math.ceil(n * 0.6 * fontPx) + 24, kMaxAutoColumnPx));
+}
+
 export function makeResizableHeaders(table, widths) {
     const headers = table.querySelectorAll('thead th');
-    if (!widths || !widths[0]) {
-        // Reset to auto layout so browser computes natural column widths;
-        // reading offsetWidth forces a reflow.
-        table.style.tableLayout = 'auto';
-        headers.forEach((th) => th.style.width = '');
-        widths = Array.from(headers, (th) => th.offsetWidth + 'px');
+    const measured = table.dataset.userSized !== '1'
+        && table.dataset.autoSized === '1';
+    if (!widths || !widths[0] || measured) {
+        delete table.dataset.lastMinWidth;
+        widths = textColumnWidths(table).map((w) => w + 'px');
+        table.dataset.autoSized = '1';
     }
+    const last = headers.length - 1;
+    let lastMin = parseFloat(table.dataset.lastMinWidth)
+        || parseFloat(widths[last])
+        || (last >= 0 ? headers[last].offsetWidth : 0) || 0;
     // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
+    headers.forEach((th, i) => th.style.width = i === last ? '' : (widths[i] || ''));
     table.style.tableLayout = 'fixed';
+    const fit = () => {
+        table.dataset.lastMinWidth = String(lastMin);
+        let total = lastMin;
+        headers.forEach((th, i) => {
+            if (i === last) return;
+            // a width set in other units (the detail table's 30ch pin
+            // column) is read from the layout, not as that many pixels
+            const w = th.style.width;
+            total += (w.endsWith('px') ? parseFloat(w) : 0) || th.offsetWidth;
+        });
+        table.style.width = total + 'px';
+        table.style.minWidth = '100%';
+    };
+    table.fitColumns = fit;
+    fit();
 
     headers.forEach((th, idx) => {
-        if (idx === headers.length - 1) return; // skip last column
         const grip = document.createElement('div');
         grip.className = 'col-resize-grip';
         th.style.position = 'relative';
@@ -622,7 +682,13 @@ export function makeResizableHeaders(table, widths) {
 
         let startX, startW;
         const onMouseMove = (e) => {
-            th.style.width = Math.max(30, startW + e.clientX - startX) + 'px';
+            const w = Math.max(30, startW + e.clientX - startX);
+            if (idx === last) {
+                lastMin = w;  // the last column keeps no width of its own
+            } else {
+                th.style.width = w + 'px';
+            }
+            fit();
         };
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
@@ -642,6 +708,7 @@ export function makeResizableHeaders(table, widths) {
         };
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();
+            table.dataset.userSized = '1';
             startX = e.clientX;
             startW = th.offsetWidth;
             document.addEventListener('mousemove', onMouseMove);
