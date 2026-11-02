@@ -2,26 +2,28 @@
 
 The documentation tests are split into two groups:
 
-- **Static tests** — registered in `regression_tests.tcl`, they exercise the
+- **Static tests** — declared in `docs/src/test/BUILD`, they exercise the
   documentation *scripts* against fixed inputs checked in beside them.
 - **Dynamic (per-module) tests** — generated for each documented module, they
   check that a module's `README.md` and `messages.txt` stay consistent with its
   Tcl sources.
 
-All of them are pure Python or Tcl and run in seconds without building the
-OpenROAD binary. See [Documentation Check Tests](../doc_check_tests.md) for the
+All of them run in seconds. Only `man_func` needs the OpenROAD binary. See [Documentation Check Tests](../doc_check_tests.md) for the
 Bazel-level view.
 
 ## Running the tests
 
 ```shell
-# All documentation checks, static and per-module
+# The static tests
+bazelisk test //docs/src/test/...
+
+# The per-module checks
 bazelisk test --test_tag_filters=doc_check //src/...
 ```
 
 ## Static tests
 
-These three are registered in `regression_tests.tcl`:
+These three are declared in `BUILD`:
 
 #### Translator
 
@@ -41,12 +43,9 @@ problem in a real module README.
 The code file can be found [here](man_func.tcl).
 The objective of this test is to check the functionality of the Tcl
 `man` command implemented within the OpenROAD binary.
-Mode 1 is where we run `man -manpath <CMD>`, and mode 2
-is where we do not specify the `-manpath` argument and just run
-`man <CMD>`.
-
-This check makes sure that the files are compiled in the correct location
-and viewable by the `man` command.
+Mode 1 runs `man -manpath <dir> <CMD>` on the pages that `//docs:man_pages`
+generates. Mode 2 runs `man <CMD>` without `-manpath`; a test binary has no
+installed pages, so it checks the not-found error.
 
 #### Bazel developer activities check
 
@@ -85,8 +84,8 @@ stale in the README still passes as long as the totals match.
 
 `man_tcl_params.py` performs per-command name and flag/key signature matching
 across the Tcl `help` output, the `proc` definitions, and the README. It is
-stricter than `man_tcl_check`, but it is in no Bazel target and is not
-registered in `regression_tests.tcl`, so it does not run today.
+stricter than `man_tcl_check`, but it is in no Bazel target, so it does not
+run today.
 
 ## New Test Checklist
 
@@ -94,7 +93,8 @@ Adding a new static test called `func`, you must create/update the following:
 - `func.py|tcl`: Test script.
 - `func.ok`: Log output of the test.
 - `.*ok`: Ideal file output of the test (can be `def`, `lef` etc).
-- `regression_tests.tcl`: Update the name of the test. In this case, `func`.
+- `BUILD`: Add a `doc_check_test` (Python) or `regression_test` (Tcl) named
+  `func`.
 
 ## Authors
 

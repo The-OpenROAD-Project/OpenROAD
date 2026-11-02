@@ -197,8 +197,22 @@ void Selected::highlight(Painter& painter,
   descriptor_->highlight(object_, painter);
 }
 
-// Selected::getActions() is defined in init_descriptors.cpp because it
-// references Gui::get() / Gui::zoomTo(), which are not available in the
-// lightweight gui_descriptors library.
+Descriptor::Actions Selected::getActions() const
+{
+  auto actions = descriptor_->getActions(object_);
+
+  odb::Rect bbox;
+  if (getBBox(bbox)) {
+    actions.push_back({"Zoom to", [this, bbox]() -> Selected {
+                         auto gui = Gui::get();
+                         if (gui) {
+                           gui->zoomTo(bbox);
+                         }
+                         return *this;
+                       }});
+  }
+
+  return actions;
+}
 
 }  // namespace web

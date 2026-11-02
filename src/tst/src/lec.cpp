@@ -20,9 +20,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#ifdef BAZEL_BUILD
 #include "tools/cpp/runfiles/runfiles.h"
-#endif
 
 namespace tst {
 
@@ -154,7 +152,6 @@ const char* toString(LecResult result)
 // did not declare //src/tst:kepler_formal_bin in its data.
 std::filesystem::path keplerFormalRunfile()
 {
-#ifdef BAZEL_BUILD
   using bazel::tools::cpp::runfiles::Runfiles;
   // Created once per process; resolution depends only on the environment
   // bazel sets up for the test.
@@ -171,7 +168,6 @@ std::filesystem::path keplerFormalRunfile()
   if (!path.empty() && isExecutableFile(path)) {
     return path;
   }
-#endif
   return {};
 }
 

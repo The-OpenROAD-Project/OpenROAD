@@ -13,8 +13,8 @@
 //
 // Unlike fft_gpu_test (which goes through the Kokkos-free gpl::FFT facade),
 // the wlop launchers take a KokkosDeviceState directly, so this TU includes
-// Kokkos-laden headers and is compiled with the device language (see
-// set_source_files_properties in test/CMakeLists.txt). Building the
+// Kokkos-laden headers and is compiled as CUDA (see CUDA_COPTS on
+// wl_gpu_test in src/gpl/test/BUILD). Building the
 // KokkosDeviceState views by hand — rather than through DeviceState — keeps
 // the test free of GNet/GPin/odb scaffolding; the view-filling code below
 // mirrors DeviceState::buildTopology's CSR layout and its

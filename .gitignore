@@ -23,11 +23,10 @@ __pycache__
 venv/
 .abc_history
 
-include/ord/Version.hh
-
+# Old CMake build trees left in existing checkouts.
 build
-build_linux
-build_mac
+debug/
+
 test/results
 
 docs/main
@@ -38,8 +37,6 @@ Messages.md
 MessagesFinal.md
 
 .idea/
-cmake-build-debug/
-debug/
 
 coverage-output
 .metals/

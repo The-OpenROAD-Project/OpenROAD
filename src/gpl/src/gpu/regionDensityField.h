@@ -28,7 +28,7 @@
 // only by Kokkos-aware translation units. This header is plain C++, so
 // consumer TUs (nesterovBase.cpp in particular) need not be compiled by nvcc.
 //
-// Compiled only when ENABLE_GPU=ON.
+// Compiled only in the GPU build (--config=gpu).
 
 #pragma once
 

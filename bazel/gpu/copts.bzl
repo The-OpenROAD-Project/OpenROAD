@@ -7,11 +7,10 @@ The hermetic clang compiles these TUs in its native CUDA mode against the
 system toolkit wrapped by @cuda_local; no separate device compiler or
 ruleset is involved. See bazel/gpu/system_gpu.bzl.
 
-cmake/KokkosBackend.cmake additionally defines FMT_USE_NONTYPE_TEMPLATE_ARGS=0
-and, on aarch64, BOOST_UNORDERED_DISABLE_NEON for its CUDA TUs. Both work
-around nvcc front-end limitations (fmt's consteval format strings, gcc's
-arm_neon.h) that clang's CUDA mode does not have, so they are deliberately
-absent here.
+FMT_USE_NONTYPE_TEMPLATE_ARGS=0 and BOOST_UNORDERED_DISABLE_NEON (aarch64) are
+deliberately not defined: they work around nvcc front-end limitations (fmt's
+consteval format strings, gcc's arm_neon.h) that clang's CUDA mode does not
+have.
 """
 
 load("@cuda_local//:defs.bzl", "CUDA_PATH")
@@ -44,8 +43,8 @@ CUDA_ARCH_COPTS = select(
 )
 
 CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
-    # Device-side FMA off for bit-stable results — the CMake --fmad=false
-    # equivalent. The global .bazelrc -ffp-contract=off also reaches these
+    # Device-side FMA off for bit-stable results (nvcc's --fmad=false).
+    # The global .bazelrc -ffp-contract=off also reaches these
     # TUs; this restates it at rule level so device code stays FMA-free
     # even if the global cxxopt is ever dropped (clang's CUDA default is
     # fp-contract=fast).

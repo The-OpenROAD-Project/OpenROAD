@@ -12,8 +12,6 @@ entries:
       title: Bazel Caching
     - file: user/Bazel-targets.md
       title: Bazel Targets
-    - file: user/Build-CMake.md
-      title: Building with CMake (deprecated)
   - url: https://openroad-flow-scripts.readthedocs.io/
     title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
   - file: tutorials/index

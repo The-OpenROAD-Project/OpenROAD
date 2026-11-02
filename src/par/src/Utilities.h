@@ -14,12 +14,6 @@
 #include <string>
 #include <vector>
 
-#ifdef LOAD_CPLEX
-// for ILP solver in CPLEX
-#include "ilcplex/cplex.h"
-#include "ilcplex/ilocplex.h"
-#endif
-
 namespace par {
 
 // Matrix is a two-dimensional vectors
@@ -120,7 +114,7 @@ bool compareDbObjectsByNameAndId(T* lhs, T* rhs)
   return lhs->getId() < rhs->getId();
 }
 
-// A fully specified Fisher-Yates shuffle so Bazel and CMake do not depend on
+// A fully specified Fisher-Yates shuffle so results do not depend on
 // implementation-defined std::shuffle behavior across standard libraries.
 template <typename RandomIt, typename URBG>
 void DeterministicShuffle(RandomIt first, RandomIt last, URBG& gen)
@@ -160,19 +154,5 @@ bool ILPPartitionInst(
     const Matrix<float>& vertex_weights,          // two-dimensional
     const Matrix<float>& upper_block_balance,
     const Matrix<float>& lower_block_balance);
-
-// Call CPLEX to solve the ILP Based Partitioning
-#ifdef LOAD_CPLEX
-bool OptimalPartCplex(
-    int num_parts,
-    int vertex_weight_dimension,
-    std::vector<int>& solution,
-    const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
-    const Matrix<int>& hyperedges,                // hyperedges
-    const std::vector<float>& hyperedge_weights,  // one-dimensional
-    const Matrix<float>& vertex_weights,          // two-dimensional
-    const Matrix<float>& upper_block_balance,
-    const Matrix<float>& lower_block_balance);
-#endif
 
 }  // namespace par

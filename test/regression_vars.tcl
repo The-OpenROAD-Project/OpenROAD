@@ -21,7 +21,7 @@ set app "openroad"
 if { [info exist ::env(OPENROAD_EXE)] } {
   set app_path "$::env(OPENROAD_EXE)"
 } else {
-  set app_path [file join $openroad_dir "build" "bin" $app]
+  set app_path [file join $openroad_dir "bazel-bin" $app]
 }
 # Application options.
 set app_options "-no_init -no_splash -exit"
@@ -74,10 +74,6 @@ proc record_flow_tests { tests } {
 
 proc record_tests1 { tests cmp_logfile } {
   global test_dir
-  if { [info exist ::env(CTEST_TESTNAME)] } {
-    set tests "$::env(CTEST_TESTNAME)"
-    set cmp_logfile "$::env(TEST_TYPE)"
-  }
   foreach test $tests {
     # Prune commented tests from the list.
     if { [string index $test 0] != "#" } {
@@ -96,12 +92,9 @@ proc record_test { test cmd_dir pass_criteria { test_options "" } } {
   if { $test_options != "" } {
     set test_specific_options($test) $test_options
   }
+  # Only Tcl tests run here; Python tests run under Bazel.
   if { [file exists [file join $cmd_dir "$test.tcl"]] } {
     lappend test_langs($test) tcl
-  }
-
-  if { [file exists [file join $cmd_dir "$test.py"]] } {
-    lappend test_langs($test) py
   }
   return $test
 }

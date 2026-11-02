@@ -3,8 +3,7 @@ name: add-test
 description: >
   Add integration or unit tests to an OpenROAD module. Handles the
   complete workflow: writing the Tcl/C++ test, generating golden files,
-  and registering the test in Bazel (CMake is deprecated and CMake
-  test registration is not required). Use when asked
+  and registering the test in Bazel. Use when asked
   to add tests, improve test coverage, create regression tests, or write
   unit tests for any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl,
   odb, pad, pdn, psm, rcx, rsz, sta, stt, tap, upf, utl, etc.).
@@ -91,10 +90,7 @@ If the test uses `diff_file`, also generate the golden output file
 ## 4. Register in Bazel
 
 Register every test in Bazel. A test missing from `BUILD` does not run in
-CI. CMake is deprecated and will be removed on Nov. 1, 2026, so CMake
-test registration is not required. This applies to tests only. A new
-source file or tool still needs its CMake entry until CMake is removed,
-because the macOS CI job builds with CMake (it runs no `ctest`).
+CI.
 
 ### Bazel -- `src/MODULE/test/BUILD`
 
@@ -141,10 +137,6 @@ Some modules split tests across multiple lists (`COMPULSORY_TESTS`,
 comprehension iterates over. Read the existing `BUILD` to find which list
 to extend, and insert the new test name in whatever sort order that
 file already uses (most modules are alphabetical).
-
-### CMake (deprecated, not required)
-
-Skip `src/MODULE/test/CMakeLists.txt`. The macOS CI job runs no `ctest`.
 
 ## 5. Write unit tests (C++, if applicable)
 
@@ -224,10 +216,6 @@ cc_test(
 )
 ```
 
-CMake test registration is not required. The deprecated CMake build uses
-`add_executable`, `gtest_discover_tests`, and `add_dependencies` in
-`src/MODULE/test/cpp/CMakeLists.txt`.
-
 ## 6. Run and verify
 
 Run a Tcl or Python test by its Bazel target name. Add
@@ -245,10 +233,6 @@ bazelisk test //src/MODULE/test/...
 # Verify Bazel sees the test
 bazelisk query //src/MODULE/test:all | grep TEST_NAME
 ```
-
-Legacy (CMake only, deprecated): `./regression -R TEST_NAME` in
-`src/MODULE/test` runs `ctest` in `build/`. It does not see Bazel
-targets.
 
 ## 7. Format and commit
 
@@ -269,7 +253,6 @@ Test for DESCRIPTION."
 - [ ] Test runs successfully: `bazelisk test //src/MODULE/test:TEST_NAME-tcl_test`
 - [ ] Golden file generated and committed
 - [ ] Registered in Bazel `BUILD`
-- [ ] CMake test registration is skipped (not required); new source files or tools still need their CMake entry
 - [ ] Test data is minimal (reuse existing files when possible)
 - [ ] C++ files formatted with clang-format
 - [ ] Commit is signed off (`-s`)

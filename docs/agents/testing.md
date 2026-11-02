@@ -10,13 +10,9 @@ OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** 
 
 **Every new test MUST be registered in Bazel. A test missing from `BUILD` does not run in CI.**
 
-CMake is deprecated and will be removed on Nov. 1, 2026. CMake test registration is not required.
-New source files and new tools still need their CMake entries until then, because the macOS CI job builds with CMake and runs no `ctest`.
-
-| Build System       | Registration File                  | Block/Macro                 |
-| ------------------ | ---------------------------------- | --------------------------- |
-| **Bazel**          | `src/<module>/test/BUILD`          | `regression_test(...)`      |
-| CMake (deprecated) | `src/<module>/test/CMakeLists.txt` | `or_integration_tests(...)` |
+| Registration File         | Block/Macro            |
+| ------------------------- | ---------------------- |
+| `src/<module>/test/BUILD` | `regression_test(...)` |
 
 See "Adding a Tool, Source File or Test in Bazel" in `docs/contrib/DeveloperGuide.md` for the `BUILD` patterns.
 
@@ -38,9 +34,6 @@ bazelisk query 'filter("repair.*hier", //src/rsz/test:all)'                # fin
 Bazel has no regex filter for test targets.
 Run `bazelisk query 'filter(...)'` to list the matching targets, then pass them to `bazelisk test`.
 `--test_filter` selects gtest cases in a C++ test only.
-
-Legacy (CMake only, deprecated): `./regression` runs `cd build && ctest -L <module>`.
-It needs a CMake build directory and does not see Bazel targets.
 
 ### Creating a New Integration Test
 
@@ -76,7 +69,7 @@ For issue reproductions, keep the test case minimal and focused on the failing t
 
 5. **Generate `<test_name>.ok` file**: Create golden test log by executing the script, redirecting stdout, and removing the openroad banner at the top.
 
-6. **Registration**: add `<test_name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`) in `src/<module>/test/BUILD` (Bazel only; CMake test registration is not required). Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a `manual` tag, so check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default. Copy `data` and `tags` from a neighbouring entry, so `<test_name>.ok` and the inputs are in the runfiles
+6. **Registration**: add `<test_name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`) in `src/<module>/test/BUILD`. Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a `manual` tag, so check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default. Copy `data` and `tags` from a neighboring entry, so `<test_name>.ok` and the inputs are in the runfiles
 
 ### Test Framework Flags
 - `-no_splash -no_init -exit`
@@ -92,7 +85,6 @@ Unit tests are C++ files located at `src/<module>/test/cpp`.
 ### Test Registration
 - Bazel: `src/<module>/test/BUILD` or `src/<module>/test/cpp/BUILD`
   - Run with `bazelisk test //src/<module>/test:<name>` or `//src/<module>/test/cpp:<name>`, where `<name>` is the `cc_test` name.
-- CMake (deprecated, test registration not required): `src/<module>/test/CMakeLists.txt`
 
 ## Python Unit Tests
 
@@ -113,7 +105,7 @@ py_test(
 
 `//python/openroad:openroadpy` provides `import openroad` and the per-tool
 modules (`import odb`, `import ant`, ...) from `python/modules`, the same
-names the wheel installs and `openroad -python` provides. Each tool module
+names the wheel installs. Each tool module
 has only its own API; all of them load from one library,
 `_openroad.so`, so they share one copy of the C++ state. Keep each `Tech`
 alive while its `Design` or the module-level functions (`set_thread_count`,

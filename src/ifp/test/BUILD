@@ -6,7 +6,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "hybrid_rows",
     "hybrid_rows2",

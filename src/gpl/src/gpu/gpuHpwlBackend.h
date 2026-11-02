@@ -2,8 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // GpuHpwlBackend — the Kokkos GPU implementation of HpwlBackend (see
-// ../hpwlBackend.h). Compiled only when ENABLE_GPU=ON; constructed by
-// makeHpwlBackend() when the GPU path is selected at run time.
+// ../hpwlBackend.h). Compiled only in the GPU build (--config=gpu); constructed
+// by makeHpwlBackend() when the GPU path is selected at run time.
 //
 // This header carries no Kokkos types — the device kernel lives entirely in
 // gpuHpwlBackend.cpp — so the HPWL factory in ../hpwl.cpp can construct a
@@ -24,8 +24,8 @@ class DeviceState;
 // PIMPL: the persistent device-side Kokkos state lives in Impl, hidden in
 // gpuHpwlBackend.cpp. This header stays Kokkos-free so it can be included by
 // the plain-CXX makeHpwlBackend() factory in ../hpwl.cpp without forcing
-// that TU to be compiled by nvcc (see src/gpl/CMakeLists.txt — hpwl.cpp is
-// intentionally left as a CXX TU).
+// that TU to be compiled as CUDA (see src/gpl/BUILD — hpwl.cpp is
+// intentionally left as a CXX TU in :gpl).
 //
 // The backend reads pin coordinates from a DeviceState shared with the
 // owning NesterovBaseCommon: pin coords are computed on the device from the

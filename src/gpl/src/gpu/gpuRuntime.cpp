@@ -3,12 +3,11 @@
 
 // GPU runtime helpers for the gpl GPU kernel series.
 //
-// Compiled only when ENABLE_GPU=ON. This TU has no device code of its own —
-// it only calls getenv and the Kokkos lifecycle API — but it includes
+// Compiled only in the GPU build (--config=gpu). This TU has no device code of
+// its own — it only calls getenv and the Kokkos lifecycle API — but it includes
 // <Kokkos_Core.hpp>, which (when Kokkos was built with the CUDA/HIP backend)
-// bakes KOKKOS_ENABLE_CUDA into its config and requires __CUDACC__. CMake
-// therefore flags this file with the device language to match the backend;
-// see src/gpl/CMakeLists.txt.
+// bakes KOKKOS_ENABLE_CUDA into its config and requires __CUDACC__. It is
+// therefore compiled as CUDA in :gpl_kokkos; see src/gpl/BUILD.
 
 #include "gpuRuntime.h"
 

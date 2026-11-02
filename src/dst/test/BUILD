@@ -42,9 +42,8 @@ cc_test(
     }),
 )
 
-# CMake builds TestDistributed but does not register it with add_test()
-# because the case is still race-prone. Keep the binary buildable in Bazel
-# without making it part of `bazel test //src/...`.
+# TestDistributed is still race-prone, so it is a buildable binary rather than
+# a test and is not part of `bazelisk test //src/...`.
 cc_binary(
     name = "dst_distributed_test",
     testonly = True,

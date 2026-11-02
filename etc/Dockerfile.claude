@@ -1,5 +1,5 @@
 # Docker image for running Claude Code with --dangerously-skip-permissions
-# inside a container that can build/test OpenROAD (Bazel; CMake is deprecated).
+# inside a container that can build/test OpenROAD with Bazel.
 #
 # Usage: see claude.sh at the repo root.
 
