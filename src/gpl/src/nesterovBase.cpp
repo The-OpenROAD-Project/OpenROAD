@@ -842,15 +842,29 @@ void BinGrid::initBins()
              block->dbuToMicrons(binSizeX_),
              block->dbuToMicrons(binSizeY_));
 
+  // initialize 1D coordinate bounds for fast L1-cached coordinate lookups
+  binLx_.resize(binCntX_);
+  binUx_.resize(binCntX_);
+  for (int idxX = 0; idxX < binCntX_; ++idxX) {
+    binLx_[idxX] = lx_ + std::lround(idxX * binSizeX_);
+    binUx_[idxX] = lx_ + std::lround((idxX + 1) * binSizeX_);
+  }
+  binLy_.resize(binCntY_);
+  binUy_.resize(binCntY_);
+  for (int idxY = 0; idxY < binCntY_; ++idxY) {
+    binLy_[idxY] = ly_ + std::lround(idxY * binSizeY_);
+    binUy_[idxY] = ly_ + std::lround((idxY + 1) * binSizeY_);
+  }
+
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
 #pragma omp parallel for num_threads(num_threads_)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
+    const int bin_ly = binLy_[idxY];
+    const int bin_uy = binUy_[idxY];
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
-      const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
-      const int bin_ly = ly_ + std::lround(idxY * binSizeY_);
-      const int bin_ux = lx_ + std::lround((idxX + 1) * binSizeX_);
-      const int bin_uy = ly_ + std::lround((idxY + 1) * binSizeY_);
+      const int bin_lx = binLx_[idxX];
+      const int bin_ux = binUx_[idxX];
       const int bin_index = (idxY * binCntX_) + idxX;
       bins_[bin_index]
           = Bin(idxX, idxY, bin_lx, bin_ly, bin_ux, bin_uy, targetDensity_);
@@ -980,46 +994,100 @@ void BinGrid::updateBinsNonPlaceArea()
   }
 }
 
-// The per-cell density scatter, in place. The bin accumulators are int64_t and
-// each addend is truncated before it is added, so the total is a sum over a
-// fixed multiset of integers -- associative and commutative, hence independent
-// of the order threads reach it, and bit-identical at any thread count.
-//
-// schedule(dynamic) because per-cell cost is its bin-overlap count, which
-// varies by an order of magnitude between a std cell and a macro.
+static inline float getOverlap1D(int bin_l, int bin_u, int cell_l, int cell_u)
+{
+  const int l = std::max(bin_l, cell_l);
+  const int u = std::min(bin_u, cell_u);
+  return static_cast<float>(std::max(0, u - l));
+}
+
+// Thread-local scratch buffers eliminate atomic RMW instructions (LOCK XADD)
+// and cross-core cache invalidations. Each thread accumulates into its own
+// densely packed int64_t array at full L1/L2 bandwidth. A parallel static
+// reduction sums across threads and resets buffers for the next iteration.
 void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                         int parallel_threads)
 {
-#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
-  for (const GCellHandle& cell : cells) {
-    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+  // 1. Ensure each thread has an accumulation buffer matching the grid bin
+  // count.
+  if (per_thread_inst_area_buffers_.size()
+      < static_cast<size_t>(parallel_threads)) {
+    per_thread_inst_area_buffers_.resize(parallel_threads);
+    per_thread_filler_area_buffers_.resize(parallel_threads);
+  }
+  for (int t = 0; t < parallel_threads; ++t) {
+    if (per_thread_inst_area_buffers_[t].size() != bins_.size()) {
+      per_thread_inst_area_buffers_[t].assign(bins_.size(), 0);
+      per_thread_filler_area_buffers_[t].assign(bins_.size(), 0);
+    }
+  }
 
-    if (cell->isInstance()) {
-      const bool macro = cell->isMacroInstance();
-      if (!macro && !cell->isStdInstance()) {
+  // 2. Parallel scatter: partition cells across threads. Each thread
+  // accumulates
+  //    exclusively into its private buffer without atomics or locks.
+#pragma omp parallel num_threads(parallel_threads)
+  {
+    const int tid = omp_get_thread_num();
+    int64_t* const inst_buf = per_thread_inst_area_buffers_[tid].data();
+    int64_t* const filler_buf = per_thread_filler_area_buffers_[tid].data();
+
+#pragma omp for schedule(static)
+    for (size_t i = 0; i < cells.size(); ++i) {
+      const GCellHandle& cell = cells[i];
+      const bool is_inst = cell->isInstance();
+      const bool is_filler = cell->isFiller();
+      if (!is_inst && !is_filler) {
         continue;
       }
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          float scaledArea
-              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-          if (macro) {
-            scaledArea *= bin.getTargetDensity();
-          }
-          bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
-        }
+      const bool macro = is_inst && cell->isMacroInstance();
+      if (is_inst && !macro && !cell->isStdInstance()) {
+        continue;
       }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.atomicAddFillerArea(static_cast<int64_t>(
-              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+
+      // Determine the 2D range of overlapping bins for this cell.
+      const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+      const int c_dLx = cell->dLx();
+      const int c_dUx = cell->dUx();
+      const int c_dLy = cell->dLy();
+      const int c_dUy = cell->dUy();
+      const float densityScale = cell->getDensityScale();
+      int64_t* const target_buf = is_inst ? inst_buf : filler_buf;
+
+      // Compute 2D overlaps using separable 1D intervals (dx * dy) and
+      // accumulate area directly into the thread-local buffer.
+      for (int y = pairY.first; y < pairY.second; ++y) {
+        const float dy = getOverlap1D(binLy_[y], binUy_[y], c_dLy, c_dUy);
+        const int row_offset = y * binCntX_;
+        for (int x = pairX.first; x < pairX.second; ++x) {
+          const float dx = getOverlap1D(binLx_[x], binUx_[x], c_dLx, c_dUx);
+          float area = (dx * dy) * densityScale;
+          if (macro) {
+            area *= bins_[row_offset + x].getTargetDensity();
+          }
+          target_buf[row_offset + x] += static_cast<int64_t>(area);
         }
       }
     }
+  }
+
+  // 3. Parallel reduction: partition bins across threads, sum contributions
+  // from
+  //    all thread buffers into bins_, and zero out the buffers for the next
+  //    iteration.
+  const size_t nbins = bins_.size();
+#pragma omp parallel for num_threads(parallel_threads) schedule(static)
+  for (size_t b = 0; b < nbins; ++b) {
+    int64_t inst = 0;
+    int64_t filler = 0;
+    for (int t = 0; t < parallel_threads; ++t) {
+      inst += per_thread_inst_area_buffers_[t][b];
+      per_thread_inst_area_buffers_[t][b] = 0;
+      filler += per_thread_filler_area_buffers_[t][b];
+      per_thread_filler_area_buffers_[t][b] = 0;
+    }
+    bins_[b].setInstPlacedAreaUnscaled(inst);
+    bins_[b].setFillerArea(filler);
   }
 }
 
@@ -1671,6 +1739,68 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientPinWA(const GPin* gPin,
              gradientMaxY);
 
   return FloatPoint(gradientMinX - gradientMaxX, gradientMinY - gradientMaxY);
+}
+
+void NesterovBaseCommon::getWireLengthGradientsWA(
+    const std::vector<GCellHandle>& gCells,
+    std::vector<FloatPoint>& out,
+    float wlCoeffX,
+    float wlCoeffY)
+{
+  assert(out.size() == gCells.size());
+
+  const size_t num_pins = gPinStor_.size();
+  if (pin_grads_.size() != num_pins) {
+    pin_grads_.resize(num_pins);
+  }
+
+  const int num_threads = std::max(1, num_threads_);
+  const GPin* gPinStorBase = gPinStor_.data();
+
+#pragma omp parallel for schedule(static) num_threads(num_threads)
+  for (size_t p = 0; p < num_pins; ++p) {
+    const GPin& gPin = gPinStor_[p];
+    const GNet* gNet = gPin.getGNet();
+    if (!gNet) {
+      pin_grads_[p] = FloatPoint(0.0f, 0.0f);
+      continue;
+    }
+
+    const FloatPoint grad
+        = getWireLengthGradientPinWA(&gPin, wlCoeffX, wlCoeffY);
+    const float weight = gNet->getTotalWeight();
+    pin_grads_[p] = FloatPoint(grad.x * weight, grad.y * weight);
+  }
+
+  const size_t num_gcells = gCells.size();
+#pragma omp parallel for schedule(static) num_threads(num_threads)
+  for (size_t i = 0; i < num_gcells; ++i) {
+    const GCell* gCell = gCells[i];
+    float gx = 0.0f;
+    float gy = 0.0f;
+    for (const GPin* gPin : gCell->gPins()) {
+      const size_t p = gPin - gPinStorBase;
+      gx += pin_grads_[p].x;
+      gy += pin_grads_[p].y;
+    }
+    out[i] = FloatPoint(gx, gy);
+  }
+
+  if (log_->debugCheck(GPL, "getGradientWA", 1)) {
+    for (size_t i = 0; i < num_gcells; ++i) {
+      const GCell* gCell = gCells[i];
+      if (gCell->isInstance()) {
+        debugPrint(log_,
+                   GPL,
+                   "getGradientWA",
+                   1,
+                   "{}, gradient: {:g} {:g}",
+                   gCell->getName(),
+                   out[i].x,
+                   out[i].y);
+      }
+    }
+  }
 }
 
 FloatPoint NesterovBaseCommon::getWireLengthPreconditioner(
@@ -2580,7 +2710,8 @@ NesterovBase::~NesterovBase() = default;
 void NesterovBase::updateGCellCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) schedule(static)
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
 #ifdef ENABLE_GPU
@@ -2593,7 +2724,8 @@ void NesterovBase::updateGCellCenterLocation(
 void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+#pragma omp parallel for num_threads(nbc_->getNumThreads()) schedule(static)
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
   if (io_) {
