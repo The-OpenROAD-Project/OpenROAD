@@ -332,6 +332,8 @@ bool
 check_ip_cmd(const char* master_name,
              bool check_all,
              int max_polygons,
+             float max_transition,
+             float max_capacitance,
              bool verbose)
 {
   ord::OpenRoad* openroad = ord::getOpenRoad();
@@ -341,6 +343,8 @@ check_ip_cmd(const char* master_name,
 
   sta::IpChecker checker(db, sta, logger);
   checker.setMaxPolygons(max_polygons);
+  checker.setMaxTransition(max_transition);
+  checker.setMaxCapacitance(max_capacitance);
   checker.setVerbose(verbose);
 
   if (check_all) {

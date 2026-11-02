@@ -167,12 +167,14 @@ define_cmd_args "check_ip" {
   [-master master_name]
   [-all]
   [-max_polygons count]
+  [-max_transition time]
+  [-max_capacitance cap]
   [-verbose]
 }
 
 proc check_ip { args } {
   parse_key_args "check_ip" args \
-    keys {-master -max_polygons} \
+    keys {-master -max_polygons -max_transition -max_capacitance} \
     flags {-all -verbose}
 
   set master_name ""
@@ -192,9 +194,23 @@ proc check_ip { args } {
     sta::check_positive_integer "-max_polygons" $max_polygons
   }
 
+  # Zero means check against the limit the Liberty library declares.
+  set max_transition 0.0
+  if { [info exists keys(-max_transition)] } {
+    set max_transition [sta::time_ui_sta $keys(-max_transition)]
+    sta::check_positive_float "-max_transition" $max_transition
+  }
+
+  set max_capacitance 0.0
+  if { [info exists keys(-max_capacitance)] } {
+    set max_capacitance [sta::capacitance_ui_sta $keys(-max_capacitance)]
+    sta::check_positive_float "-max_capacitance" $max_capacitance
+  }
+
   set verbose [info exists flags(-verbose)]
 
-  return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
+  return [sta::check_ip_cmd $master_name $check_all $max_polygons \
+    $max_transition $max_capacitance $verbose]
 }
 
 # namespace

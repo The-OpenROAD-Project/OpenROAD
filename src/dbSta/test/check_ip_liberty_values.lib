@@ -1,0 +1,146 @@
+library (check_ip_liberty_values) {
+  delay_model : table_lookup;
+  capacitive_load_unit (1,pf);
+  current_unit : "1A";
+  pulling_resistance_unit : "1kohm";
+  time_unit : "1ns";
+  voltage_unit : "1V";
+
+  default_max_transition : 1.0;
+  default_max_capacitance : 0.1;
+
+  lu_table_template (arc_template) {
+    variable_1 : input_net_transition;
+    variable_2 : total_output_net_capacitance;
+    index_1 ("0.1, 0.5");
+    index_2 ("0.01, 0.05");
+  }
+
+  cell (lib_values_ok) {
+    area : 1;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        rise_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+        cell_fall (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        fall_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+      }
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lib_zero_transition) {
+    area : 1;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        rise_transition (arc_template) {
+          values ("0.00, 0.10", "0.08, 0.15");
+        }
+        cell_fall (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        fall_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+      }
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lib_long_transition) {
+    area : 1;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        rise_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 2.50");
+        }
+        cell_fall (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        fall_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+      }
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+
+  cell (lib_large_input_cap) {
+    area : 1;
+    pin (A) {
+      direction : input;
+      capacitance : 0.5;
+    }
+    pin (Z) {
+      direction : output;
+      function : "A";
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        rise_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+        cell_fall (arc_template) {
+          values ("0.10, 0.20", "0.15, 0.25");
+        }
+        fall_transition (arc_template) {
+          values ("0.05, 0.10", "0.08, 0.15");
+        }
+      }
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
+}
