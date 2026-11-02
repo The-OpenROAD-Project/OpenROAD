@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -126,29 +127,33 @@ struct CandidateEdges
 // Algorithm: Boese, Kahng, Tsay, "Scan Chain Optimization: Heuristic and
 // Optimal Solutions", 1994, Section 3.1.
 // ---------------------------------------------------------------------------
-void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
+//
+// identity[pos] is the node id at each position; si_of_id / so_of_id give
+// each node's pin locations. The first and last positions never move.
+void TwoOptScanChain(std::vector<int>& identity,
+                     const std::vector<odb::Point>& si_of_id,
+                     const std::vector<odb::Point>& so_of_id,
                      const CandidateEdges& candidates)
 {
-  const int n = static_cast<int>(cells.size());
+  const int n = static_cast<int>(identity.size());
   if (n < 4) {
     return;
   }
 
-  // Cache scan-in / scan-out pin locations.
+  // Scan-in / scan-out pin locations by position.
   std::vector<odb::Point> si(n), so(n);
   for (int i = 0; i < n; i++) {
-    si[i] = cells[i]->getScanInLocation();
-    so[i] = cells[i]->getScanOutLocation();
+    si[i] = si_of_id[identity[i]];
+    so[i] = so_of_id[identity[i]];
   }
 
   // D(i, j) = weighted distance from scan-out of cell i to scan-in of cell j.
   auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
 
-  // Identity ↔ position mapping.  identity[pos] = cell id, pos_of[id] = pos.
-  std::vector<int> identity(n), pos_of(n);
+  // pos_of[id] = current position of node id.
+  std::vector<int> pos_of(si_of_id.size());
   for (int i = 0; i < n; i++) {
-    identity[i] = i;
-    pos_of[i] = i;
+    pos_of[identity[i]] = i;
   }
 
   // Build reversal-cost prefix array.
@@ -181,7 +186,6 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
         const int64_t gain = D(i, i + 1) + D(j, j + 1) - D(i, j)
                              - D(i + 1, j + 1) - (RC[j] - RC[i + 1]);
         if (gain > 0) {
-          std::reverse(cells.begin() + i + 1, cells.begin() + j + 1);
           std::reverse(si.begin() + i + 1, si.begin() + j + 1);
           std::reverse(so.begin() + i + 1, so.begin() + j + 1);
           std::reverse(identity.begin() + i + 1, identity.begin() + j + 1);
@@ -212,28 +216,28 @@ void TwoOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
 //   g1 + g2 > 0  where g2 = D(j, j+1) - D(j, k+1)
 //   total gain = g1 + g2 + g3  where g3 = D(k, k+1) - D(k, i+1)
 // ---------------------------------------------------------------------------
-void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
+void ThreeOptScanChain(std::vector<int>& identity,
+                       const std::vector<odb::Point>& si_of_id,
+                       const std::vector<odb::Point>& so_of_id,
                        const CandidateEdges& candidates)
 {
-  const int n = static_cast<int>(cells.size());
+  const int n = static_cast<int>(identity.size());
   if (n < 6) {
     return;
   }
 
   std::vector<odb::Point> si(n), so(n);
   for (int i = 0; i < n; i++) {
-    si[i] = cells[i]->getScanInLocation();
-    so[i] = cells[i]->getScanOutLocation();
+    si[i] = si_of_id[identity[i]];
+    so[i] = so_of_id[identity[i]];
   }
 
   auto D = [&](int a, int b) -> int64_t { return Dist(so[a], si[b]); };
 
-  // identity[pos] = original candidate index of cell at this position.
-  // pos_of[id]    = current position of the cell with original index id.
-  std::vector<int> identity(n), pos_of(n);
+  // pos_of[id] = current position of node id.
+  std::vector<int> pos_of(si_of_id.size());
   for (int i = 0; i < n; i++) {
-    identity[i] = i;
-    pos_of[i] = i;
+    pos_of[identity[i]] = i;
   }
 
   bool improved = true;
@@ -274,9 +278,6 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
           const int64_t gain = g1 + g2 + g3;
           if (gain > 0) {
             // Swap subtours [i+1..j] and [j+1..k] via rotate.
-            std::rotate(cells.begin() + i + 1,
-                        cells.begin() + j + 1,
-                        cells.begin() + k + 1);
             std::rotate(
                 si.begin() + i + 1, si.begin() + j + 1, si.begin() + k + 1);
             std::rotate(
@@ -302,7 +303,9 @@ void ThreeOptScanChain(std::vector<std::unique_ptr<ScanCell>>& cells,
 }  // namespace
 
 void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
-                            utl::Logger* logger)
+                            utl::Logger* logger,
+                            const std::optional<odb::Point>& source,
+                            const std::optional<odb::Point>& sink)
 {
   // Nothing to order
   if (cells.empty()) {
@@ -315,8 +318,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
     }
   }
 
-  // Define the starting node as the lower leftmost, so we don't accidentally
-  // start somewhere in the middle
+  // Start from the cell nearest the source. Without a source, start from the
+  // lower leftmost cell so we don't accidentally start in the middle.
   size_t start_index = 0;
   int64_t lowest_dist = std::numeric_limits<int64_t>::max();
   // Get points in a form ready to insert into index
@@ -324,10 +327,9 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   std::vector<std::pair<Point, size_t>> transformed;
 
   for (size_t i = 0; i < cells.size(); i++) {
-    // Find the lower leftmost cell by looking for the cell with the lowest
-    // manhattan distance to the origin
     auto origin = cells[i]->getOrigin();
-    const int64_t dist = origin.x() + origin.y();
+    const int64_t dist = source ? Dist(*source, cells[i]->getScanInLocation())
+                                : int64_t{origin.x()} + origin.y();
     if (dist < lowest_dist) {
       start_index = i;
       lowest_dist = dist;
@@ -367,21 +369,49 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   // Replace with sorted vector
   std::swap(cells, result);
 
-  // Build k-NN candidate edges for the local-search passes.
+  // Node ids 0..n-1 are the cells. The source and sink, when given, are extra
+  // nodes pinned to the ends of the order, so the local search accounts for
+  // the wire into the first cell and out of the last one.
   const int n = static_cast<int>(cells.size());
   std::vector<odb::Point> si(n), so(n);
   for (int i = 0; i < n; i++) {
     si[i] = cells[i]->getScanInLocation();
     so[i] = cells[i]->getScanOutLocation();
   }
+  std::vector<int> order;
+  order.reserve(n + 2);
+  if (source) {
+    order.push_back(static_cast<int>(si.size()));
+    si.push_back(*source);
+    so.push_back(*source);
+  }
+  for (int i = 0; i < n; i++) {
+    order.push_back(i);
+  }
+  if (sink) {
+    order.push_back(static_cast<int>(si.size()));
+    si.push_back(*sink);
+    so.push_back(*sink);
+  }
+
+  // Build k-NN candidate edges for the local-search passes.
   CandidateEdges candidates;
   candidates.build(si, so);
 
   // Improve the nearest-neighbor ordering with local search.
   // 2-Opt corrects for asymmetric scan-in/scan-out pin offsets.
   // 3-Opt (subtour swap) catches direction-preserving improvements.
-  TwoOptScanChain(cells, candidates);
-  ThreeOptScanChain(cells, candidates);
+  TwoOptScanChain(order, si, so, candidates);
+  ThreeOptScanChain(order, si, so, candidates);
+
+  std::vector<std::unique_ptr<ScanCell>> ordered;
+  ordered.reserve(n);
+  for (const int id : order) {
+    if (id < n) {
+      ordered.push_back(std::move(cells[id]));
+    }
+  }
+  std::swap(cells, ordered);
 }
 
 }  // namespace dft

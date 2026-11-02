@@ -248,6 +248,66 @@ TEST(TestScanOptimizer, HorizontalLineOptimalWirelength)
   EXPECT_EQ(chainWirelength(cells), 40);
 }
 
+// Eight cells on a horizontal line (x = 0 .. 70). The chain enters from a
+// scan-in pin at x = 100 and leaves to a scan-out pin at x = -30, so the
+// shortest chain runs right to left: c7 first, c0 last, with total length
+// 30 + 70 + 30. Without endpoints the order would start at the lower-left
+// cell instead.
+TEST(TestScanOptimizer, SourceAndSinkSetChainDirection)
+{
+  utl::Logger logger;
+  const int N = 8;
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  for (int i = 0; i < N; i++) {
+    const odb::Point p(i * 10, 0);
+    cells.push_back(std::make_unique<PlacedScanCellMock>(
+        "c" + std::to_string(i), p, p, p, &logger));
+  }
+  const odb::Point source(100, 0);
+  const odb::Point sink(-30, 0);
+
+  OptimizeScanWirelength(cells, &logger, source, sink);
+
+  ASSERT_EQ(cells.size(), static_cast<size_t>(N));
+  EXPECT_EQ(cells.front()->getName(), "c7");
+  EXPECT_EQ(cells.back()->getName(), "c0");
+  const int64_t total
+      = manhattanDist(source, cells.front()->getScanInLocation())
+        + chainWirelength(cells)
+        + manhattanDist(cells.back()->getScanOutLocation(), sink);
+  EXPECT_EQ(total, 130);
+}
+
+// Cells scattered so the nearest-neighbor seed from the source is not
+// optimal. 2-Opt with the endpoints pinned must not do worse than the seed and
+// must keep every cell.
+TEST(TestScanOptimizer, EndpointsNeverMoveIntoChain)
+{
+  utl::Logger logger;
+  const std::vector<odb::Point> pts = {{0, 0},
+                                       {50, 50},
+                                       {10, 40},
+                                       {40, 10},
+                                       {20, 20},
+                                       {30, 30},
+                                       {5, 25},
+                                       {45, 35}};
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  for (size_t i = 0; i < pts.size(); i++) {
+    cells.push_back(std::make_unique<PlacedScanCellMock>(
+        "c" + std::to_string(i), pts[i], pts[i], pts[i], &logger));
+  }
+  const auto expected_names = cellNameSet(cells);
+
+  OptimizeScanWirelength(
+      cells, &logger, odb::Point(-10, -10), odb::Point(60, 60));
+
+  ASSERT_EQ(cells.size(), pts.size());
+  EXPECT_EQ(cellNameSet(cells), expected_names);
+  EXPECT_EQ(cells.front()->getName(), "c0");
+  EXPECT_EQ(cells.back()->getName(), "c1");
+}
+
 // Six cells on a horizontal line with asymmetric SI/SO:
 //   SI is at x*10, SO is at x*10 + 5 (the scan signal "exits" rightward).
 // In the reversed input order the total hop cost is 5 * 15 = 75.
