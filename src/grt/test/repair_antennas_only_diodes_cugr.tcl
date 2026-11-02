@@ -1,6 +1,6 @@
-# repair_antennas -diode_only with CUGR routing: the first iteration
-# leaves one violation, so -iterations 2 exercises the repair loop
-# re-checking and inserting again after the incremental reroute.
+# repair_antennas -diode_only with CUGR routing: the incremental reroute
+# after each insertion leaves new violations on a high-fanout net, so
+# -iterations 3 exercises the repair loop until it reaches zero.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
@@ -13,7 +13,7 @@ set_routing_layers -signal met1-met5
 global_route -use_cugr
 
 check_antennas
-repair_antennas -diode_only -iterations 2
+repair_antennas -diode_only -iterations 3
 check_antennas
 check_placement
 
