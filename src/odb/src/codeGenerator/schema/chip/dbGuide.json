@@ -62,6 +62,15 @@
         "flags": [
           "private"
         ]
+      },
+      {
+        "name":"is_from_detailed_route_",
+        "type":"bool",
+        "schema":"kSchemaGuideFromDetailedRoute",
+        "default":"false",
+        "flags": [
+          "private"
+        ]
       }
     ],
     "cpp_includes": [

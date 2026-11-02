@@ -272,6 +272,11 @@ class GlobalRouter
   // (-allow_congestion), so haveRoutes() is false.
   bool haveCongestedRoutes();
   bool haveDbGuides();
+  // The loaded routes were rebuilt from detailed_route guides.
+  bool routesFromDetailedRouteGuides() const
+  {
+    return routes_from_droute_guides_;
+  }
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
@@ -656,6 +661,8 @@ class GlobalRouter
   bool initialized_;
   int total_diodes_count_;
   bool is_congested_{false};
+  // Set by loadGuidesFromDB(); cleared when the routes are.
+  bool routes_from_droute_guides_{false};
   // Whether the congestion of the current routes was accepted, decided
   // when they were routed; later changes to allow_congestion_ do not
   // withdraw it.

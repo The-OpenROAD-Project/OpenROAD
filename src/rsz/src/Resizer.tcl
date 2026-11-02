@@ -420,9 +420,6 @@ proc repair_timing { args } {
   }
 
   set match_cell_footprint [info exists flags(-match_cell_footprint)]
-  if { [design_is_routed] } {
-    est::set_parasitics_src "detailed_routing"
-  }
 
   set max_repairs_per_pass 1
   if { [info exists keys(-max_repairs_per_pass)] } {

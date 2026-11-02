@@ -3357,9 +3357,10 @@ void Resizer::findResizeSlacks(bool run_journal_restore,
 {
   initBlock();
 
-  est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
-                                          ? est::ParasiticsSrc::kGlobalRouting
-                                          : est::ParasiticsSrc::kPlacement;
+  est::ParasiticsSrc parasitics_src
+      = estimate_parasitics_->canEstimateFromGlobalRoutes()
+            ? est::ParasiticsSrc::kGlobalRouting
+            : est::ParasiticsSrc::kPlacement;
   estimate_parasitics_->setParasiticsSrc(parasitics_src);
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   if (run_journal_restore) {

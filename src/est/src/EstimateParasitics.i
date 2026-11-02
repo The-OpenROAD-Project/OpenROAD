@@ -249,6 +249,8 @@ estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
   est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  // Reject the source before the SPEF files below are created and truncated.
+  estimate_parasitics->checkParasiticsSrc(src);
   std::map<Scene*, std::ostream*> spef_files;
   if (path != nullptr && std::strlen(path) > 0) {
     std::string file_path(path);

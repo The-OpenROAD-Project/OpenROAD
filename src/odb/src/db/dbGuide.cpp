@@ -50,6 +50,9 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (is_connect_to_term_ != rhs.is_connect_to_term_) {
     return false;
   }
+  if (is_from_detailed_route_ != rhs.is_from_detailed_route_) {
+    return false;
+  }
 
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
@@ -65,6 +68,7 @@ _dbGuide::_dbGuide(_dbDatabase* db)
   is_congested_ = false;
   is_jumper_ = false;
   is_connect_to_term_ = false;
+  is_from_detailed_route_ = false;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
@@ -85,6 +89,9 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   if (obj.getDatabase()->isSchema(kSchemaGuideConnectedToTerm)) {
     stream >> obj.is_connect_to_term_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaGuideFromDetailedRoute)) {
+    stream >> obj.is_from_detailed_route_;
+  }
   return stream;
 }
 
@@ -98,6 +105,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.is_congested_;
   stream << obj.is_jumper_;
   stream << obj.is_connect_to_term_;
+  stream << obj.is_from_detailed_route_;
   return stream;
 }
 
@@ -181,6 +189,7 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   guide->is_jumper_ = false;
+  guide->is_from_detailed_route_ = false;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
@@ -219,6 +228,7 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->pushParam(_guide->is_congested_);
     block->journal_->pushParam(_guide->is_jumper_);
     block->journal_->pushParam(_guide->is_connect_to_term_);
+    block->journal_->pushParam(_guide->is_from_detailed_route_);
     block->journal_->endAction();
   }
 
@@ -283,6 +293,18 @@ void dbGuide::setIsConnectedToTerm(bool is_connected)
 {
   _dbGuide* guide = (_dbGuide*) this;
   guide->is_connect_to_term_ = is_connected;
+}
+
+bool dbGuide::isFromDetailedRoute() const
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  return guide->is_from_detailed_route_;
+}
+
+void dbGuide::setIsFromDetailedRoute(bool from_detailed_route)
+{
+  _dbGuide* guide = (_dbGuide*) this;
+  guide->is_from_detailed_route_ = from_detailed_route;
 }
 
 // User Code End dbGuidePublicMethods
