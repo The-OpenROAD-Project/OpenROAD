@@ -1,6 +1,6 @@
-# Clock inverters are macro sinks unless they drive a single register:
-# inv_multi has two register loads, inv_gater drives a clock gater and
-# inv_single drives one register.
+# Clock inverters are macro sinks unless they drive a single register or
+# only a port: inv_multi has two register loads, inv_gater drives a clock
+# gater, inv_single drives one register and inv_port drives an output port.
 source "helpers.tcl"
 
 read_liberty Nangate45/Nangate45_typ.lib
