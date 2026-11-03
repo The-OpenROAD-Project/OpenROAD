@@ -1636,9 +1636,9 @@ void collectFaninSideLoads(Resizer& resizer,
     if (!side_net.selected_arc) {
       // Drive resistance is the Liberty delay-versus-load slope of the driver.
       const sta::PinSet* drivers = network->drivers(net);
-      const sta::Pin* driver_pin
-          = drivers != nullptr && !drivers->empty() ? *drivers->begin()
-                                                    : nullptr;
+      const sta::Pin* driver_pin = drivers != nullptr && !drivers->empty()
+                                       ? *drivers->begin()
+                                       : nullptr;
       if (driver_pin == nullptr
           || network->libertyPort(driver_pin) == nullptr) {
         continue;
