@@ -1009,6 +1009,7 @@ void RepairDesign::repairDriver(sta::Vertex* drvr,
   // Don't check okToBufferNet here as we are going to do a mix of driver
   // sizing and buffering.  Further checks exist in repairNet.
   if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+      && resizer_->isPlacedNet(net_db)
       && !sta_->isClock(drvr_pin, sta_->cmdMode())
       // Exclude tie hi/low cells and supply nets.
       && !sta_->isConstant(drvr_pin, sta_->cmdMode())) {
