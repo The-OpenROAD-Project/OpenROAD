@@ -3359,12 +3359,13 @@ void Resizer::findResizeSlacks(
 {
   initBlock();
 
-  placed_net_ = placed_net;
+  // Restores the caller's predicate on every exit, including errors.
   struct PlacedNetGuard
   {
     Resizer* resizer;
-    ~PlacedNetGuard() { resizer->placed_net_ = nullptr; }
-  } placed_net_guard{this};
+    std::function<bool(const odb::dbNet*)> previous;
+    ~PlacedNetGuard() { resizer->placed_net_ = std::move(previous); }
+  } placed_net_guard{this, std::exchange(placed_net_, placed_net)};
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
                                           ? est::ParasiticsSrc::kGlobalRouting
