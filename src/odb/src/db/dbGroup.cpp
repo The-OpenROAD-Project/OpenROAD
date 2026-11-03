@@ -533,9 +533,6 @@ void dbGroup::destroy(dbGroup* group)
 {
   _dbGroup* _group = (_dbGroup*) group;
   _dbBlock* block = (_dbBlock*) _group->getOwner();
-  for (auto callback : block->callbacks_) {
-    callback->inDbGroupDestroy(group);
-  }
   while (!group->getInsts().empty()) {
     group->removeInst(*group->getInsts().begin());
   }
@@ -550,6 +547,11 @@ void dbGroup::destroy(dbGroup* group)
   }
   if (_group->parent_group_.isValid()) {
     group->getParentGroup()->removeGroup(group);
+  }
+  // After the members leave, so no receiver hears of a group it was told is
+  // gone; the group is still readable here.
+  for (auto callback : block->callbacks_) {
+    callback->inDbGroupDestroy(group);
   }
   dbProperty::destroyProperties(_group);
   block->group_hash_.remove(_group);
