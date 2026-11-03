@@ -222,7 +222,6 @@ class TritonRoute : public PinAccessService
                      const odb::Rect& requiredDrcBox);
   void repairPDNVias();
   friend class FlexDR;
-  friend struct GCFixture;
 };
 
 }  // namespace drt

@@ -174,7 +174,6 @@ cc_test(
     deps = [
         "//src/drt:base_types",
         "//src/drt:drt_impl",
-        "//src/dst",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
