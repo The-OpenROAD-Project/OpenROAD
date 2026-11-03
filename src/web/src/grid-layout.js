@@ -5,7 +5,7 @@ import { LitElement, html, css, svg, nothing } from 'lit';
 import { when } from 'lit/directives/when.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { repeat } from 'lit/directives/repeat.js';
+import { createRef, ref } from 'lit/directives/ref.js';
 import { wheelDeltaPx } from './ui-utils.js';
 
 // ─── Native CSS Grid IDE Layout Manager & Custom Elements ────────────────────
@@ -83,10 +83,9 @@ export class IdePaneElement extends LitElement {
         collapsible: { type: Boolean, reflect: true },
         maximized: { type: Boolean, reflect: true },
         collapsed: { type: Boolean, reflect: true },
-        _overflowing: { state: true },
-        _fadeStart: { state: true },
-        _fadeEnd: { state: true },
         _menuOpen: { state: true },
+        // Index, among the listed tabs, of the menu item with keyboard focus.
+        _focusIndex: { state: true },
     };
 
     static styles = [tabIconStyles, css`
@@ -120,42 +119,22 @@ export class IdePaneElement extends LitElement {
             flex-shrink: 0;
         }
 
+        /* Fills up to the controls, so the fixed right-edge fade lies over
+           empty space when the tabs fit; a tab scrolled into view clears it. */
         .ide-tabs {
             display: flex;
+            flex: 1;
             height: 100%;
             min-width: 0;
             overflow-x: auto;
             scrollbar-width: none;
-            --tab-fade: 24px;
-            /* Scrolling a tab into view keeps it clear of the faded edge. */
-            scroll-padding-inline: var(--tab-fade);
-            -webkit-mask-image: var(--tab-mask, none);
-            mask-image: var(--tab-mask, none);
+            scroll-padding-inline-end: 24px;
+            -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
         }
 
         .ide-tabs::-webkit-scrollbar {
             display: none;
-        }
-
-        /* The tabs at their full width: its size is the strip's scrollWidth. */
-        .ide-tabs-track {
-            display: flex;
-            flex: none;
-            height: 100%;
-        }
-
-        /* Fade the edge that has tabs scrolled past it. */
-        .ide-tabs.fade-start {
-            --tab-mask: linear-gradient(to left, #000 calc(100% - var(--tab-fade)), transparent);
-        }
-
-        .ide-tabs.fade-end {
-            --tab-mask: linear-gradient(to right, #000 calc(100% - var(--tab-fade)), transparent);
-        }
-
-        .ide-tabs.fade-start.fade-end {
-            --tab-mask: linear-gradient(to right, transparent, #000 var(--tab-fade),
-                                        #000 calc(100% - var(--tab-fade)), transparent);
         }
 
         .ide-controls {
@@ -182,14 +161,9 @@ export class IdePaneElement extends LitElement {
         }
 
         .ide-btn:hover,
-        .ide-btn-overflow[aria-expanded="true"] {
+        .ide-btn-tab-menu[aria-expanded="true"] {
             background: var(--bg-hover);
             color: var(--fg-primary);
-        }
-
-        /* Always laid out, so whether the tabs overflow never depends on it showing. */
-        .ide-btn-overflow.idle {
-            visibility: hidden;
         }
 
         .ide-btn.ide-btn-restore {
@@ -272,110 +246,57 @@ export class IdePaneElement extends LitElement {
 
     constructor() {
         super();
-        this._overflowing = false;
-        this._fadeStart = false;
-        this._fadeEnd = false;
         this._menuOpen = false;
-        this._tabsEl = null;
-        this._tabsTrack = null;
-        this._tabsSlot = null;
-        this._tabsObserver = null;
-        this._tabsMutations = null;
+        this._focusIndex = 0;
+        this._slotRef = createRef();
+        this._menuRef = createRef();
+        this._btnRef = createRef();
         this._menuAbort = null;
-        this._menuHadFocus = false;
-        this._inUpdate = false;
     }
 
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('ide-pane', `ide-pane-${this.paneName}`);
-        if (this.hasUpdated) this._observeStrip();
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
-        this._tabsObserver?.disconnect();
         this._closeMenu();
     }
 
-    firstUpdated() {
-        this._tabsEl = this.renderRoot.querySelector('.ide-tabs');
-        this._tabsTrack = this.renderRoot.querySelector('.ide-tabs-track');
-        this._tabsSlot = this.renderRoot.querySelector('slot[name="tabs"]');
-        // Its first callback takes the first measurement.
-        this._tabsObserver = new ResizeObserver(() => {
-            this._updateOverflow();
-            // A narrower strip must not leave the active tab out of view.
-            this._tabs.find(tab => tab.active)
-                ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
-        });
-        // The open menu shows the tabs' state, which is not the pane's.
-        this._tabsMutations = new MutationObserver(() => this.requestUpdate());
-        this._observeStrip();
-    }
-
     willUpdate(changedProperties) {
-        this._menuHadFocus = this._menuOpen && this._menuHasFocus();
-        this._inUpdate = true;
-        if (this._menuOpen && (!this._overflowing || this.collapsed
-                               || changedProperties.has('maximized'))) {
-            this._closeMenu(this._menuHadFocus);
+        if (!this._menuOpen) return;
+        if (this.collapsed || changedProperties.has('maximized')) {
+            this._closeMenu(this._menuRef.value?.contains(this.renderRoot.activeElement));
+            return;
         }
+        // A listed tab may have been closed while the menu is open.
+        this._focusIndex = Math.min(this._focusIndex, Math.max(0, this._menuTabs.length - 1));
     }
 
-    updated(changedProperties) {
-        this._inUpdate = false;
-        // On opening, or when the focused item's tab went away in this render.
-        if (this._menuOpen && (changedProperties.has('_menuOpen')
-                               || (this._menuHadFocus && !this._menuHasFocus()))) {
-            this._focusMenuItem();
-        }
+    updated() {
+        if (this._menuOpen) this._menuRef.value?.children[this._focusIndex]?.focus();
     }
 
     get _tabs() {
-        return this._tabsSlot?.assignedElements() || [];
+        return this._slotRef.value?.assignedElements() ?? [];
     }
 
-    // The strip's box and its tabs' full width bound its scroll range.
-    _observeStrip() {
-        this._tabsObserver.observe(this._tabsEl);
-        this._tabsObserver.observe(this._tabsTrack);
-    }
-
-    _observeTabs() {
-        this._tabsMutations.disconnect();
-        for (const tab of this._tabs) {
-            this._tabsMutations.observe(tab, {
-                attributes: true, attributeFilter: ['active', 'hidden', 'title'],
-            });
-        }
-    }
-
-    _onTabsSlotChange() {
-        if (!this._menuOpen) return;
-        this._observeTabs();
-        this.requestUpdate();
-    }
-
-    _updateOverflow() {
-        const el = this._tabsEl;
-        if (!el) return;
-        const max = el.scrollWidth - el.clientWidth;
-        this._overflowing = max > 1;
-        this._fadeStart = this._overflowing && el.scrollLeft > 1;
-        this._fadeEnd = this._overflowing && el.scrollLeft < max - 1;
+    get _menuTabs() {
+        return this._tabs.filter(tab => !tab.hidden);
     }
 
     _onTabsWheel(e) {
+        const strip = e.currentTarget;
         // Ctrl+wheel and trackpad pinch zoom the page.
-        if (e.ctrlKey || !this._overflowing
+        if (e.ctrlKey || strip.scrollWidth <= strip.clientWidth
             || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
         e.preventDefault();
         // The vertical delta scrolls sideways, so a page is the strip's width.
-        this._tabsEl.scrollLeft += wheelDeltaPx(e, () => this._tabsEl.clientWidth)[1];
+        strip.scrollLeft += wheelDeltaPx(e, () => strip.clientWidth)[1];
     }
 
-    _onOverflowClick() {
+    _onMenuButtonClick() {
         if (this._menuOpen) {
             this._closeMenu(true);
         } else {
@@ -385,15 +306,15 @@ export class IdePaneElement extends LitElement {
 
     _openMenu() {
         this._menuOpen = true;
-        this._observeTabs();
+        this._focusIndex = Math.max(0, this._menuTabs.findIndex(tab => tab.active));
         this._menuAbort = new AbortController();
         const { signal } = this._menuAbort;
 
         document.addEventListener('pointerdown', (e) => {
             const path = e.composedPath();
-            const inside = ['.ide-tab-menu', '.ide-btn-overflow'].some(
-                sel => path.includes(this.renderRoot.querySelector(sel)));
-            if (!inside) this._closeMenu();
+            if (!path.includes(this._menuRef.value) && !path.includes(this._btnRef.value)) {
+                this._closeMenu();
+            }
         }, { signal });
 
         // Window capture: main.js reads Escape and single letters as shortcuts
@@ -404,54 +325,43 @@ export class IdePaneElement extends LitElement {
     _closeMenu(restoreFocus = false) {
         this._menuAbort?.abort();
         this._menuAbort = null;
-        this._tabsMutations?.disconnect();
         this._menuOpen = false;
-        if (restoreFocus) this.renderRoot.querySelector('.ide-btn-overflow')?.focus();
+        if (restoreFocus) this._btnRef.value?.focus();
     }
 
-    _menuHasFocus() {
-        return !!this.renderRoot?.activeElement?.closest('.ide-tab-menu');
-    }
-
-    // The active tab's item, else the first.
-    _focusMenuItem() {
-        const items = [...this.renderRoot.querySelectorAll('.ide-tab-menu-item')];
-        (items.find(item => item.getAttribute('aria-checked') === 'true') || items[0])?.focus();
-    }
-
+    // Closes when focus goes elsewhere.  No relatedTarget (window blur, Safari's
+    // unfocused clicks, Chrome blurring an item a render removes) is not leaving.
     _onMenuFocusout(e) {
-        // Chrome blurs a focused item as a render removes it; updated() then
-        // focuses another one, so this is not focus leaving the menu.
-        if (this._inUpdate) return;
-        if (this._menuOpen && !e.currentTarget.contains(e.relatedTarget)) this._closeMenu();
-    }
-
-    // A press must not move focus off the menu before the click: on the ▾ the
-    // focusout would close it, and Safari does not focus a clicked item.
-    _keepMenuFocus(e) {
-        e.preventDefault();
+        const to = e.relatedTarget;
+        if (to && !this._menuRef.value?.contains(to) && to !== this._btnRef.value) {
+            this._closeMenu();
+        }
     }
 
     _onMenuKey(e) {
-        const menu = this.renderRoot.querySelector('.ide-tab-menu');
+        const menu = this._menuRef.value;
         if (!menu || !e.composedPath().includes(menu)) return;
-        const items = [...menu.querySelectorAll('.ide-tab-menu-item')];
-        const n = items.length;
-        const i = items.indexOf(this.renderRoot.activeElement);
-        let target = null;
+        const tabs = this._menuTabs;
+        const n = tabs.length;
+        const i = this._focusIndex;
+        let next = i;
         if (e.key === 'ArrowDown') {
-            target = items[(i + 1) % n];
+            next = (i + 1) % n;
         } else if (e.key === 'ArrowUp') {
-            target = items[i <= 0 ? n - 1 : i - 1];
+            next = (i - 1 + n) % n;
         } else if (e.key === 'Home') {
-            target = items[0];
+            next = 0;
         } else if (e.key === 'End') {
-            target = items[n - 1];
+            next = n - 1;
         } else if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            // Type-ahead: the next item whose title starts with the letter.
+            // Type-ahead: the next tab whose title starts with the letter.
             const letter = e.key.toLowerCase();
-            target = [...items.slice(i + 1), ...items.slice(0, i + 1)].find(item =>
-                item.querySelector('.ide-tab-menu-title').textContent.toLowerCase().startsWith(letter));
+            for (let k = 1; k <= n; k++) {
+                if ((tabs[(i + k) % n].title || '').toLowerCase().startsWith(letter)) {
+                    next = (i + k) % n;
+                    break;
+                }
+            }
         } else if (e.key !== 'Escape') {
             return;
         }
@@ -460,7 +370,7 @@ export class IdePaneElement extends LitElement {
         if (e.key === 'Escape') {
             this._closeMenu(true);
         } else {
-            target?.focus();
+            this._focusIndex = next;
         }
     }
 
@@ -470,15 +380,10 @@ export class IdePaneElement extends LitElement {
     }
 
     _renderTabMenu() {
-        const tabs = this._tabs.filter(tab => !tab.hidden);
         return html`
-            <div
-                class="ide-tab-menu"
-                role="menu"
-                @focusout=${this._onMenuFocusout}
-                @mousedown=${this._keepMenuFocus}
-            >
-                ${repeat(tabs, tab => tab, tab => html`
+            <div class="ide-tab-menu" role="menu" ${ref(this._menuRef)}
+                 @focusout=${this._onMenuFocusout}>
+                ${this._menuTabs.map(tab => html`
                     <button
                         class="ide-tab-menu-item"
                         role="menuitemradio"
@@ -542,34 +447,21 @@ export class IdePaneElement extends LitElement {
 
         return html`
             <div class="ide-header" id="${prefix}-header">
-                <div
-                    class=${classMap({
-                        'ide-tabs': true,
-                        'fade-start': this._fadeStart,
-                        'fade-end': this._fadeEnd,
-                    })}
-                    id="${prefix}-tabs"
-                    @scroll=${this._updateOverflow}
-                    @wheel=${this._onTabsWheel}
-                >
-                    <div class="ide-tabs-track">
-                        <slot name="tabs" @slotchange=${this._onTabsSlotChange}></slot>
-                    </div>
+                <div class="ide-tabs" id="${prefix}-tabs" role="tablist"
+                     @wheel=${this._onTabsWheel}>
+                    <slot name="tabs" ${ref(this._slotRef)}
+                          @slotchange=${() => this.requestUpdate()}></slot>
                 </div>
                 <div class="ide-controls" id="${prefix}-controls">
                     <button
-                        class=${classMap({
-                            'ide-btn': true,
-                            'ide-btn-overflow': true,
-                            idle: !this._overflowing,
-                        })}
-                        id="btn-overflow-${name}"
+                        class="ide-btn ide-btn-tab-menu"
+                        id="btn-tab-menu-${name}"
                         title="List all tabs"
                         aria-haspopup="menu"
                         aria-expanded=${this._menuOpen ? 'true' : 'false'}
-                        @mousedown=${this._keepMenuFocus}
-                        @click=${this._onOverflowClick}
-                    >▾</button>
+                        ${ref(this._btnRef)}
+                        @click=${this._onMenuButtonClick}
+                    >▼</button>
                     ${when(hasMax, () => html`
                         <button
                             class=${classMap({
@@ -1375,6 +1267,8 @@ export class GridLayoutManager extends EventEmitter {
         comp.contentDiv.hidden = false;
         this._setComponentActive(comp, true);
         this.closedComponents.delete(componentType);
+        // The pane's tab menu shows which tab is open.
+        pane.requestUpdate();
 
         comp.container.fire('show');
         comp.container.fire('open');
@@ -1397,6 +1291,8 @@ export class GridLayoutManager extends EventEmitter {
         this._setComponentActive(comp, false);
         comp.container.fire('hide');
         this.closedComponents.add(componentType);
+        // The pane's tab menu lists only the open tabs.
+        this.panes[comp.paneName]?.requestUpdate();
 
         if (autoSelectNext && this.activeTabs[comp.paneName] === componentType) {
             let nextComp = null;

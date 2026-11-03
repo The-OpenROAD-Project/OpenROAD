@@ -21,7 +21,6 @@ function stubTabStrip(tabsEl, { scrollWidth, clientWidth }) {
         set: (v) => { scrollLeft = v; },
         configurable: true,
     });
-    tabsEl.dispatchEvent(new Event('scroll'));
 }
 
 // A keydown that crosses into the pane's shadow DOM; returns the event.
@@ -33,7 +32,7 @@ function pressKey(target, key) {
     return e;
 }
 
-// Lets MutationObserver and slotchange callbacks run.
+// Lets slotchange callbacks run.
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
 const menuOf = (pane) => pane.shadowRoot.querySelector('.ide-tab-menu');
@@ -62,12 +61,10 @@ describe('GridLayoutManager', () => {
         return { pane, tabsEl: pane.shadowRoot.querySelector('.ide-tabs') };
     }
 
-    // The right pane with its tabs overflowing; with `open`, the ▾ menu too.
-    async function mountOverflowingPane({ open = false } = {}) {
+    // The right pane; with `open`, its tab menu too.
+    async function mountMenuPane({ open = false } = {}) {
         const { pane, tabsEl } = await mountRightPane();
-        stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
-        await pane.updateComplete;
-        const btn = pane.shadowRoot.querySelector('.ide-btn-overflow');
+        const btn = pane.shadowRoot.querySelector('.ide-btn-tab-menu');
         if (open) {
             btn.click();
             await pane.updateComplete;
@@ -377,39 +374,28 @@ describe('GridLayoutManager', () => {
         assert.equal(layout.activeTabs.right, 'ChartsWidget');
     });
 
-    it('shows the overflow button and edge fades only while the tabs overflow', async () => {
-        const { pane, tabsEl } = await mountRightPane();
-        const btn = pane.shadowRoot.querySelector('.ide-btn-overflow');
-        assert.ok(btn.classList.contains('idle'), 'laid out, but hidden until the tabs overflow');
-        assert.ok(!tabsEl.classList.contains('fade-end'));
+    it('shows the ▼ tab menu button on every pane', async () => {
+        for (const type of ['DisplayControls', 'LayoutViewer', 'TclConsole', 'Inspector']) {
+            layout.registerComponentFactoryFunction(type, () => {});
+        }
+        layout.loadLayout({});
+        for (const name of ['left', 'main', 'bottom', 'right']) {
+            const pane = layout.panes[name];
+            await pane.updateComplete;
+            assert.equal(pane.shadowRoot.querySelector('.ide-btn-tab-menu')?.textContent, '▼', name);
+        }
 
-        stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
-        await pane.updateComplete;
-        assert.ok(!btn.classList.contains('idle'));
-        assert.ok(!tabsEl.classList.contains('fade-start'));
-        assert.ok(tabsEl.classList.contains('fade-end'));
-
-        tabsEl.scrollLeft = 200;
-        tabsEl.dispatchEvent(new Event('scroll'));
-        await pane.updateComplete;
-        assert.ok(tabsEl.classList.contains('fade-start'));
-        assert.ok(tabsEl.classList.contains('fade-end'));
-
-        tabsEl.scrollLeft = 400;
-        tabsEl.dispatchEvent(new Event('scroll'));
-        await pane.updateComplete;
-        assert.ok(tabsEl.classList.contains('fade-start'));
-        assert.ok(!tabsEl.classList.contains('fade-end'));
-
-        stubTabStrip(tabsEl, { scrollWidth: 300, clientWidth: 300 });
-        await pane.updateComplete;
-        assert.ok(btn.classList.contains('idle'));
-        assert.ok(!tabsEl.classList.contains('fade-start'));
-        assert.ok(!tabsEl.classList.contains('fade-end'));
+        // A pane with a single tab lists it.
+        const left = layout.panes.left;
+        left.shadowRoot.querySelector('.ide-btn-tab-menu').click();
+        await left.updateComplete;
+        assert.deepEqual(
+            menuItems(left).map(item => item.textContent.trim().replace(/\s+/g, ' ')),
+            ['✓ Display Controls']);
     });
 
-    it('lists the open tabs in the overflow menu and activates the chosen one', async () => {
-        const { pane, btn } = await mountOverflowingPane();
+    it('lists the open tabs in the tab menu and activates the chosen one', async () => {
+        const { pane, btn } = await mountMenuPane();
         layout.closeComponent('Browser');
         assert.equal(btn.getAttribute('aria-expanded'), 'false');
         btn.click();
@@ -425,31 +411,34 @@ describe('GridLayoutManager', () => {
             ['true', 'false', 'false']);
         assert.ok(items[2].querySelector('.ide-tab-icon svg'));
 
-        // Opening focuses the active tab's item; arrows, Home and End move
+        // Opening focuses the open tab's item; arrows, Home and End move
         // between items, which stay out of the Tab order.
         assert.ok(items.every(item => item.getAttribute('tabindex') === '-1'));
         assert.equal(pane.shadowRoot.activeElement, items[0]);
-        const key = (k) => pressKey(pane.shadowRoot.activeElement, k);
-        key('ArrowUp');
+        const key = async (k) => {
+            pressKey(pane.shadowRoot.activeElement, k);
+            await pane.updateComplete;
+        };
+        await key('ArrowUp');
         assert.equal(pane.shadowRoot.activeElement, items[2]);
-        key('ArrowDown');
+        await key('ArrowDown');
         assert.equal(pane.shadowRoot.activeElement, items[0]);
-        key('End');
+        await key('End');
         assert.equal(pane.shadowRoot.activeElement, items[2]);
-        key('Home');
+        await key('Home');
         assert.equal(pane.shadowRoot.activeElement, items[0]);
-        key('End');
+        await key('End');
 
         items[2].click();
         await pane.updateComplete;
         assert.equal(layout.activeTabs.right, 'ChartsWidget');
         assert.equal(menuOf(pane), null);
         assert.equal(btn.getAttribute('aria-expanded'), 'false');
-        assert.equal(pane.shadowRoot.activeElement, btn, 'focus returns to the ▾');
+        assert.equal(pane.shadowRoot.activeElement, btn, 'focus returns to the ▼');
     });
 
-    it('lets a click on the overflow button reach document listeners', async () => {
-        const { btn } = await mountOverflowingPane();
+    it('lets a click on the tab menu button reach document listeners', async () => {
+        const { btn } = await mountMenuPane();
 
         // The menu bar and the layer context menu close on a document click.
         let clicks = 0;
@@ -463,13 +452,18 @@ describe('GridLayoutManager', () => {
         }
     });
 
-    it('keeps keyboard focus and Escape within the overflow menu', async () => {
-        const { pane, btn } = await mountOverflowingPane();
+    it('keeps keyboard focus and Escape within the tab menu', async () => {
+        const { pane, btn } = await mountMenuPane();
         const focused = () => pane.shadowRoot.activeElement;
         const open = async () => {
             btn.click();
             await pane.updateComplete;
             assert.ok(menuOf(pane));
+        };
+        const press = async (k) => {
+            const e = pressKey(focused(), k);
+            await pane.updateComplete;
+            return e;
         };
 
         // Like main.js's shortcuts: registered first, in document capture.
@@ -483,8 +477,7 @@ describe('GridLayoutManager', () => {
             assert.ok(menuOf(pane), 'an Escape outside the menu leaves it open');
             assert.equal(seen.length, 1);
 
-            const e = pressKey(focused(), 'Escape');
-            await pane.updateComplete;
+            const e = await press('Escape');
             assert.ok(e.defaultPrevented);
             assert.equal(menuOf(pane), null);
             assert.equal(focused(), btn);
@@ -493,40 +486,42 @@ describe('GridLayoutManager', () => {
             // A letter jumps to the next item starting with it, and is no
             // shortcut ('t' toggles the theme, 'k' the ruler).
             await open();
-            assert.ok(pressKey(focused(), 't').defaultPrevented);
+            assert.ok((await press('t')).defaultPrevented);
             assert.equal(focusedTitle(pane), 'Timing');
-            pressKey(focused(), 'h');
+            await press('h');
             assert.equal(focusedTitle(pane), 'Hierarchy', 'wraps past the end');
-            assert.ok(pressKey(focused(), 'x').defaultPrevented, 'no match');
+            assert.ok((await press('x')).defaultPrevented, 'no match');
             assert.equal(focusedTitle(pane), 'Hierarchy');
             assert.equal(seen.length, 1);
 
             // Enter is left to the button.
-            assert.ok(!pressKey(focused(), 'Enter').defaultPrevented);
+            assert.ok(!(await press('Enter')).defaultPrevented);
             assert.equal(seen.length, 2);
-            pressKey(focused(), 'Escape');
-            await pane.updateComplete;
+            await press('Escape');
         } finally {
             document.removeEventListener('keydown', onKeydown, true);
         }
 
-        // Focus moving between items keeps it open; leaving the menu closes it.
+        // Focus going within the menu or to its button keeps it open; no
+        // destination (window blur, Safari clicks, Chrome removing a focused
+        // item) keeps it open too; anywhere else closes it.
         await open();
-        const focusout = (relatedTarget) => menuItems(pane)[0].dispatchEvent(
-            new window.FocusEvent('focusout', { bubbles: true, composed: true, relatedTarget }));
-        focusout(menuItems(pane)[1]);
-        await pane.updateComplete;
+        const focusout = async (relatedTarget) => {
+            menuItems(pane)[0].dispatchEvent(new window.FocusEvent('focusout', {
+                bubbles: true, composed: true, relatedTarget,
+            }));
+            await pane.updateComplete;
+        };
+        await focusout(menuItems(pane)[1]);
         assert.ok(menuOf(pane));
-        focusout(document.body);
-        await pane.updateComplete;
+        await focusout(btn);
+        assert.ok(menuOf(pane));
+        await focusout(null);
+        assert.ok(menuOf(pane));
+        await focusout(document.body);
         assert.equal(menuOf(pane), null);
 
-        // A press on an item must not move focus off the menu first.
         await open();
-        const press = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        menuItems(pane)[1].dispatchEvent(press);
-        assert.ok(press.defaultPrevented);
-
         menuItems(pane)[0].dispatchEvent(
             new PointerEvt('pointerdown', { bubbles: true, composed: true }));
         await pane.updateComplete;
@@ -542,13 +537,11 @@ describe('GridLayoutManager', () => {
         assert.equal(menuOf(pane), null);
     });
 
-    it('updates the open overflow menu when the active tab changes', async () => {
-        const { pane } = await mountOverflowingPane({ open: true });
+    it('updates the open tab menu when the active tab changes', async () => {
+        const { pane } = await mountMenuPane({ open: true });
 
         // E.g. a selection response focusing another tab while the menu is open.
         layout.activateTab('TimingWidget');
-        await layout.components.get('TimingWidget').tabEl.updateComplete;
-        await tick();
         await pane.updateComplete;
 
         const checked = menuItems(pane)
@@ -557,14 +550,16 @@ describe('GridLayoutManager', () => {
         assert.deepEqual(checked, ['Timing']);
     });
 
-    it('closes the overflow menu from the button that opened it', async () => {
-        const { pane, btn } = await mountOverflowingPane({ open: true });
+    it('closes the tab menu from the button that opened it', async () => {
+        const { pane, btn } = await mountMenuPane({ open: true });
 
-        // Pressing the ▾ must not take focus out of the menu: the focusout
-        // would close it, and the click would then open it again.
-        const press = new window.MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        btn.dispatchEvent(press);
-        assert.ok(press.defaultPrevented);
+        // Chrome moves focus to the ▼ on mousedown; that must not close the
+        // menu, or the click would open it again.
+        menuItems(pane)[0].dispatchEvent(new window.FocusEvent('focusout', {
+            bubbles: true, composed: true, relatedTarget: btn,
+        }));
+        await pane.updateComplete;
+        assert.ok(menuOf(pane));
 
         btn.click();
         await pane.updateComplete;
@@ -572,9 +567,10 @@ describe('GridLayoutManager', () => {
         assert.equal(pane.shadowRoot.activeElement, btn);
     });
 
-    it('keeps focus in the overflow menu when the focused item goes away', async () => {
-        const { pane, btn } = await mountOverflowingPane({ open: true });
+    it('keeps focus in the tab menu when the focused item goes away', async () => {
+        const { pane, btn } = await mountMenuPane({ open: true });
         pressKey(pane.shadowRoot.activeElement, 'End');
+        await pane.updateComplete;
         assert.equal(focusedTitle(pane), 'Charts');
 
         // Chrome blurs a focused node as it removes it; jsdom does not.
@@ -589,20 +585,19 @@ describe('GridLayoutManager', () => {
 
         // E.g. a Tcl command closing the window while the menu is open.
         layout.closeComponent('ChartsWidget');
-        await tick();
         await pane.updateComplete;
         assert.ok(menuOf(pane));
-        assert.equal(focusedTitle(pane), 'Inspector', 'back on the active tab\'s item');
+        assert.equal(focusedTitle(pane), 'Timing', 'on the neighbouring item');
 
-        // A close the user did not ask for still hands focus back to the ▾.
+        // A close the user did not ask for still hands focus back to the ▼.
         layout.maximizePane('right');
         await pane.updateComplete;
         assert.equal(menuOf(pane), null);
         assert.equal(pane.shadowRoot.activeElement, btn);
     });
 
-    it('lists a tab added while the overflow menu is open', async () => {
-        const { pane } = await mountOverflowingPane({ open: true });
+    it('lists a tab added while the tab menu is open', async () => {
+        const { pane } = await mountMenuPane({ open: true });
 
         const extra = document.createElement('ide-tab');
         extra.slot = 'tabs';
@@ -616,53 +611,8 @@ describe('GridLayoutManager', () => {
         assert.ok(titles.includes('Extra'), titles.join());
     });
 
-    it('observes the strip and the tabs\' full width, not each tab', async () => {
-        const observers = [];
-        const RealResizeObserver = globalThis.ResizeObserver;
-        globalThis.ResizeObserver = class {
-            constructor(callback) {
-                this.callback = callback;
-                this.observed = new Set();
-                observers.push(this);
-            }
-            observe(el) { this.observed.add(el); }
-            disconnect() { this.observed.clear(); }
-        };
-        try {
-            // A fresh layout, so its panes are built with the fake observer.
-            document.body.innerHTML = '<div id="gl-container"></div>';
-            containerEl = document.getElementById('gl-container');
-            layout = new GridLayoutManager(containerEl);
-            const { pane, tabsEl } = await mountRightPane();
-            const track = pane.shadowRoot.querySelector('.ide-tabs-track');
-
-            const ro = observers.find(o => o.observed.has(tabsEl));
-            assert.ok(ro, 'the tab strip is observed');
-            assert.deepEqual([...ro.observed], [tabsEl, track]);
-
-            // A tab mounted later resizes the track; nothing new to observe.
-            layout.registerComponentFactoryFunction('ClockWidget', () => {});
-            layout.focusComponent('ClockWidget');
-            await tick();
-            assert.deepEqual([...ro.observed], [tabsEl, track]);
-
-            // Without dispatching scroll: only the observer can notice this.
-            Object.defineProperty(tabsEl, 'scrollWidth', { value: 700, configurable: true });
-            Object.defineProperty(tabsEl, 'clientWidth', { value: 300, configurable: true });
-            // A narrower strip brings the active tab back into view.
-            const scrolls = [];
-            layout.components.get('ClockWidget').tabEl.scrollIntoView = (opts) => scrolls.push(opts);
-            ro.callback([]);
-            await pane.updateComplete;
-            assert.ok(!pane.shadowRoot.querySelector('.ide-btn-overflow').classList.contains('idle'));
-            assert.deepEqual(scrolls, [{ inline: 'nearest', block: 'nearest' }]);
-        } finally {
-            globalThis.ResizeObserver = RealResizeObserver;
-        }
-    });
-
     it('scrolls an overflowing tab strip horizontally with a vertical wheel', async () => {
-        const { pane, tabsEl } = await mountRightPane();
+        const { tabsEl } = await mountRightPane();
         const spin = (init) => {
             const e = new window.WheelEvent('wheel', { bubbles: true, cancelable: true, ...init });
             tabsEl.dispatchEvent(e);
@@ -670,12 +620,10 @@ describe('GridLayoutManager', () => {
         };
 
         stubTabStrip(tabsEl, { scrollWidth: 300, clientWidth: 300 });
-        await pane.updateComplete;
         assert.ok(!spin({ deltaY: 100 }).defaultPrevented);
         assert.equal(tabsEl.scrollLeft, 0);
 
         stubTabStrip(tabsEl, { scrollWidth: 700, clientWidth: 300 });
-        await pane.updateComplete;
         assert.ok(spin({ deltaY: 100 }).defaultPrevented);
         assert.equal(tabsEl.scrollLeft, 100);
 
@@ -839,7 +787,8 @@ describe('GridLayoutManager', () => {
         await pane.updateComplete;
 
         assert.ok(pane.shadowRoot.querySelector('.ide-header'));
-        assert.ok(pane.shadowRoot.querySelector('.ide-tabs'));
+        // The ide-tab elements are role="tab"; ARIA wants them in a tablist.
+        assert.equal(pane.shadowRoot.querySelector('.ide-tabs').getAttribute('role'), 'tablist');
         assert.ok(pane.shadowRoot.querySelector('.ide-controls'));
         assert.ok(pane.shadowRoot.querySelector('.ide-content'));
         assert.ok(pane.shadowRoot.querySelector('#btn-maximize-structure'));
