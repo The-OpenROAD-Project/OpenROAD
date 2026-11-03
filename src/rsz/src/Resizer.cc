@@ -3351,11 +3351,20 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore,
-                               bool run_repair_timing,
-                               float repair_tns_end_percent)
+void Resizer::findResizeSlacks(
+    bool run_journal_restore,
+    bool run_repair_timing,
+    float repair_tns_end_percent,
+    const std::function<bool(const odb::dbNet*)>& placed_net)
 {
   initBlock();
+
+  placed_net_ = placed_net;
+  struct PlacedNetGuard
+  {
+    Resizer* resizer;
+    ~PlacedNetGuard() { resizer->placed_net_ = nullptr; }
+  } placed_net_guard{this};
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
                                           ? est::ParasiticsSrc::kGlobalRouting
@@ -7773,7 +7782,13 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 
   odb::dbNet* db_net = db_network_->staToDb(net);
 
-  return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+  return !(db_net->isConnectedByAbutment() || db_net->isSpecial())
+         && isPlacedNet(db_net);
+}
+
+bool Resizer::isPlacedNet(const odb::dbNet* net) const
+{
+  return !placed_net_ || placed_net_(net);
 }
 
 sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
