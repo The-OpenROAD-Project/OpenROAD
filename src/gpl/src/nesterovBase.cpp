@@ -40,7 +40,7 @@
 
 // Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
 // unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
-// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
+// destructors see a complete type on CPU-only builds (without --config=gpu).
 #include "gpu/deviceState.h"
 #include "gpu/nesterovDeviceContext.h"
 #include "gpu/regionDensityField.h"
@@ -1824,6 +1824,22 @@ void NesterovBaseCommon::fixPointers()
         if (isValidSigType(iterm->getSigType())) {
           auto it = db_iterm_to_index_map_.find(iterm);
           if (it != db_iterm_to_index_map_.end()) {
+            // Like the initial netlist, a gcell only has pins on nets with
+            // a GNet. The resizer only buffers nets that gpl places, so a
+            // new pin on any other net breaks that agreement.
+            odb::dbNet* db_net = iterm->getNet();
+            if (db_net == nullptr) {
+              continue;
+            }
+            if (!db_net_to_index_map_.contains(db_net)) {
+              log_->error(GPL,
+                          335,
+                          "Pin {} is on net {} ({}), which global placement "
+                          "does not place.",
+                          iterm->getName(),
+                          db_net->getName(),
+                          db_net->getSigType().getString());
+            }
             size_t gpin_index = it->second;
             gCell.addGPin(&gPinStor_[gpin_index]);
           } else {

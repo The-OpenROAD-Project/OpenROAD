@@ -190,6 +190,23 @@ TEST_F(TestEnclosure, SnapRoundsDownToManufacturingGrid)
   EXPECT_EQ(on_grid.getY(), 30);
 }
 
+TEST_F(TestEnclosure, SnapPreservesNegativeEnclosure)
+{
+  tech()->setManufacturingGrid(10);
+  Enclosure enclosure(-1, -13);
+  enclosure.snap(tech());
+  EXPECT_EQ(enclosure, Enclosure(-10, -20));
+
+  Enclosure on_grid(-10, 20);
+  on_grid.snap(tech());
+  EXPECT_EQ(on_grid, Enclosure(-10, 20));
+
+  tech()->setManufacturingGrid(0);
+  Enclosure no_grid(-1, -13);
+  no_grid.snap(tech());
+  EXPECT_EQ(no_grid, Enclosure(-1, -13));
+}
+
 // snap() is a no-op when the tech has no manufacturing grid set.
 TEST_F(TestEnclosure, SnapIsNoOpWithoutManufacturingGrid)
 {
@@ -3394,6 +3411,119 @@ class TestableGenerateVia : public GenerateViaGenerator
 
   bool exposeCheckMinEnclosure() const { return checkMinEnclosure(); }
 };
+
+TEST_F(TestPDNViaTech, GeneratedDefaultEnclosureAppliesToBothLandings)
+{
+  const ViaStack s = makeBasicViaStack();
+  const odb::Rect r(0, 0, 2000, 2000);
+  TestableGenerateVia gen(getLogger(), s.rule, r, loose(), r, loose());
+  gen.getBottomEnclosure()->copy(Enclosure(10, 10));
+  gen.getTopEnclosure()->copy(Enclosure(10, 10));
+  EXPECT_TRUE(gen.exposeCheckMinEnclosure());
+
+  gen.getBottomEnclosure()->setX(9);
+  EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+  gen.getBottomEnclosure()->setX(10);
+  gen.getTopEnclosure()->setY(9);
+  EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+}
+
+TEST_F(TestPDNViaTech, GeneratedOverrideDoesNotRemoveOtherLandingDefault)
+{
+  const ViaStack s = makeBasicViaStack();
+  auto* rule = addCutEnclosureRule(s.cut, 5, 5);
+  const odb::Rect r(0, 0, 2000, 2000);
+  for (const bool above : {false, true}) {
+    SCOPED_TRACE(above);
+    rule->setAbove(above);
+    rule->setBelow(!above);
+    TestableGenerateVia gen(getLogger(), s.rule, r, loose(), r, loose());
+    auto* overridden = above ? gen.getTopEnclosure() : gen.getBottomEnclosure();
+    auto* fallback = above ? gen.getBottomEnclosure() : gen.getTopEnclosure();
+    overridden->copy(Enclosure(5, 5));
+    fallback->copy(Enclosure(10, 10));
+    EXPECT_TRUE(gen.exposeCheckMinEnclosure());
+
+    fallback->setX(9);
+    EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+    fallback->setX(10);
+    overridden->setY(4);
+    EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+  }
+}
+
+TEST_F(TestPDNViaTech, GeneratedInapplicableWidthRuleKeepsDefaultEnclosure)
+{
+  const ViaStack s = makeBasicViaStack();
+  auto* rule = addCutEnclosureRule(s.cut, 5, 5);
+  rule->setWidthValid(true);
+  rule->setMinWidth(2001);
+  const odb::Rect r(0, 0, 2000, 2000);
+  TestableGenerateVia gen(getLogger(), s.rule, r, loose(), r, loose());
+  gen.getBottomEnclosure()->copy(Enclosure(9, 10));
+  gen.getTopEnclosure()->copy(Enclosure(10, 10));
+  EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+  gen.getBottomEnclosure()->setX(10);
+  EXPECT_TRUE(gen.exposeCheckMinEnclosure());
+}
+
+TEST_F(TestPDNViaTech, GeneratedApplicableEnclosuresRemainAlternatives)
+{
+  const ViaStack s = makeBasicViaStack();
+  addCutEnclosureRule(
+      s.cut, 5, 20, odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT);
+  addCutEnclosureRule(
+      s.cut, 20, 5, odb::dbTechLayerCutEnclosureRule::HORZ_AND_VERT);
+  const odb::Rect r(0, 0, 2000, 2000);
+  TestableGenerateVia gen(getLogger(), s.rule, r, loose(), r, loose());
+  gen.getBottomEnclosure()->copy(Enclosure(5, 20));
+  gen.getTopEnclosure()->copy(Enclosure(20, 5));
+  EXPECT_TRUE(gen.exposeCheckMinEnclosure());
+
+  // The VIARULE default must not become an alternative to applicable rules.
+  gen.getBottomEnclosure()->copy(Enclosure(10, 10));
+  EXPECT_FALSE(gen.exposeCheckMinEnclosure());
+}
+
+TEST_F(TestPDNViaTech, GeneratedOddDeficitDoesNotRoundToZero)
+{
+  tech()->setManufacturingGrid(1);
+  const ViaStack s = makeBasicViaStack("", 50, 0);
+  const ViaGenerator::Constraint fit{true, true, true, std::nullopt};
+  for (const auto& [size, expected] : {std::pair{48, -1},
+                                       std::pair{49, -1},
+                                       std::pair{50, 0},
+                                       std::pair{69, 9},
+                                       std::pair{70, 10}}) {
+    SCOPED_TRACE(size);
+    const odb::Rect r(0, 0, size, size);
+    TestableGenerateVia gen(getLogger(), s.rule, r, fit, r, fit);
+    gen.exposeDetermineRowsAndColumns(Enclosure(0, 0), Enclosure(0, 0));
+    ASSERT_EQ(gen.getRows(), 1);
+    ASSERT_EQ(gen.getColumns(), 1);
+    EXPECT_EQ(*gen.getBottomEnclosure(), Enclosure(expected, expected));
+    EXPECT_EQ(*gen.getTopEnclosure(), Enclosure(expected, expected));
+    EXPECT_EQ(gen.exposeCheckMinEnclosure(), size >= 50);
+  }
+}
+
+TEST_F(TestPDNViaTech, GeneratedBuildRejectsInsufficientDefaultEnclosure)
+{
+  const ViaStack s = makeBasicViaStack("", 140, 20);
+  const ViaGenerator::Constraint fit{true, true, true, std::nullopt};
+  for (const int size : {20, 160, 180}) {
+    SCOPED_TRACE(size);
+    const odb::Rect r(0, 0, size, size);
+    GenerateViaGenerator gen(getLogger(), s.rule, r, fit, r, fit);
+    EXPECT_EQ(gen.build(false, false), size == 180);
+    if (size == 180) {
+      EXPECT_EQ(*gen.getBottomEnclosure(), Enclosure(20, 20));
+      EXPECT_EQ(*gen.getTopEnclosure(), Enclosure(20, 20));
+      EXPECT_EQ(gen.getGeneratorWidth(true), 180);
+      EXPECT_EQ(gen.getGeneratorHeight(false), 180);
+    }
+  }
+}
 
 // Stack mirroring a real M1/V1/M2 VIARULE GENERATE: the bottom (vertical) strap
 // encloses the cut only along its length (Y), the top (horizontal) strap only
