@@ -199,14 +199,14 @@ TEST(TestScanOptimizer, AllCellsPreservedAfterOptimization)
 {
   utl::Logger logger;
   // 8 cells at scattered positions in the plane.
-  std::vector<odb::Point> positions = {{100, 200},
-                                       {500, 100},
-                                       {300, 400},
-                                       {700, 50},
-                                       {50, 600},
-                                       {900, 300},
-                                       {200, 700},
-                                       {600, 500}};
+  const std::vector<odb::Point> positions = {{100, 200},
+                                             {500, 100},
+                                             {300, 400},
+                                             {700, 50},
+                                             {50, 600},
+                                             {900, 300},
+                                             {200, 700},
+                                             {600, 500}};
 
   std::unordered_set<std::string> expected_names;
   std::vector<std::unique_ptr<ScanCell>> cells;
@@ -454,7 +454,7 @@ TEST(TestKMeans, KEqualsOne)
   const std::vector<int> assignments = KMeansClusters(cells, 1);
 
   ASSERT_EQ(assignments.size(), 5u);
-  for (int a : assignments) {
+  for (const int a : assignments) {
     EXPECT_EQ(a, 0);
   }
 }
@@ -506,8 +506,8 @@ TEST(TestKMeans, QuadrantRecovery)
   std::vector<ScanCell*> cells;
   for (int q = 0; q < 4; q++) {
     for (int w = 0; w < 4; w++) {
-      odb::Point p(qoffsets[q].x() + within[w].x(),
-                   qoffsets[q].y() + within[w].y());
+      const odb::Point p(qoffsets[q].x() + within[w].x(),
+                         qoffsets[q].y() + within[w].y());
       owned.push_back(MakeCell("c" + std::to_string(q * 4 + w), p, &logger));
       cells.push_back(owned.back().get());
     }
@@ -542,7 +542,7 @@ TEST(TestKMeans, Deterministic)
   std::vector<ScanCell*> cells;
   // 20 cells at pseudo-scattered positions.
   for (int i = 0; i < 20; i++) {
-    odb::Point p(i * 37, (i * 53) % 200);
+    const odb::Point p(i * 37, (i * 53) % 200);
     owned.push_back(MakeCell("c" + std::to_string(i), p, &logger));
     cells.push_back(owned.back().get());
   }
@@ -566,7 +566,7 @@ TEST(TestKMeans, ConvergesOnLargeInput)
   for (int i = 0; i < N; i++) {
     rx = (rx * 1103515245 + 12345) & 0x7fffffff;
     ry = (ry * 1103515245 + 12345) & 0x7fffffff;
-    odb::Point p(rx % 100000, ry % 100000);
+    const odb::Point p(rx % 100000, ry % 100000);
     owned.push_back(MakeCell("c" + std::to_string(i), p, &logger));
     cells.push_back(owned.back().get());
   }
@@ -574,7 +574,7 @@ TEST(TestKMeans, ConvergesOnLargeInput)
   const std::vector<int> assignments = KMeansClusters(cells, 4);
 
   ASSERT_EQ(assignments.size(), static_cast<size_t>(N));
-  for (int a : assignments) {
+  for (const int a : assignments) {
     EXPECT_GE(a, 0);
     EXPECT_LT(a, 4);
   }

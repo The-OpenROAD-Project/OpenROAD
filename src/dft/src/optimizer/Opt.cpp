@@ -78,7 +78,7 @@ struct CandidateEdges
     for (int i = 0; i < n; i++) {
       indexed.emplace_back(Point(scan_in[i].x(), scan_in[i].y()), i);
     }
-    bgi::rtree<std::pair<Point, int>, bgi::rstar<4>> rtree(indexed);
+    const bgi::rtree<std::pair<Point, int>, bgi::rstar<4>> rtree(indexed);
 
     // Over-query factor: R-tree returns by Euclidean proximity which may not
     // match weighted Manhattan.  Retrieve extra candidates and re-rank.
@@ -86,7 +86,7 @@ struct CandidateEdges
     const int keep_k = std::min(n - 1, kMaxNeighbors);
 
     for (int i = 0; i < n; i++) {
-      Point so_pt(scan_out[i].x(), scan_out[i].y());
+      const Point so_pt(scan_out[i].x(), scan_out[i].y());
       std::vector<std::pair<int64_t, int>> ranked;
       ranked.reserve(query_k);
 
@@ -148,7 +148,7 @@ void TwoOptScanChain(std::vector<int>& identity,
   }
 
   // D(i, j) = weighted distance from scan-out of cell i to scan-in of cell j.
-  auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
+  const auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
 
   // pos_of[id] = current position of node id.
   std::vector<int> pos_of(si_of_id.size());
@@ -158,7 +158,7 @@ void TwoOptScanChain(std::vector<int>& identity,
 
   // Build reversal-cost prefix array.
   std::vector<int64_t> RC(n, 0);
-  auto rebuildRC = [&](int from) {
+  const auto rebuildRC = [&](int from) {
     for (int k = std::max(1, from); k < n; k++) {
       const int64_t rev = Dist(so[k], si[k - 1]);
       RC[k] = RC[k - 1] + (rev - D(k - 1, k));
@@ -174,7 +174,7 @@ void TwoOptScanChain(std::vector<int>& identity,
       const int id_i1 = identity[i + 1];  // cell at position i+1
 
       // Iterate over k-NN of cell id_i1 (measured by so → si distance).
-      for (int neighbor_id : candidates.neighbors[id_i1]) {
+      for (const int neighbor_id : candidates.neighbors[id_i1]) {
         const int j = pos_of[neighbor_id];
         // j must index the second removed edge (j, j+1), so j ∈ [i+2, n-2].
         if (j < i + 2 || j > n - 2) {
@@ -232,7 +232,7 @@ void ThreeOptScanChain(std::vector<int>& identity,
     so[i] = so_of_id[identity[i]];
   }
 
-  auto D = [&](int a, int b) -> int64_t { return Dist(so[a], si[b]); };
+  const auto D = [&](int a, int b) -> int64_t { return Dist(so[a], si[b]); };
 
   // pos_of[id] = current position of node id.
   std::vector<int> pos_of(si_of_id.size());
@@ -249,7 +249,7 @@ void ThreeOptScanChain(std::vector<int>& identity,
 
       // Middle loop: after the swap, edge i → j+1 is created, so j+1 should
       // be a neighbour of cell at position i.
-      for (int nb_id : candidates.neighbors[id_i]) {
+      for (const int nb_id : candidates.neighbors[id_i]) {
         const int j1_pos = pos_of[nb_id];
         const int j = j1_pos - 1;
         if (j < i + 2 || j >= n - 3) {
@@ -264,7 +264,7 @@ void ThreeOptScanChain(std::vector<int>& identity,
         const int id_j = identity[j];
 
         // Inner loop: after the swap, edge j → k+1 is created.
-        for (int nb2_id : candidates.neighbors[id_j]) {
+        for (const int nb2_id : candidates.neighbors[id_j]) {
           const int k1_pos = pos_of[nb2_id];
           const int k = k1_pos - 1;
           if (k < j + 2 || k >= n - 1) {
@@ -327,7 +327,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   std::vector<std::pair<Point, size_t>> transformed;
 
   for (size_t i = 0; i < cells.size(); i++) {
-    auto origin = cells[i]->getOrigin();
+    const auto origin = cells[i]->getOrigin();
     const int64_t dist = source ? Dist(*source, cells[i]->getScanInLocation())
                                 : int64_t{origin.x()} + origin.y();
     if (dist < lowest_dist) {

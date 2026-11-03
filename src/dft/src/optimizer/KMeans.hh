@@ -47,10 +47,10 @@ namespace dft {
 //   k <= 1: all cells are assigned to cluster 0.
 //   n <= k: each cell gets its own cluster, 0 to n - 1.
 inline std::vector<int> KMeansClusters(const std::vector<ScanCell*>& cells,
-                                       int k,
-                                       int64_t cap_bits
+                                       const int k,
+                                       const int64_t cap_bits
                                        = std::numeric_limits<int64_t>::max(),
-                                       int max_iters = 100)
+                                       const int max_iters = 100)
 {
   const int n = static_cast<int>(cells.size());
 
@@ -145,7 +145,7 @@ inline std::vector<int> KMeansClusters(const std::vector<ScanCell*>& cells,
     std::vector<int> new_assignments(n, -1);
     bool changed = false;
 
-    for (int i : order) {
+    for (const int i : order) {
       int chosen = -1;
       // Try clusters in nearest-first order; take the first one that
       // still has room for this cell's bits.

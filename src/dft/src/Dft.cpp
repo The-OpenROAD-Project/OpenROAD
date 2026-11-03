@@ -60,11 +60,13 @@ struct OptChain
 // partition or list.
 odb::dbScanList* singleScanList(odb::dbScanChain* chain)
 {
-  odb::dbSet<odb::dbScanPartition> partitions = chain->getScanPartitions();
+  const odb::dbSet<odb::dbScanPartition> partitions
+      = chain->getScanPartitions();
   if (partitions.size() != 1) {
     return nullptr;
   }
-  odb::dbSet<odb::dbScanList> lists = (*partitions.begin())->getScanLists();
+  const odb::dbSet<odb::dbScanList> lists
+      = (*partitions.begin())->getScanLists();
   if (lists.size() != 1) {
     return nullptr;
   }
@@ -123,7 +125,7 @@ bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
     return false;
   }
   using Edge = odb::dbScanInst::ClockEdge;
-  auto is_falling = [](const std::unique_ptr<OdbScanCellAdapter>& cell) {
+  const auto is_falling = [](const std::unique_ptr<OdbScanCellAdapter>& cell) {
     return cell->getScanInst()->getClockEdge() == Edge::Falling;
   };
   // A falling-edge last cell after rising-edge ones is not a chain scan_opt
@@ -155,7 +157,7 @@ bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
       rising.push_back(std::move(cell));
     }
   }
-  auto restore = [&](std::vector<std::unique_ptr<ScanCell>>& group) {
+  const auto restore = [&](std::vector<std::unique_ptr<ScanCell>>& group) {
     for (auto& cell : group) {
       cells.emplace_back(static_cast<OdbScanCellAdapter*>(cell.release()));
     }
@@ -247,7 +249,7 @@ void rewriteScanList(
   }
 }
 
-const char* edgeName(odb::dbScanInst::ClockEdge edge)
+const char* edgeName(const odb::dbScanInst::ClockEdge edge)
 {
   return edge == odb::dbScanInst::ClockEdge::Falling ? "falling" : "rising";
 }
@@ -277,7 +279,7 @@ void rebalanceChains(std::vector<OptChain>& chains,
     }
   }
 
-  for (auto& [key, members] : domains) {
+  for (const auto& [key, members] : domains) {
     const int k = static_cast<int>(members.size());
     if (k < 2) {
       continue;
@@ -366,7 +368,7 @@ void rebalanceChains(std::vector<OptChain>& chains,
     // rebalanced chains only if their scan wiring is shorter. k-means ignores
     // the fixed scan-in and scan-out ends, so it can lose.
     using Cells = std::vector<std::unique_ptr<OdbScanCellAdapter>>;
-    auto adapter = [&](const std::unique_ptr<OdbScanCellAdapter>& cell) {
+    const auto adapter = [&](const std::unique_ptr<OdbScanCellAdapter>& cell) {
       return std::make_unique<OdbScanCellAdapter>(cell->getScanInst(), logger);
     };
     std::vector<Cells> kept(k);
@@ -691,7 +693,7 @@ std::vector<odb::Point> collectChainOrigins(odb::dbScanChain* chain)
 
 }  // namespace
 
-void Dft::scanOpt(bool rebalance_chains)
+void Dft::scanOpt(const bool rebalance_chains)
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = block->getDft();
@@ -797,7 +799,7 @@ void Dft::scanOpt(bool rebalance_chains)
                 block->dbuToMicrons(total_final));
 }
 
-void Dft::reportChainMetrics()
+void Dft::reportChainMetrics() const
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbDft* db_dft = block->getDft();

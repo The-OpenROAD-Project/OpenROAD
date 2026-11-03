@@ -100,7 +100,7 @@ class Dft
   // sum of pairwise Manhattan distances).  Output is CSV-formatted to
   // stdout for sweep collectors.  These metrics measure clustering
   // quality without depending on intra-chain ordering.
-  void reportChainMetrics();
+  void reportChainMetrics() const;
 
  private:
   // If we need to run pre_dft to create the internal state

@@ -93,7 +93,7 @@ uint64_t totalBits(const std::vector<std::unique_ptr<ScanChain>>& chains)
 
 // Helper: run the architect and return chains.
 std::vector<std::unique_ptr<ScanChain>> runArchitect(
-    ScanArchitectConfig& config,
+    const ScanArchitectConfig& config,
     std::vector<std::unique_ptr<ScanCell>>& cells,
     utl::Logger* logger)
 {
@@ -122,7 +122,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsOneOverridesMaxLength)
   std::vector<std::unique_ptr<ScanCell>> cells;
   addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   // max_chains=1 caps to 1 chain despite max_length=10 wanting 2
   EXPECT_EQ(chains.size(), 1);
@@ -143,7 +143,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsLargerThanNeededHasNoEffect)
   std::vector<std::unique_ptr<ScanCell>> cells;
   addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   // max_length=10 produces 2 chains; max_chains=5 is larger so no effect
   EXPECT_EQ(chains.size(), 2);
@@ -167,7 +167,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsAppliedPerDomainIndependently)
   addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, &logger);
   addCells(cells, "clk2_cell", 20, "clk2", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   // Each domain capped at 2 chains → 4 total
   EXPECT_EQ(chains.size(), 4);
@@ -188,7 +188,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsOnePerDomainTwoDomains)
   addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, &logger);
   addCells(cells, "clk2_cell", 15, "clk2", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   // 1 chain per domain → 2 total; all bits preserved
   EXPECT_EQ(chains.size(), 2);
@@ -209,7 +209,7 @@ TEST(TestScanArchitectMaxChains, NoMaxChainsOnlyMaxLength)
   std::vector<std::unique_ptr<ScanCell>> cells;
   addCells(cells, "cell", 30, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   EXPECT_EQ(chains.size(), 3);
   EXPECT_EQ(totalBits(chains), 30);
@@ -228,7 +228,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsExactlyEqualsMaxLengthResult)
   std::vector<std::unique_ptr<ScanCell>> cells;
   addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, &logger);
+  const auto chains = runArchitect(config, cells, &logger);
 
   EXPECT_EQ(chains.size(), 2);
   EXPECT_EQ(totalBits(chains), 20);
