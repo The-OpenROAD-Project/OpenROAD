@@ -280,6 +280,7 @@ std::string buildFingerprint(const fsv::Stack& stack,
   list("dg", options.diagonal_gap_factors);
   list("ds", options.diagonal_spacing_factors);
   list("df", options.diagonal_far_spacing_factors);
+  list("xs", options.crossing_spacing_factors);
   list("es", options.end_spacing_factors);
   list("ff", options.facing_factors);
   // Only the cover settings in use: the tolerance, or the depths and far
@@ -625,15 +626,25 @@ void buildCrossing(const fsv::Stack& stack,
                                 + conductor.name + ", not over or under");
   }
   const CrossingKey key{conductor.name, cover_conductor.name};
-  if (model.crossing(key) != nullptr) {
+  const double w = conductor.min_width;
+  std::vector<double> spacings;
+  for (const double f : options.crossing_spacing_factors) {
+    spacings.push_back(f * conductor.min_spacing);
+  }
+  if (const CrossingTable* built = model.crossing(key)) {
+    requireGrid("crossing table of " + key.layer, built->spacings(), spacings);
     return;  // built before
   }
-  const double w = conductor.min_width;
-  // One 3D solve per (crossing width, coverage, length), then the two
-  // per-length references. The two lengths are whole pitches and differ
-  // by at least one, so their difference is never zero.
+  const int ns = static_cast<int>(spacings.size()) + 1;
+  auto spacingOf
+      = [&](const int si) { return si < ns - 1 ? spacings[si] : -1.0; };
+  // For each spacing column (no neighbor last): one 3D solve per
+  // (crossing width, coverage, length), then the two per-length
+  // references. The two lengths are whole pitches and differ by at least
+  // one, so their difference is never zero.
   struct Job
   {
+    int spacing;
     double wc;
     double coverage;
     double length;
@@ -641,34 +652,38 @@ void buildCrossing(const fsv::Stack& stack,
     double cross = 0;
   };
   std::vector<Job> jobs;
-  for (const double wf : options.crossing_width_factors) {
-    for (const double f : options.coverages) {
-      const double wc = wf * cover_conductor.min_width;
-      const double pitch = wc / f;
-      const int n_short = std::max(
-          1, static_cast<int>(std::lround(options.crossing_length / pitch)));
-      const int n_long = std::max(
-          n_short + 1,
-          static_cast<int>(std::lround(options.crossing_length_long / pitch)));
-      jobs.push_back({wc, f, n_short * pitch});
-      jobs.push_back({wc, f, n_long * pitch});
+  for (int si = 0; si < ns; si++) {
+    for (const double wf : options.crossing_width_factors) {
+      for (const double f : options.coverages) {
+        const double wc = wf * cover_conductor.min_width;
+        const double pitch = wc / f;
+        const int n_short = std::max(
+            1, static_cast<int>(std::lround(options.crossing_length / pitch)));
+        const int n_long = std::max(n_short + 1,
+                                    static_cast<int>(std::lround(
+                                        options.crossing_length_long / pitch)));
+        jobs.push_back({si, wc, f, n_short * pitch});
+        jobs.push_back({si, wc, f, n_long * pitch});
+      }
     }
   }
-  LateralCap open_cap;
-  LateralCap plane_cap;
+  std::vector<LateralCap> open_cap(ns);
+  std::vector<LateralCap> plane_cap(ns);
   const int count = static_cast<int>(jobs.size());
-  runJobs(options, count + 2, [&](const int i, fsv::Solver& solver) {
+  runJobs(options, count + (2 * ns), [&](const int i, fsv::Solver& solver) {
     if (i >= count) {
-      const bool is_open = i == count;
-      LateralCap& cap = is_open ? open_cap : plane_cap;
+      const int si = (i - count) / 2;
+      const bool is_open = (i - count) % 2 == 0;
+      LateralCap& cap = is_open ? open_cap[si] : plane_cap[si];
       // The plane sits where the cover is; the open wire has none.
       const Layer below = !is_open && !over ? cover : Layer();
       const Layer above = !is_open && over ? cover : Layer();
+      const double s = spacingOf(si);
       cap = solveSection(stack,
                          layer,
                          w,
-                         -1,
-                         -1,
+                         s,
+                         s,
                          below,
                          above,
                          options,
@@ -684,6 +699,7 @@ void buildCrossing(const fsv::Stack& stack,
     pattern.crossing_width = job.wc;
     pattern.pitch = job.wc / job.coverage;
     pattern.length = job.length;
+    pattern.spacing = spacingOf(job.spacing);
     pattern.extent = options.extent;
     const CrossingPattern::Array array = pattern.build(stack);
     job.length = array.length;
@@ -693,49 +709,62 @@ void buildCrossing(const fsv::Stack& stack,
     job.total = row.total();
     job.cross = row.coupling(array.cross);
   });
-  const double plane_total = plane_cap.total();
-  const double plane_cross = over ? plane_cap.above : plane_cap.below;
-  // The shares are relative to what the plane adds; a plane that adds
-  // nothing has no shares to tabulate.
-  if (!(plane_total > open_cap.total()) || !(plane_cross > 0)) {
-    throw std::runtime_error("a plane on " + cover_conductor.name
-                             + " adds nothing to a wire on " + conductor.name);
-  }
-  // Pairs of lengths give per-length values, then the share over the gap.
-  std::vector<std::pair<double, CrossingShare>> points;
-  for (int i = 0; i + 1 < count; i += 2) {
-    const Job& a = jobs[i];
-    const Job& b = jobs[i + 1];
-    const double dl = b.length - a.length;
-    const double total = (b.total - a.total) / dl;
-    const double cross = (b.cross - a.cross) / dl;
-    const double f = a.coverage;
-    const double g_total
-        = (total - open_cap.total()) / (plane_total - open_cap.total());
-    const double g_cross = cross / plane_cross;
-    const double gap = a.wc * (1 / f - 1);
-    points.push_back({gap, {(g_total - f) / (1 - f), (g_cross - f) / (1 - f)}});
-  }
-  std::sort(points.begin(), points.end(), [](const auto& a, const auto& b) {
-    return a.first < b.first;
-  });
-  // Points at the same gap (within rounding) average into one.
+  // Pairs of lengths give per-length values, then the share over the gap,
+  // relative to what the plane adds with the same neighbors; a plane that
+  // adds nothing has no shares to tabulate.
   std::vector<double> gaps;
   std::vector<CrossingShare> values;
-  std::vector<int> counts;
-  for (const auto& [gap, share] : points) {
-    if (!gaps.empty() && gap - gaps.back() <= 1e-9 * std::max(gap, 1.0)) {
-      CrossingShare& last = values.back();
-      const int n = ++counts.back();
-      last.total += (share.total - last.total) / n;
-      last.cross += (share.cross - last.cross) / n;
-      continue;
+  const int per_column = count / ns;
+  for (int si = 0; si < ns; si++) {
+    const LateralCap& open = open_cap[si];
+    const LateralCap& plane = plane_cap[si];
+    const double plane_total = plane.total();
+    const double plane_cross = over ? plane.above : plane.below;
+    if (!(plane_total > open.total()) || !(plane_cross > 0)) {
+      throw std::runtime_error("a plane on " + cover_conductor.name
+                               + " adds nothing to a wire on "
+                               + conductor.name);
     }
-    gaps.push_back(gap);
-    values.push_back(share);
-    counts.push_back(1);
+    std::vector<std::pair<double, CrossingShare>> points;
+    for (int i = si * per_column; i + 1 < (si + 1) * per_column; i += 2) {
+      const Job& a = jobs[i];
+      const Job& b = jobs[i + 1];
+      const double dl = b.length - a.length;
+      const double total = (b.total - a.total) / dl;
+      const double cross = (b.cross - a.cross) / dl;
+      const double f = a.coverage;
+      const double g_total
+          = (total - open.total()) / (plane_total - open.total());
+      const double g_cross = cross / plane_cross;
+      const double gap = a.wc * (1 / f - 1);
+      points.push_back(
+          {gap, {(g_total - f) / (1 - f), (g_cross - f) / (1 - f)}});
+    }
+    std::sort(points.begin(), points.end(), [](const auto& x, const auto& y) {
+      return x.first < y.first;
+    });
+    // Points at the same gap (within rounding) average into one; every
+    // column has the same gaps.
+    std::vector<double> column_gaps;
+    std::vector<CrossingShare> column;
+    std::vector<int> counts;
+    for (const auto& [gap, share] : points) {
+      if (!column_gaps.empty()
+          && gap - column_gaps.back() <= 1e-9 * std::max(gap, 1.0)) {
+        CrossingShare& last = column.back();
+        const int n = ++counts.back();
+        last.total += (share.total - last.total) / n;
+        last.cross += (share.cross - last.cross) / n;
+        continue;
+      }
+      column_gaps.push_back(gap);
+      column.push_back(share);
+      counts.push_back(1);
+    }
+    gaps = column_gaps;
+    values.insert(values.end(), column.begin(), column.end());
   }
-  model.addCrossing(key, CrossingTable(gaps, values));
+  model.addCrossing(key, CrossingTable(gaps, values, spacings));
 }
 
 void buildEnds(const fsv::Stack& stack,

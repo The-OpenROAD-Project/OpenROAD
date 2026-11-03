@@ -45,6 +45,8 @@
 // --csv:
 //       [--diagonal_depth N]
 //       [--truth FILE]
+// and for e9, to leave out the cells' pins, every box below a layer:
+//       [--drop_below LAYER]
 // and for e12 and e13 the layers that may cover (default: every
 // conductor), and for e13 the cover tolerance:
 //       [--layers a,b,...] [--cover_tol X]
@@ -59,6 +61,7 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -110,7 +113,8 @@ struct Options
   int threads = 1;
   double tol = 0.003;
   std::string csv;
-  std::string truth;  // e14: truth rows from an earlier --csv
+  std::string truth;       // e9, e14: truth rows from an earlier --csv
+  std::string drop_below;  // e9: boxes below this layer's bottom removed
   pex::ReferenceOptions reference;
   double extent = 10;
   bool smoke = false;
@@ -173,6 +177,8 @@ Options parse(const int argc, char** argv)
       o.csv = value();
     } else if (arg == "--truth") {
       o.truth = value();
+    } else if (arg == "--drop_below") {
+      o.drop_below = value();
     } else if (arg == "--diagonal_depth") {
       o.reference.diagonal_depth = std::stoi(value());
     } else if (arg == "--extent") {
@@ -1269,6 +1275,7 @@ pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
     b.far_cover_factors = {};
     b.cover_tolerance = 0;
     b.end_length = 1;
+    b.crossing_spacing_factors = {1};
     b.end_spacing_factors = {1};
     b.facing_factors = {1};
     b.diagonal_width_factors = {1};
@@ -1779,9 +1786,40 @@ void nets(Lab& lab)
   utl::Logger logger;
   const Design design = readDesign(o, logger);
   const pex::Model model = netsModel(lab, design);
+  // Below --drop_below, nothing is kept, of any net: the cells' pins and
+  // the contacts to them.
+  const double floor
+      = o.drop_below.empty()
+            ? -std::numeric_limits<double>::infinity()
+            : pex::layerExtent(lab.stack(), lab.layer(o.drop_below)).bottom;
   for (odb::dbNet* net : targetNets(o, design.block)) {
     const fsv::NetWindow window = netWindow(lab, design.block, net);
-    const fsv::Geometry& g = window.geometry;
+    fsv::Geometry g;
+    pex::NetIndex target = window.targets.front();
+    {
+      const fsv::Geometry& all = window.geometry;
+      std::vector<int> index(all.netCount(), -1);
+      for (int b = 0; b < static_cast<int>(all.boxes().size()); b++) {
+        const int n = all.boxNet(b);
+        if (all.boxes()[b].lo[2] < floor - 1e-9) {
+          continue;
+        }
+        if (index[n] < 0) {
+          index[n] = g.addNet(all.netName(n));
+          if (all.grounded(n)) {
+            g.setGrounded(index[n]);
+          }
+        }
+        g.addBox(index[n], all.boxes()[b]);
+      }
+      if (all.window()) {
+        g.setWindow(*all.window());
+      }
+      if (index[target] < 0) {
+        continue;  // nothing of the net is left
+      }
+      target = index[target];
+    }
     if (o.dump) {
       for (int b = 0; b < static_cast<int>(g.boxes().size()); b++) {
         const fsv::Box& box = g.boxes()[b];
@@ -1795,8 +1833,7 @@ void nets(Lab& lab)
                     box.hi[1]);
       }
     }
-    compareNet(
-        lab, "e9", net->getName(), g, window.targets.front(), model, true);
+    compareNet(lab, "e9", net->getName(), g, target, model, true);
   }
 }
 
@@ -1911,8 +1948,9 @@ std::string viaBetween(const Lab& lab,
 // net's wire. Each coupling is compared too. The
 // wire runs along x on --layer; branches go to +y. Open: nothing else.
 // Dense: a neighbor at minimum spacing on the -y side and a plane two
-// layers up. The model is for --layers (default: the layer and those next
-// to it).
+// layers up. Tight, for the cases whose net stays on the wire's track:
+// neighbors at minimum spacing on both sides and the plane. The model is for
+// --layers (default: the layer and those next to it).
 void junctions(Lab& lab)
 {
   const Options& o = lab.options();
@@ -1941,12 +1979,13 @@ void junctions(Lab& lab)
   {
     std::string name;
     std::function<void(pex::PatternBuilder&, pex::NetIndex)> add;
+    bool straight = false;  // nothing of the wire's net off its track
   };
   std::vector<Case> cases;
   auto straight = [&](pex::PatternBuilder& b, const pex::NetIndex n) {
     b.add(lab.layer(m), n, 0, 0, length, w);
   };
-  cases.push_back({"straight", straight});
+  cases.push_back({"straight", straight, true});
   cases.push_back({"bend", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
                      straight(b, n);
                      b.add(lab.layer(m), n, length - w, 0, length, length);
@@ -2031,7 +2070,24 @@ void junctions(Lab& lab)
                              -length,
                              (length + wc) / 2,
                              length);
-                     }});
+                     },
+                     true});
+    // Three crossings of one net at four of their widths' pitch.
+    cases.push_back({"crossed3_" + other,
+                     [&, other](pex::PatternBuilder& b, const pex::NetIndex n) {
+                       straight(b, n);
+                       const double wc = lab.conductor(other).min_width;
+                       for (const int k : {-1, 0, 1}) {
+                         const double x = (length / 2) + (k * 4 * wc);
+                         b.add(lab.layer(other),
+                               b.net("crossing"),
+                               x - (wc / 2),
+                               -length,
+                               x + (wc / 2),
+                               length);
+                       }
+                     },
+                     true});
   }
   // Short boxes at twice the minimum width, as a landing pad is.
   for (const double l : {1.0, 2.0, 4.0, 8.0}) {
@@ -2050,14 +2106,26 @@ void junctions(Lab& lab)
                              0,
                              2 * length + f * s,
                              w);
-                     }});
+                     },
+                     true});
   }
-  for (const std::string context : {"open", "dense"}) {
+  for (const std::string context : {"open", "dense", "tight"}) {
     for (const Case& c : trim(cases, o.smoke)) {
+      if (context == "tight" && !c.straight) {
+        continue;
+      }
       pex::PatternBuilder b(lab.stack());
       const pex::NetIndex n = b.net("wire");
       c.add(b, n);
-      if (context == "dense") {
+      if (context == "tight") {
+        b.add(lab.layer(m),
+              b.net("neighbor_up"),
+              -2,
+              w + s,
+              (2 * length) + 2,
+              (2 * w) + s);
+      }
+      if (context != "open") {
         b.add(lab.layer(m), b.net("neighbor"), -2, -s - w, 2 * length + 2, -s);
         if (!far.empty()) {
           b.add(lab.layer(far),

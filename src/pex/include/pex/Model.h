@@ -100,19 +100,32 @@ struct CrossingKey
   auto operator<=>(const CrossingKey&) const = default;
 };
 
+// The shares over the gaps, for each spacing to neighbors of minimum width
+// on both sides of the wire under the same crossings, and with no
+// neighbor last.
 class CrossingTable
 {
  public:
-  // Throws std::invalid_argument for an empty grid, gaps not ascending or
-  // not positive, a value count that differs, or a share that is not
-  // finite.
-  CrossingTable(std::vector<double> gaps, std::vector<CrossingShare> values);
+  // Values in [spacing][gap] order. Throws std::invalid_argument for an
+  // empty gap grid, a grid not ascending or not positive, a value count
+  // that is not gaps x (spacings + 1), or a share that is not finite.
+  CrossingTable(std::vector<double> gaps,
+                std::vector<CrossingShare> values,
+                std::vector<double> spacings = {});
 
   const std::vector<double>& gaps() const { return gaps_; }
+  const std::vector<double>& spacings() const { return spacings_; }
+  // With the column of no neighbor.
+  int spacingCount() const { return static_cast<int>(spacings_.size()) + 1; }
   const std::vector<CrossingShare>& values() const { return values_; }
+  const CrossingShare& at(int spacing, int gap) const
+  {
+    return values_[(spacing * gaps_.size()) + gap];
+  }
 
  private:
-  std::vector<double> gaps_;  // µm, ascending, all positive
+  std::vector<double> gaps_;      // µm, ascending, all positive
+  std::vector<double> spacings_;  // µm, ascending
   std::vector<CrossingShare> values_;
 };
 
@@ -276,17 +289,29 @@ class Model
   // covered wire: the integral of the one-sided share. It is linear in d
   // between the tabulated gaps, where it equals gap × share, and constant
   // past the last. Throws std::out_of_range when the pair has no table.
-  CrossingShare crossingKept(const CrossingKey& key, double d) const;
+  // The wire's neighbors on the left and right (negative or past the last
+  // tabulated spacing: none) each take half, from the spacing's column,
+  // interpolated in its logarithm.
+  CrossingShare crossingKept(const CrossingKey& key,
+                             double d,
+                             double left = -1,
+                             double right = -1) const;
   // The share over a gap between two crossings: 1 at a gap of 0, else the
   // kept amount over the gap, so it falls as 1 / gap past the last
   // tabulated gap.
-  CrossingShare crossing(const CrossingKey& key, double gap) const;
+  CrossingShare crossing(const CrossingKey& key,
+                         double gap,
+                         double left = -1,
+                         double right = -1) const;
   // The share one crossing keeps at a distance d from its edge with
   // nothing on the other side: 1 under the crossing (d <= 0), the slope
   // of the kept amount on the segment holding d otherwise, within [0, 1].
   // The two-sided share over a gap is exactly the mean of the one-sided
   // shares along it.
-  CrossingShare crossingOneSided(const CrossingKey& key, double d) const;
+  CrossingShare crossingOneSided(const CrossingKey& key,
+                                 double d,
+                                 double left = -1,
+                                 double right = -1) const;
 
   DiagonalTable& addDiagonal(const DiagonalKey& key, DiagonalTable table);
   const DiagonalTable* diagonal(const DiagonalKey& key) const;

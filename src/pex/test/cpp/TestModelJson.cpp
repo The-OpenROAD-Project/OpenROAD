@@ -31,6 +31,11 @@ Model sample()
   model.addCrossing(
       {"m2", "m3"},
       CrossingTable({0.1, 0.9, 2.7}, {{0.88, 0.9}, {0.73, 0.8}, {0.48, 0.6}}));
+  model.addCrossing(
+      {"m2", "m1"},
+      CrossingTable({0.1, 0.9},
+                    {{0.8, 0.85}, {0.5, 0.6}, {0.9, 0.95}, {0.7, 0.75}},
+                    {0.14}));
   DiagonalTable& d = model.addDiagonal(
       {"m2", "m1"},
       DiagonalTable({0.14, 0.42}, {-0.07, 0, 0.5}, {0.14, 0.28}, {0.14}));
@@ -88,6 +93,12 @@ TEST(ModelJson, RoundTrip)
   ASSERT_EQ(c->values().size(), 3u);
   EXPECT_EQ(c->values()[1].total, 0.73);
   EXPECT_EQ(c->values()[2].cross, 0.6);
+  EXPECT_TRUE(c->spacings().empty());
+  const CrossingTable* beside = back.crossing({"m2", "m1"});
+  ASSERT_NE(beside, nullptr);
+  EXPECT_EQ(beside->spacings(), (std::vector<double>{0.14}));
+  EXPECT_EQ(beside->at(0, 1).total, 0.5);
+  EXPECT_EQ(beside->at(1, 1).cross, 0.75);
   const DiagonalTable* d = back.diagonal({"m2", "m1"});
   ASSERT_NE(d, nullptr);
   EXPECT_EQ(d->gaps(), model.diagonal({"m2", "m1"})->gaps());

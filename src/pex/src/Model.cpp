@@ -90,14 +90,21 @@ void LateralTable::set(const int width,
 }
 
 CrossingTable::CrossingTable(std::vector<double> gaps,
-                             std::vector<CrossingShare> values)
-    : gaps_(std::move(gaps)), values_(std::move(values))
+                             std::vector<CrossingShare> values,
+                             std::vector<double> spacings)
+    : gaps_(std::move(gaps)),
+      spacings_(std::move(spacings)),
+      values_(std::move(values))
 {
   requireGrid("crossing gap", gaps_, true);
-  if (values_.size() != gaps_.size()) {
+  if (!spacings_.empty()) {
+    requireGrid("crossing spacing", spacings_, true);
+  }
+  if (values_.size() != gaps_.size() * spacingCount()) {
     throw std::invalid_argument(
         "crossing table has " + std::to_string(values_.size()) + " values for "
-        + std::to_string(gaps_.size()) + " gaps");
+        + std::to_string(gaps_.size()) + " gaps and "
+        + std::to_string(spacingCount()) + " spacing columns");
   }
   for (const CrossingShare& s : values_) {
     requireFinite("crossing", s.total);
@@ -360,12 +367,16 @@ struct Segment
   double rate;  // the one-sided share along it
 };
 
-// The segment holding d, with d past the last gap on a final segment of
-// rate 0.
-Segment segmentAt(const CrossingTable& t, const double d, const bool cross)
+// The segment holding d in a spacing's column, with d past the last gap on
+// a final segment of rate 0.
+Segment segmentAt(const CrossingTable& t,
+                  const int column,
+                  const double d,
+                  const bool cross)
 {
   auto value = [&](const int i) {
-    return cross ? t.values()[i].cross : t.values()[i].total;
+    const CrossingShare& v = t.at(column, i);
+    return cross ? v.cross : v.total;
   };
   double g0 = 0;
   double k0 = 0;
@@ -381,12 +392,15 @@ Segment segmentAt(const CrossingTable& t, const double d, const bool cross)
   return {g0, std::numeric_limits<double>::infinity(), 0};
 }
 
-double kept(const CrossingTable& t, const double d, const bool cross)
+double kept(const CrossingTable& t,
+            const int column,
+            const double d,
+            const bool cross)
 {
   double sum = 0;
   double g0 = 0;
   while (g0 < d) {
-    const Segment s = segmentAt(t, std::nextafter(g0, d), cross);
+    const Segment s = segmentAt(t, column, std::nextafter(g0, d), cross);
     const double g1 = std::min(s.g1, d);
     sum += s.rate * (g1 - g0);
     g0 = g1;
@@ -394,35 +408,68 @@ double kept(const CrossingTable& t, const double d, const bool cross)
   return sum;
 }
 
+// A per-column value over the two sides' spacings: each side half, from
+// its spacing's column, interpolated in the spacing's logarithm.
+template <class F>
+CrossingShare overSides(const CrossingTable& t,
+                        const double left,
+                        const double right,
+                        F&& column)
+{
+  auto side = [&](const double s) {
+    const Bracket b = bracketSpacing(t.spacings(), s);
+    const CrossingShare lo = column(b.lo);
+    const CrossingShare hi = b.hi == b.lo ? lo : column(b.hi);
+    return CrossingShare{(1 - b.t) * lo.total + b.t * hi.total,
+                         (1 - b.t) * lo.cross + b.t * hi.cross};
+  };
+  const CrossingShare l = side(left);
+  const CrossingShare r = left == right ? l : side(right);
+  return {(l.total + r.total) / 2, (l.cross + r.cross) / 2};
+}
+
 }  // namespace
 
-CrossingShare Model::crossingKept(const CrossingKey& key, const double d) const
+CrossingShare Model::crossingKept(const CrossingKey& key,
+                                  const double d,
+                                  const double left,
+                                  const double right) const
 {
   const CrossingTable& t = requireCrossing(*this, key);
   if (d <= 0) {
     return {0, 0};
   }
-  return {kept(t, d, false), kept(t, d, true)};
+  return overSides(t, left, right, [&](const int c) {
+    return CrossingShare{kept(t, c, d, false), kept(t, c, d, true)};
+  });
 }
 
-CrossingShare Model::crossing(const CrossingKey& key, const double gap) const
+CrossingShare Model::crossing(const CrossingKey& key,
+                              const double gap,
+                              const double left,
+                              const double right) const
 {
   if (gap <= 0) {
     requireCrossing(*this, key);
     return {1, 1};
   }
-  const CrossingShare k = crossingKept(key, gap);
+  const CrossingShare k = crossingKept(key, gap, left, right);
   return {k.total / gap, k.cross / gap};
 }
 
 CrossingShare Model::crossingOneSided(const CrossingKey& key,
-                                      const double d) const
+                                      const double d,
+                                      const double left,
+                                      const double right) const
 {
   const CrossingTable& t = requireCrossing(*this, key);
   if (d <= 0) {
     return {1, 1};
   }
-  return {segmentAt(t, d, false).rate, segmentAt(t, d, true).rate};
+  return overSides(t, left, right, [&](const int c) {
+    return CrossingShare{segmentAt(t, c, d, false).rate,
+                         segmentAt(t, c, d, true).rate};
+  });
 }
 
 DiagonalTable& Model::addDiagonal(const DiagonalKey& key, DiagonalTable table)

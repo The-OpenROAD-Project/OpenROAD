@@ -52,6 +52,9 @@ struct BuildOptions
   // layer's minimum width, coverage fractions, and the two wire lengths
   // whose difference cancels the ends.
   std::vector<double> crossing_width_factors{1, 2, 5};
+  // Spacings to neighbors of the wire under the crossings, as multiples of
+  // the layer's minimum spacing, with no neighbor besides.
+  std::vector<double> crossing_spacing_factors{1, 2, 4};
   std::vector<double> coverages{0.1, 0.25, 0.5, 0.75};
   double crossing_length = 10;
   double crossing_length_long = 30;

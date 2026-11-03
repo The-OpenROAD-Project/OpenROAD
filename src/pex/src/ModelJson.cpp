@@ -124,6 +124,8 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
   o["layer"] = key.layer;
   o["cover"] = key.cover;
   o["gaps"] = numbers(table.gaps());
+  o["spacings"] = numbers(table.spacings());
+  // Flat, in [spacing][gap] order with no neighbor last.
   json::array total;
   json::array cross;
   for (const CrossingShare& s : table.values()) {
@@ -140,10 +142,11 @@ void readCrossing(const json::object& o, Model& model)
   const CrossingKey key{std::string(o.at("layer").as_string()),
                         std::string(o.at("cover").as_string())};
   const std::vector<double> gaps = numbers(o.at("gaps"));
+  const std::vector<double> spacings = numbers(o.at("spacings"));
   const std::vector<double> total = numbers(o.at("total"));
   const std::vector<double> cross = numbers(o.at("cross"));
   // The two are zipped into shares; the table checks the count against
-  // the gaps.
+  // the grids.
   if (total.size() != cross.size()) {
     throw std::runtime_error("crossing table of " + key.layer
                              + " has total and cross arrays that differ");
@@ -152,7 +155,7 @@ void readCrossing(const json::object& o, Model& model)
   for (size_t i = 0; i < total.size(); i++) {
     values.push_back({total[i], cross[i]});
   }
-  model.addCrossing(key, CrossingTable(gaps, values));
+  model.addCrossing(key, CrossingTable(gaps, values, spacings));
 }
 
 json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)

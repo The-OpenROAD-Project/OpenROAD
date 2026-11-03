@@ -195,13 +195,16 @@ struct Lateral
 // covers: from the nearest run before and after, through the one-sided
 // shares integrated over the piece.
 // The crossing table is `key`'s, the cover of the tabulated layer
-// standing in for `layer` when that one has none (CoverMap).
+// standing in for `layer` when that one has none (CoverMap), at the
+// piece's neighbor spacings `left` and `right` (negative: none).
 Cover partialCover(const Model& model,
                    const std::string& layer,
                    const CrossingKey& key,
                    const std::vector<Run>& runs,
                    const double x0,
-                   const double x1)
+                   const double x1,
+                   const double left,
+                   const double right)
 {
   Cover cover;
   cover.layer = layer;
@@ -221,7 +224,7 @@ Cover partialCover(const Model& model,
   const double len = x1 - x0;
   // The one-sided share integrated from the crossing's edge out to d.
   auto integral = [&](const double d, const bool cross) {
-    const CrossingShare k = model.crossingKept(key, d);
+    const CrossingShare k = model.crossingKept(key, d, left, right);
     return cross ? k.cross : k.total;
   };
   double total = 0;
@@ -421,6 +424,11 @@ class Wire
   // else the layer whose crossings keep the largest share.
   Cover coverOn(const bool below, const double x0, const double x1) const
   {
+    // The neighbors over the span, which hold the crossings' reach.
+    const Lateral* l = nearest(left_, x0, x1);
+    const Lateral* r = nearest(right_, x0, x1);
+    const double sl = l == nullptr ? -1 : l->gap;
+    const double sr = r == nullptr ? -1 : r->gap;
     Cover best;
     for (int l = below ? shape_.layer - 1 : shape_.layer + 1;
          l >= 0 && l < static_cast<int>(layers_.names.size());
@@ -464,7 +472,9 @@ class Wire
                          {name_, map_.crossingCover(layers_.layers[l])},
                          it->second,
                          x0,
-                         x1);
+                         x1,
+                         sl,
+                         sr);
       if (partial.share > best.share) {
         best = partial;
       }
@@ -642,7 +652,9 @@ class Wire
                           {name_, map_.crossingCover(layers_.layers[j])},
                           runs->second,
                           x0,
-                          x1)
+                          x1,
+                          sl,
+                          sr)
                           .share;
           }
         }

@@ -178,6 +178,27 @@ TEST(Model, CrossingShareOverGaps)
   EXPECT_THROW(model.crossing({"m2", "m4"}, 1), std::out_of_range);
 }
 
+// With neighbors, each side takes half from its spacing's column.
+TEST(Model, CrossingShareWithNeighbors)
+{
+  EXPECT_THROW(CrossingTable({1}, {{0.5, 0.5}}, {0.1}), std::invalid_argument);
+  Model model;
+  const CrossingKey key{"m2", "m3"};
+  // At 0.1 the share over a gap of 1 is 0.4, at 0.4 0.6, with no neighbor
+  // 0.8.
+  model.addCrossing(
+      key,
+      CrossingTable({1}, {{0.4, 0.3}, {0.6, 0.5}, {0.8, 0.7}}, {0.1, 0.4}));
+  EXPECT_DOUBLE_EQ(model.crossing(key, 1).total, 0.8);
+  EXPECT_DOUBLE_EQ(model.crossing(key, 1, 0.1, 0.1).total, 0.4);
+  EXPECT_DOUBLE_EQ(model.crossing(key, 1, 0.1, -1).total, 0.6);
+  // Halfway in the spacing's logarithm; past the last, none.
+  EXPECT_DOUBLE_EQ(model.crossing(key, 1, 0.2, 0.2).cross, 0.4);
+  EXPECT_DOUBLE_EQ(model.crossing(key, 1, 0.5, 0.5).total, 0.8);
+  EXPECT_DOUBLE_EQ(model.crossingKept(key, 0.5, 0.4, 0.4).total, 0.3);
+  EXPECT_DOUBLE_EQ(model.crossingOneSided(key, 0.5, 0.1, 0.4).total, 0.5);
+}
+
 // A table whose kept amount dips between gaps (noise at a saturated gap)
 // never takes capacitance away: the share is held, not reduced.
 TEST(Model, CrossingShareNeverNegative)

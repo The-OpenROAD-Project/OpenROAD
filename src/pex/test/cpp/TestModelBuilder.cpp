@@ -68,7 +68,8 @@ BuildOptions smallBuild(const int threads)
   o.tol = 0.02;
   o.threads = threads;
   o.extent = 3;
-  o.end_spacing_factors = {};  // the end test builds them
+  o.crossing_spacing_factors = {};  // the crossing test builds them
+  o.end_spacing_factors = {};       // and the end test
   o.facing_factors = {};
   return o;
 }
@@ -152,19 +153,29 @@ TEST(ModelBuilder, CrossingAndEndTables)
     EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), full, model),
                  std::invalid_argument);
   }
+  o.crossing_spacing_factors = {1};
   buildCrossing(sky130(), L("met2"), L("met3"), o, model);
   const CrossingTable* c = model.crossing({"met2", "met3"});
   ASSERT_NE(c, nullptr);
+  ASSERT_EQ(c->spacings().size(), 1u);
+  // Neighbors under the crossings take part of what the crossings reach
+  // over a wide gap.
+  EXPECT_LT(c->at(0, 2).total, c->at(1, 2).total);
+  // A table built on another spacing grid is refused.
+  BuildOptions other = o;
+  other.crossing_spacing_factors = {2};
+  EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), other, model),
+               std::invalid_argument);
   // Gaps are wc (1 / f - 1): 0.3, 0.9 (twice, merged) and 2.7 µm.
   ASSERT_EQ(c->gaps().size(), 3u);
   EXPECT_NEAR(c->gaps()[0], 0.3, 1e-9);
   EXPECT_NEAR(c->gaps()[1], 0.9, 1e-9);
   EXPECT_NEAR(c->gaps()[2], 2.7, 1e-9);
   // Crossings keep a share of the plane's effect, less over wider gaps.
-  EXPECT_GT(c->values()[0].total, 0.5);
-  EXPECT_LT(c->values()[0].total, 1.0);
-  EXPECT_GT(c->values()[0].total, c->values()[1].total);
-  EXPECT_GT(c->values()[1].cross, 0);
+  EXPECT_GT(c->at(1, 0).total, 0.5);
+  EXPECT_LT(c->at(1, 0).total, 1.0);
+  EXPECT_GT(c->at(1, 0).total, c->at(1, 1).total);
+  EXPECT_GT(c->at(1, 1).cross, 0);
   EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met2"), o, model),
                std::invalid_argument);
 
