@@ -165,6 +165,14 @@ export class HierarchyPanel {
         for (const widget of this._widgets.values()) widget.resendColors();
     }
 
+    // The design changed (the "refresh" push): a view that loaded empty may
+    // have rows now.
+    designChanged() {
+        for (const widget of this._widgets.values()) {
+            if (widget.reloadIfEmpty) widget.reloadIfEmpty();
+        }
+    }
+
     // Move the overlay to the view now on screen.  Repaints only the two
     // pseudo-layers, and only when a flag actually moved: nothing else reads
     // these flags, so a full redraw would re-request every metal layer's grid

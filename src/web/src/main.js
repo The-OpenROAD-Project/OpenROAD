@@ -1593,6 +1593,7 @@ function applyDesignRefresh(msg) {
     // The design may have been edited by another session's
     // set_property; refresh the inspected object's properties.
     if (app.refreshInspector) app.refreshInspector();
+    if (app.hierarchyPanel) app.hierarchyPanel.designChanged();
 }
 
 // "Script running" badge at the right end of the menu bar, shown while a

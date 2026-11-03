@@ -2,7 +2,6 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { waitForMicrotasks } from './setup-dom.js';
-import { dbuRectToBounds } from '../../src/coordinates.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {

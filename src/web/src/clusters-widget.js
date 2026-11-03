@@ -77,7 +77,7 @@ export class ClustersWidget {
         this.toolbar = toolbar;
 
         this._updateBtn = document.createElement('button');
-        this._updateBtn.className = 'timing-btn';
+        this._updateBtn.className = 'or-btn';
         this._updateBtn.textContent = 'Update';
         if (isStaticMode(this._app)) {
             this._updateBtn.style.display = 'none';
@@ -272,7 +272,17 @@ export class ClustersWidget {
         this._sendGroupColors();
     }
 
+    // After a design edit.  An edit can create the first groups
+    // (rtl_macro_placer -keep_clustering_data); a tree with rows keeps the
+    // user's checkboxes until Update.
+    reloadIfEmpty() {
+        if (this._loaded && this._nodes.length === 0) this.update();
+    }
+
     async _sendGroupColors() {
+        // An empty map tells the server to paint nothing; with no groups yet,
+        // the defaults have to stay in charge for when they appear.
+        if (this._nodes.length === 0) return;
         try {
             await this._app.websocketManager.request({
                 type: 'set_group_colors',

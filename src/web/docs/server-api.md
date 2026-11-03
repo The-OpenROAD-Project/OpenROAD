@@ -777,30 +777,24 @@ instead; the `_clusters` tile layer is the scalable way to see such a cluster
 (and what `no_highlight` clients rely on).  Errors when the id is not a group
 in the current block.
 
-### `find_objects`
+### `find`
 
-Batch select (and optionally highlight) every object of one type whose name
-matches a pattern — the counterpart of the Qt GUI's Find dialog and of
-`select -type ... -name ... -highlight`.
+Select every object of one type whose name matches a pattern — the
+counterpart of the Qt GUI's Find dialog.  The matches are added to the
+selection rather than replacing it, as in the Qt GUI.
 
-| Field              | Type     | Required | Description                                                     |
-| ------------------ | -------- | :------: | --------------------------------------------------------------- |
-| `object_type`      | `string` |    ✓     | Descriptor type name: `Inst`, `Net`, `BTerm`, `Group`, ... Note it is *not* `type`, which the envelope uses. |
-| `pattern`          | `string` |    ✓     | Anchored glob (or Tcl regexp). Empty matches everything.         |
-| `is_regexp`        | `bool`   |    —     | Default `false` (glob).                                          |
-| `case_sensitive`   | `bool`   |    —     | Default `false`.                                                 |
-| `highlight_group`  | `int`    |    —     | `0..15` to also add the matches to that colored highlight group; `-1` (default) selects only. Any other value is an error, including negatives below `-1` — they are not a second spelling of `-1`. |
-| `add_to_selection` | `bool`   |    —     | Default `false` (replace the selection and the highlight group). |
-| `use_dbu`          | `bool`   |    —     | Same as `inspect`.                                               |
+| Field        | Type     | Required | Description                                                  |
+| ------------ | -------- | :------: | ------------------------------------------------------------ |
+| `obj_type`   | `string` |    ✓     | `inst`, `net` or `port`. Note it is *not* `type`, which the envelope uses. |
+| `pattern`    | `string` |    ✓     | Unix glob (`*`, `?`, `[...]`); a plain name matches only itself. |
+| `match_case` | `bool`   |    —     | Default `false`.                                              |
+| `use_dbu`    | `bool`   |    —     | Same as `inspect`.                                            |
 
-**Response (JSON):** the inspect payload of the first match plus `found`,
-`found_truncated`, `selection_count`, `selection_index`,
-`highlight_truncated`, and `match_bbox` — the `[x0, y0, x1, y1]` union of the
-matches in DBU, for the client to zoom to.  It is absent when nothing matched
-or no match reports a box.  Note it is *not* the inspect payload's own `bbox`,
-which is the first match's box and is what the selection outline is drawn from.
-Errors on an unknown `object_type`, an out-of-range `highlight_group`, or a
-malformed regexp.
+**Response (JSON):** `count` (every match) and `truncated` (`true` when more
+than 1000 matched; only the first 1000 are selected), `selection_count`,
+`sel_has_inst` and `sel_has_net`.  When something matched it also carries the
+inspect payload of the first match and `selection_index`.  Errors on an unknown
+`obj_type`.
 
 ### `clear_highlights`
 

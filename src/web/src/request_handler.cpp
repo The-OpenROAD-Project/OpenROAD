@@ -55,7 +55,6 @@
 #include "shape_collector.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
-#include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -1092,6 +1091,14 @@ static odb::Rect standInBox(const web::Selected& sel,
   return box;
 }
 
+// Maximum highlight shapes one request may push onto the overlay, which the
+// renderer walks per tile.  Past this, objects are coarsened to one box each
+// and the response flags the truncation.
+constexpr size_t kMaxHighlightShapes = 20000;
+
+// Each hover rect becomes an SVG element in the browser.
+constexpr size_t kMaxHoverShapes = 1000;
+
 static void collectHighlightShapes(const web::Selected& sel,
                                    std::vector<odb::Rect>& rects,
                                    std::vector<odb::Polygon>& polys,
@@ -1101,10 +1108,16 @@ static void collectHighlightShapes(const web::Selected& sel,
   rects.clear();
   polys.clear();
   lines.clear();
-  // Uncapped: one inspected object is one descriptor's worth of shapes.  The
-  // cap exists for selection sets, where a wide Find can leave thousands.
-  ShapeCollector collector;
+  // Capped like a selection set: one object can be a root cluster holding
+  // every instance, and then it is drawn as one box.
+  ShapeCollector collector(kMaxHighlightShapes);
   appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+  if (collector.overflowed()) {
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
+  }
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -1118,11 +1131,6 @@ static int selectionIteratorPosition(const web::SelectionSet& set,
   }
   return static_cast<int>(std::distance(set.begin(), itr));
 }
-
-// Maximum highlight shapes one request may push onto the overlay, which the
-// renderer walks per tile.  Past this, objects are coarsened to one box each
-// and the response flags the truncation.
-constexpr size_t kMaxHighlightShapes = 20000;
 
 // Accumulate highlight shapes from all items in a selection set, degrading
 // gracefully on huge sets (see kMaxHighlightShapes).  Returns true when the
@@ -2261,6 +2269,8 @@ WebSocketResponse SelectHandler::handleContextAction(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    // Before the locks below: it takes selection_mutex itself.
+    consumeStaleSelection(state);
     const std::string action(req.json.at("action").as_string());
     const bool output = jsonOr(req.json, "output", false);
     const bool input = jsonOr(req.json, "input", false);
@@ -3361,6 +3371,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const std::string layer_name
         = std::string(req.json.at("layer").as_string());
 
@@ -3462,6 +3473,7 @@ WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     odb::dbBlock* block = gen_->getBlock();
     if (block == nullptr) {
       throw std::runtime_error("No design loaded");
@@ -3595,9 +3607,14 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
           }
         }
         if (sel) {
-          ShapeCollector collector;
+          ShapeCollector collector(kMaxHoverShapes);
           sel.highlight(collector);
-          if (!collector.rects.empty()) {
+          if (collector.overflowed()) {
+            const odb::Rect stand_in = standInBox(sel, collector);
+            if (!stand_in.isInverted()) {
+              state.hover_rects.push_back(stand_in);
+            }
+          } else if (!collector.rects.empty()) {
             state.hover_rects = std::move(collector.rects);
           } else {
             odb::Rect bbox;
@@ -3845,6 +3862,7 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    consumeStaleSelection(state);
     const std::string obj_type(req.json.at("obj_type").as_string());
     const std::string pattern(req.json.at("pattern").as_string());
     const bool match_case = jsonOr(req.json, "match_case", false);
@@ -5366,21 +5384,26 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleModuleHierarchy(req);
         });
-  d.add("set_module_colors",
-        WebSocketRequest::kSetModuleColors,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSetOwnerColors(req, state, state.module_colors);
-        });
+  // Inline so two quick checkbox clicks land in the order they were sent.
+  d.add(
+      "set_module_colors",
+      WebSocketRequest::kSetModuleColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.module_colors);
+      },
+      /*run_inline=*/true);
   d.add("group_hierarchy",
         WebSocketRequest::kGroupHierarchy,
         [this](const WebSocketRequest& req, SessionState&) {
           return handleGroupHierarchy(req);
         });
-  d.add("set_group_colors",
-        WebSocketRequest::kSetGroupColors,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSetOwnerColors(req, state, state.group_colors);
-        });
+  d.add(
+      "set_group_colors",
+      WebSocketRequest::kSetGroupColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.group_colors);
+      },
+      /*run_inline=*/true);
   d.add("heatmaps",
         WebSocketRequest::kHeatmaps,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -7142,6 +7165,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
     const bool open_inspector = req.json.contains("open_inspector")
                                     ? req.json.at("open_inspector").as_bool()

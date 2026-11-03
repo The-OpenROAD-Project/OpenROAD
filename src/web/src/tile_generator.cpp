@@ -2564,8 +2564,17 @@ TileGenerator::OwnerColorMap TileGenerator::defaultModuleColors() const
   std::lock_guard lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
   if (!default_module_colors_) {
+    HierarchyResult result = HierarchyReport(block, sta_).getReport();
     default_module_colors_ = std::make_shared<const std::map<uint32_t, Color>>(
-        computeDefaultModuleColors(HierarchyReport(block, sta_).getReport()));
+        computeDefaultModuleColors(result));
+    // A flat design's palette is keyed by name group, which the renderer only
+    // resolves through this mapping.
+    if (result.name_grouped) {
+      search_->setInstGroups(block,
+                             std::make_shared<const std::vector<uint32_t>>(
+                                 std::move(result.inst_group)),
+                             rev);
+    }
   }
   return default_module_colors_;
 }
@@ -4628,8 +4637,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   static_assert(sizeof(Color) == 4);
 
   // Here rather than where the default palette is built: a session that sends
-  // its own colors never builds one, and would miss the push.
-  if (layer == "_modules" || layer == "_clusters") {
+  // its own colors never builds one, and would miss the push.  Only when the
+  // layer actually paints: an overlay that is off has nothing to go stale.
+  if ((layer == "_modules" && vis.module_view)
+      || (layer == "_clusters" && vis.cluster_view)) {
     search_->noteOwnerColorsUsed();
   }
   // Clamped BEFORE tile_px is derived from it: a dpr below the supported range
@@ -5232,15 +5243,16 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                                       dbu_tile.xMax(),
                                                       dbu_tile.yMax(),
                                                       /*min_height=*/0)) {
+          // First: most instances of a partly clustered design have no group.
+          odb::dbGroup* group = inst->getGroup();
+          if (group == nullptr) {
+            continue;
+          }
           odb::Rect inst_bbox = inst->getBBox()->getBox();
           if (!dbu_tile.overlaps(inst_bbox)) {
             continue;
           }
           if (inst->getMaster()->isFiller()) {
-            continue;
-          }
-          odb::dbGroup* group = inst->getGroup();
-          if (group == nullptr) {
             continue;
           }
           auto it = group_colors->find(group->getId());

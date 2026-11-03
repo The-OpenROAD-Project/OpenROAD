@@ -554,7 +554,7 @@ std::vector<char> hasChildrenByIndex(const size_t node_count,
 {
   std::vector<char> has_children(node_count, 0);
   for (const int parent_id : parent_ids) {
-    if (parent_id >= 0) {
+    if (parent_id >= 0 && static_cast<size_t>(parent_id) < node_count) {
       has_children[parent_id] = 1;
     }
   }

@@ -56,7 +56,10 @@ GroupStats addGroup(odb::dbGroup* group,
     }
     const odb::Rect box = inst->getBBox()->getBox();
     local.area_dbu2 += box.area();
-    local.bbox.merge(box);
+    // An unplaced instance sits at the origin and would stretch the box there.
+    if (inst->isPlaced()) {
+      local.bbox.merge(box);
+    }
     if (inst->isBlock()) {
       local.macros++;
     } else {

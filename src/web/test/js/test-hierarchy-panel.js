@@ -220,23 +220,33 @@ describe('HierarchyPanel', () => {
                      'the view that never loaded has nothing to re-send');
     });
 
-    // A reconnect gives the server a new session with no color maps in it.
-    // Whatever a view had loaded goes back up, or the rows the user unchecked
-    // would come back as the server's defaults.
-    it('resendColors re-sends what each loaded view holds', async () => {
+    // A design edit can create the first groups; the view that loaded empty
+    // fetches again, and one that never loaded stays unloaded.
+    it('designChanged reloads the view that loaded empty', async () => {
         const app = createMockApp();
-        app.visibility = { ui_hierarchy_view: true };
+        let groups = [];
+        const request = app.websocketManager.request;
+        app.websocketManager.request = (msg) => {
+            if (msg.type === 'group_hierarchy') {
+                app.sent.push(msg);
+                return Promise.resolve({ nodes: groups });
+            }
+            return request(msg);
+        };
         const panel = new HierarchyPanel(makeContainer(), app, () => {});
-        await waitForMicrotasks();
-        const colorMsgs = (type) => app.sent.filter(m => m.type === type).length;
-        const before = colorMsgs('set_module_colors');
+        const clusters = panel._widgets.get('clusters');
+        await clusters.update();
+        const count = (type) => app.sent.filter(m => m.type === type).length;
+        assert.equal(count('group_hierarchy'), 1);
 
-        panel.resendColors();
+        groups = CLUSTER_NODES;
+        panel.designChanged();
         await waitForMicrotasks();
 
-        assert.equal(colorMsgs('set_module_colors'), before + 1);
-        assert.equal(colorMsgs('set_group_colors'), 0,
-                     'the view that never loaded has nothing to re-send');
+        assert.equal(count('group_hierarchy'), 2);
+        assert.equal(clusters._nodes.length, CLUSTER_NODES.length);
+        assert.equal(count('module_hierarchy'), 0,
+                     'the view that never loaded stays unloaded');
     });
 
     // Display Controls calls this after deriving the flags, so ticking the

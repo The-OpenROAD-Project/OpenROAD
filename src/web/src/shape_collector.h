@@ -63,6 +63,9 @@ class ShapeCollector : public web::Painter
     for (const odb::Polygon& poly : polys) {
       bbox.merge(poly.getEnclosingRect());
     }
+    for (const FlightLine& line : lines) {
+      bbox.merge(odb::Rect(line.p1, line.p2));
+    }
     return bbox;
   }
 
@@ -88,6 +91,10 @@ class ShapeCollector : public web::Painter
   }
   void drawLine(const odb::Point& p1, const odb::Point& p2) override
   {
+    if (atBudget()) {
+      overflow_bbox.merge(odb::Rect(p1, p2));
+      return;
+    }
     // Selection-highlight yellow (matches the rect/poly highlight color).
     lines.push_back(
         {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
@@ -114,7 +121,10 @@ class ShapeCollector : public web::Painter
   void drawRuler(int, int, int, int, bool, const std::string&) override {}
 
  private:
-  bool atBudget() const { return rects.size() + polys.size() >= budget_; }
+  bool atBudget() const
+  {
+    return rects.size() + polys.size() + lines.size() >= budget_;
+  }
 
   size_t budget_;
 };

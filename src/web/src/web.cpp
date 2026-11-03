@@ -522,6 +522,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }
   void inDbBTermDestroy(odb::dbBTerm*) override { invalidateSelection(); }
   void inDbBlockageDestroy(odb::dbBlockage*) override { invalidateSelection(); }
+  void inDbGroupDestroy(odb::dbGroup*) override { invalidateSelection(); }
   void inDbObstructionDestroy(odb::dbObstruction*) override
   {
     invalidateSelection();

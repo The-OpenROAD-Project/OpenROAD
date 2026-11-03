@@ -1,17 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { dbuRectToBounds } from './coordinates.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
-import { isStaticMode, runTclScript } from './ui-utils.js';
-
-// The highlight-group palette comes from the server (`highlight_colors` in the
-// tech response), which reads gui::Painter::kHighlightColors — the same array
-// the overlay paints with, alpha included.
-function highlightColors(app) {
-    const colors = app.techData && app.techData.highlight_colors;
-    return Array.isArray(colors) ? colors : [];
-}
+import { runTclScript } from './ui-utils.js';
 
 // The menu bar in #menu-bar: static menus merged with the custom items
 // registered from Tcl (`create_menu_item`, delivered in app.customMenu).

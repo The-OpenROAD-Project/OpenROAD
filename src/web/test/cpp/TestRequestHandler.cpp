@@ -160,6 +160,35 @@ class LineFakeDescriptor : public FakeDescriptor
   }
 };
 
+// Highlights with `count` one-DBU rects (or lines) laid out from the bbox's
+// corner -- one object with as many shapes as a root cluster holding every
+// instance.
+class ManyShapesFakeDescriptor : public FakeDescriptor
+{
+ public:
+  ManyShapesFakeDescriptor(const int count, const bool lines)
+      : count_(count), lines_(lines)
+  {
+  }
+
+  void highlight(const std::any& object, web::Painter& painter) const override
+  {
+    const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
+    for (int i = 0; i < count_; ++i) {
+      const odb::Point p(b.xMin() + (i % b.dx()), b.yMin() + (i / b.dx()));
+      if (lines_) {
+        painter.drawLine(p, odb::Point(p.x() + 1, p.y() + 1));
+      } else {
+        painter.drawRect(odb::Rect(p.x(), p.y(), p.x() + 1, p.y() + 1));
+      }
+    }
+  }
+
+ private:
+  const int count_;
+  const bool lines_;
+};
+
 // Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
 // real dbInst/dbNet objects inside the unit tests — the production set
 // lives in the full gui library, which the web test does not link.
@@ -335,20 +364,12 @@ class FakeGroupDescriptor : public web::Descriptor
 
   std::string getTypeName() const override { return "Group"; }
 
-  // Off by default, matching web::DbGroupDescriptor: a dbGroup only reports a
-  // box when it has a region, which MPL's clusters do not.  The find_objects
-  // union-bbox tests turn it on, since a descriptor that reports nothing is
-  // exactly the case where no bbox comes back.
-  bool report_bbox = false;
-
-  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  // Matching web::DbGroupDescriptor: a dbGroup only reports a box when it has a
+  // region, which MPL's clusters do not.
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override
   {
-    if (!report_bbox) {
-      return false;
-    }
-    bbox.mergeInit();
-    mergeInstBoxes(std::any_cast<odb::dbGroup*>(object), bbox);
-    return !bbox.isInverted();
+    return false;
   }
 
   void visitAllObjects(
@@ -389,16 +410,6 @@ class FakeGroupDescriptor : public web::Descriptor
   }
 
  private:
-  static void mergeInstBoxes(odb::dbGroup* group, odb::Rect& bbox)
-  {
-    for (odb::dbInst* inst : group->getInsts()) {
-      bbox.merge(inst->getBBox()->getBox());
-    }
-    for (odb::dbGroup* child : group->getGroups()) {
-      mergeInstBoxes(child, bbox);
-    }
-  }
-
   odb::dbBlock* block_;
 };
 
@@ -2819,6 +2830,39 @@ TEST_F(GroupHandlerTest, GroupBBoxCoversNestedInstances)
   EXPECT_GT(child_bbox[0].as_int64(), 0);
 }
 
+// Right after rtl_macro_placer the standard cells are still unplaced, sitting
+// at the origin: counted, but kept out of the box the panel zooms to.
+TEST_F(GroupHandlerTest, UnplacedInstancesStayOutOfTheGroupBBox)
+{
+  makeClusterTree();
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  child_->addInst(odb::dbInst::create(block_, master, "unplaced_a"));
+  odb::dbGroup* loose = odb::dbGroup::create(block_, "loose");
+  loose->addInst(odb::dbInst::create(block_, master, "unplaced_b"));
+
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const boost::json::object* child = nullptr;
+  const boost::json::object* only_unplaced = nullptr;
+  for (const auto& node : nodes) {
+    const auto& o = node.as_object();
+    if (o.at("name").as_string() == child_->getName()) {
+      child = &o;
+    } else if (o.at("name").as_string() == "loose") {
+      only_unplaced = &o;
+    }
+  }
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(only_unplaced, nullptr);
+
+  EXPECT_EQ(child->at("insts").as_int64(), 3);
+  EXPECT_GT(child->at("bbox").as_array()[0].as_int64(), 0);
+  for (const auto& coord : only_unplaced->at("bbox").as_array()) {
+    EXPECT_EQ(coord.as_int64(), 0);
+  }
+}
+
 // Each cluster gets its own palette color, which the widget then shows in its
 // swatch and the `_clusters` layer paints with.
 TEST_F(GroupHandlerTest, GroupHierarchyAssignsDistinctColors)
@@ -3080,9 +3124,9 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   FakeInspectable fake_previous_;
 };
 
-// select_group / find_objects tests.  Both go through the descriptor
-// registry, so the fixture registers FakeGroupDescriptor for dbGroup* and
-// removes it again afterwards (the registry is a process-wide singleton).
+// select_group tests.  They go through the descriptor registry, so the
+// fixture registers FakeGroupDescriptor for dbGroup* and removes it again
+// afterwards (the registry is a process-wide singleton).
 class GroupSelectTest : public tst::Nangate45Fixture
 {
  protected:
@@ -3100,9 +3144,8 @@ class GroupSelectTest : public tst::Nangate45Fixture
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
 
-    group_desc_ = new FakeGroupDescriptor(block_);
     web::DescriptorRegistry::instance()->registerDescriptor(
-        typeid(odb::dbGroup*), group_desc_);
+        typeid(odb::dbGroup*), new FakeGroupDescriptor(block_));
   }
 
   void TearDown() override
@@ -3117,9 +3160,6 @@ class GroupSelectTest : public tst::Nangate45Fixture
   SessionState state_;
   odb::dbGroup* root_ = nullptr;
   odb::dbGroup* child_ = nullptr;
-  // Owned by the registry, which outlives the test body; kept so a test can
-  // turn on the descriptor's optional bbox.
-  FakeGroupDescriptor* group_desc_ = nullptr;
 };
 
 // Clicking a row in the Clusters panel selects the dbGroup, and the group's
@@ -3276,6 +3316,26 @@ TEST_F(GroupSelectTest, SelectGroupWithUnknownIdReturnsError)
   auto resp = handler_->handleSelectGroup(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kError);
   EXPECT_NE(payloadStr(resp).find("Group not found"), std::string::npos);
+}
+
+// After a destroy the selection may hold dangling objects; adding to it would
+// highlight them and run their deselect action.
+TEST_F(GroupSelectTest, SelectGroupDropsAStaleSelection)
+{
+  WebSocketRequest req;
+  req.id = 11;
+  req.type = WebSocketRequest::kSelectGroup;
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
+  handler_->handleSelectGroup(req, state_);
+  state_.selection_stale = true;
+
+  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
+                      + R"(,"add_to_selection":true})");
+  const auto obj
+      = parseObj(payloadStr(handler_->handleSelectGroup(req, state_)));
+
+  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
+  EXPECT_FALSE(state_.selection_stale.load());
 }
 
 // A descriptor can emit one shape per leaf, so the budget has to bound what ONE
@@ -3574,6 +3634,117 @@ TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
   EXPECT_NE(json.find("\"count\":0"), std::string::npos);
+}
+
+// Hovering an Inspector link to a root cluster sent one rect per instance,
+// each an SVG element in the browser.  Past the cap it is one box.
+TEST_F(SelectHandlerTest, HoverOverAHugeObjectSendsOneBox)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/false);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 15;
+  req.type = WebSocketRequest::kHover;
+  req.json = parseObj(R"({"select_id":0})");
+  const auto root = parseObj(payloadStr(handler_->handleHover(req, state_)));
+
+  EXPECT_EQ(root.at("count").as_int64(), 1);
+  const auto& rect = root.at("rects").as_array().at(0).as_array();
+  EXPECT_EQ(rect.at(0).as_int64(), fake_current_.bbox.xMin());
+  EXPECT_EQ(rect.at(1).as_int64(), fake_current_.bbox.yMin());
+  EXPECT_EQ(rect.at(2).as_int64(), fake_current_.bbox.xMax());
+  EXPECT_EQ(rect.at(3).as_int64(), fake_current_.bbox.yMax());
+}
+
+// The inspected object is capped like a selection set: a root cluster put one
+// shape per instance on the overlay, which every tile render walks.
+TEST_F(SelectHandlerTest, InspectOfAHugeObjectIsCoarsened)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/false);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 16;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_rects.size(), 1u);
+  EXPECT_EQ(state_.highlight_rects[0], fake_current_.bbox);
+}
+
+// Lines count against the same cap as rects.
+TEST_F(SelectHandlerTest, InspectOfAHugeLineObjectIsCoarsened)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/true);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 17;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  ASSERT_EQ(state_.highlight_rects.size(), 1u);
+  EXPECT_EQ(state_.highlight_rects[0], fake_current_.bbox);
+}
+
+// A pending staleness flag left set here wiped the fresh layer selection on
+// the next request, and kept dangling highlight-group members around.
+TEST_F(SelectHandlerTest, SelectLayerConsumesAStaleSelection)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[3].insert(makeFakeSelected(&fake_current_));
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 52;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+  ASSERT_EQ(handler_->handleSelectLayer(req, state_).type,
+            WebSocketResponse::kJson);
+
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_groups[3].empty());
+}
+
+// "Select connected" walks the current selection, so a stale one has to go
+// before the walk.
+TEST_F(SelectHandlerTest, ContextActionDropsAStaleSelection)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 53;
+  req.type = WebSocketRequest::kContextAction;
+  req.json = parseObj(R"({"action":"clear_highlights"})");
+  const auto root
+      = parseObj(payloadStr(handler_->handleContextAction(req, state_)));
+
+  EXPECT_EQ(root.at("selection_count").as_int64(), 0);
+  EXPECT_FALSE(state_.selection_stale.load());
 }
 
 TEST_F(SelectHandlerTest, SelectClearsTimingState)
@@ -4573,6 +4744,27 @@ TEST_F(FindHandlerTest, FindAddsToTheExistingSelection)
   EXPECT_TRUE(
       state_.selection_set.contains(makeFakeSelected(&fake_preselected_)))
       << "the pre-existing selection must survive a find";
+}
+
+// Unless a destroy has made it stale: a find adds to the selection and
+// highlights all of it, so the stale part has to go first.
+TEST_F(FindHandlerTest, FindDropsAStaleSelection)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_preselected_));
+  }
+  state_.selection_stale = true;
+
+  runFind("inst", "u_buf0");
+
+  const auto root = parseObj(payloadStr(last_resp_));
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(
+      state_.selection_set.contains(makeFakeSelected(&fake_preselected_)));
 }
 
 // set_property tests (descriptor editors)
@@ -5681,6 +5873,32 @@ TEST_F(DRCHandlerTest, HighlightMarker)
   // Highlight rects should contain the marker bbox
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_EQ(state_.highlight_rects.size(), 1u);
+}
+
+// Opening a marker in the Inspector runs the outgoing object's deselect
+// action, so a stale current_inspected has to be dropped first.
+TEST_F(DRCHandlerTest, HighlightDropsAStaleSelection)
+{
+  FakeDescriptor descriptor;
+  FakeInspectable stale{.name = "stale",
+                        .type = "FakeStale",
+                        .bbox = {0, 0, 10, 10},
+                        .properties = {}};
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = web::Selected(&stale, &descriptor);
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 109;
+  req.type = WebSocketRequest::kDrcHighlight;
+  req.json = parseObj(R"({"marker_id":-1})");
+  handler_->handleDRCHighlight(req, state_);
+
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.current_inspected);
 }
 
 TEST_F(DRCHandlerTest, HighlightClear)

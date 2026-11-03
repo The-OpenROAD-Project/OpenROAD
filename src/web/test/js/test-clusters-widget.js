@@ -77,6 +77,8 @@ describe('ClustersWidget', () => {
 
         assert.ok(widget._table);
         assert.equal(widget._updateBtn.textContent, 'Update');
+        assert.ok(widget._updateBtn.classList.contains('or-btn'),
+                  'the shared button style, like the Verilog Modules view');
     });
 
     // The panel calls this on first show; a second source switch back must not
@@ -157,6 +159,61 @@ describe('ClustersWidget', () => {
            assert.match(body, /keep_clustering_data/);
            assert.doesNotMatch(body, /Click "Update"/);
        });
+
+    // An empty map is "paint nothing" to the server.  Sent for a tree with no
+    // groups, it outlived them: groups created later stayed unpainted.
+    it('sends no color map for a tree with no groups', async () => {
+        const app = createMockApp();
+        app.websocketManager.request = (msg) => {
+            app.sent.push(msg);
+            if (msg.type === 'group_hierarchy') {
+                return Promise.resolve({ nodes: [] });
+            }
+            return Promise.resolve({ ok: 1 });
+        };
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+        await widget.update();
+        widget.resendColors();
+        await waitForMicrotasks();
+
+        assert.equal(
+            app.sent.filter(m => m.type === 'set_group_colors').length, 0);
+    });
+
+    // After a design edit: only a tree that loaded empty fetches again, so a
+    // populated one keeps the rows the user unchecked.
+    it('reloadIfEmpty reloads only a tree that loaded empty', async () => {
+        const app = createMockApp();
+        let nodes = [];
+        const request = app.websocketManager.request;
+        app.websocketManager.request = (msg) => {
+            if (msg.type === 'group_hierarchy') {
+                app.sent.push(msg);
+                return Promise.resolve({ nodes });
+            }
+            return request(msg);
+        };
+        const widget = new ClustersWidget(makeContainer(), app, () => {});
+        const loads = () =>
+            app.sent.filter(m => m.type === 'group_hierarchy').length;
+
+        widget.reloadIfEmpty();
+        await waitForMicrotasks();
+        assert.equal(loads(), 0, 'a tree never loaded is left to ensureLoaded');
+
+        await widget.update();
+        nodes = NODES;
+        widget.reloadIfEmpty();
+        await waitForMicrotasks();
+        assert.equal(loads(), 2);
+        assert.ok(rowNames(widget).some(n => n.includes('macro_cluster')));
+        assert.equal(
+            app.sent.filter(m => m.type === 'set_group_colors').length, 1);
+
+        widget.reloadIfEmpty();
+        await waitForMicrotasks();
+        assert.equal(loads(), 2);
+    });
 
     it('loads the tree and collapses non-root clusters by default', async () => {
         const app = createMockApp();

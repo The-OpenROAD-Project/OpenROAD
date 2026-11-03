@@ -2027,6 +2027,34 @@ TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
       << "the instance mapped to group " << kGroupB << " was not colored";
 }
 
+// The default palette of a flat design is keyed by name group, so building it
+// has to install the mapping too.  Without it -- `save_image -web` with
+// module_view, or the checkbox with the Hierarchy tab never opened -- every
+// instance resolved to the top module and the design came out in one color.
+TEST_F(TileGeneratorTest, DefaultModuleColorsColorAFlatDesignByNameGroup)
+{
+  placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  placeInst("BUF_X16", "grp_b/_2_", 50000, 50000);
+  // With STA: the hierarchy report, and so the palette, is empty without it.
+  TileGenerator gen(getDb(), getSta(), getLogger());
+  gen.eagerInit();
+
+  const TileGenerator::OwnerColorMap colors = gen.defaultModuleColors();
+  ASSERT_TRUE(colors);
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePng(
+      gen.generateTile(
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, colors.get()),
+      w,
+      h);
+
+  int colors_drawn = 0;
+  for (const auto& [group, color] : *colors) {
+    colors_drawn += countPixelsOfColor(pixels, color) > 0 ? 1 : 0;
+  }
+  EXPECT_GE(colors_drawn, 2) << "both name groups should get their own color";
+}
+
 // Module colours are drawn as given, not through the coverage path, so the
 // coverage quantization must leave them alone: a translucent module colour has
 // to reach the client with its own alpha, not rounded onto the coverage grid.
