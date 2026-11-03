@@ -121,21 +121,18 @@ export function createCompositeSource({
             const all = getItems() || [];
             const d = dpr();
             const t = tileSize();
-            // One request per layer, where its first copy sits (each chiplet
-            // lists a shared layer again); layer-extents.js skips empty ones.
-            const shown = new Set(all.filter((item) => item && item.visible !== false)
-                .map((item) => item.layer));
-            const seen = new Set();
+            // One request per shown item, for its own die when it names one;
+            // layer-extents.js skips the empty ones.
             const items = all.filter(
-                (item) => item && shown.has(item.layer) && !seen.has(item.layer)
-                          && seen.add(item.layer)
-                          && tileMayHaveContent(ctx, item.layer, { z, x, y }));
+                (item) => item && item.visible !== false
+                          && tileMayHaveContent(ctx, item.layer, { z, x, y },
+                                                item.chiplet));
             if (items.length === 0) {
                 return NOTHING;
             }
             const build = tileRequestBuilder({ z, x, y }, ctx, d, t);
             const parts = items.map((item) => ({ opacity: item.opacity,
-                                                 msg: build(item.layer) }));
+                                                 msg: build(item.layer, item) }));
             const px = tileDevicePx(t, d);
             // Made on the first draw with an image, so an empty or
             // cancelled tile never allocates one.

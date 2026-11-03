@@ -218,48 +218,56 @@ describe('createCompositeSource', () => {
     });
 });
 
-// Multi-chiplet designs list a shared tech layer once per chiplet; the server
-// answers every copy with the same image.
-describe('createCompositeSource with repeated layers', () => {
-    const copies = [
+// Multi-chiplet designs list a shared tech layer once per die, and each row
+// draws only its own die.
+describe('createCompositeSource with layers shared by dies', () => {
+    const rows = [
         { layer: '_instances', opacity: 1, visible: true },
-        { layer: 'M_TOP', opacity: 1, visible: true },   // chiplet A
-        { layer: 'UBM', opacity: 1, visible: true },
-        { layer: 'M_TOP', opacity: 1, visible: true },   // chiplet B
-        { layer: 'UBM', opacity: 1, visible: false },
+        { layer: 'M_TOP', chiplet: 'top/a', opacity: 1, visible: true },
+        { layer: 'UBM', chiplet: 'top/a', opacity: 1, visible: true },
+        { layer: 'M_TOP', chiplet: 'top/b', opacity: 1, visible: true },
+        { layer: 'UBM', chiplet: 'top/b', opacity: 1, visible: false },
     ];
 
-    it('requests and composites each distinct layer once, in order', async () => {
-        const { wm, kit, source } = composite({ getItems: () => copies });
+    it('requests and composites each shown row, in order', async () => {
+        const { wm, kit, source } = composite({ getItems: () => rows });
         const h = source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.layer),
-                         ['_instances', 'M_TOP', 'UBM']);
+        assert.deepEqual(wm.sent.map((s) => [s.msg.layer, s.msg.chiplet]),
+                         [['_instances', undefined], ['M_TOP', 'top/a'],
+                          ['UBM', 'top/a'], ['M_TOP', 'top/b']]);
         for (const layer of ['_instances', 'M_TOP', 'UBM']) {
             wm.reply(layer, layer);
         }
         await h.promise;
         assert.deepEqual(kit.draws.filter((d) => d !== 'clear'),
-                         ['_instances', 'M_TOP', 'UBM']);
+                         ['_instances', 'M_TOP', 'UBM', 'M_TOP']);
     });
 
-    it('keeps a layer while any copy of it is visible', () => {
-        const items = [{ layer: 'M_TOP', opacity: 1, visible: false },
-                       { layer: 'M_TOP', opacity: 1, visible: true }];
+    // Two dies can share a layer name; each row asks for its own die.
+    it('asks each shown row for its own die', () => {
+        const items = [{ layer: 'M_TOP', chiplet: 'top/a', opacity: 1,
+                         visible: false },
+                       { layer: 'M_TOP', chiplet: 'top/b', opacity: 1,
+                         visible: true }];
         const { wm, source } = composite({ getItems: () => items });
         source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.layer), ['M_TOP']);
+        assert.deepEqual(wm.sent.map((s) => [s.msg.layer, s.msg.chiplet]),
+                         [['M_TOP', 'top/b']]);
     });
 
     // The draw list holds each chiplet's layers as a block: hiding a layer in
-    // one chiplet must not lift it above the next one in the stack.
+    // one chiplet must not lift the other chiplet's copy out of its block.
     it('keeps the stacking order when a layer is hidden in one chiplet', () => {
-        const items = [{ layer: 'M1', opacity: 1, visible: false },   // chiplet A
-                       { layer: 'M2', opacity: 1, visible: true },
-                       { layer: 'M1', opacity: 1, visible: true },    // chiplet B
-                       { layer: 'M2', opacity: 1, visible: true }];
+        const items = [
+            { layer: 'M1', chiplet: 'top/a', opacity: 1, visible: false },
+            { layer: 'M2', chiplet: 'top/a', opacity: 1, visible: true },
+            { layer: 'M1', chiplet: 'top/b', opacity: 1, visible: true },
+            { layer: 'M2', chiplet: 'top/b', opacity: 1, visible: true },
+        ];
         const { wm, source } = composite({ getItems: () => items });
         source.load({ z: 1, x: 0, y: 0 });
-        assert.deepEqual(wm.sent.map((s) => s.msg.layer), ['M1', 'M2']);
+        assert.deepEqual(wm.sent.map((s) => [s.msg.layer, s.msg.chiplet]),
+                         [['M2', 'top/a'], ['M1', 'top/b'], ['M2', 'top/b']]);
     });
 });
 
@@ -286,6 +294,33 @@ describe('createCompositeSource with layer extents', () => {
         source.load({ z: 1, x: 0, y: 0 });
         assert.deepEqual(wm.sent.slice(1).map((s) => s.msg.layer),
                          ['_instances', 'metal1']);
+    });
+
+    // Each row asks by its own die, and only where that die has the layer.
+    it('skips a row outside its own die', () => {
+        const extents = new LayerExtents();
+        extents.apply(extents.invalidate(), {
+            supported: true,
+            layers: {},
+            chiplets: {
+                'top/die0': { outline: [], layers: { metal1: [0, 0, 0.5, 1] } },
+                'top/die1': { outline: [], layers: { metal1: [0.5, 0, 1, 1] } },
+            },
+        });
+        const rows = [
+            { layer: 'metal1', chiplet: 'top/die0', opacity: 1, visible: true },
+            { layer: 'metal1', chiplet: 'top/die1', opacity: 1, visible: true },
+        ];
+        const { wm, source } = composite({
+            ctx: { ...ctx, app: { layerExtents: extents } },
+            getItems: () => rows,
+        });
+        source.load({ z: 2, x: 0, y: 0 });
+        assert.deepEqual(wm.sent.map((s) => [s.msg.layer, s.msg.chiplet]),
+                         [['metal1', 'top/die0']]);
+        source.load({ z: 2, x: 3, y: 0 });
+        assert.deepEqual(wm.sent.map((s) => [s.msg.layer, s.msg.chiplet]),
+                         [['metal1', 'top/die0'], ['metal1', 'top/die1']]);
     });
 
     it('completes a tile whose layers are all ruled out, without requests',
@@ -394,5 +429,50 @@ describe('tile requests', () => {
         const build = tileRequestBuilder(coords, tctx, 1, 240);
         assert.equal(build('metal2').pattern, 3);
         assert.equal(build('metal1').pattern, undefined);
+    });
+
+    // Two dies can share a layer name (#11886); a row's tiles draw its die.
+    it('scopes a row to its die and keys its pattern by row', () => {
+        const rowCtx = {
+            ...tctx,
+            app: {
+                layerPatterns: { M1: 3, 'layers_parent/die0/M1': 2 },
+                chipletHiddenLayers: { 'top/die1': ['M1'] },
+            },
+        };
+        const req = tileRequestBuilder(coords, rowCtx, 1, 240)(
+            'M1', { chiplet: 'top/die0', rowId: 'layers_parent/die0/M1' });
+        assert.equal(req.chiplet, 'top/die0');
+        assert.equal(req.pattern, 2, 'the row\'s own pattern wins');
+        assert.equal('chiplet_hidden_layers' in req, false,
+                     'a row cannot draw a die it does not belong to');
+    });
+
+    it('sends per-die hidden layers only on unscoped tiles that have any',
+       () => {
+           const hidden = { 'top/die0': ['M1'] };
+           const withHidden = { ...tctx, app: { chipletHiddenLayers: hidden } };
+           assert.deepEqual(
+               tileRequestBuilder(coords, withHidden, 1, 240)('_pins')
+                   .chiplet_hidden_layers,
+               hidden);
+           const none = { ...tctx, app: { chipletHiddenLayers: {} } };
+           const req = tileRequestBuilder(coords, none, 1, 240)('_pins');
+           assert.equal('chiplet_hidden_layers' in req, false);
+           assert.equal('chiplet' in req, false);
+       });
+
+    // Debug tiles skip the server cache, so only they carry the host flag.
+    it('marks the renderer host only while the renderers draw', () => {
+        const row = { chiplet: 'top/die0', rendererHost: true };
+        const off = tileRequestBuilder(coords, tctx, 1, 240)('M1', row);
+        assert.equal('renderer_host' in off, false);
+        const debugCtx = {
+            ...tctx, visibility: { ...tctx.visibility, debug_renderers: true },
+        };
+        const build = tileRequestBuilder(coords, debugCtx, 1, 240);
+        assert.equal(build('M1', row).renderer_host, true);
+        assert.equal('renderer_host' in build('M1', { chiplet: 'top/die1' }),
+                     false);
     });
 });

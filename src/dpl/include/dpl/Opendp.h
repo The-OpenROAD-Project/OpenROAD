@@ -28,6 +28,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+namespace odb {
+class dbBlockCallBackObj;
+}
+
 namespace dpl {
 
 class Node;
@@ -108,6 +112,7 @@ class Opendp
   // site_search_window/row_search_window/drc_penalty use a negative value to
   // mean "unset" (use the negotiation legalizer's own default); 0 is a valid
   // explicit value for all three.
+  // pdn_aware enables fixed supply via checking.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
@@ -117,7 +122,8 @@ class Opendp
                          int row_search_window = -1,
                          double drc_penalty = -1.0,
                          bool disable_window_extension = false,
-                         bool quiet = false);
+                         bool quiet = false,
+                         bool pdn_aware = false);
   // C++ equivalent of `detailed_placement -quiet`.
   void detailedPlacementQuiet();
   void reportLegalizationStats() const;
@@ -230,7 +236,10 @@ class Opendp
   bool isMultiRow(const Node* cell) const;
   void updateDbInstLocations();
 
-  void initGrid();
+  void initGrid(bool check_fixed_supply_vias = false);
+
+  // Return whether fixed supply via checks are enabled for the current block.
+  bool isPdnAwareForCurrentBlock();
 
   void initPlacementDRC();
 
@@ -319,7 +328,8 @@ class Opendp
                     const std::vector<Node*>& region_placement_failures,
                     const std::vector<Node*>& placement_failures,
                     const std::vector<Node*>& edge_spacing_failures,
-                    const std::vector<Node*>& blocked_layers_failures);
+                    const std::vector<Node*>& blocked_layers_failures,
+                    const std::vector<Node*>& fixed_supply_via_failures);
   void writeJsonReport(const std::string& filename);
 
   void rectDist(const Node* cell,
@@ -421,6 +431,9 @@ class Opendp
   int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_diamond_legalizer_ = false;
+  bool pdn_aware_ = false;
+  odb::dbBlock* pdn_aware_block_ = nullptr;
+  std::unique_ptr<odb::dbBlockCallBackObj> pdn_aware_block_observer_;
   bool quiet_ = false;
   int total_moves_ = 0;
   // Counters for reporting

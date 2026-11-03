@@ -182,6 +182,11 @@ export function buildVisibilityFlags(visibility, selectability) {
     return vf;
 }
 
+// Whether an object map such as app.chipletHiddenLayers has any key.
+export function hasEntries(map) {
+    return !!map && Object.keys(map).length > 0;
+}
+
 // Pure builder for the tile-request payload. `ctx` carries the per-layer
 // visibility/selectability context.
 //
@@ -189,8 +194,12 @@ export function buildVisibilityFlags(visibility, selectability) {
 // so the wire schema stays uniform with selectAt requests.
 //
 // `dpr` is passed in rather than read here so a caller can override it without
-// this module knowing anything about why.  Returns `layerName => request`,
-// with the fields every layer shares built once.
+// this module knowing anything about why.  Returns `(layerName, row) =>
+// request`, with the fields every layer shares built once.
+//
+// `row` is the Display Controls row asking: `chiplet` is the die it draws (two
+// dies can share a layer name), `rowId` keys its fill pattern and
+// `rendererHost` marks the row that carries the renderers' layer pass.
 export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
     const { visibility, selectability, visibleLayers, selectableLayers, app }
         = ctx;
@@ -206,9 +215,20 @@ export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
     if (app && app.visibleChiplets instanceof Set) {
         shared.visible_chiplets = [...app.visibleChiplets];
     }
-    return (layerName) => {
+    return (layerName, row = {}) => {
         const req = { type: 'tile', layer: layerName, ...shared };
-        const p = layerPattern(app, layerName);
+        // A row is only requested while it is checked, so a die's exceptions
+        // cannot change its pixels; leaving them out keeps its cache key stable.
+        if (row.chiplet) {
+            req.chiplet = row.chiplet;
+        } else if (app && hasEntries(app.chipletHiddenLayers)) {
+            req.chiplet_hidden_layers = app.chipletHiddenLayers;
+        }
+        // Debug tiles skip the cache, so this flag cannot fragment it.
+        if (row.rendererHost && shared.debug_renderers) {
+            req.renderer_host = true;
+        }
+        const p = layerPattern(app, row.rowId ?? layerName);
         if (p !== 1) {
             req.pattern = p;
         }
@@ -216,11 +236,11 @@ export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
     };
 }
 
-// Per-layer fill pattern (int matching the server's FillPattern enum; 1 =
-// solid). Read lazily so a change via the layer context menu is picked up on
-// the next refresh without rebuilding the layer.
-function layerPattern(app, layerName) {
-    const p = app && app.layerPatterns ? app.layerPatterns[layerName] : undefined;
+// Fill pattern of a Display Controls row (int matching the server's
+// FillPattern enum; 1 = solid), read on every request so a change via the
+// layer context menu is picked up on the next refresh.
+function layerPattern(app, rowId) {
+    const p = app && app.layerPatterns ? app.layerPatterns[rowId] : undefined;
     return p === undefined ? 1 : p;
 }
 

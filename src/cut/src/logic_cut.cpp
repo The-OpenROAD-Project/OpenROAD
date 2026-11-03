@@ -24,6 +24,7 @@
 #include "misc/vec/vecPtr.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
@@ -137,29 +138,56 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     sta::LibertyCell* cell = network->libertyCell(instance);
     std::string cell_name = cell->name();
 
-    // Need to check for const cells since the Mio_Library_t* filters out
-    // const cells.
-    if (abc_library.IsConst0Cell(cell_name)) {
-      cell_name = abc::Mio_LibraryReadConst0(library)->pName;
-    }
+    int connected_outputs = 0;
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network->pinIterator(instance));
+    while (pin_iter->hasNext()) {
+      sta::Pin* pin = pin_iter->next();
 
-    if (abc_library.IsConst1Cell(cell_name)) {
-      cell_name = abc::Mio_LibraryReadConst1(library)->pName;
-    }
+      if (!network->net(pin) || !network->direction(pin)->isOutput()) {
+        continue;
+      }
 
-    // Is a regular standard cell
-    if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
-      logger->error(utl::CUT,
-                    24,
-                    "cell: {} was not found in the ABC library. Please report "
-                    "this internal error.",
-                    cell_name);
+      if (++connected_outputs > 1) {
+        logger->error(
+            utl::CUT,
+            50,
+            "Instance {} of type {} has more than one output connected. "
+            "Multioutput cells with more than one output used are not "
+            "supported.",
+            network->name(instance),
+            cell_name);
+      }
+
+      sta::LibertyPort* port = network->libertyPort(pin);
+      std::string port_name = port->name();
+
+      // Need to check for const cells since the Mio_Library_t* filters out
+      // const cells.
+      if (abc_library.IsConst0Port(cell_name, port_name)) {
+        cell_name = abc::Mio_LibraryReadConst0(library)->pName;
+      }
+
+      if (abc_library.IsConst1Port(cell_name, port_name)) {
+        cell_name = abc::Mio_LibraryReadConst1(library)->pName;
+      }
+
+      // Is a regular standard cell
+      if (cell_name_to_mio.find(cell_name) == cell_name_to_mio.end()) {
+        logger->error(
+            utl::CUT,
+            24,
+            "cell: {} was not found in the ABC library. Please report "
+            "this internal error.",
+            cell_name);
+      }
+      abc::Abc_Obj_t* abc_cell = abc::Abc_NtkCreateNode(&abc_network);
+      abc::Abc_ObjSetData(abc_cell, cell_name_to_mio.at(cell_name));
+      std::string instance_name = network->name(instance);
+      abc::Abc_ObjAssignName(
+          abc_cell, instance_name.data(), /*pSuffix=*/nullptr);
+      instance_map[instance] = abc_cell;
     }
-    abc::Abc_Obj_t* abc_cell = abc::Abc_NtkCreateNode(&abc_network);
-    abc::Abc_ObjSetData(abc_cell, cell_name_to_mio.at(cell_name));
-    std::string instance_name = network->name(instance);
-    abc::Abc_ObjAssignName(abc_cell, instance_name.data(), /*pSuffix=*/nullptr);
-    instance_map[instance] = abc_cell;
   }
 
   return instance_map;

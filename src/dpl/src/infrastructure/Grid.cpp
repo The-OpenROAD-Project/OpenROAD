@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "boost/geometry/index/predicates.hpp"
 #include "boost/polygon/polygon.hpp"  // NOLINT(misc-include-cleaner) Boost polygon headers require a specific include order.
 #include "boost/polygon/polygon_90_set_data.hpp"
 #include "boost/polygon/rectangle_concept.hpp"
@@ -179,7 +180,9 @@ void Grid::markBlocked(odb::dbBlock* block)
   // Stripe metal per level, and via/patch metal per level.  The via/patch
   // metal lying outside the stripes can short to pins on the same layer.
   std::vector<gtl::polygon_90_set_data<int>> wire_metal(kMaxPinLevel + 1);
-  std::vector<gtl::polygon_90_set_data<int>> via_metal(kMaxPinLevel + 1);
+  // via_metal is kept per net so pins on the same net are not blocked.
+  using LevelMetal = std::vector<gtl::polygon_90_set_data<int>>;
+  std::vector<std::pair<odb::dbNet*, LevelMetal>> via_metal;
   auto addRect = [](gtl::polygon_90_set_data<int>& set, const odb::Rect& r) {
     set += gtl::rectangle_data<int>{r.xMin(), r.yMin(), r.xMax(), r.yMax()};
   };
@@ -189,6 +192,8 @@ void Grid::markBlocked(odb::dbBlock* block)
     if (!net->isSpecial()) {
       continue;
     }
+    LevelMetal& net_via_metal
+        = via_metal.emplace_back(net, LevelMetal(kMaxPinLevel + 1)).second;
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* sbox : swire->getWires()) {
         if (sbox->isVia()) {
@@ -197,7 +202,7 @@ void Grid::markBlocked(odb::dbBlock* block)
           for (const odb::dbShape& shape : via_shapes) {
             const int level = getLevel(shape.getTechLayer());
             if (level > 0) {
-              addRect(via_metal[level], shape.getBox());
+              addRect(net_via_metal[level], shape.getBox());
             }
           }
           continue;
@@ -208,7 +213,7 @@ void Grid::markBlocked(odb::dbBlock* block)
           continue;
         }
         if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
-          addRect(via_metal[level], wire_rect);
+          addRect(net_via_metal[level], wire_rect);
           continue;
         }
         addRect(wire_metal[level], wire_rect);
@@ -224,28 +229,29 @@ void Grid::markBlocked(odb::dbBlock* block)
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (int level = 1; level <= kMaxPinLevel; level++) {
-    via_metal[level] -= wire_metal[level];
-    rects.clear();
-    via_metal[level].get_rectangles(rects);
     // A pin closer than min spacing to the metal is a violation the router
     // can't fix, so grow the blockage to just short of min spacing.
     odb::dbTechLayer* layer = block->getTech()->findRoutingLayer(level);
     const int bloat = layer ? std::max(layer->getSpacing() - 1, 0) : 0;
-    std::vector<odb::Rect> blockages;
-    blockages.reserve(rects.size());
-    for (const auto& rect : rects) {
-      odb::Rect blockage;
-      odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect))
-          .bloat(bloat, blockage);
-      // The pixels are a coarse filter; overlapsPinBlockage is exact
-      markPixels(blockage, [level](Pixel& pixel) {
-        pixel.blocked_pin_layers |= 1 << level;
-      });
-      blockage.moveDelta(-core.xMin(), -core.yMin());
-      blockages.push_back(blockage);
+    std::vector<NetRect> blockages;
+    for (auto& [net, net_via_metal] : via_metal) {
+      net_via_metal[level] -= wire_metal[level];
+      rects.clear();
+      net_via_metal[level].get_rectangles(rects);
+      for (const auto& rect : rects) {
+        odb::Rect blockage;
+        odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect))
+            .bloat(bloat, blockage);
+        // The pixels are a coarse filter; overlapsPinBlockage is exact
+        markPixels(blockage, [level](Pixel& pixel) {
+          pixel.blocked_pin_layers |= 1 << level;
+        });
+        blockage.moveDelta(-core.xMin(), -core.yMin());
+        blockages.emplace_back(blockage, net);
+      }
     }
     // Bulk loading packs the tree
-    pin_blockages_[level] = RectTree(blockages);
+    pin_blockages_[level] = NetRectTree(blockages);
   }
 
   for (odb::dbBlockage* blockage : block->getBlockages()) {
@@ -272,10 +278,17 @@ void Grid::markBlocked(odb::dbBlock* block)
   }
 }
 
-bool Grid::overlapsPinBlockage(const int level, const odb::Rect& rect) const
+bool Grid::overlapsPinBlockage(const int level,
+                               const odb::Rect& rect,
+                               const odb::dbNet* pin_net) const
 {
-  const RectTree& tree = pin_blockages_[level];
-  return tree.qbegin(boost::geometry::index::intersects(rect)) != tree.qend();
+  const NetRectTree& tree = pin_blockages_[level];
+  return tree.qbegin(boost::geometry::index::intersects(rect)
+                     && boost::geometry::index::satisfies(
+                         [pin_net](const NetRect& blockage) {
+                           return blockage.second != pin_net;
+                         }))
+         != tree.qend();
 }
 
 void Grid::initGrid(odb::dbDatabase* db,

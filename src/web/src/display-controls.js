@@ -47,6 +47,23 @@ export function anyGroupOn(groups, visibility) {
         (group) => group.every((key) => !!visibility[key]));
 }
 
+// Rows switched off on one die while another die still shows the same name, as
+// { chipletPath: [names] }: what the name union in `shownNames` cannot say.
+// `rows` is [{ path, name, on }]; a row with no path (old backend) is skipped.
+export function chipletLayerExceptions(rows, shownNames) {
+    const out = {};
+    for (const { path, name, on } of rows) {
+        if (on || !path || !shownNames.has(name)) {
+            continue;
+        }
+        if (!out[path]) {
+            out[path] = [];
+        }
+        out[path].push(name);
+    }
+    return out;
+}
+
 // Build the CheckboxTreeModel input for the Chiplets group.  Each
 // `chipletData` entry comes from the backend serializeTechResponse and
 // has shape { path, name, parent, master, depth }.  `savedHidden` is the
@@ -129,8 +146,12 @@ export function populateDisplayControls(app, visibility, selectability,
     // alpha displayControls.cpp gives the Qt GUI's brush.  Dimming the layer on
     // top of that would apply the transparency a second time and render the
     // layout darker than the Qt GUI.
-    function makeRoutingLayer(name) {
-        return { layer: name, opacity: 1, visible: false };
+    //
+    // `row` is the Display Controls row ({ chiplet, rowId, rendererHost }) and
+    // becomes the draw item, so its tiles draw only its die: two dies sharing
+    // a layer name show, hide and stack independently.
+    function makeRoutingLayer(name, row) {
+        return Object.assign(row, { layer: name, opacity: 1, visible: false });
     }
 
     // Only a real change dirties the slot: the tree's onChange re-asserts the
@@ -208,7 +229,7 @@ export function populateDisplayControls(app, visibility, selectability,
         }
     } catch (_) { /* ignore */ }
 
-    // Restore saved per-layer fill patterns (raw layer name → FillPattern int).
+    // Restore saved per-row fill patterns (row id → FillPattern int).
     // Kept in sessionStorage alongside the visibility/selectability sets so a
     // pattern survives the open-database reload but starts fresh in a new
     // session, matching the Qt GUI (review feedback on #10795).
@@ -226,12 +247,56 @@ export function populateDisplayControls(app, visibility, selectability,
         } catch (_) { /* ignore */ }
     }
 
-    // Apply a fill pattern to one layer and refresh the slot that draws it.
-    function setLayerPattern(name, value) {
+    // A pattern saved under a raw layer name (a display state written by an
+    // older binary) goes to every row of that name before its first tile.
+    const namePatternKeys = new Set();
+    function adoptNamePattern(rowId, name) {
+        const p = app.layerPatterns[name];
+        if (p === undefined) {
+            return;
+        }
+        namePatternKeys.add(name);
+        if (!(rowId in app.layerPatterns)) {
+            app.layerPatterns[rowId] = p;
+        }
+    }
+
+    // The renderers' per-layer pass knows nothing of dies, so it goes on one
+    // row per name: the first shown in paint order.
+    const hostedNames = new Set();
+    function claimRendererHost(name, visible) {
+        if (!visible || hostedNames.has(name)) {
+            return false;
+        }
+        hostedNames.add(name);
+        return true;
+    }
+
+    // One routing row: its draw item, shown unless the session hid it, and its
+    // tree node with `data` added to the common fields.
+    function makeLayerRow(name, id, chiplet, data) {
+        adoptNamePattern(id, name);
+        const visible = !savedHiddenLayers.has(id);
+        const row = { chiplet, rowId: id,
+                      rendererHost: claimRendererHost(name, visible) };
+        const layer = makeRoutingLayer(name, row);
+        if (visible) {
+            setRoutingVisible(layer, true);
+            app.visibleLayers.add(id);
+            app.visibleLayerNames.add(name);
+        }
+        routingLayers.push(layer);
+        layerIds.push(id);
+        return { id, data: { name, layer, row, nodeId: id, ...data },
+                 checked: visible };
+    }
+
+    // Apply a fill pattern to one row and refresh the slot that draws it.
+    function setLayerPattern(rowId, value) {
         if (value === 1) {
-            delete app.layerPatterns[name];
+            delete app.layerPatterns[rowId];
         } else {
-            app.layerPatterns[name] = value;
+            app.layerPatterns[rowId] = value;
         }
         persistLayerPatterns();
         // or_layer_patterns is part of the saved display state.
@@ -310,33 +375,19 @@ export function populateDisplayControls(app, visibility, selectability,
             const order = flipped
                 ? layers.map((_, i) => i).reverse()
                 : layers.map((_, i) => i);
+            // This die's (or folder's) rows in tech order, for the layer menu.
+            const techRows = layers.map(
+                (layerObj) => `${parentId}/${layerObj.name || layerObj}`);
             order.forEach((idx) => {
                 const layerObj = layers[idx];
-                const name = layerObj.name || layerObj;
-                const slot = paletteBase + idx;
-                const layer = makeRoutingLayer(name);
-
-                const id = `${parentId}/${name}`;
-
-                const visible = !savedHiddenLayers.has(id);
-                if (visible) {
-                    setRoutingVisible(layer, true);
-                    app.visibleLayers.add(id);
-                    app.visibleLayerNames.add(name);
-                }
-                routingLayers.push(layer);
-
-                layerIds.push(id);
-                children.push({
-                    id,
-                    // ownerChipletPath, not chipletPath: the latter means
-                    // "this node IS that chiplet" and drives the Chiplets
-                    // panel sync, which must only ever see group nodes.
-                    data: { name, layer, color: layerObj.color,
-                            colorIndex: slot, nodeId: id,
-                            ownerChipletPath: chipletPath },
-                    checked: visible,
-                });
+                // ownerChipletPath, not chipletPath: the latter means "this
+                // node IS that chiplet" and drives the Chiplets panel sync,
+                // which must only ever see group nodes.
+                children.push(makeLayerRow(
+                    layerObj.name || layerObj, techRows[idx], chipletPath,
+                    { color: layerObj.color, colorIndex: paletteBase + idx,
+                      techRows, techIndex: idx,
+                      ownerChipletPath: chipletPath }));
             });
         }
 
@@ -382,25 +433,21 @@ export function populateDisplayControls(app, visibility, selectability,
         layerSpec = buildLayerSpec(techData.layer_hierarchy, 'layers_parent');
     } else {
         // Fallback for old backends
+        const techRows = techData.layers.map(name => `layers_parent/${name}`);
         layerSpec = {
             id: 'layers_parent',
-            children: techData.layers.map((name, index) => {
-                const layer = makeRoutingLayer(name);
-
-                const id = `layers_parent/${name}`;
-
-                const visible = !savedHiddenLayers.has(id);
-                if (visible) {
-                    setRoutingVisible(layer, true);
-                    app.visibleLayers.add(id);
-                    app.visibleLayerNames.add(name);
-                }
-                routingLayers.push(layer);
-
-                layerIds.push(id);
-                return { id, data: { name, layer, colorIndex: index, nodeId: id }, checked: visible };
-            }),
+            children: techData.layers.map((name, index) => makeLayerRow(
+                name, techRows[index], undefined,
+                { colorIndex: index, techRows, techIndex: index })),
         };
+    }
+
+    // Every row has adopted its name's pattern by now, so the old keys can go.
+    if (namePatternKeys.size > 0) {
+        for (const name of namePatternKeys) {
+            delete app.layerPatterns[name];
+        }
+        persistLayerPatterns();
     }
 
     // ─── The slots ───────────────────────────────────────────────────────
@@ -430,7 +477,12 @@ export function populateDisplayControls(app, visibility, selectability,
     function mirrorForSelectability(node) {
         if (!node.children || node.children.length === 0) {
             const name = node.data && node.data.name;
-            const selectable = name ? !savedNonSelectableLayers.has(name) : true;
+            // Saved as row ids; a bare name is the older format, which held
+            // for every row of that name.
+            const selectable = name
+                ? !savedNonSelectableLayers.has(node.id)
+                  && !savedNonSelectableLayers.has(name)
+                : true;
             if (selectable && name) {
                 app.selectableLayers.add(name);
             }
@@ -443,6 +495,27 @@ export function populateDisplayControls(app, visibility, selectability,
         };
     }
     const layerSelSpec = mirrorForSelectability(layerSpec);
+
+    // The layer row behind a node of either tree, or null for group nodes.
+    function layerRowData(node) {
+        const visNode = layerModel.get(node.id);
+        return visNode && visNode.data && visNode.data.layer
+            ? visNode.data : null;
+    }
+
+    // What one model's layer rows switch off per die beyond `shownNames`, the
+    // name union the server also gets (see chipletLayerExceptions).
+    function layerExceptions(model, shownNames) {
+        const rows = [];
+        model.forEach(node => {
+            const data = layerRowData(node);
+            if (data) {
+                rows.push({ path: data.ownerChipletPath, name: data.name,
+                            on: node.checked });
+            }
+        });
+        return chipletLayerExceptions(rows, shownNames);
+    }
 
     const layerModel = new CheckboxTreeModel(() => {
         // Single pass over the tree: rebuild visibleLayerNames in place
@@ -466,6 +539,10 @@ export function populateDisplayControls(app, visibility, selectability,
         let visibilityChangedAny = false;
         const trackChiplets
             = chipletModel && app.visibleChiplets instanceof Set;
+        // { path, name, on } per row, for the per-die exceptions.
+        const rows = [];
+        // The walk is in paint order, so it re-picks the renderer hosts.
+        hostedNames.clear();
 
         layerModel.forEach(node => {
             if (node.cb) {
@@ -476,12 +553,18 @@ export function populateDisplayControls(app, visibility, selectability,
                 const id = node.data.nodeId || node.data.name;
                 allLayerIds.push(id);
                 setRoutingVisible(node.data.layer, node.checked);
+                rows.push({ path: node.data.ownerChipletPath,
+                            name: node.data.name, on: node.checked });
                 if (node.checked) {
                     app.visibleLayers.add(id);
                     app.visibleLayerNames.add(node.data.name);
                 } else {
                     app.visibleLayers.delete(id);
                 }
+                // The host only moves when a row of its name is shown or
+                // hidden, which already repaints the slot.
+                node.data.row.rendererHost
+                    = claimRendererHost(node.data.name, node.checked);
             }
             if (trackChiplets && node.data && node.data.chipletPath) {
                 const path = node.data.chipletPath;
@@ -506,11 +589,13 @@ export function populateDisplayControls(app, visibility, selectability,
                 }
             }
         });
+        app.chipletHiddenLayers
+            = chipletLayerExceptions(rows, app.visibleLayerNames);
         // One refresh per affected slot, after the whole walk: a group
         // toggle touches many nodes that share a slot.  Pins filter by
-        // visible_layers, which only changes when some routing entry flips,
-        // and so do the overlays that draw by them under the current
-        // visibility.
+        // visible_layers and the per-die exceptions, which only change when
+        // some routing entry flips, and so do the overlays that draw by them
+        // under the current visibility.
         if (app.baseSlot && dirtySlots.has(app.baseSlot)) {
             for (const { def, under } of app.overlayLayers) {
                 if (anyGroupOn(def.layers_by, visibility)) {
@@ -566,6 +651,9 @@ export function populateDisplayControls(app, visibility, selectability,
     
     app.layerModel = layerModel; // expose it so other rendering mechanism can use it
     layerModel.addFromSpec(layerSpec);
+    // addFromSpec fires no onChange, so the restored state is read here.
+    app.chipletHiddenLayers
+        = layerExceptions(layerModel, app.visibleLayerNames);
 
     // Parallel selectability model — picks gate on this set on the server.
     const layerSelModel = new CheckboxTreeModel(() => {
@@ -575,14 +663,25 @@ export function populateDisplayControls(app, visibility, selectability,
         // another M1 leaf is still checked).  Mutate in place — the
         // tile request context (app.tileCtx) captured this Set by reference.
         app.selectableLayers.clear();
+        const rows = [];
+        // Row ids, so one die's row does not carry the same name elsewhere.
+        const nonSel = [];
         layerSelModel.forEach(node => {
             if (node.checked && node.data && node.data.name) {
                 app.selectableLayers.add(node.data.name);
             }
+            const data = layerRowData(node);
+            if (data) {
+                rows.push({ path: data.ownerChipletPath, name: data.name,
+                            on: node.checked });
+                if (!node.checked) {
+                    nonSel.push(node.id);
+                }
+            }
         });
+        app.chipletNonselectableLayers
+            = chipletLayerExceptions(rows, app.selectableLayers);
         syncLayerSelDom();
-        const nonSel
-            = techData.layers.filter(n => !app.selectableLayers.has(n));
         try {
             window.sessionStorage.setItem(
                 'or_nonselectable_layers', JSON.stringify(nonSel));
@@ -592,6 +691,8 @@ export function populateDisplayControls(app, visibility, selectability,
         app.syncDisplayState?.();
     });
     layerSelModel.addFromSpec(layerSelSpec);
+    app.chipletNonselectableLayers
+        = layerExceptions(layerSelModel, app.selectableLayers);
 
     // Sync layer selectability DOM: visibility off disables the sel checkbox.
     function syncLayerSelDom() {
@@ -612,10 +713,10 @@ export function populateDisplayControls(app, visibility, selectability,
     contextMenu.style.display = 'none';
     document.body.appendChild(contextMenu);
 
-    function showOnlyLayers(indices) {
+    function showOnlyLayers(ids) {
         const updates = {};
-        layerIds.forEach((id, i) => {
-            if (id) updates[id] = indices.has(i);
+        layerIds.forEach((id) => {
+            if (id) updates[id] = ids.has(id);
         });
         layerModel.checkSet(updates);
     }
@@ -638,13 +739,12 @@ export function populateDisplayControls(app, visibility, selectability,
         contextMenu.appendChild(div);
     }
 
-    const n = routingLayers.length;
     const menuItems = [
-        { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
-        { label: 'Show layer range \u2195',   fn: (i) => layerRangeSet(i, 1, 1, n) },
-        { label: 'Show layer range \u2195\u2195', fn: (i) => layerRangeSet(i, 2, 2, n) },
-        { label: 'Show layer range \u2193',   fn: (i) => layerRangeSet(i, 1, 0, n) },
-        { label: 'Show layer range \u2191',   fn: (i) => layerRangeSet(i, 0, 1, n) },
+        { label: 'Show only this layer', lower: 0, upper: 0 },
+        { label: 'Show layer range \u2195', lower: 1, upper: 1 },
+        { label: 'Show layer range \u2195\u2195', lower: 2, upper: 2 },
+        { label: 'Show layer range \u2193', lower: 1, upper: 0 },
+        { label: 'Show layer range \u2191', lower: 0, upper: 1 },
     ];
 
     document.addEventListener('click', (e) => {
@@ -797,9 +897,16 @@ export function populateDisplayControls(app, visibility, selectability,
                 e.preventDefault();
                 e.stopPropagation();
                 contextMenu.innerHTML = '';
+                // Neighbours in the tech within this row's die or folder, as
+                // Qt's getLowerLayer/getUpperLayer: a flip changes paint order,
+                // not which layer is below.
+                const rows = node.data.techRows;
                 for (const item of menuItems) {
-                    addContextMenuItem(item.label,
-                        () => showOnlyLayers(item.fn(index)));
+                    addContextMenuItem(item.label, () => showOnlyLayers(
+                        new Set([...layerRangeSet(node.data.techIndex,
+                                                  item.lower, item.upper,
+                                                  rows.length)]
+                            .map(i => rows[i]))));
                 }
 
                 // Fill-pattern submenu: choosing one re-renders the base
@@ -809,12 +916,12 @@ export function populateDisplayControls(app, visibility, selectability,
                 sep.style.borderTop = '1px solid #555';
                 sep.style.margin = '4px 0';
                 contextMenu.appendChild(sep);
-                const current = app.layerPatterns[name] ?? 1;
+                const current = app.layerPatterns[node.id] ?? 1;
                 for (const opt of PATTERN_OPTIONS) {
                     const marker = current === opt.value ? '● ' : '   ';
                     addContextMenuItem(
                         marker + 'Fill: ' + opt.label,
-                        () => setLayerPattern(name, opt.value));
+                        () => setLayerPattern(node.id, opt.value));
                 }
 
                 contextMenu.style.left = e.clientX + 'px';
