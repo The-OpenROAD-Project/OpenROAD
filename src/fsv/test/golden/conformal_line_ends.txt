@@ -1,0 +1,9 @@
+# Two wires end to end, both wrapped by a high-k conformal dielectric whose
+# shells cover the line ends and cross a planar interface. 3D: the x extents
+# count. See fv2d_golden.py for the conformal line format.
+background 3.9
+layer 0.6 2.7
+layer 1.2 4.2
+box a 0 0 0.5 1.2 0.2 0.8
+box b 1.44 0 0.5 2.64 0.2 0.8
+conformal C 0.5 0.8 0.08 0.04 6.0

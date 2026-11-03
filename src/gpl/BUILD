@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
@@ -17,10 +15,8 @@ package(
 )
 
 # The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
-# Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
-# the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
-# src/gpl/CMakeLists.txt, keeping the two builds behaviorally identical.
-# hpwl.cpp stays a plain C++ TU in :gpl, also mirroring CMake.
+# Kokkos-free PIMPL headers, but it is compiled as CUDA along with them.
+# hpwl.cpp stays a plain C++ TU in :gpl.
 cc_library(
     name = "gpl_kokkos",
     srcs = [
@@ -79,7 +75,13 @@ cc_library(
         "-layering_check",
         "-parse_headers",
     ],
-    includes = ["include"],
+    # "src" lets the GPU sources include the gpl src/ headers listed above
+    # by bare name (nesterovBase.h, fftBackend.h, ...). :gpl_impl also
+    # exports this path but cannot be a dep here (cycle).
+    includes = [
+        "include",
+        "src",
+    ],
     local_defines = ["ENABLE_GPU"],
     # Keep wildcard builds (bazel build //...) CPU-clean; this target is
     # only reachable through :gpl under --//:gpu=cuda.
@@ -119,16 +121,17 @@ cc_library(
         "src/hpwlBackend.h",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
+        "src/ioPinBase.cpp",
         "src/mbff.cpp",
         "src/nesterovBase.cpp",
         "src/nesterovPlace.cpp",
         "src/placerBase.cpp",
+        "src/powerBase.cpp",
         "src/replace.cpp",
         "src/routeBase.cpp",
         "src/solver.cpp",
         "src/solver.h",
         "src/timingBase.cpp",
-        "src/timingBase.h",
         "src/wirelengthGradient.cpp",
         "src/wirelengthGradientBackend.h",
     ] + select({
@@ -153,12 +156,15 @@ cc_library(
         "src/fft.h",
         "src/fftBackend.h",
         "src/graphicsNone.h",
+        "src/ioPinBase.h",
         "src/mbff.h",
         "src/nesterovBase.h",
         "src/nesterovPlace.h",
         "src/placerBase.h",
         "src/point.h",
+        "src/powerBase.h",
         "src/routeBase.h",
+        "src/timingBase.h",
     ],
     copts = [
         "-fopenmp",
@@ -179,6 +185,7 @@ cc_library(
         "//src/dbSta:dbNetwork",
         "//src/grt",
         "//src/odb/src/db",
+        "//src/ppl",
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
@@ -244,38 +251,6 @@ cc_library(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
-cc_binary(
-    name = "_gpl.so",
-    srcs = [
-        ":swig-py",
-    ],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    includes = ["src"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        "//src/gpl",
-        "//src/odb/src/db",
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-# This packages the SWIG-generated Python wrapper (gpl.py) and the
-# compiled C++ extension (_gpl.so) together.
-py_library(
-    name = "gpl_py",
-    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
-    data = [":_gpl.so"],
-    # This allows imports relative to the workspace root.
-    imports = ["."],
-    visibility = ["//visibility:public"],
-)
-
 tcl_encode(
     name = "tcl",
     srcs = [
@@ -312,7 +287,7 @@ python_wrap_cc(
         "src/replace-py.i",
         "//:error_swig-py",
     ],
-    module = "gpl",
+    module = "gpl_py",
     root_swig_src = "src/replace-py.i",
     swig_includes = [
         "include",
@@ -335,4 +310,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/gpl/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":gpl"],
 )

@@ -6,24 +6,35 @@ to be stable enough that an alternate client (custom browser app,
 headless test driver, third-party visualization) can be implemented
 against it without reading the JavaScript reference frontend.
 
-The server exposes one HTTP route for static assets and one WebSocket
-endpoint for all dynamic operations. The WebSocket carries a small
-binary framing with JSON or PNG payloads.
+The server exposes HTTP routes for its embedded assets and a layout
+image, and one WebSocket endpoint for all dynamic operations. The
+WebSocket carries a small binary framing with JSON or PNG payloads.
 
 ## Connecting
 
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
-- HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+- HTTP `GET` serves the three assets embedded in the binary: `/` (or
+  `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
+  string or fragment is ignored. `GET /download/image` renders a PNG of
+  the layout from its query parameters. Anything else is 404, and no
+  method other than GET is supported.
+- The assets are stored gzipped. When `Accept-Encoding` allows
+  gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
+  wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- `GET /download/image` answers 404 when no design is loaded, 400 for a
+  malformed `bbox`, and 500 when the render fails.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
 ## Wire frame format
 
-Every WebSocket message — both client→server and server→client — is a
-binary frame with the following layout:
+The two directions are not symmetric. A **request** is a plain UTF-8 JSON
+document sent as-is (the reference frontend uses `JSON.stringify`); it carries
+no header. A **response**, and every server push, is a binary frame with the
+following layout:
 
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |
@@ -137,7 +148,9 @@ Render a single 256×256 PNG tile of the layout.
 | `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
-| `visible_layers` | `string[]` | ✓ | Tech layers currently visible on the *pins* synthetic layer; empty array means hide all pin markers. |
+| `visible_layers` | `string[]` | ✓ | Tech layers currently visible, the union over the dies; an empty array hides them all. Read only by `_pins` and by the overlays whose `layers_by` group is on (see `tech`); every other tile ignores it, and it is left out of their cache key. |
+| `chiplet`        | `string` |    —     | Chiplet path (as in the `tech` response's `chiplets[].path`) of the die a tech-layer tile draws. Two dies can share a layer name; omitted draws every visible chiplet. |
+| `chiplet_hidden_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers hidden on that die only, while `visible_layers` still lists them. Read by the same tiles as `visible_layers`; a tech-layer tile names its die with `chiplet` instead. |
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
@@ -224,8 +237,25 @@ from `layers` (the `_`-prefixed pseudo layers) must always be requested,
 unless it is in `sized` below.
 Only design geometry is covered: tracks and the debug overlays also draw on
 layer tiles, so tiles are requested regardless while those are on.
-`supported` is false for multi-chiplet designs, and the client then
+`supported` is false when no chiplet has geometry, and the client then
 requests every tile.
+
+A multi-chiplet design leaves `layers` and `gated` empty and describes each
+die under `chiplets`, keyed by chiplet path, for the tiles a `chiplet` scopes
+to that die:
+```json
+"chiplets": {
+  "top/die0": {
+    "outline": [[x0, y0, x1, y1], …],
+    "layers": {"metal1": [x0, y0, x1, y1]},
+    "gated": {"inst_pins": {"metal1": [x0, y0, x1, y1]}, …}
+  }
+}
+```
+`outline` holds one box per edge of the die outline, which every layer tile of
+a die draws; such a tile can be skipped when it misses every edge as well as
+the die's `layers` and `gated` rects. A die or a layer it does not list must
+always be requested.
 
 A layer in `sized` draws only on features long enough on screen — the
 instance and pin names of `_inst_labels` need an instance at least
@@ -298,6 +328,8 @@ overlapping objects on repeated calls at the same point.
 | `dbu_y`          | `int`    |    ✓     | Y coordinate in DBU. |
 | `zoom`           | `int` or `double` | ✓ | Current Leaflet zoom level. Server truncates fractional values. |
 | `visible_layers` | `string[]`|    ✓    | Same semantics as `tile`. |
+| `chiplet_hidden_layers` | `object` | — | Same as `tile`: a layer hidden on one die is not picked there. |
+| `chiplet_nonselectable_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers made unselectable on that die only, while `selectable_layers` still lists them. |
 | *visibility flags* | `bool` |  per-flag default | Same as `tile`. |
 | `site_<name>`    | `bool`   |    —     | Same as `tile`. |
 

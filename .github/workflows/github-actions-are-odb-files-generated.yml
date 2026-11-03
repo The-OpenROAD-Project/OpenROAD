@@ -10,7 +10,9 @@ on:
 
 jobs:
   Are-Odb-Files-Generated:
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
+    env:
+      CLANG_FORMAT_VERSION: "23.1.2"
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -20,21 +22,22 @@ jobs:
       - name: setup
         run: |
           python3 -m venv venv
-          venv/bin/pip install jinja2==3.1.6
+          venv/bin/pip install jinja2==3.1.6 "clang-format==${CLANG_FORMAT_VERSION}"
       - name: Check that ODB Generated Files Are Up To Date
         run: |
           source venv/bin/activate
           cd src/odb/src/codeGenerator/
           ./generate
-          if [ -z "$(git status --porcelain)" ]; then
+          # Only src/odb: a reused self-hosted checkout can hold stale files elsewhere.
+          if [ -z "$(git status --porcelain -- :/src/odb)" ]; then
             exit 0
           else
             echo ::group::Non-Empty Git Status Oputput
-            git status --porcelain
+            git status --porcelain -- :/src/odb
             echo ::endgroup::
 
             echo ::group::Non-Empty Git Diff Oputput
-            git diff
+            git diff -- :/src/odb
             echo ::endgroup::
 
             printf "Your ODB generated files are out of date\n"

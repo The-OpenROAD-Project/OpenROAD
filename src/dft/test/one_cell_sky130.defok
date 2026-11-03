@@ -7,7 +7,7 @@ REGIONS 1 ;
     - region ( 0 0 ) ( 2000 2000 ) ;
 END REGIONS
 COMPONENTS 1 ;
-    - ff1 sky130_fd_sc_hd__sdfsbp_1 + PLACED ( 1000 1000 ) N + REGION region ;
+    - ff1 sky130_fd_sc_hd__sdfstp_1 + PLACED ( 1000 1000 ) N + REGION region ;
 END COMPONENTS
 PINS 6 ;
     - clock + NET clock + DIRECTION INPUT + USE SIGNAL ;

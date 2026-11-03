@@ -151,12 +151,14 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   float tempFanout;
   bool existMaxFanout;
 
-  // Check if top instance has fanout limit
+  // Get the tightest limit for the design across all modes.
   sta::Cell* top_cell = network_->cell(network_->topInstance());
-  openSta_->cmdMode()->sdc()->fanoutLimit(
-      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+  for (sta::Mode* mode : openSta_->modes()) {
+    mode->sdc()->fanoutLimit(
+        top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
@@ -175,28 +177,34 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return (existMaxFanout) ? fanout : 0;
+    return fanout == std::numeric_limits<int>::max() ? 0 : fanout;
   }
 
-  auto sdc = openSta_->cmdMode()->sdc();
+  // Get the tightest limit for the buffer across all modes.
+  for (sta::Mode* mode : openSta_->modes()) {
+    sta::Sdc* sdc = mode->sdc();
 
-  sdc->fanoutLimit(buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
+    sdc->fanoutLimit(
+        buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
+
+    sdc->fanoutLimit(
+        bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+    if (existMaxFanout) {
+      fanout = std::min(fanout, (int) tempFanout);
+    }
   }
 
-  sdc->fanoutLimit(bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
-  if (existMaxFanout) {
-    fanout = std::min(fanout, (int) tempFanout);
-  }
-
+  // Get the tightest limit from liberty, falling back to the library default.
   sta::LibertyPort* port = network_->libertyPort(buffer_port);
   port->fanoutLimit(sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   } else {
     port->libertyLibrary()->defaultMaxFanout(tempFanout, existMaxFanout);
-    if ((existMaxFanout)) {
+    if (existMaxFanout) {
       fanout = std::min(fanout, (int) tempFanout);
     }
   }
@@ -339,15 +347,24 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
-  auto sdc = openSta_->cmdMode()->sdc();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
-          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
-              && !sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
+          if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()) {
+            bool isLeafPin = false;
+            sta::Pin* staPin = network_->dbToSta(outputPin);
+            for (sta::Mode* mode : openSta_->modes()) {
+              if (mode->sdc()->isLeafPinClock(staPin)) {
+                isLeafPin = true;
+                break;
+              }
+            }
+            if (isLeafPin) {
+              continue;
+            }
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
@@ -1248,20 +1265,36 @@ void TritonCTS::populateTritonCTS()
     allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    staClockNets_ = openSta_->findClkNets();
-    sta::Sdc* sdc = openSta_->cmdMode()->sdc();
-    for (auto clk : sdc->clocks()) {
-      std::string clkName = clk->name();
-      odb::PtrSet<odb::dbNet> clkNets;
-      findClockRoots(clk, clkNets);
-      for (auto net : clkNets) {
-        if (allClkNets.find(net) != allClkNets.end()) {
-          logger_->error(
-              CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+    staClockNets_.clear();
+    for (sta::Mode* mode : openSta_->modes()) {
+      odb::PtrSet<odb::dbNet> modeStaClkNets = openSta_->findClkNets(mode);
+      staClockNets_.insert(modeStaClkNets.begin(), modeStaClkNets.end());
+    }
+    for (sta::Mode* mode : openSta_->modes()) {
+      sta::Sdc* sdc = mode->sdc();
+      // Modes share clock roots, so overlap is an error only within a mode.
+      odb::PtrSet<odb::dbNet> modeClkNets;
+      for (auto clk : sdc->clocks()) {
+        std::string clkName = clk->name();
+        odb::PtrSet<odb::dbNet> clkNets;
+        findClockRoots(clk, clkNets);
+        odb::PtrSet<odb::dbNet> newClkNets;
+        for (auto net : clkNets) {
+          if (modeClkNets.find(net) != modeClkNets.end()) {
+            logger_->error(
+                CTS, 114, "Clock {} overlaps a previous clock.", clkName);
+          }
+          if (allClkNets.find(net) == allClkNets.end()) {
+            newClkNets.insert(net);
+          }
         }
+        modeClkNets.insert(clkNets.begin(), clkNets.end());
+        if (newClkNets.empty()) {
+          continue;
+        }
+        clockNetsInfo.emplace_back(newClkNets, clkName);
+        allClkNets.insert(newClkNets.begin(), newClkNets.end());
       }
-      clockNetsInfo.emplace_back(clkNets, clkName);
-      allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
   // Seed with all existing instance positions to prevent clones from
@@ -2674,7 +2707,10 @@ ClockInst& TritonCTS::placeDummyCell(Clock& clockNet,
   }
   std::string cellName
       = options_->getDummyLoadPrefix() + std::to_string(dummyLoadIndex_++);
-  dummyInst = odb::dbInst::create(block_, master, cellName.c_str());
+  // In the module of the buffer it loads, so that it joins the buffer's
+  // output net there instead of across a module boundary.
+  dummyInst = odb::dbInst::create(
+      block_, master, cellName.c_str(), false, inst->getDbInst()->getModule());
   dummyInst->setSourceType(odb::dbSourceType::TIMING);
   dummyInst->setLocation(inst->getX(), inst->getY());
   dummyInst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
@@ -2701,6 +2737,13 @@ void TritonCTS::connectDummyCell(const ClockInst* inst,
   odb::dbNet* sinkNet = iTerm->getNet();
   odb::dbITerm* dummyInputPin = getFirstInput(dummyInst);
   dummyInputPin->connect(sinkNet);
+  // As for a sink: without it the hierarchical view leaves the dummy
+  // load off the net, and its capacitance is not seen once the database
+  // is read back.
+  if (network_->hasHierarchy()) {
+    network_->hierarchicalConnect(
+        iTerm, dummyInputPin, sinkNet->getConstName());
+  }
   dummyClock.setInputPinObj(dummyInputPin);
   subNet.addInst(dummyClock);
 }
@@ -2741,6 +2784,47 @@ void TritonCTS::repairClockNets()
   }
 }
 
+int TritonCTS::runLatencyBalancers(double capPerDBU,
+                                   double resPerDBU,
+                                   bool useful_skew)
+{
+  int totalDelayBuff = 0;
+  for (auto& builder : std::ranges::reverse_view(builders_)) {
+    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
+      LatencyBalancer balancer = LatencyBalancer(builder.get(),
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_.get(),
+                                                 capPerDBU,
+                                                 resPerDBU,
+                                                 useful_skew);
+      totalDelayBuff += balancer.run();
+    }
+  }
+  return totalDelayBuff;
+}
+
+double TritonCTS::getMaxDelayBufferDelay(double extra_out_cap)
+{
+  double max_delay = 0.0;
+  for (const std::string& buffer : options_->getDlyBufferList()) {
+    if (db_->findMaster(buffer.c_str()) == nullptr) {
+      continue;  // liberty-only cell, cannot be instantiated
+    }
+    const double delay
+        = techChar_->computeBufferDelay(buffer, buffer, extra_out_cap);
+    if (delay <= 0.0) {
+      continue;  // skip cells with no usable delay
+    }
+    max_delay = std::max(max_delay, delay);
+  }
+  return max_delay;
+}
+
 // Balance macro cell latencies with register latencies.
 // This is needed only if special insertion delay handling
 // is invoked.
@@ -2761,19 +2845,31 @@ void TritonCTS::balanceMacroRegisterLatencies()
   double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  for (auto& builder : std::ranges::reverse_view(builders_)) {
-    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-      LatencyBalancer balancer = LatencyBalancer(builder.get(),
-                                                 options_,
-                                                 logger_,
-                                                 db_,
-                                                 network_,
-                                                 openSta_,
-                                                 techChar_.get(),
-                                                 capPerDBU,
-                                                 resPerDBU);
-      totalDelayBuff += balancer.run();
+  const bool useful_skew = options_->applyUsefulSkew();
+
+  // Pass 1: classic latency balancing (always runs).
+  totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU, false);
+
+  if (useful_skew) {
+    // Calculate useful skew for all registers on RSZ
+    const double max_buf_delay = getMaxDelayBufferDelay(0.0);
+    if (max_buf_delay <= 0.0) {
+      logger_->warn(CTS, 300, "No usable delay buffer; skipping useful skew.");
+    } else {
+      rsz::Resizer::SkewBudgetOptions budget_opts;
+      budget_opts.one_sided = true;
+      budget_opts.paths_per_endpoint = 200;
+      budget_opts.quantum = 0;
+      budget_opts.max_skew = 8.0f * max_buf_delay;
+      resizer_->computeSkewBudget(budget_opts);
+
+      // Pass 2: realize the useful-skew schedule.
+      const int useful_skew_buffers
+          = runLatencyBalancers(capPerDBU, resPerDBU, true);
+      totalDelayBuff += useful_skew_buffers;
+      if (useful_skew_buffers == 0) {
+        logger_->warn(CTS, 231, "No useful skew delay buffers were inserted.");
+      }
     }
   }
   if (totalDelayBuff) {

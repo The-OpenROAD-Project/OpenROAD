@@ -58,6 +58,7 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
 }
 
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
@@ -88,6 +89,47 @@ odb::dbInst* ReplaceCell(
   }
   if (group) {
     group->addInst(new_instance);
+  }
+
+  for (odb::dbProperty* prop : odb::dbProperty::getProperties(old_instance)) {
+    const std::string name = prop->getName();
+    switch (prop->getType()) {
+      case odb::dbProperty::STRING_PROP:
+        odb::dbStringProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbStringProperty*>(prop)->getValue().c_str());
+        break;
+      case odb::dbProperty::BOOL_PROP:
+        odb::dbBoolProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbBoolProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::INT_PROP:
+        odb::dbIntProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbIntProperty*>(prop)->getValue());
+        break;
+      case odb::dbProperty::DOUBLE_PROP:
+        odb::dbDoubleProperty::create(
+            new_instance,
+            name.c_str(),
+            static_cast<odb::dbDoubleProperty*>(prop)->getValue());
+        break;
+    }
+  }
+
+  // Keep the activity annotations of the old pins on the new pins
+  for (odb::dbITerm* old_iterm : old_instance->getITerms()) {
+    auto mapped = port_mapping.find(old_iterm->getMTerm()->getName());
+    if (mapped != port_mapping.end()) {
+      odb::dbITerm* new_iterm = new_instance->findITerm(mapped->second.c_str());
+      if (new_iterm) {
+        sta->copyUserActivity(old_iterm, new_iterm);
+      }
+    }
   }
 
   // Delete the old cell

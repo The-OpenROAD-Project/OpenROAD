@@ -38,7 +38,7 @@ struct _dbNetFlags
   dbWireType::Value wire_type : 4;
   uint32_t special : 1;
   uint32_t wild_connect : 1;
-  uint32_t wire_ordered : 1;
+  uint32_t unused4 : 1;
   uint32_t disable_auto_taper : 1;
   uint32_t unused2 : 1;
   uint32_t spef : 1;

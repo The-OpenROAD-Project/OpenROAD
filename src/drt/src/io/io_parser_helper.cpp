@@ -679,9 +679,7 @@ void io::Parser::convertLef58MinCutConstraints()
     }
     for (auto con : layer->getLef58MinimumcutConstraints()) {
       auto dbRule = con->getODBRule();
-      std::unique_ptr<frConstraint> uCon
-          = std::make_unique<frMinimumcutConstraint>();
-      auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+      int num_cuts = dbRule->getNumCuts();
       if (dbRule->isPerCutClass()) {
         const frViaDef* viaDefBelow = nullptr;
         if (lNum > bottomLayerNum) {
@@ -692,19 +690,17 @@ void io::Parser::convertLef58MinCutConstraints()
           viaDefAbove = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
         }
         bool found = false;
-        rptr->setNumCuts(dbRule->getNumCuts());
         for (const auto& [cutclass, numcuts] : dbRule->getCutClassCutsMap()) {
           if (viaDefBelow && !dbRule->isFromAbove()
               && viaDefBelow->getCutClass()->getName() == cutclass) {
             found = true;
-            rptr->setNumCuts(numcuts);
+            num_cuts = numcuts;
             break;
           }
           if (viaDefAbove && !dbRule->isFromBelow()
               && viaDefAbove->getCutClass()->getName() == cutclass) {
             found = true;
-
-            rptr->setNumCuts(numcuts);
+            num_cuts = numcuts;
             break;
           }
         }
@@ -712,7 +708,15 @@ void io::Parser::convertLef58MinCutConstraints()
           continue;
         }
       }
+      // Every via has at least one cut, so a single-cut rule can't be violated.
+      if (num_cuts <= 1) {
+        continue;
+      }
 
+      std::unique_ptr<frConstraint> uCon
+          = std::make_unique<frMinimumcutConstraint>();
+      auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
+      rptr->setNumCuts(num_cuts);
       if (dbRule->isLengthValid()) {
         router_cfg_->MTSAFEDIST
             = std::max(router_cfg_->MTSAFEDIST, dbRule->getLengthWithinDist());

@@ -14,7 +14,7 @@
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.1 |     46 | resp_msg[13]
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
      147* |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -162.6 |     46 | resp_msg[13]
     final |       0 |      60 |        0 |      0 |     0 |    +0.0% |  -24.595 |     -162.6 |     18 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
@@ -42,8 +42,8 @@ Path Type: max
   16.79  168.68 v _417_/Y (AO32x1_ASAP7_75t_SL)
   19.90  188.58 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
   11.59  200.18 ^ output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  200.59 ^ resp_msg[13] (out)
-         200.59   data arrival time
+   0.42  200.60 ^ resp_msg[13] (out)
+         200.60   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -52,9 +52,9 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -200.59   data arrival time
+        -200.60   data arrival time
 ---------------------------------------------------------
-         -24.59   slack (VIOLATED)
+         -24.60   slack (VIOLATED)
 
 
 Startpoint: dpath.a_reg.out[6]$_DFFE_PP_
@@ -79,8 +79,8 @@ Path Type: max
   16.79  168.68 v _417_/Y (AO32x1_ASAP7_75t_SL)
   19.90  188.58 ^ _418_/Y (XOR2x2_ASAP7_75t_SL)
   11.59  200.18 ^ output41/Y (BUFx2_ASAP7_75t_SL)
-   0.42  200.59 ^ resp_msg[13] (out)
-         200.59   data arrival time
+   0.42  200.60 ^ resp_msg[13] (out)
+         200.60   data arrival time
 
  220.00  220.00   clock core_clock (rise edge)
    0.00  220.00   clock network delay (ideal)
@@ -89,9 +89,9 @@ Path Type: max
          176.00   data required time
 ---------------------------------------------------------
          176.00   data required time
-        -200.59   data arrival time
+        -200.60   data arrival time
 ---------------------------------------------------------
-         -24.59   slack (VIOLATED)
+         -24.60   slack (VIOLATED)
 
 
 Startpoint: dpath.b_reg.out[6]$_DFFE_PP_

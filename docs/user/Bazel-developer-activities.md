@@ -15,7 +15,7 @@ This document covers:
 
 For general Bazel usage (running tests, build configs, caching, ORFS details), see:
 
-- [Testing local changes with Bazel](Bazel.md)
+- [Building and testing with Bazel](Bazel.md)
 - [Bazel targets](Bazel-targets.md)
 - [Bazel Developer Guide: Caching](Bazel-caching.md)
 
@@ -77,10 +77,10 @@ Example validation steps:
     bazelisk test //src/<tool>/test:<new_test_target>
 
 The test target name is derived from the test file name with a suffix added
-based on type: Tcl tests get `_tcl` and Python tests get `_py`. For example,
-`src/grt/test/fastroute.tcl` becomes target `fastroute_tcl`, so you would run:
+based on type: Tcl tests get `-tcl_test` and Python tests get `-py_test`. For example,
+`src/grt/test/bus_route.tcl` becomes target `bus_route-tcl_test`, so you would run:
 
-    bazelisk test //src/grt/test:fastroute_tcl
+    bazelisk test //src/grt/test:bus_route-tcl_test
 
 Use the `bazelisk query` command above to list all test targets and find the
 exact name for any test in the subtree.

@@ -1,0 +1,26 @@
+# fsv 3D references from fv3d_golden.py, in fF.
+# Finite volumes at h = 0.04, 0.02, 0.01 µm,
+# extrapolated to h = 0; the extrapolation moves no entry by more
+# than 6.5e-03 of its row's total, and doubling the distance to
+# the grounded far boundaries (20 µm) moves none by more than
+# 1.5e-04.
+# <structure> <master> <net> <capacitance>; cap[master] is the total,
+# other entries are minus the coupling (Maxwell matrix).
+conformal_line_ends a a 0.189314
+conformal_line_ends a b -0.0379121
+conformal_line_ends a ground -0.151403
+conformal_line_ends b a -0.0379121
+conformal_line_ends b b 0.189314
+conformal_line_ends b ground -0.151403
+conformal_crossing m1 m1 0.225502
+conformal_crossing m1 m2 -0.0559535
+conformal_crossing m1 ground -0.169576
+conformal_crossing m2 m1 -0.0559535
+conformal_crossing m2 m2 0.212165
+conformal_crossing m2 ground -0.156223
+crossing m1 m1 0.279867
+crossing m1 m2 -0.0471983
+crossing m1 ground -0.232687
+crossing m2 m1 -0.0471983
+crossing m2 m2 0.210039
+crossing m2 ground -0.162851

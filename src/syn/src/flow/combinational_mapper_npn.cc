@@ -207,31 +207,32 @@ repolarize:
   }
 
   for (int ambi = 0; ambi < nbits; ambi = ((ambi | ambimask) + 1) & ~ambimask) {
-  next_round: {
-    Truth6 sc = 0;
-    for (int idx1 = 0; idx1 < nbits; idx1++) {
-      if (!(m & (Truth6) 1 << idx1)) {
-        continue;
-      }
-
-      int idx2 = 0;
-      for (int j = 0; j < ninputs; j++) {
-        int pj = order[j];
-        if ((!!(idx1 & 1 << pj)) ^ compls[pj] ^ !!(ambi & 1 << pj)) {
-          idx2 |= 1 << j;
+  next_round:
+    {
+      Truth6 sc = 0;
+      for (int idx1 = 0; idx1 < nbits; idx1++) {
+        if (!(m & (Truth6) 1 << idx1)) {
+          continue;
         }
+
+        int idx2 = 0;
+        for (int j = 0; j < ninputs; j++) {
+          int pj = order[j];
+          if ((!!(idx1 & 1 << pj)) ^ compls[pj] ^ !!(ambi & 1 << pj)) {
+            idx2 |= 1 << j;
+          }
+        }
+
+        sc |= (Truth6) 1 << idx2;
       }
 
-      sc |= (Truth6) 1 << idx2;
-    }
+      for (int i = 0; i < ninputs; i++) {
+        npn.input_complement[i] = compls[i] ^ !!(ambi & 1 << i);
+        npn.permutation[order[i]] = i;
+      }
 
-    for (int i = 0; i < ninputs; i++) {
-      npn.input_complement[i] = compls[i] ^ !!(ambi & 1 << i);
-      npn.permutation[order[i]] = i;
+      cb(sc, npn);
     }
-
-    cb(sc, npn);
-  }
 
     for (int j = ninputs - 2; j >= 0; j--) {
       if (tied[j]) {

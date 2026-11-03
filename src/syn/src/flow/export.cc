@@ -50,6 +50,9 @@ void exportToOdb(Graph& g,
     odb::dbBlock::destroy(block);
   }
   block = odb::dbBlock::create(chip, block_name);
+  // As dbReadVerilog does: write_def scales by the DEF units, whose default
+  // of 100 would round a design on a finer database grid.
+  block->setDefUnits(tech->getLefUnits());
   auto* network = sta->getDbNetwork();
 
   // Collect net names from Name instances

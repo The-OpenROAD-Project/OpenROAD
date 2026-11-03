@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -48,6 +48,9 @@ cc_library(
     hdrs = [
         "include/par/PartitionMgr.h",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     includes = [
         "include",
     ],
@@ -59,6 +62,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.range",
+        "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
     ],
@@ -146,4 +150,10 @@ messages_txt(
         "//docs:__pkg__",
         "//src/par/test:__pkg__",
     ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":par"],
 )

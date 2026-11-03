@@ -1,6 +1,7 @@
 # Files in this blacklist are ignored by fix_lint and fmt_yaml_test; remove a file from this list to enable formatting.
 
 # --- Section 1: Generated / Lockfiles (Never format) ---
+src/web/pnpm-lock.yaml
 src/web/test/pnpm-lock.yaml
 
 # --- Section 2: Existing YAML files (To be formatted in follow-up PRs) ---

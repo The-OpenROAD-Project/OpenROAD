@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <unordered_set>
+
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -64,6 +66,9 @@ class RepairHold : public sta::dbStaState
   void bufferHoldDelays(sta::LibertyCell* buffer,
                         // Return values.
                         sta::Delay delays[sta::RiseFall::index_count]);
+  // Hold slack at `end` of the paths being repaired: the selected path
+  // group's under `repair_timing -path_group`, every path's otherwise.
+  sta::Slack holdSlack(sta::Vertex* end) const;
   void findHoldViolations(sta::VertexSeq& ends,
                           double hold_margin,
                           // Return values.
@@ -86,6 +91,11 @@ class RepairHold : public sta::dbStaState
                       int max_buffer_count,
                       bool verbose,
                       int& pass);
+  // True if drvr_pin is part of the clock tree proper, i.e. it is in the
+  // clock network and (transitively) drives a clock sink.  Hold buffers
+  // must not be inserted on such nets: that would change clock latency.
+  bool isClockTreeDriver(const sta::Pin* drvr_pin);
+  void findClockTreePins();
   void repairEndHold(sta::Vertex* end_vertex,
                      sta::LibertyCell* buffer_cell,
                      double setup_margin,
@@ -111,7 +121,11 @@ class RepairHold : public sta::dbStaState
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  est::EstimateParasitics* estimate_parasitics_;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
+
+  // Clock-network pins that drive a clock sink.  Computed lazily.
+  std::unordered_set<const sta::Pin*> clk_tree_pins_;
+  bool clk_tree_pins_valid_ = false;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

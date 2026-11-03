@@ -54,10 +54,10 @@ check "interior cell by literal path" {
   get_full_name [lindex [get_cells chipA/ff] 0]
 } chipA/ff
 # Chiplet-scoped wildcard: enumerates the master block's nets
-# (clk d n1 n2 q).
+# (clk d n1 n2 q ext).
 check "interior nets by scoped wildcard" {
   llength [get_nets chipA/*]
-} 5
+} 6
 # Chiplet-scoped cell wildcards: the SDC path walk descends chip-insts
 # (real hierarchy), so patterns with dividers match interior instances.
 check "interior cells by scoped wildcard" {
@@ -72,6 +72,14 @@ check "cross-chiplet cell wildcard" {
 check "boundary port pin resolves to pad iterm" {
   get_full_name [lindex [get_pins chipA/clk] 0]
 } chipA/bump_clk/PAD
+
+# A chiplet's boundary bterms are reached as pins by net traversal and must
+# be nameable: dbNetwork::port() resolves them on the chip-inst's master
+# cell, not the stack's top cell (which has no such port). Covers a
+# bump-bound bterm (q) and one with no bump (ext, like a package-facing
+# port the bump map never names). Both used to segfault naming the pin.
+report_net chipA/q
+report_net chipA/ext
 
 proc chip_net_names { } {
   set names {}

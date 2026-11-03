@@ -1,9 +1,11 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@openroad-pip//:requirements.bzl", "requirement")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -41,7 +43,29 @@ JS_FILES = ["//src/web:js_files"]
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
+    "//src/web:node_modules/lit",
 ] + JS_FILES
+
+py_test(
+    name = "npm_lock_test",
+    srcs = ["npm_lock_test.py"],
+    data = [
+        "//src/web:package.json",
+        "//src/web:pnpm-lock.yaml",
+    ],
+    deps = [requirement("pyyaml")],
+)
+
+py_test(
+    name = "bundle_test",
+    srcs = ["bundle_test.py"],
+    data = JS_FILES + [
+        "//src/web:bundle/THIRD_PARTY_LICENSES.txt",
+        "//src/web:bundle/app.min.js",
+        "//src/web:bundle/index.html",
+        "//src/web:bundle/report.min.js",
+    ],
+)
 
 test_suite(
     name = "cpp_tests",
@@ -50,7 +74,9 @@ test_suite(
         ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":session_lifetime_test",
         ":tile_generator_test",
+        ":web_assets_test",
     ],
 )
 
@@ -79,6 +105,27 @@ js_test(
     name = "schematic_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-schematic-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "schematic_pins_test",
+    data = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:node_modules/netlistsvg",
+        "//src/web:src/openroad_skin.svg",
+    ],
+    entry_point = "js/test-schematic-pins.js",
+    no_copy_to_bin = [
+        "//src/web:esbuild.config.mjs",
+        "//src/web:src/openroad_skin.svg",
+    ],
+)
+
+js_test(
+    name = "three_subset_test",
+    data = JS_FILES + ["//src/web:node_modules/three"],
+    entry_point = "js/test-three-subset.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -114,6 +161,13 @@ js_test(
     name = "capture_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-capture.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ide_layout_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-ide-layout.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -379,6 +433,16 @@ cc_test(
 )
 
 cc_test(
+    name = "web_assets_test",
+    srcs = ["cpp/TestWebAssets.cpp"],
+    deps = [
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "request_handler_test",
     srcs = ["cpp/TestRequestHandler.cpp"],
     data = [
@@ -391,7 +455,21 @@ cc_test(
         "//src/web",
         "//src/web:core",
         "@boost.asio",
+        "@boost.beast",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "session_lifetime_test",
+    srcs = ["cpp/TestSessionLifetime.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/web",
+        "@boost.asio",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

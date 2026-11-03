@@ -22,9 +22,9 @@ export function currentDpr() {
 
 // Kept as a named export because main.js and the tests import it from here.
 // Delegates so the per-layer and merged paths cannot drift on the wire format.
-export function buildTileRequest(coords, layerName, ctx) {
+export function buildTileRequest(coords, layerName, ctx, row = {}) {
     return buildTileRequestFor(coords, layerName, ctx, currentDpr(),
-                               tileSizeCss());
+                               tileSizeCss(), row);
 }
 
 // `app` (last arg) is read lazily on every request so that
@@ -70,6 +70,9 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
         initialize: function(websocketManager, layerName, options) {
             this._websocketManager = websocketManager;
             this._layerName = layerName;
+            // The Display Controls row this pane draws (see buildTileRequestFor),
+            // shared with display-controls.js, which updates it in place.
+            this._row = (options && options.row) || {};
             L.GridLayer.prototype.initialize.call(
                 this, withDeviceExactTileSize(options));
         },
@@ -102,14 +105,15 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
             // when the tile is discarded (e.g. during zoom).
             tile._websocketRequestId = this._websocketManager.nextId;
 
-            if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+            if (!tileMayHaveContent(ctx, this._layerName, coords,
+                                    this._row.chiplet)) {
                 tile._websocketRequestId = undefined;
                 applyTilePayload(tile, null);
                 return tile;
             }
 
             this._websocketManager.request(
-                buildTileRequest(coords, this._layerName, ctx)
+                buildTileRequest(coords, this._layerName, ctx, this._row)
             ).then(data => {
                 applyTilePayload(tile, data);
             }).catch(err => {
@@ -139,7 +143,8 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                     this._websocketManager.cancel(tile._websocketRequestId);
                 }
 
-                if (!tileMayHaveContent(ctx, this._layerName, coords)) {
+                if (!tileMayHaveContent(ctx, this._layerName, coords,
+                                    this._row.chiplet)) {
                     tile._websocketRequestId = undefined;
                     applyTilePayload(tile, null);
                     continue;
@@ -148,7 +153,7 @@ export function createWebSocketTileLayer(visibility, visibleLayers,
                 tile._websocketRequestId = this._websocketManager.nextId;
 
                 this._websocketManager.request(
-                    buildTileRequest(coords, this._layerName, ctx)
+                    buildTileRequest(coords, this._layerName, ctx, this._row)
                 ).then(data => {
                     applyTilePayload(tile, data);
                 }).catch(err => {
