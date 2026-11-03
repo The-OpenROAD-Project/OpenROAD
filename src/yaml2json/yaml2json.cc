@@ -90,6 +90,9 @@ std::string formatFloat(const YAML::Node& node, const std::string& text)
   }
   char buf[64];
   const auto printed = std::to_chars(buf, buf + sizeof(buf), value);
+  if (printed.ec != std::errc()) {
+    fail(node, "cannot print float '" + text + "'");
+  }
   std::string out(buf, printed.ptr);
   if (out.find_first_of(".e") == std::string::npos) {
     out += ".0";
