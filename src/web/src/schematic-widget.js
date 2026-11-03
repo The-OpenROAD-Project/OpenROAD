@@ -54,7 +54,7 @@ export class SchematicWidget {
         this.container.element.appendChild(this.element);
 
         // Button listeners
-        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this.refresh());
+        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this._onRefresh());
         this.controls.querySelector('#schematic-fit').addEventListener('click', () => this.fitView());
         this.controls.querySelector('#schematic-zoom-in').addEventListener('click', () => this._zoomStep(1.5));
         this.controls.querySelector('#schematic-zoom-out').addEventListener('click', () => this._zoomStep(1 / 1.5));
@@ -349,7 +349,14 @@ export class SchematicWidget {
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
+    // Redraws the instance last asked for, including one a timing cone picked
+    // without selecting it.
+    _onRefresh() {
+        this.refresh(this._instName);
+    }
+
     refresh(instName = this.appState.selectedInstanceName) {
+        this._instName = instName;
         if (!this._netlistsvgReady) {
             this.setStatus(this._unreadyStatus());
             return;

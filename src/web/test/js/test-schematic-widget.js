@@ -332,6 +332,39 @@ describe('SchematicWidget.syncCone', () => {
     });
 });
 
+// The real refresh() on a stand-in, recording the instances it asks for.
+describe('SchematicWidget.refresh', () => {
+    function makeStub() {
+        const requested = [];
+        const stub = Object.create(SchematicWidget.prototype);
+        stub._netlistsvgReady = true;
+        stub.controls = document.createElement('div');
+        stub.controls.innerHTML =
+            '<input id="schematic-fanin-depth" value="1">' +
+            '<input id="schematic-fanout-depth" value="1">';
+        stub.setStatus = () => {};
+        stub.appState = {
+            selectedInstanceName: '',
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request(msg) {
+                    requested.push(msg.inst_name);
+                    return Promise.resolve({});
+                },
+            },
+        };
+        return { stub, requested };
+    }
+
+    it('redraws the instance a timing cone picked when Refresh is pressed', async () => {
+        const { stub, requested } = makeStub();
+        stub.refresh('b0');  // syncCone, for a path pin nothing selected
+        stub._onRefresh();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        assert.deepEqual(requested, ['b0', 'b0']);
+    });
+});
+
 // A stand-in again: building the widget needs a window.
 describe('SchematicWidget without netlistsvg', () => {
     function makeStub(isStaticMode) {

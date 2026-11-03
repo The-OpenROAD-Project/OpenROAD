@@ -140,6 +140,7 @@ export function createMenuBar(app) {
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: show('LayoutViewer') },
+            { label: 'Schematic', action: show('SchematicWidget') },
             { label: '3D Viewer', action: show('3DViewer') },
             { label: 'Display Controls', action: show('DisplayControls') },
             { label: 'Inspector', action: show('Inspector') },

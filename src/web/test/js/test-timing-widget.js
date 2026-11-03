@@ -5,6 +5,7 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { TimingWidget } from '../../src/timing-widget.js';
+import { beginSelection } from '../../src/ui-utils.js';
 
 // jsdom does not implement scrollIntoView; stub it so _selectPathRow runs.
 if (!window.HTMLElement.prototype.scrollIntoView) {
@@ -381,11 +382,24 @@ describe('TimingWidget cone target', () => {
         const app = createMockApp();
         const widget = makeWidget(app);
         widget._selectDetailRow(2);
+        beginSelection(app);
         app.selectedInstanceName = 'u9';
         const { cone, synced } = await applyCone(widget, app);
         assert.equal(cone.pin_name, undefined);
         assert.equal(cone.inst_name, 'u9');
         assert.deepEqual(synced, ['u9']);
+    });
+
+    it('targets the instance when it is selected again after the row', async () => {
+        const app = createMockApp();
+        app.selectedInstanceName = 'u9';
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        // Same name as before the row: only the selection token tells them apart.
+        beginSelection(app);
+        const { cone } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, undefined);
+        assert.equal(cone.inst_name, 'u9');
     });
 
     it('cones a port row without syncing the schematic', async () => {

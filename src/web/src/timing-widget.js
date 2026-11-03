@@ -24,8 +24,8 @@ export class TimingWidget {
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
-        // The selected instance when a path row was last picked (_coneTarget).
-        this._rowSelectionInst = '';
+        // app.selectionToken when a path row was last picked (_coneTarget).
+        this._rowSelectionToken = null;
         // Default to sorting by slack, matching the Qt GUI.
         this._sortCol = 'slack';
         this._sortAscending = true;
@@ -272,13 +272,13 @@ export class TimingWidget {
         return panel;
     }
 
-    // The cone target: the pin of the path row picked last, unless an instance
-    // was selected (layout, Inspector) after it; else the selected instance.
+    // The cone target: the pin of the path row picked last, unless any selection
+    // (layout, Inspector, Charts…) came after it; else the selected instance.
     // The backend prefers pin_name and falls back to inst_name.
     _coneTarget() {
         const node = this._detailNodes[this._selectedDetailIndex];
         const inst = this._app.selectedInstanceName || '';
-        if (node?.pin && inst === this._rowSelectionInst) {
+        if (node?.pin && this._app.selectionToken === this._rowSelectionToken) {
             return { pin: node.pin, inst: instanceOfPin(node.pin) };
         }
         return { pin: '', inst };
@@ -585,7 +585,7 @@ export class TimingWidget {
         rows[idx].classList.add('timing-selected-row');
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._detailTableContainer.focus();
-        this._rowSelectionInst = this._app.selectedInstanceName || '';
+        this._rowSelectionToken = this._app.selectionToken;
 
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];

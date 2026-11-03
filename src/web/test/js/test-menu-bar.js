@@ -388,10 +388,13 @@ describe('Windows menu', () => {
         }));
 
         rowByLabel(openMenu('Windows'), 'Charts').click();
+        // Closable, so the menu must be able to bring it back.
+        rowByLabel(openMenu('Windows'), 'Schematic').click();
         rowByLabel(openMenu('Help'), 'Keyboard Shortcuts').click();
 
         assert.deepEqual(focused, [
             ['ChartsWidget', { reveal: true }],
+            ['SchematicWidget', { reveal: true }],
             ['HelpWidget', { reveal: true }],
         ]);
     });
