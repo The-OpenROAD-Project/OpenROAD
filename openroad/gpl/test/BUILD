@@ -44,6 +44,7 @@ PASSFAIL_TESTS = [
     "incremental02",
     "incremental03",
     "incremental04",
+    "incremental05",
     "options01",
     "place_ios_rd",
     "place_ios_td",

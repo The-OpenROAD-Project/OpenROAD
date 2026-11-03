@@ -277,14 +277,26 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
              "Overflow after unlocking all instances: {:.4f}",
              np_->getAverageOverflow());
 
-  const bool missed_target = np_->getAverageOverflow() > options.overflow;
+  // Phase 2 can be given its own target, e.g. to let phase 1 stop at a
+  // looser one sized for the swapped modules.
+  PlaceOptions phase2_options = options;
+  if (options.incrementalPhase2 && options.incrementalPhase2Overflow >= 0) {
+    phase2_options.overflow = options.incrementalPhase2Overflow;
+  }
+  const bool missed_target
+      = np_->getAverageOverflow() > phase2_options.overflow;
 
   if (options.incrementalPhase2 && (phase1_diverged || missed_target)) {
+    // Hand the fillers out again around the placement phase 1 reached, so
+    // phase 2 starts with them in the space that is free now.
+    for (auto& nb : nbVec_) {
+      nb->redistributeFillerCells(false);
+    }
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
     PlaceResult phase2
-        = doNesterovPlace(threads, options, result.final_iteration + 1);
+        = doNesterovPlace(threads, phase2_options, result.final_iteration + 1);
     phase2.trace.insert(
         phase2.trace.begin(), result.trace.begin(), result.trace.end());
     result = std::move(phase2);

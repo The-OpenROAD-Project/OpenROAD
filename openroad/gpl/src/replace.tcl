@@ -12,6 +12,7 @@ sta::define_cmd_args "global_placement" {\
     [-virtual_cts]\
     [-incremental]\
     [-incremental_phase2]\
+    [-incremental_phase2_overflow overflow]\
     [-skip_io]\
     [-place_ios]\
     [-bin_grid_count grid_count]\
@@ -56,7 +57,7 @@ proc global_placement { args } {
   sta::parse_key_args "global_placement" args \
     keys {-bin_grid_count -density \
       -init_density_penalty -init_wirelength_coef \
-      -min_phi_coef -max_phi_coef -overflow \
+      -min_phi_coef -max_phi_coef -overflow -incremental_phase2_overflow \
       -reference_hpwl \
       -initial_place_max_iter -initial_place_max_fanout \
       -routability_check_overflow -routability_snapshot_overflow \
@@ -113,6 +114,19 @@ proc global_placement { args } {
   if { [info exists flags(-incremental_phase2)] \
          && ![info exists flags(-incremental)] } {
     utl::error GPL 198 "-incremental_phase2 requires -incremental."
+  }
+  if { [info exists keys(-incremental_phase2_overflow)] \
+         && ![info exists flags(-incremental_phase2)] } {
+    utl::error GPL 199 \
+      "-incremental_phase2_overflow requires -incremental_phase2."
+  }
+  if { [info exists keys(-incremental_phase2_overflow)] } {
+    set phase2_overflow $keys(-incremental_phase2_overflow)
+    if { ![string is double -strict $phase2_overflow] \
+           || $phase2_overflow < 0 || $phase2_overflow > 1 } {
+      utl::error GPL 200 \
+        "-incremental_phase2_overflow must be between 0 and 1."
+    }
   }
 
   if { [info exists flags(-incremental)] } {
