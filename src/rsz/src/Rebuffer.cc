@@ -3048,6 +3048,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
+        && resizer_->isPlacedNet(net_db)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())
         && !sta_->isClockSrc(drvr_pin, sta_->cmdMode()->sdc())
         // Exclude tie hi/low cells and supply nets.

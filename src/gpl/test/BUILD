@@ -36,6 +36,7 @@ TESTS = [
     "simple01-td-tune",
     "simple01-td-repair",
     "simple01-td-restart",
+    "simple01-td-scan-net",
     "simple01-uniform",
     "simple01-vcts",
     "simple01-vcts-clamp",
