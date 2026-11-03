@@ -49,6 +49,13 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
 {
   core_weights_ = weights;
 
+  penalty_terms_ = {
+      {.name = "Outline", .weight = core_weights_.outline},
+      {.name = "Wire Length", .weight = core_weights_.wirelength},
+      {.name = "Guidance", .weight = core_weights_.guidance},
+      {.name = "Fence", .weight = core_weights_.fence},
+  };
+
   pos_swap_prob_ = pos_swap_prob;
   neg_swap_prob_ = neg_swap_prob;
   double_swap_prob_ = double_swap_prob;
@@ -198,49 +205,49 @@ float SimulatedAnnealingCore<T>::getAreaPenalty() const
 template <class T>
 float SimulatedAnnealingCore<T>::getOutlinePenalty() const
 {
-  return outline_penalty_;
+  return penalty_terms_[kOutlineTerm].value;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getNormOutlinePenalty() const
 {
-  return norm_outline_penalty_;
+  return penalty_terms_[kOutlineTerm].normalization_factor;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getWirelength() const
 {
-  return wirelength_;
+  return penalty_terms_[kWirelengthTerm].value;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getNormWirelength() const
 {
-  return norm_wirelength_;
+  return penalty_terms_[kWirelengthTerm].normalization_factor;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getGuidancePenalty() const
 {
-  return guidance_penalty_;
+  return penalty_terms_[kGuidanceTerm].value;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getNormGuidancePenalty() const
 {
-  return norm_guidance_penalty_;
+  return penalty_terms_[kGuidanceTerm].normalization_factor;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getFencePenalty() const
 {
-  return fence_penalty_;
+  return penalty_terms_[kFenceTerm].value;
 }
 
 template <class T>
 float SimulatedAnnealingCore<T>::getNormFencePenalty() const
 {
-  return norm_fence_penalty_;
+  return penalty_terms_[kFenceTerm].normalization_factor;
 }
 
 template <class T>
@@ -255,15 +262,16 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
   const int max_width = std::max(outline_.dx(), width_);
   const int max_height = std::max(outline_.dy(), height_);
-  outline_penalty_
-      = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
+  PenaltyTerm& term = penalty_terms_[kOutlineTerm];
+  term.value = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
   // normalization
-  outline_penalty_ = outline_penalty_ / outline_.area();
+  term.value = term.value / outline_.area();
   if (graphics_) {
-    graphics_->setOutlinePenalty({"Outline",
-                                  core_weights_.outline,
-                                  outline_penalty_,
-                                  norm_outline_penalty_});
+    graphics_->setOutlinePenalty(
+        {.name = "Outline",
+         .weight = core_weights_.outline,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -274,13 +282,15 @@ void SimulatedAnnealingCore<T>::calWirelength()
     return;
   }
 
-  wirelength_ = computeNetsWireLength(nets_);
+  PenaltyTerm& term = penalty_terms_[kWirelengthTerm];
+  term.value = computeNetsWireLength(nets_);
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty({.name = "Wire Length",
-                                     .weight = core_weights_.wirelength,
-                                     .value = wirelength_,
-                                     .normalization_factor = norm_wirelength_});
+    graphics_->setWirelengthPenalty(
+        {.name = "Wire Length",
+         .weight = core_weights_.wirelength,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -368,7 +378,8 @@ template <class T>
 void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
-  fence_penalty_ = 0.0;
+  PenaltyTerm& term = penalty_terms_[kFenceTerm];
+  term.value = 0.0;
   if (core_weights_.fence <= 0.0 || fences_.empty()) {
     return;
   }
@@ -397,14 +408,16 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const int height = y_dist <= max_y_dist ? 0 : (y_dist - max_y_dist);
     const float width_ratio = width / static_cast<float>(outline_.dx());
     const float height_ratio = height / static_cast<float>(outline_.dy());
-    fence_penalty_
-        += (width_ratio * width_ratio) + (height_ratio * height_ratio);
+    term.value += (width_ratio * width_ratio) + (height_ratio * height_ratio);
   }
   // normalization
-  fence_penalty_ = fence_penalty_ / fences_.size();
+  term.value = term.value / fences_.size();
   if (graphics_) {
     graphics_->setFencePenalty(
-        {"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
+        {.name = "Fence",
+         .weight = core_weights_.fence,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -412,7 +425,8 @@ template <class T>
 void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
-  guidance_penalty_ = 0.0;
+  PenaltyTerm& term = penalty_terms_[kGuidanceTerm];
+  term.value = 0.0;
   if (core_weights_.guidance <= 0.0 || guides_.empty()) {
     return;
   }
@@ -431,16 +445,44 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
       penalty -= (overlap.area());
     }
 
-    guidance_penalty_ += block_->dbuAreaToMicrons(penalty);
+    term.value += block_->dbuAreaToMicrons(penalty);
   }
 
-  guidance_penalty_ = guidance_penalty_ / guides_.size();
+  term.value = term.value / guides_.size();
 
   if (graphics_) {
-    graphics_->setGuidancePenalty({"Guidance",
-                                   core_weights_.guidance,
-                                   guidance_penalty_,
-                                   norm_guidance_penalty_});
+    graphics_->setGuidancePenalty(
+        {.name = "Guidance",
+         .weight = core_weights_.guidance,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
+  }
+}
+
+template <class T>
+float SimulatedAnnealingCore<T>::sumPenaltyTerms(float cost) const
+{
+  for (const PenaltyTerm& term : penalty_terms_) {
+    if (term.normalization_factor > 0.0f) {
+      cost += term.weight * term.value / term.normalization_factor;
+    }
+  }
+  return cost;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::savePenaltyTerms()
+{
+  for (PenaltyTerm& term : penalty_terms_) {
+    term.pre_value = term.value;
+  }
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::restorePenaltyTerms()
+{
+  for (PenaltyTerm& term : penalty_terms_) {
+    term.value = term.pre_value;
   }
 }
 
@@ -619,7 +661,7 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::report(const PenaltyData& penalty) const
+void SimulatedAnnealingCore<T>::report(const PenaltyTerm& penalty) const
 {
   logger_->report(
       "{:>15s} | {:>8.4f} | {:>7.4f} | {:>14.4f} | {:>7.4f} ",
@@ -637,19 +679,13 @@ void SimulatedAnnealingCore<T>::reportCoreWeights() const
       "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");
   logger_->report(
       "---------------------------------------------------------------");
-  report({"Area", core_weights_.area, getAreaPenalty(), 1.0f});
-  report({"Outline",
-          core_weights_.outline,
-          outline_penalty_,
-          norm_outline_penalty_});
-
-  report(
-      {"Wire Length", core_weights_.wirelength, wirelength_, norm_wirelength_});
-  report({"Guidance",
-          core_weights_.guidance,
-          guidance_penalty_,
-          norm_guidance_penalty_});
-  report({"Fence", core_weights_.fence, fence_penalty_, norm_fence_penalty_});
+  report({.name = "Area",
+          .weight = core_weights_.area,
+          .value = getAreaPenalty(),
+          .normalization_factor = norm_area_penalty_});
+  for (const PenaltyTerm& term : penalty_terms_) {
+    report(term);
+  }
 }
 
 template <class T>

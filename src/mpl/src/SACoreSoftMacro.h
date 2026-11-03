@@ -87,6 +87,15 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     bool operator==(const NotchVicinity&) const = default;
   };
 
+  // Appended to penalty_terms_ after the base class's own terms.
+  enum PenaltyTermIndex : size_t
+  {
+    kBoundaryTerm = SimulatedAnnealingCore<SoftMacro>::kFenceTerm + 1,
+    kSoftBlockageTerm,
+    kFixedMacrosTerm,
+    kNotchTerm
+  };
+
   float calNormCost() const override;
   void calPenalty() override;
 
@@ -141,25 +150,10 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   int adjust_v_th_;  // the threshold for adjust hard macro clusters
                      // vertically
 
-  // additional penalties
   float boundary_weight_ = 0.0;
   float soft_blockage_weight_ = 0.0;
   float notch_weight_ = 0.0;
   const float fixed_macros_weight_ = 100.0;
-
-  float boundary_penalty_ = 0.0;
-  float notch_penalty_ = 0.0;
-  float soft_blockage_penalty_ = 0.0;
-  float fixed_macros_penalty_ = 0.0;
-
-  float pre_boundary_penalty_ = 0.0;
-  float pre_notch_penalty_ = 0.0;
-  float pre_soft_blockage_penalty_ = 0.0;
-
-  float norm_boundary_penalty_ = 0.0;
-  float norm_notch_penalty_ = 0.0;
-  float norm_soft_blockage_penalty_ = 0.0;
-  float norm_fixed_macros_penalty_ = 0.0;
 
   // action prob
   float resize_prob_ = 0.0;

@@ -68,6 +68,14 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   boundary_weight_ = soft_weights.boundary;
   soft_blockage_weight_ = soft_weights.soft_blockage;
   notch_weight_ = soft_weights.notch;
+
+  penalty_terms_.push_back({.name = "Boundary", .weight = boundary_weight_});
+  penalty_terms_.push_back(
+      {.name = "Soft Blockage", .weight = soft_blockage_weight_});
+  penalty_terms_.push_back(
+      {.name = "Fixed Macros", .weight = fixed_macros_weight_});
+  penalty_terms_.push_back({.name = "Notch", .weight = notch_weight_});
+
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
@@ -108,7 +116,7 @@ void SACoreSoftMacro::run()
 
 bool SACoreSoftMacro::isValid() const
 {
-  if (!fixed_macros_.empty() && fixed_macros_penalty_ > 0.0f) {
+  if (!fixed_macros_.empty() && penalty_terms_[kFixedMacrosTerm].value > 0.0f) {
     return false;
   }
 
@@ -118,32 +126,32 @@ bool SACoreSoftMacro::isValid() const
 // acessors functions
 float SACoreSoftMacro::getBoundaryPenalty() const
 {
-  return boundary_penalty_;
+  return penalty_terms_[kBoundaryTerm].value;
 }
 
 float SACoreSoftMacro::getNormBoundaryPenalty() const
 {
-  return norm_boundary_penalty_;
+  return penalty_terms_[kBoundaryTerm].normalization_factor;
 }
 
 float SACoreSoftMacro::getSoftBlockagePenalty() const
 {
-  return soft_blockage_penalty_;
+  return penalty_terms_[kSoftBlockageTerm].value;
 }
 
 float SACoreSoftMacro::getNormSoftBlockagePenalty() const
 {
-  return norm_soft_blockage_penalty_;
+  return penalty_terms_[kSoftBlockageTerm].normalization_factor;
 }
 
 float SACoreSoftMacro::getNotchPenalty() const
 {
-  return notch_penalty_;
+  return penalty_terms_[kNotchTerm].value;
 }
 
 float SACoreSoftMacro::getNormNotchPenalty() const
 {
-  return norm_notch_penalty_;
+  return penalty_terms_[kNotchTerm].normalization_factor;
 }
 
 // Operations
@@ -154,34 +162,7 @@ float SACoreSoftMacro::calNormCost() const
   if (norm_area_penalty_ > 0.0) {
     cost += core_weights_.area * getAreaPenalty();
   }
-  if (norm_outline_penalty_ > 0.0) {
-    cost += core_weights_.outline * outline_penalty_ / norm_outline_penalty_;
-  }
-  if (norm_wirelength_ > 0.0) {
-    cost += core_weights_.wirelength * wirelength_ / norm_wirelength_;
-  }
-  if (norm_guidance_penalty_ > 0.0) {
-    cost += core_weights_.guidance * guidance_penalty_ / norm_guidance_penalty_;
-  }
-  if (norm_fence_penalty_ > 0.0) {
-    cost += core_weights_.fence * fence_penalty_ / norm_fence_penalty_;
-  }
-
-  if (norm_boundary_penalty_ > 0.0) {
-    cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
-  }
-  if (norm_soft_blockage_penalty_ > 0.0) {
-    cost += soft_blockage_weight_ * soft_blockage_penalty_
-            / norm_soft_blockage_penalty_;
-  }
-  if (norm_fixed_macros_penalty_ > 0.0) {
-    cost += fixed_macros_weight_ * fixed_macros_penalty_
-            / norm_fixed_macros_penalty_;
-  }
-  if (norm_notch_penalty_ > 0.0) {
-    cost += notch_weight_ * notch_penalty_ / norm_notch_penalty_;
-  }
-  return cost;
+  return sumPenaltyTerms(cost);
 }
 
 void SACoreSoftMacro::calPenalty()
@@ -195,8 +176,10 @@ void SACoreSoftMacro::calPenalty()
   calNotchPenalty();
   calFixedMacrosPenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty(
-        {"Area", core_weights_.area, getAreaPenalty(), norm_area_penalty_});
+    graphics_->setAreaPenalty({.name = "Area",
+                               .weight = core_weights_.area,
+                               .value = getAreaPenalty(),
+                               .normalization_factor = norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -250,13 +233,7 @@ void SACoreSoftMacro::saveState()
   pre_width_ = width_;
   pre_height_ = height_;
 
-  pre_outline_penalty_ = outline_penalty_;
-  pre_wirelength_ = wirelength_;
-  pre_guidance_penalty_ = guidance_penalty_;
-  pre_fence_penalty_ = fence_penalty_;
-  pre_boundary_penalty_ = boundary_penalty_;
-  pre_soft_blockage_penalty_ = soft_blockage_penalty_;
-  pre_notch_penalty_ = notch_penalty_;
+  savePenaltyTerms();
 }
 
 void SACoreSoftMacro::restoreState()
@@ -283,13 +260,7 @@ void SACoreSoftMacro::restoreState()
   width_ = pre_width_;
   height_ = pre_height_;
 
-  outline_penalty_ = pre_outline_penalty_;
-  wirelength_ = pre_wirelength_;
-  guidance_penalty_ = pre_guidance_penalty_;
-  fence_penalty_ = pre_fence_penalty_;
-  boundary_penalty_ = pre_boundary_penalty_;
-  soft_blockage_penalty_ = pre_soft_blockage_penalty_;
-  notch_penalty_ = pre_notch_penalty_;
+  restorePenaltyTerms();
 }
 
 void SACoreSoftMacro::initialize()
@@ -324,26 +295,35 @@ void SACoreSoftMacro::initialize()
     width_list.push_back(width_);
     height_list.push_back(height_);
     area_penalty_list.push_back(getAreaPenalty());
-    outline_penalty_list.push_back(outline_penalty_);
-    wirelength_list.push_back(wirelength_);
-    guidance_penalty_list.push_back(guidance_penalty_);
-    fence_penalty_list.push_back(fence_penalty_);
-    boundary_penalty_list.push_back(boundary_penalty_);
-    soft_blockage_penalty_list.push_back(soft_blockage_penalty_);
-    notch_penalty_list.push_back(notch_penalty_);
-    fixed_macros_penalty_list.push_back(fixed_macros_penalty_);
+    outline_penalty_list.push_back(penalty_terms_[kOutlineTerm].value);
+    wirelength_list.push_back(penalty_terms_[kWirelengthTerm].value);
+    guidance_penalty_list.push_back(penalty_terms_[kGuidanceTerm].value);
+    fence_penalty_list.push_back(penalty_terms_[kFenceTerm].value);
+    boundary_penalty_list.push_back(penalty_terms_[kBoundaryTerm].value);
+    soft_blockage_penalty_list.push_back(
+        penalty_terms_[kSoftBlockageTerm].value);
+    notch_penalty_list.push_back(penalty_terms_[kNotchTerm].value);
+    fixed_macros_penalty_list.push_back(penalty_terms_[kFixedMacrosTerm].value);
   }
   graphics_ = save_graphics;
 
   norm_area_penalty_ = calAverage(area_penalty_list);
-  norm_outline_penalty_ = calAverage(outline_penalty_list);
-  norm_wirelength_ = calAverage(wirelength_list);
-  norm_guidance_penalty_ = calAverage(guidance_penalty_list);
-  norm_fence_penalty_ = calAverage(fence_penalty_list);
-  norm_boundary_penalty_ = calAverage(boundary_penalty_list);
-  norm_soft_blockage_penalty_ = calAverage(soft_blockage_penalty_list);
-  norm_notch_penalty_ = calAverage(notch_penalty_list);
-  norm_fixed_macros_penalty_ = calAverage(fixed_macros_penalty_list);
+  penalty_terms_[kOutlineTerm].normalization_factor
+      = calAverage(outline_penalty_list);
+  penalty_terms_[kWirelengthTerm].normalization_factor
+      = calAverage(wirelength_list);
+  penalty_terms_[kGuidanceTerm].normalization_factor
+      = calAverage(guidance_penalty_list);
+  penalty_terms_[kFenceTerm].normalization_factor
+      = calAverage(fence_penalty_list);
+  penalty_terms_[kBoundaryTerm].normalization_factor
+      = calAverage(boundary_penalty_list);
+  penalty_terms_[kSoftBlockageTerm].normalization_factor
+      = calAverage(soft_blockage_penalty_list);
+  penalty_terms_[kNotchTerm].normalization_factor
+      = calAverage(notch_penalty_list);
+  penalty_terms_[kFixedMacrosTerm].normalization_factor
+      = calAverage(fixed_macros_penalty_list);
 
   // Reset penalites if lower than threshold
 
@@ -351,36 +331,36 @@ void SACoreSoftMacro::initialize()
     norm_area_penalty_ = 1.0;
   }
 
-  if (norm_outline_penalty_ <= 1e-4) {
-    norm_outline_penalty_ = 1.0;
+  if (penalty_terms_[kOutlineTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kOutlineTerm].normalization_factor = 1.0;
   }
 
-  if (norm_wirelength_ <= 1e-4) {
-    norm_wirelength_ = 1.0;
+  if (penalty_terms_[kWirelengthTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kWirelengthTerm].normalization_factor = 1.0;
   }
 
-  if (norm_guidance_penalty_ <= 1e-4) {
-    norm_guidance_penalty_ = 1.0;
+  if (penalty_terms_[kGuidanceTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kGuidanceTerm].normalization_factor = 1.0;
   }
 
-  if (norm_fence_penalty_ <= 1e-4) {
-    norm_fence_penalty_ = 1.0;
+  if (penalty_terms_[kFenceTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kFenceTerm].normalization_factor = 1.0;
   }
 
-  if (norm_soft_blockage_penalty_ <= 1e-4) {
-    norm_soft_blockage_penalty_ = 1.0;
+  if (penalty_terms_[kSoftBlockageTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kSoftBlockageTerm].normalization_factor = 1.0;
   }
 
-  if (norm_boundary_penalty_ <= 1e-4) {
-    norm_boundary_penalty_ = 1.0;
+  if (penalty_terms_[kBoundaryTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kBoundaryTerm].normalization_factor = 1.0;
   }
 
-  if (norm_notch_penalty_ <= 1e-4) {
-    norm_notch_penalty_ = 1.0;
+  if (penalty_terms_[kNotchTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kNotchTerm].normalization_factor = 1.0;
   }
 
-  if (norm_fixed_macros_penalty_ <= 1e-4) {
-    norm_fixed_macros_penalty_ = 1.0;
+  if (penalty_terms_[kFixedMacrosTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kFixedMacrosTerm].normalization_factor = 1.0;
   }
 
   // Calculate initial temperature
@@ -388,14 +368,14 @@ void SACoreSoftMacro::initialize()
   for (int i = 0; i < outline_penalty_list.size(); i++) {
     width_ = width_list[i];
     height_ = height_list[i];
-    outline_penalty_ = outline_penalty_list[i];
-    wirelength_ = wirelength_list[i];
-    guidance_penalty_ = guidance_penalty_list[i];
-    fence_penalty_ = fence_penalty_list[i];
-    boundary_penalty_ = boundary_penalty_list[i];
-    soft_blockage_penalty_ = soft_blockage_penalty_list[i];
-    notch_penalty_ = notch_penalty_list[i];
-    fixed_macros_penalty_ = fixed_macros_penalty_list[i];
+    penalty_terms_[kOutlineTerm].value = outline_penalty_list[i];
+    penalty_terms_[kWirelengthTerm].value = wirelength_list[i];
+    penalty_terms_[kGuidanceTerm].value = guidance_penalty_list[i];
+    penalty_terms_[kFenceTerm].value = fence_penalty_list[i];
+    penalty_terms_[kBoundaryTerm].value = boundary_penalty_list[i];
+    penalty_terms_[kSoftBlockageTerm].value = soft_blockage_penalty_list[i];
+    penalty_terms_[kNotchTerm].value = notch_penalty_list[i];
+    penalty_terms_[kFixedMacrosTerm].value = fixed_macros_penalty_list[i];
     cost_list.push_back(calNormCost());
   }
 
@@ -418,7 +398,8 @@ void SACoreSoftMacro::initialize()
 // have their lower left corner based on the parent's outline.
 void SACoreSoftMacro::calBoundaryPenalty()
 {
-  boundary_penalty_ = 0.0;
+  PenaltyTerm& term = penalty_terms_[kBoundaryTerm];
+  term.value = 0.0;
 
   if (boundary_weight_ <= 0.0) {
     return;
@@ -459,18 +440,18 @@ void SACoreSoftMacro::calBoundaryPenalty()
       y_dist_from_root
           = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
-      boundary_penalty_
-          += block_->dbuToMicrons(x_dist_from_root + y_dist_from_root)
-             * soft_macro.getNumMacro();
+      term.value += block_->dbuToMicrons(x_dist_from_root + y_dist_from_root)
+                    * soft_macro.getNumMacro();
     }
   }
   // normalization
-  boundary_penalty_ = boundary_penalty_ / number_of_movable_macros;
+  term.value = term.value / number_of_movable_macros;
   if (graphics_) {
-    graphics_->setBoundaryPenalty({"Boundary",
-                                   boundary_weight_,
-                                   boundary_penalty_,
-                                   norm_boundary_penalty_});
+    graphics_->setBoundaryPenalty(
+        {.name = "Boundary",
+         .weight = boundary_weight_,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -482,7 +463,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
 //    mixed clusters with large std cell area have less penalty.
 void SACoreSoftMacro::calSoftBlockagePenalty()
 {
-  soft_blockage_penalty_ = 0.0;
+  PenaltyTerm& term = penalty_terms_[kSoftBlockageTerm];
+  term.value = 0.0;
   if (soft_blockages_.empty() || soft_blockage_weight_ <= 0.0) {
     return;
   }
@@ -512,19 +494,19 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
         const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
-        soft_blockage_penalty_
+        term.value
             += overlap.area() * soft_macro.getNumMacro() * macro_dominance;
       }
     }
   }
   // normalization
-  soft_blockage_penalty_ = soft_blockage_penalty_ / tot_num_macros;
+  term.value = term.value / tot_num_macros;
   if (graphics_) {
     graphics_->setSoftBlockagePenalty(
         {.name = "Soft Blockage",
          .weight = soft_blockage_weight_,
-         .value = soft_blockage_penalty_,
-         .normalization_factor = norm_soft_blockage_penalty_});
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -534,7 +516,8 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
     return;
   }
 
-  fixed_macros_penalty_ = 0.0f;
+  PenaltyTerm& term = penalty_terms_[kFixedMacrosTerm];
+  term.value = 0.0f;
 
   for (const odb::Rect& fixed_macro : fixed_macros_) {
     for (const int macro_id : pos_seq_) {
@@ -553,15 +536,16 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
         continue;
       }
 
-      fixed_macros_penalty_ += block_->dbuAreaToMicrons(overlap.area());
+      term.value += block_->dbuAreaToMicrons(overlap.area());
     }
   }
 
   if (graphics_) {
-    graphics_->setFixedMacrosPenalty({"Fixed Macros",
-                                      fixed_macros_weight_,
-                                      fixed_macros_penalty_,
-                                      norm_fixed_macros_penalty_});
+    graphics_->setFixedMacrosPenalty(
+        {.name = "Fixed Macros",
+         .weight = fixed_macros_weight_,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -761,7 +745,8 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   // Initialization
-  notch_penalty_ = 0.0;
+  PenaltyTerm& term = penalty_terms_[kNotchTerm];
+  term.value = 0.0;
   notch_h_th_ = outline_.dy() / 10;
   notch_v_th_ = outline_.dx() / 10;
   int width = 0;
@@ -772,13 +757,14 @@ void SACoreSoftMacro::calNotchPenalty()
   if (!isValid()) {
     width = std::max(width_, outline_.dx());
     height = std::max(height_, outline_.dy());
-    notch_penalty_ = calSingleNotchPenalty(width, height);
+    term.value = calSingleNotchPenalty(width, height);
 
     if (graphics_) {
-      graphics_->setNotchPenalty({.name = "Notch",
-                                  .weight = notch_weight_,
-                                  .value = notch_penalty_,
-                                  .normalization_factor = norm_notch_penalty_});
+      graphics_->setNotchPenalty(
+          {.name = "Notch",
+           .weight = notch_weight_,
+           .value = term.value,
+           .normalization_factor = term.normalization_factor});
     }
     return;
   }
@@ -887,7 +873,7 @@ void SACoreSoftMacro::calNotchPenalty()
       }
 
       if (is_notch) {
-        notch_penalty_ += calSingleNotchPenalty(width, height);
+        term.value += calSingleNotchPenalty(width, height);
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],
@@ -900,7 +886,10 @@ void SACoreSoftMacro::calNotchPenalty()
 
   if (graphics_) {
     graphics_->setNotchPenalty(
-        {"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
+        {.name = "Notch",
+         .weight = notch_weight_,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
   }
 }
 
@@ -993,15 +982,6 @@ void SACoreSoftMacro::resizeOneCluster()
 void SACoreSoftMacro::printResults() const
 {
   reportCoreWeights();
-  report({"Boundary",
-          boundary_weight_,
-          boundary_penalty_,
-          norm_boundary_penalty_});
-  report({.name = "Soft Blockage",
-          .weight = soft_blockage_weight_,
-          .value = soft_blockage_penalty_,
-          .normalization_factor = norm_soft_blockage_penalty_});
-  report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   reportTotalCost();
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
     reportLocations();
@@ -1208,7 +1188,7 @@ void SACoreSoftMacro::setClustersLocations(
 
 void SACoreSoftMacro::attemptCentralization(const float pre_cost)
 {
-  if (outline_penalty_ > 0) {
+  if (penalty_terms_[kOutlineTerm].value > 0) {
     return;
   }
 

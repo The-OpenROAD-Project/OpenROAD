@@ -92,6 +92,15 @@ class SimulatedAnnealingCore
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
+  // Indices into penalty_terms_.
+  enum PenaltyTermIndex : size_t
+  {
+    kOutlineTerm,
+    kWirelengthTerm,
+    kGuidanceTerm,
+    kFenceTerm
+  };
+
  protected:
   struct Result
   {
@@ -126,6 +135,10 @@ class SimulatedAnnealingCore
   void calGuidancePenalty();
   void calFencePenalty();
 
+  float sumPenaltyTerms(float cost) const;
+  void savePenaltyTerms();
+  void restorePenaltyTerms();
+
   // operations
   void packFloorplan();
   virtual void perturb() = 0;
@@ -144,7 +157,7 @@ class SimulatedAnnealingCore
   void reportCoreWeights() const;
   void reportTotalCost() const;
   void reportLocations() const;
-  void report(const PenaltyData& penalty) const;
+  void report(const PenaltyTerm& penalty) const;
 
   odb::Rect outline_;
   odb::Rect die_area_;  // Offset to the current outline.
@@ -188,20 +201,10 @@ class SimulatedAnnealingCore
   int pre_width_ = 0;
   int pre_height_ = 0;
 
-  float wirelength_ = 0.0;
-  float outline_penalty_ = 0.0;
-  float guidance_penalty_ = 0.0;
-  float fence_penalty_ = 0.0;
+  // Outline, Wire Length, Guidance, Fence (kOutlineTerm..kFenceTerm);
+  // SACoreSoftMacro appends more. Area is always recomputed.
+  std::vector<PenaltyTerm> penalty_terms_;
 
-  float pre_outline_penalty_ = 0.0;
-  float pre_wirelength_ = 0.0;
-  float pre_guidance_penalty_ = 0.0;
-  float pre_fence_penalty_ = 0.0;
-
-  float norm_wirelength_ = 0;
-  float norm_outline_penalty_ = 0.0;
-  float norm_guidance_penalty_ = 0.0;
-  float norm_fence_penalty_ = 0.0;
   float norm_area_penalty_ = 0.0;
 
   // probability of each action
