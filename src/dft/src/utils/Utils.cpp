@@ -172,7 +172,8 @@ bool IsScanCell(const sta::dbNetwork* db_network,
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
                             utl::Logger* logger,
-                            odb::dbNet* net)
+                            odb::dbNet* net,
+                            odb::dbSigType sig_type)
 {
   if (!net) {
     net = odb::dbNet::create(block, port_name.c_str());
@@ -183,7 +184,7 @@ odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                     "unrelated net with the same name already exists",
                     port_name);
     }
-    net->setSigType(odb::dbSigType::SCAN);
+    net->setSigType(sig_type);
   }
   auto port = odb::dbBTerm::create(net, port_name.c_str());
   if (port == nullptr) {
@@ -192,7 +193,7 @@ odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                   "Failed to create port: a port named '{}' already exists",
                   port_name);
   }
-  port->setSigType(odb::dbSigType::SCAN);
+  port->setSigType(sig_type);
 
   return port;
 }

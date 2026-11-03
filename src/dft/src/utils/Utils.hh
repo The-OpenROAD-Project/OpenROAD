@@ -42,10 +42,12 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 bool IsScanCell(const sta::dbNetwork* db_network,
                 const sta::LibertyCell* liberty_cell);
 
-// Convenience method to create a new port
+// Convenience method to create a new port. The port, and the net when one is
+// created, get sig_type.
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
                             utl::Logger* logger,
-                            odb::dbNet* net = nullptr);
+                            odb::dbNet* net = nullptr,
+                            odb::dbSigType sig_type = odb::dbSigType::SCAN);
 
 }  // namespace dft::utils
