@@ -489,35 +489,27 @@ void TechChar::initCharacterization()
 
   // Trim and sort buffer list in ascending order of max cap limit
   trimSortBufferList(masterVector);
+  logger_->info(CTS, 52, "The following clock buffers will be used for CTS:");
+  for (const std::string& bufName : masterVector) {
+    logger_->report("                    {}", bufName);
+    masterNames_.emplace_back(bufName);
+  }
 
   // Runs after the buffer list sanity checks in trimSortBufferList
   createDelayBufList();
 
-  float maxBuffCap = 0.0;
-  std::string bufMasterName;
+  const std::string noMaxCap = initCharBuffer(masterVector);
+  if (!noMaxCap.empty()) {
+    logger_->error(CTS, 111, "No max capacitance found for cell {}.", noMaxCap);
+  }
+  const std::string bufMasterName = charBuf_ ? charBuf_->getName() : "";
   std::vector<float> axisSlews, axisLoads;
   for (const std::string& master_name : masterVector) {
-    float maxCap = 0.0;
-    bool maxCapExist = false;
     odb::dbMaster* buf = db_->findMaster(master_name.c_str());
     sta::Cell* masterCell = db_network_->dbToSta(buf);
     sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
     sta::LibertyPort *input, *output;
     libertyCell->bufferPorts(input, output);
-    output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
-    sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
-    if (!maxCapExist) {
-      lib->defaultMaxCapacitance(maxCap, maxCapExist);
-    }
-    if (!maxCapExist) {
-      logger_->error(
-          CTS, 111, "No max capacitance found for cell {}.", master_name);
-    }
-    if (maxCap >= maxBuffCap) {
-      maxBuffCap = maxCap;
-      charBuf_ = buf;
-      bufMasterName = master_name;
-    }
     // collect slews and caps from NLDM table axis from all buffers in list
     collectSlewsLoadsFromTableAxis(
         libertyCell, input, output, axisSlews, axisLoads);
@@ -532,9 +524,6 @@ void TechChar::initCharacterization()
   } else {
     logger_->info(CTS, 49, "Characterization buffer is {}.", bufMasterName);
   }
-
-  odb::dbMaster* sinkMaster
-      = db_->findMaster(options_->getSinkBuffer().c_str());
 
   for (odb::dbMTerm* masterTerminal : charBuf_->getMTerms()) {
     if (masterTerminal->getIoType() == odb::dbIoType::INPUT
@@ -599,16 +588,14 @@ void TechChar::initCharacterization()
         "    Check the -wire_unit parameter or the technology files.");
   }
 
-  setLengthUnit(charBuf_->getHeight() * 10 / 2);
+  initSinkBufferInputCap();
 
   // Gets the max slew and max cap if they weren't added as parameters.
   float maxSlew = 0.0;
   float maxCap = 0.0;
   if (options_->getMaxCharSlew() == 0 || options_->getMaxCharCap() == 0) {
     sta::Cell* masterCell = db_network_->dbToSta(charBuf_);
-    sta::Cell* sinkCell = db_network_->dbToSta(sinkMaster);
     sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
-    sta::LibertyCell* libertySinkCell = db_network_->libertyCell(sinkCell);
     bool maxSlewExist = false;
     bool maxCapExist = false;
 
@@ -642,15 +629,6 @@ void TechChar::initCharacterization()
       options_->setMaxCharSlew(maxSlew);
       options_->setMaxCharCap(maxCap);
     }
-    if (!libertySinkCell) {
-      logger_->error(
-          CTS, 76, "No Liberty cell found for {}.", options_->getSinkBuffer());
-    } else {
-      sta::LibertyPort *input, *output;
-      libertySinkCell->bufferPorts(input, output);
-      options_->setSinkBufferInputCap(input->capacitance());
-    }
-
   } else {
     maxSlew = options_->getMaxCharSlew();
     maxCap = options_->getMaxCharCap();
@@ -998,11 +976,57 @@ void TechChar::trimSortBufferList(std::vector<std::string>& buffers)
       }
     }
   }
+}
 
-  logger_->info(CTS, 52, "The following clock buffers will be used for CTS:");
-  for (const std::string& bufName : buffers) {
-    logger_->report("                    {}", bufName);
-    masterNames_.emplace_back(bufName);
+// Picks the buffer with the largest max cap, the last of equals, and sets the
+// length unit from it.
+std::string TechChar::initCharBuffer(const std::vector<std::string>& buffers)
+{
+  float maxBuffCap = 0.0;
+  for (const std::string& master_name : buffers) {
+    float maxCap = 0.0;
+    bool maxCapExist = false;
+    odb::dbMaster* buf = db_->findMaster(master_name.c_str());
+    sta::Cell* masterCell = db_network_->dbToSta(buf);
+    sta::LibertyCell* libertyCell = db_network_->libertyCell(masterCell);
+    sta::LibertyPort *input, *output;
+    libertyCell->bufferPorts(input, output);
+    output->capacitanceLimit(sta::MinMax::max(), maxCap, maxCapExist);
+    sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
+    if (!maxCapExist) {
+      lib->defaultMaxCapacitance(maxCap, maxCapExist);
+    }
+    if (!maxCapExist) {
+      return master_name;
+    }
+    if (maxCap >= maxBuffCap) {
+      maxBuffCap = maxCap;
+      charBuf_ = buf;
+    }
+  }
+  if (charBuf_ != nullptr) {
+    setLengthUnit(charBuf_->getHeight() * 10 / 2);
+  }
+  return "";
+}
+
+// Left as is when the characterization max slew and max cap are both given.
+void TechChar::initSinkBufferInputCap()
+{
+  if (options_->getMaxCharSlew() != 0 && options_->getMaxCharCap() != 0) {
+    return;
+  }
+  odb::dbMaster* sinkMaster
+      = db_->findMaster(options_->getSinkBuffer().c_str());
+  sta::Cell* sinkCell = db_network_->dbToSta(sinkMaster);
+  sta::LibertyCell* libertySinkCell = db_network_->libertyCell(sinkCell);
+  if (!libertySinkCell) {
+    logger_->error(
+        CTS, 76, "No Liberty cell found for {}.", options_->getSinkBuffer());
+  } else {
+    sta::LibertyPort *input, *output;
+    libertySinkCell->bufferPorts(input, output);
+    options_->setSinkBufferInputCap(input->capacitance());
   }
 }
 
