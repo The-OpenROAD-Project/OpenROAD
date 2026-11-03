@@ -181,6 +181,7 @@ cc_library(
         "//src/gpl:__subpackages__",
     ],
     deps = [
+        "//src/cts",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/grt",

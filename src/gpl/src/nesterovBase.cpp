@@ -1219,6 +1219,7 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options,
       timingDrivenMode(options.timingDrivenMode),
       timingDrivenRepairTiming(options.timingDrivenRepairTiming),
       timingDrivenRepairTnsEndPercent(options.timingDrivenRepairTnsEndPercent),
+      powerDrivenClockLeafOverflows(options.powerDrivenClockLeafOverflows),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
 {
@@ -1541,6 +1542,92 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       }
     }
   }
+
+  // For power-driven virtual clock leaf nets
+  updateVirtualNetForceWA(wlCoeffX, wlCoeffY);
+}
+
+void NesterovBaseCommon::setVirtualNets(std::vector<VirtualNet> nets)
+{
+  virtual_nets_ = std::move(nets);
+  virtual_net_grads_.assign(gCellStor_.size(), FloatPoint());
+}
+
+void NesterovBaseCommon::clearVirtualNets()
+{
+  virtual_nets_.clear();
+  virtual_net_grads_.clear();
+}
+
+static void waAxisGradients(const std::vector<float>& pos,
+                            const float coef,
+                            const float bar,
+                            std::vector<float>& min_exp,
+                            std::vector<float>& max_exp,
+                            std::vector<float>& grads)
+{
+  const auto [lo, hi] = std::ranges::minmax_element(pos);
+  const float min_pos = *lo;
+  const float max_pos = *hi;
+  const size_t n = pos.size();
+  min_exp.assign(n, 0);
+  max_exp.assign(n, 0);
+  float min_sum = 0, pos_min_sum = 0, max_sum = 0, pos_max_sum = 0;
+  for (size_t i = 0; i < n; i++) {
+    const float exp_min = (min_pos - pos[i]) * coef;
+    const float exp_max = (pos[i] - max_pos) * coef;
+    if (exp_min > bar) {
+      min_exp[i] = fastExp(exp_min);
+      min_sum += min_exp[i];
+      pos_min_sum += pos[i] * min_exp[i];
+    }
+    if (exp_max > bar) {
+      max_exp[i] = fastExp(exp_max);
+      max_sum += max_exp[i];
+      pos_max_sum += pos[i] * max_exp[i];
+    }
+  }
+  grads.resize(n);
+  for (size_t i = 0; i < n; i++) {
+    float grad_min = 0, grad_max = 0;
+    if (min_exp[i] > 0) {
+      grad_min = (min_sum * (min_exp[i] * (1.0 - coef * pos[i]))
+                  + coef * min_exp[i] * pos_min_sum)
+                 / (min_sum * min_sum);
+    }
+    if (max_exp[i] > 0) {
+      grad_max = (max_sum * (max_exp[i] * (1.0 + coef * pos[i]))
+                  - coef * max_exp[i] * pos_max_sum)
+                 / (max_sum * max_sum);
+    }
+    grads[i] = grad_min - grad_max;
+  }
+}
+
+void NesterovBaseCommon::updateVirtualNetForceWA(float wlCoeffX, float wlCoeffY)
+{
+  if (virtual_nets_.empty()) {
+    return;
+  }
+  std::ranges::fill(virtual_net_grads_, FloatPoint());
+  const float bar = NesterovBaseVars::minWireLengthForceBar;
+  std::vector<float> xs, ys, grad_x, grad_y, min_exp, max_exp;
+  for (const VirtualNet& net : virtual_nets_) {
+    xs.clear();
+    ys.clear();
+    for (const GPin* gPin : net.pins) {
+      xs.push_back(gPin->cx());
+      ys.push_back(gPin->cy());
+    }
+    waAxisGradients(xs, wlCoeffX, bar, min_exp, max_exp, grad_x);
+    waAxisGradients(ys, wlCoeffY, bar, min_exp, max_exp, grad_y);
+    for (size_t i = 0; i < net.pins.size(); i++) {
+      FloatPoint& grad
+          = virtual_net_grads_[getGCellIndex(net.pins[i]->getGCell())];
+      grad.x += net.weight * grad_x[i];
+      grad.y += net.weight * grad_y[i];
+    }
+  }
 }
 
 GCell& NesterovBaseCommon::getGCell(size_t index)
@@ -1584,6 +1671,12 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
 
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
+  }
+
+  if (!virtual_net_grads_.empty() && gCell->isInstance()) {
+    const FloatPoint& grad = virtual_net_grads_[getGCellIndex(gCell)];
+    gradientPair.x += grad.x;
+    gradientPair.y += grad.y;
   }
 
   if (gCell->isInstance()) {

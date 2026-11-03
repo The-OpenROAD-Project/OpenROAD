@@ -859,6 +859,8 @@ struct NesterovPlaceVars
   bool timingDrivenRepairTiming;
   float timingDrivenRepairTnsEndPercent;
   int timingDrivenIterCounter = 0;
+  const std::vector<int> powerDrivenClockLeafOverflows;
+  int powerDrivenIterCounter = 0;
   const bool routability_driven_mode;
   const bool disableRevertIfDiverge;
 
@@ -939,6 +941,8 @@ class NesterovBaseCommon
   // backend. Defined in wirelengthGradient.cpp.
   void prepareDeviceWlGradients();
 
+  bool isWireLengthGradientOnDevice() const;
+
   FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
                                         float wlCoeffX,
                                         float wlCoeffY) const;
@@ -994,6 +998,16 @@ class NesterovBaseCommon
   void resizeMinRcCellSize();
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
+
+  // Power-driven clock leaf nets, WA gradient only.
+  struct VirtualNet
+  {
+    std::vector<GPin*> pins;
+    float weight = 0;
+  };
+  void setVirtualNets(std::vector<VirtualNet> nets);
+  void clearVirtualNets();
+  bool hasVirtualNets() const { return !virtual_net_grads_.empty(); }
 
   GCell& getGCell(size_t index);
   size_t getGCellIndex(const GCell* gCell) const;
@@ -1067,6 +1081,11 @@ class NesterovBaseCommon
   int new_gcells_count_;
   int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
+
+  // For power-driven clock leaf nets, grads parallel to gCellStor_
+  void updateVirtualNetForceWA(float wlCoeffX, float wlCoeffY);
+  std::vector<VirtualNet> virtual_nets_;
+  std::vector<FloatPoint> virtual_net_grads_;
 };
 
 // Stores instances belonging to a specific power domain

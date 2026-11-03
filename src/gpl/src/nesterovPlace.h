@@ -122,6 +122,7 @@ class NesterovPlace
                        int64_t& td_accumulated_delta_area,
                        bool is_routability_gpl_iter,
                        int& virtual_cts_count);
+  void runPowerDriven();
   // Re-evaluate every GCell's current gradient at curSLP, so that the next
   // step length estimate compares gradients of the same objective.
   void refreshCurGradients();

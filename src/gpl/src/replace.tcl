@@ -48,7 +48,8 @@ sta::define_cmd_args "global_placement" {\
     [-random_seed random_seed]\
     [-perturb_dist perturb_dist]\
     [-enable_routing_congestion]\
-    [-power_driven_net_weight power_driven_net_weight]
+    [-power_driven_net_weight power_driven_net_weight]\
+    [-power_driven_clock_leaf_overflow power_driven_clock_leaf_overflow]
 }
 
 proc global_placement { args } {
@@ -77,7 +78,8 @@ proc global_placement { args } {
       -random_seed \
       -perturb_dist \
       -pad_left -pad_right \
-      -power_driven_net_weight} \
+      -power_driven_net_weight \
+      -power_driven_clock_leaf_overflow} \
     flags {-skip_initial_place \
       -force_center_initial_place \
       -skip_nesterov_place \
