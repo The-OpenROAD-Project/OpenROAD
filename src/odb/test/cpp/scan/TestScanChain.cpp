@@ -248,6 +248,9 @@ TEST_F(TestScanChain, ResetDestroysScanInsts)
   dft_->reset();
   EXPECT_EQ(dft_->getScanChains().size(), 0);
   EXPECT_FALSE(dft_->isScanInserted());
+  for (dbInst* inst : instances_) {
+    EXPECT_EQ(inst->getScanInst(), nullptr);
+  }
 
   // The block owns the scan insts. If reset() destroyed them, a new chain
   // reuses their table slots instead of allocating new ones.

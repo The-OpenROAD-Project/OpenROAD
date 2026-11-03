@@ -147,8 +147,16 @@ void dbDft::reset()
     }
   }
   for (dbScanInst* scan_inst : scan_insts) {
+    _dbScanInst* obj_scan_inst = (_dbScanInst*) scan_inst;
+    // Drop the instance's lookup entry so dbInst::getScanInst() no longer
+    // finds the destroyed scan inst.
+    auto itr = block->inst_scan_inst_map_.find(obj_scan_inst->inst_);
+    if (itr != block->inst_scan_inst_map_.end()
+        && itr->second == obj_scan_inst->getId()) {
+      block->inst_scan_inst_map_.erase(itr);
+    }
     dbProperty::destroyProperties(scan_inst);
-    block->scan_inst_tbl_->destroy((_dbScanInst*) scan_inst);
+    block->scan_inst_tbl_->destroy(obj_scan_inst);
   }
 
   obj->scan_inserted_ = false;
