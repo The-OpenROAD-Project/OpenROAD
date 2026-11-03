@@ -1796,6 +1796,16 @@ TEST_P(EnclosureCandidateFixture, lef58_enclosure_widest_width_bucket)
              cut);
 }
 
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_below_width_threshold)
+{
+  makeEnclosure({-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -20, 400, 100});
+  addRule(200, 80, 80);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
 INSTANTIATE_TEST_SUITE_P(EnclosureCandidates,
                          EnclosureCandidateFixture,
                          testing::Combine(testing::Bool(), testing::Bool()));

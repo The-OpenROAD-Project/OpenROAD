@@ -691,6 +691,9 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
   bool above = encRect->getLayerNum() > viaRect->getLayerNum();
   const auto& constraints = layer->getLef58EnclosureConstraints(
       cutClassIdx, encRect->width(), above);
+  if (constraints.empty()) {
+    return;
+  }
   frLef58EnclosureConstraint* lastCon = nullptr;
   for (auto* candidate : candidates) {
     frCoord sideOverhang = std::min(gtl::xh(*candidate) - gtl::xh(*viaRect),
