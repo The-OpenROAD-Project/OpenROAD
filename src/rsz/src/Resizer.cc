@@ -1570,7 +1570,7 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin) const
   } else {
     if (sta::Graph* graph = sta_->graph()) {
       if (sta::Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin)) {
-        float max_res = 0.0f;
+        float max_res = -std::numeric_limits<float>::infinity();
         graph->visitFaninEdges(
             drvr_vertex,
             sta_->search()->evalPred(),
@@ -1581,7 +1581,9 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin) const
                 }
               }
             });
-        return max_res;
+        if (std::isfinite(max_res)) {
+          return max_res;
+        }
       }
     }
     if (sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin)) {
