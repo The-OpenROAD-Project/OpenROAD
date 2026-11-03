@@ -17,6 +17,7 @@ COMPULSORY_TESTS = [
     "scan_opt_edges_sky130",
     "scan_opt_rebalance_sky130",
     "scan_opt_sky130",
+    "scan_replace_activity_sky130",
     "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
@@ -65,6 +66,9 @@ filegroup(
             ],
             "scan_opt_sky130": [
                 "place_sort_sky130.v",
+            ],
+            "scan_replace_activity_sky130": [
+                "one_cell_sky130.def",
             ],
             "scan_replace_dont_use_sky130": [
                 "one_cell_sky130.def",
