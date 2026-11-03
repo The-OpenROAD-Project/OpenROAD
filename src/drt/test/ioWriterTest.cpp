@@ -101,9 +101,11 @@ TEST_F(IoWriterTest, preservesAsymmetricVariableEndStyle)
   io::Writer writer(design.get(), logger.get());
   writer.updateDb(db.get(), router_cfg.get());
 
+  ASSERT_NE(variable_db_net->getWire(), nullptr);
   EXPECT_EQ(
       points(variable_db_net),
       (std::vector<std::tuple<int, int, int>>{{10, 20, 0}, {110, 20, 37}}));
+  ASSERT_NE(control_db_net->getWire(), nullptr);
   EXPECT_EQ(
       points(control_db_net),
       (std::vector<std::tuple<int, int, int>>{{30, 40, 0}, {130, 40, 60}}));
