@@ -93,11 +93,11 @@
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
-[INFO DRT-0036] metal1 guide region query size = 496.
+[INFO DRT-0036] metal1 guide region query size = 489.
 [INFO DRT-0036] via1 guide region query size = 0.
-[INFO DRT-0036] metal2 guide region query size = 430.
+[INFO DRT-0036] metal2 guide region query size = 402.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] metal3 guide region query size = 269.
+[INFO DRT-0036] metal3 guide region query size = 255.
 [INFO DRT-0036] via3 guide region query size = 0.
 [INFO DRT-0036] metal4 guide region query size = 23.
 [INFO DRT-0036] via4 guide region query size = 0.
