@@ -538,30 +538,10 @@ TEST_F(TestAnnealerCore, RandomSeedChangesPlacementAndResetsAcrossCalls)
   };
 
   auto runPlace = [&]() {
-    const std::string report_dir = ::testing::TempDir();
-    placer.place(/*num_threads=*/1,
-                 /*max_num_macro=*/0,
-                 /*min_num_macro=*/0,
-                 /*max_num_inst=*/0,
-                 /*min_num_inst=*/0,
-                 /*tolerance=*/0.1f,
-                 /*max_num_level=*/1,
-                 /*coarsening_ratio=*/10.0f,
-                 /*large_net_threshold=*/50,
-                 odb::Rect(0, 0, 0, 0),
-                 /*area_weight=*/0.1f,
-                 /*outline_weight=*/100.0f,
-                 /*wirelength_weight=*/100.0f,
-                 /*guidance_weight=*/10.0f,
-                 /*fence_weight=*/10.0f,
-                 /*boundary_weight=*/50.0f,
-                 /*notch_weight=*/50.0f,
-                 /*soft_blockage_weight=*/10.0f,
-                 /*target_util=*/0.25f,
-                 /*min_ar=*/0.33f,
-                 report_dir.c_str(),
-                 /*keep_clustering_data=*/false,
-                 /*pin_aware_channels=*/false);
+    MacroPlacerOptions options;
+    options.max_num_level = 1;
+    options.report_directory = ::testing::TempDir();
+    placer.run(/*threads=*/1, options);
   };
 
   // Run 1: default seed (0).
@@ -680,33 +660,12 @@ TEST_F(TestAnnealerCore, Mpl0003ReportsMacroAreaPercentageOfOutline)
   odb::dbInst::create(block_, std_master, "U0");
 
   MacroPlacer placer(db_.get(), nullptr, &logger_, nullptr);
-  const std::string report_dir = ::testing::TempDir();
+  MacroPlacerOptions options;
+  options.max_num_level = 1;
+  options.report_directory = ::testing::TempDir();
 
   testing::internal::CaptureStdout();
-  EXPECT_LOGGER_ERROR((placer.place(/*num_threads=*/1,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    0.1f,
-                                    1,
-                                    10.0f,
-                                    50,
-                                    odb::Rect(0, 0, 0, 0),
-                                    0.1f,
-                                    100.0f,
-                                    100.0f,
-                                    10.0f,
-                                    10.0f,
-                                    50.0f,
-                                    50.0f,
-                                    10.0f,
-                                    0.25f,
-                                    0.33f,
-                                    report_dir.c_str(),
-                                    false,
-                                    false)),
-                      "MPL-0003");
+  EXPECT_LOGGER_ERROR(placer.run(/*threads=*/1, options), "MPL-0003");
   const std::string output = testing::internal::GetCapturedStdout();
   EXPECT_NE(output.find("[ERROR MPL-0003]"), std::string::npos);
   EXPECT_NE(output.find("72.0%"), std::string::npos) << "Actual: " << output;

@@ -594,7 +594,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     odb::dbMaster* master_scan_cell = db_network_->staToDb(scan_cell);
 
     odb::dbInst* new_cell = utils::ReplaceCell(
-        block, inst, master_scan_cell, scan_candidate->getPortMapping());
+        sta_, block, inst, master_scan_cell, scan_candidate->getPortMapping());
 
     already_replaced.insert(new_cell);
     addCellForRollback(master, master_scan_cell, scan_candidate);
@@ -637,7 +637,8 @@ void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
     }
 
     RollbackCandidate& rollback_candidate = *found->second;
-    utils::ReplaceCell(block,
+    utils::ReplaceCell(sta_,
+                       block,
                        inst,
                        rollback_candidate.getMaster(),
                        rollback_candidate.getPortMapping());
