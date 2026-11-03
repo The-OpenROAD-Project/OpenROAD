@@ -1576,11 +1576,16 @@ bool TritonCTS::separateMacroRegSinks(
           nonSinkMacro
               &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
         } else if (invertedLoads == 0) {
-          logger_->warn(CTS,
-                        136,
-                        "Inverter {} output net has no signal input; "
-                        "treating as a dangling clock inverter.",
-                        inst->getName());
+          if (invertedNet && !invertedNet->getBTerms().empty()) {
+            // Port-only fanout: leaf, no tree below.
+            nonSinkMacro = false;
+          } else {
+            logger_->warn(CTS,
+                          136,
+                          "Inverter {} output net has no signal input; "
+                          "treating as a dangling clock inverter.",
+                          inst->getName());
+          }
         }
       }
 
