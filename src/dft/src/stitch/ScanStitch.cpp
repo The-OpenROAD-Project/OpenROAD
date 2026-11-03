@@ -145,7 +145,8 @@ static std::pair<std::string, std::optional<std::string>> SplitTermIdentifier(
 
 ScanDriver ScanStitch::FindOrCreateDriver(std::string_view kind,
                                           odb::dbBlock* block,
-                                          const std::string& with_name)
+                                          const std::string& with_name,
+                                          odb::dbSigType sig_type)
 {
   auto term_info = SplitTermIdentifier(with_name);
 
@@ -185,19 +186,23 @@ ScanDriver ScanStitch::FindOrCreateDriver(std::string_view kind,
     // We don't actually care if it's an output, that works here too.
     return ScanDriver(bterm);
   }
-  return CreateNewPort<ScanDriver>(block, with_name);
+  return CreateNewPort<ScanDriver>(block, with_name, nullptr, sig_type);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block,
                                               const std::string& with_name)
 {
-  return FindOrCreateDriver(kScanEnable, block, with_name);
+  // Scan enable is an ordinary high-fanout control net, not part of a chain
+  // that scan_opt reorders, so placement and buffering treat it like any
+  // other signal.
+  return FindOrCreateDriver(
+      kScanEnable, block, with_name, odb::dbSigType::SIGNAL);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanIn(odb::dbBlock* block,
                                           const std::string& with_name)
 {
-  return FindOrCreateDriver(kScanIn, block, with_name);
+  return FindOrCreateDriver(kScanIn, block, with_name, odb::dbSigType::SCAN);
 }
 
 ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
