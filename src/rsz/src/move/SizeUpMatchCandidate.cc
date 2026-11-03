@@ -51,7 +51,8 @@ void SizeUpMatchCandidate::loadDriverCell()
 
 MoveResult SizeUpMatchCandidate::applyReplacement()
 {
-  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)
+  if (!resizer_.replacementPreservesMaxCap(
+          inst_, replacement_, target().mode(resizer_))
       || !resizer_.replaceCell(inst_, replacement_)) {
     debugPrint(resizer_.logger(),
                RSZ,

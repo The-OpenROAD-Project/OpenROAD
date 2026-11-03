@@ -3048,6 +3048,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
+        && resizer_->isPlacedNet(net_db)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())
         && !sta_->isClockSrc(drvr_pin, sta_->cmdMode()->sdc())
         // Exclude tie hi/low cells and supply nets.
@@ -3155,7 +3156,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3 && timing_tree; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(

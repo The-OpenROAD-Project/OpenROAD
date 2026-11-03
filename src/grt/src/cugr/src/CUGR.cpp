@@ -51,7 +51,7 @@ using utl::GRT;
 
 namespace grt {
 
-// Sentinel demoteNonCriticalNets writes so a net sorts last; not a slack.
+// Sentinel demoteNonCriticalNets writes on non-critical nets; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
 // Overflow relief rounds; each grows the candidates and reruns the RRR loop.
 constexpr int kReliefRounds = 5;
@@ -59,8 +59,28 @@ constexpr int kReliefRounds = 5;
 constexpr int kReliefMargin = 5;
 // Float slack of the relief's overflow comparisons.
 constexpr double kReliefTolerance = 1e-9;
+// Longest route a relief move may leave, relative to the net's route before
+// the relief.
+constexpr double kMaxReliefStretch = 1.25;
 
 namespace {
+
+// Stable-sorts net indices by less on their nets. Removed (null) nets sort
+// last so the comparator stays a strict weak ordering.
+template <typename Less>
+void stableSortNets(std::vector<int>& net_indices,
+                    const std::vector<std::unique_ptr<GRNet>>& nets,
+                    Less less)
+{
+  std::ranges::stable_sort(net_indices, [&](const int lhs, const int rhs) {
+    const GRNet* lhs_net = nets[lhs].get();
+    const GRNet* rhs_net = nets[rhs].get();
+    if (lhs_net == nullptr || rhs_net == nullptr) {
+      return rhs_net == nullptr && lhs_net != nullptr;
+    }
+    return less(lhs_net, rhs_net);
+  });
+}
 
 // Per-3D-edge key used by saveCongestion() to attribute wires and via
 // stubs to specific edges.
@@ -805,8 +825,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   // (2d) direction -> x -> y -> has overflow?
   GridGraphView<bool> congestion_view;
   grid_graph_->extractCongestionView(congestion_view);
-  sortNetIndices(net_indices,
-                 resistance_aware_ && critical_nets_percentage_ != 0);
+  sortForReroute(net_indices);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
@@ -852,8 +871,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   GridGraphView<CostT> full_view;
   int view_mismatches = 0;
   double view_max_drift = 0.0;
-  sortNetIndices(net_indices,
-                 resistance_aware_ && critical_nets_percentage_ != 0);
+  sortForReroute(net_indices);
   SparseGrid grid(10, 10, 0, 0);
   // A reroute that adds overflow beyond float noise is rolled back and
   // retried next pass.
@@ -928,11 +946,17 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
     delta -= grid_graph_->sumOverflow(touched_edges);
     grid_graph_->addTreeUsage(*net);
     delta += grid_graph_->sumOverflow(touched_edges);
-    // Relief neighbors move only if overflow drops; others may move sideways.
-    const bool strict
-        = !options.strict_accept.empty() && options.strict_accept[net_index];
-    const bool keep
-        = strict ? delta < -kAcceptTolerance : delta <= kAcceptTolerance;
+    // Relief neighbors move only if overflow drops and the route stays within
+    // their length limit; others may move sideways.
+    const double max_length = options.relief_max_length.empty()
+                                  ? std::numeric_limits<double>::infinity()
+                                  : options.relief_max_length[net_index];
+    const bool relief_neighbor = std::isfinite(max_length);
+    bool keep = relief_neighbor ? delta < -kAcceptTolerance
+                                : delta <= kAcceptTolerance;
+    if (keep && relief_neighbor) {
+      keep = grid_graph_->getTreeLength(net->getRoutingTree()) <= max_length;
+    }
     if (!keep) {
       grid_graph_->removeTreeUsage(*net);
       grid_graph_->updateWireCostView(wire_cost_view, *net);
@@ -960,8 +984,8 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
              GRT,
              "rrr",
              1,
-             "iteration {}: {} nets rerouted, {} of them rolled back (the new "
-             "route added overflow); overflow change {:.2f}.",
+             "iteration {}: {} nets rerouted, {} of them rolled back by the "
+             "accept test; overflow change {:.2f}.",
              iteration,
              accepted.size() + rejected,
              rejected,
@@ -1008,9 +1032,9 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
   full_slack_update_done_ = false;
   parasitics_dirty_nets_.clear();
 
-  // Incremental re-optimizes every dirty net each stage: the congested-set
-  // narrowing between the stages below is skipped, so net_indices stays the
-  // full dirty set; congestion checks still scope via incremental_candidates_.
+  // Incremental re-optimizes every dirty net in stages 1, 3 and 4, skipping
+  // the congested-set narrowing; the RRR loop then reroutes only the congested
+  // ones among incremental_candidates_.
   incremental_routing_ = incremental;
   if (incremental) {
     incremental_candidates_ = net_indices;
@@ -1235,7 +1259,7 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
           sta_slack * 1e12);
     } else if (cugr_slack >= kDemotedSlack) {
       detail = fmt::format(
-          "slack = {:.2f} ps (cugr entered stage demoted, sorts last)",
+          "slack = {:.2f} ps (cugr entered stage demoted as non-critical)",
           sta_slack * 1e12);
     } else {
       detail = fmt::format(
@@ -1406,15 +1430,8 @@ void CUGR::iterativeRRR(std::vector<int>& net_indices,
       logger_->info(
           GRT, 117, "Start extra iteration {}/{}", i, congestion_iterations_);
     }
-    if (incremental_routing_ && options.reroute_all_candidates) {
-      // Incremental reroutes all dirty nets each iteration, not just congested.
-      std::vector<int> reroute_set = incremental_candidates_;
-      overflow_change
-          += mazeRoute(reroute_set, CugrStage::iterativeRRR, i, options);
-    } else {
-      overflow_change
-          += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
-    }
+    overflow_change
+        += mazeRoute(net_indices, CugrStage::iterativeRRR, i, options);
     debugPass("rrr iteration", i);
 
     stagnant_passes
@@ -1467,10 +1484,11 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
   for (const int index : incremental_candidates_) {
     is_candidate[index] = 1;
   }
-  // Neighbors move only if overflow drops; the passes keep the slacks.
-  RerouteOptions options{.reroute_all_candidates = false,
-                         .strict_accept = std::vector<char>(gr_nets_.size(), 0),
-                         .refresh_critical = false};
+  // Neighbors get a length limit (see mazeRoute); the passes keep the slacks.
+  RerouteOptions options{
+      .relief_max_length = std::vector<double>(
+          gr_nets_.size(), std::numeric_limits<double>::infinity()),
+      .refresh_critical = false};
   // Each added net's tree before the relief; a rolled-back reroute keeps it.
   std::vector<std::pair<int, std::shared_ptr<GRTreeNode>>> added_trees;
   std::vector<int> net_indices;
@@ -1481,10 +1499,13 @@ std::vector<int> CUGR::relieveIncrementalOverflow()
     if (added.empty()) {
       break;
     }
-    // Added nets join the candidates under strict acceptance.
+    // Added nets join the candidates, limited to kMaxReliefStretch of their
+    // length before the relief.
     for (const int index : added) {
       is_candidate[index] = 1;
-      options.strict_accept[index] = 1;
+      options.relief_max_length[index]
+          = kMaxReliefStretch
+            * grid_graph_->getTreeLength(gr_nets_[index]->getRoutingTree());
       incremental_candidates_.push_back(index);
       added_trees.emplace_back(index, gr_nets_[index]->getRoutingTree());
     }
@@ -1737,24 +1758,46 @@ void CUGR::sortNetIndices(std::vector<int>& net_indices,
   if (res_aware_order) {
     // Multi-factor res-aware ordering (slack+resistance+fanout+length) so
     // critical nets route first (FR's full tuple regressed asap7).
-    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-      if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-        return false;
-      }
-      return getResAwareScore(gr_nets_[lhs].get())
-             < getResAwareScore(gr_nets_[rhs].get());
-    });
+    stableSortNets(
+        net_indices, gr_nets_, [&](const GRNet* lhs, const GRNet* rhs) {
+          return getResAwareScore(lhs) < getResAwareScore(rhs);
+        });
     return;
   }
-  std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-      return false;
-    }
-    return std::make_tuple(gr_nets_[lhs]->getSlack(),
-                           gr_nets_[lhs]->getBoundingBox().hp())
-           < std::make_tuple(gr_nets_[rhs]->getSlack(),
-                             gr_nets_[rhs]->getBoundingBox().hp());
+  stableSortNets(net_indices, gr_nets_, [](const GRNet* lhs, const GRNet* rhs) {
+    return std::make_tuple(lhs->getSlack(), lhs->getBoundingBox().hp())
+           < std::make_tuple(rhs->getSlack(), rhs->getBoundingBox().hp());
   });
+}
+
+void CUGR::sortRerouteIndices(std::vector<int>& net_indices) const
+{
+  // Each reroute sees every other net in place, so a net routed later finds
+  // the capacity that earlier nets vacated. Non-critical nets go first,
+  // largest bounding box first, since they have the most room to detour.
+  // Critical nets go last, worst slack last.
+  auto key = [](const GRNet* net) {
+    const float slack = net->getSlack();
+    return std::make_tuple(
+        slack < kDemotedSlack, -slack, -net->getBoundingBox().hp());
+  };
+  stableSortNets(
+      net_indices, gr_nets_, [&](const GRNet* lhs, const GRNet* rhs) {
+        return key(lhs) < key(rhs);
+      });
+}
+
+void CUGR::sortForReroute(std::vector<int>& net_indices) const
+{
+  const bool res_aware_order
+      = resistance_aware_ && critical_nets_percentage_ != 0;
+  // Incremental reroutes follow netlist edits rather than congestion and
+  // skip demotion, so they keep the slack-then-size order.
+  if (res_aware_order || incremental_routing_) {
+    sortNetIndices(net_indices, res_aware_order);
+  } else {
+    sortRerouteIndices(net_indices);
+  }
 }
 
 void CUGR::getGuides(const GRNet* net,
