@@ -247,6 +247,12 @@ set_insertion_delay(bool insDelay)
 }
 
 void
+set_useful_skew(bool usefulSkew)
+{
+  getTritonCts()->getParms()->setUsefulSkew(usefulSkew);
+}
+
+void
 set_sink_buffer_max_cap_derate(double derate)
 {
   getTritonCts()->getParms()->setSinkBufferMaxCapDerate(derate);

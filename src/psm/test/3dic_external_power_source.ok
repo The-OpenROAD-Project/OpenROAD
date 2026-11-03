@@ -1,0 +1,51 @@
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0128] Design: flop_chip_a
+[INFO ODB-0252]     Updated 5 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0253]     Updated 5 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO ODB-0128] Design: flop_chip_b
+[INFO ODB-0252]     Updated 5 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0253]     Updated 5 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_external_power_source.loc.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Total power      : 2.25e-06 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.10e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 3.33e-05 V
+Worstcase IR drop: 1.11e-04 V
+Percentage drop  : 0.01 %
+######################################
+########## EM analysis ###############
+Net                : VDD
+Corner             : default
+Maximum current    : 2.05e-06 A
+Average current    : 2.45e-07 A
+Number of resistors: 101
+######################################
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0013] Reusing previous solution
+########## IR report #################
+Net              : VDD
+Corner           : default
+Total power      : 2.25e-06 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.10e+00 V
+Average voltage  : 1.10e+00 V
+Average IR drop  : 3.33e-05 V
+Worstcase IR drop: 1.11e-04 V
+Percentage drop  : 0.01 %
+######################################
+No differences found.
+No differences found.

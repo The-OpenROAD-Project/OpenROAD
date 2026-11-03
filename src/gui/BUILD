@@ -175,17 +175,16 @@ messages_txt(
     ],
 )
 
-# Desktop entry for GUI builds. Generated from the same template that the
-# CMake build configures (see src/gui/CMakeLists.txt). The install prefix is
-# not known at build time, so the icon path is left as a @OPENROAD_PREFIX@
-# placeholder that //bazel:install.sh substitutes at install time.
+# Desktop entry for GUI builds. The install prefix is not known at build
+# time, so the icon path is left as a @OPENROAD_PREFIX@ placeholder that
+# //bazel:install.sh substitutes at install time.
 expand_template(
     name = "desktop_entry",
     out = "openroad.desktop",
     substitutions = {
         "${OPENROAD_SHARE_GUI_DIR}": "@OPENROAD_PREFIX@/share/openroad/gui",
     },
-    template = "resources/openroad.desktop.cmake",
+    template = "resources/openroad.desktop.in",
 )
 
 # The desktop entry and its icon, laid out at the paths install.sh expects
