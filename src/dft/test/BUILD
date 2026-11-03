@@ -160,9 +160,10 @@ cc_test(
 cc_test(
     name = "dft_scan_optimizer_unittest",
     srcs = ["cpp/TestScanOptimizer.cpp"],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
         "//src/dft",
+        "//src/dft/src/cells",
+        "//src/dft/src/clock_domain",
         "//src/dft/src/optimizer",
         "//src/dft/src/utils",
         "//src/odb/src/db",

@@ -181,6 +181,17 @@ bool IsScanCell(const sta::dbNetwork* db_network,
   return false;
 }
 
+odb::Point GetITermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
+{
+  if (iterm != nullptr) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      return odb::Point(x, y);
+    }
+  }
+  return inst->getOrigin();
+}
+
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
                             utl::Logger* logger,

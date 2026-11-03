@@ -112,7 +112,7 @@ std::vector<std::unique_ptr<ScanChain>> runArchitect(
 // max_length=10 would normally produce 2 chains.
 TEST(TestScanArchitectMaxChains, MaxChainsOneOverridesMaxLength)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -120,9 +120,9 @@ TEST(TestScanArchitectMaxChains, MaxChainsOneOverridesMaxLength)
   config.setMaxChains(1);
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, logger);
+  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   // max_chains=1 caps to 1 chain despite max_length=10 wanting 2
   EXPECT_EQ(chains.size(), 1);
@@ -133,7 +133,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsOneOverridesMaxLength)
 // max_length=10 with 20 bits → 2 chains; max_chains=5 doesn't add chains.
 TEST(TestScanArchitectMaxChains, MaxChainsLargerThanNeededHasNoEffect)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -141,9 +141,9 @@ TEST(TestScanArchitectMaxChains, MaxChainsLargerThanNeededHasNoEffect)
   config.setMaxChains(5);
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, logger);
+  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   // max_length=10 produces 2 chains; max_chains=5 is larger so no effect
   EXPECT_EQ(chains.size(), 2);
@@ -156,7 +156,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsLargerThanNeededHasNoEffect)
 // Total: 4 chains (2 per domain)
 TEST(TestScanArchitectMaxChains, MaxChainsAppliedPerDomainIndependently)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -164,10 +164,10 @@ TEST(TestScanArchitectMaxChains, MaxChainsAppliedPerDomainIndependently)
   config.setMaxChains(2);
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, logger);
-  addCells(cells, "clk2_cell", 20, "clk2", ClockEdge::Rising, logger);
+  addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, &logger);
+  addCells(cells, "clk2_cell", 20, "clk2", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   // Each domain capped at 2 chains → 4 total
   EXPECT_EQ(chains.size(), 4);
@@ -177,7 +177,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsAppliedPerDomainIndependently)
 // max_chains=1 with two clock domains → 1 chain per domain = 2 total.
 TEST(TestScanArchitectMaxChains, MaxChainsOnePerDomainTwoDomains)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -185,10 +185,10 @@ TEST(TestScanArchitectMaxChains, MaxChainsOnePerDomainTwoDomains)
   config.setMaxChains(1);
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, logger);
-  addCells(cells, "clk2_cell", 15, "clk2", ClockEdge::Rising, logger);
+  addCells(cells, "clk1_cell", 20, "clk1", ClockEdge::Rising, &logger);
+  addCells(cells, "clk2_cell", 15, "clk2", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   // 1 chain per domain → 2 total; all bits preserved
   EXPECT_EQ(chains.size(), 2);
@@ -199,7 +199,7 @@ TEST(TestScanArchitectMaxChains, MaxChainsOnePerDomainTwoDomains)
 // 30 bits, max_length=10 → 3 chains.
 TEST(TestScanArchitectMaxChains, NoMaxChainsOnlyMaxLength)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -207,9 +207,9 @@ TEST(TestScanArchitectMaxChains, NoMaxChainsOnlyMaxLength)
   // max_chains intentionally NOT set
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "cell", 30, "clk1", ClockEdge::Rising, logger);
+  addCells(cells, "cell", 30, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   EXPECT_EQ(chains.size(), 3);
   EXPECT_EQ(totalBits(chains), 30);
@@ -218,7 +218,7 @@ TEST(TestScanArchitectMaxChains, NoMaxChainsOnlyMaxLength)
 // max_chains exactly equals what max_length would produce — no conflict.
 TEST(TestScanArchitectMaxChains, MaxChainsExactlyEqualsMaxLengthResult)
 {
-  utl::Logger* logger = new utl::Logger();
+  utl::Logger logger;
 
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
@@ -226,9 +226,9 @@ TEST(TestScanArchitectMaxChains, MaxChainsExactlyEqualsMaxLengthResult)
   config.setMaxChains(2);  // max_length also produces 2 for 20 bits
 
   std::vector<std::unique_ptr<ScanCell>> cells;
-  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, logger);
+  addCells(cells, "cell", 20, "clk1", ClockEdge::Rising, &logger);
 
-  auto chains = runArchitect(config, cells, logger);
+  auto chains = runArchitect(config, cells, &logger);
 
   EXPECT_EQ(chains.size(), 2);
   EXPECT_EQ(totalBits(chains), 20);

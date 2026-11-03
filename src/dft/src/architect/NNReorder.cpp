@@ -53,7 +53,7 @@ void NearestNeighborReorder(std::vector<std::unique_ptr<ScanCell>>& cells,
     // Find the lower leftmost cell by looking for the cell with the lowest
     // manhattan distance to the origin
     auto origin = cells[i]->getOrigin();
-    const int64_t dist = origin.x() + origin.y();
+    const int64_t dist = static_cast<int64_t>(origin.x()) + origin.y();
     if (dist < lowest_dist) {
       start_index = i;
       lowest_dist = dist;

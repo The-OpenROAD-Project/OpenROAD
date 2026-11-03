@@ -7,23 +7,13 @@
 #include <variant>
 
 #include "ClockDomain.hh"
+#include "Utils.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
 
 namespace dft {
 
 namespace {
-
-odb::Point itermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
-{
-  if (iterm != nullptr) {
-    int x, y;
-    if (iterm->getAvgXY(&x, &y)) {
-      return odb::Point(x, y);
-    }
-  }
-  return inst->getOrigin();
-}
 
 // Resolve a variant<dbBTerm*, dbITerm*> to a dbITerm* (returns nullptr for
 // top-level BTerm pins).
@@ -83,12 +73,12 @@ bool OdbScanCellAdapter::isPlaced() const
 
 odb::Point OdbScanCellAdapter::getScanInLocation() const
 {
-  return itermLocation(scan_in_iterm_, inst_);
+  return utils::GetITermLocation(scan_in_iterm_, inst_);
 }
 
 odb::Point OdbScanCellAdapter::getScanOutLocation() const
 {
-  return itermLocation(scan_out_iterm_, inst_);
+  return utils::GetITermLocation(scan_out_iterm_, inst_);
 }
 
 odb::dbITerm* OdbScanCellAdapter::getScanInITerm() const

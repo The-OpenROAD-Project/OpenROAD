@@ -26,6 +26,7 @@ cc_library(
     deps = [
         "//src/dft/src/cells",
         "//src/dft/src/clock_domain",
+        "//src/dft/src/utils",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.geometry",
