@@ -6,7 +6,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "3dic_check_power_grid_aes_gcd_nangate45",
     "3dic_error_file_assembly_coordinates",
