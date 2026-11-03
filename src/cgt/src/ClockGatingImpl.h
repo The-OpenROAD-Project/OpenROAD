@@ -42,7 +42,7 @@ class ClockGating::Impl
   ~Impl();
 
   // Main function that performs the clock gating process
-  void run();
+  void run(sta::Scene* scene);
 
   void setMinInstances(int min_instances) { min_instances_ = min_instances; }
   void setMaxCover(int max_cover) { max_cover_ = max_cover; }
