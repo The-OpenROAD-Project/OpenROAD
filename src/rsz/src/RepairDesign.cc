@@ -1115,8 +1115,8 @@ void RepairDesign::repairNet(sta::Net* net,
         // without requiring driver resizing or buffer insertion.
         if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
           rerouted_nets_++;
-          estimate_parasitics_->updateParasitics();
-          sta_->findDelays(drvr);
+          estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+          graph_delay_calc_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
           debugPrint(logger_,
                      RSZ,
@@ -1133,8 +1133,8 @@ void RepairDesign::repairNet(sta::Net* net,
         if (slew_slack1 < 0.0f) {
           if (repairDriverSlew(corner1, drvr_pin)) {
             resize_count_++;
-            estimate_parasitics_->updateParasitics();
-            sta_->findDelays(drvr);
+            estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+            graph_delay_calc_->findDelays(drvr);
             checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
           }
 
@@ -1183,8 +1183,8 @@ void RepairDesign::repairNet(sta::Net* net,
           slew_violation = true;
           if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
             rerouted_nets_++;
-            estimate_parasitics_->updateParasitics();
-            sta_->findDelays(drvr);
+            estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+            graph_delay_calc_->findDelays(drvr);
             debugPrint(logger_,
                        RSZ,
                        "repair_net",
