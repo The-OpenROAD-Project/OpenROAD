@@ -37,13 +37,13 @@ class ConstPool
   ConstPool& operator=(const ConstPool&) = delete;
 
   // Returns the id of the constant, adding it if needed (write mode only;
-  // in read-only mode a new constant yields an invalid id). `aval` and `bval`
+  // in read-only mode a new constant yields an invalid id). `bits` and `x_mask`
   // hold constNumWords(width) words each using the ConstView.h encoding
   // (0 = (0, 0), 1 = (1, 0), x = (0, 1)); bits above `width` are ignored, and
   // (1, 1) bits are normalized to x = (0, 1).
   ConstId intern(uint32_t width,
-                 std::span<const uint64_t> aval,
-                 std::span<const uint64_t> bval);
+                 std::span<const uint64_t> bits,
+                 std::span<const uint64_t> x_mask);
   // A two-state value, zero-extended or truncated to `width`.
   ConstId internUint(uint32_t width, uint64_t value);
   // Every bit set to `value`.
@@ -80,8 +80,8 @@ class ConstPool
  private:
   static constexpr size_t kChunkWords = 4096;  // 32 KiB
 
-  // Width and normalized words (aval then bval) of a constant, either stored
-  // in the pool or, for lookups, in the caller's buffer.
+  // Width and normalized words (`bits` then `x_mask`) of a constant, either
+  // stored in the pool or, for lookups, in the caller's buffer.
   struct Key
   {
     uint32_t width = 0;
@@ -119,8 +119,8 @@ class ConstPool
   std::atomic<TableMode> mode_{TableMode::kReadOnly};
   utl::Logger* logger_ = utl::Logger::defaultLogger();
   // Storage per constant: entries_[id] is its width and a pointer into a
-  // chunk at 2 * constNumWords(width) words, the aval plane then the bval
-  // plane; index_ maps the same Key to the id. Chunks never move.
+  // chunk at 2 * constNumWords(width) words, the `bits` plane then the
+  // `x_mask` plane; index_ maps the same Key to the id. Chunks never move.
   mutable absl::Mutex mutex_;
   std::vector<Key> entries_ ABSL_GUARDED_BY(mutex_);  // by ConstId
   // Keys point into `chunks_`.

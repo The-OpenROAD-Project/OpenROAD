@@ -3,7 +3,7 @@
 
 // The value of a 3-state constant (0, 1, x), pooled or inline. z is not a
 // constant: it comes from kTribuf and kTriJoin, and floating wires are
-// kUndriven. Encoding: bit planes (aval, bval) with 0 = (0, 0), 1 = (1, 0),
+// kUndriven. Encoding: bit planes (bits, x_mask) with 0 = (0, 0), 1 = (1, 0),
 // x = (0, 1); (1, 1) is normalized to x. Bit i is bit i % 64 of word i / 64;
 // bits above the width are 0.
 
@@ -19,8 +19,8 @@
 
 namespace syn::lir {
 
-// One 3-state bit; the value is aval | (bval << 1), with aval = 0 when
-// bval = 1.
+// One 3-state bit; the value is bits | (x_mask << 1), with bits = 0 when
+// x_mask = 1.
 enum class LogicValue : uint8_t
 {
   kZero = 0,
@@ -47,28 +47,28 @@ constexpr uint64_t constLastWordMask(uint32_t width)
 inline constexpr uint32_t kMaxInlineConstWidth = 32;
 
 // A read-only view of a constant. A small (inline) constant is copied into
-// the view, so keep the view alive while using its aval() and bval() spans.
+// the view, so keep the view alive while using its bits() and xMask() spans.
 class ConstView
 {
  public:
   ConstView() = default;
-  // `words` holds constNumWords(width) aval words followed by as many bval
-  // words, normalized.
+  // `words` holds constNumWords(width) `bits` words followed by as many
+  // `x_mask` words, normalized.
   ConstView(uint32_t width, const uint64_t* words)
       : width_(width), words_(words)
   {
   }
   // A constant of at most kMaxInlineConstWidth bits, held by value. Bits
   // above the width are ignored.
-  static ConstView fromInline(uint32_t width, uint32_t aval, uint32_t bval);
+  static ConstView fromInline(uint32_t width, uint32_t bits, uint32_t x_mask);
 
   uint32_t width() const { return width_; }
   uint32_t numWords() const { return constNumWords(width_); }
-  std::span<const uint64_t> aval() const ABSL_ATTRIBUTE_LIFETIME_BOUND
+  std::span<const uint64_t> bits() const ABSL_ATTRIBUTE_LIFETIME_BOUND
   {
     return {words(), numWords()};
   }
-  std::span<const uint64_t> bval() const ABSL_ATTRIBUTE_LIFETIME_BOUND
+  std::span<const uint64_t> xMask() const ABSL_ATTRIBUTE_LIFETIME_BOUND
   {
     return {words() + numWords(), numWords()};
   }
@@ -94,7 +94,7 @@ class ConstView
 
   uint32_t width_ = 0;
   const uint64_t* words_ = nullptr;         // null for a small constant
-  std::array<uint64_t, 2> small_ = {0, 0};  // aval, bval of a small constant
+  std::array<uint64_t, 2> small_ = {0, 0};  // bits, x_mask of a small constant
 };
 
 }  // namespace syn::lir

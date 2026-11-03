@@ -49,17 +49,17 @@ TEST(ConstPoolTest, ThreeStateBits)
   EXPECT_EQ(value.bit(1), LogicValue::kX);
   EXPECT_EQ(value.bit(2), LogicValue::kZero);
   EXPECT_EQ(value.bit(3), LogicValue::kOne);
-  // Planes: aval = 1 -> 1; bval = x -> 1.
-  EXPECT_EQ(value.aval()[0], 0b1001u);
-  EXPECT_EQ(value.bval()[0], 0b0010u);
+  // Planes: bits = 1 -> 1; x_mask = x -> 1.
+  EXPECT_EQ(value.bits()[0], 0b1001u);
+  EXPECT_EQ(value.xMask()[0], 0b0010u);
   EXPECT_FALSE(value.isTwoState());
   EXPECT_FALSE(value.toUint64().has_value());
   EXPECT_EQ(value.toString(), "4'b10x1");
   EXPECT_EQ(*pool.internBitString("10X1"), *pool.internBitString("10x1"));
-  // bval = 1 with aval = 1 is normalized to x (aval = 0, bval = 1).
-  const std::array<uint64_t, 1> aval = {0b1011u};
-  const std::array<uint64_t, 1> bval = {0b0010u};
-  EXPECT_EQ(pool.intern(4, aval, bval), *pool.internBitString("10x1"));
+  // x_mask = 1 with bits = 1 is normalized to x (bits = 0, x_mask = 1).
+  const std::array<uint64_t, 1> bits = {0b1011u};
+  const std::array<uint64_t, 1> x_mask = {0b0010u};
+  EXPECT_EQ(pool.intern(4, bits, x_mask), *pool.internBitString("10x1"));
   EXPECT_FALSE(pool.internBitString("10z").ok());
   EXPECT_FALSE(pool.internBitString("10Z").ok());
   EXPECT_FALSE(pool.internBitString("10?").ok());
@@ -87,9 +87,9 @@ TEST(ConstPoolTest, BitsAboveTheWidthAreIgnored)
 {
   ConstPool pool;
   pool.setMode(TableMode::kSingleWrite);
-  const std::array<uint64_t, 1> aval = {0xF5};
-  const std::array<uint64_t, 1> bval = {0xF0};
-  EXPECT_EQ(pool.intern(4, aval, bval), pool.internUint(4, 5));
+  const std::array<uint64_t, 1> bits = {0xF5};
+  const std::array<uint64_t, 1> x_mask = {0xF0};
+  EXPECT_EQ(pool.intern(4, bits, x_mask), pool.internUint(4, 5));
   EXPECT_EQ(pool.internUint(4, 0xFF), *pool.internBitString("1111"));
 }
 
@@ -145,13 +145,13 @@ TEST(ConstViewTest, SmallViewsHoldTheirValue)
     copy = temp;  // must not point into `temp`
   }
   EXPECT_EQ(copy.toString(), "4'b10x1");
-  EXPECT_EQ(copy.aval()[0], 0b1001u);
-  EXPECT_EQ(copy.bval()[0], 0b0010u);
+  EXPECT_EQ(copy.bits()[0], 0b1001u);
+  EXPECT_EQ(copy.xMask()[0], 0b0010u);
   EXPECT_FALSE(copy.isTwoState());
-  // bval = 1 with aval = 1 is normalized to x (aval = 0, bval = 1).
+  // x_mask = 1 with bits = 1 is normalized to x (bits = 0, x_mask = 1).
   const ConstView norm = ConstView::fromInline(4, 0b1011, 0b0010);
   EXPECT_EQ(norm.toString(), "4'b10x1");
-  EXPECT_EQ(norm.aval()[0], 0b1001u);
+  EXPECT_EQ(norm.bits()[0], 0b1001u);
   EXPECT_EQ(ConstView::fromInline(32, 0xFFFFFFFF, 0).toUint64(),
             uint64_t{0xFFFFFFFF});
   EXPECT_TRUE(ConstView::fromInline(0, 1, 1).isTwoState());

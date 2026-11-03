@@ -27,8 +27,8 @@ namespace {
 
 using WordBuffer = absl::InlinedVector<uint64_t, 4>;
 
-// Clears the bits above the width in both planes of `words` and clears aval
-// wherever bval is set (an unknown bit is always (0, 1)).
+// Clears the bits above the width in both planes of `words` and clears `bits`
+// wherever `x_mask` is set (an unknown bit is always (0, 1)).
 void normalize(uint32_t width, uint64_t* words)
 {
   const uint32_t n = constNumWords(width);
@@ -56,14 +56,14 @@ bool ConstPool::Key::operator==(const Key& other) const
 }
 
 ConstId ConstPool::intern(uint32_t width,
-                          std::span<const uint64_t> aval,
-                          std::span<const uint64_t> bval)
+                          std::span<const uint64_t> bits,
+                          std::span<const uint64_t> x_mask)
 {
   const uint32_t n = constNumWords(width);
-  assert(aval.size() == n && bval.size() == n);
+  assert(bits.size() == n && x_mask.size() == n);
   WordBuffer words(2 * size_t{n});
-  std::copy(aval.begin(), aval.begin() + n, words.begin());
-  std::copy(bval.begin(), bval.begin() + n, words.begin() + n);
+  std::copy(bits.begin(), bits.begin() + n, words.begin());
+  std::copy(x_mask.begin(), x_mask.begin() + n, words.begin() + n);
   normalize(width, words.data());
   return internNormalized(width, words.data());
 }
@@ -73,7 +73,7 @@ ConstId ConstPool::internUint(uint32_t width, uint64_t value)
   const uint32_t n = constNumWords(width);
   WordBuffer words(2 * size_t{n}, 0);
   if (n > 0) {
-    // Clear bits of `value` above `width`; `bval` and upper words are 0.
+    // Clear bits of `value` above `width`; `x_mask` and upper words are 0.
     words[0] = width < 64 ? (value & constLastWordMask(width)) : value;
   }
   return internNormalized(width, words.data());

@@ -29,15 +29,15 @@ char logicValueChar(LogicValue value)
   return '?';
 }
 
-ConstView ConstView::fromInline(uint32_t width, uint32_t aval, uint32_t bval)
+ConstView ConstView::fromInline(uint32_t width, uint32_t bits, uint32_t x_mask)
 {
   assert(width <= kMaxInlineConstWidth);
   ConstView view;
   view.width_ = width;
   const uint64_t mask = width == 0 ? 0 : constLastWordMask(width);
-  const uint64_t b = bval & mask;
-  view.small_[0] = (aval & mask) & ~b;
-  view.small_[1] = b;
+  const uint64_t x = x_mask & mask;
+  view.small_[0] = (bits & mask) & ~x;
+  view.small_[1] = x;
   return view;
 }
 
@@ -47,18 +47,18 @@ LogicValue ConstView::bit(uint32_t index) const
   const uint64_t* w = words();
   const uint32_t word = index / 64;
   const uint32_t shift = index % 64;
-  const uint64_t a = (w[word] >> shift) & 1u;
-  const uint64_t b = (w[numWords() + word] >> shift) & 1u;
-  if (b != 0) {
+  const uint64_t v = (w[word] >> shift) & 1u;
+  const uint64_t x = (w[numWords() + word] >> shift) & 1u;
+  if (x != 0) {
     return LogicValue::kX;
   }
-  return a != 0 ? LogicValue::kOne : LogicValue::kZero;
+  return v != 0 ? LogicValue::kOne : LogicValue::kZero;
 }
 
 bool ConstView::isTwoState() const
 {
-  const std::span<const uint64_t> b = bval();
-  return std::ranges::all_of(b, [](uint64_t w) { return w == 0; });
+  const std::span<const uint64_t> x = xMask();
+  return std::ranges::all_of(x, [](uint64_t w) { return w == 0; });
 }
 
 bool ConstView::isFill(LogicValue value) const
@@ -69,9 +69,9 @@ bool ConstView::isFill(LogicValue value) const
   for (uint32_t word = 0; word < n; ++word) {
     const uint64_t mask
         = word + 1 == n ? constLastWordMask(width_) : ~uint64_t{0};
-    const uint64_t want_a = (v & 1u) ? mask : 0;
-    const uint64_t want_b = (v & 2u) ? mask : 0;
-    if (w[word] != want_a || w[n + word] != want_b) {
+    const uint64_t want_bits = (v & 1u) ? mask : 0;
+    const uint64_t want_x = (v & 2u) ? mask : 0;
+    if (w[word] != want_bits || w[n + word] != want_x) {
       return false;
     }
   }
@@ -83,13 +83,13 @@ std::optional<uint64_t> ConstView::toUint64() const
   if (!isTwoState()) {
     return std::nullopt;
   }
-  const std::span<const uint64_t> a = aval();
-  for (size_t word = 1; word < a.size(); ++word) {
-    if (a[word] != 0) {
+  const std::span<const uint64_t> b = bits();
+  for (size_t word = 1; word < b.size(); ++word) {
+    if (b[word] != 0) {
       return std::nullopt;
     }
   }
-  return a.empty() ? 0 : a[0];
+  return b.empty() ? 0 : b[0];
 }
 
 std::string ConstView::toString() const
@@ -105,10 +105,10 @@ std::string ConstView::toString() const
 uint64_t ConstView::checksum() const
 {
   uint64_t h = checksumCombine(kChecksumSeed, width_);
-  for (uint64_t w : aval()) {
+  for (uint64_t w : bits()) {
     h = checksumCombine(h, w);
   }
-  for (uint64_t w : bval()) {
+  for (uint64_t w : xMask()) {
     h = checksumCombine(h, w);
   }
   return h;
