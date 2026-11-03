@@ -65,6 +65,23 @@ constexpr double kMaxReliefStretch = 1.25;
 
 namespace {
 
+// Stable-sorts net indices by less on their nets. Removed (null) nets sort
+// last so the comparator stays a strict weak ordering.
+template <typename Less>
+void stableSortNets(std::vector<int>& net_indices,
+                    const std::vector<std::unique_ptr<GRNet>>& nets,
+                    Less less)
+{
+  std::ranges::stable_sort(net_indices, [&](const int lhs, const int rhs) {
+    const GRNet* lhs_net = nets[lhs].get();
+    const GRNet* rhs_net = nets[rhs].get();
+    if (lhs_net == nullptr || rhs_net == nullptr) {
+      return rhs_net == nullptr && lhs_net != nullptr;
+    }
+    return less(lhs_net, rhs_net);
+  });
+}
+
 // Per-3D-edge key used by saveCongestion() to attribute wires and via
 // stubs to specific edges.
 using EdgeKey = std::tuple<int, int, int>;  // (layer, x, y)
@@ -1741,23 +1758,15 @@ void CUGR::sortNetIndices(std::vector<int>& net_indices,
   if (res_aware_order) {
     // Multi-factor res-aware ordering (slack+resistance+fanout+length) so
     // critical nets route first (FR's full tuple regressed asap7).
-    std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-      if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-        return false;
-      }
-      return getResAwareScore(gr_nets_[lhs].get())
-             < getResAwareScore(gr_nets_[rhs].get());
-    });
+    stableSortNets(
+        net_indices, gr_nets_, [&](const GRNet* lhs, const GRNet* rhs) {
+          return getResAwareScore(lhs) < getResAwareScore(rhs);
+        });
     return;
   }
-  std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-      return false;
-    }
-    return std::make_tuple(gr_nets_[lhs]->getSlack(),
-                           gr_nets_[lhs]->getBoundingBox().hp())
-           < std::make_tuple(gr_nets_[rhs]->getSlack(),
-                             gr_nets_[rhs]->getBoundingBox().hp());
+  stableSortNets(net_indices, gr_nets_, [](const GRNet* lhs, const GRNet* rhs) {
+    return std::make_tuple(lhs->getSlack(), lhs->getBoundingBox().hp())
+           < std::make_tuple(rhs->getSlack(), rhs->getBoundingBox().hp());
   });
 }
 
@@ -1767,18 +1776,15 @@ void CUGR::sortRerouteIndices(std::vector<int>& net_indices) const
   // the capacity that earlier nets vacated. Non-critical nets go first,
   // largest bounding box first, since they have the most room to detour.
   // Critical nets go last, worst slack last.
-  auto key = [&](const int index) {
-    const GRNet* net = gr_nets_[index].get();
+  auto key = [](const GRNet* net) {
     const float slack = net->getSlack();
     return std::make_tuple(
         slack < kDemotedSlack, -slack, -net->getBoundingBox().hp());
   };
-  std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
-    if (gr_nets_[lhs] == nullptr || gr_nets_[rhs] == nullptr) {
-      return false;
-    }
-    return key(lhs) < key(rhs);
-  });
+  stableSortNets(
+      net_indices, gr_nets_, [&](const GRNet* lhs, const GRNet* rhs) {
+        return key(lhs) < key(rhs);
+      });
 }
 
 void CUGR::sortForReroute(std::vector<int>& net_indices) const
