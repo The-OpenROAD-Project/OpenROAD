@@ -1279,6 +1279,7 @@ class NesterovBase
   float getPhiCoef(float scaledDiffHpwl) const;
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
+  void setStepLength(float step_length) { stepLength_ = step_length; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
 
   // True once the cells have stopped moving as fast as they were: the

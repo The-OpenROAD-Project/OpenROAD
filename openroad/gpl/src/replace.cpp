@@ -233,6 +233,13 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     if (moved) {
       np_->reinit();
     }
+    // Start phase 1 with a smaller step: a full first step throws the new
+    // cells out of the holes the swapped modules left, and the step length
+    // is re-estimated from the iterations after it anyway.
+    constexpr float kPhase1FirstStepScale = 0.1;
+    for (auto& nb : nbVec_) {
+      nb->setStepLength(nb->getStoredStepLength() * kPhase1FirstStepScale);
+    }
   }
 
   // Phase 1 is allowed to diverge and keep the placement it reached instead
