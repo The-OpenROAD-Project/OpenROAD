@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <queue>
 #include <regex>
 #include <set>
@@ -300,6 +301,29 @@ void HierRTLMP::init()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
+}
+
+void HierRTLMP::checkMacroPlacement(std::optional<odb::Rect> global_fence,
+                                    int min_channel_width,
+                                    int min_channel_height,
+                                    bool pin_aware_channels) const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  if (global_fence
+      && (global_fence->xMin() >= global_fence->xMax()
+          || global_fence->yMin() >= global_fence->yMax())) {
+    logger_->error(MPL,
+                   82,
+                   "Invalid global fence: lower coordinates must be strictly "
+                   "less than upper coordinates.");
+  }
+  PhysicalHierarchy tree;
+  tree.global_fence = global_fence.value_or(block->getCoreArea());
+  ClusteringEngine engine(block, logger_, tritonpart_, nullptr);
+  engine.setTree(&tree);
+  engine.setChannel({min_channel_width, min_channel_height},
+                    pin_aware_channels);
+  engine.checkFeasibility();
 }
 
 ////////////////////////////////////////////////////////////////////////

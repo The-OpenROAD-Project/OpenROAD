@@ -10,6 +10,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
     "boundary_push1",
     "centralization1",
+    "check_macro_placement",
     "clocked_macro",
     "fixed_covers",
     "fixed_ios1",
@@ -54,6 +55,7 @@ ALL_TESTS = COMPULSORY_TESTS
 
 # Self-checking: the script reports pass/fail, no golden log.
 PASSFAIL_TESTS = [
+    "check_macro_placement",
     "rerun1",
 ]
 
@@ -323,6 +325,21 @@ cc_test(
         "//src/mpl:pusher",
         "//src/odb/src/db",
         "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mpl_macro_preflight_unittest",
+    srcs = ["cpp/TestMacroPreflight.cpp"],
+    deps = [
+        "//src/mpl",
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

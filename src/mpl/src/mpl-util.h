@@ -24,6 +24,30 @@ using ClusterToBoundaryRegionMap = std::map<Cluster*, BoundaryRegion>;
 using BoundaryRegionList = std::vector<BoundaryRegion>;
 using RectList = std::vector<odb::Rect>;
 
+inline int checkedMicronsToDbu(odb::dbBlock* block,
+                               double microns,
+                               const char* option,
+                               utl::Logger* logger)
+{
+  double rounded_dbu = microns;
+  if (std::isfinite(microns)) {
+    rounded_dbu = std::round(microns * block->getTech()->getDbUnitsPerMicron());
+  }
+  if (!std::isfinite(rounded_dbu)
+      || rounded_dbu < std::numeric_limits<int>::min()
+      || rounded_dbu > std::numeric_limits<int>::max()) {
+    logger->error(utl::MPL,
+                  83,
+                  "Invalid {} value {}: must be finite and round to a DBU "
+                  "value in [{}, {}].",
+                  option,
+                  microns,
+                  std::numeric_limits<int>::min(),
+                  std::numeric_limits<int>::max());
+  }
+  return static_cast<int>(rounded_dbu);
+}
+
 // One of the edges of the die area.
 enum class Boundary
 {
