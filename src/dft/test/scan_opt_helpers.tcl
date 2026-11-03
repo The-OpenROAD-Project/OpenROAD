@@ -26,6 +26,26 @@ proc scan_chain_cells { chain } {
   return $cells
 }
 
+proc scan_chain_by_name { name } {
+  foreach chain [[[ord::get_db_block] getDft] getScanChains] {
+    if { [$chain getName] == $name } {
+      return $chain
+    }
+  }
+  error "no scan chain $name"
+}
+
+# Returns the chain's cells in odb order, each with the net on its SCD pin,
+# so a change to either the odb order or the netlist shows up.
+proc scan_chain_order { chain } {
+  set order {}
+  foreach scan_inst [scan_chain_cells $chain] {
+    set inst [$scan_inst getInst]
+    lappend order [list [$inst getName] [[[$inst findITerm SCD] getNet] getName]]
+  }
+  return $order
+}
+
 # Returns a dict of chain name -> name of its last cell.
 proc scan_chain_last_cells { } {
   set lasts [dict create]
