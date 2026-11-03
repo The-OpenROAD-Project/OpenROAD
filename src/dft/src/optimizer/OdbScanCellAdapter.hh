@@ -26,7 +26,7 @@ class OdbScanCellAdapter : public ScanCell
 
   uint64_t getBits() const override;
 
-  // Connect stubs — not used during optimisation.
+  // Connect stubs — not used during optimization.
   void connectScanEnable(const ScanDriver&) const override {}
   void connectScanIn(const ScanDriver&) const override {}
   void connectScanOut(const ScanLoad&) const override {}

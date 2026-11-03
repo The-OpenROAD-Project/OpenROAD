@@ -31,7 +31,7 @@ namespace dft {
 // core of a cluster (high confidence) are placed first; ambiguous
 // boundary cells are pushed to a less-loaded cluster only when the
 // preferred one is already full.  This keeps quality close to the
-// unconstrained optimum while strictly honouring the bit cap.
+// unconstrained optimum while strictly honoring the bit cap.
 //
 // Fallback: if every cluster is at capacity (only possible with multi-bit
 // cells that don't pack evenly), the cell goes to the least-loaded

@@ -65,7 +65,7 @@ void NearestNeighborReorder(std::vector<std::unique_ptr<ScanCell>>& cells,
   bgi::rtree<std::pair<Point, size_t>, bgi::rstar<4>> rtree(transformed);
   auto cursor = transformed[start_index];
 
-  // Search nearest neighbours
+  // Search nearest neighbors
   std::vector<std::unique_ptr<ScanCell>> result;
   result.emplace_back(std::move(cells[cursor.second]));
   while (result.size() < cells.size()) {

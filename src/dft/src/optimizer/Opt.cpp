@@ -31,7 +31,7 @@ namespace {
 // after DP, this is never more than one)
 constexpr int kMaxCellsToSearch = 10;
 
-// Number of nearest neighbours kept per cell for candidate-edge filtering.
+// Number of nearest neighbors kept per cell for candidate-edge filtering.
 // k = 50 is the conservative value recommended by Reinelt (Section 3, page 5).
 constexpr int kMaxNeighbors = 50;
 
@@ -39,7 +39,7 @@ constexpr int kMaxNeighbors = 50;
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Weighted Manhattan distance between two points (int64 to avoid overflow).
+// Manhattan distance between two points (int64 to avoid overflow).
 int64_t Dist(const odb::Point& a, const odb::Point& b)
 {
   const int64_t dx = std::abs(static_cast<int64_t>(a.x()) - b.x());
@@ -50,8 +50,8 @@ int64_t Dist(const odb::Point& a, const odb::Point& b)
 // ---------------------------------------------------------------------------
 // k-Nearest-Neighbor candidate edges
 //
-// For each cell i we precompute the k nearest cells measured by the weighted
-// distance from scan-out(i) to scan-in(neighbour).  The 2-Opt and 3-Opt inner
+// For each cell i we precompute the k nearest cells measured by the
+// distance from scan-out(i) to scan-in(neighbor).  The 2-Opt and 3-Opt inner
 // loops iterate only over these candidates, reducing per-pass cost from O(n²)
 // to O(n·k).
 //
@@ -61,8 +61,8 @@ int64_t Dist(const odb::Point& a, const odb::Point& b)
 // ---------------------------------------------------------------------------
 struct CandidateEdges
 {
-  // neighbors[i] = vector of cell indices that are the k nearest neighbours
-  // of cell i, measured by Dist(so[i], si[neighbour]).
+  // neighbors[i] = vector of cell indices that are the k nearest neighbors
+  // of cell i, measured by Dist(so[i], si[neighbor]).
   std::vector<std::vector<int>> neighbors;
 
   void build(const std::vector<odb::Point>& scan_in,
@@ -81,7 +81,7 @@ struct CandidateEdges
     const bgi::rtree<std::pair<Point, int>, bgi::rstar<4>> rtree(indexed);
 
     // Over-query factor: R-tree returns by Euclidean proximity which may not
-    // match weighted Manhattan.  Retrieve extra candidates and re-rank.
+    // match Manhattan.  Retrieve extra candidates and re-rank.
     const int query_k = std::min(n, kMaxNeighbors * 2);
     const int keep_k = std::min(n - 1, kMaxNeighbors);
 
@@ -147,7 +147,7 @@ void TwoOptScanChain(std::vector<int>& identity,
     so[i] = so_of_id[identity[i]];
   }
 
-  // D(i, j) = weighted distance from scan-out of cell i to scan-in of cell j.
+  // D(i, j) = Manhattan distance from scan-out of cell i to scan-in of cell j.
   const auto D = [&](int i, int j) -> int64_t { return Dist(so[i], si[j]); };
 
   // pos_of[id] = current position of node id.
@@ -248,7 +248,7 @@ void ThreeOptScanChain(std::vector<int>& identity,
       const int id_i = identity[i];
 
       // Middle loop: after the swap, edge i → j+1 is created, so j+1 should
-      // be a neighbour of cell at position i.
+      // be a neighbor of cell at position i.
       for (const int nb_id : candidates.neighbors[id_i]) {
         const int j1_pos = pos_of[nb_id];
         const int j = j1_pos - 1;
@@ -341,7 +341,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   bgi::rtree<std::pair<Point, size_t>, bgi::rstar<4>> rtree(transformed);
   auto cursor = transformed[start_index];
 
-  // Search nearest neighbours
+  // Search nearest neighbors
   std::vector<std::unique_ptr<ScanCell>> result;
   result.emplace_back(std::move(cells[cursor.second]));
   while (result.size() < cells.size()) {
