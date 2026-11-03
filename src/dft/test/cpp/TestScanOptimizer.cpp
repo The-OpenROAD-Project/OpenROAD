@@ -459,7 +459,7 @@ TEST(TestKMeans, KEqualsOne)
   }
 }
 
-// n < k: degenerate case must not crash and all cells fall in cluster 0.
+// n < k: each cell gets its own cluster.
 TEST(TestKMeans, CellsFewerThanK)
 {
   utl::Logger logger;
@@ -472,10 +472,24 @@ TEST(TestKMeans, CellsFewerThanK)
 
   const std::vector<int> assignments = KMeansClusters(cells, 5);
 
-  ASSERT_EQ(assignments.size(), 3u);
-  for (int a : assignments) {
-    EXPECT_EQ(a, 0);
+  EXPECT_EQ(assignments, (std::vector<int>{0, 1, 2}));
+}
+
+// n == k: happens when rebalancing chains of two cells each, since every
+// chain keeps its last cell out of the pool. No cluster may get two cells.
+TEST(TestKMeans, CellsEqualK)
+{
+  utl::Logger logger;
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+  for (int i = 0; i < 3; i++) {
+    owned.push_back(MakeCell("c" + std::to_string(i), {i * 100, 0}, &logger));
+    cells.push_back(owned.back().get());
   }
+
+  const std::vector<int> assignments = KMeansClusters(cells, 3, /*cap_bits=*/1);
+
+  EXPECT_EQ(assignments, (std::vector<int>{0, 1, 2}));
 }
 
 // 16 cells in 4 tight, well-separated quadrants — k=4 must recover them.

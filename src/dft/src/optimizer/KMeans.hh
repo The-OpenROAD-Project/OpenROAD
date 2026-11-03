@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 #include <numeric>
 #include <utility>
@@ -43,7 +44,8 @@ namespace dft {
 // OpenROAD runs remain reproducible across invocations.
 //
 // Degenerate cases:
-//   k <= 1 or n <= k: all cells are assigned to cluster 0.
+//   k <= 1: all cells are assigned to cluster 0.
+//   n <= k: each cell gets its own cluster, 0 to n - 1.
 inline std::vector<int> KMeansClusters(const std::vector<ScanCell*>& cells,
                                        int k,
                                        int64_t cap_bits
@@ -52,8 +54,13 @@ inline std::vector<int> KMeansClusters(const std::vector<ScanCell*>& cells,
 {
   const int n = static_cast<int>(cells.size());
 
-  if (k <= 1 || n <= k) {
+  if (k <= 1) {
     return std::vector<int>(n, 0);
+  }
+  if (n <= k) {
+    std::vector<int> assignments(n);
+    std::iota(assignments.begin(), assignments.end(), 0);
+    return assignments;
   }
 
   // Cache cell origins and bit counts once.
