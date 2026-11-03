@@ -65,15 +65,15 @@ class MplObserver
   {
   }
 
-  virtual void setAreaPenalty(const PenaltyData& penalty) {}
-  virtual void setBoundaryPenalty(const PenaltyData& penalty) {}
-  virtual void setFencePenalty(const PenaltyData& penalty) {}
-  virtual void setGuidancePenalty(const PenaltyData& penalty) {}
-  virtual void setSoftBlockagePenalty(const PenaltyData& penalty) {}
-  virtual void setFixedMacrosPenalty(const PenaltyData& penalty) {}
-  virtual void setNotchPenalty(const PenaltyData& penalty) {}
-  virtual void setOutlinePenalty(const PenaltyData& penalty) {}
-  virtual void setWirelengthPenalty(const PenaltyData& penalty) {}
+  virtual void setAreaPenalty(const PenaltyTerm& penalty) {}
+  virtual void setBoundaryPenalty(const PenaltyTerm& penalty) {}
+  virtual void setFencePenalty(const PenaltyTerm& penalty) {}
+  virtual void setGuidancePenalty(const PenaltyTerm& penalty) {}
+  virtual void setSoftBlockagePenalty(const PenaltyTerm& penalty) {}
+  virtual void setFixedMacrosPenalty(const PenaltyTerm& penalty) {}
+  virtual void setNotchPenalty(const PenaltyTerm& penalty) {}
+  virtual void setOutlinePenalty(const PenaltyTerm& penalty) {}
+  virtual void setWirelengthPenalty(const PenaltyTerm& penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
 
   virtual void eraseDrawing() {}
