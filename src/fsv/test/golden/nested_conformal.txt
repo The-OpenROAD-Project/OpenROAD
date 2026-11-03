@@ -1,10 +1,10 @@
 # Cross section of two wires with nested conformal dielectrics: a
 # sidewall-only low-k shell inside a high-k one, under air. Wires run along
-# x; their x extents are ignored.
+# y; their y extents are ignored.
 background 1.0
 layer 0.4 3.9
 layer 1.1 4.5
-box a 0 0 0.5 1 0.2 0.85
-box b 0 0.36 0.5 1 0.56 0.85
+box a 0 0 0.5 0.2 1 0.85
+box b 0.36 0 0.5 0.56 1 0.85
 conformal IN 0.5 0.85 0.02 0 3.0
 conformal OUT 0.5 0.85 0.03 0.05 7.0

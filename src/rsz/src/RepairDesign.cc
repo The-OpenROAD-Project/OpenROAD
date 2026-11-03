@@ -1009,6 +1009,7 @@ void RepairDesign::repairDriver(sta::Vertex* drvr,
   // Don't check okToBufferNet here as we are going to do a mix of driver
   // sizing and buffering.  Further checks exist in repairNet.
   if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
+      && resizer_->isPlacedNet(net_db)
       && !sta_->isClock(drvr_pin, sta_->cmdMode())
       // Exclude tie hi/low cells and supply nets.
       && !sta_->isConstant(drvr_pin, sta_->cmdMode())) {
@@ -1115,8 +1116,8 @@ void RepairDesign::repairNet(sta::Net* net,
         // without requiring driver resizing or buffer insertion.
         if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
           rerouted_nets_++;
-          estimate_parasitics_->updateParasitics();
-          sta_->findDelays(drvr);
+          estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+          graph_delay_calc_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
           debugPrint(logger_,
                      RSZ,
@@ -1133,8 +1134,8 @@ void RepairDesign::repairNet(sta::Net* net,
         if (slew_slack1 < 0.0f) {
           if (repairDriverSlew(corner1, drvr_pin)) {
             resize_count_++;
-            estimate_parasitics_->updateParasitics();
-            sta_->findDelays(drvr);
+            estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+            graph_delay_calc_->findDelays(drvr);
             checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
           }
 
@@ -1183,8 +1184,8 @@ void RepairDesign::repairNet(sta::Net* net,
           slew_violation = true;
           if (rerouteEnabled() && resizer_->tryRerouteNet(drvr_pin)) {
             rerouted_nets_++;
-            estimate_parasitics_->updateParasitics();
-            sta_->findDelays(drvr);
+            estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
+            graph_delay_calc_->findDelays(drvr);
             debugPrint(logger_,
                        RSZ,
                        "repair_net",
@@ -1957,7 +1958,8 @@ void RepairDesign::repairNetLoad(
   wire_length = 0;
 
   // Check that the slew limit specified is within the bounds of reason.
-  pre_checks_->checkSlewLimit(bnet->cap(), bnet->maxLoadSlew());
+  pre_checks_->checkSlewLimit(
+      load_pin, bnet->cap(), bnet->maxLoadSlew(), bnet->corner());
 
   load_pins.push_back(load_pin);
 }

@@ -10,6 +10,7 @@
 [INFO GRT-0012] Found 12 antenna violations.
 [INFO GRT-0302] Inserted 10 jumpers for 8 nets.
 [INFO GRT-0012] Found 4 antenna violations.
+[INFO DPL-0009] Utilization: 2.8%
 [INFO DPL-0501] Legalized with 17 moves: displacement total 4.8 u, max 2.9 u; HPWL 24149.3 -> 24152.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 4 diodes.
 [INFO ANT-0002] Found 0 net violations.

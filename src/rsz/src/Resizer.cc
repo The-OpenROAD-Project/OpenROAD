@@ -1213,8 +1213,32 @@ void Resizer::findBuffers()
   if (buffer_cells_.empty()) {
     logger_->error(RSZ, 22, "no buffers found.");
   } else {
-    // find the buffer with the largest drive resistance
+    // Keep the repair candidate unchanged because it is coupled to the
+    // pruned buffer list and timing-repair heuristics.
     buffer_lowest_drive_ = buffer_cells_.back();
+
+    // Select a fast cell from the weakest drive-strength bucket.  Using the
+    // final pruned cell for port buffering can select a delay cell because
+    // pruning scores cells by input RC and does not preserve drive-resistance
+    // order.
+    const size_t weakest_bucket_size
+        = std::max<size_t>(1, static_cast<size_t>(bucket_size));
+    const size_t weakest_bucket_start
+        = new_buffer_list.size() - weakest_bucket_size;
+    port_buffer_ = new_buffer_list[weakest_bucket_start];
+    sta::LibertyPort *input, *output;
+    port_buffer_->bufferPorts(input, output);
+    float lowest_intrinsic_delay = output->intrinsicDelay(sta_);
+
+    for (size_t i = weakest_bucket_start + 1; i < new_buffer_list.size(); i++) {
+      sta::LibertyCell* buffer = new_buffer_list[i];
+      buffer->bufferPorts(input, output);
+      const float intrinsic_delay = output->intrinsicDelay(sta_);
+      if (intrinsic_delay < lowest_intrinsic_delay) {
+        port_buffer_ = buffer;
+        lowest_intrinsic_delay = intrinsic_delay;
+      }
+    }
   }
 }
 
@@ -1258,6 +1282,7 @@ void Resizer::findBuffersNoPruning()
            });
 
       buffer_lowest_drive_ = buffer_cells_[0];
+      port_buffer_ = buffer_lowest_drive_;
     }
   }
 }
@@ -1269,15 +1294,15 @@ sta::LibertyCell* Resizer::selectBufferCell(sta::LibertyCell* user_buffer_cell)
     return user_buffer_cell;
   }
 
-  // Otherwise, find the weakest buffer with the lowest drive resistance.
-  findBuffers();  // updates buffer_lowest_drive_
+  // Otherwise, find a fast buffer from the weakest drive-strength group.
+  findBuffers();  // updates port_buffer_
 
   // No buffer?
-  if (buffer_lowest_drive_ == nullptr) {
+  if (port_buffer_ == nullptr) {
     logger_->error(RSZ, 41, "No buffers found.");
   }
 
-  return buffer_lowest_drive_;
+  return port_buffer_;
 }
 
 bool Resizer::isLinkCell(sta::LibertyCell* cell) const
@@ -3326,11 +3351,21 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore,
-                               bool run_repair_timing,
-                               float repair_tns_end_percent)
+void Resizer::findResizeSlacks(
+    bool run_journal_restore,
+    bool run_repair_timing,
+    float repair_tns_end_percent,
+    const std::function<bool(const odb::dbNet*)>& placed_net)
 {
   initBlock();
+
+  // Restores the caller's predicate on every exit, including errors.
+  struct PlacedNetGuard
+  {
+    Resizer* resizer;
+    std::function<bool(const odb::dbNet*)> previous;
+    ~PlacedNetGuard() { resizer->placed_net_ = std::move(previous); }
+  } placed_net_guard{this, std::exchange(placed_net_, placed_net)};
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
                                           ? est::ParasiticsSrc::kGlobalRouting
@@ -3761,6 +3796,7 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
   // findTargetLoads skips dont_use cells, so a cell re-enabled with
   // unset_dont_use would otherwise keep a target load of zero and be ranked
@@ -3776,6 +3812,7 @@ void Resizer::resetDontUse()
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
+  port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
   target_load_map_ = nullptr;
 
@@ -5878,7 +5915,14 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     sta_->findRequireds();
   }
   std::vector<float> initial_latency(ck_pins.size(), 0.0f);
-  std::vector<bool> initial_pin_latency_set(ck_pins.size(), false);
+  // Full original pin-level latency per (rise/fall, min/max) so an asymmetric
+  // annotation is restored exactly instead of being collapsed to one value.
+  // initial_latency[] keeps only the rise/max baseline the LP shifts.
+  using PinLatency = std::array<std::array<float, 2>, 2>;
+  using PinLatencySet = std::array<std::array<bool, 2>, 2>;
+  std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
+  std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
+                                                  PinLatencySet{});
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
@@ -5911,11 +5955,19 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     float val = 0.0f;
     bool exists = false;
     sdc->clockLatency(ck_clocks[i], ck_pins[i], rf_rise, mm_max, val, exists);
-    initial_pin_latency_set[i] = exists;
     if (!exists) {
       sdc->clockLatency(ck_clocks[i], rf_rise, mm_max, val, exists);
     }
     initial_latency[i] = val;
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        float lat = 0.0f;
+        bool lat_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, lat, lat_exists);
+        orig_pin_latency_set[i][rf->index()][mm->index()] = lat_exists;
+        orig_pin_latency[i][rf->index()][mm->index()] = lat;
+      }
+    }
   }
 
   // 4. Cutting-plane iteration.
@@ -6331,18 +6383,37 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // budget never leaves the cutting-plane's tentative set_clock_latency
   // annotations in the SDC. Without this, an abort would corrupt downstream
   // timing with skew that was computed but never realized.
+  // Put one CK pin back to its exact pre-LP SDC state: drop the clock/pin
+  // latency the LP wrote, then re-apply each original per-(rise/fall, min/max)
+  // value only if removing the LP's annotation also dropped it. A
+  // clock-agnostic pin latency survives removeClockLatency, so re-applying it
+  // would duplicate the original as a clock-specific annotation.
+  auto restore_pin_latency = [&](int i) {
+    sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      for (const sta::MinMax* mm : sta::MinMax::range()) {
+        const size_t ri = rf->index();
+        const size_t mi = mm->index();
+        if (!orig_pin_latency_set[i][ri][mi]) {
+          continue;
+        }
+        float cur = 0.0f;
+        bool cur_exists = false;
+        sdc->clockLatency(ck_clocks[i], ck_pins[i], rf, mm, cur, cur_exists);
+        if (!cur_exists || cur != orig_pin_latency[i][ri][mi]) {
+          sta_->setClockLatency(ck_clocks[i],
+                                const_cast<sta::Pin*>(ck_pins[i]),
+                                rf->asRiseFallBoth(),
+                                mm->asMinMaxAll(),
+                                orig_pin_latency[i][ri][mi],
+                                sdc);
+        }
+      }
+    }
+  };
   auto restore_initial_latencies = [&]() {
     for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
-      if (initial_pin_latency_set[i]) {
-        sta_->setClockLatency(ck_clocks[i],
-                              const_cast<sta::Pin*>(ck_pins[i]),
-                              sta::RiseFallBoth::riseFall(),
-                              sta::MinMaxAll::all(),
-                              initial_latency[i],
-                              sdc);
-      } else {
-        sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
-      }
+      restore_pin_latency(i);
     }
     sta_->findRequireds();
   };
@@ -6528,16 +6599,7 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
     // and double-count once CTS inserts the delay buffers). The schedule
     // survives only as the useful_skew_target property — a timing-inert
     // signal CTS reads to decide whether to realize the skew.
-    if (initial_pin_latency_set[i]) {
-      sta_->setClockLatency(ck_clocks[i],
-                            const_cast<sta::Pin*>(ck_pins[i]),
-                            sta::RiseFallBoth::riseFall(),
-                            sta::MinMaxAll::all(),
-                            initial_latency[i],
-                            sdc);
-    } else {
-      sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
-    }
+    restore_pin_latency(i);
 
     if (std::fabs(ti) >= opts.emit_threshold) {
       odb::dbITerm* ck_iterm = nullptr;
@@ -7721,7 +7783,13 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 
   odb::dbNet* db_net = db_network_->staToDb(net);
 
-  return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+  return !(db_net->isConnectedByAbutment() || db_net->isSpecial())
+         && isPlacedNet(db_net);
+}
+
+bool Resizer::isPlacedNet(const odb::dbNet* net) const
+{
+  return !placed_net_ || placed_net_(net);
 }
 
 sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
@@ -8206,8 +8274,6 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     const sta::Scene* corner,
     std::map<const sta::Pin*, float>& load_pin_slew)
 {
-  repair_design_->init();
-
   using BnetPtr = BufferedNetPtr;
 
   sta::LibertyCell* cell = network_->libertyCell(buffer_instance);
@@ -8508,7 +8574,8 @@ bool Resizer::checkMaxCapOK(const sta::Pin* drvr_pin, const float cap_delta)
 }
 
 bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
-                                         const sta::LibertyCell* replacement)
+                                         const sta::LibertyCell* replacement,
+                                         const sta::Mode* mode)
 {
   if (replacement == nullptr) {
     return false;
@@ -8531,6 +8598,27 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
     sta::PinSet* drivers = network_->drivers(pin);
     if (drivers == nullptr) {
       continue;
+    }
+
+    // Skip the max-cap check on a register clock pin only when its clock is
+    // ideal: the clock net's capacitance is irrelevant to timing then.
+    if (network_->isRegClkPin(pin) && mode != nullptr
+        && mode->clkNetwork()->isIdealClock(pin)) {
+      continue;
+    }
+
+    // Skip the max-cap check on scan-enable/scan-in pins because they
+    // tend to be high fanout pins
+    if (db_network_ != nullptr) {
+      odb::dbITerm* iterm = nullptr;
+      odb::dbBTerm* bterm = nullptr;
+      odb::dbModITerm* moditerm = nullptr;
+      db_network_->staToDb(pin, iterm, bterm, moditerm);
+      if (iterm != nullptr
+          && (db_network_->isScanEnable(iterm)
+              || db_network_->isScanIn(iterm))) {
+        continue;
+      }
     }
 
     const float old_cap

@@ -758,8 +758,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     }
 
     // Enable resistance aware routing only if the net needs it
+    resistance_aware_ = enable_resistance_aware_ && net->isResAware();
     if (enable_resistance_aware_) {
-      resistance_aware_ = net->isResAware();
       // Don't reroute nets with positive slack
       if (!is_incremental_grt_ && net->getSlack() >= 0) {
         continue;

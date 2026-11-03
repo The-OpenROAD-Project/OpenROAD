@@ -65,6 +65,9 @@ class Layout
 
   int getWidth() const;
 
+  // a floor on the width, for a column kept empty
+  void setMinWidth(int width);
+
  private:
   odb::Orientation2D orientation_;
   odb::Point origin_;
