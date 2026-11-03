@@ -3919,7 +3919,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block,
             } else if (segStyle.getEndStyle()
                        == frEndStyle(frcTruncateEndStyle)) {
               _wire_encoder.addPoint(end.x(), end.y(), 0, 0);
-            } else if (segStyle.getBeginStyle()
+            } else if (segStyle.getEndStyle()
                        == frEndStyle(frcVariableEndStyle)) {
               _wire_encoder.addPoint(end.x(), end.y(), segStyle.getEndExt(), 0);
             }
