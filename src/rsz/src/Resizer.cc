@@ -1539,7 +1539,7 @@ void Resizer::bufferOutput(const sta::Pin* top_pin,
 
 ////////////////////////////////////////////////////////////////
 
-float Resizer::driveResistance(const sta::Pin* drvr_pin)
+float Resizer::driveResistance(const sta::Pin* drvr_pin) const
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     sta::InputDrive* drive
@@ -1568,8 +1568,23 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
       return max_res;
     }
   } else {
-    sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    if (drvr_port) {
+    if (sta::Graph* graph = sta_->graph()) {
+      if (sta::Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin)) {
+        float max_res = 0.0f;
+        graph->visitFaninEdges(
+            drvr_vertex,
+            sta_->search()->evalPred(),
+            [&](sta::Edge* edge, sta::Vertex*) {
+              if (!edge->role()->isWire()) {
+                for (sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+                  max_res = std::max(max_res, arc->driveResistance());
+                }
+              }
+            });
+        return max_res;
+      }
+    }
+    if (sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin)) {
       return drvr_port->driveResistance();
     }
   }
