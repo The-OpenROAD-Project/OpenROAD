@@ -133,6 +133,24 @@ TEST(ModelBuilder, TablesAreSymmetricAndThreadIndependent)
   }
 }
 
+// The kept form: a share of 1 at no gap, L / g far out; a fit recovers the
+// length from shares 5% off either way.
+TEST(ModelBuilder, KeptFit)
+{
+  EXPECT_EQ(keptShare(0.9, 0), 1);
+  EXPECT_NEAR(keptShare(0.9, 90), 0.01, 1e-6);
+  const std::vector<double> gaps{0.05, 0.1, 0.2, 0.3, 0.5, 0.9, 1.5, 3, 8};
+  std::vector<double> shares;
+  for (size_t i = 0; i < gaps.size(); i++) {
+    const double noise = (i % 2 == 0 ? 1 : -1) * 0.05;
+    shares.push_back(keptShare(0.9, gaps[i]) * (1 + noise));
+  }
+  const KeptFit fit = fitKept(gaps, shares);
+  EXPECT_NEAR(fit.length, 0.9, 0.05);
+  EXPECT_LT(fit.residual, kKeptFitTolerance * fit.length);
+  EXPECT_THROW(fitKept({1, 2}, {0.5}), std::invalid_argument);
+}
+
 TEST(ModelBuilder, CrossingAndEndTables)
 {
   BuildOptions o = smallBuild(4);

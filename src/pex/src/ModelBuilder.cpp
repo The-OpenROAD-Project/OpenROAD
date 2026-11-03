@@ -603,11 +603,73 @@ void buildLateral(const fsv::Stack& stack,
   });
 }
 
+double keptShare(const double length, const double gap)
+{
+  if (gap <= 0) {
+    return 1;
+  }
+  return length / gap * -std::expm1(-gap / length);
+}
+
+KeptFit fitKept(const std::vector<double>& gaps,
+                const std::vector<double>& shares)
+{
+  if (gaps.empty() || gaps.size() != shares.size()) {
+    throw std::invalid_argument("a kept fit needs a share per gap");
+  }
+  // The squared residual of the kept amounts, gap x share, at a length.
+  auto residual = [&](const double length) {
+    double sum = 0;
+    for (size_t i = 0; i < gaps.size(); i++) {
+      const double r = gaps[i] * (shares[i] - keptShare(length, gaps[i]));
+      sum += r * r;
+    }
+    return sum;
+  };
+  // A scan in the logarithm from a thousandth of the narrowest gap to a
+  // thousand times the widest, then golden sections around the best.
+  const double lo = std::log(1e-3 * gaps.front());
+  const double hi = std::log(1e3 * gaps.back());
+  constexpr int kScan = 200;
+  int best = 0;
+  double best_r = residual(std::exp(lo));
+  for (int i = 1; i <= kScan; i++) {
+    const double r = residual(std::exp(lo + (hi - lo) * i / kScan));
+    if (r < best_r) {
+      best = i;
+      best_r = r;
+    }
+  }
+  double a = lo + (hi - lo) * std::max(0, best - 1) / kScan;
+  double b = lo + (hi - lo) * std::min(kScan, best + 1) / kScan;
+  const double phi = (std::sqrt(5.0) - 1) / 2;
+  for (int i = 0; i < 60; i++) {
+    const double c = b - phi * (b - a);
+    const double d = a + phi * (b - a);
+    if (residual(std::exp(c)) < residual(std::exp(d))) {
+      b = d;
+    } else {
+      a = c;
+    }
+  }
+  const double length = std::exp((a + b) / 2);
+  return {length, std::sqrt(residual(length) / gaps.size())};
+}
+
 void buildCrossing(const fsv::Stack& stack,
                    const Layer layer,
                    const Layer cover,
                    const BuildOptions& options,
                    Model& model)
+{
+  buildCrossings(stack, layer, {cover}, options, model);
+}
+
+void buildCrossings(const fsv::Stack& stack,
+                    const Layer layer,
+                    const std::vector<Layer>& covers,
+                    const BuildOptions& options,
+                    Model& model)
 {
   // Each coverage sets a pitch (width / f) and a gap (width (1 / f - 1)),
   // and the share divides by 1 - f: the fraction has to be strictly inside
@@ -619,26 +681,15 @@ void buildCrossing(const fsv::Stack& stack,
     }
   }
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
-  const fsv::Stack::Conductor& cover_conductor = requireConductor(stack, cover);
-  const bool over = cover_conductor.bottom >= conductor.top;
-  if (!over && cover_conductor.top > conductor.bottom) {
-    throw std::invalid_argument(cover_conductor.name + " is beside "
-                                + conductor.name + ", not over or under");
-  }
-  const CrossingKey key{conductor.name, cover_conductor.name};
   const double w = conductor.min_width;
   std::vector<double> spacings;
   for (const double f : options.crossing_spacing_factors) {
     spacings.push_back(f * conductor.min_spacing);
   }
-  if (const CrossingTable* built = model.crossing(key)) {
-    requireGrid("crossing table of " + key.layer, built->spacings(), spacings);
-    return;  // built before
-  }
   const int ns = static_cast<int>(spacings.size()) + 1;
   auto spacingOf
       = [&](const int si) { return si < ns - 1 ? spacings[si] : -1.0; };
-  // For each spacing column (no neighbor last): one 3D solve per
+  // For each cover and spacing column (no neighbor last): one 3D solve per
   // (crossing width, coverage, length), then the two per-length
   // references. The two lengths are whole pitches and differ by at least
   // one, so their difference is never zero.
@@ -651,33 +702,85 @@ void buildCrossing(const fsv::Stack& stack,
     double total = 0;
     double cross = 0;
   };
-  std::vector<Job> jobs;
-  for (int si = 0; si < ns; si++) {
-    for (const double wf : options.crossing_width_factors) {
-      for (const double f : options.coverages) {
-        const double wc = wf * cover_conductor.min_width;
-        const double pitch = wc / f;
-        const int n_short = std::max(
-            1, static_cast<int>(std::lround(options.crossing_length / pitch)));
-        const int n_long = std::max(n_short + 1,
-                                    static_cast<int>(std::lround(
-                                        options.crossing_length_long / pitch)));
-        jobs.push_back({si, wc, f, n_short * pitch});
-        jobs.push_back({si, wc, f, n_long * pitch});
+  struct Table
+  {
+    Layer cover;
+    CrossingKey key;
+    bool over;
+    std::vector<Job> jobs;
+    std::vector<LateralCap> open_cap;
+    std::vector<LateralCap> plane_cap;
+  };
+  std::vector<Table> tables;
+  for (const Layer cover : covers) {
+    const fsv::Stack::Conductor& cover_conductor
+        = requireConductor(stack, cover);
+    const bool over = cover_conductor.bottom >= conductor.top;
+    if (!over && cover_conductor.top > conductor.bottom) {
+      throw std::invalid_argument(cover_conductor.name + " is beside "
+                                  + conductor.name + ", not over or under");
+    }
+    const CrossingKey key{conductor.name, cover_conductor.name};
+    if (const CrossingTable* built = model.crossing(key)) {
+      requireGrid(
+          "crossing table of " + key.layer, built->spacings(), spacings);
+      continue;  // built before
+    }
+    Table table{cover,
+                key,
+                over,
+                {},
+                std::vector<LateralCap>(ns),
+                std::vector<LateralCap>(ns)};
+    for (int si = 0; si < ns; si++) {
+      for (const double wf : options.crossing_width_factors) {
+        for (const double f : options.coverages) {
+          const double wc = wf * cover_conductor.min_width;
+          const double pitch = wc / f;
+          const int n_short = std::max(
+              1,
+              static_cast<int>(std::lround(options.crossing_length / pitch)));
+          const int n_long = std::max(
+              n_short + 1,
+              static_cast<int>(
+                  std::lround(options.crossing_length_long / pitch)));
+          table.jobs.push_back({si, wc, f, n_short * pitch});
+          table.jobs.push_back({si, wc, f, n_long * pitch});
+        }
       }
     }
+    tables.push_back(std::move(table));
   }
-  std::vector<LateralCap> open_cap(ns);
-  std::vector<LateralCap> plane_cap(ns);
-  const int count = static_cast<int>(jobs.size());
-  runJobs(options, count + (2 * ns), [&](const int i, fsv::Solver& solver) {
-    if (i >= count) {
-      const int si = (i - count) / 2;
-      const bool is_open = (i - count) % 2 == 0;
-      LateralCap& cap = is_open ? open_cap[si] : plane_cap[si];
+  // All the layer's solves in one pool, the long arrays first so the last
+  // to finish are short: (table, job) for an array, (table, -1 - k) for
+  // reference k (open and plane per spacing).
+  std::vector<std::pair<int, int>> tasks;
+  for (int t = 0; t < static_cast<int>(tables.size()); t++) {
+    for (int j = 0; j < static_cast<int>(tables[t].jobs.size()); j++) {
+      tasks.emplace_back(t, j);
+    }
+  }
+  std::stable_sort(
+      tasks.begin(), tasks.end(), [&](const auto& x, const auto& y) {
+        return tables[x.first].jobs[x.second].length
+               > tables[y.first].jobs[y.second].length;
+      });
+  for (int t = 0; t < static_cast<int>(tables.size()); t++) {
+    for (int k = 0; k < 2 * ns; k++) {
+      tasks.emplace_back(t, -1 - k);
+    }
+  }
+  runJobs(options, tasks.size(), [&](const int i, fsv::Solver& solver) {
+    Table& table = tables[tasks[i].first];
+    const int j = tasks[i].second;
+    if (j < 0) {
+      const int k = -1 - j;
+      const int si = k / 2;
+      const bool is_open = k % 2 == 0;
+      LateralCap& cap = is_open ? table.open_cap[si] : table.plane_cap[si];
       // The plane sits where the cover is; the open wire has none.
-      const Layer below = !is_open && !over ? cover : Layer();
-      const Layer above = !is_open && over ? cover : Layer();
+      const Layer below = !is_open && !table.over ? table.cover : Layer();
+      const Layer above = !is_open && table.over ? table.cover : Layer();
       const double s = spacingOf(si);
       cap = solveSection(stack,
                          layer,
@@ -691,10 +794,10 @@ void buildCrossing(const fsv::Stack& stack,
                          options.tol / 3);
       return;
     }
-    Job& job = jobs[i];
+    Job& job = table.jobs[j];
     CrossingPattern pattern;
     pattern.layer = layer;
-    pattern.cover = cover;
+    pattern.cover = table.cover;
     pattern.width = w;
     pattern.crossing_width = job.wc;
     pattern.pitch = job.wc / job.coverage;
@@ -709,62 +812,116 @@ void buildCrossing(const fsv::Stack& stack,
     job.total = row.total();
     job.cross = row.coupling(array.cross);
   });
-  // Pairs of lengths give per-length values, then the share over the gap,
-  // relative to what the plane adds with the same neighbors; a plane that
-  // adds nothing has no shares to tabulate.
-  std::vector<double> gaps;
-  std::vector<CrossingShare> values;
-  const int per_column = count / ns;
-  for (int si = 0; si < ns; si++) {
-    const LateralCap& open = open_cap[si];
-    const LateralCap& plane = plane_cap[si];
-    const double plane_total = plane.total();
-    const double plane_cross = over ? plane.above : plane.below;
-    if (!(plane_total > open.total()) || !(plane_cross > 0)) {
-      throw std::runtime_error("a plane on " + cover_conductor.name
-                               + " adds nothing to a wire on "
-                               + conductor.name);
-    }
-    std::vector<std::pair<double, CrossingShare>> points;
-    for (int i = si * per_column; i + 1 < (si + 1) * per_column; i += 2) {
-      const Job& a = jobs[i];
-      const Job& b = jobs[i + 1];
-      const double dl = b.length - a.length;
-      const double total = (b.total - a.total) / dl;
-      const double cross = (b.cross - a.cross) / dl;
-      const double f = a.coverage;
-      const double g_total
-          = (total - open.total()) / (plane_total - open.total());
-      const double g_cross = cross / plane_cross;
-      const double gap = a.wc * (1 / f - 1);
-      points.push_back(
-          {gap, {(g_total - f) / (1 - f), (g_cross - f) / (1 - f)}});
-    }
-    std::sort(points.begin(), points.end(), [](const auto& x, const auto& y) {
-      return x.first < y.first;
-    });
-    // Points at the same gap (within rounding) average into one; every
-    // column has the same gaps.
-    std::vector<double> column_gaps;
-    std::vector<CrossingShare> column;
-    std::vector<int> counts;
-    for (const auto& [gap, share] : points) {
-      if (!column_gaps.empty()
-          && gap - column_gaps.back() <= 1e-9 * std::max(gap, 1.0)) {
-        CrossingShare& last = column.back();
-        const int n = ++counts.back();
-        last.total += (share.total - last.total) / n;
-        last.cross += (share.cross - last.cross) / n;
+  for (const Table& table : tables) {
+    // Pairs of lengths give per-length values, then the share over the
+    // gap, relative to what the plane adds with the same neighbors; a
+    // plane that adds nothing has no shares to tabulate.
+    std::vector<double> gaps;
+    // The raw shares per column, then a fitted kept amount per column for
+    // the total and the coupling. A column the neighbors leave the plane
+    // nothing to add to, or whose fit fails, takes its length from a wider
+    // spacing (the coupling) or from its coupling's, scaled as without
+    // neighbors (the total).
+    std::vector<std::vector<CrossingShare>> raw(ns);
+    std::vector<bool> usable(ns, false);
+    const int per_column = static_cast<int>(table.jobs.size()) / ns;
+    for (int si = 0; si < ns; si++) {
+      const LateralCap& open = table.open_cap[si];
+      const LateralCap& plane = table.plane_cap[si];
+      const double plane_total = plane.total();
+      const double plane_cross = table.over ? plane.above : plane.below;
+      usable[si] = plane_total > open.total() && plane_cross > 0;
+      if (!usable[si]) {
         continue;
       }
-      column_gaps.push_back(gap);
-      column.push_back(share);
-      counts.push_back(1);
+      std::vector<std::pair<double, CrossingShare>> points;
+      for (int i = si * per_column; i + 1 < (si + 1) * per_column; i += 2) {
+        const Job& a = table.jobs[i];
+        const Job& b = table.jobs[i + 1];
+        const double dl = b.length - a.length;
+        const double total = (b.total - a.total) / dl;
+        const double cross = (b.cross - a.cross) / dl;
+        const double f = a.coverage;
+        const double g_total
+            = (total - open.total()) / (plane_total - open.total());
+        const double g_cross = cross / plane_cross;
+        const double gap = a.wc * (1 / f - 1);
+        points.push_back(
+            {gap, {(g_total - f) / (1 - f), (g_cross - f) / (1 - f)}});
+      }
+      std::sort(points.begin(), points.end(), [](const auto& x, const auto& y) {
+        return x.first < y.first;
+      });
+      // Points at the same gap (within rounding) average into one; every
+      // column has the same gaps.
+      std::vector<double> column_gaps;
+      std::vector<CrossingShare> column;
+      std::vector<int> counts;
+      for (const auto& [gap, share] : points) {
+        if (!column_gaps.empty()
+            && gap - column_gaps.back() <= 1e-9 * std::max(gap, 1.0)) {
+          CrossingShare& last = column.back();
+          const int n = ++counts.back();
+          last.total += (share.total - last.total) / n;
+          last.cross += (share.cross - last.cross) / n;
+          continue;
+        }
+        column_gaps.push_back(gap);
+        column.push_back(share);
+        counts.push_back(1);
+      }
+      gaps = column_gaps;
+      raw[si] = std::move(column);
     }
-    gaps = column_gaps;
-    values.insert(values.end(), column.begin(), column.end());
+    auto fitted = [&](const int si, const bool cross) {
+      std::vector<double> shares;
+      for (const CrossingShare& v : raw[si]) {
+        shares.push_back(cross ? v.cross : v.total);
+      }
+      const KeptFit fit = fitKept(gaps, shares);
+      const bool good = fit.length > 0.01 * w
+                        && fit.residual <= kKeptFitTolerance * fit.length;
+      return good ? fit.length : -1.0;
+    };
+    std::vector<double> length_total(ns, -1);
+    std::vector<double> length_cross(ns, -1);
+    const int none = ns - 1;
+    if (usable[none]) {
+      length_total[none] = fitted(none, false);
+      length_cross[none] = fitted(none, true);
+    }
+    if (length_cross[none] <= 0) {
+      throw std::runtime_error("the crossing shares of " + table.key.layer
+                               + " under or over " + table.key.cover
+                               + " fit no kept amount; solve them tighter");
+    }
+    // A far cover changes the total too little for its shares to fit; its
+    // coupling's length stands in.
+    if (length_total[none] <= 0) {
+      length_total[none] = length_cross[none];
+    }
+    const double ratio = length_total[none] / length_cross[none];
+    for (int si = none - 1; si >= 0; si--) {
+      if (usable[si]) {
+        length_cross[si] = fitted(si, true);
+        length_total[si] = fitted(si, false);
+      }
+      if (length_cross[si] <= 0) {
+        length_cross[si] = length_cross[si + 1];
+      }
+      if (length_total[si] <= 0) {
+        length_total[si] = length_cross[si] * ratio;
+      }
+    }
+    std::vector<CrossingShare> values;
+    for (int si = 0; si < ns; si++) {
+      for (const double gap : gaps) {
+        values.push_back({keptShare(length_total[si], gap),
+                          keptShare(length_cross[si], gap)});
+      }
+    }
+    model.addCrossing(table.key, CrossingTable(gaps, values, spacings));
   }
-  model.addCrossing(key, CrossingTable(gaps, values, spacings));
 }
 
 void buildEnds(const fsv::Stack& stack,
@@ -1053,13 +1210,15 @@ void buildLayer(const fsv::Stack& stack,
 {
   buildLateral(stack, layer, plan, options, model);
   buildEnds(stack, layer, plan, options, model);
+  std::vector<Layer> covers;
   for (const std::vector<Layer>* side : {&plan.below, &plan.above}) {
     for (const Layer cover : *side) {
       if (cover.valid()) {
-        buildCrossing(stack, layer, cover, options, model);
+        covers.push_back(cover);
       }
     }
   }
+  buildCrossings(stack, layer, covers, options, model);
   for (const Layer other : diagonalLayers(stack, layer, options)) {
     buildDiagonal(stack, layer, other, options, model);
   }

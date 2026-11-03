@@ -169,15 +169,40 @@ void buildLateral(const fsv::Stack& stack,
                   const BuildOptions& options,
                   Model& model);
 
+// The crossing shares follow a kept amount over a gap g of
+// L (1 - exp(-g / L)): a share of 1 at no gap, falling as L / g. One length
+// L per spacing column, fitted to the solved shares, smooths their noise,
+// which the plane's small effect beside close neighbors amplifies.
+struct KeptFit
+{
+  double length = 0;    // L, µm
+  double residual = 0;  // rms of the kept amounts' misfit, µm
+};
+// A fit is good when its residual is within this fraction of its length.
+inline constexpr double kKeptFitTolerance = 0.15;
+double keptShare(double length, double gap);
+KeptFit fitKept(const std::vector<double>& gaps,
+                const std::vector<double>& shares);
+
 // Builds the crossing table of a layer and one covering layer: periodic
 // arrays of crossing wires on the cover, over a wire of minimum width, at
-// every crossing width and coverage of the options; each array gives the
-// share kept over the gap between its crossings.
+// every crossing width and coverage of the options, and with neighbors
+// at every crossing spacing; each array gives the share kept over the gap
+// between its crossings, and the table holds them fitted (fitKept). Throws
+// std::runtime_error when the coupling shares without neighbors fit no
+// kept amount.
 void buildCrossing(const fsv::Stack& stack,
                    Layer layer,
                    Layer cover,
                    const BuildOptions& options,
                    Model& model);
+// The crossing tables of a layer and several covering layers, their solves
+// in one pool.
+void buildCrossings(const fsv::Stack& stack,
+                    Layer layer,
+                    const std::vector<Layer>& covers,
+                    const BuildOptions& options,
+                    Model& model);
 
 // Builds the diagonal table of a layer and a nearby layer: a wire of
 // minimum width with a neighbor at a spacing on each side, and a parallel
