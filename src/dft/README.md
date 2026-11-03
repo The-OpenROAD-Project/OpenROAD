@@ -98,8 +98,10 @@ Run it after `execute_dft_plan` and placement.
 
 Within each chain, falling-edge cells stay ahead of rising-edge cells, and the
 cell that drives the chain's scan-out stays last, since the scan-out is often a
-functional output port. Chains with more than one partition or scan list, and
-chains with unplaced cells, are skipped.
+functional output port. A chain keeps its current order unless the new one is
+shorter. Chains with more than one partition or scan list, and chains with
+unplaced cells, are skipped. A SCANDEF chain with `FLOATING` cells has one scan
+list per cell, so `scan_opt` skips it.
 
 The cost is the distance from each cell's scan output to the next cell's scan
 input. When a scan output also drives functional logic, a shorter scan
@@ -114,7 +116,7 @@ scan_opt
 
 | Switch Name | Description |
 | ---- | ---- |
-| `-rebalance_chains` | Before reordering, move cells between chains of the same clock and edge so each chain covers a compact area. Each chain keeps the cell that drives its scan-out. No chain ends up with more bits than the longest chain had, unless multi-bit cells cannot be packed that way. |
+| `-rebalance_chains` | Before reordering, move cells between chains of the same clock and edge so each chain covers a compact area. Each chain keeps the cell that drives its scan-out, and no chain ends up with more bits than the longest chain had. Chains of a clock and edge keep their cells when rebalancing would break that limit or would not shorten their scan wiring. |
 
 ### Report Chain Metrics
 

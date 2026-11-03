@@ -66,7 +66,7 @@ NETS 33 ;
     - clock2 ( PIN clock2 ) ( ff8_clk2_rising CLK ) ( ff8_clk2_falling CLK_N ) ( ff6_clk2_rising CLK ) ( ff6_clk2_falling CLK_N ) ( ff4_clk2_rising CLK ) ( ff4_clk2_falling CLK_N )
       ( ff2_clk2_rising CLK ) ( ff2_clk2_falling CLK_N ) ( ff10_clk2_rising CLK ) ( ff10_clk2_falling CLK_N ) + USE SIGNAL ;
     - output1 ( PIN output1 ) ( ff3_clk1_rising SCD ) ( ff1_clk1_rising Q ) + USE SIGNAL ;
-    - output10 ( PIN output10 ) ( ff8_clk2_rising SCD ) ( ff10_clk2_rising Q ) + USE SIGNAL ;
+    - output10 ( PIN output10 ) ( ff2_clk2_rising SCD ) ( ff10_clk2_rising Q ) + USE SIGNAL ;
     - output11 ( PIN output11 ) ( ff5_clk1_falling SCD ) ( ff1_clk1_falling Q ) + USE SIGNAL ;
     - output12 ( PIN output12 ) ( ff6_clk2_falling SCD ) ( ff2_clk2_falling Q ) + USE SIGNAL ;
     - output13 ( PIN output13 ) ( ff3_clk1_falling Q ) + USE SIGNAL ;
@@ -79,11 +79,11 @@ NETS 33 ;
     - output2 ( PIN output2 ) ( ff2_clk2_rising Q ) + USE SIGNAL ;
     - output20 ( PIN output20 ) ( ff10_clk2_falling Q ) + USE SIGNAL ;
     - output3 ( PIN output3 ) ( ff3_clk1_rising Q ) + USE SIGNAL ;
-    - output4 ( PIN output4 ) ( ff2_clk2_rising SCD ) ( ff4_clk2_rising Q ) + USE SIGNAL ;
+    - output4 ( PIN output4 ) ( ff6_clk2_rising SCD ) ( ff4_clk2_rising Q ) + USE SIGNAL ;
     - output5 ( PIN output5 ) ( ff9_clk1_rising SCD ) ( ff5_clk1_rising Q ) + USE SIGNAL ;
     - output6 ( PIN output6 ) ( ff6_clk2_rising Q ) + USE SIGNAL ;
     - output7 ( PIN output7 ) ( ff7_clk1_rising Q ) + USE SIGNAL ;
-    - output8 ( PIN output8 ) ( ff6_clk2_rising SCD ) ( ff8_clk2_rising Q ) + USE SIGNAL ;
+    - output8 ( PIN output8 ) ( ff4_clk2_rising SCD ) ( ff8_clk2_rising Q ) + USE SIGNAL ;
     - output9 ( PIN output9 ) ( ff7_clk1_rising SCD ) ( ff9_clk1_rising Q ) + USE SIGNAL ;
     - port1 ( PIN port1 ) ( ff9_clk1_rising D ) ( ff9_clk1_falling D ) ( ff8_clk2_rising D ) ( ff8_clk2_falling D ) ( ff7_clk1_rising D ) ( ff7_clk1_falling D )
       ( ff6_clk2_rising D ) ( ff6_clk2_falling D ) ( ff5_clk1_rising D ) ( ff5_clk1_falling D ) ( ff4_clk2_rising D ) ( ff4_clk2_falling D ) ( ff3_clk1_rising D ) ( ff3_clk1_falling D )
@@ -95,8 +95,8 @@ NETS 33 ;
     - scan_in_1 ( PIN scan_in_1 ) ( ff9_clk1_falling SCD ) + USE SCAN ;
     - scan_in_2 ( PIN scan_in_2 ) ( ff2_clk2_falling SCD ) + USE SCAN ;
     - scan_in_3 ( PIN scan_in_3 ) ( ff8_clk2_falling SCD ) + USE SCAN ;
-    - scan_in_4 ( PIN scan_in_4 ) ( ff10_clk2_rising SCD ) + USE SCAN ;
-    - scan_in_5 ( PIN scan_in_5 ) ( ff4_clk2_rising SCD ) + USE SCAN ;
+    - scan_in_4 ( PIN scan_in_4 ) ( ff8_clk2_rising SCD ) + USE SCAN ;
+    - scan_in_5 ( PIN scan_in_5 ) ( ff10_clk2_rising SCD ) + USE SCAN ;
     - scan_in_6 ( PIN scan_in_6 ) ( ff5_clk1_rising SCD ) + USE SCAN ;
     - scan_in_7 ( PIN scan_in_7 ) ( ff1_clk1_rising SCD ) + USE SCAN ;
     - set_b ( PIN set_b ) ( ff9_clk1_rising SET_B ) ( ff9_clk1_falling SET_B ) ( ff8_clk2_rising SET_B ) ( ff8_clk2_falling SET_B ) ( ff7_clk1_rising SET_B ) ( ff7_clk1_falling SET_B )
@@ -143,8 +143,8 @@ SCANCHAINS 8 ;
 - chain_4
 + START PIN scan_in_4
 + ORDERED
-  ff10_clk2_rising ( IN SCD ) ( OUT Q )
   ff8_clk2_rising ( IN SCD ) ( OUT Q )
+  ff4_clk2_rising ( IN SCD ) ( OUT Q )
   ff6_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION default
 + STOP PIN output6 ;
@@ -152,7 +152,7 @@ SCANCHAINS 8 ;
 - chain_5
 + START PIN scan_in_5
 + ORDERED
-  ff4_clk2_rising ( IN SCD ) ( OUT Q )
+  ff10_clk2_rising ( IN SCD ) ( OUT Q )
   ff2_clk2_rising ( IN SCD ) ( OUT Q )
 + PARTITION default
 + STOP PIN output2 ;

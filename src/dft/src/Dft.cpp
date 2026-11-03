@@ -52,6 +52,8 @@ struct OptChain
   std::vector<std::unique_ptr<OdbScanCellAdapter>> cells;
   // Set when rebalancing changed which cells the chain holds.
   bool members_changed = false;
+  // Set when rebalancing already reordered the cells.
+  bool reordered = false;
 };
 
 // Returns the chain's only scan list, or nullptr if it has more than one
@@ -111,7 +113,8 @@ int64_t chainLength(
 // Reorders a chain's cells to reduce wire length. The last cell drives the
 // chain's scan-out, which may be a functional port, so it stays last.
 // Falling-edge cells stay ahead of rising-edge cells. Returns false, leaving
-// the order alone, if the chain cannot be reordered under those rules.
+// the order alone, if the chain cannot be reordered under those rules or the
+// new order is not shorter than a current order that already follows them.
 bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
                   const std::optional<odb::Point>& source,
                   utl::Logger* logger)
@@ -128,6 +131,16 @@ bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
   if (is_falling(cells.back())
       && !std::all_of(cells.begin(), cells.end() - 1, is_falling)) {
     return false;
+  }
+
+  // The current order can be kept only if no falling-edge cell follows a
+  // rising-edge one.
+  const bool order_valid
+      = std::is_partitioned(cells.begin(), cells.end() - 1, is_falling);
+  const int64_t old_length = chainLength(source, cells);
+  std::vector<const OdbScanCellAdapter*> old_order;
+  for (const auto& cell : cells) {
+    old_order.push_back(cell.get());
   }
 
   std::unique_ptr<OdbScanCellAdapter> last = std::move(cells.back());
@@ -164,6 +177,17 @@ bool reorderChain(std::vector<std::unique_ptr<OdbScanCellAdapter>>& cells,
   restore(falling);
   restore(rising);
   cells.push_back(std::move(last));
+
+  if (order_valid && chainLength(source, cells) >= old_length) {
+    std::map<const OdbScanCellAdapter*, size_t> old_index;
+    for (size_t i = 0; i < old_order.size(); i++) {
+      old_index[old_order[i]] = i;
+    }
+    std::ranges::sort(cells, [&](const auto& a, const auto& b) {
+      return old_index.at(a.get()) < old_index.at(b.get());
+    });
+    return false;
+  }
   return true;
 }
 
@@ -223,11 +247,20 @@ void rewriteScanList(
   }
 }
 
+const char* edgeName(odb::dbScanInst::ClockEdge edge)
+{
+  return edge == odb::dbScanInst::ClockEdge::Falling ? "falling" : "rising";
+}
+
 // Moves cells between chains of the same clock domain so each chain holds a
 // spatially compact set. Each chain keeps its last cell, which drives its
 // scan-out, and no chain ends up with more bits than the longest one had.
-// Only chains whose cells all share one clock and edge take part.
-void rebalanceChains(std::vector<OptChain>& chains, utl::Logger* logger)
+// Only chains whose cells all share one clock and edge take part. A domain
+// keeps its chains when rebalancing would lengthen its scan wiring. Every
+// chain in a domain that was considered comes back reordered.
+void rebalanceChains(std::vector<OptChain>& chains,
+                     odb::dbBlock* block,
+                     utl::Logger* logger)
 {
   using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
   std::map<DomainKey, std::vector<OptChain*>> domains;
@@ -320,27 +353,64 @@ void rebalanceChains(std::vector<OptChain>& chains, utl::Logger* logger)
     if (matched < k) {
       logger->info(utl::DFT,
                    24,
-                   "Kept {} chains on clock {} as they are; rebalancing "
-                   "would make a chain longer than {} bits.",
+                   "Kept {} chains on clock {} ({} edge) as they are; "
+                   "rebalancing would make a chain longer than {} bits.",
                    k,
                    key.first,
+                   edgeName(key.second),
                    max_chain_bits);
       continue;
     }
 
-    // Commit: move every pooled cell to its new chain, then the last cells.
-    std::vector<std::vector<std::unique_ptr<OdbScanCellAdapter>>> new_cells(k);
+    // Reorder both the current chains and the rebalanced ones, and keep the
+    // rebalanced chains only if their scan wiring is shorter. k-means ignores
+    // the fixed scan-in and scan-out ends, so it can lose.
+    using Cells = std::vector<std::unique_ptr<OdbScanCellAdapter>>;
+    auto adapter = [&](const std::unique_ptr<OdbScanCellAdapter>& cell) {
+      return std::make_unique<OdbScanCellAdapter>(cell->getScanInst(), logger);
+    };
+    std::vector<Cells> kept(k);
+    std::vector<Cells> moved(k);
+    for (int m = 0; m < k; m++) {
+      for (const auto& cell : members[m]->cells) {
+        kept[m].push_back(adapter(cell));
+      }
+    }
     for (size_t i = 0; i < pool.size(); i++) {
       const auto& [m, idx] = pool_origin[i];
-      new_cells[chain_of_cluster[assignment[i]]].push_back(
-          std::move(members[m]->cells[idx]));
+      moved[chain_of_cluster[assignment[i]]].push_back(
+          adapter(members[m]->cells[idx]));
     }
+    int64_t kept_length = 0;
+    int64_t moved_length = 0;
     for (int m = 0; m < k; m++) {
-      new_cells[m].push_back(std::move(members[m]->cells.back()));
+      moved[m].push_back(adapter(members[m]->cells.back()));
+      const std::optional<odb::Point> source
+          = pinLocation(members[m]->chain->getScanIn());
+      reorderChain(kept[m], source, logger);
+      reorderChain(moved[m], source, logger);
+      kept_length += chainLength(source, kept[m]);
+      moved_length += chainLength(source, moved[m]);
     }
+
+    const bool rebalance = moved_length < kept_length;
     for (int m = 0; m < k; m++) {
-      members[m]->cells = std::move(new_cells[m]);
-      members[m]->members_changed = true;
+      members[m]->cells = std::move(rebalance ? moved[m] : kept[m]);
+      members[m]->members_changed = rebalance;
+      members[m]->reordered = true;
+    }
+    if (!rebalance) {
+      logger->info(utl::DFT,
+                   25,
+                   "Kept {} chains on clock {} ({} edge) as they are; "
+                   "rebalancing does not shorten their scan wiring ({:.2f} um "
+                   "vs {:.2f} um).",
+                   k,
+                   key.first,
+                   edgeName(key.second),
+                   block->dbuToMicrons(kept_length),
+                   block->dbuToMicrons(moved_length));
+      continue;
     }
 
     logger->info(utl::DFT,
@@ -672,7 +742,7 @@ void Dft::scanOpt(bool rebalance_chains)
   }
 
   if (rebalance_chains) {
-    rebalanceChains(chains, logger_);
+    rebalanceChains(chains, block, logger_);
   }
 
   int chains_changed = 0;
@@ -683,15 +753,18 @@ void Dft::scanOpt(bool rebalance_chains)
     const std::optional<odb::Point> source
         = pinLocation(chain.chain->getScanIn());
 
+    // Compare against the order in odb; rebalancing may already have
+    // reordered the cells.
     std::vector<odb::dbScanInst*> before;
-    before.reserve(chain.cells.size());
-    for (const auto& cell : chain.cells) {
-      before.push_back(cell->getScanInst());
+    for (odb::dbScanInst* scan_inst : chain.list->getScanInsts()) {
+      before.push_back(scan_inst);
     }
 
-    reorderChain(chain.cells, source, logger_);
+    if (!chain.reordered) {
+      reorderChain(chain.cells, source, logger_);
+    }
 
-    bool changed = chain.members_changed;
+    bool changed = chain.members_changed || before.size() != chain.cells.size();
     for (size_t j = 0; j < before.size() && !changed; j++) {
       changed = before[j] != chain.cells[j]->getScanInst();
     }
