@@ -316,6 +316,7 @@ class PlaceIos : public tst::Fixture
                    nullptr,
                    nullptr,
                    &pin_placer_,
+                   nullptr,
                    &logger_};
 };
 

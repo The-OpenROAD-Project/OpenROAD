@@ -476,6 +476,7 @@ void NesterovPlace::runTimingDriven(int iter,
     // CPU backend, whose computeHpwl maintains them eagerly).
     nbc_->mirrorNetBoxesToHost();
 
+    nbc_->clearVirtualNets();
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
@@ -635,6 +636,36 @@ void NesterovPlace::runTimingDriven(int iter,
       npVars_.timingDrivenMode = false;
     }
   }
+}
+
+void NesterovPlace::runPowerDriven()
+{
+  if (!pwb_ || !pwb_->clockLeafNetsEnabled()) {
+    return;
+  }
+  const int overflow = std::round(average_overflow_unscaled_ * 100);
+  const int reached = std::ranges::count_if(
+      npVars_.powerDrivenClockLeafOverflows,
+      [overflow](const int threshold) { return threshold > overflow; });
+  const bool next = reached > npVars_.powerDrivenIterCounter;
+  const bool dropped
+      = npVars_.powerDrivenIterCounter > 0 && !nbc_->hasVirtualNets();
+  if (!next && !dropped) {
+    return;
+  }
+  if (next) {
+    npVars_.powerDrivenIterCounter = reached;
+    log_->info(GPL,
+               435,
+               "Power-driven iteration {}/{}, overflow: {:.3f}.",
+               npVars_.powerDrivenIterCounter,
+               npVars_.powerDrivenClockLeafOverflows.size(),
+               average_overflow_unscaled_);
+  }
+  updateDb();
+  pwb_->updateClockLeafNets();
+  // The leaf nets change the objective, as timing-driven iterations do.
+  refreshCurGradients();
 }
 
 // Evaluate every gradient at curSLP on the repaired
@@ -1460,6 +1491,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                     is_routability_gpl_iter,
                     virtual_cts_count);
 
+    runPowerDriven();
+
     const DivergeAction diverge_action = isDiverged(curA);
     if (diverge_action == DivergeAction::kStop) {
       break;
@@ -1506,6 +1539,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   if (cb_) {
     cb_->removeVirtualCts();
   }
+  nbc_->clearVirtualNets();
 
   // The GPU HPWL backend keeps per-net boxes device-resident during the
   // loop (no host reader exists there — see hpwlBackend.h). Materialize

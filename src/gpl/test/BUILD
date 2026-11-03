@@ -318,6 +318,7 @@ cc_test(
     env = GPU_ENV_OFF,
     deps = [
         "//src/ant",
+        "//src/cts",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
