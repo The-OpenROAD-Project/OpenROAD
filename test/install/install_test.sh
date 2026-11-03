@@ -53,6 +53,16 @@ else
     exit 1
 fi
 
+# Verify yaml2json is installed next to openroad and converts YAML.
+if OUTPUT=$(printf 'k:\n  default: 1.0\n' | ./yaml2json 2>&1) \
+    && echo "$OUTPUT" | grep -q '"default": 1.0'; then
+    echo "PASS: installed yaml2json converts YAML to JSON"
+else
+    echo "FAIL: installed yaml2json missing or produced unexpected output"
+    echo "Output was: $OUTPUT"
+    exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # install.sh artifact cleanup test.
 #

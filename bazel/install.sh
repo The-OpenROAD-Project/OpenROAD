@@ -43,20 +43,24 @@ DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/../install/OpenROAD}
 mkdir -p "$DEST_DIR/bin"
 
 # Remove previous OpenROAD install artifacts.
-rm -f "$DEST_DIR/bin/openroad"
-rm -f "$DEST_DIR/bin/openroad.repo_mapping"
-rm -f "$DEST_DIR/bin/openroad.runfiles_manifest"
-rm -rf "$DEST_DIR/bin/openroad.runfiles"
+for binary in openroad yaml2json; do
+    rm -f "$DEST_DIR/bin/$binary"
+    rm -f "$DEST_DIR/bin/$binary.repo_mapping"
+    rm -f "$DEST_DIR/bin/$binary.runfiles_manifest"
+    rm -rf "$DEST_DIR/bin/$binary.runfiles"
+done
 
 tar -xf "$TARFILE" -C "$DEST_DIR/bin"
 
 # Remove useless files from pkg_tar from bazel
-if [ -e "$DEST_DIR/bin/openroad.repo_mapping" ]; then
-    chmod u+w "$DEST_DIR/bin/openroad.repo_mapping"
-    rm -rf "$DEST_DIR/bin/openroad.repo_mapping"
-    chmod u+w "$DEST_DIR/bin/openroad.runfiles"
-    rm -rf "$DEST_DIR/bin/openroad.runfiles"
-fi
+for binary in openroad yaml2json; do
+    if [ -e "$DEST_DIR/bin/$binary.repo_mapping" ]; then
+        chmod u+w "$DEST_DIR/bin/$binary.repo_mapping"
+        rm -rf "$DEST_DIR/bin/$binary.repo_mapping"
+        chmod u+w "$DEST_DIR/bin/$binary.runfiles"
+        rm -rf "$DEST_DIR/bin/$binary.runfiles"
+    fi
+done
 
 ABS_DEST="$(realpath "$DEST_DIR")"
 echo "OpenROAD binary installed to $ABS_DEST"
