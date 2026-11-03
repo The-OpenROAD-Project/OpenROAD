@@ -11,10 +11,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -1027,6 +1030,16 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
   }
 }
 
+static void updateBinDensity(Bin& bin)
+{
+  const float scaledBinArea
+      = static_cast<float>(bin.getBinArea() * bin.getTargetDensity());
+  bin.setDensity((static_cast<float>(bin.instPlacedArea())
+                  + static_cast<float>(bin.getFillerArea())
+                  + static_cast<float>(bin.getNonPlaceArea()))
+                 / scaledBinArea);
+}
+
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                          int parallel_threads)
@@ -1115,10 +1128,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     int64_t binArea = bin.getBinArea();
     const float scaledBinArea
         = static_cast<float>(binArea * bin.getTargetDensity());
-    bin.setDensity((static_cast<float>(bin.instPlacedArea())
-                    + static_cast<float>(bin.getFillerArea())
-                    + static_cast<float>(bin.getNonPlaceArea()))
-                   / scaledBinArea);
+    updateBinDensity(bin);
 
     // Locked instances cannot move, so the overflow they add on top of the
     // bin's non-placeable area is a fixed baseline; count only what unlocked
@@ -1169,6 +1179,41 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
           "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
           block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
           block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+    }
+  }
+}
+
+// Each per-bin addend is truncated as in scatterDensityAreaInPlace, so a cell
+// added here contributes what a full update would give it.
+void BinGrid::updateBinsGCellDensityArea(const GCell* cell)
+{
+  const bool instance = cell->isInstance();
+  const bool macro = instance && cell->isMacroInstance();
+  if (instance ? !macro && !cell->isStdInstance() : !cell->isFiller()) {
+    return;
+  }
+  const bool locked = instance && track_locked_ && cell->isLocked();
+  const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+  const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+  for (int y = pairY.first; y < pairY.second; y++) {
+    for (int x = pairX.first; x < pairX.second; x++) {
+      Bin& bin = bins_[y * binCntX_ + x];
+      float scaledArea
+          = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+      if (macro) {
+        scaledArea *= bin.getTargetDensity();
+      }
+      const auto area = static_cast<int64_t>(scaledArea);
+      if (instance) {
+        bin.addInstPlacedAreaUnscaled(area);
+        bin.addInstPlacedArea(area);
+        if (locked) {
+          bin.setLockedAreaUnscaled(bin.getLockedAreaUnscaled() + area);
+        }
+      } else {
+        bin.addFillerArea(area);
+      }
+      updateBinDensity(bin);
     }
   }
 }
@@ -4875,31 +4920,33 @@ void NesterovBase::restoreRemovedFillers()
   rebuildNbDeviceCtx();
 }
 
-void NesterovBase::redistributeFillerCells()
+bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
 {
   // Reads and overwrites the per-filler host vectors below directly; they
   // must be fresh first. Mirrors the very first line of cutFillerCells().
   pullCoordsFromDevice();
 
   if (fillerStor_.empty()) {
-    return;
+    return false;
   }
 
   dbBlock* block = pb_->db()->getChip()->getBlock();
 
-  // Free capacity per bin (filler area is excluded)
+  // With spread_new_cells, the new (unlocked) cells are first spread over
+  // their modules' holes, so the fillers stay out of them; afterwards the
+  // new cells go back to where they were.
+  //
+  // Room a bin has left at target density for instances.
+  auto bin_free = [](const Bin& bin) {
+    return static_cast<double>(bin.getBinArea()) * bin.getTargetDensity()
+           - static_cast<double>(bin.getNonPlaceArea())
+           - static_cast<double>(bin.instPlacedArea());
+  };
+  // Free capacity for the fillers (filler area is excluded)
   std::vector<Bin>& bins = getBins();
-  std::vector<double> free_capacity(bins.size(), 0.0);
   double total_free_capacity = 0.0;
-  for (size_t b = 0; b < bins.size(); ++b) {
-    const Bin& bin = bins[b];
-    const double scaled_bin_area
-        = static_cast<double>(bin.getBinArea()) * bin.getTargetDensity();
-    const double free = scaled_bin_area
-                        - static_cast<double>(bin.instPlacedArea())
-                        - static_cast<double>(bin.getNonPlaceArea());
-    free_capacity[b] = std::max(0.0, free);
-    total_free_capacity += free_capacity[b];
+  for (const Bin& bin : bins) {
+    total_free_capacity += std::max(0.0, bin_free(bin));
   }
 
   const size_t num_fillers = fillerStor_.size();
@@ -4916,58 +4963,211 @@ void NesterovBase::redistributeFillerCells()
                free_capacity_um2,
                num_fillers,
                filler_area_um2);
-    return;
+    return false;
   }
 
-  // Give every bin an integer filler quota proportional to its free
-  // capacity (largest-remainder method, so the quotas sum to exactly
-  // num_fillers instead of drifting from independent rounding).
-  std::vector<size_t> quota(bins.size(), 0);
-  std::vector<double> remainder(bins.size(), 0.0);
-  size_t assigned = 0;
-  for (size_t b = 0; b < bins.size(); ++b) {
-    const double exact = free_capacity[b] / total_free_capacity
-                         * static_cast<double>(num_fillers);
-    quota[b] = static_cast<size_t>(exact);
-    remainder[b] = exact - static_cast<double>(quota[b]);
-    assigned += quota[b];
+  // Rebuild the grid from the instances' current positions, leaving out the
+  // fillers and, when spreading, the new (unlocked) cells; those are added
+  // one at a time below. The grid is built from the density centres, which
+  // init() leaves on prevSLPCoordi_, so put them on curCoordi_ first.
+  for (size_t i = 0; i < nb_gcells_.size(); ++i) {
+    nb_gcells_[i]->setDensityCenterLocation(curCoordi_[i].x, curCoordi_[i].y);
   }
-  assigned = std::min(assigned, num_fillers);
-  const size_t leftover = num_fillers - assigned;
-  if (leftover > 0) {
-    std::vector<size_t> order;
-    order.reserve(bins.size());
-    for (size_t b = 0; b < bins.size(); ++b) {
-      order.push_back(b);
+  std::vector<GCellHandle> kept;
+  for (const GCellHandle& gcell : nb_gcells_) {
+    if (gcell->isInstance() && !(spread_new_cells && !gcell->isLocked())) {
+      kept.push_back(gcell);
     }
-    std::partial_sort(
-        order.begin(),
-        order.begin() + leftover,
-        order.end(),
-        [&](size_t a, size_t b) { return remainder[a] > remainder[b]; });
-    for (size_t k = 0; k < leftover; ++k) {
-      quota[order[k]]++;
+  }
+#ifdef ENABLE_GPU
+  const int scatter_threads
+      = nb_device_ctx_ != nullptr ? static_cast<int>(nbc_->getNumThreads()) : 1;
+#else
+  const int scatter_threads = static_cast<int>(nbc_->getNumThreads());
+#endif
+  bg_.updateBinsGCellDensityArea(kept, scatter_threads);
+
+  // The spread only moves the new cells' density footprints on the grid;
+  // their positions and optimizer state are left as they are.
+  if (spread_new_cells) {
+    std::map<unsigned, std::vector<size_t>> groups;  // by dbModule id
+    for (size_t i = 0; i < nb_gcells_.size(); ++i) {
+      GCell* gcell = nb_gcells_[i];
+      if (!gcell->isInstance() || gcell->isLocked()) {
+        continue;
+      }
+      groups[gcell->insts().front()->dbInst()->getModule()->getId()].push_back(
+          i);
     }
+
+    // Candidate positions: the centres of a grid five times finer than the
+    // bins.
+    constexpr int kSub = 5;
+    const int px_cnt = bg_.getBinCntX() * kSub;
+    const int py_cnt = bg_.getBinCntY() * kSub;
+    const double step_x = bg_.getBinSizeX() / kSub;
+    const double step_y = bg_.getBinSizeY() / kSub;
+    auto point = [&](int p) {
+      return std::pair{bg_.lx() + (p % px_cnt + 0.5) * step_x,
+                       bg_.ly() + (p / px_cnt + 0.5) * step_y};
+    };
+    // Whether the bin holding (x, y) has room for the cell. A cell larger
+    // than a bin's capacity needs that bin empty, and the bins its density
+    // footprint covers, centred on (x, y), to have room for its area between
+    // them.
+    auto fits = [&](GCell* gcell, double x, double y) {
+      const Bin& bin = bins[bg_.getBinIndex(
+          std::clamp(static_cast<int>((x - bg_.lx()) / bg_.getBinSizeX()),
+                     0,
+                     bg_.getBinCntX() - 1),
+          std::clamp(static_cast<int>((y - bg_.ly()) / bg_.getBinSizeY()),
+                     0,
+                     bg_.getBinCntY() - 1))];
+      const double area = static_cast<double>(gcell->dDx()) * gcell->dDy()
+                          * gcell->getDensityScale();
+      const double capacity
+          = static_cast<double>(bin.getBinArea()) * bin.getTargetDensity()
+            - static_cast<double>(bin.getNonPlaceArea())
+            - static_cast<double>(bin.getLockedAreaUnscaled());
+      if (area <= capacity) {
+        return bin_free(bin) >= area;
+      }
+      if (bin_free(bin) < capacity) {
+        return false;
+      }
+      gcell->setDensityCenterLocation(static_cast<int>(x), static_cast<int>(y));
+      const auto [xl, xh] = bg_.getDensityMinMaxIdxX(gcell);
+      const auto [yl, yh] = bg_.getDensityMinMaxIdxY(gcell);
+      double room = 0;
+      for (int by = yl; by < yh; ++by) {
+        for (int bx = xl; bx < xh; ++bx) {
+          room += std::max(0.0, bin_free(bins[bg_.getBinIndex(bx, by)]));
+        }
+      }
+      return room >= area;
+    };
+
+    size_t moved = 0, unplaced = 0;
+    double total_dist = 0.0;
+    for (auto& [module, idx] : groups) {
+      double sx = 0, sy = 0;
+      for (size_t i : idx) {
+        sx += curCoordi_[i].x;
+        sy += curCoordi_[i].y;
+      }
+      const double gx = sx / idx.size();
+      const double gy = sy / idx.size();
+
+      // Place the cells from the module's centroid outwards.
+      std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) {
+        const double da
+            = std::abs(curCoordi_[a].x - gx) + std::abs(curCoordi_[a].y - gy);
+        const double db
+            = std::abs(curCoordi_[b].x - gx) + std::abs(curCoordi_[b].y - gy);
+        return da != db ? da < db : a < b;
+      });
+
+      for (size_t i : idx) {
+        GCell* gcell = nb_gcells_[i];
+        const double x0 = curCoordi_[i].x;
+        const double y0 = curCoordi_[i].y;
+
+        auto dist = [&](int p) {
+          const auto [x, y] = point(p);
+          return std::abs(x - x0) + std::abs(y - y0);
+        };
+
+        // Nearest position where the cell fits, found by a best-first search
+        // over the fine grid from the cell.
+        int best = -1;
+        const int start
+            = std::clamp(
+                  static_cast<int>((x0 - bg_.lx()) / step_x), 0, px_cnt - 1)
+              + px_cnt
+                    * std::clamp(static_cast<int>((y0 - bg_.ly()) / step_y),
+                                 0,
+                                 py_cnt - 1);
+        std::unordered_set<int> visited{start};
+        using Entry = std::pair<double, int>;
+        std::priority_queue<Entry, std::vector<Entry>, std::greater<>> heap;
+        heap.emplace(dist(start), start);
+        while (!heap.empty()) {
+          const int p = heap.top().second;
+          heap.pop();
+          const auto [x, y] = point(p);
+          if (fits(gcell, x, y)) {
+            best = p;
+            break;
+          }
+          const int pxi = p % px_cnt;
+          const int pyi = p / px_cnt;
+          for (const auto [xx, yy] : {std::pair{pxi - 1, pyi},
+                                      std::pair{pxi + 1, pyi},
+                                      std::pair{pxi, pyi - 1},
+                                      std::pair{pxi, pyi + 1}}) {
+            if (xx < 0 || xx >= px_cnt || yy < 0 || yy >= py_cnt) {
+              continue;
+            }
+            const int next = yy * px_cnt + xx;
+            if (visited.insert(next).second) {
+              heap.emplace(dist(next), next);
+            }
+          }
+        }
+
+        // With no room anywhere, the cell stays where it is.
+        const auto [x, y] = best < 0 ? std::pair{x0, y0} : point(best);
+        gcell->setDensityCenterLocation(static_cast<int>(x),
+                                        static_cast<int>(y));
+        bg_.updateBinsGCellDensityArea(gcell);
+        if (best < 0) {
+          ++unplaced;
+        } else {
+          total_dist += std::abs(x - x0) + std::abs(y - y0);
+          ++moved;
+        }
+      }
+    }
+    debugPrint(
+        log_,
+        GPL,
+        "spread",
+        1,
+        "Spread {} new cells over {} modules, mean move {:.2f} um, {} "
+        "without room.",
+        moved,
+        groups.size(),
+        moved ? block->dbuToMicrons(static_cast<int>(total_dist / moved)) : 0.0,
+        unplaced);
   }
 
-  // Walk the fillers once, handing them out to bins in quota order.
-  size_t bin_idx = 0;
-  size_t remaining_in_bin = quota[0];
+  // Place each filler in the lowest-density bin and add it to the grid.
+  // Heap entries left stale by a filler are skipped when popped.
+  // Only bins with room besides their blockages take fillers.
+  auto has_room = [&](int b) {
+    return bins[b].getBinArea() * bins[b].getTargetDensity()
+           > bins[b].getNonPlaceArea();
+  };
+  using Entry = std::pair<float, int>;
+  std::priority_queue<Entry, std::vector<Entry>, std::greater<>> heap;
+  for (int b = 0; b < static_cast<int>(bins.size()); ++b) {
+    if (has_room(b)) {
+      heap.emplace(bins[b].getDensity(), b);
+    }
+  }
   size_t repositioned = 0;
   for (size_t i = 0; i < nb_gcells_.size(); ++i) {
     if (!nb_gcells_[i]->isFiller()) {
       continue;
     }
-    while (remaining_in_bin == 0 && bin_idx + 1 < bins.size()) {
-      ++bin_idx;
-      remaining_in_bin = quota[bin_idx];
+    while (!heap.empty()
+           && heap.top().first != bins[heap.top().second].getDensity()) {
+      heap.pop();
     }
-    if (remaining_in_bin == 0) {
-      // Quotas sum to num_fillers, so this should not happen; leave any
-      // stragglers where they are rather than crash.
+    if (heap.empty()) {
       break;
     }
-
+    const int bin_idx = heap.top().second;
     const Bin& bin = bins[bin_idx];
     GCell* gcell = nb_gcells_[i];
     const int half_dx = gcell->dx() / 2;
@@ -4989,6 +5189,20 @@ void NesterovBase::redistributeFillerCells()
     const int cx = bin.cx() + jitter_x;
     const int cy = bin.cy() + jitter_y;
     gcell->setCenterLocation(cx, cy);
+    gcell->setDensityCenterLocation(cx, cy);
+    bg_.updateBinsGCellDensityArea(gcell);
+
+    // Re-queue the bins the filler covers with their new density.
+    const auto [xl, xh] = bg_.getDensityMinMaxIdxX(gcell);
+    const auto [yl, yh] = bg_.getDensityMinMaxIdxY(gcell);
+    for (int y = yl; y < yh; ++y) {
+      for (int x = xl; x < xh; ++x) {
+        const int b = bg_.getBinIndex(x, y);
+        if (has_room(b)) {
+          heap.emplace(bins[b].getDensity(), b);
+        }
+      }
+    }
 
     // Update location in NesterovBase
     const FloatPoint pos(static_cast<float>(cx), static_cast<float>(cy));
@@ -5006,9 +5220,10 @@ void NesterovBase::redistributeFillerCells()
     curSLPDensityGrads_[i] = FloatPoint();
     curSLPSumGrads_[i] = FloatPoint();
 
-    --remaining_in_bin;
     ++repositioned;
   }
+  // Rebuild the grid from every cell's position (the spread moved the new
+  // cells' density centres).
   updateGCellDensityCenterLocation(curCoordi_);
   updateDensityFieldBin();
 
@@ -5035,6 +5250,7 @@ void NesterovBase::redistributeFillerCells()
              repositioned,
              free_capacity_um2,
              filler_area_um2);
+  return repositioned > 0;
 }
 
 void NesterovBaseCommon::destroyCbkGNet(odb::dbNet* db_net)

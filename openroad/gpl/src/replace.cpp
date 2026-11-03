@@ -226,8 +226,12 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
   // Build NesterovBase now (instead of lazily in doNesterovPlace() below) so
   // fillers can be redistributed before phase 1 sees its first iteration.
   if (initNesterovPlace(locked_options, threads, true)) {
+    bool moved = false;
     for (auto& nb : nbVec_) {
-      nb->redistributeFillerCells();
+      moved |= nb->redistributeFillerCells();
+    }
+    if (moved) {
+      np_->reinit();
     }
   }
 

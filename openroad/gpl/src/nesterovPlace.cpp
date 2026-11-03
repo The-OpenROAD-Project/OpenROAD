@@ -664,6 +664,12 @@ void NesterovPlace::enableIncrementalDensityPenaltyGuard()
   incremental_penalty_guard_requested_ = true;
 }
 
+void NesterovPlace::reinit()
+{
+  recursionCntInitSLPCoef_ = 0;
+  init();
+}
+
 void NesterovPlace::clearDivergence()
 {
   num_region_diverged_ = 0;

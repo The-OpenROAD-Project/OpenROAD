@@ -751,6 +751,9 @@ class BinGrid
   void setTrackLocked(bool track_locked) { track_locked_ = track_locked; }
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                   int parallel_threads = 1);
+  // Add one cell's density area at its current density location and
+  // refresh the density of the bins it overlaps.
+  void updateBinsGCellDensityArea(const GCell* cell);
   void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                  int parallel_threads);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
@@ -793,6 +796,9 @@ class BinGrid
 
   std::vector<Bin>& getBins();
   const std::vector<Bin>& getBinsConst() const { return bins_; };
+  // Index in getBins() of the bin at grid position (x, y); bins are stored
+  // row by row.
+  int getBinIndex(int x, int y) const { return y * binCntX_ + x; }
 
   void updateBinsNonPlaceArea();
 
@@ -1352,8 +1358,11 @@ class NesterovBase
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
 
-  // Directly redistributes the existing filler into the free space.
-  void redistributeFillerCells();
+  // Directly redistributes the existing filler into the free space. With
+  // spread_new_cells, the unlocked instances are first spread over their
+  // holes so the fillers stay out of them. Returns whether any filler
+  // moved.
+  bool redistributeFillerCells(bool spread_new_cells = true);
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
