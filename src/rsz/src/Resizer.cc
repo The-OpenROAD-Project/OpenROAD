@@ -3351,11 +3351,21 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore,
-                               bool run_repair_timing,
-                               float repair_tns_end_percent)
+void Resizer::findResizeSlacks(
+    bool run_journal_restore,
+    bool run_repair_timing,
+    float repair_tns_end_percent,
+    const std::function<bool(const odb::dbNet*)>& placed_net)
 {
   initBlock();
+
+  // Restores the caller's predicate on every exit, including errors.
+  struct PlacedNetGuard
+  {
+    Resizer* resizer;
+    std::function<bool(const odb::dbNet*)> previous;
+    ~PlacedNetGuard() { resizer->placed_net_ = std::move(previous); }
+  } placed_net_guard{this, std::exchange(placed_net_, placed_net)};
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
                                           ? est::ParasiticsSrc::kGlobalRouting
@@ -7153,17 +7163,19 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // ODB's insertBuffer* already placed the instance; re-run through
-  // setLocation so clampLocToCore can pull it back inside the core if
-  // the insertion point landed in the die-core gap.
-  setLocation(buffer_inst, buffer_inst->getLocation());
+  if (buffer_inst->isPlaced()) {
+    // ODB's insertBuffer* already placed the instance; re-run through
+    // setLocation so clampLocToCore can pull it back inside the core if
+    // the insertion point landed in the die-core gap.
+    setLocation(buffer_inst, buffer_inst->getLocation());
 
-  // Legalize the cell position for accurate parasitic estimation
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
-    opendp_->legalCellPos(buffer_inst);
+    // Legalize the cell position for accurate parasitic estimation
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::kGlobalRouting
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kDetailedRouting) {
+      opendp_->legalCellPos(buffer_inst);
+    }
   }
 
   // Increment the design area
@@ -7773,7 +7785,13 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 
   odb::dbNet* db_net = db_network_->staToDb(net);
 
-  return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+  return !(db_net->isConnectedByAbutment() || db_net->isSpecial())
+         && isPlacedNet(db_net);
+}
+
+bool Resizer::isPlacedNet(const odb::dbNet* net) const
+{
+  return !placed_net_ || placed_net_(net);
 }
 
 sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(

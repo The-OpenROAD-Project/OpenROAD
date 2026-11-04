@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <limits>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -62,6 +64,7 @@ BuildOptions smallBuild(const int threads)
   o.below_depth = 1;
   o.above_depth = 0;
   o.far_cover_factors = {};  // the far ladder has its own test
+  o.cover_tolerance = 0;     // and so do the probes
   o.tol = 0.02;
   o.threads = threads;
   o.extent = 3;
@@ -298,6 +301,160 @@ TEST(ModelBuilder, ResumesAndBuildsFarLayers)
   EXPECT_THROW(buildEnds(sky130(), L("met2"), wider, model),
                std::invalid_argument);
   EXPECT_EQ(solves, 0);
+}
+
+// A curve in candidate order, with every candidate's error measured
+// against 1.
+ProbeCurve curveOf(const std::vector<double>& values)
+{
+  return {values, std::vector<double>(values.size(), 1)};
+}
+
+TEST(ModelBuilder, PickCoversKeepsOnlyWhatInterpolationNeeds)
+{
+  // Distances 1, 2, 4, 8, 16: equal steps in the logarithm.
+  const std::vector<double> d{1, 2, 4, 8, 16};
+  // Linear in the logarithm: the ends predict everything.
+  EXPECT_EQ(pickCovers(d, {curveOf({5, 4, 3, 2, 1})}, 0.001),
+            (std::vector<int>{0, 4}));
+  // A kink at 4 needs it as a pick; a second curve straight there adds
+  // nothing.
+  EXPECT_EQ(pickCovers(
+                d, {curveOf({5, 4, 3, 3, 3}), curveOf({1, 1, 1, 1, 1})}, 0.001),
+            (std::vector<int>{0, 2, 4}));
+  // The error is relative to the scale: a bend of 0.5 passes at a
+  // tolerance of 0.01 when the scale is 100.
+  EXPECT_EQ(pickCovers(d, {{{5, 4, 3, 3, 3}, {100, 100, 100, 100, 100}}}, 0.01),
+            (std::vector<int>{0, 4}));
+  // Two candidates or fewer are all picked.
+  EXPECT_EQ(pickCovers({1, 3}, {curveOf({1, 9})}, 0.5),
+            (std::vector<int>{0, 1}));
+  // A tighter tolerance never picks fewer.
+  const ProbeCurve wavy = curveOf({5, 4.1, 3.3, 2.2, 1.9});
+  size_t last = 0;
+  for (const double tol : {1.0, 0.3, 0.1, 0.03, 0.01, 0.001}) {
+    const size_t picks = pickCovers(d, {wavy}, tol).size();
+    EXPECT_GE(picks, last) << tol;
+    last = picks;
+  }
+  EXPECT_EQ(last, d.size());
+}
+
+// The plan from probes on sky130 met2, routing layers only: below are met1
+// and li1, both kept; above are met3, met4 and met5, of which the probes
+// decide met4. The nearest and farthest are always kept, and the plan
+// does not depend on the thread count.
+TEST(ModelBuilder, PlanCoversFromProbes)
+{
+  BuildOptions o = smallBuild(4);
+  o.layers = {"li1", "met1", "met2", "met3", "met4", "met5"};
+  o.cover_tolerance = 0.01;
+  o.tol = 0.01;
+  int probes = 0;
+  o.progress = [&](int, int) { probes++; };
+  const CoverPlan plan = planCovers(sky130(), L("met2"), o);
+  EXPECT_EQ(probes, 3 * 8);  // the below side has nothing to decide
+  EXPECT_EQ(names(plan.below), (std::vector<std::string>{"", "met1", "li1"}));
+  ASSERT_GE(plan.above.size(), 3u);
+  EXPECT_EQ(sky130().name(plan.above[1]), "met3");
+  EXPECT_EQ(sky130().name(plan.above.back()), "met5");
+  BuildOptions one = o;
+  one.threads = 1;
+  one.progress = nullptr;
+  EXPECT_EQ(names(planCovers(sky130(), L("met2"), one).above),
+            names(plan.above));
+  // A looser tolerance never keeps more.
+  BuildOptions loose = one;
+  loose.cover_tolerance = 0.5;
+  EXPECT_EQ(names(planCovers(sky130(), L("met2"), loose).above),
+            (std::vector<std::string>{"", "met3", "met5"}));
+  EXPECT_NE(buildFingerprint(sky130(), o), buildFingerprint(sky130(), loose));
+  BuildOptions negative = one;
+  negative.cover_tolerance = -1;
+  EXPECT_THROW(planCovers(sky130(), L("met2"), negative),
+               std::invalid_argument);
+  negative.cover_tolerance = std::numeric_limits<double>::infinity();
+  EXPECT_THROW(planCovers(sky130(), L("met2"), negative),
+               std::invalid_argument);
+  // The far factors are checked whichever way the covers are chosen.
+  BuildOptions bad_factor = one;
+  bad_factor.far_cover_factors = {1, 0};
+  EXPECT_THROW(planCovers(sky130(), L("met2"), bad_factor),
+               std::invalid_argument);
+  // With nothing above met5, the probes below skip the variants with the
+  // other side's cover: 5 candidates × 4 variants; a grid of one width
+  // probes it once: 5 × 2.
+  probes = 0;
+  planCovers(sky130(), L("met5"), o);
+  EXPECT_EQ(probes, 5 * 4);
+  BuildOptions single = o;
+  single.width_factors = {1};
+  probes = 0;
+  planCovers(sky130(), L("met5"), single);
+  EXPECT_EQ(probes, 5 * 2);
+  // Choosing by depth needs no probes, and no layer fit to probe.
+  BuildOptions fixed = one;
+  fixed.cover_tolerance = 0;
+  EXPECT_EQ(names(coversAbove(sky130(), L("DIFF"), fixed)).front(), "");
+}
+
+// A resumed build with probe-chosen covers takes the plan from the model
+// it resumes, so it runs no probe and no solve.
+TEST(ModelBuilder, ResumeWithProbedCoversRunsNothing)
+{
+  BuildOptions o = smallBuild(4);
+  o.layers = {"li1", "met1", "met2", "met3", "met4", "met5"};
+  o.cover_tolerance = 0.02;
+  o.width_factors = {1};
+  o.spacing_factors = {1};
+  o.crossing_width_factors = {1};
+  o.coverages = {0.5};
+  o.crossing_length = 2;
+  o.crossing_length_long = 4;
+  o.end_length = 1;
+  o.diagonal_depth = 0;
+  o.tol = 0.03;
+  Model model;
+  buildLayer(sky130(), L("met4"), o, model);
+  int solves = 0;
+  o.progress = [&](int, int) { solves++; };
+  std::stringstream file;
+  writeModel(model, {}, file);
+  Model saved = readModel(file);
+  const std::optional<CoverPlan> held = heldCovers(sky130(), saved, L("met4"));
+  ASSERT_TRUE(held.has_value());
+  EXPECT_EQ(names(held->above),
+            names(planCovers(sky130(), L("met4"), o).above));
+  solves = 0;
+  buildLayer(sky130(), L("met4"), *held, o, saved);
+  EXPECT_EQ(solves, 0);
+  EXPECT_FALSE(heldCovers(sky130(), saved, L("met1")).has_value());
+  EXPECT_THROW(heldCovers(sky130(), saved, L("via")), std::invalid_argument);
+}
+
+// A plan that grows adds what the model lacks: a layer built at depth 0,
+// then built again at depth 1 on the same model, gains the nearer covers.
+TEST(ModelBuilder, ChangedPlanAddsMissingContexts)
+{
+  BuildOptions o = smallBuild(4);
+  o.layers = {"met1", "met2", "met3"};
+  o.width_factors = {1};
+  o.spacing_factors = {1};
+  o.crossing_width_factors = {1};
+  o.coverages = {0.5};
+  o.crossing_length = 2;
+  o.crossing_length_long = 4;
+  o.end_length = 1;
+  o.diagonal_depth = 0;
+  o.tol = 0.03;
+  o.below_depth = o.above_depth = 0;
+  Model model;
+  buildLayer(sky130(), L("met2"), o, model);
+  EXPECT_EQ(model.lateral({"met2", "met1", ""}), nullptr);
+  o.below_depth = o.above_depth = 1;
+  buildLayer(sky130(), L("met2"), o, model);
+  EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
 }
 
 TEST(ModelBuilder, RefusesBadLayersBeforeSolving)

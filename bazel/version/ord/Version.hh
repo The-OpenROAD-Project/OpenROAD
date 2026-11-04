@@ -3,8 +3,7 @@
 
 #pragma once
 
-// The Bazel counterpart of the CMake-generated include/ord/Version.hh. The
-// version is not compiled in: //bazel:stamped_binary.bzl writes it into the
+// The version is not compiled in: //bazel:stamped_binary.bzl writes it into the
 // linked binary, so a new version invalidates no compile or link action.
 
 namespace ord {

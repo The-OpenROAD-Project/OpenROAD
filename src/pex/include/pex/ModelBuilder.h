@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -28,7 +29,8 @@ struct BuildOptions
   std::vector<double> width_factors{1, 1.5, 2, 3, 5, 10};
   std::vector<double> spacing_factors{1, 1.25, 1.5, 2, 3, 5, 7, 10};
   // Covering layers tabulated below the layer (plus the substrate alone)
-  // and above it (plus none), nearest first.
+  // and above it (plus none), nearest first. These and the far factors
+  // below apply only when cover_tolerance is 0.
   int below_depth = 2;
   int above_depth = 2;
   // Past the depth, a few far layers get contexts too, at spaced
@@ -40,6 +42,12 @@ struct BuildOptions
   // farthest, so the table count grows with this list, not with the
   // layer count. Empty: no far layer gets a context.
   std::vector<double> far_cover_factors{1, 2, 4};
+  // The covers are chosen per layer and side from 2D probes (planCovers):
+  // the fewest layers, always the nearest and the farthest, such that
+  // log-distance interpolation between them predicts every other layer's
+  // total and plane coupling within this fraction of the total. 0 uses
+  // the depths and far factors above instead.
+  double cover_tolerance = 0.02;
   // The crossing patterns: crossing widths as multiples of the cover
   // layer's minimum width, coverage fractions, and the two wire lengths
   // whose difference cancels the ends.
@@ -80,17 +88,57 @@ struct BuildOptions
 std::string buildFingerprint(const fsv::Stack& stack,
                              const BuildOptions& options);
 
-// The covering contexts of a layer: no layer first (the substrate below,
-// open above), then the usable layers within the depth nearest first,
-// then the far layers the options' factors pick and the farthest, nearest
-// first. A conductor sitting on the ground plane is the ground and does
-// not count, nor does one outside the options' layers.
+// The covering contexts of a layer on each side: no layer first (the
+// substrate below, open above), then the tabulated covers nearest first.
+// A conductor sitting on the ground plane is the ground and does not
+// count, nor does one outside the options' layers.
+struct CoverPlan
+{
+  std::vector<Layer> below;
+  std::vector<Layer> above;
+};
+
+// The covers to tabulate for a layer. Without a cover tolerance: the
+// usable layers within the depth, then the far layers the factors pick
+// and the farthest. With one: the fewest usable layers, always the
+// nearest and the farthest, such that interpolating in the logarithm of
+// the distance between consecutive ones (as CoverMap does) predicts every
+// other usable layer within the tolerance. The prediction is checked on
+// 2D probes of a wire with a plane on each candidate cover: at the
+// narrowest and the widest width of the grid, alone and between
+// neighbors at minimum spacing, with the other side open and with its
+// nearest cover (when it has one); the total, the plane coupling, the
+// ground and the neighbor coupling, each relative to the total.
+// The probes are seeded by their position, so the plan does not depend on
+// the thread count.
+CoverPlan planCovers(const fsv::Stack& stack,
+                     Layer layer,
+                     const BuildOptions& options);
+// One side of planCovers. Each call plans both sides, which with a cover
+// tolerance costs probes; call planCovers once to get both.
 std::vector<Layer> coversBelow(const fsv::Stack& stack,
                                Layer layer,
                                const BuildOptions& options);
 std::vector<Layer> coversAbove(const fsv::Stack& stack,
                                Layer layer,
                                const BuildOptions& options);
+
+// The probe curves of one side, for pickCovers: per quantity, a value and
+// the scale its error is measured against, at each candidate.
+struct ProbeCurve
+{
+  std::vector<double> value;
+  std::vector<double> scale;
+};
+
+// The fewest of the candidates, given ascending by distance, that include
+// the first and the last and predict every other candidate within `tol`
+// (|interpolated - value| <= tol × scale) on every curve, interpolating
+// linearly in the logarithm of the distance between consecutive picks.
+// The indices of the picks, ascending; ties go to the earlier candidates.
+std::vector<int> pickCovers(const std::vector<double>& distances,
+                            const std::vector<ProbeCurve>& curves,
+                            double tol);
 
 // Builds the lateral tables of a conductor layer, one per covering context,
 // into the model. Each table point is its own single-threaded solve, seeded
@@ -102,6 +150,14 @@ std::vector<Layer> coversAbove(const fsv::Stack& stack,
 // of the stack.
 void buildLateral(const fsv::Stack& stack,
                   Layer layer,
+                  const BuildOptions& options,
+                  Model& model);
+// The same over a plan computed once for the layer. The overload above
+// plans the covers itself, which with a cover tolerance costs probes on
+// every call: a caller building several tables of a layer passes a plan.
+void buildLateral(const fsv::Stack& stack,
+                  Layer layer,
+                  const CoverPlan& plan,
                   const BuildOptions& options,
                   Model& model);
 
@@ -137,13 +193,35 @@ void buildEnds(const fsv::Stack& stack,
                Layer layer,
                const BuildOptions& options,
                Model& model);
+void buildEnds(const fsv::Stack& stack,
+               Layer layer,
+               const CoverPlan& plan,
+               const BuildOptions& options,
+               Model& model);
 
-// All of a layer's tables: lateral and end tables, a crossing table for
-// every cover within the depths, and a diagonal table for every layer
-// within the diagonal depth.
+// All of a layer's tables: lateral and end tables for every covering
+// context of its plan (planCovers, computed once), a crossing table for
+// every cover in the plan, and a diagonal table for every layer within the
+// diagonal depth. Tables the model already holds are left alone, so a
+// changed plan adds what it lacks.
 void buildLayer(const fsv::Stack& stack,
                 Layer layer,
                 const BuildOptions& options,
                 Model& model);
+// The same over a given plan, such as heldCovers gives.
+void buildLayer(const fsv::Stack& stack,
+                Layer layer,
+                const CoverPlan& plan,
+                const BuildOptions& options,
+                Model& model);
+
+// The plan a model's own contexts for a layer make, or none when it holds
+// no lateral table of the layer. A build resuming a saved model, which
+// holds whole layers, takes it instead of probing again; it is the plan
+// for the current options only when the model was built with them, which
+// the caller checks (buildFingerprint).
+std::optional<CoverPlan> heldCovers(const fsv::Stack& stack,
+                                    const Model& model,
+                                    Layer layer);
 
 }  // namespace pex
