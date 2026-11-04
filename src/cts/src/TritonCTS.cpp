@@ -64,6 +64,31 @@ namespace cts {
 
 using utl::CTS;
 
+namespace {
+
+// Turns clock reconvergence pessimism removal off for its scope.
+class CrprDisabled
+{
+ public:
+  explicit CrprDisabled(sta::dbSta* sta)
+      : sta_(sta), was_enabled_(sta->crprEnabled())
+  {
+    sta_->setCrprEnabled(false);
+  }
+  ~CrprDisabled() { sta_->setCrprEnabled(was_enabled_); }
+
+  CrprDisabled(const CrprDisabled&) = delete;
+  CrprDisabled& operator=(const CrprDisabled&) = delete;
+  CrprDisabled(CrprDisabled&&) = delete;
+  CrprDisabled& operator=(CrprDisabled&&) = delete;
+
+ private:
+  sta::dbSta* sta_;
+  const bool was_enabled_;
+};
+
+}  // namespace
+
 TritonCTS::TritonCTS(utl::Logger* logger,
                      odb::dbDatabase* db,
                      sta::dbNetwork* network,
@@ -2788,6 +2813,14 @@ int TritonCTS::runLatencyBalancers(double capPerDBU,
                                    double resPerDBU,
                                    bool useful_skew)
 {
+  // The balancers read clock arrivals only, which clock reconvergence
+  // pessimism removal does not change. With it on, every register clock
+  // pin's arrival carries its own clock path, so the clock network's
+  // arrivals do not merge: on a 700k-register design they took 77 GB.
+  // Turning it back on invalidates the arrivals, so the slacks read after
+  // balancing (useful skew's budget, repair) have it.
+  CrprDisabled crpr_disabled(openSta_);
+
   int totalDelayBuff = 0;
   for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {

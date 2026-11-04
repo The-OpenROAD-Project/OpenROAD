@@ -61,6 +61,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "crpr_restored",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
@@ -170,6 +171,9 @@ filegroup(
                 "ihp-sg13g2/sg13g2_tech.lef",
                 "ihp-sg13g2/sg13g2_stdcell.lef",
                 "check_max_fanout3.def",
+            ],
+            "crpr_restored": [
+                "gated_clock2.def",
             ],
             "dont_touch_sink": [
                 "16sinks.def",
