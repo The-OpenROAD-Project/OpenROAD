@@ -339,6 +339,37 @@ TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
   EXPECT_EQ(failureCount("Overlap_failures"), 0);
 }
 
+TEST_F(CheckPlacementTest, LegalCellPosAfterDetailedPlacementLeavesMacro)
+{
+  // detailed_placement frees its pixel grid on return. The resizer then
+  // calls legalCellPos for a cell it moved, without placing again, and the
+  // cell must still be moved off a macro, which legalCellPos finds in the
+  // pixels.
+  // The macro is away from the core's edges, so the cell has room beside it.
+  odb::dbInst* macro = makeCell("BLOCK1",
+                                "macro",
+                                {kCoreX + 10 * kSiteWidth, kCoreY},
+                                odb::dbPlacementStatus::FIRM);
+  odb::dbInst* buf = makeCell("BUF_X1",
+                              "buf",
+                              {kCoreX + 24 * kSiteWidth, kCoreY},
+                              odb::dbPlacementStatus::PLACED);
+  ASSERT_NE(macro, nullptr);
+  ASSERT_NE(buf, nullptr);
+
+  dp_.detailedPlacement(/*max_displacement_x=*/0, /*max_displacement_y=*/0);
+
+  const odb::Rect macro_box = macro->getBBox()->getBox();
+  // One site in from the macro's left edge, one row up: the left edge is
+  // the nearest way off it.
+  buf->setLocation(kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight);
+  ASSERT_TRUE(buf->getBBox()->getBox().overlaps(macro_box));
+
+  dp_.legalCellPos(buf);
+
+  EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+}
+
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
 class FixedSupplyViaTest : public tst::Nangate45Fixture
 {
