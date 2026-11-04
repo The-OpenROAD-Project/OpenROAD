@@ -123,37 +123,6 @@ bool SACoreSoftMacro::isValid() const
   return resultFitsInOutline();
 }
 
-// acessors functions
-float SACoreSoftMacro::getBoundaryPenalty() const
-{
-  return penalty_terms_[kBoundaryTerm].value;
-}
-
-float SACoreSoftMacro::getNormBoundaryPenalty() const
-{
-  return penalty_terms_[kBoundaryTerm].normalization_factor;
-}
-
-float SACoreSoftMacro::getSoftBlockagePenalty() const
-{
-  return penalty_terms_[kSoftBlockageTerm].value;
-}
-
-float SACoreSoftMacro::getNormSoftBlockagePenalty() const
-{
-  return penalty_terms_[kSoftBlockageTerm].normalization_factor;
-}
-
-float SACoreSoftMacro::getNotchPenalty() const
-{
-  return penalty_terms_[kNotchTerm].value;
-}
-
-float SACoreSoftMacro::getNormNotchPenalty() const
-{
-  return penalty_terms_[kNotchTerm].normalization_factor;
-}
-
 // Operations
 float SACoreSoftMacro::calNormCost() const
 {

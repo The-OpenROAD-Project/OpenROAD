@@ -50,14 +50,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void run() override;
   bool isValid() const override;
 
-  // accessors
-  float getBoundaryPenalty() const;
-  float getNormBoundaryPenalty() const;
-  float getNotchPenalty() const;
-  float getNormNotchPenalty() const;
-  float getSoftBlockagePenalty() const;
-  float getNormSoftBlockagePenalty() const;
-
   void printResults() const;  // just for test
 
   // Initialize the SA worker
