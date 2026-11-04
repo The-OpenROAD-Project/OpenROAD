@@ -95,6 +95,7 @@ class SimulatedAnnealingCore
   // Indices into penalty_terms_.
   enum PenaltyTermIndex : size_t
   {
+    kAreaTerm,
     kOutlineTerm,
     kWirelengthTerm,
     kGuidanceTerm,
@@ -125,6 +126,7 @@ class SimulatedAnnealingCore
 
   virtual float calNormCost() const = 0;
   virtual void calPenalty() = 0;
+  void calAreaPenalty();
   void calOutlinePenalty();
   void calWirelength();
   float computeNetsWireLength(const BundledNetList& nets) const;
@@ -135,7 +137,7 @@ class SimulatedAnnealingCore
   void calGuidancePenalty();
   void calFencePenalty();
 
-  float sumPenaltyTerms(float cost) const;
+  float sumNormalizedPenaltyTerms() const;
   void savePenaltyTerms();
   void restorePenaltyTerms();
 
@@ -201,11 +203,9 @@ class SimulatedAnnealingCore
   int pre_width_ = 0;
   int pre_height_ = 0;
 
-  // Outline, Wire Length, Guidance, Fence (kOutlineTerm..kFenceTerm);
-  // SACoreSoftMacro appends more. Area is always recomputed.
+  // Area, Outline, Wire Length, Guidance, Fence (kAreaTerm..kFenceTerm);
+  // SACoreSoftMacro appends more.
   std::vector<PenaltyTerm> penalty_terms_;
-
-  float norm_area_penalty_ = 0.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.0;

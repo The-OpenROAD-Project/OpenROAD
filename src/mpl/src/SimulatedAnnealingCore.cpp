@@ -50,6 +50,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
   core_weights_ = weights;
 
   penalty_terms_ = {
+      {.name = "Area", .weight = core_weights_.area},
       {.name = "Outline", .weight = core_weights_.outline},
       {.name = "Wire Length", .weight = core_weights_.wirelength},
       {.name = "Guidance", .weight = core_weights_.guidance},
@@ -198,8 +199,7 @@ int64_t SimulatedAnnealingCore<T>::getArea() const
 template <class T>
 float SimulatedAnnealingCore<T>::getAreaPenalty() const
 {
-  return block_->dbuAreaToMicrons(getArea())
-         / block_->dbuAreaToMicrons(outline_.area());
+  return penalty_terms_[kAreaTerm].value;
 }
 
 template <class T>
@@ -257,6 +257,21 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 }
 
 // Private functions
+template <class T>
+void SimulatedAnnealingCore<T>::calAreaPenalty()
+{
+  PenaltyTerm& term = penalty_terms_[kAreaTerm];
+  term.value = block_->dbuAreaToMicrons(getArea())
+               / block_->dbuAreaToMicrons(outline_.area());
+  if (graphics_) {
+    graphics_->setAreaPenalty(
+        {.name = "Area",
+         .weight = core_weights_.area,
+         .value = term.value,
+         .normalization_factor = term.normalization_factor});
+  }
+}
+
 template <class T>
 void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
@@ -460,8 +475,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::sumPenaltyTerms(float cost) const
+float SimulatedAnnealingCore<T>::sumNormalizedPenaltyTerms() const
 {
+  float cost = 0.0f;
   for (const PenaltyTerm& term : penalty_terms_) {
     if (term.normalization_factor > 0.0f) {
       cost += term.weight * term.value / term.normalization_factor;
@@ -679,10 +695,6 @@ void SimulatedAnnealingCore<T>::reportCoreWeights() const
       "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");
   logger_->report(
       "---------------------------------------------------------------");
-  report({.name = "Area",
-          .weight = core_weights_.area,
-          .value = getAreaPenalty(),
-          .normalization_factor = norm_area_penalty_});
   for (const PenaltyTerm& term : penalty_terms_) {
     report(term);
   }
