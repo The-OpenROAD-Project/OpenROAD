@@ -3598,6 +3598,7 @@ void NesterovBase::resetMinSumOverflow()
   minSumOverflow_ = 1e30;
   hpwlWithMinSumOverflow_ = 1e30;
   prev_reported_overflow_unscaled_ = 0;
+  prev_reported_hpwl_ = 0;
 }
 
 float NesterovBase::getPhiCoef(float scaledDiffHpwl) const

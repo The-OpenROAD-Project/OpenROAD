@@ -884,7 +884,7 @@ TEST_F(TimingRepairIntegrationTest,
 TEST_F(TimingRepairIntegrationTest, NonVirtualRepairResetsDivergenceBaselines)
 {
   makePlacer(false);
-  NesterovBase& nb = *nb_vec_[0];
+  NesterovBase& nb = *np_->getTopLevelNB();
   setPreRepairDivergenceBaselines(nb);
   ASSERT_TRUE(nb.checkDivergence());
   nb.clearDivergence();

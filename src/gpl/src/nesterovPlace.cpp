@@ -611,6 +611,7 @@ void NesterovPlace::runTimingDriven(int iter,
         }
         nesterov->checkConsistency();
         nesterov->resetMinSumOverflow();
+        nesterov->setPrevHpwl(nbc_->getHpwl());
       }
       nbc_->resetDeltaArea();
       nbc_->resetNewGcellsCount();
