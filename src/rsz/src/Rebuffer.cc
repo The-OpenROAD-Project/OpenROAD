@@ -3090,14 +3090,17 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   size_ra_runtime_ = 0;
   size_eval_runtime_ = 0;
 
-  sta::Level current_level = -1;
-  sta::Level max_dirty_level = 0;
-  bool dirty_in_level = false;
-  bool req_dirty = false;
-  std::unordered_set<const sta::Instance*> resized_insts_in_level;
+  // Drivers are visited in decreasing level order. Drivers on one level are
+  // not in each other's fanin or fanout, so netlist edits are propagated to
+  // timing once per level rather than once per driver. The exception is an
+  // instance resized earlier in the level: its other outputs are refreshed
+  // (through their loads) before they are rebuffered.
+  sta::Level timing_level = -1;
+  sta::Level dirty_level = -1;  // max load level of unpropagated edits
+  std::unordered_set<const sta::Instance*> resized_insts;
 
-  auto tree_max_load_level = [&](const BnetPtr& tree) {
-    sta::Level max_lvl = 0;
+  auto max_load_level = [&](const BnetPtr& tree) {
+    sta::Level max_level = 0;
     visitTree(
         [&](auto& recurse, int, const BnetPtr& bnet) -> int {
           switch (bnet->type()) {
@@ -3108,35 +3111,32 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
             case BnetType::junction:
               return recurse(bnet->ref()) + recurse(bnet->ref2());
             case BnetType::load:
-              max_lvl = std::max(
-                  max_lvl, graph_->pinDrvrVertex(bnet->loadPin())->level());
+              max_level = std::max(
+                  max_level, graph_->pinDrvrVertex(bnet->loadPin())->level());
               return 1;
           }
           abort();
         },
         tree);
-    return max_lvl;
+    return max_level;
   };
 
-  auto flush_sta = [&](sta::Vertex* req_drvr) {
-    if (dirty_in_level) {
-      if (estimate_parasitics_->hasParasiticsInvalid()) {
-        estimate_parasitics_->updateParasitics();
-      }
-      {
-        utl::DebugScopedTimer timer(sta_runtime);
-        sta_->findDelays(max_dirty_level);
-        search_->findArrivals(max_dirty_level);
-      }
-      dirty_in_level = false;
-      max_dirty_level = 0;
-      resized_insts_in_level.clear();
-      req_dirty = true;
+  auto propagate_edits = [&]() {
+    if (dirty_level < 0) {
+      return;
     }
-    if (req_drvr && req_dirty) {
-      utl::DebugScopedTimer timer(sta_runtime);
-      search_->findRequireds(req_drvr->level());
-    }
+    estimate_parasitics_->updateParasitics();
+    utl::DebugScopedTimer timer(sta_runtime);
+    sta_->findDelays(dirty_level);
+    search_->findArrivals(dirty_level);
+    dirty_level = -1;
+    resized_insts.clear();
+  };
+
+  auto refresh_timing = [&](sta::Vertex* drvr) {
+    propagate_edits();
+    utl::DebugScopedTimer timer(sta_runtime);
+    search_->findRequireds(drvr->level());
   };
 
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
@@ -3154,14 +3154,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    const bool inst_resized_in_level
-        = drvr_inst && resized_insts_in_level.contains(drvr_inst);
-    if (drvr->level() != current_level) {
-      current_level = drvr->level();
-      flush_sta(drvr);
-    } else if (inst_resized_in_level
-               && estimate_parasitics_->hasParasiticsInvalid()) {
-      estimate_parasitics_->updateParasitics();
+    if (drvr->level() != timing_level) {
+      timing_level = drvr->level();
+      refresh_timing(drvr);
     }
 
     // set rebuffering globals
@@ -3188,10 +3183,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       continue;
     }
 
-    if (inst_resized_in_level) {
-      max_dirty_level
-          = std::max(max_dirty_level, tree_max_load_level(original_tree));
-      flush_sta(drvr);
+    if (drvr_inst && resized_insts.contains(drvr_inst)) {
+      dirty_level = std::max(dirty_level, max_load_level(original_tree));
+      refresh_timing(drvr);
     }
 
     bool debug = (drvr_pin == resizer_->debug_pin_);
@@ -3216,7 +3210,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3 && timing_tree; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(
@@ -3299,7 +3293,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     const int prev_resize_count = driver_resize_count_;
     area_opt_tree = sizeDriverWithTree(
         drvr_pin, timing_tree, area_opt_tree, target_slack);
-    const bool driver_resized = (driver_resize_count_ != prev_resize_count);
+    const bool driver_resized = driver_resize_count_ != prev_resize_count;
 
     sta::Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
     odb::dbITerm* drvr_op_iterm = nullptr;
@@ -3321,11 +3315,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (driver_resized || inserted > 0 || !insts.empty()) {
       sta_->ensureLevelized();
-      dirty_in_level = true;
-      max_dirty_level
-          = std::max(max_dirty_level, tree_max_load_level(unbuffered_tree));
-      if (driver_resized && drvr_inst) {
-        resized_insts_in_level.insert(drvr_inst);
+      dirty_level = std::max(dirty_level, max_load_level(unbuffered_tree));
+      if (driver_resized) {
+        resized_insts.insert(drvr_inst);
       }
     }
 
@@ -3336,7 +3328,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     }
   }
 
-  flush_sta(nullptr);
+  propagate_edits();
 
   printProgress(filtered_pins.size(), false, true, 0);
   if (size_driver_) {
