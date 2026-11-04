@@ -17,7 +17,6 @@ class ResynthesisStrategy
   virtual void OptimizeDesign(sta::dbSta* sta,
                               utl::UniqueName& name_generator,
                               rsz::Resizer* resizer,
-                              utl::Logger* logger)
-      = 0;
+                              utl::Logger* logger) = 0;
 };
 }  // namespace rmp

@@ -50,16 +50,17 @@ TEST_F(AntennaReportTest, Format)
   LayerCheck metal;
   metal.layer = stack_.metal(1);
   metal.par = {.actual = 55.123, .required = 0, .violated = false};
-  metal.car = RatioCheck{.actual = 55.123, .required = 0, .violated = false};
+  metal.car = {.actual = 55.123, .required = 0, .violated = false};
   metal.psr = RatioCheck{.actual = 275.2, .required = 10, .violated = true};
   metal.csr = RatioCheck{.actual = 275.2, .required = 0, .violated = false};
   metal.violated = true;
   pin.layers.push_back(metal);
 
-  // A cut layer whose PAR violates, so CAR was not evaluated.
+  // A cut layer, which has no side area ratios.
   LayerCheck cut;
   cut.layer = stack_.cut(1);
   cut.par = {.actual = 0.14, .required = 0.1, .violated = true};
+  cut.car = {.actual = 0.25, .required = 0, .violated = false};
   cut.violated = true;
   pin.layers.push_back(cut);
 
@@ -82,6 +83,8 @@ TEST_F(AntennaReportTest, Format)
         "    Layer: V1\n"
         "      Partial area ratio:    0.14\n"
         "      Required ratio:    0.10 (Gate area) (VIOLATED)\n"
+        "      Cumulative area ratio:    0.25\n"
+        "      Required ratio:    0.00 (Cumulative area) \n"
         "\n"
         "\n";
   EXPECT_EQ(formatNetCheck(net_check), expected);

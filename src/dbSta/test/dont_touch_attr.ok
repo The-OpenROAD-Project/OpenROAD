@@ -1,3 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-1
-0
+[WARNING ORD-2059] Ignoring unrecognized dont_touch value "maybe" on instance u6.
+u1 1
+u2 0
+u3 1
+u4 1
+u5 0
+u6 0
+u7 1
+u8 1

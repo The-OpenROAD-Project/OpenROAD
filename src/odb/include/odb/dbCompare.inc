@@ -26,29 +26,25 @@ template <>
 struct less<odb::dbBoolProperty*>
 {
   bool operator()(const odb::dbBoolProperty* lhs,
-                  const odb::dbBoolProperty* rhs) const
-      = delete;
+                  const odb::dbBoolProperty* rhs) const = delete;
 };
 template <>
 struct less<odb::dbStringProperty*>
 {
   bool operator()(const odb::dbStringProperty* lhs,
-                  const odb::dbStringProperty* rhs) const
-      = delete;
+                  const odb::dbStringProperty* rhs) const = delete;
 };
 template <>
 struct less<odb::dbIntProperty*>
 {
   bool operator()(const odb::dbIntProperty* lhs,
-                  const odb::dbIntProperty* rhs) const
-      = delete;
+                  const odb::dbIntProperty* rhs) const = delete;
 };
 template <>
 struct less<odb::dbDoubleProperty*>
 {
   bool operator()(const odb::dbDoubleProperty* lhs,
-                  const odb::dbDoubleProperty* rhs) const
-      = delete;
+                  const odb::dbDoubleProperty* rhs) const = delete;
 };
 template <>
 struct less<odb::dbBox*>
@@ -117,15 +113,13 @@ template <>
 struct less<odb::dbTrackGrid*>
 {
   bool operator()(const odb::dbTrackGrid* lhs,
-                  const odb::dbTrackGrid* rhs) const
-      = delete;
+                  const odb::dbTrackGrid* rhs) const = delete;
 };
 template <>
 struct less<odb::dbObstruction*>
 {
   bool operator()(const odb::dbObstruction* lhs,
-                  const odb::dbObstruction* rhs) const
-      = delete;
+                  const odb::dbObstruction* rhs) const = delete;
 };
 template <>
 struct less<odb::dbBlockage*>
@@ -213,85 +207,73 @@ template <>
 struct less<odb::dbTechViaRule*>
 {
   bool operator()(const odb::dbTechViaRule* lhs,
-                  const odb::dbTechViaRule* rhs) const
-      = delete;
+                  const odb::dbTechViaRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechViaLayerRule*>
 {
   bool operator()(const odb::dbTechViaLayerRule* lhs,
-                  const odb::dbTechViaLayerRule* rhs) const
-      = delete;
+                  const odb::dbTechViaLayerRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechViaGenerateRule*>
 {
   bool operator()(const odb::dbTechViaGenerateRule* lhs,
-                  const odb::dbTechViaGenerateRule* rhs) const
-      = delete;
+                  const odb::dbTechViaGenerateRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechLayerSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerSpacingRule* lhs,
-                  const odb::dbTechLayerSpacingRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerSpacingRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechMinCutRule*>
 {
   bool operator()(const odb::dbTechMinCutRule* lhs,
-                  const odb::dbTechMinCutRule* rhs) const
-      = delete;
+                  const odb::dbTechMinCutRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechMinEncRule*>
 {
   bool operator()(const odb::dbTechMinEncRule* lhs,
-                  const odb::dbTechMinEncRule* rhs) const
-      = delete;
+                  const odb::dbTechMinEncRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechV55InfluenceEntry*>
 {
   bool operator()(const odb::dbTechV55InfluenceEntry* lhs,
-                  const odb::dbTechV55InfluenceEntry* rhs) const
-      = delete;
+                  const odb::dbTechV55InfluenceEntry* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechLayerAntennaRule*>
 {
   bool operator()(const odb::dbTechLayerAntennaRule* lhs,
-                  const odb::dbTechLayerAntennaRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerAntennaRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechAntennaPinModel*>
 {
   bool operator()(const odb::dbTechAntennaPinModel* lhs,
-                  const odb::dbTechAntennaPinModel* rhs) const
-      = delete;
+                  const odb::dbTechAntennaPinModel* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechNonDefaultRule*>
 {
   bool operator()(const odb::dbTechNonDefaultRule* lhs,
-                  const odb::dbTechNonDefaultRule* rhs) const
-      = delete;
+                  const odb::dbTechNonDefaultRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechLayerRule*>
 {
   bool operator()(const odb::dbTechLayerRule* lhs,
-                  const odb::dbTechLayerRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerRule* rhs) const = delete;
 };
 template <>
 struct less<odb::dbTechSameNetRule*>
 {
   bool operator()(const odb::dbTechSameNetRule* lhs,
-                  const odb::dbTechSameNetRule* rhs) const
-      = delete;
+                  const odb::dbTechSameNetRule* rhs) const = delete;
 };
 
 // Generator Code Begin Less
@@ -299,16 +281,14 @@ template <>
 struct less<odb::dbAccessPoint*>
 {
   bool operator()(const odb::dbAccessPoint* lhs,
-                  const odb::dbAccessPoint* rhs) const
-      = delete;
+                  const odb::dbAccessPoint* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbAlignmentMarkerRule*>
 {
   bool operator()(const odb::dbAlignmentMarkerRule* lhs,
-                  const odb::dbAlignmentMarkerRule* rhs) const
-      = delete;
+                  const odb::dbAlignmentMarkerRule* rhs) const = delete;
 };
 
 template <>
@@ -322,8 +302,7 @@ template <>
 struct less<odb::dbCellEdgeSpacing*>
 {
   bool operator()(const odb::dbCellEdgeSpacing* lhs,
-                  const odb::dbCellEdgeSpacing* rhs) const
-      = delete;
+                  const odb::dbCellEdgeSpacing* rhs) const = delete;
 };
 
 template <>
@@ -344,16 +323,14 @@ template <>
 struct less<odb::dbChipBumpInst*>
 {
   bool operator()(const odb::dbChipBumpInst* lhs,
-                  const odb::dbChipBumpInst* rhs) const
-      = delete;
+                  const odb::dbChipBumpInst* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbChipCapNode*>
 {
   bool operator()(const odb::dbChipCapNode* lhs,
-                  const odb::dbChipCapNode* rhs) const
-      = delete;
+                  const odb::dbChipCapNode* rhs) const = delete;
 };
 
 template <>
@@ -388,16 +365,14 @@ template <>
 struct less<odb::dbChipRegion*>
 {
   bool operator()(const odb::dbChipRegion* lhs,
-                  const odb::dbChipRegion* rhs) const
-      = delete;
+                  const odb::dbChipRegion* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbChipRegionInst*>
 {
   bool operator()(const odb::dbChipRegionInst* lhs,
-                  const odb::dbChipRegionInst* rhs) const
-      = delete;
+                  const odb::dbChipRegionInst* rhs) const = delete;
 };
 
 template <>
@@ -424,8 +399,7 @@ template <>
 struct less<odb::dbGCellGrid*>
 {
   bool operator()(const odb::dbGCellGrid* lhs,
-                  const odb::dbGCellGrid* rhs) const
-      = delete;
+                  const odb::dbGCellGrid* rhs) const = delete;
 };
 
 template <>
@@ -439,8 +413,7 @@ template <>
 struct less<odb::dbGDSBoundary*>
 {
   bool operator()(const odb::dbGDSBoundary* lhs,
-                  const odb::dbGDSBoundary* rhs) const
-      = delete;
+                  const odb::dbGDSBoundary* rhs) const = delete;
 };
 
 template <>
@@ -468,8 +441,7 @@ template <>
 struct less<odb::dbGDSStructure*>
 {
   bool operator()(const odb::dbGDSStructure* lhs,
-                  const odb::dbGDSStructure* rhs) const
-      = delete;
+                  const odb::dbGDSStructure* rhs) const = delete;
 };
 
 template <>
@@ -483,8 +455,7 @@ template <>
 struct less<odb::dbGlobalConnect*>
 {
   bool operator()(const odb::dbGlobalConnect* lhs,
-                  const odb::dbGlobalConnect* rhs) const
-      = delete;
+                  const odb::dbGlobalConnect* rhs) const = delete;
 };
 
 template <>
@@ -505,24 +476,21 @@ template <>
 struct less<odb::dbIsolation*>
 {
   bool operator()(const odb::dbIsolation* lhs,
-                  const odb::dbIsolation* rhs) const
-      = delete;
+                  const odb::dbIsolation* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbLevelShifter*>
 {
   bool operator()(const odb::dbLevelShifter* lhs,
-                  const odb::dbLevelShifter* rhs) const
-      = delete;
+                  const odb::dbLevelShifter* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbLogicPort*>
 {
   bool operator()(const odb::dbLogicPort* lhs,
-                  const odb::dbLogicPort* rhs) const
-      = delete;
+                  const odb::dbLogicPort* rhs) const = delete;
 };
 
 template <>
@@ -536,24 +504,21 @@ template <>
 struct less<odb::dbMarkerCategory*>
 {
   bool operator()(const odb::dbMarkerCategory* lhs,
-                  const odb::dbMarkerCategory* rhs) const
-      = delete;
+                  const odb::dbMarkerCategory* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbMasterEdgeType*>
 {
   bool operator()(const odb::dbMasterEdgeType* lhs,
-                  const odb::dbMasterEdgeType* rhs) const
-      = delete;
+                  const odb::dbMasterEdgeType* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbMetalWidthViaMap*>
 {
   bool operator()(const odb::dbMetalWidthViaMap* lhs,
-                  const odb::dbMetalWidthViaMap* rhs) const
-      = delete;
+                  const odb::dbMetalWidthViaMap* rhs) const = delete;
 };
 
 template <>
@@ -609,24 +574,21 @@ template <>
 struct less<odb::dbPowerDomain*>
 {
   bool operator()(const odb::dbPowerDomain* lhs,
-                  const odb::dbPowerDomain* rhs) const
-      = delete;
+                  const odb::dbPowerDomain* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbPowerSwitch*>
 {
   bool operator()(const odb::dbPowerSwitch* lhs,
-                  const odb::dbPowerSwitch* rhs) const
-      = delete;
+                  const odb::dbPowerSwitch* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbScanChain*>
 {
   bool operator()(const odb::dbScanChain* lhs,
-                  const odb::dbScanChain* rhs) const
-      = delete;
+                  const odb::dbScanChain* rhs) const = delete;
 };
 
 template <>
@@ -647,8 +609,7 @@ template <>
 struct less<odb::dbScanPartition*>
 {
   bool operator()(const odb::dbScanPartition* lhs,
-                  const odb::dbScanPartition* rhs) const
-      = delete;
+                  const odb::dbScanPartition* rhs) const = delete;
 };
 
 template <>
@@ -662,56 +623,49 @@ template <>
 struct less<odb::dbTechLayer*>
 {
   bool operator()(const odb::dbTechLayer* lhs,
-                  const odb::dbTechLayer* rhs) const
-      = delete;
+                  const odb::dbTechLayer* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerAreaRule*>
 {
   bool operator()(const odb::dbTechLayerAreaRule* lhs,
-                  const odb::dbTechLayerAreaRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerAreaRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerArraySpacingRule*>
 {
   bool operator()(const odb::dbTechLayerArraySpacingRule* lhs,
-                  const odb::dbTechLayerArraySpacingRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerArraySpacingRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerCornerSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerCornerSpacingRule* lhs,
-                  const odb::dbTechLayerCornerSpacingRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerCornerSpacingRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerCutClassRule*>
 {
   bool operator()(const odb::dbTechLayerCutClassRule* lhs,
-                  const odb::dbTechLayerCutClassRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerCutClassRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerCutEnclosureRule*>
 {
   bool operator()(const odb::dbTechLayerCutEnclosureRule* lhs,
-                  const odb::dbTechLayerCutEnclosureRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerCutEnclosureRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerCutSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerCutSpacingRule* lhs,
-                  const odb::dbTechLayerCutSpacingRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerCutSpacingRule* rhs) const = delete;
 };
 
 template <>
@@ -734,16 +688,14 @@ template <>
 struct less<odb::dbTechLayerEolExtensionRule*>
 {
   bool operator()(const odb::dbTechLayerEolExtensionRule* lhs,
-                  const odb::dbTechLayerEolExtensionRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerEolExtensionRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerEolKeepOutRule*>
 {
   bool operator()(const odb::dbTechLayerEolKeepOutRule* lhs,
-                  const odb::dbTechLayerEolKeepOutRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerEolKeepOutRule* rhs) const = delete;
 };
 
 template <>
@@ -758,40 +710,35 @@ template <>
 struct less<odb::dbTechLayerKeepOutZoneRule*>
 {
   bool operator()(const odb::dbTechLayerKeepOutZoneRule* lhs,
-                  const odb::dbTechLayerKeepOutZoneRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerKeepOutZoneRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerMaxSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerMaxSpacingRule* lhs,
-                  const odb::dbTechLayerMaxSpacingRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerMaxSpacingRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerMinCutRule*>
 {
   bool operator()(const odb::dbTechLayerMinCutRule* lhs,
-                  const odb::dbTechLayerMinCutRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerMinCutRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerMinStepRule*>
 {
   bool operator()(const odb::dbTechLayerMinStepRule* lhs,
-                  const odb::dbTechLayerMinStepRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerMinStepRule* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerSpacingEolRule*>
 {
   bool operator()(const odb::dbTechLayerSpacingEolRule* lhs,
-                  const odb::dbTechLayerSpacingEolRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerSpacingEolRule* rhs) const = delete;
 };
 
 template <>
@@ -814,16 +761,14 @@ template <>
 struct less<odb::dbTechLayerVoltageSpacing*>
 {
   bool operator()(const odb::dbTechLayerVoltageSpacing* lhs,
-                  const odb::dbTechLayerVoltageSpacing* rhs) const
-      = delete;
+                  const odb::dbTechLayerVoltageSpacing* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbTechLayerWidthTableRule*>
 {
   bool operator()(const odb::dbTechLayerWidthTableRule* lhs,
-                  const odb::dbTechLayerWidthTableRule* rhs) const
-      = delete;
+                  const odb::dbTechLayerWidthTableRule* rhs) const = delete;
 };
 
 template <>
@@ -838,40 +783,35 @@ template <>
 struct less<odb::dbUnfoldedChipBumpInst*>
 {
   bool operator()(const odb::dbUnfoldedChipBumpInst* lhs,
-                  const odb::dbUnfoldedChipBumpInst* rhs) const
-      = delete;
+                  const odb::dbUnfoldedChipBumpInst* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbUnfoldedChipConn*>
 {
   bool operator()(const odb::dbUnfoldedChipConn* lhs,
-                  const odb::dbUnfoldedChipConn* rhs) const
-      = delete;
+                  const odb::dbUnfoldedChipConn* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbUnfoldedChipInst*>
 {
   bool operator()(const odb::dbUnfoldedChipInst* lhs,
-                  const odb::dbUnfoldedChipInst* rhs) const
-      = delete;
+                  const odb::dbUnfoldedChipInst* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbUnfoldedChipNet*>
 {
   bool operator()(const odb::dbUnfoldedChipNet* lhs,
-                  const odb::dbUnfoldedChipNet* rhs) const
-      = delete;
+                  const odb::dbUnfoldedChipNet* rhs) const = delete;
 };
 
 template <>
 struct less<odb::dbUnfoldedChipRegionInst*>
 {
   bool operator()(const odb::dbUnfoldedChipRegionInst* lhs,
-                  const odb::dbUnfoldedChipRegionInst* rhs) const
-      = delete;
+                  const odb::dbUnfoldedChipRegionInst* rhs) const = delete;
 };
 
 // Generator Code End Less

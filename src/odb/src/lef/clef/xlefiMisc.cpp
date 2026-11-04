@@ -47,7 +47,7 @@ int lefiGeometries_numItems(const ::lefiGeometries* obj)
 enum ::lefiGeomEnum lefiGeometries_itemType(const ::lefiGeometries* obj,
                                             int index)
 {
-  return (::lefiGeomEnum)((LefParser::lefiGeometries*) obj)->itemType(index);
+  return (::lefiGeomEnum) ((LefParser::lefiGeometries*) obj)->itemType(index);
 }
 
 struct ::lefiGeomRect* lefiGeometries_getRect(const ::lefiGeometries* obj,

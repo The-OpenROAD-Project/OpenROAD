@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: place_macro_already_placed_overlap
+[INFO ODB-0131]     Created 1 components and 2 component-terminals.
+[INFO MPL-0035] Macro macro placed. Bounding box (100.000um, 100.115um), (200.000um, 200.115um). Orientation R0

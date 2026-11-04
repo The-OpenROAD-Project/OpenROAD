@@ -185,6 +185,10 @@ class SetupLegacyBase : public OptimizationPolicy
 
   // === Progress reporting ===================================================
   void printProgress(int iteration, bool force, char phase_marker) const;
+  // The phase-end WNS/TNS sample for the profiler and the debug log.
+  void reportPhaseComplete(const char* phase_name, char phase_marker) const;
+  // The worst setup path of an endpoint, under the target_collection scope.
+  sta::Path* endpointWorstPath(sta::Vertex* endpoint) const;
   bool terminateProgress(int iteration,
                          float initial_tns,
                          float& prev_tns,
@@ -196,7 +200,6 @@ class SetupLegacyBase : public OptimizationPolicy
   void reportCustomPhaseSetup() const;
 
   int committedMoves(MoveType type) const;
-  int totalMoves(MoveType type) const;
 
   // === Rejection state ======================================================
   std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>

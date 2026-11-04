@@ -29,7 +29,7 @@ struct ExpectedLayer
 {
   std::string layer;
   Ratio par;
-  std::optional<Ratio> car;
+  Ratio car;
   std::optional<Ratio> psr;
   std::optional<Ratio> csr;
 };
@@ -94,8 +94,7 @@ inline void expectNetCheck(const NetCheck& net_check,
       expectRatio(layer.psr, expected_layer.psr, where + " psr");
       expectRatio(layer.csr, expected_layer.csr, where + " csr");
       const bool layer_violated
-          = expected_layer.par.violated
-            || (expected_layer.car && expected_layer.car->violated)
+          = expected_layer.par.violated || expected_layer.car.violated
             || (expected_layer.psr && expected_layer.psr->violated)
             || (expected_layer.csr && expected_layer.csr->violated);
       EXPECT_EQ(layer.violated, layer_violated) << where;

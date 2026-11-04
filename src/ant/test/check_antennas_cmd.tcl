@@ -7,6 +7,9 @@ check_error "no design loaded" { check_antennas } ANT-0003
 read_lef ant_check.lef
 read_def ant_check.def
 
+# Checking one net needs no prior check_antennas.
+check "check_net_violation first" { ant::check_net_violation net50 } 1
+
 check "returns the violating net count" { check_antennas } 1
 check "antenna_violation_count" { ant::antenna_violation_count } 1
 check "-verbose" { check_antennas -verbose } 1
@@ -25,5 +28,8 @@ check "check_net_violation on an unknown net" \
 set report_file [make_result_file check_antennas_cmd.rpt]
 check "-report_file" { check_antennas -report_file $report_file } 1
 check "report file written" { expr { [file size $report_file] > 0 } } 1
+file delete $report_file
+check_antennas
+check "-report_file applies to one call" { file exists $report_file } 0
 
 exit_summary

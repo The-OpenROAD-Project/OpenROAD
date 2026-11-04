@@ -10,10 +10,14 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Scene.hh"
+#include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -33,41 +37,80 @@ PreChecks::PreChecks(Resizer* resizer) : resizer_(resizer)
   sta_ = resizer_->sta_;
 }
 
-void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew)
+void PreChecks::checkSlewLimit(const sta::Pin* load_pin,
+                               float ref_cap,
+                               float max_load_slew,
+                               const sta::Scene* corner)
 {
+  SlewCheckCache& cache = slew_check_by_corner_[corner];
+
   // Ensure the max slew value specified is something the library can
   // potentially handle
-  if (!best_case_slew_computed_ || ref_cap < best_case_slew_load_) {
+  if (!cache.best_case_slew_computed || ref_cap < cache.best_case_slew_load) {
+    // The global target slews come from the slowest corner. Use this
+    // corner's target input slews when judging its transition limit.
+    float target_slews[sta::RiseFall::index_count]{};
+    int counts[sta::RiseFall::index_count]{};
+    const int lib_index = corner->libertyIndex(sta::MinMax::max());
+    const sta::Pvt* pvt
+        = sta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
+    for (LibertyCell* buffer : resizer_->buffer_cells_) {
+      resizer_->findBufferTargetSlews(
+          buffer->sceneCell(lib_index), pvt, target_slews, counts);
+    }
+    sta::Slew input_slews[sta::RiseFall::index_count];
+    for (int rf_index : sta::RiseFall::rangeIndex()) {
+      if (counts[rf_index] == 0) {
+        logger_->error(RSZ,
+                       3247,
+                       "Cannot check the slew limit for pin {} at corner {}: "
+                       "no buffer timing models for {} transitions.",
+                       resizer_->dbNetwork()->pathName(load_pin),
+                       corner->name(),
+                       sta::RiseFall::find(rf_index)->name());
+      }
+      input_slews[rf_index] = target_slews[rf_index] / counts[rf_index];
+    }
+    auto buffer_slew = [&](LibertyCell* buffer) -> float {
+      sta::LibertyPort *input, *output;
+      buffer->bufferPorts(input, output);
+      sta::ArcDelay delays[sta::RiseFall::index_count];
+      sta::Slew slews[sta::RiseFall::index_count];
+      resizer_->gateDelays(output,
+                           ref_cap,
+                           input_slews,
+                           corner,
+                           sta::MinMax::max(),
+                           delays,
+                           slews);
+      return std::max(slews[sta::RiseFall::riseIndex()],
+                      slews[sta::RiseFall::fallIndex()]);
+    };
     LibertyCellSeq swappable_cells
         = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
-    float slew = resizer_->bufferSlew(resizer_->buffer_lowest_drive_,
-                                      ref_cap,
-                                      resizer_->tgt_slew_corner_,
-                                      sta::MinMax::max());
+    float slew = buffer_slew(resizer_->buffer_lowest_drive_);
     for (LibertyCell* buffer : swappable_cells) {
-      slew = std::min(
-          slew,
-          resizer_->bufferSlew(
-              buffer, ref_cap, resizer_->tgt_slew_corner_, sta::MinMax::max()));
+      slew = std::min(slew, buffer_slew(buffer));
     }
-    best_case_slew_computed_ = true;
-    best_case_slew_load_ = ref_cap;
-    best_case_slew_ = slew;
+    cache.best_case_slew_computed = true;
+    cache.best_case_slew_load = ref_cap;
+    cache.best_case_slew = slew;
   }
 
-  if (max_load_slew < best_case_slew_) {
+  if (max_load_slew < cache.best_case_slew) {
     const sta::Unit* time_unit = sta_->units()->timeUnit();
     const sta::Unit* cap_unit = sta_->units()->capacitanceUnit();
-
     logger_->error(RSZ,
                    90,
-                   "Max transition time from SDC is {}{}s. Best achievable "
-                   "transition time is {}{}s with a load of {}{}F",
+                   "Max transition time for pin {} at corner {} is {}{}s. Best "
+                   "achievable transition time is {}{}s with a load of {}{}F",
+                   resizer_->dbNetwork()->pathName(load_pin),
+                   corner->name(),
                    time_unit->asString(max_load_slew),
                    time_unit->scaleAbbreviation(),
-                   time_unit->asString(best_case_slew_),
+                   time_unit->asString(cache.best_case_slew),
                    time_unit->scaleAbbreviation(),
-                   cap_unit->asString(best_case_slew_load_, 2),
+                   cap_unit->asString(cache.best_case_slew_load, 2),
                    cap_unit->scaleAbbreviation());
   }
 }

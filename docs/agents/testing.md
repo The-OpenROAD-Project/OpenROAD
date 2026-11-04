@@ -6,17 +6,15 @@ OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** 
 > handle DB/STA dependencies, see `testing-strategy.md`. This guide covers the
 > mechanics of writing and registering a test.
 
-## CAUTION -- Dual Registration Required
+## CAUTION -- Register Tests in Bazel
 
-**Every new test MUST be registered in BOTH build systems. Missing either one is a build break.**
+**Every new test MUST be registered in Bazel. A test missing from `BUILD` does not run in CI.**
 
-| Build System | Registration File                  | Block/Macro                 |
-| ------------ | ---------------------------------- | --------------------------- |
-| **CMake**    | `src/<module>/test/CMakeLists.txt` | `or_integration_tests(...)` |
-| **Bazel**    | `src/<module>/test/BUILD`          | `regression_test(...)`      |
+| Registration File         | Block/Macro            |
+| ------------------------- | ---------------------- |
+| `src/<module>/test/BUILD` | `regression_test(...)` |
 
-Forgetting the Bazel `BUILD` file is the most common mistake -- CMake-only registration
-silently passes local `make test` but the **test will be missing from Bazel CI**.
+See "Adding a Tool, Source File or Test in Bazel" in `docs/contrib/DeveloperGuide.md` for the `BUILD` patterns.
 
 ## Integration Tests
 
@@ -24,18 +22,18 @@ Integration tests are Tcl scripts located at `src/<module>/test` or `src/<module
 
 ### Running Integration Tests
 
-`./regression` is a ctest wrapper that filters by module label.
+Each name in a test list of `src/<module>/test/BUILD` becomes a Bazel target `<name>-tcl_test`.
+A Python test becomes `<name>-py_test`.
 
 ```bash
-cd src/rsz/test
-./regression -R buffer_ports1   # run one test (regex match)
-./regression -R "repair.*hier"  # run tests matching pattern
-./regression -j4 -V             # all rsz tests, parallel, verbose
-
-# Or equivalently from the build directory:
-cd build
-ctest -R "rsz\.buffer_ports1\.tcl"
+bazelisk test --test_output=errors //src/rsz/test:buffer_ports1-tcl_test   # one test
+bazelisk test --test_output=errors //src/rsz/test/...                      # all rsz tests
+bazelisk query 'filter("repair.*hier", //src/rsz/test:all)'                # find tests by regex
 ```
+
+Bazel has no regex filter for test targets.
+Run `bazelisk query 'filter(...)'` to list the matching targets, then pass them to `bazelisk test`.
+`--test_filter` selects gtest cases in a C++ test only.
 
 ### Creating a New Integration Test
 
@@ -71,7 +69,7 @@ For issue reproductions, keep the test case minimal and focused on the failing t
 
 5. **Generate `<test_name>.ok` file**: Create golden test log by executing the script, redirecting stdout, and removing the openroad banner at the top.
 
-6. **Registration (BOTH files for CMake and Bazel -- do NOT skip Bazel)**
+6. **Registration**: add `<test_name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`) in `src/<module>/test/BUILD`. Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a `manual` tag, so check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default. Copy `data` and `tags` from a neighboring entry, so `<test_name>.ok` and the inputs are in the runfiles
 
 ### Test Framework Flags
 - `-no_splash -no_init -exit`
@@ -85,8 +83,8 @@ For issue reproductions, keep the test case minimal and focused on the failing t
 Unit tests are C++ files located at `src/<module>/test/cpp`.
 
 ### Test Registration
-- CMake: `src/<module>/test/CMakeLists.txt`
 - Bazel: `src/<module>/test/BUILD` or `src/<module>/test/cpp/BUILD`
+  - Run with `bazelisk test //src/<module>/test:<name>` or `//src/<module>/test/cpp:<name>`, where `<name>` is the `cc_test` name.
 
 ## Python Unit Tests
 
@@ -107,8 +105,8 @@ py_test(
 
 `//python/openroad:openroadpy` provides `import openroad` and the per-tool
 modules (`import odb`, `import ant`, ...) from `python/modules`, the same
-names the wheel installs and `openroad -python` provides. Each tool module
-has only its own API, as under CMake; all of them load from one library,
+names the wheel installs. Each tool module
+has only its own API; all of them load from one library,
 `_openroad.so`, so they share one copy of the C++ state. Keep each `Tech`
 alive while its `Design` or the module-level functions (`set_thread_count`,
 ...) are in use.

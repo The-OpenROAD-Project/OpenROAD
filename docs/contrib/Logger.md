@@ -419,20 +419,16 @@ Regression tests should not have any `UKN-0000` messages in their ok
 files. A simple grep should indicate that you still have pending calls
 to pre-logger error/warn functions.
 
-The `cmake` file for the tool must also be updated to include spdlog in
-the link libraries so it can find the header files if they are not in
-the normal system directories.
+The tool `BUILD` file must also list `//src/utl` in the `deps` of the
+tool library so it can find the logger header files.
 
-:::{tip}
-At UCSD, dfm.ucsd.edu is an example of this problem; it has an ancient version of
-spdlog in '/usr/include/spdlog'. Use `module` to install
-spdlog 1.8.1 on dfm.ucsd.edu and check your build there.
-:::
-
-``` cmake
-target_link_libraries(<library_target>
-  PUBLIC
-    utl
+``` starlark
+cc_library(
+    name = "<library_target>",
+    ...
+    deps = [
+        "//src/utl",
+    ],
 )
 ```
 

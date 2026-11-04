@@ -1696,6 +1696,7 @@ void extMain::run()
                 _mergeResBound);
 
   uint32_t cnt = 0;
+  uint32_t extracted_net_count = 0;
   for (dbNet* net : _block->getNets()) {
     if (net->getSigType().isSupply()) {
       continue;
@@ -1707,6 +1708,7 @@ void extMain::run()
     _connectedBTerm.clear();
     _connectedITerm.clear();
     cnt += makeNetRCsegs(net);
+    extracted_net_count++;
     for (dbBTerm* bterm : _connectedBTerm) {
       bterm->setMark(0);
     }
@@ -1825,13 +1827,13 @@ void extMain::run()
     logger_->info(RCX,
                   45,
                   "Extract {} nets, {} rsegs, {} caps, {} ccs",
-                  numOfNet - 2,
+                  extracted_net_count,
                   numOfRSeg,
                   numOfCapNode,
                   numOfCCSeg);
   } else {
     logger_->warn(
-        RCX, 107, "Nothing is extracted out of {} nets!", numOfNet - 2);
+        RCX, 107, "Nothing is extracted out of {} nets!", extracted_net_count);
   }
   if (!_allNet) {
     for (dbNet* net : inets) {

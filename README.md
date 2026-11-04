@@ -277,74 +277,91 @@ transceivers, OpenPower-based Microwatt etc.
 
 ## Build OpenROAD
 
-Bazel is the supported build system:
+Bazel is the supported build system.
+Install the dependencies, then build and install OpenROAD:
 
 ``` shell
+sudo ./etc/DependencyInstaller.sh -bazel
 bazelisk run --//:platform=gui //:install
 ```
 
-To build OpenROAD tools locally on your machine, follow steps
-from [here](docs/user/Build.md).
+See [Installing OpenROAD](docs/user/Build.md) for the CLI-only build.
+To skip the build, use one of these options:
 
-> **The CMake build is deprecated.** It is no longer developed and will be
-> removed in a future release; the CMake configure step prints a warning to
-> this effect. Please switch to [Bazel](docs/user/Bazel.md).
+- [Prebuilt binaries](docs/user/Build.md#build-with-prebuilt-binaries),
+  from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
+- [Docker](docs/user/Build.md#build-with-docker).
 
-### Third-party dependencies: submodules vs. Bazel BCR
+See [Building and testing with Bazel](docs/user/Bazel.md) for tests and build configurations.
+Bazel is the only supported build system.
 
-OpenROAD ships two build systems, and they source third-party code
-differently:
+### Third-party dependencies
 
-- **CMake**: CMake has no central registry of versioned dependencies, so
-  third-party sources are vendored as git submodules (see `.gitmodules`
-  and the nested `.gitmodules` files under each submodule). Some of
-  these submodules look like forks but are really just pinned upstream
-  trees; they exist so CMake has a directory to point at. These are
-  upstream mirrors — kept as submodules because that is what CMake can
-  consume.
-- **Bazel**: prefer the idiomatic options, in order:
-  1. A module from the [Bazel Central Registry](https://registry.bazel.build/)
-     (`bazel_dep` in `MODULE.bazel`). This is the default — pinned,
-     mirrored, reproducible, and no submodule needed.
-  2. If the dependency is not on BCR, fetch the upstream repository
-     directly with `http_archive` (preferred) or a module extension.
-     For modules that exist on BCR but need a different revision,
-     `git_override` (pinned by commit) or `archive_override` (pinned
-     by URL + SHA256) can be used. Bring a BUILD overlay only when
-     upstream does not ship one.
-  3. A real fork (with OpenROAD-specific patches) stays as a git
-     submodule because that is also what CMake needs; Bazel then
-     references it via its local path.
+Bazel sources third-party code in this order of preference:
+
+1. A module from the [Bazel Central Registry](https://registry.bazel.build/)
+   (`bazel_dep` in `MODULE.bazel`). This is the default — pinned,
+   mirrored, reproducible, and no submodule needed.
+2. If the dependency is not on BCR, fetch the upstream repository
+   directly with `http_archive` (preferred) or a module extension.
+   For modules that exist on BCR but need a different revision,
+   `git_override` (pinned by commit) or `archive_override` (pinned
+   by URL + SHA256) can be used. Bring a BUILD overlay only when
+   upstream does not ship one.
+3. A real fork (with OpenROAD-specific patches) stays as a git
+   submodule; Bazel then references it via its local path.
 
 The rule of thumb: if Bazel can get it from BCR or directly from the
-upstream repo, do not add a submodule just for Bazel. Submodules are
-the CMake-side compromise, not the source of truth for Bazel builds.
+upstream repo, do not add a submodule for it.
+
+There is a third source, for browser code only: the web viewer's
+JavaScript libraries come from **npm**, pinned in `src/web/package.json`
+and `src/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
+embedded in the binary (see `src/web/README.md`). Do not add a submodule
+or a BCR module for one of these, and do not add an npm dependency for
+anything that is not browser code.
 
 ## Regression Tests
 
-There are a set of executable regression test scripts in `./test/`.
+The regression tests are registered in the `BUILD` files.
+The test files are in `./test/` and in `src/<tool>/test/`.
+Run them with Bazel:
 
 ``` shell
 # run tests for all tools
-./test/regression
-
-# run all flow tests
-./test/regression flow
+bazelisk test //src/...
 
 # run <tool> tests
-./test/regression <tool>
-
-# run all <tool>-specific unit tests
-cd src/<tool>
-./test/regression
+bazelisk test //src/<tool>/...
 
 # run only <TEST_NAME> for <tool>
-cd src/<tool>
-./test/regression <TEST_NAME>
+bazelisk test //src/<tool>/test:<TEST_NAME>-tcl_test
+
+# run all flow tests
+bazelisk test //test:flow_tests
 ```
 
+Tcl tests end in `-tcl_test` and Python tests end in `-py_test`.
+Use `bazelisk query 'kind(test, //src/<tool>/...)'` to list the test targets of a tool.
+
 The flow tests check results such as worst slack against reference values.
-Use `report_flow_metrics [test]...` to see all of the metrics.
+
+### Running the tests in `./test/` outside Bazel
+
+`./test/regression` is a Tcl driver for the tests in `./test/`.
+Set `OPENROAD_EXE` to the binary to test:
+
+``` shell
+bazelisk build //:openroad
+
+# run all flow tests
+OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression flow
+
+# run only <TEST_NAME>
+OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression <TEST_NAME>
+```
+
+Use `report_flow_metrics [test]...` to see all of the flow test metrics.
 
 ``` text
 % report_flow_metrics gcd_nangate45
@@ -377,7 +394,6 @@ openroad [-help] [-version] [-no_init] [-exit] [-gui]
   -no_splash         do not show the license splash at startup
   -exit              exit after reading cmd_file
   -gui               start in gui mode
-  -python            start with python interpreter [limited to db operations]
   -log <file_name>   write a log in <file_name>
   -db <file_name>    open a .odb database at startup
   cmd_file           source cmd_file

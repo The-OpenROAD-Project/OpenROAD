@@ -85,6 +85,7 @@ def repair_timing(
     allow_setup_violations=False,
     sequence="",
     phases="",
+    path_group="",
     skip_pin_swap=False,
     skip_gate_cloning=False,
     skip_size_down_fanout=False,
@@ -94,6 +95,7 @@ def repair_timing(
     skip_last_gasp=False,
     skip_vt_swap=False,
     skip_crit_vt_swap=False,
+    effort="high",
     repair_tns=100,
     max_passes=10000,
     max_iterations=-1,
@@ -119,6 +121,8 @@ def repair_timing(
         _error(utl.RSZ, 1030, "repair_tns must be between 0 and 100.")
     if not (0 <= max_buffer_percent <= 100):
         _error(utl.RSZ, 1031, "max_buffer_percent must be between 0 and 100.")
+    if effort not in ("low", "medium", "high"):
+        _error(utl.RSZ, 1034, "effort must be low, medium or high.")
 
     if recover_power is not None:
         if not (0 <= recover_power <= 100):
@@ -142,6 +146,7 @@ def repair_timing(
             verbose,
             sequence,
             phases,
+            path_group,
             skip_pin_swap,
             skip_gate_cloning,
             skip_size_down_fanout,
@@ -151,6 +156,7 @@ def repair_timing(
             skip_last_gasp,
             skip_vt_swap,
             skip_crit_vt_swap,
+            effort,
         )
 
     if hold:
@@ -163,6 +169,7 @@ def repair_timing(
             max_iterations,
             match_cell_footprint,
             verbose,
+            path_group,
         )
 
 

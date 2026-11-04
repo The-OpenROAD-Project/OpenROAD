@@ -5,9 +5,12 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "PathGroupFilter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -15,6 +18,7 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
@@ -57,6 +61,8 @@ void RepairHold::init()
   db_network_ = resizer_->db_network_;
   estimate_parasitics_ = resizer_->estimate_parasitics_;
   initial_design_area_ = resizer_->computeDesignArea();
+  clk_tree_pins_.clear();
+  clk_tree_pins_valid_ = false;
 }
 
 bool RepairHold::repairHold(
@@ -77,9 +83,23 @@ bool RepairHold::repairHold(
 
   sta_->findRequireds();
   sta::VertexSet& ends = sta_->search()->endpoints();
+  const PathGroupFilter path_group_filter(resizer_);
   sta::VertexSeq ends1;
-  for (sta::Vertex* end : ends) {
-    ends1.push_back(end);
+  if (path_group_filter.enabled()) {
+    // Hold paths are min delay paths, so ask the group against min_. One
+    // query returns every endpoint whose own hold slack in the group needs
+    // repairing; merely hosting an in-group path would let nearly every
+    // register through.
+    for (const auto& [pin, slack] :
+         path_group_filter.groupEndpointSlacks(min_, hold_margin)) {
+      // slack_max is inclusive; the margin test here is strict.
+      sta::Vertex* vertex = graph_->pinLoadVertex(pin);
+      if (vertex != nullptr && sta::fuzzyLess(slack, hold_margin)) {
+        ends1.push_back(vertex);
+      }
+    }
+  } else {
+    ends1.assign(ends.begin(), ends.end());
   }
   sta::sort(ends1, sta::VertexIdLess(graph_));
 
@@ -464,6 +484,17 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
   return repaired;
 }
 
+sta::Slack RepairHold::holdSlack(sta::Vertex* end) const
+{
+  if (resizer_->pathGroup().empty()) {
+    return sta_->slack(end, min_);
+  }
+  // A worse hold path of another group at the same endpoint is not this
+  // repair's to fix, and would keep the endpoint failing once its group
+  // path is met. An endpoint with no path in the group has none to fix.
+  return PathGroupFilter(resizer_).groupSlack(end, min_).value_or(sta::INF);
+}
+
 void RepairHold::findHoldViolations(sta::VertexSeq& ends,
                                     const double hold_margin,
                                     // Return values.
@@ -474,8 +505,19 @@ void RepairHold::findHoldViolations(sta::VertexSeq& ends,
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
   for (sta::Vertex* end : ends) {
-    const sta::Slack slack = sta_->slack(end, min_);
-    if (!sta_->isClock(end->pin(), sta_->cmdMode()) && slack < hold_margin) {
+    const sta::Slack slack = holdSlack(end);
+    // Skip endpoints that lie on the clock network so we do not try to fix
+    // hold on the clock tree itself.  isClock() reports any pin in a clock
+    // network's combinational fanout, which incorrectly includes register
+    // data (D) pins that sample a signal sourced from a clock (e.g. a clock
+    // used as data crossing into a different sampling-clock domain).  Such
+    // register data pins are genuine hold endpoints: they carry a timing
+    // check (hasChecks()).  Only exclude clock pins that are NOT data check
+    // endpoints, so real cross-clock-domain hold violations are not silently
+    // skipped.  See OpenROAD issue #8075.
+    const bool clk_tree_endpoint
+        = sta_->isClock(end->pin(), sta_->cmdMode()) && !end->hasChecks();
+    if (!clk_tree_endpoint && slack < hold_margin) {
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -500,8 +542,15 @@ void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
                                 int& pass)
 {
   estimate_parasitics_->updateParasitics();
-  sta::sort(hold_failures, [=, this](sta::Vertex* end1, sta::Vertex* end2) {
-    return sta_->slack(end1, min_) < sta_->slack(end2, min_);
+  // Under -path_group each slack is a path query, so read it once per
+  // endpoint rather than on every comparison.
+  std::unordered_map<sta::Vertex*, sta::Slack> end_slacks;
+  end_slacks.reserve(hold_failures.size());
+  for (sta::Vertex* end : hold_failures) {
+    end_slacks[end] = holdSlack(end);
+  }
+  sta::sort(hold_failures, [&](sta::Vertex* end1, sta::Vertex* end2) {
+    return end_slacks.at(end1) < end_slacks.at(end2);
   });
   for (sta::Vertex* end_vertex : hold_failures) {
     if (verbose) {
@@ -533,13 +582,87 @@ class RepairHoldPredicate : public sta::SearchPred1
   }
 };
 
+bool RepairHold::isClockTreeDriver(const sta::Pin* drvr_pin)
+{
+  if (!sta_->isClock(drvr_pin, sta_->cmdMode())) {
+    return false;
+  }
+  if (!clk_tree_pins_valid_) {
+    findClockTreePins();
+  }
+  return clk_tree_pins_.contains(drvr_pin);
+}
+
+// Walk backward from every clock sink in the clock network (register or
+// timing-check clock pins and clock output ports) through clock-network
+// fanin.  The pins reached form the clock tree proper.  Clock-network pins
+// that only feed data pins (clock used as data) are not included.
+void RepairHold::findClockTreePins()
+{
+  clk_tree_pins_.clear();
+  const sta::Mode* mode = sta_->cmdMode();
+  sta_->ensureClkNetwork(mode);
+  sta::ClkNetwork* clk_network = mode->clkNetwork();
+  std::vector<const sta::Pin*> queue;
+  for (const sta::Clock* clk : mode->sdc()->clocks()) {
+    const sta::PinSet* clk_pins = clk_network->pins(clk);
+    if (clk_pins == nullptr) {
+      continue;
+    }
+    for (const sta::Pin* pin : *clk_pins) {
+      const bool clk_sink = network_->isRegClkPin(pin)
+                            || network_->isCheckClk(pin)
+                            || (network_->isTopLevelPort(pin)
+                                && network_->direction(pin)->isAnyOutput());
+      if (clk_sink && clk_tree_pins_.insert(pin).second) {
+        queue.push_back(pin);
+      }
+    }
+  }
+  while (!queue.empty()) {
+    const sta::Pin* pin = queue.back();
+    queue.pop_back();
+    sta::Vertex* vertex;
+    sta::Vertex* bidir_drvr_vertex;
+    graph_->pinVertices(pin, vertex, bidir_drvr_vertex);
+    for (sta::Vertex* to_vertex : {vertex, bidir_drvr_vertex}) {
+      if (to_vertex == nullptr) {
+        continue;
+      }
+      sta::VertexInEdgeIterator edge_iter(to_vertex, graph_);
+      while (edge_iter.hasNext()) {
+        sta::Edge* edge = edge_iter.next();
+        if (edge->role()->isTimingCheck()) {
+          continue;
+        }
+        const sta::Pin* from_pin = edge->from(graph_)->pin();
+        if (clk_network->isClock(from_pin)
+            && clk_tree_pins_.insert(from_pin).second) {
+          queue.push_back(from_pin);
+        }
+      }
+    }
+  }
+  clk_tree_pins_valid_ = true;
+  debugPrint(logger_,
+             RSZ,
+             "repair_hold",
+             2,
+             "found {} clock tree pins",
+             clk_tree_pins_.size());
+}
+
 void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                sta::LibertyCell* buffer_cell,
                                const double setup_margin,
                                const double hold_margin,
                                const bool allow_setup_violations)
 {
-  sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  // The endpoint is here because the group's hold slack violates, which its
+  // worst hold path need not belong to. Repair the group's own path so the
+  // buffers land on what was asked for.
+  const PathGroupFilter path_group_filter(resizer_);
+  sta::Path* end_path = path_group_filter.findWorstSlackPath(end_vertex, min_);
   if (end_path) {
     sta::Mode* mode = end_path->mode(sta_);
     debugPrint(logger_,
@@ -550,6 +673,12 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                end_vertex->name(network_),
                delayAsString(end_path->slack(sta_), sta_),
                delayAsString(sta_->slack(end_vertex, max_), sta_));
+    // Under -path_group a load's own hold slack also counts other groups'
+    // paths, so it neither decides where a buffer goes nor how much delay
+    // it must add: only the group's path at this endpoint does, until it is
+    // met. Other failing loads still share the buffer, setup checked.
+    const bool group_only = path_group_filter.enabled();
+    sta::Slack group_hold_slack = end_path->slack(sta_);
     sta::PathExpanded expanded(end_path, sta_);
     RepairHoldPredicate pred(sta_);
     const int path_length = expanded.size();
@@ -565,8 +694,14 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
         sta::Vertex* path_vertex = path_vertices[i];
         sta::Pin* path_pin = path_vertex->pin();
 
-        if (path_vertex->isDriver(network_)
-            && resizer_->okToBufferNet(path_pin)) {
+        if (group_only && !(group_hold_slack < hold_margin)) {
+          break;
+        }
+        // Hold paths that start at a clock source (clock used as data)
+        // run through clock-network drivers.  Only buffer on the data
+        // side so the clock latency of other sinks is not changed.
+        if (path_vertex->isDriver(network_) && resizer_->okToBufferNet(path_pin)
+            && !isClockTreeDriver(path_pin)) {
           sta::PinSeq load_pins;
           Slacks slacks;
           mergeInit(slacks);
@@ -589,6 +724,12 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
                 sta_->slacks(fanout, fanout_slacks);
+                if (group_only) {
+                  // The buffer delays both transitions by what the group
+                  // needs; setup still answers for every path.
+                  fanout_slacks[rise_index_][min_index_] = group_hold_slack;
+                  fanout_slacks[fall_index_][min_index_] = group_hold_slack;
+                }
                 mergeInto(fanout_slacks, slacks);
                 if (network_->direction(load_pin)->isAnyOutput()
                     && network_->isTopLevelPort(load_pin)) {
@@ -681,6 +822,9 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                 resizer_->journalEnd();
                 inserted_buffer_count_ += move.buffers;
                 resize_count_ += move.resizes;
+                if (group_only) {
+                  group_hold_slack = holdSlack(end_vertex);
+                }
               }
             }
           }
@@ -820,10 +964,26 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    sta::Slack wns;
-    sta::Vertex* worst_vertex;
-    sta_->worstSlack(min_, wns, worst_vertex);
-    const sta::Slack tns = sta_->totalNegativeSlack(min_);
+    sta::Slack wns = sta::INF;
+    sta::Vertex* worst_vertex = nullptr;
+    sta::Slack tns = 0.0;
+    const PathGroupFilter path_group_filter(resizer_);
+    if (path_group_filter.enabled()) {
+      // Report the group being repaired, as the setup progress table does.
+      const std::optional<PathGroupFilter::GroupWorst> worst
+          = path_group_filter.groupWorst(min_);
+      if (worst.has_value()) {
+        wns = worst->slack;
+        worst_vertex = graph_->pinLoadVertex(worst->endpoint);
+      }
+      for (const auto& [endpoint_pin, slack] :
+           path_group_filter.groupEndpointSlacks(min_, 0.0)) {
+        tns = sta::delayAsFloat(tns) + sta::delayAsFloat(slack);
+      }
+    } else {
+      sta_->worstSlack(min_, wns, worst_vertex);
+      tns = sta_->totalNegativeSlack(min_);
+    }
 
     std::string itr_field = fmt::format("{}", iteration);
     if (end) {
@@ -843,7 +1003,7 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         area_growth / initial_design_area_ * 1e2,
         delayAsString(wns, 3, sta_),
         delayAsString(tns, 3, sta_),
-        worst_vertex->name(network_));
+        worst_vertex != nullptr ? worst_vertex->name(network_) : "");
 
     debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());
   }

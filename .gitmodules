@@ -1,9 +1,3 @@
 [submodule "module/OpenSTA"]
 	path = src/sta
 	url = ../../The-OpenROAD-Project/OpenSTA.git
-[submodule "src/abc"]
-	path = third-party/abc
-	url = ../../The-OpenROAD-Project/abc.git
-[submodule "third-party/slang-elab"]
-	path = third-party/slang-elab
-	url = ../../povik/yosys-slang.git

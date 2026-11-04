@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0128] Design: flop_chip_a
+[INFO ODB-0252]     Updated 5 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0253]     Updated 5 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO ODB-0128] Design: flop_chip_b
+[INFO ODB-0252]     Updated 5 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0253]     Updated 5 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[WARNING PSM-0038] Unconnected shape on net VDD at (65.070um, 16.000um) - (75.070um, 26.000um), layer: metal5.
+[WARNING PSM-0039] Unconnected instance bump_vdd/PAD at location (70.070um, 21.000um).
+[ERROR PSM-0153] A chiplet power grid on VDD failed the local checks.
+PSM-0153
+Chiplet chipB, net VDD (coordinates relative to the assembly origin in microns)
+violation type: Unconnected shape
+	srcs: net:VDD
+	bbox = (165.0700, 216.0000) - (175.0700, 226.0000) on Layer metal5
+violation type: Unconnected instance
+	srcs: inst:bump_vdd
+	bbox = (170.0700, 221.0000) - (199.0700, 250.0000) on Layer -
+Chiplet chipA, net VDD (coordinates relative to the assembly origin in microns)
+The power grid for VDD is disconnected.

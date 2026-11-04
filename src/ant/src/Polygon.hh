@@ -44,8 +44,14 @@ std::vector<int> findNodesWithIntersection(const GraphNodes& graph_nodes,
 void wiresToPolygonSetMap(
     odb::dbWire* wires,
     odb::PtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer);
-void avoidPinIntersection(
-    odb::dbNet* db_net,
-    odb::PtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer);
+// Adds the shapes of db_net's pins to its routed metal.  A pin's own metal
+// is antenna area: LEF gives a pin's metal area as its shape plus its
+// ANTENNAPARTIALMETALAREA (LEF/DEF 5.8, p. 144), and the area values in LEF
+// leave the pin out because the router counts it (Appendix C, p. 1079).
+// A block pin without a partial area on a layer is the exception: its
+// shape there is often an abstract of the block, not its metal, so only the
+// routed metal over it counts.
+void addPinShapes(odb::dbNet* db_net,
+                  odb::PtrMap<odb::dbTechLayer, PolygonSet>& set_by_layer);
 
 }  // namespace ant

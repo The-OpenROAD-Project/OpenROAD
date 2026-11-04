@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <charconv>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -15,9 +16,13 @@
 #include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
@@ -29,6 +34,10 @@
 #include "utl/Logger.h"
 #include "web/core.h"
 
+namespace boost::asio {
+class io_context;
+}
+
 namespace web {
 
 class HeatMapDataSource;
@@ -36,6 +45,7 @@ class HeatMapSourceRegistration;
 class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
+struct EmbeddedAsset;
 
 // Sentinel string set as the Tcl result by WebServer::tclExitHandler
 // when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
@@ -515,6 +525,38 @@ struct SessionState
 // friends), and matching "/?mergetiles=0" against the asset table simply fails,
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
+
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.  A
+// q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
+bool acceptsGzip(std::string_view accept_encoding);
+
+// Fills in res for an embedded asset: the stored gzip bytes with
+// Content-Encoding: gzip when accept_encoding allows them, else the inflated
+// bytes (or a 500 if the asset cannot be inflated).
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res);
 
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.
 // Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the

@@ -8,6 +8,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
 namespace dft {
@@ -38,7 +39,10 @@ class ScanChain;
 class Dft
 {
  public:
-  Dft(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  Dft(odb::dbDatabase* db,
+      sta::dbSta* sta,
+      rsz::Resizer* resizer,
+      utl::Logger* logger);
   ~Dft();
 
   // Pre-work for insert_dft. We collect the cells that need to be
@@ -104,6 +108,7 @@ class Dft
   // Global state
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
+  rsz::Resizer* resizer_;
   utl::Logger* logger_;
 
   // Internal state

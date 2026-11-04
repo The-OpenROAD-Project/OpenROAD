@@ -3,7 +3,7 @@
 ## SPDX-License-Identifier: BSD-3-Clause
 ## Copyright (c) 2024-2026, The OpenROAD Authors
 
-# Bazel-mode helper used by save_ok / save_defok / save_guideok.
+# Helper used by save_ok / save_defok / save_guideok.
 # Each test's artifact lives under bazel-testlogs/<package>/<name>-<lang>_test/
 # either as test.outputs/results/<name>-<lang>.<ext> (unzipped, current
 # bazel default) or test.outputs/outputs.zip (zipped, older bazel).

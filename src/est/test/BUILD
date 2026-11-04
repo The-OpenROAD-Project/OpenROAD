@@ -5,7 +5,6 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 TESTS = [
     "make_parasitics1",
     "make_parasitics2",
@@ -48,6 +47,13 @@ filegroup(
         "//test:asap7_data",
     ],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "estimate_parasitics_source",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
 
 cc_test(
     name = "TestEstimateParasitics",

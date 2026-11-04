@@ -211,7 +211,7 @@ class PlaceIos : public tst::Fixture
         block_->findConstraintRegion(edge, begin, end));
   }
 
-  void place(PlaceOptions options = {})
+  void place(PlaceOptions&& options = {})
   {
     options.placeIosMode = true;
     options.initDensityPenaltyFactor = 0.01;
@@ -591,7 +591,7 @@ TEST_F(PlaceIos, TopLayerPinsStayInTheirRegion)
 
   PlaceOptions options;
   options.initialPlaceMaxIter = 0;
-  place(options);
+  place(std::move(options));
 
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     odb::dbBox* box = pinBox(bterm);

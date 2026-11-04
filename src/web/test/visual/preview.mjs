@@ -12,8 +12,8 @@
 //   cd src/web/test/visual && npm i puppeteer-core   # one-time
 //   node preview.mjs [outDir]
 //
-// Requires google-chrome (or set CHROME=/path/to/chrome) and network access
-// (netlistsvg is loaded from its CDN, same as the real viewer).
+// Requires google-chrome (or set CHROME=/path/to/chrome) and network access for
+// netlistsvg's prebuilt CDN bundle, which can render unlike the viewer's build.
 
 import puppeteer from 'puppeteer-core';
 import { writeFileSync, readFileSync, mkdtempSync, mkdirSync } from 'node:fs';
@@ -78,11 +78,14 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
 <script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
 </head><body><div id="host" style="width:760px;height:460px"></div>
 <script type="module">
-  import { SchematicWidget } from '/schematic-widget.js';
+  // schematic-widget.js reads the skin off the global, as the viewer's bundle
+  // sets it.
+  const skin = await fetch('/openroad_skin.svg');
+  if (!skin.ok) throw new Error('openroad_skin.svg: HTTP ' + skin.status);
+  window.openroadSkin = await skin.text();
+  const { SchematicWidget } = await import('/schematic-widget.js');
   const widget = new SchematicWidget({ element: document.getElementById('host') }, {});
   window.__render = async (json) => {
-    for (let i = 0; i < 300 && !widget._netlistsvgReady; i++)
-      await new Promise((r) => setTimeout(r, 50));
     if (!widget._netlistsvgReady) throw new Error('netlistsvg not ready');
     await widget.renderNetlist(json);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -91,7 +94,11 @@ const HARNESS = `<!doctype html><html><head><meta charset="utf-8">
   window.__ready = true;
 </script></body></html>`;
 
-const MIME = { '.js': 'application/javascript', '.html': 'text/html' };
+const MIME = {
+  '.js': 'application/javascript',
+  '.html': 'text/html',
+  '.svg': 'image/svg+xml',
+};
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   if (url === '/preview.html' || url === '/') {
