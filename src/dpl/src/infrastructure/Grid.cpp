@@ -620,7 +620,8 @@ GridY Grid::gridHeight(const Node* cell) const
   }
   auto site = cell->getDbInst()->getMaster()->getSite();
   if (!site) {
-    return GridY{max(1, (gridEndY(cell) - gridSnapDownY(cell)).v)};
+    const int spanned_rows = (gridEndY(cell) - gridSnapDownY(cell)).v;
+    return GridY{max(1, spanned_rows)};
   }
   if (!site->hasRowPattern()) {
     return GridY{1};

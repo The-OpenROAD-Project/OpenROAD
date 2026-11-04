@@ -429,6 +429,10 @@ bool NegotiationLegalizer::initFromDb()
     // footprint stays within the grid (matches Opendp::legalPt behaviour).
     cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
     cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    // Block macros often have no SITE in LEF. On hybrid-row grids with
+    // non-uniform row heights, gridHeight(master) cannot determine the row
+    // span from the master alone and returns 1, so derive the grid footprint
+    // from the placed instance's bounding box via gridCovering().
     if (dpl_grid->hasHybridRows() && cell.node && !master->getSite()) {
       const GridRect r = dpl_grid->gridCovering(cell.node);
       cell.init_x = r.xlo.v;
