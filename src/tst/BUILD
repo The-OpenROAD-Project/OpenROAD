@@ -51,9 +51,6 @@ cc_library(
         "include/tst/db_fixture.h",
         "include/tst/logger_checks.h",
     ],
-    defines = [
-        "BAZEL_BUILD",
-    ],
     includes = [
         "include",
     ],
@@ -89,9 +86,6 @@ cc_library(
     hdrs = [
         "include/tst/fixture.h",
     ],
-    defines = [
-        "BAZEL_BUILD",
-    ],
     includes = [
         "include",
     ],
@@ -117,9 +111,6 @@ cc_library(
     data = [
         "//test:nangate45_data",
         "//test:sky130hd_data",
-    ],
-    defines = [
-        "BAZEL_BUILD",
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],
@@ -196,7 +187,6 @@ cc_library(
     # Every test that LECs gets the binary in its runfiles, so under bazel the
     # tool is never missing and the tests can never quietly degrade.
     data = [":kepler_formal_bin"],
-    defines = ["BAZEL_BUILD"],
     includes = ["include"],
     visibility = ["//visibility:public"],
     deps = [

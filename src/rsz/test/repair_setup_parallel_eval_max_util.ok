@@ -10,11 +10,13 @@ Design area 894 um^2 1% utilization.
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
-[WARNING RSZ-2033] PARALLEL_EVAL reached the -max_utilization limit of 1.43%: batch 1 would grow the design area to 913.2 um^2, over the 894.7 um^2 limit. Batches over the limit are undone.
-       1* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
-       2* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
+       1* |      26 |       2 |        3 |      0 |     0 |    -2.7% |   -0.195 |       -1.2 |     17 | inst13/D
+       2* |      27 |       7 |        7 |      0 |     0 |    -1.8% |   -0.180 |       -0.7 |     12 | inst13/D
+    final |      27 |      11 |        8 |      0 |     0 |    -1.2% |   -0.173 |       -0.6 |     10 | inst13/D
 ------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 27 buffers.
+[INFO RSZ-0040] Inserted 8 buffers.
+[INFO RSZ-0051] Resized 11 instances: 11 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-Design area 894 um^2 1% utilization.
-utilization 1.4274%
+Design area 883 um^2 1% utilization.
+utilization 1.4109%

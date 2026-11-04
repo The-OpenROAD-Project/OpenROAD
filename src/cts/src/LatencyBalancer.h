@@ -64,7 +64,8 @@ class LatencyBalancer
                   sta::dbSta* sta,
                   TechChar* techChar,
                   double capPerDBU,
-                  double resPerDBU)
+                  double resPerDBU,
+                  bool useful_skew)
       : root_(root),
         options_(options),
         logger_(logger),
@@ -75,17 +76,20 @@ class LatencyBalancer
         wireSegmentUnit_(techChar->getLengthUnit()),
         capPerDBU_(capPerDBU),
         resPerDBU_(resPerDBU),
+        useful_skew_(useful_skew),
         worseDelay_(std::numeric_limits<float>::min())
   {
   }
 
   int run();
+  sta::ArcDelay computeBufferDelay(double extra_out_cap);
+  std::optional<double> usefulSkewTarget(odb::dbInst* inst) const;
 
  private:
   void initSta();
-  void findLeafBuilders(TreeBuilder* builder);
   // Fills dlyBuffers_ and buffersDelay_, skipping cells with no usable delay.
   void computeBuffersDelay(double extra_out_cap);
+  void findLeafBuilders(TreeBuilder* builder);
   int64_t computeWireLumpedDelay(const std::string& load,
                                  double wl,
                                  double& wireCap);
@@ -143,6 +147,7 @@ class LatencyBalancer
   double wireSegmentUnit_;
   double capPerDBU_;
   double resPerDBU_;
+  bool useful_skew_;
   double dpUnit_ = std::pow(10, 12);  // pico seconds
   float worseDelay_;
   int delayBufIndex_{0};

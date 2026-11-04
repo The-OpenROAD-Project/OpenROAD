@@ -22,6 +22,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "powerBase.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
@@ -37,6 +38,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
                              std::shared_ptr<ClockBase> cb,
+                             std::shared_ptr<PowerBase> pwb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : npVars_(npVars)
@@ -48,6 +50,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   rb_ = std::move(rb);
   tb_ = std::move(tb);
   cb_ = std::move(cb);
+  pwb_ = std::move(pwb);
   log_ = log;
 
   db_cbk_ = std::make_unique<nesterovDbCbk>(this);
@@ -458,7 +461,11 @@ void NesterovPlace::runTimingDriven(int iter,
     int nbc_total_gcells_before_td = nbc_->getGCells().size();
 
     for (auto& nb : nbVec_) {
-      nb_gcells_before_td += nb->getGCells().size();
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isInstance()) {
+          ++nb_gcells_before_td;
+        }
+      }
     }
 
     bool enable_repair_timing = npVars_.timingDrivenIterCounter
@@ -473,6 +480,19 @@ void NesterovPlace::runTimingDriven(int iter,
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
     getTopLevelNB()->refreshIoPins();
+    // is_routability_need_ stays true before/during ordinary refinement.
+    // Only runRoutability() clears it, after the final pass and any restore.
+    const bool retained_inflation = !virtual_td_iter
+                                    && npVars_.routability_driven_mode
+                                    && !is_routability_need_;
+    if (retained_inflation) {
+      // Inflate before initializing the new cells' optimizer/device state.
+      rb_->inflateNewCells();
+    }
+    // Virtual iterations undo their netlist edits, so activity is unchanged.
+    if (pwb_ && !virtual_td_iter) {
+      pwb_->setPowerNetWeights();
+    }
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
@@ -495,7 +515,11 @@ void NesterovPlace::runTimingDriven(int iter,
         = nbc_->getNewGcellsCount() - nbc_->getDeletedGcellsCount();
     td_accumulated_delta_area += nbc_->getDeltaArea();
     for (auto& nb : nbVec_) {
-      nb_gcells_after_td += nb->getGCells().size();
+      for (const auto& cell : nb->getGCells()) {
+        if (cell->isInstance()) {
+          ++nb_gcells_after_td;
+        }
+      }
     }
     const int nb_total_gcells_delta = nb_gcells_after_td - nb_gcells_before_td;
     if (nb_total_gcells_delta != nbc_total_gcells_delta) {
@@ -526,19 +550,27 @@ void NesterovPlace::runTimingDriven(int iter,
         // 3. updateareas
         // 4. updateDensitySize
 
-        nesterov->setTargetDensity(
-            static_cast<float>(nbc_->getDeltaArea()
-                               + nesterov->getNesterovInstsArea()
-                               + nesterov->getTotalFillerArea())
-            / static_cast<float>(nesterov->getWhiteSpaceArea()));
-
-        nesterov->setMovableArea(nesterov->getTargetDensity()
-                                 * nesterov->getWhiteSpaceArea());
+        const int64_t previous_area = nesterov->getNesterovInstsArea();
+        if (retained_inflation) {
+          // New inflation needs region-local live area, not a global repair
+          // delta. Keep this accounting out of the ordinary placement path.
+          nesterov->updateTimingDrivenDensity();
+        } else {
+          nesterov->setTargetDensity(
+              static_cast<float>(nbc_->getDeltaArea()
+                                 + nesterov->getNesterovInstsArea()
+                                 + nesterov->getTotalFillerArea())
+              / static_cast<float>(nesterov->getWhiteSpaceArea()));
+          nesterov->setMovableArea(nesterov->getTargetDensity()
+                                   * nesterov->getWhiteSpaceArea());
+        }
         float rsz_delta_area_microns
             = block->dbuAreaToMicrons(nbc_->getDeltaArea());
         float rsz_delta_area_percentage
             = (nbc_->getDeltaArea()
-               / static_cast<float>(nesterov->getNesterovInstsArea()))
+               / static_cast<float>(retained_inflation
+                                        ? previous_area
+                                        : nesterov->getNesterovInstsArea()))
               * 100.0f;
         log_->info(
             GPL,
@@ -571,12 +603,16 @@ void NesterovPlace::runTimingDriven(int iter,
                    110,
                    "Timing-driven: new target density: {}",
                    nesterov->getTargetDensity());
-        nbc_->resetDeltaArea();
-        nbc_->resetNewGcellsCount();
-        nesterov->updateAreas();
-        nesterov->updateDensitySize();
+        if (!retained_inflation) {
+          nbc_->resetDeltaArea();
+          nbc_->resetNewGcellsCount();
+          nesterov->updateAreas();
+          nesterov->updateDensitySize();
+        }
         nesterov->checkConsistency();
       }
+      nbc_->resetDeltaArea();
+      nbc_->resetNewGcellsCount();
 
       refreshCurGradients();
 

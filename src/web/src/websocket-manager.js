@@ -477,7 +477,9 @@ export class WebSocketManager {
 
         // Tile requests — return a data URI string.
         if (type === 'tile') {
-            const key = msg.layer + '/' + msg.z + '/' + msg.x + '/' + msg.y;
+            // Must match the keys WebServer::saveReport writes.
+            const key = (msg.chiplet ? msg.chiplet + '|' : '') + msg.layer
+                        + '/' + msg.z + '/' + msg.x + '/' + msg.y;
             const b64 = this._cache.tiles && this._cache.tiles[key];
             if (b64) {
                 return Promise.resolve('data:image/png;base64,' + b64);

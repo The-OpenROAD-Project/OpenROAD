@@ -15,6 +15,7 @@
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
@@ -362,6 +363,12 @@ const sta::Scene* Target::activeScene(const Resizer& resizer) const
   }
   return endpoint_path != nullptr ? endpoint_path->scene(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Mode* Target::mode(const Resizer& resizer) const
+{
+  const sta::Scene* active_scene = activeScene(resizer);
+  return active_scene != nullptr ? active_scene->mode() : nullptr;
 }
 
 const sta::MinMax* Target::minMax(const Resizer& resizer) const

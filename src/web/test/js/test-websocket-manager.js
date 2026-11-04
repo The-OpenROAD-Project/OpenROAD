@@ -687,6 +687,23 @@ describe('WebSocketManager.fromCache', () => {
         );
     });
 
+    // Two dies can share a layer name; each row's tile is saved per die.
+    it('looks up a die\'s row under its chiplet', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache({
+            tiles: { 'top/die0|M1/1/0/0': 'aGk=' },
+        }));
+        const result = await mgr.request({
+            type: 'tile', layer: 'M1', chiplet: 'top/die0', z: 1, x: 0, y: 0
+        });
+        assert.equal(result, 'data:image/png;base64,aGk=');
+        await assert.rejects(
+            mgr.request({
+                type: 'tile', layer: 'M1', chiplet: 'top/die1', z: 1, x: 0,
+                y: 0,
+            }),
+            { message: /Tile not cached/ });
+    });
+
     it('timing_highlight calls setPathOverlay with data URI', async () => {
         let called = null;
         const cache = makeCache();

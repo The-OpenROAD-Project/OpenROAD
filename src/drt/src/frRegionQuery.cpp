@@ -611,6 +611,12 @@ void frRegionQuery::Impl::init()
 
   markers.clear();
   markers.resize(numLayers);
+  // Register any markers already present on the block (e.g. DRC markers read
+  // from the database) so the detailed router can reroute their regions.
+  for (const auto& marker : design->getTopBlock()->getMarkers()) {
+    markers.at(marker->getLayerNum())
+        .insert(std::make_pair(marker->getBBox(), marker.get()));
+  }
 
   ObjectsByLayer<frBlockObject> allShapes(numLayers);
 

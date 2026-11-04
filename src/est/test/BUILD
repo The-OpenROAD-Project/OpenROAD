@@ -5,7 +5,6 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 TESTS = [
     "make_parasitics1",
     "make_parasitics2",

@@ -106,6 +106,7 @@ cc_library(
     ],
     deps = [
         "//src/odb/src/db",
+        "//src/odb/src/wireNormalizer",
         "//src/utl",
     ],
 )

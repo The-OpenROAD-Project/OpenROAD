@@ -33,6 +33,22 @@ using utl::GRT;
 
 namespace {
 
+// Append segment to route unless net_segs already has it. Vias match in
+// either layer order. Wires already match in either direction, because the
+// GSegment constructor orders their x and y.
+void addSegment(const GSegment& segment,
+                std::unordered_set<GSegment, GSegmentHash>& net_segs,
+                GRoute& route)
+{
+  GSegment key = segment;
+  if (key.isVia() && key.init_layer > key.final_layer) {
+    std::swap(key.init_layer, key.final_layer);
+  }
+  if (net_segs.insert(key).second) {
+    route.push_back(segment);
+  }
+}
+
 // Record `new_layer` as the latest pseudo-layer seen at (x, y). If a
 // previously recorded layer there differs by exactly one cut layer, emit a
 // bridging via segment (deduplicating against net_segs). Used by both
@@ -59,10 +75,7 @@ void recordLayerAndBridge(
     if (is_3d_route) {
       bridge_via.setIs3DRoute(true);
     }
-    if (!net_segs.contains(bridge_via)) {
-      net_segs.insert(bridge_via);
-      route.push_back(bridge_via);
-    }
+    addSegment(bridge_via, net_segs, route);
   }
   point_pseudo_layer[pt] = new_layer;
 }
@@ -1455,29 +1468,14 @@ NetRouteMap FastRouteCore::getRoutes()
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
           const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
-
-          GSegment segment = GSegment(
-              lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1);
-
+          addSegment(
+              GSegment(
+                  lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1),
+              net_segs,
+              route);
           lastX = xreal;
           lastY = yreal;
           lastL = grids[i].layer;
-          if (net_segs.find(segment) == net_segs.end()) {
-            if (segment.init_layer != segment.final_layer) {
-              GSegment invet_via = GSegment(segment.final_x,
-                                            segment.final_y,
-                                            segment.final_layer,
-                                            segment.init_x,
-                                            segment.init_y,
-                                            segment.init_layer);
-              if (net_segs.find(invet_via) != net_segs.end()) {
-                continue;
-              }
-            }
-
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
         }
       }
     }
@@ -1640,34 +1638,27 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
         if (lastX == xreal) {
           // if change direction add a via to change the layer
           if (lastL == layer_h) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
-            if (net_segs.find(segment) == net_segs.end()) {
-              net_segs.insert(segment);
-              route.push_back(segment);
-            }
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1),
+                net_segs,
+                route);
           }
           lastL = layer_v;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
         } else {
           // if change direction add a via to change the layer
           if (lastL == layer_v) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
-            if (net_segs.find(segment) == net_segs.end()) {
-              net_segs.insert(segment);
-              route.push_back(segment);
-            }
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1),
+                net_segs,
+                route);
           }
           lastL = layer_h;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
         }
         lastX = xreal;
         lastY = yreal;
-        if (net_segs.find(segment) == net_segs.end()) {
-          net_segs.insert(segment);
-          route.push_back(segment);
-        }
+        addSegment(segment, net_segs, route);
         // Per-hop commit: catches the case where *this* edge ends or passes
         // through an XY that a previously processed edge entered on a
         // different layer (edge-entry bridging alone misses this).
@@ -1705,11 +1696,7 @@ void FastRouteCore::convertGridsToSegments(
     GSegment segment
         = GSegment(lastX, lastY, lastL + 1, xreal, yreal, currentL + 1);
     segment.setIs3DRoute(true);
-
-    if (net_segs.find(segment) == net_segs.end()) {
-      net_segs.insert(segment);
-      route.push_back(segment);
-    }
+    addSegment(segment, net_segs, route);
 
     lastX = xreal;
     lastY = yreal;
@@ -1993,6 +1980,94 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
     }
   }
   clearCongestionDirtyTiles();
+}
+
+// The inverse of updateDbCongestion(): for each edge, the map holds the
+// capacity plus the blockage (the tracks) and the usage plus the blockage.
+// With the same routes in this engine's usage, the blockage the edge had when
+// the map was written, and so its capacity, follow.
+int FastRouteCore::restoreCapacitiesFromDb(const int min_routing_layer,
+                                           const int max_routing_layer)
+{
+  if (h_edges_3D_.num_elements() == 0) {
+    return 0;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr || db_gcell->getNumGridPatternsX() != 1
+      || db_gcell->getNumGridPatternsY() != 1) {
+    return 0;
+  }
+  int origin_x, count_x, step_x, origin_y, count_y, step_y;
+  db_gcell->getGridPatternX(0, origin_x, count_x, step_x);
+  db_gcell->getGridPatternY(0, origin_y, count_y, step_y);
+  if (origin_x != x_corner_ || count_x != x_grid_ || step_x != tile_size_
+      || origin_y != y_corner_ || count_y != y_grid_ || step_y != tile_size_) {
+    debugPrint(logger_,
+               GRT,
+               "incr",
+               1,
+               "The odb congestion map is on another grid; capacities kept.");
+    return 0;
+  }
+
+  auto db_tech = db_->getTech();
+  int changed = 0;
+  int kept = 0;
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
+    odb::dbTechLayer* layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    const bool horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    const EdgeDirection direction
+        = horizontal ? EdgeDirection::Horizontal : EdgeDirection::Vertical;
+    for (int y = 0; y < y_grid_; y++) {
+      for (int x = 0; x < x_grid_; x++) {
+        // The last column (row) only mirrors its neighbor.
+        if ((horizontal && x == x_grid_ - 1)
+            || (!horizontal && y == y_grid_ - 1)) {
+          continue;
+        }
+        const Edge3D& edge
+            = horizontal ? h_edges_3D_[k][y][x] : v_edges_3D_[k][y][x];
+        const Edge3D& other
+            = horizontal ? v_edges_3D_[k][y][x] : h_edges_3D_[k][y][x];
+        const int tracks = std::lround(db_gcell->getCapacity(layer, x, y));
+        const int blockage = std::lround(db_gcell->getUsage(layer, x, y))
+                             - edge.usage - other.usage - other.red;
+        // Other tracks, or other routes, than the map was written with.
+        if (tracks != edge.cap + edge.red || blockage < 0
+            || blockage > tracks) {
+          kept++;
+          continue;
+        }
+        const int cap = tracks - blockage;
+        if (cap == edge.cap) {
+          continue;
+        }
+        const int delta = cap - edge.cap;
+        addAdjustment(x,
+                      y,
+                      horizontal ? x + 1 : x,
+                      horizontal ? y : y + 1,
+                      k + 1,
+                      cap,
+                      delta < 0);
+        graph2d_.addCap3D(x, y, k, direction, delta);
+        changed++;
+      }
+    }
+  }
+  debugPrint(logger_,
+             GRT,
+             "incr",
+             1,
+             "Capacities from the odb congestion map: {} edges changed, {} "
+             "kept (map inconsistent with the routes).",
+             changed,
+             kept);
+  return changed;
 }
 
 // The usage odb reports for one GCell on layer index `k`.  Shared by the full
@@ -3018,6 +3093,9 @@ void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 void FastRouteCore::setResistanceAware(bool resistance_aware)
 {
   enable_resistance_aware_ = resistance_aware;
+  if (!resistance_aware) {
+    resistance_aware_ = false;
+  }
   en_estimate_parasitics_ = true;
 }
 

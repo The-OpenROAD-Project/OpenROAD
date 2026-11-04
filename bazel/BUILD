@@ -17,8 +17,8 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 
-# The Bazel replacement for the CMake-generated ord/Version.hh. The version
-# is written into the linked binary by stamped_binary.bzl.
+# ord/Version.hh. The version is written into the linked binary by
+# stamped_binary.bzl.
 cc_library(
     name = "openroad_version",
     srcs = ["version/version.cc"],

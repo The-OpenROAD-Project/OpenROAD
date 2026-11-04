@@ -5,7 +5,7 @@ mkdir -p work
 cd work
 
 # Create a soft link to openroad executable
-ln -s ../../../../build/bin/openroad
+ln -s ../../../../bazel-bin/openroad
 
 # Step A: Generate Patterns Layout that models
 #         various capacitance and resistance

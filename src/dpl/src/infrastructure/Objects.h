@@ -47,9 +47,14 @@ class Master
   void setTopPowerType(int top_pwr);
   void setDbMaster(odb::dbMaster* db_master);
   odb::dbMaster* getDbMaster() const;
+  struct PinShape
+  {
+    odb::Rect rect;
+    odb::dbMTerm* mterm;
+  };
   // Signal pin shapes in master coordinates, by routing level
-  void addPinShape(int level, const odb::Rect& rect);
-  const std::vector<odb::Rect>& getPinShapes(int level) const;
+  void addPinShape(int level, const odb::Rect& rect, odb::dbMTerm* mterm);
+  const std::vector<PinShape>& getPinShapes(int level) const;
 
  private:
   odb::dbMaster* db_master_{nullptr};
@@ -58,7 +63,7 @@ class Master
   std::vector<MasterEdge> edges_;
   int bottom_pwr_{0};
   int top_pwr_{0};
-  std::array<std::vector<odb::Rect>, kMaxPinLevel + 1> pin_shapes_;
+  std::array<std::vector<PinShape>, kMaxPinLevel + 1> pin_shapes_;
 };
 
 class Pin;

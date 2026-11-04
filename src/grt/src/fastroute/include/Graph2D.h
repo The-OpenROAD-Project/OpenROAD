@@ -129,6 +129,8 @@ class Graph2D
                    int layer,
                    EdgeDirection direction,
                    double cap);
+  // Adds to a layer's capacity, keeping the NDR capacity reserved on it.
+  void addCap3D(int x, int y, int layer, EdgeDirection direction, int delta);
 
   void clearNDRnets();
   void clearCongestedNDRnets() { congested_ndrs_.clear(); };

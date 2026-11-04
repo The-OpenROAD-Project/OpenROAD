@@ -104,9 +104,8 @@ The existing fixture stack already supports this:
   test case by hand."
 - **`odb::SimpleDbFixture`** (`src/odb/test/cpp/helper/helper.h`) -- pre-builds a
   minimal tech/lib/chip/block and `createMaster*` helpers.
-- **`tst/physical_builder.h`** (Bazel `//src/tst:physical_builder`; CMake
-  `tst_physical`, deprecated) -- odb-only builders for physical test cases: `makeTech`,
-  `makeLib`, `makeBlock`, `makeLayerStack` (M1..Mn with cuts and vias),
+- **`tst/physical_builder.h`** (Bazel `//src/tst:physical_builder`) -- odb-only
+  builders for physical test cases: `makeTech`, `makeLib`, `makeBlock`, `makeLayerStack` (M1..Mn with cuts and vias),
   `applyAntennaRule` (an `AntennaRuleSpec` over the layer's default antenna
   rule), `makeMaster` (pins with shapes and antenna gate/diffusion areas),
   `RoutePath` (a fluent `dbWireEncoder` wrapper for routed wires) and
@@ -285,8 +284,7 @@ at once.
 4. **Write the C++ unit test(s)** with semantic assertions on observable state.
    One behavior per `TEST_F`; build inputs with `makeInst`/`makeBTerm`/`makeNets`
    or `createMaster*` rather than checked-in DEFs. Add a builder helper if the
-   same construction recurs. Register in Bazel (`BUILD`); CMake
-   test registration is not required.
+   same construction recurs. Register in Bazel (`BUILD`).
 5. **Confirm coverage is equal-or-better.** The C++ tests must cover every
    behavior the golden test pinned (use the intent list from step 2 as a
    checklist). A C++ test that asserts *more* (e.g. an error/rejection path the
@@ -296,10 +294,7 @@ at once.
 6. **Delete the superseded Tcl/Python test(s) and their artifacts, and
    de-register them from Bazel** -- in this same change. Remove the
    `.tcl`/`.py` and its `.ok`/`.defok`/`.vok`; drop the name from the test
-   list in `src/<module>/test/BUILD` (`regression_test`). If the name is also
-   in the deprecated `src/<module>/test/CMakeLists.txt`
-   (`or_integration_tests`), drop it there too so CMake does not point at a
-   missing file. Remove checked-in DEF/LEF data
+   list in `src/<module>/test/BUILD` (`regression_test`). Remove checked-in DEF/LEF data
    only if nothing else references it (grep first -- fixtures like Nangate45 and shared `data/` files
    are used by many tests).
 7. **Check residual binding coverage.** Removing a *golden* test does not have to
@@ -320,6 +315,4 @@ at once.
 
 Every new test -- C++ or Tcl -- must be registered in Bazel (`BUILD`).
 A test missing from `BUILD` does not run in CI.
-CMake test registration is not required: CMake is deprecated and will be removed on Nov. 1, 2026.
 See `testing.md` for the exact Bazel macros (`regression_test`, `cc_test`).
-The CMake equivalents (`or_integration_tests`, `gtest_discover_tests`) are deprecated.

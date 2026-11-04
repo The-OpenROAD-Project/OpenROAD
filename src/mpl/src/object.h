@@ -303,7 +303,6 @@ class HardMacro
   HardMacro(odb::dbInst* inst, Halo halo);
 
   bool operator<(const HardMacro& macro) const;
-  bool operator==(const HardMacro& macro) const;
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }

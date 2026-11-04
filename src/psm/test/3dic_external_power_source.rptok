@@ -1,0 +1,9 @@
+Instance,Terminal,Layer,X location,Y location,Voltage
+chipB/inv,VDD,metal1,40.0325,20.9150,1.099925
+chipB/ff,VDD,metal1,21.6045,20.8725,1.099890
+chipB/buf_inst,VDD,metal1,60.1225,20.9125,1.099968
+chipB/bump_vdd,PAD,metal1,70.0700,21.0000,1.099997
+chipA/inv,VDD,metal1,40.0325,20.9150,1.099924
+chipA/ff,VDD,metal1,21.6045,20.8725,1.099889
+chipA/buf_inst,VDD,metal1,60.1225,20.9125,1.099967
+chipA/bump_vdd,PAD,metal1,70.0700,21.0000,1.099997

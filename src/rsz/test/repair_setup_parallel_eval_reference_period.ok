@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+[DEBUG RSZ-repair_setup] PARALLEL_EVAL reference clock period 2.600e-10
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -34.849 |     -241.8 |     46 | resp_msg[13]
+[DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 16 (WNS 2.098e-11)
+    final |       0 |     160 |       35 |      0 |    16 |    +8.8% |   28.389 |        0.0 |     24 | resp_msg[12]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 35 buffers.
+[INFO RSZ-0051] Resized 160 instances: 33 up, 0 up match, 9 down, 118 VT
+[INFO RSZ-0043] Swapped pins on 16 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max 28.389
+tns max 0.000

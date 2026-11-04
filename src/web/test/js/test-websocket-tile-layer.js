@@ -50,6 +50,7 @@ const { floorClampZoom, buildTileRequest, currentDpr,
 const { BLANK_TILE, TILE_SIZE_CSS, buildTileRequestFor, watchDevicePixelRatio }
     = await import('../../src/tile-request.js');
 const { WebSocketManager } = await import('../../src/websocket-manager.js');
+const { LayerExtents } = await import('../../src/layer-extents.js');
 
 // The seam the tile size exists to prevent: a tile whose CSS size is not a whole
 // number of device pixels has a fractional PITCH, so its boundaries cannot all
@@ -373,6 +374,53 @@ describe('buildTileRequest', () => {
         const req = buildTileRequest({ z: 0, x: 0, y: 0 }, 'M1', patCtx);
         assert.equal(req.pattern, 3);
     });
+
+    // Two dies can share a layer name (#11886); a row's tiles draw its die.
+    it('scopes a row to its die and keys its pattern by row', () => {
+        const rowCtx = {
+            ...ctx,
+            app: {
+                layerPatterns: { M1: 3, 'layers_parent/die0/M1': 2 },
+                chipletHiddenLayers: { 'top/die1': ['M1'] },
+            },
+        };
+        const req = buildTileRequest(
+            { z: 0, x: 0, y: 0 }, 'M1', rowCtx,
+            { chiplet: 'top/die0', rowId: 'layers_parent/die0/M1' });
+        assert.equal(req.chiplet, 'top/die0');
+        assert.equal(req.pattern, 2, 'the row\'s own pattern wins');
+        assert.equal('chiplet_hidden_layers' in req, false,
+                     'a row cannot draw a die it does not belong to');
+    });
+
+    it('sends per-die hidden layers only on unscoped tiles that have any',
+       () => {
+           const hidden = { 'top/die0': ['M1'] };
+           const withHidden = { ...ctx, app: { chipletHiddenLayers: hidden } };
+           assert.deepEqual(
+               buildTileRequest({ z: 0, x: 0, y: 0 }, '_pins', withHidden)
+                   .chiplet_hidden_layers,
+               hidden);
+           const none = { ...ctx, app: { chipletHiddenLayers: {} } };
+           const req = buildTileRequest({ z: 0, x: 0, y: 0 }, '_pins', none);
+           assert.equal('chiplet_hidden_layers' in req, false);
+           assert.equal('chiplet' in req, false);
+       });
+
+    // Debug tiles skip the server cache, so only they carry the host flag.
+    it('marks the renderer host only while the renderers draw', () => {
+        const row = { chiplet: 'top/die0', rendererHost: true };
+        const off = buildTileRequest({ z: 0, x: 0, y: 0 }, 'M1', ctx, row);
+        assert.equal('renderer_host' in off, false);
+        const debugCtx = {
+            ...ctx, visibility: { ...ctx.visibility, debug_renderers: true },
+        };
+        assert.equal(buildTileRequest(
+            { z: 0, x: 0, y: 0 }, 'M1', debugCtx, row).renderer_host, true);
+        assert.equal('renderer_host' in buildTileRequest(
+            { z: 0, x: 0, y: 0 }, 'M1', debugCtx, { chiplet: 'top/die1' }),
+                     false);
+    });
 });
 
 describe('WebSocketManager.cancel', () => {
@@ -434,6 +482,32 @@ describe('the layer body must resolve every name it references', () => {
         const layer = build();
         layer._map = null;
         assert.equal(layer._clampZoom(5), 5);
+    });
+
+    // A row asks by its own die: die1's metal1 is only in the right half.
+    it('skips a tile outside its row\'s die', () => {
+        const layerExtents = new LayerExtents();
+        layerExtents.apply(layerExtents.invalidate(), {
+            supported: true,
+            layers: {},
+            chiplets: {
+                'top/die1': { outline: [], layers: { metal1: [0.5, 0, 1, 1] } },
+            },
+        });
+        const sent = [];
+        const Layer = createWebSocketTileLayer(
+            {}, new Set(['metal1']), null, null, { layerExtents });
+        const wm = { nextId: 1, cancel() {},
+                     request: (msg) => { sent.push(msg);
+                                         return new Promise(() => {}); } };
+        const layer = new Layer(wm, 'metal1', { row: { chiplet: 'top/die1' } });
+        withFakeDocument(() => {
+            layer.createTile({ x: 0, y: 0, z: 2 }, () => {});
+            assert.equal(sent.length, 0, 'requested a tile outside die1');
+            layer.createTile({ x: 3, y: 0, z: 2 }, () => {});
+        });
+        assert.equal(sent.length, 1);
+        assert.equal(sent[0].chiplet, 'top/die1');
     });
 
     // A blank tile arrives as a null payload (frame type 3).  The element must

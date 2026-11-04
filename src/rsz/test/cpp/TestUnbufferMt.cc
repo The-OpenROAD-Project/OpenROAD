@@ -80,16 +80,16 @@ TEST_F(TestUnbufferMt, GenerateOffersARemovalThatGains)
 TEST_F(TestUnbufferMt, ImpactReconnectsThePinsOfTheDroppedNet)
 {
   // path_pre1 keeps its input net, so the NAND2 input moves.
-  const UnbufferMtCandidate inner(resizer_,
-                                  makeTarget("path_out", "path_pre1", "Z"));
+  const Target inner_target = makeTarget("path_out", "path_pre1", "Z");
+  const UnbufferMtCandidate inner(resizer_, inner_target);
   EXPECT_EQ(
       inner.impact().reconnect_pins,
       std::vector<const sta::Pin*>{db_network_->findPin("path_target/A1")});
 
   // path_load drives the path_out port, so its output net stays and the NAND2
   // output moves onto it.
-  const UnbufferMtCandidate outer(resizer_,
-                                  makeTarget("path_out", "path_load", "Z"));
+  const Target outer_target = makeTarget("path_out", "path_load", "Z");
+  const UnbufferMtCandidate outer(resizer_, outer_target);
   EXPECT_EQ(
       outer.impact().reconnect_pins,
       std::vector<const sta::Pin*>{db_network_->findPin("path_target/ZN")});

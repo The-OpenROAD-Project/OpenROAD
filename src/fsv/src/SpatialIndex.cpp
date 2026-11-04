@@ -22,28 +22,43 @@ constexpr int kBins = 16;
 
 constexpr double kMax = std::numeric_limits<double>::max();
 constexpr double kLowest = std::numeric_limits<double>::lowest();
-constexpr Box kEmpty{{kMax, kMax, kMax}, {kLowest, kLowest, kLowest}};
+
+template <int D>
+AlignedBox<D> emptyBox()
+{
+  AlignedBox<D> b;
+  b.lo.fill(kMax);
+  b.hi.fill(kLowest);
+  return b;
+}
 
 // Grows a box to cover another.
-void grow(Box& bounds, const Box& b)
+template <int D>
+void grow(AlignedBox<D>& bounds, const AlignedBox<D>& b)
 {
-  for (int k = 0; k < 3; k++) {
+  for (int k = 0; k < D; k++) {
     bounds.lo[k] = std::min(bounds.lo[k], b.lo[k]);
     bounds.hi[k] = std::max(bounds.hi[k], b.hi[k]);
   }
 }
 
-// A node's volume, the split cost's measure of how often a nearest-distance
-// query has to open it. (Ray tracers use surface area; on thin routed wires
-// volume measured 5-15% faster.)
-double volume(const Box& b)
+// A node's volume (area, in 2D), the split cost's measure of how often a
+// nearest-distance query has to open it. (Ray tracers use surface area; on
+// thin routed wires volume measured 5-15% faster.)
+template <int D>
+double volume(const AlignedBox<D>& b)
 {
-  return (b.hi[0] - b.lo[0]) * (b.hi[1] - b.lo[1]) * (b.hi[2] - b.lo[2]);
+  double v = 1;
+  for (int k = 0; k < D; k++) {
+    v *= b.hi[k] - b.lo[k];
+  }
+  return v;
 }
 
 }  // namespace
 
-SpatialIndex::SpatialIndex(const std::vector<Box>& boxes)
+template <int D>
+SpatialIndex<D>::SpatialIndex(const std::vector<AlignedBox<D>>& boxes)
     : boxes_(boxes), order_(boxes.size())
 {
   std::iota(order_.begin(), order_.end(), 0);
@@ -53,11 +68,12 @@ SpatialIndex::SpatialIndex(const std::vector<Box>& boxes)
   }
 }
 
-int SpatialIndex::build(const int first, const int last, const int depth)
+template <int D>
+int SpatialIndex<D>::build(const int first, const int last, const int depth)
 {
   const int id = static_cast<int>(nodes_.size());
   nodes_.emplace_back();
-  Box bounds = kEmpty;
+  AlignedBox<D> bounds = emptyBox<D>();
   for (int i = first; i < last; i++) {
     grow(bounds, boxes_[order_[i]]);
   }
@@ -75,16 +91,21 @@ int SpatialIndex::build(const int first, const int last, const int depth)
   return id;
 }
 
-int SpatialIndex::partition(const int first, const int last, const bool by_cost)
+template <int D>
+int SpatialIndex<D>::partition(const int first,
+                               const int last,
+                               const bool by_cost)
 {
   // Box centers are compared as lo + hi (twice the center) throughout.
   auto center2 = [&](const int box, const int k) {
     return boxes_[box].lo[k] + boxes_[box].hi[k];
   };
-  Vec3 cmin{kMax, kMax, kMax};
-  Vec3 cmax{kLowest, kLowest, kLowest};
+  Vec<D> cmin;
+  Vec<D> cmax;
+  cmin.fill(kMax);
+  cmax.fill(kLowest);
   for (int i = first; i < last; i++) {
-    for (int k = 0; k < 3; k++) {
+    for (int k = 0; k < D; k++) {
       cmin[k] = std::min(cmin[k], center2(order_[i], k));
       cmax[k] = std::max(cmax[k], center2(order_[i], k));
     }
@@ -104,12 +125,12 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
   double best_cost = kMax;
   int best_axis = -1;
   int best_bin = 0;
-  for (int k = 0; by_cost && k < 3; k++) {
+  for (int k = 0; by_cost && k < D; k++) {
     if (!(cmax[k] > cmin[k])) {
       continue;
     }
-    std::array<Box, kBins> bin_bounds;
-    bin_bounds.fill(kEmpty);
+    std::array<AlignedBox<D>, kBins> bin_bounds;
+    bin_bounds.fill(emptyBox<D>());
     std::array<int, kBins> bin_count{};
     for (int i = first; i < last; i++) {
       const int b = binOf(order_[i], k);
@@ -119,7 +140,7 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
     // Sweep from the right for each suffix's volume and count.
     std::array<double, kBins> right_volume{};
     std::array<int, kBins> right_count{};
-    Box acc = kEmpty;
+    AlignedBox<D> acc = emptyBox<D>();
     int count = 0;
     for (int b = kBins - 1; b > 0; b--) {
       grow(acc, bin_bounds[b]);
@@ -128,7 +149,7 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
       right_count[b] = count;
     }
     // Sweep from the left; splitting before bin b puts bins < b on the left.
-    acc = kEmpty;
+    acc = emptyBox<D>();
     count = 0;
     for (int b = 1; b < kBins; b++) {
       grow(acc, bin_bounds[b - 1]);
@@ -156,7 +177,7 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
   // Median split on the axis with the widest spread of centers, used below
   // kMaxCostDepth and when every center coincides.
   int axis = 0;
-  for (int k = 1; k < 3; k++) {
+  for (int k = 1; k < D; k++) {
     if (cmax[k] - cmin[k] > cmax[axis] - cmin[axis]) {
       axis = k;
     }
@@ -173,10 +194,12 @@ int SpatialIndex::partition(const int first, const int last, const bool by_cost)
   return mid;
 }
 
-SpatialIndex::Nearest SpatialIndex::nearest(const Vec3& p) const
+template <int D>
+typename SpatialIndex<D>::Nearest SpatialIndex<D>::nearest(
+    const Vec<D>& p) const
 {
   // A point at or below the ground plane is touching it.
-  Nearest best{std::max(0.0, p[2]), kGround};
+  Nearest best{std::max(0.0, p[D - 1]), kGround};
   if (nodes_.empty()) {
     return best;
   }
@@ -217,5 +240,8 @@ SpatialIndex::Nearest SpatialIndex::nearest(const Vec3& p) const
   }
   return best;
 }
+
+template class SpatialIndex<2>;
+template class SpatialIndex<3>;
 
 }  // namespace fsv

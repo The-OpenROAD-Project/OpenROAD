@@ -457,6 +457,7 @@ struct Target
   sta::Instance* inst(const Resizer& resizer) const;
   sta::Vertex* vertex(const Resizer& resizer) const;
   const sta::Scene* activeScene(const Resizer& resizer) const;
+  const sta::Mode* mode(const Resizer& resizer) const;
   const sta::MinMax* minMax(const Resizer& resizer) const;
   const sta::Path* driverPath(const Resizer& resizer) const;
 

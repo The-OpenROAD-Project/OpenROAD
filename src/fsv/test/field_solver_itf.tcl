@@ -31,4 +31,19 @@ check "the via layer gives the via's z extent" {
   expr { abs([dict get $box v total] / [dict get $via v total] - 1) < 0.05 }
 } 1
 
+# A met1/met2 grid: 20 sidewall shells, more than the dielectric scans
+# directly, so cubes find nearby shells through its index. The walk count
+# is fixed and the log records the result exactly.
+clear_field_solver
+for { set i 0 } { $i < 10 } { incr i } {
+  set y [expr { 0.34 * $i }]
+  add_field_solver_box -net h$i -layer met1 -rect [list 0 $y 4 [expr { $y + 0.14 }]]
+  set x [expr { 0.4 * $i }]
+  add_field_solver_box -net v$i -layer met2 -rect [list $x -0.5 [expr { $x + 0.14 }] 3.5]
+}
+set grid [solve_capacitance -nets h4 -min_walks 32768 -max_walks 32768]
+check "the grid's middle wire couples most to its neighbours" {
+  expr { [dict get $grid h4 couplings h3] > [dict get $grid h4 couplings v4] }
+} 1
+
 exit_summary

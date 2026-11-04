@@ -202,6 +202,11 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
     };
 }
 
+// Whether an object map such as app.chipletHiddenLayers has any key.
+export function hasEntries(map) {
+    return !!map && Object.keys(map).length > 0;
+}
+
 // Pure builder for the tile-request payload. `ctx` carries the per-layer
 // visibility/selectability context.
 //
@@ -210,8 +215,12 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
 //
 // `dpr` is passed in rather than read here so a caller can override it without
 // this module knowing anything about why.
+//
+// `row` is the Display Controls row asking: `chiplet` is the die it draws (two
+// dies can share a layer name), `rowId` keys its fill pattern and
+// `rendererHost` marks the row that carries the renderers' layer pass.
 export function buildTileRequestFor(coords, layerName, ctx, dpr,
-                                    tileSize = tileSizeCss()) {
+                                    tileSize = tileSizeCss(), row = {}) {
     const { visibility, selectability, visibleLayers, selectableLayers, app }
         = ctx;
     const vf = {};
@@ -237,11 +246,22 @@ export function buildTileRequestFor(coords, layerName, ctx, dpr,
     if (app && app.visibleChiplets instanceof Set) {
         req.visible_chiplets = [...app.visibleChiplets];
     }
+    // A row is only requested while it is checked, so a die's exceptions
+    // cannot change its pixels; leaving them out keeps its cache key stable.
+    if (row.chiplet) {
+        req.chiplet = row.chiplet;
+    } else if (app && hasEntries(app.chipletHiddenLayers)) {
+        req.chiplet_hidden_layers = app.chipletHiddenLayers;
+    }
+    // Debug tiles skip the cache, so this flag cannot fragment it.
+    if (row.rendererHost && vf.debug_renderers) {
+        req.renderer_host = true;
+    }
     // Per-layer fill pattern (int matching the server's FillPattern enum;
     // 1 = solid). Read lazily so a change via the layer context menu is picked
     // up on the next refresh without rebuilding the layer.
     if (app && app.layerPatterns) {
-        const p = app.layerPatterns[layerName];
+        const p = app.layerPatterns[row.rowId ?? layerName];
         if (p !== undefined && p !== 1) {
             req.pattern = p;
         }
