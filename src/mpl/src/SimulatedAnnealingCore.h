@@ -77,15 +77,6 @@ class SimulatedAnnealingCore
   int getWidth() const;
   int getHeight() const;
   int64_t getArea() const;
-  float getAreaPenalty() const;
-  float getOutlinePenalty() const;
-  float getNormOutlinePenalty() const;
-  float getWirelength() const;
-  float getNormWirelength() const;
-  float getGuidancePenalty() const;
-  float getNormGuidancePenalty() const;
-  float getFencePenalty() const;
-  float getNormFencePenalty() const;
   std::vector<T> getMacros() const;
 
   virtual void initialize() = 0;

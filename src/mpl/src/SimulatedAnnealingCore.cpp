@@ -197,60 +197,6 @@ int64_t SimulatedAnnealingCore<T>::getArea() const
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::getAreaPenalty() const
-{
-  return penalty_terms_[kAreaTerm].value;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getOutlinePenalty() const
-{
-  return penalty_terms_[kOutlineTerm].value;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getNormOutlinePenalty() const
-{
-  return penalty_terms_[kOutlineTerm].normalization_factor;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getWirelength() const
-{
-  return penalty_terms_[kWirelengthTerm].value;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getNormWirelength() const
-{
-  return penalty_terms_[kWirelengthTerm].normalization_factor;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getGuidancePenalty() const
-{
-  return penalty_terms_[kGuidanceTerm].value;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getNormGuidancePenalty() const
-{
-  return penalty_terms_[kGuidanceTerm].normalization_factor;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getFencePenalty() const
-{
-  return penalty_terms_[kFenceTerm].value;
-}
-
-template <class T>
-float SimulatedAnnealingCore<T>::getNormFencePenalty() const
-{
-  return penalty_terms_[kFenceTerm].normalization_factor;
-}
-
-template <class T>
 std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 {
   return macros_;
