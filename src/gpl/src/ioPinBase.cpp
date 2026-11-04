@@ -77,7 +77,7 @@ IoPinBase::IoPinBase(const std::vector<ppl::SlotPosition>& slots,
   int box_constrained = 0;
   for (size_t i = 0; i < n; ++i) {
     const std::optional<odb::Rect> cr = bterms_[i]->getConstraintRegion();
-    if (cr.has_value() && cr->xMin() != cr->xMax()
+    if (cr.has_value() && !bterms_[i]->isMirrored() && cr->xMin() != cr->xMax()
         && cr->yMin() != cr->yMax()) {
       box_constraints_[i] = cr;
       ++box_constrained;
@@ -443,7 +443,7 @@ void IoPinBase::initConstraints()
       continue;
     }
     const std::optional<odb::Rect> cr = bterms_[i]->getConstraintRegion();
-    if (!cr.has_value()) {
+    if (!cr.has_value() || bterms_[i]->isMirrored()) {
       continue;
     }
     PerimSegment seg;
