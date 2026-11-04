@@ -16,6 +16,7 @@ COMPULSORY_TESTS = [
     "scan_architect_register_bank_no_clock_mix_sky130",
     "scan_replace_activity_sky130",
     "scan_replace_dont_use_sky130",
+    "scan_replace_state_binding_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
     "sub_modules_sky130",
