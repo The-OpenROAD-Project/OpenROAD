@@ -948,6 +948,15 @@ class NesterovBaseCommon
                                 float wlCoeffX,
                                 float wlCoeffY);
 
+  void invalidatePinGradients() { pin_grads_valid_ = false; }
+
+  bool needPinGradientsUpdate(float wlCoeffX, float wlCoeffY) const
+  {
+    return !pin_grads_valid_ || pin_grads_.size() != gPinStor_.size()
+           || pin_grads_wl_coeff_x_ != wlCoeffX
+           || pin_grads_wl_coeff_y_ != wlCoeffY;
+  }
+
   // GPU path: run the per-inst gradient gather on device only (no host
   // copy) so the NB-level device scatter can consume it. No-op on the CPU
   // backend. Defined in wirelengthGradient.cpp.
@@ -1082,6 +1091,9 @@ class NesterovBaseCommon
   int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
   std::vector<FloatPoint> pin_grads_;
+  bool pin_grads_valid_ = false;
+  float pin_grads_wl_coeff_x_ = 0.0f;
+  float pin_grads_wl_coeff_y_ = 0.0f;
 };
 
 // Stores instances belonging to a specific power domain

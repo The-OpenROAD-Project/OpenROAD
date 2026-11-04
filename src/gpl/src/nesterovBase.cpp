@@ -1522,6 +1522,7 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
                                                         float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
+  invalidatePinGradients();
   // clear all WA variables.
 #pragma omp parallel for num_threads(num_threads_)
   for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
@@ -1760,31 +1761,35 @@ void NesterovBaseCommon::getWireLengthGradientsWA(
 {
   assert(out.size() == gCells.size());
 
-  const size_t num_pins = gPinStor_.size();
-  if (pin_grads_.size() != num_pins) {
-    pin_grads_.resize(num_pins);
-  }
-
-  const int num_threads = std::max(1, num_threads_);
-  const GPin* gPinStorBase = gPinStor_.data();
-
-#pragma omp parallel for schedule(static) num_threads(num_threads)
-  for (size_t p = 0; p < num_pins; ++p) {
-    const GPin& gPin = gPinStor_[p];
-    const GNet* gNet = gPin.getGNet();
-    if (!gNet) {
-      pin_grads_[p] = FloatPoint(0.0f, 0.0f);
-      continue;
+  if (needPinGradientsUpdate(wlCoeffX, wlCoeffY)) {
+    const size_t num_pins = gPinStor_.size();
+    if (pin_grads_.size() != num_pins) {
+      pin_grads_.resize(num_pins);
     }
 
-    const FloatPoint grad
-        = getWireLengthGradientPinWA(&gPin, wlCoeffX, wlCoeffY);
-    const float weight = gNet->getTotalWeight();
-    pin_grads_[p] = FloatPoint(grad.x * weight, grad.y * weight);
+#pragma omp parallel for schedule(static) num_threads(num_threads_)
+    for (size_t p = 0; p < num_pins; ++p) {
+      const GPin& gPin = gPinStor_[p];
+      const GNet* gNet = gPin.getGNet();
+      if (!gNet) {
+        pin_grads_[p] = FloatPoint(0.0f, 0.0f);
+        continue;
+      }
+
+      const FloatPoint grad
+          = getWireLengthGradientPinWA(&gPin, wlCoeffX, wlCoeffY);
+      const float weight = gNet->getTotalWeight();
+      pin_grads_[p] = FloatPoint(grad.x * weight, grad.y * weight);
+    }
+
+    pin_grads_valid_ = true;
+    pin_grads_wl_coeff_x_ = wlCoeffX;
+    pin_grads_wl_coeff_y_ = wlCoeffY;
   }
 
+  const GPin* gPinStorBase = gPinStor_.data();
   const size_t num_gcells = gCells.size();
-#pragma omp parallel for schedule(static) num_threads(num_threads)
+#pragma omp parallel for schedule(static) num_threads(num_threads_)
   for (size_t i = 0; i < num_gcells; ++i) {
     const GCell* gCell = gCells[i];
     float gx = 0.0f;
@@ -1910,6 +1915,7 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
 //
 void NesterovBaseCommon::fixPointers()
 {
+  invalidatePinGradients();
   nbc_gcells_.clear();
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
