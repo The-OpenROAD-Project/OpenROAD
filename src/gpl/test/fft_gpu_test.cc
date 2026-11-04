@@ -5,7 +5,7 @@
 //
 // This test exercises the GPU FFT backend (src/gpl/src/gpu/gpuFftBackend.cpp,
 // the Kokkos/KokkosFFT PoissonSolver) through the gpl::FFT public API -- it is
-// only built when ENABLE_GPU=ON (see src/gpl/test/CMakeLists.txt). With the
+// only built in the GPU build (--config=gpu; see src/gpl/test/BUILD). With the
 // default environment gpl::gpuEnabled() is true, so gpl::FFT's makeFftBackend()
 // selects GpuFftBackend. It runs the GPU FFT on a fixed 16x16 Gaussian density
 // input and checks the resulting electroPhi / electroField against a baked-in
@@ -31,6 +31,8 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <numbers>
+#include <utility>
 
 #include "gtest/gtest.h"
 #include "src/gpl/src/fft.h"
@@ -559,6 +561,36 @@ TEST(GpuFFTTest, MatchesCpuReferenceAsymmetric)
   EXPECT_LT(rel_field_y, 1e-2f)
       << "electroFieldY (asymmetric) residual too large -- possible X/Y "
          "axis swap or scale regression in GpuFftBackend";
+}
+
+TEST(GpuFFTTest, RectangularBins)
+{
+  constexpr int n = 8;
+  constexpr float pi = std::numbers::pi_v<float>;
+  for (const auto [dx, dy] :
+       {std::pair{1.0F, 1.0F}, {3.0F, 1.0F}, {1.0F, 3.0F}}) {
+    SCOPED_TRACE(::testing::Message() << "dx=" << dx << ", dy=" << dy);
+    gpl::FFT fft(n, n, dx, dy);
+    ASSERT_STREQ(fft.getBackendName(), "GPU (Kokkos Poisson)");
+    for (int x = 0; x < n; ++x) {
+      for (int y = 0; y < n; ++y) {
+        fft.updateDensity(
+            x,
+            y,
+            std::cos(pi * (x + 0.5F) / n) + std::cos(pi * (y + 0.5F) / n));
+      }
+    }
+    fft.doFFT();
+    const auto [ex, ey] = fft.getElectroField(0, 0);
+    // Cosine-mode field amplitudes scale inversely with wave number.
+    EXPECT_NEAR(ex / ey, dx / dy, 1e-4F);
+    const float phi_sum = fft.getElectroPhi(0, 0);
+    const float phi_difference = fft.getElectroPhi(0, n - 1);
+    // Opposite Y phases isolate each mode's inverse-square Poisson response.
+    EXPECT_NEAR((phi_sum + phi_difference) / (phi_sum - phi_difference),
+                dx * dx / (dy * dy),
+                1e-4F);
+  }
 }
 
 // Canonical regen path for the baked references above. DISABLED by default so
