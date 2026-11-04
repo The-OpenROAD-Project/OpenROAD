@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -153,7 +154,8 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
   }
 }
 
-void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
+PlaceResult Replace::doIncrementalPlace(const int threads,
+                                        const PlaceOptions& options)
 {
   checkHasCoreRows();
   log_->info(GPL, 83, "Execute incremental mode global placement.");
@@ -199,7 +201,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     // initNesterovPlace() would hit this same condition and refuse to build
     // np_, so bail out here instead of leaving every later np_ use guarded.
     log_->warn(GPL, 139, "No placeable instances - skipping placement.");
-    return;
+    return {};
   }
 
   log_->info(GPL, 154, "Identified {} placed instances", placed_cnt);
@@ -211,7 +213,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     log_->info(GPL,
                156,
                "Identified all instances as placed. Skipping incremental mode");
-    return;
+    return {};
   }
 
   // Phase 1: place the unplaced (new) objects with everything else locked,
@@ -236,8 +238,8 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   // timing-driven failure, say) still throws and propagates normally -
   // nothing here is set up to recover from those.
   np_->setAllowDivergenceRecovery(true);
-  int iter = doNesterovPlace(threads, locked_options);
-  const bool phase1_diverged = np_->divergedLastRun();
+  PlaceResult result = doNesterovPlace(threads, locked_options);
+  const bool phase1_diverged = result.diverged;
   if (phase1_diverged) {
     log_->warn(GPL,
                195,
@@ -265,16 +267,22 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
-    doNesterovPlace(threads, options, iter + 1);
+    PlaceResult phase2
+        = doNesterovPlace(threads, options, result.final_iteration + 1);
+    phase2.trace.insert(
+        phase2.trace.begin(), result.trace.begin(), result.trace.end());
+    result = std::move(phase2);
   }
+  return result;
 }
 
-void Replace::doPlace(const int threads, const PlaceOptions& options)
+PlaceResult Replace::doPlace(const int threads, const PlaceOptions& options)
 {
   utl::Timer timer;
   doInitialPlace(threads, options);
-  doNesterovPlace(threads, options);
+  PlaceResult result = doNesterovPlace(threads, options);
   log_->info(GPL, 500, "Runtime: {:.2f}s", timer.elapsed());
+  return result;
 }
 
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
@@ -463,9 +471,9 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   return true;
 }
 
-int Replace::doNesterovPlace(const int threads,
-                             const PlaceOptions& options,
-                             const int start_iter)
+PlaceResult Replace::doNesterovPlace(const int threads,
+                                     const PlaceOptions& options,
+                                     const int start_iter)
 {
   checkHasCoreRows();
   checkPlaceIosSupported(options);
@@ -475,7 +483,7 @@ int Replace::doNesterovPlace(const int threads,
   }
 
   if (!initNesterovPlace(options, threads, true)) {
-    return 0;
+    return {};
   }
 
   log_->info(GPL, 84, "---- Execute Nesterov Global Placement.");
@@ -485,14 +493,14 @@ int Replace::doNesterovPlace(const int threads,
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  int return_do_nesterov = np_->doNesterovPlace(start_iter);
+  PlaceResult result = np_->doNesterovPlace(start_iter);
 
   // Legalize the solved pins, moving each as little as possible.
   if (options.placeIosMode) {
     pin_placer_->runHungarianMatching(true);
   }
 
-  reportHpwlMetric();
+  result.hpwl = reportHpwlMetric();
 
   auto end = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = end - start;
@@ -509,17 +517,18 @@ int Replace::doNesterovPlace(const int threads,
     fr_->setCriticalNetsPercentage(0);
     fr_->globalRoute();
   }
-  return return_do_nesterov;
+  return result;
 }
 
 // Same evaluator dpl reports route__wirelength__estimated with, so the
 // global and detailed placement numbers are directly comparable.
-void Replace::reportHpwlMetric()
+int64_t Replace::reportHpwlMetric()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   const int64_t hpwl = odb::WireLengthEvaluator(block).hpwl();
   log_->info(GPL, 1018, "Final HPWL (um): {:.2f}", block->dbuToMicrons(hpwl));
   log_->metric("route__wirelength__estimated", block->dbuToMicrons(hpwl));
+  return hpwl;
 }
 
 NesterovBase* Replace::getTopLevelNB() const

@@ -785,6 +785,7 @@ void NesterovPlace::revertToDivergeSnapshot()
     nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
+  reverted_since_overflow_update_ = true;
 }
 
 NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
@@ -1309,13 +1310,19 @@ void NesterovPlace::reportResults(int nesterov_iter,
   log_->metric("gpl__area__final__percent", placement_diff);
 }
 
-int NesterovPlace::doNesterovPlace(int start_iter)
+PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
 {
+  trace_.clear();
+
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
     if (allow_divergence_recovery_) {
       log_->warn(GPL, divergeCode_, divergeMsg_);
-      return start_iter;
+      PlaceResult result;
+      result.final_iteration = start_iter;
+      result.overflow = average_overflow_unscaled_;
+      result.diverged = true;
+      return result;
     }
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
@@ -1546,7 +1553,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   if (db_cbk_ != nullptr) {
     db_cbk_->removeOwner();
   }
-  return nesterov_iter;
+
+  PlaceResult result;
+  result.final_iteration = nesterov_iter;
+  result.overflow = reverted_since_overflow_update_
+                        ? diverge_snapshot_average_overflow_unscaled_
+                        : average_overflow_unscaled_;
+  result.diverged = num_region_diverged_ > 0;
+  result.trace = std::move(trace_);
+  trace_.clear();
+  return result;
 }
 
 void NesterovPlace::updateWireLengthCoef(float overflow)
@@ -1570,6 +1586,8 @@ void NesterovPlace::updateNextIter(int iter)
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
 
+  // The penalty before this update is the one the iteration table reports.
+  const float density_penalty = nbVec_[0]->getDensityPenalty();
   for (auto& nb : nbVec_) {
     nb->updateNextIter(iter);
     total_sum_overflow_ += nb->getSumOverflow();
@@ -1582,9 +1600,16 @@ void NesterovPlace::updateNextIter(int iter)
   // For coefficient, using average regions' overflow
   updateWireLengthCoef(average_overflow_);
 
+  reverted_since_overflow_update_ = false;
+
+  const int64_t hpwl = nbc_->getHpwl();
+  trace_.push_back({.iteration = iter,
+                    .overflow = average_overflow_unscaled_,
+                    .hpwl = hpwl,
+                    .density_penalty = density_penalty});
+
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
-    int64_t hpwl = nbc_->getHpwl();
     hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;

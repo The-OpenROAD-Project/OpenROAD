@@ -448,6 +448,25 @@ cc_test(
 )
 
 cc_test(
+    name = "place_result_test",
+    srcs = ["place_result_test.cpp"],
+    data = [
+        "nangate45.lef",
+        "simple01.def",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "wirelength_gradient_test",
     srcs = ["wirelength_gradient_test.cpp"],
     env = GPU_ENV_OFF,

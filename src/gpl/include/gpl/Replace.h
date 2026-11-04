@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -50,6 +51,37 @@ class NesterovPlace;
 
 using Cluster = std::vector<odb::dbInst*>;
 using Clusters = std::vector<Cluster>;
+
+// One Nesterov iteration: the values of a row in the iteration table that
+// the log prints every 10 iterations.
+struct PlaceIteration
+{
+  int iteration = 0;
+  // Unscaled overflow, averaged over the regions.
+  float overflow = 0;
+  // Total HPWL of the nets, in DBU.
+  int64_t hpwl = 0;
+  // Density penalty of the first region: the top level, unless it has no
+  // placeable instances.
+  float density_penalty = 0;
+};
+
+// The outcome of a global placement run.
+struct PlaceResult
+{
+  // The iteration counter when the run stopped.  A run that converges at
+  // iteration N stops at N; one that runs out stops at the iteration limit.
+  int final_iteration = 0;
+  // Unscaled overflow of the final placement, averaged over the regions.
+  float overflow = 0;
+  // HPWL of the final placement in DBU, the value of the
+  // route__wirelength__estimated metric.
+  int64_t hpwl = 0;
+  // True when the run stopped on a divergence it did not recover from.
+  bool diverged = false;
+  // Every Nesterov iteration, in order.
+  std::vector<PlaceIteration> trace;
+};
 
 struct PlaceOptions
 {
@@ -164,12 +196,12 @@ class Replace
 
   void reset();
 
-  void doIncrementalPlace(int threads, const PlaceOptions& options = {});
-  void doPlace(int threads, const PlaceOptions& options = {});
+  PlaceResult doIncrementalPlace(int threads, const PlaceOptions& options = {});
+  PlaceResult doPlace(int threads, const PlaceOptions& options = {});
   void doInitialPlace(int threads, const PlaceOptions& options = {});
-  int doNesterovPlace(int threads,
-                      const PlaceOptions& options = {},
-                      int start_iter = 0);
+  PlaceResult doNesterovPlace(int threads,
+                              const PlaceOptions& options = {},
+                              int start_iter = 0);
 
   void runMBFF(int max_sz,
                float alpha,
@@ -202,7 +234,7 @@ class Replace
                          bool check_density);
   void checkHasCoreRows();
   void checkPlaceIosSupported(const PlaceOptions& options);
-  void reportHpwlMetric();
+  int64_t reportHpwlMetric();
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
   void initIoPinPlace();

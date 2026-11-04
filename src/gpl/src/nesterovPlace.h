@@ -50,8 +50,9 @@ class NesterovPlace
                 utl::Logger* log);
   ~NesterovPlace();
 
-  // return iteration count
-  int doNesterovPlace(int start_iter = 0);
+  // Runs the Nesterov loop from start_iter.  The result's hpwl is left 0;
+  // Replace fills it in once the placement is written back.
+  PlaceResult doNesterovPlace(int start_iter = 0);
 
   void updateWireLengthCoef(float overflow);
 
@@ -192,6 +193,13 @@ class NesterovPlace
   // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
+  // Set when the placement was reverted to the divergence snapshot after the
+  // last overflow update, so average_overflow_unscaled_ describes a
+  // placement that no longer exists.
+  bool reverted_since_overflow_update_ = false;
+
+  // The iterations of the current doNesterovPlace() call.
+  std::vector<PlaceIteration> trace_;
 
   // Snapshot saving for revert if diverge
   float diverge_snapshot_average_overflow_unscaled_ = 0;
