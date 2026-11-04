@@ -330,7 +330,7 @@ Master* Network::addMaster(odb::dbMaster* db_master,
             || layer->getRoutingLevel() > kMaxPinLevel) {
           continue;
         }
-        master->addPinShape(layer->getRoutingLevel(), box->getBox());
+        master->addPinShape(layer->getRoutingLevel(), box->getBox(), mterm);
       }
     }
   }

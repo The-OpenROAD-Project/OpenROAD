@@ -1118,6 +1118,19 @@ dbObject* dbNet::getFirstDriverTerm() const
     return nullptr;
   }
 
+  // If a BTerm is present on the net, it is usually the driver (input port);
+  // check BTerms first before scanning all load ITerms.
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      return bterm;
+    }
+  }
+
   for (dbITerm* iterm : getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
@@ -1130,17 +1143,6 @@ dbObject* dbNet::getFirstDriverTerm() const
     if (iterm->getIoType() == dbIoType::OUTPUT
         || iterm->getIoType() == dbIoType::INOUT) {
       return iterm;
-    }
-  }
-
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getSigType().isSupply()) {
-      continue;
-    }
-
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      return bterm;
     }
   }
 

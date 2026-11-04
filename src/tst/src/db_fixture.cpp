@@ -3,8 +3,6 @@
 
 #include "tst/db_fixture.h"
 
-#include <deque>
-#include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -15,10 +13,7 @@
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
-
-#ifdef BAZEL_BUILD
 #include "tools/cpp/runfiles/runfiles.h"
-#endif
 
 namespace tst {
 
@@ -31,35 +26,8 @@ DbFixture::DbFixture()
 
 DbFixture::~DbFixture() = default;
 
-// Takes a relative path and removes leading directories until a valid path is
-// found. This is needed by cmake to find a path from the fuller one used by
-// bazel.
-std::filesystem::path findValidPath(const std::filesystem::path& relative_path)
-{
-  std::deque<std::filesystem::path> path_components;
-
-  for (const auto& component : relative_path) {
-    path_components.push_back(component);
-  }
-
-  while (!path_components.empty()) {
-    std::filesystem::path current_path;
-    for (const auto& part : path_components) {
-      current_path /= part;
-    }
-
-    if (std::filesystem::exists(current_path)) {
-      return current_path;
-    }
-    path_components.pop_front();
-  }
-
-  throw std::runtime_error("Could not find: " + relative_path.string());
-}
-
 std::string getRunfilePath(const std::string& file_path)
 {
-#ifdef BAZEL_BUILD
   // Created once per process. Runfiles resolution depends only on the
   // environment bazel sets up for the test, so there is nothing per-fixture
   // about it.
@@ -75,9 +43,6 @@ std::string getRunfilePath(const std::string& file_path)
           return created;
         }();
   return runfiles->Rlocation(file_path);
-#else
-  return std::filesystem::canonical(findValidPath(file_path));
-#endif
 }
 
 std::string DbFixture::getFilePath(const std::string& file_path) const

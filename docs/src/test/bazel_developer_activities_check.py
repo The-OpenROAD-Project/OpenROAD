@@ -24,7 +24,7 @@ def _contains_any(text: str, patterns: List[str]) -> bool:
 
 
 def main() -> int:
-    base_dir = Path(__file__).resolve().parent.parent.parent  # docs/
+    base_dir = Path(__file__).absolute().parent.parent.parent  # docs/
     user_docs = base_dir / "user"
 
     required_files = [

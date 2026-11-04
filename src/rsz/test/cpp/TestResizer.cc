@@ -1149,9 +1149,11 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
   sta::LibertyCell* d1_rvt = skew_lib->findLibertyCell("SKEW_BUF_D1_RVT");
   sta::LibertyCell* skrd2_rvt = skew_lib->findLibertyCell("SKEW_BUF_SKRD2_RVT");
   sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  sta::LibertyCell* d3_rvt = skew_lib->findLibertyCell("SKEW_BUF_D3_RVT");
   ASSERT_NE(d1_rvt, nullptr);
   ASSERT_NE(skrd2_rvt, nullptr);
   ASSERT_NE(d2_rvt, nullptr);
+  ASSERT_NE(d3_rvt, nullptr);
 
   sta::LibertyPort* in_port = d1_rvt->findLibertyPort("A");
   sta::LibertyPort* drvr_port = d1_rvt->findLibertyPort("Z");
@@ -1173,8 +1175,10 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
 
   // SKEW_BUF_SKRD2_RVT has a faster rise delay than SKEW_BUF_D1_RVT, but its
   // fall delay exceeds SKEW_BUF_D1_RVT's worst-case delay. On a rising edge,
-  // transition-aware sizing should pick SKEW_BUF_SKRD2_RVT; on a falling edge,
-  // it should skip SKEW_BUF_SKRD2_RVT and pick SKEW_BUF_D2_RVT.
+  // transition-aware sizing picks SKEW_BUF_SKRD2_RVT. On a falling edge it must
+  // skip SKEW_BUF_SKRD2_RVT (which weakens the fall edge); among the remaining
+  // eligible cells the power-aware score picks SKEW_BUF_D3_RVT, whose larger
+  // delay gain per unit cost beats the smaller SKEW_BUF_D2_RVT.
   sta::LibertyCell* rise_replacement
       = generator.upsizeCell(in_port,
                              sta::RiseFall::rise(),
@@ -1197,7 +1201,7 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
                              scene,
                              max);
   ASSERT_NE(fall_replacement, nullptr);
-  EXPECT_EQ(fall_replacement, d2_rvt);
+  EXPECT_EQ(fall_replacement, d3_rvt);
 
   odb::dbInst* db_inst = block_->findInst("enable_buf0");
   ASSERT_NE(db_inst, nullptr);

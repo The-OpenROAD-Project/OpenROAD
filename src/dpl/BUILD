@@ -92,6 +92,7 @@ cc_library(
     deps = [
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.container_hash",
         "@boost.format",
         "@boost.geometry",
         "@boost.icl",

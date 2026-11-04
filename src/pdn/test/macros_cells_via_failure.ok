@@ -9,4 +9,5 @@
 [INFO PDN-0001] Inserting grid: grid
 [INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - dcache.data.data_arrays_0.data_arrays_0_ext.mem
 [INFO PDN-0001] Inserting grid: CORE_macro_grid_1 - frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem
+[WARNING PDN-0110] No via inserted between metal4 and metal7 at (186.3400, 116.1000) - (186.8100, 116.2800) on VDD
 No differences found.

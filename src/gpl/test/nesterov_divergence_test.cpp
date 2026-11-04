@@ -116,6 +116,7 @@ class NesterovDivergenceRecoveryTest : public ::testing::Test
                                           /* rb = */ nullptr,
                                           /* tb = */ nullptr,
                                           /* cb = */ nullptr,
+                                          /* pwb = */ nullptr,
                                           std::make_unique<GraphicsNone>(),
                                           &logger_);
   }

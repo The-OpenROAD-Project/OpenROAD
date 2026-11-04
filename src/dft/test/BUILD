@@ -1,16 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "max_chain_count_sky130",
     "one_cell_sky130",
@@ -18,6 +14,7 @@ COMPULSORY_TESTS = [
     "scan_architect_clock_mix_sky130",
     "scan_architect_no_mix_sky130",
     "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_replace_activity_sky130",
     "scan_replace_dont_use_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
@@ -29,6 +26,8 @@ ALL_TESTS = COMPULSORY_TESTS
 filegroup(
     name = "regression_resources",
     srcs = [
+        "asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
         "helpers.tcl",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
         "sky130hd/sky130_fd_sc_hd_merged.lef",
@@ -52,6 +51,9 @@ filegroup(
             ],
             "scan_architect_register_bank_no_clock_mix_sky130": [
                 "register_bank_top.v",
+            ],
+            "scan_replace_activity_sky130": [
+                "one_cell_sky130.def",
             ],
             "scan_replace_dont_use_sky130": [
                 "one_cell_sky130.def",
@@ -82,9 +84,13 @@ filegroup(
 cc_test(
     name = "dft_scan_architect_unittest",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -93,9 +99,13 @@ cc_test(
 cc_test(
     name = "TestScanArchitect",
     srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
     deps = [
         "//src/dft/src/architect",
         "//src/dft/src/config",
+        "//src/dft/src/replace",
+        "//src/sta:opensta_lib",
+        "//src/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

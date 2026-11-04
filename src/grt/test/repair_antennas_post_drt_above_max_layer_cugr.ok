@@ -21,6 +21,7 @@ moved bterm req_msg[0] from met3 to met4
 [DEBUG GRT-repair_antennas] antenna violations req_msg[11]
 [DEBUG GRT-repair_antennas] antenna violations req_msg[23]
 [INFO GRT-0012] Found 3 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19603.4 -> 19603.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 3 diodes.
 [INFO ANT-0002] Found 0 net violations.

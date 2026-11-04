@@ -6,53 +6,19 @@ cd "$(dirname $(readlink -f $0))/../"
 
 _help() {
     cat <<EOF
-usage: $0 [dynamic|test]
-       $0 static <TOKEN>
-       $0 static-bazel <TOKEN>
+usage: $0 static <TOKEN>
        $0 upload <TOKEN> [VERSION]
+       $0 test
+
+  static <TOKEN>            Capture a Coverity build of //:openroad with
+                            Bazel and upload it. static-bazel is an alias.
+  upload <TOKEN> [VERSION]  Upload an existing openroad.tgz capture.
+  test                      Run the tests for this script.
+
+For line coverage, run: bazelisk coverage --config=coverage <targets>
 
 EOF
     exit "${1:-1}"
-}
-
-_lcov() {
-    ctest --test-dir build -j $(nproc)
-
-    # sta has a private test suite
-    # drt's gr is not in use
-    mkdir -p coverage-output
-    lcov \
-        --capture \
-        --directory ./build \
-        --exclude "/usr/include/*" \
-        --exclude "/opt/*" \
-        --exclude "/usr/lib/*" \
-        --exclude "/usr/local/*" \
-        --exclude "*/.local/*" \
-        --exclude "*build*" \
-        --exclude "*/third-party/*" \
-        --exclude "*/sta/*" \
-        --exclude "*/test/*" \
-        --exclude "*/drt/src/gr/*" \
-        --exclude "*/drt/src/db/grObj/*" \
-        --output-file ./coverage-output/main_coverage.info
-
-    genhtml ./coverage-output/main_coverage.info \
-        --output-directory ./coverage-output \
-        --ignore-errors source
-
-}
-
-_coverity_cmake() {
-    cmakeOptions=""
-    if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
-    fi
-    cmake ${cmakeOptions} -B build .
-    # compile abc before calling cov-build to exclude from analysis.
-    # Coverity fails to process abc code due to -fpermissive flag.
-    cmake --build build -j $(nproc) --target abc
-    cov-build --dir cov-int cmake --build build -j $(nproc)
 }
 
 _coverity_bazel() {
@@ -182,10 +148,14 @@ _coverity_upload() {
 
 token=""
 
-target="${1:-dynamic}"
+if [[ $# -lt 1 ]]; then
+    _help
+fi
+
+target="${1}"
 case "${target}" in
-    dynamic )
-        _lcov
+    -h | -help | --help )
+        _help 0
         ;;
     test )
         bazelisk test //etc:code_coverage_test
@@ -202,11 +172,7 @@ case "${target}" in
             _help
         fi
         token="${2}"
-        if [[ ${target} == "static-bazel" ]]; then
-            _coverity_capture _coverity_bazel
-        else
-            _coverity_capture _coverity_cmake
-        fi
+        _coverity_capture _coverity_bazel
         _coverity_upload
         ;;
     upload )

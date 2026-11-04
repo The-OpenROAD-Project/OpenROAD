@@ -61,6 +61,18 @@ have_detailed_routes()
 }
 
 void
+report_congestion()
+{
+  getGlobalRouter()->reportCongestion();
+}
+
+bool
+has_congestion()
+{
+  return getGlobalRouter()->hasCongestion();
+}
+
+void
 set_capacity_adjustment(float adjustment)
 {
   getGlobalRouter()->setAdjustment(adjustment);

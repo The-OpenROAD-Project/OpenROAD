@@ -373,16 +373,6 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         mode = "or-error",
-        symptom = "Error - out_flat.tcl, 4 stoi - no conversion",
-        netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_survival.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "or-error",
         symptom = "Error - out_flat.tcl, 4 stoi - out of range",
         netlists = [
             "wb_sta_reader_attr_src_line_overflow.v",
@@ -398,16 +388,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "or-error",
-        symptom = "Error - out_hier.tcl, 4 stoi - no conversion",
-        netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     xfail(
@@ -1414,10 +1394,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     # Moved here from the LEC corpus 2026-08-12: 1'bx has no binary value, so a
@@ -1503,10 +1480,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     structural_xfail(

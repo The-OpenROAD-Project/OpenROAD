@@ -67,10 +67,12 @@ export function decodeTilePayload(payload) {
     });
 }
 
-// `items` is the ordered draw list this pane owns: [{ layer, opacity, visible }],
-// bottom-most first. It is read live on every request, so a visibility toggle
-// only has to flip `visible` and call refreshTiles() — no layer is added to or
-// removed from the map, and the pane count never changes.
+// `items` is the ordered draw list this pane owns:
+// [{ layer, chiplet, rowId, rendererHost, opacity, visible }], bottom-most
+// first; the item is the Display Controls row (see buildTileRequestFor). It is
+// read live on every request, so a visibility toggle only has to flip
+// `visible` and call refreshTiles() — no layer is added to or removed from the
+// map, and the pane count never changes.
 export function createMergedTileLayer(ctx, options = {}) {
     const decode = options.decode || decodeTilePayload;
     const dprOf = options.dpr || nativeDpr;
@@ -164,7 +166,8 @@ export function createMergedTileLayer(ctx, options = {}) {
         _renderTile: function(canvas, coords, dpr) {
             const generation = this._generation;
             const items = this.visibleItems().filter(
-                item => tileMayHaveContent(ctx, item.layer, coords));
+                item => tileMayHaveContent(ctx, item.layer, coords,
+                                           item.chiplet));
             // A tile none of whose layers can draw here keeps no backing store
             // at all.  A full-size canvas per tile position per pane is what the
             // browser pays for on a zoom -- allocating, clearing and compositing
@@ -192,7 +195,7 @@ export function createMergedTileLayer(ctx, options = {}) {
                     canvas._orRequestIds.push(id);
                     return this._websocketManager.request(
                         buildTileRequestFor(coords, item.layer, ctx, dpr,
-                                            this.getTileSize().x));
+                                            this.getTileSize().x, item));
                 },
                 decode,
                 draw: (sources) => mergeOntoContext(context, sources,

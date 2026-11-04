@@ -62,7 +62,7 @@ TEST_F(ScriptViewTest, TheFirstCheckOfAParentWarns)
 {
   getLogger()->redirectStringBegin();
   EXPECT_FALSE(view_.checkDisplayControlVisible("Rows"));
-  EXPECT_NE(getLogger()->redirectStringEnd().find("WEB-0127"),
+  EXPECT_NE(getLogger()->redirectStringEnd().find("WEB-0137"),
             std::string::npos);
 }
 

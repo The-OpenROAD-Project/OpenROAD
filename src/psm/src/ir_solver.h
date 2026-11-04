@@ -4,11 +4,13 @@
 #pragma once
 
 #include <cstddef>
+#include <iosfwd>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "Eigen/Sparse"
@@ -20,6 +22,7 @@
 #include "node.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "psm/pdnsim.h"
 #include "utl/Logger.h"
@@ -77,12 +80,21 @@ class IRSolver
            const UserVoltages& user_voltages,
            const UserPowers& user_powers,
            const PDNSim::GeneratedSourceSettings& generated_source_settings);
+  IRSolver(std::unique_ptr<IRNetwork> network,
+           sta::dbSta* sta,
+           est::EstimateParasitics* estimate_parasitics,
+           utl::Logger* logger,
+           const UserVoltages& user_voltages,
+           const UserPowers& user_powers,
+           const PDNSim::GeneratedSourceSettings& generated_source_settings);
   // Defined in the source file, since the shorts are only forward declared
   ~IRSolver();
 
   odb::dbNet* getNet() const { return net_; };
 
-  bool check(bool check_bterms, bool check_placed);
+  bool check(bool check_bterms,
+             bool check_placed,
+             const odb::dbTransform& marker_transform = {});
 
   void solve(sta::Scene* corner,
              GeneratedSourceType source_type,
@@ -100,6 +112,7 @@ class IRSolver
   void enableGui(bool enable);
 
   void writeErrorFile(const std::string& error_file) const;
+  void writeErrorFile(std::ofstream& report) const;
   void writeInstanceVoltageFile(const std::string& voltage_file,
                                 sta::Scene* corner) const;
   void writeEMFile(const std::string& em_file, sta::Scene* corner) const;
@@ -137,6 +150,8 @@ class IRSolver
   IRNetwork* getNetwork() const { return network_.get(); }
 
  private:
+  struct AssemblyData;
+
   template <typename T>
   using ValueNodeMap = std::map<const Node*, T>;
   using LayerPolygons
@@ -178,8 +193,10 @@ class IRSolver
   odb::PtrMap<odb::dbInst, Power> getInstancePower(sta::Scene* corner) const;
   Voltage getPowerNetVoltage(sta::Scene* corner) const;
 
-  Connection::ConnectionMap<Current> generateCurrentMap(
+  std::vector<std::pair<Connection*, Current>> generateCurrentMap(
       sta::Scene* corner) const;
+  std::vector<Node*> getReportNodes() const;
+  std::string getAnalysisNetName() const;
 
   Connection::ConnectionMap<Connection::Conductance> generateConductanceMap(
       sta::Scene* corner,
@@ -194,13 +211,16 @@ class IRSolver
   SourceNodes generateSourceNodesGenericBumps() const;
   SourceNodes generateSourceNodesFromShapes(
       const std::set<odb::Rect>& shapes) const;
+  SourceNodes generateSourceNodesFromShapes(
+      IRNetwork* network,
+      const std::set<odb::Rect>& shapes) const;
   Voltage generateSourceNodesFromSourceFile(const std::string& source_file,
                                             sta::Scene* corner,
                                             SourceNodes& sources) const;
 
-  void reportUnconnectedNodes() const;
+  void reportUnconnectedNodes(const odb::dbTransform& marker_transform) const;
   void reportMissingBTerm() const;
-  void reportShortedNodes() const;
+  void reportShortedNodes(const odb::dbTransform& marker_transform) const;
 
   std::map<Node*, Connection::ConnectionSet> getNodeConnectionMap(
       const Connection::ConnectionMap<Connection::Conductance>& conductance)
@@ -226,6 +246,9 @@ class IRSolver
       Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
       Eigen::VectorXd& j_vector) const;
 
+  void addAssemblyLoads(odb::dbNet* net,
+                        const odb::PtrMap<odb::dbInst, Power>& powers,
+                        Voltage power_voltage);
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
   void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
@@ -235,6 +258,11 @@ class IRSolver
       const Connection::ConnectionMap<Connection::Conductance>& cond,
       const std::string& name) const;
 
+  void addAssemblyVoltageSourcesFromFile(const std::string& source_file);
+  bool buildSourceMap(std::map<std::size_t, Voltage>& sources) const;
+  Voltage getNominalVoltage(sta::Scene* corner, odb::dbNet* net) const;
+  void solveAssembly(sta::Scene* corner, const std::string& source_file);
+
   odb::dbNet* net_;
 
   utl::Logger* logger_;
@@ -242,6 +270,7 @@ class IRSolver
   sta::dbSta* sta_;
 
   std::unique_ptr<IRNetwork> network_;
+  std::unique_ptr<AssemblyData> assembly_;
 
   std::unique_ptr<DebugGui> gui_;
 

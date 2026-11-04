@@ -5,11 +5,14 @@
 #include <cmath>
 #include <cstddef>
 #include <memory>
+#include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "FastRoute.h"
+#include "grt/GRoute.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "stt/SteinerTreeBuilder.h"
@@ -459,6 +462,79 @@ TEST_F(Maze3DTest, RecoversMultipleEdgesOfOneMultiPinNet)
   EXPECT_EQ(logger_.getWarningCount(), 1);
   EXPECT_NE(output.find("[WARNING GRT-0183]"), std::string::npos);
   EXPECT_NE(output.find("edges of 1 nets"), std::string::npos);
+}
+
+using Via = std::tuple<int, int, int, int>;
+
+// Lists the vias of a route by position and layer pair, whichever way each
+// via points. A via listed twice is a parallel resistor in the parasitics.
+std::multiset<Via> getVias(const GRoute& route)
+{
+  std::multiset<Via> vias;
+  for (const GSegment& segment : route) {
+    if (segment.isVia() && segment.init_layer != segment.final_layer) {
+      vias.emplace(segment.init_x,
+                   segment.init_y,
+                   std::min(segment.init_layer, segment.final_layer),
+                   std::max(segment.init_layer, segment.final_layer));
+    }
+  }
+  return vias;
+}
+
+TEST_F(Maze3DTest, Get3DRouteAddsSinkPinViaOnce)
+{
+  // The sink pin is below the edge, so its via stack is walked down to the
+  // pin and back up.
+  addTreeNet("sink_below_edge",
+             {{1, 0, 0}, {1, 2, 0}},
+             {},
+             {{0, 1, {{1, 0, 1}, {1, 1, 1}, {1, 2, 1}}}});
+
+  GRoute route;
+  router_->get3DRoute(block_->findNet("sink_below_edge"), route);
+
+  const std::multiset<Via> expected{{150, 50, 1, 2}, {150, 250, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
+  EXPECT_EQ(route.size(), 4);
+}
+
+TEST_F(Maze3DTest, Get3DRouteAddsColocatedPinViaOnce)
+{
+  // Two sink pins share a gcell on different layers. The routed edge climbs
+  // to the upper pin, and the zero-length edge between the pins walks the
+  // same via back down.
+  addTreeNet("colocated_sinks",
+             {{0, 1, 0}, {2, 1, 1}, {2, 1, 0}},
+             {},
+             {{0, 1, {{0, 1, 0}, {1, 1, 0}, {2, 1, 0}}},
+              {1, 2, {{2, 1, 1}, {2, 1, 0}}}});
+
+  GRoute route;
+  router_->get3DRoute(block_->findNet("colocated_sinks"), route);
+
+  const std::multiset<Via> expected{{250, 150, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
+  EXPECT_EQ(route.size(), 3);
+}
+
+TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
+{
+  // The edges cross at (1, 1) with opposite turns: the first turns from the
+  // vertical to the horizontal layer, the second arrives horizontally and is
+  // bridged up before it turns.
+  addTreeNet("crossing_edges",
+             {{1, 0, 1}, {2, 1, 0}, {0, 1, 0}, {1, 2, 1}},
+             {},
+             {{0, 1, {{1, 0, 1}, {1, 1, 1}, {2, 1, 0}}},
+              {2, 3, {{0, 1, 0}, {1, 1, 0}, {1, 2, 1}}}});
+
+  GRoute route;
+  router_->getPlanarRoute(block_->findNet("crossing_edges"), route);
+
+  const std::multiset<Via> expected{{150, 150, 1, 2}};
+  EXPECT_EQ(getVias(route), expected);
+  EXPECT_EQ(route.size(), 5);
 }
 
 }  // namespace

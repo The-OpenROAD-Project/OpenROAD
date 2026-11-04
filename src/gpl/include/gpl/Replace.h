@@ -43,6 +43,7 @@ class NesterovBase;
 class RouteBase;
 class TimingBase;
 class ClockBase;
+class PowerBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -67,6 +68,8 @@ struct PlaceOptions
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
   float timingNetWeightMax = 5;
+  bool powerDrivenMode = false;
+  float powerDrivenNetWeight = 1;
   float timingDrivenNetsPercentage = 10;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
@@ -220,6 +223,7 @@ class Replace
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   std::shared_ptr<ClockBase> cb_;
+  std::shared_ptr<PowerBase> pwb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;

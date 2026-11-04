@@ -19,8 +19,8 @@ for MODULE_PATH in "$SRC_BASE_PATH"/*; do
 	    SRC_PATH=$(realpath $SRC_BASE_PATH/$MODULE/README.md)
 	    DEST_PATH="$(realpath $DEST_BASE_PATH/$MODULE).md"
 
-        # Not every directory under src/ is a documented module (src/cmake,
-        # modules whose docs live elsewhere), so a missing README is not an
+        # Not every directory under src/ is a documented module (some modules
+        # keep their docs elsewhere), so a missing README is not an
         # error here. md_roff_compat.py reports the ones it actually expects.
         if [ -e "$SRC_PATH" ]; then
             ln -s -f "$SRC_PATH" "$DEST_PATH"

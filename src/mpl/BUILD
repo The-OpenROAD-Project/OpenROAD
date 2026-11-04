@@ -147,6 +147,7 @@ tcl_wrap_cc(
     srcs = [
         "src/mpl.i",
         "//:error_swig",
+        "//:options_swig",
     ],
     module = "mpl",
     namespace_prefix = "mpl",

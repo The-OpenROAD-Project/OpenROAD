@@ -45,4 +45,16 @@ library (check_ip_liberty_pins) {
       voltage_name : VDD;
     }
   }
+
+  cell (lef_lib_area_mismatch) {
+    area : 2;
+    pin (A) {
+      capacitance : 0.001;
+      direction : input;
+    }
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : VDD;
+    }
+  }
 }

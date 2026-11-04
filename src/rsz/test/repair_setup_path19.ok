@@ -12,13 +12,13 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -3.463 |     -104.5 |     42 | capture_56/D
-    1219* |      15 |     106 |       42 |      3 |    23 |   +11.3% |   -1.463 |      -48.2 |     42 | capture_17/D
-    final |      15 |     106 |       42 |      3 |    23 |   +11.3% |   -1.463 |      -48.2 |     38 | capture_17/D
+    1175* |      11 |      64 |       42 |      3 |    22 |   +11.5% |   -1.520 |      -49.9 |     42 | capture_7/D
+    final |      11 |      64 |       42 |      3 |    22 |   +11.5% |   -1.520 |      -49.9 |     38 | capture_7/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 15 buffers.
+[INFO RSZ-0059] Removed 11 buffers.
 [INFO RSZ-0040] Inserted 42 buffers.
-[INFO RSZ-0051] Resized 106 instances: 106 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 23 instances.
+[INFO RSZ-0051] Resized 64 instances: 64 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 22 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_202 (rising edge-triggered flip-flop clocked by core_clock)
@@ -49,7 +49,7 @@ Path Type: max
 
 
 Startpoint: launch_37 (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: capture_17 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_7 (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -65,54 +65,53 @@ Path Type: max
    0.1325    0.9978 ^ inst7/X (sky130_fd_sc_hs__buf_8)
    0.0472    1.0450 v inst8/Y (sky130_fd_sc_hs__nor2_8)
    0.1943    1.2393 ^ inst9/Y (sky130_fd_sc_hs__a21oi_4)
-   0.1176    1.3570 ^ inst10/X (sky130_fd_sc_hs__buf_8)
-   0.0311    1.3881 v inst11/Y (sky130_fd_sc_hs__nand2_8)
-   0.3037    1.6918 ^ inst12/SUM (sky130_fd_sc_hs__fa_1)
-   0.0386    1.7303 v inst13/Y (sky130_fd_sc_hs__inv_2)
-   0.2995    2.0298 ^ inst14/SUM (sky130_fd_sc_hs__fa_1)
-   0.0403    2.0702 v inst15/Y (sky130_fd_sc_hs__inv_2)
-   0.2932    2.3633 ^ inst16/SUM (sky130_fd_sc_hs__fa_1)
-   0.0362    2.3995 v inst17/Y (sky130_fd_sc_hs__inv_2)
-   0.2689    2.6684 ^ inst18/SUM (sky130_fd_sc_hs__fa_1)
-   0.0382    2.7066 v inst19/Y (sky130_fd_sc_hs__inv_2)
-   0.2609    2.9675 ^ inst20/SUM (sky130_fd_sc_hs__fa_1)
-   0.0356    3.0031 v inst21/Y (sky130_fd_sc_hs__inv_2)
-   0.2573    3.2603 ^ inst22/SUM (sky130_fd_sc_hs__fa_1)
-   0.1611    3.4214 v inst23/SUM (sky130_fd_sc_hs__ha_1)
-   0.1224    3.5438 v inst24/X (sky130_fd_sc_hs__and3_4)
-   0.2045    3.7482 ^ inst25/Y (sky130_fd_sc_hs__a211oi_4)
-   0.0760    3.8243 v inst26/Y (sky130_fd_sc_hs__o31ai_4)
-   0.1728    3.9970 ^ inst27/Y (sky130_fd_sc_hs__o41ai_4)
-   0.1007    4.0977 v inst28/Y (sky130_fd_sc_hs__o21bai_1)
-   0.0924    4.1901 ^ inst29/Y (sky130_fd_sc_hs__nand4_1)
-   0.0668    4.2569 v inst30/Y (sky130_fd_sc_hs__nand2_1)
-   0.1280    4.3849 ^ inst31/Y (sky130_fd_sc_hs__a21oi_1)
-   0.0785    4.4635 v inst32/Y (sky130_fd_sc_hs__o21bai_1)
-   0.1255    4.5890 v inst33/X (sky130_fd_sc_hs__xor2_1)
-   0.1244    4.7134 v inst34/X (sky130_fd_sc_hs__buf_4)
-   0.1372    4.8506 ^ inst35/Y (sky130_fd_sc_hs__a21oi_4)
-   0.1050    4.9556 ^ inst36/X (sky130_fd_sc_hs__buf_8)
-   0.0502    5.0058 v inst37/Y (sky130_fd_sc_hs__a211oi_4)
-   0.1338    5.1396 v rebuffer32/X (sky130_fd_sc_hs__buf_8)
-   0.1755    5.3151 ^ inst39/Y (sky130_fd_sc_hs__o41ai_4)
-   0.1575    5.4726 ^ rebuffer8/X (sky130_fd_sc_hs__buf_8)
-   0.1334    5.6060 ^ clone26/X (sky130_fd_sc_hs__buf_16)
-   0.0456    5.6517 v inst40_neighbor14/Y (sky130_fd_sc_hs__o21ai_4)
-   0.1219    5.7735 v rebuffer27/X (sky130_fd_sc_hs__buf_8)
-   0.0949    5.8684 v loadbuf_17/X (sky130_fd_sc_hs__buf_2)
-   0.0001    5.8685 v capture_17/D (sky130_fd_sc_hs__dfrtp_2)
-             5.8685   data arrival time
+   0.1110    1.3504 ^ inst10/X (sky130_fd_sc_hs__buf_8)
+   0.0333    1.3837 v inst11/Y (sky130_fd_sc_hs__nand2_4)
+   0.3059    1.6895 ^ inst12/SUM (sky130_fd_sc_hs__fa_1)
+   0.0386    1.7281 v inst13/Y (sky130_fd_sc_hs__inv_2)
+   0.2995    2.0276 ^ inst14/SUM (sky130_fd_sc_hs__fa_1)
+   0.0403    2.0679 v inst15/Y (sky130_fd_sc_hs__inv_2)
+   0.2932    2.3611 ^ inst16/SUM (sky130_fd_sc_hs__fa_1)
+   0.0362    2.3972 v inst17/Y (sky130_fd_sc_hs__inv_2)
+   0.2689    2.6661 ^ inst18/SUM (sky130_fd_sc_hs__fa_1)
+   0.0382    2.7043 v inst19/Y (sky130_fd_sc_hs__inv_2)
+   0.2609    2.9652 ^ inst20/SUM (sky130_fd_sc_hs__fa_1)
+   0.0356    3.0008 v inst21/Y (sky130_fd_sc_hs__inv_2)
+   0.2573    3.2581 ^ inst22/SUM (sky130_fd_sc_hs__fa_1)
+   0.1611    3.4192 v inst23/SUM (sky130_fd_sc_hs__ha_1)
+   0.1224    3.5415 v inst24/X (sky130_fd_sc_hs__and3_4)
+   0.2090    3.7505 ^ inst25/Y (sky130_fd_sc_hs__a211oi_4)
+   0.0779    3.8284 v inst26/Y (sky130_fd_sc_hs__o31ai_4)
+   0.1793    4.0078 ^ inst27/Y (sky130_fd_sc_hs__o41ai_4)
+   0.1014    4.1092 v inst28/Y (sky130_fd_sc_hs__o21bai_1)
+   0.0924    4.2016 ^ inst29/Y (sky130_fd_sc_hs__nand4_1)
+   0.0668    4.2684 v inst30/Y (sky130_fd_sc_hs__nand2_1)
+   0.1521    4.4206 ^ inst31/Y (sky130_fd_sc_hs__a21oi_1)
+   0.0737    4.4943 v inst32/Y (sky130_fd_sc_hs__o21bai_2)
+   0.1111    4.6054 ^ inst33/X (sky130_fd_sc_hs__xor2_2)
+   0.1373    4.7427 ^ inst34/X (sky130_fd_sc_hs__buf_4)
+   0.0651    4.8078 v inst35/Y (sky130_fd_sc_hs__a21oi_4)
+   0.1248    4.9326 v inst36/X (sky130_fd_sc_hs__buf_8)
+   0.2107    5.1433 ^ inst37/Y (sky130_fd_sc_hs__a211oi_4)
+   0.1271    5.2704 ^ inst38/X (sky130_fd_sc_hs__buf_8)
+   0.0547    5.3251 v inst39/Y (sky130_fd_sc_hs__o41ai_4)
+   0.1436    5.4687 v rebuffer8/X (sky130_fd_sc_hs__buf_8)
+   0.1484    5.6171 v clone42/X (sky130_fd_sc_hs__buf_8)
+   0.2090    5.8261 ^ inst40_neighbor23/Y (sky130_fd_sc_hs__o21ai_4)
+   0.1061    5.9322 ^ loadbuf_7/X (sky130_fd_sc_hs__buf_2)
+   0.0001    5.9322 ^ capture_7/D (sky130_fd_sc_hs__dfrtp_2)
+             5.9322   data arrival time
 
    4.5500    4.5500   clock core_clock (rise edge)
    0.0000    4.5500   clock network delay (ideal)
    0.0000    4.5500   clock reconvergence pessimism
-             4.5500 ^ capture_17/CLK (sky130_fd_sc_hs__dfrtp_2)
-  -0.1450    4.4050   library setup time
-             4.4050   data required time
+             4.5500 ^ capture_7/CLK (sky130_fd_sc_hs__dfrtp_2)
+  -0.1373    4.4127   library setup time
+             4.4127   data required time
 -------------------------------------------------------------
-             4.4050   data required time
-            -5.8685   data arrival time
+             4.4127   data required time
+            -5.9322   data arrival time
 -------------------------------------------------------------
-            -1.4634   slack (VIOLATED)
+            -1.5195   slack (VIOLATED)
 
 

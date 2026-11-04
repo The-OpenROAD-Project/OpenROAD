@@ -1,11 +1,11 @@
-[INFO FSV-0011] Net a: total 0.70334 fF +- 0.0053 after 114688 walks (8.9 hops per walk).
-  ground                    0.36867 +- 0.0046 fF
-  b                         0.33467 +- 0.0044 fF
-[INFO FSV-0011] Net b: total 0.70922 fF +- 0.0053 after 114688 walks (8.9 hops per walk).
-  ground                    0.36951 +- 0.0046 fF
-  a                         0.33971 +- 0.0044 fF
-[INFO FSV-0011] Net a: total 1.4067 fF +- 0.011 after 114688 walks (8.9 hops per walk).
-  ground                    0.73734 +- 0.0093 fF
-  b                         0.66935 +- 0.0088 fF
+[INFO FSV-0011] Net a: total 0.70281 fF +- 0.0067 after 71680 walks (8.9 hops per walk).
+  ground                    0.36827 +- 0.0059 fF
+  b                         0.33454 +- 0.0056 fF
+[INFO FSV-0011] Net b: total 0.7091 fF +- 0.007 after 64512 walks (8.8 hops per walk).
+  ground                    0.37407 +- 0.0062 fF
+  a                         0.33503 +- 0.0058 fF
+[INFO FSV-0011] Net a: total 1.4056 fF +- 0.013 after 71680 walks (8.9 hops per walk).
+  ground                    0.73653 +- 0.012 fF
+  b                         0.66908 +- 0.011 fF
 Summary 5 / 5 (100% pass)
 pass

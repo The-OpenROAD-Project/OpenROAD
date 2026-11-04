@@ -20,8 +20,8 @@ Run clang-tidy hermetically using the toolchain Bazel already uses to compile:
 # Single module:
 bazelisk build --config=lint //src/utl/...
 
-# Full lint scope (excludes submodules):
-bazelisk build --config=lint -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+# Full lint scope (excludes the upstream OpenSTA submodule):
+bazelisk build --config=lint -- //src/... //third-party/... -//src/sta/...
 ```
 - Uses `clang-tidy` from `@llvm//tools` (the same binary `etc/run-clang-tidy.sh` uses).
 - Reports land at `$(bazelisk info bazel-bin)/<pkg>/<target>_rules_lint/<src>.AspectRulesLintClangTidy.out`.

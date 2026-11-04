@@ -10,7 +10,10 @@ namespace rsz {
 // The tunables of the setup repair policies and their moves; estimator and
 // planner calibration constants stay in their files.  The default member
 // initializer is the shipped value; forParallelEval() sets the PARALLEL_EVAL
-// values.  Times are seconds and "pct" fields are percent.
+// values.  Times are seconds and "pct" fields are percent.  "period_pct"
+// fields are percent of the reference clock period of a PARALLEL_EVAL run:
+// the shortest period of a clock with source pins in any mode, fixed for the
+// run.  A share of |WNS| would vanish as WNS approaches zero.
 
 // Controls how stalled batches favor targets in shared violating cones.
 // The rank is score * (1 + bottleneck_scale *
@@ -97,8 +100,8 @@ struct ParallelEvalPolicyConfig
   // untouched arcs by a hair.
   float culprit_delay_ratio{0.01f};
   // A batch that improves TNS is also saved while its WNS stays within this
-  // percent of the best checkpoint WNS.
-  float checkpoint_wns_tolerance_pct{1.0f};
+  // percent of the reference clock period below the best checkpoint WNS.
+  float checkpoint_wns_tolerance_period_pct{0.02f};
   // Batches that skip the instances of an undone batch.
   int miss_tabu_batches{8};
 
@@ -109,23 +112,30 @@ struct ParallelEvalPolicyConfig
 
   // The batches stop after stall_max_batches batches without progress, or
   // once those batches spent stall_batches times the current cap in moves.
-  // Progress is a saved checkpoint that improves WNS by progress_wns_pct or
-  // TNS by progress_pct percent of its initial value.
+  // Progress is a saved checkpoint that improves WNS by
+  // progress_wns_period_pct percent of the reference clock period or TNS by
+  // progress_tns_pct percent of its initial value.
   int stall_batches{6};
   // Absolute cap on consecutive stalled batches.
   int stall_max_batches{24};
   // Minimum TNS improvement relative to the initial magnitude.
-  float progress_pct{0.5f};
-  // Minimum WNS improvement relative to the initial magnitude.
-  float progress_wns_pct{0.1f};
+  float progress_tns_pct{0.5f};
+  // Minimum WNS improvement in percent of the reference clock period.
+  float progress_wns_period_pct{0.04f};
 
   // The batches also stop when the last stall_window saved batches, after
-  // spending stall_window_min_work, moved neither WNS nor the failing
-  // endpoint count by stall_rel_pct percent and TNS did not progress.
+  // spending stall_window_min_work, moved neither WNS by stall_wns_period_pct
+  // nor the failing endpoint count by stall_failing_endpoint_pct percent per
+  // batch and TNS did not progress.
   int stall_window{6};
-  // Relative WNS or failing endpoint change needed to reset the window stall
-  // check.
-  float stall_rel_pct{1.0f};
+  // Average WNS gain per saved batch, in percent of the reference clock
+  // period, that keeps the window moving.  The rule also needs a flat TNS
+  // and failing endpoint count, so it ends only batch stages that barely move
+  // WNS.
+  float stall_wns_period_pct{0.2f};
+  // Average failing endpoint drop per saved batch, in percent of the current
+  // count, that keeps the window moving.
+  float stall_failing_endpoint_pct{1.0f};
   // Minimum reference work before the window stall check applies.
   float stall_window_min_work{30.0f};
 
@@ -148,8 +158,8 @@ struct ParallelEvalPolicyConfig
   // A tail batch may cost at most this multiple of its WNS gain in TNS.
   float wns_tail_tns_ratio{10.0f};
   // A tail batch is WNS progress only when it raises the best WNS by this
-  // percent of it.
-  float wns_tail_min_gain_pct{0.5f};
+  // percent of the reference clock period.
+  float wns_tail_min_gain_period_pct{0.1f};
   // Tail work budget: this percent of the batch stage's work, at least
   // wns_tail_min_work.
   float wns_tail_work_pct{400.0f};

@@ -6,7 +6,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 ALL_TESTS = [
     "supported",
     "clocktree_virtual_clock",
@@ -27,7 +26,6 @@ QT_TESTS = [
     "select_name_patterns",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "clocktree_virtual_clock",
     "display_controls_parity",
