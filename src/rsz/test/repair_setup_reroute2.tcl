@@ -38,10 +38,18 @@ set_routing_layers -signal M2-M6 -clock M4-M6
 global_route
 estimate_parasitics -global_routing
 
-report_worst_slack -max
-report_tns -digits 3
+set wns_before [worst_slack -max]
+set tns_before [total_negative_slack -max]
+check "gcd starts with setup violations" { expr { $wns_before < 0 } } 1
 
-repair_timing -setup -phases "REROUTE" -repair_tns 10
+tee -quiet -variable log { repair_timing -setup -phases "REROUTE" -repair_tns 10 }
 
-report_worst_slack -max
-report_tns -digits 3
+check "repair_timing reroutes nets resistance-aware" {
+  expr { [regexp {RSZ-0053\] Rerouted ([0-9]+) nets} $log -> nets] && $nets > 0 }
+} 1
+check "rerouting improves WNS" { expr { [worst_slack -max] > $wns_before } } 1
+check "rerouting improves TNS" {
+  expr { [total_negative_slack -max] > $tns_before }
+} 1
+
+exit_summary

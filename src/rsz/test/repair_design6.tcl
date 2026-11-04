@@ -38,8 +38,20 @@ set_routing_layers -signal M2-M6 -clock M4-M6
 global_route
 estimate_parasitics -global_routing
 
-report_check_types -max_slew -max_cap -digits 3
+check "the sparse placement violates max slew" {
+  expr { [sta::max_slew_violation_count] > 0 }
+} 1
+check "the sparse placement violates max capacitance" {
+  expr { [sta::max_capacitance_violation_count] > 0 }
+} 1
 
-repair_design -reroute
+tee -quiet -variable log { repair_design -reroute }
 
-report_check_types -max_slew -max_cap -digits 3
+check "repair_design -reroute moves nets to other layers" {
+  expr { [regexp {RSZ-0044\] Rerouted ([0-9]+) nets} $log -> nets] && $nets > 0 }
+} 1
+check "no max slew violation remains" { sta::max_slew_violation_count } 0
+check "no max capacitance violation remains" \
+  { sta::max_capacitance_violation_count } 0
+
+exit_summary

@@ -71,7 +71,6 @@ TESTS = [
     "repair_design3_verbose",
     "repair_design4",
     "repair_design5",
-    "repair_design6",
     "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",
@@ -164,8 +163,6 @@ TESTS = [
     "repair_setup_invalid_phase",
     "repair_setup_move_tracker_level1",
     "repair_setup_pin_command",
-    "repair_setup_reroute1",
-    "repair_setup_reroute2",
     "repair_setup_size_down_fanout_only",
     "repair_setup_sizeup_match_only",
     "repair_setup_split_load_hier_only",
@@ -315,6 +312,9 @@ PASSFAIL_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "repair_design6",
+    "repair_setup_reroute1",
+    "repair_setup_reroute2",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -324,6 +324,9 @@ SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "repair_design6",
+    "repair_setup_reroute1",
+    "repair_setup_reroute2",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
