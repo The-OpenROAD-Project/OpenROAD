@@ -157,16 +157,12 @@ float SACoreSoftMacro::getNormNotchPenalty() const
 // Operations
 float SACoreSoftMacro::calNormCost() const
 {
-  float cost = 0.0;  // Initialize cost
-
-  if (norm_area_penalty_ > 0.0) {
-    cost += core_weights_.area * getAreaPenalty();
-  }
-  return sumPenaltyTerms(cost);
+  return sumNormalizedPenaltyTerms();
 }
 
 void SACoreSoftMacro::calPenalty()
 {
+  calAreaPenalty();
   calOutlinePenalty();
   calWirelength();
   calGuidancePenalty();
@@ -176,10 +172,6 @@ void SACoreSoftMacro::calPenalty()
   calNotchPenalty();
   calFixedMacrosPenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({.name = "Area",
-                               .weight = core_weights_.area,
-                               .value = getAreaPenalty(),
-                               .normalization_factor = norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -294,7 +286,7 @@ void SACoreSoftMacro::initialize()
 
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(getAreaPenalty());
+    area_penalty_list.push_back(penalty_terms_[kAreaTerm].value);
     outline_penalty_list.push_back(penalty_terms_[kOutlineTerm].value);
     wirelength_list.push_back(penalty_terms_[kWirelengthTerm].value);
     guidance_penalty_list.push_back(penalty_terms_[kGuidanceTerm].value);
@@ -307,7 +299,8 @@ void SACoreSoftMacro::initialize()
   }
   graphics_ = save_graphics;
 
-  norm_area_penalty_ = calAverage(area_penalty_list);
+  penalty_terms_[kAreaTerm].normalization_factor
+      = calAverage(area_penalty_list);
   penalty_terms_[kOutlineTerm].normalization_factor
       = calAverage(outline_penalty_list);
   penalty_terms_[kWirelengthTerm].normalization_factor
@@ -327,8 +320,8 @@ void SACoreSoftMacro::initialize()
 
   // Reset penalites if lower than threshold
 
-  if (norm_area_penalty_ <= 1e-4) {
-    norm_area_penalty_ = 1.0;
+  if (penalty_terms_[kAreaTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kAreaTerm].normalization_factor = 1.0;
   }
 
   if (penalty_terms_[kOutlineTerm].normalization_factor <= 1e-4) {
@@ -368,6 +361,7 @@ void SACoreSoftMacro::initialize()
   for (int i = 0; i < outline_penalty_list.size(); i++) {
     width_ = width_list[i];
     height_ = height_list[i];
+    penalty_terms_[kAreaTerm].value = area_penalty_list[i];
     penalty_terms_[kOutlineTerm].value = outline_penalty_list[i];
     penalty_terms_[kWirelengthTerm].value = wirelength_list[i];
     penalty_terms_[kGuidanceTerm].value = guidance_penalty_list[i];

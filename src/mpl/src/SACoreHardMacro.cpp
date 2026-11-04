@@ -71,24 +71,17 @@ void SACoreHardMacro::run()
 
 float SACoreHardMacro::calNormCost() const
 {
-  float cost = 0.0;  // Initialize cost
-  if (norm_area_penalty_ > 0.0) {
-    cost += core_weights_.area * getAreaPenalty();
-  }
-  return sumPenaltyTerms(cost);
+  return sumNormalizedPenaltyTerms();
 }
 
 void SACoreHardMacro::calPenalty()
 {
+  calAreaPenalty();
   calOutlinePenalty();
   calWirelength();
   calGuidancePenalty();
   calFencePenalty();
   if (graphics_) {
-    graphics_->setAreaPenalty({.name = "Area",
-                               .weight = core_weights_.area,
-                               .value = getAreaPenalty(),
-                               .normalization_factor = norm_area_penalty_});
     graphics_->penaltyCalculated(calNormCost());
   }
 }
@@ -195,7 +188,7 @@ void SACoreHardMacro::initialize()
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(getAreaPenalty());
+    area_penalty_list.push_back(penalty_terms_[kAreaTerm].value);
     outline_penalty_list.push_back(penalty_terms_[kOutlineTerm].value);
     wirelength_list.push_back(penalty_terms_[kWirelengthTerm].value);
     guidance_penalty_list.push_back(penalty_terms_[kGuidanceTerm].value);
@@ -203,7 +196,8 @@ void SACoreHardMacro::initialize()
   }
   graphics_ = save_graphics;
 
-  norm_area_penalty_ = calAverage(area_penalty_list);
+  penalty_terms_[kAreaTerm].normalization_factor
+      = calAverage(area_penalty_list);
   penalty_terms_[kOutlineTerm].normalization_factor
       = calAverage(outline_penalty_list);
   penalty_terms_[kWirelengthTerm].normalization_factor
@@ -213,8 +207,8 @@ void SACoreHardMacro::initialize()
   penalty_terms_[kFenceTerm].normalization_factor
       = calAverage(fence_penalty_list);
 
-  if (norm_area_penalty_ <= 1e-4) {
-    norm_area_penalty_ = 1.0;
+  if (penalty_terms_[kAreaTerm].normalization_factor <= 1e-4) {
+    penalty_terms_[kAreaTerm].normalization_factor = 1.0;
   }
 
   if (penalty_terms_[kOutlineTerm].normalization_factor <= 1e-4) {
@@ -238,6 +232,7 @@ void SACoreHardMacro::initialize()
   for (int i = 0; i < outline_penalty_list.size(); i++) {
     width_ = width_list[i];
     height_ = height_list[i];
+    penalty_terms_[kAreaTerm].value = area_penalty_list[i];
     penalty_terms_[kOutlineTerm].value = outline_penalty_list[i];
     penalty_terms_[kWirelengthTerm].value = wirelength_list[i];
     penalty_terms_[kGuidanceTerm].value = guidance_penalty_list[i];
@@ -261,6 +256,7 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
   core_weights_ = weights;
 
   // calNormCost() sums penalty_terms_[i].weight, so keep it in sync.
+  penalty_terms_[kAreaTerm].weight = core_weights_.area;
   penalty_terms_[kOutlineTerm].weight = core_weights_.outline;
   penalty_terms_[kWirelengthTerm].weight = core_weights_.wirelength;
   penalty_terms_[kGuidanceTerm].weight = core_weights_.guidance;
