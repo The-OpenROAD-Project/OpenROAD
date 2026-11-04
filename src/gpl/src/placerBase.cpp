@@ -1140,10 +1140,9 @@ void PlacerBase::init(bool check_density)
       continue;
     }
 
-    // The region it lands in is unknown, so only the top level counts it.
     if (pbCommon_->unplacedMacrosAsFixed() && inst->isMacro()
         && !db_inst->isPlaced()) {
-      if (!region) {
+      if (isInGroup(db_inst)) {
         odb::dbMaster* master = db_inst->getMaster();
         nonPlaceInstsArea_
             += static_cast<int64_t>(master->getWidth()) * master->getHeight();
@@ -1174,17 +1173,8 @@ void PlacerBase::init(bool check_density)
       nonPlaceInstsArea_ += overlap_area;
     } else {
       // Movable instances
-      odb::dbGroup* db_inst_group = db_inst->getGroup();
-      if (group_ == nullptr) {
-        if (db_inst_group
-            && db_inst_group->getType() != odb::dbGroupType::VISUAL_DEBUG) {
-          continue;
-        }
-      } else {
-        if (!db_inst_group || db_inst_group != group_
-            || db_inst_group->getType() == odb::dbGroupType::VISUAL_DEBUG) {
-          continue;
-        }
+      if (!isInGroup(db_inst)) {
+        continue;
       }
 
       placeInsts_.push_back(inst);
@@ -1219,6 +1209,16 @@ void PlacerBase::init(bool check_density)
   }
 
   printInfo(check_density);
+}
+
+bool PlacerBase::isInGroup(odb::dbInst* inst) const
+{
+  odb::dbGroup* group = inst->getGroup();
+  if (group && group->getType() == odb::dbGroupType::VISUAL_DEBUG) {
+    group = nullptr;
+  }
+
+  return group == group_;
 }
 
 // Use dummy instance to fill unusable sites.  Sites are unusable

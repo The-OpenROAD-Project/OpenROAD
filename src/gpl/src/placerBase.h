@@ -434,6 +434,7 @@ class PlacerBase
   odb::dbGroup* group_ = nullptr;
 
   void init(bool check_density);
+  bool isInGroup(odb::dbInst* inst) const;
   void initInstsForUnusableSites();
 
   void reset();
