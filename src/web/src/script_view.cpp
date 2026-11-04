@@ -96,7 +96,7 @@ bool ScriptView::check(const std::string& name, const bool selectable)
   const std::vector<Match> matches = matchLocked(tree_, name, selectable);
   if (matches.empty()) {
     logger_->warn(utl::WEB,
-                  127,
+                  137,
                   "Unable to find {} display control at {}.",
                   columnName(selectable),
                   name);
@@ -128,7 +128,7 @@ void ScriptView::set(const std::string& name,
   const std::vector<Match> matches = matchLocked(tree_, name, selectable);
   if (matches.empty()) {
     logger_->error(utl::WEB,
-                   126,
+                   136,
                    "Unable to find {} display control at {}.",
                    columnName(selectable),
                    name);
