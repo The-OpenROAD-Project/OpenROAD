@@ -35,7 +35,12 @@ open). Four kinds of table describe a layer:
   between two of them takes both, weighted in the logarithm of its
   distance (`pex/CoverMap.h`; e12 measures what that costs), so the table
   count grows with the depth and the far factors, not with the square of
-  the layer count.
+  the layer count. By default the builder chooses the covers itself
+  instead: it probes each usable layer with a few 2D solves and keeps the
+  fewest, always the nearest and the farthest, whose interpolation
+  predicts the rest within 2% of the total (`planCovers`; e13 checks the
+  choice where the probes did not look and finds it well inside that).
+  A cover tolerance of 0 goes back to the depth and far factors.
 - **Crossing.** A covering layer is rarely a plane: it is wires crossing
   the piece. One table per `(layer, cover)` pair holds the share of the
   plane's effect that the crossings keep over the uncovered gap between two
@@ -90,6 +95,7 @@ bazel-bin/src/pex/test/Experiments --threads 64 --tol 0.003 \
 | e9 nets | nets of a routed design, each solved within a halo | the model applied to the same boxes by the reference evaluator | the attainable accuracy |
 | e11 diagonal | a parallel wire on a nearby layer beside the wire, alone and with neighbors | the wire without it | the diagonal table |
 | e12 far covers | a wire under or over a plane on each layer the builder would not tabulate | the tabulated covers it resolves to, and the open context a lookup would fall back to without them | the far cover factors |
+| e13 probed covers | the same, for the covers chosen from probes, at widths and spacings the probes did not use | the chosen covers it resolves to | the cover tolerance and the probe variants |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
 ODB file, builds the model for every routing layer of the design the stack

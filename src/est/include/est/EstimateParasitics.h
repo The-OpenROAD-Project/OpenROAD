@@ -217,6 +217,9 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                                const std::vector<odb::Point>& sink_locations);
   SteinerTree* makeSteinerTree(const sta::Pin* drvr_pin);
   void updateParasitics();
+  // Updates pin access deferred by incremental global routing, reroutes the
+  // nets whose access points changed and invalidates their parasitics.
+  void finishIncrementalRoutes();
   void ensureWireParasitic(const sta::Pin* drvr_pin);
   void ensureWireParasitic(const sta::Pin* drvr_pin, const sta::Net* net);
   void highlightSteiner(const sta::Pin* drvr);

@@ -15,10 +15,8 @@ package(
 )
 
 # The Kokkos/CUDA backends plus fft.cpp. fft.cpp itself includes only
-# Kokkos-free PIMPL headers, but it is compiled as CUDA here to mirror
-# the CMake flow's set_source_files_properties(... LANGUAGE CUDA) list in
-# src/gpl/CMakeLists.txt, keeping the two builds behaviorally identical.
-# hpwl.cpp stays a plain C++ TU in :gpl, also mirroring CMake.
+# Kokkos-free PIMPL headers, but it is compiled as CUDA along with them.
+# hpwl.cpp stays a plain C++ TU in :gpl.
 cc_library(
     name = "gpl_kokkos",
     srcs = [

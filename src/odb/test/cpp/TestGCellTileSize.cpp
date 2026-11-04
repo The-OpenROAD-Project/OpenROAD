@@ -2,8 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include "gtest/gtest.h"
-#include "helper.h"
 #include "odb/db.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {

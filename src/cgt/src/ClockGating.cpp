@@ -81,9 +81,9 @@ ClockGating::ClockGating(utl::Logger* logger, sta::dbSta* open_sta)
 
 ClockGating::~ClockGating() = default;
 
-void ClockGating::run()
+void ClockGating::run(sta::Scene* scene)
 {
-  impl_->run();
+  impl_->run(scene);
 }
 
 void ClockGating::setMinInstances(int min_instances)
@@ -406,7 +406,7 @@ static std::string combinedInstanceNames(
   return result;
 }
 
-void ClockGating::Impl::run()
+void ClockGating::Impl::run(sta::Scene* const scene)
 {
   debugPrint(logger_,
              CGT,
@@ -436,6 +436,7 @@ void ClockGating::Impl::run()
   // Initialize ABC
   cut::abcInit();
   abc_factory_->AddDbSta(sta_);
+  abc_factory_->SetCorner(scene);
   abc_library_ = std::make_unique<cut::AbcLibrary>(abc_factory_->Build());
 
   dump("pre");
