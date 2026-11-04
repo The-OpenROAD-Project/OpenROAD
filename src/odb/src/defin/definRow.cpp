@@ -91,13 +91,25 @@ void definRow::begin(const char* name,
 
   // When STEP is omitted the sites abut (DEF 5.8 ROW, Example 4-25), so
   // the pitch is the oriented site extent along the row direction.
-  int db_spacing;
-  if (spacing) {
-    db_spacing = dbdist(*spacing);
-  } else {
-    Rect site_box(0, 0, site->getWidth(), site->getHeight());
-    dbTransform(orient).apply(site_box);
-    db_spacing = direction == DEF_VERTICAL ? site_box.dy() : site_box.dx();
+  Rect site_box(0, 0, site->getWidth(), site->getHeight());
+  dbTransform(orient).apply(site_box);
+  const int site_extent
+      = direction == DEF_VERTICAL ? site_box.dy() : site_box.dx();
+  const int db_spacing = spacing ? dbdist(*spacing) : site_extent;
+
+  // Rows with a site spacing smaller than the site extent declare
+  // overlapping sites.  Reject them here so the issue is surfaced at read
+  // time instead of later.
+  if (num_sites > 1 && db_spacing < site_extent) {
+    _logger->warn(utl::ODB,
+                  478,
+                  "Row {} has site spacing ({}) smaller than the site extent "
+                  "along the row ({}); the row's sites overlap.  Row ignored.",
+                  name,
+                  db_spacing,
+                  site_extent);
+    ++_errors;
+    return;
   }
 
   if (direction == DEF_VERTICAL) {

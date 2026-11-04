@@ -219,6 +219,14 @@ class TritonCTS
   void setAllClocksPropagated();
   void repairClockNets();
   void balanceMacroRegisterLatencies();
+  // Runs a LatencyBalancer over every top-level builder tree and returns the
+  // total number of delay buffers inserted. useful_skew selects classic vs.
+  // useful-skew balancing.
+  int runLatencyBalancers(double capPerDBU, double resPerDBU, bool useful_skew);
+  // Largest usable delay across the delay-buffer list, used to size the
+  // useful-skew max_skew before computeSkewBudget. Returns 0 when no buffer
+  // has a usable delay.
+  double getMaxDelayBufferDelay(double extra_out_cap);
 
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;

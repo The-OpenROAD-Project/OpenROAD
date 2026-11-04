@@ -1,7 +1,7 @@
 # fsv cross-section references from fv2d_golden.py, in fF/µm.
 # Finite volumes at h = 0.01, 0.005, 0.0025 µm,
 # extrapolated to h = 0; the extrapolation moves no entry by more
-# than 6.0e-04 of its row's total.
+# than 1.1e-03 of its row's total.
 # <structure> <master> <net> <capacitance>; cap[master] is the total,
 # other entries are minus the coupling (Maxwell matrix).
 etch_stop_pair lower lower 0.0897293
@@ -10,15 +10,45 @@ etch_stop_pair lower ground -0.0523982
 etch_stop_pair upper lower -0.0373311
 etch_stop_pair upper upper 0.0864918
 etch_stop_pair upper ground -0.0491606
-three_wires left left 0.155876
-three_wires left middle -0.0892538
-three_wires left right -0.0051964
-three_wires left ground -0.0614254
-three_wires middle left -0.0892538
+three_wires left left 0.155875
+three_wires left middle -0.0892539
+three_wires left right -0.00519631
+three_wires left ground -0.0614253
+three_wires middle left -0.0892539
 three_wires middle middle 0.211432
-three_wires middle right -0.0892538
-three_wires middle ground -0.0329241
-three_wires right left -0.0051964
-three_wires right middle -0.0892538
-three_wires right right 0.155876
-three_wires right ground -0.0614254
+three_wires middle right -0.0892539
+three_wires middle ground -0.032924
+three_wires right left -0.00519631
+three_wires right middle -0.0892539
+three_wires right right 0.155875
+three_wires right ground -0.0614253
+conformal_pair a a 0.152253
+conformal_pair a b -0.0967067
+conformal_pair a ground -0.0555465
+conformal_pair b a -0.0967067
+conformal_pair b b 0.152253
+conformal_pair b ground -0.0555465
+nested_conformal a a 0.200056
+nested_conformal a b -0.135735
+nested_conformal a ground -0.0643212
+nested_conformal b a -0.135735
+nested_conformal b b 0.200056
+nested_conformal b ground -0.0643212
+merged_conformal a a 0.201392
+merged_conformal a b -0.132509
+merged_conformal a c -0.00975906
+merged_conformal a ground -0.0591233
+merged_conformal b a -0.132509
+merged_conformal b b 0.292606
+merged_conformal b c -0.132509
+merged_conformal b ground -0.0275877
+merged_conformal c a -0.00975906
+merged_conformal c b -0.132509
+merged_conformal c c 0.201392
+merged_conformal c ground -0.0591233
+sky130_met1_pair a a 0.188499
+sky130_met1_pair a b -0.141776
+sky130_met1_pair a ground -0.0467232
+sky130_met1_pair b a -0.141776
+sky130_met1_pair b b 0.188499
+sky130_met1_pair b ground -0.0467232

@@ -51,14 +51,6 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
-# rules_cc_autoconf is transitive (bison, flex, m4, gawk, readline). Its
-# checker uses std::back_inserter without <iterator>, which libc++ 23 no
-# longer pulls in transitively; 0.23.0 adds the include.
-single_version_override(
-    module_name = "rules_cc_autoconf",
-    version = "0.23.0",
-)
-
 BOOST_VERSION = "1.89.0.bcr.2"
 
 BOOST_CONTEXT_VERSION = "1.89.0.bcr.3"
@@ -149,14 +141,13 @@ single_version_override(
     version = "76.1.bcr.3",
 )
 
-# gawk is transitive (abc -> ncurses -> gawk; yosys -> gawk). Same gnulib
-# libc-header shadowing as sed: gawk@5.3.2.bcr.2 fails to compile against
-# hermetic-llvm's explicit libc -isystem entries.
-single_version_override(
-    module_name = "gawk",
-    version = "5.4.0.bcr.2",
-)
-
+# gawk is transitive (abc -> ncurses -> gawk). Its vendored gnulib headers
+# shadow libc headers, and gawk@5.3.2.bcr.2 fails to compile against
+# hermetic-llvm's explicit libc -isystem entries (BCR #7642); the graph
+# alone resolves 5.3.2.bcr.3. A direct bazel_dep rather than a
+# single_version_override, so the floor reaches downstream consumers via
+# MVS too (overrides only apply in the root module).
+bazel_dep(name = "gawk", version = "5.4.0.bcr.2")
 bazel_dep(name = "git", version = "2.54.0")
 
 # We enable the external_include_paths feature globally (see .bazelrc), which
@@ -174,31 +165,18 @@ single_version_override(
 )
 
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
-
-# m4 is transitive (bison/rules_flex -> m4). Same gnulib libc-header
-# shadowing class as sed/gawk under hermetic-llvm (BCR #7642).
-single_version_override(
-    module_name = "m4",
-    version = "1.4.21.bcr.4",
-)
-
 bazel_dep(name = "libdeflate", version = "1.26")
 bazel_dep(name = "openmp", version = "21.1.5.bcr.2")
 bazel_dep(name = "or-tools", version = "9.15")
-
-# sed is transitive (abc -> ncurses -> sed). Its vendored gnulib headers
-# deliberately shadow libc headers (stdio.h, error.h); hermetic-llvm's
-# explicit libc -isystem entries outrank them and sed@4.9.bcr.3 fails to
-# compile (BCR #7642). 4.9.bcr.5 carries the upstream fix (BCR #7915).
-single_version_override(
-    module_name = "sed",
-    version = "4.9.bcr.5",
-)
 
 # spdlog < 1.16.0.bcr.2's BUILD.bazel calls the native cc_test rule, which
 # Bazel 9 removed; loading the package fails. 1.16.0.bcr.2+ loads cc_test
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
+
+# sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
+# compiles, from the BCR like every dependency that is not a fork.
+bazel_dep(name = "sv-elab", version = "2026-10-29")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -302,12 +280,8 @@ archive_override(
 
 # JavaScript / web UI: //:openroad embeds the npm libraries esbuild bundles.
 bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
-bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "aspect_rules_js", version = "3.5.1")
 bazel_dep(name = "rules_nodejs", version = "6.7.3")
-
-# write_source_files keeps src/web/dist, the CMake build's copy of the bundle,
-# in step with the bundler's output.
-bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 # --- Extensions ---
 
@@ -456,12 +430,6 @@ use_repo(npm, "npm")
 # --- External archives ---
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-bazel_dep(name = "sv-elab", version = "2026-10-13")
-local_path_override(
-    module_name = "sv-elab",
-    path = "third-party/sv-elab",
-)
 
 # --- pandoc for macOS arm64 (used by //docs:man_pages) ---
 #

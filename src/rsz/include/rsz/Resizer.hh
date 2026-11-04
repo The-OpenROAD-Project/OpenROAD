@@ -562,9 +562,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
+  // placed_net limits buffering to the nets the placer models. Buffers added
+  // to any other net would have no connections in the placer.
   void findResizeSlacks(bool run_journal_restore,
                         bool run_repair_timing = false,
-                        float repair_tns_end_percent = 0.01);
+                        float repair_tns_end_percent = 0.01,
+                        const std::function<bool(const odb::dbNet*)>& placed_net
+                        = {});
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -951,7 +955,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool removeBufferIfPossible(sta::Instance* buffer,
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement);
+                                  const sta::LibertyCell* replacement,
+                                  const sta::Mode* mode = nullptr);
   // The load a driver can still take under its max-cap limit: none once the
   // limit is violated, and no bound without a limit.
   float maxCapIncrease(const sta::Pin* drvr_pin);
@@ -1018,6 +1023,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isEditableLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
+  // False for a net outside the placer's nets during findResizeSlacks.
+  bool isPlacedNet(const odb::dbNet* net) const;
   sta::LibertyCell* lowestDriveBufferCell() const;
   sta::LibertyCell* selectBetterRfDriveVtCell(sta::LibertyCell* curr_cell);
   bool checkAndMarkVTSwappable(sta::Instance* inst,
@@ -1062,6 +1069,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
+  // Set only for the duration of findResizeSlacks.
+  std::function<bool(const odb::dbNet*)> placed_net_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
@@ -1088,6 +1097,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   const sta::MinMax* max_ = sta::MinMax::max();
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
+  sta::LibertyCell* port_buffer_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.

@@ -7,7 +7,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <charconv>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -129,17 +128,6 @@ std::string sanitizeFilename(std::string name)
   return name;
 }
 
-// Parse an integer that must span the whole string_view (no trailing garbage),
-// exception-free.  Returns false on any malformed/partial input.
-template <typename T>
-bool parseIntExact(std::string_view s, T& out, int base = 10)
-{
-  const char* const first = s.data();
-  const char* const last = first + s.size();
-  const auto res = std::from_chars(first, last, out, base);
-  return res.ec == std::errc{} && res.ptr == last;
-}
-
 // Percent-decode a URL query value (e.g. the JSON `vis` payload).
 std::string urlDecode(std::string_view s)
 {
@@ -217,12 +205,25 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
+// The plain-text response every HTTP answer starts from.
+http::response<http::string_body> textResponse(const http::status status,
+                                               const unsigned version,
+                                               const bool keep_alive)
+{
+  http::response<http::string_body> res{status, version};
+  res.set(http::field::server, "OpenROAD");
+  res.set(http::field::content_type, "text/plain");
+  res.set(http::field::access_control_allow_origin, "*");
+  res.keep_alive(keep_alive);
+  return res;
+}
+
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
                          std::string_view target,
                          http::response<http::string_body>& res)
 {
-  if (!generator) {
+  if (!generator || !generator->getBlock()) {
     res.result(http::status::not_found);
     res.body() = "No design loaded.";
     return;
@@ -270,11 +271,6 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
-  if (png.empty()) {
-    res.result(http::status::internal_server_error);
-    res.body() = "Image render failed.";
-    return;
-  }
 
   const auto fname_it = params.find("filename");
   const std::string filename = sanitizeFilename(
@@ -311,16 +307,13 @@ class ScriptGateScope
   const bool entered_;
 };
 
-static http::response<http::string_body> handle_request(
-    http::request<http::string_body>&& req,
+// The routing itself.  Anything it throws is caught by handle_request below.
+static http::response<http::string_body> dispatch_request(
+    const http::request<http::string_body>& req,
     const std::shared_ptr<TileGenerator>& generator,
     ScriptGate& script_gate)
 {
-  http::response<http::string_body> res{http::status::ok, req.version()};
-  res.set(http::field::server, "Boost.Beast Server (C++17)");
-  res.set(http::field::content_type, "text/plain");
-  res.keep_alive(req.keep_alive());
-  res.set(http::field::access_control_allow_origin, "*");
+  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the download handler needs the
@@ -352,6 +345,25 @@ static http::response<http::string_body> handle_request(
 
   res.prepare_payload();
   return res;
+}
+
+// utl::Logger::error throws: answer 500 rather than drop the connection.
+static http::response<http::string_body> handle_request(
+    http::request<http::string_body>&& req,
+    const std::shared_ptr<TileGenerator>& generator,
+    ScriptGate& script_gate,
+    utl::Logger* logger)
+{
+  try {
+    return dispatch_request(req, generator, script_gate);
+  } catch (const std::exception& e) {
+    logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
+    auto res = textResponse(
+        http::status::internal_server_error, req.version(), req.keep_alive());
+    res.body() = "Request failed.";
+    res.prepare_payload();
+    return res;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -397,6 +409,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   // Debug-graphics hook (nullable).  When set, this session registers a
   // send callback for server-push broadcasts (pause/continue notifications).
   WebViewerHook* viewer_hook_ = nullptr;
+  std::shared_ptr<SessionRegistry> registry_;  // the one viewer_token_ is in
   std::size_t viewer_token_ = 0;
 
   // In-flight request window announced to the client on connect.
@@ -934,20 +947,12 @@ WebSocketSession::~WebSocketSession()
       }
     }
   }
-  if (viewer_hook_ != nullptr && viewer_token_ != 0) {
-    viewer_hook_->sessions().remove(viewer_token_);
+  if (registry_ && viewer_token_ != 0) {
+    registry_->remove(viewer_token_);
   }
-  if (init_thread_.joinable()) {
-    // The init thread holds a reference to the session. When it holds the
-    // last one, the session is destroyed on that thread, which cannot join
-    // itself (std::system_error, resource deadlock avoided): it is ending,
-    // so let it go.
-    if (init_thread_.get_id() == std::this_thread::get_id()) {
-      init_thread_.detach();
-    } else {
-      init_thread_.join();
-    }
-  }
+  // The init thread may have dropped the last reference, and then this runs on
+  // it, where a join would deadlock.
+  joinUnlessSelf(init_thread_);
   std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
   if (!state_.active_heatmap.empty()) {
     auto active = state_.heatmaps.find(state_.active_heatmap);
@@ -1015,7 +1020,8 @@ void WebSocketSession::on_accept(beast::error_code ec)
   // browsers reject with "A server must not mask any frames".
   if (viewer_hook_ != nullptr) {
     auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
-    viewer_token_ = viewer_hook_->sessions().add(
+    registry_ = viewer_hook_->sessionsHandle();
+    viewer_token_ = registry_->add(
         // SendFn — queue a JSON push message on this session's write queue.
         [weak_self](const std::string& json) {
           auto self = weak_self.lock();
@@ -1146,12 +1152,10 @@ namespace {
 
 // Run a request handler, converting any exception into an error response.
 //
-// Handlers run either on the read thread or on a bare io_context thread, and
-// neither has a try/catch above it: the threads run io_context::run() directly
-// (see createAndRunListener), so an exception escaping a handler unwinds out of
-// the thread function and calls std::terminate -- the whole openroad process
-// dies, taking the design with it.  A malformed request must cost the client
-// one error response, never the session.
+// An exception escaping a handler reaches runIoContext(), which logs it, but
+// the request goes unanswered and, on the read thread, the session stops
+// reading.  A malformed request must cost the client one error response,
+// never the session.
 //
 // The obvious offender is a field whose JSON type is wrong -- boost::json's
 // as_int64()/as_string() throw rather than return an error.  See
@@ -1387,8 +1391,8 @@ void HttpSession::on_read(beast::error_code ec)
     return;
   }
 
-  res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), generator_, tcl_eval_->script_gate));
+  res_ = std::make_shared<http::response<http::string_body>>(handle_request(
+      std::move(req_), generator_, tcl_eval_->script_gate, logger_));
   do_write();
 }
 
@@ -1723,19 +1727,10 @@ void WebServer::stopAndJoinIoThreads()
   if (ioc_) {
     ioc_->stop();
   }
-  const auto self_id = std::this_thread::get_id();
+  // ioc_->stop() unblocks the workers, so the one joinUnlessSelf detaches (when
+  // stop() runs on a worker) finishes on its own.
   for (auto& t : threads_) {
-    if (!t.joinable()) {
-      continue;
-    }
-    if (t.get_id() == self_id) {
-      // Self-join would raise EDEADLK. ioc_->stop() above unblocks the
-      // worker so detaching is safe — the thread runs to completion on
-      // its own.
-      t.detach();
-    } else {
-      t.join();
-    }
+    joinUnlessSelf(t);
   }
   threads_.clear();
 }
@@ -1877,7 +1872,6 @@ void WebServer::saveReport(const std::string& filename,
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
       = boost::json::serialize(serializeBoundsResponse(*generator_, true));
-  const auto tech_layers = generator_->getLayers();
 
   // ── Serialize module hierarchy ──
 
@@ -1929,19 +1923,47 @@ void WebServer::saveReport(const std::string& filename,
 
   // Every pane the viewer mounts by default, the same stack save_image draws,
   // plus the module coloring.
-  std::vector<std::string> all_layers
-      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
-  all_layers.emplace_back("_modules");
+  std::vector<PaintLayer> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, generator_->paintOrderLayers());
+  all_layers.push_back({.layer = "_modules", .chiplet = ""});
 
-  // Collect non-empty tiles as "layer/z/x/y" -> base64.
+  // Collect non-empty tiles as "[chiplet|]layer/z/x/y" -> base64.  Must match
+  // the key WebSocketManager._cacheRequest builds.
   std::vector<std::pair<std::string, std::string>> tile_entries;
-  for (const auto& layer : all_layers) {
+  TileVisibility scoped_vis = vis;
+  const auto extents = generator_->layerExtents();
+  // World rect of each tile, indexed [ty][tx] with ty as Leaflet counts it.
+  const odb::Rect bounds = generator_->getBounds();
+  std::vector<std::vector<odb::Rect>> tile_rects(num_tiles);
+  for (int ty = 0; ty < num_tiles; ++ty) {
+    for (int tx = 0; tx < num_tiles; ++tx) {
+      tile_rects[ty].push_back(
+          TileGenerator::tileWorldRect(bounds, kZ, tx, num_tiles - 1 - ty));
+    }
+  }
+  for (const PaintLayer& entry : all_layers) {
+    scoped_vis.chiplet = entry.chiplet;
+    const std::string prefix = entry.chiplet.empty()
+                                   ? entry.layer
+                                   : entry.chiplet + "|" + entry.layer;
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
+        if (!TileGenerator::rowMayDraw(
+                *extents, entry, tile_rects[ty][tx], scoped_vis)) {
+          continue;
+        }
+        auto png = generator_->generateTile(entry.layer,
+                                            kZ,
+                                            tx,
+                                            ty,
+                                            scoped_vis,
+                                            {},
+                                            {},
+                                            {},
+                                            {},
+                                            mod_colors_ptr);
         if (!is_blank(png)) {
-          std::string key = layer + "/" + std::to_string(kZ) + "/"
+          std::string key = prefix + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
         }
@@ -2666,9 +2688,6 @@ void WebServer::gifAddFrame(std::optional<int> key,
                                       viewerBackground(viewer_hook_.get()),
                                       &w,
                                       &h);
-  if (rgba.empty()) {
-    return;  // renderImageBuffer already logged the error.
-  }
 
   const int d = delay.value_or(kDefaultGifDelay);
   if (gif->frame_count == 0) {
@@ -2676,10 +2695,9 @@ void WebServer::gifAddFrame(std::optional<int> key,
     gif->width = w;
     gif->height = h;
     if (!gif->encoder.begin(gif->filename, w, h, d)) {
-      logger_->error(
-          utl::WEB, 71, "Failed to open GIF file {}.", gif->filename);
+      const std::string filename = gif->filename;  // `gif` dies with the slot
       gifs_[idx].reset();
-      return;
+      logger_->error(utl::WEB, 71, "Failed to open GIF file {}.", filename);
     }
   } else if (w != gif->width || h != gif->height) {
     // Later frames are scaled to match the first (like gui's QImage::scaled).
@@ -2687,8 +2705,8 @@ void WebServer::gifAddFrame(std::optional<int> key,
   }
 
   if (!gif->encoder.addFrame(rgba, gif->width, gif->height, d)) {
+    gifs_[idx].reset();
     logger_->error(utl::WEB, 72, "Failed to write GIF frame.");
-    return;
   }
   ++gif->frame_count;
 }
@@ -2707,13 +2725,15 @@ void WebServer::gifEnd(std::optional<int> key)
     gifs_[idx].reset();
     return;
   }
-  gif->encoder.end();
-  logger_->info(utl::WEB,
-                75,
-                "Saved animated GIF ({} frames) to {}.",
-                gif->frame_count,
-                gif->filename);
+  const bool written = gif->encoder.end();
+  const std::string filename = gif->filename;  // `gif` dies with the slot
+  const int frames = gif->frame_count;
   gifs_[idx].reset();
+  if (!written) {
+    logger_->error(utl::WEB, 127, "Failed to write GIF {}.", filename);
+  }
+  logger_->info(
+      utl::WEB, 75, "Saved animated GIF ({} frames) to {}.", frames, filename);
 }
 
 std::string WebServer::addToolbarButton(const std::string& name,

@@ -102,6 +102,7 @@ class Parser
   void setVias(odb::dbBlock*);
   void updateNetRouting(frNet*, odb::dbNet*);
   void setNets(odb::dbBlock*);
+  void setMarkers(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);
   void getSBoxCoords(odb::dbSBox*,
                      frCoord&,

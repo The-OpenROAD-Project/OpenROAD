@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    BLANK_TILE, hasEntries, tileSizeCss, useFittedTileSize, useStaticTileSize,
     withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -27,7 +27,7 @@ import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
-         rafCoalesce, showToast, unitLabel }
+         rafCoalesce, showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -171,8 +171,13 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
-    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
-    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // { chipletPath: [layer names] } a die hides (resp. makes unselectable)
+    // while another die still shows them; `visibleLayerNames` and
+    // `selectableLayers` are the unions.  Kept by display-controls.js.
+    chipletHiddenLayers: {},
+    chipletNonselectableLayers: {},
+    // Per-row fill pattern, keyed by the Display Controls row id → int matching
+    // the server's FillPattern enum (1 = solid). Populated/persisted by
     // display-controls.js and read lazily by websocket-tile-layer.js.
     layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
@@ -1256,7 +1261,7 @@ if (staticCache) {
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    const websocketUrl = websocketUrlFrom(window.location);
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
@@ -1911,6 +1916,13 @@ app.websocketManager.readyPromise.then(async () => {
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            if (hasEntries(app.chipletHiddenLayers)) {
+                selectRequest.chiplet_hidden_layers = app.chipletHiddenLayers;
+            }
+            if (hasEntries(app.chipletNonselectableLayers)) {
+                selectRequest.chiplet_nonselectable_layers
+                    = app.chipletNonselectableLayers;
             }
             const token = beginSelection(app);
             return app.websocketManager.request(selectRequest)

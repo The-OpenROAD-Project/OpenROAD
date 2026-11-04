@@ -1721,7 +1721,7 @@ void ClusteringEngine::breakMixedLeaves(
 
 // "Split" mixed leaf by replacing it for standard-cell and macro
 // clusters. Macro clusters are formed by grouping the macros in
-// the mixed leaf according to footprint, connection signature and
+// the mixed leaf according to master, connection signature and
 // interconnectivity.
 void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 {
@@ -1752,7 +1752,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 
   const int number_of_movable_macros
       = static_cast<int>(movable_hard_macros.size());
-  std::vector<int> size_class(number_of_movable_macros, -1);
+  std::vector<int> master_class(number_of_movable_macros, -1);
   std::vector<int> signature_class(number_of_movable_macros, -1);
   std::vector<int> interconn_class(number_of_movable_macros, -1);
   std::vector<int> macro_class(number_of_movable_macros, -1);
@@ -1763,11 +1763,11 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
     interconn_class.front() = -1;
     macro_class.front() = 0;
   } else {
-    classifyMacrosBySize(movable_hard_macros, size_class);
+    classifyMacrosByMaster(movable_hard_macros, master_class);
     classifyMacrosByConnSignature(movable_macro_clusters, signature_class);
     classifyMacrosByInterconn(movable_macro_clusters, interconn_class);
     groupSingleMacroClusters(movable_macro_clusters,
-                             size_class,
+                             master_class,
                              signature_class,
                              interconn_class,
                              macro_class);
@@ -1882,22 +1882,24 @@ void ClusteringEngine::createOneClusterForEachMacro(
   }
 }
 
-void ClusteringEngine::classifyMacrosBySize(
+void ClusteringEngine::classifyMacrosByMaster(
     const std::vector<HardMacro*>& hard_macros,
-    std::vector<int>& size_class)
+    std::vector<int>& master_class)
 {
   for (int i = 0; i < hard_macros.size(); i++) {
-    if (size_class[i] == -1) {
+    if (master_class[i] == -1) {
       for (int j = i + 1; j < hard_macros.size(); j++) {
-        if ((size_class[j] == -1) && ((*hard_macros[i]) == (*hard_macros[j]))) {
-          size_class[j] = i;
+        if (master_class[j] == -1
+            && hard_macros[i]->getInst()->getMaster()
+                   == hard_macros[j]->getInst()->getMaster()) {
+          master_class[j] = i;
         }
       }
     }
   }
 
   for (int i = 0; i < hard_macros.size(); i++) {
-    size_class[i] = (size_class[i] == -1) ? i : size_class[i];
+    master_class[i] = (master_class[i] == -1) ? i : master_class[i];
   }
 }
 
@@ -1959,13 +1961,13 @@ void ClusteringEngine::classifyMacrosByInterconn(
 }
 
 // We determine if the macros belong to the same class based on:
-// 1. Size && and Interconnection (Directly connected macro clusters
+// 1. Master && Interconnection (Directly connected macro clusters
 //    should be grouped)
-// 2. Size && Connection Signature (Macros with same connection
+// 2. Master && Connection Signature (Macros with same connection
 //    signature should be grouped)
 void ClusteringEngine::groupSingleMacroClusters(
     const std::vector<Cluster*>& macro_clusters,
-    const std::vector<int>& size_class,
+    const std::vector<int>& master_class,
     const std::vector<int>& signature_class,
     std::vector<int>& interconn_class,
     std::vector<int>& macro_class)
@@ -1981,7 +1983,7 @@ void ClusteringEngine::groupSingleMacroClusters(
         continue;
       }
 
-      if (size_class[i] == size_class[j]) {
+      if (master_class[i] == master_class[j]) {
         if (interconn_class[i] == interconn_class[j]) {
           debugPrint(logger_,
                      MPL,

@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-# Test Parity Note: All C++ tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(
@@ -165,6 +162,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestInsertBuffer",
+    srcs = ["TestInsertBuffer.cpp"],
+    data = ["insert_buffer_port_alias.v"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestJournal",
     srcs = ["TestJournal.cpp"],
     deps = [
@@ -257,8 +267,8 @@ cc_test(
         "TestDbNet.cpp",
         "TestDbWire.cc",
         "TestDesignIsRouted.cpp",
-        "TestOrderWires.cpp",
         "TestPolygonalFloorplan.cc",
+        "TestWireNormalizer.cpp",
     ],
     args = [],
     data = [
@@ -270,6 +280,7 @@ cc_test(
         "//src/odb/src/defin",
         "//src/odb/src/lefin",
         "//src/odb/src/lefout",
+        "//src/odb/src/wireNormalizer",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/tst:nangate45_fixture",
