@@ -47,6 +47,12 @@ class PlaceResultTest : public tst::Fixture
     }
   }
 
+  // A placer that has not seen the design, as a separate command would be.
+  Replace freshPlacer()
+  {
+    return Replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+  }
+
   odb::dbBlock* block_ = nullptr;
   Replace replace_{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
 };
@@ -56,7 +62,7 @@ TEST_F(PlaceResultTest, DoPlaceReportsTheFinalPlacement)
   PlaceOptions options;
   const PlaceResult result = replace_.doPlace(1, options);
 
-  EXPECT_FALSE(result.diverged);
+  EXPECT_EQ(result.stop, PlaceStop::kConverged);
   EXPECT_GT(result.final_iteration, 0);
   EXPECT_LT(result.final_iteration, options.nesterovPlaceMaxIter);
   EXPECT_LE(result.overflow, options.overflow);
@@ -64,7 +70,8 @@ TEST_F(PlaceResultTest, DoPlaceReportsTheFinalPlacement)
 }
 
 // The run converges at the iteration where overflow first drops below the
-// target, and that is the last one in the trace.
+// target, and that is the last one in the trace.  The density penalty ramps
+// up while cells spread.
 TEST_F(PlaceResultTest, TraceHoldsEveryIteration)
 {
   PlaceOptions options;
@@ -80,16 +87,61 @@ TEST_F(PlaceResultTest, TraceHoldsEveryIteration)
     EXPECT_GT(it.hpwl, 0) << "iteration " << it.iteration;
     EXPECT_GT(it.density_penalty, 0) << "iteration " << it.iteration;
   }
-}
-
-// The density penalty ramps up while cells spread.
-TEST_F(PlaceResultTest, DensityPenaltyGrows)
-{
-  const PlaceResult result = replace_.doPlace(1, PlaceOptions{});
-
-  ASSERT_FALSE(result.trace.empty());
   EXPECT_GT(result.trace.back().density_penalty,
             result.trace.front().density_penalty);
+}
+
+// A run that runs out of iterations stops at the limit, one past the last
+// iteration it ran, and reports the overflow it reached.
+TEST_F(PlaceResultTest, IterationLimitStopsOnePastTheTrace)
+{
+  PlaceOptions options;
+  options.nesterovPlaceMaxIter = 5;
+  const PlaceResult result = replace_.doPlace(1, options);
+
+  EXPECT_EQ(result.stop, PlaceStop::kIterationLimit);
+  EXPECT_EQ(result.final_iteration, 5);
+  expectConsecutive(result.trace, 0, 4);
+  EXPECT_GT(result.overflow, options.overflow);
+  EXPECT_EQ(result.overflow, result.trace.back().overflow);
+  EXPECT_EQ(result.hpwl, odb::WireLengthEvaluator(block_).hpwl());
+}
+
+TEST_F(PlaceResultTest, IncrementalWithEverythingPlacedGivesAnEmptyResult)
+{
+  replace_.doPlace(1, PlaceOptions{});
+
+  const PlaceResult result = freshPlacer().doIncrementalPlace(1);
+
+  EXPECT_EQ(result.stop, PlaceStop::kNotRun);
+  EXPECT_EQ(result.final_iteration, 0);
+  EXPECT_TRUE(result.trace.empty());
+}
+
+// Incremental placement places the unplaced cells, and its result describes
+// the final placement whether or not it needed its second phase.
+TEST_F(PlaceResultTest, IncrementalReportsTheFinalPlacement)
+{
+  PlaceOptions options;
+  replace_.doPlace(1, options);
+  int unplaced = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (unplaced < 20 && !inst->isFixed()) {
+      inst->setPlacementStatus(odb::dbPlacementStatus::NONE);
+      ++unplaced;
+    }
+  }
+  ASSERT_EQ(unplaced, 20);
+
+  const PlaceResult result = freshPlacer().doIncrementalPlace(1, options);
+
+  EXPECT_EQ(result.stop, PlaceStop::kConverged);
+  ASSERT_FALSE(result.trace.empty());
+  for (int i = 0; i + 1 < std::ssize(result.trace); ++i) {
+    EXPECT_LT(result.trace[i].iteration, result.trace[i + 1].iteration);
+  }
+  EXPECT_LE(result.overflow, options.overflow);
+  EXPECT_EQ(result.hpwl, odb::WireLengthEvaluator(block_).hpwl());
 }
 
 TEST_F(PlaceResultTest, NoPlaceableInstancesGivesAnEmptyResult)
@@ -99,6 +151,7 @@ TEST_F(PlaceResultTest, NoPlaceableInstancesGivesAnEmptyResult)
   }
   const PlaceResult result = replace_.doNesterovPlace(1);
 
+  EXPECT_EQ(result.stop, PlaceStop::kNotRun);
   EXPECT_EQ(result.final_iteration, 0);
   EXPECT_TRUE(result.trace.empty());
 }

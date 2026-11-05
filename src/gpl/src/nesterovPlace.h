@@ -78,10 +78,10 @@ class NesterovPlace
   // doNesterovPlace() call before it does any work.
   void clearDivergence();
   // When true, a divergence is reported as a warning and doNesterovPlace()
-  // returns normally (check PlaceResult::diverged) instead of logging an ERROR
-  // and throwing. Defaults to false, so a plain (non-incremental) placement
-  // run still fails loudly and immediately on divergence, as before. The
-  // caller is responsible for toggling this back off once the recoverable
+  // returns normally (check for PlaceStop::kDiverged) instead of logging an
+  // ERROR and throwing. Defaults to false, so a plain (non-incremental)
+  // placement run still fails loudly and immediately on divergence, as before.
+  // The caller is responsible for toggling this back off once the recoverable
   // window has passed (e.g. incremental placement's phase 2 has no further
   // fallback, so it should not set this).
   void setAllowDivergenceRecovery(bool allow)
@@ -131,6 +131,8 @@ class NesterovPlace
   };
   DivergeAction isDiverged(float& curA);
   void revertToDivergeSnapshot();
+  // Unscaled overflow of the current placement, averaged over the regions.
+  float getFinalOverflow() const;
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
@@ -192,13 +194,12 @@ class NesterovPlace
   // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
-  // Overflow of the placement in the NesterovBase snapshot buffer, which the
-  // routability and divergence snapshots share.
-  float snapshot_overflow_ = 0;
-  // Set when the placement was reverted to the snapshot after the last
-  // overflow update, so average_overflow_unscaled_ describes a placement
-  // that no longer exists and snapshot_overflow_ is the current one.
-  bool reverted_since_overflow_update_ = false;
+  // Set when average_overflow_unscaled_ does not describe the current
+  // placement: no update has run in this doNesterovPlace() call yet, or the
+  // placement was reverted to the snapshot since the last one.
+  bool overflow_update_is_stale_ = true;
+  // The iteration of the last overflow update, which sets its normalization.
+  int last_overflow_iter_ = 0;
 
   // The iterations of the current doNesterovPlace() call.
   std::vector<PlaceIteration> trace_;

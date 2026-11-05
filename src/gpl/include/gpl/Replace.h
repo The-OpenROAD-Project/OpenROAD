@@ -62,29 +62,51 @@ struct PlaceIteration
   float overflow = 0;
   // Total HPWL of the nets, in DBU.
   int64_t hpwl = 0;
-  // Density penalty of the first region: the top level, unless it has no
-  // placeable instances.
+  // Density penalty of the first region, usually the top level.  It stops
+  // changing once that region converges.
   float density_penalty = 0;
 };
 
-// The outcome of a global placement run.  A run that places nothing (no
-// placeable instances, or incremental placement with every instance already
-// placed) returns a default-constructed result.
+// How a placement run ended.
+enum class PlaceStop
+{
+  // Nothing was placed: no placeable instances, or incremental placement
+  // with every instance already placed.  The rest of the result is empty.
+  kNotRun,
+  // Overflow reached the target.
+  kConverged,
+  // The run used all its iterations.
+  kIterationLimit,
+  // The run diverged again after resuming from the min-HPWL snapshot, so it
+  // reverted to that snapshot once more and stopped (GPL-0997).
+  kRevertedAfterDivergence,
+  // The run diverged and did not recover (GPL-0305, GPL-0306 or GPL-0307).
+  // Placement reports this only where it allows divergence recovery, as in
+  // the first phase of incremental placement; elsewhere it is an error.
+  kDiverged,
+};
+
+// The outcome of a global placement run.
 struct PlaceResult
 {
+  PlaceStop stop = PlaceStop::kNotRun;
   // The iteration counter when the run stopped.  A run that converges at
   // iteration N stops at N, the last iteration in the trace.  A run that
   // runs out stops at the iteration limit, one past the trace, and one that
   // diverges in the gradient step stops before recording that iteration.
   int final_iteration = 0;
   // Unscaled overflow of the final placement, averaged over the regions.
+  // After a revert to a snapshot this is the overflow of the restored
+  // placement, not that of the last iteration in the trace.
   float overflow = 0;
   // HPWL of the final placement in DBU, the value of the
   // route__wirelength__estimated metric.
   int64_t hpwl = 0;
-  // True when the run stopped on a divergence it did not recover from.
-  bool diverged = false;
-  // Every Nesterov iteration, in order.
+  // Every Nesterov iteration, in order.  A revert to a snapshot does not
+  // rewind the iteration counter, so the iterations after it continue the
+  // numbering from the restored placement.  Incremental placement starts its
+  // second phase at the first phase's final_iteration + 1, which skips one
+  // number when the first phase stopped at its iteration limit.
   std::vector<PlaceIteration> trace;
 };
 
