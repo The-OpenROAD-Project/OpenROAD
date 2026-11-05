@@ -194,7 +194,7 @@ proc check_ip { args } {
     sta::check_positive_integer "-max_polygons" $max_polygons
   }
 
-  # Zero means check against the limit the Liberty library declares.
+  # Zero means derive the limit from the loaded Liberty libraries.
   set max_transition 0.0
   if { [info exists keys(-max_transition)] } {
     set max_transition [sta::time_ui_sta $keys(-max_transition)]

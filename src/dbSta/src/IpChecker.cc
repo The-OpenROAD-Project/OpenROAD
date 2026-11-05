@@ -1041,15 +1041,19 @@ void IpChecker::checkLibertyCellValues(odb::dbMaster* master,
     if (cap > max_cap) {
       logger_->warn(utl::CHK,
                     150,
-                    "Pin {}/{} capacitance {} {} in library {} is above the "
-                    "characterized load limit of {} {}",
+                    "Pin {}/{} capacitance {} {} in library {} is above {} {}, "
+                    "{}",
                     master_name,
                     mterm->getName(),
                     cap_unit->asString(cap),
                     cap_unit->scaleAbbrevSuffix(),
                     library->name(),
                     cap_unit->asString(max_cap),
-                    cap_unit->scaleAbbrevSuffix());
+                    cap_unit->scaleAbbrevSuffix(),
+                    max_capacitance_ > 0.0
+                        ? "the -max_capacitance limit"
+                        : "the largest load characterized in any loaded "
+                          "library; use -max_capacitance to set the limit");
       warning_count_++;
     }
   }
