@@ -140,11 +140,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   int adjust_v_th_;  // the threshold for adjust hard macro clusters
                      // vertically
 
-  float boundary_weight_ = 0.0;
-  float soft_blockage_weight_ = 0.0;
-  float notch_weight_ = 0.0;
-  const float fixed_macros_weight_ = 100.0;
-
   // action prob
   float resize_prob_ = 0.0;
 

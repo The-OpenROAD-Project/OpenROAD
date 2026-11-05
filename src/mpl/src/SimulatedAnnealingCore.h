@@ -165,8 +165,6 @@ class SimulatedAnnealingCore
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
-  SACoreWeights core_weights_;
-
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
   float init_temperature_ = 1.0;
