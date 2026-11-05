@@ -148,7 +148,7 @@ class SimulatedAnnealingCore
   static float calAverage(std::vector<float>& value_list);
 
   // For debugging
-  void reportCoreWeights() const;
+  void reportWeights() const;
   void reportTotalCost() const;
   void reportLocations() const;
   void report(const Penalty& penalty) const;
