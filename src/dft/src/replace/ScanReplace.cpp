@@ -38,42 +38,6 @@ namespace {
 using StatePortMap
     = std::unordered_map<const sta::LibertyPort*, const sta::LibertyPort*>;
 
-// State variable names (e.g. IQ and IQ_N in ff(IQ, IQ_N)) are local to each
-// cell, so they are bound by position: the first variable of the i-th ff or
-// latch group to the first variable of the i-th group of the other cell, and
-// likewise for the second (inverted) variable. Returns false when the cells'
-// sequential structure differs so no such binding exists.
-bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
-                    const sta::LibertyCell* scan_cell,
-                    StatePortMap& state_ports)
-{
-  const sta::SequentialSeq& non_scan_seqs = non_scan_cell->sequentials();
-  const sta::SequentialSeq& scan_seqs = scan_cell->sequentials();
-  if (non_scan_seqs.size() != scan_seqs.size()) {
-    return false;
-  }
-  const auto bind = [&state_ports](const sta::LibertyPort* from,
-                                   const sta::LibertyPort* to) {
-    if ((from == nullptr) != (to == nullptr)) {
-      return false;
-    }
-    if (from) {
-      state_ports[from] = to;
-    }
-    return true;
-  };
-  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
-    const sta::Sequential& non_scan_seq = non_scan_seqs[i];
-    const sta::Sequential& scan_seq = scan_seqs[i];
-    if (non_scan_seq.isRegister() != scan_seq.isRegister()
-        || !bind(non_scan_seq.output(), scan_seq.output())
-        || !bind(non_scan_seq.outputInv(), scan_seq.outputInv())) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // Returns true if scan_port is a scan cell state variable bound in
 // state_ports.
 bool IsBoundScanStatePort(const sta::LibertyPort* scan_port,
@@ -113,6 +77,56 @@ bool FuncEquiv(const sta::FuncExpr* non_scan_expr,
              && FuncEquiv(
                  non_scan_expr->right(), scan_expr->right(), state_ports);
   }
+}
+
+// State variable names (e.g. IQ and IQ_N in ff(IQ, IQ_N)) are local to each
+// cell, so they are bound by position: the first variable of the i-th ff or
+// latch group to the first variable of the i-th group of the other cell, and
+// likewise for the second (inverted) variable. Bound groups must also share
+// their clock (clocked_on / enable), clear and preset functions and the
+// clear-and-preset output values; only next_state may differ, as the scan mux
+// is part of it. Returns false when no such binding exists.
+bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
+                    const sta::LibertyCell* scan_cell,
+                    StatePortMap& state_ports)
+{
+  const sta::SequentialSeq& non_scan_seqs = non_scan_cell->sequentials();
+  const sta::SequentialSeq& scan_seqs = scan_cell->sequentials();
+  if (non_scan_seqs.size() != scan_seqs.size()) {
+    return false;
+  }
+  const auto bind = [&state_ports](const sta::LibertyPort* from,
+                                   const sta::LibertyPort* to) {
+    if ((from == nullptr) != (to == nullptr)) {
+      return false;
+    }
+    if (from) {
+      state_ports[from] = to;
+    }
+    return true;
+  };
+  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
+    const sta::Sequential& non_scan_seq = non_scan_seqs[i];
+    const sta::Sequential& scan_seq = scan_seqs[i];
+    if (non_scan_seq.isRegister() != scan_seq.isRegister()
+        || !bind(non_scan_seq.output(), scan_seq.output())
+        || !bind(non_scan_seq.outputInv(), scan_seq.outputInv())) {
+      return false;
+    }
+  }
+  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
+    const sta::Sequential& non_scan_seq = non_scan_seqs[i];
+    const sta::Sequential& scan_seq = scan_seqs[i];
+    if (!FuncEquiv(non_scan_seq.clock(), scan_seq.clock(), state_ports)
+        || !FuncEquiv(non_scan_seq.clear(), scan_seq.clear(), state_ports)
+        || !FuncEquiv(non_scan_seq.preset(), scan_seq.preset(), state_ports)
+        || non_scan_seq.clearPresetOutput() != scan_seq.clearPresetOutput()
+        || non_scan_seq.clearPresetOutputInv()
+               != scan_seq.clearPresetOutputInv()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Checks the ports
