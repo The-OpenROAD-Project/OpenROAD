@@ -615,7 +615,7 @@ void SimulatedAnnealingCore<T>::report(const Penalty& penalty) const
 }
 
 template <class T>
-void SimulatedAnnealingCore<T>::reportCoreWeights() const
+void SimulatedAnnealingCore<T>::reportWeights() const
 {
   logger_->report(
       "\n  Penalty Type  |  Weight  |  Value  |  Norm. Factor  |  Cost");

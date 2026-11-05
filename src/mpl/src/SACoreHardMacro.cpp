@@ -172,7 +172,7 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 
 void SACoreHardMacro::printResults() const
 {
-  reportCoreWeights();
+  reportWeights();
   reportTotalCost();
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
     reportLocations();
