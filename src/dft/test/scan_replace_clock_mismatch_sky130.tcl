@@ -6,7 +6,7 @@ read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 read_liberty scan_replace_clock_mismatch_sky130.lib
 
-read_def scan_replace_clock_mismatch_sky130.def
+read_def one_cell_reset_sky130.def
 
 create_clock -name main_clock -period 2.0000 -waveform {0.0000 1.0000} [get_ports {clock}]
 

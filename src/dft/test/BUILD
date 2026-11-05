@@ -58,8 +58,14 @@ filegroup(
             "scan_replace_activity_sky130": [
                 "one_cell_sky130.def",
             ],
+            "scan_replace_clock_mismatch_sky130": [
+                "one_cell_reset_sky130.def",
+            ],
             "scan_replace_dont_use_sky130": [
                 "one_cell_sky130.def",
+            ],
+            "scan_replace_state_binding_sky130": [
+                "one_cell_reset_sky130.def",
             ],
             "scandef_core_sky130": [
                 "register_bank_cores.lef",

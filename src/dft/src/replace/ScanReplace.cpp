@@ -163,15 +163,14 @@ bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
   return true;
 }
 
-// Checks the ports
+// Finds the scan cell port equivalent to a non-scan cell signal port. Bound
+// state variables are not signal ports: BindStatePorts has already matched
+// them, so they are skipped on both sides.
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
     const sta::LibertyCell* scan_cell,
     const StatePortMap& state_ports)
 {
-  if (auto it = state_ports.find(non_scan_cell_port); it != state_ports.end()) {
-    return scan_cell->findLibertyPort(it->second->name());
-  }
   sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
@@ -240,7 +239,10 @@ bool IsScanEquivalent(
   sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
   while (non_scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
-    if (non_scan_cell_port->isPwrGnd()) {
+    // Bound state variables were matched by BindStatePorts and have no pins
+    // to reconnect, so they stay out of port_mapping.
+    if (non_scan_cell_port->isPwrGnd()
+        || state_ports.contains(non_scan_cell_port)) {
       continue;
     }
     sta::LibertyPort* scan_equiv_port = FindEquivalentPortInScanCell(
@@ -276,7 +278,8 @@ bool IsScanEquivalent(
   sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
-    if (scan_cell_port->isPwrGnd()) {
+    if (scan_cell_port->isPwrGnd()
+        || IsBoundScanStatePort(scan_cell_port, state_ports)) {
       continue;
     }
     if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
