@@ -37,6 +37,182 @@ class OpendpTest : public tst::Fixture
   odb::dbBlock* block_;
 };
 
+namespace {
+
+class FixedMacroFootprintTest
+    : public tst::Nangate45Fixture,
+      public ::testing::WithParamInterface<odb::dbOrientType>
+{
+ protected:
+  void SetUp() override
+  {
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    site_width_ = site_->getWidth();
+    row_height_ = site_->getHeight();
+    core_x_ = 10 * site_width_;
+    core_y_ = row_height_;
+    block_->setDieArea(odb::Rect(0, 0, 120 * site_width_, 12 * row_height_));
+    for (int row = 0; row < 10; ++row) {
+      const std::string name = "ROW_" + std::to_string(row);
+      odb::dbRow::create(
+          block_,
+          name.c_str(),
+          site_,
+          core_x_,
+          core_y_ + row * row_height_,
+          row % 2 == 0 ? odb::dbOrientType::R0 : odb::dbOrientType::MX,
+          odb::dbRowDir::HORIZONTAL,
+          100,
+          site_width_);
+    }
+    block_->setCoreArea(block_->computeCoreArea());
+
+    auto* master = odb::dbMaster::create(lib_, "macro");
+    master->setType(odb::dbMasterType::BLOCK);
+    master->setWidth(20 * site_width_);
+    master->setHeight(2 * row_height_);
+    master->setFrozen();
+    macro_ = odb::dbInst::create(block_, master, "macro");
+    macro_->setOrient(GetParam());
+    macro_->setLocation(core_x_ + 10 * site_width_, core_y_ + 2 * row_height_);
+    macro_->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
+
+  odb::dbInst* makeCell(const odb::Point& location)
+  {
+    auto* cell = makeInst(
+        block_,
+        lib_->findMaster("INV_X1"),
+        "cell",
+        {.location = location, .status = odb::dbPlacementStatus::PLACED});
+    cell->setOrient(odb::dbOrientType::R0);
+    return cell;
+  }
+
+  void legalize()
+  {
+    const odb::Point macro_location = macro_->getLocation();
+    ASSERT_NO_THROW(dp_.detailedPlacement(0, 0));
+    ASSERT_NO_THROW(dp_.checkPlacement(false));
+    EXPECT_EQ(macro_->getLocation(), macro_location);
+    EXPECT_EQ(macro_->getOrient(), GetParam());
+  }
+
+  odb::dbSite* site_ = nullptr;
+  odb::dbInst* macro_ = nullptr;
+  int site_width_ = 0;
+  int row_height_ = 0;
+  int core_x_ = 0;
+  int core_y_ = 0;
+  Opendp dp_{db_.get(), &logger_};
+};
+
+TEST_P(FixedMacroFootprintTest, LegalCellBesideMacroStaysInPlace)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  const int first_site
+      = (bbox.xMax() - core_x_ + site_width_ - 1) / site_width_;
+  auto* cell = makeCell(
+      {core_x_ + first_site * site_width_, core_y_ + 2 * row_height_});
+  const odb::Point initial_location = cell->getLocation();
+  ASSERT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_EQ(cell->getLocation(), initial_location);
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, CellAboveUnrotatedFootprintIsLegalized)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  auto* cell = makeCell({bbox.xMin() + site_width_, core_y_ + 4 * row_height_});
+
+  legalize();
+
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, CellAtRightEdgeDoesNotOverlapMacro)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  const int last_site = (bbox.xMax() - core_x_ - 1) / site_width_;
+  auto* cell = makeCell(
+      {core_x_ + last_site * site_width_, core_y_ + 2 * row_height_});
+  ASSERT_TRUE(bbox.overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, MacroCrossingCoreEdgeKeepsItsBlockageInPlace)
+{
+  block_->setDieArea(odb::Rect(0, 0, 140 * site_width_, 12 * row_height_));
+  macro_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  macro_->setLocation(core_x_ + 95 * site_width_, core_y_ + 2 * row_height_);
+  macro_->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  auto* cell
+      = makeCell({core_x_ + 90 * site_width_, core_y_ + 2 * row_height_});
+  const odb::Point initial_location = cell->getLocation();
+  ASSERT_FALSE(macro_->getBBox()->getBox().overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_EQ(cell->getLocation(), initial_location);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Orientations,
+    FixedMacroFootprintTest,
+    ::testing::Values(odb::dbOrientType::R0,
+                      odb::dbOrientType::R90,
+                      odb::dbOrientType::R180,
+                      odb::dbOrientType::R270,
+                      odb::dbOrientType::MX,
+                      odb::dbOrientType::MY,
+                      odb::dbOrientType::MXR90,
+                      odb::dbOrientType::MYR90),
+    [](const ::testing::TestParamInfo<odb::dbOrientType>& info) {
+      return info.param.getString();
+    });
+
+class GcdPlacementTest : public tst::Fixture
+{
+};
+
+TEST_F(GcdPlacementTest, RotatedMacroKeepsPlacementLegal)
+{
+  auto* lib
+      = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
+  auto* block = readDef("_main/src/dpl/test/gcd_replace.def", {lib});
+  block->setCoreArea(block->computeCoreArea());
+  const odb::Rect core = block->getCoreArea();
+  auto* site = lib->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+  ASSERT_NE(site, nullptr);
+
+  auto* master = odb::dbMaster::create(lib, "macro");
+  master->setType(odb::dbMasterType::BLOCK);
+  master->setWidth(20 * site->getWidth());
+  master->setHeight(2 * site->getHeight());
+  master->setFrozen();
+  auto* macro = odb::dbInst::create(block, master, "macro");
+  macro->setOrient(odb::dbOrientType::R90);
+  const odb::Point location(core.xMin() + 200 * site->getWidth(),
+                            core.yMin() + 20 * site->getHeight());
+  macro->setLocation(location.x(), location.y());
+  macro->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  Opendp dp(db_.get(), &logger_);
+  ASSERT_NO_THROW(dp.detailedPlacement(0, 0));
+  EXPECT_NO_THROW(dp.checkPlacement(false));
+  EXPECT_EQ(macro->getLocation(), location);
+  EXPECT_EQ(macro->getOrient(), odb::dbOrientType::R90);
+}
+
+}  // namespace
+
 // Four Nangate45 rows of 32 sites starting at (kCoreX, kCoreY), plus the
 // BLOCK1 macro from extra.lef.  Row 2 is fragmented around a hole spanning
 // sites [kHoleStart, kHoleEnd), as rows are cut around macros.  Coordinates
