@@ -87,7 +87,8 @@ void LatencyBalancer::initSta()
   for (auto mode : openSta_->modes()) {
     openSta_->ensureClkNetwork(mode);
   }
-  openSta_->updateTiming(false);
+  // Only clock arrivals at the sinks are read; data arrivals are not.
+  openSta_->ensureClkArrivals();
   timingGraph_ = openSta_->graph();
 }
 
