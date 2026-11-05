@@ -254,7 +254,7 @@ void Graphics::addChartPoint()
       = outline_it != penalties_.end() ? outline_it->second.value : 0;
   const float wirelength
       = wirelength_it != penalties_.end() ? wirelength_it->second.value : 0;
-      
+
   chart_->addPoint(iter_, {area, outline, wirelength});
 }
 

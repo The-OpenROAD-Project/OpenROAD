@@ -204,11 +204,11 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 template <class T>
 void SimulatedAnnealingCore<T>::calAreaPenalty()
 {
-  Penalty& penalty = penalties_[kArea];
-  penalty.value = block_->dbuAreaToMicrons(getArea())
-                  / block_->dbuAreaToMicrons(outline_.area());
+  Penalty& area_penalty = penalties_[kArea];
+  area_penalty.value = block_->dbuAreaToMicrons(getArea())
+                       / block_->dbuAreaToMicrons(outline_.area());
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(area_penalty);
   }
 }
 
@@ -217,13 +217,13 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
 {
   const int max_width = std::max(outline_.dx(), width_);
   const int max_height = std::max(outline_.dy(), height_);
-  Penalty& penalty = penalties_[kOutline];
-  penalty.value
+  Penalty& outline_penalty = penalties_[kOutline];
+  outline_penalty.value
       = (max_width * static_cast<int64_t>(max_height)) - outline_.area();
   // normalization
-  penalty.value = penalty.value / outline_.area();
+  outline_penalty.value = outline_penalty.value / outline_.area();
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(outline_penalty);
   }
 }
 
@@ -234,11 +234,11 @@ void SimulatedAnnealingCore<T>::calWirelength()
     return;
   }
 
-  Penalty& penalty = penalties_[kWirelength];
-  penalty.value = computeNetsWireLength(nets_);
+  Penalty& wirelength_penalty = penalties_[kWirelength];
+  wirelength_penalty.value = computeNetsWireLength(nets_);
 
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(wirelength_penalty);
   }
 }
 
@@ -326,8 +326,8 @@ template <class T>
 void SimulatedAnnealingCore<T>::calFencePenalty()
 {
   // Initialization
-  Penalty& penalty = penalties_[kFence];
-  penalty.value = 0.0;
+  Penalty& fence_penalty = penalties_[kFence];
+  fence_penalty.value = 0.0;
   if (penalties_[kFence].weight <= 0.0 || fences_.empty()) {
     return;
   }
@@ -356,13 +356,13 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
     const int height = y_dist <= max_y_dist ? 0 : (y_dist - max_y_dist);
     const float width_ratio = width / static_cast<float>(outline_.dx());
     const float height_ratio = height / static_cast<float>(outline_.dy());
-    penalty.value
+    fence_penalty.value
         += (width_ratio * width_ratio) + (height_ratio * height_ratio);
   }
   // normalization
-  penalty.value = penalty.value / fences_.size();
+  fence_penalty.value = fence_penalty.value / fences_.size();
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(fence_penalty);
   }
 }
 
@@ -370,8 +370,8 @@ template <class T>
 void SimulatedAnnealingCore<T>::calGuidancePenalty()
 {
   // Initialization
-  Penalty& penalty = penalties_[kGuidance];
-  penalty.value = 0.0;
+  Penalty& guidance_penalty = penalties_[kGuidance];
+  guidance_penalty.value = 0.0;
   if (penalties_[kGuidance].weight <= 0.0 || guides_.empty()) {
     return;
   }
@@ -390,13 +390,13 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
       overlap_penalty -= (overlap.area());
     }
 
-    penalty.value += block_->dbuAreaToMicrons(overlap_penalty);
+    guidance_penalty.value += block_->dbuAreaToMicrons(overlap_penalty);
   }
 
-  penalty.value = penalty.value / guides_.size();
+  guidance_penalty.value = guidance_penalty.value / guides_.size();
 
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(guidance_penalty);
   }
 }
 
