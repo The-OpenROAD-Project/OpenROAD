@@ -1099,6 +1099,10 @@ class NesterovBase
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // HPWL that the last updateNextIter() measured.  A converged region skips
+  // the update, so its value is from an earlier iteration.
+  int64_t getIterHpwl() const { return prev_hpwl_; }
+  bool isConverged() const { return isConverged_; }
   // Sets densityPenalty_ from the wirelength/density gradient ratio times
   // factor
   void updateDensityPenaltyFromRatio(float factor);

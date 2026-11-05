@@ -1592,8 +1592,16 @@ void NesterovPlace::updateNextIter(int iter)
 
   // The penalty before this update is the one the iteration table reports.
   const float density_penalty = nbVec_[0]->getDensityPenalty();
+  // Each region measures HPWL in its update.  Converged regions skip the
+  // update and move nothing, so the last region that does update measures
+  // the HPWL of the whole placement after this iteration.
+  std::optional<int64_t> updated_hpwl;
   for (auto& nb : nbVec_) {
+    const bool updates = !nb->isConverged();
     nb->updateNextIter(iter);
+    if (updates) {
+      updated_hpwl = nb->getIterHpwl();
+    }
     total_sum_overflow_ += nb->getSumOverflow();
     total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
@@ -1606,7 +1614,7 @@ void NesterovPlace::updateNextIter(int iter)
 
   reverted_since_overflow_update_ = false;
 
-  const int64_t hpwl = nbc_->getHpwl();
+  const int64_t hpwl = updated_hpwl ? *updated_hpwl : nbc_->getHpwl();
   trace_.push_back({.iteration = iter,
                     .overflow = average_overflow_unscaled_,
                     .hpwl = hpwl,
