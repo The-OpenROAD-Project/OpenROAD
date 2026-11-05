@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -218,6 +220,56 @@ TEST_F(TestScanChain, CreateScanChainWithPartition)
       ++i;
     }
   }
+}
+
+TEST_F(TestScanChain, ResetDestroysScanInsts)
+{
+  SetUpTmpPath("ResetDestroysScanInsts");
+
+  auto build_chain = [this]() {
+    dbScanChain* scan_chain = dbScanChain::create(dft_);
+    dbScanPartition* partition = dbScanPartition::create(scan_chain);
+    partition->setName(kPartition1);
+    dbScanList* scan_list = dbScanList::create(partition);
+    std::vector<uint32_t> ids;
+    for (dbInst* inst : instances_) {
+      dbScanInst* scan_inst = scan_list->add(inst);
+      scan_inst->setBits(1);
+      scan_inst->setAccessPins(
+          {.scan_in = inst->findITerm("a"), .scan_out = inst->findITerm("o")});
+      ids.push_back(scan_inst->getId());
+    }
+    return ids;
+  };
+
+  const std::vector<uint32_t> first_ids = build_chain();
+  dft_->setScanInserted(true);
+
+  dft_->reset();
+  EXPECT_EQ(dft_->getScanChains().size(), 0);
+  EXPECT_FALSE(dft_->isScanInserted());
+  for (dbInst* inst : instances_) {
+    EXPECT_EQ(inst->getScanInst(), nullptr);
+  }
+
+  // The block owns the scan insts. If reset() destroyed them, a new chain
+  // reuses their table slots instead of allocating new ones.
+  const uint32_t max_first_id
+      = *std::max_element(first_ids.begin(), first_ids.end());
+  for (const uint32_t id : build_chain()) {
+    EXPECT_LE(id, max_first_id);
+  }
+
+  dbDatabase* db2 = writeReadDb();
+  dbSet<dbScanChain> scan_chains2
+      = db2->getChip()->getBlock()->getDft()->getScanChains();
+  ASSERT_EQ(scan_chains2.size(), 1);
+  dbScanList* scan_list2 = *scan_chains2.begin()
+                                ->getScanPartitions()
+                                .begin()
+                                ->getScanLists()
+                                .begin();
+  EXPECT_EQ(scan_list2->getScanInsts().size(), instances_.size());
 }
 
 }  // namespace

@@ -347,10 +347,9 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
     sta::Delay upstream = 0.0;
     const sta::Path* prev_drvr_path = driver_path->prevPath();
     if (prev_drvr_path != nullptr) {
-      const sta::LibertyPort* prev_port
-          = network_->libertyPort(prev_drvr_path->pin(sta_));
-      if (prev_port != nullptr) {
-        upstream = prev_port->driveResistance()
+      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+      if (prev_drvr_pin != nullptr) {
+        upstream = resizer_->driveResistance(prev_drvr_pin)
                    * (from->capacitance() - driver_arc->from()->capacitance());
       }
     }
@@ -393,7 +392,7 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       continue;
     }
     const float delta
-        = prev_port->driveResistance()
+        = resizer_->driveResistance(prev_drvr_pin)
           * (from->capacitance() - driver_arc->from()->capacitance());
     if (delta <= 0.0) {
       continue;
@@ -561,7 +560,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  float r_drvr = driver->driveResistance();
+  float r_drvr = (driver == drvr_port_ && pin_ != nullptr)
+                     ? resizer_->driveResistance(pin_)
+                     : driver->driveResistance();
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
