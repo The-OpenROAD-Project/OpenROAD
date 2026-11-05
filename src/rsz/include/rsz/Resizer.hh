@@ -957,6 +957,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement,
                                   const sta::Mode* mode = nullptr);
+  // An input pin whose fanin max-cap check a cell swap skips: a register
+  // clock pin of an ideal clock, or a scan-enable/scan-in pin.
+  bool skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode);
   // The load a driver can still take under its max-cap limit: none once the
   // limit is violated, and no bound without a limit.
   float maxCapIncrease(const sta::Pin* drvr_pin);
@@ -974,7 +977,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   };
 
   // Capture fanin max-cap state once before screening equivalent cells.
-  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst);
+  // The pins that skipsFaninMaxCap() exempts get no budget.
+  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst,
+                                              const sta::Mode* mode = nullptr);
   // Test a replacement using captured headroom without new STA queries.
   bool replacementFitsInputCapBudgets(
       const std::vector<InputCapBudget>& budgets,

@@ -356,7 +356,12 @@ TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
       = sta_->network()->findLibertyCell("BUF_X1_L");
   ASSERT_NE(candidate_cell, nullptr);
 
-  VtSwapMtCandidate candidate(resizer, target, target_inst, candidate_cell);
+  VtSwapMtCandidate candidate(resizer,
+                              target,
+                              target_inst,
+                              candidate_cell,
+                              /*score_scale=*/1.0f,
+                              /*cost_divisor=*/1.0f);
 
   const Estimate estimate = candidate.estimate();
   ASSERT_TRUE(estimate.legal);

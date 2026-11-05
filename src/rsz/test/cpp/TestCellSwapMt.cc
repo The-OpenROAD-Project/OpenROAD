@@ -107,17 +107,71 @@ TEST_F(TestResizerMt, SizeUpMtCandidateAppliesScoreScale)
       = DelayEstimator::estimate(estimator_context.value(), replacement_cell);
   ASSERT_TRUE(raw_estimate.legal);
 
-  SizeUpMtCandidate default_scale_candidate(
-      resizer, target, target_inst, replacement_cell, 1.0f);
+  SizeUpMtCandidate default_scale_candidate(resizer,
+                                            target,
+                                            target_inst,
+                                            replacement_cell,
+                                            1.0f,
+                                            /*cost_divisor=*/1.0f);
   const Estimate default_scale = default_scale_candidate.estimate();
   EXPECT_EQ(default_scale.legal, raw_estimate.legal);
   EXPECT_FLOAT_EQ(default_scale.score, raw_estimate.arrival_impr);
 
-  SizeUpMtCandidate half_scale_candidate(
-      resizer, target, target_inst, replacement_cell, 0.5f);
+  SizeUpMtCandidate half_scale_candidate(resizer,
+                                         target,
+                                         target_inst,
+                                         replacement_cell,
+                                         0.5f,
+                                         /*cost_divisor=*/1.0f);
   const Estimate half_scale = half_scale_candidate.estimate();
   EXPECT_EQ(half_scale.legal, raw_estimate.legal);
   EXPECT_FLOAT_EQ(half_scale.score, raw_estimate.arrival_impr * 0.5f);
+
+  // The score is the gain per unit of relative cell cost.  raw_gain stays the
+  // estimated gain.
+  SizeUpMtCandidate costly_candidate(resizer,
+                                     target,
+                                     target_inst,
+                                     replacement_cell,
+                                     1.0f,
+                                     /*cost_divisor=*/2.0f);
+  const Estimate costly = costly_candidate.estimate();
+  EXPECT_FLOAT_EQ(costly.score, raw_estimate.arrival_impr / 2.0f);
+  ASSERT_TRUE(costly.raw_gain.has_value());
+  EXPECT_FLOAT_EQ(*costly.raw_gain, raw_estimate.arrival_impr);
+
+  // VtSwapMt applies its weight and its relative cell cost the same way.
+  VtSwapMtCandidate vt_candidate(resizer,
+                                 target,
+                                 target_inst,
+                                 replacement_cell,
+                                 1.25f,
+                                 /*cost_divisor=*/2.0f);
+  const Estimate vt = vt_candidate.estimate();
+  EXPECT_FLOAT_EQ(vt.score, raw_estimate.arrival_impr * 1.25f / 2.0f);
+  ASSERT_TRUE(vt.raw_gain.has_value());
+  EXPECT_FLOAT_EQ(*vt.raw_gain, raw_estimate.arrival_impr);
+}
+
+TEST_F(TestResizerMt, RelativeCellCostsKeepTheCheapestOptionWhole)
+{
+  // The cheapest option above the current cost is the reference; an option at
+  // most as costly as the current cell keeps its full score.
+  const std::vector<float> divisors
+      = relativeCellCosts({1.25f, 2.5f, 0.8f, 1.0f, 10.0f});
+  ASSERT_EQ(divisors.size(), 5);
+  EXPECT_FLOAT_EQ(divisors[0], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[1], 2.0f);
+  EXPECT_FLOAT_EQ(divisors[2], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[3], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[4], 8.0f);
+  EXPECT_TRUE(relativeCellCosts({}).empty());
+
+  // Without a costlier option, as for a VT swap compared by LEF area, every
+  // option keeps its full score; no divisor ever drops below 1.
+  for (const float divisor : relativeCellCosts({0.5f, 1.0f, 0.9f})) {
+    EXPECT_FLOAT_EQ(divisor, 1.0f);
+  }
 }
 
 TEST_F(TestResizerMt, DualRfDriveGuardRequiresBothTransitions)

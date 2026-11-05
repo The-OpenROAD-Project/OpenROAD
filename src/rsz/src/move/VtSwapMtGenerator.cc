@@ -3,7 +3,9 @@
 
 #include "VtSwapMtGenerator.hh"
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -24,6 +26,36 @@ VtSwapMtGenerator::VtSwapMtGenerator(const GeneratorContext& context)
 {
 }
 
+void VtSwapMtGenerator::prepareInputs(Target& target) const
+{
+  prepareInputCapBudgets(target);
+
+  // Find the cell costs here, so generate() on a worker only reads the cache.
+  sta::LibertyCell* current_cell
+      = resizer_.network()->libertyCell(target.inst(resizer_));
+  if (!vt_swap_options_.contains(current_cell)) {
+    vt_swap_options_.emplace(current_cell, buildVtSwapOptions(current_cell));
+  }
+}
+
+VtSwapMtGenerator::VtSwapOptions VtSwapMtGenerator::buildVtSwapOptions(
+    sta::LibertyCell* current_cell) const
+{
+  VtSwapOptions options;
+  for (sta::LibertyCell* candidate_cell : selectCandidateCells(current_cell)) {
+    // As for SizeUpMt, a cell without a cost on a metric both cells have is
+    // not a candidate.
+    const std::optional<float> cost_ratio
+        = cellCostRatio(current_cell, candidate_cell);
+    if (!cost_ratio) {
+      continue;
+    }
+    options.cells.push_back(candidate_cell);
+    options.cost_ratios.push_back(*cost_ratio);
+  }
+  return options;
+}
+
 std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
@@ -34,13 +66,14 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
   // the workers start, key on the link cell.
   sta::LibertyCell* current_cell
       = resizer_.network()->libertyCell(target.inst(resizer_));
-  const std::vector<sta::LibertyCell*> candidate_cells
-      = selectCandidateCells(current_cell);
+  const VtSwapOptions& options = vt_swap_options_.at(current_cell);
 
   // Fanin max-cap headroom is instance-level, captured once per target.
   const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
-  candidates.reserve(candidate_cells.size());
-  for (sta::LibertyCell* candidate_cell : candidate_cells) {
+  std::vector<sta::LibertyCell*> fitting;
+  std::vector<float> cost_ratios;
+  for (size_t i = 0; i < options.cells.size(); ++i) {
+    sta::LibertyCell* candidate_cell = options.cells[i];
     if (policy_config_.dual_rf_drive_guard) {
       sta::LibertyCell* candidate_scene
           = candidate_cell->sceneCell(target_arc.scene, target_arc.min_max);
@@ -65,8 +98,22 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
       continue;
     }
 
+    fitting.push_back(candidate_cell);
+    cost_ratios.push_back(options.cost_ratios[i]);
+  }
+
+  // The cheapest faster VT keeps its full score; a jump over more VTs pays
+  // only its extra cost.
+  const std::vector<float> cost_divisors = relativeCellCosts(cost_ratios);
+  candidates.reserve(fitting.size());
+  for (size_t i = 0; i < fitting.size(); ++i) {
     candidates.push_back(std::make_unique<VtSwapMtCandidate>(
-        resizer_, target, target.inst(resizer_), candidate_cell));
+        resizer_,
+        target,
+        target.inst(resizer_),
+        fitting[i],
+        policy_config_.vt_swap_mt_score_scale,
+        cost_divisors[i]));
   }
   return candidates;
 }

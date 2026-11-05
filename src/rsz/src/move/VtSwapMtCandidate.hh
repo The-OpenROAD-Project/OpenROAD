@@ -33,7 +33,9 @@ class VtSwapMtCandidate : public MoveCandidate
   VtSwapMtCandidate(Resizer& resizer,
                     const Target& target,
                     sta::Instance* inst,
-                    sta::LibertyCell* candidate_cell);
+                    sta::LibertyCell* candidate_cell,
+                    float score_scale,
+                    float cost_divisor);
 
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
@@ -46,10 +48,18 @@ class VtSwapMtCandidate : public MoveCandidate
   MoveType type() const override { return MoveType::kVtSwap; }
 
  private:
+  // A positive score per unit of the candidate's relative cost.
+  float costScaled(float score) const;
+
   // === Candidate state ======================================================
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};
   sta::LibertyCell* candidate_cell_{nullptr};
+  // Weight of the score in the shared pool.
+  const float score_scale_;
+  // Relative cell cost of the candidate among the target's VTs, at least 1
+  // (relativeCellCosts()).
+  const float cost_divisor_;
 };
 
 }  // namespace rsz

@@ -362,8 +362,12 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopCountsARemoval)
   // the run goes on.
   ResizerTestPeer::openBatchJournal(policy);
   UnbufferMtCandidate unbuffer(resizer_, removal);
-  SizeUpMtCandidate size_up(
-      resizer_, upsize, upsize.inst(resizer_), larger, 1.0f);
+  SizeUpMtCandidate size_up(resizer_,
+                            upsize,
+                            upsize.inst(resizer_),
+                            larger,
+                            1.0f,
+                            /*cost_divisor=*/1.0f);
   ASSERT_TRUE(committer.commit(unbuffer).accepted);
   ASSERT_TRUE(committer.commit(size_up).accepted);
   EXPECT_FALSE(resizer_.overMaxArea());
@@ -537,10 +541,18 @@ TEST_F(TestResizerMtSequential,
       const DelayEstimate raw
           = DelayEstimator::estimate(*target.estimator_context, replacement);
       ASSERT_TRUE(raw.legal) << failReasonName(raw.reason);
-      SizeUpMtCandidate size(
-          resizer_, target, target.inst(resizer_), replacement, scale);
-      VtSwapMtCandidate vt(
-          resizer_, target, target.inst(resizer_), replacement);
+      SizeUpMtCandidate size(resizer_,
+                             target,
+                             target.inst(resizer_),
+                             replacement,
+                             scale,
+                             /*cost_divisor=*/1.0f);
+      VtSwapMtCandidate vt(resizer_,
+                           target,
+                           target.inst(resizer_),
+                           replacement,
+                           /*score_scale=*/1.0f,
+                           /*cost_divisor=*/1.0f);
       const Estimate estimate = size_up ? size.estimate() : vt.estimate();
       ASSERT_TRUE(estimate.legal) << estimate.reason;
       ASSERT_TRUE(estimate.raw_gain.has_value());

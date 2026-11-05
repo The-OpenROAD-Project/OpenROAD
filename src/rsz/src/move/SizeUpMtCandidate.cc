@@ -23,12 +23,14 @@ SizeUpMtCandidate::SizeUpMtCandidate(Resizer& resizer,
                                      const Target& target,
                                      sta::Instance* inst,
                                      sta::LibertyCell* replacement,
-                                     float score_scale)
+                                     float score_scale,
+                                     float cost_divisor)
     : MoveCandidate(resizer, target),
       inst_(inst),
       current_cell_(resizer.network()->libertyCell(inst)),
       replacement_(replacement),
-      score_scale_(score_scale)
+      score_scale_(score_scale),
+      cost_divisor_(cost_divisor)
 {
 }
 
@@ -46,7 +48,7 @@ Estimate SizeUpMtCandidate::estimate()
     // The opposite-transition reject carries the target gain in its score.
     return {
         .legal = false,
-        .score = estimate.score,
+        .score = costScaled(estimate.score),
         .raw_gain = delay_est.reason == FailReason::kEstimateNonImproving
                         ? std::optional<float>(delay_est.arrival_impr)
                         : std::nullopt,
@@ -56,7 +58,18 @@ Estimate SizeUpMtCandidate::estimate()
   }
 
   chargeCellSwapSideCosts(delay_est, replacement_, score_scale_, estimate);
+  // Rank the gain per unit of cost, as SizeUpGenerator::upsizeCell does, so a
+  // larger cell must buy its extra leakage or area with extra slack.
+  estimate.score = costScaled(estimate.score);
   return estimate;
+}
+
+float SizeUpMtCandidate::costScaled(const float score) const
+{
+  // Only a positive score pays the cost: dividing a negative score by a
+  // divisor of at least 1 would pull it toward zero and rank a costlier move
+  // higher.
+  return score > 0.0f ? score / cost_divisor_ : score;
 }
 
 MoveResult SizeUpMtCandidate::apply()

@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -148,6 +149,14 @@ class MoveGenerator
                        const sta::RiseFall* drvr_rf,
                        const sta::MinMax* min_max) const;
 
+  // === Shared cell-cost helper =============================================
+  // New/old cost of a swap from `from` to `to`: leakage, else LEF area, else
+  // Liberty area, the order SizeUpGenerator::upsizeCell uses, so units never
+  // mix.  nullopt when the two cells share no metric.  Main thread only:
+  // cellLeakage() fills a cache.
+  std::optional<float> cellCostRatio(sta::LibertyCell* from,
+                                     sta::LibertyCell* to) const;
+
   // === Shared fanin max-cap helper =========================================
   // The cell-swap generators' fanin max-cap headroom, captured by their
   // prepareInputs(): the STA capacitance check behind it is main-thread only.
@@ -155,8 +164,8 @@ class MoveGenerator
   void prepareInputCapBudgets(Target& target) const
   {
     if (!target.input_cap_budgets.has_value()) {
-      target.input_cap_budgets
-          = resizer_.inputCapBudgets(target.inst(resizer_));
+      target.input_cap_budgets = resizer_.inputCapBudgets(
+          target.inst(resizer_), target.mode(resizer_));
     }
   }
   const std::vector<Resizer::InputCapBudget>& inputCapBudgets(

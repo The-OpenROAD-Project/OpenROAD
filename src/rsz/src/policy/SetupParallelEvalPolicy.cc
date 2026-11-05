@@ -198,9 +198,9 @@ void SetupParallelEvalPolicy::selectMoveSequence()
 {
   // -sequence is the move set; without it the default runs.  The candidates
   // of a target compete on score, and the sequence order only breaks exact
-  // ties; SizeUpMt scores carry the 0.75 size_up_mt_score_scale.  The default
-  // goes through the same filter, so -skip_vt_swap and a single-VT library
-  // still remove VtSwapMt.
+  // ties; the move weights such as size_up_mt_score_scale scale the scores.
+  // The default goes through the same filter, so -skip_vt_swap and a
+  // single-VT library still remove VtSwapMt.
   std::vector<MoveType> requested_sequence = config_.sequence;
   if (requested_sequence.empty()) {
     requested_sequence = {MoveType::kUnbuffer,
