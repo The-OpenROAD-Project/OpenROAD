@@ -49,6 +49,8 @@ struct PinAccessCase
   const char* name;
   const char* pin_layer;
   int max_routing_layer;
+  bool as_bterm;
+  const char* ap_layer;
   bool planar;
   bool up;
   bool down;
@@ -106,21 +108,43 @@ class BumpPinAccessTest : public tst::DbFixture,
     return master;
   }
 
+  odb::dbBTerm* makeBumpBTerm(const char* pin_layer, odb::dbNet* net)
+  {
+    odb::dbBTerm* bump = odb::dbBTerm::create(net, "bump");
+    bump->setIoType(odb::dbIoType::INOUT);
+    odb::dbBPin* bpin = odb::dbBPin::create(bump);
+    odb::dbBox::create(bpin,
+                       tech_->findLayer(pin_layer),
+                       kBumpX,
+                       kBumpY,
+                       kBumpX + kBumpSize,
+                       kBumpY + kBumpSize);
+    bpin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+    return bump;
+  }
+
   std::vector<odb::dbAccessPoint*> bumpAccessPoints(const PinAccessCase& test)
   {
-    odb::dbMaster* master = makeBumpMaster(test.pin_layer);
-    odb::dbInst* bump
-        = makeInst(block_,
-                   master,
-                   "bump",
-                   {.location = odb::Point(50000, 30000),
-                    .status = odb::dbPlacementStatus::FIRM,
-                    .iterms = {{.net_name = "a", .term_name = "PAD"}}});
-    makeBTerm(block_,
-              "a",
-              {.bpins = {{.layer_name = "metal2",
-                          .rect = odb::Rect(9800, 39800, 10200, 40200),
-                          .status = odb::dbPlacementStatus::FIRM}}});
+    odb::dbBTerm* pin
+        = makeBTerm(block_,
+                    "a",
+                    {.bpins = {{.layer_name = "metal2",
+                                .rect = odb::Rect(9800, 39800, 10200, 40200),
+                                .status = odb::dbPlacementStatus::FIRM}}});
+    odb::dbMaster* master = nullptr;
+    odb::dbInst* bump_inst = nullptr;
+    odb::dbBTerm* bump_bterm = nullptr;
+    if (test.as_bterm) {
+      bump_bterm = makeBumpBTerm(test.pin_layer, pin->getNet());
+    } else {
+      master = makeBumpMaster(test.pin_layer);
+      bump_inst = makeInst(block_,
+                           master,
+                           "bump",
+                           {.location = odb::Point(kBumpX, kBumpY),
+                            .status = odb::dbPlacementStatus::FIRM,
+                            .iterms = {{.net_name = "a", .term_name = "PAD"}}});
+    }
     block_->setMinRoutingLayer(2);
     block_->setMaxRoutingLayer(test.max_routing_layer);
 
@@ -134,9 +158,17 @@ class BumpPinAccessTest : public tst::DbFixture,
     router.pinAccess();
 
     std::vector<odb::dbAccessPoint*> aps;
+    if (bump_bterm) {
+      for (odb::dbBPin* bpin : bump_bterm->getBPins()) {
+        const std::vector<odb::dbAccessPoint*> bpin_aps
+            = bpin->getAccessPoints();
+        aps.insert(aps.end(), bpin_aps.begin(), bpin_aps.end());
+      }
+      return aps;
+    }
     for (odb::dbMPin* mpin : master->findMTerm("PAD")->getMPins()) {
       const auto pin_access = mpin->getPinAccess();
-      const int idx = bump->getPinAccessIdx();
+      const int idx = bump_inst->getPinAccessIdx();
       if (idx < 0 || idx >= static_cast<int>(pin_access.size())) {
         continue;
       }
@@ -146,6 +178,8 @@ class BumpPinAccessTest : public tst::DbFixture,
   }
 
   static constexpr int kBumpSize = 10000;
+  static constexpr int kBumpX = 50000;
+  static constexpr int kBumpY = 30000;
 
   odb::dbTech* tech_ = nullptr;
   odb::dbLib* lib_ = nullptr;
@@ -168,29 +202,34 @@ TEST_P(BumpPinAccessTest, AccessFollowsLayerRoutability)
               || ap->hasAccess(odb::dbDirection::WEST);
     up |= ap->hasAccess(odb::dbDirection::UP);
     down |= ap->hasAccess(odb::dbDirection::DOWN);
+    EXPECT_EQ(ap->getLayer()->getName(), test.ap_layer);
   }
   EXPECT_EQ(planar, test.planar);
   EXPECT_EQ(up, test.up);
   EXPECT_EQ(down, test.down);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    LayerRoutability,
-    BumpPinAccessTest,
-    testing::Values(
-        PinAccessCase{"TopLayer", "metal10", 10, true, false, true},
-        PinAccessCase{"AboveTopRoutingLayer", "metal10", 9, false, false, true},
-        PinAccessCase{"FarAboveTopRoutingLayer",
-                      "metal10",
-                      8,
-                      false,
-                      false,
-                      true},
-        PinAccessCase{"MiddleLayer", "metal6", 10, true, true, true},
-        PinAccessCase{"BottomLayer", "metal2", 10, true, true, false}),
-    [](const testing::TestParamInfo<PinAccessCase>& info) {
-      return std::string(info.param.name);
-    });
+const PinAccessCase kCases[] = {
+    {"TopLayer", "metal10", 10, false, "metal10", true, false, true},
+    {"AboveTopRoutingLayer", "metal10", 9, true, "metal9", true, false, false},
+    {"FarAboveTopRoutingLayer",
+     "metal10",
+     8,
+     true,
+     "metal8",
+     true,
+     false,
+     false},
+    {"MiddleLayer", "metal6", 10, false, "metal6", true, true, true},
+    {"BottomLayer", "metal2", 10, false, "metal2", true, true, false},
+};
+
+INSTANTIATE_TEST_SUITE_P(LayerRoutability,
+                         BumpPinAccessTest,
+                         testing::ValuesIn(kCases),
+                         [](const testing::TestParamInfo<PinAccessCase>& info) {
+                           return std::string(info.param.name);
+                         });
 
 }  // namespace
 }  // namespace drt
