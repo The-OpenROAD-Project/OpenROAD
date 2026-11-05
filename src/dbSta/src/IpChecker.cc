@@ -881,17 +881,22 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
   }
 
   const std::string master_name = master->getName();
-  LibertyCell* liberty_cell = network->findLibertyCell(master_name);
-  if (liberty_cell == nullptr) {
-    // Already reported by checkLibertyPins.
-    return;
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{
+      network->libertyLibraryIterator()};
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* library = lib_iter->next();
+    LibertyCell* liberty_cell = library->findLibertyCell(master_name);
+    if (liberty_cell != nullptr) {
+      checkLibertyCellValues(master, library, liberty_cell);
+    }
   }
+}
 
-  LibertyLibrary* library = liberty_cell->libertyLibrary();
-  if (library == nullptr) {
-    return;
-  }
-
+void IpChecker::checkLibertyCellValues(odb::dbMaster* master,
+                                       LibertyLibrary* library,
+                                       LibertyCell* liberty_cell)
+{
+  const std::string master_name = master->getName();
   Units* units = library->units();
   Unit* time_unit = units->timeUnit();
   Unit* cap_unit = units->capacitanceUnit();
@@ -976,9 +981,10 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
       if (min_slew <= 0.0) {
         logger_->warn(utl::CHK,
                       140,
-                      "Cell {} arc {} has a transition of {} {}, an "
-                      "instantaneous switch",
+                      "Cell {} in library {} arc {} has a transition of {} "
+                      "{}, an instantaneous switch",
                       master_name,
+                      library->name(),
                       arc_name,
                       time_unit->asString(min_slew),
                       time_unit->scaleAbbrevSuffix());
@@ -990,9 +996,10 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
         const int digits = time_unit->digits() + 3;
         logger_->warn(utl::CHK,
                       141,
-                      "Cell {} arc {} has a transition of {} {} at its "
-                      "smallest load, {} {} above the limit of {} {}",
+                      "Cell {} in library {} arc {} has a transition of {} "
+                      "{} at its smallest load, {} {} above the limit of {} {}",
                       master_name,
+                      library->name(),
                       arc_name,
                       time_unit->asString(min_load_slew, digits),
                       time_unit->scaleAbbrevSuffix(),
@@ -1034,12 +1041,13 @@ void IpChecker::checkLibertyValues(odb::dbMaster* master)
     if (cap > max_cap) {
       logger_->warn(utl::CHK,
                     150,
-                    "Pin {}/{} capacitance {} {} is above the characterized "
-                    "load limit of {} {}",
+                    "Pin {}/{} capacitance {} {} in library {} is above the "
+                    "characterized load limit of {} {}",
                     master_name,
                     mterm->getName(),
                     cap_unit->asString(cap),
                     cap_unit->scaleAbbrevSuffix(),
+                    library->name(),
                     cap_unit->asString(max_cap),
                     cap_unit->scaleAbbrevSuffix());
       warning_count_++;

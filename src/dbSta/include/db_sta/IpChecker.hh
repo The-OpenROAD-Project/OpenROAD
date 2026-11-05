@@ -10,6 +10,8 @@
 
 namespace sta {
 class dbSta;
+class LibertyCell;
+class LibertyLibrary;
 }  // namespace sta
 
 namespace utl {
@@ -102,6 +104,9 @@ class IpChecker
 
   // LIB-CHK-014-015: Check Liberty transition tables and input capacitance
   void checkLibertyValues(odb::dbMaster* master);
+  void checkLibertyCellValues(odb::dbMaster* master,
+                              LibertyLibrary* library,
+                              LibertyCell* liberty_cell);
 
   // Largest output load any loaded Liberty library is characterized for.
   // Zero when no table declares a load axis.
