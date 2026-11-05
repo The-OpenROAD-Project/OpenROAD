@@ -138,7 +138,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "cmd_file_error",
     "commands_without_load",
@@ -168,10 +167,7 @@ PYTHON_TESTS = [
 # The local Bazel OpenROAD workflow for a quick smoketest
 # is to run, in the relevant folder:
 #
-# "bazel test -c opt ..."
-#
-# Now, or_integration_tests() in CMakeLists.txt do not list
-# BIG_TESTS below.
+# "bazelisk test -c opt ..."
 #
 # By marking the tests tags=["manual"],
 # the tests are available, but have to be invoked

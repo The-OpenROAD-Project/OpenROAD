@@ -18,8 +18,7 @@ GPU_ONLY = select({
 # on a GPU build the GPU FFT backend is not bit-identical to the CPU
 # Ooura FFT, so the ENABLE_GPU runtime gate (default on when compiled
 # in; see gpl::gpuEnabled) is pinned off. On the default CPU build the
-# branch is empty and the variable is never read. Mirrors the
-# ENVIRONMENT injection in src/gpl/test/CMakeLists.txt.
+# branch is empty and the variable is never read.
 GPU_ENV_OFF = select({
     "//:gpu_cuda": {"ENABLE_GPU": "0"},
     "//conditions:default": {},

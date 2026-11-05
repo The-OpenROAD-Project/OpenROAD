@@ -35,17 +35,14 @@ src/defout - DEF writer
 ## Database API
 
 We are still working on documenting the APIs.  We have over 1,800 objects
-and functions that we are still documenting (for both TCL and Python).
+and functions that we are still documenting (for Tcl and Python).
 **Contributions are very welcome in this effort**. Find starting points below.
 
 ## Python
 
-After building successfully, run `openroad -python` to enable the Python
-interpreter. You can find examples on using the API from Python under
-`test/python/` directory.
-
-To list the full set of the Python classes exposed run `openroad -python`
-then:
+The Python API ships as the `openroad` wheel; see
+[Python API](../../docs/user/Bazel.md#python-api-the-openroad-wheel). After
+installing it, list the exposed classes with:
 ```
 import openroad
 import odb
