@@ -120,4 +120,32 @@ TEST_F(SkewBudgetRestoreTest, AsymmetricPinLatencyPreserved)
   EXPECT_FLOAT_EQ(pinLatency(clk, ck, sta::MinMax::max()), max_before);
 }
 
+// compute_skew_budget's LP applies set_clock_latency to every register CK pin,
+// which strips a pin-level set_propagated_clock (the two are mutually exclusive
+// in STA). The annotation must be restored when the register is not shifted.
+TEST_F(SkewBudgetRestoreTest, PinPropagatedClockPreserved)
+{
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Pin* ck = db_network_->findPin("r3/CK");
+  ASSERT_NE(ck, nullptr);
+
+  // set_propagated_clock [get_pins r3/CK]. Check the SDC annotation directly
+  // (the source of truth the LP strips), not Sta::isPropagatedClock, which
+  // queries the clock network and needs the graph built first.
+  sta_->setPropagatedClock(ck, sta_->cmdMode());
+  ASSERT_TRUE(sdc->isPropagatedClock(ck));
+
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  ep_.estimateWireParasitics();
+
+  Resizer::SkewBudgetOptions opts;
+  opts.max_iterations = 1;
+  resizer_.computeSkewBudget(opts);
+
+  // The pin-level set_propagated_clock annotation must survive unchanged.
+  EXPECT_TRUE(sdc->isPropagatedClock(ck));
+}
+
 }  // namespace rsz
