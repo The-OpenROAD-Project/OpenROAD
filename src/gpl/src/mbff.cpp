@@ -513,6 +513,9 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
       }
       if (tray_iterm) {
+        // Keep the activity annotation of the flop pin on the tray pin.
+        sta_->copyUserActivity(iterm, tray_iterm);
+
         const std::string val = orig_inst_name + "/" + orig_port_name;
         odb::dbStringProperty* prop
             = odb::dbStringProperty::find(tray_iterm, kOrigNameProp);

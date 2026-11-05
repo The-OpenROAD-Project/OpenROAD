@@ -347,10 +347,9 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
     sta::Delay upstream = 0.0;
     const sta::Path* prev_drvr_path = driver_path->prevPath();
     if (prev_drvr_path != nullptr) {
-      const sta::LibertyPort* prev_port
-          = network_->libertyPort(prev_drvr_path->pin(sta_));
-      if (prev_port != nullptr) {
-        upstream = prev_port->driveResistance()
+      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+      if (prev_drvr_pin != nullptr) {
+        upstream = resizer_->driveResistance(prev_drvr_pin)
                    * (from->capacitance() - driver_arc->from()->capacitance());
       }
     }
@@ -393,7 +392,7 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       continue;
     }
     const float delta
-        = prev_port->driveResistance()
+        = resizer_->driveResistance(prev_drvr_pin)
           * (from->capacitance() - driver_arc->from()->capacitance());
     if (delta <= 0.0) {
       continue;
@@ -561,7 +560,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  float r_drvr = driver->driveResistance();
+  float r_drvr = (driver == drvr_port_ && pin_ != nullptr)
+                     ? resizer_->driveResistance(pin_)
+                     : driver->driveResistance();
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
@@ -3048,6 +3049,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
+        && resizer_->isPlacedNet(net_db)
         && !sta_->isClock(drvr_pin, sta_->cmdMode())
         && !sta_->isClockSrc(drvr_pin, sta_->cmdMode()->sdc())
         // Exclude tie hi/low cells and supply nets.
@@ -3155,7 +3157,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     {
       utl::DebugScopedTimer timer(bft_runtime);
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 3 && timing_tree; i++) {
         timing_tree = bufferForTiming(timing_tree);
         if (!timing_tree) {
           logger_->warn(

@@ -406,7 +406,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-delay_buffer_derate] \
                                              [-library] \
                                              [-repair_clock_nets] \
-                                             [-no_insertion_delay]
+                                             [-no_insertion_delay] \
+                                             [-useful_skew]
 }
 
 proc clock_tree_synthesis { args } {
@@ -422,7 +423,8 @@ proc clock_tree_synthesis { args } {
           -sink_buffer_max_cap_derate -delay_buffer_derate -library} \
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -no_obstruction_aware \
-           -dont_use_dummy_load -repair_clock_nets -no_insertion_delay
+           -dont_use_dummy_load -repair_clock_nets -no_insertion_delay \
+           -useful_skew
   }
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
@@ -580,6 +582,18 @@ proc clock_tree_synthesis { args } {
     cts::set_insertion_delay false
   } else {
     cts::set_insertion_delay true
+  }
+
+  if { [info exists flags(-useful_skew)] } {
+    if { [info exists flags(-no_insertion_delay)] } {
+      utl::warn CTS 230 "-useful_skew is ignored because -no_insertion_delay\
+        disables delay buffer insertion."
+      cts::set_useful_skew false
+    } else {
+      cts::set_useful_skew true
+    }
+  } else {
+    cts::set_useful_skew false
   }
 
   if { [ord::get_db_block] == "NULL" } {

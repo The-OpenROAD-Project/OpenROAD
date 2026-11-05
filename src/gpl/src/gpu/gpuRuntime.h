@@ -6,7 +6,7 @@
 // This header is intentionally Kokkos-free: it declares only two free
 // functions and is safe to include from plain-C++ translation units (e.g.
 // the HPWL and FFT backend factories). The Kokkos-dependent definitions live
-// in gpuRuntime.cpp, which is compiled only when ENABLE_GPU=ON.
+// in gpuRuntime.cpp, which is compiled only in the GPU build (--config=gpu).
 
 #pragma once
 

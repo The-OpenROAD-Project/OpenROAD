@@ -1188,9 +1188,9 @@ static void addSelectionTypeFlags(boost::json::object& root,
 
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
-// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
-// the plain net for input pins too: NetWithSink lives in a gui-private
-// header under CMake, so the driver->sink flight line is a follow-up.
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  It inserts
+// the plain net for input pins too.  Qt selects NetWithSink there for a
+// driver->sink flight line; see the TODO in the connected-nets handler.
 static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,
@@ -1266,9 +1266,8 @@ static void runDeselectAction(const web::Selected& old_sel,
     return;
   }
   try {
-    // getDescriptorActions(): Selected::getActions() lives in the full
-    // gui library (its "Zoom to" needs Gui::get()); the web only links
-    // gui_descriptors and blocklists "Zoom to" anyway.
+    // getDescriptorActions(): the web zooms on its own, so it skips the
+    // "Zoom to" entry that getActions() adds.
     for (const auto& action : old_sel.getDescriptorActions()) {
       if (action.name == web::Descriptor::kDeselectAction) {
         action.callback();
@@ -2173,9 +2172,10 @@ web::SelectionSet computeConnectedSet(const std::string& action,
         if (input
             && (dir == odb::dbIoType::INPUT || dir == odb::dbIoType::INOUT)) {
           // TODO: the Qt GUI selects DbNetDescriptor::NetWithSink{net, iterm}
-          // so the input flightline points at this specific sink pin.  That
-          // descriptor lives in a private gui header; until it is exposed the
-          // web selects the plain net (all sinks highlighted).
+          // so the input flightline points at this specific sink pin.  The
+          // web selects the plain net (all sinks highlighted) because
+          // appendHighlightShapes() and the has_guides check handle only
+          // dbNet* payloads; they need NetWithSink support first.
           result.insert(registry->makeSelected(net));
         }
       }
@@ -5427,6 +5427,17 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     for (const std::string& k : sel_keys) {
       key_obj.erase(k);
     }
+    // Only the tiles that filter by layer name read these; in every other key
+    // one layer toggle would miss the cache for all the rest.
+    if (!TileGenerator::readsLayerVisibility(layer, vis)) {
+      key_obj.erase("visible_layers");
+      key_obj.erase("chiplet_hidden_layers");
+    }
+    // A tile scoped to a die depends on that die being shown, not the others.
+    if (!vis.chiplet.empty()) {
+      key_obj.erase("visible_chiplets");
+      key_obj["chiplet_visible"] = vis.isChipletVisible(vis.chiplet);
+    }
     key_obj["dpr"] = dpr;
     // Pinned like dpr: two clients on different displays ask for different
     // pixel counts of the same tile, and they are different images.
@@ -5446,10 +5457,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  utl::WEB,
                  "tile",
                  1,
-                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
-                 "cache=hit bytes={}",
+                 "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} "
+                 "tile_px={} cache=hit bytes={}",
                  req.id,
                  layer,
+                 vis.chiplet,
                  z,
                  x,
                  y,
@@ -5490,10 +5502,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              utl::WEB,
              "tile",
              1,
-             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
-             "module_colors={} focus_nets={} detailed={} bytes={}",
+             "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} tile_px={} "
+             "cache={} module_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
+             vis.chiplet,
              z,
              x,
              y,
