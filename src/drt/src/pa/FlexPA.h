@@ -420,11 +420,9 @@ class FlexPA
    * @param layer_num layer in which the vias exist
    * @param inst_term optional param for when the caller wants to avoid certain
    * via_defs depending on the inst_term
-   * @param max_vias maximum number of via defs to return. Callers that need
-   * every via def on the layer can pass
-   * std::numeric_limits<int>::max(); callers splitting a combined budget
-   * across multiple calls (e.g. up vias and down vias) are responsible for
-   * subtracting what earlier calls already returned.
+   * @param max_vias maximum number of via defs to return per cut count
+   * (single and double cut). Callers that need every via def can pass
+   * std::numeric_limits<int>::max().
    *
    * @return a vector of the priority vias
    */
