@@ -79,13 +79,13 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     bool operator==(const NotchVicinity&) const = default;
   };
 
-  // Appended to penalty_terms_ after the base class's own terms.
-  enum PenaltyTermIndex : size_t
+  // Appended to penalties_ after the base class's own terms.
+  enum PenaltyKind : size_t
   {
-    kBoundaryTerm = SimulatedAnnealingCore<SoftMacro>::kFenceTerm + 1,
-    kSoftBlockageTerm,
-    kFixedMacrosTerm,
-    kNotchTerm
+    kBoundary = SimulatedAnnealingCore<SoftMacro>::kFence + 1,
+    kSoftBlockage,
+    kFixedMacros,
+    kNotch
   };
 
   float calNormCost() const override;

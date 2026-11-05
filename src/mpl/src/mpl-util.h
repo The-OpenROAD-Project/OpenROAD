@@ -88,7 +88,7 @@ struct SASoftWeights
 //
 // Note: the normalization factor is generated during the
 // annealer core initialization.
-struct PenaltyTerm
+struct Penalty
 {
   std::string name;
   float weight{0.0f};

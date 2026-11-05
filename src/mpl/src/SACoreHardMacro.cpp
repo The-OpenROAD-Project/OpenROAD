@@ -71,7 +71,7 @@ void SACoreHardMacro::run()
 
 float SACoreHardMacro::calNormCost() const
 {
-  return sumNormalizedPenaltyTerms();
+  return sumNormalizedPenalties();
 }
 
 void SACoreHardMacro::calPenalty()
@@ -132,7 +132,7 @@ void SACoreHardMacro::saveState()
   pre_width_ = width_;
   pre_height_ = height_;
 
-  savePenaltyTerms();
+  savePenalties();
 }
 
 void SACoreHardMacro::restoreState()
@@ -158,7 +158,7 @@ void SACoreHardMacro::restoreState()
   width_ = pre_width_;
   height_ = pre_height_;
 
-  restorePenaltyTerms();
+  restorePenalties();
 }
 
 void SACoreHardMacro::initialize()
@@ -188,43 +188,39 @@ void SACoreHardMacro::initialize()
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(penalty_terms_[kAreaTerm].value);
-    outline_penalty_list.push_back(penalty_terms_[kOutlineTerm].value);
-    wirelength_list.push_back(penalty_terms_[kWirelengthTerm].value);
-    guidance_penalty_list.push_back(penalty_terms_[kGuidanceTerm].value);
-    fence_penalty_list.push_back(penalty_terms_[kFenceTerm].value);
+    area_penalty_list.push_back(penalties_[kArea].value);
+    outline_penalty_list.push_back(penalties_[kOutline].value);
+    wirelength_list.push_back(penalties_[kWirelength].value);
+    guidance_penalty_list.push_back(penalties_[kGuidance].value);
+    fence_penalty_list.push_back(penalties_[kFence].value);
   }
   graphics_ = save_graphics;
 
-  penalty_terms_[kAreaTerm].normalization_factor
-      = calAverage(area_penalty_list);
-  penalty_terms_[kOutlineTerm].normalization_factor
-      = calAverage(outline_penalty_list);
-  penalty_terms_[kWirelengthTerm].normalization_factor
-      = calAverage(wirelength_list);
-  penalty_terms_[kGuidanceTerm].normalization_factor
+  penalties_[kArea].normalization_factor = calAverage(area_penalty_list);
+  penalties_[kOutline].normalization_factor = calAverage(outline_penalty_list);
+  penalties_[kWirelength].normalization_factor = calAverage(wirelength_list);
+  penalties_[kGuidance].normalization_factor
       = calAverage(guidance_penalty_list);
-  penalty_terms_[kFenceTerm].normalization_factor
-      = calAverage(fence_penalty_list);
+  penalties_[kFence].normalization_factor = calAverage(fence_penalty_list);
 
-  if (penalty_terms_[kAreaTerm].normalization_factor <= 1e-4) {
-    penalty_terms_[kAreaTerm].normalization_factor = 1.0;
+  if (penalties_[kArea].normalization_factor <= 1e-4) {
+    penalties_[kArea].normalization_factor = 1.0;
   }
 
-  if (penalty_terms_[kOutlineTerm].normalization_factor <= 1e-4) {
-    penalty_terms_[kOutlineTerm].normalization_factor = 1.0;
+  if (penalties_[kOutline].normalization_factor <= 1e-4) {
+    penalties_[kOutline].normalization_factor = 1.0;
   }
 
-  if (penalty_terms_[kWirelengthTerm].normalization_factor <= 1e-4) {
-    penalty_terms_[kWirelengthTerm].normalization_factor = 1.0;
+  if (penalties_[kWirelength].normalization_factor <= 1e-4) {
+    penalties_[kWirelength].normalization_factor = 1.0;
   }
 
-  if (penalty_terms_[kGuidanceTerm].normalization_factor <= 1e-4) {
-    penalty_terms_[kGuidanceTerm].normalization_factor = 1.0;
+  if (penalties_[kGuidance].normalization_factor <= 1e-4) {
+    penalties_[kGuidance].normalization_factor = 1.0;
   }
 
-  if (penalty_terms_[kFenceTerm].normalization_factor <= 1e-4) {
-    penalty_terms_[kFenceTerm].normalization_factor = 1.0;
+  if (penalties_[kFence].normalization_factor <= 1e-4) {
+    penalties_[kFence].normalization_factor = 1.0;
   }
 
   // Calculate initial temperature
@@ -232,11 +228,11 @@ void SACoreHardMacro::initialize()
   for (int i = 0; i < outline_penalty_list.size(); i++) {
     width_ = width_list[i];
     height_ = height_list[i];
-    penalty_terms_[kAreaTerm].value = area_penalty_list[i];
-    penalty_terms_[kOutlineTerm].value = outline_penalty_list[i];
-    penalty_terms_[kWirelengthTerm].value = wirelength_list[i];
-    penalty_terms_[kGuidanceTerm].value = guidance_penalty_list[i];
-    penalty_terms_[kFenceTerm].value = fence_penalty_list[i];
+    penalties_[kArea].value = area_penalty_list[i];
+    penalties_[kOutline].value = outline_penalty_list[i];
+    penalties_[kWirelength].value = wirelength_list[i];
+    penalties_[kGuidance].value = guidance_penalty_list[i];
+    penalties_[kFence].value = fence_penalty_list[i];
     cost_list.push_back(calNormCost());
   }
   float delta_cost = 0.0;
@@ -255,12 +251,12 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 {
   core_weights_ = weights;
 
-  // calNormCost() sums penalty_terms_[i].weight, so keep it in sync.
-  penalty_terms_[kAreaTerm].weight = core_weights_.area;
-  penalty_terms_[kOutlineTerm].weight = core_weights_.outline;
-  penalty_terms_[kWirelengthTerm].weight = core_weights_.wirelength;
-  penalty_terms_[kGuidanceTerm].weight = core_weights_.guidance;
-  penalty_terms_[kFenceTerm].weight = core_weights_.fence;
+  // calNormCost() sums penalties_[i].weight, so keep it in sync.
+  penalties_[kArea].weight = core_weights_.area;
+  penalties_[kOutline].weight = core_weights_.outline;
+  penalties_[kWirelength].weight = core_weights_.wirelength;
+  penalties_[kGuidance].weight = core_weights_.guidance;
+  penalties_[kFence].weight = core_weights_.fence;
 }
 
 void SACoreHardMacro::printResults() const
