@@ -6,7 +6,6 @@
 #include <cmath>
 #include <limits>
 #include <map>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -128,38 +127,27 @@ void Graphics::saStep(const std::vector<HardMacro>& macros)
   soft_macros_.clear();
 }
 
-template <typename T>
-void Graphics::report(const std::optional<T>& value)
+void Graphics::report(const PenaltyTerm& term)
 {
-  if (value) {
-    const PenaltyTerm& penalty_term = value.value();
-    const float normalized_penalty
-        = penalty_term.value / penalty_term.normalization_factor;
+  const float normalized_penalty = term.value / term.normalization_factor;
 
-    logger_->report(
-        "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
-        penalty_term.name,
-        normalized_penalty,
-        penalty_term.weight,
-        normalized_penalty * penalty_term.weight);
-  }
+  logger_->report(
+      "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
+      term.name,
+      normalized_penalty,
+      term.weight,
+      normalized_penalty * term.weight);
 }
 
 void Graphics::report(const float norm_cost)
 {
-  report(area_penalty_);
-  report(outline_penalty_);
-  report(wirelength_penalty_);
-  report(fence_penalty_);
-  report(guidance_penalty_);
-  report(boundary_penalty_);
-  report(soft_blockage_penalty_);
-  report(fixed_macros_penalty_);
-  report(notch_penalty_);
-  report(std::optional<PenaltyTerm>({.name = "Total",
-                                     .weight = 1.0f,
-                                     .value = norm_cost,
-                                     .normalization_factor = 1.0f}));
+  for (const auto& [name, term] : penalty_terms_) {
+    report(term);
+  }
+  report({.name = "Total",
+          .weight = 1.0f,
+          .value = norm_cost,
+          .normalization_factor = 1.0f});
 }
 
 void Graphics::drawResult()
@@ -227,12 +215,8 @@ void Graphics::penaltyCalculated(float norm_cost)
   bool drawing_last_step = skip_steps_ && !is_skipping_;
 
   if (norm_cost < best_norm_cost_ || drawing_last_step) {
-    const float area = area_penalty_ ? area_penalty_.value().value : 0;
-    const float outline = outline_penalty_ ? outline_penalty_.value().value : 0;
-    const float wirelength
-        = wirelength_penalty_ ? wirelength_penalty_.value().value : 0;
     if (chart_) {
-      chart_->addPoint(iter_, {area, outline, wirelength});
+      addChartPoint();
     }
 
     logger_->report("------ Penalty (Iter {}) ------", iter_);
@@ -259,62 +243,28 @@ void Graphics::penaltyCalculated(float norm_cost)
   }
 }
 
+void Graphics::addChartPoint()
+{
+  const auto area_it = penalty_terms_.find("Area");
+  const auto outline_it = penalty_terms_.find("Outline");
+  const auto wirelength_it = penalty_terms_.find("Wire Length");
+  const float area
+      = area_it != penalty_terms_.end() ? area_it->second.value : 0;
+  const float outline
+      = outline_it != penalty_terms_.end() ? outline_it->second.value : 0;
+  const float wirelength
+      = wirelength_it != penalty_terms_.end() ? wirelength_it->second.value : 0;
+  chart_->addPoint(iter_, {area, outline, wirelength});
+}
+
 void Graphics::resetPenalties()
 {
-  area_penalty_.reset();
-  outline_penalty_.reset();
-  wirelength_penalty_.reset();
-  fence_penalty_.reset();
-  guidance_penalty_.reset();
-  boundary_penalty_.reset();
-  soft_blockage_penalty_.reset();
-  fixed_macros_penalty_.reset();
-  notch_penalty_.reset();
+  penalty_terms_.clear();
 }
 
-void Graphics::setNotchPenalty(const PenaltyTerm& penalty)
+void Graphics::setPenalty(const PenaltyTerm& penalty)
 {
-  notch_penalty_ = penalty;
-}
-
-void Graphics::setSoftBlockagePenalty(const PenaltyTerm& penalty)
-{
-  soft_blockage_penalty_ = penalty;
-}
-
-void Graphics::setFixedMacrosPenalty(const PenaltyTerm& penalty)
-{
-  fixed_macros_penalty_ = penalty;
-}
-
-void Graphics::setBoundaryPenalty(const PenaltyTerm& penalty)
-{
-  boundary_penalty_ = penalty;
-}
-
-void Graphics::setFencePenalty(const PenaltyTerm& penalty)
-{
-  fence_penalty_ = penalty;
-}
-
-void Graphics::setGuidancePenalty(const PenaltyTerm& penalty)
-{
-  guidance_penalty_ = penalty;
-}
-
-void Graphics::setAreaPenalty(const PenaltyTerm& penalty)
-{
-  area_penalty_ = penalty;
-}
-
-void Graphics::setOutlinePenalty(const PenaltyTerm& penalty)
-{
-  outline_penalty_ = penalty;
-}
-
-void Graphics::setWirelengthPenalty(const PenaltyTerm& penalty)
-{
-  wirelength_penalty_ = penalty;
+  penalty_terms_[penalty.name] = penalty;
 }
 
 void Graphics::setMaxLevel(const int max_level)

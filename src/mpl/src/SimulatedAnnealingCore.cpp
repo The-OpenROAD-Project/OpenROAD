@@ -210,11 +210,7 @@ void SimulatedAnnealingCore<T>::calAreaPenalty()
   term.value = block_->dbuAreaToMicrons(getArea())
                / block_->dbuAreaToMicrons(outline_.area());
   if (graphics_) {
-    graphics_->setAreaPenalty(
-        {.name = "Area",
-         .weight = core_weights_.area,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -228,11 +224,7 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   // normalization
   term.value = term.value / outline_.area();
   if (graphics_) {
-    graphics_->setOutlinePenalty(
-        {.name = "Outline",
-         .weight = core_weights_.outline,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -247,11 +239,7 @@ void SimulatedAnnealingCore<T>::calWirelength()
   term.value = computeNetsWireLength(nets_);
 
   if (graphics_) {
-    graphics_->setWirelengthPenalty(
-        {.name = "Wire Length",
-         .weight = core_weights_.wirelength,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -374,11 +362,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   // normalization
   term.value = term.value / fences_.size();
   if (graphics_) {
-    graphics_->setFencePenalty(
-        {.name = "Fence",
-         .weight = core_weights_.fence,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -412,11 +396,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   term.value = term.value / guides_.size();
 
   if (graphics_) {
-    graphics_->setGuidancePenalty(
-        {.name = "Guidance",
-         .weight = core_weights_.guidance,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
