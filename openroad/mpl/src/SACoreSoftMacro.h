@@ -50,8 +50,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void run() override;
   bool isValid() const override;
 
-  void printResults() const;  // just for test
-
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
@@ -89,8 +87,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calPenalty() override;
 
   void perturb() override;
-  void saveState() override;
-  void restoreState() override;
   // actions used
   void resizeOneCluster();
 

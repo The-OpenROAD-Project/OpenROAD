@@ -73,6 +73,7 @@ class SimulatedAnnealingCore
   virtual bool isValid() const;
   bool fitsIn(const odb::Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
+  void printResults() const;  // just for test
   float getNormCost() const;
   int getWidth() const;
   int getHeight() const;
@@ -135,8 +136,8 @@ class SimulatedAnnealingCore
   // operations
   void packFloorplan();
   virtual void perturb() = 0;
-  virtual void saveState() = 0;
-  virtual void restoreState() = 0;
+  virtual void saveState();
+  virtual void restoreState();
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();

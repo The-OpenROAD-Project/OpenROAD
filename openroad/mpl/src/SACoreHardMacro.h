@@ -45,15 +45,11 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void setWeights(const SACoreWeights& weights);
 
   void fillDeadSpace() override {}
-  // print results
-  void printResults() const;
 
  private:
   void calPenalty() override;
 
   void perturb() override;
-  void saveState() override;
-  void restoreState() override;
 };
 
 }  // namespace mpl

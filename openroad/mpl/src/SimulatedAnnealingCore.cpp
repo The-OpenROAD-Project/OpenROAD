@@ -505,6 +505,50 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
 }
 
+template <class T>
+void SimulatedAnnealingCore<T>::saveState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  pre_macros_ = macros_;
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+
+  pre_width_ = width_;
+  pre_height_ = height_;
+
+  savePenalties();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::restoreState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  // To reduce the runtime, here we do not call PackFloorplan
+  // again. So when we need to generate the final floorplan out,
+  // we need to call PackFloorplan again at the end of SA process
+  if (action_id_ == 1) {
+    pos_seq_ = pre_pos_seq_;
+  } else if (action_id_ == 2) {
+    neg_seq_ = pre_neg_seq_;
+  } else if (action_id_ == 3 || action_id_ == 4) {
+    pos_seq_ = pre_pos_seq_;
+    neg_seq_ = pre_neg_seq_;
+  }
+
+  macros_ = pre_macros_;
+
+  width_ = pre_width_;
+  height_ = pre_height_;
+
+  restorePenalties();
+}
+
 // SingleSeqSwap
 template <class T>
 void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
@@ -675,6 +719,16 @@ void SimulatedAnnealingCore<T>::reportLocations() const
                     block_->dbuToMicrons(macro.getHeight()));
   }
   logger_->report("");
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::printResults() const
+{
+  reportWeights();
+  reportTotalCost();
+  if (logger_->debugCheck(utl::MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
+  }
 }
 
 template <class T>

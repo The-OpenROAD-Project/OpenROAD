@@ -114,48 +114,6 @@ void SACoreHardMacro::perturb()
   calPenalty();
 }
 
-void SACoreHardMacro::saveState()
-{
-  if (macros_.empty()) {
-    return;
-  }
-
-  pre_macros_ = macros_;
-  pre_pos_seq_ = pos_seq_;
-  pre_neg_seq_ = neg_seq_;
-
-  pre_width_ = width_;
-  pre_height_ = height_;
-
-  savePenalties();
-}
-
-void SACoreHardMacro::restoreState()
-{
-  if (macros_.empty()) {
-    return;
-  }
-
-  // To reduce the runtime, here we do not call PackFloorplan
-  // again. So when we need to generate the final floorplan out,
-  // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 1) {
-    pos_seq_ = pre_pos_seq_;
-  } else if (action_id_ == 2) {
-    neg_seq_ = pre_neg_seq_;
-  } else if (action_id_ == 3 || action_id_ == 4) {
-    pos_seq_ = pre_pos_seq_;
-    neg_seq_ = pre_neg_seq_;
-  }
-
-  macros_ = pre_macros_;
-
-  width_ = pre_width_;
-  height_ = pre_height_;
-
-  restorePenalties();
-}
-
 void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 {
   penalties_[kArea].weight = weights.area;
@@ -163,15 +121,6 @@ void SACoreHardMacro::setWeights(const SACoreWeights& weights)
   penalties_[kWirelength].weight = weights.wirelength;
   penalties_[kGuidance].weight = weights.guidance;
   penalties_[kFence].weight = weights.fence;
-}
-
-void SACoreHardMacro::printResults() const
-{
-  reportWeights();
-  reportTotalCost();
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
-    reportLocations();
-  }
 }
 
 }  // namespace mpl
