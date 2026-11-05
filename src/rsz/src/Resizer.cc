@@ -5923,7 +5923,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
   std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
                                                   PinLatencySet{});
+  // A pin-level set_propagated_clock is mutually exclusive with
+  // set_clock_latency on the same pin, so the LP's setClockLatency calls below
+  // strip it. Capture it here (before the cutting-plane loop) so
+  // restore_pin_latency can re-apply it afterwards.
+  std::vector<bool> orig_pin_propagated(ck_pins.size(), false);
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    // Read the raw SDC annotation (the source of truth setClockLatency
+    // strips), not Sta::isPropagatedClock, which queries the derived clock
+    // network and is not current here.
+    orig_pin_propagated[i] = sdc->isPropagatedClock(ck_pins[i]);
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
       // would take the max over every tag, including non-clock paths
@@ -6390,6 +6399,13 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // would duplicate the original as a clock-specific annotation.
   auto restore_pin_latency = [&](int i) {
     sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    if (orig_pin_propagated[i]) {
+      // set_propagated_clock and set_clock_latency are mutually exclusive on a
+      // pin, so a pin that was propagated carried no latency to restore.
+      sta_->setPropagatedClock(const_cast<sta::Pin*>(ck_pins[i]),
+                               sta_->cmdMode());
+      return;
+    }
     for (const sta::RiseFall* rf : sta::RiseFall::range()) {
       for (const sta::MinMax* mm : sta::MinMax::range()) {
         const size_t ri = rf->index();
