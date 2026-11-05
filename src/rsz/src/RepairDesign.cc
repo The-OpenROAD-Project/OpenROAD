@@ -83,6 +83,7 @@ void RepairDesign::init()
   pre_checks_ = std::make_unique<PreChecks>(resizer_);
   parasitics_src_ = estimate_parasitics_->getParasiticsSrc();
   initial_design_area_ = resizer_->computeDesignArea();
+  buffer_candidates_ = {};
 
   r_strongest_buffer_ = std::numeric_limits<float>::max();
   for (auto buffer : resizer_->buffer_cells_) {
@@ -420,6 +421,11 @@ void RepairDesign::repairClkNets(double max_wire_length)
       resizer_->sizing_area_limit_, std::nullopt);
   utl::SetAndRestore<std::optional<double>> leakage_limit(
       resizer_->sizing_leakage_limit_, std::nullopt);
+  utl::SetAndRestore allow_clk(resizer_->exclude_clock_buffers_, false);
+  const decltype(resizer_->swappable_cells_cache_) empty_sc;
+  utl::SetAndRestore sc_guard(resizer_->swappable_cells_cache_, empty_sc);
+  // Clear candidates populated with clock buffers and lifted limits on exit.
+  utl::SetAndRestore<BufferCandidates> bc_guard(buffer_candidates_, {});
 
   slew_margin_ = 0.0;
   cap_margin_ = 0.0;
@@ -1542,9 +1548,6 @@ void RepairDesign::repairNetWire(
              bnet->layer(),
              wire_res);
 
-  sta::LibertyCell* buffer_cell = resizer_->findTargetCell(
-      resizer_->buffer_lowest_drive_, load_cap, false);
-
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
   bnet->setMaxLoadSlew(
@@ -1668,19 +1671,31 @@ void RepairDesign::repairNetWire(
       int buf_y = to_y + d * dy;
       // Buffer is inserted at buf_dist from to_pt, so it drives only the
       // downstream wire (buf_dist long) + ref_cap, not the full Steiner edge.
-      const float buffer_load_cap
-          = static_cast<float>(buf_dist / (dbu_ * 1e+6) * wire_cap + ref_cap);
+      // Subtract wire_slew_degradation linearly to match the additive Elmore
+      // slew model used by repairNetWire above; if wire RC consumes the budget,
+      // findBufferUnderSlew clamps to 0 and selects the smallest cap-clean
+      // cell.
+      const double buf_len = dbuToMeters(buf_dist);
+      const double buf_wire_res = buf_len * wire_res;
+      const double buf_wire_cap = buf_len * wire_cap;
+      const float buffer_load_cap = static_cast<float>(buf_wire_cap + ref_cap);
+      const double wire_slew_degradation = buf_wire_res
+                                           * (buf_wire_cap / 2.0 + ref_cap)
+                                           * resizer_->slew_shape_factor_;
+      const float downstream_max_slew
+          = static_cast<float>(max_load_slew_margined - wire_slew_degradation);
       float repeater_cap, repeater_fanout;
-      if (!makeRepeater("wire",
-                        odb::Point(buf_x, buf_y),
-                        buffer_cell,
-                        /* resize= */ true,
-                        level,
-                        load_pins,
-                        repeater_cap,
-                        repeater_fanout,
-                        max_load_slew,
-                        /* load_cap_hint= */ buffer_load_cap)) {
+      if (!makeRepeater(
+              "wire",
+              odb::Point(buf_x, buf_y),
+              /*buffer_cell=*/nullptr,
+              /*resize=*/true,
+              level,
+              load_pins,
+              repeater_cap,
+              repeater_fanout,
+              max_load_slew,
+              {.load_cap = buffer_load_cap, .max_slew = downstream_max_slew})) {
         debugPrint(logger_,
                    RSZ,
                    "repair_net",
@@ -1706,8 +1721,6 @@ void RepairDesign::repairNetWire(
       load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
                    + r_wire * c_wire / 2)
                   * resizer_->slew_shape_factor_;
-      buffer_cell = resizer_->findTargetCell(
-          resizer_->buffer_lowest_drive_, load_cap, false);
 
       bnet->setCapacitance(load_cap);
       bnet->setFanout(repeater_fanout);
@@ -1825,8 +1838,6 @@ void RepairDesign::repairNetJunc(
   float load_cap = cap_left + cap_right;
   float max_load_slew = min(max_load_slew_left, max_load_slew_right);
   float max_load_slew_margined = maxSlewMargined(max_load_slew);
-  sta::LibertyCell* buffer_cell = resizer_->findTargetCell(
-      resizer_->buffer_lowest_drive_, load_cap, false);
 
   // Check for violations when the left/right branches are combined.
   // Add a buffer to left or right branch to stay under the max
@@ -1898,27 +1909,33 @@ void RepairDesign::repairNetJunc(
   if (repeater_left) {
     makeRepeater(repeater_reason,
                  loc,
-                 buffer_cell,
-                 true,
+                 /*buffer_cell=*/nullptr,
+                 /*resize=*/true,
                  level,
                  loads_left,
                  cap_left,
                  fanout_left,
                  max_load_slew_left,
-                 /* load_cap_hint= */ cap_left);
+                 {
+                     .load_cap = cap_left,
+                     .max_slew = maxSlewMargined(max_load_slew_left),
+                 });
     wire_length_left = 0;
   }
   if (repeater_right) {
     makeRepeater(repeater_reason,
                  loc,
-                 buffer_cell,
-                 true,
+                 /*buffer_cell=*/nullptr,
+                 /*resize=*/true,
                  level,
                  loads_right,
                  cap_right,
                  fanout_right,
                  max_load_slew_right,
-                 /* load_cap_hint= */ cap_right);
+                 {
+                     .load_cap = cap_right,
+                     .max_slew = maxSlewMargined(max_load_slew_right),
+                 });
     wire_length_right = 0;
   }
 
@@ -2233,7 +2250,7 @@ bool RepairDesign::makeRepeater(const char* reason,
                                 float& repeater_cap,
                                 float& repeater_fanout,
                                 float& repeater_max_slew,
-                                std::optional<float> load_cap_hint)
+                                const RepeaterSizingHint& sizing_hint)
 {
   sta::Net* out_net;
   sta::Pin *repeater_in_pin, *repeater_out_pin;
@@ -2250,27 +2267,17 @@ bool RepairDesign::makeRepeater(const char* reason,
                       out_net,
                       repeater_in_pin,
                       repeater_out_pin,
-                      load_cap_hint);
+                      sizing_hint);
 }
 
 ////////////////////////////////////////////////////////////////
 
-bool RepairDesign::hasInputPort(const sta::Net* net)
-{
-  bool has_top_level_port = false;
-  sta::NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
-  while (pin_iter->hasNext()) {
-    const sta::Pin* pin = pin_iter->next();
-    if (network_->isTopLevelPort(pin)
-        && network_->direction(pin)->isAnyInput()) {
-      has_top_level_port = true;
-      break;
-    }
-  }
-  delete pin_iter;
-  return has_top_level_port;
-}
-
+// Insert a buffer_cell instance between drvr_pin_ and load_pins.
+// Also updates:
+//  load_pins -> repeater_input_pin
+//  repeater_cap
+//  repeater_fanout
+//  repeater_max_slew
 bool RepairDesign::makeRepeater(
     const char* reason,
     int x,
@@ -2286,8 +2293,15 @@ bool RepairDesign::makeRepeater(
     sta::Net*& out_net,
     sta::Pin*& repeater_in_pin,
     sta::Pin*& repeater_out_pin,
-    std::optional<float> load_cap_hint)
+    const RepeaterSizingHint& sizing_hint)
 {
+  const sta::Scene* corner = corner_ ? corner_ : resizer_->tgt_slew_corner_;
+  if (!buffer_cell) {
+    const sta::LibertyCellSeq& soft_cands
+        = softCandidates(resizer_->buffer_lowest_drive_);
+    buffer_cell = soft_cands.empty() ? resizer_->buffer_lowest_drive_
+                                     : soft_cands.front();
+  }
   debugPrint(logger_,
              RSZ,
              "repair_net",
@@ -2326,7 +2340,29 @@ bool RepairDesign::makeRepeater(
   // Resize repeater as we back up by levels.
   if (resize) {
     sta::Pin* buffer_out_pin = network_->findPin(buffer, buffer_output_port);
-    resizer_->resizeToTargetSlew(buffer_out_pin, load_cap_hint);
+    float load_cap = 0.0f;
+    if (sizing_hint.load_cap
+        && (parasitics_src_ == est::ParasiticsSrc::kGlobalRouting
+            || parasitics_src_ == est::ParasiticsSrc::kPlacement)) {
+      // Placement and global-routing callers pass the isolated downstream
+      // segment/branch capacitance; using it directly also avoids triggering
+      // an incremental FastRoute per repeater under kGlobalRouting.
+      load_cap = *sizing_hint.load_cap;
+    } else {
+      estimate_parasitics_->ensureWireParasitic(buffer_out_pin);
+      load_cap = graph_delay_calc_->loadCap(buffer_out_pin, corner, max_);
+      if (sizing_hint.load_cap
+          && parasitics_src_ == est::ParasiticsSrc::kNone) {
+        // Without wire parasitics, loadCap() includes pin capacitance only;
+        // preserve any larger caller-computed Steiner capacitance hint.
+        load_cap = max(load_cap, *sizing_hint.load_cap);
+      }
+    }
+    if (sta::LibertyCell* target
+        = findBufferUnderSlew(sizing_hint.max_slew, load_cap);
+        target && target != buffer_cell) {
+      resizer_->replaceCell(buffer, target, true);
+    }
     buffer_cell = network_->libertyCell(buffer);
     buffer_cell->bufferPorts(buffer_input_port, buffer_output_port);
   }
@@ -2336,48 +2372,300 @@ bool RepairDesign::makeRepeater(
 
   load_pins.clear();
   load_pins.push_back(repeater_in_pin);
-  repeater_cap = resizer_->portCapacitance(buffer_input_port, corner_);
+  repeater_cap = resizer_->portCapacitance(buffer_input_port, corner);
   repeater_fanout = resizer_->portFanoutLoad(buffer_input_port);
-  repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
+  repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner);
 
   return true;
+}
+
+sta::LibertyCellSeq RepairDesign::rankBufferCandidates(
+    sta::LibertyCellSeq cells,
+    bool clock_only) const
+{
+  // Sort candidates by ascending LEF area (breaking equal-area ties by stronger
+  // drive, i.e., lower drive resistance first, then cell ID for determinism) so
+  // the single pass below keeps only the area-vs-drive Pareto frontier and
+  // prunes equal- or larger-area cells with equal or weaker drive.
+  std::ranges::sort(cells, [this](sta::LibertyCell* a, sta::LibertyCell* b) {
+    const int64_t area_diff = db_network_->staToDb(a)->getArea()
+                              - db_network_->staToDb(b)->getArea();
+    if (area_diff != 0) {
+      return area_diff < 0;
+    }
+    if (!resizer_->exclude_clock_buffers_) {
+      const bool a_clk = resizer_->getBufferUse(a) == BufferUse::CLOCK;
+      const bool b_clk = resizer_->getBufferUse(b) == BufferUse::CLOCK;
+      if (a_clk != b_clk) {
+        return a_clk;
+      }
+    }
+    const float r_diff = resizer_->bufferDriveResistance(a)
+                         - resizer_->bufferDriveResistance(b);
+    return r_diff != 0.0f ? r_diff < 0.0f : a->id() < b->id();
+  });
+
+  sta::LibertyCellSeq ranked;
+  ranked.reserve(cells.size());
+  float min_r = sta::INF;
+  for (sta::LibertyCell* cell : cells) {
+    // LibertyCell::isBuffer() already excludes level shifters and pads, while
+    // single-input always_on and isolation buffers still return isBuffer().
+    if (!cell->isBuffer() || cell->alwaysOn() || cell->isIsolationCell()) {
+      continue;
+    }
+    const bool is_clock = resizer_->getBufferUse(cell) == BufferUse::CLOCK;
+    if (clock_only ? !is_clock
+                   : (resizer_->exclude_clock_buffers_ && is_clock)) {
+      continue;
+    }
+    const float r = resizer_->bufferDriveResistance(cell);
+    if (r < min_r) {
+      min_r = r;
+      ranked.push_back(cell);
+    }
+  }
+  return ranked;
+}
+
+const sta::LibertyCellSeq& RepairDesign::softCandidates(sta::LibertyCell* seed)
+{
+  if (!seed) {
+    buffer_candidates_ = {};
+    return buffer_candidates_.soft;
+  }
+  if (buffer_candidates_.seed != seed) {
+    buffer_candidates_ = {};
+    buffer_candidates_.seed = seed;
+    sta::LibertyCellSeq soft
+        = rankBufferCandidates(resizer_->getSwappableCells(seed));
+    // Re-anchor the sizing-limit window on the smallest-area buffer when seed
+    // (for example a larger-area multi-stage delay cell) is not smallest.
+    if (!soft.empty() && soft.front() != seed) {
+      soft = rankBufferCandidates(resizer_->getSwappableCells(soft.front()));
+    }
+    buffer_candidates_.soft = std::move(soft);
+  }
+  return buffer_candidates_.soft;
+}
+
+const sta::LibertyCellSeq& RepairDesign::unconstrainedCandidates(
+    sta::LibertyCell* unit)
+{
+  if (!buffer_candidates_.unconstrained) {
+    sta::LibertyCellSeq unconstrained;
+    if (unit && !resizer_->dontUse(unit)
+        && (resizer_->sizing_area_limit_ || resizer_->sizing_leakage_limit_)) {
+      const decltype(resizer_->swappable_cells_cache_) empty_cache;
+      const std::optional<double> unlimited;
+      utl::SetAndRestore cache_guard(resizer_->swappable_cells_cache_,
+                                     empty_cache);
+      utl::SetAndRestore area_guard(resizer_->sizing_area_limit_, unlimited);
+      utl::SetAndRestore leakage_guard(resizer_->sizing_leakage_limit_,
+                                       unlimited);
+      unconstrained = rankBufferCandidates(resizer_->getSwappableCells(unit));
+    }
+    buffer_candidates_.unconstrained = std::move(unconstrained);
+  }
+  return *buffer_candidates_.unconstrained;
+}
+
+const sta::LibertyCellSeq& RepairDesign::clockCandidates(sta::LibertyCell* unit)
+{
+  if (!buffer_candidates_.clock) {
+    sta::LibertyCellSeq clk;
+    if (unit && !resizer_->dontUse(unit) && !resizer_->exclude_clock_buffers_) {
+      clk = rankBufferCandidates(resizer_->getSwappableCells(unit),
+                                 /*clock_only=*/true);
+    }
+    buffer_candidates_.clock = std::move(clk);
+  }
+  return *buffer_candidates_.clock;
+}
+
+RepairDesign::BufferDrcResult RepairDesign::isBufferDrcClean(
+    sta::LibertyCell* buf,
+    float load_cap,
+    float max_slew,
+    const sta::Scene* corner)
+{
+  const float slew = resizer_->bufferSlew(buf, load_cap, corner, max_);
+  const float cap_limit = resizer_->maxLoad(network_->cell(buf), corner);
+  const bool cap_ok = cap_limit <= 0.0f
+                      || load_cap <= cap_limit * (1.0 - cap_margin_ / 100.0);
+  if (!cap_ok) {
+    return {
+        .drc_clean = false,
+        .cap_clean = false,
+        .slew = slew,
+    };
+  }
+
+  sta::LibertyPort *input = nullptr, *output = nullptr;
+  buf->bufferPorts(input, output);
+  float port_slew_limit = 0.0f;
+  bool has_slew_limit = false;
+  sta_->findSlewLimit(output, corner, max_, port_slew_limit, has_slew_limit);
+  const float slew_limit
+      = has_slew_limit
+            ? min(max_slew, max(0.0f, maxSlewMargined(port_slew_limit)))
+            : max_slew;
+  return {
+      .drc_clean = slew <= slew_limit,
+      .cap_clean = true,
+      .slew = slew,
+  };
+}
+
+void RepairDesign::logBufferChoice(sta::LibertyCell* buf,
+                                   const char* reason,
+                                   float slew) const
+{
+  debugPrint(logger_,
+             RSZ,
+             "buffer_under_slew",
+             1,
+             "{} ({}, slew={})",
+             buf->name(),
+             reason,
+             units_->timeUnit()->asString(slew));
+}
+
+sta::LibertyCell* RepairDesign::selectBufferFromCandidates(
+    const sta::LibertyCellSeq& candidates,
+    float load_cap,
+    float max_slew,
+    const sta::Scene* corner,
+    bool honor_target_slew,
+    BufferFallback& fallback)
+{
+  // Require at least a 5% slew reduction per upsize step when target_slew is
+  // unreachable so unconstrained windows do not chase asymptotic self-loading.
+  constexpr float kMinSlewImprovementRatio = 0.95f;
+  const sta::Scene* tgt_corner
+      = resizer_->tgt_slew_corner_ ? resizer_->tgt_slew_corner_ : corner;
+  float target_slew = 0.0f;
+  if (honor_target_slew) {
+    target_slew = max(resizer_->targetSlew(sta::RiseFall::rise()),
+                      resizer_->targetSlew(sta::RiseFall::fall()));
+  }
+  // Track the lowest-slew DRC-clean buffer within the resizer sizing limits so
+  // repeater sizing stays monotonic with load when target_slew is unreachable
+  // inside those limits, without expanding past them when DRC is already clean.
+  sta::LibertyCell* best_drc_clean = nullptr;
+  float best_drc_slew = sta::INF;
+
+  for (sta::LibertyCell* buf : candidates) {
+    const BufferDrcResult eval
+        = isBufferDrcClean(buf, load_cap, max_slew, corner);
+    if (eval.slew < fallback.min_slew) {
+      fallback.min_slew = eval.slew;
+      fallback.min_slew_buf = buf;
+    }
+    // Always retain the smallest-area (lowest input-capacitance) cap-clean
+    // candidate as the unachievable-slew fallback so zero-progress wire splits
+    // do not escalate repeater input capacitance up the net.
+    if (eval.cap_clean && !fallback.cap_clean_buf) {
+      fallback.cap_clean_buf = buf;
+      fallback.cap_clean_slew = eval.slew;
+    }
+    if (eval.drc_clean) {
+      if (!honor_target_slew) {
+        logBufferChoice(buf, "expanded_drc", eval.slew);
+        return buf;
+      }
+      const float tgt_slew
+          = (tgt_corner == corner)
+                ? eval.slew
+                : resizer_->bufferSlew(buf, load_cap, tgt_corner, max_);
+      if (target_slew <= 0.0f || tgt_slew <= target_slew) {
+        logBufferChoice(buf, "soft_target", eval.slew);
+        return buf;
+      }
+      if (!best_drc_clean
+          || eval.slew < best_drc_slew * kMinSlewImprovementRatio) {
+        best_drc_slew = eval.slew;
+        best_drc_clean = buf;
+      }
+    }
+  }
+  if (best_drc_clean) {
+    logBufferChoice(best_drc_clean, "soft_drc_clean", best_drc_slew);
+    return best_drc_clean;
+  }
+  return nullptr;
 }
 
 sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
                                                     float load_cap)
 {
-  sta::LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
-  float min_slew = sta::INF;
-  sta::LibertyCellSeq swappable_cells
-      = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
-  if (!swappable_cells.empty()) {
-    std::ranges::sort(swappable_cells,
-                      [this](const sta::LibertyCell* buffer1,
-                             const sta::LibertyCell* buffer2) {
-                        return resizer_->bufferDriveResistance(buffer1)
-                               > resizer_->bufferDriveResistance(buffer2);
-                      });
-    for (sta::LibertyCell* buffer : swappable_cells) {
-      float slew = resizer_->bufferSlew(
-          buffer, load_cap, resizer_->tgt_slew_corner_, resizer_->max_);
-      debugPrint(logger_,
-                 RSZ,
-                 "buffer_under_slew",
-                 1,
-                 "{:{}s}pt ({} {})",
-                 buffer->name(),
-                 units_->timeUnit()->asString(slew));
-      if (slew < max_slew) {
-        return buffer;
-      }
-      if (slew < min_slew) {
-        min_slew_buffer = buffer;
-        min_slew = slew;
+  max_slew = max(0.0f, max_slew);
+  sta::LibertyCell* seed = resizer_->buffer_lowest_drive_;
+  const sta::Scene* corner = corner_ ? corner_ : resizer_->tgt_slew_corner_;
+  if (!seed || !corner) {
+    return seed;
+  }
+
+  const sta::LibertyCellSeq& soft_cands = softCandidates(seed);
+  sta::LibertyCell* unit = soft_cands.empty() ? seed : soft_cands.front();
+
+  // During clock-net repair, prefer dedicated clock buffers whenever one meets
+  // both DRC and target_slew; fall through to the full candidate set only when
+  // clock buffers lack sufficient drive (e.g., libraries whose CLKBUF family
+  // stops at a small drive strength).
+  if (!resizer_->exclude_clock_buffers_) {
+    const sta::LibertyCellSeq& clk_cands = clockCandidates(unit);
+    if (!clk_cands.empty()) {
+      const sta::Scene* tgt_corner
+          = resizer_->tgt_slew_corner_ ? resizer_->tgt_slew_corner_ : corner;
+      const float target_slew
+          = max(resizer_->targetSlew(sta::RiseFall::rise()),
+                resizer_->targetSlew(sta::RiseFall::fall()));
+      for (sta::LibertyCell* clk_buf : clk_cands) {
+        const BufferDrcResult eval
+            = isBufferDrcClean(clk_buf, load_cap, max_slew, corner);
+        if (!eval.drc_clean) {
+          continue;
+        }
+        const float tgt_slew
+            = (tgt_corner == corner)
+                  ? eval.slew
+                  : resizer_->bufferSlew(clk_buf, load_cap, tgt_corner, max_);
+        if (target_slew <= 0.0f || tgt_slew <= target_slew) {
+          logBufferChoice(clk_buf, "clock_target", eval.slew);
+          return clk_buf;
+        }
       }
     }
   }
-  // Could not find a buffer under max_slew but this is min slew achievable.
-  return min_slew_buffer;
+
+  BufferFallback fallback{.min_slew_buf = unit};
+  if (sta::LibertyCell* buf
+      = selectBufferFromCandidates(soft_cands,
+                                   load_cap,
+                                   max_slew,
+                                   corner,
+                                   /*honor_target_slew=*/true,
+                                   fallback)) {
+    return buf;
+  }
+  if (sta::LibertyCell* buf
+      = selectBufferFromCandidates(unconstrainedCandidates(unit),
+                                   load_cap,
+                                   max_slew,
+                                   corner,
+                                   /*honor_target_slew=*/false,
+                                   fallback)) {
+    return buf;
+  }
+  if (fallback.cap_clean_buf) {
+    logBufferChoice(
+        fallback.cap_clean_buf, "cap_clean_fallback", fallback.cap_clean_slew);
+    return fallback.cap_clean_buf;
+  }
+  logBufferChoice(
+      fallback.min_slew_buf, "min_slew_fallback", fallback.min_slew);
+  return fallback.min_slew_buf;
 }
 
 double RepairDesign::dbuToMeters(int dist) const

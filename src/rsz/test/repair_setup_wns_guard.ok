@@ -7,7 +7,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         7
-    final |   +107.7% |       0 |       2 |             2 |         0
+    final |    +61.5% |       0 |       2 |             2 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 2 capacitance violations.
@@ -19,11 +19,11 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.177 |       -0.3 |      2 | y2
-       1* |       0 |       1 |        0 |      0 |     0 |    +7.4% |   -0.141 |       -0.3 |      2 | y2
-    final |       0 |       1 |        0 |      0 |     0 |    +7.4% |   -0.141 |       -0.3 |      2 | y2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.205 |       -0.4 |      2 | y2
+       1* |       0 |       1 |        0 |      0 |     0 |    +9.5% |   -0.170 |       -0.3 |      2 | y2
+    final |       0 |       1 |        0 |      0 |     0 |    +9.5% |   -0.170 |       -0.3 |      2 | y2
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -0.14
-tns max -0.270
+worst slack max -0.17
+tns max -0.327

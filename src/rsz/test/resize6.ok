@@ -8,7 +8,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        12
-    final |    +14.8% |       1 |       1 |             1 |         0
+    final |    +83.6% |       1 |       1 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
@@ -16,14 +16,14 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0038] Inserted 1 buffers in 1 nets.
 Net out
  Pin capacitance: 2000.00
- Wire capacitance: 0.11
- Total capacitance: 2000.11
+ Wire capacitance: 0.50
+ Total capacitance: 2000.50
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- wire2/Z output (BUF_X4) (34, 101)
+ wire2/Z output (BUF_X32) (40, 100)
 
 Load pins
  out output port pin 2000.00 (33, 100)
@@ -32,11 +32,11 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-wire2/Z                                 0.20    1.11   -0.91 (VIOLATED)
+wire2/Z                                 0.20    0.16    0.04 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-wire2/Z                               242.31 2000.11 -1757.80 (VIOLATED)
+wire2/Z                              1904.30 2000.50  -96.20 (VIOLATED)
 

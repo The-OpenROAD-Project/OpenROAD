@@ -67,7 +67,7 @@ in1 manhtn 1.2 steiner 1.2 0.00
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +166.7% |       1 |       2 |             1 |         0
+    final |   +100.0% |       1 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
@@ -81,25 +81,25 @@ Path Type: max
 
     Cap    Slew   Delay    Time   Description
 -----------------------------------------------------------------------
-                   0.00    0.00 v input external delay
-   0.96    0.00    0.00    0.00 v in1 (in)
-           0.00    0.00    0.00 v u1/A (BUF_X1)
-   1.69    0.01    0.02    0.02 v u1/Z (BUF_X1)
-           0.01    0.00    0.02 v u2/A (BUF_X2)
-  52.06    0.02    0.04    0.07 v u2/Z (BUF_X2)
-           0.07    0.05    0.12 v wire2/A (BUF_X4)
-  47.19    0.01    0.06    0.17 v wire2/Z (BUF_X4)
-           0.05    0.04    0.21 v wire1/A (BUF_X4)
-  58.00    0.01    0.05    0.27 v wire1/Z (BUF_X4)
-           0.07    0.06    0.33 v u3/A (BUF_X1)
-   0.07    0.01    0.05    0.37 v u3/Z (BUF_X1)
-           0.01    0.00    0.37 v out1 (out)
-                           0.37   data arrival time
+                   0.00    0.00 ^ input external delay
+   1.06    0.00    0.00    0.00 ^ in1 (in)
+           0.00    0.00    0.00 ^ u1/A (BUF_X1)
+   1.88    0.01    0.02    0.02 ^ u1/Z (BUF_X1)
+           0.01    0.00    0.02 ^ u2/A (BUF_X2)
+  50.84    0.05    0.06    0.08 ^ u2/Z (BUF_X2)
+           0.08    0.05    0.13 ^ wire2/A (BUF_X2)
+  45.97    0.04    0.07    0.20 ^ wire2/Z (BUF_X2)
+           0.07    0.04    0.24 ^ wire1/A (BUF_X2)
+  58.11    0.05    0.07    0.32 ^ wire1/Z (BUF_X2)
+           0.10    0.07    0.39 ^ u3/A (BUF_X1)
+   0.07    0.01    0.03    0.42 ^ u3/Z (BUF_X1)
+           0.01    0.00    0.42 ^ out1 (out)
+                           0.42   data arrival time
 -----------------------------------------------------------------------
 (Path is unconstrained)
 
 
 Driver    length delay
-wire1/Z manhtn 760.4 steiner 760.4 0.00
-u2/Z manhtn 652.2 steiner 652.2 0.00
-wire2/Z manhtn 587.4 steiner 587.4 0.00
+wire1/Z manhtn 760.7 steiner 760.7 0.00
+u2/Z manhtn 652.3 steiner 652.3 0.00
+wire2/Z manhtn 587.7 steiner 587.7 0.00

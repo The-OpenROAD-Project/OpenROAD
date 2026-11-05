@@ -46,6 +46,12 @@ class LoadRegion
   std::vector<LoadRegion> regions_;
 };
 
+struct RepeaterSizingHint
+{
+  std::optional<float> load_cap;
+  float max_slew = sta::INF;
+};
+
 class RepairDesign : sta::dbStaState
 {
  public:
@@ -207,6 +213,19 @@ class RepairDesign : sta::dbStaState
   odb::Rect findBbox(sta::PinSeq& pins);
   odb::Point findClosedPinLoc(const sta::Pin* drvr_pin, sta::PinSeq& pins);
   bool isRepeater(const sta::Pin* load_pin);
+  struct BufferDrcResult
+  {
+    bool drc_clean = false;
+    bool cap_clean = false;
+    float slew = sta::INF;
+  };
+  struct BufferFallback
+  {
+    sta::LibertyCell* cap_clean_buf = nullptr;
+    float cap_clean_slew = sta::INF;
+    sta::LibertyCell* min_slew_buf = nullptr;
+    float min_slew = sta::INF;
+  };
   bool makeRepeater(const char* reason,
                     const odb::Point& loc,
                     sta::LibertyCell* buffer_cell,
@@ -217,7 +236,7 @@ class RepairDesign : sta::dbStaState
                     float& repeater_cap,
                     float& repeater_fanout,
                     float& repeater_max_slew,
-                    std::optional<float> load_cap_hint = std::nullopt);
+                    const RepeaterSizingHint& sizing_hint = {});
   bool makeRepeater(const char* reason,
                     int x,
                     int y,
@@ -232,8 +251,34 @@ class RepairDesign : sta::dbStaState
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
                     sta::Pin*& repeater_out_pin,
-                    std::optional<float> load_cap_hint = std::nullopt);
+                    const RepeaterSizingHint& sizing_hint = {});
   sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
+  // Selects a DRC-clean buffer from ranked candidates and updates fallbacks.
+  sta::LibertyCell* selectBufferFromCandidates(
+      const sta::LibertyCellSeq& candidates,
+      float load_cap,
+      float max_slew,
+      const sta::Scene* corner,
+      bool honor_target_slew,
+      BufferFallback& fallback);
+  // Logs the chosen repeater cell and selection reason under debug level 1.
+  void logBufferChoice(sta::LibertyCell* buf,
+                       const char* reason,
+                       float slew) const;
+  // Sorts buffers by ascending area and prunes equal/weaker-drive cells.
+  sta::LibertyCellSeq rankBufferCandidates(sta::LibertyCellSeq cells,
+                                           bool clock_only = false) const;
+  // Returns cached ranked buffer candidates within resizer sizing limits.
+  const sta::LibertyCellSeq& softCandidates(sta::LibertyCell* seed);
+  // Returns cached ranked buffer candidates with sizing limits lifted for DRC.
+  const sta::LibertyCellSeq& unconstrainedCandidates(sta::LibertyCell* unit);
+  // Returns cached ranked clock-buffer candidates for clock-net repair.
+  const sta::LibertyCellSeq& clockCandidates(sta::LibertyCell* unit);
+  // Evaluates max_capacitance and output max_transition limits for buf.
+  BufferDrcResult isBufferDrcClean(sta::LibertyCell* buf,
+                                   float load_cap,
+                                   float max_slew,
+                                   const sta::Scene* corner);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -276,6 +321,16 @@ class RepairDesign : sta::dbStaState
   std::shared_ptr<ResizerObserver> graphics_;
 
   float r_strongest_buffer_ = 0;
+  struct BufferCandidates
+  {
+    sta::LibertyCell* seed = nullptr;
+    sta::LibertyCellSeq soft;  // within resizer sizing limits
+    std::optional<sta::LibertyCellSeq>
+        unconstrained;  // sizing limits lifted, built lazily
+    std::optional<sta::LibertyCellSeq>
+        clock;  // clock buffers only, built lazily during repair_clock_nets
+  };
+  BufferCandidates buffer_candidates_;
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
