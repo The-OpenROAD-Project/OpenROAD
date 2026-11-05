@@ -743,7 +743,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void findLongWires(sta::VertexSeq& drvrs);
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
-  float driveResistance(const sta::Pin* drvr_pin);
+  float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   int vtCategoryCount() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
