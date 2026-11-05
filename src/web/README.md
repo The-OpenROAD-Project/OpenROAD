@@ -70,6 +70,10 @@ session will not connect; every session mints a new one.
   file others can read takes the token along. It travels in clear text over
   HTTP, so it does not replace the loopback bind.
 
+The viewer also refuses to run inside another site's frame and runs no script
+that does not come from the server itself (a Content-Security-Policy with
+`script-src 'self'`), so markup that ends up in a design name cannot run code.
+
 #### Running on a remote machine
 
 By default no browser is launched from an ssh session, from a batch job, or
@@ -486,7 +490,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI or a path on this server starting with `/` or `./`. An `http(s):` URL is blocked by the viewer's Content-Security-Policy. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |

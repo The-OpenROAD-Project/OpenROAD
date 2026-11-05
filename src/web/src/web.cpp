@@ -162,7 +162,16 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
-// The plain-text response every HTTP answer starts from.
+// script-src 'self' keeps an injected <img onerror> or inline <script> from
+// running; styles stay inline-able for netlistsvg's SVG and the templates.
+constexpr std::string_view kContentSecurityPolicy
+    = "default-src 'self'; script-src 'self'; "
+      "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+      "connect-src 'self' data:; font-src 'self' data:; object-src 'none'; "
+      "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+// The plain-text response every HTTP answer starts from, security headers
+// included (issue #11167, F-06).
 http::response<http::string_body> textResponse(const http::status status,
                                                const unsigned version,
                                                const bool keep_alive)
@@ -170,6 +179,11 @@ http::response<http::string_body> textResponse(const http::status status,
   http::response<http::string_body> res{status, version};
   res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
+  // By name: older Beast releases have no enum for some of these.
+  res.set("Content-Security-Policy", kContentSecurityPolicy);
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("X-Frame-Options", "DENY");
+  res.set("Referrer-Policy", "no-referrer");
   res.keep_alive(keep_alive);
   return res;
 }

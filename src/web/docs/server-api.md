@@ -47,6 +47,15 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
   other users of that machine until it is redeemed.
 - `GET /download/image` answers 404 when no design is loaded, 400 for a
   malformed `bbox`, and 500 when the render fails.
+- Every HTTP response, refusals included, carries `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and this
+  `Content-Security-Policy`:
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:; connect-src 'self' data:; font-src 'self' data:;
+  object-src 'none'; base-uri 'none'; form-action 'none';
+  frame-ancestors 'none'`. The page runs no inline script and no `eval`, and
+  loads images only from itself, `data:` and `blob:`; another site cannot
+  frame it.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 

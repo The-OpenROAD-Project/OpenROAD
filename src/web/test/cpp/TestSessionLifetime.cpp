@@ -57,6 +57,35 @@ int statusOf(const std::string& head)
   return code;
 }
 
+// What every response head must carry (issue #11167, F-06).
+void expectSecurityHeaders(const std::string& head, const std::string& what)
+{
+  for (const char* header : {
+           "X-Frame-Options: DENY\r\n",
+           "X-Content-Type-Options: nosniff\r\n",
+           "Referrer-Policy: no-referrer\r\n",
+       }) {
+    EXPECT_NE(head.find(header), std::string::npos) << what << '\n' << head;
+  }
+  const size_t csp = head.find("Content-Security-Policy: ");
+  ASSERT_NE(csp, std::string::npos) << what << '\n' << head;
+  const std::string policy = head.substr(csp, head.find("\r\n", csp) - csp);
+  // No inline scripts and no eval: an injected handler does not run.
+  for (const char* directive : {
+           "script-src 'self';",
+           "object-src 'none'",
+           "base-uri 'none'",
+           "form-action 'none'",
+           "frame-ancestors 'none'",
+       }) {
+    EXPECT_NE(policy.find(directive), std::string::npos)
+        << what << ": " << directive << '\n'
+        << policy;
+  }
+  EXPECT_EQ(policy.find("unsafe-eval"), std::string::npos) << what << '\n'
+                                                           << policy;
+}
+
 // A loopback listener with no design, so eagerInit() returns at once and the
 // init thread is often the one to drop a session's last reference.
 class ListenerFixture : public ::testing::Test
@@ -345,6 +374,47 @@ TEST_F(ListenerFixture, UnauthorizedNamesTheTokenScheme)
   EXPECT_NE(upgrade.find(challenge), std::string::npos) << upgrade;
 }
 
+// Every route out of textResponse(), refusals and the redirect included.
+TEST_F(ListenerFixture, EveryAnswerCarriesTheSecurityHeaders)
+{
+  struct Answer
+  {
+    std::string what;
+    std::string head;
+    int status;
+  };
+  const Answer answers[] = {
+      {.what = "page", .head = httpGet(withToken("/")), .status = 200},
+      {.what = "asset", .head = httpGet("/app.min.js"), .status = 200},
+      {
+          .what = "no such route",
+          .head = httpGet(withToken("/no-such-route")),
+          .status = 404,
+      },
+      {.what = "page without the token", .head = httpGet("/"), .status = 401},
+      {
+          .what = "ticket",
+          .head = httpGet(std::string("/?ticket=") + kTicket),
+          .status = 302,
+      },
+      {
+          .what = "upgrade without the token",
+          .head = upgradeAndDrop(""),
+          .status = 401,
+      },
+      {
+          .what = "cross-origin upgrade",
+          .head = upgradeAndDrop(withToken(""), "http://evil.example"),
+          .status = 403,
+      },
+  };
+  for (const Answer& answer : answers) {
+    // The status shows the request reached the path it is meant to test.
+    EXPECT_EQ(statusOf(answer.head), answer.status) << answer.what;
+    expectSecurityHeaders(answer.head, answer.what);
+  }
+}
+
 TEST_F(ListenerFixture, TicketDoesNotOpenTheWebSocket)
 {
   // Only the page redeems a ticket; the socket that carries the Tcl
@@ -365,11 +435,13 @@ TEST_F(ListenerFixture, ImageDownloadWithoutADesignAnswers404)
 }
 
 // An escaping utl::Logger::error would drop the connection unanswered.  Like
-// every other response, the 500 carries no wildcard CORS header.
+// every other response, the 500 carries the security headers and no wildcard
+// CORS header.
 TEST_F(DegenerateDesignFixture, FailedRenderAnswers500AndKeepsServing)
 {
   const std::string head = httpGet(withToken("/download/image?type=entire"));
   EXPECT_EQ(statusOf(head), 500);
+  expectSecurityHeaders(head, "500");
   EXPECT_EQ(head.find("Access-Control-Allow-Origin"), std::string::npos)
       << head;
   EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
