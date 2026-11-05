@@ -175,6 +175,30 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "io_test",
+    tests = [":io_unittest"],
+)
+
+cc_test(
+    name = "io_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
         "ioWriterTest.cpp",
     ],
     includes = [
