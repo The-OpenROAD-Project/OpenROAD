@@ -515,6 +515,64 @@ TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
   EXPECT_EQ(failureCount("Overlap_failures"), 0);
 }
 
+// Window-supply check: a window of +/- 4 sites and +/- 1 row reaches
+// 3 x 2 boxes of 4 sites by 1 row from the core's corner, 24 sites.
+class WindowSupplyTest : public CheckPlacementTest
+{
+ protected:
+  static constexpr int kWindowSites = 4;
+  static constexpr int kWindowRows = 1;
+
+  // count BUF_X1 (2 sites each) left by global placement at one spot.
+  void stackBuffers(const int count, const odb::Point& location)
+  {
+    for (int i = 0; i < count; ++i) {
+      const std::string name = "buf" + std::to_string(i);
+      makeCell(
+          "BUF_X1", name.c_str(), location, odb::dbPlacementStatus::PLACED);
+    }
+  }
+
+  // Run detailed placement and return the logger error id it raised, or
+  // "" if none.
+  std::string runPlacement(const bool use_diamond)
+  {
+    try {
+      dp_.detailedPlacement(kWindowSites,
+                            kWindowRows,
+                            /*report_file_name=*/"",
+                            /*incremental=*/false,
+                            use_diamond);
+    } catch (const std::runtime_error& error) {
+      return error.what();
+    }
+    return "";
+  }
+};
+
+TEST_F(WindowSupplyTest, DiamondStopsWhenWindowsCannotHoldTheCells)
+{
+  // 30 buffers need 60 sites; 24 are within reach.
+  stackBuffers(30, {kCoreX, kCoreY});
+  EXPECT_EQ(runPlacement(/*use_diamond=*/true), "DPL-1107");
+}
+
+TEST_F(WindowSupplyTest, NegotiationIsNotStoppedByTheCheck)
+{
+  // The negotiation can move cells further than the window, so the same
+  // placement only warns.
+  stackBuffers(30, {kCoreX, kCoreY});
+  EXPECT_NE(runPlacement(/*use_diamond=*/false), "DPL-1107");
+}
+
+TEST_F(WindowSupplyTest, DiamondLegalizesWhenWindowsHoldTheCells)
+{
+  // 3 buffers need 6 sites; the window reaches 24.
+  stackBuffers(3, {kCoreX, kCoreY});
+  EXPECT_EQ(runPlacement(/*use_diamond=*/true), "");
+  EXPECT_EQ(runCheck(/*check_fixed=*/false, /*check_placeable=*/true), "");
+}
+
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
 class FixedSupplyViaTest : public tst::Nangate45Fixture
 {

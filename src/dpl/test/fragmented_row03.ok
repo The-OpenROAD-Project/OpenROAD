@@ -8,6 +8,9 @@
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
 [INFO DPL-0009] Utilization: 38.9%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1106] 1 of 1 windows of 95.0 x 1.4 um hold more cells than the free sites within +/- 500 sites and +/- 100 rows of them can take (sites of cells needed / free sites reachable):
+[INFO DPL-1109]   window at (14.0, 14.0) um: 7 / 2
+[WARNING DPL-1108] 1 window(s) need more sites than are within the displacement window (worst at (14.0, 14.0) um). The cells there outnumber the sites they can reach: density, or a channel too narrow for what was put in it. The negotiation legalizer may still legalize them by moving cells further.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
 	Automatic search window extension enabled.
