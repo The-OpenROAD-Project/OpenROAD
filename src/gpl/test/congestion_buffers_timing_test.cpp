@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -301,6 +303,42 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
                          delta_area_,
                          routability_iteration,
                          virtual_cts);
+  }
+
+  void runSubDbuStepAfterRefreshCurGradients()
+  {
+    NesterovBase& nb = *nb_vec_[0];
+    // Center every movable GCell inside its integer DBU cell so a sub-DBU step
+    // moves float coordinates without crossing any integer DBU boundary.
+    for (size_t i = 0; i < nb.nb_gcells_.size(); ++i) {
+      GCell* gcell = nb.nb_gcells_[i];
+      if (gcell->isLocked()) {
+        continue;
+      }
+      const float cx = nb.getDensityCoordiLayoutInsideX(
+          gcell, std::floor(nb.curSLPCoordi_[i].x) + 0.5f);
+      const float cy = nb.getDensityCoordiLayoutInsideY(
+          gcell, std::floor(nb.curSLPCoordi_[i].y) + 0.5f);
+      nb.curCoordi_[i] = FloatPoint(cx, cy);
+      nb.curSLPCoordi_[i] = FloatPoint(cx, cy);
+    }
+
+    np_->refreshCurGradients();
+
+    float max_grad = 0.0f;
+    for (const FloatPoint& grad : nb.curSLPSumGrads_) {
+      max_grad
+          = std::max(max_grad, std::max(std::fabs(grad.x), std::fabs(grad.y)));
+    }
+    ASSERT_GT(max_grad, 0.0f);
+
+    nb.stepLength_ = std::min(0.01f, 0.25f / max_grad);
+    np_->doBackTracking(0.0f);
+
+    EXPECT_GT(nb.coordiDistance_, 0.0f);
+    EXPECT_EQ(nb.gradDistance_, 0.0f);
+    EXPECT_FALSE(nb.isDiverged());
+    EXPECT_FALSE(np_->divergedLastRun());
   }
 
   void checkRetainedInsertions(bool expect_inflation)
@@ -1233,6 +1271,16 @@ TEST_F(TimingRepairIntegrationTest, DeletionReclaimsAllowanceForReplacement)
   nb_vec_[0]->updateGCellState();
   nb_vec_[0]->updateTimingDrivenDensity();
   EXPECT_TRUE(nb_vec_[0]->getNewInstances().empty());
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       SubDbuStepAfterRefreshCurGradientsDoesNotDiverge)
+{
+  makePlacer(false, true);
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+
+  runSubDbuStepAfterRefreshCurGradients();
 }
 
 }  // namespace gpl
