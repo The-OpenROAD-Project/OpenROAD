@@ -359,6 +359,25 @@ class FastRouteCore
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
 
+  // Usage of an edge as `net` sees it when choosing its route: an NDR net
+  // also pays for the NDR deficit of the edge (see
+  // Graph2D::getNDRDeficitIfRouted), the other nets see `usage` unchanged.
+  double getUsageNDRAware(FrNet* net,
+                          int x,
+                          int y,
+                          EdgeDirection direction,
+                          double usage) const;
+  double getEstUsageRedH(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Horizontal, graph2d_.getEstUsageRedH(x, y));
+  }
+  double getEstUsageRedV(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Vertical, graph2d_.getEstUsageRedV(x, y));
+  }
+
   // maze functions
   // Maze-routing in different orders
   double getCost(int index, bool is_horizontal, const CostParams& cost_params);
@@ -475,6 +494,7 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  bool canRunMaze3D(int overflow_2d) const;
   void addNeighborPoints(int netID,
                          int n1,
                          int n2,
@@ -749,6 +769,9 @@ class FastRouteCore
 
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
+  // Overflow an NDR net is charged, in its routing cost, per track it would
+  // miss on an edge where it fits no single layer.
+  static constexpr int kNdrDeficitCost = 100;
 
   // Snapshot-batched routing constants.
   // Nets are partitioned into batches and routed in parallel waves against
