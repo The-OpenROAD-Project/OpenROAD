@@ -158,6 +158,27 @@ cc_test(
 )
 
 cc_test(
+    name = "dft_execute_plan_unittest",
+    srcs = ["cpp/TestDftExecutePlan.cpp"],
+    data = [
+        "max_chain_count_sky130.v",
+        ":regression_resources",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dft",
+        "//src/dft/src/config",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "dft_scan_optimizer_unittest",
     srcs = ["cpp/TestScanOptimizer.cpp"],
     deps = [

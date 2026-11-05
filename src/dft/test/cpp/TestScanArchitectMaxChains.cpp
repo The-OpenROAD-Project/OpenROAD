@@ -8,6 +8,7 @@
 // max_length to accommodate all bits. These tests verify that behavior directly
 // against the code in ScanArchitect::inferChainCountFromMaxLength().
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <sstream>
@@ -29,19 +30,20 @@
 namespace dft::test {
 namespace {
 
-// Minimal ScanCell mock — identical to ScanCellMock but defined locally
-// so this test file has no external dependencies beyond the test framework.
+// Minimal ScanCell mock, defined locally so this test file has no external
+// dependencies beyond the test framework.
 class CellMock : public ScanCell
 {
  public:
   CellMock(const std::string& name,
            std::unique_ptr<ClockDomain> clock_domain,
-           utl::Logger* logger)
-      : ScanCell(name, std::move(clock_domain), logger)
+           utl::Logger* logger,
+           uint64_t bits = 1)
+      : ScanCell(name, std::move(clock_domain), logger), bits_(bits)
   {
   }
 
-  uint64_t getBits() const override { return 1; }
+  uint64_t getBits() const override { return bits_; }
   void connectScanEnable(const ScanDriver&) const override {}
   void connectScanIn(const ScanDriver&) const override {}
   void connectScanOut(const ScanLoad&) const override {}
@@ -61,6 +63,9 @@ class CellMock : public ScanCell
   bool isPlaced() const override { return false; }
   odb::Point getScanInLocation() const override { return odb::Point(); }
   odb::Point getScanOutLocation() const override { return odb::Point(); }
+
+ private:
+  uint64_t bits_;
 };
 
 // Helper: build N 1-bit cells in the given clock domain.
@@ -89,6 +94,13 @@ uint64_t totalBits(const std::vector<std::unique_ptr<ScanChain>>& chains)
     }
   }
   return total;
+}
+
+// Helper: true if no chain is empty.
+bool noEmptyChains(const std::vector<std::unique_ptr<ScanChain>>& chains)
+{
+  return std::ranges::none_of(chains,
+                              [](const auto& chain) { return chain->empty(); });
 }
 
 // Helper: run the architect and return chains.
@@ -232,6 +244,54 @@ TEST(TestScanArchitectMaxChains, MaxChainsExactlyEqualsMaxLengthResult)
 
   EXPECT_EQ(chains.size(), 2);
   EXPECT_EQ(totalBits(chains), 20);
+}
+
+// max_chains=6 with 10 bits gives a length of 2, which fills only 5 chains.
+// No empty sixth chain is created.
+TEST(TestScanArchitectMaxChains, MaxChainsAboveBalancedCountCreatesNoEmptyChain)
+{
+  utl::Logger logger;
+
+  ScanArchitectConfig config;
+  config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
+  config.setMaxLength(1);
+  config.setMaxChains(6);
+
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  addCells(cells, "cell", 10, "clk1", ClockEdge::Rising, &logger);
+
+  const auto chains = runArchitect(config, cells, &logger);
+
+  EXPECT_EQ(chains.size(), 5);
+  EXPECT_TRUE(noEmptyChains(chains));
+  EXPECT_EQ(totalBits(chains), 10);
+}
+
+// Multi-bit cells overshoot the max length: with cells of 4, 4, 1 and 1 bits
+// and a length of 3, the 4-bit cells fill one chain each and the 1-bit cells
+// share a third, so the fourth chain is empty and dropped.
+TEST(TestScanArchitectMaxChains, MultiBitOvershootDropsEmptyChain)
+{
+  utl::Logger logger;
+
+  ScanArchitectConfig config;
+  config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
+  config.setMaxLength(3);
+
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  for (const uint64_t bits : {4U, 4U, 1U, 1U}) {
+    cells.push_back(std::make_unique<CellMock>(
+        "cell" + std::to_string(cells.size()),
+        std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
+        &logger,
+        bits));
+  }
+
+  const auto chains = runArchitect(config, cells, &logger);
+
+  EXPECT_EQ(chains.size(), 3);
+  EXPECT_TRUE(noEmptyChains(chains));
+  EXPECT_EQ(totalBits(chains), 10);
 }
 
 }  // namespace
